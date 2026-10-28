@@ -5,7 +5,7 @@ Lathe keeps a product's lifecycle (domain model, use cases, interaction design, 
 ## Use it in a product repo
 
 ```sh
-npm install --save-dev /path/to/jaredrob-lathe-0.1.0.tgz   # until it is published
+npm install --save-dev /path/to/jaredrob-lathe-1.0.0.tgz   # until it is published
 npx lathe init --name "Tool Library" --prefix TL
 npx lathe add domain --id TL-LEND --title Lending --product_id TL
 npx lathe check
@@ -29,14 +29,15 @@ What the schema enforces is never a check: data with a missing parent, a link to
 
 The source of truth is `data/<table>.jsonl` at the product repo's root: one file per stored table with rows, one JSON object per line, rows sorted by key, columns in the table's order, columns without a value left out, UTF-8 with a trailing newline. A change to a row is a one-line diff, and git is the history: `git log` and `git blame` show what changed, when, and whether the Owner or an Agent made it. The database is built in memory on each load and never committed.
 
-`lathe.config.json`, at the root, is optional:
+`lathe.config.json`, at the root, is written by `lathe init`:
 
 ```json
-{ "data": "data" }
+{ "schema": 1, "data": "data" }
 ```
 
 | Key | Default | Meaning |
 | --- | --- | --- |
+| `schema` | `1` | The schema version the data is for (see [Upgrading](#upgrading)). |
 | `data` | `data` | The folder of data files. |
 
 Any other key, or a file that is not one JSON object, is refused when the config is read. A product's settings are data too: `product_setting.max_children` (15 when the product has no row) is the most children of one kind a record has before the `too-many-children` warning. `product_setting.max_entities_per_aggregate` (7 when the product has no row) is the most entities an aggregate has before the `aggregate-too-large` warning; a settings row gives both.
@@ -77,14 +78,49 @@ The driver checks the merged table's own rules (columns, types, keys and checks)
 
 | Command | What it does |
 | --- | --- |
-| `init --name <name> --prefix <P>` | Writes `lathe.config.json` (if there is none) and adds the product record to `data/product.jsonl` through the store. Both options are required; the prefix is capital letters and digits, starting with a letter. It stops if that product already exists. |
+| `init --name <name> --prefix <P>` | Writes `lathe.config.json` (if there is none) with this Lathe's schema version, and adds the product record to `data/product.jsonl` through the store. Both options are required; the prefix is capital letters and digits, starting with a letter. It stops if that product already exists. |
 | `check [--json]` | Loads the data and checks it. Prints the errors, then the warnings, then the coverage: for each domain, and for the product outside the domains, one line per obligation kind (designed, built and proved out of the total, and how many wait on a test not automated yet, with each gap), a line of test counts, and the records short of a minimum. Exits 1 on any error, data the store refuses included; warnings alone do not fail it. `--json` prints the whole `Workspace` instead. |
+| `upgrade [--allow-dirty]` | Moves the data forward to this Lathe's schema version (see [Upgrading](#upgrading)). |
 | `serve [--port <n>]` | Serves the web app and its API at `http://127.0.0.1:<port>` (default 5330). Open pages reload when the data changes. |
 | `merge-data <base> <ours> <theirs> <path>` | Git's merge driver for the data files (see [The merge driver](#the-merge-driver)). |
 | `mcp` | Serves the data commands as MCP tools over stdio, for the Claude Code plugin. |
 | `add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list`, `next-id` | The data commands (see [Changing the data](#changing-the-data)). |
 
 A usage mistake (a missing option, an unknown command, a bad port) exits 2.
+
+## Upgrading
+
+Lathe's schema has a version: one whole number in [schema/version.json](schema/version.json), 1 for the first versioned schema. A product's `lathe.config.json` names the version its data is for (none is 1). Every load (`lathe check`, the data commands, `lathe serve`, the MCP tools, `loadWorkspace` and `openStore`) stops on data for another version, with one message and nothing read: data for an older schema says to run `npx lathe upgrade`; data for a newer one says the product needs a newer Lathe.
+
+**Versions.** The package follows semantic versioning, and its major version tracks the schema: a breaking schema change (a table, column or rule that existing data may not pass, such as a renamed or removed column or a new required one) raises the schema version by one, adds a converter, and raises the major version. A new kind, an optional column or a new check is a minor version; a fix is a patch. Two releases with the same major version read the same data.
+
+**Upgrading a product.** Update `@jaredrob/lathe` in the product repo, commit, then:
+
+```sh
+npx lathe upgrade
+```
+
+It runs each converter in order from the product's schema version to this Lathe's, prints what each changed, then a list of what it could not convert, for you to finish by hand (nothing is silently dropped), and raises `schema` in `lathe.config.json`. It refuses a git working tree with changes, so the whole upgrade is one commit to review with `git diff`; `--allow-dirty` upgrades anyway. If the converted data does not load under the new schema, it stops before raising the version and lists the store's refusals as the to-dos; `git checkout -- .` undoes it. The upgrade goes one way: nothing old is kept, and no Lathe reads the old form afterwards.
+
+**Writing a converter.** A breaking schema change comes with `upgrades/<from>-to-<to>.ts`, moving the data forward exactly one version (`1-to-2.ts`). Its default export has up to two phases:
+
+```ts
+import type { Converter } from '../src/index.ts';
+
+export default {
+  // What the new schema cannot load as it is, on the raw rows of the data files.
+  files(data, notes) {
+    data.write('product', data.read('product').map(({ notes: delivery, ...row }) => ({ ...row, delivery })));
+    notes.changed('product.notes is now product.delivery');
+  },
+  // Everything else, through the store's command layer, once the data loads.
+  async records(store, notes) {
+    for (const row of store.rows('product')) if (!row.delivery) notes.todo(`${row.id}: write how it is delivered`);
+  },
+} satisfies Converter;
+```
+
+Every converter's `files` phase runs in order, then every `records` phase in order: the store is Lathe's current one, so the files phases bring the data to a shape it loads. A table a files phase rewrites takes the store's own order and line format. `notes.changed` lines are the summary; `notes.todo` lines are the to-do list. Test each converter on a copy of a real product before release; [test/cli/upgrade.test.ts](test/cli/upgrade.test.ts) shows the whole path with a test converter.
 
 ## The engine
 

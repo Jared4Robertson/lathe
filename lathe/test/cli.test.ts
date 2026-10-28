@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace } from '../src/index.ts';
+import { loadWorkspace, SCHEMA_VERSION } from '../src/index.ts';
 import { build, changing, complete, removeData, sparse, writeData } from './helpers.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -94,7 +94,7 @@ describe('lathe init', () => {
     const root = writeData({});
     const first = lathe('init', '--root', root, '--name', 'Tool Library', '--prefix', 'TL');
     expect(first.status).toBe(0);
-    expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ data: 'data' });
+    expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ schema: SCHEMA_VERSION, data: 'data' });
     const product = path.join(root, 'data', 'product.jsonl');
     expect(JSON.parse(readFileSync(product, 'utf8'))).toMatchObject({ id: 'TL', title: 'Tool Library' });
     expect(lathe('check', '--root', root).status).toBe(0);

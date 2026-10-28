@@ -154,6 +154,38 @@ describe('the MCP launcher', () => {
     expect(messages[1].result.content[0].text).toBe('Product TL: Tool Library\n  kind: product');
   });
 
+  it('LA-PLT-UC17-R05-T01 warns once, in the first tool result, when the installed Lathe is not the major version the skills were written for', async () => {
+    const major = JSON.parse(readFileSync(path.join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8')).lathe.major;
+    expect(major).toBe(Number(JSON.parse(readFileSync(path.join(here, '..', '..', 'package.json'), 'utf8')).version.split('.')[0]));
+    // The tool results for two show calls, with the installed Lathe at the given version.
+    const results = async (version: string) => {
+      const root = productRepo();
+      const installed = path.join(root, 'node_modules', '@jaredrob', 'lathe');
+      mkdirSync(path.join(installed, 'schema'), { recursive: true });
+      writeFileSync(path.join(installed, 'package.json'), JSON.stringify({ name: '@jaredrob/lathe', version }));
+      writeFileSync(path.join(installed, 'schema', 'version.json'), '{ "schema": 7 }\n');
+      const server = spawn(process.execPath, [path.join(pluginDir, 'scripts', 'mcp-server.mjs')], { env: { ...process.env, CLAUDE_PROJECT_DIR: root }, stdio: ['pipe', 'pipe', 'pipe'] });
+      let out = '';
+      server.stdout.on('data', (chunk) => (out += chunk));
+      server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {} } })}\n`);
+      for (const id of [2, 3]) server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params: { name: 'show', arguments: { id: 'TL' } } })}\n`);
+      server.stdin.end();
+      expect(await new Promise((resolve) => server.on('close', resolve))).toBe(0);
+      return { root, calls: out.trim().split('\n').map((l) => JSON.parse(l)).slice(1).map((m) => m.result.content.map((c: { text: string }) => c.text)) };
+    };
+    const other = await results(`${major + 1}.3.0`);
+    expect(other.calls).toEqual([
+      [
+        'Product TL: Tool Library\n  kind: product',
+        `Warning: the Lathe plugin's skills were written for Lathe ${major}.x, but ${other.root} has Lathe ${major + 1}.3.0 (schema 7). ` +
+          "The tools match the installed Lathe, but the skills may name tables, columns or steps it does not have: update the plugin or the product's @jaredrob/lathe so their major versions match.",
+      ],
+      ['Product TL: Tool Library\n  kind: product'],
+    ]);
+    // The same major version: no warning.
+    expect((await results(`${major}.9.1`)).calls).toEqual([['Product TL: Tool Library\n  kind: product'], ['Product TL: Tool Library\n  kind: product']]);
+  });
+
   it('LA-INT01-T03 says why it cannot start outside a Lathe repo', () => {
     const empty = realpathSync(mkdtempSync(path.join(tmpdir(), 'lathe-plugin-none-')));
     roots.push(empty);

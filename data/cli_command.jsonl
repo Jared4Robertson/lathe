@@ -12,3 +12,4 @@
 {"id":"LA-CHK-QRY01-CLI","title":"lathe check","domain_id":"LA-CHK","usage":"lathe check [--json]","mcp_tool":"check","file":"lathe/bin/lathe.ts"}
 {"id":"LA-PLT-CMD17-CLI","title":"lathe serve","domain_id":"LA-PLT","usage":"lathe serve [--port <port>]","file":"lathe/bin/lathe.ts"}
 {"id":"LA-PLT-CMD21-CLI","title":"lathe init","domain_id":"LA-PLT","usage":"lathe init --name <name> --prefix <prefix>","file":"lathe/bin/lathe.ts"}
+{"id":"LA-PLT-CMD24-CLI","title":"lathe upgrade","domain_id":"LA-PLT","usage":"lathe upgrade [--allow-dirty]","file":"lathe/bin/lathe.ts"}

@@ -10,7 +10,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { loadWorkspace, openStore, PACKAGE_DIR, type LoadTimings } from '../../src/index.ts';
+import { loadWorkspace, openStore, PACKAGE_DIR, SCHEMA_VERSION, type LoadTimings } from '../../src/index.ts';
 import type { SpecData, WriteAnswer } from '../../src/server/contract.ts';
 import { WRITE_BODY_LIMIT } from '../../src/server/api.ts';
 import { APP_DIR } from '../../src/server/serve.ts';
@@ -181,7 +181,7 @@ describe('Platform flows', () => {
     // lathe init writes the config and the product record.
     const init = ok(root, 'init', '--name', 'Tool Library', '--prefix', 'TL');
     expect(init).toContain('Wrote lathe.config.json');
-    expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ data: 'data' });
+    expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ schema: SCHEMA_VERSION, data: 'data' });
     expect(readFileSync(path.join(root, 'data', 'product.jsonl'), 'utf8')).toContain('"id":"TL","title":"Tool Library"');
 
     // The merge driver, once per clone, as the README says: git then merges the data files through it.

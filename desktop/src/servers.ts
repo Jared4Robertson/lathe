@@ -1,7 +1,8 @@
-// What a window loads: Lathe's own server (`serve()` from the built package) for the opened folder,
-// or in development the app's Vite dev server (devSource.ts). Each window owns its server and
+// What a window loads: Lathe's own server (`serve()` from the built package) for the opened folder, from the
+// product's own installed Lathe when it has one and the app's bundled copy otherwise, or in development the app's
+// Vite dev server (devSource.ts). Each window owns its server and
 // stops it when it closes.
-import { existsSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import type { Server } from 'node:http';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -21,6 +22,39 @@ type Serve = (options: { root: string; port: number; host?: string }) => { serve
 export function serveModulePath(repoRoot: string, packaged: { resourcesPath: string } | null) {
   const base = packaged ? path.join(packaged.resourcesPath, 'node_modules', '@jaredrob', 'lathe') : path.join(repoRoot, 'lathe');
   return path.join(base, 'dist', 'src', 'server', 'serve.js');
+}
+
+/** The Lathe a product opens with: its serve() module, whether it is the product's own or the app's, and its version. */
+export interface LatheChoice {
+  modulePath: string;
+  source: 'product' | 'bundled';
+  version: string | null;
+}
+
+/** The version in the package.json of the Lathe package whose serve() module this is, or null. */
+export function packageVersion(modulePath: string): string | null {
+  try {
+    const pkg = JSON.parse(readFileSync(path.resolve(path.dirname(modulePath), '..', '..', '..', 'package.json'), 'utf8')) as { version?: unknown };
+    return typeof pkg.version === 'string' ? pkg.version : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * The Lathe a product folder opens with: the product's own installed Lathe (node_modules/@jaredrob/lathe, built) when
+ * it has one, so the app reads its data with the Lathe it was written for; else the app's bundled copy.
+ */
+export function latheFor(folder: string, bundled: string): LatheChoice {
+  const own = path.join(folder, 'node_modules', '@jaredrob', 'lathe', 'dist', 'src', 'server', 'serve.js');
+  const modulePath = existsSync(own) ? own : bundled;
+  return { modulePath, source: modulePath === own ? 'product' : 'bundled', version: packageVersion(modulePath) };
+}
+
+/** Which Lathe a window runs, as its About window says it: "its own Lathe 1.2.0" or "bundled Lathe 1.0.0". */
+export function latheLabel(choice: LatheChoice): string {
+  const version = choice.version ? ` ${choice.version}` : '';
+  return choice.source === 'product' ? `its own Lathe${version}` : `bundled Lathe${version}`;
 }
 
 /** Starts `serve()` in this process on a free local port (never 5199) for the folder. */
