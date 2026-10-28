@@ -73,7 +73,7 @@ describe('graph page', () => {
     expect(side.getAllByText('Invariant').length).toBeGreaterThan(0);
     expect(side.getByText('A loan is returned once', { selector: '.side-bar-name' })).toBeTruthy();
     expect(side.getByText('No test proves invariant P-D-INV02.')).toBeTruthy();
-    // The gaps in the words of the wiki's Traceability callouts, in the side bar's compact Traceability (brief 64).
+    // The gaps in the words of the wiki's Traceability callouts, in the side bar's compact Traceability.
     const gaps = side.getByRole('region', { name: /^Traceability/ });
     expect([...gaps.querySelectorAll('li[data-gap]')].map((li) => li.textContent)).toContain('Not proved yet');
     expect(side.getByRole('link', { name: 'P-D-INV02' }).getAttribute('href')).toBe('/P-D-INV02');

@@ -1,6 +1,6 @@
 # Lathe on a phone: design decisions
 
-Brief 52. The records are `LA-BRW-UC116` (and its requirements), `LA-BRW-DR220` to `DR223`, components `C210` to `C215`, tests `T460` to `T471`, and the standard `LA-PAT-APP-UX-R07`. The page bar (`LA-PAT-APP-UX-R03`) was designed at the same time, at the Owner's request, so the wide and the narrow layouts are one design at two widths.
+The records are `LA-BRW-UC116` (and its requirements), `LA-BRW-DR220` to `DR223`, components `C210` to `C215`, tests `T460` to `T471`, and the standard `LA-PAT-APP-UX-R07`. The page bar (`LA-PAT-APP-UX-R03`) was designed at the same time, at the Owner's request, so the wide and the narrow layouts are one design at two widths.
 
 ## The principle
 
@@ -24,7 +24,7 @@ Each decision lists the options weighed, the choice and why.
 
 ### 3. One view at a time, without forgetting the wide screen's views
 
-- **Chosen:** the phone shows the first view the address names (`?view=wiki,graph` shows the wiki). Tapping Graph shows the graph alone and writes `?view=graph` (replacing the history entry, as the desktop toggles do) and the tab's views. It does not write the views remembered for a wide screen (`lathe:view`), so a phone visit never collapses the Owner's desktop set.
+- **Chosen:** the phone shows the first view the address names (`?view=wiki,graph` shows the wiki). Tapping Graph shows the graph alone and writes `?view=graph` (replacing the history entry, as the desktop toggles do) and the tab's views. It does not write the views remembered for a wide screen (`lathe:view`), so a phone visit never collapses the Reader's desktop set.
 - **Why:** the address must say what is on screen (UX-R06); the remembered set is a wide-screen preference.
 - No pane headers (nothing to close or maximize when only one pane shows) and no resize handles.
 
@@ -46,7 +46,7 @@ Each decision lists the options weighed, the choice and why.
 │ Read a record as a wiki page, a      │  a record page: the wiki, full width
 │ graph or a model, side by side       │
 │ LA-BRW-UC50                          │
-│ the Owner opens any record, group, …     │
+│ Owner opens any record, group, …     │
 │ UC requirements 13                   │
 │ [ Filter by ID or title ]  13 of 13  │
 │ ┌──────────────────────────────────┐ │

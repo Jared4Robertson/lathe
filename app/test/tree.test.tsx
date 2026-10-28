@@ -70,7 +70,7 @@ describe('one level deep', () => {
     expect(cap.querySelector('ul.nested')).toBeNull();
     expect(within(children).queryByRole('link', { name: /DM-SHOP-UC01/ })).toBeNull();
 
-    // On a record's page the side bar does not repeat the children the wiki lists (brief 64).
+    // On a record's page the side bar does not repeat the children the wiki lists.
     await openApp('/DM-SHOP-CAP01');
     await screen.findByRole('heading', { level: 1, name: 'Buying' });
     expect(within(main()).getByRole('list', { name: 'Use cases of DM-SHOP-CAP01' })).toBeInTheDocument();

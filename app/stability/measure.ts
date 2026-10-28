@@ -17,7 +17,7 @@ export const BUDGET = 0.01;
 /**
  * Parts of the app whose fixes wait on other work. A shift that only moves nodes inside these is
  * reported as `deferred` and listed in notes/jitter-audit.md, but is not held to the budget yet.
- * Brief 53's phase 2 emptied it (the nav and the tab strip are held to the budget): keep it empty.
+ * Phase 2 of the jitter audit emptied it (the nav and the tab strip are held to the budget): keep it empty.
  */
 export const DEFERRED: string[] = [];
 
@@ -189,7 +189,7 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
 export async function installProbes(page: Page, firstKeys: string[] = []) {
   await page.addInitScript(probes, { firstKeys, deferred: DEFERRED });
   // The scenarios read every page with the side bar open, as a Reader who opened it
-  // in the Wiki view too (it starts closed there, brief 64); a choice made in a scenario is kept.
+  // in the Wiki view too (it starts closed there); a choice made in a scenario is kept.
   await page.addInitScript(() => {
     try {
       if (!localStorage.getItem('lathe:side-bar')) {

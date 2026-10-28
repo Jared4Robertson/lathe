@@ -3,7 +3,7 @@
 // open-file event. Both route here: open (or focus) that folder's window, or bring the app forward.
 import path from 'node:path';
 
-/** The folder named on a command line (`electron . ~/Development/client_sandbox`), if any. */
+/** The folder named on a command line (`electron . ~/Development/tool-library`), if any. */
 export function folderArgument(argv: readonly string[], packaged: boolean): string | undefined {
   const args = argv.slice(packaged ? 1 : 2).filter((a) => !a.startsWith('-'));
   return args.at(-1);
