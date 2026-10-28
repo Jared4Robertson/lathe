@@ -1,6 +1,6 @@
-// Authoring's and Checking's flows through the MCP tools (LA-IF04), each walked through the `lathe mcp` server served
-// in process, as the plugin talks to it, on a temporary product: the Agent writes with add, set, move, link, unlink and
-// remove, reads with show and next_id, and checks with check. The same flows through the CLI are in authoring.test.ts and
+// Authoring's and Checking's flows through the MCP tools (LA-IF04), each walked through a real `lathe mcp` server, as
+// the plugin starts it, on a temporary product: the Agent writes with add, set, move, link, unlink and remove, reads
+// with show and next_id, and checks with check. The same flows through the CLI are in authoring.test.ts and
 // checking.test.ts.
 import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
