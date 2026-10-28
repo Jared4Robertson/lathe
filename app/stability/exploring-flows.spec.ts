@@ -291,7 +291,9 @@ test.describe('Exploring flows', () => {
     await expect(n.getByRole('button', { name: 'Fold Platform' })).toHaveAttribute('aria-expanded', 'true');
     const platform = n.getByRole('list', { name: 'Folders of Platform' });
     await expect(platform.getByRole('button', { name: /^Use cases \d+$/ })).toHaveAttribute('aria-expanded', 'true');
-    await expect(n.getByRole('list', { name: 'Use cases of Platform' }).getByRole('button', { name: /^Capabilities \d+$/ })).toHaveAttribute('aria-expanded', 'true');
+    // Use cases holds only capabilities, so it lists them itself, with no Capabilities folder between.
+    await expect(n.getByRole('list', { name: 'Use cases of Platform' }).getByRole('link', { name: /\S/ }).first()).toBeVisible();
+    await expect(n.getByRole('list', { name: 'Use cases of Platform' }).getByRole('button', { name: /^Capabilities \d+$/ })).toHaveCount(0);
     // Use cases lists the capabilities in order.
     await page.goto('/LA-EXP/use-cases');
     const caps = page.locator(WIKI).getByRole('link', { name: /^LA-EXP-CAP\d+/ });

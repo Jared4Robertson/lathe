@@ -1,7 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { main, openApp, section } from './helpers';
+import { main, openApp, section, stageOf } from './helpers';
 
 // A domain's page reads its records in the five stages, each a heading in its stage's color with one
 // section per kind that has records; a record folds the children of its own stage under it, and what
@@ -28,7 +28,8 @@ describe('domain page', () => {
     const user = userEvent.setup();
     expect(stages()).toEqual([
       ['Domain model', ['Aggregates', 'Specifications', 'Read models', 'Terms']],
-      ['Use cases', ['Capabilities']],
+      // Use cases holds only capabilities, so it lists them itself, with no folder heading.
+      ['Use cases', []],
       ['Interaction design', ['Flows', 'Endpoints']],
       ['Technical specification', ['Tables', 'Command handlers']],
       ['Test plan', ['Invariant tests', 'Use case tests']],
@@ -48,7 +49,7 @@ describe('domain page', () => {
     expect(within(section(/^Read models/)).getByRole('link', { name: /^DM-SHOP-RM01/ }).closest('li')).toHaveTextContent('1 query');
 
     // Use cases: the capability folds its use case, a row naming its actor.
-    const buying = within(section(/^Capabilities/)).getByRole('link', { name: /^DM-SHOP-CAP01\s*Buying/ }).closest('li') as HTMLElement;
+    const buying = within(stageOf('use-cases')).getByRole('link', { name: /^DM-SHOP-CAP01\s*Buying/ }).closest('li') as HTMLElement;
     expect(buying).toHaveTextContent('1 use case');
     await user.click(within(buying).getByRole('button', { name: 'Expand DM-SHOP-CAP01' }));
     const add = within(buying).getByRole('link', { name: /^DM-SHOP-UC01\s*Add/ }).closest('li') as HTMLElement;
@@ -89,7 +90,7 @@ describe('domain page', () => {
     await user.clear(search);
     expect(ids(section(/^Use case tests/))).toEqual(['DM-SHOP-UC01-R01-T01']);
     expect(ids(section(/^Aggregates/))).toEqual(['DM-SHOP-A1']);
-    expect(ids(section(/^Capabilities/))).toEqual(['DM-SHOP-CAP01']);
+    expect(ids(stageOf('use-cases'))).toEqual(['DM-SHOP-CAP01']);
   });
 
   it('LA-V91-R04-T01 The domain page lists its coverage gaps, each with the missing link, and its problems', async () => {

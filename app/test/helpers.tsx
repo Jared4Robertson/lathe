@@ -58,6 +58,13 @@ export async function openApp(path: string, served: Served = {}) {
 export const main = () => screen.getByRole('main');
 
 /** The page's section with this heading. */
+/** A stage on a domain or product page, by its name in the schema ("use-cases"): its heading and what it lists. */
+export function stageOf(stage: string, scope: HTMLElement = main()) {
+  const element = scope.querySelector<HTMLElement>(`.stage-${stage}`);
+  expect(element).not.toBeNull();
+  return element!;
+}
+
 export function section(name: string | RegExp) {
   const heading = within(main()).getByRole('heading', { name });
   const element = heading.closest('section');

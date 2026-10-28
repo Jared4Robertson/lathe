@@ -11,7 +11,8 @@ import { LongList } from '../components/LongList';
 import { Card, CardGrid } from '../shell/Card';
 import { countOf } from '../plural';
 import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, StageMark, gapText, idText, levelBelow, recordText, type SectionLevel } from './parts';
-import { allFolders, domainFolders, foldedChildren, productFolders, type Folder, type OwnerFolders } from './folders';
+import { allFolders, domainFolders, foldedChildren, productFolders, type Folder, type OwnerFolders, type StageFolders } from './folders';
+import { ActionsSlotContext } from '../components/ActionsSlot';
 import {
   byIdOrder,
   kindLabel,
@@ -205,14 +206,31 @@ function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecR
 }
 
 /**
+ * A stage on a domain or product page: its heading in its stage's color with its count, and beside it the actions of
+ * what it lists itself (the Expand all of a stage with one folder, whose records it shows directly), then its contents.
+ */
+function StageBlock({ stage, level, children }: { stage: StageFolders; level: 2 | 3; children: ReactNode }) {
+  const [actions, setActions] = useState<HTMLDivElement | null>(null);
+  const StageHeading = level === 2 ? 'h2' : 'h3';
+  return (
+    <div className={`stage stage-${stage.stage}`}>
+      <header className="stage-head">
+        <StageHeading className="stage-title"><StageMark stage={stage.stage} />{stage.label}<span className="section-count">{stage.count}</span></StageHeading>
+        <div className="spec-section-actions" ref={setActions} />
+      </header>
+      <ActionsSlotContext.Provider value={actions}>{children}</ActionsSlotContext.Provider>
+    </div>
+  );
+}
+
+/**
  * A domain's or a product's records in its stages, as the side nav reads them: each stage under its
  * heading and color (Domain model, Use cases, Interaction design, Technical specification, Test plan),
- * and in it one section per kind with records, each record a row whose children of the same stage
- * fold under it. A stage with nothing yet says so. Then the folders outside the stages, except open
+ * and in it one section per kind with records (or, for a stage with one folder, its records directly), each record a
+ * row whose children of the same stage fold under it. A stage with nothing yet says so. Then the folders outside the stages, except open
  * questions, which the page lists itself.
  */
 function StageSections({ index, folders, query, level = 2 }: { index: SpecIndex; folders: OwnerFolders; query: string; level?: 2 | 3 }) {
-  const StageHeading = level === 2 ? 'h2' : 'h3';
   const q = query.trim().toLowerCase();
   const matches = (r: SpecRecord) => !q || recordText(r).toLowerCase().includes(q);
   const nested = (r: SpecRecord) => foldedChildren(index, r);
@@ -230,10 +248,11 @@ function StageSections({ index, folders, query, level = 2 }: { index: SpecIndex;
   return (
     <>
       {folders.stages.map((stage) => (
-        <div key={stage.key} className={`stage stage-${stage.stage}`}>
-          <StageHeading className="stage-title"><StageMark stage={stage.stage} />{stage.label}<span className="section-count">{stage.count}</span></StageHeading>
-          {stage.count === 0 ? <p className="hint">Nothing yet.</p> : stage.folders.filter((f) => f.count > 0).map((f) => folderSection(f, levelBelow(level)))}
-        </div>
+        <StageBlock key={stage.key} stage={stage} level={level}>
+          {stage.count === 0 ? <p className="hint">Nothing yet.</p>
+            : stage.direct ? tree(stage.direct.records, stage.direct.label)
+            : stage.folders.filter((f) => f.count > 0).map((f) => folderSection(f, levelBelow(level)))}
+        </StageBlock>
       ))}
       {folders.loose.filter((f) => f.kind !== 'question').map((f) => folderSection(f, level))}
     </>

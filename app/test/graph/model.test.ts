@@ -17,15 +17,19 @@ describe('graph neighborhood', () => {
     expect(ids(one)).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
     // A leaf has nothing below it, so depth 2 and 3 frame the same picture.
     expect(ids(neighborhood(index, 'P-D-UC01-R01', 3))).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
-    // From the Use cases stage, each depth one level further down: its folder, the capability, its use case, its requirements.
+    // From the Use cases stage, which holds only capabilities and so lists them itself, each depth one level further
+    // down: the capability, its use case, its requirements.
     const stage = (d: number) => ids(neighborhood(index, 'P-D/use-cases', d));
-    expect(stage(1)).toEqual(['P-D', 'P-D/use-cases', 'P-D/use-cases/capability']);
-    expect(stage(2)).toEqual(['P-D', 'P-D-CAP01', 'P-D/use-cases', 'P-D/use-cases/capability']);
-    expect(stage(4)).toEqual(expect.arrayContaining(['P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R02']));
+    expect(stage(1)).toEqual(['P-D', 'P-D-CAP01', 'P-D/use-cases']);
+    expect(stage(2)).toEqual(['P-D', 'P-D-CAP01', 'P-D-UC01', 'P-D/use-cases']);
+    expect(stage(3)).toEqual(expect.arrayContaining(['P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R02']));
+    // From the Domain model stage, which keeps its folders: its folders, then their records.
+    expect(ids(neighborhood(index, 'P-D/domain-model', 1))).toEqual(expect.arrayContaining(['P-D', 'P-D/domain-model', 'P-D/domain-model/aggregate']));
+    expect(ids(neighborhood(index, 'P-D/domain-model', 1))).not.toContain('P-D-A1');
     // Each node at its level, reached from the one above it.
     const four = neighborhood(index, 'P-D/use-cases', 4);
     const distance = new Map(four.nodes.map((x) => [x.id, x.distance]));
-    expect(['P-D/use-cases/capability', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => distance.get(id))).toEqual([1, 2, 3, 4]);
+    expect(['P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => distance.get(id))).toEqual([1, 2, 3]);
     expect(four.via.get('P-D-UC01-R01')).toBe('P-D-UC01');
     // Down as well as up: from an aggregate, its folder above and its entity below; no sibling and no link.
     const aggregate = neighborhood(index, 'P-D-A4', 1);
@@ -104,14 +108,15 @@ describe('graph neighborhood', () => {
     const n = neighborhood(index, 'P-D/use-cases', 4);
     const column = new Map(n.nodes.map((x) => [x.id, x.column]));
     // The parent one column to the left, each level below one more to the right; the leftmost column is 0.
-    expect(['P-D', 'P-D/use-cases', 'P-D/use-cases/capability', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2, 3, 4, 5]);
+    expect(['P-D', 'P-D/use-cases', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2, 3, 4]);
     // Every node's parent line runs from one column to the next.
     for (const e of n.edges.filter((e) => e.relation === 'parent')) expect(column.get(e.target)).toBe(column.get(e.source)! + 1);
-    // From the domain at depth 2: stages in one column, every folder in the next, whatever it holds.
+    // From the domain at depth 2: stages in one column, every folder (or a one-folder stage's record) in the next,
+    // whatever it holds.
     const domain = neighborhood(index, 'P-D', 2);
     const dc = new Map(domain.nodes.map((x) => [x.id, x.column]));
     expect(dc.get('P-D/domain-model')).toBe(dc.get('P-D/test-plan'));
-    const folders = ['P-D/domain-model/aggregate', 'P-D/use-cases/capability', 'P-D/interaction-design/flow', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test'];
+    const folders = ['P-D/domain-model/aggregate', 'P-D-CAP01', 'P-D/interaction-design/flow', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test'];
     expect(new Set(folders.map((id) => dc.get(id)))).toEqual(new Set([dc.get('P-D/domain-model')! + 1]));
   });
 
@@ -127,7 +132,7 @@ describe('graph neighborhood', () => {
     }
     // Ancestors to the left of a record.
     const col = (id: string) => map.nodes.get(id)!.x;
-    const chain = ['P-D/use-cases', 'P-D/use-cases/capability', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'];
+    const chain = ['P-D/domain-model', 'P-D/domain-model/aggregate', 'P-D-A4', 'P-D-EN06'];
     for (let i = 1; i < chain.length; i++) expect(col(chain[i - 1])).toBeLessThan(col(chain[i]));
   });
 
