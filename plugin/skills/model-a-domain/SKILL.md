@@ -92,7 +92,7 @@ Every `statement` is one rule in one sentence or two, with MUST / MUST NOT where
 - A command `raises` each event it may raise, of its own aggregate. An event no command raises is a gap.
 - Name an event in the past tense, subject first: Loan opened, Tool returned. Its `event_field` rows carry what happened, not the whole entity: the IDs it concerns, when it happened and the values that changed, typed as entity fields are.
 - `published: true` makes the event's shape a promise to other domains, which may then hear it. Domains meet only through published events: commands, queries, read models and specifications stay inside their own domain.
-- **The outbox.** An event a policy hears is delivered by outbox, saved in the same transaction as its aggregate and delivered reliably afterwards, because a lost reaction is a lost change. Its event type says so (`delivery: "outbox"`, see `write-the-technical-spec`); the check warns while it does not. An event that only keeps read models current (`fed_by`), where those read models are rebuilt from the data on every load, may be delivered in process, published or not.
+- **The outbox.** An event a policy hears, in its own domain or another (when it is published), is delivered by outbox, saved in the same transaction as its aggregate and delivered reliably afterwards: a lost reaction is a lost change. Its event type says so (`delivery: "outbox"`, see `write-the-technical-spec`); the check warns while it does not. An event that only keeps read models current (`fed_by`), where those read models are rebuilt from the data on every load, may be delivered in process, published or not: the next load rebuilds what a lost delivery missed.
 
 ## 3. Rules: invariants, value objects and constraints, specifications, policies
 
