@@ -122,15 +122,27 @@ async function init() {
 function startServer() {
   const port = Number(values.port ?? 5330);
   if (!Number.isInteger(port) || port <= 0) fail('--port must be a port number.');
-  let server: ReturnType<typeof serve>;
+  let running: ReturnType<typeof serve>;
   try {
-    server = serve({ root, port });
+    running = serve({ root, port });
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error));
   }
-  server.on('listening', () => console.log(`Lathe is serving ${root} at http://127.0.0.1:${port}`));
-  server.on('error', (error) => fail(`Could not start the server: ${error.message}`));
+  running.server.on('listening', () => console.log(`Lathe is serving ${root} at http://127.0.0.1:${port}`));
+  running.server.on('error', (error) => fail(`Could not start the server: ${error.message}`));
+  // Stopped from a terminal: stop cleanly (LA-PLT-UC02-R06), then end by the same signal, as before. A second signal,
+  // or a stop that takes longer than STOP_TIMEOUT, ends it at once.
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+    process.once(signal, () => {
+      const end = () => process.kill(process.pid, signal);
+      setTimeout(end, STOP_TIMEOUT).unref();
+      void running.stop().finally(end);
+    });
+  }
 }
+
+/** The longest `lathe serve` waits for its server to stop on SIGINT or SIGTERM. */
+const STOP_TIMEOUT = 10_000;
 
 async function mergeData() {
   const [base, ours, theirs, file] = positionals.slice(1);

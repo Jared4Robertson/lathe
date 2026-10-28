@@ -177,6 +177,7 @@
 {"id":"LA-PLT-UC02-FL-S02","title":"They set up the merge driver for the data files once per clone, as the README says","flow_id":"LA-PLT-UC02-FL","path":"main","position":2}
 {"id":"LA-PLT-UC02-FL-S03","title":"They add the first domain and records with lathe add, or an Agent through the MCP tools, in the data folder the config names, with any kinds of the product's own","flow_id":"LA-PLT-UC02-FL","path":"main","position":3}
 {"id":"LA-PLT-UC02-FL-S04","title":"They run lathe serve to browse and edit the spec, with no build tools in the repo","flow_id":"LA-PLT-UC02-FL","path":"main","position":4}
+{"id":"LA-PLT-UC02-FL-S05","title":"They stop lathe serve from the terminal, and it closes the database before it ends","flow_id":"LA-PLT-UC02-FL","path":"main","position":5}
 {"id":"LA-PLT-UC03-FL-S01","title":"An Agent changes records through the command layer while the Reader keeps the page open","flow_id":"LA-PLT-UC03-FL","path":"main","position":1}
 {"id":"LA-PLT-UC03-FL-S02","title":"The server sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL","path":"main","position":2}
 {"id":"LA-PLT-UC03-FL-S03","title":"When the data cannot be loaded, the page says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL","path":"refused","position":1}
@@ -233,6 +234,7 @@
 {"id":"LA-PLT-UC11-FL-S04","title":"A link to another site opens in the system browser, and the window stays on Lathe","flow_id":"LA-PLT-UC11-FL","path":"main","position":3}
 {"id":"LA-PLT-UC11-FL-S05","title":"They come back to it from File › Open Recent","flow_id":"LA-PLT-UC11-FL","path":"main","position":4}
 {"id":"LA-PLT-UC11-FL-S06","title":"The next launch reopens the last folder","flow_id":"LA-PLT-UC11-FL","path":"main","position":5}
+{"id":"LA-PLT-UC11-FL-S07","title":"They quit, and the app exits once every window's server has stopped","flow_id":"LA-PLT-UC11-FL","path":"main","position":6}
 {"id":"LA-PLT-UC12-FL-S01","title":"The Owner runs npm --prefix desktop run dev; a window loads the 5199 dev server when it serves the opened folder","flow_id":"LA-PLT-UC12-FL","path":"main","position":1}
 {"id":"LA-PLT-UC12-FL-S02","title":"Otherwise the shell starts a dev server of its own for the folder","flow_id":"LA-PLT-UC12-FL","path":"alternate","position":1}
 {"id":"LA-PLT-UC12-FL-S03","title":"A change to the main process or a preload restarts Electron","flow_id":"LA-PLT-UC12-FL","path":"main","position":2}

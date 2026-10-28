@@ -3,15 +3,13 @@
 // Vite. It is skipped, with a message, only when the app's packages are not installed (app/node_modules).
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import type { Server } from 'node:http';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { PACKAGE_DIR } from '../src/index.ts';
 import type { SpecData, WriteAnswer } from '../src/server/contract.ts';
 import { openStore, SCHEMA_DIR } from '../src/store/index.ts';
-import { closeStores } from '../src/server/api.ts';
-import { APP_DIR, serve } from '../src/server/serve.ts';
+import { APP_DIR, serve, type LatheServer } from '../src/server/serve.ts';
 
 const APP_SOURCE = path.join(PACKAGE_DIR, '..', 'app');
 const VITE = path.join(APP_SOURCE, 'node_modules', '.bin', 'vite');
@@ -30,7 +28,7 @@ if (!prebuilt && !canBuild) {
 const temps: string[] = [];
 let appDir = APP_DIR;
 let root = '';
-let server: Server | undefined;
+let running: LatheServer | undefined;
 
 beforeAll(async () => {
   if (!prebuilt && !canBuild) return;
@@ -50,19 +48,15 @@ beforeAll(async () => {
     { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01' } },
   ]);
   await store.close();
-  server = serve({ root, port: PORT, appDir });
+  running = serve({ root, port: PORT, appDir });
   await new Promise<void>((resolve, reject) => {
-    server!.once('listening', resolve);
-    server!.once('error', reject);
+    running!.server.once('listening', resolve);
+    running!.server.once('error', reject);
   });
 }, 180_000);
 
 afterAll(async () => {
-  if (server) {
-    server.closeAllConnections();
-    await new Promise((resolve) => server!.close(resolve));
-  }
-  await closeStores();
+  await running?.stop();
   for (const dir of temps) rmSync(dir, { recursive: true, force: true });
 });
 
