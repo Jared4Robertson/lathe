@@ -209,7 +209,8 @@ describe('pattern rules', () => {
 
 describe('minimums', () => {
   it('a record short of each minimum is a gap, under its own scope, named by the rule', async () => {
-    const ws = await loadData(sparse());
+    // A source file no record names, for code-file-untraced.
+    const ws = await loadData(sparse(), { files: { 'src/orphan.ts': 'export {};\n' } });
     const found = new Set(ws.coverage.flatMap((c) => c.gaps.map((g) => g.missing)));
     for (const rule of GAP_RULES) expect(found.has(rule.name), rule.name).toBe(true);
     // A view's gap is the domain's whose flow step happens in it, as a use case's is its domain's.
