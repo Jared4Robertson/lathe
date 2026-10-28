@@ -596,9 +596,9 @@ A command changes exactly one aggregate, its parent, and other aggregates follow
 
 **Warning** · Lathe's · Kinds: [`domain_event`](#kind-domain_event), [`event_type`](#kind-event_type), [`policy`](#kind-policy)
 
-A published event, or an event a policy hears whose aggregate is stored in a table, whose event type is not delivered by outbox.
+An event a policy hears, whose aggregate is stored in a table, whose event type is not delivered by outbox.
 
-An event that crosses a transaction is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, so a reaction is never lost. That is every published event, and every event a policy hears whose aggregate is stored in a table (an entity of the aggregate has a table). An event inside one process with no transaction to join, such as one heard in the same browser tab, is exempt. Its event type records the delivery; one delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
+An event a policy hears is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, since a lost reaction is a lost change. That is every event a policy hears whose aggregate is stored in a table (an entity of the aggregate has a table), in its own domain or, when published, in another. An event inside one process with no transaction to join, such as one heard in the same browser tab, is exempt. So is an event that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load: it may be delivered in process, since the next load rebuilds what a lost delivery missed. Its event type records the delivery; one a policy hears that is delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
 
 <a id="check-has-crosses-aggregate"></a>
 
@@ -888,7 +888,7 @@ No domain owes its rules, so they count in no domain's coverage. Link the use ca
 
 A capability or a group with exactly one child.
 
-A level that holds one record groups nothing. A capability with one use case is reported; one with none is a coverage gap instead. A group (the `group_name` of every kind that has one, read from the record_group view: UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) is counted among its parent's children of one kind, compared trimmed and in any letter case, and reported on that parent. Merge it into a neighbor, or give it more.
+A level that holds one record groups nothing. A capability with exactly one child is reported, counting its own children of every kind (its use cases, and the records of a product's own kinds under it) but not theirs; one with none is a coverage gap instead. A group (the `group_name` of every kind that has one, read from the record_group view: UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) is counted among its parent's children of one kind, compared trimmed and in any letter case, and reported on that parent. Merge it into a neighbor, or give it more.
 
 ### Coverage gaps: use cases
 
@@ -898,7 +898,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | --- | --- | --- |
 | <a id="gap-capability-without-use-case"></a>`capability-without-use-case` | [`capability`](#kind-capability), [`use_case`](#kind-use_case) | A capability with no use case. |
 | <a id="gap-use-case-without-actor"></a>`use-case-without-actor` | [`use_case`](#kind-use_case), `use_case_actor` | A use case with no actor. |
-| <a id="gap-use-case-without-requirement"></a>`use-case-without-requirement` | [`use_case`](#kind-use_case), [`uc_requirement`](#kind-uc_requirement) | A use case with no UC requirement. |
+| <a id="gap-use-case-without-requirement"></a>`use-case-without-requirement` | [`use_case`](#kind-use_case), [`uc_requirement`](#kind-uc_requirement) | A use case with no UC requirement that follows no pattern. |
 | <a id="gap-pattern-without-rule"></a>`pattern-without-rule` | [`pattern`](#kind-pattern), [`pattern_rule`](#kind-pattern_rule) | A pattern with no rule. |
 
 <a id="stage-interaction-design"></a>
