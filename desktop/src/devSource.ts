@@ -77,7 +77,8 @@ export async function waitFor(url: string, timeout = 60_000, probe: Probe = http
 
 export interface OwnDevServer {
   url: string;
-  stop: () => void;
+  /** Stops the dev server; resolves once its process has exited. */
+  stop: () => Promise<void>;
 }
 
 /**
@@ -94,8 +95,13 @@ export async function startOwnDevServer(repoRoot: string, folder: string, log: (
   child.stdout?.on('data', (d) => log(String(d)));
   child.stderr?.on('data', (d) => log(String(d)));
   const url = `http://127.0.0.1:${port}`;
+  const exited = new Promise<void>((resolve) => {
+    if (child.exitCode !== null || child.signalCode !== null) resolve();
+    else child.once('exit', () => resolve());
+  });
   const stop = () => {
-    if (child.exitCode === null) child.kill();
+    if (child.exitCode === null && child.signalCode === null) child.kill();
+    return exited;
   };
   try {
     await Promise.race([
@@ -103,7 +109,7 @@ export async function startOwnDevServer(repoRoot: string, folder: string, log: (
       new Promise((_, reject) => child.once('exit', (code) => reject(new Error(`The app's dev server stopped (exit ${code}). Run npm install in app/.`)))),
     ]);
   } catch (error) {
-    stop();
+    await stop();
     throw error;
   }
   return { url, stop };

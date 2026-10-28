@@ -1,10 +1,12 @@
 // `lathe serve`: serves the built web app and the API for one product repo, with no build tools.
-// Pages reload through server-sent events (GET /api/events) when the data files change.
+// Pages reload through server-sent events (GET /api/events) when the data files change. Its stop waits for the
+// work in progress and closes the database, so the process that ran it exits cleanly (LA-PLT-UC02-R06).
 import { existsSync, watch, type FSWatcher } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
-import { createServer, type ServerResponse } from 'node:http';
+import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import path from 'node:path';
 import { PACKAGE_DIR } from '../config.ts';
+import { closeEngine } from '../store/store.ts';
 import { closeStores, handleApi, watchTargets } from './api.ts';
 
 /** Where `npm --prefix lathe run build` puts the built web app. */
@@ -36,27 +38,58 @@ export interface ServeOptions {
   appDir?: string;
 }
 
-export function serve({ root, port, host = '127.0.0.1', appDir = APP_DIR }: ServeOptions) {
+/** A running `serve()`: its HTTP server, and the one way to stop it. */
+export interface LatheServer {
+  /** The HTTP server; it emits 'listening' once it listens, or 'error'. */
+  server: Server;
+  /**
+   * Stops watching the data, closes every connection and stops taking requests, waits for the requests in progress
+   * (a load, a reload or a write), then closes the root's stores and, when no other store is open, the database
+   * engine. A process may exit once it resolves. Calling it again returns the same stop.
+   */
+  stop(): Promise<void>;
+}
+
+export function serve({ root, port, host = '127.0.0.1', appDir = APP_DIR }: ServeOptions): LatheServer {
   if (!existsSync(path.join(appDir, 'index.html'))) {
     throw new Error(`The web app is not built (${appDir} is missing). In the Lathe repo, run: npm --prefix lathe run build`);
   }
 
   const clients = new Set<ServerResponse>();
   const watchers: FSWatcher[] = [];
+  const timers = new Set<NodeJS.Timeout>();
   for (const { dir, event } of watchTargets(root)) {
     if (!existsSync(dir)) continue;
     let timer: NodeJS.Timeout | undefined;
     watchers.push(
       watch(dir, { recursive: true }, () => {
+        if (timer) timers.delete(timer);
         clearTimeout(timer);
         timer = setTimeout(() => {
+          timers.delete(timer!);
           for (const client of clients) client.write(`data: ${event}\n\n`);
         }, 150);
+        timers.add(timer);
       }),
     );
   }
 
-  const server = createServer(async (req, res) => {
+  // The requests being answered, which a stop waits for.
+  const inFlight = new Set<Promise<void>>();
+  let stopping: Promise<void> | undefined;
+
+  const server = createServer((req, res) => {
+    if (stopping) {
+      res.statusCode = 503;
+      res.end('Lathe is stopping.');
+      return;
+    }
+    const answering = answer(req, res);
+    inFlight.add(answering);
+    void answering.finally(() => inFlight.delete(answering));
+  });
+
+  async function answer(req: IncomingMessage, res: ServerResponse): Promise<void> {
     const pathname = decodeURIComponent(new URL(req.url ?? '/', 'http://localhost').pathname);
     try {
       if (pathname === '/api/events') {
@@ -80,12 +113,25 @@ export function serve({ root, port, host = '127.0.0.1', appDir = APP_DIR }: Serv
       if (insideApp && existsSync(file) && (await stat(file)).isFile()) return await sendFile(res, file);
       return await sendFile(res, path.join(appDir, 'index.html'));
     } catch (error) {
+      if (res.destroyed) return;
       res.statusCode = 500;
       res.end(error instanceof Error ? error.message : String(error));
     }
-  });
+  }
 
-  server.on('close', () => { watchers.forEach((w) => w.close()); void closeStores(root); });
+  const stop = () =>
+    (stopping ??= (async () => {
+      for (const watcher of watchers) watcher.close();
+      for (const timer of timers) clearTimeout(timer);
+      for (const client of clients) client.end();
+      const closed = new Promise<void>((resolve) => server.close(() => resolve()));
+      server.closeAllConnections();
+      await closed;
+      while (inFlight.size) await Promise.allSettled([...inFlight]);
+      await closeStores(root);
+      await closeEngine();
+    })());
+
   server.listen(port, host);
-  return server;
+  return { server, stop };
 }
