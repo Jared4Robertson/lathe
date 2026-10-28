@@ -177,7 +177,7 @@ export function readTestCases(text: string): TestCase[] {
     const nameEnd = code.indexOf(code[quote], quote + 1);
     const end = closing(code, open);
     if (nameEnd < 0) continue;
-    calls.push({ kind, at: match.index, end: end < 0 ? code.length : end, name: text.slice(quote + 1, nameEnd), rows });
+    calls.push({ kind, at: match.index, end: end < 0 ? code.length : end, name: text.slice(quote + 1, nameEnd).replace(/\\(.)/g, '$1'), rows });
   }
   const breaks = [...text.matchAll(/\n/g)].map((m) => m.index);
   const lineAt = (at: number) => {

@@ -14,11 +14,11 @@ beforeAll(async () => {
 });
 
 describe("Lathe's checks", () => {
-  it('the complete product breaks none of them', () => {
+  it('LA-STD-CODE-R05-T01 the complete product breaks none of them', () => {
     expect(clean.problems).toEqual([]);
   });
 
-  it('every check row has a test here', async () => {
+  it('LA-STD-CODE-R05-T01 every check row has a test here', async () => {
     const store = await openStore(path.dirname(LATHE_DATA_DIR), { latheDataDir: null });
     const names = store.rows('check').map((r) => String(r.name)).sort();
     await store.close();
@@ -72,7 +72,7 @@ check('test-file-missing', () => {
     expect(later.problems.filter((p) => p.severity === 'error')).toEqual([]);
   });
 
-  it('a folder is not a test file', async () => {
+  it('LA-AUT-INV21-T a folder is not a test file', async () => {
     const ws = await loadData(changing(complete(), 'policy_test', () => true, { file: 'src' }), { missing: ['src'] });
     expect(records(ofCheck(ws, 'test-file-missing'))).toEqual(['EX-LEND-PO01-T']);
   });
@@ -216,7 +216,7 @@ check('test-level-not-allowed', () => {
     expect(ofCheck(await loadData(changing(complete(), 'constraint_test', () => true, { level: 'database' })), 'test-level-not-allowed')).toEqual([]);
   });
 
-  it('a pattern rule test may run at any level', async () => {
+  it('LA-CHK-UC04-R04-T02 a pattern rule test may run at any level', async () => {
     for (const level of ['unit', 'database', 'contract', 'e2e-api', 'e2e-ui']) {
       const ws = await loadData(changing(complete(), 'pattern_rule_test', () => true, { level }));
       expect(ofCheck(ws, 'test-level-not-allowed'), level).toEqual([]);
@@ -225,7 +225,7 @@ check('test-level-not-allowed', () => {
 });
 
 check('technical-file-missing', () => {
-  it("a technical record whose file does not exist is a warning; a folder will do", async () => {
+  it('LA-AUT-UC17-R07-T02 a technical record whose file does not exist is a warning; a folder will do', async () => {
     let data = changing(complete(), 'adapter', () => true, { file: 'src/mail' });
     data = changing(data, 'ui_component', () => true, { file: 'src' });
     const ws = await loadData(data, { missing: ['src/dates.ts', 'src/mail', 'src'] });
@@ -282,7 +282,7 @@ describe('nothing uses it', () => {
     });
   }
 
-  it('a value object used by a read model is used; a query selecting by a specification uses it', async () => {
+  it('LA-CHK-UC04-R09-T02 a value object used by a read model is used; a query selecting by a specification uses it', async () => {
     let data = changing(complete(), 'entity_field', (r) => r.type_value_object_id === 'EX-VO01', { type_value_object_id: undefined, type: 'text' });
     data = adding(data, { read_model_field: [{ read_model_id: 'EX-LEND-RM01', position: 2, name: 'Email', meaning: 'Whom to tell.', type_value_object_id: 'EX-VO01', required: false }] });
     data = without(data, 'checks', () => true);
