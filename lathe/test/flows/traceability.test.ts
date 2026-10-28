@@ -254,7 +254,7 @@ describe('Traceability flows from the command line', () => {
     });
   });
 
-  it('LA-TRC-UC07-FL03-T follow a pattern per domain, with or without settings', async () => {
+  it('LA-TRC-UC07-FL03-T follow a pattern per domain', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
@@ -284,7 +284,7 @@ describe('Traceability flows from the command line', () => {
     expect(tl.refused('add', 'product_kind', ...flags({ name: 'invariant', product_id: 'TL', label: 'Our invariant', description: 'A rule of ours.', parent_kind: 'domain', obligation: true }))).toContain('invariant');
   });
 
-  it('LA-TRC-UC08-FL03-T report pattern rule tests that count nowhere and silent manual test files', async () => {
+  it('LA-TRC-UC08-FL03-T report tests that count for nothing', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
