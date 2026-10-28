@@ -40,7 +40,7 @@ function labelOf(map: GraphMap, n: MapNode): MapLabel {
 const eps = 1e-9;
 
 describe('the one map', () => {
-  it.each(['LA-EXP-DS05-T11', 'LA-V93-R29-T01'])('%s A parent spans its children stacked, an equal part each, from its top edge to its bottom edge, each child beside it, nothing overlapping', () => {
+  it('LA-EXP-DS05-T11 LA-V93-R29-T01 A parent spans its children stacked, an equal part each, from its top edge to its bottom edge, each child beside it, nothing overlapping', () => {
     for (const map of all()) {
       for (const r of map.roots) expect(map.nodes.get(r)!.h).toBe(MAP_SIZE);
       for (const node of map.nodes.values()) {
@@ -178,7 +178,7 @@ describe('columns and text', () => {
 describe('the level of detail', () => {
   const map = graphMap(testIndex(), 'P');
 
-  it.each(['LA-EXP-DS10-T02', 'LA-PAT-APP-UX-R11-T02'])('%s Only boxes in view and big enough are drawn, each with its label, with bars for children too small, within a budget', () => {
+  it('LA-EXP-DS10-T02 LA-PAT-APP-UX-R11-T02 Only boxes in view and big enough are drawn, each with its label, with bars for children too small, within a budget', () => {
     // Framed on the domain: the domain and its stages are drawn; nothing outside the view.
     const view = frameOnMap(map, 'P-D', 1, 1000, 800);
     const d = drawnFor(map, view, 1000, 800);
@@ -213,7 +213,7 @@ describe('the level of detail', () => {
     expect(drawnFor(map, view, 1000, 800)).toEqual(d);
   });
 
-  it.each(['LA-EXP-DS06-T04', 'LA-EXP-DS10-T04'])('%s A label keeps its size in the map: the camera never changes it', () => {
+  it('LA-EXP-DS06-T04 LA-EXP-DS10-T04 A label keeps its size in the map: the camera never changes it', () => {
     // The text scale is the map's: a column's width over TEXT_SIZE at most, whatever the camera.
     for (const n of map.nodes.values()) expect(n.text).toBeLessThanOrEqual(treeText(n.w));
     // Every zoom draws each box with the same text scale, the map's, and its label: zooming never changes a label's size.

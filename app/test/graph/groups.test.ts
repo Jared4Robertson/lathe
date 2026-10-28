@@ -30,7 +30,7 @@ describe('graph groups', () => {
   const index = testIndex();
   const grouped = indexOf(groupedWorkspace());
 
-  it.each(['LA-EXP-DS04-T01', 'LA-V93-R23-T01'])('%s A record with several kinds of child in its stage has a group per child kind, labeled with the plural and a count', () => {
+  it('LA-EXP-DS04-T01 LA-V93-R23-T01 A record with several kinds of child in its stage has a group per child kind, labeled with the plural and a count', () => {
     expect(childKinds(index, 'P-D')).toEqual(['aggregate', 'read_model', 'domain_service', 'term', 'capability', 'question']);
     // An aggregate with entities, invariants, events and commands reaches them through a group each.
     expect(groupLabel(index, 'P-D-A3/entity')).toBe('Entities (3)');
@@ -56,7 +56,7 @@ describe('graph groups', () => {
     expect(isGraphNode(index, 'missing/use_case')).toBe(false);
   });
 
-  it.each(['LA-EXP-DS05-T03', 'LA-V93-R23-T02'])('%s Every group is in the map with all its members beside it, and the spine runs record, group, record', () => {
+  it('LA-EXP-DS05-T03 LA-V93-R23-T02 Every group is in the map with all its members beside it, and the spine runs record, group, record', () => {
     // At depth 1 the domain frames its five stages and the open questions' group; depth 2 frames their folders.
     const domain = neighborhood(index, 'P-D', 1);
     expect(groups(domain)).toEqual([...STAGES, 'P-D/question'].sort());
@@ -104,7 +104,7 @@ describe('graph groups', () => {
     for (const id of ['P-D-CAP01', 'P-D', 'P-D-UC01-R01']) expect(new Set(at(id).edges.map((e) => e.relation))).toEqual(new Set([PARENT]));
   });
 
-  it.each(['LA-EXP-DS04-T02', 'LA-V93-R25-T01'])('%s A group can be the focus: its parent and all its members are shown, and depth counts levels from it', () => {
+  it('LA-EXP-DS04-T02 LA-V93-R25-T01 A group can be the focus: its parent and all its members are shown, and depth counts levels from it', () => {
     const g = neighborhood(grouped, 'P-D/domain-model/aggregate', 1);
     expect(g.nodes[0]).toMatchObject({ id: 'P-D/domain-model/aggregate', distance: 0 });
     expect(ids(g)).toEqual(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4', 'P-D/domain-model', 'P-D/domain-model/aggregate']);

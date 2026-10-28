@@ -110,7 +110,7 @@ describe('the Nested map', () => {
     }
   });
 
-  it.each(['LA-EXP-DS06-T09', 'LA-EXP-DS07-T03'])('%s Siblings share one text scale, their side over TEXT_SIZE or the largest at which every sibling\'s whole label fits, and one header band', () => {
+  it('LA-EXP-DS06-T09 LA-EXP-DS07-T03 Siblings share one text scale, their side over TEXT_SIZE or the largest at which every sibling\'s whole label fits, and one header band', () => {
     for (const map of all()) {
       for (const group of siblingGroups(map)) {
         const most = sizeText(group[0].w);

@@ -96,7 +96,12 @@ test.describe('graph', () => {
       await check(move);
     }
     // The camera moved at every step; the map never did.
-    await test.step('LA-V93-R07-T03 the camera moved at every focus, Back and Forward', () => expect(new Set(cameras).size).toBeGreaterThan(5));
+    // Four focuses, then Back, Back and Forward: eight cameras over five places, each unlike the one before it.
+    await test.step('LA-V93-R07-T03 the camera moved at every focus, Back and Forward', () => {
+      expect(cameras).toHaveLength(8);
+      for (let i = 1; i < cameras.length; i++) expect(cameras[i], `the camera at step ${i}`).not.toBe(cameras[i - 1]);
+      expect(new Set(cameras).size).toBeGreaterThanOrEqual(5);
+    });
     await test.step('LA-V93-R16-T03 focusing moved the camera only: no box of the map changed its place or size', () => expect(seen.size).toBeGreaterThan(50));
   });
 

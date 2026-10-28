@@ -36,7 +36,7 @@ async function showGraph(path: string, workspace: SpecData = testWorkspace(), de
 }
 
 describe('graph page', () => {
-  it.each(['LA-V93-R10-T03', 'LA-V93-R11-T02'])('%s Clicking a node re-centers the graph and changes the address, Back walks back, and no visited trail is drawn', async () => {
+  it('LA-V93-R10-T03 LA-V93-R11-T02 Clicking a node re-centers the graph and changes the address, Back walks back, and no visited trail is drawn', async () => {
     await showGraph(`/${STEP}`);
     expect(title()).toBe('Librarian lends the thing');
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
@@ -200,7 +200,7 @@ describe('graph page', () => {
     }
   });
 
-  it.each(['LA-EXP-DS05-T02', 'LA-V93-R15-T04'])('%s The page draws the map in columns with a solid parent/child spine, and links between siblings never move anything', async () => {
+  it('LA-EXP-DS05-T02 LA-V93-R15-T04 The page draws the map in columns with a solid parent/child spine, and links between siblings never move anything', async () => {
     await showGraph(`/${STEP}`);
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
     const left = (id: string) => drawnBox(id)!.map.x;
@@ -224,7 +224,7 @@ describe('graph page', () => {
 describe('graph groups on the page', () => {
   const groupNode = (id: string) => drawnBox(id) ?? null;
 
-  it.each(['LA-V93-R23-T04', 'LA-V93-R24-T01'])('%s A group shows its name and count, with no chevron; clicking the group, or Enter on it, goes to it', async () => {
+  it('LA-V93-R23-T04 LA-V93-R24-T01 A group shows its name and count, with no chevron; clicking the group, or Enter on it, goes to it', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     expect(groupNode('P-D/question')!.group).toBe(true);
@@ -285,7 +285,7 @@ describe('graph groups on the page', () => {
     await screen.findByText(/There's no record or group/);
   });
 
-  it.each(['LA-V93-R23-T05', 'LA-V93-R26-T02'])('%s Groups are drawn as folders and carry a mark when a member or anything beneath it has errors or gaps; the legend explains them', async () => {
+  it('LA-V93-R23-T05 LA-V93-R26-T02 Groups are drawn as folders and carry a mark when a member or anything beneath it has errors or gaps; the legend explains them', async () => {
     await showGraph('/P-D', testWorkspace(), 1, false);
     await waitFor(() => expect(node('P-D/test-plan')).not.toBeNull());
     expect(groupNode('P-D/test-plan')!.badges.map((b) => [b.label, b.tone])).toContainEqual(['!', 'error']);
@@ -355,7 +355,7 @@ describe('graph groups on the page', () => {
 });
 
 describe('the map on the page', () => {
-  it.each(['LA-EXP-DS06-T03', 'LA-V93-R29-T02'])('%s Tall parents carry their height and text scale, every box its text scale as its box scale, and every parent line is level', async () => {
+  it('LA-EXP-DS06-T03 LA-V93-R29-T02 Tall parents carry their height and text scale, every box its text scale as its box scale, and every parent line is level', async () => {
     await showGraph('/P-D', testWorkspace(), 2, false);
     await waitFor(() => expect(node('P-D/domain-model')).not.toBeNull());
     const height = (id: string) => drawnBox(id)!.map.h;
