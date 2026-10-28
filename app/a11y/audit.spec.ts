@@ -26,7 +26,7 @@ const PAGES: State[] = [
   { name: 'interface page', url: '/LA-IF03', ready: '.interface-flows' },
   { name: 'group page', url: GROUP, ready: '.pane-title' },
   { name: 'graph', url: `${RECORD}?view=graph`, ready: '.pane-graph .graph-flow .graph-box' },
-  { name: 'Model view', url: `${AGGREGATE}?view=model`, ready: '.pane-model .model-canvas' },
+  { name: 'ERD view', url: `${AGGREGATE}?view=erd`, ready: '.pane-erd .erd-canvas' },
   { name: 'Checks', url: `${PRODUCT}/checks`, ready: '#main h1' },
   { name: 'Format', url: '/format', ready: '#main h1' },
   { name: 'Appearance', url: '/settings/appearance', ready: '#main h1' },
@@ -124,7 +124,7 @@ const BY_RULE: { record: string; says: string; rules: string[] }[] = [
 ];
 
 /** The Explorer's pages and states: where it shows the spec, as the domain LA-EXP owns them. */
-const EXPLORER = ['domain page', 'record page', 'group page', 'graph', 'Model view'];
+const EXPLORER = ['domain page', 'record page', 'group page', 'graph', 'ERD view'];
 
 /** Audits the page, then names each record's share of the one run's findings, and the pattern rule's whole. */
 async function auditAll(page: Page, state: string) {

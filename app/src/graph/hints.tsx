@@ -5,7 +5,7 @@ import { Button } from '../components/Button';
 // view's faded context boxes. A click pans the camera that way, with the shared motion, without
 // changing the focus: by about half the canvas, or as the host asks (the graph brings the nearest
 // linked record into view). The chips follow the camera, and an edge with nothing past it shows none.
-// The graph's canvas counts with its own camera; the Model view's wrapper is app/src/model/hints.tsx.
+// The graph's canvas counts with its own camera; the ERD view's wrapper is app/src/erd/hints.tsx.
 
 export type Point = { x: number; y: number };
 export type Side = 'up' | 'down' | 'left' | 'right';

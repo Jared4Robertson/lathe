@@ -2,8 +2,7 @@
 // full strength, and everything else (its siblings, other branches, the levels above) faded well
 // back, at `--focus-fade`. In the Nested and Voronoi layouts, where the focus's ancestors contain
 // it, each ancestor keeps a faint outline and name as a trail, at `--focus-trail`; their other
-// contents fade. The fade follows the focus and eases with the camera's glide to it. A trace keeps
-// its own highlighting and fades nothing.
+// contents fade. The fade follows the focus and eases with the camera's glide to it.
 
 /** A map's tree as the fade reads it: its layout and each node's parent. */
 export interface FadeMap {
@@ -30,6 +29,3 @@ export function focusStrength(map: FadeMap, focus: string, look: FadeLook): (id:
     return strength;
   };
 }
-
-/** Every box at full strength: a trace, or a map without its focus. */
-export const FULL_STRENGTH = (): number => 1;

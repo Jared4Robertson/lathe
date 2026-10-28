@@ -154,7 +154,7 @@ test.describe('Exploring flows', () => {
     await graphReady(page);
     // Close Model, resize the panes from the keyboard, show one alone.
     await page.keyboard.press('Control+4');
-    await expect(page.locator('.pane-model')).toHaveCount(0);
+    await expect(page.locator('.pane-erd')).toHaveCount(0);
     const handle = page.getByRole('separator', { name: 'Resize the wiki and graph panes' });
     const before = await handle.getAttribute('aria-valuenow');
     await handle.focus();
@@ -344,7 +344,7 @@ test.describe('Exploring flows', () => {
     await expect(tabs.getByRole('tab')).toHaveCount(1);
   });
 
-  test('LA-EXP-UC11-FL01-T read a domain and its aggregates as an ERD: the Model view, an aggregate picked, an entity, the key', async ({ page }) => {
+  test('LA-EXP-UC11-FL01-T read a domain and its aggregates as an ERD: the ERD view, an aggregate picked, an entity, the key', async ({ page }) => {
     await openPage(page, '/LA-EXP');
     await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Model' }).click();
     const model = page.getByRole('region', { name: 'Model', exact: true });
@@ -356,9 +356,9 @@ test.describe('Exploring flows', () => {
     await page.waitForURL((u) => u.pathname === '/LA-EXP-A5');
     await expect(model.getByRole('list', { name: /^Fields of / }).first()).toBeVisible();
     // On an entity, the same ERD picks it out.
-    await page.locator('.pane-model .model-flow .react-flow__node:not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
+    await page.locator('.pane-erd .erd-flow .react-flow__node:not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
     await page.waitForURL((u) => /^\/LA-EXP-EN\d+$/.test(u.pathname));
-    await expect(page.locator('.pane-model .react-flow__node .is-focus').first()).toBeVisible();
+    await expect(page.locator('.pane-erd .react-flow__node .is-focus').first()).toBeVisible();
     // The key under the diagram.
     await expect(page.getByRole('region', { name: 'Model', exact: true }).getByRole('group', { name: 'Key' })).toBeVisible();
   });

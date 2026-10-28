@@ -148,7 +148,7 @@ describe('traceability', () => {
     expect(traceOf(model, model.byId.get('P-D-UC01-FL01-T')!).runBy).toMatchObject({ level: 'manual', state: 'manual', file: null });
   });
 
-  it('LA-V92-R07-T01 No page shows a relation code as a heading or label: wiki, record facts, graph and Model view read the labels', async () => {
+  it('LA-V92-R07-T01 No page shows a relation code as a heading or label: wiki, record facts, graph and ERD view read the labels', async () => {
     const w = modelWorkspace();
     const index = indexOf(w);
     const codes = new Set(Object.keys(w.schema.relations));
@@ -166,7 +166,7 @@ describe('traceability', () => {
     }
     expect(offenders).toEqual([]);
 
-    // The graph's edges, legend and connections, and the Model view's lines, read the same labels.
+    // The graph's edges, legend and connections, and the ERD view's lines, read the same labels.
     expect(graphEdgeLabel(index, { source: 'P-D-UC01-FL01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' })).toBe('Fulfills');
     expect(graphEdgeLabel(index, { source: 'P-D-UC01-FL01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' }, 'target')).toBe('Fulfilled by');
     expect(graphRelationLabel('happens_in', index)).toBe('Happens in');

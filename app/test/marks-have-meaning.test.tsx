@@ -1,5 +1,5 @@
 // LA-PAT-APP-CODE-R21: nothing outlives its purpose, and a mark that can't be explained can't ship.
-// Every mark the Graph or the Model view can draw (a box's shape or fill, a badge, a line style) is
+// Every mark the Graph or the ERD view can draw (a box's shape or fill, a badge, a line style) is
 // listed in that view's key, with words that say what it means.
 import './graph/setup';
 import { indexOf } from './fixtures/load';
@@ -13,8 +13,8 @@ import { Legend } from '../src/graph/panel';
 import { BOX_LOOKS } from '../src/graph/paint';
 import { BADGE_TONES } from '../src/graph/plate';
 import { SHAPES } from '../src/graph/shapes';
-import { erdFor } from '../src/model/erd';
-import { ErdKey } from '../src/model/ModelView';
+import { erdFor } from '../src/erd/erd';
+import { ErdKey } from '../src/erd/ErdView';
 import { modelWorkspace } from './fixtures/model';
 import { testWorkspace } from './graph/workspace';
 
@@ -51,7 +51,7 @@ describe('LA-V93-R12-T06 the Graph view key', () => {
   });
 });
 
-describe('LA-V94-R05-T02 the Model view key', () => {
+describe('LA-V94-R05-T02 the ERD view key', () => {
   // Box and line classes that answer the pointer or the keyboard, not marks with a meaning.
   const INTERACTION = new Set(['is-focus', 'has-hover-label']);
   // Every class the stylesheet gives a box or a line, and what in the ERD draws it, checked below: each box kind

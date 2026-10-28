@@ -9,12 +9,9 @@ import { Icon } from '../components/icons';
 import { NodeLink, type GraphInfo } from './panel';
 import { TapCard, useTapToOpen } from './touch';
 import {
-  ENFORCES,
-  NAMES,
   NO_FILTERS,
   PARENT,
   TRACE_RELATIONS,
-  canTrace,
   filterKind,
   graphEdgeLabel,
   graphRelationLabel,
@@ -28,17 +25,16 @@ import {
   nodeParent,
   parseGroupId,
   relationsOf,
-  traceChain,
   type Filters,
   type Neighborhood,
 } from './model';
-import { boxExit, traceGrid, type Point } from './layout';
+import type { Point } from './layout';
 import { DEFAULT_GRAPH_SETTINGS } from './settings';
 import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
-import { labelFor, labelHeight, setTextMeasure, type TextMeasure } from './text';
-import { drawnFor, drawnKey, drawnNested, fitBoxes, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, MIN_ZOOM, zoomPath, type Drawn, type Viewport } from './camera';
+import { setTextMeasure, type TextMeasure } from './text';
+import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, MIN_ZOOM, zoomPath, type Drawn, type Viewport } from './camera';
 import { EdgeHintChips, pastEdges, type Side } from './hints';
 import { readMotion } from './motion';
 import { nodeShape } from './shapes';
@@ -46,14 +42,14 @@ import { Button } from '../components/Button';
 import { measureSpec, pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
-import { focusStrength, FULL_STRENGTH } from './fade';
+import { focusStrength } from './fade';
 import { paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
 // Clicking a record or a group focuses it (through onNavigate, so the host changes the address and
 // Back walks back along the path), and the camera glides to frame it; nothing in the map moves or
-// changes size. Trace mode is a chain, not the tree, and keeps a small picture of its own.
+// changes size. An obligation's chain is the Trace view's (app/src/trace).
 //
 // The map is drawn on a canvas, every frame (paint.ts): each box in view its shape, its colors and
 // its label, the lines at the label's map size times the zoom, so text is crisp at any zoom. A
@@ -69,9 +65,8 @@ import { hitPlate } from './hit';
 /** CSS family for an edge's relation, so related relations share a line style. */
 export function relationStyle(relation: string): string {
   if (relation === PARENT) return 'structure';
-  if (['fulfills', ENFORCES].includes(relation)) return 'trace';
+  if (relation === 'fulfills') return 'fulfills';
   if (['invokes', 'happens_in', 'exchanges_with', 'renders', 'meets'].includes(relation)) return 'design';
-  if (relation === NAMES) return 'file';
   if (relation === 'follows') return 'pattern';
   // A domain event's links: dashed, in the spark colors.
   if (['raises', 'hears'].includes(relation)) return 'event';
@@ -99,13 +94,12 @@ export const GRAPH_LAYOUTS: readonly { layout: GraphLayout; label: string; tip: 
   { layout: 'voronoi', label: 'Voronoi', tip: 'Voronoi: each parent a cell made of its children' },
 ];
 
-/** What the person set on the graph: the view, depth, filters, trace mode, the Links switch and the minimap. */
+/** What the person set on the graph: the view, depth, filters, the Links switch and the minimap. */
 export interface GraphSettings {
   /** Tree, Nested or Voronoi (LA-V93-R21). Tree by default. */
   layout: GraphLayout;
   depth: number;
   filters: Filters;
-  trace: boolean;
   /** The Links switch: the focused record's own links, one step. Off by default. */
   links: boolean;
   /** The minimap in a corner of the canvas. Off by default. */
@@ -205,7 +199,7 @@ function trailItem(index: SpecIndex, id: string): { body: ReactNode; full: strin
 export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted, onSettingsChange, onGraph, onPeek }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
-  const { layout, depth, filters, trace, links, minimap } = settings;
+  const { layout, depth, filters, links, minimap } = settings;
   const latest = useRef(settings);
   latest.current = settings;
   const update = useCallback((patch: Partial<GraphSettings>) => {
@@ -215,7 +209,6 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   }, [onSettingsChange]);
   const setDepth = (d: number) => update({ depth: d });
   const setFilters = (f: Filters) => update({ filters: f });
-  const setTrace = (t: boolean) => update({ trace: t });
   const [trail, setTrail] = useState<string[]>(readTrail);
   // The trail is one line (LA-PAT-APP-UX-R08): its items shrink, cut with an ellipsis, and when
   // they still overflow it scrolls to the end, so the center is always in view and the canvas
@@ -244,25 +237,20 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     });
   }, [index, focus]);
 
-  const tracing = trace && canTrace(index, focus);
-  const graph = useMemo(
-    () => (tracing ? traceChain(index, focus, filters) : neighborhood(index, focus, depth, filters, { links })),
-    [index, focus, depth, filters, tracing, links],
-  );
+  const graph = useMemo(() => neighborhood(index, focus, depth, filters, { links }), [index, focus, depth, filters, links]);
   // Before paint, so the side bar shows what the graph connects in the same frame as the graph
   // (in an effect it showed one frame without it, then pushed its legend down; LA-PAT-APP-UX-R08).
-  useLayoutEffect(() => { onGraph?.({ graph, tracing }); }, [graph, tracing, onGraph]);
+  useLayoutEffect(() => { onGraph?.({ graph }); }, [graph, onGraph]);
 
-  const clearFilters = useCallback(() => update({ filters: NO_FILTERS, trace: false }), [update]);
+  const clearFilters = useCallback(() => update({ filters: NO_FILTERS }), [update]);
   const onPageKey = (e: KeyboardEvent<HTMLElement>) => {
-    if (e.key === 'Escape' && (isFiltered(filters) || trace)) { e.preventDefault(); clearFilters(); }
+    if (e.key === 'Escape' && isFiltered(filters)) { e.preventDefault(); clearFilters(); }
   };
   const valid = isGraphNode(index, focus);
-  useCommand('graphDepthUp', () => update({ depth: Math.min(MAX_DEPTH, latest.current.depth + 1) }), valid && !tracing && layout === 'tree');
-  useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && !tracing && layout === 'tree');
-  useCommand('graphTrace', () => update({ trace: !latest.current.trace }), valid && canTrace(index, focus));
-  useCommand('graphLinks', () => update({ links: !latest.current.links }), valid && !tracing);
-  useCommand('graphLayout', () => update({ layout: nextLayout(latest.current.layout) }), valid && !tracing);
+  useCommand('graphDepthUp', () => update({ depth: Math.min(MAX_DEPTH, latest.current.depth + 1) }), valid && layout === 'tree');
+  useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && layout === 'tree');
+  useCommand('graphLinks', () => update({ links: !latest.current.links }), valid);
+  useCommand('graphLayout', () => update({ layout: nextLayout(latest.current.layout) }), valid);
   // Stepping through the tree moves the focus, as a click does (the arrow keys do it on the canvas, GraphStage).
   const stepTo = (step: Step) => () => {
     const to = stepTarget(index, focus, step);
@@ -305,7 +293,6 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   const counts = graphSummary(graph);
   // The step buttons keep their places in every view; each shows the arrow that takes its step in this one.
   const steps = STEPS.map((step) => ({ step, command: STEP_COMMANDS[step], label: COMMANDS.find((c) => c.id === STEP_COMMANDS[step])!.title, mark: formatBinding(stepKey(layout, step), isMac()) }));
-  const traceable = canTrace(index, focus);
   const moreControls = (
     <>
       {/* Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21). */}
@@ -313,13 +300,13 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
         <span className="graph-depth-name">Depth</span>
         {DEPTHS.map((d) => (
           <Tooltip key={d} label={DEPTH_LABELS[d - 1]} command={d === depth + 1 ? 'graphDepthUp' : d === depth - 1 ? 'graphDepthDown' : undefined}>
-            <button type="button" aria-pressed={depth === d} disabled={tracing} onClick={() => setDepth(d)}>{d}</button>
+            <button type="button" aria-pressed={depth === d} onClick={() => setDepth(d)}>{d}</button>
           </Tooltip>
         ))}
       </div>
       <div className="graph-links" role="group" aria-label="Cross-links">
         <Tooltip label="Links: the center's own links, one step" command="graphLinks">
-          <button type="button" aria-pressed={links} disabled={tracing} onClick={() => update({ links: !links })}>Links</button>
+          <button type="button" aria-pressed={links} onClick={() => update({ links: !links })}>Links</button>
         </Tooltip>
       </div>
       <div className="graph-steps" role="group" aria-label="Step through the tree">
@@ -360,7 +347,7 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
           <div className="graph-depth graph-layout" role="group" aria-label="Layout">
             {GRAPH_LAYOUTS.map((l) => (
               <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
-                <button type="button" aria-pressed={layout === l.layout} aria-label={tier >= 2 ? l.label : undefined} disabled={tracing} onClick={() => update({ layout: l.layout })}>{tier >= 2 ? l.label[0] : l.label}</button>
+                <button type="button" aria-pressed={layout === l.layout} aria-label={tier >= 2 ? l.label : undefined} onClick={() => update({ layout: l.layout })}>{tier >= 2 ? l.label[0] : l.label}</button>
               </Tooltip>
             ))}
           </div>
@@ -372,25 +359,8 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
               <div className="graph-more-body">{moreControls}</div>
             </details>
           ) : moreControls}
-          {/* Trace and filters sit at the end. Where there is nothing to trace the switch stays in its slot, so nothing beside it
-              moves, but looks and announces disabled, and its hover and focus hint (on the label, which a disabled control
-              still gets) says what to focus to trace. */}
+          {/* The filters sit at the end. */}
           <div className="graph-toolbar-end">
-            {traceable ? (
-              <label className="graph-trace-toggle">
-                <Tooltip label="Trace mode on or off" command="graphTrace">
-                  <input type="checkbox" aria-label="Trace mode" checked={trace} onChange={(e) => setTrace(e.target.checked)} />
-                </Tooltip>
-                <span className="graph-trace-name">Trace</span>
-              </label>
-            ) : (
-              <Tooltip label={TRACE_IDLE_HINT}>
-                <label className="graph-trace-toggle is-disabled">
-                  <input type="checkbox" aria-label="Trace mode" aria-disabled="true" aria-description={TRACE_IDLE_HINT} checked={false} onChange={() => {}} />
-                  <span className="graph-trace-name">Trace</span>
-                </label>
-              </Tooltip>
-            )}
             <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
           </div>
         </div>
@@ -403,9 +373,6 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     </section>
   );
 }
-
-/** The Trace switch's hint where the focus has nothing to trace (LA-V93-R52). */
-export const TRACE_IDLE_HINT = 'Focus a requirement or rule to trace it';
 
 /** The trace preset's button, worded with the relations' labels (LA-V92-R07): "Only fulfills, invokes and happens in links". */
 export function traceOnlyLabel(index: SpecIndex): string {
@@ -569,7 +536,6 @@ export interface SceneBox {
   shape: string;
   view: string;
   focus: boolean;
-  file: boolean;
   group: boolean;
   /** Its states as drawn: under the pointer, ringed by the keyboard, selected by a tap, lit by the spotlight (null without one). */
   hover: boolean;
@@ -636,7 +602,7 @@ function GraphCanvas(props: CanvasProps) {
     void pageMeasure(fonts).then((m) => { if (live) setMeasure(m); });
     return () => { live = false; };
   }, [fonts.body, fonts.mono]);
-  if (!measure) return <div className="graph-flow" data-layout={props.graph.mode === 'trace' ? 'trace' : props.layout} aria-busy="true" />;
+  if (!measure) return <div className="graph-flow" data-layout={props.layout} aria-busy="true" />;
   setTextMeasure(measure);
   return <GraphStage {...props} measure={measure} fonts={fonts} theme={theme} />;
 }
@@ -653,7 +619,6 @@ interface CanvasProps {
 }
 
 function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
-  const tracing = graph.mode === 'trace';
   const focus = graph.focus;
   // The focus's own product's map (no other product's nodes are in it), in any layout (LA-V93-R21): the Tree map (map.ts), the Nested map (nested.ts) or the Voronoi map (voronoi.ts), under one camera.
   // The Voronoi map is laid out in a worker the first time; until it is ready the canvas is empty.
@@ -730,12 +695,12 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     const motion = readMotion();
     if (!size || !animate || motion.duration === 0 || sameView(from, target)) {
       setViewport(target);
-      if (!tracing) show(drawnAt(target));
+      show(drawnAt(target));
       return 0;
     }
     const path = zoomPath(from, target, size.w, size.h);
     // Everything the glide passes over joins the keyboard's layer once, as it starts, and is trimmed when it ends.
-    if (!tracing) show(mergeDrawn([0, 0.25, 0.5, 0.75, 1].map((t) => drawnAt(path.at(t)))));
+    show(mergeDrawn([0, 0.25, 0.5, 0.75, 1].map((t) => drawnAt(path.at(t)))));
     const duration = glideDuration(motion.duration, path.S);
     moves.current.glides++;
     const start = performance.now();
@@ -744,20 +709,17 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       setViewport(path.at(motion.ease(t)));
       if (t < 1) { glide.current = requestAnimationFrame(step); return; }
       glide.current = null;
-      if (!tracing) show(latestDrawnAt.current(target));
+      show(latestDrawnAt.current(target));
     };
     glide.current = requestAnimationFrame(step);
     return duration;
-  }, [getViewport, setViewport, size, tracing, show, drawnAt]);
+  }, [getViewport, setViewport, size, show, drawnAt]);
 
-  // A trace's boxes are leaves at text scale 1, each as tall as its wrapped label needs (text.ts).
-  const tracePlaced = useMemo(() => (tracing ? traceGrid(graph, (id) => 2 * Math.ceil(labelHeight(labelFor(index, id)) / 2)) : null), [tracing, graph, index, measure]);
-  /** The camera that frames the focus: on the map, the focus and the levels the depth shows; in a trace, the whole chain. */
+  /** The camera that frames the focus: the focus and the levels the depth shows. */
   const framing = useCallback((): Viewport | null => {
     if (!size) return null;
-    if (tracePlaced) return fitBoxes(tracePlaced.positions, size.w, size.h, 40, tracePlaced.heights, tracePlaced.widths);
     return map.view !== 'tree' ? frameNested(map, focus, size.w, size.h) : frameOnMap(map, focus, depth, size.w, size.h);
-  }, [size, tracePlaced, map, focus, depth]);
+  }, [size, map, focus, depth]);
 
   // Frame the focus whenever it, the depth or the pane's size changes: a glide, except the first
   // picture, a resize and a map that has just been laid out, which frame at once.
@@ -775,7 +737,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     framedEmpty.current = map.nodes.size === 0;
   }, [framing]);
   // What is drawn follows the filters and the Links switch at once.
-  useEffect(() => { if (glide.current === null && !tracing && size) show(drawnAt(getViewport())); requestPaint(); }, [drawnAt]);
+  useEffect(() => { if (glide.current === null && size) show(drawnAt(getViewport())); requestPaint(); }, [drawnAt]);
 
   // The pane's size, observed once for the canvas's life.
   useLayoutEffect(() => {
@@ -814,9 +776,9 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   // layer follows once a frame. A gesture during a glide takes over from it.
   const pending = useRef<number | null>(null);
   const follow = useCallback(() => {
-    if (pending.current !== null || tracing) return;
+    if (pending.current !== null) return;
     pending.current = requestAnimationFrame(() => { pending.current = null; if (glide.current === null) show(latestDrawnAt.current(getViewport())); });
-  }, [tracing, show, getViewport]);
+  }, [show, getViewport]);
   useEffect(() => () => { if (pending.current !== null) cancelAnimationFrame(pending.current); pending.current = null; }, []);
 
   const zoomLimit = MAX_ZOOM;
@@ -843,47 +805,29 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   const look = useRef<Look>(PLAIN_LOOK);
   useLayoutEffect(() => { if (wrapper.current) look.current = readLook(wrapper.current); requestPaint(); }, [theme]);
 
-  const fileTitles = useMemo(() => new Map(graph.nodes.filter((n) => n.id.startsWith('file:')).map((n) => [n.id, n.title])), [graph]);
-  const plates = useMemo(() => new Map<string, Plate>(), [map, tracePlaced, index, measure, fileTitles]);
+  const plates = useMemo(() => new Map<string, Plate>(), [map, index, measure]);
   const plateFor = useCallback((id: string): Plate | null => {
     const known = plates.get(id);
     if (known) return known;
-    let source: PlateSource | null = null;
-    if (tracePlaced) {
-      const at = tracePlaced.positions.get(id);
-      if (at) source = { view: 'trace', node: { ...at, w: tracePlaced.widths.get(id)!, h: tracePlaced.heights.get(id)!, text: 1 } };
-    } else {
-      const n = map.nodes.get(id);
-      if (n) source = map.view === 'tree' ? { view: 'tree', node: n } : map.view === 'nested' ? { view: 'nested', node: n as NestedNode } : { view: 'voronoi', node: n as VoronoiNode };
-    }
-    if (!source) return null;
-    const plate = plateOf(index, id, source, fileTitles.get(id));
+    const n = map.nodes.get(id);
+    if (!n) return null;
+    const source: PlateSource = map.view === 'tree' ? { view: 'tree', node: n } : map.view === 'nested' ? { view: 'nested', node: n as NestedNode } : { view: 'voronoi', node: n as VoronoiNode };
+    const plate = plateOf(index, id, source);
     plates.set(id, plate);
     return plate;
-  }, [plates, tracePlaced, map, index, fileTitles]);
+  }, [plates, map, index]);
 
   /** The boxes, bars and lines a camera shows, in draw order: in the Nested and Voronoi views a parent before its children, so each child lies over its parent (LA-EXP-DS09). */
   const frameAt = useCallback((v: Viewport): { plates: Plate[]; bars: Bar[]; lines: Line[] } => {
-    const ids = tracing ? graph.nodes.map((n) => n.id) : drawnAt(v).boxes.map((b) => b.id);
+    const ids = drawnAt(v).boxes.map((b) => b.id);
     const shown = ids.map(plateFor).filter((p): p is Plate => p !== null);
-    if (!tracing && map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode).order - (map.nodes.get(b.id) as NestedNode).order);
+    if (map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode).order - (map.nodes.get(b.id) as NestedNode).order);
     const bars: Bar[] = [];
-    if (!tracing && map.view === 'tree') {
+    if (map.view === 'tree') {
       for (const bar of drawnAt(v).bars) bars.push({ parent: bar.parent, x: bar.x, y: bar.y, w: bar.w, h: bar.h });
     }
     const byId = new Map(shown.map((p) => [p.id, p]));
     const lines: Line[] = [];
-    if (tracing) {
-      for (const e of graph.edges) {
-        const s = byId.get(e.source);
-        const t = byId.get(e.target);
-        if (!s || !t) continue;
-        const sc = centerOf(s);
-        const tc = centerOf(t);
-        lines.push({ id: e.id, source: e.source, target: e.target, style: relationStyle(e.relation), link: true, points: [boxExit(sc.x, sc.y, tc.x, tc.y, s.w, s.h), boxExit(tc.x, tc.y, sc.x, sc.y, t.w, t.h)], scale: 1, label: graphEdgeLabel(index, e) });
-      }
-      return { plates: shown, bars, lines };
-    }
     // The tree's parent lines: level, from the parent's outline to the child's, at the child's middle. Nested and Voronoi have none: holding is the parent link (LA-EXP-DS07).
     if (parentShown && map.view === 'tree') {
       for (const b of shown) {
@@ -904,7 +848,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       lines.push({ id: e.id, source: e.source, target: e.target, style: relationStyle(e.relation), link: true, points: linkEnds(anchor(s), anchor(t)), scale: 1, label: graphEdgeLabel(index, e) });
     }
     return { plates: shown, bars, lines };
-  }, [tracing, graph, drawnAt, plateFor, map, index, parentShown]);
+  }, [graph, drawnAt, plateFor, map, index, parentShown]);
   const lastFrame = useRef<{ plates: Plate[]; bars: Bar[]; lines: Line[] } | null>(null);
   // What the last frame drew is stale once anything it was drawn from changes: the pointer then hit-tests a fresh frame.
   lastFrame.current = null;
@@ -921,7 +865,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     const t = fade > 0 ? Math.min(1, (performance.now() - s.start) / fade) : 1;
     return { value: s.from + (s.to - s.from) * t, done: t >= 1 };
   };
-  /** The focus fade (fade.ts) for each focus, on this map and look; a trace fades nothing. */
+  /** The focus fade (fade.ts) for each focus, on this map and look. */
   const strengths = useMemo(() => new Map<string, (id: string) => number>(), [map]);
   const strengthOf = (f: string) => {
     const l = look.current;
@@ -932,7 +876,6 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   };
   /** How strongly each box is drawn now: the new focus's fade, eased in from the old one's over the camera's glide. */
   const strengthNow = (): { at: (id: string) => number; done: boolean } => {
-    if (tracing) return { at: FULL_STRENGTH, done: true };
     const shift = fadeShift.current;
     const to = strengthOf(focus);
     const t = shift.from === null || shift.to !== focus || shift.duration <= 0 ? 1 : Math.min(1, (performance.now() - shift.start) / shift.duration);
@@ -971,7 +914,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     const root = wrapper.current;
     if (!root) return;
     const known = id !== null && (map.nodes.has(id) || graph.nodes.some((n) => n.id === id));
-    onPeek?.('hover', known && !id!.startsWith('file:') ? id : null);
+    onPeek?.('hover', known ? id : null);
     const s = spotlight.current;
     const value = spotNow().value;
     if (!known) {
@@ -989,7 +932,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       litLines.add(line.id);
     }
     // Nested and Voronoi, holding is the parent link: the box lights its parent and everything inside it, as the Tree view's parent lines light theirs.
-    const held = map.view !== 'tree' && !tracing ? map.nodes.get(id!) : undefined;
+    const held = map.view !== 'tree' ? map.nodes.get(id!) : undefined;
     if (held) {
       if (held.parent) lit.add(held.parent);
       const within = (n: string) => { for (const c of map.nodes.get(n)?.children ?? []) { lit.add(c); within(c); } };
@@ -998,12 +941,12 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     root.classList.add('has-spotlight');
     spotlight.current = { id, lit, litLines, from: s.id === null ? value : 1, to: 1, start: performance.now() };
     requestPaint();
-  }, [map, graph, onPeek, tracing, frameAt, requestPaint]);
+  }, [map, graph, onPeek, frameAt, requestPaint]);
   // A new focus starts without a spotlight.
   useEffect(() => () => spot(null), [focus]);
 
-  /** Whether a box can be focused by a click: a record or a group, not the focus, not a file. */
-  const canOpen = useCallback((id: string) => !id.startsWith('file:') && id !== focus && isGraphNode(index, id), [focus, index]);
+  /** Whether a box can be focused by a click: a record or a group, not the focus. */
+  const canOpen = useCallback((id: string) => id !== focus && isGraphNode(index, id), [focus, index]);
   // By touch, a first tap selects a node and a second tap (or the card's Open chip) opens it.
   const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus);
   tap.current = tapToOpen;
@@ -1012,16 +955,15 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
 
   // ---- The keyboard's layer ----
   const boxIds = useMemo((): string[] => {
-    if (tracePlaced) return graph.nodes.map((n) => n.id);
     if (!drawn) return [];
     // What was drawn for the map before this one (the Voronoi map's empty stand-in, say) may name nodes this one lacks.
     return drawn.boxes.filter((b) => map.nodes.has(b.id)).map((b) => b.id);
-  }, [tracePlaced, graph, drawn, map]);
+  }, [drawn, map]);
   const order = useMemo(() => {
     const placed = boxIds.map((id) => plateFor(id)).filter((p): p is Plate => p !== null);
-    if (tracing || map.view === 'tree') return keyboardOrder(placed);
+    if (map.view === 'tree') return keyboardOrder(placed);
     return keyboardOrder(placed, (id) => (map.nodes.get(id) as NestedNode | undefined)?.order ?? Infinity);
-  }, [boxIds, plateFor, map, tracing]);
+  }, [boxIds, plateFor, map]);
   const domNode = (id: string) => [...(layer.current?.querySelectorAll<HTMLElement>('.graph-box') ?? [])].find((el) => el.dataset.id === id) ?? null;
 
   // After a keyboard action, put focus back on the right box once it is in the layer.
@@ -1158,7 +1100,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   }, [zoomAt, follow]);
 
   // The edge hints count the linked records past each edge; a click brings the nearest of them into view.
-  const linkedCenters = useMemo(() => (tracing ? [] : linked.flatMap((id) => { const n = map.nodes.get(id); return n && !hidden.has(id) ? [centerOf(n)] : []; })), [tracing, linked, map, hidden]);
+  const linkedCenters = useMemo(() => linked.flatMap((id) => { const n = map.nodes.get(id); return n && !hidden.has(id) ? [centerOf(n)] : []; }), [linked, map, hidden]);
   const hintKey = useSyncExternalStore(store.subscribe, () => {
     const s = sizeRef.current;
     if (!s || linkedCenters.length === 0) return '0 0 0 0';
@@ -1206,7 +1148,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       const sp = spotlight.current;
       const strength = strengthNow().at;
       return {
-        layout: tracing ? 'trace' : layout,
+        layout,
         camera: roundCamera(v),
         moves: moves.current.moves,
         glides: moves.current.glides,
@@ -1216,7 +1158,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         bars: frame.bars.map((b) => rect(b.x, b.y, b.w, b.h)),
         lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, label: l.label, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
         boxes: frame.plates.map((p) => ({
-          id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, file: p.file, group: p.group,
+          id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, group: p.group,
           hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, strength: strength(p.id),
           map: { x: p.x, y: p.y, w: p.w, h: p.h }, textScale: p.text, boxScale: p.scale,
           rect: rect(p.x, p.y, p.w, p.h),
@@ -1242,9 +1184,9 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   return (
     <div
       ref={wrapper}
-      className={`graph-flow${nested && !tracing ? ' is-nested' : ''}${layout === 'voronoi' && !tracing ? ' is-voronoi' : ''}`}
-      data-layout={tracing ? 'trace' : layout}
-      data-ready={size && (layout !== 'voronoi' || tracing || voronoi) ? 'true' : undefined}
+      className={`graph-flow${nested ? ' is-nested' : ''}${layout === 'voronoi' ? ' is-voronoi' : ''}`}
+      data-layout={layout}
+      data-ready={size && (layout !== 'voronoi' || voronoi) ? 'true' : undefined}
       tabIndex={-1}
       role="group"
       aria-label="Graph canvas: the arrow keys step through the tree"
@@ -1297,8 +1239,8 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
           <Button variant="icon" className="graph-frame-focus" label="Frame the focus" onClick={frameFocus}><Icon name="maximize" size={14} /></Button>
         </Tooltip>
       </div>
-      {minimap && !tracing && <MapOverview map={map} focus={focus} hidden={hidden} view={minimapView} />}
-      {!tracing && size && linkedCenters.length > 0 && <EdgeHintChips past={past} noun="linked" onPan={panToward} />}
+      {minimap && <MapOverview map={map} focus={focus} hidden={hidden} view={minimapView} />}
+      {size && linkedCenters.length > 0 && <EdgeHintChips past={past} noun="linked" onPan={panToward} />}
       {armedPlate && (
         <TapCard
           kind={armedPlate.kindLabel}

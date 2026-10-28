@@ -66,7 +66,7 @@
 {"id":"LA-TRC-UC07-FL03","title":"Follow a pattern for a whole domain","use_case_id":"LA-TRC-UC07","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC08-FL03","title":"Find pattern rule tests that count nowhere","use_case_id":"LA-TRC-UC08","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC09-FL01","title":"Read a product's coverage","use_case_id":"LA-TRC-UC09","interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC10-FL01","title":"Trace an obligation in the graph","use_case_id":"LA-TRC-UC10","interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC10-FL01","title":"Trace obligations in the Trace view","use_case_id":"LA-TRC-UC10","interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC11-FL01","title":"Read coverage for every obligation kind","use_case_id":"LA-TRC-UC11","interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC12-FL01","title":"Check how a domain proves the patterns it follows","use_case_id":"LA-TRC-UC12","interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC13-FL01","title":"See tests by state with coverage","use_case_id":"LA-TRC-UC13","interface_id":"LA-IF01"}

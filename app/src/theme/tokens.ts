@@ -53,7 +53,6 @@ export const COLOR_TOKENS: readonly ColorToken[] = [
   { name: '--g-test-plan-bg', label: 'Test plan stage fill', group: 'Graph', core: false },
   { name: '--g-structural', label: 'Structural records', group: 'Graph', core: false, on: { bg: ['--g-structural-bg'], min: CONTROL } },
   { name: '--g-structural-bg', label: 'Structural fill', group: 'Graph', core: false },
-  { name: '--g-file', label: 'Files', group: 'Graph', core: false, on: { bg: ['--paper'], min: CONTROL } },
   { name: '--on-mark', label: 'Text on a colored mark', group: 'Depth', core: false, on: { bg: ['--spark', '--steel'], min: CONTROL } },
   { name: '--shadow-soft', label: 'Soft shadow', group: 'Depth', core: false },
   { name: '--shadow', label: 'Shadow', group: 'Depth', core: false },

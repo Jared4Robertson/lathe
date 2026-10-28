@@ -1,4 +1,4 @@
-// The focus page of a record or group at its address, /<id> (LA-V96): the page bar and the Wiki, Graph and Model panes.
+// The focus page of a record or group at its address, /<id> (LA-V96): the page bar and the Wiki, Graph and ERD panes.
 import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 import { Icon } from '../components/icons';
 import { rowPlace } from '../specs/RecordText';
@@ -21,7 +21,7 @@ import { KindBadge, PageHeader, ProblemBadge, RecordTree, Section, listTitle } f
 import { RecordContent, RecordEyebrow } from '../specs/RecordContent';
 import { foldedChildren } from '../specs/folders';
 import { DomainWiki, NotFound, ProductWiki, problemsUnder } from '../specs/SpecPages';
-import { addressOf, HOME_PATH, focusOf, VIEW_LABELS, VIEW_NAMES, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
+import { addressOf, HOME_PATH, focusOf, VIEW_LABELS, VIEW_NAMES, VIEW_WORDS, viewsFromSearch, viewsOffered, viewsShown, withView, type FocusRoute, type ViewName } from './address';
 import { SideBar } from './SideBar';
 import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, sideModeOf, type SideModeState, type SideView } from './sideBarState';
 import { PageBar, ViewIcon } from './PageBar';
@@ -30,9 +30,10 @@ import { PANE_SIZE_KEY, PANE_WEIGHT, PANE_WEIGHT_MAX, PANE_WEIGHT_MIN, VIEW_KEY,
 import { Button } from '../components/Button';
 
 // One page for one thing (a record, a group, a product or a domain), at one address, in up to
-// three views, each a pane you open and close: Wiki (the page to read), Graph (the graph centered
-// on it) and Model (the ERD of a domain, an aggregate or an entity's aggregate; offered only there).
-// The open panes sit side by side in the order Wiki, Graph, Model, with a handle to drag in every
+// four views, each a pane you open and close: Wiki (the page to read), Graph (the graph centered
+// on it), ERD (the ERD of a domain, an aggregate or an entity's aggregate; offered only there) and
+// Trace (an obligation's chain, or the matrix of the obligations under the focus; offered only where
+// there is one). The open panes sit side by side in the order Wiki, Graph, ERD, Trace, with a handle to drag in every
 // gap. Every pane shows the same focus: clicking a node or a box changes the address and the others
 // follow. Any pane can be maximized. The side bar, the page's last column, shows
 // Details, Outline or History for what the open views show (SideBar.tsx); it is open or closed,
@@ -43,14 +44,15 @@ import { Button } from '../components/Button';
 // one setting for the session, not a tab's (graph/settings.ts).
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
-const ModelView = lazy(() => import('../model/ModelView').then((m) => ({ default: m.ModelView })));
+const ErdView = lazy(() => import('../erd/ErdView').then((m) => ({ default: m.ErdView })));
+const TraceView = lazy(() => import('../trace/TraceView').then((m) => ({ default: m.TraceView })));
 
 const SIDE_BAR_WIDTH_KEY = 'lathe:side-bar-width';
 /** The narrowest a pane gets, and the limits of one pane's share of the two panes beside a gap, in percent. */
 const PANE_MIN_PX = 220;
 const GAP_MIN = 20;
 const GAP_MAX = 80;
-const lower = (v: ViewName) => VIEW_LABELS[v].toLowerCase();
+const lower = (v: ViewName) => VIEW_WORDS[v];
 /** The key a history entry notes the wiki's scroll under. */
 const WIKI_SCROLL = 'wikiScroll';
 
@@ -96,7 +98,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
 
   // The open tabs, and the active one's state. The open views are the tab's: those the link named
   // when it opened, otherwise those of the tab it was opened from ("wiki,graph"; the old single
-  // names and "split" read the same way). Model shows only where it is offered; the views asked for
+  // names and "split" read the same way). ERD and Trace show only where offered; the views asked for
   // but not offered here are kept, so they come back on a page that offers them.
   const tabs = usePageTabs(index, route, search);
   const tab = tabs.active;
@@ -290,7 +292,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   // Commands.
   useCommand('viewWiki', () => toggleView('wiki'));
   useCommand('viewGraph', () => toggleView('graph'));
-  useCommand('viewModel', () => toggleView('model'), offered.includes('model'));
+  useCommand('viewErd', () => toggleView('erd'), offered.includes('erd'));
+  useCommand('viewTrace', () => toggleView('trace'), offered.includes('trace'));
   useCommand('maximizePane', () => {
     if (full) { leaveFull(); return; }
     const inPane = (document.activeElement as HTMLElement | null)?.closest?.<HTMLElement>('.pane')?.dataset.view;
@@ -315,9 +318,14 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         <GraphView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} settings={settings} onSettingsChange={setSettings} onGraph={onGraph} onPeek={peek.set} />
       </Suspense>
     ),
-    model: (
-      <Suspense fallback={<p className="hint graph-loading">Loading the model…</p>}>
-        <ModelView index={index} focus={focus} onNavigate={onNavigate} onPeek={peek.set} />
+    erd: (
+      <Suspense fallback={<p className="hint graph-loading">Loading the ERD…</p>}>
+        <ErdView index={index} focus={focus} onNavigate={onNavigate} onPeek={peek.set} />
+      </Suspense>
+    ),
+    trace: (
+      <Suspense fallback={<p className="hint graph-loading">Loading the trace…</p>}>
+        <TraceView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} />
       </Suspense>
     ),
   };
@@ -647,8 +655,8 @@ function PageTitle({ index, route, fixed = false }: { index: SpecIndex; route: F
     problems = groupMembers(index, focus).flatMap((m) => index.problemsFor.get(m.id) ?? []);
   }
   return (
-    // Above a graph or a model the title keeps one fixed height (one line, cut with an ellipsis, the
-    // whole title in its tooltip), so the canvas below never moves when the focus changes. The header
+    // Above a graph, an ERD or a trace the title keeps one fixed height (one line, cut with an ellipsis,
+    // the whole title in its tooltip), so what is below never moves when the focus changes. The header
     // is keyed by the focus: a new page's header is new content drawn in place, never the last one's
     // badge slid along by a title of another length (UX-R08). The title's box itself stays.
     <div className={`pane-title${fixed ? ' is-fixed' : ''}`} title={fixed ? title : undefined}>

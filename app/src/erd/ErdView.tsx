@@ -1,4 +1,4 @@
-// The Model view of a domain's, aggregate's or entity's address, /<domain-aggregate-or-entity-id>?view=model (LA-V94).
+// The ERD view of a domain's, aggregate's or entity's address, /<domain-aggregate-or-entity-id>?view=erd (LA-V94).
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { RelationRule, SpecIndex } from '../specs/data';
@@ -11,7 +11,7 @@ import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
 
-// The Model view: the entity-relationship diagram of a domain (each aggregate a boundary around its
+// The ERD view: the entity-relationship diagram of a domain (each aggregate a boundary around its
 // entities) or of an aggregate (with the aggregates it references, or that reference it, faded around
 // it), drawn with React Flow and laid out by ELK. An entity page draws its aggregate's ERD with that
 // entity highlighted. Clicking a box goes to it, as a graph node does. A key under the diagram explains
@@ -28,7 +28,7 @@ const LINE_KEY: Record<ErdRelation, { note: string; meaning: string }> = {
 };
 const LINE_ORDER = Object.keys(LINE_KEY) as ErdRelation[];
 
-export interface ModelViewProps {
+export interface ErdViewProps {
   index: SpecIndex;
   focus: string;
   onNavigate: (id: string) => void;
@@ -39,14 +39,14 @@ export interface ModelViewProps {
 interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean }
 /**
  * `label`: the line's words, read from its source, from the schema's relations (LA-V92-R07) or the
- * Model view's own for a reference. `title`: the whole sentence, for its tooltip. `hover`: the fields
+ * ERD view's own for a reference. `title`: the whole sentence, for its tooltip. `hover`: the fields
  * shown on a dashed reference line while it is hovered, or null.
  */
 interface LineData extends Record<string, unknown> { line: ErdLine; source: Rect; target: Rect; offset: number; label: string; title: string; hover: string | null }
 type BoxNode = Node<BoxData>;
 type LineEdge = Edge<LineData>;
 
-/** A line's label, in sentence case: the relation's own words, or the Model view's for a reference. */
+/** A line's label, in sentence case: the relation's own words, or the ERD view's for a reference. */
 export function lineLabel(relations: readonly RelationRule[], relation: ErdRelation): string {
   const own = LINE_WORDS[relation];
   if (own) return own.charAt(0).toUpperCase() + own.slice(1);
@@ -110,9 +110,9 @@ export function lineWords(line: ErdLine, label: string, titles: ReadonlyMap<stri
 const nodeTypes = { box: BoxView };
 const edgeTypes = { line: LineView };
 
-export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) {
+export function ErdView({ index, focus, onNavigate, onPeek }: ErdViewProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
-  if (!erd) return <p className="hint model-missing">The Model view shows the entities of a domain, an aggregate or an entity's aggregate.</p>;
+  if (!erd) return <p className="hint erd-missing">The ERD view shows the entities of a domain, an aggregate or an entity's aggregate.</p>;
   const scope = index.byId.get(erd.scope);
   const entities = erd.boxes.filter((b) => b.kind === 'entity').length;
   const empty = erd.level === 'domain' ? erd.boxes.length === 0 : entities === 0;
@@ -121,15 +121,15 @@ export function ModelView({ index, focus, onNavigate, onPeek }: ModelViewProps) 
     ? `The aggregates of ${scope?.title}, their entities and relationships`
     : `The entities of ${scope?.title}, and the aggregates it references or that reference it`;
   return (
-    <section className="model-page" aria-label="Model">
-      <header className="model-header">
+    <section className="erd-page" aria-label="Model">
+      <header className="erd-header">
         {/* One line of one text, cut with an ellipsis, its whole text in its tooltip: a new caption never moves anything (LA-PAT-APP-UX-R08). */}
-        <p className="model-caption" title={`${caption} · ${counts}`}>{`${caption} · ${counts}`}</p>
+        <p className="erd-caption" title={`${caption} · ${counts}`}>{`${caption} · ${counts}`}</p>
       </header>
       {empty ? (
-        <p className="placeholder model-empty">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet.'}</p>
+        <p className="placeholder erd-empty">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet.'}</p>
       ) : (
-        <div className="model-canvas">
+        <div className="erd-canvas">
           <ReactFlowProvider>
             <ErdCanvas relations={index.workspace.relations} erd={erd} focus={focus} onNavigate={onNavigate} onPeek={onPeek} />
           </ReactFlowProvider>
@@ -221,7 +221,7 @@ export function fitRects(rects: Map<string, Rect>, width: number, height: number
 /** A box's accessible name: its kind, title and owner, its root mark, and whether the page is about it. */
 const boxName = (box: ErdBox) => `${BOX_KIND[box.kind]} ${box.title}${box.owner ? `, ${box.owner}` : ''}${box.root ? ', root' : ''}${box.highlight ? ' (this entity)' : ''}`;
 
-function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: readonly RelationRule[]; erd: Erd; focus: string; onNavigate: (id: string) => void; onPeek?: ModelViewProps['onPeek'] }) {
+function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: readonly RelationRule[]; erd: Erd; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek'] }) {
   const [placed, setPlaced] = useState<{ erd: Erd; rects: Map<string, Rect> } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const wrapper = useRef<HTMLDivElement>(null);
@@ -342,7 +342,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek }: { relations: r
 
   if (error) return <p className="error">Couldn't draw the diagram: {error}</p>;
   return (
-    <div ref={wrapper} className="model-flow" onKeyDown={onKeyDown} onFocus={(e) => onPeek?.('hover', boxAt(e.target))} onBlur={() => onPeek?.('hover', null)}>
+    <div ref={wrapper} className="erd-flow" onKeyDown={onKeyDown} onFocus={(e) => onPeek?.('hover', boxAt(e.target))} onBlur={() => onPeek?.('hover', null)}>
       {!placed && <p className="hint graph-loading">Laying out the diagram…</p>}
       <ReactFlow
         nodes={nodes}

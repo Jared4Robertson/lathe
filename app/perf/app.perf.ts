@@ -123,25 +123,25 @@ test.describe('performance', () => {
     await record({ name: `${label}: frames over 20 ms`, value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
   });
 
-  test('LA-V61-R37-T04 opening the Model pane takes under 100 ms of main-thread work', async ({ page }) => {
+  test('LA-V61-R37-T04 opening the ERD pane takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, AGGREGATE);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+4');
-      await page.locator('.pane-model .model-flow .react-flow__node').first().waitFor();
+      await page.locator('.pane-erd .erd-flow .react-flow__node').first().waitFor();
     });
     await page.keyboard.press('Control+4');
-    await expect(page.locator('.pane-model')).toHaveCount(0);
+    await expect(page.locator('.pane-erd')).toHaveCount(0);
     const again = await work(page, async () => {
       await page.keyboard.press('Control+4');
-      await page.locator('.pane-model .model-flow .react-flow__node').first().waitFor();
+      await page.locator('.pane-erd .erd-flow .react-flow__node').first().waitFor();
     });
-    await record({ name: 'Model view: first open (loads its code and ELK)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
-    await record({ name: 'view switch: open the Model pane', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
+    await record({ name: 'ERD view: first open (loads its code and ELK)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
+    await record({ name: 'view switch: open the ERD pane', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
     // The time from the key press to the laid-out diagram, on a domain page (the ELK layout in its worker).
-    await page.goto(`${DOMAIN}?view=model`);
+    await page.goto(`${DOMAIN}?view=erd`);
     const start = await page.evaluate(() => performance.now());
-    await page.locator('.pane-model .model-flow .react-flow__node').first().waitFor();
+    await page.locator('.pane-erd .erd-flow .react-flow__node').first().waitFor();
     const laid = (await page.evaluate(() => performance.now())) - start;
-    await record({ name: 'Model view: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
+    await record({ name: 'ERD view: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
   });
 });
