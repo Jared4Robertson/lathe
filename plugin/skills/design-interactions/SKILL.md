@@ -32,6 +32,22 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `api_requirement` | the endpoint | `<endpoint>-R<nn>` | `statement`: one rule the endpoint must follow. |
 | `integration` | none | `<P>-INT<nn>` | An outside system, such as a mail service. `system`: its name; `description`. |
 
+## Naming
+
+Every record's `title` is in sentence case, with no trailing period, and unique within its kind and product; the store refuses a duplicate or a trailing period. Names take 1 to 4 words, goals 2 to 6, statements one short sentence; detail goes in the `description` or `statement`.
+
+| Kind | Title | Good | Not |
+| --- | --- | --- | --- |
+| interface, integration | the proper name | Web app, HTTP API, Mail | The web frontend |
+| flow | its use case's title, "in" or "through", its interface's title | Borrow a tool through the HTTP API | Borrow a tool |
+| flow step | the actor or the system, then a present-tense verb | The member picks a tool | Tool picked |
+| view | its subject and its form (page, dialog, panel) | Loan page, Return dialog | Loans |
+| UI component | a noun phrase for what it shows | Record card | RecordCard |
+| endpoint | its method and route | POST /loans/{loanId}/return | Return a tool |
+| view requirement, API requirement | a sentence that is true when the rule holds | An unknown loan answers 404 loan_not_found | 404 handling |
+
+The store refuses an endpoint title other than its method and route. `lathe check` warns of a flow title that is not its use case's title, "in" or "through", and its interface's title.
+
 ## Interfaces
 
 - Declare each interface the product offers once, under the product: its web app, its HTTP API, its command line, its tools for agents, its desktop app. Its `kind` says what a flow's steps go through: views (`web app`, `desktop`), endpoints (`API`), commands and queries run directly (`CLI`, `agent tools`), or anything (`other`).
@@ -74,12 +90,12 @@ add  { "interface": { "id": "TL-IF01", "title": "HTTP API", "product_id": "TL", 
 The Return a tool flow through it: the librarian records the return (which invokes the command an endpoint exposes), a refused return, and the result.
 
 ```
-add  { "flow": { "id": "TL-LEND-UC04-FL01", "title": "Return a tool", "use_case_id": "TL-LEND-UC04", "interface_id": "TL-IF01",
+add  { "flow": { "id": "TL-LEND-UC04-FL01", "title": "Return a tool through the HTTP API", "use_case_id": "TL-LEND-UC04", "interface_id": "TL-IF01",
        "description": "How a librarian takes a tool back and closes its loan." } }
 add  { "flow_step": { "id": "TL-LEND-UC04-FL01-S02", "title": "The librarian records the condition and, optionally, a note",
        "flow_id": "TL-LEND-UC04-FL01", "path": "main", "position": 2 } }
 link { "source": "TL-LEND-UC04-FL01-S02", "relation": "invokes", "target": "TL-LEND-CMD06" }
-add  { "flow_step": { "id": "TL-LEND-UC04-FL01-S03", "title": "A return with no valid condition, of an unknown loan or of a loan already returned is refused",
+add  { "flow_step": { "id": "TL-LEND-UC04-FL01-S03", "title": "The library refuses a return with no valid condition, of an unknown loan or of a loan already returned",
        "flow_id": "TL-LEND-UC04-FL01", "path": "refused", "position": 1 } }
 link { "source": "TL-LEND-UC04-FL01-S03", "relation": "fulfills", "target": "TL-LEND-UC04-R01" }
 ```
@@ -87,7 +103,7 @@ link { "source": "TL-LEND-UC04-FL01-S03", "relation": "fulfills", "target": "TL-
 The endpoint that exposes the command, and one of its API requirements:
 
 ```
-add  { "endpoint": { "id": "TL-LEND-EP05", "title": "Return a tool", "command_id": "TL-LEND-CMD06",
+add  { "endpoint": { "id": "TL-LEND-EP05", "title": "POST /loans/{loanId}/return", "command_id": "TL-LEND-CMD06",
        "method": "POST", "route": "/loans/{loanId}/return",
        "description": "Request: { \"condition\": \"good\" | \"needs_repair\", \"note\"?: string }. Responds 200 with the loan, or 400 / 404 / 409 with an error." } }
 add  { "api_requirement": { "id": "TL-LEND-EP05-R02", "title": "An unknown loan answers 404 loan_not_found", "endpoint_id": "TL-LEND-EP05",

@@ -34,6 +34,17 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `pattern_rule` | the pattern | `<pattern>-R<nn>` | `statement`; `setting`, a setting it depends on; the applies-when columns (see Patterns). |
 | `setting_value` (part) | the follower | `pattern_id` and `setting` | `value`, or `not_applicable` with the reason. |
 
+## Naming
+
+Every record's `title` is in sentence case, with no trailing period, and unique within its kind and product; the store refuses a duplicate or a trailing period. Names take 1 to 4 words, goals 2 to 6, statements one short sentence; detail goes in the `goal`, `statement` or `description`.
+
+| Kind | Title | Good | Not |
+| --- | --- | --- | --- |
+| capability | a noun phrase for a lasting ability | Invoice management | Managing invoices |
+| use case | an imperative verb and its object: the actor's goal | Borrow a tool | Tool borrowing screen |
+| pattern | a singular noun phrase, no article | Librarian action | The librarian actions |
+| UC requirement, pattern rule | a sentence that is true when the rule holds | An unavailable tool is refused with the reason | Unavailable tool handling |
+
 ## Capabilities
 
 Every use case sits in a capability: an ordered slice of its domain, such as 01 Catalog, 02 Lending. Add the domain's capabilities first, then each use case under the one it belongs to. Move a use case to another capability with `move`; its ID never changes. A capability with no use case, or one with a single use case, is a gap the check reports, and so is a capability that serves no business outcome.

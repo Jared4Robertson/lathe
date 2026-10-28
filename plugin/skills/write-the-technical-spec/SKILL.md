@@ -41,6 +41,19 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 Each has `file` (from the product root; it may not exist yet, and several records may share one file) and `description` (what in the file, such as the function names). Name the unit in its `title`, such as `LendingService.borrow`.
 
+## Naming
+
+A technical record is bound to code, so its `title` is the identifier exactly as the code writes it, with no spaces: `LoanRow`, `buildReference`, `loans`. It is unique within its kind and product and has no trailing period; the store refuses a duplicate, a trailing period or a title with whitespace. Explain the unit in `description`, never in the title (`Store (loans)` is refused; `Store.insertLoan` is not). This holds for every technical kind but the UI component, named for what it shows (Record card, see `design-interactions`), and for a product's own code-bound kinds, such as an entry point, tooling, an IPC channel or a plugin hook.
+
+| Kind | Title | Good |
+| --- | --- | --- |
+| data model, projection, handlers, service, repository, adapter, predicate, value type, table, event type | the identifier in code | `Loan`, `ToolReturned`, `loans` |
+| standard, standard rule | a singular noun phrase; a sentence that is true when the rule holds | Code; Errors carry a code and a sentence |
+| a product's CLI command | the invocation | lathe add |
+| a check row | the kebab-case name of the mistake it finds | event-tense |
+
+The store refuses a check row title not in kebab case.
+
 What follows from the tree is not stored: a command is carried out by its handler and its aggregate root's data model, and a handler loads its aggregate through the aggregate's repository. Link nothing for these.
 
 ## Domain layer and application layer
@@ -81,8 +94,8 @@ The handler of Borrow a tool, the repository and data model of the Loan, and the
 add  { "command_handler": { "id": "TL-LEND-CMD05-H", "title": "LendingService.borrow", "command_id": "TL-LEND-CMD05",
        "file": "src/lending-service.ts",
        "description": "Runs the checks in order in one transaction and inserts the loan with its due date. It saves LoanOpened to the outbox in that transaction and runs the relay once it commits." } }
-add  { "repository": { "id": "TL-LEND-A3-REPO", "title": "Store (loans)", "aggregate_id": "TL-LEND-A3", "file": "src/store.ts",
-       "description": "insertLoan, findLoan, activeLoansForMember, activeLoanForTool and markReturned on the SQLite store." } }
+add  { "repository": { "id": "TL-LEND-A3-REPO", "title": "Store.insertLoan", "aggregate_id": "TL-LEND-A3", "file": "src/store.ts",
+       "description": "The Store class's loan methods: insertLoan, findLoan, activeLoansForMember, activeLoanForTool and markReturned on the SQLite store." } }
 add  { "data_model": { "id": "TL-LEND-EN04-DM", "title": "Loan", "entity_id": "TL-LEND-EN04", "file": "src/model.ts",
        "description": "The Loan interface; mapped from its row by toLoan in src/store.ts." } }
 add  { "event_type": { "id": "TL-LEND-EV06-ET", "title": "ToolReturned", "domain_event_id": "TL-LEND-EV06", "delivery": "outbox",
