@@ -1,4 +1,4 @@
-{"id":"LA-AUT-UC01-FL03-S01","title":"The Agent follows the plugin's skills, which write only through the tools","flow_id":"LA-AUT-UC01-FL03","path":"main","position":1}
+{"id":"LA-AUT-UC01-FL03-S01","title":"The Agent follows the plugin's skills, which tell it to write through the lathe command or the tools, never by hand","flow_id":"LA-AUT-UC01-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC01-FL03-S02","title":"The Agent or the Owner adds a record with its typed columns, parent and parts","flow_id":"LA-AUT-UC01-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC01-FL03-S03","title":"They change a record's columns","flow_id":"LA-AUT-UC01-FL03","path":"main","position":3}
 {"id":"LA-AUT-UC01-FL03-S04","title":"The command layer refuses a write with every reason, and no data file changes","flow_id":"LA-AUT-UC01-FL03","path":"refused","position":1}
@@ -9,10 +9,24 @@
 {"id":"LA-AUT-UC01-FL03-S09","title":"...or unlink them","flow_id":"LA-AUT-UC01-FL03","path":"link","position":2}
 {"id":"LA-AUT-UC01-FL03-S10","title":"They remove a record with its parts","flow_id":"LA-AUT-UC01-FL03","path":"remove","position":1}
 {"id":"LA-AUT-UC01-FL03-S11","title":"They make several changes as one write","flow_id":"LA-AUT-UC01-FL03","path":"several","position":1}
+{"id":"LA-AUT-UC01-FL04-S01","title":"The Agent follows the plugin's skills, which tell it to change data only through the tools","flow_id":"LA-AUT-UC01-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC01-FL04-S02","title":"The Agent adds a record with add, its typed columns, parent and parts as the tool's input schema gives them","flow_id":"LA-AUT-UC01-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC01-FL04-S03","title":"The Agent changes a record's columns with set","flow_id":"LA-AUT-UC01-FL04","path":"main","position":3}
+{"id":"LA-AUT-UC01-FL04-S04","title":"The command layer writes the rows the write changed into the data files, one line each, sorted, and the tool returns them","flow_id":"LA-AUT-UC01-FL04","path":"main","position":4}
+{"id":"LA-AUT-UC01-FL04-S05","title":"The Agent shows the record with show to see what it wrote","flow_id":"LA-AUT-UC01-FL04","path":"main","position":5}
+{"id":"LA-AUT-UC01-FL04-S06","title":"The tool returns a refused write with every reason, and no data file changes","flow_id":"LA-AUT-UC01-FL04","path":"refused","position":1}
+{"id":"LA-AUT-UC01-FL04-S07","title":"The Agent moves a record under another parent with move","flow_id":"LA-AUT-UC01-FL04","path":"move","position":1}
+{"id":"LA-AUT-UC01-FL04-S08","title":"The Agent links two records with link","flow_id":"LA-AUT-UC01-FL04","path":"link","position":1}
+{"id":"LA-AUT-UC01-FL04-S09","title":"The Agent unlinks them with unlink","flow_id":"LA-AUT-UC01-FL04","path":"link","position":2}
+{"id":"LA-AUT-UC01-FL04-S10","title":"The Agent removes a record with its parts with remove","flow_id":"LA-AUT-UC01-FL04","path":"remove","position":1}
 {"id":"LA-AUT-UC02-FL03-S01","title":"The Agent follows the modeling skill's first step and lists the product's business capabilities","flow_id":"LA-AUT-UC02-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC02-FL03-S02","title":"They read what the reference says a domain is","flow_id":"LA-AUT-UC02-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC02-FL03-S03","title":"They add one domain per capability, with its subdomain type","flow_id":"LA-AUT-UC02-FL03","path":"main","position":3}
 {"id":"LA-AUT-UC02-FL03-S04","title":"`lathe check` warns of a domain named for a technology, and they rename it for its capability","flow_id":"LA-AUT-UC02-FL03","path":"main","position":4}
+{"id":"LA-AUT-UC02-FL04-S01","title":"The Agent follows the modeling skill's first step and lists the product's business capabilities","flow_id":"LA-AUT-UC02-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC02-FL04-S02","title":"The Agent reads what a domain is in the add tool's description of the domain table, the reference's own text","flow_id":"LA-AUT-UC02-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC02-FL04-S03","title":"The Agent adds one domain per capability with add, each with its subdomain type","flow_id":"LA-AUT-UC02-FL04","path":"main","position":3}
+{"id":"LA-AUT-UC02-FL04-S04","title":"The check tool warns of a domain named for a technology, and the Agent renames the domain with set","flow_id":"LA-AUT-UC02-FL04","path":"main","position":4}
 {"id":"LA-AUT-UC03-FL03-S01","title":"The Owner writes the change into Lathe's migrations and reviews the diff in git","flow_id":"LA-AUT-UC03-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC03-FL03-S02","title":"They regenerate the row types and the reference; a test fails while either is stale","flow_id":"LA-AUT-UC03-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC03-FL03-S03","title":"The next load applies the migrations in order and checks every product's data against them","flow_id":"LA-AUT-UC03-FL03","path":"main","position":3}
@@ -20,11 +34,19 @@
 {"id":"LA-AUT-UC04-FL03-S01","title":"The Owner or the Agent declares a product kind with its fields, in a stage","flow_id":"LA-AUT-UC04-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC04-FL03-S02","title":"They declare product relations, new or adding a pair to Lathe's","flow_id":"LA-AUT-UC04-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC04-FL03-S03","title":"A kind declared twice is refused, naming the file and line of each","flow_id":"LA-AUT-UC04-FL03","path":"refused","position":1}
-{"id":"LA-AUT-UC04-FL03-S04","title":"The next load generates the product's tables; the MCP server announces its tools again","flow_id":"LA-AUT-UC04-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC04-FL03-S04","title":"The next load generates the product's tables, and lathe add takes the new kind with its columns","flow_id":"LA-AUT-UC04-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC04-FL04-S01","title":"The Agent declares a product kind with its fields, in a stage, with add","flow_id":"LA-AUT-UC04-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC04-FL04-S02","title":"The Agent declares product relations, new or adding a pair to Lathe's","flow_id":"LA-AUT-UC04-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC04-FL04-S03","title":"The server loads the generated tables and announces its tools again, and add takes the new kind","flow_id":"LA-AUT-UC04-FL04","path":"main","position":3}
+{"id":"LA-AUT-UC04-FL04-S04","title":"The store refuses a kind declared twice, naming the file and line of each","flow_id":"LA-AUT-UC04-FL04","path":"refused","position":1}
 {"id":"LA-AUT-UC05-FL03-S01","title":"They add the domain's capabilities in order","flow_id":"LA-AUT-UC05-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC05-FL03-S02","title":"They move each use case under its capability","flow_id":"LA-AUT-UC05-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC05-FL03-S03","title":"They write shared behavior once, as a pattern with its rules and settings","flow_id":"LA-AUT-UC05-FL03","path":"main","position":3}
 {"id":"LA-AUT-UC05-FL03-S04","title":"Each follower links the pattern and answers its settings; each following domain owes its rules","flow_id":"LA-AUT-UC05-FL03","path":"main","position":4}
+{"id":"LA-AUT-UC05-FL04-S01","title":"The Agent adds the domain's capabilities in order with add","flow_id":"LA-AUT-UC05-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC05-FL04-S02","title":"The Agent moves each use case under its capability with move","flow_id":"LA-AUT-UC05-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC05-FL04-S03","title":"The Agent writes shared behavior once, as a pattern with its rules and settings","flow_id":"LA-AUT-UC05-FL04","path":"main","position":3}
+{"id":"LA-AUT-UC05-FL04-S04","title":"The Agent links each follower to the pattern and answers its settings, and each following domain owes its rules","flow_id":"LA-AUT-UC05-FL04","path":"main","position":4}
 {"id":"LA-AUT-UC06-FL03-S01","title":"They declare the product's interfaces, then add each use case's flow through one, its ID ending in the interface's number, and its steps in order on their paths","flow_id":"LA-AUT-UC06-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC06-FL03-S02","title":"They link each step to the requirements it fulfills, the command or query it invokes and the view it happens in","flow_id":"LA-AUT-UC06-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC06-FL03-S03","title":"A second flow through one interface, a flow ID not ending in its interface's number, a view in an API, CLI or agent tools flow, a repeated position, or a requirement of another use case, is refused","flow_id":"LA-AUT-UC06-FL03","path":"refused","position":1}
@@ -32,12 +54,19 @@
 {"id":"LA-AUT-UC07-FL03-S01","title":"They write a record whose text names other records, in any product's IDs","flow_id":"LA-AUT-UC07-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC07-FL03-S02","title":"The record shows its text as written; only its links relate it","flow_id":"LA-AUT-UC07-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC07-FL03-S03","title":"`lathe check` reports nothing about IDs in text","flow_id":"LA-AUT-UC07-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC07-FL04-S01","title":"The Agent writes a record whose text names other records, in any product's IDs, with set","flow_id":"LA-AUT-UC07-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC07-FL04-S02","title":"The show tool returns the text as written, and only its links relate it","flow_id":"LA-AUT-UC07-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC07-FL04-S03","title":"The check tool reports nothing about IDs in text","flow_id":"LA-AUT-UC07-FL04","path":"main","position":3}
 {"id":"LA-AUT-UC08-FL03-S01","title":"They read each kind's stage and place in the reference","flow_id":"LA-AUT-UC08-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC08-FL03-S02","title":"They declare a product kind in one of the stages","flow_id":"LA-AUT-UC08-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC10-FL03-S01","title":"They add the aggregate's root and child entities","flow_id":"LA-AUT-UC10-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC10-FL03-S02","title":"They add each entity's fields, typed by a basic type, a value object or another aggregate","flow_id":"LA-AUT-UC10-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC10-FL03-S03","title":"They add the value objects with their constraints","flow_id":"LA-AUT-UC10-FL03","path":"main","position":3}
 {"id":"LA-AUT-UC10-FL03-S04","title":"They link parts to the root with `has_one` and `has_many`; `lathe check` reports a child no link reaches","flow_id":"LA-AUT-UC10-FL03","path":"main","position":4}
+{"id":"LA-AUT-UC10-FL04-S01","title":"The Agent adds the aggregate's root and child entities with add","flow_id":"LA-AUT-UC10-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC10-FL04-S02","title":"The Agent adds each entity's fields, typed by a basic type, a value object or another aggregate","flow_id":"LA-AUT-UC10-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC10-FL04-S03","title":"The Agent adds the value objects with their constraints","flow_id":"LA-AUT-UC10-FL04","path":"main","position":3}
+{"id":"LA-AUT-UC10-FL04-S04","title":"The Agent links parts to the root with `has_one` and `has_many`, and the check tool reports a child no link reaches","flow_id":"LA-AUT-UC10-FL04","path":"main","position":4}
 {"id":"LA-AUT-UC11-FL03-S01","title":"They run the reference script and read the reference it writes","flow_id":"LA-AUT-UC11-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC11-FL03-S02","title":"A product's reference shows its own kinds and checks after Lathe's","flow_id":"LA-AUT-UC11-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC11-FL03-S03","title":"A product kind, relation or check that would leave the reference blank is refused","flow_id":"LA-AUT-UC11-FL03","path":"refused","position":1}
@@ -45,35 +74,62 @@
 {"id":"LA-AUT-UC12-FL03-S02","title":"They link what each command raises and checks, and mark the events other domains hear as published","flow_id":"LA-AUT-UC12-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC12-FL03-S03","title":"They add a policy under the command it invokes, hearing one event","flow_id":"LA-AUT-UC12-FL03","path":"main","position":3}
 {"id":"LA-AUT-UC12-FL03-S04","title":"A command that must change another aggregate of its domain records it, with its reason","flow_id":"LA-AUT-UC12-FL03","path":"exception","position":1}
+{"id":"LA-AUT-UC12-FL04-S01","title":"The Agent adds the aggregate's commands, and the events each raises with their fields, with add","flow_id":"LA-AUT-UC12-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC12-FL04-S02","title":"The Agent links what each command raises and checks, and marks the events other domains hear as published","flow_id":"LA-AUT-UC12-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC12-FL04-S03","title":"The Agent adds a policy under the command it invokes, hearing one event","flow_id":"LA-AUT-UC12-FL04","path":"main","position":3}
+{"id":"LA-AUT-UC12-FL04-S04","title":"The Agent records another aggregate of its domain a command must change, with its reason, and the check tool lists it apart","flow_id":"LA-AUT-UC12-FL04","path":"exception","position":1}
 {"id":"LA-AUT-UC13-FL03-S01","title":"They add each test under the record it tests, with its run by","flow_id":"LA-AUT-UC13-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC13-FL03-S02","title":"They sort a long list of requirements or rules into groups","flow_id":"LA-AUT-UC13-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC13-FL03-S03","title":"They describe the data sets tests start from, with the file that builds each, and link the tests","flow_id":"LA-AUT-UC13-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC13-FL04-S01","title":"The Agent adds each test under the record it tests, with its run by, with add","flow_id":"LA-AUT-UC13-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC13-FL04-S02","title":"The Agent sorts a long list of requirements or rules into groups with set","flow_id":"LA-AUT-UC13-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC13-FL04-S03","title":"The Agent describes the data sets tests start from, with the file that builds each, and links the tests","flow_id":"LA-AUT-UC13-FL04","path":"main","position":3}
 {"id":"LA-AUT-UC14-FL01-S01","title":"The Reader opens the record format from the palette or the shortcuts sheet","flow_id":"LA-AUT-UC14-FL01","path":"main","position":1}
 {"id":"LA-AUT-UC14-FL01-S02","title":"They open a kind's page from the side bar's Kind row or a column label","flow_id":"LA-AUT-UC14-FL01","path":"main","position":2}
 {"id":"LA-AUT-UC14-FL01-S03","title":"They open a check's page from a problem's code","flow_id":"LA-AUT-UC14-FL01","path":"main","position":3}
 {"id":"LA-AUT-UC14-FL01-S04","title":"They find a kind or a check by quick find","flow_id":"LA-AUT-UC14-FL01","path":"find","position":1}
+{"id":"LA-AUT-UC14-FL02-S01","title":"The Reader opens the record format from the palette, the shortcuts sheet or the Help menu","flow_id":"LA-AUT-UC14-FL02","path":"main","position":1}
+{"id":"LA-AUT-UC14-FL02-S02","title":"The Reader opens a kind's page from the side bar's Kind row or a column label","flow_id":"LA-AUT-UC14-FL02","path":"main","position":2}
+{"id":"LA-AUT-UC14-FL02-S03","title":"The Reader opens a check's page from a problem's code","flow_id":"LA-AUT-UC14-FL02","path":"main","position":3}
+{"id":"LA-AUT-UC14-FL02-S04","title":"The Reader finds a kind or a check by quick find","flow_id":"LA-AUT-UC14-FL02","path":"find","position":1}
 {"id":"LA-AUT-UC15-FL02-S01","title":"In the desktop app, the author chooses Reveal in Finder, Open in editor or Copy ID for the record in front","flow_id":"LA-AUT-UC15-FL02","path":"main","position":1}
 {"id":"LA-AUT-UC15-FL02-S02","title":"The shell finds the data file from the ID and reveals it, or opens it in the chosen editor","flow_id":"LA-AUT-UC15-FL02","path":"main","position":2}
 {"id":"LA-AUT-UC15-FL02-S03","title":"The author changes the record, and the page reloads with the change","flow_id":"LA-AUT-UC15-FL02","path":"main","position":3}
 {"id":"LA-AUT-UC16-FL03-S01","title":"They add a standard and its rules","flow_id":"LA-AUT-UC16-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC16-FL03-S02","title":"They link each technical record that follows a rule with `meets`, and write the standard rule tests that prove it","flow_id":"LA-AUT-UC16-FL03","path":"main","position":2}
-{"id":"LA-AUT-UC16-FL03-S03","title":"They read each standard with its rules, what meets them and their tests, in the app and the graph","flow_id":"LA-AUT-UC16-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC16-FL03-S03","title":"They show each standard with its rules, what meets them and their tests, with lathe show","flow_id":"LA-AUT-UC16-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC16-FL04-S01","title":"The Agent adds a standard and its rules with add","flow_id":"LA-AUT-UC16-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC16-FL04-S02","title":"The Agent links each technical record that follows a rule with `meets`, and writes the standard rule tests that prove it","flow_id":"LA-AUT-UC16-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC16-FL04-S03","title":"The Agent shows each standard with its rules, what meets them and their tests","flow_id":"LA-AUT-UC16-FL04","path":"main","position":3}
 {"id":"LA-AUT-UC17-FL03-S01","title":"They add the technical record under the design record it implements, naming its file","flow_id":"LA-AUT-UC17-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC17-FL03-S02","title":"They add each entity's and read model's table with its keys, a unique key naming its invariant","flow_id":"LA-AUT-UC17-FL03","path":"main","position":2}
+{"id":"LA-AUT-UC17-FL04-S01","title":"The Agent adds the technical record under the design record it implements, naming its file","flow_id":"LA-AUT-UC17-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC17-FL04-S02","title":"The Agent adds each entity's and read model's table with its keys, a unique key naming its invariant","flow_id":"LA-AUT-UC17-FL04","path":"main","position":2}
 {"id":"LA-AUT-UC18-FL03-S01","title":"They add an endpoint under the command or query it exposes","flow_id":"LA-AUT-UC18-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC18-FL03-S02","title":"They add view requirements under views and API requirements under endpoints","flow_id":"LA-AUT-UC18-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC18-FL03-S03","title":"They link steps to the views they happen in and the integrations they exchange with; `lathe check` reports one nothing uses","flow_id":"LA-AUT-UC18-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC18-FL04-S01","title":"The Agent adds an endpoint under the command or query it exposes","flow_id":"LA-AUT-UC18-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC18-FL04-S02","title":"The Agent adds view requirements under views and API requirements under endpoints","flow_id":"LA-AUT-UC18-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC18-FL04-S03","title":"The Agent links steps to the views they happen in and the integrations they exchange with, and the check tool reports one nothing uses","flow_id":"LA-AUT-UC18-FL04","path":"main","position":3}
 {"id":"LA-AUT-UC19-FL03-S01","title":"Git merges two branches and runs the merge driver for each data file","flow_id":"LA-AUT-UC19-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC19-FL03-S02","title":"A real clash stops the merge, naming the key and both versions","flow_id":"LA-AUT-UC19-FL03","path":"clash","position":1}
 {"id":"LA-AUT-UC20-FL03-S01","title":"They add each value format as a constraint of its value object","flow_id":"LA-AUT-UC20-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC20-FL03-S02","title":"They add each rule of one aggregate as its invariant, naming it on the unique key that enforces it","flow_id":"LA-AUT-UC20-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC20-FL03-S03","title":"They add each check across aggregates as a specification, linking what it reads and the commands that check it","flow_id":"LA-AUT-UC20-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC20-FL04-S01","title":"The Agent adds each value format as a constraint of its value object","flow_id":"LA-AUT-UC20-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC20-FL04-S02","title":"The Agent adds each rule of one aggregate as its invariant, naming it on the unique key that enforces it","flow_id":"LA-AUT-UC20-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC20-FL04-S03","title":"The Agent adds each check across aggregates as a specification, linking what it reads and the commands that check it","flow_id":"LA-AUT-UC20-FL04","path":"main","position":3}
 {"id":"LA-AUT-UC21-FL03-S01","title":"They add each read model with its fields, linking the aggregates it reads, and its queries","flow_id":"LA-AUT-UC21-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC21-FL03-S02","title":"They add domain services and the domain's terms","flow_id":"LA-AUT-UC21-FL03","path":"main","position":2}
+{"id":"LA-AUT-UC21-FL04-S01","title":"The Agent adds each read model with its fields, linking the aggregates it reads, and its queries","flow_id":"LA-AUT-UC21-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC21-FL04-S02","title":"The Agent adds domain services and the domain's terms","flow_id":"LA-AUT-UC21-FL04","path":"main","position":2}
 {"id":"LA-AUT-UC22-FL03-S01","title":"They add each business outcome under the product, with its statement, measure and target","flow_id":"LA-AUT-UC22-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC22-FL03-S02","title":"They link each capability to the outcomes it serves","flow_id":"LA-AUT-UC22-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC22-FL03-S03","title":"They link each outcome to the tests or records that measure it, or say how it is measured outside the code","flow_id":"LA-AUT-UC22-FL03","path":"main","position":3}
-{"id":"LA-CHK-UC01-FL03-S01","title":"The Agent runs lathe check, or the MCP check tool, on the product root","flow_id":"LA-CHK-UC01-FL03","path":"main","position":1}
+{"id":"LA-AUT-UC22-FL04-S01","title":"The Agent adds each business outcome under the product, with its statement, measure and target","flow_id":"LA-AUT-UC22-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC22-FL04-S02","title":"The Agent links each capability to the outcomes it serves","flow_id":"LA-AUT-UC22-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC22-FL04-S03","title":"The Agent links each outcome to the tests or records that measure it","flow_id":"LA-AUT-UC22-FL04","path":"main","position":3}
+{"id":"LA-CHK-UC01-FL03-S01","title":"The Agent runs lathe check on the product root","flow_id":"LA-CHK-UC01-FL03","path":"main","position":1}
 {"id":"LA-CHK-UC01-FL03-S02","title":"Data the store refuses becomes data-refused errors naming the file, the line and the rule, and nothing else is checked","flow_id":"LA-CHK-UC01-FL03","path":"refused","position":1}
 {"id":"LA-CHK-UC01-FL03-S03","title":"The command prints every error, then every warning, each naming its check and record, then one coverage line per domain and obligation kind","flow_id":"LA-CHK-UC01-FL03","path":"main","position":2}
 {"id":"LA-CHK-UC01-FL03-S04","title":"The command exits with status 1 when there is an error, 0 otherwise","flow_id":"LA-CHK-UC01-FL03","path":"main","position":3}
@@ -81,29 +137,46 @@
 {"id":"LA-CHK-UC01-FL03-S06","title":"The Agent fixes each error, runs the check again until there are none, and hands the work back to the Owner with the check's last lines","flow_id":"LA-CHK-UC01-FL03","path":"main","position":4}
 {"id":"LA-CHK-UC02-FL03-S01","title":"The Agent adds the check as one row through the command layer: a name, a position, a severity, a summary, an explanation and one SELECT","flow_id":"LA-CHK-UC02-FL03","path":"main","position":1}
 {"id":"LA-CHK-UC02-FL03-S02","title":"The next check runs every check row in order, the new one among them, each query reading the typed tables, views and file facts","flow_id":"LA-CHK-UC02-FL03","path":"main","position":2}
+{"id":"LA-CHK-UC02-FL04-S01","title":"The Agent adds the check as one row with add: a name, a position, a severity, a summary, an explanation and one SELECT","flow_id":"LA-CHK-UC02-FL04","path":"main","position":1}
+{"id":"LA-CHK-UC02-FL04-S02","title":"The check tool runs every check row in order, the new one among them, each query reading the typed tables, views and file facts","flow_id":"LA-CHK-UC02-FL04","path":"main","position":2}
 {"id":"LA-CHK-UC04-FL03-S01","title":"The Owner or an Agent runs lathe check on a product whose stages were written at different times","flow_id":"LA-CHK-UC04-FL03","path":"main","position":1}
 {"id":"LA-CHK-UC04-FL03-S02","title":"A row the schema refuses is refused once, naming its rule, file and line, and nothing that only follows from it is reported","flow_id":"LA-CHK-UC04-FL03","path":"refused","position":1}
 {"id":"LA-CHK-UC04-FL03-S03","title":"Each view, integration, value object, specification or UI component that nothing uses is an error","flow_id":"LA-CHK-UC04-FL03","path":"main","position":2}
 {"id":"LA-CHK-UC04-FL03-S04","title":"The shape warnings name a test at a level its kind does not allow and each event a policy hears not delivered by outbox; the recorded exceptions are listed apart; coverage names each use case with no flow","flow_id":"LA-CHK-UC04-FL03","path":"main","position":3}
 {"id":"LA-CHK-UC04-FL03-S05","title":"They fix each error and work through the warnings as the stages fill in","flow_id":"LA-CHK-UC04-FL03","path":"main","position":4}
 {"id":"LA-CHK-UC05-FL03-S01","title":"The Owner decides a rule belongs to their product, not to Lathe","flow_id":"LA-CHK-UC05-FL03","path":"main","position":1}
-{"id":"LA-CHK-UC05-FL03-S02","title":"They add it as a check row with the product's product_id, through lathe add check or the app","flow_id":"LA-CHK-UC05-FL03","path":"main","position":2}
+{"id":"LA-CHK-UC05-FL03-S02","title":"They add it as a check row with the product's product_id, through lathe add check","flow_id":"LA-CHK-UC05-FL03","path":"main","position":2}
 {"id":"LA-CHK-UC05-FL03-S03","title":"A check named like one of Lathe's is refused, naming lathe/data/check.jsonl","flow_id":"LA-CHK-UC05-FL03","path":"refused","position":1}
 {"id":"LA-CHK-UC05-FL03-S04","title":"They run lathe check: Lathe's checks run first, then the product's, whose problems carry its row's name and concern only its product's records","flow_id":"LA-CHK-UC05-FL03","path":"main","position":3}
 {"id":"LA-CHK-UC05-FL03-S05","title":"A product check whose query fails is an error naming the check, and the other checks still run","flow_id":"LA-CHK-UC05-FL03","path":"refused","position":2}
 {"id":"LA-CHK-UC05-FL03-S06","title":"A checks key in lathe.config.json is refused as an unknown setting","flow_id":"LA-CHK-UC05-FL03","path":"refused","position":3}
 {"id":"LA-CHK-UC05-FL03-S07","title":"They fix what the new check finds and run lathe check again until it is clean","flow_id":"LA-CHK-UC05-FL03","path":"main","position":4}
+{"id":"LA-CHK-UC05-FL04-S01","title":"The Owner decides a rule belongs to their product, not to Lathe","flow_id":"LA-CHK-UC05-FL04","path":"main","position":1}
+{"id":"LA-CHK-UC05-FL04-S02","title":"The Agent adds it as a check row with the product's product_id, with add","flow_id":"LA-CHK-UC05-FL04","path":"main","position":2}
+{"id":"LA-CHK-UC05-FL04-S03","title":"The check tool runs Lathe's checks first, then the product's, whose problems carry its row's name and concern only its product's records","flow_id":"LA-CHK-UC05-FL04","path":"main","position":3}
+{"id":"LA-CHK-UC05-FL04-S04","title":"The Agent fixes what the new check finds and calls the check tool again until it is clean","flow_id":"LA-CHK-UC05-FL04","path":"main","position":4}
+{"id":"LA-CHK-UC05-FL04-S05","title":"The store refuses a check named like one of Lathe's, naming lathe/data/check.jsonl","flow_id":"LA-CHK-UC05-FL04","path":"refused","position":1}
+{"id":"LA-CHK-UC05-FL04-S06","title":"The check tool reports a product check whose query fails as an error naming the check, and the other checks still run","flow_id":"LA-CHK-UC05-FL04","path":"refused","position":2}
+{"id":"LA-CHK-UC05-FL04-S07","title":"The check tool refuses a checks key in lathe.config.json as an unknown setting","flow_id":"LA-CHK-UC05-FL04","path":"refused","position":3}
 {"id":"LA-CHK-UC06-FL03-S01","title":"The Owner sets the product's children and entities limits, or leaves the defaults of 15 and 7","flow_id":"LA-CHK-UC06-FL03","path":"main","position":1}
 {"id":"LA-CHK-UC06-FL03-S02","title":"Lathe check warns of each record with more children of one kind than the limit, counting a flow's steps per path and requirements and rules per group, and of each aggregate with more entities than its limit","flow_id":"LA-CHK-UC06-FL03","path":"main","position":2}
 {"id":"LA-CHK-UC06-FL03-S03","title":"It warns of each capability or group with one child","flow_id":"LA-CHK-UC06-FL03","path":"main","position":3}
 {"id":"LA-CHK-UC06-FL03-S04","title":"The Owner or an Agent adds a level or merges one, and checks again","flow_id":"LA-CHK-UC06-FL03","path":"main","position":4}
+{"id":"LA-CHK-UC06-FL04-S01","title":"The Agent sets the product's children and entities limits with add, or leaves the defaults of 15 and 7","flow_id":"LA-CHK-UC06-FL04","path":"main","position":1}
+{"id":"LA-CHK-UC06-FL04-S02","title":"The check tool warns of each record with more children of one kind than the limit, counting a flow's steps per path and requirements and rules per group, and of each aggregate with more entities than its limit","flow_id":"LA-CHK-UC06-FL04","path":"main","position":2}
+{"id":"LA-CHK-UC06-FL04-S03","title":"The check tool warns of each capability or group with one child","flow_id":"LA-CHK-UC06-FL04","path":"main","position":3}
+{"id":"LA-CHK-UC06-FL04-S04","title":"The Agent adds a level or merges one, and calls the check tool again","flow_id":"LA-CHK-UC06-FL04","path":"main","position":4}
 {"id":"LA-CHK-UC07-FL01-S01","title":"While an Agent writes records, the Owner keeps the product's Checks page open: its problems, errors first, grouped by check, and the workspace's below","flow_id":"LA-CHK-UC07-FL01","path":"main","position":1}
 {"id":"LA-CHK-UC07-FL01-S02","title":"Each time a data file changes, the page reloads and shows the problems as they are now","flow_id":"LA-CHK-UC07-FL01","path":"main","position":2}
 {"id":"LA-CHK-UC07-FL01-S03","title":"They open a problem's record to see it and its problems, and go back","flow_id":"LA-CHK-UC07-FL01","path":"main","position":3}
 {"id":"LA-CHK-UC07-FL01-S04","title":"They follow a check's code to the check's page in the reference","flow_id":"LA-CHK-UC07-FL01","path":"main","position":4}
-{"id":"LA-CHK-UC07-FL01-S05","title":"With the desktop app, the Dock badge shows the error count of the product in front","flow_id":"LA-CHK-UC07-FL01","path":"main","position":5}
+{"id":"LA-CHK-UC07-FL02-S01","title":"The Owner keeps the product's Checks page open in the desktop app while an Agent writes records: its problems, errors first, grouped by check, and the workspace's below","flow_id":"LA-CHK-UC07-FL02","path":"main","position":1}
+{"id":"LA-CHK-UC07-FL02-S02","title":"The page reloads each time a data file changes and shows the problems as they are now","flow_id":"LA-CHK-UC07-FL02","path":"main","position":2}
+{"id":"LA-CHK-UC07-FL02-S03","title":"The Owner opens a problem's record to see it and its problems, and goes back","flow_id":"LA-CHK-UC07-FL02","path":"main","position":3}
+{"id":"LA-CHK-UC07-FL02-S04","title":"The Owner follows a check's code to the check's page in the reference","flow_id":"LA-CHK-UC07-FL02","path":"main","position":4}
+{"id":"LA-CHK-UC07-FL02-S05","title":"The Dock badge shows the error count of the product in front","flow_id":"LA-CHK-UC07-FL02","path":"main","position":5}
 {"id":"LA-CHK-UC08-FL04-S01","title":"Claude Code loads Lathe's plugin, which declares the guard hook on Write, Edit, MultiEdit and NotebookEdit","flow_id":"LA-CHK-UC08-FL04","path":"main","position":1}
-{"id":"LA-CHK-UC08-FL04-S02","title":"The Agent changes records through the MCP tools or the lathe command, which validates each write in one transaction","flow_id":"LA-CHK-UC08-FL04","path":"main","position":2}
+{"id":"LA-CHK-UC08-FL04-S02","title":"The Agent changes records through the MCP tools, which validate each write in one transaction","flow_id":"LA-CHK-UC08-FL04","path":"main","position":2}
 {"id":"LA-CHK-UC08-FL04-S03","title":"A hand edit of a data file is refused before it happens, pointing at the tools","flow_id":"LA-CHK-UC08-FL04","path":"refused","position":1}
 {"id":"LA-CHK-UC08-FL04-S04","title":"Every other edit goes through silently","flow_id":"LA-CHK-UC08-FL04","path":"main","position":3}
 {"id":"LA-EXP-UC01-FL01-S01","title":"The reader sees the current space's domains in the nav","flow_id":"LA-EXP-UC01-FL01","path":"main","position":1}
