@@ -35,7 +35,7 @@ function bigWorkspace(): SpecData {
     addRows(ws, 'uc_requirement', { id: `BG-D01-UC01-R${pad(u)}`, title: `Requirement ${u}`, use_case_id: 'BG-D01-UC01', statement: `Requirement ${u} MUST hold.` });
   }
   ws.problems.push(...Array.from({ length: 12 }, (_, i) => ({ severity: 'warning' as const, check: 'not-proved', record: `BG-D01-UC01-R${pad(i + 1)}`, message: `No test proves UC requirement BG-D01-UC01-R${pad(i + 1)}.` })));
-  ws.coverage.push(...Array.from({ length: 12 }, (_, d): Coverage => ({ product: 'BG', domain: `BG-D${pad(d + 1)}`, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, gaps: [] })));
+  ws.coverage.push(...Array.from({ length: 12 }, (_, d): Coverage => ({ product: 'BG', domain: `BG-D${pad(d + 1)}`, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: {}, pattern_rules: {}, gaps: [] })));
   ws.coverage.find((c) => c.domain === 'BG-D01')!.gaps = Array.from({ length: 12 }, (_, i) => gap(`BG-D01-UC01-R${pad(i + 1)}`, 'uc_requirement', 'proved'));
   return ws;
 }

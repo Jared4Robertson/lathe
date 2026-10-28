@@ -1,7 +1,6 @@
-import { textOf, byIdOrder, type SpecIndex, type SpecLink, type SpecRecord } from './data';
+import { textOf, byIdOrder, provedByOf, type SpecIndex, type SpecLink, type SpecRecord } from './data';
 import { linkLabel } from './labels';
 import { isTestKind } from './parts';
-import { patternsFollowedBy, ruleStatus } from './patterns';
 
 // What a record's Traceability section shows (LA-TRC-UC14), on the new model's tree: an obligation
 // (a constraint, invariant, specification, policy, domain service, UC requirement, view or API
@@ -9,8 +8,9 @@ import { patternsFollowedBy, ruleStatus } from './patterns';
 // specifies its implementation, built when that names a file that exists, and proved by its tests,
 // which sit under it. Its other links follow, titled by their labels. A use case lists its UC
 // requirements, each judged; a test shows what it proves (its parent) and how it is run. Coverage's
-// gaps, where the engine reports them, decide designed and proved, so this section never disagrees
-// with the coverage marks or the checks. Pure logic, tested directly; Traceability.tsx draws it.
+// gaps, where the engine reports them, decide designed and built, and its proved_by decides proved and
+// names the proof, so this section never disagrees with the coverage marks or the checks. Pure logic,
+// tested directly; Traceability.tsx draws it.
 
 export type TraceRole = 'design' | 'proof' | 'plain';
 
@@ -39,6 +39,7 @@ export interface Judgment {
   needsDesign: boolean;
   designedBy: string[];
   builtBy: string[];
+  /** The tests that count as its proof there, as the engine's coverage says. */
   provedBy: string[];
   /** Its tests not automated yet: they do not count as proof. */
   notAutomatedBy: string[];
@@ -96,28 +97,25 @@ export function buildersOf(index: SpecIndex, record: SpecRecord, designers: read
   return sortIds(technical.filter((id) => isBuilt(index, id)));
 }
 
-/** The tests of an obligation (its children of the test plan), split into proof and those not automated yet; for a pattern rule, those in one domain. */
-export function testsOf(index: SpecIndex, record: SpecRecord, domain?: string): { proved: string[]; notAutomated: string[] } {
-  const tests = childrenInStage(index, record.id, 'test-plan').filter((t) => !domain || record.kind !== 'pattern_rule' || textOf(t.row, 'domain_id') === domain);
-  const notAutomated = tests.filter((t) => textOf(t.row, 'state') === 'not automated yet');
-  return { proved: sortIds(tests.filter((t) => !notAutomated.includes(t)).map((t) => t.id)), notAutomated: sortIds(notAutomated.map((t) => t.id)) };
-}
+/** The tests of an obligation (its children of the test plan); for a pattern rule with a domain given, those naming that domain. */
+const testsOf = (index: SpecIndex, record: SpecRecord, domain?: string) =>
+  childrenInStage(index, record.id, 'test-plan').filter((t) => !domain || record.kind !== 'pattern_rule' || textOf(t.row, 'domain_id') === domain);
+
+/** An obligation's tests not automated yet (in one domain, for a pattern rule): meant as proof, not proof yet. */
+export const notAutomatedTestsOf = (index: SpecIndex, record: SpecRecord, domain?: string): string[] =>
+  sortIds(testsOf(index, record, domain).filter((t) => textOf(t.row, 'state') === 'not automated yet').map((t) => t.id));
 
 /**
  * Where an obligation is owed: its own domain (for one under a record with no owner, the one domain using it); for
- * what the product shares (a standard rule, a view requirement of a view two domains use) its product; for a pattern rule each domain following its pattern where it applies.
+ * what the product shares (a standard rule, a view requirement of a view two domains use) its product; for a pattern
+ * rule each domain where the engine's coverage says it is owed (Coverage.pattern_rules).
  */
 export function owingDomains(index: SpecIndex, record: SpecRecord): string[] {
   if (record.domain) return [record.domain];
   if (record.kind !== 'pattern_rule') return record.product ? [record.product] : [];
-  if (!record.parent) return [];
-  const domains = index.workspace.records.filter((d) => d.kind === 'domain' && d.product === record.product);
-  return domains
-    .filter((d) => {
-      const followed = patternsFollowedBy(index, d.id).find((f) => f.pattern.id === record.parent);
-      return followed && ruleStatus(index, record, d.id, followed).applies;
-    })
-    .map((d) => d.id)
+  return index.workspace.coverage
+    .filter((c) => c.domain !== null && c.product === record.product && c.pattern_rules[record.id] === 'owed')
+    .map((c) => c.domain as string)
     .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
 }
 
@@ -126,12 +124,13 @@ export function judge(index: SpecIndex, record: SpecRecord, domain: string): Jud
   const needsDesign = record.kind !== 'pattern_rule';
   const designedBy = needsDesign ? designersOf(index, record) : [];
   const builtBy = buildersOf(index, record, designedBy);
-  const { proved: provedBy, notAutomated: notAutomatedBy } = testsOf(index, record, domain);
+  const provedBy = provedByOf(index, record.id, domain);
+  const notAutomatedBy = notAutomatedTestsOf(index, record, domain);
   const coverage = index.coverage.get(domain);
   const missing = new Set((coverage?.gaps ?? []).filter((g) => g.id === record.id).map((g) => g.missing));
   const designed = coverage ? !missing.has('designed') : designedBy.length > 0;
   const built = coverage ? !missing.has('built') : builtBy.length > 0;
-  const proved = coverage ? !missing.has('proved') : provedBy.length > 0;
+  const proved = provedBy.length > 0;
   const gaps: TraceGap[] = [];
   if (needsDesign && !designed) gaps.push({ kind: 'not-designed', check: 'not-designed' });
   if (needsDesign && designed && !built) gaps.push({ kind: 'not-built', check: 'not-built' });
@@ -185,12 +184,12 @@ export function traceOf(index: SpecIndex, record: SpecRecord, skip: ReadonlySet<
     trace.judgments = owingDomains(index, record).map((d) => judge(index, record, d));
     // A record's own domain (or the product, for a standard rule): Designed by and Proved by as groups, then the rest.
     const designers = record.kind === 'pattern_rule' ? [] : designersOf(index, record);
-    const { proved, notAutomated } = testsOf(index, record);
+    const tests = testsOf(index, record).map((t) => t.id);
     const own = new Set(['fulfills', 'meets']);
     trace.groups = [
       // A standard rule is met, in its relation's own words, by what follows it.
       ...(designers.length > 0 ? [{ key: 'design', label: record.kind === 'standard_rule' ? 'Met by' : 'Designed by', role: 'design' as TraceRole, ids: designers }] : []),
-      ...(proved.length + notAutomated.length > 0 ? [{ key: 'proof', label: 'Proved by', role: 'proof' as TraceRole, ids: sortIds([...proved, ...notAutomated]) }] : []),
+      ...(tests.length > 0 ? [{ key: 'proof', label: 'Proved by', role: 'proof' as TraceRole, ids: sortIds(tests) }] : []),
       ...grouped(index, into.filter((l) => !own.has(l.relation)), 'target'),
       ...grouped(index, out, 'source'),
     ];

@@ -15,7 +15,7 @@
 {"id":"LA-EXP-SP05-PR","title":"the Links hop of neighborhood","specification_id":"LA-EXP-SP05","file":"app/src/graph/model.ts","description":"the Links hop of neighborhood"}
 {"id":"LA-PLT-SP01-PR","title":"checkFolder","specification_id":"LA-PLT-SP01","file":"desktop/src/folders.ts","description":"checkFolder"}
 {"id":"LA-PLT-SP02-PR","title":"chooseDevSource","specification_id":"LA-PLT-SP02","file":"desktop/src/devSource.ts","description":"chooseDevSource, ROOT_HEADER; also freePort, which keeps INV06"}
-{"id":"LA-TRC-SP01-PR","title":"the followers step of owed_pattern_rules","specification_id":"LA-TRC-SP01","file":"lathe/src/coverage.ts","description":"the followers step of owed_pattern_rules (a domain itself, or its use cases)"}
-{"id":"LA-TRC-SP02-PR","title":"owed_pattern_rules' not-applicable step","specification_id":"LA-TRC-SP02","file":"lathe/src/coverage.ts","description":"owed_pattern_rules' not-applicable step"}
-{"id":"LA-TRC-SP03-PR","title":"owed_pattern_rules' applies-when step","specification_id":"LA-TRC-SP03","file":"lathe/src/coverage.ts","description":"owed_pattern_rules' applies-when step"}
-{"id":"LA-TRC-SP04-PR","title":"owed_pattern_rules","specification_id":"LA-TRC-SP04","file":"lathe/src/coverage.ts","description":"owed_pattern_rules"}
+{"id":"LA-TRC-SP01-PR","title":"the followers step of pattern_rule_standing","specification_id":"LA-TRC-SP01","file":"lathe/src/coverage.ts","description":"the followers step of pattern_rule_standing (a domain itself, or its use cases)"}
+{"id":"LA-TRC-SP02-PR","title":"pattern_rule_standing's not-applicable step","specification_id":"LA-TRC-SP02","file":"lathe/src/coverage.ts","description":"pattern_rule_standing's not-applicable step"}
+{"id":"LA-TRC-SP03-PR","title":"pattern_rule_standing's applies-when step","specification_id":"LA-TRC-SP03","file":"lathe/src/coverage.ts","description":"pattern_rule_standing's applies-when step"}
+{"id":"LA-TRC-SP04-PR","title":"pattern_rule_standing","specification_id":"LA-TRC-SP04","file":"lathe/src/coverage.ts","description":"pattern_rule_standing, and owed_pattern_rules over it"}
