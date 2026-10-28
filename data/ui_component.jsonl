@@ -9,7 +9,7 @@
 {"id":"LA-UI105","title":"Graph motion","file":"app/src/graph/motion.ts"}
 {"id":"LA-UI106","title":"Tab strip","file":"app/src/views/TabStrip.tsx","description":"The page's tabs, at the left of the page bar."}
 {"id":"LA-UI107","title":"ERD layout","file":"app/src/erd/layout.ts"}
-{"id":"LA-UI108","title":"ERD stage","file":"app/src/erd/ErdView.tsx","description":"The ERD stage: the diagram fitted in the open space, with its key floating at its foot."}
+{"id":"LA-UI108","title":"ERD stage","file":"app/src/erd/ErdView.tsx","description":"The ERD stage: the product's, the domain's or the aggregate's diagram fitted in the open space, the focus's nearest box highlighted, with its key floating at its foot."}
 {"id":"LA-UI109","title":"Tap to open","file":"app/src/graph/touch.tsx"}
 {"id":"LA-UI110","title":"Edge hints","file":"app/src/graph/hints.tsx"}
 {"id":"LA-UI111","title":"Domain events section","file":"app/src/specs/DomainEvents.tsx"}
@@ -34,12 +34,12 @@
 {"id":"LA-UI132","title":"Record text","file":"app/src/specs/RecordText.tsx","description":"A record's own text: its fields, parts and settings, by kind."}
 {"id":"LA-UI133","title":"Focus fade","file":"app/src/graph/fade.ts","description":"How strongly the graph draws each box for its focus: the focus's subtree at full strength, the trail and the rest faded."}
 {"id":"LA-UI134","title":"Flows by interface sections","file":"app/src/specs/InterfaceParts.tsx"}
-{"id":"LA-UI135","title":"Trace stage","file":"app/src/trace/TraceView.tsx","description":"The Trace stage: an obligation's chain, or the matrix of those under the focus, padded into the open space."}
+{"id":"LA-UI135","title":"Trace stage","file":"app/src/trace/TraceView.tsx","description":"The Trace stage: an obligation's chain, the matrix of those under the focus, or the rows that hold the focus or the matrix around it, padded into the open space."}
 {"id":"LA-UI136","title":"Card","file":"app/src/shell/Card.tsx","description":"The one card: a title that is its link or button, stretched over the whole card, and what else the card holds; and the grid that lists cards."}
-{"id":"LA-UI140","title":"Wiki card","file":"app/src/views/WikiCard.tsx","description":"The focus's wiki page, floating over the left of the open space: its breadcrumb, title and content, its collapse button and resize handle."}
 {"id":"LA-UI137","title":"Header strip","file":"app/src/views/HeaderStrip.tsx","description":"The one line under the active tab: the focus's breadcrumb, kind, ID and title, and what the stage draws of it."}
 {"id":"LA-UI138","title":"Breadcrumb","file":"app/src/components/Breadcrumb.tsx","description":"The one trail of places above a page, collapsed past three places with a menu of the hidden levels."}
 {"id":"LA-UI139","title":"Open space","file":"app/src/views/openSpace.ts","description":"The stage's measure of what the floating panels leave of it, as CSS variables and a store the stages frame their focus in."}
+{"id":"LA-UI140","title":"Wiki card","file":"app/src/views/WikiCard.tsx","description":"The focus's wiki page, floating over the left of the open space: its breadcrumb, title and content, its collapse button and resize handle."}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
 {"id":"LA-UI53","title":"Traceability and its gap callouts","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by"}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
