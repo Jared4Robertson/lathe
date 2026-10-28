@@ -4,7 +4,7 @@ import { existsSync, readdirSync, statSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_TESTS_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS } from './coverage.ts';
+import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS } from './coverage.ts';
 import { loadConfig } from './config.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
@@ -180,15 +180,16 @@ type Scoped<T> = T & { product: string; domain: string | null };
 // Coverage per domain, and per product outside every domain: one entry per obligation kind in kind order, the tests
 // by state, and the gaps.
 async function computeCoverage(store: Store): Promise<Coverage[]> {
-  // The three queries only read, so they run side by side, each on its own connection.
+  // The four queries only read, so they run side by side, each on its own connection.
   const on = async <T,>(sql: string) => {
     const c = await store.connect();
     try { return await readRows<T>(c, sql); } finally { c.closeSync(); }
   };
-  const [counts, gaps, tests] = await Promise.all([
+  const [counts, gaps, tests, proofs] = await Promise.all([
     on<Scoped<ObligationCoverage>>(COVERAGE_COUNTS_SQL),
     on<Scoped<CoverageGap>>(COVERAGE_GAPS_SQL),
     on<Scoped<TestCounts>>(COVERAGE_TESTS_SQL),
+    on<Scoped<{ id: string; test_id: string }>>(COVERAGE_PROOFS_SQL),
   ]);
   const key = (r: { product: string; domain: string | null }) => `${r.product}\u0000${r.domain ?? ''}`;
   const group = <T extends { product: string; domain: string | null }>(rows: T[]) => {
@@ -198,11 +199,19 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
   };
   const countsBy = group(counts);
   const gapsBy = group(gaps);
+  const proofsBy = group(proofs);
+  const provedBy = (scope: { product: string; domain: string | null }) => {
+    const by: Record<string, string[]> = {};
+    for (const p of proofsBy.get(key(scope)) ?? []) (by[p.id] ??= []).push(p.test_id);
+    for (const ids of Object.values(by)) ids.sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+    return by;
+  };
   return tests.map((t) => ({
     product: t.product,
     domain: t.domain,
     obligations: (countsBy.get(key(t)) ?? []).map(({ kind, label, total, designed, built, proved, not_automated, proof_only }) => ({ kind, label, total, designed, built, proved, not_automated, proof_only })),
     tests: { automated: t.automated, manual: t.manual, not_automated: t.not_automated },
+    proved_by: provedBy(t),
     gaps: (gapsBy.get(key(t)) ?? []).map(({ id, kind, missing, message }) => ({ id, kind, missing, message })),
   }));
 }

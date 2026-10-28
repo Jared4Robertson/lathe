@@ -272,6 +272,12 @@ export function gapsOf(index: SpecIndex, id: string): string[] {
   return (index.coverage.get(scope)?.gaps ?? []).filter((g) => g.id === id).map((g) => g.missing);
 }
 
+/**
+ * The tests that count as an obligation's proof where it is owed (a domain, or a product outside every domain), as the
+ * engine's coverage says (Coverage.proved_by); empty when it is not proved there. The app never works proof out itself.
+ */
+export const provedByOf = (index: SpecIndex, id: string, scope: string): string[] => index.coverage.get(scope)?.proved_by[id] ?? [];
+
 /** A record's rows of one part table (an entity's fields, a table's keys), in key order. */
 export const partsOf = (index: SpecIndex, id: string, table: string): Row[] => index.parts.get(id)?.get(table) ?? [];
 

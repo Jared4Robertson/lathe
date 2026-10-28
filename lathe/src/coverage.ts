@@ -200,8 +200,11 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
  * - obligation_impl (obligation_id, impl_id): the technical records that implement each obligation.
  * - obligation_proof (obligation_id, test_id, domain_id, state, counts): the tests of each obligation; counts when it
  *   is automated or manual, at an allowed level and backed.
- * - coverage_item (product, domain, id, kind, proof_only, designed, built, proved, not_automated): each obligation a
- *   domain, or the product outside every domain, owes.
+ * - coverage_owed (product, domain, id, kind): each obligation a domain, or the product outside every domain, owes.
+ * - coverage_proof (product, domain, id, test_id): the tests that count as an owed obligation's proof where it is owed
+ *   (a pattern rule's naming the owing domain); the one answer to "proved", which coverage_item and the app read.
+ * - coverage_item (product, domain, id, kind, proof_only, designed, built, proved, not_automated): each owed
+ *   obligation, judged.
  * - coverage_scope (product, domain): each domain, and each product's place outside every domain (domain null).
  * - coverage_count, coverage_tests and coverage_gap: the counts per scope and obligation kind, the tests by state,
  *   and every gap: obligations not designed, built or proved, and records short of a minimum.
@@ -291,12 +294,17 @@ WITH proofs AS (
 )
 SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;
 
+CREATE OR REPLACE VIEW coverage_owed AS
+SELECT s.product_id AS product, s.domain_id AS domain, o.id, o.kind FROM obligation o JOIN record_scope s ON s.id = o.id WHERE o.kind <> 'pattern_rule'
+UNION ALL
+SELECT s.product_id, p.domain, p.id, 'pattern_rule' FROM owed_pattern_rules p JOIN record_scope s ON s.id = p.domain;
+
+-- The tests that count as each owed obligation's proof where it is owed: a pattern rule's only in the owing domain.
+CREATE OR REPLACE TABLE coverage_proof AS
+SELECT o.product, o.domain, o.id, p.test_id
+FROM coverage_owed o JOIN obligation_proof p ON p.obligation_id = o.id AND p.counts AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain);
+
 CREATE OR REPLACE TABLE coverage_item AS
-WITH owed AS (
-  SELECT s.product_id AS product, s.domain_id AS domain, o.id, o.kind FROM obligation o JOIN record_scope s ON s.id = o.id WHERE o.kind <> 'pattern_rule'
-  UNION ALL
-  SELECT s.product_id, p.domain, p.id, 'pattern_rule' FROM owed_pattern_rules p JOIN record_scope s ON s.id = p.domain
-)
 SELECT o.product, o.domain, o.id, o.kind,
   o.kind IN (${list(PROOF_ONLY)}) AS proof_only,
   o.kind IN (${list(DESIGNED_BY_CONSTRUCTION)})
@@ -304,9 +312,9 @@ SELECT o.product, o.domain, o.id, o.kind,
     OR (o.kind NOT IN (${list([...DESIGNED_BY_CONSTRUCTION, 'uc_requirement'])}) AND EXISTS (SELECT 1 FROM obligation_impl i WHERE i.obligation_id = o.id)) AS designed,
   o.kind IN (${list(PROOF_ONLY)})
     OR EXISTS (SELECT 1 FROM obligation_impl i JOIN file_facts f ON f.record = i.impl_id AND f.file_exists WHERE i.obligation_id = o.id) AS built,
-  EXISTS (SELECT 1 FROM obligation_proof p WHERE p.obligation_id = o.id AND p.counts AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain)) AS proved,
+  EXISTS (SELECT 1 FROM coverage_proof p WHERE p.id = o.id AND p.domain IS NOT DISTINCT FROM o.domain) AS proved,
   EXISTS (SELECT 1 FROM obligation_proof p WHERE p.obligation_id = o.id AND p.state = 'not automated yet' AND (o.kind <> 'pattern_rule' OR p.domain_id = o.domain)) AS has_not_automated
-FROM owed o;
+FROM coverage_owed o;
 
 CREATE OR REPLACE VIEW coverage_scope AS
 SELECT product_id AS product, id AS domain FROM domain
@@ -368,3 +376,6 @@ export const COVERAGE_GAPS_SQL = `SELECT product, domain, id, kind, missing, mes
 
 /** One row per scope: its tests by state. */
 export const COVERAGE_TESTS_SQL = `SELECT product, domain, automated, manual, not_automated FROM coverage_tests ORDER BY product, domain NULLS LAST`;
+
+/** One row per test that counts as an owed obligation's proof: (product, domain, id, test_id). */
+export const COVERAGE_PROOFS_SQL = `SELECT product, domain, id, test_id FROM coverage_proof ORDER BY product, domain NULLS LAST, id, test_id`;

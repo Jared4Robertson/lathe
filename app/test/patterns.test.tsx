@@ -1,11 +1,15 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { loadWorkspace } from '../../lathe/src/index';
 import type { SpecData } from '../../lathe/src/server/contract';
 import { textOf } from '../src/specs/data';
 import { followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, settingValue, settingsOf } from '../src/specs/patterns';
 import { patternWorkspace } from './fixtures/patterns';
 import { openApp, section } from './helpers';
-import { addRows, indexOf, removeRows } from './fixtures/load';
+import { addRows, fixture, indexOf, removeRows } from './fixtures/load';
 
 // Patterns in the app: the domain page's "Patterns we follow", a pattern's page and a pattern
 // rule's page, from a workspace where two domains follow one pattern: DM-SHOP itself and through
@@ -124,6 +128,42 @@ describe('Patterns we follow, on the domain page', () => {
     await openApp('/DM-PAY', { data: ws });
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     expect(rowOf(section(/^Patterns we follow/), 'DM-PAT-AUDIT')).toHaveTextContent('followed by the whole domain');
+  });
+
+  it('LA-V91-R54-T06 A rule whose pattern rule test names a file that does not exist is not proved, as coverage says', async () => {
+    // The patterns fixture through the real engine, in a product folder with no code files: DM-PAT-AUDIT-R01-T01 is
+    // automated and run by test/audit.test.ts, which does not exist there, so it proves nothing.
+    const root = await mkdtemp(path.join(tmpdir(), 'lathe-patterns-'));
+    const served = async (): Promise<SpecData> => {
+      const ws = await loadWorkspace(root, { dataDir: path.join(import.meta.dirname, 'fixtures/data/patterns'), latheDataDir: null });
+      return fixture('patterns', { problems: ws.problems, exceptions: ws.exceptions, coverage: ws.coverage });
+    };
+    const rule = async (data: SpecData) => {
+      await openApp('/DM-SHOP', { data });
+      await screen.findByRole('heading', { level: 1, name: 'Shopping' });
+      const patterns = section(/^Patterns we follow/);
+      // The tree keeps the pattern open from the first look.
+      const expand = within(patterns).queryByRole('button', { name: 'Expand DM-SHOP:DM-PAT-AUDIT' });
+      if (expand) fireEvent.click(expand);
+      return within(rowOf(patterns, 'DM-PAT-AUDIT-R01')).getByText(/proved$/);
+    };
+    try {
+      const missing = await served();
+      const shop = missing.coverage.find((c) => c.domain === 'DM-SHOP')!;
+      expect(shop.proved_by['DM-PAT-AUDIT-R01']).toBeUndefined();
+      expect(shop.gaps).toContainEqual(expect.objectContaining({ id: 'DM-PAT-AUDIT-R01', missing: 'proved' }));
+      expect(await rule(missing)).toHaveTextContent('not proved');
+      expect(within(section(/^Coverage/).querySelector('[data-kind="pattern_rule"]') as HTMLElement).getByRole('img', { name: /^proved: 0 of / })).toBeInTheDocument();
+
+      // Once the file exists and names the test, coverage and the list both say proved.
+      await mkdir(path.join(root, 'test'));
+      await writeFile(path.join(root, 'test/audit.test.ts'), "it('DM-PAT-AUDIT-R01-T01 Adding an item is recorded', () => {});\n");
+      const backed = await served();
+      expect(backed.coverage.find((c) => c.domain === 'DM-SHOP')!.proved_by['DM-PAT-AUDIT-R01']).toEqual(['DM-PAT-AUDIT-R01-T01']);
+      expect(await rule(backed)).toHaveTextContent(/^proved$/);
+    } finally {
+      await rm(root, { recursive: true, force: true });
+    }
   });
 
   it('LA-V91-R54-T04 A domain that follows no pattern says so', async () => {
