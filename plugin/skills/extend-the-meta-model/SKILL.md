@@ -81,11 +81,18 @@ link { "source": "TL-LEND-ENTRY01", "relation": "starts_up", "target": "TL-LEND-
 
 Give every kind, field and relation a plain `description`; the app shows it.
 
+## Naming a product kind's records
+
+A product kind's records follow the same title convention as Lathe's: sentence case, no trailing period, unique within the kind and product (the store refuses a duplicate or a trailing period). Name them as the family they belong to, and say which in the kind's `description`:
+
+- Code-bound kinds (an entry point, tooling, a shared module, an API client, an IPC channel, a plugin hook): the identifier or file name exactly as in code, with no spaces, such as `server.ts`; the store refuses whitespace. A CLI command is its invocation (lathe add); a check row the kebab-case name of the mistake (event-tense).
+- Other kinds: a singular noun phrase for a thing (Persona, Report), an imperative verb and its object for a goal (Send a reminder), a sentence that is true for a rule.
+
 ## A product's own checks
 
 A house rule the schema cannot express, such as "every command has an endpoint", is a product check, not a new kind. A check is a `check` row with the product's `product_id`:
 
-- `name`: lower case with hyphens. Do not reuse one of Lathe's check names (`list` the `check` table to see them).
+- `name`: the mistake it finds, in kebab case (lower case with hyphens), such as `event-tense`. Do not reuse one of Lathe's check names (`list` the `check` table to see them).
 - `position`: its place in the run order; the product's checks run after Lathe's.
 - `severity`: `warning` for work still to do, `error` only for a broken workspace, as Lathe does, or `error_or_warning` when its rows say which.
 - `summary`: what it reports, in one sentence; `explanation`: why it matters, ending with how to fix what it reports. `REFERENCE.md` and the app show both.

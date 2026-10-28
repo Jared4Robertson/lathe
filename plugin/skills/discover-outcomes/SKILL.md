@@ -18,13 +18,15 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 | Column | What to write |
 | --- | --- |
-| `title` | The outcome in a few words: More tools in use. |
+| `title` | The state wanted, as a noun phrase of 1 to 4 words: More tools in use. Not a task (Increase borrowing) or a feature (Online borrowing). |
 | `product_id` | The product. An outcome sits under its product, never a domain: one outcome is usually served by capabilities of several domains. |
 | `statement` | The outcome in one sentence, as a change in the world the product brings about, stated so it can be measured: "Members borrow the library's tools more often." Not a feature ("Members can borrow tools"), and not a task. |
 | `measure` | What is counted to know whether it is reached, and how: "Loans opened per catalog tool per month." A measure someone can actually count, from the product's own data or its runs. |
 | `target` | The value of the measure that counts as reached, and by when: "Two per tool per month within a year of opening." |
 | `measured_outside` | Only for an outcome nothing in the code can measure (adoption by other repos, sales): who counts what, and from where. Leave it out when a test or record can measure it. |
 | `notes` | Anything longer, such as where the measure's numbers come from. |
+
+Every title, here and in every kind, is in sentence case with no trailing period, and unique within its kind and product: the store refuses a duplicate or a trailing period. The product's own title is its proper name, such as Tool Library. Each skill names its own kinds.
 
 Write a handful, not dozens: three to six outcomes cover most products. Two outcomes with the same measure are one outcome. An outcome that no capability could move is a wish; leave it out or say what would serve it.
 
