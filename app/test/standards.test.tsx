@@ -1,6 +1,6 @@
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { openApp, openSideBar } from './helpers';
 import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
@@ -136,7 +136,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   });
 
   it.each(['LA-PAT-APP-CODE-R06-T01', 'LA-PAT-APP-CODE-R06-T02'])('%s Every button and link on the main pages has an accessible name', async () => {
-    for (const path of ['/', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph']) {
+    for (const path of ['/', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?stage=graph']) {
       await openApp(path);
       // The role queries compute each control's accessible name; keep the ones whose name is empty.
       const controls = ['button', 'link', 'textbox', 'searchbox', 'combobox', 'checkbox', 'radio'].flatMap((role) => screen.queryAllByRole(role));
@@ -165,18 +165,25 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     for (const token of ['--hover-bg', '--hover-ring', '--hover-speed']) expect(CSS).toContain(`${token}:`);
   });
 
-  it.each(['LA-PAT-APP-UX-R02-T01', 'LA-PAT-APP-UX-R02-T02'])('%s The workbench: panels sit on the shell a gap apart, and every gap between two panels is the one ResizeHandle', async () => {
-    for (const token of ['--shell:', '--panel-gap:', '--panel-radius:']) expect(CSS).toContain(token);
+  it.each(['LA-PAT-APP-UX-R02-T01', 'LA-PAT-APP-UX-R02-T02'])('%s The stage behind, the panels floating over it, inset and frosted, every panel edge the one ResizeHandle', async () => {
+    for (const token of ['--shell:', '--float-inset:', '--panel-radius:', '--float-dense:', '--float-light:', '--float-shadow:']) expect(CSS).toContain(token);
     // One implementation: no other component draws a separator of its own.
     const separators = filesUnder(SRC, /\.tsx$/).filter((f) => !f.endsWith('ResizeHandle.tsx')).flatMap((f) => where(f, readFileSync(f, 'utf8'), /role="separator"/));
     expect(separators).toEqual([]);
-    // On a record with the wiki and graph open and the side bar shown: nav, wiki, graph and sideBar, each gap a handle.
-    await openApp('/DM-SHOP-UC01?view=wiki,graph');
+    // On a record with the side bar shown: the nav, the wiki card and the side bar each have a handle at their edge.
+    await openApp('/DM-SHOP-UC01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     // A focusable separator (one with a value) is a splitter; a plain divider line such as the rail's is not.
     const handles = screen.getAllByRole('separator').filter((h) => h.hasAttribute('aria-valuenow')).map((h) => [h.getAttribute('aria-label'), h.classList.contains('resize-handle')]);
-    expect(handles).toEqual([['Resize the navigation', true], ['Resize the wiki and graph panes', true], ['Resize the side bar', true]]);
-    for (const panel of [document.querySelector('#nav'), ...document.querySelectorAll('.pane'), document.querySelector('.side-bar-column')]) expect(panel).toHaveClass('panel');
+    expect(handles).toEqual([['Resize the navigation', true], ['Resize the wiki card', true], ['Resize the side bar', true]]);
+    // The stage fills the window behind; every panel floats over it, naming the side it sits on.
+    const stage = screen.getByRole('region', { name: 'Graph stage' });
+    expect(stage).toHaveClass('focus-stage');
+    expect(stage.closest('[data-floating]')).toBeNull();
+    for (const [panel, side] of [[document.querySelector('#nav'), 'left'], [document.querySelector('.wiki-panel'), 'left'], [document.querySelector('.page-bar'), 'top'], [document.querySelector('.header-strip'), 'top'], [document.querySelector('.side-bar-column'), 'right']] as const) {
+      expect(panel).toHaveAttribute('data-floating', side);
+    }
+    expect(CSS).toMatch(/\.focus-stage \{ position: absolute; inset: 0; z-index: 0;/);
   });
 
   it.each(['LA-PAT-APP-CODE-R10-T01', 'LA-PAT-APP-CODE-R10-T02'])('%s Every grid says its columns, a single column being minmax(0, 1fr), so content shrinks with its panel', () => {
@@ -186,19 +193,17 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(unsized).toEqual([]);
   });
 
-  it.each(['LA-PAT-APP-UX-R03-T01', 'LA-PAT-APP-UX-R03-T02'])('%s The page bar holds the page\'s tabs and layout controls; each pane\'s header holds only that pane\'s actions, on wide and narrow screens alike', async () => {
-    // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
-    for (const [path, narrow] of [['/DM-SHOP-UC01?view=wiki', false], ['/DM-SHOP-UC01?view=wiki,graph', false], ['/DM-SHOP-UC01?view=wiki,graph', true]] as const) {
+  it.each(['LA-PAT-APP-UX-R03-T01', 'LA-PAT-APP-UX-R03-T02'])('%s The page bar holds the page\'s tabs and controls; a stage\'s own tools float in the open space, on wide and narrow screens alike', async () => {
+    openSideBar('details');
+    for (const [path, narrow] of [['/DM-SHOP-UC01?stage=graph', false], ['/DM-SHOP-UC01?stage=erd', false], ['/DM-SHOP-UC01?stage=graph', true]] as const) {
       if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-      // One page bar, at the top of the editor area, outside every pane and outside the side bar.
+      // One page bar, at the top of the tab panel, outside the stage, the wiki card and the side bar.
       const bars = [...document.querySelectorAll<HTMLElement>('.page-bar')];
       expect(bars).toHaveLength(1);
       const bar = bars[0];
-      expect(bar.closest('.pane')).toBeNull();
-      expect(bar.closest('.side-bar, .side-bar-column')).toBeNull();
+      expect(bar.closest('.focus-stage, .wiki-panel, .side-bar, .side-bar-column')).toBeNull();
       // Its left: the tabs (on a phone, the Open pages control that opens them as a sheet).
       if (narrow) {
         expect(within(bar).getByRole('button', { name: /^Open pages: \d+$/ })).toBeInTheDocument();
@@ -207,60 +212,40 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
         expect(screen.getAllByRole('tablist')).toHaveLength(1);
         expect(bar.querySelector('.page-bar-start [role="tablist"]')).not.toBeNull();
       }
-      // Its right: the View group, then the side bar toggle last.
-      const groups = screen.queryAllByRole('group', { name: 'View' });
+      // Its right: the stage switch, one pressed stage, then the wiki card and side bar toggles, the side bar's last.
+      const groups = screen.queryAllByRole('group', { name: 'Stage' });
       expect(groups).toHaveLength(1);
       expect(bar.contains(groups[0])).toBe(true);
-      // A view the page does not offer keeps its slot, dimmed (aria-disabled), so the toggles never move (UX-R08).
-      const toggles = within(groups[0]).getAllByRole('button').filter((t) => t.getAttribute('aria-disabled') !== 'true');
-      for (const t of toggles) expect(t).toHaveAttribute('aria-pressed');
-      const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
-      expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(panes.length);
+      const stages = within(groups[0]).getAllByRole('button');
+      for (const t of stages) expect(t).toHaveAttribute('aria-pressed');
+      expect(stages.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(1);
+      expect(within(bar).getByRole('button', { name: /the wiki card$/ })).toBeInTheDocument();
       const sideBar = screen.getByRole('button', { name: /the side bar$/, expanded: !narrow });
       expect(bar.contains(sideBar)).toBe(true);
       const actions = [...bar.querySelectorAll('.page-bar-actions button')];
       expect(actions[actions.length - 1]).toBe(sideBar);
-      if (narrow) {
-        // A phone shows one view at a time, with no pane headers.
-        expect(panes).toHaveLength(1);
-        expect(document.querySelector('.pane-bar')).toBeNull();
-      } else {
-        for (const t of toggles) expect(t).toHaveClass('icon-button');
-        for (const pane of panes) {
-          // Each pane's slim header: a quiet label naming its view, then only the pane's own actions.
-          expect(pane).toHaveClass('panel');
-          expect(pane.firstElementChild).toHaveClass('pane-bar');
-          const label = pane.querySelector('.pane-bar > .pane-head > .pane-name');
-          expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph|ERD|Trace)$/);
-          expect(label?.querySelector('button, a, [tabindex]')).toBeNull();
-          const own = [...pane.querySelectorAll<HTMLElement>('.pane-bar button')];
-          for (const b of own) {
-            expect(b).toHaveClass('icon-button');
-            expect(b.getAttribute('aria-label')).toMatch(/^Close the (wiki|graph|ERD|trace) pane$|^Full screen|^Leave full screen/);
-          }
-          // Close shows only when more than one pane is open.
-          expect(own.some((b) => /^Close the/.test(b.getAttribute('aria-label') ?? ''))).toBe(panes.length > 1);
-          expect(pane.querySelector('.pane-bar [role="tablist"], .pane-bar [role="group"]')).toBeNull();
-        }
-      }
-      // The title belongs to the content of the leftmost pane.
-      expect(screen.getByRole('heading', { level: 1 }).closest('.pane')).toBe(panes[0]);
+      if (!narrow) for (const t of stages) expect(t).toHaveClass('icon-button');
+      // No panes and no pane headers: a stage's own controls float as its tools, inside the stage, never in the page bar.
+      expect(document.querySelector('.pane, .pane-bar')).toBeNull();
+      await waitFor(() => expect(document.querySelectorAll('.focus-stage [data-stage-tools]').length).toBeGreaterThan(0));
+      const tools = document.querySelectorAll<HTMLElement>('.focus-stage [data-stage-tools]');
+      for (const t of tools) expect(bar.contains(t)).toBe(false);
+      // The page's title is the header strip's, under the page bar.
+      expect(screen.getByRole('heading', { level: 1 }).closest('.header-strip')).not.toBeNull();
     }
-    // The page bar and the pane headers keep one height whatever they hold.
+    // The page bar and the header strip keep one height whatever they hold.
     expect(CSS).toMatch(/\.page-bar \{[^}]*height: var\(--page-bar-height\)/);
-    expect(CSS).toMatch(/\.pane-bar \{[^}]*height: var\(--pane-bar-height\)/);
+    expect(CSS).toMatch(/\.header-strip \{[^}]*height: var\(--strip-height\)/);
   });
 
-  it('LA-V96-R04-T03 Wiki, Graph, ERD and Trace are pressed toggles in the page bar, the open ones shown as panes in that order, each naming its view and closable while another is open', async () => {
-    await openApp('/DM-SHOP-UC01?view=wiki,graph');
+  it('LA-V96-R04-T03 Graph, ERD and Trace are pressed buttons of the stage switch in the page bar, one pressed, its stage the one drawn', async () => {
+    await openApp('/DM-SHOP-UC01?stage=trace');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-    const toggles = within(screen.getByRole('group', { name: 'View' })).getAllByRole('button');
-    expect(toggles.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(2);
-    const panes = [...document.querySelectorAll<HTMLElement>('.pane')];
-    expect(panes.map((p) => p.querySelector('.pane-name')?.textContent?.trim())).toEqual(['Wiki', 'Graph']);
-    for (const pane of panes) expect(pane.querySelector('.pane-bar button[aria-label^="Close the"]')).not.toBeNull();
+    const buttons = within(screen.getByRole('group', { name: 'Stage' })).getAllByRole('button');
+    expect(buttons.map((t) => [t.getAttribute('aria-label'), t.getAttribute('aria-pressed')])).toEqual([['Graph', 'false'], ['ERD', 'false'], ['Trace', 'true']]);
+    expect(screen.getByRole('region', { name: 'Trace stage' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: /^(Graph|ERD) stage$/ })).toBeNull();
   });
-
 
   it('LA-PAT-APP-UX-R04-T01 Motion is shared and optional: every transition and animation uses the motion or hover tokens and is turned off under reduced motion', () => {
     const rules = styleRules(CSS);
@@ -371,10 +356,10 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     // button with a name; and every problem row, the record's or else its check's, is never a dead box.
     let cards = 0;
     let problems = 0;
-    for (const path of ['/', '/DM', '/DM/checks', '/DM-SHOP-UC01-R01-T01', '/DM-SHOP-UC01-R01?view=trace', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM/checks', '/DM-SHOP-UC01-R01-T01', '/DM-SHOP-UC01-R01?stage=trace', '/settings/appearance']) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1 });
-      // The Trace view loads on its own: its chain's cards.
+      // The Trace stage loads on its own: its chain's cards.
       if (path.includes('trace')) await screen.findByRole('list', { name: 'Obligation' });
       const wrong = [...document.querySelectorAll<HTMLElement>('.card')].filter((card) => {
         cards += 1;
@@ -551,7 +536,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(raw).toEqual([]);
 
     // The pages.
-    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?view=graph', '/DM/checks', '/format', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?stage=graph', '/DM/checks', '/format', '/settings/appearance']) {
       await openApp(path);
       // Every page waits for its content.
       await screen.findAllByRole('heading', { level: 1 });
@@ -584,7 +569,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(parseSpecRoute('/DM-SHOP/interaction-design/flow', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'interaction-design/flow' });
 
     // The pages: every in-app link is the home page, an app page or an ID, and none is an old address.
-    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/interaction-design/flow?view=wiki,graph', '/DM/checks', '/format', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/interaction-design/flow?stage=graph', '/DM/checks', '/format', '/settings/appearance']) {
       await openApp(path);
       await screen.findAllByRole('heading', { level: 1 });
       const wrong = [...document.querySelectorAll('a[href^="/"]')].map((a) => a.getAttribute('href')!).filter((href) => {
@@ -602,10 +587,11 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       expect(await screen.findByText(/There's no such page\./), path).toBeInTheDocument();
       expect(window.location.pathname, path).toBe(path);
     }
-    // `?view=split` is no view name: the page opens with the views last used, the wiki at first.
-    await openApp('/DM-SHOP-UC01?view=split');
+    // The old view query names nothing: the page opens on the stage last used, the graph at first.
+    await openApp('/DM-SHOP-UC01?view=trace');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-    expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
+    expect(screen.getByRole('region', { name: 'Graph stage' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Trace stage' })).toBeNull();
   });
 
   describe('LA-STD-PRINCIPLES-R04-T01 changes are hard cutovers', () => {

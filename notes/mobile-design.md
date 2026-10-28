@@ -22,11 +22,11 @@ Each decision lists the options weighed, the choice and why.
 - **Chosen:** (b), per the Owner's page bar decision. A tab is a page and the panes are views of it, so the page bar holds what belongs to the page: the tabs, the View group and the inspector toggle. On a phone the same bar sits under the top bar: the tabs fold into an "Open pages" button with a count, the View group becomes a segmented switch (Wiki, Graph, Model; icons and labels, labels dropped under 380 px), and the inspector toggle stays at the far right, beside where the inspector would be.
 - **Why:** one design is easier to learn and to keep consistent; the controls are where they are on the desktop. The bottom bar's thumb-reach advantage is smaller than it looks here: the switch is used once per page, not continuously, and sheets that need a thumb (the inspector, the open pages, the canvas card) do sit at the bottom.
 
-### 3. One view at a time, without forgetting the wide screen's views
+### 3. The stage full screen, the panels as sheets and drawers
 
-- **Chosen:** the phone shows the first view the address names (`?view=wiki,graph` shows the wiki). Tapping Graph shows the graph alone and writes `?view=graph` (replacing the history entry, as the desktop toggles do) and the tab's views. It does not write the views remembered for a wide screen (`lathe:view`), so a phone visit never collapses the Reader's desktop set.
-- **Why:** the address must say what is on screen (UX-R06); the remembered set is a wide-screen preference.
-- No pane headers (nothing to close or maximize when only one pane shows) and no resize handles.
+- **Chosen (superseding the one-view-at-a-time design):** the phone shows the stage full screen under the top bar, the compact page bar and the header strip. The stage switch shows Graph, ERD and Trace as named segments; switching writes `?stage=` (replacing the history entry) and the tab's stage, but not the stage remembered for a wide screen (`lathe:stage`). The wiki card opens as a bottom sheet from the page bar's wiki button, and the side bar as a drawer from the right.
+- **Why:** the address must say what is on screen (UX-R06); the stage is the page's canvas on every screen, and the panels that float over it on a wide screen need the whole width on a phone.
+- No resize handles on a phone.
 
 ### 4. The top bar
 

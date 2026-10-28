@@ -63,7 +63,7 @@ describe('one level deep', () => {
     openSideBar();
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
-    const wiki = screen.getByRole('region', { name: 'Wiki pane' });
+    const wiki = screen.getByRole('region', { name: 'Wiki card' });
     // A domain's one page lists its records in their stages and folders, each with its own children folded.
     const children = stageOf('use-cases', wiki);
     const cap = row(children, 'DM-SHOP-CAP01');

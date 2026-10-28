@@ -36,7 +36,7 @@ async function tabUntil(page: Page, match: (el: Element) => boolean, what: strin
 
 const announcer = (page: Page) => page.getByTestId('announcer');
 
-async function open(page: Page, url: string, ready = '.focus-views .pane-title') {
+async function open(page: Page, url: string, ready = '.header-strip h1') {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.goto(url);
   await page.locator('.app[data-specs="ready"]').first().waitFor();
@@ -46,7 +46,7 @@ async function open(page: Page, url: string, ready = '.focus-views .pane-title')
 
 test.describe('keyboard', () => {
   test('LA-V61-R41-T01 Tab reaches every control and comes back round, with no trap', async ({ page }) => {
-    await open(page, `${RECORD}?view=wiki,graph`, '.pane-graph .graph-flow .graph-box');
+    await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
     // Every control the page draws that Tab should reach: buttons, links and fields not hidden or disabled.
     const reachable = await page.evaluate(() => {
       const all = [...document.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), input:not([disabled]), select, textarea, [tabindex]:not([tabindex="-1"])')];
@@ -91,33 +91,59 @@ test.describe('keyboard', () => {
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(new RegExp(`${href!.split('?')[0]}`));
     // From quick find.
-    await expect(page.locator('.focus-views .pane-title').first()).toBeVisible();
+    await expect(page.locator('.header-strip h1').first()).toBeVisible();
     await page.keyboard.press('Control+k');
     await expect(page.locator('.quick-find input')).toBeFocused();
     await page.keyboard.type('LA-PLT-UC05');
     await page.locator('.quick-find-results li').first().waitFor();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/LA-PLT-UC05/);
-    await expect(page.locator('.focus-views .pane-title h1').first()).toBeVisible();
+    await expect(page.locator('.header-strip h1').first()).toBeVisible();
     // LA-V61-R42-T01: after the move, focus is not lost on the body.
     expect((await focused(page)).tag).not.toBe('body');
   });
 
-  test('LA-V61-R41-T02 switch views from the page bar', async ({ page }) => {
+  test('LA-V61-R41-T02 switch the stage from the page bar and by its keys', async ({ page }) => {
     await open(page, RECORD);
-    await tabUntil(page, (el) => el.getAttribute('aria-label') === 'Graph' && !!el.closest('.page-bar'), 'the Graph view toggle');
+    await tabUntil(page, (el) => el.getAttribute('aria-label') === 'ERD' && !!el.closest('.page-bar'), 'the ERD stage button');
     await page.keyboard.press('Enter');
-    await expect(page).toHaveURL(/view=wiki(%2C|,)graph/);
-    await expect(page.locator('.page-bar').getByRole('button', { name: 'Graph', exact: true })).toHaveAttribute('aria-pressed', 'true');
-    await test.step('LA-V61-R43-T01 opening a view is announced', () => expect(announcer(page)).toHaveText(/Graph view/));
-    // Focus stays on the toggle that was pressed.
-    expect((await focused(page)).name).toBe('Graph');
-    await page.keyboard.press('Space');
-    await expect(page).not.toHaveURL(/graph/);
+    await expect(page).toHaveURL(/stage=erd/);
+    await expect(page.locator('.page-bar').getByRole('button', { name: 'ERD', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await test.step('LA-V61-R43-T01 switching the stage is announced', () => expect(announcer(page)).toHaveText(/ERD stage/));
+    // Focus stays on the button that was pressed.
+    expect((await focused(page)).name).toBe('ERD');
+    // Every stage works on every focus: the switch never disables one (LA-PAT-APP-UX-R17).
+    await expect(page.locator('.page-bar .stage-switch button[aria-disabled]')).toHaveCount(0);
+    // Off a Mac, Ctrl+3 for the Trace stage and Ctrl+1 for the graph.
+    await page.keyboard.press('Control+3');
+    await expect(page).toHaveURL(/stage=trace/);
+    await test.step('LA-V61-R43-T01 switching the stage by its keys is announced', () => expect(announcer(page)).toHaveText(/Trace stage/));
+    await page.keyboard.press('Control+1');
+    await expect(page).toHaveURL(/stage=graph/);
+  });
+
+  test('LA-V61-R41-T02 collapse and show the wiki card with w, focus kept on the page', async ({ page }) => {
+    await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('w');
+    await expect(page.locator('.wiki-panel')).toHaveCount(0);
+    await test.step('LA-V61-R43-T01 collapsing the wiki card is announced', () => expect(announcer(page)).toHaveText('Wiki card collapsed'));
+    // LA-V61-R42-T01: focus moves to the page bar's toggle, which brings the card back.
+    expect((await focused(page)).classes).toContain('wiki-panel-toggle');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.wiki-panel')).toBeVisible();
+    await expect(announcer(page)).toHaveText('Wiki card shown');
+    // From inside the card: its own collapse button.
+    await page.locator('.wiki-panel').getByRole('button', { name: 'Collapse the wiki card' }).focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.wiki-panel')).toHaveCount(0);
+    expect((await focused(page)).classes).toContain('wiki-panel-toggle');
+    await page.keyboard.press('w');
+    await expect(page.locator('.wiki-panel')).toBeVisible();
   });
 
   test('LA-V61-R41-T02 re-center the graph with Tab and Enter, and step through the tree with the arrow keys', async ({ page }) => {
-    await open(page, `${RECORD}?view=graph`, '.pane-graph .graph-flow .graph-box');
+    await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
     await tabUntil(page, (el) => !!el.closest('.graph-box'), 'a box in the graph');
     const first = await page.evaluate(() => document.activeElement!.closest('.graph-box')!.getAttribute('data-id'));
     let target = first;
@@ -141,7 +167,7 @@ test.describe('keyboard', () => {
     // In the Nested view (v switches to it), which draws children inside their parent, Up steps out and Down back in.
     const child = new URL(page.url()).pathname;
     await page.keyboard.press('v');
-    await expect(page.locator('.pane-graph .graph-flow')).toHaveAttribute('data-layout', 'nested');
+    await expect(page.locator('.focus-stage .graph-flow')).toHaveAttribute('data-layout', 'nested');
     await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.graph-box')?.getAttribute('data-id'))).toBe(decodeURIComponent(child.slice(1)));
     await page.keyboard.press('ArrowUp');
     await expect.poll(() => new URL(page.url()).pathname).toBe(parent);
@@ -162,14 +188,14 @@ test.describe('keyboard', () => {
   });
 
   test('LA-V61-R41-T02 open and close the side bar, and focus it', async ({ page }) => {
-    // With the wiki alone the side bar starts hidden.
-    await open(page, RECORD);
+    // On the Trace stage the side bar starts hidden.
+    await open(page, `${RECORD}?stage=trace`, '.focus-stage .trace-page');
     const toggle = page.locator('.page-bar .side-bar-toggle');
     await expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await tabUntil(page, (el) => el.classList.contains('side-bar-toggle'), 'the side bar toggle');
     await page.keyboard.press('Enter');
     await expect(announcer(page)).toHaveText('Side bar shown');
-    await expect(page.locator('.side-bar-column')).toBeVisible();
+    await expect(page.locator('.stage-layout > .side-bar-column')).toBeVisible();
     await expect(toggle).toHaveAttribute('aria-expanded', 'true');
     await toggle.focus();
     await page.keyboard.press('Enter');
@@ -185,7 +211,7 @@ test.describe('keyboard', () => {
 
   test('LA-V61-R41-T02 pick a theme, and focus comes back', async ({ page }) => {
     await open(page, RECORD);
-    await tabUntil(page, (el) => el.getAttribute('aria-label') === 'Wiki' && !!el.closest('.page-bar'), 'the Wiki view toggle');
+    await tabUntil(page, (el) => el.getAttribute('aria-label') === 'Graph' && !!el.closest('.page-bar'), 'the Graph stage button');
     await page.keyboard.press('g');
     await page.keyboard.press('t');
     await page.locator('.dialog-search').waitFor();
@@ -195,7 +221,7 @@ test.describe('keyboard', () => {
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'midnight');
     await test.step('LA-V61-R43-T01 choosing a theme is announced', () => expect(announcer(page)).toHaveText(/Color theme: Midnight/));
     // LA-V61-R42-T01: back on the control that had focus before the picker opened.
-    expect((await focused(page)).name).toBe('Wiki');
+    expect((await focused(page)).name).toBe('Graph');
   });
 
   test('LA-V61-R41-T02 open a domain from its card: each card is one tab stop, and Enter opens it', async ({ page }) => {
@@ -236,8 +262,8 @@ test.describe('keyboard', () => {
 test.describe('keyboard on a phone', () => {
   test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-  test('LA-V61-R42-T01 a sheet gives focus back to the button that opened it', async ({ page }) => {
-    await open(page, RECORD, '.pane-title');
+  test('LA-V61-R42-T01 a drawer or a sheet gives focus back to the button that opened it', async ({ page }) => {
+    await open(page, RECORD, '.header-strip h1');
     const opener = page.getByRole('button', { name: 'Open the navigation' });
     await opener.focus();
     await page.keyboard.press('Enter');
@@ -249,11 +275,19 @@ test.describe('keyboard on a phone', () => {
     if (await sideBar.count()) {
       await sideBar.first().focus();
       await page.keyboard.press('Enter');
-      await page.locator('.side-bar-sheet').waitFor();
+      await page.locator('.side-bar-drawer').waitFor();
       await page.keyboard.press('Escape');
-      await expect(page.locator('.side-bar-sheet')).toHaveCount(0);
+      await expect(page.locator('.side-bar-drawer')).toHaveCount(0);
       await expect(page.getByRole('button', { name: 'Show the side bar' }).first()).toBeFocused();
     }
+    // The wiki card's sheet, from the page bar's wiki button.
+    const card = page.getByRole('button', { name: 'Show the wiki card' });
+    await card.focus();
+    await page.keyboard.press('Enter');
+    await page.locator('.wiki-panel-sheet').waitFor();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.wiki-panel-sheet')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Show the wiki card' })).toBeFocused();
   });
 
 });
@@ -274,7 +308,7 @@ test.describe('changing records by keyboard', () => {
       await expect(page.getByRole('form')).toHaveCount(0, { timeout: 20_000 });
       await expect(announcer(page)).toHaveText(`Saved ${EDITED.slice(1)}`);
       await expect.poll(async () => (await focused(page)).name).toBe('Edit');
-      await expect(page.locator('.pane-title h1')).toContainText(', by keyboard');
+      await expect(page.locator('.header-strip h1')).toContainText(', by keyboard');
     } finally {
       restore();
     }

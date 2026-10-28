@@ -7,9 +7,9 @@
 {"id":"LA-UI102","title":"Mentions","file":"app/src/specs/mentions.tsx"}
 {"id":"LA-UI103","title":"Flow steps","file":"app/src/specs/FlowSteps.tsx"}
 {"id":"LA-UI105","title":"Graph motion","file":"app/src/graph/motion.ts"}
-{"id":"LA-UI106","title":"Tab strip","file":"app/src/views/TabStrip.tsx"}
+{"id":"LA-UI106","title":"Tab strip","file":"app/src/views/TabStrip.tsx","description":"The page's tabs, at the left of the page bar."}
 {"id":"LA-UI107","title":"ERD layout","file":"app/src/erd/layout.ts"}
-{"id":"LA-UI108","title":"ERD view","file":"app/src/erd/ErdView.tsx"}
+{"id":"LA-UI108","title":"ERD stage","file":"app/src/erd/ErdView.tsx","description":"The ERD stage: the product's, the domain's or the aggregate's diagram fitted in the open space, the focus's nearest box highlighted, with its key floating at its foot."}
 {"id":"LA-UI109","title":"Tap to open","file":"app/src/graph/touch.tsx"}
 {"id":"LA-UI110","title":"Edge hints","file":"app/src/graph/hints.tsx"}
 {"id":"LA-UI111","title":"Domain events section","file":"app/src/specs/DomainEvents.tsx"}
@@ -28,14 +28,18 @@
 {"id":"LA-UI126","title":"Lathe logo","file":"app/src/LatheLogo.tsx","description":"Lathe's logo in the page's steel and spark colors."}
 {"id":"LA-UI127","title":"Actions slot","file":"app/src/components/ActionsSlot.tsx","description":"The place in a heading's row where a list's controls sit."}
 {"id":"LA-UI128","title":"Line icons","file":"app/src/components/icons.tsx","description":"The line icons drawn inline, with no icon font."}
-{"id":"LA-UI129","title":"ERD icon","file":"app/src/erd/ErdIcon.tsx","description":"The ERD view's icon on the page bar."}
+{"id":"LA-UI129","title":"ERD icon","file":"app/src/erd/ErdIcon.tsx","description":"The ERD stage's icon in the stage switch."}
 {"id":"LA-UI130","title":"Shape marks","file":"app/src/graph/shape-icons.tsx","description":"The small marks of a kind's shape, in the boxes and the key."}
 {"id":"LA-UI131","title":"Quick pick","file":"app/src/theme/QuickPick.tsx","description":"A filter box over a list, as the theme picker shows it."}
 {"id":"LA-UI132","title":"Record text","file":"app/src/specs/RecordText.tsx","description":"A record's own text: its fields, parts and settings, by kind."}
 {"id":"LA-UI133","title":"Focus fade","file":"app/src/graph/fade.ts","description":"How strongly the graph draws each box for its focus: the focus's subtree at full strength, the trail and the rest faded."}
 {"id":"LA-UI134","title":"Flows by interface sections","file":"app/src/specs/InterfaceParts.tsx"}
-{"id":"LA-UI135","title":"Trace view","file":"app/src/trace/TraceView.tsx","description":"The Trace view's pane: an obligation's chain, or the matrix of those under the focus."}
+{"id":"LA-UI135","title":"Trace stage","file":"app/src/trace/TraceView.tsx","description":"The Trace stage: an obligation's chain, the matrix of those under the focus, or the rows that hold the focus or the matrix around it, padded into the open space."}
 {"id":"LA-UI136","title":"Card","file":"app/src/shell/Card.tsx","description":"The one card: a title that is its link or button, stretched over the whole card, and what else the card holds; and the grid that lists cards."}
+{"id":"LA-UI137","title":"Header strip","file":"app/src/views/HeaderStrip.tsx","description":"The one line under the active tab: the focus's breadcrumb, kind, ID and title, and what the stage draws of it."}
+{"id":"LA-UI138","title":"Breadcrumb","file":"app/src/shell/Breadcrumb.tsx","description":"The one trail of places above a page, collapsed past three places with a menu of the hidden levels."}
+{"id":"LA-UI139","title":"Open space","file":"app/src/views/openSpace.ts","description":"The stage's measure of what the floating panels leave of it, as CSS variables and a store the stages frame their focus in."}
+{"id":"LA-UI140","title":"Wiki card","file":"app/src/views/WikiCard.tsx","description":"The focus's wiki page, floating over the left of the open space: its breadcrumb, title and content, its collapse button and resize handle."}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
 {"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
@@ -44,7 +48,7 @@
 {"id":"LA-UI62","title":"Command palette and sheet","file":"app/src/shell/commands.tsx","description":"The command dispatcher, the palette and the shortcuts sheet."}
 {"id":"LA-UI63","title":"Tooltip","file":"app/src/shell/Tooltip.tsx"}
 {"id":"LA-UI64","title":"Resize handle","file":"app/src/components/ResizeHandle.tsx"}
-{"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx"}
+{"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx","description":"The top of the tab panel: the tabs, the stage switch, and the wiki card and side bar toggles."}
 {"id":"LA-UI66","title":"Bottom sheet","file":"app/src/shell/BottomSheet.tsx"}
 {"id":"LA-UI67","title":"Phone top bar","file":"app/src/shell/MobileBar.tsx","description":"The phone top bar and the quick find sheet."}
 {"id":"LA-UI68","title":"Shared styles","file":"app/src/styles.css"}
@@ -65,7 +69,7 @@
 {"id":"LA-UI92","title":"Graph page","file":"app/src/graph/GraphPage.tsx"}
 {"id":"LA-UI93","title":"Record content","file":"app/src/specs/RecordContent.tsx"}
 {"id":"LA-UI94","title":"Long list","file":"app/src/components/LongList.tsx"}
-{"id":"LA-UI95","title":"Focus page","file":"app/src/views/FocusPage.tsx"}
+{"id":"LA-UI95","title":"Focus page","file":"app/src/views/FocusPage.tsx","description":"The stage and the panels floating over it, for one focus."}
 {"id":"LA-UI96","title":"Side bar","file":"app/src/views/SideBar.tsx"}
 {"id":"LA-UI97","title":"Nav","file":"app/src/shell/Nav.tsx"}
 {"id":"LA-UI98","title":"Quick find","file":"app/src/shell/QuickFind.tsx"}

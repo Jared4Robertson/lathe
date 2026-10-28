@@ -9,12 +9,12 @@ import { DOMAIN, FOCUS, SHELL } from './scenarios';
 test.describe('fold', () => {
   test('LA-V61-R30-T01 open and close one row', async ({ page }) => {
     await openPage(page, DOMAIN);
-    const toggle = page.locator('.pane-wiki .tree-toggle').first();
+    const toggle = page.locator('.wiki-panel .tree-toggle').first();
     await toggle.scrollIntoViewIfNeeded();
-    const row = page.locator('.pane-wiki .record-list.tree > li:has(.tree-toggle)').first();
+    const row = page.locator('.wiki-panel .record-list.tree > li:has(.tree-toggle)').first();
     await row.evaluate((el) => el.setAttribute('data-stability', 'row'));
     const keys = [...SHELL, ...FOCUS, '[data-stability="row"] > .tree-row'];
-    const allow = ['[data-stability="row"] ~ li', '[data-stability="row"] .tree-nested', '.pane-wiki .spec-section:has([data-stability="row"]) ~ *', '.pane-wiki .spec-body > :has([data-stability="row"]) ~ *'];
+    const allow = ['[data-stability="row"] ~ li', '[data-stability="row"] .tree-nested', '.wiki-panel .spec-section:has([data-stability="row"]) ~ *', '.wiki-panel .spec-body > :has([data-stability="row"]) ~ *'];
     const open = await step(page, 'fold', 'open a row', { keys, allow }, async () => {
       await toggle.click();
       await expect(toggle).toHaveAttribute('aria-expanded', 'true');
@@ -29,11 +29,11 @@ test.describe('fold', () => {
 
   test('LA-V61-R30-T01 Expand all and Collapse all', async ({ page }) => {
     await openPage(page, DOMAIN);
-    const bulk = page.locator('.pane-wiki').getByRole('button', { name: /^(Expand|Collapse) all$/ }).first();
+    const bulk = page.locator('.wiki-panel').getByRole('button', { name: /^(Expand|Collapse) all$/ }).first();
     await bulk.scrollIntoViewIfNeeded();
     await bulk.evaluate((el) => el.closest('.spec-section')?.setAttribute('data-stability', 'section'));
     const keys = [...SHELL, ...FOCUS, '[data-stability="section"] > .spec-section-head'];
-    const allow = ['[data-stability="section"] .record-list', '[data-stability="section"] ~ *', '.pane-wiki .spec-body > :has([data-stability="section"]) ~ *', '[data-stability="section"] .long-list'];
+    const allow = ['[data-stability="section"] .record-list', '[data-stability="section"] ~ *', '.wiki-panel .spec-body > :has([data-stability="section"]) ~ *', '[data-stability="section"] .long-list'];
     const expand = await step(page, 'fold', 'Expand all', { keys, allow }, async () => {
       await bulk.click();
       await expect(bulk).toHaveText('Collapse all');

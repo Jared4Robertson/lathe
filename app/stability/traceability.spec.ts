@@ -4,7 +4,7 @@ import { rowsOf, served, testsText } from './flows';
 import { PRODUCT } from './scenarios';
 
 // Traceability's flows that the Reader walks in the app, each on its main path, over the suite's copy
-// of this repo's data: the product's and the domains' coverage, the Trace view, every
+// of this repo's data: the product's and the domains' coverage, the Trace stage, every
 // obligation kind and test state, the patterns a domain follows, tests by state, and what designs,
 // builds and proves a record. Each page is checked against the coverage the engine worked out
 // (GET /api/spec). The flows run from the command line are in lathe/test/flows/traceability.test.ts.
@@ -15,7 +15,7 @@ const TRC = 'LA-TRC';
 const EXP = 'LA-EXP';
 /** A UC requirement with a flow step that fulfills it, in a view, and a test. */
 const REQUIREMENT = 'LA-TRC-UC10-R03';
-const WIKI = '.pane-wiki';
+const WIKI = '.wiki-panel';
 
 test.describe('Traceability flows', () => {
   test('LA-TRC-UC09-FL01-T see each domain\'s coverage and the product\'s summary', async ({ page }) => {
@@ -47,10 +47,10 @@ test.describe('Traceability flows', () => {
     // S04: a domain card opens its domain page.
     await wiki.getByRole('link', { name: 'LA-TRC Traceability' }).click();
     await page.waitForURL((u) => u.pathname === `/${TRC}`);
-    await expect(page.locator(`${WIKI} .pane-title h1`)).toHaveText('Traceability');
+    await expect(page.locator(`.header-strip h1`)).toHaveText('Traceability');
   });
 
-  test('LA-TRC-UC10-FL01-T trace obligations in the Trace view', async ({ page }) => {
+  test('LA-TRC-UC10-FL01-T trace obligations on the Trace stage', async ({ page }) => {
     const spec = await served(page);
     // The chain: the steps that fulfill it, their flows, what they invoke and where they happen, the handlers of what
     // they invoke, the tests under it and the files those name.
@@ -61,11 +61,11 @@ test.describe('Traceability flows', () => {
     const handlers = [...rowsOf(spec, 'command_handler'), ...rowsOf(spec, 'query_handler')].filter((h) => operations.includes(String(h.command_id ?? h.query_id))).map((h) => String(h.id));
     const tests = rowsOf(spec, 'use_case_test').filter((t) => t.uc_requirement_id === REQUIREMENT).map((t) => String(t.id));
     expect(steps.length && tests.length).toBeTruthy();
-    const pane = page.locator('.pane-trace');
+    const pane = page.locator('.focus-stage');
     const column = (name: string) => pane.locator('.trace-column').filter({ has: page.locator('.trace-column-name', { hasText: new RegExp(`^${name}`) }) });
     const ids = (name: string) => column(name).locator('a.card-title code').allTextContents();
-    // S01, S02: the requirement's Trace view: its chain, column by column, every card a link.
-    await openPage(page, `/${REQUIREMENT}?view=trace`, '.pane-trace .trace-chain');
+    // S01, S02: the requirement's Trace stage: its chain, column by column, every card a link.
+    await openPage(page, `/${REQUIREMENT}?stage=trace`, '.focus-stage .trace-chain');
     await expect(pane.locator('[aria-current="page"]')).toContainText(REQUIREMENT);
     expect((await ids('Design')).sort()).toEqual([...new Set([...steps, ...flows, ...views, ...operations])].sort());
     expect(await ids('Build')).toEqual(expect.arrayContaining(handlers));
@@ -73,16 +73,20 @@ test.describe('Traceability flows', () => {
     // S03: the use case's matrix, a row per requirement under it, then the domain's, grouped by parent.
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
     const requirements = rowsOf(spec, 'uc_requirement').filter((r) => r.use_case_id === useCase).map((r) => String(r.id));
-    await openPage(page, `/${useCase}?view=trace`, '.pane-trace .trace-matrix');
+    await openPage(page, `/${useCase}?stage=trace`, '.focus-stage .trace-matrix');
     const rows = pane.locator('.trace-matrix tbody tr:not(.group-row)');
     await expect(rows).toHaveCount(requirements.length);
-    await openPage(page, `/${TRC}?view=trace`, '.pane-trace .trace-matrix');
+    await openPage(page, `/${TRC}?stage=trace`, '.focus-stage .trace-matrix');
     await expect(pane.locator('.trace-matrix tr.group-row').first()).toBeVisible();
     expect(await pane.locator('.trace-matrix tr.group-row').count()).toBeGreaterThan(1);
     // S04: Gaps only keeps the rows with a gap, and each of them has one.
     await pane.getByRole('checkbox', { name: 'Gaps only' }).check();
     const left = await rows.count();
     for (let i = 0; i < Math.min(left, 20); i++) await expect(rows.nth(i).locator('td.is-gap').first()).toBeAttached();
+    // Every stage works on every focus (LA-PAT-APP-UX-R17): on a step, the rows it belongs to, the step marked in its cell.
+    await openPage(page, `/${steps[0]}?stage=trace`, '.focus-stage .trace-matrix');
+    await expect(pane.locator('.trace-matrix th[scope="row"]').filter({ hasText: REQUIREMENT })).toBeVisible();
+    await expect(pane.locator('.trace-matrix td [aria-current="page"]').first()).toContainText(steps[0]);
   });
 
   test('LA-TRC-UC11-FL01-T see every obligation kind and test state', async ({ page }) => {
@@ -100,7 +104,7 @@ test.describe('Traceability flows', () => {
     const gapId = (await gap.locator('code').textContent())!;
     await gap.click();
     await page.waitForURL((u) => u.pathname === `/${gapId}`);
-    await expect(page.locator(`${WIKI} .pane-title`)).toContainText(gapId);
+    await expect(page.locator(".header-strip-id")).toHaveText(gapId);
     // S03: on a record page each test shows its state.
     await openPage(page, `/${REQUIREMENT}`);
     const proved = page.locator(WIKI).getByRole('list', { name: 'Proved by' });
@@ -132,8 +136,8 @@ test.describe('Traceability flows', () => {
     await expect(wiki.getByRole('heading', { name: `Rules ${rules.length}`, level: 2 })).toBeVisible();
     await expect(wiki.getByRole('region', { name: `Followed in ${EXP}` })).toBeVisible();
     // S03: in the graph, the rules sit under the pattern and its followers are linked to it.
-    await openPage(page, `/${pattern}?view=graph`, '.pane-graph .graph-flow .graph-box');
-    const ids = await page.locator('.pane-graph .graph-flow .graph-box').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
+    await openPage(page, `/${pattern}?stage=graph`, '.focus-stage .graph-flow .graph-box');
+    const ids = await page.locator('.focus-stage .graph-flow .graph-box').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
     for (const r of rules) expect(ids).toContain(r.id);
     const traced = page.getByRole('complementary', { name: 'Side bar' }).getByRole('region', { name: 'Traceability' });
     await expect(traced.getByRole('link', { name: EXP, exact: true })).toBeVisible();

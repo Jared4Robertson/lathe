@@ -14,15 +14,15 @@ async function tabsOf(page: Page): Promise<string[]> {
   }));
 }
 
-/** Follows the first link in the wiki pane to a record other than the one shown, and returns its ID. */
+/** Follows the first link in the wiki card to a record other than the one shown, and returns its ID. */
 async function followLink(page: Page): Promise<string> {
   const from = new URL(page.url()).pathname;
-  const links = page.locator('.pane-wiki .spec-body a.record-link[href^="/LA-"]');
+  const links = page.locator('.wiki-panel .spec-body a.record-link[href^="/LA-"]');
   const target = await links.evaluateAll((all, here) => all.map((a) => a.getAttribute('href')!).find((h) => h !== here && !h.includes('?'))!, from);
   expect(target, `a link from ${from} to another record`).toBeTruthy();
-  await page.locator(`.pane-wiki .spec-body a.record-link[href="${target}"]`).first().click();
+  await page.locator(`.wiki-panel .spec-body a.record-link[href="${target}"]`).first().click();
   await page.waitForURL((u) => u.pathname === target);
-  await page.locator('.focus-views .pane-title').first().waitFor();
+  await page.locator('.header-strip h1').first().waitFor();
   return target.slice(1);
 }
 

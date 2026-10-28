@@ -1,12 +1,12 @@
-// The Graph view of an address, /<id>?view=graph (LA-V93).
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+// The Graph stage of an address, /<id>?stage=graph (LA-V93).
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type PointerEvent as ReactPointerEvent} from 'react';
 import { type SpecIndex } from '../specs/data';
 import { lowerLabel } from '../plural';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { COMMANDS, formatBinding, isMac } from '../shell/keymap';
 import { Icon } from '../components/icons';
-import { NodeLink, type GraphInfo } from './panel';
+import type { GraphInfo } from './panel';
 import { TapCard, useTapToOpen } from './touch';
 import {
   NO_FILTERS,
@@ -15,15 +15,12 @@ import {
   filterKind,
   graphEdgeLabel,
   graphRelationLabel,
-  groupName,
   isFiltered,
   isGraphNode,
   kindGroups,
   neighborhood,
-  nextTrail,
   nodeChildren,
   nodeParent,
-  parseGroupId,
   relationsOf,
   type Filters,
   type Neighborhood,
@@ -44,6 +41,7 @@ import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './pl
 import { focusStrength } from './fade';
 import { paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
+import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
 // Clicking a record or a group focuses it (through onNavigate, so the host changes the address and
@@ -72,18 +70,6 @@ export function relationStyle(relation: string): string {
   return 'other';
 }
 
-const TRAIL_KEY = 'lathe:graph-trail';
-function readTrail(): string[] {
-  try {
-    const stored = JSON.parse(window.sessionStorage.getItem(TRAIL_KEY) ?? '[]');
-    return Array.isArray(stored) ? stored.filter((s) => typeof s === 'string') : [];
-  } catch {
-    return [];
-  }
-}
-function writeTrail(trail: string[]) {
-  try { window.sessionStorage.setItem(TRAIL_KEY, JSON.stringify(trail)); } catch { /* storage unavailable */ }
-}
 
 /** How the graph draws the tree (LA-V93-R21): Tree, parents beside their children; Nested, parents made of them as boxes; Voronoi, as polygon cells. */
 export type GraphLayout = 'tree' | 'nested' | 'voronoi';
@@ -164,8 +150,6 @@ export interface GraphViewProps {
   focus: string;
   /** Called with a record or group ID when the person moves the focus there. */
   onNavigate: (id: string) => void;
-  /** The address a node's link points to, for opening in a new tab. */
-  hrefFor: (id: string) => string;
   /** The settings, when the host keeps them (so they survive moving between pages and views). */
   settings?: GraphSettings;
   onSettingsChange?: (settings: GraphSettings) => void;
@@ -176,26 +160,13 @@ export interface GraphViewProps {
    * selected by a first tap (`selected`), or null, so the host's side bar can describe it.
    */
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
+  /** Called with what the graph draws of the focus, for the header strip: "9 records · 8 links". */
+  onCounts?: (counts: string) => void;
+  /** The open space the host's floating panels leave over the stage, where the camera frames the focus. */
+  space?: OpenSpaceStore;
 }
 
-/**
- * How a node is named in the trail: a record's title with its ID in parentheses, "Browsing
- * (LA-EXP)"; a group, which has no ID of its own, by its name alone ("Use cases", no count), with
- * its parent's ID in the full text (tooltip and accessible name) so two groups of one name differ.
- */
-function trailItem(index: SpecIndex, id: string): { body: ReactNode; full: string } {
-  const record = index.byId.get(id);
-  if (record) {
-    return {
-      body: <><span className="trail-name">{record.title}</span> <code className="trail-id">({id})</code></>,
-      full: `${record.title} (${id})`,
-    };
-  }
-  const name = groupName(index, id);
-  return { body: <span className="trail-name">{name}</span>, full: `${name} of ${parseGroupId(id)!.parent}` };
-}
-
-export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted, onSettingsChange, onGraph, onPeek }: GraphViewProps) {
+export function GraphView({ index, focus, onNavigate, settings: hosted, onSettingsChange, onGraph, onPeek, onCounts, space }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
   const { layout, depth, filters, links, minimap } = settings;
@@ -208,38 +179,12 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
   }, [onSettingsChange]);
   const setDepth = (d: number) => update({ depth: d });
   const setFilters = (f: Filters) => update({ filters: f });
-  const [trail, setTrail] = useState<string[]>(readTrail);
-  // The trail is one line (LA-PAT-APP-UX-R08): its items shrink, cut with an ellipsis, and when
-  // they still overflow it scrolls to the end, so the center is always in view and the canvas
-  // below never moves as the trail grows.
-  // It is a Tab stop only while it overflows, so the keyboard can scroll it (LA-PAT-APP-UX-R10).
-  const trailList = useRef<HTMLOListElement>(null);
-  const [trailOverflows, setTrailOverflows] = useState(false);
-  useLayoutEffect(() => {
-    const ol = trailList.current;
-    if (!ol) return;
-    ol.scrollLeft = ol.scrollWidth;
-    const measure = () => setTrailOverflows(ol.scrollWidth > ol.clientWidth);
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(measure);
-    observer.observe(ol);
-    return () => observer.disconnect();
-  }, [trail, focus]);
-
-  useEffect(() => {
-    if (!isGraphNode(index, focus)) return;
-    setTrail((t) => {
-      const next = nextTrail(t, focus);
-      writeTrail(next);
-      return next;
-    });
-  }, [index, focus]);
 
   const graph = useMemo(() => neighborhood(index, focus, depth, filters, { links }), [index, focus, depth, filters, links]);
   // Before paint, so the side bar shows what the graph connects in the same frame as the graph
   // (in an effect it showed one frame without it, then pushed its legend down; LA-PAT-APP-UX-R08).
   useLayoutEffect(() => { onGraph?.({ graph }); }, [graph, onGraph]);
+  useLayoutEffect(() => { onCounts?.(graphSummary(graph)); }, [graph, onCounts]);
 
   const clearFilters = useCallback(() => update({ filters: NO_FILTERS }), [update]);
   const onPageKey = (e: KeyboardEvent<HTMLElement>) => {
@@ -289,7 +234,6 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
       </div>
     );
   }
-  const counts = graphSummary(graph);
   // The step buttons keep their places in every view; each shows the arrow that takes its step in this one.
   const steps = STEPS.map((step) => ({ step, command: STEP_COMMANDS[step], label: COMMANDS.find((c) => c.id === STEP_COMMANDS[step])!.title, mark: formatBinding(stepKey(layout, step), isMac()) }));
   const moreControls = (
@@ -320,28 +264,9 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
 
   return (
     <section className="graph-page" aria-label="Graph" onKeyDown={onPageKey}>
-      <header className="graph-header">
-        {/* The trail and, right-aligned on the same line, the count: one line of fixed height, the count one piece of text, so a
-            new count never moves anything (LA-PAT-APP-UX-R08). */}
-        <div className="graph-head-line">
-          <nav className="graph-trail" aria-label="Records visited">
-            <ol ref={trailList} tabIndex={trailOverflows ? 0 : undefined}>
-              {trail.filter((id) => isGraphNode(index, id)).map((id) => {
-                const item = trailItem(index, id);
-                return (
-                  <li key={id}>
-                    {id === focus
-                      ? <span className="trail-item" aria-current="page" title={item.full} aria-label={item.full}>{item.body}</span>
-                      : <NodeLink id={id} onNavigate={onNavigate} hrefFor={hrefFor} title={item.full} ariaLabel={item.full} className="trail-item">{item.body}</NodeLink>}
-                  </li>
-                );
-              })}
-            </ol>
-          </nav>
-          <span className="graph-count" title={counts}>{counts}</span>
-        </div>
-        {/* One row at every pane width (LA-PAT-APP-UX-R08): when the row does not fit, it steps down a tier at a time
-            (toolbarTier), never wrapping and never cutting anything off. */}
+      {/* The toolbar floats at the top of the open space, one row at every width (LA-PAT-APP-UX-R08): when the row does not fit, it steps down a tier at a time
+          (toolbarTier), never wrapping and never cutting anything off. */}
+      <div className="graph-tools stage-tools" data-stage-tools="top">
         <div className="graph-toolbar" ref={toolbar} data-tier={TOOLBAR_TIERS[tier]}>
           <div className="graph-depth graph-layout" role="group" aria-label="Layout">
             {GRAPH_LAYOUTS.map((l) => (
@@ -363,10 +288,10 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
             <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
           </div>
         </div>
-      </header>
+      </div>
       <div className="graph-workspace">
         <div className="graph-canvas">
-          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} />
+          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} space={space} />
         </div>
       </div>
     </section>
@@ -524,6 +449,10 @@ const sameView = (a: Viewport, b: Viewport) => Math.abs(a.x - b.x) < 0.5 && Math
 
 /** How much one step of the zoom buttons zooms. */
 const ZOOM_STEP = 1.2;
+/** No floating panels: the frame is the whole stage. */
+const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
+/** The least open space, in px, the camera frames the focus in; less frames on the whole stage. */
+const MIN_FRAME = 120;
 /** How far the pointer moves before a press is a drag, in CSS pixels. */
 const DRAG_PX = 3;
 
@@ -615,9 +544,10 @@ interface CanvasProps {
   onNavigate: (id: string) => void;
   minimap: boolean;
   onPeek?: GraphViewProps['onPeek'];
+  space?: OpenSpaceStore;
 }
 
-function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
+function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek, space, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
   const focus = graph.focus;
   // The focus's own product's map (no other product's nodes are in it), in any layout (LA-V93-R21): the Tree map (map.ts), the Nested map (nested.ts) or the Voronoi map (voronoi.ts), under one camera.
   // The Voronoi map is laid out in a worker the first time; until it is ready the canvas is empty.
@@ -714,14 +644,31 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     return duration;
   }, [getViewport, setViewport, size, show, drawnAt]);
 
-  /** The camera that frames the focus: the focus and the levels the depth shows. */
-  const framing = useCallback((): Viewport | null => {
-    if (!size) return null;
-    return map.view !== 'tree' ? frameNested(map, focus, size.w, size.h) : frameOnMap(map, focus, depth, size.w, size.h);
-  }, [size, map, focus, depth]);
+  // The frame: the open space the floating panels leave over the stage, less the stage's own tools
+  // (openSpace.ts). The camera frames the focus there, so it sits centered in what is left.
+  const open = useOpenSpace(space);
+  const inset: Insets = open?.frame ?? NO_INSETS;
+  const insetKey = `${inset.left} ${inset.top} ${inset.right} ${inset.bottom}`;
+  const frameBox = useCallback((s: { w: number; h: number }) => {
+    const w = s.w - inset.left - inset.right;
+    const h = s.h - inset.top - inset.bottom;
+    // An open space too small to frame anything in frames on the whole stage.
+    return w < MIN_FRAME || h < MIN_FRAME ? { x: 0, y: 0, w: s.w, h: s.h } : { x: inset.left, y: inset.top, w, h };
+  }, [insetKey]);
 
-  // Frame the focus whenever it, the depth or the pane's size changes: a glide, except the first
-  // picture, a resize and a map that has just been laid out, which frame at once.
+  /** The camera that frames the focus: the focus and the levels the depth shows, in the frame. */
+  const framing = useCallback((): Viewport | null => {
+    // With a host that floats panels, never before their first measure: the first picture is framed once, in place.
+    if (!size || (space && !open)) return null;
+    const box = frameBox(size);
+    const v = map.view !== 'tree' ? frameNested(map, focus, box.w, box.h) : frameOnMap(map, focus, depth, box.w, box.h);
+    return { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
+  }, [size, map, focus, depth, frameBox, space, open]);
+
+  // Frame the focus whenever it, the depth, the stage's size or the open space changes: a glide,
+  // except the first picture, a resize of the stage and a map that has just been laid out, which
+  // frame at once. A panel collapsed, opened or resized recenters the focus with a short glide
+  // (at once under reduced motion, readMotion).
   const framedFor = useRef<{ w: number; h: number } | null>(null);
   /** The focus fade's move to a new focus (fade.ts): from the focus before, eased over the camera's glide to the new one. */
   const fadeShift = useRef<{ from: string | null; to: string; start: number; duration: number }>({ from: null, to: focus, start: 0, duration: 0 });
@@ -793,7 +740,11 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     const v = getViewport();
     const zoom = Math.min(zoomLimit, Math.max(MIN_ZOOM, v.zoom * factor));
     const k = zoom / v.zoom;
-    moveTo({ x: size.w / 2 - (size.w / 2 - v.x) * k, y: size.h / 2 - (size.h / 2 - v.y) * k, zoom }, true);
+    // About the frame's center, the middle of what the panels leave open.
+    const box = frameBox(size);
+    const cx = box.x + box.w / 2;
+    const cy = box.y + box.h / 2;
+    moveTo({ x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k, zoom }, true);
     follow();
   };
 

@@ -1,4 +1,4 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { SpecData } from '../../lathe/src/server/contract';
 import { groupRecords } from '../src/specs/groups';
@@ -7,7 +7,7 @@ import { owingDomains } from '../src/specs/trace';
 import { expectStandingsAsEngine } from './fixtures/engine';
 import { patternWorkspace, withStandings } from './fixtures/patterns';
 import { standardWorkspace } from './fixtures/standards';
-import { main, openApp, openSideBar, section, sideBar } from './helpers';
+import { main, openApp, section } from './helpers';
 import { addRows, indexOf, setRow } from './fixtures/load';
 
 // Groups (group_name) and waivers by setting value (a rule's applies_when columns) in the app, on the
@@ -86,7 +86,7 @@ describe('waivers by setting value', () => {
 });
 
 describe('groups', () => {
-  it('LA-V92-R22-T01 UC requirements, pattern rules and standard rules read under their group headings, the ungrouped first, and the Outline lists the groups', async () => {
+  it('LA-V92-R22-T01 UC requirements, pattern rules and standard rules read under their group headings, the ungrouped first', async () => {
     const ix = indexOf(groupedWorkspace());
     const reqs = (ix.children.get('DM-SHOP-UC01') ?? []).filter((r) => r.kind === 'uc_requirement');
     expect(groupRecords(reqs).map((g) => [g.heading, g.records.map((r) => r.id)])).toEqual([
@@ -95,7 +95,6 @@ describe('groups', () => {
       ['Stock', ['DM-SHOP-UC01-R03']],
     ]);
 
-    openSideBar('outline');
     await openApp('/DM-SHOP-UC01', { data: groupedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     // The UC requirements: the ungrouped one first, then each group under its heading (the flow is listed by interface).
@@ -107,9 +106,6 @@ describe('groups', () => {
     // The Traceability table: one body per group, headed by its name.
     const table = within(main()).getByRole('table', { name: /How each UC requirement of DM-SHOP-UC01/ });
     expect(within(table).getAllByRole('rowheader').filter((h) => h.getAttribute('scope') === 'rowgroup').map((h) => h.textContent)).toEqual(['Limits', 'Stock']);
-    // The Outline lists the groups.
-    const outline = await waitFor(() => within(sideBar()).getByRole('list', { name: 'Sections' }));
-    expect(within(outline).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Limits', 'Stock']));
 
     // A pattern's rules: the ungrouped first, then Keeping (written Keeping and keeping).
     await openApp('/DM-PAT-AUDIT', { data: waiverWorkspace() });

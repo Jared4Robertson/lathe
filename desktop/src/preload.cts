@@ -2,7 +2,7 @@
 // nothing but Electron, and it exposes only window.latheDesktop (typed in app/src/shell/commands.tsx):
 //   isDesktop           true, so the app can tell it runs in the desktop shell;
 //   platform            the operating system ("darwin", "win32", "linux");
-//   onCommand           subscribes to native menu choices, each sent as a command ID such as "viewWiki";
+//   onCommand           subscribes to native menu choices, each sent as a command ID such as "stageGraph";
 //   setChrome           sends the theme's { background, foreground } for the window's chrome (the main
 //                       process checks them, desktop/src/chrome.ts);
 //   onFullScreen        subscribes to the window entering and leaving full screen, called at once with

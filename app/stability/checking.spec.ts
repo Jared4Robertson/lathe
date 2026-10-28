@@ -53,7 +53,7 @@ test.describe('Checking flows', () => {
       // S03: they open a problem's record to see it and its problems, and go back.
       await main.getByRole('link', { name: ADDED, exact: true }).first().click();
       await page.waitForURL((u) => u.pathname === `/${ADDED}`);
-      await expect(page.locator('.pane-wiki').getByRole('list', { name: 'Problems' })).toContainText('view-unused');
+      await expect(page.locator('.wiki-panel').getByRole('list', { name: 'Problems' })).toContainText('view-unused');
       await page.goBack();
       await page.waitForURL((u) => u.pathname === CHECKS);
       // S04: a check's code leads to its page in the reference.

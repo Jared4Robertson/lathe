@@ -4,7 +4,7 @@
 {"id":"LA-EXP-RM01","title":"Space index","domain_id":"LA-EXP","description":"One index per space: the records of its product and of no product (SP01), their parts, the links among them, their coverage, and the space's problems with the workspace's."}
 {"id":"LA-EXP-RM02","title":"Folder tree","domain_id":"LA-EXP","description":"Each product's nav tree: Shared, then each domain's five stages, the kind groups inside a stage that holds several kinds (SP03), and the records in them, placed by DS03."}
 {"id":"LA-EXP-RM03","title":"Graph map","domain_id":"LA-EXP","description":"One map per product and layout: the folder tree (DS04) laid out once per load by DS05 (Tree), DS07 (Nested) or DS08 (Voronoi), every node with its place, size and label."}
-{"id":"LA-EXP-RM04","title":"ERD","domain_id":"LA-EXP","description":"What a domain's or an aggregate's ERD draws: boxes and lines, worked out on each request."}
+{"id":"LA-EXP-RM04","title":"ERD","domain_id":"LA-EXP","description":"What a product's, a domain's or an aggregate's ERD draws, with the focus's nearest entity or aggregate highlighted: boxes and lines, worked out on each request."}
 {"id":"LA-EXP-RM05","title":"Record history","domain_id":"LA-EXP","description":"The commits that changed a record's rows, read from git on each request."}
 {"id":"LA-EXP-RM06","title":"Spaces","domain_id":"LA-EXP","description":"Every product as a space in the rail, with its look and place."}
 {"id":"LA-PLT-RM01","title":"Workspace","domain_id":"LA-PLT","description":"Every product's records, links, problems and coverage, as one load of the data files gives them: `Workspace` in `lathe/src/types.ts`. Filled from the data files whenever they change."}

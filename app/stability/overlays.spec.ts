@@ -8,8 +8,8 @@ import { FOCUS, RECORD, SHELL } from './scenarios';
 
 test.describe('overlays', () => {
   test('LA-V61-R34-T01 a tooltip shows in place', async ({ page }) => {
-    await openPage(page, `${RECORD}?view=wiki,graph`);
-    const button = page.locator('.page-bar .pane-views button').first();
+    await openPage(page, `${RECORD}?stage=graph`);
+    const button = page.locator('.page-bar .stage-switch button').first();
     const r = await step(page, 'overlays', 'tooltip on hover', { keys: [...SHELL, ...FOCUS, '.tooltip'] }, async () => {
       await button.hover();
       await page.locator('.tooltip').waitFor();
@@ -17,7 +17,7 @@ test.describe('overlays', () => {
     });
     expectStable(r);
     const next = await step(page, 'overlays', 'tooltip moving to the next button', { keys: [...SHELL, ...FOCUS] }, async () => {
-      await page.locator('.page-bar .pane-views button').nth(1).hover();
+      await page.locator('.page-bar .stage-switch button').nth(1).hover();
       await page.waitForTimeout(400);
     });
     expectStable(next);
@@ -51,7 +51,7 @@ test.describe('overlays', () => {
 
   test('LA-V61-R34-T01 the shortcuts sheet', async ({ page }) => {
     await openPage(page, RECORD);
-    await page.locator('#main').click({ position: { x: 400, y: 300 } });
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     const r = await step(page, 'overlays', 'shortcuts sheet: open and search', { keys: [...SHELL, ...FOCUS, '.dialog-search'], allow: ['.shortcut-groups'] }, async () => {
       await page.keyboard.press('Control+/');
       await page.locator('.dialog-search').waitFor();

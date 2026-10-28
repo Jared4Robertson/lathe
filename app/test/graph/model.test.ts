@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addRows, indexOf } from '../fixtures/load';
-import { neighborhood, nextTrail, type Filters } from '../../src/graph/model';
+import { neighborhood, type Filters } from '../../src/graph/model';
 import { graphMap } from '../../src/graph/map';
 import { testIndex, testWorkspace } from './workspace';
 
@@ -94,14 +94,6 @@ describe('graph neighborhood', () => {
     }
     // The order within a level is the nav's: the tables in ID order.
     expect(map.nodes.get('P-D-EN02-TB')!.y).toBeLessThan(map.nodes.get('P-D-EN03-TB')!.y);
-  });
-
-  it('LA-V93-R11-T01 The breadcrumb trail adds each record visited and cuts back when a visited record is revisited', () => {
-    expect(nextTrail([], 'A')).toEqual(['A']);
-    expect(nextTrail(['A'], 'B')).toEqual(['A', 'B']);
-    expect(nextTrail(['A', 'B', 'C'], 'B')).toEqual(['A', 'B']);
-    expect(nextTrail(['A', 'B'], 'B')).toEqual(['A', 'B']);
-    expect(nextTrail(['1', '2', '3'], '4', 3)).toEqual(['2', '3', '4']);
   });
 
   it('LA-V93-R15-T01 Columns follow the parent/child tree around the focus', () => {

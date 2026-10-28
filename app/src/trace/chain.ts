@@ -1,7 +1,7 @@
 import { byIdOrder, textOf, type SpecIndex, type SpecRecord } from '../specs/data';
 import { designersOf } from '../specs/trace';
 import { isTestKind } from '../specs/parts';
-import { treeChildren } from '../graph/tree';
+import { treeChildren, treeParent } from '../graph/tree';
 import { isObligation } from './offer';
 
 // The Trace view's logic (LA-TRC-UC10), pure and tested directly: an obligation's traceability
@@ -167,18 +167,21 @@ export function obligationsUnder(index: SpecIndex, focus: string): string[] {
 /** The kinds a chain links by a trace relation, besides the tests. */
 const TRACED_KINDS: ReadonlySet<string> = new Set(['flow_step', 'command', 'query', 'command_handler', 'query_handler', 'ui_component']);
 
-const reachedCache = new WeakMap<SpecIndex, Set<string>>();
-/** Every record some obligation's chain holds, in the whole space, worked out once per index. */
-function reached(index: SpecIndex): Set<string> {
-  let known = reachedCache.get(index);
+const holdersCache = new WeakMap<SpecIndex, Map<string, string[]>>();
+/** For every record some obligation's chain holds, in the whole space, the obligations whose chains hold it; worked out once per index. */
+function holders(index: SpecIndex): Map<string, string[]> {
+  let known = holdersCache.get(index);
   if (known) return known;
-  known = new Set();
+  known = new Map();
   for (const r of index.workspace.records) {
     const row = traceChain(index, r.id);
     if (!row) continue;
-    for (const id of [...row.design, ...row.build, ...row.tests]) known.add(id);
+    for (const id of new Set([...row.design, ...row.build, ...row.tests])) {
+      const by = known.get(id);
+      if (by) by.push(r.id); else known.set(id, [r.id]);
+    }
   }
-  reachedCache.set(index, known);
+  holdersCache.set(index, known);
   return known;
 }
 
@@ -194,7 +197,7 @@ export interface UntracedGroup { kind: string; ids: string[] }
 
 /** The design, build and test records under a record or group that no obligation's chain reaches, by kind in the schema's order. */
 export function untracedUnder(index: SpecIndex, focus: string): UntracedGroup[] {
-  const reach = reached(index);
+  const reach = holders(index);
   const found: string[] = [];
   const seen = new Set<string>();
   const walk = (id: string) => {
@@ -222,8 +225,54 @@ export interface TraceGroup {
 
 /** The traceability matrix of a record or group: one row per obligation under it, grouped by its parent, in the tree's order. */
 export function traceMatrix(index: SpecIndex, focus: string): TraceGroup[] {
+  return groupRows(index, obligationsUnder(index, focus));
+}
+
+// ---------- What the Trace stage shows for any focus ----------
+//
+// Every stage works on every focus (LA-PAT-APP-UX-R17), so the Trace stage has a shape for each:
+// - an obligation: its chain;
+// - a record or group with obligations under it: their matrix;
+// - a design, build or test record some chain holds: the rows it belongs to, each obligation whose
+//   chain holds it, with the record marked in its cell;
+// - a design, build or test record no chain holds: the untraced state, with the matrix of the
+//   nearest container with obligations below it for context, the record marked;
+// - any other record (an entity, a value object, a term): the matrix of the nearest container with
+//   obligations (its aggregate, its domain, its product), the record marked.
+
+export type TraceShape =
+  | { shape: 'chain' }
+  | { shape: 'matrix'; groups: TraceGroup[] }
+  | { shape: 'rows'; groups: TraceGroup[] }
+  | { shape: 'context'; untraced: boolean; scope: string | null; groups: TraceGroup[] };
+
+/** The obligations whose chains hold a record, in ID order; empty when none does. */
+export const holdersOf = (index: SpecIndex, id: string): string[] => [...(holders(index).get(id) ?? [])].sort((a, b) => byIdOrder({ id: a }, { id: b }));
+
+/** The nearest container above a focus in the tree with an obligation under it, or null. */
+function nearestWithObligations(index: SpecIndex, focus: string): string | null {
+  for (let at = treeParent(index, focus); at !== null; at = treeParent(index, at)) {
+    if (obligationsUnder(index, at).length > 0) return at;
+  }
+  return null;
+}
+
+/** What the Trace stage shows for a focus. */
+export function traceShape(index: SpecIndex, focus: string): TraceShape {
+  if (isObligation(index, focus)) return { shape: 'chain' };
+  const own = obligationsUnder(index, focus);
+  if (own.length > 0) return { shape: 'matrix', groups: groupRows(index, own) };
+  const held = holdersOf(index, focus);
+  if (held.length > 0) return { shape: 'rows', groups: groupRows(index, held) };
+  const record = index.byId.get(focus);
+  const scope = nearestWithObligations(index, focus);
+  return { shape: 'context', untraced: !!record && traceable(index, record), scope, groups: scope ? traceMatrix(index, scope) : [] };
+}
+
+/** Rows of obligations, grouped by each obligation's parent in the order given. */
+function groupRows(index: SpecIndex, obligations: readonly string[]): TraceGroup[] {
   const groups = new Map<string, TraceGroup>();
-  for (const id of obligationsUnder(index, focus)) {
+  for (const id of obligations) {
     const parentId = index.byId.get(id)?.parent ?? '';
     let group = groups.get(parentId);
     if (!group) { group = { parent: index.byId.get(parentId) ?? null, rows: [] }; groups.set(parentId, group); }
