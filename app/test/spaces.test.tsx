@@ -242,7 +242,8 @@ describe('product spaces', () => {
     // Notebook's one error and the workspace's one; none of Demo shop's.
     expect(within(main()).getByText('2 errors · 0 warnings')).toBeInTheDocument();
     expect(within(main()).queryByRole('group', { name: 'Show checks for' })).toBeNull();
-    expect([...main().querySelectorAll('section li a')].map((a) => a.getAttribute('href'))).toEqual(['/NF-NOTE']);
+    // The workspace's problem names no record, so its row opens its check (LA-PAT-APP-UX-R14).
+    expect([...main().querySelectorAll('section li a')].map((a) => a.getAttribute('href'))).toEqual(['/NF-NOTE', '/format/checks/engine']);
     expect(within(main()).getByRole('heading', { level: 2, name: /^Workspace/ })).toBeInTheDocument();
     expect(within(main()).getByText('The checks could not read a file.')).toBeInTheDocument();
     expect(main().textContent).not.toMatch(/DM-/);

@@ -8,6 +8,7 @@ import { DomainPatterns } from './PatternParts';
 import { patternsFollowedBy } from './patterns';
 import { CoverageBars, ProductSummary } from './ProductHealth';
 import { LongList } from '../components/LongList';
+import { Card, CardGrid } from '../shell/Card';
 import { countOf } from '../plural';
 import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, StageMark, gapText, idText, levelBelow, recordText, type SectionLevel } from './parts';
 import { allFolders, domainFolders, foldedChildren, productFolders, type Folder, type OwnerFolders, type StageFolders } from './folders';
@@ -76,15 +77,13 @@ function SpecsHome({ index }: { index: SpecIndex }) {
     <div className="spec-body">
       <PageHeader eyebrow="Specs" title="Products" />
       {index.products.length === 0 && <p className="hint">No products yet. Run <code>lathe init</code> to add the first to <code>data/product.jsonl</code>.</p>}
-      <div className="cards">
+      <CardGrid label="Products">
         {index.products.map((p) => (
-          <Link key={p.id} to={addressOf(p.id)} className="card">
-            <code>{p.id}</code>
-            <strong>{p.title}</strong>
+          <Card key={p.id} href={addressOf(p.id)} title={<><code>{p.id}</code><strong>{p.title}</strong></>}>
             <small>{countOf((index.domainsOf.get(p.id) ?? []).length, 'domain')}</small>
-          </Link>
+          </Card>
         ))}
-      </div>
+      </CardGrid>
     </div>
   );
 }
@@ -103,14 +102,13 @@ function BusinessOutcomes({ index, productId }: { index: SpecIndex; productId: s
     <Section title="Business outcomes" count={outcomes.length} className="stage stage-discovery product-outcomes">
       <p className="hint">What the product exists to achieve, each measurable, and the capabilities that serve it.</p>
       {outcomes.length === 0 && <p className="hint">No business outcomes yet.</p>}
-      <ul className="outcome-list">
+      <CardGrid stack label="Business outcomes">
         {outcomes.map((o) => {
           const servedBy = (index.incoming.get(o.id) ?? []).filter((l) => l.relation === 'serves').map((l) => l.source).sort();
           return (
-            <li key={o.id} className="outcome">
-              <RecordLink index={index} id={o.id} row />
+            <Card key={o.id} accent href={addressOf(o.id)} title={<><code>{o.id}</code><strong>{o.title}</strong></>}>
               <div className="outcome-statement"><Prose index={index} source={textOf(o.row, 'statement')} self={o.id} /></div>
-              <dl className="fields">
+              <dl className="fields outcome-fields">
                 <div><dt>Measure</dt><dd><Prose index={index} source={textOf(o.row, 'measure')} self={o.id} /></dd></div>
                 <div><dt>Target</dt><dd><Prose index={index} source={textOf(o.row, 'target')} self={o.id} /></dd></div>
                 <div>
@@ -122,10 +120,10 @@ function BusinessOutcomes({ index, productId }: { index: SpecIndex; productId: s
                   </dd>
                 </div>
               </dl>
-            </li>
+            </Card>
           );
         })}
-      </ul>
+      </CardGrid>
     </Section>
   );
 }
@@ -150,18 +148,14 @@ export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
       <BusinessOutcomes index={index} productId={id} />
       <Section title="Domains" count={domains.length}>
         {domains.length === 0 && <p className="hint">No domains yet.</p>}
-        <div className="cards">
+        <CardGrid label="Domains">
           {domains.map((d) => (
-            <article key={d.id} className="card domain-card">
-              <Link to={addressOf(d.id)} className="card-title">
-                <code>{d.id}</code>
-                <strong>{d.title}</strong>
-              </Link>
+            <Card key={d.id} href={addressOf(d.id)} title={<><code>{d.id}</code><strong>{d.title}</strong></>}>
               <CoverageBars coverage={index.coverage.get(d.id)} />
               <ProblemBadge problems={problems.filter((p) => index.byId.get(p.record!)?.domain === d.id)} />
-            </article>
+            </Card>
           ))}
-        </div>
+        </CardGrid>
       </Section>
       {ownCount > 0 && (
         <Section title="Shared" count={ownCount} className="product-shared">

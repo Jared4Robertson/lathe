@@ -265,7 +265,7 @@ describe('folders by stage', () => {
     expect(rows(list('Test plan of Shopping'))).toEqual(['Invariant tests1', 'Use case tests1']);
   });
 
-  const proveLaPatAppUxR14 = async () => {
+  const proveLaPatAppUxR15 = async () => {
     // The folder model: a stage with one folder shows that folder's records directly; with two or more it keeps them.
     const index = indexOf(patternWorkspace());
     const stage = (owner: string, name: string) => ownerFolders(index, owner).stages.find((s) => s.stage === name)!;
@@ -305,6 +305,6 @@ describe('folders by stage', () => {
     await openApp('/DM-SHOP/use-cases/capability');
     await screen.findByText(/There's no record or group/);
   };
-  it('LA-PAT-APP-UX-R14-T01 A stage with one folder lists its records directly in the folder model, the nav, the graph\'s tree and the domain page, and the folder has no address', proveLaPatAppUxR14);
-  it('LA-PAT-APP-UX-R14-T02 A stage with one folder lists its records directly in the folder model, the nav, the graph\'s tree and the domain page, and the folder has no address', proveLaPatAppUxR14);
+  it('LA-PAT-APP-UX-R15-T01 A stage with one folder lists its records directly in the folder model, the nav, the graph\'s tree and the domain page, and the folder has no address', proveLaPatAppUxR15);
+  it('LA-PAT-APP-UX-R15-T02 A stage with one folder lists its records directly in the folder model, the nav, the graph\'s tree and the domain page, and the folder has no address', proveLaPatAppUxR15);
 });

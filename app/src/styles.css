@@ -147,22 +147,35 @@ code { font: 0.86em var(--mono); }
 .stage-technical-specification { --stage-color: var(--g-technical-specification); --stage-fill: var(--g-technical-specification-bg); }
 .stage-test-plan { --stage-color: var(--g-test-plan); --stage-fill: var(--g-test-plan-bg); }
 /* A product's business outcomes: each a block, its statement, then its measure, target and the capabilities serving it. */
-.outcome-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 12px; }
-.outcome { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; padding: 10px 12px; border: 1px solid var(--rule); border-left: 3px solid var(--stage-color, var(--rule)); border-radius: 4px; background: var(--sheet); }
-.outcome-statement p, .outcome .fields dd p { margin: 0; }
+.outcome-statement p, .outcome-fields dd p { margin: 0; }
 .served-by { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .stage-mark { flex: none; display: inline-block; width: 10px; height: 10px; border-radius: 2px; border: 1.5px solid var(--stage-color, var(--g-structural)); background: var(--stage-fill, var(--g-structural-bg)); }
 .kind-badge { display: inline-block; font: 500 0.72rem var(--mono); padding: 0 6px; border-radius: 4px; border: 1px solid var(--stage-color, var(--rule)); background: var(--stage-fill, var(--sheet)); color: var(--ink); white-space: nowrap; }
 
-.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
-.card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; padding: 14px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); color: var(--ink); text-decoration: none; }
-.spec-body a.card { color: var(--ink); text-decoration: none; }
-.spec-body a.card:hover strong, .spec-body .card-title:hover strong { color: var(--steel); }
-.card code, .card-title code { color: var(--muted); }
+/* Cards (LA-PAT-APP-UX-R14): a card has one primary action, taken by clicking anywhere on it. The Card component
+   (app/src/shell/Card.tsx) draws every card: its title is the link or button, and the title's ::after stretches over
+   the whole card, so the card takes the title's hover ring, focus ring and pointer. Every other control in the card
+   sits above the stretched title and keeps working. */
+.card-grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+.card-grid.card-stack { grid-template-columns: minmax(0, 1fr); }
+.card { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; align-content: start; padding: 14px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); color: var(--ink); }
+.card.card-accent { border-left: 3px solid var(--stage-color, var(--rule)); }
+.card.is-current { border-color: var(--steel); box-shadow: 0 0 0 1px var(--steel); }
+.card .card-title { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; margin: 0; padding: 0; border: 0; background: none; font: inherit; text-align: left; color: var(--ink); text-decoration: none; cursor: pointer; }
+.card-title::after { content: ''; position: absolute; inset: -1px; border: 1px solid transparent; border-radius: 10px; transition: border-color var(--hover-speed), box-shadow var(--hover-speed); }
+.card-title:hover::after { border-color: var(--steel); box-shadow: 0 0 0 3px var(--hover-ring); }
+.card .card-title:hover strong { color: var(--steel); }
+.card .card-title.card-title:focus-visible { outline: none; }
+.card-title:focus-visible::after { outline: 2px solid var(--steel); outline-offset: 3px; }
+.card :is(a, button, input, select, textarea, summary, [title], [tabindex]):not(.card-title) { position: relative; z-index: 1; }
+.card-title code { color: var(--muted); }
 .card strong { font: 700 1.05rem var(--display); }
 .card small { color: var(--muted); }
-.spec-body .card-title { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; color: var(--ink); text-decoration: none; }
-.domain-card .badge { justify-self: start; }
+.card .badge { justify-self: start; }
+.card.card-compact { gap: 2px; padding: 8px 10px; border-radius: 6px; min-width: 0; overflow-wrap: anywhere; }
+.card-compact .card-title::after { border-radius: 6px; }
+.card-compact code { font-size: 0.8rem; }
+@media (prefers-reduced-motion: reduce) { .card-title::after { transition: none; } }
 
 .coverage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .coverage-heading { margin: 4px 0 0; font-size: 0.78rem; font-weight: 600; }
@@ -690,7 +703,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-UX-R01).
    Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
    The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
-.card, .button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-filters > summary, .graph-legend summary {
+.button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-filters > summary, .graph-legend summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
 /* A row that leads to one record is one link (LA-PAT-APP-UX-R05): its record link, marked row-link, stretches over
@@ -704,16 +717,11 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 a.row-link.row-link:focus-visible { outline: none; }
 .row-link:focus-visible::after { outline: 2px solid var(--steel); outline-offset: -1px; }
 @media (prefers-reduced-motion: reduce) { .row-link::after { transition: none; } }
-/* A domain card is one link: its title's link stretches over the whole card, so anywhere on it goes to the domain. */
-.domain-card { position: relative; }
-.domain-card .card-title::after { content: ''; position: absolute; inset: 0; border-radius: inherit; }
-.spec-body a.card:hover, .spec-body .domain-card:hover { border-color: var(--steel); box-shadow: 0 0 0 3px var(--hover-ring); }
-.spec-body .domain-card:hover .card-title strong { color: var(--steel); }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
 .quick-find-results li:not(.active):hover, .palette-list li:not(.active):hover { background: var(--hover-bg); }
 .graph-filters > summary:hover, .graph-legend summary:hover { color: var(--steel); }
 @media (prefers-reduced-motion: reduce) {
-  .card, .button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-filters > summary, .graph-legend summary { transition: none; }
+  .button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-filters > summary, .graph-legend summary { transition: none; }
 }
 
 /* The workbench (LA-PAT-APP-UX-R02): each panel is a rounded box on the shell; the gap between two
@@ -870,12 +878,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 @container trace-page (max-width: 640px) { .trace-chain { grid-template-columns: minmax(0, 1fr); } }
 .trace-column { min-width: 0; }
 .trace-column-name { margin: 0 0 8px; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.trace-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
-.trace-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); text-decoration: none; min-width: 0; overflow-wrap: anywhere; }
-a.trace-card:hover { border-color: var(--steel); }
-.trace-card.is-focus { border-color: var(--steel); box-shadow: inset 3px 0 0 var(--steel); }
-.trace-card code { font-size: 0.8rem; }
-.trace-card-title { font-size: 0.88rem; }
+.trace-ref-title { font-size: 0.88rem; }
 .trace-cell-empty { margin: 0; }
 /* An owed column left empty is a gap, in the warning color; a column the kind does not owe is a quiet note. */
 .trace-missing { display: inline-block; padding: 2px 8px; border: 1px solid var(--warn); border-radius: 6px; color: var(--ink); font-size: 0.82rem; }
@@ -909,12 +912,7 @@ a.trace-card:hover { border-color: var(--steel); }
 .segment.is-on { background: var(--sheet); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px var(--shadow-soft); }
 .segment input { position: absolute; opacity: 0; inset: 0; margin: 0; cursor: pointer; }
 .segment:focus-within { outline: 2px solid var(--steel); outline-offset: 1px; }
-.theme-list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
-.theme-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 10px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); }
-.theme-card.is-current { border-color: var(--steel); box-shadow: 0 0 0 1px var(--steel); }
-.theme-card-name { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
-.theme-card-name small { color: var(--muted); font-size: 0.78rem; }
-.theme-card-actions { display: flex; flex-wrap: wrap; gap: 6px; }
+.theme-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .confirm { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 0.85rem; }
 /* A file input drawn as a ghost Button: the input covers its label. */
 .file-button { position: relative; }
@@ -1063,14 +1061,15 @@ a.trace-card:hover { border-color: var(--steel); }
   :is(.quick-find, .dialog, .long-list-tools, .graph-filters, .appearance-page) :is(input, select, textarea), .dialog-search { font-size: 16px; }
 }
 
-/* A canvas by touch: the selected node is outlined, and a card at the bottom names it with an Open chip. */
+/* A canvas by touch: the selected node is outlined, and a card at the bottom names it; a tap on the card opens it. */
 .graph-flow, .erd-flow { touch-action: none; }
 .react-flow__node.is-armed .erd-box { box-shadow: 0 0 0 3px var(--steel); }
-.tap-card { position: absolute; z-index: 6; left: 56px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; max-width: 420px; box-sizing: border-box; padding: 6px 6px 6px 14px; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 12px; box-shadow: 0 6px 20px var(--shadow); }
-.tap-card-text { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
-.tap-card-text small { color: var(--muted); font-size: 0.72rem; }
-.tap-card-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.92rem; }
-.tap-open { flex: none; min-height: var(--touch-target); padding: 0 16px; border-radius: 999px; font-weight: 600; }
+.card.card-bar { position: absolute; z-index: 6; left: 56px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; max-width: 420px; box-sizing: border-box; padding: 6px 6px 6px 14px; border-radius: 12px; box-shadow: 0 6px 20px var(--shadow); }
+.card-bar .card-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); }
+.card-bar .card-title::after { border-radius: 12px; }
+.tap-text { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.tap-text small { font-size: 0.72rem; }
+.tap-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 0.92rem var(--body); }
 
 /* Long IDs and code never widen the page: IDs wrap at any character, code blocks and tables scroll in their own box. */
 .record-id, .tab-id, .qf-meta code { overflow-wrap: anywhere; }
