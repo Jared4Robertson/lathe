@@ -15,6 +15,7 @@
 {"id":"LA-VO15-VT","title":"Kind field type","value_object_id":"LA-VO15","file":"lathe/schema/012-product-kinds.sql","description":"field_type"}
 {"id":"LA-VO16-VT","title":"Stage","value_object_id":"LA-VO16","file":"lathe/schema/001-meta.sql","description":"stage"}
 {"id":"LA-VO17-VT","title":"Relation role","value_object_id":"LA-VO17","file":"lathe/schema/001-meta.sql","description":"link_role"}
+{"id":"LA-VO18-VT","title":"Group name","value_object_id":"LA-VO18","file":"app/src/specs/groups.ts","description":"`groupRecords`: groups compared trimmed and in lower case, headed as first written."}
 {"id":"LA-VO41-VT","title":"the CHECK on check.name","value_object_id":"LA-VO41","file":"lathe/schema/011-checking.sql"}
 {"id":"LA-VO42-VT","title":"check_severity","value_object_id":"LA-VO42","file":"lathe/schema/011-checking.sql"}
 {"id":"LA-VO43-VT","title":"the CHECK on max_children","value_object_id":"LA-VO43","file":"lathe/schema/003-product.sql"}

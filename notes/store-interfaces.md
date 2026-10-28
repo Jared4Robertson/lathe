@@ -34,7 +34,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | domain-model | `query` | read_model (read_model_id) | description? | `<P>-<D>-QRY<nn>` |
 | domain-model | `policy` | command (command_id) | statement | `<P>-<D>-PO<nn>` |
 | domain-model | `domain_service` | domain (domain_id) | statement | `<P>-<D>-DS<nn>` |
-| domain-model | `term` | domain (domain_id) | meaning | `<P>-<D>-TM<nn>` |
+| domain-model | `term` | domain (domain_id) | meaning, group_name? | `<P>-<D>-TM<nn>` |
 | use-cases | `capability` | domain (domain_id) | position (int), description? | `<P>-<D>-CAP<nn>` |
 | use-cases | `use_case` | capability (capability_id) | goal?, notes? | `<P>-<D>-UC<nn>` |
 | use-cases | `uc_requirement` | use_case (use_case_id) | statement, group_name? | `<use case>-R<nn>` |
