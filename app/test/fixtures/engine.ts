@@ -16,7 +16,7 @@ export async function throughEngine(data: SpecData, files: Record<string, string
   try {
     const dataDir = path.join(root, 'data');
     await mkdir(dataDir);
-    for (const [table, rows] of Object.entries(data.tables)) {
+    for (const [table, rows] of Object.entries(data.sources[0].tables)) {
       await writeFile(path.join(dataDir, `${table}.jsonl`), rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
     }
     for (const [file, text] of Object.entries(files)) {

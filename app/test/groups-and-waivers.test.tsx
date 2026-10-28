@@ -122,7 +122,7 @@ describe('groups', () => {
 
     // A standard's rule table heads each group's rows with its name.
     const std = standardWorkspace();
-    for (const r of std.tables.standard_rule) r.group_name = 'Data';
+    for (const r of std.sources[0].tables.standard_rule) r.group_name = 'Data';
     await openApp('/DM-STD-CODE', { data: std });
     await screen.findByRole('heading', { level: 1, name: 'Code standard' });
     const stdTable = within(section(/^Rules/)).getByRole('table');

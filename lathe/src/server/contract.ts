@@ -1,8 +1,8 @@
 // What the app's server answers, shared by the server (api.ts, history.ts) and the web app, which imports these
-// types only. The server reads the product's data through the store and serves the typed rows as they are.
+// types only. The server reads each product's data through its own store and serves the typed rows as they are.
 //
-//   GET  /api/spec               SpecData: the schema, every stored table's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
-//   POST /api/write              { commands: Command[] } -> WriteAnswer: one transaction through the store's command layer
+//   GET  /api/spec               SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
+//   POST /api/write              { commands: Command[] } -> WriteAnswer: one transaction through the command layer of the product the commands name
 //   GET  /api/history?id=<ID>    HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 import type { Command, StoreProblem } from '../store/store.ts';
 import type { Row, Value } from '../store/rows.ts';
@@ -11,24 +11,34 @@ import type { Coverage, Problem, RecordedException } from '../types.ts';
 
 export type { Row, StoreProblem, Value };
 
-/** GET /api/spec. */
+/**
+ * GET /api/spec: every product the workspace shows (its own, then each its lathe.config.json lists under products),
+ * each product's rows from its own folder, with one schema and the checks of them all.
+ */
 export interface SpecData {
+  /** The schema of every product's data as one: Lathe's tables, and each product's own kinds and relations. */
   schema: SchemaDescription;
-  /** The data folder, relative to the product root and written with /, such as data. */
-  dataDir: string;
-  /** The rows of every stored table that has any, sorted by key, as the data files hold them. */
-  tables: Record<string, Row[]>;
+  /** Each product folder's rows: the workspace's own first, then the listed ones in their order. */
+  sources: SpecSource[];
   /**
    * Where each record with no owner sits, from the store's record_scope (Store.placements): its product, and its
    * domain, the one that uses it (or a specification's, from its ID), or null when the product shares it. What sits
    * under it follows it.
    */
   placements: Record<string, { product: string | null; domain: string | null }>;
-  /** What the checks found. */
+  /** What the checks found, each product checked in its own folder. */
   problems: Problem[];
   /** Every recorded exception (a command_change row): listed, never a problem. */
   exceptions: RecordedException[];
   coverage: Coverage[];
+}
+
+/** One product folder's data. */
+export interface SpecSource {
+  /** Its data folder, relative to the workspace root and written with /, such as data or examples/tool-library/data. */
+  dataDir: string;
+  /** The rows of every stored table that has any, sorted by key, as the data files hold them. */
+  tables: Record<string, Row[]>;
 }
 
 /** POST /api/write takes this body. */

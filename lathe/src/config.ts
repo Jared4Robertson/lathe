@@ -26,6 +26,11 @@ export interface LatheConfig {
    * null when the config names none, and then the root and each folder directly under it that holds a package.json.
    */
   packages: string[] | null;
+  /**
+   * The other products this workspace shows beside its own (the folders its products key lists), as absolute roots,
+   * each with its own lathe.config.json and data; none when the config names none.
+   */
+  products: string[];
 }
 
 /**
@@ -57,10 +62,12 @@ interface ConfigFile {
   routers?: unknown;
   /** The package folders whose package.json lists the product's packages; default the root and the folders under it. */
   packages?: unknown;
+  /** The folders of the other products the workspace shows, each with its own lathe.config.json; default none. */
+  products?: unknown;
 }
 
 /** The keys lathe.config.json may hold; any other key is an error, never silently ignored. */
-const CONFIG_KEYS = ['schema', 'data', 'tests', 'source', 'routers', 'packages'] as const;
+const CONFIG_KEYS = ['schema', 'data', 'tests', 'source', 'routers', 'packages', 'products'] as const;
 
 /** The installed Lathe package's own folder (holding schema/ and data/), from source or from dist. */
 export const PACKAGE_DIR = (() => {
@@ -111,6 +118,37 @@ export function loadConfig(root: string): LatheConfig {
   return config;
 }
 
+/**
+ * The products a workspace shows: its own config first, then the config of each folder its products key lists, in
+ * the listed order, each refused unless its data is for this Lathe's schema version. Only the workspace lists
+ * products: a listed product that lists its own is refused.
+ */
+export function workspaceProducts(root: string): LatheConfig[] {
+  const own = loadConfig(root);
+  return [own, ...own.products.map((product) => {
+    const config = loadConfig(product);
+    if (config.products.length) {
+      const folder = path.relative(own.root, product).split(path.sep).join('/');
+      throw new Error(`${folder}/${CONFIG_FILE}: products is for the workspace only; list every product in ${CONFIG_FILE} at ${own.root}.`);
+    }
+    return config;
+  })];
+}
+
+/** Why the products' IDs clash (one product ID in two products' folders), or null when each is in one folder. */
+export function productClash(workspace: string, products: { root: string; ids: readonly string[] }[]): string | null {
+  const seen = new Map<string, string>();
+  const folder = (root: string) => path.relative(workspace, root).split(path.sep).join('/') || '.';
+  for (const { root, ids } of products) {
+    for (const id of ids) {
+      const other = seen.get(id);
+      if (other !== undefined && other !== root) return `The product ${id} is in two folders, ${folder(other)} and ${folder(root)}: a product's records live in its own folder only.`;
+      seen.set(id, root);
+    }
+  }
+  return null;
+}
+
 /** The product's config whatever its schema version: only `lathe upgrade` reads it this way. */
 export function readConfig(root: string): LatheConfig {
   root = path.resolve(root);
@@ -156,7 +194,25 @@ export function readConfig(root: string): LatheConfig {
     source: source ?? [...DEFAULT_SOURCE],
     routers: (config.routers as string[] | undefined) ?? [],
     packages: packageFolders(root, config.packages),
+    products: productFolders(root, config.products),
   };
+}
+
+// The product folders the config lists, as absolute roots: each a folder other than the root, named once, that holds
+// its own lathe.config.json.
+function productFolders(root: string, value: unknown): string[] {
+  if (value === undefined) return [];
+  const shape = `${CONFIG_FILE}: products must list the folders of the other products this workspace shows, each holding its own ${CONFIG_FILE}, such as ["examples/tool-library"].`;
+  if (!Array.isArray(value) || value.some((v) => typeof v !== 'string' || v.trim() === '')) throw new Error(shape);
+  const roots: string[] = [];
+  for (const folder of value as string[]) {
+    const product = path.resolve(root, folder);
+    if (product === root) throw new Error(`${shape} ${folder} is the workspace itself.`);
+    if (roots.includes(product)) throw new Error(`${shape} ${folder} is listed twice.`);
+    if (!existsSync(path.join(product, CONFIG_FILE))) throw new Error(`${shape} ${folder} holds no ${CONFIG_FILE}.`);
+    roots.push(product);
+  }
+  return roots;
 }
 
 // The package folders the config lists, each a folder inside the root, as paths from the root ('.' for the root).
@@ -167,6 +223,13 @@ function packageFolders(root: string, value: unknown): string[] | null {
   return (value as string[]).map((folder) => {
     const rel = path.relative(root, path.resolve(root, folder));
     if (rel.startsWith('..') || path.isAbsolute(rel)) throw new Error(`${shape} ${folder} is outside it.`);
+    if (otherProductHolds(root, rel)) throw new Error(`${shape} ${folder} is another product's folder.`);
     return rel.split(path.sep).join('/') || '.';
   });
+}
+
+/** Whether a folder, from the root, lies in another product's folder: it or a folder above it, below the root, holds its own lathe.config.json. */
+export function otherProductHolds(root: string, rel: string): boolean {
+  for (let at = rel; at !== '' && at !== '.'; at = path.dirname(at)) if (existsSync(path.join(root, at, CONFIG_FILE))) return true;
+  return false;
 }
