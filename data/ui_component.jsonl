@@ -35,6 +35,7 @@
 {"id":"LA-UI133","title":"Focus fade","file":"app/src/graph/fade.ts","description":"How strongly the graph draws each box for its focus: the focus's subtree at full strength, the trail and the rest faded."}
 {"id":"LA-UI134","title":"Flows by interface sections","file":"app/src/specs/InterfaceParts.tsx"}
 {"id":"LA-UI135","title":"Trace view","file":"app/src/trace/TraceView.tsx","description":"The Trace view's pane: an obligation's chain, or the matrix of those under the focus."}
+{"id":"LA-UI136","title":"Card","file":"app/src/shell/Card.tsx","description":"The one card: a title that is its link or button, stretched over the whole card, and what else the card holds; and the grid that lists cards."}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
 {"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}

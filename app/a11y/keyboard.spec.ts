@@ -198,6 +198,22 @@ test.describe('keyboard', () => {
     expect((await focused(page)).name).toBe('Wiki');
   });
 
+  test('LA-V61-R41-T02 open a domain from its card: each card is one tab stop, and Enter opens it', async ({ page }) => {
+    await open(page, PRODUCT);
+    const inDomains = (el: Element) => el.classList.contains('card-title') && !!el.closest('ul[aria-label="Domains"]');
+    await tabUntil(page, inDomains, 'a domain card', 400);
+    const first = await page.evaluate(() => document.activeElement!.getAttribute('href'));
+    // One tab stop per card (LA-PAT-APP-UX-R14): the next Tab lands on the next card's title, not inside this card.
+    await page.keyboard.press('Tab');
+    const next = await page.evaluate(() => ({ title: document.activeElement!.classList.contains('card-title'), href: document.activeElement!.getAttribute('href') }));
+    expect(next.title, 'the next stop is the next card').toBe(true);
+    expect(next.href).not.toBe(first);
+    await page.keyboard.press('Shift+Tab');
+    expect(await page.evaluate(() => document.activeElement!.getAttribute('href'))).toBe(first);
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`${first}$`));
+  });
+
   test('LA-V61-R42-T01 the palette and the shortcuts sheet give focus back when they close', async ({ page }) => {
     await open(page, RECORD);
     await tabUntil(page, (el) => el.classList.contains('side-bar-toggle'), 'the side bar toggle');

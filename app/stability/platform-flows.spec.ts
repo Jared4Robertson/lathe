@@ -335,11 +335,12 @@ test.describe('Platform flows in the app', () => {
       await page.keyboard.press('Control+2');
       await page.locator(`${FLOW} .graph-box`).first().waitFor({ state: 'attached' });
     }));
-    // Fold rows with Expand all, scrolled to first by the Reader when it sits below the fold.
+    // Fold rows with Expand all. The Reader scrolls to the button first; the step measures the rows opening.
     const expand = page.locator(WIKI).getByRole('button', { name: 'Expand all' }).first();
-    if (await expand.count()) await expand.scrollIntoViewIfNeeded();
+    await expand.scrollIntoViewIfNeeded();
     expectStable(await step(page, 'flow', 'Expand all', { keys: KEYS, allow: ['.pane-wiki .pane-scroll'] }, async () => {
-      if (await expand.count()) await expand.click();
+      await expand.click();
+      await expect(page.locator(WIKI).getByRole('button', { name: 'Collapse all' }).first()).toBeVisible();
     }));
     // The Reader scrolls back to the top, where the steps below start.
     await page.locator(`${WIKI} .pane-scroll`).evaluate((e) => e.scrollTo(0, 0));
@@ -367,6 +368,8 @@ test.describe('Platform flows in the app', () => {
     } finally {
       restore();
     }
+    // The put-back goal reloads the page too: let it land before the next step measures.
+    await expect(page.locator(WIKI)).not.toContainText('A goal the flow test writes', { timeout: 20_000 });
     // Overlays are placed before they show.
     expectStable(await step(page, 'flow', 'quick find', { keys: [...KEYS, '.quick-find input'], allow: ['.quick-find-results'] }, async () => {
       await page.keyboard.press('Control+k');

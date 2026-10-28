@@ -6,6 +6,7 @@ import { kindLabel, type SpecIndex } from '../specs/data';
 import { isObligation } from './offer';
 import { gapColumns, TRACE_COLUMN_LABELS, TRACE_COLUMNS, traceChain, traceMatrix, untracedUnder, type TraceColumn, type TraceFile, type TraceRow } from './chain';
 import { plural } from '../plural';
+import { Card, CardGrid } from '../shell/Card';
 
 // What the focus owes and how far it has come, as columns left to right: obligation, design, build,
 // tests, files (chain.ts). On an obligation it is that obligation's chain, each column a list of
@@ -72,31 +73,46 @@ function peekHandlers(props: TraceViewProps) {
   };
 }
 
-/** A link to a record in a cell or card: its ID, and its title where there is room. */
-function Ref({ id, props, compact, className }: { id: string; props: TraceViewProps; compact?: boolean; className?: string }) {
+/** A link to a record in a matrix cell: its ID. */
+function Ref({ id, props, className = 'trace-ref' }: { id: string; props: TraceViewProps; className?: string }) {
   const record = props.index.byId.get(id);
-  const title = record ? `${record.title} (${id})` : id;
+  return <TraceLink id={id} props={props} title={record ? `${record.title} (${id})` : id} className={className}><code>{id}</code></TraceLink>;
+}
+
+/** A record's card in a chain's column: its kind, ID and title; anywhere on it opens the record. */
+function RecordCard({ id, props, current = false }: { id: string; props: TraceViewProps; current?: boolean }) {
+  const record = props.index.byId.get(id);
   return (
-    <TraceLink id={id} props={props} title={title} className={className ?? 'trace-ref'}>
-      {compact ? <code>{id}</code> : (
-        <>
-          <small className="meta">{record ? kindLabel(props.index, record.kind) : ''}</small>
-          <code>{id}</code>
-          <span className="trace-card-title">{record?.title ?? ''}</span>
-        </>
-      )}
-    </TraceLink>
+    <Card
+      look="compact"
+      href={props.hrefFor(id)}
+      onFollow={() => props.onNavigate(id)}
+      current={current}
+      hint={record ? `${record.title} (${id})` : id}
+      data={{ 'data-trace-id': id }}
+      title={<><small className="meta">{record ? kindLabel(props.index, record.kind) : ''}</small><code>{id}</code><span className="trace-ref-title">{record?.title ?? ''}</span></>}
+    />
   );
 }
 
 /** A file, linked to the first record that names it. */
-function FileRef({ file, props, compact }: { file: TraceFile; props: TraceViewProps; compact?: boolean }) {
+function FileRef({ file, props }: { file: TraceFile; props: TraceViewProps }) {
   const title = `${file.path}, named by ${file.namedBy.join(', ')}`;
+  return <TraceLink id={file.namedBy[0]} props={props} title={title} className="trace-ref trace-file"><code>{file.path}</code></TraceLink>;
+}
+
+/** A file's card in a chain's column, opening the first record that names it. */
+function FileCard({ file, props }: { file: TraceFile; props: TraceViewProps }) {
+  const id = file.namedBy[0];
   return (
-    <TraceLink id={file.namedBy[0]} props={props} title={title} className={compact ? 'trace-ref trace-file' : 'trace-card trace-file'}>
-      <code>{file.path}</code>
-      {!compact && <small className="meta">Named by {file.namedBy.join(', ')}</small>}
-    </TraceLink>
+    <Card
+      look="compact"
+      href={props.hrefFor(id)}
+      onFollow={() => props.onNavigate(id)}
+      hint={`${file.path}, named by ${file.namedBy.join(', ')}`}
+      data={{ 'data-trace-id': id }}
+      title={<><code className="trace-file">{file.path}</code><small className="meta">Named by {file.namedBy.join(', ')}</small></>}
+    />
   );
 }
 
@@ -120,11 +136,11 @@ function TraceChainView(props: TraceViewProps) {
   const column = (c: TraceColumn): ReactNode => {
     if (itemsOf(row, c) === 0) return <p className="trace-cell-empty"><Empty row={row} column={c} /></p>;
     return (
-      <ul className="trace-cards" aria-label={TRACE_COLUMN_LABELS[c]}>
+      <CardGrid stack label={TRACE_COLUMN_LABELS[c]}>
         {c === 'files'
-          ? row.files.map((f) => <li key={f.path}><FileRef file={f} props={props} /></li>)
-          : row[c].map((id) => <li key={id}><Ref id={id} props={props} className="trace-card" /></li>)}
-      </ul>
+          ? row.files.map((f) => <FileCard key={f.path} file={f} props={props} />)
+          : row[c].map((id) => <RecordCard key={id} id={id} props={props} />)}
+      </CardGrid>
     );
   };
   return (
@@ -136,11 +152,7 @@ function TraceChainView(props: TraceViewProps) {
         <ol className="trace-chain">
           <li className="trace-column">
             <h3 className="trace-column-name">Obligation</h3>
-            <div className="trace-card is-focus" aria-current="page">
-              <small className="meta">{kindLabel(index, record.kind)}</small>
-              <code>{focus}</code>
-              <span className="trace-card-title">{record.title}</span>
-            </div>
+            <CardGrid stack label="Obligation"><RecordCard id={focus} props={props} current /></CardGrid>
           </li>
           {TRACE_COLUMNS.map((c) => (
             <li key={c} className="trace-column">
@@ -211,14 +223,14 @@ function TraceMatrixView(props: TraceViewProps) {
                 </tr>
                 {g.rows.map((row) => (
                   <tr key={row.obligation} className={gapColumns(row).length > 0 ? 'has-gap' : undefined}>
-                    <th scope="row"><Ref id={row.obligation} props={props} compact /> <span className="trace-row-title">{index.byId.get(row.obligation)?.title}</span></th>
+                    <th scope="row"><Ref id={row.obligation} props={props} /> <span className="trace-row-title">{index.byId.get(row.obligation)?.title}</span></th>
                     {TRACE_COLUMNS.map((c) => (
                       <td key={c} className={itemsOf(row, c) === 0 && !row.notOwed.has(c) ? 'is-gap' : undefined}>
                         {itemsOf(row, c) === 0 ? <Empty row={row} column={c} /> : (
                           <span className="trace-refs">
                             {c === 'files'
-                              ? row.files.map((f) => <FileRef key={f.path} file={f} props={props} compact />)
-                              : row[c].map((id) => <Ref key={id} id={id} props={props} compact />)}
+                              ? row.files.map((f) => <FileRef key={f.path} file={f} props={props} />)
+                              : row[c].map((id) => <Ref key={id} id={id} props={props} />)}
                           </span>
                         )}
                       </td>
@@ -242,7 +254,7 @@ function TraceMatrixView(props: TraceViewProps) {
               {untraced.map((g) => (
                 <div key={g.kind}>
                   <dt>{plural(kindLabel(index, g.kind))} <span className="section-count">{g.ids.length}</span></dt>
-                  <dd><span className="trace-refs">{g.ids.map((id) => <Ref key={id} id={id} props={props} compact />)}</span></dd>
+                  <dd><span className="trace-refs">{g.ids.map((id) => <Ref key={id} id={id} props={props} />)}</span></dd>
                 </div>
               ))}
             </dl>
