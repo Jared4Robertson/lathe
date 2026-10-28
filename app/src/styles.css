@@ -975,7 +975,7 @@ a.row-link.row-link:focus-visible { outline: none; }
    with an ellipsis, whole in its tooltip), and the stage's counts at the right. */
 .header-strip { position: absolute; z-index: 3; top: calc(var(--float-inset) + var(--page-bar-height)); left: var(--nav-space); right: var(--float-inset); box-sizing: border-box; height: var(--strip-height); display: flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid var(--float-border); border-radius: 0 0 var(--panel-radius) var(--panel-radius); font-size: 0.8rem; white-space: nowrap; }
 .stage-layout.is-phone > .header-strip { position: static; flex: none; border-width: 0 0 1px; border-radius: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--sheet); }
-.header-strip-trail { flex: 0 1 auto; min-width: 0; max-width: 45%; overflow-x: clip; }
+.header-strip-trail { flex: 0 1 auto; min-width: 0; max-width: 45%; }
 .header-strip-sep { flex: none; color: var(--muted); }
 .header-strip-focus { flex: 1 1 auto; min-width: 8rem; display: flex; align-items: center; gap: 6px; }
 .header-strip-focus .kind-badge { flex: none; font-size: 0.68rem; }
@@ -983,9 +983,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .header-strip-title { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; font: 600 0.8rem/1.3 var(--body); color: var(--ink); }
 .header-strip-counts { flex: 0 1000 auto; min-width: 0; margin-left: auto; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* The wiki card (WikiCard.tsx). */
-.wiki-panel { position: absolute; z-index: 2; top: var(--below-strip); bottom: var(--float-inset); left: var(--nav-space); box-sizing: border-box; width: var(--card-width, clamp(300px, calc((100% - var(--nav-space)) / 3), 640px)); max-width: calc(100% - var(--nav-space) - var(--side-space)); display: flex; flex-direction: column; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
+.wiki-panel { position: absolute; z-index: 2; top: var(--below-strip); bottom: var(--float-inset); left: var(--nav-space); box-sizing: border-box; width: var(--card-width, clamp(300px, calc((100% - var(--nav-space)) / 3), 640px)); min-width: 200px; max-width: calc(100% - var(--nav-space) - var(--side-space) - 160px); display: flex; flex-direction: column; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
 .wiki-panel-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 36px; padding: 2px 4px 2px 12px; border-bottom: 1px solid var(--float-border); font-size: 0.8rem; }
-.wiki-panel-trail { flex: 1 1 auto; min-width: 0; overflow-x: clip; }
+.wiki-panel-trail { flex: 1 1 auto; min-width: 0; }
 .wiki-panel-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; border-radius: 0 0 var(--panel-radius) var(--panel-radius); }
 .wiki-panel-title { padding: 14px 20px 0; }
 .wiki-panel-title h2 { margin: 2px 0 0; font: 700 1.35rem/1.25 var(--display); overflow-wrap: anywhere; }
@@ -1021,7 +1021,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 .breadcrumb ol { display: flex; align-items: center; gap: 4px; min-width: 0; margin: 0; padding: 0; list-style: none; white-space: nowrap; }
 .crumb { display: flex; align-items: center; gap: 4px; min-width: 0; }
 .crumb + .crumb::before { content: "›"; flex: none; color: var(--muted); }
-.crumb:first-child, .crumb:last-child { flex-shrink: 0.2; }
 .crumb-link { min-width: 0; max-width: 16rem; overflow: hidden; text-overflow: ellipsis; color: var(--steel); text-decoration: none; }
 .crumb-link:hover { text-decoration: underline; }
 .crumb-link:focus-visible, .crumb-more-button:focus-visible, .crumb-menu-link:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; border-radius: 3px; }

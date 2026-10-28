@@ -263,6 +263,22 @@ describe('one address, one stage', () => {
     expect(card().querySelector('h1')).toBeNull();
   });
 
+  it('LA-V96-R09-T01 The header strip names the focus in one line under the active tab: its breadcrumb, kind, linked ID and title, whole in its tooltip, and the stage\'s counts', async () => {
+    await openApp('/P-D-UC01?stage=graph', served());
+    const h1 = await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    const strip = h1.closest<HTMLElement>('.header-strip')!;
+    expect(strip).not.toBeNull();
+    expect(within(strip).getByRole('navigation', { name: 'Breadcrumb' })).toBeInTheDocument();
+    expect(within(strip).getByRole('link', { name: 'P-D-UC01' })).toHaveAttribute('href', '/P-D-UC01');
+    expect(strip.querySelector('.kind-badge')).not.toBeNull();
+    expect(h1.closest('[title]')).toHaveAttribute('title', 'Lend a thing (P-D-UC01)');
+    await waitFor(() => expect(strip.querySelector('.header-strip-counts')!.textContent).toMatch(/^\d+ records? · .*\d+ links?$/));
+    // One line: the title cut with an ellipsis, never wrapped.
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
+    expect(css).toMatch(/\.header-strip \{[^}]*height: var\(--strip-height\)[^}]*white-space: nowrap/);
+    expect(css).toMatch(/\.header-strip-title \{[^}]*text-overflow: ellipsis/);
+  });
+
   it('LA-V96-R19-T01 The wiki card shows the focus\'s page, follows it once it settles, collapses by w and its button, and keeps its width for the session', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
