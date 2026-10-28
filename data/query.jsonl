@@ -27,7 +27,7 @@
 {"id":"LA-TRC-QRY01","title":"Count coverage","read_model_id":"LA-TRC-RM01","description":"Workspace.coverage[].obligations and .proved_by (the tests that count as each obligation's proof there); lathe check's coverage lines; the product and domain pages"}
 {"id":"LA-TRC-QRY02","title":"List coverage gaps","read_model_id":"LA-TRC-RM02","description":"Coverage.gaps; the gap callouts and the not-designed, not-built and not-proved warnings"}
 {"id":"LA-TRC-QRY03","title":"Count tests by state","read_model_id":"LA-TRC-RM03","description":"Coverage.tests"}
-{"id":"LA-TRC-QRY04","title":"List the pattern rules a domain owes","read_model_id":"LA-TRC-RM04","description":"Patterns we follow, the pattern and pattern rule pages"}
+{"id":"LA-TRC-QRY04","title":"List the pattern rules a domain owes","read_model_id":"LA-TRC-RM04","description":"Coverage.pattern_rules, each followed rule's standing per domain: Patterns we follow, the pattern and pattern rule pages, and Traceability's owing domains"}
 {"id":"LA-TRC-QRY05","title":"Trace a record","read_model_id":"LA-TRC-RM06","description":"A record's Traceability section"}
 {"id":"LA-TRC-QRY06","title":"Trace an obligation in the graph","read_model_id":"LA-TRC-RM06","description":"The graph's trace mode"}
 {"id":"LA-TRC-QRY07","title":"Find the files that are missing or silent","read_model_id":"LA-TRC-RM05","description":"The checks that read the file facts: a test's file missing or not naming it, a manual test's file naming it, and a technical record's file missing."}

@@ -172,6 +172,7 @@ A query can read every typed table, the `record_parent`, `link` and `record_grou
 | `file_facts` | `record`, `kind`, `file`, `file_exists`, `contains_id`: each record that names a file |
 | `test_level_allowed` | `kind`, `level`: the run by levels each test kind allows |
 | `test_run` | `id`, `kind`, `parent_id`, `domain_id` (a pattern rule test's), `level`, `state`, `file`, `level_allowed`, `backed`: every test with its run by |
+| `pattern_rule_standing` | `domain`, `id`, `standing`: each rule of each pattern a domain follows, `owed`, `not-applicable` or `waived` there; the app reads it as `Coverage.pattern_rules` |
 | `owed_pattern_rules` | `domain`, `id`: each pattern rule a domain owes, as a follower of its pattern, unless not applicable or waived there |
 | `obligation_impl`, `obligation_proof` | the technical records that implement each obligation, and the tests that prove it |
 | `coverage_owed` | `product`, `domain`, `id`, `kind`: each obligation a domain, or the product outside the domains, owes |

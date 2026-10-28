@@ -38,6 +38,7 @@ const coverage = (): Coverage[] => [{
   ],
   tests: { automated: 3, manual: 1, not_automated: 1 },
   proved_by: { 'P-D-INV01': ['P-D-INV01-T'], 'P-D-PO02': ['P-D-PO02-T'], 'P-D-UC01-R01': ['P-D-UC01-R01-T01'] },
+  pattern_rules: {},
   gaps: [
     gap('P-D-INV02', 'invariant', 'proved'),
     gap('P-D-UC01-R02', 'uc_requirement', 'proved'),
@@ -48,6 +49,7 @@ const coverage = (): Coverage[] => [{
   obligations: [],
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
+  pattern_rules: {},
   gaps: [],
 }];
 

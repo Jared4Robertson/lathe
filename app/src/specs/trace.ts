@@ -1,6 +1,5 @@
 import { textOf, byIdOrder, provedByOf, type SpecIndex, type SpecLink, type SpecRecord } from './data';
 import { linkLabel } from './labels';
-import { patternsFollowedBy, ruleStatus } from './patterns';
 
 // What a record's Traceability section shows (LA-TRC-UC14), on the new model's tree: an obligation
 // (a constraint, invariant, specification, policy, domain service, UC requirement, view or API
@@ -107,19 +106,15 @@ export const notAutomatedTestsOf = (index: SpecIndex, record: SpecRecord, domain
 
 /**
  * Where an obligation is owed: its own domain (for one under a record with no owner, the one domain using it); for
- * what the product shares (a standard rule, a view requirement of a view two domains use) its product; for a pattern rule each domain following its pattern where it applies.
+ * what the product shares (a standard rule, a view requirement of a view two domains use) its product; for a pattern
+ * rule each domain where the engine's coverage says it is owed (Coverage.pattern_rules).
  */
 export function owingDomains(index: SpecIndex, record: SpecRecord): string[] {
   if (record.domain) return [record.domain];
   if (record.kind !== 'pattern_rule') return record.product ? [record.product] : [];
-  if (!record.parent) return [];
-  const domains = index.workspace.records.filter((d) => d.kind === 'domain' && d.product === record.product);
-  return domains
-    .filter((d) => {
-      const followed = patternsFollowedBy(index, d.id).find((f) => f.pattern.id === record.parent);
-      return followed && ruleStatus(index, record, d.id, followed).applies;
-    })
-    .map((d) => d.id)
+  return index.workspace.coverage
+    .filter((c) => c.domain !== null && c.product === record.product && c.pattern_rules[record.id] === 'owed')
+    .map((c) => c.domain as string)
     .sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
 }
 

@@ -9,7 +9,7 @@
 // - built: a technical record that implements it names a file that exists;
 // - proved: a test of it exists, automated or manual, at a level its test kind allows (ALLOWED_LEVELS), and an
 //   automated test's file exists and names the test's ID.
-// A pattern rule asks for proof only: it is owed by each domain that follows its pattern (owed_pattern_rules) and
+// A pattern rule asks for proof only: it is owed by each domain that follows its pattern (pattern_rule_standing) and
 // proved there by its pattern rule test naming that domain.
 //
 // Besides obligations, coverage reports the records short of a minimum, the "at least one" and "exactly one" rules
@@ -193,10 +193,13 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
  * per load, so the checks and the coverage queries that read it share the work):
  * - test_run (id, kind, parent_id, domain_id, level, state, file, level_allowed, backed): every test with its run by;
  *   backed says an automated test's file exists and names the test's ID (true for any other state).
- * - owed_pattern_rules (domain, id): each pattern rule a domain owes. A domain follows a pattern when the domain itself
- *   follows it or one of its use cases does; these are the pattern's followers there. A following domain owes each
- *   rule of the pattern, except a rule whose setting every following use case there marks not applicable (when the
- *   domain does not follow the pattern itself), and a rule with an applies-when setting no follower there meets.
+ * - pattern_rule_standing (domain, id, standing): each rule of each pattern a domain follows, and whether the domain
+ *   owes it. A domain follows a pattern when the domain itself follows it or one of its use cases does; these are the
+ *   pattern's followers there. A following domain owes each rule of the pattern ('owed'), except a rule whose setting
+ *   every following use case there marks not applicable, when the domain does not follow the pattern itself
+ *   ('not-applicable'), and a rule with an applies-when setting no follower there meets ('waived'). The one answer to
+ *   "does this rule apply here", which coverage and the app read.
+ * - owed_pattern_rules (domain, id): the rules a domain owes.
  * - obligation_impl (obligation_id, impl_id): the technical records that implement each obligation.
  * - obligation_proof (obligation_id, test_id, domain_id, state, counts): the tests of each obligation; counts when it
  *   is automated or manual, at an allowed level and backed.
@@ -232,7 +235,7 @@ SELECT t.*, EXISTS (SELECT 1 FROM test_level_allowed a WHERE a.kind = t.kind AND
 FROM (${testRun}) t
 LEFT JOIN file_facts f ON f.record = t.id;
 
-CREATE OR REPLACE VIEW owed_pattern_rules AS
+CREATE OR REPLACE TABLE pattern_rule_standing AS
 WITH followers AS (
   SELECT DISTINCT s.domain_id AS domain, f.target_id AS pattern, f.source_id AS follower, false AS by_domain
   FROM follows f JOIN use_case u ON u.id = f.source_id JOIN record_scope s ON s.id = u.id
@@ -252,7 +255,10 @@ judged AS (
   LEFT JOIN setting_value wv ON wv.follower_id = f.follower AND wv.pattern_id = r.pattern_id AND wv.setting = r.applies_when_setting
   GROUP BY f.domain, r.id
 )
-SELECT domain, id FROM judged WHERE NOT not_applicable AND meets;
+SELECT domain, id, CASE WHEN not_applicable THEN 'not-applicable' WHEN NOT meets THEN 'waived' ELSE 'owed' END AS standing FROM judged;
+
+CREATE OR REPLACE VIEW owed_pattern_rules AS
+SELECT domain, id FROM pattern_rule_standing WHERE standing = 'owed';
 
 CREATE OR REPLACE TABLE obligation_impl AS
 -- A constraint: its value object's value type.
@@ -379,3 +385,6 @@ export const COVERAGE_TESTS_SQL = `SELECT product, domain, automated, manual, no
 
 /** One row per test that counts as an owed obligation's proof: (product, domain, id, test_id). */
 export const COVERAGE_PROOFS_SQL = `SELECT product, domain, id, test_id FROM coverage_proof ORDER BY product, domain NULLS LAST, id, test_id`;
+
+/** One row per rule of each pattern a domain follows, with its standing there: (product, domain, id, standing). */
+export const PATTERN_RULE_STANDING_SQL = `SELECT s.product_id AS product, p.domain, p.id, p.standing FROM pattern_rule_standing p JOIN record_scope s ON s.id = p.domain ORDER BY product, p.domain, p.id`;

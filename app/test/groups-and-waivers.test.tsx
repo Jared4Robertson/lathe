@@ -4,7 +4,8 @@ import type { SpecData } from '../../lathe/src/server/contract';
 import { groupRecords } from '../src/specs/groups';
 import { appliesWhenOf, followingDomains, patternsFollowedBy, ruleStatus } from '../src/specs/patterns';
 import { owingDomains } from '../src/specs/trace';
-import { patternWorkspace } from './fixtures/patterns';
+import { expectStandingsAsEngine } from './fixtures/engine';
+import { patternWorkspace, withStandings } from './fixtures/patterns';
 import { standardWorkspace } from './fixtures/standards';
 import { main, openApp, openSideBar, section, sideBar } from './helpers';
 import { addRows, indexOf, setRow } from './fixtures/load';
@@ -22,10 +23,12 @@ function waiverWorkspace(): SpecData {
     { follower_id: 'DM-PAY-UC01', pattern_id: 'DM-PAT-AUDIT', setting: 'who', value: 'Shopper' },
   );
   setRow(ws, 'pattern_rule', 'DM-PAT-AUDIT-R03', { group_name: 'Keeping' });
-  return addRows(ws, 'pattern_rule', {
+  addRows(ws, 'pattern_rule', {
     id: 'DM-PAT-AUDIT-R04', title: 'The shopper is named', pattern_id: 'DM-PAT-AUDIT', statement: 'It MUST hold.',
     group_name: 'keeping', applies_when_setting: 'who', applies_when_negated: true, applies_when_value: 'clerk',
   });
+  withStandings(ws, 'DM-SHOP', { R01: 'owed', R02: 'owed', R03: 'owed', R04: 'waived' });
+  return withStandings(ws, 'DM-PAY', { R01: 'owed', R02: 'owed', R03: 'waived', R04: 'owed' });
 }
 
 /** The pattern workspace with DM-SHOP-UC01's UC requirements in groups, after an ungrouped one. */
@@ -56,6 +59,9 @@ describe('waivers by setting value', () => {
     // A domain that follows the pattern itself meets it only through the settings it gives.
     const ws = addRows(waiverWorkspace(), 'follows', { source_id: 'DM-PAY', target_id: 'DM-PAT-AUDIT' });
     addRows(ws, 'setting_value', { follower_id: 'DM-PAY', pattern_id: 'DM-PAT-AUDIT', setting: 'who', value: 'clerk' });
+    withStandings(ws, 'DM-PAY', { R01: 'owed', R02: 'owed', R03: 'owed', R04: 'owed' });
+    // The hand-written standings of these workspaces are the engine's.
+    for (const data of [waiverWorkspace(), ws]) await expectStandingsAsEngine(data);
     const itself = indexOf(ws);
     const followed = followingDomains(itself, 'DM-PAT-AUDIT').find((d) => d.domain === 'DM-PAY')!;
     expect(followed.byDomain).toBe(true);

@@ -126,6 +126,12 @@ export interface TestCounts {
   not_automated: number;
 }
 
+/**
+ * Whether a domain that follows a pattern owes one of its rules: owed; not applicable, every following use case marking
+ * the rule's setting not applicable; or waived, no follower meeting its applies-when condition.
+ */
+export type PatternRuleStanding = 'owed' | 'not-applicable' | 'waived';
+
 /** Coverage of one domain, or of the product's records outside every domain (domain null). */
 export interface Coverage {
   product: string;
@@ -140,6 +146,12 @@ export interface Coverage {
    * obligation not proved here is absent. The one answer to "proved": the app reads it, never works it out.
    */
   proved_by: Record<string, string[]>;
+  /**
+   * For a domain: each rule of each pattern it follows, with its standing there (owed, not applicable or waived), as
+   * the engine works it out; empty outside every domain. The one answer to "does this rule apply here": the app reads
+   * it, never works it out.
+   */
+  pattern_rules: Record<string, PatternRuleStanding>;
   /** The obligations not yet designed, built or proved, then the records short of a minimum (gap rules), by record. */
   gaps: CoverageGap[];
 }
