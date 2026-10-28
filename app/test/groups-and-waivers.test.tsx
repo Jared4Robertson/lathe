@@ -98,9 +98,9 @@ describe('groups', () => {
     openSideBar('outline');
     await openApp('/DM-SHOP-UC01', { data: groupedWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-    // The Children section: the ungrouped children first (a UC requirement and the flow), then each group under its heading.
-    const children = section(/^Children/);
-    expect(within(children).getAllByRole('heading').map((h) => h.textContent)).toEqual(['Children5', 'Limits2', 'Stock1']);
+    // The UC requirements: the ungrouped one first, then each group under its heading (the flow is listed by interface).
+    const children = section(/^UC requirements/);
+    expect(within(children).getAllByRole('heading').map((h) => h.textContent)).toEqual(['UC requirements4', 'Limits2', 'Stock1']);
     expect(within(section(/^Limits/)).getAllByRole('link').map((a) => a.textContent)).toEqual([
       expect.stringMatching(/^DM-SHOP-UC01-R02/), expect.stringMatching(/^DM-SHOP-UC01-R04/),
     ]);

@@ -48,12 +48,14 @@ describe('record page', () => {
     expect(within(side()).getByText('data/use_case.jsonl:2')).toBeInTheDocument();
     expect(within(side()).getByText('capability_id', { selector: 'dt code' }).closest('div')!.querySelector('a')).toHaveAttribute('href', '/DM-SHOP-CAP01');
 
-    // The children are the wiki's: its UC requirements and its flow.
-    const children = within(main()).getByRole('heading', { name: /^Children/ });
-    expect(children).toHaveTextContent(/^Children\s*3$/);
+    // The children are the wiki's: its UC requirements, and its flow listed by interface.
+    const children = within(main()).getByRole('heading', { name: /^UC requirements/ });
+    expect(children).toHaveTextContent(/^UC requirements\s*2$/);
     const items = [...children.closest('section')!.querySelectorAll('a.row-link')];
-    expect(items.map((a) => a.getAttribute('href'))).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02', '/DM-SHOP-UC01-FL01']));
-    expect(within(side()).queryByRole('heading', { name: /^Children/ })).toBeNull();
+    expect(items.map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02']);
+    const flows = within(main()).getByRole('heading', { name: /^Flows by interface/ }).closest('section')!;
+    expect([...flows.querySelectorAll('a.row-link')].map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-FL01']);
+    expect(within(side()).queryByRole('heading', { name: /^UC requirements|^Children/ })).toBeNull();
 
     // Markdown in a text field is rendered.
     await openApp('/DM');
