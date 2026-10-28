@@ -114,7 +114,7 @@ describe('The app menu has About and Settings, File chooses the editor, and View
     expect(submenu(full(false).menu.find((m) => m.label === 'File')).some((m) => m.label === 'Settings…')).toBe(true);
   });
 
-  it('chooses the editor in File › Open Records In, with the current one checked', () => {
+  it('LA-AUT-UC15-R02-T02 chooses the editor in File › Open Records In, with the current one checked', () => {
     const { menu, actions } = full(true);
     const editors = submenu(submenu(menu.find((m) => m.label === 'File')).find((m) => m.label === 'Open Records In'));
     expect(editors.map((m) => m.label ?? m.type)).toEqual(['VS Code', 'Cursor', 'Zed', 'Default App', 'separator', 'Edit Settings File…']);

@@ -214,7 +214,7 @@ test.describe('graph', () => {
     });
   });
 
-  test('in each layout, focusing each of Lathe\'s domains at depth 2, framed and zoomed in, every drawn box shows its title text and its whole label inside it', async ({ page }) => {
+  test('LA-V93-R10-T08 in each layout, focusing each of Lathe\'s domains at depth 2, framed and zoomed in, every drawn box shows its title text and its whole label inside it', async ({ page }) => {
     for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) {
       for (const domain of ['LA-AUT', 'LA-CHK', 'LA-EXP', 'LA-PLT', 'LA-TRC']) {
         await openPage(page, `/${domain}?view=graph`);
