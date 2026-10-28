@@ -164,6 +164,7 @@ code { font: 0.86em var(--mono); }
 .section-count { font: 500 0.75rem var(--mono); color: var(--muted); }
 /* A stage on a domain's or product's page: a rule in its stage's color above it, and its color mark beside its title. */
 .stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; padding-top: 6px; border-top: 2px solid var(--stage-color, var(--rule)); }
+.stage-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-width: 0; }
 .stage-title { display: flex; align-items: center; gap: 8px; font: 500 0.78rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink); padding-top: 6px; }
 /* Each stage's color, for its mark, its badges and its rule (the graph reads the same tokens). */
 .stage-discovery { --stage-color: var(--g-discovery); --stage-fill: var(--g-discovery-bg); }
@@ -1013,7 +1014,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .side-bar-drawer { position: fixed; z-index: 80; inset: 0 0 0 auto; width: min(380px, 92vw); display: flex; flex-direction: column; background: var(--sheet); box-shadow: -4px 0 24px var(--shadow-strong); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) 0; }
 .side-bar-drawer > .side-bar { flex: 1; min-height: 0; }
 
-/* ---------- The breadcrumb (app/src/shell/Breadcrumb.tsx, LA-PAT-APP-UX-R15) ----------
+/* ---------- The breadcrumb (app/src/shell/Breadcrumb.tsx, LA-PAT-APP-UX-R16) ----------
    One line: each place cut with an ellipsis (whole in its tooltip), a "›" between; the "…" button opens the hidden
    levels as a menu under it. */
 .breadcrumb { min-width: 0; }

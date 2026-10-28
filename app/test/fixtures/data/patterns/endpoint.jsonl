@@ -1,1 +1,1 @@
-{"id":"DM-SHOP-EP01","title":"Add to basket","command_id":"DM-SHOP-CMD01","method":"POST","route":"/basket/items"}
+{"id":"DM-SHOP-EP01","title":"POST /basket/items","command_id":"DM-SHOP-CMD01","method":"POST","route":"/basket/items"}

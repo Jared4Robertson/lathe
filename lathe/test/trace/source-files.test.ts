@@ -63,7 +63,7 @@ describe('source file tracing', () => {
       aggregate: [{ id: 'EX-LEND-A1', title: 'Loan', domain_id: 'EX-LEND' }],
       repository: [{ id: 'EX-LEND-A1-REPO', title: 'Loans', aggregate_id: 'EX-LEND-A1', file: 'src/lending' }],
       command: [{ id: 'EX-LEND-CMD01', title: 'Open a loan', aggregate_id: 'EX-LEND-A1' }],
-      command_handler: [{ id: 'EX-LEND-CMD01-H', title: 'Open a loan', command_id: 'EX-LEND-CMD01', file: './src/open.ts' }],
+      command_handler: [{ id: 'EX-LEND-CMD01-H', title: 'openLoan', command_id: 'EX-LEND-CMD01', file: './src/open.ts' }],
     };
     const root = await build(data, { missing: ['src/lending'], files: { ...LEFT_OUT, 'src/lending/store.ts': '', 'src/helpers.ts': '', 'scripts/seed.js': '' } });
     const ws = await loadWorkspace(root);

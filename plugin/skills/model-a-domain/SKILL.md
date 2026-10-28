@@ -78,6 +78,24 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 Every `statement` is one rule in one sentence or two, with MUST / MUST NOT where it is a rule.
 
+## Naming
+
+Every record's `title` follows one convention, whatever its kind: sentence case, no trailing period, and unique within its kind and product. The store refuses a duplicate title or a trailing period. Names take 1 to 4 words, goals 2 to 6, statements one short sentence (about 15 words); detail goes in the `statement` or `description`, never the title.
+
+| Kind | Title | Good | Not |
+| --- | --- | --- | --- |
+| domain | a noun for a business area | Lending | Loan management screens |
+| aggregate, entity, value object, term, read model | a singular noun phrase, no article | Loan, Email address, Loan history | The loans |
+| domain service | a noun phrase for what it works out | Due date | Calculate due date |
+| command | an imperative verb and its object | Borrow a tool | Tool borrowing |
+| query | Get, List or Find and its object | List overdue loans | Overdue loans |
+| domain event | a past participle phrase, subject first | Tool borrowed | Borrow tool |
+| policy | "When" the event, then the reaction | When a tool is returned damaged, hold it for repair | Damage policy |
+| invariant, constraint | a sentence that is true when the rule holds | A loan has one borrower | Loan borrower rule |
+| specification | a yes-or-no condition, no article | Tool is available | The tool is available |
+
+`lathe check` warns of a query that does not start with Get, List or Find, a specification that starts with A, An or The, and a domain event not in the past tense (`event-tense`). Capabilities and use cases are named in `write-use-cases`.
+
 ## 1. Aggregates and entities
 
 - An aggregate is what one command changes as a unit, in one transaction, keeping all its invariants. Start from the records that must change together and stay consistent; anything with a life of its own is the root of another aggregate.
@@ -158,7 +176,7 @@ link { "source": "TL-LEND-CMD06", "relation": "calls", "target": "TL-LEND-DS01" 
 A tool returned needing repair must leave lending, but Return a tool changes only the Loan. The Tool follows through the event: a policy under the Tool's Report damage command hears Tool returned.
 
 ```
-add  { "policy": { "id": "TL-LEND-PO01", "title": "A tool returned needing repair is taken out of lending", "command_id": "TL-LEND-CMD03",
+add  { "policy": { "id": "TL-LEND-PO01", "title": "When a tool is returned needing repair, report damage on it", "command_id": "TL-LEND-CMD03",
        "statement": "Whenever a tool is returned with the condition needs_repair, report damage on it with the return's note as the damage note." } }
 link { "source": "TL-LEND-PO01", "relation": "hears", "target": "TL-LEND-EV06" }
 ```
@@ -176,7 +194,7 @@ Rules sorted by what they do: a value object with its constraint, an invariant, 
 add  { "value_object": { "id": "TL-VO02", "title": "Email address", "description": "How the library contacts a member." } }
 add  { "constraint": { "id": "TL-VO02-C02", "title": "An email address is kept trimmed and in lower case", "value_object_id": "TL-VO02",
        "statement": "An email address MUST be trimmed and kept in lower case, so two spellings of one address are the same address." } }
-add  { "invariant": { "id": "TL-LEND-INV01", "title": "One member per email", "aggregate_id": "TL-LEND-A1",
+add  { "invariant": { "id": "TL-LEND-INV01", "title": "No two members share an email", "aggregate_id": "TL-LEND-A1",
        "statement": "Two members MUST NOT share an email address." } }
 add  { "specification": { "id": "TL-LEND-SP03", "title": "Member is at the loan limit",
        "statement": "A member is at the loan limit when they hold 3 active loans. A loan stops counting when it is returned." } }

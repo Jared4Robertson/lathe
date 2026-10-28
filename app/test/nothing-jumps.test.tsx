@@ -155,7 +155,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(unfold().closest('.nav-row')).toHaveClass('holds-current');
     // Opening the marked row opens the branch down to the page.
     fireEvent.click(unfold());
-    expect(within(await within(panel()).findByRole('list', { name: 'Capabilities of Shopping' })).getByRole('link', { name: 'Buying' })).toBeInTheDocument();
+    expect(within(await within(panel()).findByRole('list', { name: 'Use cases of Shopping' })).getByRole('link', { name: 'Buying' })).toBeInTheDocument();
   });
 
   it('LA-V61-R38-T02 the fonts are the app\'s own, preloaded, and never swap in', () => {

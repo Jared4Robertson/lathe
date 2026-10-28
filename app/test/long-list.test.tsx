@@ -6,7 +6,7 @@ import type { SpecData } from '../../lathe/src/server/contract';
 import { LongList } from '../src/components/LongList';
 import { addRows } from './fixtures/load';
 import { gap, workspace as baseWorkspace } from './fixtures/workspace';
-import { main, openApp, section } from './helpers';
+import { main, openApp, section, stageOf } from './helpers';
 
 interface Item { id: string; title: string }
 const make = (n: number): Item[] => Array.from({ length: n }, (_, i) => ({ id: `X-${String(i + 1).padStart(2, '0')}`, title: i === 6 ? 'The seventh thing' : `Thing ${i + 1}` }));
@@ -95,7 +95,8 @@ describe('long lists', () => {
     // The domain page: groups, a long nested list, gaps and problems.
     await openApp('/BG-D01', served);
     await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
-    const useCases = section(/^Capabilities/);
+    // Use cases holds only capabilities, so it lists them itself.
+    const useCases = stageOf('use-cases');
     const search = within(useCases).getByRole('searchbox', { name: 'Filter capabilities' });
     await user.click(within(useCases).getByRole('button', { name: 'Expand BG-D01-CAP01' }));
     expect(within(useCases).getByRole('searchbox', { name: 'Filter use cases of BG-D01-CAP01' })).toBeInTheDocument();

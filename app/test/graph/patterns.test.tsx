@@ -19,9 +19,9 @@ describe('patterns in the graph', () => {
     const ix = index();
     const n = neighborhood(ix, 'DM-PAT-AUDIT', 1);
     const edges = n.edges.map(edge);
-    // The pattern sits in its product's Use cases stage, in the Patterns folder, as the nav lists it.
+    // The pattern sits in its product's Use cases stage, which holds only patterns and so lists them itself, as the nav does.
     expect(edges).toEqual(expect.arrayContaining([
-      'DM/use-cases/pattern parent DM-PAT-AUDIT',
+      'DM/use-cases parent DM-PAT-AUDIT',
       'DM-PAT-AUDIT parent DM-PAT-AUDIT-R01',
       'DM-PAT-AUDIT parent DM-PAT-AUDIT-R02',
       'DM-PAT-AUDIT parent DM-PAT-AUDIT-R03',

@@ -75,7 +75,7 @@ describe('Routes kept in step from the command line', () => {
     // S01: an Agent writes an endpoint and its handler, whose file names the route with its parameter written another way.
     await tl.seed([
       ...LENDING,
-      add('endpoint', { id: 'TL-LEND-EP01', title: 'Open a loan', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/tools/{toolId}/loans' }),
+      add('endpoint', { id: 'TL-LEND-EP01', title: 'POST /tools/{toolId}/loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/tools/{toolId}/loans' }),
       add('endpoint_handler', { id: 'TL-LEND-EP01-H', title: 'postLoan', endpoint_id: 'TL-LEND-EP01', file: 'src/router.ts' }),
     ]);
     tl.write('src/router.ts', "// TL-LEND-EP01-H\nrouter.post('/tools/:id/loans', openLoan);\n");
@@ -84,11 +84,11 @@ describe('Routes kept in step from the command line', () => {
     expect(problemsOf(ws, 'endpoint-route-not-in-file')).toEqual([]);
     expect(gapsOf(ws, null).filter((g) => g.startsWith('route-without-record'))).toEqual([]);
     // S04: the record's route changes alone, and the check reports it as an error.
-    tl.run('set', 'TL-LEND-EP01', '--route', '/loans');
+    tl.run('set', 'TL-LEND-EP01', '--route', '/loans', '--title', 'POST /loans');
     const refused = tl.check();
     expect(refused.status).toBe(1);
     expect(refused.stdout).toContain('[endpoint-route-not-in-file] TL-LEND-EP01: Endpoint TL-LEND-EP01 is POST /loans');
-    tl.run('set', 'TL-LEND-EP01', '--route', '/tools/{toolId}/loans');
+    tl.run('set', 'TL-LEND-EP01', '--route', '/tools/{toolId}/loans', '--title', 'POST /tools/{toolId}/loans');
     // S05: the router serves a route no record has; it is a gap until the Agent removes the route nothing uses.
     tl.write('src/router.ts', "// TL-LEND-EP01-H\nrouter.post('/tools/:id/loans', openLoan);\nrouter.get('/loans', listLoans);\n");
     ws = tl.workspace();

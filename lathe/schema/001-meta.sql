@@ -16,6 +16,8 @@ CREATE TYPE stage AS ENUM ('discovery', 'domain-model', 'use-cases', 'interactio
 CREATE TYPE id_scope AS ENUM ('product', 'domain', 'parent');
 CREATE TYPE link_role AS ENUM ('design', 'proof');
 CREATE TYPE link_scope AS ENUM ('product', 'domain', 'aggregate');
+-- How a code-bound kind's titles are written: one identifier as in code, an invocation, or a kebab-case name.
+CREATE TYPE title_form AS ENUM ('identifier', 'invocation', 'kebab-case');
 
 CREATE TABLE meta_table (
   name VARCHAR PRIMARY KEY,
@@ -61,6 +63,14 @@ COMMENT ON COLUMN meta_kind.id_pattern IS 'How its IDs are written, such as <P>-
 COMMENT ON COLUMN meta_kind.id_example IS 'An example ID, such as TL-LEND-UC01.';
 COMMENT ON COLUMN meta_kind.id_scope IS 'What its IDs start with, followed by a hyphen: its product''s ID, its domain''s ID or its parent''s ID. A kind with no owner takes its product, or its domain, from that prefix. None for a kind whose IDs are free.';
 COMMENT ON COLUMN meta_kind.product_id IS 'For a product''s own kind, the product that declares it; none for Lathe''s kinds.';
+
+CREATE TABLE meta_kind_title (
+  kind VARCHAR PRIMARY KEY REFERENCES meta_kind (name),
+  form title_form NOT NULL
+);
+COMMENT ON TABLE meta_kind_title IS 'The code-bound kinds, whose records are titled by what they are in code rather than in words. Every title is in sentence case, unique within its kind and product, and ends without a period; a kind listed here also takes its form, which the store refuses a title for breaking.';
+COMMENT ON COLUMN meta_kind_title.kind IS 'The kind.';
+COMMENT ON COLUMN meta_kind_title.form IS 'identifier: one token exactly as in code, with no whitespace, such as LoanRow or lathe:tabs; invocation: the command as typed, lower case first, words one space apart, such as lathe add; kebab-case: lower-case words joined by hyphens, such as event-tense.';
 
 CREATE TABLE meta_kind_parent (
   kind VARCHAR NOT NULL REFERENCES meta_kind (name),
@@ -116,7 +126,7 @@ COMMENT ON COLUMN meta_supertype_member.kind IS 'A kind whose records it holds.'
 
 INSERT INTO meta_table VALUES
   ('meta_migration', 'meta', NULL), ('meta_table', 'meta', NULL), ('meta_stage', 'meta', NULL),
-  ('meta_kind', 'meta', NULL), ('meta_kind_parent', 'meta', NULL), ('meta_relation', 'meta', NULL),
+  ('meta_kind', 'meta', NULL), ('meta_kind_title', 'meta', NULL), ('meta_kind_parent', 'meta', NULL), ('meta_relation', 'meta', NULL),
   ('meta_relation_pair', 'meta', NULL), ('meta_supertype_member', 'meta', NULL);
 
 INSERT INTO meta_stage VALUES

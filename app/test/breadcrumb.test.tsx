@@ -7,7 +7,7 @@ import { Breadcrumb, collapseCrumbs, type Crumb } from '../src/shell/Breadcrumb'
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
-// One breadcrumb, collapsed past three places (LA-PAT-APP-UX-R15).
+// One breadcrumb, collapsed past three places (LA-PAT-APP-UX-R16).
 
 const crumbs = (n: number): Crumb[] => Array.from({ length: n }, (_, i) => ({ to: `/X${i}`, label: `Place ${i}`, full: `Place ${i} (X${i})` }));
 const SRC = resolve(process.cwd(), 'src');
@@ -17,7 +17,7 @@ const filesUnder = (dir: string): string[] => readdirSync(dir).flatMap((f) => {
 });
 
 describe('the one breadcrumb', () => {
-  it('LA-PAT-APP-UX-R15-T01 A trail of up to three shows in full; a longer one the first, a labeled "…" menu of the hidden levels, and the last', async () => {
+  it('LA-PAT-APP-UX-R16-T01 A trail of up to three shows in full; a longer one the first, a labeled "…" menu of the hidden levels, and the last', async () => {
     expect(collapseCrumbs([1, 2, 3])).toEqual({ first: [1, 2, 3], hidden: [], last: [] });
     expect(collapseCrumbs([1, 2, 3, 4, 5])).toEqual({ first: [1], hidden: [2, 3, 4], last: [5] });
 
@@ -57,7 +57,7 @@ describe('the one breadcrumb', () => {
     expect(screen.queryByRole('list', { name: 'Hidden levels' })).toBeNull();
   });
 
-  it('LA-PAT-APP-UX-R15-T02 The header strip, the wiki card and the phone\'s top bar each use the one component; nothing else draws a trail', async () => {
+  it('LA-PAT-APP-UX-R16-T02 The header strip, the wiki card and the phone\'s top bar each use the one component; nothing else draws a trail', async () => {
     await openApp('/P-D-UC01-FL01-S01?stage=graph', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1 });
     const strip = document.querySelector<HTMLElement>('.header-strip')!;

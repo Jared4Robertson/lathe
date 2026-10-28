@@ -28,8 +28,10 @@ describe('graph columns by tree depth', () => {
     for (const [child, parent] of parentOf) byParent.set(parent, (byParent.get(parent) ?? new Set()).add(column.get(child)!));
     for (const cols of byParent.values()) expect(cols.size).toBe(1);
     // In the map: the records straight in a domain's folders, whatever their stage and kind, at one level; a folder's records at one x.
-    const members = ['P-D-A1', 'P-D-CAP01', 'P-D-UC01-FL01', 'P-D-EN02-TB', 'P-D-INV01-T'];
+    const members = ['P-D-A1', 'P-D-UC01-FL01', 'P-D-EN02-TB', 'P-D-INV01-T'];
     expect(new Set(members.map((id) => map.nodes.get(id)!.level)).size).toBe(1);
+    // A stage with one folder (Use cases) holds its records itself, at its folders' level in the other stages.
+    expect(map.nodes.get('P-D-CAP01')!.level).toBe(map.nodes.get('P-D/domain-model/aggregate')!.level);
     expect(new Set(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4'].map(x)).size).toBe(1);
   });
 
@@ -38,7 +40,7 @@ describe('graph columns by tree depth', () => {
     const column = columnOf(neighborhood(index, 'P-D-UC01', 3));
     expect(['P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => column.get(id))).toEqual([0, 1, 2]);
     // The map: every ancestor one level further left.
-    const chain = ['P', 'P-D', 'P-D/use-cases', 'P-D/use-cases/capability', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'];
+    const chain = ['P', 'P-D', 'P-D/use-cases', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'];
     for (let i = 1; i < chain.length; i++) expect(x(chain[i - 1])).toBeLessThan(x(chain[i]));
   });
 
@@ -87,7 +89,7 @@ describe('graph columns by tree depth', () => {
     const stages = ['P-D/domain-model', 'P-D/use-cases', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan'];
     expect(stages.map((id) => domain.get(id))).toEqual([0, 1, 2, 3, 4]);
     expect(domain.get('P-D/domain-model/aggregate')!).toBeLessThan(domain.get('P-D/domain-model/specification')!);
-    expect(domain.get('P-D/domain-model/term')!).toBeLessThan(domain.get('P-D/use-cases/capability')!);
+    expect(domain.get('P-D/domain-model/term')!).toBeLessThan(domain.get('P-D-CAP01')!);
     // Rows within each column are 0, 1, 2 ... and the map holds them top to bottom, whatever is in focus.
     const placed = graphMap(grouped, 'P').nodes;
     for (const c of new Set(n.nodes.map((x) => x.column))) {

@@ -298,6 +298,11 @@ INSERT INTO meta_kind_parent VALUES
   ('table', 'entity', 1, 'entity_id'), ('table', 'read_model', 2, 'read_model_id'), ('table', 'domain', 3, 'domain_id'),
   ('standard', 'product', 1, 'product_id'),
   ('standard_rule', 'standard', 1, 'standard_id');
+INSERT INTO meta_kind_title VALUES
+  ('repository', 'identifier'), ('data_model', 'identifier'), ('value_type', 'identifier'), ('predicate', 'identifier'),
+  ('event_type', 'identifier'), ('projection', 'identifier'), ('command_handler', 'identifier'), ('query_handler', 'identifier'),
+  ('event_handler', 'identifier'), ('service', 'identifier'), ('endpoint_handler', 'identifier'), ('adapter', 'identifier'),
+  ('table', 'identifier');
 INSERT INTO meta_table VALUES
   ('repository', 'kind', NULL), ('data_model', 'kind', NULL), ('value_type', 'kind', NULL), ('predicate', 'kind', NULL), ('event_type', 'kind', NULL), ('projection', 'kind', NULL), ('command_handler', 'kind', NULL), ('query_handler', 'kind', NULL), ('event_handler', 'kind', NULL), ('service', 'kind', NULL), ('endpoint_handler', 'kind', NULL), ('adapter', 'kind', NULL),
   ('table', 'kind', NULL), ('table_key', 'part', 'table_id'), ('ui_component', 'kind', NULL), ('standard', 'kind', NULL), ('standard_rule', 'kind', NULL);

@@ -71,7 +71,7 @@ describe('keyboard shortcuts', () => {
   it('LA-V61-R08-T03 Alt+G, Alt+E and Alt+T (or Ctrl+1, 2 and 3) switch the stage off a Mac, on every focus; w and Alt+W collapse and show the wiki card', async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    // A use case has every stage too (LA-PAT-APP-UX-R16).
+    // A use case has every stage too (LA-PAT-APP-UX-R17).
     press(document.body, '2', 'Digit2', { ctrlKey: true });
     expect(window.location.search).toBe('?stage=erd');
     press(document.body, 't', 'KeyT', { altKey: true });

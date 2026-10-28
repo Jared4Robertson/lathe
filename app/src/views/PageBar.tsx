@@ -12,7 +12,7 @@ import type { PageTabsApi } from './useTabs';
 // of VS Code's editor area. At its left the page's tabs; at its right the stage switch (Graph, ERD,
 // Trace), a divider, the wiki card toggle and the side bar toggle. It is one line high whatever it
 // holds (the tabs scroll sideways), so nothing below it moves (UX-R08). Every stage works on every
-// focus (LA-PAT-APP-UX-R16): the switch always holds all three, never disabled or hidden.
+// focus (LA-PAT-APP-UX-R17): the switch always holds all three, never disabled or hidden.
 //
 // On a phone it is the same bar, compact (notes/mobile-design.md): the tabs fold into an "Open
 // pages" button that opens them as a sheet, the stage switch is segments with names, the wiki

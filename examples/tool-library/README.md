@@ -90,7 +90,7 @@ curl -s -X POST localhost:5310/tools/1/repair
 
 | File | Technical records |
 | --- | --- |
-| `src/model.ts` | The data models (`TL-LEND-EN0n-DM`), value types (`TL-VO0n-VT`), predicates (`TL-LEND-SP0n-PR`) and the Library calendar service (`TL-LEND-DS01-SV`). |
+| `src/model.ts` | The data models (`TL-LEND-EN0n-DM`), value types (`TL-VO0n-VT`), predicates (`TL-LEND-SP0n-PR`) and the `dueDate` service (`TL-LEND-DS01-SV`). |
 | `src/store.ts` | The repositories (`TL-LEND-A1-REPO` to `A3-REPO`), the tables `members`, `tools` and `loans` (`TL-LEND-EN01-TB`, `EN02-TB`, `EN04-TB`) and the `outbox` table. |
 | `src/events.ts` | The event types (`TL-LEND-EV01-ET` to `EV06-ET`) and the outbox's relay, which delivers them. |
 | `src/event-handlers.ts` | The event handler `TL-LEND-PO01-H`: a tool returned needing repair is taken out of lending. |

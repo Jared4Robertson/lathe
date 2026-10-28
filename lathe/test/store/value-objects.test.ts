@@ -141,7 +141,7 @@ describe("Authoring's value objects", () => {
         await refusals(
           adding({
             read_model: [{ id: 'TL-LEND-RM02', title: 'Overdue loans', domain_id: 'TL-LEND' }],
-            table: [{ id: 'TL-LEND-RM02-TB', title: 'Overdue loans', read_model_id: 'TL-LEND-RM02', name: 'overdue_loans', storage }],
+            table: [{ id: 'TL-LEND-RM02-TB', title: 'overdue_loans', read_model_id: 'TL-LEND-RM02', name: 'overdue_loans', storage }],
           }),
         ),
         storage,
@@ -159,7 +159,7 @@ describe("Authoring's value objects", () => {
     for (const method of ['post', 'TRACE']) {
       expect(await refusals(firstRow('endpoint', { method })), method).toEqual(notOneOf('endpoint', 'method', method, methods));
     }
-    const endpoints = methods.map((method, i) => ({ id: `TL-LEND-EP0${i + 2}`, title: `${method} loans`, command_id: 'TL-LEND-CMD01', method, route: `/loans/${i}` }));
+    const endpoints = methods.map((method, i) => ({ id: `TL-LEND-EP0${i + 2}`, title: `${method} /loans/${i}`, command_id: 'TL-LEND-CMD01', method, route: `/loans/${i}` }));
     expect(await refusals(adding({ endpoint: endpoints }))).toEqual([]);
   });
 

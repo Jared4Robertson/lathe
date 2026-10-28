@@ -137,7 +137,7 @@ function referencingAggregates(index: SpecIndex, aggregate: string): SpecRecord[
 }
 
 /**
- * What the ERD stage draws for a focus (LA-PAT-APP-UX-R16: every stage works on every focus): a
+ * What the ERD stage draws for a focus (LA-PAT-APP-UX-R17: every stage works on every focus): a
  * domain's ERD; an aggregate's (an entity's highlighted in it); for a group, its owner's. For any
  * other record, its domain's ERD with the nearest entity or aggregate above it highlighted, or for a
  * Shared record (one in no domain) and a product, the product's ERD. Null only for an unknown focus.

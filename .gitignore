@@ -3,3 +3,7 @@ desktop/node_modules/
 desktop/out/
 desktop/release/
 desktop/build/stage/
+
+# The full check's output (scripts/ci.sh)
+ci-result.md
+ci-logs/

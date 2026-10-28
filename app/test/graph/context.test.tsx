@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { graphSummary, keyboardOrder, stepTarget, type Box } from '../../src/graph/GraphPage';
 import { panToward, pastEdges } from '../../src/graph/hints';
-import { groupLabel, groupMembers, neighborhood, type Neighborhood } from '../../src/graph/model';
+import { groupLabel, groupMembers, isGraphNode, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { treeChildren, treeParent } from '../../src/graph/tree';
 import { labelLines } from '../../src/graph/text';
 import { domainFolders } from '../../src/specs/folders';
@@ -32,16 +32,17 @@ async function showGraph(path: string, workspace: SpecData = testWorkspace(), de
 describe('the graph tree, its depth and its camera', () => {
   it.each(['LA-EXP-DS09-T06', 'LA-V93-R10-T06'])('%s Depth counts levels below a domain and a use case, as a file explorer does', () => {
     const index = testIndex();
-    // From the domain: depth 1 its stages, depth 2 their folders, depth 3 what is in them.
+    // From the domain: depth 1 its stages, depth 2 their folders (or, in a stage with one folder, its records), depth 3
+    // what is in them.
     const one = ids(neighborhood(index, 'P-D', 1));
     expect(one).toEqual(expect.arrayContaining(STAGES));
     expect(one.some((id) => id.split('/').length > 2)).toBe(false);
     const two = ids(neighborhood(index, 'P-D', 2));
-    expect(two).toEqual(expect.arrayContaining(['P-D/domain-model/aggregate', 'P-D/use-cases/capability', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test']));
+    expect(two).toEqual(expect.arrayContaining(['P-D/domain-model/aggregate', 'P-D-CAP01', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test']));
     expect(two).not.toContain('P-D-A1');
     const three = ids(neighborhood(index, 'P-D', 3));
-    expect(three).toEqual(expect.arrayContaining(['P-D-A1', 'P-D-CAP01', 'P-D-UC01-FL01', 'P-D-EP01', 'P-D-EN03-TB', 'P-D-INV01-T']));
-    expect(three).not.toContain('P-D-UC01');
+    expect(three).toEqual(expect.arrayContaining(['P-D-A1', 'P-D-UC01', 'P-D-UC01-FL01', 'P-D-EP01', 'P-D-EN03-TB', 'P-D-INV01-T']));
+    expect(three).not.toContain('P-D-UC01-R01');
     // From a use case in a capability: its capability is the parent at every depth; nothing further up.
     for (const depth of [1, 2, 3]) {
       expect(ids(neighborhood(index, 'P-D-UC01', depth)).filter((id) => !id.startsWith('P-D-UC01'))).toEqual(['P-D-CAP01']);
@@ -53,8 +54,11 @@ describe('the graph tree, its depth and its camera', () => {
     const { stages } = domainFolders(index, 'P-D');
     expect(treeChildren(index, 'P-D')).toEqual([...STAGES, 'P-D/question']);
     expect(groupLabel(index, 'P-D/technical-specification')).toBe(`Technical specification (${stages.find((s) => s.stage === 'technical-specification')!.count})`);
-    expect(treeChildren(index, 'P-D/use-cases')).toEqual(['P-D/use-cases/capability']);
-    expect(groupLabel(index, 'P-D/use-cases/capability')).toBe('Capabilities (1)');
+    expect(treeChildren(index, 'P-D/domain-model')).toEqual(stages.find((s) => s.stage === 'domain-model')!.folders.filter((f) => f.count > 0).map((f) => f.key));
+    // Use cases holds only capabilities, so it holds them itself: its folder is no level of the tree.
+    expect(treeChildren(index, 'P-D/use-cases')).toEqual(['P-D-CAP01']);
+    expect(treeParent(index, 'P-D-CAP01')).toBe('P-D/use-cases');
+    expect(isGraphNode(index, 'P-D/use-cases/capability')).toBe(false);
     // A capability's children are its use cases; a use case's are its UC requirements, while its flow is listed in
     // Interaction design and its tests in the Test plan.
     expect(treeChildren(index, 'P-D-CAP01')).toEqual(['P-D-UC01']);
@@ -80,10 +84,11 @@ describe('the graph tree, its depth and its camera', () => {
     expect(groupLabel(index, 'P/shared')).toBe('Shared (4)');
     expect(labelLines(index, 'P/shared').meta).toBe('Folder · P');
     expect(labelLines(index, 'P/domain-model').meta).toBe('Stage · P');
-    expect(treeChildren(index, 'P/domain-model/value_object')).toEqual(['P-VO01']);
+    // Shared's Domain model holds only value objects, so it holds them itself.
+    expect(treeChildren(index, 'P/domain-model')).toEqual(['P-VO01']);
     expect(treeChildren(index, 'P-VO01')).toEqual(['P-VO01-C01']);
     // Every child's parent is the node that lists it.
-    for (const id of ['P', 'P/shared', 'P-D', 'P-D/domain-model', 'P-D/test-plan', 'P-D/interaction-design', 'P-D-A3', 'P/technical-specification']) {
+    for (const id of ['P', 'P/shared', 'P/domain-model', 'P-D', 'P-D/domain-model', 'P-D/use-cases', 'P-D/test-plan', 'P-D/interaction-design', 'P-D-A3', 'P/technical-specification']) {
       for (const c of treeChildren(index, id)) expect(treeParent(index, c)).toBe(id);
     }
   });
@@ -133,7 +138,7 @@ describe('the graph tree, its depth and its camera', () => {
     // The summary counts the framed picture: the domain, its parent and three levels below it.
     const n = neighborhood(indexOf(w), 'P-D', 3);
     await waitFor(() => expect(document.querySelector('.header-strip-counts')!.textContent).toBe(graphSummary(n)));
-    expect(graphSummary(n)).toBe('31 records · 27 groups · 57 links');
+    expect(graphSummary(n)).toBe('32 records · 26 groups · 57 links');
   });
 
   it('LA-V93-R20-T01 Filters have a Minimap switch, off by default and kept while walking, and the minimap is an overview of the whole map', async () => {
@@ -182,7 +187,7 @@ describe('the graph tree, its depth and its camera', () => {
     fireEvent.keyDown(graphHost()!, { key: 'ArrowLeft', code: 'ArrowLeft' });
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-    for (const to of ['/P-D-CAP01', '/P-D/use-cases/capability', '/P-D/use-cases']) {
+    for (const to of ['/P-D-CAP01', '/P-D/use-cases']) {
       fireEvent.click(within(screen.getByRole('group', { name: 'Step through the tree' })).getByRole('button', { name: 'Step out to the parent' }));
       await waitFor(() => expect(window.location.pathname).toBe(to));
     }
@@ -195,7 +200,7 @@ describe('the graph tree, its depth and its camera', () => {
   // in, Up and Down across; in the Nested and Voronoi views (children drawn inside their parent) Up out, Down in, Left
   // and Right across. From a stage, which has a parent, a first child and a sibling either side.
   const FROM = 'P-D/use-cases';
-  const TARGETS = { out: 'P-D', in: 'P-D/use-cases/capability', previous: 'P-D/domain-model', next: 'P-D/interaction-design' };
+  const TARGETS = { out: 'P-D', in: 'P-D-CAP01', previous: 'P-D/domain-model', next: 'P-D/interaction-design' };
   const NESTED_KEYS = { ArrowUp: 'out', ArrowDown: 'in', ArrowLeft: 'previous', ArrowRight: 'next' } as const;
   const ARROWS = {
     tree: { ArrowLeft: 'out', ArrowRight: 'in', ArrowUp: 'previous', ArrowDown: 'next' },

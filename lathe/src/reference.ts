@@ -4,7 +4,7 @@
 // own kinds, relations and checks); renderReference writes it as Markdown, by stage, as lathe/REFERENCE.md holds it
 // (`npm --prefix lathe run reference`).
 import { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE } from './coverage.ts';
-import type { ColumnDescription, IdScope, SchemaDescription, Stage, TableDescription, TableRole } from './store/schema.ts';
+import type { ColumnDescription, IdScope, KindDescription, SchemaDescription, Stage, TableDescription, TableRole } from './store/schema.ts';
 import type { Row } from './store/rows.ts';
 
 export interface ColumnReference {
@@ -73,6 +73,8 @@ export interface KindReference {
   id: { pattern: string; example: string } | null;
   /** For a product's own kind, the product that declares it; null for Lathe's. */
   product: string | null;
+  /** For a code-bound kind, how its titles are written (meta_kind_title); null for a kind titled in words. */
+  title_form: KindDescription['titleForm'];
 }
 
 export interface RelationReference {
@@ -179,6 +181,7 @@ export function referenceOf(schema: SchemaDescription, kindOrder: string[], chec
       id_scope: k.idScope,
       id: k.idPattern ? { pattern: k.idPattern, example: k.idExample ?? '' } : null,
       product: k.productId,
+      title_form: k.titleForm,
     };
   });
   const tableNames = Object.keys(schema.tables).sort((a, b) => {
@@ -255,6 +258,11 @@ const code = (text: string) => `\`${text}\``;
 const cell = (text: string) => text.replaceAll('|', '\\|').replaceAll('\n', ' ');
 const SEVERITY: Record<CheckReference['severity'], string> = { error: 'Error', warning: 'Warning', error_or_warning: 'Error or warning' };
 const ID_SCOPE: Record<IdScope, string> = { product: "its product's ID", domain: "its domain's ID", parent: "its parent's ID" };
+const TITLE_FORM: Record<NonNullable<KindDescription['titleForm']>, string> = {
+  identifier: 'one identifier exactly as in code, with no whitespace',
+  invocation: 'the invocation as typed, lower case first',
+  'kebab-case': 'a kebab-case name',
+};
 const ROLE_HEADINGS: Partial<Record<TableRole, string>> = {
   declaration: "Declaration tables: a product's own kinds and relations.",
   checking: 'Checking tables: the checks and their settings.',
@@ -337,6 +345,7 @@ export function renderReference(ref: Reference): string {
     if (k.coverage) out.push(`  - **Designed:** ${k.coverage.designed}`, `  - **Built:** ${k.coverage.built}`, `  - **Proved:** ${k.coverage.proved}`);
     if (k.levels) out.push(`- **Run by levels:** ${k.levels.map(code).join(', ')}`);
     if (k.id) out.push(`- **ID:** ${code(k.id.pattern)}, such as ${code(k.id.example)}${k.id_scope ? `; it starts with ${ID_SCOPE[k.id_scope]}` : ''}`);
+    if (k.title_form) out.push(`- **Title:** ${TITLE_FORM[k.title_form]} (refused otherwise)`);
     if (k.product) out.push(`- **Declared by:** product ${code(k.product)}`);
     const byLabel = (rels: RelationReference[], label: (r: RelationReference) => string) => [...new Set(rels.map((r) => `${cell(label(r))} ([${code(r.relation)}](#${relationAnchor(r.relation)}))`))];
     const outgoing = byLabel(ref.relations.filter((r) => r.pairs.some((p) => p.source_kind === k.kind)), (r) => r.forward_label);

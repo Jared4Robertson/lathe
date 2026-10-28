@@ -73,7 +73,7 @@ describe('the matrix under a record or group', () => {
     // A stage of the domain, and the product: what is under them.
     expect(traceMatrix(index, 'P-D/use-cases').flatMap((g) => g.rows.map((r) => r.obligation))).toContain('P-D-UC01-R01');
     expect(traceMatrix(index, 'P').flatMap((g) => g.rows.map((r) => r.obligation))).toEqual(expect.arrayContaining(rows));
-    // Every focus has a shape (LA-PAT-APP-UX-R16): a chain, a matrix, the rows that hold it, or the matrix around it.
+    // Every focus has a shape (LA-PAT-APP-UX-R17): a chain, a matrix, the rows that hold it, or the matrix around it.
     for (const id of ['P', 'P-D', 'P-D/use-cases', 'P-D-UC01', 'P-D-A3']) expect(traceShape(index, id).shape, id).toBe('matrix');
     expect(traceShape(index, 'P-D-UC01-R01').shape).toBe('chain');
     for (const id of ['P-D-UC01-R01-T01', 'P-D-UC01-FL01-S01', 'P-D-CMD01-H']) expect([id, traceShape(index, id).shape, holdersOf(index, id)]).toEqual([id, 'rows', ['P-D-UC01-R01']]);

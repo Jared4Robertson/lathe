@@ -27,6 +27,7 @@ A refused write changed nothing. Its result lists every reason, each with the ru
 - `[relation-pair]`, `[link-scope]`, `[link-crosses-product]`: a link between kinds its relation does not join, across domains where the relation stays in one (`checks`, `reads`, `selects_by`, `calls`) or across aggregates (`raises`), or across products.
 - `[step-fulfills-own-use-case]`, `[policy-hears-published]`, `[command-change-in-domain]`: a step fulfilling another use case's requirement, a policy hearing another domain's unpublished event, a command change of the command's own aggregate or another domain's.
 - `[referenced]`: a removal while something still references the record; the refusal names what does. Unlink, remove or move those first.
+- A title refused: a duplicate within its kind and product, a trailing period, whitespace in a code-bound title, an endpoint title other than its method and route, or a check row title not in kebab case. Rename it by the naming convention in the skill that writes the kind; never add a number or a suffix just to make it unique.
 
 A record's parent columns change only with `move`. A key never changes: a row that needs another key is removed and added again. Never renumber a record to get past a refusal.
 
@@ -49,6 +50,8 @@ An error means the spec is broken. Do not leave one behind.
 - **A test at a level its kind does not allow** (see `plan-tests`).
 - **A level of the spec the wrong size**: more children of one kind than the product's `max_children` setting allows, or a capability with only one use case. Add a capability, or merge one. Do not raise `max_children` to silence the warning unless the user asks.
 - **An aggregate too large**: more entities than the product's `max_entities_per_aggregate` setting allows (7 by default). Split it into smaller aggregates that each change together (see `model-a-domain`); do not raise the setting unless the user asks.
+
+- **A title against the convention**: a test title starting with "Tests that", "Test that" or "Should"; a specification starting with A, An or The; a flow title other than its use case's title, "in" or "through", and its interface's title; a query not starting with Get, List or Find; a domain event not in the past tense (`event-tense`). `set` the title as the skill that writes the kind says.
 
 Fix the warnings your task is about; leave the rest and mention them.
 

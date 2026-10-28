@@ -11,7 +11,7 @@ import { openApp } from '../helpers';
 
 // The Trace stage (LA-V98): an obligation's chain as columns, the matrix of every obligation under
 // a record or group with its gaps in view, the rows that hold a design, build or test record, or the
-// matrix around a record outside every chain. It works on every focus (LA-PAT-APP-UX-R16).
+// matrix around a record outside every chain. It works on every focus (LA-PAT-APP-UX-R17).
 
 const served = (data = modelWorkspace()) => ({ data });
 const traceStage = () => screen.getByRole('region', { name: 'Trace stage' });
@@ -149,7 +149,7 @@ describe('the Trace stage', () => {
     expect(within(traceStage()).queryByRole('button', { name: /^Show \d+ more$/ })).toBeNull();
   });
 
-  it('LA-PAT-APP-UX-R16-T02 A design, build or test record shows the rows that hold it, marked; one nothing traces to says so above the matrix around it; any other record shows the matrix around it', async () => {
+  it('LA-PAT-APP-UX-R17-T02 A design, build or test record shows the rows that hold it, marked; one nothing traces to says so above the matrix around it; any other record shows the matrix around it', async () => {
     // A command a chain holds: the rows of each obligation whose chain holds it, the command marked in its cell.
     await openApp('/P-D-CMD01?stage=trace', served());
     let table = await matrix();

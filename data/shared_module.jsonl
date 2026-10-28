@@ -1,15 +1,15 @@
-{"id":"LA-AUT-MOD01","title":"CLI data commands","domain_id":"LA-AUT","file":"lathe/src/cli/writers.ts"}
-{"id":"LA-EXP-MOD01","title":"Layout engine","domain_id":"LA-EXP","file":"app/src/elk.ts"}
-{"id":"LA-EXP-MOD02","title":"Domain event lookups","domain_id":"LA-EXP","file":"app/src/specs/events.ts"}
-{"id":"LA-EXP-MOD03","title":"Label plurals","domain_id":"LA-EXP","file":"app/src/plural.ts"}
-{"id":"LA-EXP-MOD04","title":"Side bar state","domain_id":"LA-EXP","file":"app/src/views/sideBarState.ts"}
-{"id":"LA-PLT-MOD01","title":"Phone layout","domain_id":"LA-PLT","file":"app/src/shell/useNarrow.ts"}
-{"id":"LA-PLT-MOD02","title":"Theme on the page","domain_id":"LA-PLT","file":"app/src/theme/apply.ts"}
-{"id":"LA-PLT-MOD03","title":"Contrast math","domain_id":"LA-PLT","file":"app/src/theme/contrast.ts"}
-{"id":"LA-PLT-MOD04","title":"Spec change events in the app","domain_id":"LA-PLT","file":"app/src/events.ts"}
-{"id":"LA-PLT-MOD05","title":"Menu commands","domain_id":"LA-PLT","file":"desktop/src/commands.ts"}
-{"id":"LA-PLT-MOD06","title":"JSON files in the user data folder","domain_id":"LA-PLT","file":"desktop/src/store.ts"}
-{"id":"LA-PLT-MOD07","title":"Server contract","domain_id":"LA-PLT","file":"lathe/src/server/contract.ts"}
-{"id":"LA-PLT-MOD08","title":"Plugin scripts' shared helpers","domain_id":"LA-PLT","file":"plugin/scripts/lathe-root.mjs"}
-{"id":"LA-TRC-MOD01","title":"Outcome measure gap","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
-{"id":"LA-TRC-MOD02","title":"Obligation kinds","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}
+{"id":"LA-AUT-MOD01","title":"writers.ts","domain_id":"LA-AUT","file":"lathe/src/cli/writers.ts"}
+{"id":"LA-EXP-MOD01","title":"elk.ts","domain_id":"LA-EXP","file":"app/src/elk.ts"}
+{"id":"LA-EXP-MOD02","title":"model/events.ts","domain_id":"LA-EXP","file":"app/src/specs/events.ts"}
+{"id":"LA-EXP-MOD03","title":"plural.ts","domain_id":"LA-EXP","file":"app/src/plural.ts"}
+{"id":"LA-EXP-MOD04","title":"sideBarState.ts","domain_id":"LA-EXP","file":"app/src/views/sideBarState.ts"}
+{"id":"LA-PLT-MOD01","title":"useNarrow.ts","domain_id":"LA-PLT","file":"app/src/shell/useNarrow.ts"}
+{"id":"LA-PLT-MOD02","title":"apply.ts","domain_id":"LA-PLT","file":"app/src/theme/apply.ts"}
+{"id":"LA-PLT-MOD03","title":"contrast.ts","domain_id":"LA-PLT","file":"app/src/theme/contrast.ts"}
+{"id":"LA-PLT-MOD04","title":"events.ts","domain_id":"LA-PLT","file":"app/src/events.ts"}
+{"id":"LA-PLT-MOD05","title":"commands.ts","domain_id":"LA-PLT","file":"desktop/src/commands.ts"}
+{"id":"LA-PLT-MOD06","title":"store.ts","domain_id":"LA-PLT","file":"desktop/src/store.ts"}
+{"id":"LA-PLT-MOD07","title":"contract.ts","domain_id":"LA-PLT","file":"lathe/src/server/contract.ts"}
+{"id":"LA-PLT-MOD08","title":"lathe-root.mjs","domain_id":"LA-PLT","file":"plugin/scripts/lathe-root.mjs"}
+{"id":"LA-TRC-MOD01","title":"measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
+{"id":"LA-TRC-MOD02","title":"offer.ts","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}

@@ -63,7 +63,7 @@ const PAGES: State[] = [
   { name: 'interface page', url: '/LA-IF03', ready: '.interface-flows' },
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
-  // Every stage works on every focus (LA-PAT-APP-UX-R16): the shapes a stage takes outside its own kinds.
+  // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
   { name: 'Trace stage, the rows a flow step belongs to', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-matrix [aria-current="page"]' },
   { name: 'Trace stage, an entity in its aggregate\'s matrix', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },

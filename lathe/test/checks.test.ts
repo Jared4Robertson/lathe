@@ -472,6 +472,87 @@ check('domain-named-for-technology', () => {
   });
 });
 
+check('query-title-verb', () => {
+  it('LA-STD-MODELING-R06-T01 a query not starting with Get, List or Find is a warning', async () => {
+    expect(ofCheck(clean, 'query-title-verb')).toEqual([]);
+    const data = adding(complete(), {
+      query: [
+        { id: 'EX-LEND-QRY02', title: 'Get a loan', read_model_id: 'EX-LEND-RM01' },
+        { id: 'EX-LEND-QRY03', title: 'find a tool by name', read_model_id: 'EX-LEND-RM01' },
+        { id: 'EX-LEND-QRY04', title: 'Show overdue loans', read_model_id: 'EX-LEND-RM01' },
+        { id: 'EX-LEND-QRY05', title: 'Getaway tools', read_model_id: 'EX-LEND-RM01' },
+      ],
+    });
+    const found = ofCheck(await loadData(data), 'query-title-verb');
+    expect(records(found)).toEqual(['EX-LEND-QRY04', 'EX-LEND-QRY05']);
+    expect(found.every((p) => p.severity === 'warning')).toBe(true);
+    expect(found[0].message).toBe(
+      'Query EX-LEND-QRY04 is titled "Show overdue loans", which does not start with Get, List or Find; title a query by what it returns, such as "List overdue loans".',
+    );
+  });
+});
+
+check('flow-title-off-pattern', () => {
+  it("LA-STD-MODELING-R06-T02 a flow not titled as its use case's title, in or through, and its interface's title is a warning", async () => {
+    expect(ofCheck(clean, 'flow-title-off-pattern')).toEqual([]);
+    const titled = (title: string) => changing(complete(), 'flow', (r) => r.id === 'EX-LEND-UC01-FL01', { title });
+    for (const title of ['Borrow a tool in the web app', 'borrow a tool through Web app', 'Borrow a tool in web app']) {
+      expect(ofCheck(await loadData(titled(title)), 'flow-title-off-pattern'), title).toEqual([]);
+    }
+    const found = ofCheck(await loadData(titled('Borrow at the desk')), 'flow-title-off-pattern');
+    expect(found).toEqual([
+      expect.objectContaining({
+        severity: 'warning',
+        record: 'EX-LEND-UC01-FL01',
+        message:
+          'Flow EX-LEND-UC01-FL01 is titled "Borrow at the desk", but its use case EX-LEND-UC01 is "Borrow a tool" and its interface EX-IF01 is "Web app"; title it "Borrow a tool in the web app".',
+      }),
+    ]);
+    // A renamed use case shows in its flows.
+    const renamed = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { title: 'Lend a tool' });
+    expect(records(ofCheck(await loadData(renamed), 'flow-title-off-pattern'))).toEqual(['EX-LEND-UC01-FL01']);
+  });
+});
+
+check('specification-title-article', () => {
+  it('LA-STD-MODELING-R08-T01 a specification starting with A, An or The is a warning; a condition with no article is not', async () => {
+    expect(ofCheck(clean, 'specification-title-article')).toEqual([]);
+    const data = adding(complete(), {
+      specification: [
+        { id: 'EX-LEND-SP02', title: 'The tool is free', statement: 'A tool is free when no loan names it.' },
+        { id: 'EX-LEND-SP03', title: 'an active member', statement: 'A member is active when they have borrowed this year.' },
+        { id: 'EX-LEND-SP04', title: 'Theme is set', statement: 'A theme is set when one is chosen.' },
+        { id: 'EX-LEND-SP05', title: 'Area is open', statement: 'An area is open when it has staff.' },
+      ],
+    });
+    const found = ofCheck(await loadData(data), 'specification-title-article');
+    expect(records(found)).toEqual(['EX-LEND-SP02', 'EX-LEND-SP03']);
+    expect(found[0].message).toBe('Specification EX-LEND-SP02 is titled "The tool is free", which starts with "The"; name the condition with no article, such as "Tool is available".');
+  });
+});
+
+check('test-title-not-a-result', () => {
+  it('LA-STD-MODELING-R08-T02 a test titled "Tests that…" or "Should…" is a warning; a result, or the noun Tests first, is not', async () => {
+    expect(ofCheck(clean, 'test-title-not-a-result')).toEqual([]);
+    const titled = (titles: string[]) =>
+      adding(complete(), {
+        use_case_test: titles.map((title, i) => ({
+          id: `EX-LEND-UC01-R01-T0${i + 2}`,
+          title,
+          uc_requirement_id: 'EX-LEND-UC01-R01',
+          level: 'service',
+          state: 'not automated yet',
+        })),
+      });
+    const data = titled(['Tests that a lent tool is refused', 'Should refuse a lent tool', 'Test whether a tool is lent', 'Tests run one at a time', 'A lent tool is refused again']);
+    const found = ofCheck(await loadData(data), 'test-title-not-a-result');
+    expect(records(found)).toEqual(['EX-LEND-UC01-R01-T02', 'EX-LEND-UC01-R01-T03', 'EX-LEND-UC01-R01-T04']);
+    expect(found[1].message).toBe(
+      'Use case test EX-LEND-UC01-R01-T03 is titled "Should refuse a lent tool", which says what it tests or should do; title a test by the result it shows, such as "An overdue loan is refused a renewal".',
+    );
+  });
+});
+
 check('title-breaks-convention', () => {
   const named = async (capabilities: string[], useCases: string[]) => {
     const data = adding(complete(), {
@@ -702,11 +783,11 @@ check('endpoint-route-not-in-file', () => {
   it('LA-TRC-UC15-R01-T01 An endpoint handler\'s file that does not name its method and route is an error', async () => {
     const data = adding(complete(), {
       endpoint: [
-        { id: 'EX-LEND-EP02', title: 'Get a tool', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/tools/{toolId}' },
-        { id: 'EX-LEND-EP03', title: 'Add a tool', command_id: 'EX-LEND-CMD02', method: 'POST', route: '/tools' },
-        { id: 'EX-LEND-EP04', title: 'Remind', command_id: 'EX-LEND-CMD03', method: 'POST', route: '/loans/{loanId}/remind' },
-        { id: 'EX-LEND-EP05', title: 'List members', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/members' },
-        { id: 'EX-LEND-EP06', title: 'List fees', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/fees' },
+        { id: 'EX-LEND-EP02', title: 'GET /tools/{toolId}', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/tools/{toolId}' },
+        { id: 'EX-LEND-EP03', title: 'POST /tools', command_id: 'EX-LEND-CMD02', method: 'POST', route: '/tools' },
+        { id: 'EX-LEND-EP04', title: 'POST /loans/{loanId}/remind', command_id: 'EX-LEND-CMD03', method: 'POST', route: '/loans/{loanId}/remind' },
+        { id: 'EX-LEND-EP05', title: 'GET /members', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/members' },
+        { id: 'EX-LEND-EP06', title: 'GET /fees', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/fees' },
       ],
       endpoint_handler: [
         { id: 'EX-LEND-EP02-H', title: 'getTool', endpoint_id: 'EX-LEND-EP02', file: 'src/tool.ts' },

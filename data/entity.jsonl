@@ -35,7 +35,6 @@
 {"id":"LA-AUT-EN41","title":"Policy","aggregate_id":"LA-AUT-A8","role":"child","description":"Whenever an event, then a command (event storming). It belongs to the command it invokes and hears one event: its own domain's, or another domain's published one."}
 {"id":"LA-AUT-EN42","title":"Domain service","aggregate_id":"LA-AUT-A4","role":"child","description":"Domain logic that belongs to no single entity and is not a yes-or-no check, such as calculating a late fee. Commands and queries of its domain call it; it uses no storage and no outside system."}
 {"id":"LA-AUT-EN43","title":"Use case actor","aggregate_id":"LA-AUT-A11","role":"child","description":"One actor of a use case, in order: a role of the use case's product."}
-{"id":"LA-AUT-EN44","title":"Setting value","aggregate_id":"LA-AUT-A2","role":"child","description":"The value a use case or domain gives one setting of a pattern it follows: a value, or Not applicable with the reason."}
 {"id":"LA-AUT-EN45","title":"View requirement","aggregate_id":"LA-AUT-A12","role":"child","description":"One rule a view must follow, such as what it shows while loading or a field's limits."}
 {"id":"LA-AUT-EN46","title":"API requirement","aggregate_id":"LA-AUT-A13","role":"child","description":"One rule an endpoint must follow, such as an error's response or a limit on its request."}
 {"id":"LA-AUT-EN47","title":"Repository","aggregate_id":"LA-AUT-A6","role":"child","description":"Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage."}

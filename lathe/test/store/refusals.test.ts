@@ -301,6 +301,45 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/pattern_rule.jsonl', line: 1 })]);
   });
 
+  it('LA-STD-MODELING-R04-T01 refuses a title another record of its kind and product has, or one ending with a period', async () => {
+    await loads(everyKind());
+    const twice = adding({ aggregate: [{ id: 'TL-LEND-A9', title: ' loan ', domain_id: 'TL-LEND' }] });
+    const found = await refusal(twice);
+    expect(found.map((p) => [p.rule, p.key]).sort()).toEqual([
+      ['title-unique', 'TL-LEND-A1'],
+      ['title-unique', 'TL-LEND-A9'],
+    ]);
+    expect(found.find((p) => p.key === 'TL-LEND-A9')?.message).toBe(
+      'Aggregate TL-LEND-A9 is titled "loan", as is TL-LEND-A1 in product TL; give each aggregate a title of its own',
+    );
+    // A record of another kind may share the title: the aggregate Loan's root entity is Loan too.
+    expect(everyKind().entity.find((e) => e.id === 'TL-LEND-EN01')?.title).toBe('Loan');
+    const period = everyKind();
+    period.invariant[0] = { ...period.invariant[0], title: 'One active loan per tool.' };
+    expect(await refusal(period)).toEqual([expect.objectContaining({ rule: 'title-period', file: 'data/invariant.jsonl', line: 1 })]);
+  });
+
+  it('LA-STD-MODELING-R09-T01 refuses a code-bound title that is not one identifier, and an endpoint not titled by its method and route', async () => {
+    const spaced = everyKind();
+    spaced.command_handler[0] = { ...spaced.command_handler[0], title: 'the loan opener' };
+    spaced.table[1] = { ...spaced.table[1], title: 'Loans by member' };
+    const found = await refusal(spaced);
+    expect(found.map((p) => [p.rule, p.table])).toEqual([
+      ['title-form', 'command_handler'],
+      ['title-form', 'table'],
+    ]);
+    expect(found[0].message).toBe(
+      'Command handler TL-LEND-CMD01-H is titled "the loan opener", but a command handler is titled by one identifier exactly as in code, with no whitespace, such as LoanRow; put the explanation in its description',
+    );
+    const endpoint = everyKind();
+    endpoint.endpoint[0] = { ...endpoint.endpoint[0], title: 'Borrow a tool' };
+    expect(await refusal(endpoint)).toEqual([expect.objectContaining({ rule: 'check', table: 'endpoint' })]);
+    // Code compares exactly: a table and a type may differ only in letter case.
+    const cased = everyKind();
+    cased.data_model.push({ id: 'TL-LEND-EN02-DM', title: 'loan', entity_id: 'TL-LEND-EN02' });
+    await loads(cased);
+  });
+
   it('LA-TRC-INV03-T refuses a setting value for a pattern its follower does not follow', async () => {
     expect(await refusal({ ...everyKind(), follows: [] })).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/setting_value.jsonl', line: 1 })]);
   });
