@@ -1,5 +1,5 @@
 // `lathe serve`: serves the built web app and the API for one product repo, with no build tools.
-// Pages reload through server-sent events (GET /api/events) when the data files change. Its stop waits for the
+// Pages reload through server-sent events (GET /api/events, LA-PLT-EP02-H) when the data files change. Its stop waits for the
 // work in progress and closes the database, so the process that ran it exits cleanly (LA-PLT-UC02-R06).
 import { existsSync, watch, type FSWatcher } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';

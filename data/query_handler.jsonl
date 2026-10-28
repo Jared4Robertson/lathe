@@ -24,6 +24,7 @@
 {"id":"LA-PLT-QRY04-H","title":"themes","query_id":"LA-PLT-QRY04","file":"app/src/theme/ThemeProvider.tsx","description":"themes, active, basedOn"}
 {"id":"LA-PLT-QRY05-H","title":"exportFile","query_id":"LA-PLT-QRY05","file":"app/src/theme/ThemeProvider.tsx","description":"exportFile"}
 {"id":"LA-PLT-QRY06-H","title":"refreshMenu's Open Recent items","query_id":"LA-PLT-QRY06","file":"desktop/src/main.ts","description":"refreshMenu's Open Recent items"}
+{"id":"LA-PLT-QRY07-H","title":"the change event stream of lathe serve","query_id":"LA-PLT-QRY07","file":"lathe/src/server/serve.ts","description":"Watches the product's data folder and Lathe's own data and schema (watchTargets) and sends spec:changed to every open event stream."}
 {"id":"LA-TRC-QRY01-H","title":"computeCoverage","query_id":"LA-TRC-QRY01","file":"lathe/src/index.ts","description":"computeCoverage, its obligations (COVERAGE_COUNTS_SQL)"}
 {"id":"LA-TRC-QRY02-H","title":"computeCoverage","query_id":"LA-TRC-QRY02","file":"lathe/src/index.ts","description":"computeCoverage, its gaps (COVERAGE_GAPS_SQL)"}
 {"id":"LA-TRC-QRY03-H","title":"computeCoverage","query_id":"LA-TRC-QRY03","file":"lathe/src/index.ts","description":"computeCoverage, its tests (COVERAGE_TESTS_SQL)"}
@@ -31,4 +32,5 @@
 {"id":"LA-TRC-QRY05-H","title":"traceOf","query_id":"LA-TRC-QRY05","file":"app/src/specs/trace.ts","description":"traceOf, judge, owingDomains, isBuilt"}
 {"id":"LA-TRC-QRY06-H","title":"traceChain","query_id":"LA-TRC-QRY06","file":"app/src/graph/model.ts","description":"traceChain"}
 {"id":"LA-TRC-QRY07-H","title":"the file checks","query_id":"LA-TRC-QRY07","file":"lathe/data/check.jsonl","description":"The test-file-missing, test-file-missing-id, manual-test-file-silent and technical-file-missing checks, each a query of file_facts."}
+{"id":"LA-TRC-QRY08-H","title":"gatherRouteFacts","query_id":"LA-TRC-QRY08","file":"lathe/src/trace/routes.ts","description":"gatherRouteFacts, namesRoute and servedRoutes, written into route_facts and served_routes by writeRouteFacts; the gap rule ROUTE_GAP_RULES."}
 {"id":"LA-TRC-QRY09-H","title":"table-schema-mismatch","query_id":"LA-TRC-QRY09","file":"lathe/data/check.jsonl","description":"The table-schema-mismatch check."}

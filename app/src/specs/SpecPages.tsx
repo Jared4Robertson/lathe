@@ -1,3 +1,4 @@
+// The product's page at its ID, /<product-id> (LA-V51), and its space's Checks page at /<product-id>/checks (LA-V41).
 import { useState, type ReactNode } from 'react';
 import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
