@@ -152,8 +152,10 @@ WHERE NOT EXISTS (SELECT 1 FROM reads r WHERE r.source_id = m.id)${schema.relati
     `SELECT c.id, 'Capability ' || c.id || ' has no use case.' AS message FROM capability c WHERE NOT EXISTS (SELECT 1 FROM use_case u WHERE u.capability_id = c.id)`),
   gap('use-case-without-actor', 'use-cases', ['use_case', 'use_case_actor'], 'A use case with no actor.',
     `SELECT u.id, 'Use case ' || u.id || ' names no actor.' AS message FROM use_case u WHERE NOT EXISTS (SELECT 1 FROM use_case_actor a WHERE a.use_case_id = u.id)`),
-  gap('use-case-without-requirement', 'use-cases', ['use_case', 'uc_requirement'], 'A use case with no UC requirement.',
-    `SELECT u.id, 'Use case ' || u.id || ' has no UC requirement.' AS message FROM use_case u WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id)`),
+  // A use case that follows a pattern owes the pattern's rules instead of requirements of its own.
+  gap('use-case-without-requirement', 'use-cases', ['use_case', 'uc_requirement'], 'A use case with no UC requirement that follows no pattern.',
+    `SELECT u.id, 'Use case ' || u.id || ' has no UC requirement and follows no pattern.' AS message FROM use_case u
+WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND NOT EXISTS (SELECT 1 FROM follows f WHERE f.source_id = u.id)`),
   gap('pattern-without-rule', 'use-cases', ['pattern', 'pattern_rule'], 'A pattern with no rule.',
     `SELECT p.id, 'Pattern ' || p.id || ' has no rule.' AS message FROM pattern p WHERE NOT EXISTS (SELECT 1 FROM pattern_rule r WHERE r.pattern_id = p.id)`),
   // Interaction design.

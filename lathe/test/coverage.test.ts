@@ -1,8 +1,8 @@
 // Coverage: every obligation designed, built and proved, per domain and for what the product shares, and the
 // records short of a minimum. Each case starts from the complete product, where everything is covered.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { GAP_RULES, type Workspace } from '../src/index.ts';
-import { adding, changing, complete, gaps, loadData, obligation, removeData, sparse, without } from './helpers.ts';
+import { ALLOWED_LEVELS, GAP_RULES, type Workspace } from '../src/index.ts';
+import { adding, changing, complete, gaps, loadData, obligation, ofCheck, records, removeData, sparse, without, type Data } from './helpers.ts';
 
 afterAll(removeData);
 
@@ -269,5 +269,184 @@ describe("a product's own obligation kinds", () => {
     expect(obligation(await loadData(data), 'EX-LEND', 'house_rule')).toMatchObject({ total: 3, proved: 3 });
     // The script's file exists but leaves its ID out, so it no longer proves HR02; the sign-off still counts.
     expect(obligation(await loadData(data, { silent: ['EX-LEND-RC01'] }), 'EX-LEND', 'house_rule')).toMatchObject({ total: 3, proved: 2 });
+  });
+});
+
+describe('pattern rules, domain by domain', () => {
+  const shop = (data = complete()) =>
+    adding(data, {
+      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }],
+      capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1 }],
+      use_case: [
+        { id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01' },
+        { id: 'EX-SHOP-UC02', title: 'Price a tool', capability_id: 'EX-SHOP-CAP01' },
+      ],
+    });
+  /** A second pattern of the complete product, with no settings and one rule. */
+  const logged = (data = complete()) =>
+    adding(data, {
+      pattern: [{ id: 'EX-PAT-LOG', title: 'Logged action', product_id: 'EX' }],
+      pattern_rule: [{ id: 'EX-PAT-LOG-R01', title: 'Each action is logged', pattern_id: 'EX-PAT-LOG', statement: 'Each action MUST be logged.' }],
+    });
+  /** A follower of EX-PAT-ACT with its value of record, or with record not applicable (null). */
+  const sale = (follower: string, value: string | null): Data => ({
+    follows: [{ source_id: follower, target_id: 'EX-PAT-ACT' }],
+    setting_value: [
+      value === null
+        ? { follower_id: follower, pattern_id: 'EX-PAT-ACT', setting: 'record', not_applicable: 'Saves nothing.' }
+        : { follower_id: follower, pattern_id: 'EX-PAT-ACT', setting: 'record', value },
+    ],
+  });
+  const merge = (...parts: Data[]) => parts.reduce((all, part) => adding(all, part), {} as Data);
+
+  it('LA-TRC-UC04-R01-T01 a pattern rule sits under a pattern and is an obligation counted for proof alone', async () => {
+    expect(clean.kinds.find((k) => k.kind === 'pattern_rule')).toMatchObject({ obligation: true });
+    const ws = await loadData(without(complete(), 'pattern_rule_test', () => true));
+    // Nothing designs or builds a pattern rule, and it is still designed and built: only its proof is missing.
+    expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject({ proof_only: true, total: 1, designed: 1, built: 1, proved: 0 });
+    expect(gaps(ws)).toEqual(['proved EX-PAT-ACT-R01']);
+  });
+
+  it("LA-TRC-UC04-R03-T01 a domain's own pattern rule test proves the rule there and nowhere else; one not automated yet leaves it not automated", async () => {
+    const data = adding(shop(), sale('EX-SHOP-UC01', 'Sale'));
+    const ws = await loadData(data);
+    expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject(covered(1));
+    expect(obligation(ws, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1, proved: 0, not_automated: 0 });
+    const planned = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'A sale reads the same', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'api', state: 'not automated yet' }] });
+    expect(obligation(await loadData(planned), 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1, proved: 0, not_automated: 1 });
+  });
+
+  it('LA-TRC-UC04-R04-T01 a rule is not counted where every following use case marks its setting not applicable; one value, or no setting, counts it', async () => {
+    const withSetting = changing(shop(logged()), 'pattern_rule', (r) => r.id === 'EX-PAT-ACT-R01', { setting: 'record' });
+    const following: Data = { follows: [{ source_id: 'EX-SHOP-UC01', target_id: 'EX-PAT-LOG' }] };
+    const none = await loadData(adding(withSetting, merge(sale('EX-SHOP-UC01', null), sale('EX-SHOP-UC02', null), following)));
+    expect(obligation(none, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1 });
+    expect(none.coverage.find((c) => c.domain === 'EX-SHOP')?.gaps.filter((g) => g.kind === 'pattern_rule').map((g) => g.id)).toEqual(['EX-PAT-LOG-R01']);
+    const one = await loadData(adding(withSetting, merge(sale('EX-SHOP-UC01', null), sale('EX-SHOP-UC02', 'Price'), following)));
+    expect(obligation(one, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 2 });
+  });
+
+  it('LA-TRC-UC04-R05-T01 a not-proved warning names the pattern rule and each domain that owes it, and says when its test there is not automated yet', async () => {
+    const data = adding(shop(), merge(sale('EX-SHOP-UC01', 'Sale'), sale('EX-SHOP', 'Sale')));
+    const unproved = without(data, 'pattern_rule_test', () => true);
+    expect(ofCheck(await loadData(unproved), 'not-proved').map((p) => p.message)).toEqual([
+      'Pattern rule EX-PAT-ACT-R01 is not proved yet in EX-LEND.',
+      'Pattern rule EX-PAT-ACT-R01 is not proved yet in EX-SHOP.',
+    ]);
+    const planned = changing(data, 'pattern_rule_test', () => true, { state: 'not automated yet', file: undefined });
+    expect(ofCheck(await loadData(planned), 'not-proved').map((p) => p.message)).toEqual([
+      'Pattern rule EX-PAT-ACT-R01 is not proved yet in EX-LEND: its test is not automated yet.',
+      'Pattern rule EX-PAT-ACT-R01 is not proved yet in EX-SHOP.',
+    ]);
+  });
+
+  it("LA-TRC-UC04-R08-T01 an obligation outside every domain counts in the product's Shared coverage, and a pattern rule never does", async () => {
+    const data = adding(complete(), {
+      product_kind: [{ name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'product', stage: 'use-cases', obligation: true }],
+      house_rule: [{ id: 'EX-HR01', title: 'Quiet', product_id: 'EX' }],
+    });
+    const ws = await loadData(data);
+    expect(obligation(ws, null, 'house_rule')).toMatchObject({ total: 1, proved: 0 });
+    expect(obligation(ws, null, 'pattern_rule')).toMatchObject({ total: 0 });
+    expect(records(ofCheck(ws, 'not-proved'))).toEqual(['EX-HR01']);
+  });
+
+  it('LA-TRC-UC04-R09-T01 a waived rule adds nothing to its domain: no count, no gap, no not-proved warning, and its test there counts nothing', async () => {
+    const waived = changing(complete(), 'pattern_rule', () => true, { applies_when_setting: 'record', applies_when_value: 'Loan', applies_when_negated: false });
+    const ws = await loadData(waived);
+    expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 0, proved: 0 });
+    expect(gaps(ws)).toEqual([]);
+    expect(ofCheck(ws, 'not-proved')).toEqual([]);
+    expect(ofCheck(ws, 'pattern-rule-test-outside-followers').map((p) => p.severity)).toEqual(['warning']);
+  });
+
+  it('LA-TRC-SP01-T a domain follows a pattern itself or through any of its use cases', async () => {
+    // EX-LEND follows EX-PAT-ACT through its use case, and EX-PAT-LOG itself.
+    const ws = await loadData(adding(logged(), { follows: [{ source_id: 'EX-LEND', target_id: 'EX-PAT-LOG' }] }));
+    expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 2, proved: 1 });
+    expect(ws.coverage.find((c) => c.domain === 'EX-LEND')?.gaps.map((g) => g.id)).toEqual(['EX-PAT-LOG-R01']);
+  });
+
+  it('LA-TRC-UC07-R02-T01 a domain following a pattern itself and through a use case counts each rule once; one following only through use cases that all mark the setting not applicable counts none', async () => {
+    const both = await loadData(adding(complete(), { follows: [{ source_id: 'EX-LEND', target_id: 'EX-PAT-ACT' }] }));
+    expect(obligation(both, 'EX-LEND', 'pattern_rule')).toMatchObject(covered(1));
+    const withSetting = changing(shop(), 'pattern_rule', () => true, { setting: 'record' });
+    const none = await loadData(adding(withSetting, merge(sale('EX-SHOP-UC01', null), sale('EX-SHOP-UC02', null))));
+    expect(obligation(none, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 0 });
+    expect(none.coverage.find((c) => c.domain === 'EX-SHOP')?.gaps.filter((g) => g.kind === 'pattern_rule')).toEqual([]);
+  });
+
+  it('LA-TRC-UC07-R03-T01 a pattern may have no settings: its followers give none, and its rules are owed wherever it is followed', async () => {
+    const data = adding(logged(), { follows: [{ source_id: 'EX-LEND-UC01', target_id: 'EX-PAT-LOG' }, { source_id: 'EX-LEND', target_id: 'EX-PAT-LOG' }] });
+    const ws = await loadData(data);
+    expect(ofCheck(ws, 'pattern-setting-missing')).toEqual([]);
+    expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 2, proved: 1 });
+  });
+
+  it('LA-TRC-INV02-T a follower of two patterns with a setting of the same name gives each its own value', async () => {
+    const data = adding(complete(), {
+      pattern: [{ id: 'EX-PAT-AUD', title: 'Audited action', product_id: 'EX' }],
+      pattern_setting: [{ pattern_id: 'EX-PAT-AUD', position: 1, name: 'record', meaning: 'The record audited.' }],
+      pattern_rule: [{ id: 'EX-PAT-AUD-R01', title: 'Each change is audited', pattern_id: 'EX-PAT-AUD', statement: 'Each change MUST be audited.' }],
+      follows: [{ source_id: 'EX-LEND-UC02', target_id: 'EX-PAT-AUD' }],
+    });
+    // EX-LEND-UC02's value of record answers EX-PAT-ACT alone.
+    expect(ofCheck(await loadData(data), 'pattern-setting-missing')).toEqual([
+      expect.objectContaining({ severity: 'error', record: 'EX-LEND-UC02', message: expect.stringContaining('follows pattern EX-PAT-AUD') }),
+    ]);
+    const answered = adding(data, { setting_value: [{ follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-AUD', setting: 'record', value: 'Tool' }] });
+    expect(ofCheck(await loadData(answered), 'pattern-setting-missing')).toEqual([]);
+  });
+
+  it('LA-TRC-UC07-R07-T01 a use case that follows a pattern is not asked for requirements of its own', async () => {
+    const ws = await loadData(adding(shop(), sale('EX-SHOP-UC01', 'Sale')));
+    const gapsOf = (id: string) => ws.coverage.flatMap((c) => c.gaps).filter((g) => g.id === id).map((g) => g.missing);
+    expect(gapsOf('EX-SHOP-UC01')).not.toContain('use-case-without-requirement');
+    expect(gapsOf('EX-SHOP-UC02')).toContain('use-case-without-requirement');
+  });
+});
+
+describe('the other obligation kinds and their gaps', () => {
+  it('LA-CHK-UC04-R02-T01 a use case with no flow is a use-case-without-flow gap in its domain, never an error', async () => {
+    const data = adding(complete(), {
+      use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', capability_id: 'EX-LEND-CAP01' }],
+      use_case_actor: [{ use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Member' }],
+    });
+    const ws = await loadData(data);
+    expect(ws.coverage.find((c) => c.domain === 'EX-LEND')?.gaps.filter((g) => g.id === 'EX-LEND-UC03').map((g) => g.missing)).toContain('use-case-without-flow');
+    expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
+  });
+
+  it("LA-TRC-UC07-R04-T01 a product kind declared an obligation is counted as Lathe's are, and one that is not is not counted", async () => {
+    const data = adding(complete(), {
+      product_kind: [
+        { name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true },
+        { name: 'house_note', product_id: 'EX', label: 'House note', description: 'A note of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: false },
+      ],
+      house_rule: [{ id: 'EX-LEND-HR01', title: 'Quiet', domain_id: 'EX-LEND' }],
+      house_note: [{ id: 'EX-LEND-HN01', title: 'Tea at four', domain_id: 'EX-LEND' }],
+    });
+    const ws = await loadData(data);
+    expect(obligation(ws, 'EX-LEND', 'house_rule')).toMatchObject({ total: 1, designed: 0, built: 0, proved: 0 });
+    expect(obligation(ws, 'EX-LEND', 'house_note')).toBeUndefined();
+    expect(records(ofCheck(ws, 'not-proved'))).toEqual(['EX-LEND-HR01']);
+  });
+});
+
+describe('the run by levels', () => {
+  it('LA-TRC-DS02-T01 each test kind allows its own levels, and a pattern rule test any', () => {
+    expect(ALLOWED_LEVELS).toEqual({
+      constraint_test: ['unit', 'database'],
+      invariant_test: ['unit', 'database'],
+      specification_test: ['unit', 'database'],
+      policy_test: ['database', 'api', 'e2e-api', 'e2e-ui', 'manual'],
+      domain_service_test: ['unit'],
+      use_case_test: ['api', 'e2e-api', 'e2e-ui', 'manual'],
+      view_test: ['unit', 'e2e-ui', 'manual'],
+      endpoint_test: ['contract', 'api'],
+      flow_test: ['e2e-ui', 'e2e-api', 'manual'],
+      integration_test: ['contract', 'e2e-api', 'manual'],
+      pattern_rule_test: ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'],
+    });
   });
 });

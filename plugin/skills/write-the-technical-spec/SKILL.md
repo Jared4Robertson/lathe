@@ -56,7 +56,7 @@ What follows from the tree is not stored: a command is carried out by its handle
 
 ## Event types and the outbox
 
-An event type's `delivery` says how its event reaches what hears it: `in process`, after the transaction commits, or `outbox`, saved in the same transaction as its aggregate and delivered reliably afterwards. **The outbox is the standard for events that cross a transaction:** an event a policy hears, or a published one, is delivered by outbox, so a reaction is never lost. The check warns about every such event whose event type is not.
+An event type's `delivery` says how its event reaches what hears it: `in process`, after the transaction commits, or `outbox`, saved in the same transaction as its aggregate and delivered reliably afterwards. **The outbox is the standard for an event a policy hears:** it is delivered by outbox, since a lost reaction is a lost change. The check warns about every such event whose event type is not. An event that only keeps read models current (`fed_by`), where those read models are rebuilt from the data on every load, may be delivered in process, published or not.
 
 ## Standards
 
