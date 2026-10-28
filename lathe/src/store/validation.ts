@@ -18,7 +18,9 @@ export interface ValidationQuery {
  * The views every database of the store has:
  * - record_parent (id, kind, parent_id): every record with its one parent, or none for a product and a kind with no
  *   owner;
- * - link (relation, source_id, target_id): every link of every relation.
+ * - link (relation, source_id, target_id): every link of every relation;
+ * - record_group (id, label): every record that names a group among its siblings, with the group as written: a flow
+ *   step's path, and the group_name of every kind that has one, Lathe's and a product's own alike.
  */
 export function storeViewsSql(schema: SchemaDescription): string {
   const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
@@ -29,11 +31,19 @@ export function storeViewsSql(schema: SchemaDescription): string {
   const links = Object.keys(schema.relations)
     .sort()
     .map((r) => `SELECT ${sqlString(r)} AS relation, source_id, target_id FROM ${sqlName(r)}`);
+  const groups = [
+    'SELECT id, path AS label FROM flow_step',
+    ...kinds
+      .filter((k) => schema.tables[k.name].columns.some((c) => c.name === 'group_name'))
+      .map((k) => `SELECT id, group_name::VARCHAR FROM ${sqlName(k.name)} WHERE group_name IS NOT NULL`),
+  ];
   return `
 CREATE OR REPLACE VIEW record_parent AS
 ${parents.join('\nUNION ALL ')};
 CREATE OR REPLACE VIEW link AS
 ${links.join('\nUNION ALL ')};
+CREATE OR REPLACE VIEW record_group AS
+${groups.join('\nUNION ALL ')};
 `;
 }
 
