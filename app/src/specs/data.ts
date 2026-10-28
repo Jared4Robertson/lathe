@@ -56,7 +56,7 @@ export interface Workspace {
   dataDir: string;
   /** Every kind, in the schema's kind order (kindOrder). */
   kinds: Kind[];
-  /** The five stages, in order. */
+  /** The six stages, in order. */
   stages: StageRule[];
   /** Each relation's allowed pairs, one rule per pair. */
   relations: RelationRule[];
@@ -100,7 +100,7 @@ export function partTablesOf(schema: SchemaDescription, kind: string): string[] 
 }
 
 /**
- * Orders kind names as the schema does: Lathe's kinds by their position (the product, the five stages in order, then
+ * Orders kind names as the schema does: Lathe's kinds by their position (the product, the six stages in order, then
  * open questions), a product's own kinds after them, by name.
  */
 export function kindOrder(schema: SchemaDescription): (a: string, b: string) => number {

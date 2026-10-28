@@ -150,6 +150,8 @@ function RunBy({ record, runBy }: { record: SpecRecord; runBy: NonNullable<Trace
           </div>
         )}
         {runBy.manualReason && <div><dt>Manual because</dt><dd>{runBy.manualReason}</dd></div>}
+        <div><dt>Size</dt><dd>{runBy.size}</dd></div>
+        <div><dt>Markers</dt><dd>{runBy.markers.length > 0 ? runBy.markers.join(', ') : 'none'}</dd></div>
       </dl>
     </Section>
   );

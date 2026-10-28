@@ -36,6 +36,8 @@
 {"use_case_id":"LA-AUT-UC20","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-AUT-UC21","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-AUT-UC21","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-AUT-UC22","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-AUT-UC22","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-CHK-UC01","position":1,"role_name":"Agent"}
 {"use_case_id":"LA-CHK-UC01","position":2,"role_name":"Owner"}
 {"use_case_id":"LA-CHK-UC02","position":1,"role_name":"Agent"}

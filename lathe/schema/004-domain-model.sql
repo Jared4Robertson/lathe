@@ -317,20 +317,20 @@ CREATE UNIQUE INDEX event_field_name_folded ON event_field (domain_event_id, low
 CREATE UNIQUE INDEX read_model_field_name_folded ON read_model_field (read_model_id, lower(trim(name)));
 
 INSERT INTO meta_kind VALUES
-  ('domain', 'Domain', 'domain-model', 2, false, '<P>-<D>', 'TL-LEND', 'parent', NULL),
-  ('aggregate', 'Aggregate', 'domain-model', 3, false, '<P>-<D>-A<n>', 'TL-LEND-A1', 'domain', NULL),
-  ('entity', 'Entity', 'domain-model', 4, false, '<P>-<D>-EN<nn>', 'TL-LEND-EN01', 'domain', NULL),
-  ('value_object', 'Value object', 'domain-model', 5, false, '<P>-VO<nn>', 'TL-VO01', 'product', NULL),
-  ('constraint', 'Constraint', 'domain-model', 6, true, '<value object>-C<nn>', 'TL-VO01-C01', 'parent', NULL),
-  ('invariant', 'Invariant', 'domain-model', 7, true, '<P>-<D>-INV<nn>', 'TL-LEND-INV01', 'domain', NULL),
-  ('specification', 'Specification', 'domain-model', 8, true, '<P>-<D>-SP<nn>', 'TL-LEND-SP01', 'domain', NULL),
-  ('domain_event', 'Domain event', 'domain-model', 9, false, '<P>-<D>-EV<nn>', 'TL-LEND-EV01', 'domain', NULL),
-  ('command', 'Command', 'domain-model', 10, false, '<P>-<D>-CMD<nn>', 'TL-LEND-CMD01', 'domain', NULL),
-  ('read_model', 'Read model', 'domain-model', 11, false, '<P>-<D>-RM<nn>', 'TL-LEND-RM01', 'domain', NULL),
-  ('query', 'Query', 'domain-model', 12, false, '<P>-<D>-QRY<nn>', 'TL-LEND-QRY01', 'domain', NULL),
-  ('policy', 'Policy', 'domain-model', 13, true, '<P>-<D>-PO<nn>', 'TL-LEND-PO01', 'domain', NULL),
-  ('domain_service', 'Domain service', 'domain-model', 14, true, '<P>-<D>-DS<nn>', 'TL-LEND-DS01', 'domain', NULL),
-  ('term', 'Term', 'domain-model', 15, false, '<P>-<D>-TM<nn>', 'TL-LEND-TM01', 'domain', NULL);
+  ('domain', 'Domain', 'domain-model', 3, false, '<P>-<D>', 'TL-LEND', 'parent', NULL),
+  ('aggregate', 'Aggregate', 'domain-model', 4, false, '<P>-<D>-A<n>', 'TL-LEND-A1', 'domain', NULL),
+  ('entity', 'Entity', 'domain-model', 5, false, '<P>-<D>-EN<nn>', 'TL-LEND-EN01', 'domain', NULL),
+  ('value_object', 'Value object', 'domain-model', 6, false, '<P>-VO<nn>', 'TL-VO01', 'product', NULL),
+  ('constraint', 'Constraint', 'domain-model', 7, true, '<value object>-C<nn>', 'TL-VO01-C01', 'parent', NULL),
+  ('invariant', 'Invariant', 'domain-model', 8, true, '<P>-<D>-INV<nn>', 'TL-LEND-INV01', 'domain', NULL),
+  ('specification', 'Specification', 'domain-model', 9, true, '<P>-<D>-SP<nn>', 'TL-LEND-SP01', 'domain', NULL),
+  ('domain_event', 'Domain event', 'domain-model', 10, false, '<P>-<D>-EV<nn>', 'TL-LEND-EV01', 'domain', NULL),
+  ('command', 'Command', 'domain-model', 11, false, '<P>-<D>-CMD<nn>', 'TL-LEND-CMD01', 'domain', NULL),
+  ('read_model', 'Read model', 'domain-model', 12, false, '<P>-<D>-RM<nn>', 'TL-LEND-RM01', 'domain', NULL),
+  ('query', 'Query', 'domain-model', 13, false, '<P>-<D>-QRY<nn>', 'TL-LEND-QRY01', 'domain', NULL),
+  ('policy', 'Policy', 'domain-model', 14, true, '<P>-<D>-PO<nn>', 'TL-LEND-PO01', 'domain', NULL),
+  ('domain_service', 'Domain service', 'domain-model', 15, true, '<P>-<D>-DS<nn>', 'TL-LEND-DS01', 'domain', NULL),
+  ('term', 'Term', 'domain-model', 16, false, '<P>-<D>-TM<nn>', 'TL-LEND-TM01', 'domain', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('domain', 'product', 1, 'product_id'),
   ('aggregate', 'domain', 1, 'domain_id'),

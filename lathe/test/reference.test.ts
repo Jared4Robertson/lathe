@@ -77,7 +77,7 @@ describe('check rows', () => {
 
 describe('the reference', () => {
   it("LA-AUT-UC11-R02-T01 The reference holds every stage, kind, table, relation, check and gap of Lathe's schema", async () => {
-    expect(defaults.stages.map((s) => s.stage)).toEqual(['domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
+    expect(defaults.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
     const useCase = defaults.kinds.find((k) => k.kind === 'use_case')!;
     expect(useCase).toMatchObject({
       label: 'Use case',

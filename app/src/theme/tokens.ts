@@ -39,6 +39,8 @@ export const COLOR_TOKENS: readonly ColorToken[] = [
   { name: '--warn', label: 'Warning', group: 'Signals', core: true, on: { bg: ['--paper', '--sheet'], min: TEXT } },
   { name: '--error', label: 'Error', group: 'Signals', core: false, on: { bg: ['--paper', '--sheet', '--error-bg'], min: TEXT } },
   { name: '--error-bg', label: 'Error tint', group: 'Signals', core: false },
+  { name: '--g-discovery', label: 'Discovery stage', group: 'Graph', core: false, on: { bg: ['--g-discovery-bg'], min: CONTROL } },
+  { name: '--g-discovery-bg', label: 'Discovery stage fill', group: 'Graph', core: false },
   { name: '--g-domain-model', label: 'Domain model stage', group: 'Graph', core: false, on: { bg: ['--g-domain-model-bg'], min: CONTROL } },
   { name: '--g-domain-model-bg', label: 'Domain model stage fill', group: 'Graph', core: false },
   { name: '--g-use-cases', label: 'Use cases stage', group: 'Graph', core: false, on: { bg: ['--g-use-cases-bg'], min: CONTROL } },

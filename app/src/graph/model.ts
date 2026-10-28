@@ -84,7 +84,7 @@ export function edgesOf(index: SpecIndex, id: string): GraphEdge[] {
   return edges.filter((e) => index.byId.has(e.source) && index.byId.has(e.target)).map((e) => ({ ...e, id: edgeId(e) }));
 }
 
-/** A node's stage's place in the sort: groups and structural records first, then the five stages in order, files last. */
+/** A node's stage's place in the sort: groups and structural records first, then the six stages in order, files last. */
 function stageRank(index: SpecIndex, stage: GraphNode['stage']): number {
   if (stage === GROUP_STAGE || stage === '') return 0;
   if (stage === 'file') return index.workspace.stages.length + 1;
@@ -117,17 +117,21 @@ function recordNode(index: SpecIndex, id: string, distance: number, mode: GraphM
 }
 
 /**
- * Columns of a trace, left to right: the obligation; the flow and the step that fulfill it; what designs it (the
+ * Columns of a trace, left to right: why a UC requirement is there (the business outcomes its capability serves, the
+ * capability, the use case); the obligation; the flow and the step that fulfill it; what designs it (the
  * views a step happens in, the commands and queries it invokes, the value object or aggregate the obligation sits
  * in); the technical records that implement it; the tests that prove it; the files they name.
  */
-export const TRACE_COLUMNS = { obligation: 0, flow: 1, step: 1.5, design: 2, technical: 3, test: 4, file: 5 } as const;
+export const TRACE_COLUMNS = { outcome: -3, capability: -2, useCase: -1, obligation: 0, flow: 1, step: 1.5, design: 2, technical: 3, test: 4, file: 5 } as const;
 
 /** The trace column of a kind, by its stage: a flow and a step, the design kinds, the technical kinds, the tests, a file. */
 export function traceColumn(index: SpecIndex, kind: string): number {
   if (kind === FILE_KIND) return TRACE_COLUMNS.file;
   if (kind === 'flow') return TRACE_COLUMNS.flow;
   if (kind === 'flow_step') return TRACE_COLUMNS.step;
+  if (kind === 'business_outcome') return TRACE_COLUMNS.outcome;
+  if (kind === 'capability') return TRACE_COLUMNS.capability;
+  if (kind === 'use_case') return TRACE_COLUMNS.useCase;
   const stage = index.kinds.get(kind)?.stage;
   if (stage === 'technical-specification') return TRACE_COLUMNS.technical;
   if (stage === 'test-plan') return TRACE_COLUMNS.test;
@@ -451,6 +455,8 @@ const childrenIn = (index: SpecIndex, id: string, stage: string) =>
 
 /**
  * An obligation's traceability chain, left to right:
+ * - why it is there: for a UC requirement, its use case, the use case's capability and the business outcomes that
+ *   capability serves, so the trace runs from an outcome to the code and tests;
  * - what designs it: for a UC requirement, the flow steps that fulfill it, each with its flow and the views it
  *   happens in and the commands and queries it invokes; for a constraint, its value object; for an invariant, its
  *   aggregate;
@@ -485,6 +491,13 @@ export function traceChain(index: SpecIndex, focus: string, filters: Filters = N
     for (const t of childrenIn(index, id, 'technical-specification')) add(id, PARENT, t.id, t.id, id);
   };
 
+  if (record.kind === 'uc_requirement' && record.parent) {
+    // Its use case, the capability the use case sits in, and the outcomes that capability serves.
+    const useCase = index.byId.get(record.parent);
+    if (useCase && add(useCase.id, PARENT, focus, useCase.id, focus) && useCase.parent && add(useCase.parent, PARENT, useCase.id, useCase.parent, useCase.id)) {
+      for (const l of (index.outgoing.get(useCase.parent) ?? []).filter((x) => x.relation === 'serves')) add(l.source, l.relation, l.target, l.target, l.source);
+    }
+  }
   if (record.kind === 'uc_requirement') {
     // The steps that fulfill it, each with its flow, where it happens and what it invokes, and that operation's handler.
     for (const l of (index.incoming.get(focus) ?? []).filter((x) => x.relation === 'fulfills')) {
@@ -552,7 +565,7 @@ export const graphRelationLabel = (relation: string, index?: SpecIndex) => RELAT
 export const graphEdgeLabel = (index: SpecIndex, e: { source: string; relation: string; target: string }, from: 'source' | 'target' = 'source') =>
   RELATION_LABELS[e.relation] ?? linkLabel(index, e, from);
 
-/** The kinds a person can filter on, grouped by the five stages in order, then the structural kinds (product, open question). */
+/** The kinds a person can filter on, grouped by the six stages in order, then the structural kinds (product, open question). */
 export function kindGroups(index: SpecIndex): { stage: Stage | ''; title: string; kinds: { kind: string; label: string }[] }[] {
   const groups: { stage: Stage | ''; title: string }[] = [
     ...index.workspace.stages.map((s) => ({ stage: s.stage, title: s.label })),
@@ -565,7 +578,7 @@ export function kindGroups(index: SpecIndex): { stage: Stage | ''; title: string
 }
 
 /** The relations kept by the "traceability only" preset: what a trace draws. */
-export const TRACE_RELATIONS = new Set([PARENT, 'fulfills', 'invokes', 'happens_in', 'meets', ENFORCES, NAMES]);
+export const TRACE_RELATIONS = new Set([PARENT, 'serves', 'fulfills', 'invokes', 'happens_in', 'meets', ENFORCES, NAMES]);
 
 
 /** Keeps the breadcrumb trail: going back to a record in the trail cuts the trail there. */

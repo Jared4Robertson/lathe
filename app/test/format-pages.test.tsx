@@ -23,9 +23,9 @@ describe('format reference pages', () => {
     expect(section('How records are kept')).toHaveTextContent('Every table\'s rows are one file in data/');
 
     const kinds = section(/^Kinds\d/);
-    // The five stages in order, then the kinds outside them.
+    // The six stages in order, then the kinds outside them.
     expect([...kinds.querySelectorAll(':scope > section > .spec-section-head h3')].map((h) => h.firstChild?.textContent)).toEqual([
-      'Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan', 'Outside the stages',
+      'Discovery', 'Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan', 'Outside the stages',
     ]);
     const useCases = within(kinds).getByRole('heading', { name: /^Use cases/ }).closest('section')!;
     const row = within(useCases).getByRole('link', { name: /use_case\s*Use case/ });

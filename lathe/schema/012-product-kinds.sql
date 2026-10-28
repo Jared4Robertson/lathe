@@ -20,7 +20,7 @@ COMMENT ON COLUMN product_kind.product_id IS 'The product that declares it; only
 COMMENT ON COLUMN product_kind.label IS 'The kind''s name as people read it, such as Report.';
 COMMENT ON COLUMN product_kind.description IS 'What a record of the kind is.';
 COMMENT ON COLUMN product_kind.parent_kind IS 'The kind its records sit under, their one parent: one of Lathe''s or another product kind. Its table gets a required <parent_kind>_id column.';
-COMMENT ON COLUMN product_kind.stage IS 'The stage its records belong to, any of the five, if one; such as technical-specification for a kind of code Lathe has no kind for.';
+COMMENT ON COLUMN product_kind.stage IS 'The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for.';
 COMMENT ON COLUMN product_kind.obligation IS 'Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype.';
 COMMENT ON COLUMN product_kind.id_pattern IS 'How its IDs are written, its own pattern, such as <command>-CLI.';
 COMMENT ON COLUMN product_kind.id_example IS 'An example ID.';

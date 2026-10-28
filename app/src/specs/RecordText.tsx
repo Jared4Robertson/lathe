@@ -1,13 +1,13 @@
 import type { ReactNode } from 'react';
 import { parentColumns, partsOf, textOf, type Row, type SpecIndex, type SpecRecord } from './data';
 import { Prose } from './mentions';
-import { RecordLink, Section } from './parts';
+import { RecordLink, Section, isTestKind } from './parts';
 import { appliesWhenOf, appliesWhenText, settingOfRow, settingText } from './patterns';
 
 // A record's typed fields, in place of a Markdown body: its text fields (a rule's statement, a use
-// case's goal, a term's meaning, a test's Given, When and Then, the notes) on the page, read as
-// Markdown, and its short fields (a route, a method, a file, a level) as facts beside it. Its part
-// rows show too: the fields of an entity, a value object, a domain event or a read model as a table,
+// case's goal, a term's meaning, a test's Given, When and Then, an outcome's measure and target, a
+// test data set's environment and setup, the notes) on the page, read as Markdown, and its short
+// fields (a route, a method, a file, a level) as facts beside it. Its part rows show too: the fields of an entity, a value object, a domain event or a read model as a table,
 // each with its type (a basic type, a value object or a reference to an aggregate); a table's keys;
 // a command's recorded exceptions; a flow test's steps; a product's roles.
 
@@ -17,6 +17,15 @@ const LEAD_COLUMNS = ['statement', 'goal', 'meaning', 'description'] as const;
 const TITLED_COLUMNS: readonly { column: string; title: string }[] = [
   { column: 'identity', title: 'Identity' },
   { column: 'expected_result', title: 'Expected result' },
+  // A business outcome's measure and target.
+  { column: 'measure', title: 'Measure' },
+  { column: 'target', title: 'Target' },
+  // A test data set: where it runs, what it starts with, and how to prepare and reset it.
+  { column: 'environment', title: 'Environment' },
+  { column: 'accounts', title: 'Accounts' },
+  { column: 'records', title: 'Starting records' },
+  { column: 'prepare', title: 'Prepare' },
+  { column: 'reset', title: 'Reset' },
 ];
 /** A test's scenario, shown together: Given, When and Then, or what a constraint accepts and refuses. */
 const SCENARIO_COLUMNS = ['given', 'when', 'then', 'accepts', 'refuses'] as const;
@@ -25,7 +34,7 @@ export const TEXT_COLUMNS: ReadonlySet<string> = new Set([...LEAD_COLUMNS, ...TI
 /** A pattern rule's applies-when columns read as one fact. */
 const APPLIES_WHEN_COLUMNS: ReadonlySet<string> = new Set(['applies_when_setting', 'applies_when_negated', 'applies_when_value']);
 /** A test's run by, which its Traceability shows. */
-const RUN_BY_COLUMNS: ReadonlySet<string> = new Set(['level', 'state', 'file', 'manual_reason']);
+const RUN_BY_COLUMNS: ReadonlySet<string> = new Set(['level', 'state', 'file', 'manual_reason', 'size', 'smoke', 'external']);
 
 const label = (column: string) => column.replaceAll('_', ' ');
 
@@ -201,7 +210,7 @@ export interface Fact {
 export function factsOf(index: SpecIndex, record: SpecRecord): Fact[] {
   const { schema } = index.workspace;
   const skip = new Set(['id', 'title', ...parentColumns(schema, record.kind), ...TEXT_COLUMNS, ...APPLIES_WHEN_COLUMNS, 'steps']);
-  if (index.kinds.get(record.kind)?.stage === 'test-plan') for (const c of RUN_BY_COLUMNS) skip.add(c);
+  if (isTestKind(index, record.kind)) for (const c of RUN_BY_COLUMNS) skip.add(c);
   const facts: Fact[] = (schema.tables[record.kind]?.columns ?? [])
     .filter((c) => !skip.has(c.name) && record.row[c.name] !== undefined)
     .map((c) => ({ column: c.name, label: label(c.name), value: c.name === 'domain_id' ? <RecordLink index={index} id={textOf(record.row, c.name)} /> : textOf(record.row, c.name) }));

@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
 import { RecordText } from './RecordText';
+import { Prose } from './mentions';
 import { DomainPatterns } from './PatternParts';
 import { patternsFollowedBy } from './patterns';
 import { CoverageBars, ProductSummary } from './ProductHealth';
@@ -91,7 +92,44 @@ export const problemsUnder = (index: SpecIndex, key: 'product' | 'domain', id: s
   index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.[key] === id);
 
 /**
- * A product's wiki: its text, its domains (not their contents), what it shares in its stages
+ * A product's business outcomes, the discovery stage (LA-V51): each with its measurable statement, its measure and
+ * target, and the capabilities that serve it. An outcome no capability serves says so, as coverage reports it.
+ */
+function BusinessOutcomes({ index, productId }: { index: SpecIndex; productId: string }) {
+  const outcomes = recordsIn(index, (r) => r.kind === 'business_outcome' && r.parent === productId);
+  return (
+    <Section title="Business outcomes" count={outcomes.length} className="stage stage-discovery product-outcomes">
+      <p className="hint">What the product exists to achieve, each measurable, and the capabilities that serve it.</p>
+      {outcomes.length === 0 && <p className="hint">No business outcomes yet.</p>}
+      <ul className="outcome-list">
+        {outcomes.map((o) => {
+          const servedBy = (index.incoming.get(o.id) ?? []).filter((l) => l.relation === 'serves').map((l) => l.source).sort();
+          return (
+            <li key={o.id} className="outcome">
+              <RecordLink index={index} id={o.id} row />
+              <div className="outcome-statement"><Prose index={index} source={textOf(o.row, 'statement')} self={o.id} /></div>
+              <dl className="fields">
+                <div><dt>Measure</dt><dd><Prose index={index} source={textOf(o.row, 'measure')} self={o.id} /></dd></div>
+                <div><dt>Target</dt><dd><Prose index={index} source={textOf(o.row, 'target')} self={o.id} /></dd></div>
+                <div>
+                  <dt>Served by</dt>
+                  <dd>
+                    {servedBy.length === 0 ? <span className="hint">No capability yet.</span> : (
+                      <ul className="plain served-by">{servedBy.map((c) => <li key={c}><RecordLink index={index} id={c} /></li>)}</ul>
+                    )}
+                  </dd>
+                </div>
+              </dl>
+            </li>
+          );
+        })}
+      </ul>
+    </Section>
+  );
+}
+
+/**
+ * A product's wiki: its text, its business outcomes, its domains (not their contents), what it shares in its stages
  * (patterns, standards, and the value objects, views, integrations and UI components two or more
  * domains use, or none), its summary, open questions and problems.
  */
@@ -100,11 +138,14 @@ export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
   const domains = index.domainsOf.get(id) ?? [];
   const questions = recordsIn(index, (r) => r.kind === 'question' && r.product === id);
   const problems = problemsUnder(index, 'product', id);
+  // Its business outcomes have a section of their own, so Shared holds the other stages.
   const own = productFolders(index, id);
-  const ownCount = own.stages.reduce((n, s) => n + s.count, 0);
+  const shared = own.stages.filter((s) => s.stage !== 'discovery' && s.count > 0);
+  const ownCount = shared.reduce((n, s) => n + s.count, 0);
   return (
     <div className="spec-body">
       <RecordText index={index} record={product} />
+      <BusinessOutcomes index={index} productId={id} />
       <Section title="Domains" count={domains.length}>
         {domains.length === 0 && <p className="hint">No domains yet.</p>}
         <div className="cards">
@@ -123,7 +164,7 @@ export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
       {ownCount > 0 && (
         <Section title="Shared" count={ownCount} className="product-shared">
           <p className="hint">Patterns and standards, and the records with no owner that two or more domains use, or none, with what sits under them.</p>
-          <StageSections index={index} folders={{ stages: own.stages.filter((s) => s.count > 0), loose: [] }} query="" level={3} />
+          <StageSections index={index} folders={{ stages: shared, loose: [] }} query="" level={3} />
           {index.coverage.get(id) && (
             <Section level={3} title="Shared coverage" className="product-coverage">
               <CoverageBars coverage={index.coverage.get(id)} />

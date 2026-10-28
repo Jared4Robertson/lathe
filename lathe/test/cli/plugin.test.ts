@@ -32,7 +32,7 @@ function productRepo(): string {
   return root;
 }
 
-const SKILLS = ['model-a-domain', 'write-use-cases', 'design-interactions', 'write-the-technical-spec', 'plan-tests', 'check-and-fix', 'extend-the-meta-model'];
+const SKILLS = ['discover-outcomes', 'model-a-domain', 'write-use-cases', 'design-interactions', 'write-the-technical-spec', 'plan-tests', 'check-and-fix', 'extend-the-meta-model'];
 
 // The tool calls a skill shows, as \`add { ... }\`, \`set { ... }\` or \`link { ... }\`, in its examples or inline.
 function examples(text: string): { op: string; args: Record<string, unknown> }[] {

@@ -1,6 +1,6 @@
 # Lathe
 
-A lathe is a tool that makes tools, including better lathes. Lathe organizes a product's lifecycle (domain model, use cases, interaction design, technical specification, test plan) as typed data: a table per kind of record, kept as one `data/<table>.jsonl` file per table in the product's own repo. A database loads them with every key and rule of its schema, so data that breaks the model cannot be saved; checks report the work still to do, coverage traces each obligation to the code that builds it and the tests that prove it, and a web app lets you read, navigate and edit the result.
+A lathe is a tool that makes tools, including better lathes. Lathe organizes a product's lifecycle (discovery, domain model, use cases, interaction design, technical specification, test plan) as typed data: a table per kind of record, kept as one `data/<table>.jsonl` file per table in the product's own repo. A database loads them with every key and rule of its schema, so data that breaks the model cannot be saved; checks report the work still to do, coverage traces each business outcome through the capabilities that serve it, and each obligation to the code that builds it and the tests that prove it, and a web app lets you read, navigate and edit the result.
 
 Lathe describes itself in its own format: its specification is the data in [data/](data/), and `lathe check` runs on it as on any product. Most records are written by agents; the [Claude Code plugin](plugin/) gives them MCP tools that write through the same command layer as the CLI and the app. Specs name roles (Owner, Reader, Agent), never people.
 
@@ -14,7 +14,7 @@ Lathe describes itself in its own format: its specification is the data in [data
 | [plugin/](plugin/) | The Claude Code plugin: skills for writing records, MCP tools that write through the command layer, and a hook that refuses hand edits to data files. |
 | [data/](data/) | Lathe's own specification (product `LA`), with this repo's own checks in `data/check.jsonl`. |
 | [examples/tool-library/](examples/tool-library/) | The example product (`TL`): its code, whose tests carry their spec IDs, and its specification in its own `data/`. |
-| [notes/](notes/) | Notes for contributors: the store's interfaces, the audits behind the accessibility and stability suites, the phone layout's design, and the plan for what comes next. |
+| [notes/](notes/) | Notes for contributors: the store's interfaces, the audits behind the accessibility and stability suites, and the phone layout's design. |
 
 ## Run it
 
@@ -50,7 +50,7 @@ Lathe's schema has a version (in [lathe/schema/version.json](lathe/schema/versio
 ## A tour of the app
 
 - **Spaces.** Each product is a space. The rail at the far left of the nav has one icon per product; Alt+1 to Alt+9 switch between them. The nav, quick find and Checks follow the current space.
-- **The nav's stages.** Under each domain, the nav follows the five stages of the schema: domain model, use cases, interaction design, technical specification and test plan.
+- **The nav's stages.** Under each domain, the nav follows the schema's stages: domain model, use cases, interaction design, technical specification and test plan. Discovery, the first stage, holds the product's business outcomes, which the product page lists first and Shared holds in the nav.
 - **Views.** A record, group, domain or product page opens in one or more views side by side: **Wiki** (the record as a page: its body, fields, children, links in and out, and problems; a domain page adds its stages, coverage and open questions), **Graph** (the records around it as boxes and arrows, by level), and **Model** (on a domain, aggregate or entity page: the entity-relationship diagram of a domain's aggregates and their entities, or of one aggregate). Toggle them from the page bar or with Ctrl+W, Ctrl+G and Ctrl+M (Alt off a Mac); Ctrl+3 makes the focused view full screen. The address names the open views (`?view=wiki,graph`), so a link opens as it was seen.
 - **Tabs.** Each space keeps its own tabs, as VS Code's editors: a new page opens in the preview tab (italic) until you keep it (double-click, or Ctrl+K Enter). Ctrl+Tab cycles; Alt+Shift+W closes.
 - **The side bar.** On the right, it shows the focused record's kind, fields, parent, children, links both ways, problems and coverage gaps, and what the graph connects to it. Mod+Alt+B shows or hides it, and its edge drags to resize.

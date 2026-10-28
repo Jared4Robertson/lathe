@@ -14,6 +14,7 @@
 {"id":"LA-CHK-CK09","title":"ui-component-unused","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK11","title":"event-not-by-outbox","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK12","title":"aggregate-too-large","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
+{"id":"LA-CHK-CK13","title":"test-data-set-unused","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK01","title":"not-designed","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK02","title":"not-built","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK03","title":"not-proved","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
@@ -24,3 +25,4 @@
 {"id":"LA-TRC-CK09","title":"pattern-rule-test-outside-followers","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK10","title":"manual-test-file-silent","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK12","title":"technical-file-missing","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
+{"id":"LA-TRC-CK13","title":"test-data-set-file-missing","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
