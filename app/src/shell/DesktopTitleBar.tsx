@@ -12,7 +12,8 @@ import './DesktopTitleBar.css';
 // The desktop app's own title bar (LA-PLT-UC14), as in VS Code: the window has no system title bar,
 // so this 38 px bar on the shell color carries the window's controls (the traffic lights at the left
 // on macOS, the native buttons at the right elsewhere), back and forward, a command center naming
-// the page that opens quick find, and the layout toggles. It drags the window; a double-click on it
+// the page that opens quick find, and the layout toggles: the navigation, the side bar and the chat
+// with Claude (LA-PLT-UC19). It drags the window; a double-click on it
 // zooms or maximizes the window, natively, as the system setting says. In full screen on macOS the
 // traffic lights hide, and so does the room kept for them. In a browser it is not drawn.
 // It also carries the desktop's page hooks: the Dock badge and the record menu (desktopRecord.tsx).
@@ -24,6 +25,9 @@ interface PageState {
   sideBarShown: boolean;
   /** Whether the page has a side bar to show or hide at all. */
   sideBarOffered: boolean;
+  chatShown: boolean;
+  /** On a phone's width, where the chat is not offered. */
+  narrow: boolean;
 }
 
 function readPage(): PageState {
@@ -35,15 +39,17 @@ function readPage(): PageState {
     navShown: narrow ? !!document.getElementById('nav') : !(app?.classList.contains('nav-collapsed') ?? false),
     sideBarShown,
     sideBarOffered: sideBarShown || !!document.querySelector('.side-bar-toggle'),
+    chatShown: !!document.getElementById('chat-panel'),
+    narrow,
   };
 }
 
 const samePage = (a: PageState, b: PageState) =>
-  a.title === b.title && a.navShown === b.navShown && a.sideBarShown === b.sideBarShown && a.sideBarOffered === b.sideBarOffered;
+  a.title === b.title && a.navShown === b.navShown && a.sideBarShown === b.sideBarShown && a.sideBarOffered === b.sideBarOffered && a.chatShown === b.chatShown && a.narrow === b.narrow;
 
 /** The page's state, kept current as the page changes (the observer batches each turn's changes into one read). */
 function usePageState(): PageState {
-  const [page, setPage] = useState<PageState>({ title: '', navShown: true, sideBarShown: false, sideBarOffered: false });
+  const [page, setPage] = useState<PageState>({ title: '', navShown: true, sideBarShown: false, sideBarOffered: false, chatShown: false, narrow: false });
   useLayoutEffect(() => {
     const read = () => {
       const next = readPage();
@@ -159,6 +165,13 @@ function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: SpecIndex | 
             <Icon name="sidebar-right" size={16} />
           </Button>
         </Tooltip>
+        {!page.narrow && (
+          <Tooltip label="Show or hide the chat with Claude" command="toggleChat" placement="left">
+            <Button variant="icon" className={`title-bar-button${page.chatShown ? ' is-on' : ''}`} label="Show or hide the chat with Claude" aria-pressed={page.chatShown} onClick={() => run('toggleChat')}>
+              <Icon name="chat" size={16} />
+            </Button>
+          </Tooltip>
+        )}
       </div>
     </header>
   );

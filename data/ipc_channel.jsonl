@@ -1,2 +1,6 @@
 {"id":"LA-PLT-CMD13-IPC","title":"lathe:set-chrome","command_id":"LA-PLT-CMD13","file":"desktop/src/preload.cts"}
 {"id":"LA-PLT-CMD14-IPC","title":"lathe:error-count","command_id":"LA-PLT-CMD14","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD26-IPC","title":"lathe:chat-open","command_id":"LA-PLT-CMD26","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD27-IPC","title":"lathe:chat-send","command_id":"LA-PLT-CMD27","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD28-IPC","title":"lathe:chat-answer","command_id":"LA-PLT-CMD28","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD29-IPC","title":"lathe:chat-stop","command_id":"LA-PLT-CMD29","file":"desktop/src/preload.cts"}

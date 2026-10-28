@@ -42,6 +42,7 @@
 {"id":"LA-UI140","title":"Wiki card","file":"app/src/views/WikiCard.tsx","description":"The focus's wiki page, floating over the left of the open space: its breadcrumb, title and content, its collapse button and resize handle."}
 {"id":"LA-UI141","title":"Trace canvas","file":"app/src/trace/TraceCanvas.tsx","description":"The Trace stage drawn on the canvas with the graph's painter and camera: what is in view of its picture, the hover spotlight over every copy of a record, the keyboard's ring, and the column names over the frame."}
 {"id":"LA-UI142","title":"Trace picture","file":"app/src/trace/lanes.ts","description":"The Trace stage's picture, laid out once in map units: one obligation's chain with its why columns, or a why tree and a lane per obligation, gaps as boxes and the Untraced lane last; and what a rectangle of it holds."}
+{"id":"LA-UI143","title":"Chat panel","file":"app/src/chat/ChatPanel.tsx","description":"The chat panel: its head, the session picker, the log with its tool rows, permission prompts and record diffs, and the composer."}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
 {"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
