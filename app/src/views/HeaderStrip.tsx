@@ -1,6 +1,6 @@
 import { memo } from 'react';
 import { Breadcrumb, type Crumb } from '../components/Breadcrumb';
-import { groupName, isGroup, parseGroupId } from '../graph/model';
+import { groupLabel, groupName, isGroup, parseGroupId } from '../graph/model';
 import { treeParent } from '../graph/tree';
 import type { SpecIndex } from '../specs/data';
 import { KindBadge } from '../specs/parts';
@@ -38,18 +38,18 @@ export interface HeaderStripProps {
 
 export const HeaderStrip = memo(function HeaderStrip({ index, focus, counts }: HeaderStripProps) {
   const record = index.byId.get(focus);
-  const title = record?.title ?? (isGroup(index, focus) ? groupName(index, focus) : focus);
+  const title = record?.title ?? (isGroup(index, focus) ? groupLabel(index, focus) : focus);
   const trail = focusTrail(index, focus);
   return (
     <div className="header-strip" data-floating="top">
       {trail.length > 0 && <Breadcrumb items={trail} className="header-strip-trail" />}
       {trail.length > 0 && <span className="header-strip-sep" aria-hidden="true">›</span>}
       {/* Keyed by the focus: a new focus is new text drawn in place, never the last one's slid along (UX-R08). */}
-      <h1 key={focus} className="header-strip-focus" title={record ? `${record.title} (${focus})` : title}>
+      <div key={focus} className="header-strip-focus" title={record ? `${record.title} (${focus})` : title}>
         {record && <KindBadge index={index} kind={record.kind} />}
         {record && <code className="header-strip-id">{focus}</code>}
-        <span className="header-strip-title">{title}</span>
-      </h1>
+        <h1 className="header-strip-title">{title}</h1>
+      </div>
       <span className="header-strip-counts" title={counts}>{counts}</span>
     </div>
   );

@@ -310,6 +310,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         stage={stage}
         onStage={setStage}
         stageBox={stageBox}
+        strip={<HeaderStrip index={index} focus={focus} counts={counts} />}
         card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} sheet /> : null}
         onCard={setCardShown}
         cardButton={cardButton}
@@ -424,6 +425,8 @@ interface PhoneLayoutProps {
   stage: StageName;
   onStage: (stage: StageName) => void;
   stageBox: ReactNode;
+  /** The header strip, under the compact page bar. */
+  strip: ReactNode;
   /** The wiki card, while its sheet is open. */
   card: ReactNode;
   onCard: (show: boolean) => void;
@@ -442,7 +445,7 @@ interface PhoneLayoutProps {
  * the side bar as a drawer from the right.
  */
 function PhoneLayout(props: PhoneLayoutProps) {
-  const { index, tabs, stage, onStage, stageBox, card, onCard, cardButton, sideBarShown, onSideBar, sideBarButton, sideBar, sideBarRef, layout } = props;
+  const { index, tabs, stage, onStage, stageBox, strip, card, onCard, cardButton, sideBarShown, onSideBar, sideBarButton, sideBar, sideBarRef, layout } = props;
   const [pagesOpen, setPagesOpen] = useState(false);
   const pagesButton = useRef<HTMLButtonElement>(null);
   const pagesSheet = useRef<HTMLUListElement>(null);
@@ -473,6 +476,7 @@ function PhoneLayout(props: PhoneLayoutProps) {
         onPages={() => setPagesOpen(true)}
         pagesButton={pagesButton}
       />
+      {strip}
       {stageBox}
       {card && (
         <BottomSheet label="Wiki card" className="wiki-card-sheet" onClose={() => onCard(false)}>
