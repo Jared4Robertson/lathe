@@ -1,4 +1,4 @@
-# Jitter audit (brief 53)
+# Jitter audit
 
 Every shift the stability suite found, grouped by cause, ranked by size times how often the Reader meets it. The rule is `LA-PAT-APP-UX-R08` ("Nothing jumps"); the use case is `LA-BRW-UC117`.
 
@@ -10,7 +10,7 @@ Every shift the stability suite found, grouped by cause, ranked by size times ho
   - long animation frames;
   - the boxes of key elements, frame by frame, so a move, a jump back or a remount shows even without a shift.
 - A step names what it changes on purpose (`allow`, such as the panes when a pane opens). Everything else is **unexpected**, and must stay at 0.01 or less. Transforms and opacity are not layout shifts, so the graph's tokened glides and fades cost nothing.
-- In phase 1, shifts that moved only the nav or the tab strip were reported as **deferred** (`DEFERRED` in `app/stability/measure.ts`), because those parts belonged to other briefs. Phase 2 emptied that list: every part of the app is held to the budget.
+- In phase 1, shifts that moved only the nav or the tab strip were reported as **deferred** (`DEFERRED` in `app/stability/measure.ts`), because those parts belonged to other work in progress. Phase 2 emptied that list: every part of the app is held to the budget.
 - A shift source whose node was removed before the shift was reported (old content being replaced) cannot be placed; it neither explains nor condemns its shift, and the other sources decide.
 - A key element that a step cannot find fails the step, so a selector that goes stale after a UI change is caught.
 - Results: `app/stability/results/summary.json` (ignored by git). `STABILITY_LABEL=before` keeps a labeled copy.
@@ -176,6 +176,6 @@ Size is the largest CLS value seen in one step, and the largest move of a key el
 9. Long frames measured on the built app: no action needed (cause 9).
 10. Everything re-measured: every step is at 0.0000 unexpected, and no key element moves.
 
-## Measurement fix (brief 70)
+## Measurement fix
 
 11. "ERD: Back to the domain" failed once (0.076): the shift came from the side panel, which the step allows, but one moved element had already left the page before the shift was reported, and whether it counted depended on machine load. A removed element is now judged by where its old box was: inside an allowed part it is allowed; otherwise it neither explains nor condemns the shift. The 0.01 limit is unchanged. The step passed 9 of 9 runs, including at 6× CPU slowdown.

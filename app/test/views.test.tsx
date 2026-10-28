@@ -249,7 +249,7 @@ describe('one address, three views', () => {
     await screen.findByRole('heading', { level: 1, name: 'Invariants (13)' });
     expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByRole('searchbox', { name: 'Filter invariants of P-D-A3/invariant' })).toBeInTheDocument();
     await waitFor(() => expect(within(sideBar()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());
-    // The side bar's Outline: the graph's records by level, each list searchable past 10 rows (brief 64).
+    // The side bar's Outline: the graph's records by level, each list searchable past 10 rows.
     fireEvent.click(within(sideBar()).getByRole('button', { name: 'Outline' }));
     await waitFor(() => expect(within(sideBar()).getAllByRole('searchbox', { name: /^Filter level \d$/ }).length).toBeGreaterThan(0));
   });
@@ -275,7 +275,7 @@ describe('one address, three views', () => {
   });
 
   it('LA-V96-R04-T01 The page bar holds the tabs at its left and the view toggles, a divider and the side bar toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown side bar share one on look', async () => {
-    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    // The side bar starts closed in the Wiki view; this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -310,7 +310,7 @@ describe('one address, three views', () => {
 });
 
 describe('the side bar', () => {
-  /** A use case in the Graph view, where the side bar starts open (brief 64). */
+  /** A use case in the Graph view, where the side bar starts open. */
   const inGraph = async () => {
     await openApp('/P-D-UC01?view=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });

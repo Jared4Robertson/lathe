@@ -25,7 +25,7 @@ export interface TabView {
   /** Each pane's weight, which the gaps share out. */
   sizes: Record<ViewName, number>;
   graph: GraphSettings;
-  /** The side bar in each view mode: open or not, and its view (brief 64). Absent modes use the last used. */
+  /** The side bar in each view mode: open or not, and its view. Absent modes use the last used. */
   side?: SideState;
 }
 export type PageTab = Tab<TabView>;

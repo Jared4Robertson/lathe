@@ -71,7 +71,7 @@ export function startAtDepth(depth: number, layout: 'tree' | 'nested' | 'voronoi
 
 /**
  * Opens the side bar in these view modes for the rest of the test, as if the person
- * had opened it there last (brief 64: it starts closed in the Wiki view, open in the Graph and Model views).
+ * had opened it there last (it starts closed in the Wiki view, open in the Graph and Model views).
  */
 export function openSideBar(view: 'details' | 'outline' | 'history' = 'details', modes: ('wiki' | 'graph' | 'model')[] = ['wiki']) {
   window.localStorage.setItem('lathe:side-bar', JSON.stringify(Object.fromEntries(modes.map((m) => [m, { open: true, view }]))));

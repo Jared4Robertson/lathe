@@ -9,7 +9,7 @@ const handle = (name: string) => screen.getByRole('separator', { name });
 
 describe('resizable panels', () => {
   const proveLaV61R02T02 = async () => {
-    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    // The side bar starts closed in the Wiki view; this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
@@ -38,7 +38,7 @@ describe('resizable panels', () => {
   it('LA-V61-R03-T02 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', proveLaV61R02T02);
 
   const proveLaV61R03T03 = async () => {
-    // The side bar starts closed in the Wiki view (brief 64); this test reads it open.
+    // The side bar starts closed in the Wiki view; this test reads it open.
     openSideBar('details', ['wiki', 'graph', 'model']);
     window.localStorage.setItem('lathe:nav-width', '400');
     window.localStorage.setItem('lathe:side-bar-width', '9999');

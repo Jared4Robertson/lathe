@@ -8,9 +8,9 @@ import { openApp, openSideBar } from './helpers';
 // or "Members". The title, the list's accessible name and its search box all follow.
 
 const wiki = () => screen.getByRole('region', { name: 'Wiki pane' });
-// The side bar's Details holds a product's and a domain's own facts, their overview being the page (brief 64).
+// The side bar's Details holds a product's and a domain's own facts, their overview being the page.
 const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
-/** The side bar never repeats a list the wiki shows (brief 64). */
+/** The side bar never repeats a list the wiki shows. */
 const noListInSideBar = (name: RegExp) => { expect(within(sideBar()).queryByRole('list', { name })).toBeNull(); expect(within(sideBar()).queryByRole('heading', { name })).toBeNull(); };
 
 describe('list titles', () => {

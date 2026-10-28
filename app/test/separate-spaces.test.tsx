@@ -9,7 +9,7 @@ import { workspace } from './fixtures/workspace';
 import { main, openApp, openSideBar, sideBar } from './helpers';
 import { boxElement, drawnIds } from './graph/scene';
 
-// Each product is a separate space (brief 82): every view and count inside a space reads the
+// Each product is a separate space: every view and count inside a space reads the
 // space's own index, so nothing of another product shows in it, even where the data names or links
 // across products (which the store refuses, but the app does not rely on that).
 

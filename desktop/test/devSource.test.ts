@@ -23,7 +23,7 @@ describe('In development the window uses the 5199 server only when it answers fo
   });
 
   it('LA-PLT-SP02-T starts its own server when 5199 answers for another folder, or with an error', async () => {
-    expect(await chooseDevSource('/c2/docs', '/repo/lathe', answers(200, '/repo/lathe'))).toEqual({ kind: 'own' });
+    expect(await chooseDevSource('/product/docs', '/repo/lathe', answers(200, '/repo/lathe'))).toEqual({ kind: 'own' });
     expect(await chooseDevSource('/repo/lathe', '/repo/lathe', answers(500, '/repo/lathe'))).toEqual({ kind: 'own' });
   });
 

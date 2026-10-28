@@ -15,7 +15,7 @@ describe('The launch view names the product, and the error page says what failed
   });
 
   it('LA-V69-R01-T01 builds the error page with the message, the folder and the three actions', () => {
-    const model = errorModel('Tool Library', '/Users/person/work/tools', '  data/use_case.jsonl:3: the line is not one JSON object  ', colors, 'darwin', '/Users/me');
+    const model = errorModel('Tool Library', '/Users/person/work/tools', '  data/use_case.jsonl:3: the line is not one JSON object  ', colors, 'darwin', '/Users/person');
     expect(model).toMatchObject({ view: 'error', heading: "Lathe couldn't open Tool Library", message: 'data/use_case.jsonl:3: the line is not one JSON object', folder: '~/work/tools' });
     expect(model.actions.map((a) => a.label)).toEqual(['Retry', 'Open Another Folder…', 'Reveal in Finder']);
     expect(model.actions.filter((a) => a.primary).map((a) => a.id)).toEqual(['retry']);
