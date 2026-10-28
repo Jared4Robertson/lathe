@@ -20,7 +20,7 @@ function builtLathe(dir: string, version: string): string {
 }
 
 describe('the Lathe a product opens with', () => {
-  it("LA-PLT-UC17-R06-T01 is the product's own installed Lathe when it has one, else the bundled copy, and About says which", () => {
+  it("LA-PLT-UC11-R09-T01 is the product's own installed Lathe when it has one, else the bundled copy, and About says which", () => {
     const bundled = builtLathe(path.join(temp, 'app', 'lathe'), '1.0.0');
     const plain = path.join(temp, 'plain');
     mkdirSync(plain);
