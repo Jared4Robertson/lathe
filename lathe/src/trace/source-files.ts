@@ -14,7 +14,7 @@
 // product's own, that has a file column) names it, or names a folder that holds it. Paths are compared from the repo
 // root, as records write them, after dropping a leading ./ and a trailing slash. It reads only names and the first
 // lines of each file; it never reads code for record IDs, which code needs not carry.
-import { existsSync } from 'node:fs';
+import { existsSync, type Dirent } from 'node:fs';
 import { glob, open } from 'node:fs/promises';
 import path from 'node:path';
 import { CONFIG_FILE } from '../config.ts';
@@ -47,26 +47,23 @@ async function head(file: string): Promise<string> {
 
 /** The product's source files, from the root, sorted: what the source globs match, less what is left out. */
 export async function sourceFiles(root: string, source: readonly string[], tests: readonly string[]): Promise<string[]> {
-  const skip = (entry: string) => {
-    const name = path.basename(entry);
-    if (entry === '' || entry === '.') return false;
-    return SKIPPED_FOLDERS.has(name) || (name.startsWith('.') && !path.extname(name)) || existsSync(path.join(root, entry, CONFIG_FILE));
-  };
-  const testFiles = new Set<string>();
-  for await (const file of glob([...tests], { cwd: root, exclude: skip })) testFiles.add(normalizePath(String(file)));
+  // One walk of the tree: a folder is skipped by its name, or when it holds its own config (another product).
+  const skip = (entry: Dirent) =>
+    entry.isDirectory() && (SKIPPED_FOLDERS.has(entry.name) || entry.name.startsWith('.') || existsSync(path.join(entry.parentPath, entry.name, CONFIG_FILE)));
+  const isTest = (file: string) => tests.some((glob) => path.posix.matchesGlob(file, glob));
   const found = new Set<string>();
-  for await (const file of glob([...source], { cwd: root, exclude: skip })) {
-    const rel = normalizePath(String(file));
+  for await (const entry of glob([...source], { cwd: root, exclude: skip, withFileTypes: true })) {
+    if (!entry.isFile()) continue;
+    const rel = normalizePath(path.relative(root, path.join(entry.parentPath, entry.name)));
     const parts = rel.split('/');
-    const name = parts[parts.length - 1];
-    if (testFiles.has(rel) || parts.slice(0, -1).some((p) => TEST_FOLDERS.has(p)) || CONFIG_NAME.test(name)) continue;
+    if (parts.slice(0, -1).some((p) => TEST_FOLDERS.has(p)) || CONFIG_NAME.test(entry.name) || isTest(rel)) continue;
     found.add(rel);
   }
   const files = await Promise.all([...found].map(async (rel) => {
     try {
       return GENERATED(await head(path.join(root, rel))) ? null : rel;
     } catch {
-      return null; // a folder the globs matched, or a file gone since
+      return null; // a file gone since
     }
   }));
   return files.filter((f): f is string => f !== null).sort();
