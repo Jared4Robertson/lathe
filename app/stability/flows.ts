@@ -10,8 +10,8 @@ export async function served(page: Page): Promise<SpecData> {
   return (await answer.json()) as SpecData;
 }
 
-/** The rows of one stored table. */
-export const rowsOf = (spec: SpecData, table: string) => spec.tables[table] ?? [];
+/** The rows of one stored table, from every product folder. */
+export const rowsOf = (spec: SpecData, table: string) => spec.sources.flatMap((source) => source.tables[table] ?? []);
 
 /** "12 automated, 1 manual, 2 not automated yet", as the app words a domain's tests by state. */
 export const testsText = (t: { automated: number; manual: number; not_automated: number }) => `${t.automated} automated, ${t.manual} manual, ${t.not_automated} not automated yet`;

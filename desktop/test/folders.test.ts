@@ -21,14 +21,27 @@ function folder(name: string, files: Record<string, string> = {}, dirs: string[]
 describe('LA-PLT-SP01-T A folder opens only when it holds lathe.config.json or a data folder', () => {
   it('opens a folder with lathe.config.json, reading its data folder', () => {
     const root = folder('configured', { 'lathe.config.json': '{ "data": "tables" }' });
-    expect(checkFolder(root)).toEqual({ ok: true, dataDir: path.join(root, 'tables') });
+    expect(checkFolder(root)).toEqual({ ok: true, dataDirs: [path.join(root, 'tables')] });
     const plainConfig = folder('configured-default', { 'lathe.config.json': '{}' });
-    expect(checkFolder(plainConfig)).toEqual({ ok: true, dataDir: path.join(plainConfig, 'data') });
+    expect(checkFolder(plainConfig)).toEqual({ ok: true, dataDirs: [path.join(plainConfig, 'data')] });
+  });
+
+  it('LA-PLT-UC11-R08-T01 opens a workspace with the data folder of each product it lists, from its own config', () => {
+    const root = folder('workspace', {
+      'lathe.config.json': '{ "products": ["examples/shop", "examples/gone"] }',
+      'examples/shop/lathe.config.json': '{ "data": "spec" }',
+      'data/product.jsonl': '{"id":"LA","title":"Lathe"}\n',
+      'examples/shop/spec/product.jsonl': '{"id":"SH","title":"Shop"}\n',
+    });
+    const check = checkFolder(root);
+    // A listed folder with no config of its own is left for the server to report.
+    expect(check).toEqual({ ok: true, dataDirs: [path.join(root, 'data'), path.join(root, 'examples/shop/spec')] });
+    expect(check.ok && productNames(check.dataDirs)).toEqual(['Lathe', 'Shop']);
   });
 
   it('opens a folder with a data folder and no config', () => {
     const root = folder('plain', {}, ['data']);
-    expect(checkFolder(root)).toEqual({ ok: true, dataDir: path.join(root, 'data') });
+    expect(checkFolder(root)).toEqual({ ok: true, dataDirs: [path.join(root, 'data')] });
   });
 
   it('says what is missing otherwise', () => {
@@ -55,8 +68,8 @@ describe('LA-PLT-SP01-T A folder opens only when it holds lathe.config.json or a
       'data/product.jsonl': '{"id":"LA","title":"Lathe"}\n{"id":"TL","title":"Tool Library"}\nnot json\n',
       'data/domain.jsonl': '{"id":"LA-D","title":"Not a product","product_id":"LA"}\n',
     });
-    const names = productNames(path.join(root, 'data'));
-    expect(productNames(path.join(root, 'missing'))).toEqual([]);
+    const names = productNames([path.join(root, 'data')]);
+    expect(productNames([path.join(root, 'missing')])).toEqual([]);
     expect(names).toEqual(['Lathe', 'Tool Library']);
     expect(windowTitle('/Users/person/Development/Lathe', names, '/Users/person')).toBe('Lathe, Tool Library — ~/Development/Lathe');
     expect(windowTitle('/srv/product', [], '/Users/person')).toBe('product — /srv/product');

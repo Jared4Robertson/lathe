@@ -7,8 +7,9 @@ type Watched = { dir: string; event: 'spec:changed' };
 
 // Serves Lathe's API (lathe/src/server/api.ts: the spec, writes and history) inside the Vite dev server. The module
 // is loaded through Vite, so edits to the engine are picked up without a restart, and its packages resolve from
-// lathe/node_modules. `root` is the product folder: vite.config.ts passes LATHE_ROOT, or this repo when it is not set.
-// Sends spec:changed when the product's data files change, or the package's own data (Lathe's checks) or schema.
+// lathe/node_modules. `root` is the workspace: vite.config.ts passes LATHE_ROOT, or this repo when it is not set, and
+// the API serves its product and each other product its lathe.config.json lists. Sends spec:changed when any of
+// their data files change, or the package's own data (Lathe's checks) or schema.
 export function latheApi(root: string, engineDir = path.resolve(import.meta.dirname, '../../lathe')): Plugin {
   const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
   const fail = (res: import('node:http').ServerResponse, error: string) => {

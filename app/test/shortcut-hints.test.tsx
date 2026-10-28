@@ -6,6 +6,10 @@ import { COMMANDS, OVERRIDES_KEY, ariaKeyShortcuts, formatBinding, resolveComman
 import { TOOLTIP_DELAY } from '../src/shell/Tooltip';
 import { openApp, openSideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
+import { addRows } from './fixtures/load';
+
+/** The graph's workspace with a second product, so the nav shows the space rail (it shows only with two or more). */
+const twoProducts = () => addRows(testWorkspace(), 'product', { id: 'ZZ', title: 'Other product' });
 
 // Shortcut hints the standard way: tooltips that name a control and its keys, the palette's
 // right-aligned keys, and aria-keyshortcuts, all read from the one keymap with its overrides.
@@ -79,7 +83,7 @@ describe('shortcut hints', () => {
     expect(formatBinding('Alt+1', false)).toBe('Alt+1');
 
     asMac();
-    await openApp('/P-D-UC01', { data: testWorkspace() });
+    await openApp('/P-D-UC01', { data: twoProducts() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     keyFocus(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     expect(tooltip()).toHaveTextContent('Collapse the navigation ⌘B');
@@ -158,7 +162,7 @@ describe('shortcut hints', () => {
     expect(ariaKeyShortcuts(['+', '='], false)).toBe('Plus =');
     expect(ariaKeyShortcuts(['Mod+Alt+B'], false)).toBe('Control+Alt+B');
 
-    await openApp('/P-D-UC01', { data: testWorkspace() });
+    await openApp('/P-D-UC01', { data: twoProducts() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(within(nav()).getByRole('button', { name: 'Collapse the navigation' })).toHaveAttribute('aria-keyshortcuts', 'Control+B');
     expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveAttribute('aria-keyshortcuts', 'Control+P Control+K');

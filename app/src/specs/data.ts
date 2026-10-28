@@ -52,7 +52,10 @@ export interface PartRow {
 /** The typed data read into records, links and parts, with what the checks found. */
 export interface Workspace {
   schema: SchemaDescription;
-  /** The data folder, relative to the product root, such as data. */
+  /**
+   * The data folder, relative to the workspace root, such as data: in a space its product's own folder, in the
+   * whole workspace the workspace's own product's.
+   */
   dataDir: string;
   /** Every kind, in the schema's kind order (kindOrder). */
   kinds: Kind[];
@@ -142,12 +145,15 @@ export function buildWorkspace(data: SpecData): Workspace {
     })),
   );
 
-  const dir = data.dataDir.replace(/\/+$/, '');
-  const placed: Omit<SpecRecord, 'product' | 'domain'>[] = names.flatMap((kind) => {
-    const parents = schema.kinds[kind].parents;
-    return (data.tables[kind] ?? []).map((row, i) => {
-      const parent = parents.map((p) => row[p.column]).find((v): v is string => typeof v === 'string' && v !== '') ?? null;
-      return { id: String(row.id), kind, title: textOf(row, 'title'), parent, row, file: `${dir}/${kind}.jsonl`, line: i + 1 };
+  // Each product folder's rows, each record at its line in its own folder's file.
+  const placed: Omit<SpecRecord, 'product' | 'domain'>[] = data.sources.flatMap((source) => {
+    const dir = source.dataDir.replace(/\/+$/, '');
+    return names.flatMap((kind) => {
+      const parents = schema.kinds[kind].parents;
+      return (source.tables[kind] ?? []).map((row, i) => {
+        const parent = parents.map((p) => row[p.column]).find((v): v is string => typeof v === 'string' && v !== '') ?? null;
+        return { id: String(row.id), kind, title: textOf(row, 'title'), parent, row, file: `${dir}/${kind}.jsonl`, line: i + 1 };
+      });
     });
   });
   const byId = new Map(placed.map((r) => [r.id, r]));
@@ -175,8 +181,7 @@ export function buildWorkspace(data: SpecData): Workspace {
   const links: SpecLink[] = [];
   const parts: PartRow[] = [];
   for (const table of Object.values(schema.tables)) {
-    const rows = data.tables[table.name];
-    if (!rows) continue;
+    const rows = data.sources.flatMap((source) => source.tables[table.name] ?? []);
     if (table.role === 'link') {
       for (const row of rows) links.push({ source: String(row.source_id), relation: table.name, target: String(row.target_id) });
     } else if (table.role === 'part' && table.ownerColumn) {
@@ -185,14 +190,15 @@ export function buildWorkspace(data: SpecData): Workspace {
   }
   return {
     schema,
-    dataDir: dir,
+    dataDir: data.sources[0]?.dataDir.replace(/\/+$/, '') ?? '',
     kinds,
     stages,
     relations,
     records,
     links,
     parts,
-    checks: data.tables.check ?? [],
+    // Lathe's own checks are in every product folder's rows: each check once, by its name.
+    checks: [...new Map(data.sources.flatMap((source) => source.tables.check ?? []).map((c) => [String(c.name), c])).values()],
     problems: data.problems,
     exceptions: data.exceptions,
     coverage: data.coverage,
@@ -301,8 +307,10 @@ export function spaceIndex(index: SpecIndex, product: string): SpecIndex {
   const inSpace = (r: SpecRecord | undefined) => !!r && (r.product === product || r.product === null);
   // A link or problem about an ID that is no record stays with the record that names it.
   const elsewhere = (id: string) => { const r = index.byId.get(id); return !!r && !inSpace(r); };
+  const own = index.byId.get(product)?.file;
   const space = indexWorkspace({
     ...workspace,
+    dataDir: own ? own.slice(0, own.lastIndexOf('/')) : workspace.dataDir,
     records: workspace.records.filter((r) => inSpace(r)),
     links: workspace.links.filter((l) => !elsewhere(l.source) && !elsewhere(l.target)),
     parts: workspace.parts.filter((p) => !elsewhere(p.owner)),

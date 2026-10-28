@@ -17,12 +17,12 @@ export default async function setup(project: TestProject) {
     // Without Lathe's own checks beside it: a fixture holds the check rows its tests need.
     const store = await openStore(dir, { dataDir: dir, latheDataDir: null });
     try {
-      const tables: FixtureRows['tables'] = {};
+      const tables: FixtureRows['sources'][number]['tables'] = {};
       for (const table of store.schema.loadOrder) {
         const rows = store.rows(table);
         if (rows.length > 0) tables[table] = rows;
       }
-      fixtures[name] = { schema: store.schema, dataDir: 'data', tables, placements: await store.placements() };
+      fixtures[name] = { schema: store.schema, sources: [{ dataDir: 'data', tables }], placements: await store.placements() };
     } finally {
       await store.close();
     }

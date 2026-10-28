@@ -8,6 +8,7 @@ import { colorField, colorOf, iconField, monogramOf, productOfPath, spaceOf } fr
 import { spaceIndex } from '../src/specs/data';
 import { addRows, indexOf, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
+import { modelWorkspace } from './fixtures/model';
 import { main, openApp } from './helpers';
 
 // Product spaces: the rail at the far left of the nav, one icon per product; the nav, quick find
@@ -81,6 +82,25 @@ describe('product spaces', () => {
     expect(spaceLink('Notebook')).toHaveClass('is-current');
     const css = (await import('node:fs')).readFileSync((await import('node:path')).resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toMatch(/\.space-item\[aria-current\]::before/);
+  });
+
+  it('LA-V90-R72-T01 The rail shows with two or more products; with one there is none, and the product heads the nav', async () => {
+    await openApp('/DM', { data: spacesWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
+    expect(nav().querySelector('.space-rail')).not.toBeNull();
+    // One product: no rail, the panel the whole nav, the product's name and icon its first row.
+    await openApp('/P', { data: modelWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Product' });
+    expect(nav().querySelector('.space-rail')).toBeNull();
+    expect(within(nav()).queryByRole('list', { name: 'Spaces' })).toBeNull();
+    const head = within(panel()).getByRole('link', { name: 'Product' });
+    expect(head).toHaveAttribute('href', '/P');
+    expect(head.querySelector('.space-mark')).toHaveTextContent('P');
+    // Collapsed, the nav keeps its buttons and lists no spaces.
+    fireEvent.click(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
+    expect(within(nav()).getByRole('button', { name: 'Expand the navigation' })).toBeInTheDocument();
+    expect(within(nav()).queryByRole('list', { name: 'Spaces' })).toBeNull();
+    fireEvent.click(within(nav()).getByRole('button', { name: 'Expand the navigation' }));
   });
 
   it('LA-V41-R03-T01 The space\'s Checks page is inside it, at its product\'s ID, opened from the nav', async () => {

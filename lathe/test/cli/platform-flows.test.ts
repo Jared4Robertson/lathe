@@ -203,7 +203,7 @@ describe('Platform flows', () => {
     expect(page.status).toBe(200);
     expect(await page.text()).toContain('<div id="root">');
     const spec = (await (await fetch(`${base}/api/spec`)).json()) as SpecData;
-    expect(spec.tables.aggregate.map((r) => r.id)).toEqual(['TL-LEND-A1']);
+    expect(spec.sources[0].tables.aggregate.map((r) => r.id)).toEqual(['TL-LEND-A1']);
 
     // Stopped from the terminal, it closes the database and ends by the same signal, cleanly.
     child.kill('SIGINT');
@@ -262,7 +262,7 @@ describe('Platform flows', () => {
     expect((await saved.json()) as WriteAnswer).toMatchObject({ ok: true, tables: ['aggregate'] });
     expect(await eventsUntil(events, 'data: spec:changed', 10_000)).toContain('data: spec:changed');
     const reloaded = (await (await fetch(`${base}/api/spec`)).json()) as SpecData;
-    expect(reloaded.tables.aggregate[0].description).toBe('One tool lent to one member.');
+    expect(reloaded.sources[0].tables.aggregate[0].description).toBe('One tool lent to one member.');
 
     // Refused before the store sees it: another site's write, a body not sent as JSON, a body over the limit.
     const before = files(root);
