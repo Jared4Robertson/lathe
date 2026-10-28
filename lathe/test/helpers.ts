@@ -169,6 +169,7 @@ export function complete(): Data {
 
     capability: [{ id: 'EX-LEND-CAP01', title: 'Lending', domain_id: 'EX-LEND', position: 1 }],
     serves: [{ source_id: 'EX-LEND-CAP01', target_id: 'EX-BO01' }],
+    measured_by: [{ source_id: 'EX-BO01', target_id: 'EX-LEND-UC01-R01-T01' }],
     use_case: [
       { id: 'EX-LEND-UC01', title: 'Borrow a tool', capability_id: 'EX-LEND-CAP01' },
       { id: 'EX-LEND-UC02', title: 'Add a tool', capability_id: 'EX-LEND-CAP01' },
