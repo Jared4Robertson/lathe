@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS tools (
   description TEXT NOT NULL DEFAULT '',
   condition TEXT NOT NULL DEFAULT 'good' CHECK (condition IN ('good', 'needs_repair')),
   damage_note TEXT,
+  damage_reported_at TEXT,
   added_at TEXT NOT NULL
 );
 
@@ -62,6 +63,7 @@ function toTool(r: Row): Tool {
     description: String(r.description),
     condition: r.condition as Condition,
     damageNote: r.damage_note == null ? null : String(r.damage_note),
+    damageReportedAt: r.damage_reported_at == null ? null : String(r.damage_reported_at),
     addedAt: String(r.added_at),
   };
 }
@@ -139,10 +141,11 @@ export class Store {
     return (this.db.prepare('SELECT * FROM tools ORDER BY id').all() as Row[]).map(toTool);
   }
 
-  setToolCondition(id: number, condition: Condition, damageNote: string | null): Tool {
+  /** Sets a tool's condition with its damage report: the note and when it was reported, or neither once repaired. */
+  setToolCondition(id: number, condition: Condition, damage: { note: string; reportedAt: string } | null): Tool {
     const r = this.db
-      .prepare('UPDATE tools SET condition = ?, damage_note = ? WHERE id = ? RETURNING *')
-      .get(condition, damageNote, id) as Row;
+      .prepare('UPDATE tools SET condition = ?, damage_note = ?, damage_reported_at = ? WHERE id = ? RETURNING *')
+      .get(condition, damage?.note ?? null, damage?.reportedAt ?? null, id) as Row;
     return toTool(r);
   }
 

@@ -21,7 +21,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | Stage | Kind | Parent | Columns besides id and title (? = optional) | ID |
 | --- | --- | --- | --- | --- |
 | — | `product` | none | description?, icon?, color?, notes? | `<P>` |
-| discovery | `business_outcome` | product (product_id) | statement, measure, target, notes? | `<P>-BO<nn>` |
+| discovery | `business_outcome` | product (product_id) | statement, measure, target, measured_outside?, notes? | `<P>-BO<nn>` |
 | domain-model | `domain` | product (product_id) | subdomain_type (core/supporting/generic), description?, notes? | `<P>-<D>` |
 | domain-model | `aggregate` | domain (domain_id) | description?, identity?, notes? | `<P>-<D>-A<n>` |
 | domain-model | `entity` | aggregate (aggregate_id) | role (root/child), in_root_table? (bool), description? | `<P>-<D>-EN<nn>` |
@@ -109,6 +109,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `has_one` | product | entity | entity | entity→entity |
 | `hears` (one per source) | product | policy | domain_event | policy→domain_event |
 | `invokes` (one per source) | product | flow_step | operation | flow_step→command, flow_step→query |
+| `measured_by` | product | business_outcome | record_id | 12 pairs: business_outcome→every test kind; a product adds its own kinds with a product_relation named measured_by |
 | `meets` | product | meets_source | standard_rule | 14 pairs: every member of meets_source (the technical kinds; a standard rule is proved by its standard rule tests) |
 | `raises` | aggregate | command | domain_event | command→domain_event |
 | `reads` | domain | reads_source | aggregate | read_model→aggregate, specification→aggregate |
@@ -214,7 +215,7 @@ What a command does:
 
 ## Notes by part
 
-- **Engine.** Coverage of obligations (designed, built, proved) and the "at least one" and "nothing uses it" checks are the engine's: none are refusals. `record_scope` has `aggregate_id` now; `meta_kind.obligation` is a boolean; sections are gone in favor of `schema.stages`. Allowed test levels per test kind are not in the schema. Coverage reports a business outcome no capability serves and a capability that serves none as gaps (`outcome-not-served`, `capability-serves-no-outcome`); the checks `test-data-set-unused` and `test-data-set-file-missing` report a data set no test starts from and one whose file is missing.
+- **Engine.** Coverage of obligations (designed, built, proved) and the "at least one" and "nothing uses it" checks are the engine's: none are refusals. `record_scope` has `aggregate_id` now; `meta_kind.obligation` is a boolean; sections are gone in favor of `schema.stages`. Allowed test levels per test kind are not in the schema. Coverage reports a business outcome no capability serves and a capability that serves none as gaps (`outcome-not-served`, `capability-serves-no-outcome`), and an outcome that gives no `measured_outside` and that no running test (manual, or automated and backed) and no record of a product's own kind measures (`outcome-not-measured`, in `lathe/src/trace/measures.ts`); the checks `test-data-set-unused` and `test-data-set-file-missing` report a data set no test starts from and one whose file is missing. Before the checks run the engine also fills `table_facts` (`lathe/src/trace/tables.ts`): each table kept in a database that names a file, read as text against its name, the columns its fields give and its primary, unique and foreign keys; `table-schema-mismatch` warns of each part the file does not define, and the gap `table-without-file` reports a table stored as a table that names no file.
 - **App and writers.** Forms read `store.schema.tables[name].columns` (kind, enum values, required, description) and `kinds[name].parents` (zero, one or two) and `idScope`/`idPattern` to suggest IDs. Writes go through `store.apply`; show `StoreError.problems` with their `command` index.
 
 ## Later additions
