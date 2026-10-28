@@ -1,3 +1,2 @@
-{"id":"TL-LEND-CAP01","title":"Membership","domain_id":"TL-LEND","position":1,"description":"Who may borrow: a librarian registers a person as a member, and the member's ID goes on their card."}
-{"id":"TL-LEND-CAP02","title":"Catalog","domain_id":"TL-LEND","position":2,"description":"What can be lent: librarians add tools to the catalog, take a damaged tool out of lending, and put it back once it is repaired."}
-{"id":"TL-LEND-CAP03","title":"Lending","domain_id":"TL-LEND","position":3,"description":"Loans themselves: a member borrows a tool for the loan period, and a librarian takes it back and records its condition."}
+{"id":"TL-LEND-CAP02","title":"Catalog","domain_id":"TL-LEND","position":1,"description":"What can be lent: librarians add tools to the catalog, take a damaged tool out of lending, and put it back once it is repaired."}
+{"id":"TL-LEND-CAP03","title":"Lending","domain_id":"TL-LEND","position":2,"description":"Who may borrow and the loans themselves: a librarian registers a person as a member, whose member ID goes on their card; a member borrows a tool for the loan period, and a librarian takes it back and records its condition."}
