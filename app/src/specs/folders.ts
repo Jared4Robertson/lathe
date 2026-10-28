@@ -3,9 +3,11 @@ import { textOf, byIdOrder, kindLabel, type SpecIndex, type SpecRecord, type Sta
 
 // The folders a product's records are read in: the five stages (domain model, use cases, interaction
 // design, technical specification, test plan) from the schema, and in each stage one folder per kind,
-// in the schema's kind order. A domain has its stages; the product has its own for what sits at
-// product level (value objects, patterns, views, integrations, UI components, standards and what sits
-// under them). Kinds outside the stages (open questions) follow the stages.
+// in the schema's kind order. A domain has its stages; the product has its own for what it shares
+// (Shared): its patterns and standards, and each record with no owner (a value object, view,
+// integration or UI component) that two or more domains use, or none, with what sits under them. A
+// record with no owner that one domain uses is that domain's, as the store's record_scope places it.
+// Kinds outside the stages (open questions) follow the stages.
 //
 // A stage's folders list the records that start a branch of that stage: those whose parent is the
 // domain or product itself, is of another stage, or is none (a kind with no owner). What sits under a
@@ -107,7 +109,7 @@ export function foldedChildren(index: SpecIndex, record: SpecRecord): SpecRecord
   return sortRecords(index, kids);
 }
 
-/** The records that belong to a domain (its own records), or to a product at product level (in no domain). */
+/** The records that belong to a domain (its own records), or that a product shares (in no domain). */
 function ownedBy(index: SpecIndex, owner: SpecRecord): SpecRecord[] {
   if (owner.kind === 'domain') return index.workspace.records.filter((r) => r.domain === owner.id && r.id !== owner.id);
   return index.workspace.records.filter((r) => r.product === owner.id && r.domain === null && r.kind !== 'product');
@@ -140,7 +142,7 @@ function perIndex<T>(compute: (index: SpecIndex, key: string) => T): (index: Spe
 /**
  * A domain's or a product's stages and folders: every stage with a folder for each kind of the stage (empty ones
  * too; a product's own kinds of no stage among the loose), then its records outside every stage. A product's
- * folders hold what sits at product level, never its domains' records. Worked out once per index.
+ * folders hold what it shares, never its domains' records. Worked out once per index.
  */
 export const ownerFolders = perIndex((index: SpecIndex, ownerId: string): OwnerFolders => {
   const owner = index.byId.get(ownerId);
@@ -151,8 +153,9 @@ export const ownerFolders = perIndex((index: SpecIndex, ownerId: string): OwnerF
     const folders = index.workspace.kinds
       .filter((k) => k.stage === s.stage && !CONTAINERS.has(k.kind))
       .map((k) => folderOf(index, `${key}/${k.kind}`, k.kind, roots.filter((r) => r.kind === k.kind)))
-      // An empty folder only for a kind that can start a branch here: a domain's stages leave out what sits at
-      // product level, and neither lists a kind that always folds under another (an entity under its aggregate).
+      // An empty folder only for a kind that can start a branch here: a domain's stages leave out the kinds it only
+      // gains by use (a view, a value object), and neither lists a kind that always folds under another (an entity
+      // under its aggregate).
       .filter((f) => f.count > 0 || canStartIn(index, f.kind, owner.kind));
     return { key, stage: s.stage, label: s.label, description: s.description, folders, count: folders.reduce((n, f) => n + f.count, 0) };
   });
@@ -162,8 +165,9 @@ export const ownerFolders = perIndex((index: SpecIndex, ownerId: string): OwnerF
 });
 
 /**
- * Whether records of a kind can belong to a domain (`domain`) or sit at product level (`product`): a kind with no
- * owner by its IDs' scope, any other by where its parents can be.
+ * Whether records of a kind can be written into a domain (`domain`) or the product's Shared folder (`product`): a
+ * kind with no owner by its IDs' scope, any other by where its parents can be. A record with no owner that one domain
+ * uses is listed in that domain all the same; its folder there shows only when it holds records.
  */
 function canSitIn(index: SpecIndex, kind: string, owner: string, seen = new Set<string>()): boolean {
   if (seen.has(kind)) return false;
@@ -174,7 +178,7 @@ function canSitIn(index: SpecIndex, kind: string, owner: string, seen = new Set<
   return described.parent_kinds.some((p) => canSitIn(index, p, owner, seen));
 }
 
-/** Whether a record of a kind can start a branch of its stage in a domain or at product level (see startsBranch). */
+/** Whether a record of a kind can start a branch of its stage in a domain or in Shared (see startsBranch). */
 function canStartIn(index: SpecIndex, kind: string, owner: string): boolean {
   const described = index.kinds.get(kind);
   if (!described) return false;
@@ -182,13 +186,13 @@ function canStartIn(index: SpecIndex, kind: string, owner: string): boolean {
   return described.parent_kinds.some((p) => p === owner || (!CONTAINERS.has(p) && stageOfKind(index, p) !== described.stage && canSitIn(index, p, owner)));
 }
 
-/** The key, and graph address, of the folder holding a product's own stages: "TL/product-level". */
-export const productLevelKey = (productId: string) => `${productId}/product-level`;
+/** The key, and graph address, of the folder holding a product's own stages, what it shares: "TL/shared". */
+export const sharedKey = (productId: string) => `${productId}/shared`;
 
 /** A domain's stages and folders. */
 export const domainFolders = (index: SpecIndex, domainId: string): OwnerFolders => ownerFolders(index, domainId);
 
-/** A product's own stages and folders: what sits at product level. */
+/** A product's own stages and folders: what it shares. */
 export const productFolders = (index: SpecIndex, productId: string): OwnerFolders => ownerFolders(index, productId);
 
 /** Every folder of an owner, the stages' then the loose ones. */
@@ -210,7 +214,7 @@ export function branchOf(index: SpecIndex, id: string): string[] {
   for (let r: SpecRecord | undefined = record; r && !seen.has(r.id); r = r.parent ? index.byId.get(r.parent) : undefined) {
     seen.add(r.id);
     const stage = folders.stages.find((s) => s.folders.some((f) => f.records.some((x) => x.id === r!.id)));
-    const head = record.domain ? [`domain:${record.domain}`] : [productLevelKey(owner)];
+    const head = record.domain ? [`domain:${record.domain}`] : [sharedKey(owner)];
     if (stage) return [...head, stage.key, stage.folders.find((f) => f.records.some((x) => x.id === r!.id))!.key];
     const loose = folders.loose.find((f) => f.records.some((x) => x.id === r!.id));
     if (loose) return [...head, loose.key];

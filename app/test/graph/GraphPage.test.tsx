@@ -230,7 +230,7 @@ describe('graph page', () => {
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
     const left = (id: string) => drawnBox(id)!.map.x;
     expect(left('P-D-UC01-FL')).toBeLessThan(left(STEP));
-    // What the step links to keeps its own place in the map: the view at product level, left of the deeper requirement.
+    // What the step links to keeps its own place in the map: the view in its domain's Interaction design, left of the deeper requirement.
     expect(left('P-V01')).toBeLessThan(left('P-D-UC01-R01'));
     expect(scene().lines.some((l) => l.style === 'structure' && !l.link)).toBe(true);
 

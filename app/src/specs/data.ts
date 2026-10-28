@@ -11,8 +11,10 @@ export type { Coverage, Kind, Problem, RelationRule, Row, SchemaDescription, Spe
 // a record per row of a kind's table, its parent from the one of its kind's parent columns that
 // holds a value, a link per row of a relation's table, and the part rows (an entity's fields, a use
 // case's actors, a table's keys) under the record that owns them. A kind with no owner (a value
-// object, a specification, a view, an integration, a UI component) has no parent: its product, and a
-// specification's domain, follow from its ID. Every view reads this index.
+// object, a specification, a view, an integration, a UI component) has no parent: where it sits, its
+// product and the one domain that uses it (a specification's from its ID) or none when shared, is the
+// store's answer (SpecData.placements, from record_scope), and what sits under it follows it. Every
+// view reads this index.
 
 /** One record: a row of its kind's table, placed in the tree. */
 export interface SpecRecord {
@@ -23,7 +25,7 @@ export interface SpecRecord {
   parent: string | null;
   /** The product it sits in (itself for a product). */
   product: string | null;
-  /** The domain it sits in (itself for a domain), or null for what sits at product level. */
+  /** The domain it sits in (itself for a domain; for a record with no owner, the one domain that uses it), or null for what the product shares. */
   domain: string | null;
   /** The row as the data file holds it: every column that has a value, typed. */
   row: Row;
@@ -104,16 +106,6 @@ export function kindOrder(schema: SchemaDescription): (a: string, b: string) => 
   return (a, b) => rank(a) - rank(b) || a.localeCompare(b);
 }
 
-/**
- * The product, or domain, an ID starts with: the longest of the IDs that, with a hyphen, starts it. A kind with no
- * owner takes its product (and a specification its domain) from its ID this way.
- */
-function prefixOwner(ids: readonly string[], id: string): string | null {
-  let best: string | null = null;
-  for (const owner of ids) if (id.startsWith(`${owner}-`) && (!best || owner.length > best.length)) best = owner;
-  return best;
-}
-
 /** Reads the schema's kinds, stages and relations, and the rows, into a Workspace. */
 export function buildWorkspace(data: SpecData): Workspace {
   const { schema } = data;
@@ -157,10 +149,8 @@ export function buildWorkspace(data: SpecData): Workspace {
     });
   });
   const byId = new Map(placed.map((r) => [r.id, r]));
-  const productIds = placed.filter((r) => r.kind === 'product').map((r) => r.id);
-  const domainIds = placed.filter((r) => r.kind === 'domain').map((r) => r.id);
   // A record's product and domain: the nearest of each up its parent chain. A chain that ends in a kind with no owner
-  // takes its product from that record's ID, and its domain too when that kind's IDs are domain-scoped.
+  // takes both from where the store places that record.
   const scopeOf = (start: Omit<SpecRecord, 'product' | 'domain'>): { product: string | null; domain: string | null } => {
     const seen = new Set<string>();
     let product: string | null = null;
@@ -173,8 +163,8 @@ export function buildWorkspace(data: SpecData): Workspace {
       if (r.kind === 'product') product = r.id;
     }
     if (top.kind !== 'product' && !top.parent) {
-      product ??= prefixOwner(productIds, top.id);
-      if (!domain && schema.kinds[top.kind]?.idScope === 'domain') domain = prefixOwner(domainIds, top.id);
+      product ??= data.placements[top.id]?.product ?? null;
+      domain ??= data.placements[top.id]?.domain ?? null;
     }
     return { product, domain };
   };

@@ -74,6 +74,52 @@ describe('add', () => {
   });
 });
 
+describe('record_scope', () => {
+  it('LA-PLT-UC01-R05-T01 a record with no owner belongs to the one domain that uses it, with what sits under it, and is shared when two or none do', async () => {
+    const { store } = await fresh();
+    const domains = async (ids: string[]) =>
+      Object.fromEntries(
+        (await store.query<{ id: string; domain_id: string | null }>(`SELECT id, domain_id FROM record_scope WHERE id IN (${ids.map((id) => `'${id}'`).join(', ')})`)).map((r) => [r.id, r.domain_id]),
+      );
+    // Lending's one flow step happens in the view and exchanges with the integration, the view's UI component renders
+    // it, and a Lending entity's field is typed by the value object: all four, and what sits under them, are Lending's.
+    const lending = ['TL-V01', 'TL-V01-R01', 'TL-V01-R01-T01', 'TL-INT01', 'TL-INT01-AD', 'TL-INT01-T01', 'TL-UI01', 'TL-VO01', 'TL-VO01-C01', 'TL-VO01-C01-T', 'TL-VO01-VT'];
+    expect(await domains(lending)).toEqual(Object.fromEntries(lending.map((id) => [id, 'TL-LEND'])));
+    // A second domain's flow step happens in the same view, and its read model has a field typed by a new value
+    // object; a third value object is used by no one.
+    await store.apply([
+      { op: 'add', table: 'domain', row: { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting' } },
+      { op: 'add', table: 'capability', row: { id: 'TL-CAT-CAP01', title: 'Browsing', domain_id: 'TL-CAT', position: 1 } },
+      { op: 'add', table: 'use_case', row: { id: 'TL-CAT-UC01', title: 'Browse the tools', capability_id: 'TL-CAT-CAP01' } },
+      { op: 'add', table: 'flow', row: { id: 'TL-CAT-UC01-FL', title: 'Browse', use_case_id: 'TL-CAT-UC01' } },
+      { op: 'add', table: 'flow_step', row: { id: 'TL-CAT-UC01-FL-S01', title: 'Open the catalog', flow_id: 'TL-CAT-UC01-FL', path: 'main', position: 1 } },
+      { op: 'link', relation: 'happens_in', source: 'TL-CAT-UC01-FL-S01', target: 'TL-V01' },
+      { op: 'add', table: 'value_object', row: { id: 'TL-VO02', title: 'Tool size' } },
+      { op: 'add', table: 'value_object', row: { id: 'TL-VO03', title: 'Postcode' } },
+      { op: 'add', table: 'read_model', row: { id: 'TL-CAT-RM01', title: 'Tools by size', domain_id: 'TL-CAT' } },
+      { op: 'add', table: 'read_model_field', row: { read_model_id: 'TL-CAT-RM01', position: 1, name: 'Size', meaning: 'How big the tool is.', type_value_object_id: 'TL-VO02', required: true } },
+    ]);
+    expect(await domains([...lending, 'TL-VO02', 'TL-VO03'])).toEqual({
+      'TL-V01': null,
+      'TL-V01-R01': null,
+      'TL-V01-R01-T01': null,
+      'TL-UI01': null,
+      'TL-INT01': 'TL-LEND',
+      'TL-INT01-AD': 'TL-LEND',
+      'TL-INT01-T01': 'TL-LEND',
+      'TL-VO01': 'TL-LEND',
+      'TL-VO01-C01': 'TL-LEND',
+      'TL-VO01-C01-T': 'TL-LEND',
+      'TL-VO01-VT': 'TL-LEND',
+      'TL-VO02': 'TL-CAT',
+      'TL-VO03': null,
+    });
+    // IDs stay product-scoped, so moving to shared needed no rename; the product stays.
+    expect(await store.query("SELECT product_id FROM record_scope WHERE id = 'TL-V01'")).toEqual([{ product_id: 'TL' }]);
+    await store.close();
+  });
+});
+
 describe('set', () => {
   it('LA-AUT-INV38-T changes and clears columns', async () => {
     const { store } = await fresh();

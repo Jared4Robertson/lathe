@@ -162,8 +162,8 @@ describe('record page', () => {
     await openApp('/DM-V01?view=graph');
     await screen.findByRole('heading', { level: 1, name: 'Basket page' });
     expect(document.querySelector('.pane-title .eyebrow .kind-badge')).toHaveClass('stage-interaction-design');
-    // The view sits at product level: its eyebrow names the product only.
+    // Both domains' flow steps happen in the view, so the product shares it: its eyebrow names the product only.
     expect(document.querySelector('.pane-title .eyebrow')).toHaveTextContent(/^Demo shop · View/);
-    expect(sideBar()).toHaveTextContent('None: it has no owner. It exists because other records use it.');
+    expect(sideBar()).toHaveTextContent('None: it has no owner. It is shared: two or more domains use it, or none.');
   });
 });

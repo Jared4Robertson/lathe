@@ -1,9 +1,9 @@
 import type { SpecIndex, SpecRecord } from '../specs/data';
 import { kindLabel } from '../specs/data';
-import { foldedChildren, ownerFolders, productLevelKey, type Folder } from '../specs/folders';
+import { foldedChildren, ownerFolders, sharedKey, type Folder } from '../specs/folders';
 import { plural } from '../plural';
 
-// The graph's tree is the nav's tree: a product holds its Product level (its own stages, what sits at product level),
+// The graph's tree is the nav's tree: a product holds its Shared folder (its own stages, what it shares),
 // its domains, then its open questions; a domain holds its stages, then the folders outside every
 // stage (open questions); a stage holds one folder per kind; a folder holds the records that start a
 // branch of the stage, by the same folder model the nav, the domain page and the group pages read
@@ -27,10 +27,10 @@ export interface TreeGroup {
   /** The nearest record above it (its domain, product or parent record). */
   owner: string;
   /**
-   * 'level' (a product's Product level, holding its own stages), 'stage', 'folder' (a stage's folder of one kind) or
+   * 'shared' (a product's Shared folder, holding its own stages), 'stage', 'folder' (a stage's folder of one kind) or
    * 'kind' (a record's group of one kind of child, or a folder outside the stages).
    */
-  role: 'level' | 'stage' | 'folder' | 'kind';
+  role: 'shared' | 'stage' | 'folder' | 'kind';
 }
 
 export interface Tree {
@@ -92,7 +92,7 @@ export function treeOf(index: SpecIndex): Tree {
     for (const r of folder.records) { if (add(folder.key, r.id)) addRecord(r); }
   };
 
-  /** A domain's or a product's stages with records, each with its folders with records, under `under` (the owner, or the product's Product level). */
+  /** A domain's or a product's stages with records, each with its folders with records, under `under` (the owner, or the product's Shared folder). */
   const addStages = (ownerId: string, under = ownerId) => {
     const { stages } = ownerFolders(index, ownerId);
     for (const stage of stages) {
@@ -109,14 +109,14 @@ export function treeOf(index: SpecIndex): Tree {
 
   for (const product of index.products) {
     visited.add(product.id);
-    // What sits at product level, its stages in one group, so the product splits its height between it and its
+    // What the product shares, its stages in one group (Shared), so the product splits its height between it and its
     // domains rather than among every stage and domain.
     const own = ownerFolders(index, product.id).stages.filter((s) => s.count > 0);
     if (own.length > 0) {
-      const level = productLevelKey(product.id);
-      add(product.id, level);
-      group(level, { label: 'Product level', kind: null, count: own.reduce((n, s) => n + s.count, 0), members: own.flatMap((s) => s.folders.flatMap((f) => f.records)), owner: product.id, role: 'level' });
-      addStages(product.id, level);
+      const shared = sharedKey(product.id);
+      add(product.id, shared);
+      group(shared, { label: 'Shared', kind: null, count: own.reduce((n, s) => n + s.count, 0), members: own.flatMap((s) => s.folders.flatMap((f) => f.records)), owner: product.id, role: 'shared' });
+      addStages(product.id, shared);
     }
     for (const d of index.domainsOf.get(product.id) ?? []) {
       if (!add(product.id, d.id)) continue;

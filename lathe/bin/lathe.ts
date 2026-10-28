@@ -67,7 +67,7 @@ async function check() {
     if (workspace.coverage.length) {
       console.log('\nCoverage:');
       for (const c of workspace.coverage) {
-        const scope = c.domain ?? `${c.product} (outside the domains)`;
+        const scope = c.domain ?? `${c.product} Shared`;
         const counted = c.obligations.filter((o) => o.total > 0);
         const kinds = new Set(counted.map((o) => o.kind));
         const minimums = c.gaps.filter((g) => !['designed', 'built', 'proved'].includes(g.missing));

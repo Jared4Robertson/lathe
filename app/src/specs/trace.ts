@@ -103,8 +103,8 @@ export function testsOf(index: SpecIndex, record: SpecRecord, domain?: string): 
 }
 
 /**
- * Where an obligation is owed: its own domain; at product level (a view requirement, a constraint, a standard rule)
- * its product; for a pattern rule each domain following its pattern where it applies.
+ * Where an obligation is owed: its own domain (for one under a record with no owner, the one domain using it); for
+ * what the product shares (a standard rule, a view requirement of a view two domains use) its product; for a pattern rule each domain following its pattern where it applies.
  */
 export function owingDomains(index: SpecIndex, record: SpecRecord): string[] {
   if (record.domain) return [record.domain];
