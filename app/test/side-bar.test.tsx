@@ -2,15 +2,16 @@ import './graph/setup';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { changeSummary } from '../src/views/history';
-import { sideModeOf, sideStateFrom } from '../src/views/sideBarState';
+import { sideStateFrom } from '../src/views/sideBarState';
+import { SETTINGS_KEY } from '../src/graph/settings';
 import { modelWorkspace } from './fixtures/model';
-import { main, openApp, openSideBar, sideBar } from './helpers';
+import { openApp, openSideBar, sideBar } from './helpers';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, hoverBox, leaveCanvas } from './graph/scene';
 
 // The side bar (LA-EXP-UC12): a secondary side bar with three views,
-// Details, Outline and History, closed in the Wiki view and open in the Graph and ERD views,
-// remembered per view mode and per tab.
+// Details, Outline and History, open on the Graph and ERD stages and closed on the Trace,
+// remembered per stage and per tab.
 
 const node = (id: string) => boxElement(id);
 const side = () => within(sideBar());
@@ -33,14 +34,10 @@ function serveHistory(answer: (query: URLSearchParams) => unknown) {
 
 describe('the side bar', () => {
   const proveLaV95R04T01 = async () => {
-    expect(sideModeOf(['wiki'], false)).toBe('wiki');
-    expect(sideModeOf(['wiki', 'graph'], false)).toBe('graph');
-    expect(sideModeOf(['wiki', 'erd'], false)).toBe('erd');
-    expect(sideModeOf(['wiki', 'trace'], false)).toBe('trace');
-    expect(sideModeOf(['graph'], true)).toBe('graph');
-    expect(sideStateFrom({ wiki: { open: 'yes', view: 'details' }, graph: { open: true, view: 'nope' }, erd: { open: false, view: 'history' }, model: { open: true, view: 'details' } })).toEqual({ erd: { open: false, view: 'history' } });
+    expect(sideStateFrom({ wiki: { open: true, view: 'details' }, graph: { open: true, view: 'nope' }, erd: { open: false, view: 'history' }, trace: { open: 'yes', view: 'details' } })).toEqual({ erd: { open: false, view: 'history' } });
 
-    await openApp('/P-D-UC01', { data: testWorkspace() });
+    // Closed on the Trace stage, open on the Graph.
+    await openApp('/P-D-UC01?stage=trace', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
 
@@ -58,21 +55,20 @@ describe('the side bar', () => {
     expect(side().getByRole('heading', { level: 2, name: 'Outline' })).toBeInTheDocument();
     expect(sideBar().querySelector('#side-view')).toHaveAttribute('aria-labelledby', 'side-view-title');
 
-    // A reload brings the tab back with Outline in the Graph view (LA-PAT-APP-UX-R06).
+    // A reload brings the tab back with Outline on the Graph stage (LA-PAT-APP-UX-R06).
     await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(switcher().getByRole('button', { name: 'Outline' })).toHaveAttribute('aria-pressed', 'true');
-    // The Wiki view of the same tab keeps its own: closed.
-    fireEvent.click(screen.getByRole('button', { name: /^Wiki/, pressed: false }));
-    fireEvent.click(screen.getByRole('button', { name: /^Graph/, pressed: true }));
-    await waitFor(() => expect(window.location.search).toBe('?stage=graph'));
+    // The Trace stage of the same tab keeps its own: closed.
+    fireEvent.click(within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name: 'Trace' }));
+    await waitFor(() => expect(window.location.search).toBe('?stage=trace'));
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
   };
-  it('LA-V95-R04-T01 One side bar with a labeled switcher of Details, Outline and History, each with its heading; closed in the Wiki view and open in the Graph view, its view kept per view mode and per tab across a reload', proveLaV95R04T01);
-  it('LA-V95-R05-T03 The side bar\'s switcher, its headings, and its state per view mode and per tab across a reload', proveLaV95R04T01);
+  it('LA-V95-R04-T01 One side bar with a labeled switcher of Details, Outline and History, each with its heading; open on the Graph stage and closed on the Trace, its view kept per stage and per tab across a reload', proveLaV95R04T01);
+  it('LA-V95-R05-T03 The side bar\'s switcher, its headings, and its state per stage and per tab across a reload', proveLaV95R04T01);
 
-  it('LA-V95-R06-T01 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
-    window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout: 'tree', depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: true, minimap: false }));
+  it('LA-V95-R06-T01 On the Graph stage Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
+    window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], hiddenRelations: [], links: true, minimap: false, card: true, cardWidth: null }));
     await openApp('/P-D-UC01-R01?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(node('P-D-UC01-FL01-S01')).not.toBeNull());
     expect(name()).toBe('The loan is recorded');
@@ -103,52 +99,39 @@ describe('the side bar', () => {
   });
 
   const proveLaV95R06T02 = async () => {
-    openSideBar();
-    await openApp('/P-D-UC01-FL01-S01', { data: testWorkspace() });
+    await openApp('/P-D-UC01-FL01-S01?stage=trace', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Librarian lends the thing' });
-    expect(side().getByRole('heading', { name: 'Data file' })).toBeInTheDocument();
-    expect(side().getByRole('heading', { name: 'Columns' })).toBeInTheDocument();
-    expect(side().getByText('flow_id', { selector: 'dt code' })).toBeInTheDocument();
-    expect(side().getByText('invokes', { selector: 'code' })).toBeInTheDocument();
-    // Nothing the wiki shows: no Traceability, no problems list, no identity block.
-    expect(side().queryByRole('heading', { name: /^Traceability/ })).toBeNull();
-    expect(side().queryByRole('heading', { name: /^Problems/ })).toBeNull();
-    expect(name()).toBeUndefined();
+    fireEvent.click(screen.getByRole('button', { name: 'Show the side bar' }));
+    // The page's record, by default, as on every stage: the wiki card shows its text, so Details never repeats it.
+    expect(name()).toBe('Librarian lends the thing');
+    expect(side().getByText('Data file')).toBeInTheDocument();
+    expect(side().queryByText('flow_id', { selector: 'dt code' })).toBeNull();
 
-    // A record row with focus: its details.
-    const wiki = screen.getByRole('region', { name: 'Wiki pane' });
-    const row = within(wiki).getAllByRole('link', { name: /^P-D-UC01-R01/ }).find((a) => a.classList.contains('row-link'))!;
+    // A record row of the wiki card with focus: its details.
+    const card = screen.getByRole('region', { name: 'Wiki card' });
+    const row = within(card).getAllByRole('link', { name: /^P-D-UC01-R01/ }).find((a) => a.classList.contains('row-link'))!;
     fireEvent.focusIn(row);
     await waitFor(() => expect(name()).toBe('The loan is recorded'));
     expect(sideBar().querySelector('.side-bar-identity .eyebrow')).toHaveTextContent(/^Selected/);
     fireEvent.focusOut(row, { relatedTarget: document.body });
-    await waitFor(() => expect(name()).toBeUndefined());
-    // Right-clicked: it stays until a click elsewhere.
+    await waitFor(() => expect(name()).toBe('Librarian lends the thing'));
+    // Right-clicked: it stays until a click elsewhere in the card.
     fireEvent.contextMenu(row);
     await waitFor(() => expect(name()).toBe('The loan is recorded'));
-    fireEvent.pointerDown(main().querySelector('.pane-title')!, { button: 0 });
-    await waitFor(() => expect(name()).toBeUndefined());
+    fireEvent.pointerDown(card.querySelector('.wiki-panel-title')!, { button: 0 });
+    await waitFor(() => expect(name()).toBe('Librarian lends the thing'));
   };
-  it('LA-V95-R06-T02 In the Wiki view Details shows only what the page does not: the data file and line, the columns of its row and the raw links; a focused or right-clicked record row shows that record', proveLaV95R06T02);
-  it('LA-V95-R01-T01 In the Wiki view Details shows only what the page does not', proveLaV95R06T02);
+  it('LA-V95-R06-T02 Details describes the page\'s record, never repeating the wiki card; a focused or right-clicked record row in the card shows that record', proveLaV95R06T02);
+  it('LA-V95-R01-T01 The side bar never repeats what the wiki card shows', proveLaV95R06T02);
 
-  it('LA-V95-R07-T01 Outline lists the wiki\'s sections, scrolls there on a click and marks the one in view; in the ERD view it lists the boxes', async () => {
+  it('LA-V95-R07-T01 Outline lists what the stage holds: on the Graph its records by level, on the ERD its boxes', async () => {
     openSideBar('outline');
-    await openApp('/P-D-UC01', { data: testWorkspace() });
+    await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    const sections = await waitFor(() => side().getByRole('list', { name: 'Sections' }));
-    const rows = within(sections).getAllByRole('button').map((b) => b.textContent);
-    expect(rows).toEqual(expect.arrayContaining(['Traceability', 'Problems']));
-    const pane = screen.getByRole('region', { name: 'Wiki pane' }).querySelector<HTMLElement>('.pane-scroll')!;
-    const scrollTo = vi.fn();
-    pane.scrollTo = scrollTo as unknown as typeof pane.scrollTo;
-    const problems = within(sections).getByRole('button', { name: 'Problems' });
-    fireEvent.click(problems);
-    expect(scrollTo).toHaveBeenCalled();
-    expect(problems).toHaveAttribute('aria-current', 'location');
+    await waitFor(() => expect(side().getAllByRole('list', { name: /^Level \d$/ }).length).toBeGreaterThan(0));
+    expect(within(side().getAllByRole('list', { name: /^Level \d$/ })[0]).getAllByRole('link').length).toBeGreaterThan(0);
 
-    // The ERD view: the boxes, those in focus first.
-    openSideBar('outline', ['erd']);
+    // The ERD stage: the boxes, those in focus first.
     await openApp('/P-D?stage=erd', { data: modelWorkspace() });
     await screen.findAllByRole('heading', { level: 1 });
     await waitFor(() => expect(side().getByRole('heading', { name: /^Aggregates/ })).toBeInTheDocument());

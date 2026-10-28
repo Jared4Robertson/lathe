@@ -7,7 +7,13 @@ import { neighborhood } from '../src/graph/model';
 import { Legend } from '../src/graph/panel';
 import { shapeOf } from '../src/graph/shapes';
 import { standardWorkspace } from './fixtures/standards';
-import { main, openApp, section } from './helpers';
+import { main, openApp, section as pageSection } from './helpers';
+
+/** A section of the wiki card, on a record's page (the side bar has a Traceability of its own), or of the page elsewhere. */
+const section = (name: string | RegExp) => {
+  const card = screen.queryByRole('region', { name: 'Wiki card' });
+  return card ? within(card).getByRole('heading', { name }).closest('section') as HTMLElement : pageSection(name);
+};
 import { indexOf } from './fixtures/load';
 
 // Standards in the app (the standard and standard_rule tables): in Shared in the nav, in the

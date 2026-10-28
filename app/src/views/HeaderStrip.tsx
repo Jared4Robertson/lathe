@@ -1,9 +1,10 @@
 import { memo } from 'react';
-import { Breadcrumb, type Crumb } from '../components/Breadcrumb';
+import { Breadcrumb, type Crumb } from '../shell/Breadcrumb';
 import { groupLabel, groupName, isGroup, parseGroupId } from '../graph/model';
 import { treeParent } from '../graph/tree';
 import type { SpecIndex } from '../specs/data';
 import { KindBadge } from '../specs/parts';
+import { Link } from '../router';
 import { addressOf } from './address';
 
 // The header strip (LA-V96): one condensed line directly under the active tab, about 28 px, that
@@ -47,7 +48,7 @@ export const HeaderStrip = memo(function HeaderStrip({ index, focus, counts }: H
       {/* Keyed by the focus: a new focus is new text drawn in place, never the last one's slid along (UX-R08). */}
       <div key={focus} className="header-strip-focus" title={record ? `${record.title} (${focus})` : title}>
         {record && <KindBadge index={index} kind={record.kind} />}
-        {record && <code className="header-strip-id">{focus}</code>}
+        {record && <Link to={addressOf(focus)} className="header-strip-id record-link"><code>{focus}</code></Link>}
         <h1 className="header-strip-title">{title}</h1>
       </div>
       <span className="header-strip-counts" title={counts}>{counts}</span>

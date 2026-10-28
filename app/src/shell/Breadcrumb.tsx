@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
 import { Link } from '../router';
+import { Button } from '../components/Button';
 
 // The one breadcrumb (LA-PAT-APP-UX-R15): every trail of places above a page, in the header
 // strip, the wiki card and the phone's top bar, is this component. A trail of up to three items
@@ -96,16 +97,15 @@ function HiddenLevels({ items, onFollow }: { items: readonly Crumb[]; onFollow?:
   const count = items.length;
   return (
     <>
-      <button
+      <Button
         ref={button}
-        type="button"
         className="crumb-more-button"
         aria-label={`${count} hidden ${count === 1 ? 'level' : 'levels'}`}
         title={items.map((c) => c.full ?? c.label).join(' › ')}
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => setOpen((o) => !o)}
-      >…</button>
+      >…</Button>
       {open && (
         <ul ref={menu} id={id} className="crumb-menu" aria-label="Hidden levels" onKeyDown={onMenuKey}>
           {items.map((c, i) => (

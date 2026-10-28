@@ -13,10 +13,10 @@ import { usePanelSize } from '../shell/prefs';
 import { trapTab, useNarrow } from '../shell/useNarrow';
 import { parseSpecRoute, type SpecIndex, type SpecState } from '../specs/data';
 import { NotFound } from '../specs/SpecPages';
-import { addressOf, HOME_PATH, focusOf, isFocusRoute, STAGE_LABELS, withStage, type FocusRoute, type StageName } from './address';
+import { addressOf, HOME_PATH, focusOf, isFocusRoute, STAGE_LABELS, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
 import { HeaderStrip } from './HeaderStrip';
 import { createOpenSpaceStore, useOpenSpaceMeasure } from './openSpace';
-import { PageBar } from './PageBar';
+import { PageBar, STAGE_COMMANDS } from './PageBar';
 import { SideBar } from './SideBar';
 import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, type SideModeState, type SideView } from './sideBarState';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
@@ -123,10 +123,24 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     if (next === stage) return;
     // Switching a tab's stage keeps it open, as in VS Code.
     update((s) => ({ ...s, stage: next }), true);
-    rememberStage(next);
+    // A phone's switch leaves the stage remembered for a wide screen alone.
+    if (!narrow) rememberStage(next);
     navigate(withStage(window.location.pathname, next), true);
     announce(`${STAGE_LABELS[next]} stage`);
-  }, [stage, update, announce]);
+  }, [stage, narrow, update, announce]);
+  // The stage a link names becomes the one remembered, for the first tab of a new session.
+  const linked = stageFromSearch(search);
+  useEffect(() => { if (linked && !narrow) rememberStage(linked); }, [linked, narrow]);
+  // Focus lost with the stage it was on (a key switched the stage) lands on the new stage's button
+  // in the switch. On a first load focus stays at the start, where Tab finds the skip link.
+  const shownStage = useRef(stage);
+  useEffect(() => {
+    if (shownStage.current === stage) return;
+    shownStage.current = stage;
+    const active = document.activeElement;
+    if (active && active !== document.body && active.isConnected) return;
+    document.querySelector<HTMLElement>(`.page-bar [data-command="${STAGE_COMMANDS[stage]}"]`)?.focus();
+  }, [stage]);
 
   // The side bar: open or not, and its view, per stage and per tab; the last choices made start a
   // space's first tab. On a phone it is a drawer, opened on demand.
@@ -194,7 +208,9 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const onNavigate = useCallback((id: string) => navigate(hrefFor(id)), [hrefFor]);
 
   // The wiki card follows the focus once it settles, and draws only then.
-  const settledFocus = useSettled(focus, CARD_SETTLE_MS);
+  const resting = useSettled(focus, CARD_SETTLE_MS);
+  // A page the index no longer holds (another space's, or one just removed) is never drawn: the card takes the focus at once.
+  const settledFocus = index.byId.has(resting) || isGroup(index, resting) ? resting : focus;
   const cardRoute = useCardRoute(index, settledFocus, route);
 
   // The card's scroll is the tab's: it comes back when the tab is active again. Within a tab, a new
@@ -327,7 +343,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   return (
     <div
       ref={layout}
-      className={`stage-layout${showing ? ' with-side-bar' : ''}${cardShown ? ' with-card' : ''}`}
+      className={`stage-layout${showing ? ' with-side-bar' : ''}${cardShown ? ' with-wiki' : ''}`}
       style={{ '--side-bar-width': `${sideBarWidth}px`, ...(card.width !== null ? { '--card-width': `${card.width}px` } : {}) } as CSSProperties}
     >
       <PageBar
@@ -396,10 +412,10 @@ function useCardRoute(index: SpecIndex, settled: string, route: FocusRoute): Foc
 /** The handle at the wiki card's right edge: drag or arrow keys for its width, double-click to reset, drag small to collapse. */
 function CardHandle({ width, onWidth, onReset, onCollapse }: { width: number | null; onWidth: (w: number) => void; onReset: () => void; onCollapse: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  const cardLeft = () => ref.current?.closest('.wiki-card')?.getBoundingClientRect().left ?? 0;
-  const value = width ?? Math.round(ref.current?.closest('.wiki-card')?.getBoundingClientRect().width ?? CARD_MIN);
+  const cardLeft = () => ref.current?.closest('.wiki-panel')?.getBoundingClientRect().left ?? 0;
+  const value = width ?? Math.max(CARD_MIN, Math.round(ref.current?.closest('.wiki-panel')?.getBoundingClientRect().width ?? CARD_MIN));
   return (
-    <div ref={ref} className="wiki-card-handle">
+    <div ref={ref} className="wiki-panel-handle">
       <ResizeHandle
         label="Resize the wiki card"
         value={value}
@@ -479,7 +495,7 @@ function PhoneLayout(props: PhoneLayoutProps) {
       {strip}
       {stageBox}
       {card && (
-        <BottomSheet label="Wiki card" className="wiki-card-sheet" onClose={() => onCard(false)}>
+        <BottomSheet label="Wiki card" className="wiki-panel-sheet" onClose={() => onCard(false)}>
           {card}
         </BottomSheet>
       )}

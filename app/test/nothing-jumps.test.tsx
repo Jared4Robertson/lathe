@@ -90,42 +90,30 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     const missing = boxes.filter(({ s }) => !keepsGutter(s)).map(({ s, line }) => `app/src/styles.css:${line}: ${s} needs scrollbar-gutter: stable`);
     expect(missing).toEqual([]);
   });
-
-  it('LA-PAT-APP-UX-R08-T01 the bars above a canvas have one height whatever their text', () => {
-    // The pane title above a graph, an ERD or a trace: a fixed block size, each line cut with an ellipsis.
-    expect(valueFor('.pane-title.is-fixed', 'height') ?? valueFor('.pane-title.is-fixed', 'block-size')).toBe('var(--pane-title-height)');
-    expect(valueFor('.pane-title.is-fixed :is(.eyebrow, h1, .record-id)', 'white-space')).toBe('nowrap');
-    // The graph's trail and toolbar: one line each; the trail scrolls sideways instead of wrapping.
-    expect(valueFor('.graph-trail ol', 'flex-wrap')).toBe('nowrap');
-    expect(valueFor('.graph-trail ol', 'block-size')).toBeTruthy();
-    expect(valueFor('.graph-trail ol', 'overflow')).toBe('auto hidden');
+  it('LA-PAT-APP-UX-R08-T01 the bars above a stage have one height whatever their text', () => {
+    // The tab panel: the page bar and the header strip under it, each a fixed height, each line cut with an ellipsis.
+    expect(valueFor('.page-bar', 'height')).toBe('var(--page-bar-height)');
+    expect(valueFor('.header-strip', 'height')).toBe('var(--strip-height)');
+    expect(valueFor('.header-strip', 'white-space')).toBe('nowrap');
+    expect(valueFor('.header-strip-title', 'text-overflow')).toBe('ellipsis');
+    expect(valueFor('.header-strip-counts', 'text-overflow')).toBe('ellipsis');
+    // The graph's toolbar: one line.
     expect(valueFor('.graph-toolbar', 'flex-wrap')).toBe('nowrap');
-    // The count sits on the trail's line, which has one height and never wraps; the count is cut only when nothing else gives.
-    expect(valueFor('.graph-head-line', 'flex-wrap')).toBe('nowrap');
-    expect(valueFor('.graph-head-line', 'block-size')).toBeTruthy();
-    expect(valueFor('.graph-count', 'white-space')).toBe('nowrap');
-    expect(valueFor('.graph-count', 'text-overflow')).toBe('ellipsis');
-    // The ERD view: its caption is one line, and its key has one height for every ERD.
-    expect(valueFor('.erd-caption', 'white-space')).toBe('nowrap');
-    // One height for every ERD at a given pane width: a narrow pane's key is a fixed multiple of it, never sized by its content.
+    // The ERD's key has one height for every ERD at a given width: a narrow key is a fixed multiple of it, never sized by its content.
     expect(valueFor('.erd-key', 'block-size')).toMatch(/^(?:var\(--erd-key-height\)|calc\(var\(--erd-key-height\) \* [0-9.]+\))$/);
     expect(CSS).toMatch(/--erd-key-height:\s*[0-9.]+rem/);
-    // A pane's title bar is one row.
-    expect(valueFor('.pane-bar', 'display')).toBe('flex');
-    expect(valueFor('.pane-bar', 'flex-wrap') ?? 'nowrap').toBe('nowrap');
   });
 
   it('LA-V61-R38-T02 a count or caption that changes is one text, so a new number never moves the text after it', async () => {
     startAtDepth(1);
     await openApp('/P-D-UC01-R01?stage=graph', { data: testWorkspace() });
-    await waitFor(() => expect(document.querySelector('.graph-count')).not.toBeNull());
-    const count = document.querySelector('.graph-count')!;
+    await waitFor(() => expect(document.querySelector('.header-strip-counts')?.textContent).toMatch(/record/));
+    const count = document.querySelector('.header-strip-counts')!;
     expect([...count.childNodes].map((n) => n.nodeType)).toEqual([Node.TEXT_NODE]);
-    // It sits at the end of the trail's line, above the toolbar, so a new count moves nothing in the toolbar.
-    expect(count.parentElement?.classList.contains('graph-head-line')).toBe(true);
-    expect(count.previousElementSibling?.classList.contains('graph-trail')).toBe(true);
+    // It ends the header strip, so a new count moves nothing before it; the stage's toolbar holds none.
+    expect(count.parentElement?.classList.contains('header-strip')).toBe(true);
     expect(count.nextElementSibling).toBeNull();
-    expect(document.querySelector('.graph-toolbar .graph-count')).toBeNull();
+    expect(document.querySelector('.graph-toolbar .header-strip-counts')).toBeNull();
   });
 
   it('LA-V61-R38-T02 the graph canvas stays mounted when the graph re-centers', async () => {

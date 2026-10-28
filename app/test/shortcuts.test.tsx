@@ -49,12 +49,12 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     expect(nav().className).not.toContain('is-rail');
 
-    // In the Wiki view the side bar starts closed.
-    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
-    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
+    // On the Graph stage the side bar starts open.
     expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
     press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
+    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
+    expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
   });
 
   it('LA-V61-R11-T01 Hiding and showing the nav and the side bar is announced', async () => {
@@ -63,55 +63,48 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     await waitFor(() => expect(announcer()).toHaveTextContent('Navigation collapsed'));
     press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
-    await waitFor(() => expect(announcer()).toHaveTextContent('Side bar shown'));
-    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
     await waitFor(() => expect(announcer()).toHaveTextContent('Side bar hidden'));
+    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
+    await waitFor(() => expect(announcer()).toHaveTextContent('Side bar shown'));
   });
 
-  it('LA-V61-R08-T03 Alt+W, Alt+G and Alt+M (or Ctrl+1, 2 and 4) toggle the views off a Mac, Ctrl+3 shows only the focused pane, and Ctrl+3 or Escape restores', async () => {
+  it('LA-V61-R08-T03 Alt+G, Alt+E and Alt+T (or Ctrl+1, 2 and 3) switch the stage off a Mac, on every focus; w and Alt+W collapse and show the wiki card', async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    // A use case has every stage too (LA-PAT-APP-UX-R16).
     press(document.body, '2', 'Digit2', { ctrlKey: true });
-    expect(window.location.search).toBe('?stage=graph');
-    press(document.body, 'w', 'KeyW', { altKey: true });
-    expect(window.location.search).toBe('?stage=graph');
-    // The last open view stays open.
-    press(document.body, 'g', 'KeyG', { altKey: true });
-    expect(window.location.search).toBe('?stage=graph');
+    expect(window.location.search).toBe('?stage=erd');
+    press(document.body, 't', 'KeyT', { altKey: true });
+    expect(window.location.search).toBe('?stage=trace');
     press(document.body, '1', 'Digit1', { ctrlKey: true });
     expect(window.location.search).toBe('?stage=graph');
-    // Ctrl+4 and Alt+E do nothing where ERD is not offered; Ctrl+3 is not Split any more.
-    press(document.body, '4', 'Digit4', { ctrlKey: true });
     press(document.body, 'e', 'KeyE', { altKey: true });
+    expect(window.location.search).toBe('?stage=erd');
+    press(document.body, '3', 'Digit3', { ctrlKey: true });
+    expect(window.location.search).toBe('?stage=trace');
+    press(document.body, 'g', 'KeyG', { altKey: true });
     expect(window.location.search).toBe('?stage=graph');
 
-    // Ctrl+3 maximizes the focused pane; Ctrl+3 again restores, and so does Escape.
-    screen.getByRole('button', { name: 'Full screen: Graph' }).focus();
-    press(document.activeElement!, '3', 'Digit3', { ctrlKey: true });
-    expect(screen.getByRole('region', { name: 'Graph pane' }).className).toContain('is-fullscreen');
-    expect(screen.getByRole('region', { name: 'Wiki pane' })).toHaveAttribute('inert');
-    press(document.body, '3', 'Digit3', { ctrlKey: true });
-    expect(screen.getByRole('region', { name: 'Graph pane' }).className).not.toContain('is-fullscreen');
-    // With focus outside every pane, the leftmost one.
-    await waitFor(() => expect(screen.getByRole('button', { name: 'Full screen: Graph' })).toHaveFocus());
-    act(() => (document.activeElement as HTMLElement).blur());
-    press(document.body, '3', 'Digit3', { ctrlKey: true });
-    expect(screen.getByRole('region', { name: 'Wiki pane' }).className).toContain('is-fullscreen');
-    press(document.body, 'Escape', 'Escape');
-    expect(screen.getByRole('region', { name: 'Wiki pane' }).className).not.toContain('is-fullscreen');
-    // The old full-screen key is gone.
+    // w, and Alt+W off a Mac, collapse and show the wiki card.
+    expect(screen.getByRole('region', { name: 'Wiki card' })).toBeInTheDocument();
+    press(document.body, 'w', 'KeyW');
+    expect(screen.queryByRole('region', { name: 'Wiki card' })).toBeNull();
+    press(document.body, 'w', 'KeyW', { altKey: true });
+    expect(screen.getByRole('region', { name: 'Wiki card' })).toBeInTheDocument();
+    // There are no panes to maximize: the old keys do nothing.
     press(document.body, 'Enter', 'Enter', { ctrlKey: true, shiftKey: true });
-    expect(document.querySelector('.is-fullscreen')).toBeNull();
+    expect(document.querySelector('.is-fullscreen, .pane')).toBeNull();
   });
 
-  it('LA-V61-R11-T02 A view switched on or off by a key is announced, and so is the last view staying open', async () => {
+  it('LA-V61-R11-T02 A stage switched by a key is announced, and so is the wiki card collapsed or shown', async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '2', 'Digit2', { ctrlKey: true });
-    await waitFor(() => expect(announcer()).toHaveTextContent('Graph view opened'));
-    press(document.body, 'w', 'KeyW', { altKey: true });
-    press(document.body, 'g', 'KeyG', { altKey: true });
-    await waitFor(() => expect(announcer()).toHaveTextContent('stays open'));
+    await waitFor(() => expect(announcer()).toHaveTextContent('ERD stage'));
+    press(document.body, 'w', 'KeyW');
+    await waitFor(() => expect(announcer()).toHaveTextContent('Wiki card collapsed'));
+    press(document.body, 'w', 'KeyW');
+    await waitFor(() => expect(announcer()).toHaveTextContent('Wiki card shown'));
   });
 
   it('LA-V61-R11-T03 F8 says which problem it moved to', async () => {
@@ -168,12 +161,12 @@ describe('keyboard shortcuts', () => {
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
     const input = within(palette).getByRole('combobox', { name: 'Type a command' });
     await waitFor(() => expect(input).toHaveFocus());
-    await user.type(input, 'graph view');
+    await user.type(input, 'trace stage');
     const options = within(palette).getAllByRole('option');
-    expect(options[0]).toHaveTextContent('Graph view on or off');
-    expect(options[0]).toHaveTextContent('Alt+G');
+    expect(options[0]).toHaveTextContent('Trace stage');
+    expect(options[0]).toHaveTextContent('Alt+T');
     await user.keyboard('{Enter}');
-    await waitFor(() => expect(window.location.search).toBe('?stage=graph'));
+    await waitFor(() => expect(window.location.search).toBe('?stage=trace'));
     // The palette has Expand all and Collapse all.
     press(document.body, 'P', 'KeyP', { ctrlKey: true, shiftKey: true });
     await user.type(within(screen.getByRole('dialog', { name: 'Command palette' })).getByRole('combobox'), 'all rows');
@@ -225,7 +218,7 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-V61-R08-T07 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
-    // The side bar starts closed in the Wiki view; this test reads it open.
+
     openSideBar('details');
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -238,9 +231,9 @@ describe('keyboard shortcuts', () => {
     expect(window.location.pathname).toBe('/P-D-CAP01');
     await screen.findByRole('heading', { level: 1, name: 'Lending' });
 
-    // Shift+F12 shows the incoming links in the side bar.
+    // Shift+F12 shows the record's links, in and out, in the side bar's Traceability.
     press(document.body, 'F12', 'F12', { shiftKey: true });
-    await waitFor(() => expect(within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('heading', { name: /^Links in/ })).toHaveFocus());
+    await waitFor(() => expect(within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('heading', { name: /^Traceability/ })).toHaveFocus());
 
     // Ctrl+Shift+E: the nav; Ctrl+Shift+I: the side bar.
     press(document.body, 'E', 'KeyE', { ctrlKey: true, shiftKey: true });

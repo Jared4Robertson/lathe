@@ -86,7 +86,7 @@ describe('desktop title bar', () => {
   });
 
   it('LA-V67-R04-T01 The layout toggles run the navigation and side bar commands and show whether each panel shows', async () => {
-    // The side bar starts closed in the Wiki view; this test reads it open.
+    // The test reads the side bar open on every stage.
     openSideBar('details');
     desktop();
     await openApp('/DM-SHOP-UC01');

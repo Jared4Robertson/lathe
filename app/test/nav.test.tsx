@@ -132,19 +132,21 @@ describe('side navigation', () => {
     expect(within(nav()).queryByLabelText('Graph')).toBeNull();
     fireEvent.click(within(nav()).getByRole('button', { name: 'Expand the navigation' }));
 
-    // The page's Graph view and Ctrl+2.
-    expect(within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name: 'Graph' })).toBeInTheDocument();
-    fireEvent.keyDown(document.body, { key: '2', code: 'Digit2', ctrlKey: true });
+    // The page's Graph stage and Ctrl+1, from another stage.
+    fireEvent.click(within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name: 'ERD' }));
+    expect(window.location.search).toBe('?stage=erd');
+    expect(within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name: 'Graph' })).toBeInTheDocument();
+    fireEvent.keyDown(document.body, { key: '1', code: 'Digit1', ctrlKey: true });
     expect(window.location.search).toBe('?stage=graph');
 
     // The command palette.
     fireEvent.keyDown(document.body, { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true });
     const user = userEvent.setup();
-    await user.type(within(screen.getByRole('dialog', { name: 'Command palette' })).getByRole('combobox'), 'graph view');
-    expect(within(screen.getByRole('dialog')).getAllByRole('option')[0]).toHaveTextContent('Graph view');
+    await user.type(within(screen.getByRole('dialog', { name: 'Command palette' })).getByRole('combobox'), 'graph stage');
+    expect(within(screen.getByRole('dialog')).getAllByRole('option')[0]).toHaveTextContent('Graph stage');
   };
-  it('LA-V96-R01-T02 The nav has no Graph item, open or as a rail; the graph stays one view, Ctrl+2 or a palette command away', proveLaV96R01T02);
-  it('LA-V90-R01-T01 The nav has no Graph item and the graph stays a view away', proveLaV96R01T02);
+  it('LA-V96-R01-T02 The nav has no Graph item, open or as a rail; the graph stays one stage, Ctrl+1 or a palette command away', proveLaV96R01T02);
+  it('LA-V90-R01-T01 The nav has no Graph item and the graph stays a stage away', proveLaV96R01T02);
   it('LA-V90-R05-T03 The nav has no Graph item, open or as a rail', proveLaV96R01T02);
 
   it('LA-V90-R03-T01 A selected row is the whole row: the current page\'s nav row carries the selection over the panel\'s width, chevron included, with no inset bar', async () => {

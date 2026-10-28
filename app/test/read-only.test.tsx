@@ -18,9 +18,10 @@ describe('pages read until the person acts', () => {
       const { requests, writes } = await openApp(page);
       await screen.findAllByRole('heading', { level: 1 });
       const area = main();
-      // No form or editor until Edit, Add or Remove is chosen; the search boxes are the only inputs.
+      // No form or editor until Edit, Add or Remove is chosen; outside the stage's own view controls (the graph's filters, the trace's Gaps only), the search boxes are the only inputs.
       expect(area.querySelectorAll('form, textarea, select, [contenteditable]'), page).toHaveLength(0);
-      for (const input of area.querySelectorAll('input')) expect(input.type, page).toBe('search');
+      const inputs = [...area.querySelectorAll('input')].filter((input) => !input.closest('[data-stage]'));
+      for (const input of inputs) expect(input.type, page).toBe('search');
       // Every button is a plain button (none submits), and only the record actions change a record.
       const buttons = [...area.querySelectorAll('button')];
       for (const button of buttons) expect(button.type, page).toBe('button');
@@ -28,7 +29,7 @@ describe('pages read until the person acts', () => {
       if (page === '/DM-SHOP-UC01') expect(actions, page).not.toBeNull();
       for (const button of buttons.filter(isRecordAction)) expect(actions?.contains(button), `${page}: ${button.textContent}`).toBe(true);
       // Use the page: type in the search box.
-      for (const input of area.querySelectorAll('input')) await user.type(input, 'basket');
+      for (const input of inputs) await user.type(input, 'basket');
       expect(writes, page).toEqual([]);
       expect(requests.every((r) => r === 'GET /api/spec'), `${page}: ${requests.join(', ')}`).toBe(true);
     }

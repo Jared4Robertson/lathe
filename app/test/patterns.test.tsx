@@ -210,7 +210,7 @@ describe('pattern pages', () => {
       'DM-PAT-AUDIT-R03The clerk is named applies when who is clerk',
     ]);
     // No separate Children list repeats the rules.
-    expect(within(screen.getByRole('region', { name: 'Wiki pane' })).queryByRole('heading', { name: /^Children/ })).toBeNull();
+    expect(within(screen.getByRole('region', { name: 'Wiki card' })).queryByRole('heading', { name: /^Children/ })).toBeNull();
     const followed = section(/^Followed by/);
     expect(within(followed).getByRole('heading', { level: 2 }).textContent).toBe('Followed by2');
     const pay = within(followed).getByRole('region', { name: 'Followed in DM-PAY' });

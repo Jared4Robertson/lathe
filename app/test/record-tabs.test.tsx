@@ -9,7 +9,7 @@ import { testWorkspace } from './graph/workspace';
 import { boxElements } from './graph/scene';
 
 // Tabs for open pages, as editors are in VS Code (LA-EXP-UC10): the preview tab, lasting tabs,
-// closing and cycling, each tab's own views and scroll, and the address following
+// closing and cycling, each tab's own stage and wiki card scroll, and the address following
 // the active tab, so a reload brings every tab back (LA-PAT-APP-UX-R06).
 
 const served = () => ({ data: testWorkspace() });
@@ -23,7 +23,7 @@ const go = async (to: string, heading: string) => {
   act(() => navigate(to));
   await waitFor(() => expect(title()).toBe(heading));
 };
-const viewToggle = (name: 'Wiki' | 'Graph') => within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name });
+const stageButton = (name: 'Graph' | 'ERD' | 'Trace') => within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
 const key = (init: KeyboardEventInit & { key: string; code?: string }) => fireEvent.keyDown(document.body, init);
 
 describe('tabs for open pages', () => {
@@ -35,7 +35,7 @@ describe('tabs for open pages', () => {
   /** From the use case, a wiki link opened in the preview tab. */
   const linkOpened = async () => {
     await firstTab();
-    fireEvent.click(within(screen.getByRole('region', { name: 'Wiki pane' })).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
+    fireEvent.click(within(screen.getByRole('region', { name: 'Wiki card' })).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
     await waitFor(() => expect(title()).toBe('The loan is recorded'));
   };
 
@@ -180,74 +180,82 @@ describe('tabs for open pages', () => {
     await waitFor(() => expect(tab('Lend a thing')).toHaveFocus());
   });
 
-  it('LA-V96-R11-T03 Switching a preview tab\'s views keeps it open', async () => {
+  it('LA-V96-R11-T03 Switching a preview tab\'s stage keeps it open', async () => {
     await firstTab();
-    fireEvent.click(viewToggle('Graph'));
+    fireEvent.click(stageButton('ERD'));
     expect(tabs()).toEqual(['Lend a thing<']);
-    expect(address()).toBe('/P-D-UC01?stage=graph');
+    expect(address()).toBe('/P-D-UC01?stage=erd');
   });
 
-  it('LA-V96-R14-T01 Each tab keeps its own views and wiki scroll, and the graph\'s settings are the session\'s, whatever the tab', async () => {
+  it('LA-V96-R14-T01 Each tab keeps its own stage, side bar and wiki card scroll, and the graph\'s settings are the session\'s, whatever the tab', async () => {
     await firstTab();
-    // Opening the graph keeps the preview tab, and sets its depth.
-    fireEvent.click(viewToggle('Graph'));
+    // The graph's depth, set here, is the session's.
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
-    const wiki = () => document.querySelector<HTMLElement>('.pane-wiki > .pane-scroll')!;
-    wiki().scrollTop = 120;
-    fireEvent.scroll(wiki());
+    const cardScroll = () => document.querySelector<HTMLElement>('.wiki-panel-scroll')!;
+    cardScroll().scrollTop = 120;
+    fireEvent.scroll(cardScroll());
+    // The ERD for this tab, its side bar hidden there.
+    fireEvent.click(stageButton('ERD'));
+    fireEvent.click(screen.getAllByRole('button', { name: 'Hide the side bar' })[0]);
 
-    // A new tab starts from the active one's views, with the same depth; change them there.
+    // A new tab starts from the active one's stage; change it there, with the side bar left open.
     await go('/P-V01', 'Loan desk');
     expect(address()).toBe('/P-V01');
-    expect(viewToggle('Graph')).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true');
-    expect(wiki().scrollTop).toBe(0);
+    expect(stageButton('ERD')).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(cardScroll().scrollTop).toBe(0));
+    fireEvent.click(stageButton('Graph'));
+    await waitFor(() => expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true'));
     fireEvent.click(screen.getByRole('button', { name: '3' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Close the graph pane' }));
+    expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
     expect(tabs()).toEqual(['Lend a thing', 'Loan desk<']);
 
-    // Back on the first tab: its two panes and its scroll, and the depth last set, not its own.
+    // Back on the first tab: its ERD, its side bar hidden and its scroll.
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
-    expect(address()).toBe('/P-D-UC01?stage=graph');
-    expect(screen.getByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
+    expect(address()).toBe('/P-D-UC01?stage=erd');
+    expect(screen.getByRole('region', { name: 'ERD stage' })).toBeInTheDocument();
+    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
+    await waitFor(() => expect(cardScroll().scrollTop).toBe(120));
+    // The depth is the one last set, in any tab.
+    fireEvent.click(stageButton('Graph'));
     await waitFor(() => expect(screen.getByRole('button', { name: '3' })).toHaveAttribute('aria-pressed', 'true'));
-    expect(wiki().scrollTop).toBe(120);
-    // And the second: the wiki alone.
+    fireEvent.click(stageButton('ERD'));
+    // And the second: the graph.
     fireEvent.click(tab('Loan desk'));
     await waitFor(() => expect(title()).toBe('Loan desk'));
     expect(address()).toBe('/P-V01?stage=graph');
-    expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
-    // A link naming other views to a page open in a tab shows the tab as it was, and the address says so.
-    await go('/P-D-UC01?stage=graph', 'Lend a thing');
-    await waitFor(() => expect(address()).toBe('/P-D-UC01?stage=graph'));
-    // A tab stores no graph settings.
+    // A link naming another stage to a page open in a tab shows the tab as it was, and the address says so.
+    await go('/P-D-UC01?stage=trace', 'Lend a thing');
+    await waitFor(() => expect(address()).toBe('/P-D-UC01?stage=erd'));
+    // A tab stores no graph or card settings.
     const stored = JSON.parse(window.sessionStorage.getItem('lathe:tabs')!) as Record<string, { tabs: { state: object }[] }>;
-    expect(Object.values(stored).flatMap((set) => set.tabs.map((t) => Object.keys(t.state))).flat()).not.toContain('graph');
+    const keys = Object.values(stored).flatMap((set) => set.tabs.map((t) => Object.keys(t.state))).flat();
+    expect(keys).not.toContain('graph');
+    expect(keys).not.toContain('card');
   });
 
-  it('LA-V96-R15-T04 Reloading brings back each tab\'s views', async () => {
-    await openApp('/P-D-UC01?stage=graph', served());
+  it('LA-V96-R15-T04 Reloading brings back each tab\'s stage', async () => {
+    await openApp('/P-D-UC01?stage=trace', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));
-    await go('/P-V01?stage=graph', 'Loan desk');
+    await go('/P-V01?stage=erd', 'Loan desk');
     fireEvent.doubleClick(tab('Loan desk'));
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
     await openApp(address(), served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(screen.getByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Trace stage' })).toBeInTheDocument();
     fireEvent.click(tab('Loan desk'));
     await waitFor(() => expect(title()).toBe('Loan desk'));
-    expect(address()).toBe('/P-V01?stage=graph');
+    expect(address()).toBe('/P-V01?stage=erd');
   });
 
-  it.each(['LA-PAT-APP-UX-R06-T01', 'LA-PAT-APP-UX-R06-T02'])('%s Reloading brings back the same tabs, the preview, the active tab and each tab\'s views', async () => {
+  it.each(['LA-PAT-APP-UX-R06-T01', 'LA-PAT-APP-UX-R06-T02'])('%s Reloading brings back the same tabs, the preview, the active tab and each tab\'s stage', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     fireEvent.doubleClick(tab('Lend a thing'));
-    await go('/P-V01?stage=graph', 'Loan desk');
+    await go('/P-V01?stage=trace', 'Loan desk');
     fireEvent.doubleClick(tab('Loan desk'));
     await go('/P-D-A1', 'Thing');
     fireEvent.click(tab('Lend a thing'));
@@ -259,11 +267,11 @@ describe('tabs for open pages', () => {
     await openApp(address(), served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(tabs()).toEqual(before.tabs);
-    expect(screen.getByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Graph stage' })).toBeInTheDocument();
     fireEvent.click(tab('Loan desk'));
     await waitFor(() => expect(title()).toBe('Loan desk'));
-    expect(address()).toBe('/P-V01?stage=graph');
-    expect(screen.queryByRole('region', { name: 'Graph pane' })).toBeNull();
+    expect(address()).toBe('/P-V01?stage=trace');
+    expect(screen.getByRole('region', { name: 'Trace stage' })).toBeInTheDocument();
   });
 
   it('LA-V96-R15-T01 Each space keeps its own tabs: switching spaces swaps the tab set', async () => {

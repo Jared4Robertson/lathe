@@ -6,7 +6,7 @@ import type { SpecData } from '../../lathe/src/server/contract';
 import { LongList } from '../src/components/LongList';
 import { addRows } from './fixtures/load';
 import { gap, workspace as baseWorkspace } from './fixtures/workspace';
-import { main, openApp, openSideBar, section } from './helpers';
+import { main, openApp, section } from './helpers';
 
 interface Item { id: string; title: string }
 const make = (n: number): Item[] => Array.from({ length: n }, (_, i) => ({ id: `X-${String(i + 1).padStart(2, '0')}`, title: i === 6 ? 'The seventh thing' : `Thing ${i + 1}` }));
@@ -106,11 +106,7 @@ describe('long lists', () => {
     expect(within(section(/^Coverage/)).getByRole('searchbox', { name: 'Filter coverage gaps' })).toBeInTheDocument();
     expect(within(section(/^Problems in this domain/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
 
-    // A domain's children, in the side bar's Details (its page is its overview); a record's Traceability, in the wiki.
-    openSideBar();
-    await openApp('/BG-D01', served);
-    await screen.findByRole('heading', { level: 1, name: 'Domain 1' });
-    expect(within(main()).getByRole('searchbox', { name: 'Filter children' })).toBeInTheDocument();
+    // A record's Traceability, in the wiki card.
     await openApp('/BG-D01-SP01', served);
     await screen.findByRole('heading', { level: 1, name: 'A ledger balances' });
     const linksIn = within(main()).getByRole('searchbox', { name: /^Filter checked by$/i });

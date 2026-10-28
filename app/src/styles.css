@@ -100,7 +100,7 @@ body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(-
   background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur));
   box-shadow: var(--float-shadow);
 }
-.wiki-card { background: var(--float-light); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); }
+.wiki-panel { background: var(--float-light); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); }
 .placeholder { display: grid; place-items: center; color: var(--muted); }
 .menu { background: var(--sheet); padding: 0; display: flex; flex-direction: row; gap: 0; min-height: 0; overflow: hidden; box-sizing: border-box; }
 .brand { margin: 0; font: 700 1.3rem var(--display); display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; }
@@ -452,7 +452,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* A toggle that is on (the pressed view, a shown sideBar): one look for every such icon button. */
 .icon-button.is-on { color: var(--steel); background: var(--steel-bg); }
 /* A view the page does not offer keeps its slot in the View group, dimmed, so the toggles never move (UX-R08). */
-.icon-button.is-unavailable, .icon-button.is-unavailable:hover { opacity: 0.4; cursor: default; color: var(--muted); background: none; border-color: transparent; }
 /* Actions look like actions (LA-PAT-APP-UX-R09): the one Button (components/Button.tsx). Ghost is the default for a
    standalone action: no border or fill, the hover tint. Primary is filled with the accent, for the one main action of
    a form or dialog. A link drawn as a button keeps the button's look inside prose styles (hence the doubled class). */
@@ -979,18 +978,18 @@ a.row-link.row-link:focus-visible { outline: none; }
 .header-strip-sep { flex: none; color: var(--muted); }
 .header-strip-focus { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 6px; }
 .header-strip-focus .kind-badge { flex: none; font-size: 0.68rem; }
-.header-strip-id { flex: none; font: 500 0.74rem var(--mono); color: var(--muted); }
+.header-strip-id { flex: none; font: 500 0.74rem var(--mono); }
 .header-strip-title { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; font: 600 0.8rem/1.3 var(--body); color: var(--ink); }
 .header-strip-counts { flex: 0 1 auto; min-width: 0; margin-left: auto; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-variant-numeric: tabular-nums; }
 /* The wiki card (WikiCard.tsx). */
-.wiki-card { position: absolute; z-index: 2; top: var(--below-strip); bottom: var(--float-inset); left: var(--nav-space); box-sizing: border-box; width: var(--card-width, clamp(300px, calc((100% - var(--nav-space) - var(--side-space)) / 3), 640px)); max-width: calc(100% - var(--nav-space) - var(--side-space)); display: flex; flex-direction: column; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
-.wiki-card-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 36px; padding: 2px 4px 2px 12px; border-bottom: 1px solid var(--float-border); font-size: 0.8rem; }
-.wiki-card-trail { flex: 1 1 auto; min-width: 0; overflow-x: clip; }
-.wiki-card-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; border-radius: 0 0 var(--panel-radius) var(--panel-radius); }
-.wiki-card-title { padding: 14px 20px 0; }
-.wiki-card-title h2 { margin: 2px 0 0; font: 700 1.35rem/1.25 var(--display); overflow-wrap: anywhere; }
-.wiki-card-handle { position: absolute; z-index: 3; top: var(--panel-radius); bottom: var(--panel-radius); right: calc(-1 * var(--float-inset)); width: var(--float-inset); display: grid; }
-.wiki-card.is-sheet { position: static; width: auto; max-width: none; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.wiki-panel { position: absolute; z-index: 2; top: var(--below-strip); bottom: var(--float-inset); left: var(--nav-space); box-sizing: border-box; width: var(--card-width, clamp(300px, calc((100% - var(--nav-space) - var(--side-space)) / 3), 640px)); max-width: calc(100% - var(--nav-space) - var(--side-space)); display: flex; flex-direction: column; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
+.wiki-panel-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 36px; padding: 2px 4px 2px 12px; border-bottom: 1px solid var(--float-border); font-size: 0.8rem; }
+.wiki-panel-trail { flex: 1 1 auto; min-width: 0; overflow-x: clip; }
+.wiki-panel-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; border-radius: 0 0 var(--panel-radius) var(--panel-radius); }
+.wiki-panel-title { padding: 14px 20px 0; }
+.wiki-panel-title h2 { margin: 2px 0 0; font: 700 1.35rem/1.25 var(--display); overflow-wrap: anywhere; }
+.wiki-panel-handle { position: absolute; z-index: 3; top: var(--panel-radius); bottom: var(--panel-radius); right: calc(-1 * var(--float-inset)); width: var(--float-inset); display: grid; grid-template-columns: minmax(0, 1fr); }
+.wiki-panel.is-sheet { position: static; width: auto; max-width: none; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 /* The side bar, floating at the right; its handle at its left edge. */
 .stage-layout > .side-bar-column { position: absolute; z-index: 3; top: var(--float-inset); bottom: var(--float-inset); right: var(--float-inset); width: var(--side-bar-width, 340px); max-width: calc(100% - var(--nav-space) - var(--float-inset)); box-sizing: border-box; overflow: visible; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
 .stage-layout > .side-bar-column > .side-bar.record-side { border-radius: var(--panel-radius); background: none; }
@@ -1014,7 +1013,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .side-bar-drawer { position: fixed; z-index: 80; inset: 0 0 0 auto; width: min(380px, 92vw); display: flex; flex-direction: column; background: var(--sheet); box-shadow: -4px 0 24px var(--shadow-strong); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) 0; }
 .side-bar-drawer > .side-bar { flex: 1; min-height: 0; }
 
-/* ---------- The breadcrumb (app/src/components/Breadcrumb.tsx, LA-PAT-APP-UX-R15) ----------
+/* ---------- The breadcrumb (app/src/shell/Breadcrumb.tsx, LA-PAT-APP-UX-R15) ----------
    One line: each place cut with an ellipsis (whole in its tooltip), a "›" between; the "…" button opens the hidden
    levels as a menu under it. */
 .breadcrumb { min-width: 0; }
@@ -1143,7 +1142,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
     .graph-depth button, .graph-filters > summary, .graph-legend summary, .trace-filter, .quick-find-results li,
-    .palette-list li, .tab, .long-list-tools input, .quick-find input, .dialog-search, .segment, .file-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
+    .palette-list li, .tab, .long-list-tools input, .quick-find input, .dialog-search, .segment, .file-button, .crumb-more-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }
   :is(.tree-toggle, .tab-close, .color-swatch) { position: relative; }
