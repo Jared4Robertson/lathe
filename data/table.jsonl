@@ -104,3 +104,4 @@
 {"id":"LA-TRC-RM04-TB","title":"pattern_rule_standing","read_model_id":"LA-TRC-RM04","name":"pattern_rule_standing","storage":"table","file":"lathe/src/coverage.ts","description":"pattern_rule_standing, storage table; owed_pattern_rules is the view of its owed rows"}
 {"id":"LA-TRC-RM05-TB","title":"file_facts","read_model_id":"LA-TRC-RM05","name":"file_facts","storage":"table","file":"lathe/src/coverage.ts","description":"file_facts (FACT_TABLES_SQL), storage table, filled by its projection on every load"}
 {"id":"LA-TRC-RM06-TB","title":"Trace","read_model_id":"LA-TRC-RM06","name":"Trace","storage":"in memory","file":"app/src/specs/trace.ts","description":"Worked out from the space's index on each request."}
+{"id":"LA-TRC-RM07-TB","title":"table_facts","read_model_id":"LA-TRC-RM07","name":"table_facts","storage":"table","file":"lathe/src/trace/tables.ts","description":"table_facts (TABLE_FACTS_SQL), filled by its projection on every load"}

@@ -9,6 +9,9 @@ import { cameraOf, clickBox, GRAPH, graphDrawn } from './scene';
 
 const FLOW = 'LA-EXP-UC03-FL01';
 const LAYOUTS = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
+/** The arrow for each step in each layout (LA-V93-R19): Tree steps Left out and Right in; Nested and Voronoi, Up out and Down in. */
+const NESTED = { out: 'ArrowUp', in: 'ArrowDown', previous: 'ArrowLeft', next: 'ArrowRight' } as const;
+const ARROWS = { tree: { out: 'ArrowLeft', in: 'ArrowRight', previous: 'ArrowUp', next: 'ArrowDown' }, nested: NESTED, voronoi: NESTED } as const;
 
 const at = (page: Page) => new URL(page.url()).pathname.slice(1);
 const drawn = async (page: Page) => ({
@@ -56,9 +59,10 @@ for (const layout of ['tree', 'nested', 'voronoi'] as const) {
     const set = { layout, pressed: LAYOUTS[layout], depth: '2', links: 'true' };
     expect(await drawn(page)).toEqual(set);
 
-    // The four arrows: out to the flow's tab, in to the step's, and down and up across steps no tab holds.
+    // The four arrows, each taking its step in this layout (LA-V93-R19): out to the flow's tab, in to the step's, and
+    // across to the next and previous steps no tab holds.
     await canvas.focus();
-    for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowDown', 'ArrowUp', 'ArrowUp', 'ArrowLeft']) {
+    for (const key of (['out', 'in', 'next', 'next', 'previous', 'previous', 'out'] as const).map((s) => ARROWS[layout][s])) {
       await move(page, () => page.keyboard.press(key));
       expect(await drawn(page), `${key} to ${at(page)}`).toEqual(set);
     }
@@ -70,8 +74,8 @@ for (const layout of ['tree', 'nested', 'voronoi'] as const) {
       await move(page, () => clickBox(page, id));
       expect(await drawn(page), `a click to ${id}`).toEqual(set);
       await canvas.focus();
-      await move(page, () => page.keyboard.press('ArrowLeft'));
-      expect(await drawn(page), `ArrowLeft from ${id}`).toEqual(set);
+      await move(page, () => page.keyboard.press(ARROWS[layout].out));
+      expect(await drawn(page), `${ARROWS[layout].out} from ${id}`).toEqual(set);
     }
   });
 }

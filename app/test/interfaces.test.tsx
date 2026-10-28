@@ -17,7 +17,7 @@ const served = () => {
 };
 
 describe('flows by interface', () => {
-  it('LA-V92-R76-T01 A use case lists its flows by interface, and a flow names its interface', async () => {
+  it('LA-V92-R77-T01 A use case lists its flows by interface, and a flow names its interface', async () => {
     await openApp(`${addressOf('DM-SHOP-UC01')}?view=wiki`, served());
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const rows = within(within(section(/^Flows by interface/)).getByRole('list', { name: 'Flows of DM-SHOP-UC01' })).getAllByRole('listitem');
@@ -33,7 +33,7 @@ describe('flows by interface', () => {
     expect(within(through).getByRole('link')).toHaveAttribute('href', addressOf('DM-IF02'));
   });
 
-  it('LA-V92-R77-T01 An interface lists its flows by capability and the use cases with no flow through it', async () => {
+  it('LA-V92-R78-T01 An interface lists its flows by capability and the use cases with no flow through it', async () => {
     await openApp(`${addressOf('DM-IF02')}?view=wiki`, served());
     await screen.findByRole('heading', { level: 1, name: 'Terminal' });
     const flows = section(/^Flows through it/);

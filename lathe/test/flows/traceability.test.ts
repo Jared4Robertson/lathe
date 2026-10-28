@@ -115,6 +115,10 @@ describe('Traceability flows from the command line', () => {
     expect(tl.check().stdout).toContain('[code-file-untraced] Source file src/lending/rules.ts is named by no technical record, directly or through a folder.');
     tl.run('add', 'repository', '--id', 'TL-LEND-A1-REPO', '--title', 'Loans', '--aggregate_id', 'TL-LEND-A1', '--file', 'src/lending');
     expect(tl.check().stdout).not.toContain('code-file-untraced');
+    // S07: and an outcome nothing measures, until a test that runs measures it.
+    expect(tl.check().stdout).toContain('[outcome-not-measured] Business outcome TL-BO01 is measured by nothing;');
+    tl.run('link', 'TL-BO01', 'measured_by', 'TL-LEND-UC01-R01-T01');
+    expect(tl.check().stdout).not.toContain('outcome-not-measured');
   });
 
   it('LA-TRC-UC03-FL03-T record how a test is run', async () => {

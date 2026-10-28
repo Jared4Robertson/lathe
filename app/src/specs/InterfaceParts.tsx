@@ -4,7 +4,7 @@ import { addressOf } from '../views/address';
 import type { SpecIndex, SpecRecord } from './data';
 import { ProblemBadge, RecordLink, Section, recordText } from './parts';
 
-// A use case happens through one or more of its product's interfaces, with one flow for each (LA-V92-R83, LA-V92-R84).
+// A use case happens through one or more of its product's interfaces, with one flow for each (LA-V92-R77, LA-V92-R78).
 // - A use case's page lists its flows by interface, each row the flow with its interface's name and kind.
 // - A flow's page names the interface it goes through, under its title.
 // - An interface's page lists the flows through it by capability, then use case, and the product's use cases that

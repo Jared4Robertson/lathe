@@ -17,6 +17,7 @@
 // the schema leaves to the checks because records are written stage by stage (GAP_RULES): a use case with no flow, an
 // aggregate with no root, a command with no handler. The checks read the same views and tables.
 import { sqlName, sqlString, type SchemaDescription, type Stage } from './store/schema.ts';
+import { MEASURE_GAPS } from './trace/measures.ts';
 import { ROUTE_GAP_RULES } from './trace/routes.ts';
 
 /** The run by levels each test kind allows: a test at another level is reported by test-level-not-allowed and proves nothing. */
@@ -132,6 +133,7 @@ export const GAP_RULES: GapRule[] = [
   // Discovery: the trace runs from a business outcome through the capabilities that serve it.
   gap('outcome-not-served', 'discovery', ['business_outcome', 'capability'], 'A business outcome no capability serves.',
     `SELECT o.id, 'Business outcome ' || o.id || ' is served by no capability.' AS message FROM business_outcome o WHERE NOT EXISTS (SELECT 1 FROM serves s WHERE s.target_id = o.id)`),
+  ...MEASURE_GAPS,
   // Domain model.
   gap('domain-without-aggregate', 'domain-model', ['domain', 'aggregate'], 'A domain with no aggregate.',
     `SELECT d.id, 'Domain ' || d.id || ' has no aggregate.' AS message FROM domain d WHERE NOT EXISTS (SELECT 1 FROM aggregate a WHERE a.domain_id = d.id)`),
@@ -199,6 +201,9 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   missingImpl('query-without-handler', 'query', 'Query', 'query_handler', 'query_id', 'query handler'),
   missingImpl('endpoint-without-handler', 'endpoint', 'Endpoint', 'endpoint_handler', 'endpoint_id', 'endpoint handler'),
   missingImpl('integration-without-adapter', 'integration', 'Integration', 'adapter', 'integration_id', 'adapter'),
+  // A table stored as a table names the file that creates it, which table-schema-mismatch reads (trace/tables.ts).
+  gap('table-without-file', 'technical-specification', ['table'], 'A table stored in a database table that names no file creating it.',
+    `SELECT t.id, 'Table ' || t.id || ' is stored as a table but names no file that creates it.' AS message FROM "table" t WHERE t.storage = 'table' AND t.file IS NULL`),
   gap('view-without-ui-component', 'technical-specification', ['view', 'ui_component'], 'A view no UI component renders.',
     `SELECT v.id, 'View ' || v.id || ' is rendered by no UI component.' AS message FROM view v WHERE NOT EXISTS (SELECT 1 FROM renders r WHERE r.target_id = v.id)`),
   // Every source file is named by a technical record, or sits in a folder one names. A repo holding several products

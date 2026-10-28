@@ -72,3 +72,4 @@
 {"id":"LA-TRC-UC13-FL01","title":"See tests by state with coverage","use_case_id":"LA-TRC-UC13","interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC14-FL01","title":"Trace a requirement to what designs, builds and proves it","use_case_id":"LA-TRC-UC14","interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC15-FL03","title":"Keep routes and records in step","use_case_id":"LA-TRC-UC15","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC16-FL03","title":"Check a table against its file","use_case_id":"LA-TRC-UC16","interface_id":"LA-IF03"}

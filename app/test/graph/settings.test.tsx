@@ -1,7 +1,7 @@
 import './setup';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { GRAPH_LAYOUTS } from '../../src/graph/GraphPage';
+import { GRAPH_LAYOUTS, stepKey } from '../../src/graph/GraphPage';
 import { DEFAULT_GRAPH_SETTINGS, graphSettings, saveGraphSettings } from '../../src/graph/settings';
 import { activateTab, closeTab, cycleTab, emptyTabs, keepTab } from '../../src/views/tabs';
 import { arrive, type PageTabs } from '../../src/views/useTabs';
@@ -74,8 +74,9 @@ describe('moving through the graph keeps how it is drawn', () => {
       const set = { layout: label, depth: '2', links: 'true' };
       expect(drawn()).toEqual(set);
 
-      // Every arrow, into pages open in a tab and pages that are not.
-      for (const key of ['ArrowLeft', 'ArrowRight', 'ArrowDown', 'ArrowUp', 'ArrowDown', 'ArrowLeft']) {
+      // Every arrow, into pages open in a tab and pages that are not: out, in, next, previous, next and out, each by the
+      // arrow that takes that step in this layout (LA-V93-R19).
+      for (const key of (['out', 'in', 'next', 'previous', 'next', 'out'] as const).map((s) => stepKey(layout, s))) {
         await step(key);
         expect(drawn(), `${key} to ${at()}`).toEqual(set);
       }
