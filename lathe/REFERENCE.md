@@ -2281,9 +2281,9 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 
 **Error or warning** · Lathe's · Kinds: [`constraint_test`](#kind-constraint_test), [`invariant_test`](#kind-invariant_test), [`specification_test`](#kind-specification_test), [`policy_test`](#kind-policy_test), [`domain_service_test`](#kind-domain_service_test), [`use_case_test`](#kind-use_case_test), [`view_test`](#kind-view_test), [`endpoint_test`](#kind-endpoint_test), [`flow_test`](#kind-flow_test), [`integration_test`](#kind-integration_test), [`pattern_rule_test`](#kind-pattern_rule_test)
 
-A test's `file` exists.
+A test's `file` exists, and so does that of a product kind's record that proves an obligation.
 
-For an automated or manual test a missing file is an error. A test that is not automated yet may name the file it will live in, so for it a missing file is a warning. The file must be a file under the product root, never a folder. Fix the path (relative to the product root), or write the file.
+For an automated or manual test a missing file is an error. A test that is not automated yet may name the file it will live in, so for it a missing file is a warning. The file must be a file under the product root, never a folder. A record of a product's own kind that proves an obligation and names a file is checked as an automated test is. Fix the path (relative to the product root), or write the file.
 
 <a id="check-test-file-missing-id"></a>
 
@@ -2291,9 +2291,9 @@ For an automated or manual test a missing file is an error. A test that is not a
 
 **Error** · Lathe's · Kinds: [`constraint_test`](#kind-constraint_test), [`invariant_test`](#kind-invariant_test), [`specification_test`](#kind-specification_test), [`policy_test`](#kind-policy_test), [`domain_service_test`](#kind-domain_service_test), [`use_case_test`](#kind-use_case_test), [`view_test`](#kind-view_test), [`endpoint_test`](#kind-endpoint_test), [`flow_test`](#kind-flow_test), [`integration_test`](#kind-integration_test), [`pattern_rule_test`](#kind-pattern_rule_test)
 
-An automated test's file names the test, so the code can be traced back to it.
+An automated test's file names the test, and so does that of a product kind's record that proves an obligation, so the code can be traced back to it.
 
-A test proves exactly its parent, and its file names the test's own ID as a whole ID (TL-LEND-INV01-T, not inside TL-LEND-INV01-T2), so a reader of the code finds the record and a reader of the record finds the code. Until it does, the test proves nothing. A missing file is test-file-missing instead; manual tests and tests not automated yet are not checked here. Put the test's ID in the test's name in the file.
+A test proves exactly its parent, and its file names the test's own ID as a whole ID (TL-LEND-INV01-T, not inside TL-LEND-INV01-T2), so a reader of the code finds the record and a reader of the record finds the code. Until it does, the test proves nothing. A missing file is test-file-missing instead; manual tests and tests not automated yet are not checked here. A record of a product's own kind that proves an obligation and names a file is held to the same rule, since it counts as proof only when its file names it. Put the test's ID in the test's name in the file.
 
 <a id="check-manual-test-file-silent"></a>
 

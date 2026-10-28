@@ -107,6 +107,39 @@ check('test-file-missing-id', () => {
     expect(await named("it('XEX-LEND-INV01-T is another prefix')")).toBe(false);
     expect(await named("it('PRE-EX-LEND-INV01-T is longer')")).toBe(false);
   });
+
+  it("LA-TRC-UC05-R06-T01 a product kind's record that proves an obligation has its file checked as a test's", async () => {
+    const data = adding(complete(), {
+      product_kind: [
+        { name: 'house_rule', product_id: 'EX', label: 'House rule', description: 'A rule of the house.', parent_kind: 'domain', stage: 'use-cases', obligation: true },
+        { name: 'script', product_id: 'EX', label: 'Script', description: 'A script.', parent_kind: 'domain', stage: 'technical-specification', obligation: false },
+        { name: 'rule_check', product_id: 'EX', label: 'Rule check', description: 'A script that checks a rule.', parent_kind: 'domain', stage: 'test-plan', obligation: false },
+      ],
+      product_kind_field: [
+        { kind: 'script', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' },
+        { kind: 'rule_check', position: 1, name: 'file', type: 'text', required: true, description: 'The file that runs it.' },
+      ],
+      product_relation: [
+        { name: 'enforces', source_kind: 'script', target_kind: 'house_rule', product_id: 'EX', role: 'design', forward_label: 'Enforces', reverse_label: 'Enforced by', description: 'The script enforces the rule.' },
+        { name: 'checks_by_script', source_kind: 'rule_check', target_kind: 'house_rule', product_id: 'EX', role: 'proof', forward_label: 'Checks', reverse_label: 'Checked by', description: 'The script checks the rule.' },
+      ],
+      house_rule: [{ id: 'EX-LEND-HR01', title: 'Quiet', domain_id: 'EX-LEND' }],
+      script: [{ id: 'EX-LEND-SC01', title: 'quiet.sh', domain_id: 'EX-LEND', file: 'bin/quiet.sh' }],
+      rule_check: [{ id: 'EX-LEND-RC01', title: 'quiet-check.sh', domain_id: 'EX-LEND', file: 'test/quiet-check.sh' }],
+      enforces: [{ source_id: 'EX-LEND-SC01', target_id: 'EX-LEND-HR01' }],
+      checks_by_script: [{ source_id: 'EX-LEND-RC01', target_id: 'EX-LEND-HR01' }],
+    });
+    const found = (ws: Workspace, name: string) => ofCheck(ws, name).map((p) => [p.severity, p.record]);
+    const clean = await loadData(data);
+    expect([...found(clean, 'test-file-missing'), ...found(clean, 'test-file-missing-id')]).toEqual([]);
+    // Neither file is written: only the rule check, which proves the rule, is a test whose file is missing.
+    const missing = await loadData(data, { missing: ['bin/quiet.sh', 'test/quiet-check.sh'] });
+    expect(found(missing, 'test-file-missing')).toEqual([['error', 'EX-LEND-RC01']]);
+    expect(ofCheck(missing, 'test-file-missing')[0].message).toBe('Rule check EX-LEND-RC01 names the file test/quiet-check.sh, which does not exist.');
+    // Both files leave their IDs out: again only the rule check is reported.
+    const silent = await loadData(data, { silent: ['EX-LEND-SC01', 'EX-LEND-RC01'] });
+    expect(found(silent, 'test-file-missing-id')).toEqual([['error', 'EX-LEND-RC01']]);
+  });
 });
 
 check('manual-test-file-silent', () => {
