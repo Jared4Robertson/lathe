@@ -20,7 +20,7 @@ const unrecorded = (ws: Workspace, productId: string) =>
   (ws.coverage.find((c) => c.product === productId && c.domain === null)?.gaps ?? []).filter((g) => g.missing === 'route-without-record').map((g) => g.message);
 
 describe('the route normal form', () => {
-  it('LA-TRC-DS03-T01 routes written each way have one normal form', () => {
+  it('LA-TRC-DS04-T01 routes written each way have one normal form', () => {
     for (const route of ['/tools/{toolId}/damage', '/tools/:id/damage', '/tools/<tool-id>/damage/', '/tools/[toolId]/damage', '/tools/${tool.id}/damage', '/tools//{id}/damage?note=1#top']) {
       expect(normalRoute(route), route).toBe('/tools/{}/damage');
     }

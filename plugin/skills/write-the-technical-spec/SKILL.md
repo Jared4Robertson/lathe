@@ -18,6 +18,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 1. `show` the design record you implement, and `list` its children to see whether it has its technical record already.
 2. Read the code: a technical record names a real unit in a real file, not a wish.
+3. Every source file must be named by a technical record, directly or through a folder a record names; coverage lists each one that is not as a `code-file-untraced` gap. Name the record the file implements, add the missing record when the file implements something real, or delete the file when it is dead. Tests, configs, generated files and build output are left out; `source` in `lathe.config.json` says which files are source.
 
 ## The kinds
 
