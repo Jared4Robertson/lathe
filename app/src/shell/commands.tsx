@@ -68,10 +68,11 @@ export interface ShortcutHint {
   aria: string | undefined;
 }
 
-/** How a command's shortcut is shown and announced, read from the keymap with its overrides. */
-export function useShortcutHint(id: string | undefined): ShortcutHint {
+/** How a command's shortcut is shown and announced, read from the keymap with its overrides; `nested` reads a graph step's Nested and Voronoi keys. */
+export function useShortcutHint(id: string | undefined, nested = false): ShortcutHint {
   const { commands, mac } = useKeymap();
-  const keys = id ? commands.find((c) => c.id === id)?.keys ?? [] : [];
+  const command = id ? commands.find((c) => c.id === id) : undefined;
+  const keys = (nested ? command?.nestedKeys : undefined) ?? command?.keys ?? [];
   const binding = keys[0] ?? '';
   return { text: binding ? formatBinding(binding, mac) : '', binding, aria: ariaKeyShortcuts(keys, mac) || undefined };
 }
@@ -237,7 +238,7 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
   const id = useId();
-  const shown = commands.filter((c) => c.keys.length > 0 && (!c.dynamic || available(c.id)) && (!q || titleOf(c).toLowerCase().includes(q) || c.keys.some((k) => formatBinding(k, mac).toLowerCase().includes(q))));
+  const shown = commands.filter((c) => c.keys.length > 0 && (!c.dynamic || available(c.id)) && (!q || titleOf(c).toLowerCase().includes(q) || [...c.keys, ...(c.nestedKeys ?? [])].some((k) => formatBinding(k, mac).toLowerCase().includes(q))));
   return (
     <Dialog label="Keyboard shortcuts" onClose={onClose} className="shortcut-sheet">
       <div className="dialog-head">
@@ -257,7 +258,15 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
                   {rows.map((c) => (
                     <tr key={c.id}>
                       <th scope="row">{titleOf(c)}</th>
-                      <td>{c.keys.map((k, i) => <span key={k}>{i > 0 && <span className="kbd-or"> or </span>}<Keys binding={k} mac={mac} /></span>)}</td>
+                      <td>
+                        {c.keys.map((k, i) => <span key={k}>{i > 0 && <span className="kbd-or"> or </span>}<Keys binding={k} mac={mac} /></span>)}
+                        {/* A graph step's keys differ by view: the Tree view's, then the Nested and Voronoi views'. */}
+                        {c.nestedKeys && <>
+                          <span className="kbd-or"> in Tree, </span>
+                          {c.nestedKeys.map((k, i) => <span key={k}>{i > 0 && <span className="kbd-or"> or </span>}<Keys binding={k} mac={mac} /></span>)}
+                          <span className="kbd-or"> in Nested and Voronoi</span>
+                        </>}
+                      </td>
                       <td className="cmd-id"><code>{c.id}</code></td>
                     </tr>
                   ))}

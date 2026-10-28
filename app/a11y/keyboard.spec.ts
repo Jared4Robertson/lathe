@@ -130,7 +130,7 @@ test.describe('keyboard', () => {
     await expect(page).toHaveURL(new RegExp(target!));
     // LA-V61-R42-T01: focus follows the box that became the center.
     await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.graph-box')?.getAttribute('data-id'))).toBe(target);
-    // The plain arrows step through the tree: Left to the parent, Right back in to its first child; the keyboard follows.
+    // In the Tree view the plain arrows step through the tree: Left to the parent, Right back in to its first child; the keyboard follows.
     const at = new URL(page.url()).pathname;
     await page.keyboard.press('ArrowLeft');
     await expect.poll(() => new URL(page.url()).pathname).not.toBe(at);
@@ -138,6 +138,16 @@ test.describe('keyboard', () => {
     await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.graph-box')?.getAttribute('data-id'))).toBe(decodeURIComponent(parent.slice(1)));
     await page.keyboard.press('ArrowRight');
     await expect.poll(() => new URL(page.url()).pathname).not.toBe(parent);
+    // In the Nested view (v switches to it), which draws children inside their parent, Up steps out and Down back in.
+    const child = new URL(page.url()).pathname;
+    await page.keyboard.press('v');
+    await expect(page.locator('.pane-graph .graph-flow')).toHaveAttribute('data-layout', 'nested');
+    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.graph-box')?.getAttribute('data-id'))).toBe(decodeURIComponent(child.slice(1)));
+    await page.keyboard.press('ArrowUp');
+    await expect.poll(() => new URL(page.url()).pathname).toBe(parent);
+    await expect.poll(() => page.evaluate(() => document.activeElement?.closest('.graph-box')?.getAttribute('data-id'))).toBe(decodeURIComponent(parent.slice(1)));
+    await page.keyboard.press('ArrowDown');
+    await expect.poll(() => new URL(page.url()).pathname).toBe(child);
   });
 
   test('LA-V61-R41-T02 fold and unfold a row with the keyboard', async ({ page }) => {
