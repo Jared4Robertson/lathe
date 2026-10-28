@@ -1,17 +1,17 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
-import { DOMAIN, FOCUS, GRAPH_CANVAS, GRAPH_HEADER, RECORD, SHELL } from './scenarios';
+import { DOMAIN, FOCUS, GRAPH_CANVAS, GRAPH_TOOLS, RECORD, SHELL } from './scenarios';
 import { reachableBoxes } from './scene';
 
 // LA-V61-R28-T01: moving between records through the nav, a link, a graph click, Back and quick
-// find keeps the shell, the pane bar and the side bar where they were. The page's content
-// changes (it is a new page), so shifts inside the wiki pane's scroll box and the side bar's
+// find keeps the shell, the page bar, the header strip, the wiki card and the side bar where they were. The page's content
+// changes (it is a new page), so shifts inside the wiki card's scroll box, the header strip's line and the side bar's
 // body are the change itself; the frame around them must hold still.
 
-const CONTENT = ['.pane-scroll', '.side-bar'];
+const CONTENT = ['.wiki-panel-scroll', '.header-strip', '.side-bar'];
 const KEYS = [...SHELL, ...FOCUS];
-/** A new page's title may be taller or shorter than the last one's, but must not jump back. */
-const TITLE = [FOCUS[1]];
+/** The header strip keeps one height whatever the title (LA-V96-R09): nothing in the frame resizes. */
+const TITLE: string[] = [];
 
 /** The IDs of the graph's boxes wholly inside its canvas, in DOM order (the map runs past the canvas's edges). */
 /**
@@ -38,7 +38,7 @@ test.describe('navigate', () => {
 
   test('LA-V61-R28-T01 through a link in the page', async ({ page }) => {
     await openPage(page, RECORD);
-    const link = page.locator('.pane-wiki .spec-body a.record-link[href^="/LA-"]').first();
+    const link = page.locator('.wiki-panel .spec-body a.record-link[href^="/LA-"]').first();
     const r = await step(page, 'navigate', 'through a link', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await link.click();
       await page.waitForURL((u) => !u.pathname.endsWith('LA-PLT-UC05'));
@@ -50,7 +50,7 @@ test.describe('navigate', () => {
     await openPage(page, `${RECORD}?stage=graph`);
     await page.locator('.graph-flow .graph-box').nth(1).waitFor({ state: 'attached' });
     await page.waitForTimeout(500);
-    const keys = [...KEYS, GRAPH_CANVAS, GRAPH_HEADER];
+    const keys = [...KEYS, GRAPH_CANVAS, GRAPH_TOOLS];
     const [inView] = await boxesInView(page, 'LA-PLT-UC05');
     expect(inView, 'a box in view').toBeTruthy();
     const r = await step(page, 'navigate', 'graph click', { keys, allow: CONTENT, resizes: TITLE }, async () => {
@@ -65,19 +65,19 @@ test.describe('navigate', () => {
     expectStable(back);
   });
 
-  // A new page starts at the top of the wiki pane. It must be drawn there from its first frame,
+  // A new page starts at the top of the wiki card. It must be drawn there from its first frame,
   // never drawn once at the last page's scroll and then moved up (a scroll set after paint). Back
   // comes back to the old page where it was scrolled, also from its first frame.
   test('LA-V61-R28-T01 from a page scrolled half-way, and Back', async ({ page }) => {
     await openPage(page, DOMAIN);
     await page.evaluate(() => {
-      const box = document.querySelector('.pane-wiki .pane-scroll')!;
+      const box = document.querySelector('.wiki-panel-scroll')!;
       box.scrollTop = (box.scrollHeight - box.clientHeight) / 2;
     });
     await page.waitForTimeout(300);
     // The row at the top of the view, and where it sits: Back must show it there again.
     const topRow = () => page.evaluate(() => {
-      const box = document.querySelector('.pane-wiki .pane-scroll')!.getBoundingClientRect();
+      const box = document.querySelector('.wiki-panel-scroll')!.getBoundingClientRect();
       const el = document.elementFromPoint(box.left + box.width / 2, box.top + 120)?.closest('li, p, h2, h3, section');
       return el ? { text: (el.textContent ?? '').slice(0, 80), top: Math.round(el.getBoundingClientRect().top) } : null;
     });
@@ -89,8 +89,8 @@ test.describe('navigate', () => {
       // after the frame's layout and paint), so it records what the Reader saw.
       const channel = new MessageChannel();
       channel.port1.onmessage = () => {
-        const box = document.querySelector('.pane-wiki .pane-scroll');
-        w.__frames.push({ top: Math.round(box?.scrollTop ?? -1), title: document.querySelector('.pane-wiki .pane-title h1')?.textContent ?? '' });
+        const box = document.querySelector('.wiki-panel-scroll');
+        w.__frames.push({ top: Math.round(box?.scrollTop ?? -1), title: document.querySelector('.header-strip h1')?.textContent ?? '' });
         if (!w.__framesStop) requestAnimationFrame(loop);
       };
       const loop = () => channel.port2.postMessage(null);
@@ -101,12 +101,12 @@ test.describe('navigate', () => {
       w.__framesStop = true;
       return w.__frames;
     });
-    const before = await page.locator('.pane-wiki .pane-title h1').textContent();
+    const before = await page.locator('.header-strip h1').textContent();
     // A link already in view, so the click does not scroll the page to reach it first: inside the
-    // pane, and not clipped away by a long list's own scroller (its middle is the link itself).
-    const links = '.pane-wiki .pane-scroll a.row-link[href^="/LA-EXP-"]';
+    // card, and not clipped away by a long list's own scroller (its middle is the link itself).
+    const links = '.wiki-panel-scroll a.row-link[href^="/LA-EXP-"]';
     const inView = await page.evaluate((sel) => {
-      const box = document.querySelector('.pane-wiki .pane-scroll')!.getBoundingClientRect();
+      const box = document.querySelector('.wiki-panel-scroll')!.getBoundingClientRect();
       return [...document.querySelectorAll(sel)].findIndex((a) => {
         const r = a.getBoundingClientRect();
         const hit = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2);
@@ -133,7 +133,7 @@ test.describe('navigate', () => {
       await page.waitForURL(/\/LA-EXP(\?|$)/);
     });
     expectStable(b);
-    const after = await page.locator('.pane-wiki .pane-title h1').textContent();
+    const after = await page.locator('.header-strip h1').textContent();
     const backFrames = await stop();
     const jumped = backFrames.filter((f, i) => i > 0 && f.title === after && backFrames[i - 1].title === after && f.top !== backFrames[i - 1].top);
     expect.soft(jumped, 'Back draws the page once, at its place').toEqual([]);

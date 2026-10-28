@@ -299,20 +299,21 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek, space }: { relat
   const margin = useMemo(() => (frame
     ? { left: FIT_MARGIN.left + frame.left, right: FIT_MARGIN.right + frame.right, top: FIT_MARGIN.top + frame.top, bottom: FIT_MARGIN.bottom + frame.bottom }
     : FIT_MARGIN), [frame]);
-  const fit = useCallback((animate: boolean) => {
+  const fit = useCallback((animate: boolean): boolean => {
     const box = wrapper.current?.getBoundingClientRect();
-    if (!placed || placed.rects.size === 0 || !box || box.width <= 0 || box.height <= 0) return;
+    if (!placed || placed.rects.size === 0 || !box || box.width <= 0 || box.height <= 0 || (space && !open)) return false;
     const motion = readMotion();
     // An open space too small to fit anything in fits on the whole stage.
     const room = box.width - margin.left - margin.right >= MIN_FIT && box.height - margin.top - margin.bottom >= MIN_FIT;
     setViewport(fitRects(placed.rects, box.width, box.height, room ? margin : FIT_MARGIN), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
-  }, [placed, setViewport, margin]);
+    return true;
+  }, [placed, setViewport, margin, space, open]);
   // A panel collapsed, opened or resized: the diagram glides to the new open space.
   const fittedMargin = useRef(margin);
   useEffect(() => {
     if (fittedMargin.current === margin) return;
     fittedMargin.current = margin;
-    fit(true);
+    fit(fitted.current);
   }, [margin, fit]);
   // The edge hints count every box past an edge: the faded context, and what a big diagram leaves outside.
   const centers = useMemo(() => (placed ? placed.erd.boxes.flatMap((b) => {
@@ -324,8 +325,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek, space }: { relat
   const fitted = useRef(false);
   useLayoutEffect(() => {
     if (!placed) return;
-    fit(fitted.current);
-    fitted.current = true;
+    if (fit(fitted.current)) fitted.current = true;
   }, [placed, fit]);
   // Fit again whenever the canvas changes size. It observes once, for the canvas's life, and only
   // acts on a real change: observing anew with each picture reported the size again at once and

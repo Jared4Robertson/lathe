@@ -7,7 +7,7 @@ import { expect, test, type Page } from '@playwright/test';
 // - the boxes of key elements, frame by frame, so a box that moves, or jumps and then corrects,
 //   or is thrown away and drawn anew (a remount), is caught even when no shift is reported.
 // A shift is "allowed" when every node it moved sits inside one of the step's `allow` selectors:
-// the thing the step means to change, such as the panes when a pane opens. Everything else is
+// the thing the step means to change, such as the wiki card's page when the focus moves. Everything else is
 // unexpected, and a step's unexpected shifts must add up to at most BUDGET. Transforms and
 // opacity never count as layout shifts, so a tokened glide or fade (UX-R04) is free.
 
@@ -189,12 +189,12 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
 export async function installProbes(page: Page, firstKeys: string[] = []) {
   await page.addInitScript(probes, { firstKeys, deferred: DEFERRED });
   // The scenarios read every page with the side bar open, as a Reader who opened it
-  // in the Wiki view too (it starts closed there); a choice made in a scenario is kept.
+  // on the Trace stage too (it starts closed there); a choice made in a scenario is kept.
   await page.addInitScript(() => {
     try {
       if (!localStorage.getItem('lathe:side-bar')) {
         const open = { open: true, view: 'details' };
-        localStorage.setItem('lathe:side-bar', JSON.stringify({ wiki: open, graph: open, erd: open, trace: open }));
+        localStorage.setItem('lathe:side-bar', JSON.stringify({ graph: open, erd: open, trace: open }));
       }
     } catch { /* storage unavailable: the defaults apply */ }
   });
@@ -263,7 +263,7 @@ export async function firstLoad(page: Page, scenario: string, url: string, optio
 }
 
 /** Opens a page to start a scenario from, without measuring the load, and waits for it to settle. */
-export async function openPage(page: Page, url: string, ready = '.focus-views .pane-title') {
+export async function openPage(page: Page, url: string, ready = '.header-strip h1') {
   await installProbes(page);
   await page.goto(url);
   await page.locator(ready).first().waitFor();

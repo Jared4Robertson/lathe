@@ -6,8 +6,13 @@ export const BUDGETS = {
   firstLoadKb: 250,
   /** From navigation to a record page that is drawn and answers input. */
   interactiveMs: 1500,
-  /** Main-thread work for a view switch, from the key press until the page is quiet again. */
+  /** Main-thread work for a stage switch, from the key press until the page is quiet again. */
   viewSwitchMs: 100,
+  /**
+   * Main-thread work for a camera move with every panel open (LA-V96-R21): collapsing the wiki card
+   * widens the open space and the graph recenters in it, from the key press until the glide has ended.
+   */
+  cameraMoveMs: 500,
   /**
    * Main-thread work for a graph re-center at depth 3, from the click until the glide has ended. The
    * 100 ms first asked for is not met at depth 3: a re-center there adds or removes up to 200 boxes, and the

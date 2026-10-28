@@ -1,25 +1,26 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
-import { DOMAIN, GRAPH_CANVAS, GRAPH_HEADER, ERD_CANVAS, RECORD } from './scenarios';
+import { DOMAIN, GRAPH_CANVAS, GRAPH_TOOLS, ERD_CANVAS, RECORD } from './scenarios';
 import { boxOf, cameraOf, clickBox, clippedLabels, focusDrawn, GRAPH, graphDrawn, hitAt, placesOf, pointOnBox, reachableBoxes, sceneOf } from './scene';
 import type { SceneHost } from '../src/graph/GraphPage';
 
 // LA-V61-R32-T01: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The camera
-// glides (the canvas draws each frame anew, which is no layout shift); the pane's title, the
+// glides (the canvas draws each frame anew, which is no layout shift); the page bar, the header strip, the
 // graph's header and its canvas must hold still, and the canvas must not be mounted anew.
 // LA-V93-R16-T03: focusing a domain, a stage, a folder and a record, then Back and Forward, moves the
 // camera only: no box of the one map changes its place or its size.
 
-const PANE_TITLE = '.pane-graph .pane-title';
+/** The header strip under the active tab, which names the focus: it holds still while its text changes. */
+const PANE_TITLE = '.header-strip';
 /**
  * The graph's keyboard layer. A re-center moves the camera over the one map (LA-EXP-DS09), and the
  * boxes the camera brings into view join the layer as it starts: that is the picture changing,
- * inside the canvas. The canvas, its header and the pane around it are keys and must hold still,
+ * inside the canvas. The canvas, its toolbar and the panels around it are keys and must hold still,
  * and anything else that shifts is still unexpected.
  */
 const GRAPH_BOXES = `${GRAPH} .graph-access`;
 const DRAWING = `${GRAPH} canvas`;
-const PANE_BAR = '.pane-graph > .pane-bar';
+const PANE_BAR = '.stage-layout > .page-bar';
 
 const nodes = (page: Page) => graphDrawn(page);
 
@@ -39,7 +40,7 @@ test.describe('graph', () => {
         await page.locator('.graph-depth button', { hasText: String(depth) }).click();
         await page.waitForTimeout(900);
       }
-      const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, DRAWING, '.side-bar-column'];
+      const keys = [PANE_BAR, PANE_TITLE, GRAPH_TOOLS, GRAPH_CANVAS, DRAWING, '.side-bar-column'];
       // Two re-centers: out to a neighbor, then on to one of its neighbors.
       for (const hop of [1, 2]) {
         const before = new URL(page.url()).pathname;
@@ -56,7 +57,7 @@ test.describe('graph', () => {
   test('LA-V61-R32-T01 change the depth', async ({ page }) => {
     await openPage(page, `${RECORD}?stage=graph`);
     await nodes(page);
-    const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, DRAWING];
+    const keys = [PANE_BAR, PANE_TITLE, GRAPH_TOOLS, GRAPH_CANVAS, DRAWING];
     for (const d of ['2', '3', '1']) {
       const r = await step(page, 'graph', `depth to ${d}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, () => page.locator('.graph-depth button', { hasText: d }).click());
       expectStable(r);
@@ -76,7 +77,7 @@ test.describe('graph', () => {
       }
     };
     await check('the product');
-    const keys = [PANE_BAR, PANE_TITLE, GRAPH_HEADER, GRAPH_CANVAS, DRAWING];
+    const keys = [PANE_BAR, PANE_TITLE, GRAPH_TOOLS, GRAPH_CANVAS, DRAWING];
     for (const id of ['LA-EXP', 'LA-EXP/use-cases', 'LA-EXP/use-cases/capability', 'LA-EXP-CAP03', 'LA-EXP-UC03']) {
       const before = new URL(page.url()).pathname;
       const r = await test.step(`LA-EXP-UC04-R10-T01 the Reader reaches ${id} through the stages and kind groups the nav shows`, () =>
@@ -162,7 +163,7 @@ test.describe('graph', () => {
     // Nested, every box keeps its rectangle and shows its shape's mark before its kind and ID line.
     await openPage(page, `${DOMAIN}?stage=graph`);
     await nodes(page);
-    await page.locator('.pane-graph .graph-layout button', { hasText: 'Nested' }).click();
+    await page.locator('.focus-stage .graph-layout button', { hasText: 'Nested' }).click();
     await graphDrawn(page, 'nested', 1300);
     const marks = (await sceneOf(page)).boxes
       .map((b) => ({ id: b.id, icon: b.icons.some((i) => i.draw === 'shape' && i.name === b.shape), outline: b.polygon !== null || b.view !== 'nested' }));
@@ -170,7 +171,7 @@ test.describe('graph', () => {
       expect(marks.length).toBeGreaterThan(5);
       expect(marks.filter((m) => !m.icon || m.outline)).toEqual([]);
     });
-    await page.locator('.pane-graph .graph-layout button', { hasText: 'Tree' }).click();
+    await page.locator('.focus-stage .graph-layout button', { hasText: 'Tree' }).click();
   });
 
   test('LA-V93-R10-T08 at depth 2 on a domain, the domain, its stages and their folders are framed in the canvas, each showing its full title wrapped on whole words', async ({ page }) => {
@@ -220,11 +221,11 @@ test.describe('graph', () => {
         await openPage(page, `/${domain}?stage=graph`);
         await nodes(page);
         if (layout === 'Tree') await page.locator('.graph-depth button', { hasText: '2' }).click();
-        else if (!(await page.locator('.pane-graph .graph-layout button', { hasText: layout }).getAttribute('aria-pressed'))?.includes('true')) await page.locator('.pane-graph .graph-layout button', { hasText: layout }).click();
+        else if (!(await page.locator('.focus-stage .graph-layout button', { hasText: layout }).getAttribute('aria-pressed'))?.includes('true')) await page.locator('.focus-stage .graph-layout button', { hasText: layout }).click();
         await graphDrawn(page, layout.toLowerCase(), 1300);
         // Framed, then zoomed in twice: every drawn box shows its title, and its whole label lies inside it (LA-PAT-APP-UX-R12).
         for (const z of [0, 1, 2]) {
-          if (z > 0) { await page.locator('.pane-graph .graph-zoom-in').click(); await page.waitForTimeout(600); }
+          if (z > 0) { await page.locator('.focus-stage .graph-zoom-in').click(); await page.waitForTimeout(600); }
           const s = await sceneOf(page);
           const c = s.canvas;
           expect(s.boxes.length, `${layout} at ${domain}: boxes drawn`).toBeGreaterThan(0);
@@ -253,7 +254,7 @@ test.describe('graph', () => {
         }
         // Zoomed in on the framed picture, twice.
         for (const z of [1, 2]) {
-          await page.locator('.pane-graph .graph-zoom-in').click();
+          await page.locator('.focus-stage .graph-zoom-in').click();
           await page.waitForTimeout(600);
           expect(await clippedLabels(page), `${scheme} ${focus} zoomed in ${z}`).toEqual([]);
         }
@@ -281,7 +282,7 @@ test.describe('graph', () => {
     expect(focused.lines).toEqual(before.lines);
     expect(focused.screen / before.screen).toBeCloseTo(focused.zoom / before.zoom, 1);
     // Zooming in by the camera's control: the same.
-    await page.locator('.pane-graph .graph-zoom-in').click();
+    await page.locator('.focus-stage .graph-zoom-in').click();
     await page.waitForTimeout(600);
     const zoomed = await size();
     await test.step('LA-V93-R07-T04 zooming the camera draws the label at its map size times the zoom', () => {
@@ -296,7 +297,7 @@ test.describe('graph', () => {
     await openPage(page, `${DOMAIN}?stage=erd`);
     await page.locator('.erd-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
-    const keys = ['.pane-erd > .pane-bar', '.pane-erd .pane-title', '.pane-erd .erd-header', ERD_CANVAS, '.pane-erd .erd-key'];
+    const keys = ['.stage-layout > .page-bar', '.header-strip', '.focus-stage .erd-tools', ERD_CANVAS, '.focus-stage .erd-key'];
     // An aggregate's boundary holds its entities: its head is where the boundary itself takes a click.
     const box = page.locator('.erd-flow .react-flow__node .erd-aggregate .erd-box-head').first();
     const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.side-bar'] }, async () => {
@@ -332,7 +333,7 @@ const drawnCount = async (page: Page) => (await sceneOf(page)).boxes.length;
 /**
  * A labeled record box, not the focus, with a good part of it in the canvas, and a point on it where
  * the pointer finds it. With `orFocus`, the focus itself when it is the only one (a framed leaf in the
- * Nested layout fills the pane).
+ * Nested layout fills the open space).
  */
 async function labeledInView(page: Page, orFocus = false): Promise<{ id: string; x: number; y: number }> {
   const s = await sceneOf(page);
@@ -359,7 +360,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
   {
     feature: 'LA-V93-R21-T01 the Layout switch and its v command',
     run: async (page, layout) => {
-      await expect(page.locator('.pane-graph .graph-layout button[aria-pressed="true"]')).toHaveText(LAYOUT_NAMES[layout]);
+      await expect(page.locator('.focus-stage .graph-layout button[aria-pressed="true"]')).toHaveText(LAYOUT_NAMES[layout]);
       await expect(page.locator(GRAPH)).toHaveAttribute('data-layout', layout);
     },
   },
@@ -371,9 +372,9 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
       await page.evaluate((to) => { window.history.pushState(null, '', `${to}?stage=graph`); window.dispatchEvent(new PopStateEvent('popstate')); }, LINKED);
       await page.waitForURL((u) => u.pathname === LINKED);
       await page.waitForTimeout(900);
-      await page.locator('.pane-graph .graph-links button').click();
+      await page.locator('.focus-stage .graph-links button').click();
       await expect.poll(async () => (await sceneOf(page)).lines.filter((l) => l.link).length).toBeGreaterThan(0);
-      await page.locator('.pane-graph .graph-links button').click();
+      await page.locator('.focus-stage .graph-links button').click();
       await expect.poll(async () => (await sceneOf(page)).lines.filter((l) => l.link).length).toBe(0);
       await page.goBack();
       await page.waitForURL((u) => u.pathname === here);
@@ -381,14 +382,16 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'LA-EXP-UC03-R18-T01 a click focuses a box, and the trail grows',
+    feature: 'LA-EXP-UC03-R18-T01 a click focuses a box, and the header strip names where it sits',
     run: async (page) => {
       const before = path(page);
       const { id, x, y } = await labeledInView(page);
       await page.mouse.click(x, y);
       await page.waitForURL((u) => u.pathname !== before);
       await focusDrawn(page, id);
-      expect(await page.locator('.pane-graph .graph-trail li').count()).toBeGreaterThanOrEqual(2);
+      await expect(page.locator('.header-strip .breadcrumb li').first()).toBeVisible();
+      // A record names itself by its ID in the strip; a group, which has none, by its name.
+      if (!id.includes('/')) await expect(page.locator('.header-strip-id')).toHaveText(id);
       await page.waitForTimeout(1300);
     },
   },
@@ -411,8 +414,8 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     feature: 'once the graph has focus, the plain arrow that steps out in this layout (Left in Tree, Up in Nested and Voronoi) steps out to the parent',
     run: async (page, layout) => {
       const here = path(page);
-      // The graph pane takes focus as a click on its canvas gives it.
-      await page.locator('.pane-graph .graph-flow').focus();
+      // The graph stage takes focus as a click on its canvas gives it.
+      await page.locator('.focus-stage .graph-flow').focus();
       await page.keyboard.press(layout === 'tree' ? 'ArrowLeft' : 'ArrowUp');
       await page.waitForURL((u) => u.pathname !== here);
       await page.goBack();
@@ -424,7 +427,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     feature: 'Tab reaches the drawn boxes with a visible focus ring, and Enter focuses one',
     run: async (page) => {
       const here = path(page);
-      await page.locator('.pane-graph .graph-box').first().focus();
+      await page.locator('.focus-stage .graph-box').first().focus();
       await page.keyboard.press('Tab');
       const id = await page.evaluate(() => (document.activeElement as HTMLElement | null)?.closest<HTMLElement>('.graph-box')?.dataset.id ?? '');
       expect(id, 'keyboard focus is on a box').not.toBe('');
@@ -441,11 +444,11 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     feature: 'the . command frames the focus again after a free zoom',
     run: async (page) => {
       const framed = await cameraOf(page);
-      await page.locator('.pane-graph .graph-zoom-out').click();
+      await page.locator('.focus-stage .graph-zoom-out').click();
       await page.waitForTimeout(600);
       expect(await cameraOf(page)).not.toBe(framed);
       // The graph takes focus, as a click on its canvas gives it (the count may be squeezed out of view by the toolbar).
-      await page.locator('.pane-graph .graph-flow').focus();
+      await page.locator('.focus-stage .graph-flow').focus();
       await page.keyboard.press('.');
       await page.waitForTimeout(1300);
       expect(await cameraOf(page)).toBe(framed);
@@ -456,20 +459,20 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     run: async (page, layout) => {
       if (layout !== 'tree') {
         // The Depth group keeps its slot but is neither shown nor reachable (LA-V93-R21).
-        const depthGroup = page.locator('.pane-graph [aria-label="Depth"]');
+        const depthGroup = page.locator('.focus-stage [aria-label="Depth"]');
         await expect(depthGroup).toBeHidden();
         await expect(depthGroup).toHaveAttribute('inert', '');
         return;
       }
       const counts: number[] = [];
       for (const d of ['1', '2', '3']) {
-        await page.locator('.pane-graph .graph-depth button', { hasText: d }).click();
-        await expect(page.locator('.pane-graph .graph-depth button', { hasText: d })).toHaveAttribute('aria-pressed', 'true');
+        await page.locator('.focus-stage .graph-depth button', { hasText: d }).click();
+        await expect(page.locator('.focus-stage .graph-depth button', { hasText: d })).toHaveAttribute('aria-pressed', 'true');
         await page.waitForTimeout(1300);
         counts.push(await drawnCount(page));
       }
       expect(counts.every((c) => c > 0), `drawn boxes at depths 1-3: ${counts}`).toBe(true);
-      await page.locator('.pane-graph .graph-depth button', { hasText: '1' }).click();
+      await page.locator('.focus-stage .graph-depth button', { hasText: '1' }).click();
       await page.waitForTimeout(1300);
     },
   },
@@ -477,17 +480,17 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     feature: 'a hidden kind keeps its space, and the minimap shows',
     run: async (page) => {
       const before = await placesOf(page);
-      await page.locator('.pane-graph .graph-filters > summary').click();
-      const kind = page.locator('.pane-graph .graph-filter-body fieldset').nth(1).locator('input[type="checkbox"]').first();
+      await page.locator('.focus-stage .graph-filters > summary').click();
+      const kind = page.locator('.focus-stage .graph-filter-body fieldset').nth(1).locator('input[type="checkbox"]').first();
       await kind.uncheck();
       await page.waitForTimeout(600);
       const after = await placesOf(page);
       for (const [id, place] of Object.entries(after)) if (before[id]) expect(place, id).toBe(before[id]);
       await kind.check();
-      await page.locator('.pane-graph .graph-filter-body input[role="switch"]').check();
-      await expect(page.locator('.pane-graph .graph-minimap')).toBeVisible();
-      await page.locator('.pane-graph .graph-filter-body input[role="switch"]').uncheck();
-      await page.locator('.pane-graph .graph-filters > summary').click();
+      await page.locator('.focus-stage .graph-filter-body input[role="switch"]').check();
+      await expect(page.locator('.focus-stage .graph-minimap')).toBeVisible();
+      await page.locator('.focus-stage .graph-filter-body input[role="switch"]').uncheck();
+      await page.locator('.focus-stage .graph-filters > summary').click();
     },
   },
   {
@@ -524,14 +527,14 @@ for (const layout of ['tree', 'nested', 'voronoi'] as const) {
   test(`LA-V93-R14-T02 every graph feature works in the ${LAYOUT_NAMES[layout]} layout`, async ({ page }) => {
     await openPage(page, `${RECORD}?stage=graph`);
     await nodes(page);
-    await page.locator('.pane-graph .graph-box[data-id^="LA-"]').nth(1).waitFor({ state: 'attached' });
+    await page.locator('.focus-stage .graph-box[data-id^="LA-"]').nth(1).waitFor({ state: 'attached' });
     await page.waitForTimeout(900);
     if (layout !== 'tree') {
       // v steps to the next layout: Nested, then Voronoi.
-      await page.locator('.pane-graph .graph-flow').focus();
+      await page.locator('.focus-stage .graph-flow').focus();
       for (let i = 0; i < (layout === 'nested' ? 1 : 2); i++) await page.keyboard.press('v');
       await expect(page.locator(GRAPH)).toHaveAttribute('data-layout', layout);
-      await page.locator('.pane-graph .graph-box[data-id^="LA-"]').nth(1).waitFor({ state: 'attached' });
+      await page.locator('.focus-stage .graph-box[data-id^="LA-"]').nth(1).waitFor({ state: 'attached' });
       await page.waitForTimeout(1300);
     }
     for (const row of PARITY) await test.step(row.feature, () => row.run(page, layout));
@@ -569,7 +572,7 @@ for (const layout of ['tree', 'nested', 'voronoi'] as const) {
       await test.step('the layout is kept for the session across a reload', async () => {
         await page.reload();
         await nodes(page);
-        await expect(page.locator('.pane-graph .graph-layout button[aria-pressed="true"]')).toHaveText(LAYOUT_NAMES[layout]);
+        await expect(page.locator('.focus-stage .graph-layout button[aria-pressed="true"]')).toHaveText(LAYOUT_NAMES[layout]);
       });
     }
   });

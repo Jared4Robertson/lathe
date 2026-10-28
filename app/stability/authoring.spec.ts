@@ -21,7 +21,7 @@ test.describe('Authoring flows', () => {
     await expect(page.locator('#main h1')).toHaveText('Record format');
     await expect(page.locator('#main').getByRole('heading', { name: 'How records are kept', level: 2 })).toBeVisible();
     // S02: a kind's page, from the side bar's Kind row.
-    await openPage(page, `${WITH_PROBLEM}?stage=graph`, '.pane-graph .graph-flow .graph-box');
+    await openPage(page, `${WITH_PROBLEM}?stage=graph`, '.focus-stage .graph-flow .graph-box');
     await page.getByRole('complementary', { name: 'Side bar' }).getByRole('link', { name: 'UC requirement', exact: true }).click();
     await page.waitForURL((u) => u.pathname === '/format/kinds/uc_requirement');
     await expect(page.locator('#main h1')).toHaveText('UC requirement');

@@ -27,10 +27,10 @@ function edit(table: string, id: string, column: string, paragraph: string, at: 
   return () => writeFileSync(file, before);
 }
 
-/** The element at the top of the wiki pane's view, and where it is. */
+/** The element at the top of the wiki card's view, and where it is. */
 async function topVisible(page: Page) {
   return page.evaluate(() => {
-    const box = document.querySelector('.pane-wiki .pane-scroll')!;
+    const box = document.querySelector('.wiki-panel-scroll')!;
     const top = box.getBoundingClientRect().top;
     const all = [...box.querySelectorAll<HTMLElement>('li, h2, h3, p, tr')];
     const el = all.find((e) => e.getBoundingClientRect().top >= top && e.getBoundingClientRect().height > 0);
@@ -40,7 +40,7 @@ async function topVisible(page: Page) {
 
 async function yOf(page: Page, text: string) {
   return page.evaluate((text) => {
-    const box = document.querySelector('.pane-wiki .pane-scroll')!;
+    const box = document.querySelector('.wiki-panel-scroll')!;
     const top = box.getBoundingClientRect().top;
     const el = [...box.querySelectorAll<HTMLElement>('li, h2, h3, p, tr')].find((e) => (e.textContent ?? '').trim().slice(0, 80) === text);
     return el ? Math.round(el.getBoundingClientRect().top - top) : null;
@@ -48,10 +48,10 @@ async function yOf(page: Page, text: string) {
 }
 
 test.describe('live reload', () => {
-  test('LA-V61-R33-T01 while scrolled half-way in the wiki', async ({ page }) => {
+  test('LA-V61-R33-T01 while scrolled half-way in the wiki card', async ({ page }) => {
     await openPage(page, DOMAIN);
     await page.evaluate(() => {
-      const box = document.querySelector('.pane-wiki .pane-scroll')!;
+      const box = document.querySelector('.wiki-panel-scroll')!;
       box.scrollTop = (box.scrollHeight - box.clientHeight) / 2;
     });
     await page.waitForTimeout(300);
@@ -59,9 +59,9 @@ test.describe('live reload', () => {
     expect(anchor, 'something is in view').not.toBeNull();
     let restore = () => {};
     try {
-      const r = await step(page, 'reload', 'data edited while scrolled', { keys: ['nav#nav', '.pane-wiki > .pane-bar', '.pane-wiki .pane-scroll', '.side-bar-column'], settle: 1500 }, async () => {
+      const r = await step(page, 'reload', 'data edited while scrolled', { keys: ['nav#nav', '.wiki-panel-head', '.wiki-panel-scroll', '.stage-layout > .side-bar-column'], settle: 1500 }, async () => {
         restore = edit('domain', DOMAIN.slice(1), 'description', 'A paragraph the stability suite adds while the page is open, above what is in view, to see that nothing in view moves when the data reloads.', 'top');
-        await expect(page.locator('.pane-wiki')).toContainText('the stability suite adds', { timeout: 20_000 });
+        await expect(page.locator('.wiki-panel')).toContainText('the stability suite adds', { timeout: 20_000 });
       });
       expectStable(r);
       expect.soft(await yOf(page, anchor!.text), `"${anchor!.text}" stays at the top of the view`).toBe(anchor!.y);
@@ -70,16 +70,16 @@ test.describe('live reload', () => {
     }
   });
 
-  test('LA-V61-R33-T01 with the graph open', async ({ page }) => {
+  test('LA-V61-R33-T01 with the graph on the stage', async ({ page }) => {
     await openPage(page, `${RECORD}?stage=graph`);
-    await page.locator('.pane-graph .graph-flow .graph-box').first().waitFor({ state: 'attached' });
+    await page.locator('.focus-stage .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.waitForTimeout(500);
     let restore = () => {};
     try {
-      const keys = ['.pane-graph .graph-canvas', '.pane-graph .graph-header', '.pane-graph .graph-flow canvas', '.pane-wiki > .pane-bar'];
-      const r = await step(page, 'reload', 'data edited with the graph open', { keys, allow: ['.pane-wiki .pane-scroll', '.side-bar'], settle: 1500 }, async () => {
+      const keys = ['.focus-stage .graph-canvas', '.focus-stage .graph-tools', '.focus-stage .graph-flow canvas', '.wiki-panel-head'];
+      const r = await step(page, 'reload', 'data edited with the graph open', { keys, allow: ['.wiki-panel-scroll', '.side-bar'], settle: 1500 }, async () => {
         restore = edit('use_case', RECORD.slice(1), 'goal', 'Another paragraph from the stability suite, with the graph open.', 'end');
-        await expect(page.locator('.pane-wiki')).toContainText('with the graph open', { timeout: 20_000 });
+        await expect(page.locator('.wiki-panel')).toContainText('with the graph open', { timeout: 20_000 });
       });
       expectStable(r);
     } finally {
