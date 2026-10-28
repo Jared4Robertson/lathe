@@ -1,6 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD } from '../stability/scenarios';
 import { audit, LOOKS, useLook, type Finding } from './axe';
+import { withChat } from './chat';
 
 // LA-V61-R40-T01: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
 // desktop and phone widths, in the Lathe theme's light and dark and in High contrast's
@@ -145,6 +146,20 @@ const DESKTOP: State[] = [
     await open(page, EDITED, '.header-strip .crumb-more-button');
     await page.locator('.header-strip .crumb-more-button').click();
     await page.locator('.header-strip .crumb-menu').waitFor();
+  } },
+  // The desktop app's chat (LA-V99), with a stand-in for the shell: a conversation with a tool call open and a
+  // permission prompt, and the session picker with its warning about a session open in another client.
+  { name: 'the chat, a conversation with a tool call open and a permission prompt', run: async (page) => {
+    await withChat(page, RECORD.slice(1));
+    await open(page, RECORD, '.chat-log .chat-item');
+    await page.locator('.chat-tool-row').first().click();
+    await page.locator('.chat-tool-body').waitFor();
+  } },
+  { name: 'the chat, its session picker warning of a session open elsewhere', run: async (page) => {
+    await withChat(page, RECORD.slice(1), 'picker');
+    await open(page, RECORD, '.chat-session-open');
+    await page.locator('.chat-session-open', { hasText: 'Model the Explorer' }).click();
+    await page.locator('.chat-warning').waitFor();
   } },
   { name: 'a tooltip on keyboard focus', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');

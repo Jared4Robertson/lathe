@@ -1,13 +1,15 @@
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import { isNumber, readPref, writePref } from '../shell/prefs';
 import type { GraphLayout, GraphSettings } from './GraphPage';
 import { NO_FILTERS } from './model';
 
 // The one reader setting for the browser session, shared by every tab and every page (LA-V93-R72):
 // how the graph is drawn (its layout, depth, filters, Links switch and minimap), and whether the
-// wiki card is open and how wide it is. Moving through the stage (an arrow step, a click or Enter
-// on a box, a link, a tab, Back or Forward) never changes it; only the person changing a setting
-// does: the graph's toolbar, the v, +/- and w keys, the card's button and its resize handle.
+// wiki card is open and how wide it is, and whether the desktop app's chat panel is open and how
+// wide (LA-PLT-UC19). Moving through the stage (an arrow step, a click or Enter on a box, a link, a
+// tab, Back or Forward) never changes it; only the person changing a setting does: the graph's
+// toolbar, the v, +/- and w keys, the card's and the chat's buttons and resize handles. Every part
+// of the page that reads it reads the one stored value, so a change in one is seen by all.
 // Kept apart from GraphPage.tsx, which is loaded with import() when the graph is first shown.
 
 export const SETTINGS_KEY = 'lathe:session-settings';
@@ -20,26 +22,37 @@ export const DEFAULT_CARD: CardSettings = { open: true, width: null };
 export const CARD_MIN = 300;
 export const CARD_MAX = 900;
 
-export interface SessionSettings { graph: GraphSettings; card: CardSettings }
+/** The desktop app's chat panel: open or closed, and its width in px (null: its default). */
+export interface ChatSettings { open: boolean; width: number | null }
+export const DEFAULT_CHAT: ChatSettings = { open: false, width: null };
+/** The chat's narrowest, default and widest, in px. */
+export const CHAT_MIN = 320;
+export const CHAT_DEFAULT = 400;
+export const CHAT_MAX = 760;
+
+export interface SessionSettings { graph: GraphSettings; card: CardSettings; chat: ChatSettings }
 
 interface Stored {
   layout: GraphLayout; depth: number; hiddenKinds: string[]; hiddenRelations: string[]; links: boolean; minimap: boolean;
-  card: boolean; cardWidth: number | null;
+  card: boolean; cardWidth: number | null; chat: boolean; chatWidth: number | null;
 }
 /** Stored settings in today's form; anything else (an older form included) is dropped for the defaults. */
 const isStored = (v: unknown): v is Stored => {
   if (!v || typeof v !== 'object') return false;
   const s = v as Stored;
   return (s.layout === 'tree' || s.layout === 'nested' || s.layout === 'voronoi') && isNumber(s.depth) && Array.isArray(s.hiddenKinds) && Array.isArray(s.hiddenRelations)
-    && typeof s.links === 'boolean' && typeof s.minimap === 'boolean' && typeof s.card === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth));
+    && typeof s.links === 'boolean' && typeof s.minimap === 'boolean' && typeof s.card === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth))
+    && typeof s.chat === 'boolean' && (s.chatWidth === null || isNumber(s.chatWidth));
 };
 const isAny = (_v: unknown): _v is unknown => true;
-const clampWidth = (w: number | null) => (w === null ? null : Math.round(Math.min(CARD_MAX, Math.max(CARD_MIN, w))));
+const clamp = (min: number, max: number) => (w: number | null) => (w === null ? null : Math.round(Math.min(max, Math.max(min, w))));
+const clampWidth = clamp(CARD_MIN, CARD_MAX);
+const clampChat = clamp(CHAT_MIN, CHAT_MAX);
 
 /** The session's settings, or the defaults when none are stored. */
 export function sessionSettings(): SessionSettings {
   const s = readPref<unknown>(SETTINGS_KEY, null, isAny, 'session');
-  if (!isStored(s)) return { graph: DEFAULT_GRAPH_SETTINGS, card: DEFAULT_CARD };
+  if (!isStored(s)) return { graph: DEFAULT_GRAPH_SETTINGS, card: DEFAULT_CARD, chat: DEFAULT_CHAT };
   return {
     graph: {
       layout: s.layout,
@@ -49,29 +62,46 @@ export function sessionSettings(): SessionSettings {
       minimap: s.minimap,
     },
     card: { open: s.card, width: clampWidth(s.cardWidth) },
+    chat: { open: s.chat, width: clampChat(s.chatWidth) },
   };
 }
 
 /** Sets the session's settings: only the person changing a setting calls this. */
-export function saveSessionSettings({ graph: g, card }: SessionSettings) {
+export function saveSessionSettings({ graph: g, card, chat }: SessionSettings) {
   const stored: Stored = {
     layout: g.layout, depth: g.depth, hiddenKinds: [...g.filters.hiddenKinds], hiddenRelations: [...g.filters.hiddenRelations], links: g.links, minimap: g.minimap,
-    card: card.open, cardWidth: clampWidth(card.width),
+    card: card.open, cardWidth: clampWidth(card.width), chat: chat.open, chatWidth: clampChat(chat.width),
   };
   writePref(SETTINGS_KEY, stored, 'session');
+  for (const listener of listeners) listener();
 }
+
+// The one value every reader shares: read again only when the stored text changes.
+const listeners = new Set<() => void>();
+let cached: { raw: string | null; value: SessionSettings } | null = null;
+const rawStored = () => { try { return window.sessionStorage.getItem(SETTINGS_KEY); } catch { return null; } };
+function current(): SessionSettings {
+  const raw = rawStored();
+  if (!cached || cached.raw !== raw) cached = { raw, value: sessionSettings() };
+  return cached.value;
+}
+const subscribe = (listener: () => void) => { listeners.add(listener); return () => { listeners.delete(listener); }; };
 
 /** The session's settings, and the setters for the person's own changes. */
 export function useSessionSettings() {
-  const [settings, setState] = useState(sessionSettings);
-  const latest = useRef(settings);
-  latest.current = settings;
-  const save = useCallback((next: SessionSettings) => { latest.current = next; saveSessionSettings(next); setState(next); }, []);
-  const setGraph = useCallback((graph: GraphSettings) => save({ ...latest.current, graph }), [save]);
+  const settings = useSyncExternalStore(subscribe, current, current);
+  const setGraph = useCallback((graph: GraphSettings) => saveSessionSettings({ ...current(), graph }), []);
   const setCard = useCallback((patch: Partial<CardSettings>) => {
-    const card = { ...latest.current.card, ...patch };
+    const was = current();
+    const card = { ...was.card, ...patch };
     card.width = clampWidth(card.width);
-    if (card.open !== latest.current.card.open || card.width !== latest.current.card.width) save({ ...latest.current, card });
-  }, [save]);
-  return { graph: settings.graph, card: settings.card, setGraph, setCard };
+    if (card.open !== was.card.open || card.width !== was.card.width) saveSessionSettings({ ...was, card });
+  }, []);
+  const setChat = useCallback((patch: Partial<ChatSettings>) => {
+    const was = current();
+    const chat = { ...was.chat, ...patch };
+    chat.width = clampChat(chat.width);
+    if (chat.open !== was.chat.open || chat.width !== was.chat.width) saveSessionSettings({ ...was, chat });
+  }, []);
+  return { graph: settings.graph, card: settings.card, chat: settings.chat, setGraph, setCard, setChat };
 }

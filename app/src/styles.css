@@ -86,13 +86,16 @@ html { font-size: calc(var(--text-size) * 16 / 15); }
 body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(--line-height) var(--body); }
 /* The app (LA-V96): the stage behind everything, the nav and the page's panels floating over it, inset from the window
    and each other by --float-inset. A page with no stage (the product list, Checks, the format, Appearance) floats as one
-   panel right of the nav. On a phone the shell is a top bar above the page, with drawers. */
-.app { position: relative; height: 100%; box-sizing: border-box; overflow: hidden; background: var(--shell); --nav-space: calc(var(--nav-width, 336px) + 2 * var(--float-inset)); }
+   panel right of the nav. In the desktop app the chat panel floats at the right edge, the full height, and the
+   page's panels keep --chat-space clear of it, as they keep --nav-space clear of the nav. On a phone the shell is a top
+   bar above the page, with drawers. */
+.app { position: relative; height: 100%; box-sizing: border-box; overflow: hidden; background: var(--shell); --nav-space: calc(var(--nav-width, 336px) + 2 * var(--float-inset)); --chat-space: var(--float-inset); }
+.app.with-chat { --chat-space: calc(var(--chat-width, 400px) + 2 * var(--float-inset)); }
 .app.nav-collapsed { --nav-space: calc(56px + 2 * var(--float-inset)); }
 .app:not(.is-narrow) > .menu { position: absolute; z-index: 20; top: var(--float-inset); bottom: var(--float-inset); left: var(--float-inset); width: var(--nav-width, 336px); }
 .app.nav-collapsed:not(.is-narrow) > .menu { width: 56px; }
 .app:not(.is-narrow) > .app-nav-handle { position: absolute; z-index: 21; top: var(--float-inset); bottom: var(--float-inset); left: calc(var(--nav-space) - var(--float-inset)); width: var(--float-inset); }
-.app:not(.is-narrow) > main { position: absolute; top: var(--float-inset); right: var(--float-inset); bottom: var(--float-inset); left: var(--nav-space); }
+.app:not(.is-narrow) > main { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); }
 .app:not(.is-narrow) > main.stage-page { inset: 0; }
 /* Frosted panels: mostly opaque, the stage showing through as shape and color behind a blur; the dense ones (the nav,
    the tab panel, the side bar, a stage's tools) closer to opaque than the wiki card. Opaque under reduced transparency. */
@@ -965,15 +968,15 @@ a.row-link.row-link:focus-visible { outline: none; }
    top from the nav to the right edge, so its controls never move; the wiki card floats at the left below it, a third of
    the space right of the nav wide until resized; the side bar floats at the right below it. The stage measures what they leave (openSpace.ts) and sets
    --open-* and --frame-* on itself, where its own tools float. */
-.stage-layout { position: absolute; inset: 0; --side-space: var(--float-inset); --below-strip: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); }
-.stage-layout.with-side-bar { --side-space: calc(var(--side-bar-width, 340px) + 2 * var(--float-inset)); }
+.stage-layout { position: absolute; inset: 0; --side-space: var(--chat-space); --below-strip: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); }
+.stage-layout.with-side-bar { --side-space: calc(var(--side-bar-width, 340px) + var(--float-inset) + var(--chat-space)); }
 .focus-stage { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: var(--paper); }
 .tab-body { position: absolute; inset: 0; pointer-events: none; }
 .tab-body > * { pointer-events: auto; }
-.stage-layout:not(.is-phone) > .page-bar { position: absolute; z-index: 3; top: var(--float-inset); left: var(--nav-space); right: var(--float-inset); border: 1px solid var(--float-border); border-bottom: 0; border-radius: var(--panel-radius) var(--panel-radius) 0 0; }
+.stage-layout:not(.is-phone) > .page-bar { position: absolute; z-index: 3; top: var(--float-inset); left: var(--nav-space); right: var(--chat-space); border: 1px solid var(--float-border); border-bottom: 0; border-radius: var(--panel-radius) var(--panel-radius) 0 0; }
 /* The header strip (HeaderStrip.tsx): directly under the active tab, one line: the trail, the kind, ID and title (cut
    with an ellipsis, whole in its tooltip), and the stage's counts at the right. */
-.header-strip { position: absolute; z-index: 3; top: calc(var(--float-inset) + var(--page-bar-height)); left: var(--nav-space); right: var(--float-inset); box-sizing: border-box; height: var(--strip-height); display: flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid var(--float-border); border-radius: 0 0 var(--panel-radius) var(--panel-radius); font-size: 0.8rem; white-space: nowrap; }
+.header-strip { position: absolute; z-index: 3; top: calc(var(--float-inset) + var(--page-bar-height)); left: var(--nav-space); right: var(--chat-space); box-sizing: border-box; height: var(--strip-height); display: flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid var(--float-border); border-radius: 0 0 var(--panel-radius) var(--panel-radius); font-size: 0.8rem; white-space: nowrap; }
 .stage-layout.is-phone > .header-strip { position: static; flex: none; border-width: 0 0 1px; border-radius: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--sheet); }
 .header-strip-trail { flex: 0 1 auto; min-width: 0; max-width: 45%; }
 .header-strip-sep { flex: none; color: var(--muted); }
@@ -992,7 +995,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .wiki-panel-handle { position: absolute; z-index: 3; top: var(--panel-radius); bottom: var(--panel-radius); right: calc(-1 * var(--float-inset)); width: var(--float-inset); display: grid; grid-template-columns: minmax(0, 1fr); }
 .wiki-panel.is-sheet { position: static; width: auto; max-width: none; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 /* The side bar, floating at the right; its handle at its left edge. */
-.stage-layout > .side-bar-column { position: absolute; z-index: 3; top: var(--below-strip); bottom: var(--float-inset); right: var(--float-inset); width: var(--side-bar-width, 340px); max-width: calc(100% - var(--nav-space) - var(--float-inset)); box-sizing: border-box; overflow: visible; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
+.stage-layout > .side-bar-column { position: absolute; z-index: 3; top: var(--below-strip); bottom: var(--float-inset); right: var(--chat-space); width: var(--side-bar-width, 340px); max-width: calc(100% - var(--nav-space) - var(--chat-space)); box-sizing: border-box; overflow: visible; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
 .stage-layout > .side-bar-column > .side-bar.record-side { border-radius: var(--panel-radius); background: none; }
 .stage-layout > .side-bar-column .side-bar-head { background: var(--float-dense); }
 .side-bar-handle.resize-handle { position: absolute; z-index: 4; top: var(--panel-radius); bottom: var(--panel-radius); left: calc(-1 * var(--float-inset)); width: var(--float-inset); }
@@ -1006,7 +1009,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .focus-stage .graph-controls { left: calc(var(--frame-left, 0px) + 4px); bottom: calc(var(--frame-bottom, 0px) + 4px); }
 .focus-stage .graph-minimap { right: calc(var(--frame-right, 0px) + 4px); bottom: calc(var(--frame-bottom, 0px) + 4px); }
 .focus-stage .graph-edge-hints { inset: var(--frame-top, 0px) var(--frame-right, 0px) var(--frame-bottom, 0px) var(--frame-left, 0px); }
-.stage-page > .focus-missing { position: absolute; top: var(--float-inset); right: var(--float-inset); bottom: var(--float-inset); left: var(--nav-space); background: var(--paper); }
+.stage-page > .focus-missing { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); background: var(--paper); }
 .stage-page > .error { position: absolute; z-index: 5; bottom: var(--float-inset); left: var(--nav-space); margin: 0; }
 /* On a phone the stage fills what the bars leave; the side bar is a drawer from the right. */
 .stage-layout.is-phone { position: static; height: 100%; display: flex; flex-direction: column; }

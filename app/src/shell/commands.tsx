@@ -361,5 +361,9 @@ declare global {
     openRecordInEditor: (id: string) => void;
     copyRecordId: (id: string) => void;
     showRecordMenu: (id: string) => void;
+    /** The chat panel's Claude Code (LA-PLT-UC19). */
+    chat: import('../chat/types').ChatBridge;
+    /** Answers the app bridge's questions for Lathe's MCP tools: what the Reader is looking at, and opening a record. */
+    onAppRequest: (handler: (request: import('../chat/types').AppRequest) => unknown) => () => void;
   }
 }

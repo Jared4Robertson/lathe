@@ -13,8 +13,8 @@
 export type ChatItem =
   | { kind: 'user'; id: string; text: string }
   | { kind: 'assistant'; id: string; text: string; streaming: boolean }
-  | { kind: 'tool'; id: string; name: string; summary: string; input: string; result: string | null; status: 'running' | 'done' | 'error' }
-  | { kind: 'permission'; id: string; tool: string; summary: string; input: string; reason: string | null; answer: 'pending' | 'allowed' | 'denied' | 'cancelled' }
+  | { kind: 'tool'; id: string; name: string; label: string; summary: string; input: string; result: string | null; status: 'running' | 'done' | 'error' }
+  | { kind: 'permission'; id: string; tool: string; label: string; summary: string; input: string; reason: string | null; answer: 'pending' | 'allowed' | 'denied' | 'cancelled' }
   | { kind: 'notice'; id: string; text: string; tone: 'info' | 'error' };
 
 /** idle: waiting for the Owner; running: a turn is under way; closed: no process (the next message starts one). */
@@ -163,7 +163,7 @@ function assistantBlocks(items: ChatItem[], message: Json, streamed: boolean): C
     } else if (block.type === 'tool_use' && typeof block.id === 'string') {
       const name = str(block.name) ?? 'tool';
       const existing = next.find((i) => i.id === block.id);
-      if (!existing) next = upsert(next, { kind: 'tool', id: block.id, name, summary: toolSummary(name, block.input), input: pretty(block.input), result: null, status: 'running' });
+      if (!existing) next = upsert(next, { kind: 'tool', id: block.id, name, label: toolLabel(name), summary: toolSummary(name, block.input), input: pretty(block.input), result: null, status: 'running' });
     }
   }
   // A streamed message's text is complete once the message is.
@@ -234,7 +234,7 @@ export function applyLine(state: ChatState, cursor: StreamCursor, line: string):
       if (request?.subtype !== 'can_use_tool' || !id) return same;
       const tool = str(request.tool_name) ?? 'tool';
       const reason = str(request.decision_reason) ?? str(request.description) ?? str(request.title);
-      const item: ChatItem = { kind: 'permission', id, tool, summary: toolSummary(tool, request.input), input: pretty(request.input), reason, answer: 'pending' };
+      const item: ChatItem = { kind: 'permission', id, tool, label: toolLabel(tool), summary: toolSummary(tool, request.input), input: pretty(request.input), reason, answer: 'pending' };
       return { state: { ...state, items: upsert(state.items, item) }, cursor };
     }
     case 'control_cancel_request': {
