@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { domainFolders } from '../src/specs/folders';
 import { treeChildren, treeParent } from '../src/graph/tree';
 import { modelIndex, modelWorkspace } from './fixtures/model';
-import { main, openApp, openSideBar, section } from './helpers';
+import { main, openApp, openSideBar, section, stageOf } from './helpers';
 
 // How the nav, the domain, product and group pages and the record page read a domain by stage and
 // kind (LA-V90, LA-V91, LA-V92): a group that is a record links and one the app computes only
@@ -43,19 +43,19 @@ describe('groups by stage and kind', () => {
     expect(stage).toHaveAttribute('aria-expanded', 'false');
     expect(stage.closest('li')!.querySelector(':scope > a')).toBeNull();
     await user.click(stage);
-    const kind = head(list('Use cases of Shopping'), /^Capabilities/);
+    // The capability, a record, links to its own page; Use cases holds only capabilities, so lists them itself.
+    expect(within(list('Use cases of Shopping')).getByRole('link', { name: 'Buying' })).toHaveAttribute('href', '/DM-SHOP-CAP01');
+    await user.click(head(folders, /^Interaction design/));
+    const kind = head(list('Interaction design of Shopping'), /^Flows/);
     expect(kind.tagName).toBe('BUTTON');
     expect(kind.closest('li')!.querySelector(':scope > a')).toBeNull();
-    await user.click(kind);
-    // The capability, a record, links to its own page.
-    expect(within(list('Capabilities of Shopping')).getByRole('link', { name: 'Buying' })).toHaveAttribute('href', '/DM-SHOP-CAP01');
   });
 
   it('LA-V90-R02-T02 On the domain page, a capability heading its use cases links to its page, and the stage and kind headings are not links', async () => {
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     for (const h of main().querySelectorAll('h2.stage-title, h3')) expect(h.querySelector('a'), h.textContent!).toBeNull();
-    const capabilities = section(/^Capabilities/);
+    const capabilities = stageOf('use-cases');
     expect(within(capabilities).getByRole('link', { name: /DM-SHOP-CAP01/ })).toHaveAttribute('href', '/DM-SHOP-CAP01');
   });
 

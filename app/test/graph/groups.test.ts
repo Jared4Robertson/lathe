@@ -61,7 +61,10 @@ describe('graph groups', () => {
     const domain = neighborhood(index, 'P-D', 1);
     expect(groups(domain)).toEqual([...STAGES, 'P-D/question'].sort());
     expect(domain.nodes.find((x) => x.id === 'P-D/use-cases')).toMatchObject({ title: 'Use cases (1)', distance: 1, group: { parent: 'P-D', owner: 'P-D', count: 1 } });
-    expect(groups(neighborhood(index, 'P-D', 2))).toEqual(expect.arrayContaining(['P-D/use-cases/capability', 'P-D/technical-specification/table']));
+    expect(groups(neighborhood(index, 'P-D', 2))).toEqual(expect.arrayContaining(['P-D/domain-model/aggregate', 'P-D/technical-specification/table']));
+    // Use cases holds only capabilities, so it holds them itself: no folder between.
+    expect(groups(neighborhood(index, 'P-D', 2))).not.toContain('P-D/use-cases/capability');
+    expect(spine(neighborhood(index, 'P-D', 2))).toContain('P-D/use-cases > P-D-CAP01');
     // The spine runs through a group: the domain to its questions' group, the group to the question.
     const two = neighborhood(index, 'P-D', 2);
     expect(spine(two)).toContain('P-D > P-D/question');
@@ -89,8 +92,9 @@ describe('graph groups', () => {
 
   it('LA-V93-R10-T04 At depth 1 the graph frames the tree around the focus: its parent or folder at the left edge, its children or their groups, and no other links', () => {
     const at = (focus: string) => neighborhood(grouped, focus, 1);
-    // A capability in its folder: the folder at the left edge, its use cases beside it; no siblings.
-    expect(ids(at('P-D-CAP01'))).toEqual(['P-D-CAP01', 'P-D-UC01', 'P-D-UC02', 'P-D/use-cases/capability']);
+    // A capability in its stage (Use cases holds only capabilities): the stage at the left edge, its use cases beside
+    // it; no siblings.
+    expect(ids(at('P-D-CAP01'))).toEqual(['P-D-CAP01', 'P-D-UC01', 'P-D-UC02', 'P-D/use-cases']);
     // A domain: its product, its stages and the open questions' group.
     expect(ids(at('P-D'))).toEqual(['P', 'P-D', ...STAGES, 'P-D/question'].sort());
     // A record with several kinds of children reaches them through their groups.
@@ -123,9 +127,9 @@ describe('graph groups', () => {
     // A group is one column after its parent, and its members one column after the group.
     const column = (n: Neighborhood, id: string) => n.nodes.find((x) => x.id === id)!.column;
     const fromDomain = neighborhood(index, 'P-D', 3);
-    expect(column(fromDomain, 'P-D/use-cases')).toBe(column(fromDomain, 'P-D') + 1);
-    expect(column(fromDomain, 'P-D/use-cases/capability')).toBe(column(fromDomain, 'P-D/use-cases') + 1);
-    expect(column(fromDomain, 'P-D-CAP01')).toBe(column(fromDomain, 'P-D/use-cases/capability') + 1);
+    expect(column(fromDomain, 'P-D/domain-model')).toBe(column(fromDomain, 'P-D') + 1);
+    expect(column(fromDomain, 'P-D/domain-model/aggregate')).toBe(column(fromDomain, 'P-D/domain-model') + 1);
+    expect(column(fromDomain, 'P-D-A1')).toBe(column(fromDomain, 'P-D/domain-model/aggregate') + 1);
     const n = neighborhood(grouped, 'P-D/domain-model/aggregate', 2);
     const map = graphMap(grouped, 'P');
     const x = (id: string) => map.nodes.get(id)!.x;
@@ -157,7 +161,8 @@ describe('graph groups', () => {
     // A kind group and a folder go with their kind; a stage has no kind of its own and stays.
     expect(ids(neighborhood(grouped, 'P-D-A4', 1, filters(['command'])))).not.toContain('P-D-A4/command');
     expect(ids(neighborhood(index, 'P-D', 1, filters(['question'])))).not.toContain('P-D/question');
-    expect(ids(neighborhood(index, 'P-D', 2, filters(['capability'])))).not.toContain('P-D/use-cases/capability');
+    expect(ids(neighborhood(index, 'P-D', 2, filters(['aggregate'])))).not.toContain('P-D/domain-model/aggregate');
+    expect(ids(neighborhood(index, 'P-D', 2, filters(['aggregate'])))).toContain('P-D/domain-model');
     expect(ids(neighborhood(index, 'P-D', 2, filters(['capability'])))).toContain('P-D/use-cases');
     expect(ids(neighborhood(index, 'P-D', 4, filters(['use_case'])))).not.toContain('P-D-UC01');
     expect(groups(neighborhood(index, 'P-D', 2, filters([], ['parent'])))).toEqual([]);
