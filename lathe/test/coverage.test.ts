@@ -50,7 +50,8 @@ describe('coverage of the complete product', () => {
 
   it('LA-TRC-UC06-R02-T01 counts the tests of each scope by state', () => {
     expect(clean.coverage[0].tests).toEqual({ automated: 11, manual: 2, not_automated: 0 });
-    expect(clean.coverage[1].tests).toEqual({ automated: 0, manual: 0, not_automated: 0 });
+    // Outside every domain: the standard rule's test.
+    expect(clean.coverage[1].tests).toEqual({ automated: 1, manual: 0, not_automated: 0 });
   });
 });
 
@@ -131,7 +132,7 @@ describe('proved', () => {
     let data = changing(complete(), 'constraint_test', () => true, { level: 'api' });
     data = changing(data, 'specification_test', () => true, { state: 'not automated yet' });
     data = changing(data, 'view_test', () => true, { level: 'manual', state: 'manual', manual_reason: 'Looked at by eye.', file: undefined });
-    data = without(data, 'meets', (r) => r.source_id === 'EX-LEND-EP01-R01-T01');
+    data = without(data, 'standard_rule_test', () => true);
     ws = await loadData(data, { silent: ['EX-LEND-PO01-T'] });
   });
 
@@ -157,7 +158,7 @@ describe('proved', () => {
     expect(ws.coverage[0].tests).toEqual({ automated: 9, manual: 3, not_automated: 1 });
   });
 
-  it('a standard rule is proved by a test that meets it', () => {
+  it('a standard rule with no standard rule test is not proved', () => {
     expect(obligation(ws, null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 0 });
   });
 });
@@ -451,7 +452,7 @@ describe('the other obligation kinds and their gaps', () => {
 });
 
 describe('the run by levels', () => {
-  it('LA-TRC-DS02-T01 each test kind allows its own levels, and a pattern rule test any', () => {
+  it('LA-TRC-DS02-T01 each test kind allows its own levels, and a pattern rule test or a standard rule test any', () => {
     expect(ALLOWED_LEVELS).toEqual({
       constraint_test: ['unit', 'database'],
       invariant_test: ['unit', 'database'],
@@ -464,6 +465,7 @@ describe('the run by levels', () => {
       flow_test: ['e2e-ui', 'e2e-api', 'manual'],
       integration_test: ['contract', 'e2e-api', 'manual'],
       pattern_rule_test: ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'],
+      standard_rule_test: ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'],
     });
   });
 });

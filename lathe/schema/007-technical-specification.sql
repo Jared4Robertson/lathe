@@ -1,7 +1,7 @@
 -- The technical specification: one concrete kind implements each design kind, in place of generic components and
 -- layers. The domain layer (data models, value types, predicates, event types, services) stays apart from the
 -- application layer (command, query and event handlers, and projections), which alone reads and writes storage. Then
--- standards and their rules, which technical records and tests meet.
+-- standards and their rules, which technical records meet.
 
 CREATE TABLE repository (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -73,7 +73,7 @@ COMMENT ON TABLE event_type IS 'Its domain event''s shape in code; a contract wi
 COMMENT ON COLUMN event_type.id IS 'The event type''s ID: its domain event''s ID and ET, such as TL-LEND-EV01-ET.';
 COMMENT ON COLUMN event_type.title IS 'Its name in code, such as LoanOpened.';
 COMMENT ON COLUMN event_type.domain_event_id IS 'The domain event it implements; one event type each.';
-COMMENT ON COLUMN event_type.delivery IS 'How the event reaches what hears it: in process, after the transaction commits; or outbox, saved in the same transaction as its aggregate and delivered reliably afterwards. An event a policy hears or another domain may hear is delivered by outbox.';
+COMMENT ON COLUMN event_type.delivery IS 'How the event reaches what hears it: in process, after the transaction commits; or outbox, saved in the same transaction as its aggregate and delivered reliably afterwards. An event a policy hears is delivered by outbox, since a lost reaction is a lost change; one that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load, may be delivered in process.';
 COMMENT ON COLUMN event_type.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
 COMMENT ON COLUMN event_type.description IS 'How it works, in a sentence or two.';
 
@@ -258,7 +258,7 @@ CREATE TABLE standard_rule (
   statement VARCHAR NOT NULL CHECK (trim(statement) <> ''),
   group_name VARCHAR
 );
-COMMENT ON TABLE standard_rule IS 'One rule of a standard. Technical records and tests that follow it link to it with meets.';
+COMMENT ON TABLE standard_rule IS 'One rule of a standard. Technical records that follow it link to it with meets; its standard rule tests prove it.';
 COMMENT ON COLUMN standard_rule.id IS 'The rule''s ID: its standard''s ID and R<nn>, such as TL-STD-CODE-R01.';
 COMMENT ON COLUMN standard_rule.title IS 'The rule in a few words.';
 COMMENT ON COLUMN standard_rule.standard_id IS 'The standard it belongs to.';

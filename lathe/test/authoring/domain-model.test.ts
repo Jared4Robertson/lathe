@@ -199,14 +199,13 @@ describe('commands, events and policies', () => {
     expect(twice).toEqual([expect.objectContaining({ file: 'data/event_field.jsonl', line: 2 })]);
   });
 
-  it('LA-AUT-UC12-R06-T01 A command changes its own aggregate; another of its domain changed in the same transaction is recorded with its reason and listed as a warning', async () => {
+  it('LA-AUT-UC12-R06-T01 A command changes its own aggregate; another of its domain changed in the same transaction is recorded with its reason and listed as a recorded exception', async () => {
     expect(schema.tables.command.columns.find((c) => c.name === 'aggregate_id')!.required).toBe(true);
     const ws = await loadData(adding(complete(), {
       command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as lent without its loan.' }],
     }));
-    expect(ofCheck(ws, 'command-change-recorded')).toEqual([
-      { severity: 'warning', check: 'command-change-recorded', record: 'EX-LEND-CMD01', message: 'Command EX-LEND-CMD01 also changes aggregate EX-LEND-A2 in the same transaction: The tool must never show as lent without its loan.' },
-    ]);
+    expect(ws.exceptions).toEqual([{ command: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A2', reason: 'The tool must never show as lent without its loan.' }]);
+    expect(ws.problems).toEqual([]);
     const change = everyKind().command_change[0];
     // No reason, its own aggregate, or an aggregate of another domain is refused.
     const { reason: _, ...unreasoned } = change;

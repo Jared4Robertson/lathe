@@ -1,7 +1,7 @@
 -- The test plan: one test kind per thing tested, each under exactly what it proves. Every test has a run by: its level,
 -- its state, and the file that runs it or why it is manual. A constraint, invariant, specification, policy or flow has
 -- exactly one test; a domain service, UC requirement, view requirement or API requirement at least one (a check, not a
--- refusal); an integration any number; a pattern rule one per domain that adopts it.
+-- refusal); an integration or a standard rule any number; a pattern rule one per domain that adopts it.
 
 CREATE TYPE test_level AS ENUM ('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual');
 CREATE TYPE test_state AS ENUM ('automated', 'manual', 'not automated yet');
@@ -313,6 +313,34 @@ COMMENT ON COLUMN pattern_rule_test."when" IS 'What the test does.';
 COMMENT ON COLUMN pattern_rule_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN pattern_rule_test.notes IS 'Longer notes on the test, such as when to run it.';
 
+CREATE TABLE standard_rule_test (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  standard_rule_id VARCHAR NOT NULL REFERENCES standard_rule (id),
+  level test_level NOT NULL,
+  state test_state NOT NULL,
+  file VARCHAR,
+  manual_reason VARCHAR,
+  given VARCHAR,
+  "when" VARCHAR,
+  "then" VARCHAR,
+  notes VARCHAR,
+  CHECK (state <> 'automated' OR file IS NOT NULL),
+  CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
+);
+COMMENT ON TABLE standard_rule_test IS 'Proves its standard rule in the product''s code, such as a scan of the code for what the rule forbids or a test of a place that follows it.';
+COMMENT ON COLUMN standard_rule_test.id IS 'The test''s ID: its standard rule''s ID and T<nn>, such as TL-STD-CODE-R01-T01.';
+COMMENT ON COLUMN standard_rule_test.title IS 'What the test shows, in a sentence.';
+COMMENT ON COLUMN standard_rule_test.standard_rule_id IS 'The standard rule it proves.';
+COMMENT ON COLUMN standard_rule_test.level IS 'The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual.';
+COMMENT ON COLUMN standard_rule_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
+COMMENT ON COLUMN standard_rule_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
+COMMENT ON COLUMN standard_rule_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN standard_rule_test.given IS 'The state the test starts from.';
+COMMENT ON COLUMN standard_rule_test."when" IS 'What the test does.';
+COMMENT ON COLUMN standard_rule_test."then" IS 'What the test expects.';
+COMMENT ON COLUMN standard_rule_test.notes IS 'Longer notes on the test, such as when to run it.';
+
 INSERT INTO meta_kind VALUES
   ('constraint_test', 'Constraint test', 'test-plan', 44, false, '<constraint>-T', 'TL-VO01-C01-T', 'parent', NULL),
   ('invariant_test', 'Invariant test', 'test-plan', 45, false, '<invariant>-T', 'TL-LEND-INV01-T', 'parent', NULL),
@@ -324,7 +352,8 @@ INSERT INTO meta_kind VALUES
   ('endpoint_test', 'Endpoint test', 'test-plan', 51, false, '<API requirement>-T<nn>', 'TL-LEND-EP01-R01-T01', 'parent', NULL),
   ('flow_test', 'Flow test', 'test-plan', 52, false, '<flow>-T', 'TL-LEND-UC01-FL-T', 'parent', NULL),
   ('integration_test', 'Integration test', 'test-plan', 53, false, '<integration>-T<nn>', 'TL-INT01-T01', 'parent', NULL),
-  ('pattern_rule_test', 'Pattern rule test', 'test-plan', 54, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL);
+  ('pattern_rule_test', 'Pattern rule test', 'test-plan', 54, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL),
+  ('standard_rule_test', 'Standard rule test', 'test-plan', 55, false, '<standard rule>-T<nn>', 'TL-STD-CODE-R01-T01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('constraint_test', 'constraint', 1, 'constraint_id'),
   ('invariant_test', 'invariant', 1, 'invariant_id'),
@@ -336,7 +365,8 @@ INSERT INTO meta_kind_parent VALUES
   ('endpoint_test', 'api_requirement', 1, 'api_requirement_id'),
   ('flow_test', 'flow', 1, 'flow_id'),
   ('integration_test', 'integration', 1, 'integration_id'),
-  ('pattern_rule_test', 'pattern_rule', 1, 'pattern_rule_id');
+  ('pattern_rule_test', 'pattern_rule', 1, 'pattern_rule_id'),
+  ('standard_rule_test', 'standard_rule', 1, 'standard_rule_id');
 INSERT INTO meta_table VALUES
   ('constraint_test', 'kind', NULL),
   ('invariant_test', 'kind', NULL),
@@ -348,4 +378,5 @@ INSERT INTO meta_table VALUES
   ('endpoint_test', 'kind', NULL),
   ('flow_test', 'kind', NULL),
   ('integration_test', 'kind', NULL),
-  ('pattern_rule_test', 'kind', NULL);
+  ('pattern_rule_test', 'kind', NULL),
+  ('standard_rule_test', 'kind', NULL);

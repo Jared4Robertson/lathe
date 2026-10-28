@@ -63,7 +63,7 @@ export function isBuilt(index: SpecIndex, id: string): boolean {
  * - a constraint: its value object's value type; an invariant: its aggregate's repository and the tables whose unique
  *   key names it; a specification, policy or domain service: its predicate, event handler or service;
  * - a view requirement: the UI components rendering its view; an API requirement: its endpoint's handler;
- * - a standard rule: the technical records and tests that meet it;
+ * - a standard rule: the technical records that meet it;
  * - any other obligation (a product's own kind): its children of the technical specification stage.
  */
 export function designersOf(index: SpecIndex, record: SpecRecord): string[] {

@@ -115,6 +115,7 @@ export function everyKind(): Data {
     flow_test: [{ id: 'TL-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'TL-LEND-UC01-FL', level: 'e2e-ui', state: 'automated', file: 'e2e/borrow.spec.ts', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }],
     integration_test: [{ id: 'TL-INT01-T01', title: 'A mail is sent', integration_id: 'TL-INT01', level: 'manual', state: 'manual', manual_reason: 'The mail service has no test mode.' }],
     pattern_rule_test: [{ id: 'TL-PAT-ACT-R01-T01', title: 'A saved tool reads the same', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-LEND', ...automated('test/catalog.test.ts') }],
+    standard_rule_test: [{ id: 'TL-STD-CODE-R01-T01', title: 'No bare built-in import', standard_rule_id: 'TL-STD-CODE-R01', ...automated('test/imports.test.ts') }],
 
     question: [{ id: 'TL-LEND-Q01', title: 'How long is a loan?', domain_id: 'TL-LEND', owner: 'Librarian' }],
 

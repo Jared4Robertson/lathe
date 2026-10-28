@@ -60,7 +60,7 @@ An event type's `delivery` says how its event reaches what hears it: `in process
 
 ## Standards
 
-A product's engineering rules for its code, such as logging, error handling or naming, live in **standards** beside the patterns: a `standard` under the product (`<P>-STD-<NAME>`, such as `TL-STD-CODE`) with its `standard_rule` records (`<standard>-R<nn>`), one rule each in `statement`. A technical record or a test that follows a rule says so with a `meets` link to it. A standard rule is proved by the checks or linters that enforce it, named in its statement; write only rules the code really follows.
+A product's engineering rules for its code, such as logging, error handling or naming, live in **standards** beside the patterns: a `standard` under the product (`<P>-STD-<NAME>`, such as `TL-STD-CODE`) with its `standard_rule` records (`<standard>-R<nn>`), one rule each in `statement`. A technical record that follows a rule says so with a `meets` link to it, which shows where the rule is applied and designs it. A standard rule is proved by its standard rule tests (`plan-tests`), such as a scan of the code for what the rule forbids; write only rules the code really follows.
 
 ## Kinds of code Lathe has no kind for
 

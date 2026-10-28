@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { Coverage, Kind, Problem, RelationRule, StageRule } from '../../../lathe/src/types';
+import type { Coverage, Kind, Problem, RecordedException, RelationRule, StageRule } from '../../../lathe/src/types';
 import type { Row, SpecData, Value } from '../../../lathe/src/server/contract';
 import type { SchemaDescription, Stage } from '../../../lathe/src/store/schema';
 import { onLatheEvent } from '../events';
 import { isRecordId, SPACE_CHECKS } from '../views/address';
 
-export type { Coverage, Kind, Problem, RelationRule, Row, SchemaDescription, SpecData, Stage, StageRule, Value };
+export type { Coverage, Kind, Problem, RecordedException, RelationRule, Row, SchemaDescription, SpecData, Stage, StageRule, Value };
 
 // The app's spec index, built from the typed rows GET /api/spec serves (lathe/src/server/contract.ts):
 // a record per row of a kind's table, its parent from the one of its kind's parent columns that
@@ -66,6 +66,8 @@ export interface Workspace {
   /** The rows of the check table: each check's name, severity, summary and explanation. */
   checks: Row[];
   problems: Problem[];
+  /** The recorded exceptions: each command that also changes another aggregate, with its reason. Never problems. */
+  exceptions: RecordedException[];
   coverage: Coverage[];
 }
 
@@ -192,6 +194,7 @@ export function buildWorkspace(data: SpecData): Workspace {
     parts,
     checks: data.tables.check ?? [],
     problems: data.problems,
+    exceptions: data.exceptions,
     coverage: data.coverage,
   };
 }
@@ -299,6 +302,7 @@ export function spaceIndex(index: SpecIndex, product: string): SpecIndex {
     parts: workspace.parts.filter((p) => !elsewhere(p.owner)),
     checks: workspace.checks.filter((c) => c.product_id === undefined || c.product_id === product),
     problems: workspace.problems.filter((p) => !p.record || !elsewhere(p.record)),
+    exceptions: workspace.exceptions.filter((e) => inSpace(index.byId.get(e.command))),
     coverage: workspace.coverage.filter((c) => c.product === product),
   });
   known.set(product, space);

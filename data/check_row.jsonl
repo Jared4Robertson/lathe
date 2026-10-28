@@ -12,7 +12,6 @@
 {"id":"LA-CHK-CK07","title":"value-object-unused","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK08","title":"specification-unused","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK09","title":"ui-component-unused","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
-{"id":"LA-CHK-CK10","title":"command-change-recorded","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK11","title":"event-not-by-outbox","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK12","title":"aggregate-too-large","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK01","title":"not-designed","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}

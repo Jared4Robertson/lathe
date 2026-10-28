@@ -16,6 +16,7 @@ import {
   problemOrder,
   textOf,
   type Problem,
+  type RecordedException,
   type SpecIndex,
   type SpecRecord,
   type SpecRoute,
@@ -310,6 +311,34 @@ function ChecksPage({ index, product }: { index: SpecIndex; product: SpecRecord 
           ))}
         </Section>
       )}
+      {index.workspace.exceptions.length > 0 && <RecordedExceptions index={index} exceptions={index.workspace.exceptions} />}
     </div>
+  );
+}
+
+/**
+ * The recorded exceptions (LA-V41-R04): each command that also changes another aggregate of its
+ * domain in the same transaction, with the aggregate and the reason. They are deliberate deviations,
+ * not problems: listed in a section of their own, never counted or marked as warnings.
+ */
+function RecordedExceptions({ index, exceptions }: { index: SpecIndex; exceptions: RecordedException[] }) {
+  const items = exceptions.map((e) => ({ e, key: `${e.command} ${e.aggregate}` }));
+  return (
+    <Section title="Recorded exceptions" count={exceptions.length}>
+      <p className="hint">Deliberate deviations, each recorded with its reason: a command that also changes another aggregate in the same transaction. They are not problems.</p>
+      <LongList
+        label="Recorded exceptions"
+        className="record-list exceptions"
+        items={items}
+        itemKey={(item) => item.key}
+        searchText={({ e }) => `${idText(index, e.command)} ${idText(index, e.aggregate)} ${e.reason}`}
+        render={({ e }) => (
+          <>
+            <RecordLink index={index} id={e.command} showTitle={false} row />
+            <span className="exception-text">also changes <RecordLink index={index} id={e.aggregate} showTitle={false} /> in the same transaction: {e.reason}</span>
+          </>
+        )}
+      />
+    </Section>
   );
 }

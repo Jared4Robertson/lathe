@@ -66,6 +66,7 @@
 {"id":"LA-AUT-EN72-TB","title":"flow_test","entity_id":"LA-AUT-EN72","name":"flow_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-AUT-EN73-TB","title":"integration_test","entity_id":"LA-AUT-EN73","name":"integration_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-AUT-EN74-TB","title":"pattern_rule_test","entity_id":"LA-AUT-EN74","name":"pattern_rule_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
+{"id":"LA-AUT-EN75-TB","title":"standard_rule_test","entity_id":"LA-AUT-EN75","name":"standard_rule_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-CHK-EN01-TB","title":"check","entity_id":"LA-CHK-EN01","name":"check","storage":"table","file":"lathe/schema/011-checking.sql"}
 {"id":"LA-CHK-EN03-TB","title":"product_setting","entity_id":"LA-CHK-EN03","name":"product_setting","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-CHK-RM01-TB","title":"problem","read_model_id":"LA-CHK-RM01","name":"problem","storage":"table","file":"lathe/schema/011-checking.sql","description":"Filled by its projection on every load, never written to a file."}

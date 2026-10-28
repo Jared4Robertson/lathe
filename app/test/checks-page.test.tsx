@@ -1,6 +1,7 @@
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { main, openApp } from './helpers';
+import { modelWorkspace } from './fixtures/model';
 
 describe('checks page', () => {
   it("LA-V41-R01-T01 A space's Checks page lists its product's problems, errors first, grouped by check, each linking to its record, then the workspace's", async () => {
@@ -22,5 +23,21 @@ describe('checks page', () => {
       { check: 'engine', severities: ['error'], records: ['workspace'] },
     ]);
     expect(main().textContent).not.toContain('NF-NOTE');
+    // Demo shop records no exception, so it has no such section.
+    expect(within(main()).queryByRole('heading', { name: /^Recorded exceptions/ })).toBeNull();
+  });
+
+  it("LA-V41-R04-T01 A space's Checks page lists its recorded exceptions in their own section, never as problems", async () => {
+    await openApp('/P/checks', { data: modelWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'Checks' });
+    // The model's one error and one warning; Return thing's recorded exception is not counted.
+    expect(within(main()).getByText('1 error · 1 warning')).toBeInTheDocument();
+    const section = within(main()).getByRole('heading', { level: 2, name: /^Recorded exceptions/ }).closest('section')!;
+    const rows = within(within(section).getByRole('list', { name: 'Recorded exceptions' })).getAllByRole('listitem');
+    expect(rows).toHaveLength(1);
+    expect(within(rows[0]).getByRole('link', { name: /P-D-CMD02/ })).toHaveAttribute('href', '/P-D-CMD02');
+    expect(within(rows[0]).getByRole('link', { name: /P-D-A1/ })).toHaveAttribute('href', '/P-D-A1');
+    expect(rows[0]).toHaveTextContent('also changes P-D-A1 in the same transaction: The thing must be lendable again in the same transaction as its return.');
+    expect(section.querySelector('.severity, .problem')).toBeNull();
   });
 });

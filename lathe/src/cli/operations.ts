@@ -3,7 +3,7 @@
 // the check. Each operation opens the store afresh, so it always works on the data files as they are now (the Owner,
 // the app or git may have changed them since the last call). Writes never commit: the Agent or the Owner commits.
 import path from 'node:path';
-import { loadWorkspace } from '../index.ts';
+import { exceptionsText, loadWorkspace, type RecordedException } from '../index.ts';
 import { describeKey, rowKey, rowLine, type Row, type Value } from '../store/rows.ts';
 import { sqlString, type KindDescription, type SchemaDescription, type TableDescription } from '../store/schema.ts';
 import { openStore, StoreError, type Command, type Store, type StoreProblem } from '../store/store.ts';
@@ -337,14 +337,15 @@ export interface CheckProblem {
   message: string;
 }
 
-/** Runs the check on the workspace: its errors and warnings. */
-export async function check(root: string): Promise<{ errors: number; warnings: number; problems: CheckProblem[] }> {
+/** Runs the check on the workspace: its errors and warnings, and the recorded exceptions. */
+export async function check(root: string): Promise<{ errors: number; warnings: number; problems: CheckProblem[]; exceptions: RecordedException[] }> {
   const workspace = await loadWorkspace(root);
   const problems = workspace.problems.map((p) => ({ severity: p.severity, check: p.check, record: p.record ?? null, message: p.message }));
   return {
     errors: problems.filter((p) => p.severity === 'error').length,
     warnings: problems.filter((p) => p.severity === 'warning').length,
     problems,
+    exceptions: workspace.exceptions,
   };
 }
 
@@ -432,7 +433,7 @@ export function listText(table: string, rows: Row[]): string {
   return rows.map((r) => (typeof r.id === 'string' && typeof r.title === 'string' ? `${r.id}  ${r.title}` : JSON.stringify(r))).join('\n');
 }
 
-/** The check's problems, errors first, and a count line. */
+/** The check's problems, errors first, the recorded exceptions, and a count line. */
 export function checkText(result: Awaited<ReturnType<typeof check>>): string {
   const line = (p: CheckProblem) => `  [${p.check}]${p.record ? ` ${p.record}:` : ''} ${p.message}`;
   const errors = result.problems.filter((p) => p.severity === 'error');
@@ -440,6 +441,7 @@ export function checkText(result: Awaited<ReturnType<typeof check>>): string {
   const parts: string[] = [];
   if (errors.length) parts.push(`Errors (${errors.length}):\n${errors.map(line).join('\n')}`);
   if (warnings.length) parts.push(`Warnings (${warnings.length}):\n${warnings.map(line).join('\n')}`);
+  if (result.exceptions.length) parts.push(exceptionsText(result.exceptions));
   parts.push(`${count(result.errors, 'error')}, ${count(result.warnings, 'warning')}.`);
   return parts.join('\n\n');
 }

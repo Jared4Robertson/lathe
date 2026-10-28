@@ -29,7 +29,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | domain-model | `invariant` | aggregate (aggregate_id) | statement | `<P>-<D>-INV<nn>` |
 | domain-model | `specification` | none | statement | `<P>-<D>-SP<nn>` |
 | domain-model | `domain_event` | aggregate (aggregate_id) | published (bool), description? | `<P>-<D>-EV<nn>` |
-| domain-model | `command` | aggregate (aggregate_id) | description?; part `command_change` (aggregate_id, reason): another aggregate of its domain it also changes in the same transaction, a recorded exception (`command-change-in-domain` refuses its own aggregate or another domain's) | `<P>-<D>-CMD<nn>` |
+| domain-model | `command` | aggregate (aggregate_id) | description?; part `command_change` (aggregate_id, reason): another aggregate of its domain it also changes in the same transaction, a recorded exception (`command-change-in-domain` refuses its own aggregate or another domain's), listed by the engine's `Workspace.exceptions`, never a problem | `<P>-<D>-CMD<nn>` |
 | domain-model | `read_model` | domain (domain_id) | description? | `<P>-<D>-RM<nn>` |
 | domain-model | `query` | read_model (read_model_id) | description? | `<P>-<D>-QRY<nn>` |
 | domain-model | `policy` | command (command_id) | statement | `<P>-<D>-PO<nn>` |
@@ -74,6 +74,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | test-plan | `flow_test` | flow (flow_id) | run by, steps? (list), expected_result?, notes? | `<flow>-T` |
 | test-plan | `integration_test` | integration (integration_id) | run by, given?, when?, then?, notes? | `<integration>-T<nn>` |
 | test-plan | `pattern_rule_test` | pattern_rule (pattern_rule_id) | domain_id, run by, given?, when?, then?, notes? | `<pattern rule>-T<nn>` |
+| test-plan | `standard_rule_test` | standard_rule (standard_rule_id) | run by, given?, when?, then?, notes? | `<standard rule>-T<nn>` |
 | — | `question` | product (product_id) or domain (domain_id) | owner, description? | `<P>-Q<nn> or <P>-<D>-Q<nn>` |
 
 | Part, checking or declaration table | Key | Columns |
@@ -106,7 +107,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `has_one` | product | entity | entity | entity→entity |
 | `hears` (one per source) | product | policy | domain_event | policy→domain_event |
 | `invokes` (one per source) | product | flow_step | operation | flow_step→command, flow_step→query |
-| `meets` | product | meets_source | standard_rule | 25 pairs: every member of meets_source |
+| `meets` | product | meets_source | standard_rule | 14 pairs: every member of meets_source (the technical kinds; a standard rule is proved by its standard rule tests) |
 | `raises` | aggregate | command | domain_event | command→domain_event |
 | `reads` | domain | reads_source | aggregate | read_model→aggregate, specification→aggregate |
 | `renders` | product | ui_component | view | ui_component→view |
@@ -115,7 +116,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | Supertype | Members |
 | --- | --- |
 | `follows_source` | domain, use_case |
-| `meets_source` | adapter, command_handler, constraint_test, data_model, domain_service_test, endpoint_handler, endpoint_test, event_handler, event_type, flow_test, integration_test, invariant_test, pattern_rule_test, policy_test, predicate, projection, query_handler, repository, service, specification_test, table, ui_component, use_case_test, value_type, view_test |
+| `meets_source` | adapter, command_handler, data_model, endpoint_handler, event_handler, event_type, predicate, projection, query_handler, repository, service, table, ui_component, value_type |
 | `obligation` | api_requirement, constraint, domain_service, invariant, pattern_rule, policy, specification, standard_rule, uc_requirement, view_requirement |
 | `operation` | command, query |
 | `reads_source` | read_model, specification |

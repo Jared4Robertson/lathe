@@ -1,6 +1,6 @@
 // Lathe's HTTP API, shared by `lathe serve`, the desktop shell and the app's Vite dev server. Its shapes are in
 // contract.ts:
-//   GET  /api/spec                SpecData: the schema, every stored table's rows, where each record with no owner sits, and the checks' problems and coverage
+//   GET  /api/spec                SpecData: the schema, every stored table's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
 //   POST /api/write               { commands } -> WriteAnswer: one transaction through the store's command layer
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 //   GET  /api/reference           the product's Reference (reference.ts): kinds, tables, relations, folders, checks
@@ -15,7 +15,6 @@ import { loadConfig } from '../config.ts';
 import { buildReference, loadWorkspace } from '../index.ts';
 import { describeKey, rowKey, type Row } from '../store/rows.ts';
 import { formatProblem, LATHE_DATA_DIR, openStore, StoreError, type Command, type Store } from '../store/store.ts';
-import type { Coverage, Problem } from '../types.ts';
 import type { RowChange, SpecData, WriteAnswer, WriteRequest } from './contract.ts';
 import { recordHistory } from './history.ts';
 
@@ -28,8 +27,8 @@ interface Opened {
   store: Store;
   /** The data folder's files as the store last read or wrote them. */
   signature: string;
-  /** The checks' problems and coverage for this data, once worked out. */
-  checks: Promise<{ problems: Problem[]; coverage: Coverage[] }> | null;
+  /** The checks' problems, the recorded exceptions and coverage for this data, once worked out. */
+  checks: Promise<Checked> | null;
   /** Requests on this root run one after another, so a write never races a reload. */
   queue: Promise<unknown>;
 }
@@ -111,12 +110,14 @@ function send(res: ServerResponse, status: number, body: unknown, headers: Recor
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const storeMessage = (error: unknown) => (error instanceof StoreError ? error.problems.map(formatProblem).join('\n') : message(error));
 
-async function checksOf(root: string): Promise<{ problems: Problem[]; coverage: Coverage[] }> {
+type Checked = Pick<SpecData, 'problems' | 'exceptions' | 'coverage'>;
+
+async function checksOf(root: string): Promise<Checked> {
   try {
     const workspace = await loadWorkspace(root);
-    return { problems: workspace.problems, coverage: workspace.coverage };
+    return { problems: workspace.problems, exceptions: workspace.exceptions, coverage: workspace.coverage };
   } catch (error) {
-    return { problems: [{ severity: 'error', check: 'engine', record: null, message: `The checks could not run: ${message(error)}` }], coverage: [] };
+    return { problems: [{ severity: 'error', check: 'engine', record: null, message: `The checks could not run: ${message(error)}` }], exceptions: [], coverage: [] };
   }
 }
 
@@ -135,13 +136,14 @@ async function specData(root: string): Promise<SpecData> {
   const config = loadConfig(root);
   return withStore(config.root, async (opened) => {
     opened.checks ??= checksOf(config.root);
-    const { problems, coverage } = await opened.checks;
+    const { problems, exceptions, coverage } = await opened.checks;
     return {
       schema: opened.store.schema,
       dataDir: path.relative(config.root, config.dataDir).split(path.sep).join('/'),
       tables: tablesOf(opened.store),
       placements: await opened.store.placements(),
       problems,
+      exceptions,
       coverage,
     };
   });

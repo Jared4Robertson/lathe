@@ -1,6 +1,6 @@
 ---
 name: plan-tests
-description: Write or change Lathe test records and the tests they name - one test kind per thing tested (constraint, invariant, specification, policy, domain service, use case, view, endpoint, flow, integration and pattern rule tests), each under what it proves, with its run by (level, state, and a file or a manual reason). Use when planning which tests prove which obligations, writing a test for a Lathe test record, or deciding whether a test is automated, manual or not automated yet, in a repo with lathe.config.json.
+description: Write or change Lathe test records and the tests they name - one test kind per thing tested (constraint, invariant, specification, policy, domain service, use case, view, endpoint, flow, integration, pattern rule and standard rule tests), each under what it proves, with its run by (level, state, and a file or a manual reason). Use when planning which tests prove which obligations, writing a test for a Lathe test record, or deciding whether a test is automated, manual or not automated yet, in a repo with lathe.config.json.
 ---
 
 # Plan tests
@@ -29,8 +29,9 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `flow_test` | a flow: a smoke test of its main path | exactly one | `<flow>-T` | e2e-ui, manual |
 | `integration_test` | an integration | any | `<integration>-T<nn>` | contract, e2e-api, manual |
 | `pattern_rule_test` | a pattern rule, in one adopting domain (`domain_id`) | one per rule and domain | `<pattern rule>-T<nn>` | any |
+| `standard_rule_test` | a standard rule | any | `<standard rule>-T<nn>` | any |
 
-Technical records have no tests of their own: each is proved by the tests of what it implements. A standard rule is proved by the checks or linters that enforce it, named in its statement. A test at a level its kind does not allow is a warning.
+Technical records have no tests of their own: each is proved by the tests of what it implements. A standard rule is proved by its standard rule tests, such as a scan of the code for what the rule forbids; the technical records that `meets` it show where it is applied, and prove nothing. A test at a level its kind does not allow is a warning.
 
 Most kinds take `given`, `when` and `then`: the state it starts from, the action, and what it expects. A constraint test takes `accepts` and `refuses` (the values the value object takes and refuses); a flow test takes `steps` (a list, one item per step of the main path) and `expected_result`.
 
@@ -89,7 +90,7 @@ add  { "endpoint_test": { "id": "TL-LEND-EP05-R02-T01", "title": "Returning an u
 
 Once it is written: `set { "endpoint_test": { "id": "TL-LEND-EP05-R02-T01", "state": "automated", "file": "test/api.test.ts" } }`.
 
-A manual flow test, and a pattern rule test in the domain that adopts the pattern:
+A manual flow test, a pattern rule test in the domain that adopts the pattern, and a standard rule test:
 
 ```
 add  { "flow_test": { "id": "TL-LEND-UC04-FL-T", "title": "The README returns a tool against a running server", "flow_id": "TL-LEND-UC04-FL",
@@ -99,6 +100,9 @@ add  { "flow_test": { "id": "TL-LEND-UC04-FL-T", "title": "The README returns a 
        "expected_result": "The loan is returned, not late." } }
 add  { "pattern_rule_test": { "id": "TL-PAT-LIBRARIAN-ACTION-R01-T01", "title": "Each librarian action missing its required input is refused",
        "pattern_rule_id": "TL-PAT-LIBRARIAN-ACTION-R01", "domain_id": "TL-LEND", "level": "api", "state": "automated", "file": "test/api.test.ts" } }
+add  { "standard_rule_test": { "id": "TL-STD-CODE-R01-T01", "title": "Every error the API answers with carries a code and a sentence",
+       "standard_rule_id": "TL-STD-CODE-R01", "level": "api", "state": "automated", "file": "test/api.test.ts",
+       "when": "Each request the API refuses is sent.", "then": "Each answer carries an error code and a sentence." } }
 ```
 
 ## Rules

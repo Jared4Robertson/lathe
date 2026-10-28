@@ -1,6 +1,6 @@
 ---
 name: check-and-fix
-description: Run lathe check, fix every error it reports, and report warnings, gaps and coverage. Use after changing any Lathe spec data, before committing spec changes, when a write is refused, or when asked whether the spec is consistent or how much is designed, built and proved.
+description: Run lathe check, fix every error it reports, and report warnings, recorded exceptions, gaps and coverage. Use after changing any Lathe spec data, before committing spec changes, when a write is refused, or when asked whether the spec is consistent or how much is designed, built and proved.
 ---
 
 # Check and fix
@@ -9,8 +9,8 @@ The spec is typed data, changed only with Lathe's MCP tools (or the `lathe` CLI 
 
 ## Run it
 
-- With the plugin: the `check` tool. It returns every error and warning, and a last line `N errors, M warnings.`
-- In a shell, from the repo root (the folder with `lathe.config.json`): `npx lathe check` in a product repo, `npm --prefix lathe run check` in the Lathe repo. It also prints coverage, and exits 1 on any error. Add `--json` for the whole workspace as JSON.
+- With the plugin: the `check` tool. It returns every error and warning, the recorded exceptions, and a last line `N errors, M warnings.`
+- In a shell, from the repo root (the folder with `lathe.config.json`): `npx lathe check` in a product repo, `npm --prefix lathe run check` in the Lathe repo. It also prints coverage, and exits 1 on any error. Add `--json` for the whole workspace as JSON (its `exceptions` list holds the recorded exceptions).
 
 Run it before you report or commit.
 
@@ -42,15 +42,18 @@ An error means the spec is broken. Do not leave one behind.
 - **A pattern rule test** naming a domain that does not follow the pattern.
 - Fix the record that is wrong, not the one that reports it. Never change a product's own kinds or checks to make an error go away unless the user asked for that (see `extend-the-meta-model`).
 
-## Warnings: deliberate exceptions and loose ends
+## Warnings: loose ends
 
-- **A recorded exception** to one aggregate per command (`command_change`), with its reason. Each stays listed on purpose, so it stays visible: check the reason still holds, and prefer an event and a policy.
 - **An event a policy hears** whose event type is not delivered by outbox. An event that only feeds read models rebuilt on every load may go in process, and is not reported.
 - **A test at a level its kind does not allow** (see `plan-tests`).
 - **A level of the spec the wrong size**: more children of one kind than the product's `max_children` setting allows, or a capability with only one use case. Add a capability, or merge one. Do not raise `max_children` to silence the warning unless the user asks.
 - **An aggregate too large**: more entities than the product's `max_entities_per_aggregate` setting allows (7 by default). Split it into smaller aggregates that each change together (see `model-a-domain`); do not raise the setting unless the user asks.
 
 Fix the warnings your task is about; leave the rest and mention them.
+
+## Recorded exceptions: deliberate, never warnings
+
+A recorded exception is a deviation made on purpose and written down with its reason: a command that also changes another aggregate of its domain in the same transaction (a `command_change` row). It is not a problem and never counts as a warning. `lathe check` lists every one in its own **Recorded exceptions** section, after the warnings, with its command, aggregate and reason, and the app's Checks page shows them in a section of their own, so each stays visible. Read the list when you touch those commands: check each reason still holds, and prefer an event and a policy when it no longer does (then remove the row).
 
 ## Gaps and coverage
 
@@ -60,7 +63,7 @@ The obligations are constraints, invariants, specifications, policies, domain se
 
 - **designed**: its implementation is specified. A UC requirement is designed once a step of its flow fulfills it; the others once the technical record that implements them exists.
 - **built**: that technical record names a file that exists.
-- **proved**: its tests exist at a level its kind allows, automated or manual. A test not automated yet is not proof.
+- **proved**: its tests exist at a level its kind allows, automated or manual. A test not automated yet is not proof. A standard rule is proved by its standard rule tests.
 
 ## Report
 
@@ -68,5 +71,5 @@ Say, in a few lines:
 
 1. Whether the check passes (the last line: `N errors, M warnings.`).
 2. Each error you fixed and how, and any refused write you had to change.
-3. The coverage lines for each domain you touched, as `lathe check` prints them, and the gaps and warnings your change added or cleared, including any recorded exception you added, with its reason.
+3. The coverage lines for each domain you touched, as `lathe check` prints them, the gaps and warnings your change added or cleared, and any recorded exception you added or removed, with its reason.
 4. Any tests not automated yet that your change added, and why they wait.

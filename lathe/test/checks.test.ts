@@ -3,6 +3,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { openStore, LATHE_DATA_DIR, type Workspace } from '../src/index.ts';
 import path from 'node:path';
+import { checkText } from '../src/cli/operations.ts';
 import { adding, changing, complete, gaps, loadData, ofCheck, records, refusals, removeData, without } from './helpers.ts';
 
 afterAll(removeData);
@@ -250,15 +251,19 @@ check('pattern-not-followed', () => {
   });
 });
 
-check('command-change-recorded', () => {
-  it('LA-CHK-UC04-R12-T01 each recorded exception to one aggregate per command is a warning with its reason', async () => {
-    const ws = await loadData(adding(complete(), { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as free while lent.' }] }));
-    expect(ofCheck(ws, 'command-change-recorded')).toEqual([
-      {
-        severity: 'warning', check: 'command-change-recorded', record: 'EX-LEND-CMD01',
-        message: 'Command EX-LEND-CMD01 also changes aggregate EX-LEND-A2 in the same transaction: The tool must never show as free while lent.',
-      },
-    ]);
+// A recorded exception is no check's problem: the workspace lists it apart, and the check's text prints it.
+describe('recorded exceptions', () => {
+  describe('LA-STD-PRINCIPLES-R03-T01 deviations are deliberate and visible', () => {
+    it("LA-CHK-UC04-R12-T01 a command's recorded exceptions are listed with their command, aggregate and reason, never as warnings", async () => {
+      const reason = 'The tool must never show as free while lent.';
+      const ws = await loadData(adding(complete(), { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason }] }));
+      expect(ws.exceptions).toEqual([{ command: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A2', reason }]);
+      expect(ws.problems).toEqual([]);
+      expect(clean.exceptions).toEqual([]);
+      const text = checkText({ errors: 0, warnings: 0, problems: [], exceptions: ws.exceptions });
+      expect(text).toBe(`Recorded exceptions (1):\n  EX-LEND-CMD01 also changes aggregate EX-LEND-A2 in the same transaction: ${reason}\n\n0 errors, 0 warnings.`);
+      expect(checkText({ errors: 0, warnings: 0, problems: [], exceptions: [] })).not.toContain('Recorded exceptions');
+    });
   });
 });
 
@@ -418,15 +423,17 @@ check('aggregate-too-large', () => {
   const children = (n: number) =>
     Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-EN${String(i + 10).padStart(2, '0')}`, title: `Part ${i}`, aggregate_id: 'EX-LEND-A1', role: 'child', in_root_table: true }));
 
-  it('LA-CHK-UC06-R08-T01 an aggregate with more entities than max_entities_per_aggregate is a warning naming it, the count and the limit', async () => {
-    const at = (n: number) => adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 3 }], entity: children(n) });
-    expect(ofCheck(await loadData(at(1)), 'aggregate-too-large')).toEqual([]);
-    expect(ofCheck(await loadData(at(2)), 'aggregate-too-large')).toEqual([
-      {
-        severity: 'warning', check: 'aggregate-too-large', record: 'EX-LEND-A1',
-        message: "Aggregate EX-LEND-A1 has 4 entities, more than the 3 that the product's max_entities_per_aggregate setting allows; split it into smaller aggregates that each change together.",
-      },
-    ]);
+  describe('LA-STD-MODELING-R01-T01 aggregates are small', () => {
+    it('LA-CHK-UC06-R08-T01 an aggregate with more entities than max_entities_per_aggregate is a warning naming it, the count and the limit', async () => {
+      const at = (n: number) => adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 15, max_entities_per_aggregate: 3 }], entity: children(n) });
+      expect(ofCheck(await loadData(at(1)), 'aggregate-too-large')).toEqual([]);
+      expect(ofCheck(await loadData(at(2)), 'aggregate-too-large')).toEqual([
+        {
+          severity: 'warning', check: 'aggregate-too-large', record: 'EX-LEND-A1',
+          message: "Aggregate EX-LEND-A1 has 4 entities, more than the 3 that the product's max_entities_per_aggregate setting allows; split it into smaller aggregates that each change together.",
+        },
+      ]);
+    });
   });
 
   it('LA-CHK-UC06-R09-T01 without the setting the limit is 7', async () => {

@@ -66,7 +66,7 @@ describe('checks', () => {
     const files = loaded.records.filter((r) => typeof r.fields.file === 'string').length;
     const tests = loaded.records.filter((r) => r.kind.endsWith('_test')).length;
     expect(loaded.problems).toHaveLength(1);
-    expect(loaded.problems[0].message).toBe(`${loaded.records.length} ${loaded.links.length} ${tests} ${files}/${files} 11 11`);
+    expect(loaded.problems[0].message).toBe(`${loaded.records.length} ${loaded.links.length} ${tests} ${files}/${files} 11 12`);
   });
 
   it('LA-CHK-UC02-R03-T01 Every check runs, in position order, even after one fails', async () => {
@@ -81,29 +81,31 @@ describe('checks', () => {
     expect(loaded.problems[1]).toMatchObject({ severity: 'error', record: null, message: expect.stringContaining('The check broken could not run') });
   });
 
-  it("LA-CHK-INV04-T Each check is one SELECT query in its row, and Lathe's checks are named and placed in order", async () => {
-    const store = await openStore(path.dirname(LATHE_DATA_DIR), { latheDataDir: null });
-    const rows = store.rows('check');
-    const kinds = new Set(Object.keys(store.schema.kinds));
-    await store.close();
-    expect(rows.length).toBeGreaterThan(0);
-    expect(rows.map((r) => r.position).sort((a, b) => Number(a) - Number(b))).toEqual(rows.map((_, i) => i + 1));
-    for (const row of rows) {
-      const sql = String(row.query).trim();
-      expect(sql, String(row.name)).toMatch(/^(SELECT|WITH)\b/);
-      expect(row.product_id, String(row.name)).toBeUndefined();
-      // One statement: no ';' outside string literals, except at the very end.
-      const code = sql.replace(/'(?:[^']|'')*'/g, "''").replace(/;\s*$/, '');
-      expect(code, String(row.name)).not.toContain(';');
-      // Every kind a check names is one of Lathe's.
-      for (const kind of (row.kinds as string[] | undefined) ?? []) expect(kinds.has(kind), `${String(row.name)}: ${kind}`).toBe(true);
-    }
+  describe('LA-STD-CODE-R01-T01 a check is one row with one SELECT', () => {
+    it("LA-CHK-INV04-T Each check is one SELECT query in its row, and Lathe's checks are named and placed in order", async () => {
+      const store = await openStore(path.dirname(LATHE_DATA_DIR), { latheDataDir: null });
+      const rows = store.rows('check');
+      const kinds = new Set(Object.keys(store.schema.kinds));
+      await store.close();
+      expect(rows.length).toBeGreaterThan(0);
+      expect(rows.map((r) => r.position).sort((a, b) => Number(a) - Number(b))).toEqual(rows.map((_, i) => i + 1));
+      for (const row of rows) {
+        const sql = String(row.query).trim();
+        expect(sql, String(row.name)).toMatch(/^(SELECT|WITH)\b/);
+        expect(row.product_id, String(row.name)).toBeUndefined();
+        // One statement: no ';' outside string literals, except at the very end.
+        const code = sql.replace(/'(?:[^']|'')*'/g, "''").replace(/;\s*$/, '');
+        expect(code, String(row.name)).not.toContain(';');
+        // Every kind a check names is one of Lathe's.
+        for (const kind of (row.kinds as string[] | undefined) ?? []) expect(kinds.has(kind), `${String(row.name)}: ${kind}`).toBe(true);
+      }
+    });
   });
 });
 
 describe('loading', () => {
   it('LA-PLT-UC01-R01-T01 loadWorkspace returns the Workspace contract', () => {
-    expect(Object.keys(ws).sort()).toEqual(['coverage', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
+    expect(Object.keys(ws).sort()).toEqual(['coverage', 'exceptions', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
     expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'id_scope', 'kind', 'label', 'obligation', 'parent_kinds', 'position', 'required_fields', 'stage']);
     expect(ws.stages.map((s) => s.stage)).toEqual(['domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
     expect(Object.keys(ws.stages[0]).sort()).toEqual(['description', 'label', 'position', 'stage']);

@@ -128,7 +128,7 @@ describe('the technical specification', () => {
 });
 
 describe('standards', () => {
-  it('LA-AUT-UC16-R01-T01 A standard sits under the product and its rules under it, and technical records and tests meet a rule', async () => {
+  it('LA-AUT-UC16-R01-T01 A standard sits under the product, its rules under it and their tests under each rule, and technical records meet a rule', async () => {
     expect(parentsOf(schema, 'standard')).toEqual(['product.product_id']);
     expect(parentsOf(schema, 'standard_rule')).toEqual(['standard.standard_id']);
     expect([schema.kinds.standard, schema.kinds.standard_rule].map((k) => [k.stage, k.idPattern, k.obligation])).toEqual([
@@ -138,25 +138,33 @@ describe('standards', () => {
     const meets = schema.relations.meets;
     expect(meets).toMatchObject({ role: null, forwardLabel: 'Meets', reverseLabel: 'Met by' });
     expect(meets.pairs.every((p) => p.target === 'standard_rule')).toBe(true);
-    expect(meets.pairs.map((p) => p.source).sort()).toEqual([...technical(), ...Object.keys(ALLOWED_LEVELS)].sort());
-    described(reference, ['standard', 'standard_rule'], ['meets']);
+    expect(meets.pairs.map((p) => p.source).sort()).toEqual(technical().sort());
+    expect(parentsOf(schema, 'standard_rule_test')).toEqual(['standard_rule.standard_rule_id']);
+    expect([schema.kinds.standard_rule_test].map((k) => [k.stage, k.idPattern, k.obligation])).toEqual([['test-plan', '<standard rule>-T<nn>', false]]);
+    expect(ALLOWED_LEVELS.standard_rule_test).toEqual(['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual']);
+    described(reference, ['standard', 'standard_rule', 'standard_rule_test'], ['meets']);
     expect(reference.relations.find((r) => r.relation === 'meets')).toMatchObject({ role: '', forward_label: 'Meets', reverse_label: 'Met by' });
-    // A requirement cannot meet a rule, and a rule that does not exist cannot be met.
+    // A requirement or a test cannot meet a rule, and a rule that does not exist cannot be met.
     expect((await refusals(adding(everyKind(), { meets: [{ source_id: 'TL-LEND-UC01-R01', target_id: 'TL-STD-CODE-R01' }] }))).length).toBeGreaterThan(0);
+    expect((await refusals(adding(everyKind(), { meets: [{ source_id: 'TL-LEND-INV01-T', target_id: 'TL-STD-CODE-R01' }] }))).length).toBeGreaterThan(0);
     expect(await refusals(withTable(everyKind(), 'meets', [{ source_id: 'TL-LEND-CMD01-H', target_id: 'TL-STD-CODE-R09' }]))).toEqual([
       expect.objectContaining({ rule: 'foreign-key', file: 'data/meets.jsonl', line: 1 }),
     ]);
   });
 
-  it('LA-AUT-UC16-R02-T01 A standard rule is owed by the product, designed and built by the technical records that meet it and proved by the tests that meet it', async () => {
+  it('LA-AUT-UC16-R02-T01 A standard rule is owed by the product, designed and built by the technical records that meet it and proved by its standard rule tests', async () => {
     expect(record(good, 'EX-STD-CODE-R01')).toMatchObject({ product: 'EX', domain: null });
+    expect(record(good, 'EX-STD-CODE-R01-T01')).toMatchObject({ parent: 'EX-STD-CODE-R01', product: 'EX', domain: null });
     expect(obligation(good, null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 1 });
     expect(obligation(good, 'EX-LEND', 'standard_rule')).toMatchObject({ total: 0 });
-    // Met only by a technical record, it is designed and built but not proved.
-    const ws = await loadData(without(complete(), 'meets', (l) => l.source_id === 'EX-LEND-EP01-R01-T01'));
+    // With no standard rule test, it is designed and built but not proved.
+    const ws = await loadData(without(complete(), 'standard_rule_test', () => true));
     expect(obligation(ws, null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 0 });
-    // Met by a test whose file does not name it, it is not proved either.
-    const silent = await loadData(complete(), { silent: ['EX-LEND-EP01-R01-T01'] });
+    // Its test not automated yet, it is not proved and is counted as such.
+    const later = await loadData(changing(complete(), 'standard_rule_test', () => true, { state: 'not automated yet' }));
+    expect(obligation(later, null, 'standard_rule')).toMatchObject({ proved: 0, not_automated: 1 });
+    // A test whose file does not name it proves nothing either.
+    const silent = await loadData(complete(), { silent: ['EX-STD-CODE-R01-T01'] });
     expect(obligation(silent, null, 'standard_rule')).toMatchObject({ proved: 0 });
   });
 

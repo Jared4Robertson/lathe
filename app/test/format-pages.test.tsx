@@ -121,7 +121,7 @@ describe('format reference pages', () => {
     expect(within(main()).getByText('fulfills').tagName).toBe('CODE');
 
     // A check that reports nothing says so; an unknown one says it is not in the format.
-    await openApp('/format/checks/command-change-recorded');
+    await openApp('/format/checks/event-not-by-outbox');
     expect(await screen.findByText('This check reports nothing now.')).toBeInTheDocument();
     await openApp('/format/checks/no-such-check');
     expect(await screen.findByText(/The format has no check called/)).toBeInTheDocument();
@@ -173,10 +173,10 @@ describe('format reference pages', () => {
   });
 
   it('LA-V90-R71-T01 Quick find finds kinds and checks by name and leads to their pages', async () => {
-    const items = findItems(indexOf(workspace()), ['command-change-recorded']);
+    const items = findItems(indexOf(workspace()), ['event-not-by-outbox']);
     const kind = rankItems(items, 'Kind: Use case')[0];
     expect(kind).toMatchObject({ title: 'Kind: Use case', to: '/format/kinds/use_case' });
-    expect(rankItems(items, 'command-cha')[0]).toMatchObject({ title: 'Check: command-change-recorded', to: '/format/checks/command-change-recorded' });
+    expect(rankItems(items, 'event-not-by')[0]).toMatchObject({ title: 'Check: event-not-by-outbox', to: '/format/checks/event-not-by-outbox' });
     // A check that reports a problem now is found even before the reference loads.
     expect(rankItems(findItems(indexOf(workspace()), []), 'not-proved')[0]).toMatchObject({ title: 'Check: not-proved' });
 

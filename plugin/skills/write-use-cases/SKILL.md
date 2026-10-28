@@ -36,7 +36,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 ## Capabilities
 
-Every use case sits in a capability: an ordered slice of its domain, such as 01 Membership, 02 Catalog, 03 Lending. Add the domain's capabilities first, then each use case under the one it belongs to. Move a use case to another capability with `move`; its ID never changes. A capability with no use case, or one with a single use case, is a gap the check reports.
+Every use case sits in a capability: an ordered slice of its domain, such as 01 Catalog, 02 Lending. Add the domain's capabilities first, then each use case under the one it belongs to. Move a use case to another capability with `move`; its ID never changes. A capability with no use case, or one with a single use case, is a gap the check reports.
 
 ## Roles
 

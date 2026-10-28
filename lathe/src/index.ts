@@ -10,7 +10,7 @@ import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
 import { SCHEMA_DIR } from './store/schema.ts';
 import type { Row } from './store/rows.ts';
-import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, Workspace } from './types.ts';
+import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RecordedException, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, Workspace } from './types.ts';
 
 export type * from './types.ts';
 export type * from './reference.ts';
@@ -273,7 +273,18 @@ async function readRecords(store: Store, order: string[]): Promise<{ kinds: Kind
   return { kinds, stages, relations, records, links };
 }
 
-/** The workspace of an open store: its records and links, every check's problems, and coverage. root resolves the files records name. */
+/** The recorded exceptions as lathe check prints them: a heading with their count, then one line each. */
+export function exceptionsText(exceptions: RecordedException[]): string {
+  const line = (e: RecordedException) => `  ${e.command} also changes aggregate ${e.aggregate} in the same transaction: ${e.reason}`;
+  return `Recorded exceptions (${exceptions.length}):\n${exceptions.map(line).join('\n')}`;
+}
+
+/** Every recorded exception (command_change), by command and aggregate. */
+export function recordedExceptions(store: Store): RecordedException[] {
+  return store.rows('command_change').map((r) => ({ command: String(r.command_id), aggregate: String(r.aggregate_id), reason: String(r.reason) }));
+}
+
+/** The workspace of an open store: its records and links, every check's problems, the recorded exceptions, and coverage. root resolves the files records name. */
 export async function readWorkspace(store: Store, root: string, timings?: Partial<LoadTimings>): Promise<Workspace> {
   let mark = performance.now();
   const lap = (phase: 'files' | 'checks' | 'coverage') => {
@@ -303,13 +314,13 @@ export async function readWorkspace(store: Store, root: string, timings?: Partia
   lap('checks');
   const coverage = await computeCoverage(store);
   lap('coverage');
-  return { ...read, problems, coverage };
+  return { ...read, problems, exceptions: recordedExceptions(store), coverage };
 }
 
 /** A workspace whose data did not load: no records, and the store's refusals as data-refused errors. */
 function refusedWorkspace(error: StoreError): Workspace {
   return {
-    kinds: [], stages: [], relations: [], records: [], links: [], coverage: [],
+    kinds: [], stages: [], relations: [], records: [], links: [], exceptions: [], coverage: [],
     problems: error.problems.map((p) => ({ severity: 'error', check: 'data-refused', record: p.key && /^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$/.test(p.key) ? p.key : null, message: formatProblem(p) })),
   };
 }

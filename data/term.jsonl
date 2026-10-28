@@ -17,7 +17,7 @@
 {"id":"LA-AUT-TM17","title":"Refusal","domain_id":"LA-AUT","meaning":"A write the store does not accept, with every reason and no data changed.","group_name":"Writing"}
 {"id":"LA-AUT-TM18","title":"Recorded exception","domain_id":"LA-AUT","meaning":"Another aggregate of its domain that a command also changes in its transaction, named with the reason.","group_name":"Writing"}
 {"id":"LA-AUT-TM19","title":"Pattern","domain_id":"LA-AUT","meaning":"Behavior several use cases share, written once with its rules and settings; each follower answers its settings.","group_name":"Records"}
-{"id":"LA-AUT-TM20","title":"Standard","domain_id":"LA-AUT","meaning":"Engineering rules the product's code follows, which technical records and tests meet.","group_name":"Records"}
+{"id":"LA-AUT-TM20","title":"Standard","domain_id":"LA-AUT","meaning":"Engineering rules the product's code follows, which technical records meet and standard rule tests prove.","group_name":"Records"}
 {"id":"LA-CHK-TM01","title":"Check","domain_id":"LA-CHK","meaning":"One rule the engine applies on every load: a row of the `check` table whose query returns a row for each problem."}
 {"id":"LA-CHK-TM02","title":"Problem","domain_id":"LA-CHK","meaning":"One thing a check found wrong or still to do in the loaded data. Problems are the result of a run, never stored."}
 {"id":"LA-CHK-TM03","title":"Error","domain_id":"LA-CHK","meaning":"A problem that means the data is broken. `lathe check` exits 1 on any error."}

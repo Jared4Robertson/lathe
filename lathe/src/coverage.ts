@@ -30,6 +30,7 @@ export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
   flow_test: ['e2e-ui', 'e2e-api', 'manual'],
   integration_test: ['contract', 'e2e-api', 'manual'],
   pattern_rule_test: ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'],
+  standard_rule_test: ['unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual'],
 };
 
 /** The kinds whose records are tests: Lathe's kinds with a run by. */
@@ -60,7 +61,7 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
     built: 'Not asked: proof only.',
     proved: 'Its pattern rule test naming the owing domain.',
   },
-  standard_rule: { designed: 'A technical record meets it.', built: 'A technical record that meets it names a file that exists.', proved: 'A test meets it.' },
+  standard_rule: { designed: 'A technical record meets it.', built: 'A technical record that meets it names a file that exists.', proved: 'One of its standard rule tests.' },
 };
 
 /** The obligation kinds Lathe defines what designs, builds and proves; a product's own obligation kinds go by its design and proof links. */
@@ -268,7 +269,7 @@ UNION ALL SELECT f.target_id, a.id FROM fulfills f JOIN exchanges_with x ON x.so
 UNION ALL SELECT q.id, r.source_id FROM view_requirement q JOIN renders r ON r.target_id = q.view_id
 UNION ALL SELECT q.id, h.id FROM api_requirement q JOIN endpoint_handler h ON h.endpoint_id = q.endpoint_id
 -- A standard rule: the technical records that meet it.
-UNION ALL SELECT m.target_id, m.source_id FROM meets m JOIN record_id s ON s.id = m.source_id WHERE s.kind NOT IN (${list(tests)})
+UNION ALL SELECT target_id, source_id FROM meets
 -- A product's own obligation kind: the sources of its design links.
 UNION ALL SELECT l.target_id, l.source_id FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role = 'design'
   JOIN obligation o ON o.id = l.target_id WHERE o.kind NOT IN (${lathe});
@@ -277,8 +278,6 @@ CREATE OR REPLACE TABLE obligation_proof AS
 WITH proofs AS (
   SELECT t.parent_id AS obligation_id, t.id AS test_id, t.domain_id, t.state, t.level_allowed AND t.backed AS valid
   FROM test_run t JOIN obligation o ON o.id = t.parent_id
-  -- A standard rule: the tests that meet it.
-  UNION ALL SELECT m.target_id, t.id, NULL, t.state, t.level_allowed AND t.backed FROM meets m JOIN test_run t ON t.id = m.source_id
   -- A product's own obligation kind: the sources of its proof links. A test is backed as test_run says; a record of a
   -- product kind that names a file is backed only when that file exists and names it, as a test is; one that names
   -- no file counts as it stands.
