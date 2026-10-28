@@ -14,6 +14,8 @@ export interface LatheConfig {
   schema: number;
   /** Globs, relative to the root, of the product's test files, which test-case-unnamed reads; DEFAULT_TESTS when the config names none. */
   tests: string[];
+  /** Globs, relative to the root, of the product's source files, which code-file-untraced reads; DEFAULT_SOURCE when the config names none. */
+  source: string[];
 }
 
 /**
@@ -21,6 +23,13 @@ export interface LatheConfig {
  * dist and the folders of another product (a folder with its own lathe.config.json) are never read, whatever the globs.
  */
 export const DEFAULT_TESTS: readonly string[] = ['**/*.test.{ts,tsx,js,mjs}', '**/*.spec.{ts,tsx,js}'];
+
+/**
+ * The source files a product has when lathe.config.json names none: code in the common languages. Tests (the test
+ * globs, and files in test folders), configs, generated files and build output are left out whatever the globs
+ * (trace/source-files.ts).
+ */
+export const DEFAULT_SOURCE: readonly string[] = ['**/*.{ts,tsx,js,jsx,mjs,cjs,mts,cts,vue,svelte,py,rb,go,rs,java,kt,swift,cs,php}'];
 
 /** The most children of one kind a record has before too-many-children warns, when the product has no product_setting row. */
 export const DEFAULT_MAX_CHILDREN = 15;
@@ -32,10 +41,12 @@ interface ConfigFile {
   data?: unknown;
   /** Globs of the product's test files; default DEFAULT_TESTS. */
   tests?: unknown;
+  /** Globs of the product's source files; default DEFAULT_SOURCE. */
+  source?: unknown;
 }
 
 /** The keys lathe.config.json may hold; any other key is an error, never silently ignored. */
-const CONFIG_KEYS = ['schema', 'data', 'tests'] as const;
+const CONFIG_KEYS = ['schema', 'data', 'tests', 'source'] as const;
 
 /** The installed Lathe package's own folder (holding schema/ and data/), from source or from dist. */
 export const PACKAGE_DIR = (() => {
@@ -111,13 +122,20 @@ export function readConfig(root: string): LatheConfig {
   if (config.schema !== undefined && (typeof config.schema !== 'number' || !Number.isInteger(config.schema) || config.schema < 1)) {
     throw new Error(`${CONFIG_FILE}: schema must be a whole number from 1, such as 1.`);
   }
-  if (config.tests !== undefined && (!Array.isArray(config.tests) || config.tests.length === 0 || config.tests.some((t) => typeof t !== 'string' || t.trim() === ''))) {
-    throw new Error(`${CONFIG_FILE}: tests must list globs of the test files, such as ["**/*.test.ts"].`);
-  }
+  const globs = (key: 'tests' | 'source', example: string) => {
+    const value = config[key];
+    if (value !== undefined && (!Array.isArray(value) || value.length === 0 || value.some((t) => typeof t !== 'string' || t.trim() === ''))) {
+      throw new Error(`${CONFIG_FILE}: ${key} must list globs of the ${key === 'tests' ? 'test' : 'source'} files, such as ["${example}"].`);
+    }
+    return value as string[] | undefined;
+  };
+  const tests = globs('tests', '**/*.test.ts');
+  const source = globs('source', 'src/**/*.ts');
   return {
     root,
     dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'),
     schema: (config.schema as number | undefined) ?? 1,
-    tests: (config.tests as string[] | undefined) ?? [...DEFAULT_TESTS],
+    tests: tests ?? [...DEFAULT_TESTS],
+    source: source ?? [...DEFAULT_SOURCE],
   };
 }
