@@ -23,7 +23,7 @@
 {"id":"LA-AUT-UC02-FL03-S02","title":"They read what the reference says a domain is","flow_id":"LA-AUT-UC02-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC02-FL03-S03","title":"They add one domain per capability, with its subdomain type","flow_id":"LA-AUT-UC02-FL03","path":"main","position":3}
 {"id":"LA-AUT-UC02-FL03-S04","title":"`lathe check` warns of a domain named for a technology, and they rename it for its capability","flow_id":"LA-AUT-UC02-FL03","path":"main","position":4}
-{"id":"LA-AUT-UC02-FL04-S01","title":"The Agent follows the modeling skill's first step and lists the product's business capabilities","flow_id":"LA-AUT-UC02-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC02-FL04-S01","title":"Through the MCP tools, the Agent follows the modeling skill's first step and lists the product's business capabilities","flow_id":"LA-AUT-UC02-FL04","path":"main","position":1}
 {"id":"LA-AUT-UC02-FL04-S02","title":"The Agent reads what a domain is in the add tool's description of the domain table, the reference's own text","flow_id":"LA-AUT-UC02-FL04","path":"main","position":2}
 {"id":"LA-AUT-UC02-FL04-S03","title":"The Agent adds one domain per capability with add, each with its subdomain type","flow_id":"LA-AUT-UC02-FL04","path":"main","position":3}
 {"id":"LA-AUT-UC02-FL04-S04","title":"The check tool warns of a domain named for a technology, and the Agent renames the domain with set","flow_id":"LA-AUT-UC02-FL04","path":"main","position":4}
@@ -151,7 +151,7 @@
 {"id":"LA-CHK-UC05-FL03-S05","title":"A product check whose query fails is an error naming the check, and the other checks still run","flow_id":"LA-CHK-UC05-FL03","path":"refused","position":2}
 {"id":"LA-CHK-UC05-FL03-S06","title":"A checks key in lathe.config.json is refused as an unknown setting","flow_id":"LA-CHK-UC05-FL03","path":"refused","position":3}
 {"id":"LA-CHK-UC05-FL03-S07","title":"They fix what the new check finds and run lathe check again until it is clean","flow_id":"LA-CHK-UC05-FL03","path":"main","position":4}
-{"id":"LA-CHK-UC05-FL04-S01","title":"The Owner decides a rule belongs to their product, not to Lathe","flow_id":"LA-CHK-UC05-FL04","path":"main","position":1}
+{"id":"LA-CHK-UC05-FL04-S01","title":"Through the MCP tools, the Owner decides a rule belongs to their product, not to Lathe","flow_id":"LA-CHK-UC05-FL04","path":"main","position":1}
 {"id":"LA-CHK-UC05-FL04-S02","title":"The Agent adds it as a check row with the product's product_id, with add","flow_id":"LA-CHK-UC05-FL04","path":"main","position":2}
 {"id":"LA-CHK-UC05-FL04-S03","title":"The check tool runs Lathe's checks first, then the product's, whose problems carry its row's name and concern only its product's records","flow_id":"LA-CHK-UC05-FL04","path":"main","position":3}
 {"id":"LA-CHK-UC05-FL04-S04","title":"The Agent fixes what the new check finds and calls the check tool again until it is clean","flow_id":"LA-CHK-UC05-FL04","path":"main","position":4}
@@ -183,14 +183,14 @@
 {"id":"LA-EXP-UC01-FL01-S02","title":"They open a domain: its records by stage, its coverage gaps and problems","flow_id":"LA-EXP-UC01-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC01-FL01-S03","title":"They type in the search box and the records filter by ID or title","flow_id":"LA-EXP-UC01-FL01","path":"main","position":3}
 {"id":"LA-EXP-UC01-FL01-S04","title":"They open the record they found","flow_id":"LA-EXP-UC01-FL01","path":"main","position":4}
-{"id":"LA-EXP-UC01-FL02-S01","title":"The Reader sees the current space's domains in the nav","flow_id":"LA-EXP-UC01-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC01-FL02-S01","title":"In the desktop app, the Reader sees the current space's domains in the nav","flow_id":"LA-EXP-UC01-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC01-FL02-S02","title":"The Reader opens a domain: its records by stage, its coverage gaps and problems","flow_id":"LA-EXP-UC01-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC01-FL02-S03","title":"The Reader types in the search box, and the records filter by ID or title","flow_id":"LA-EXP-UC01-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC01-FL02-S04","title":"The Reader opens the record they found","flow_id":"LA-EXP-UC01-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC02-FL01-S01","title":"The reader reads a record's page: its fields, sanitized text, parts, parent, children and problems","flow_id":"LA-EXP-UC02-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC02-FL01-S02","title":"They follow a link out or in, named by its relation's label, or a record named in the text; an unknown ID stays text","flow_id":"LA-EXP-UC02-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC02-FL01-S03","title":"A click anywhere on a row opens its record","flow_id":"LA-EXP-UC02-FL01","path":"main","position":3}
-{"id":"LA-EXP-UC02-FL02-S01","title":"The Reader reads a record's page: its fields, sanitized text, parts, parent, children and problems","flow_id":"LA-EXP-UC02-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC02-FL02-S01","title":"In the desktop app, the Reader reads a record's page: its fields, sanitized text, parts, parent, children and problems","flow_id":"LA-EXP-UC02-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC02-FL02-S02","title":"The Reader follows a link out or in, named by its relation's label, or a record named in the text; an unknown ID stays text","flow_id":"LA-EXP-UC02-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC02-FL02-S03","title":"The Reader clicks anywhere on a row, which opens its record","flow_id":"LA-EXP-UC02-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC03-FL01-S01","title":"The reader turns on the Graph view of the page in hand, never from the nav","flow_id":"LA-EXP-UC03-FL01","path":"main","position":1}
@@ -202,11 +202,11 @@
 {"id":"LA-EXP-UC03-FL01-S07","title":"They switch the layout to Nested or Voronoi","flow_id":"LA-EXP-UC03-FL01","path":"main","position":7}
 {"id":"LA-EXP-UC03-FL01-S08","title":"From the keyboard they move between nodes, step out, in and across, and Escape clears the filters","flow_id":"LA-EXP-UC03-FL01","path":"main","position":8}
 {"id":"LA-EXP-UC03-FL01-S09","title":"They open a node's record page","flow_id":"LA-EXP-UC03-FL01","path":"main","position":9}
-{"id":"LA-EXP-UC03-FL02-S01","title":"The Reader turns on the Graph view of the page in hand, never from the nav","flow_id":"LA-EXP-UC03-FL02","path":"main","position":1}
-{"id":"LA-EXP-UC03-FL02-S02","title":"The graph frames the focus in the product's one map, at depth 1, its parent at the left","flow_id":"LA-EXP-UC03-FL02","path":"main","position":2}
+{"id":"LA-EXP-UC03-FL02-S01","title":"In the desktop app, the Reader turns on the Graph view of the page in hand, never from the nav","flow_id":"LA-EXP-UC03-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC03-FL02-S02","title":"In the desktop app, the graph frames the focus in the product's one map, at depth 1, its parent at the left","flow_id":"LA-EXP-UC03-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC03-FL02-S03","title":"The graph shows each node with its stage, kind, problems and gaps, with a legend, and spotlights what a hovered node joins","flow_id":"LA-EXP-UC03-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC03-FL02-S04","title":"The Reader clicks a node: the camera glides to it, the map holds still, the address and the trail follow","flow_id":"LA-EXP-UC03-FL02","path":"main","position":4}
-{"id":"LA-EXP-UC03-FL02-S05","title":"The side bar describes the focused record","flow_id":"LA-EXP-UC03-FL02","path":"main","position":5}
+{"id":"LA-EXP-UC03-FL02-S05","title":"In the desktop app, the side bar describes the focused record","flow_id":"LA-EXP-UC03-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC03-FL02-S06","title":"The Reader filters kinds and relations, switches Links on (edge hints count what lies past each edge) and the minimap","flow_id":"LA-EXP-UC03-FL02","path":"main","position":6}
 {"id":"LA-EXP-UC03-FL02-S07","title":"The Reader switches the layout to Nested or Voronoi","flow_id":"LA-EXP-UC03-FL02","path":"main","position":7}
 {"id":"LA-EXP-UC03-FL02-S08","title":"The Reader moves between nodes from the keyboard, steps out, in and across, and clears the filters with Escape","flow_id":"LA-EXP-UC03-FL02","path":"main","position":8}
@@ -220,7 +220,7 @@
 {"id":"LA-EXP-UC04-FL02-S02","title":"The Reader clicks a group, which becomes the focus at its own address","flow_id":"LA-EXP-UC04-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC04-FL02-S03","title":"The graph puts an aggregate's events in a Domain events group, as spark flags","flow_id":"LA-EXP-UC04-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC04-FL02-S04","title":"The graph puts a pattern's rules under it, and draws follows as a cross-link","flow_id":"LA-EXP-UC04-FL02","path":"main","position":4}
-{"id":"LA-EXP-UC04-FL02-S05","title":"The graph sits in a pane beside the wiki and reports each move to the page","flow_id":"LA-EXP-UC04-FL02","path":"main","position":5}
+{"id":"LA-EXP-UC04-FL02-S05","title":"In the desktop app, the graph sits in a pane beside the wiki and reports each move to the page","flow_id":"LA-EXP-UC04-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC05-FL01-S01","title":"The reader opens quick find, types part of an ID or title and opens the record","flow_id":"LA-EXP-UC05-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC05-FL01-S02","title":"The record, group, product or domain opens at its one address, in the views the link names","flow_id":"LA-EXP-UC05-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC05-FL01-S03","title":"They open and close the Wiki, Graph and Model panes, resize them and show one alone; a title above a canvas keeps its height","flow_id":"LA-EXP-UC05-FL01","path":"main","position":3}
@@ -228,18 +228,18 @@
 {"id":"LA-EXP-UC05-FL01-S05","title":"The wiki shows one level deep, grouped requirements under headings, and long lists ten rows at a time","flow_id":"LA-EXP-UC05-FL01","path":"main","position":5}
 {"id":"LA-EXP-UC05-FL01-S06","title":"They fold the nav's sections, collapse it to a rail, or open it as a sheet on a narrow screen","flow_id":"LA-EXP-UC05-FL01","path":"main","position":6}
 {"id":"LA-EXP-UC05-FL01-S07","title":"They fold the side bar away from the page bar","flow_id":"LA-EXP-UC05-FL01","path":"main","position":7}
-{"id":"LA-EXP-UC05-FL02-S01","title":"The Reader opens quick find, types part of an ID or title and opens the record","flow_id":"LA-EXP-UC05-FL02","path":"main","position":1}
-{"id":"LA-EXP-UC05-FL02-S02","title":"The record, group, product or domain opens at its one address, in the views the link names","flow_id":"LA-EXP-UC05-FL02","path":"main","position":2}
+{"id":"LA-EXP-UC05-FL02-S01","title":"In the desktop app, the Reader opens quick find, types part of an ID or title and opens the record","flow_id":"LA-EXP-UC05-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC05-FL02-S02","title":"In the desktop app, the record, group, product or domain opens at its one address, in the views the link names","flow_id":"LA-EXP-UC05-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC05-FL02-S03","title":"The Reader opens and closes the Wiki, Graph and Model panes, resizes them and shows one alone; a title above a canvas keeps its height","flow_id":"LA-EXP-UC05-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC05-FL02-S04","title":"The Reader follows a link in any pane, which moves them all; Back and Forward move both","flow_id":"LA-EXP-UC05-FL02","path":"main","position":4}
-{"id":"LA-EXP-UC05-FL02-S05","title":"The wiki shows one level deep, grouped requirements under headings, and long lists ten rows at a time","flow_id":"LA-EXP-UC05-FL02","path":"main","position":5}
+{"id":"LA-EXP-UC05-FL02-S05","title":"In the desktop app, the wiki shows one level deep, grouped requirements under headings, and long lists ten rows at a time","flow_id":"LA-EXP-UC05-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC05-FL02-S06","title":"The Reader folds the nav's sections or collapses it to a rail","flow_id":"LA-EXP-UC05-FL02","path":"main","position":6}
 {"id":"LA-EXP-UC05-FL02-S07","title":"The Reader folds the side bar away from the page bar","flow_id":"LA-EXP-UC05-FL02","path":"main","position":7}
 {"id":"LA-EXP-UC06-FL01-S01","title":"The reader opens a flow's page and reads its steps in order, a table per path","flow_id":"LA-EXP-UC06-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC06-FL01-S02","title":"They unfold a step to read more; a step with problems shows its badge","flow_id":"LA-EXP-UC06-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC06-FL01-S03","title":"In the Graph view the steps sit under the flow","flow_id":"LA-EXP-UC06-FL01","path":"main","position":3}
 {"id":"LA-EXP-UC06-FL01-S04","title":"Tracing a requirement, the reader sees the step that fulfills it, its flow and what it invokes","flow_id":"LA-EXP-UC06-FL01","path":"main","position":4}
-{"id":"LA-EXP-UC06-FL02-S01","title":"The Reader opens a flow's page and reads its steps in order, a table per path","flow_id":"LA-EXP-UC06-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC06-FL02-S01","title":"In the desktop app, the Reader opens a flow's page and reads its steps in order, a table per path","flow_id":"LA-EXP-UC06-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC06-FL02-S02","title":"The Reader unfolds a step to read more; a step with problems shows its badge","flow_id":"LA-EXP-UC06-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC06-FL02-S03","title":"The graph sets the steps under their flow in the Graph view","flow_id":"LA-EXP-UC06-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC06-FL02-S04","title":"The Reader traces a requirement and sees the step that fulfills it, its flow and what it invokes","flow_id":"LA-EXP-UC06-FL02","path":"main","position":4}
@@ -251,7 +251,7 @@
 {"id":"LA-EXP-UC07-FL01-S06","title":"On a phone the rail stays in the nav sheet","flow_id":"LA-EXP-UC07-FL01","path":"main","position":6}
 {"id":"LA-EXP-UC07-FL01-S07","title":"From the products page they choose a space","flow_id":"LA-EXP-UC07-FL01","path":"main","position":7}
 {"id":"LA-EXP-UC07-FL01-S08","title":"With one product there is no rail: the nav takes its width, the product's name and icon at its top","flow_id":"LA-EXP-UC07-FL01","path":"one product","position":1}
-{"id":"LA-EXP-UC07-FL02-S01","title":"The Reader sees each product as a space in the rail, the current one marked","flow_id":"LA-EXP-UC07-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC07-FL02-S01","title":"In the desktop app, the Reader sees each product as a space in the rail, the current one marked","flow_id":"LA-EXP-UC07-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC07-FL02-S02","title":"The Reader chooses a space: it opens on its last page, and the nav and every view follow it","flow_id":"LA-EXP-UC07-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC07-FL02-S03","title":"The Reader presses Alt and a number, or picks Switch to in the palette, to switch back","flow_id":"LA-EXP-UC07-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC07-FL02-S04","title":"The Reader finds a record in their space","flow_id":"LA-EXP-UC07-FL02","path":"main","position":4}
@@ -265,12 +265,12 @@
 {"id":"LA-EXP-UC08-FL02-S01","title":"The nav lists, under the current space, the product page, Shared and each domain, which unfolds into its five stages with counts","flow_id":"LA-EXP-UC08-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC08-FL02-S02","title":"The nav opens the rows that hold the page the Reader opens","flow_id":"LA-EXP-UC08-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC08-FL02-S03","title":"The nav lists the capabilities in order under Use cases, then the use cases outside any","flow_id":"LA-EXP-UC08-FL02","path":"main","position":3}
-{"id":"LA-EXP-UC08-FL02-S04","title":"The domain page heads its records with the same stages","flow_id":"LA-EXP-UC08-FL02","path":"main","position":4}
+{"id":"LA-EXP-UC08-FL02-S04","title":"In the desktop app, the domain page heads its records with the same stages","flow_id":"LA-EXP-UC08-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC09-FL01-S01","title":"The domain page lists Technical specification by technical kind","flow_id":"LA-EXP-UC09-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC09-FL01-S02","title":"It lists Test plan by test kind","flow_id":"LA-EXP-UC09-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC09-FL01-S03","title":"In the nav the kind groups fold with their counts, and the current page's branch opens","flow_id":"LA-EXP-UC09-FL01","path":"main","position":3}
 {"id":"LA-EXP-UC09-FL01-S04","title":"In the graph they reach the same records through the same groups, and the trail names each visit","flow_id":"LA-EXP-UC09-FL01","path":"main","position":4}
-{"id":"LA-EXP-UC09-FL02-S01","title":"The domain page lists Technical specification by technical kind","flow_id":"LA-EXP-UC09-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC09-FL02-S01","title":"In the desktop app, the domain page lists Technical specification by technical kind","flow_id":"LA-EXP-UC09-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC09-FL02-S02","title":"The domain page lists Test plan by test kind","flow_id":"LA-EXP-UC09-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC09-FL02-S03","title":"The nav folds the kind groups with their counts, and opens the current page's branch","flow_id":"LA-EXP-UC09-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC09-FL02-S04","title":"The Reader reaches the same records in the graph through the same groups, and the trail names each visit","flow_id":"LA-EXP-UC09-FL02","path":"main","position":4}
@@ -281,7 +281,7 @@
 {"id":"LA-EXP-UC10-FL01-S05","title":"They close a tab by its button, a middle-click or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL01","path":"main","position":5}
 {"id":"LA-EXP-UC10-FL01-S06","title":"A reload brings back each space's tabs as they were","flow_id":"LA-EXP-UC10-FL01","path":"main","position":6}
 {"id":"LA-EXP-UC10-FL02-S01","title":"The Reader opens a page plainly, which shows in the preview tab, or activates the tab it is open in","flow_id":"LA-EXP-UC10-FL02","path":"main","position":1}
-{"id":"LA-EXP-UC10-FL02-S02","title":"The Reader keeps the tab by a double-click, Ctrl+K then Enter, or a change to its views","flow_id":"LA-EXP-UC10-FL02","path":"main","position":2}
+{"id":"LA-EXP-UC10-FL02-S02","title":"In the desktop app, the Reader keeps the tab by a double-click, Ctrl+K then Enter, or a change to its views","flow_id":"LA-EXP-UC10-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC10-FL02-S03","title":"The Reader flips between tabs with Ctrl+Tab, or from View › Tabs in the menu bar","flow_id":"LA-EXP-UC10-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC10-FL02-S04","title":"The app keeps each tab's own views, pane sizes and scroll, and draws the graph the same in every tab","flow_id":"LA-EXP-UC10-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC10-FL02-S05","title":"The Reader closes a tab by its button, a middle-click or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL02","path":"main","position":5}
@@ -305,7 +305,7 @@
 {"id":"LA-EXP-UC13-FL01-S01","title":"The reader opens a domain's Interaction design and sees its endpoints, and the integrations only its steps exchange with","flow_id":"LA-EXP-UC13-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC13-FL01-S02","title":"They open a command and read its endpoint, method, route and API requirements","flow_id":"LA-EXP-UC13-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC13-FL01-S03","title":"They open an integration and read the steps that exchange with its system","flow_id":"LA-EXP-UC13-FL01","path":"main","position":3}
-{"id":"LA-EXP-UC13-FL02-S01","title":"The Reader opens a domain's Interaction design and sees its endpoints, and the integrations only its steps exchange with","flow_id":"LA-EXP-UC13-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC13-FL02-S01","title":"In the desktop app, the Reader opens a domain's Interaction design and sees its endpoints, and the integrations only its steps exchange with","flow_id":"LA-EXP-UC13-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC13-FL02-S02","title":"The Reader opens a command and reads its endpoint, method, route and API requirements","flow_id":"LA-EXP-UC13-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC13-FL02-S03","title":"The Reader opens an integration and reads the steps that exchange with its system","flow_id":"LA-EXP-UC13-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC14-FL01-S01","title":"The Owner chooses Edit; the form opens in place, shaped by the schema, from the keyboard too","flow_id":"LA-EXP-UC14-FL01","path":"main","position":1}
@@ -313,7 +313,7 @@
 {"id":"LA-EXP-UC14-FL01-S03","title":"The store refuses it; the reasons show beside the inputs, and they fix it and save again","flow_id":"LA-EXP-UC14-FL01","path":"refused","position":1}
 {"id":"LA-EXP-UC14-FL01-S04","title":"From a parent's page they Add a child, its ID suggested","flow_id":"LA-EXP-UC14-FL01","path":"main","position":3}
 {"id":"LA-EXP-UC14-FL01-S05","title":"They Remove a record after reading what still references it","flow_id":"LA-EXP-UC14-FL01","path":"main","position":4}
-{"id":"LA-EXP-UC14-FL02-S01","title":"The Owner chooses Edit; the form opens in place, shaped by the schema, from the keyboard too","flow_id":"LA-EXP-UC14-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC14-FL02-S01","title":"In the desktop app, the Owner chooses Edit; the form opens in place, shaped by the schema, from the keyboard too","flow_id":"LA-EXP-UC14-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC14-FL02-S02","title":"The Owner changes a field and a link and saves: one write","flow_id":"LA-EXP-UC14-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC14-FL02-S03","title":"The store refuses the write; the reasons show beside the inputs, and the Owner fixes it and saves again","flow_id":"LA-EXP-UC14-FL02","path":"refused","position":1}
 {"id":"LA-EXP-UC14-FL02-S04","title":"The Owner adds a child from its parent's page, its ID suggested","flow_id":"LA-EXP-UC14-FL02","path":"main","position":3}
@@ -332,14 +332,14 @@
 {"id":"LA-PLT-UC03-FL01-S02","title":"The server sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC03-FL01-S03","title":"When the data cannot be loaded, the page says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL01","path":"refused","position":1}
 {"id":"LA-PLT-UC03-FL02-S01","title":"The Agent changes records through the command layer while the Reader keeps the page open","flow_id":"LA-PLT-UC03-FL02","path":"main","position":1}
-{"id":"LA-PLT-UC03-FL02-S02","title":"The server sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL02","path":"main","position":2}
+{"id":"LA-PLT-UC03-FL02-S02","title":"In the desktop app, the server sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC03-FL02-S03","title":"The page says what is wrong when the data cannot be loaded, rather than showing other data","flow_id":"LA-PLT-UC03-FL02","path":"refused","position":1}
 {"id":"LA-PLT-UC04-FL01-S01","title":"The Reader presses Cmd/Ctrl+Shift+P; the palette lists the commands that apply, from the one keymap, each with its keys for the platform","flow_id":"LA-PLT-UC04-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC04-FL01-S02","title":"They run commands by their VS Code keys, such as Cmd/Ctrl+B to hide the navigation","flow_id":"LA-PLT-UC04-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC04-FL01-S03","title":"A screen reader hears what the command changed","flow_id":"LA-PLT-UC04-FL01","path":"main","position":3}
 {"id":"LA-PLT-UC04-FL01-S04","title":"While they type in a search box, single-key shortcuts don't fire, and keys the app doesn't handle reach the browser","flow_id":"LA-PLT-UC04-FL01","path":"typing","position":1}
 {"id":"LA-PLT-UC04-FL01-S05","title":"They press ?; the shortcuts sheet lists every shortcut by group, with a search and how to override a binding","flow_id":"LA-PLT-UC04-FL01","path":"main","position":4}
-{"id":"LA-PLT-UC04-FL02-S01","title":"The Reader presses Cmd/Ctrl+Shift+P; the palette lists the commands that apply, from the one keymap, each with its keys for the platform","flow_id":"LA-PLT-UC04-FL02","path":"main","position":1}
+{"id":"LA-PLT-UC04-FL02-S01","title":"In the desktop app, the Reader presses Cmd/Ctrl+Shift+P; the palette lists the commands that apply, from the one keymap, each with its keys for the platform","flow_id":"LA-PLT-UC04-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC04-FL02-S02","title":"The Reader runs commands by their VS Code keys, such as Cmd/Ctrl+B to hide the navigation","flow_id":"LA-PLT-UC04-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC04-FL02-S03","title":"The app announces to a screen reader what the command changed","flow_id":"LA-PLT-UC04-FL02","path":"main","position":3}
 {"id":"LA-PLT-UC04-FL02-S04","title":"The app fires no single-key shortcut while the Reader types in a search box, and passes keys it doesn't handle to the window","flow_id":"LA-PLT-UC04-FL02","path":"typing","position":1}
@@ -348,7 +348,7 @@
 {"id":"LA-PLT-UC05-FL01-S02","title":"They open the palette and read each command's keys","flow_id":"LA-PLT-UC05-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC05-FL01-S03","title":"A screen reader hears the keys","flow_id":"LA-PLT-UC05-FL01","path":"main","position":3}
 {"id":"LA-PLT-UC05-FL01-S04","title":"They rebind a key and every hint follows, the shortcuts sheet with them","flow_id":"LA-PLT-UC05-FL01","path":"main","position":4}
-{"id":"LA-PLT-UC05-FL02-S01","title":"The Reader rests on a control and its tooltip names its keys","flow_id":"LA-PLT-UC05-FL02","path":"main","position":1}
+{"id":"LA-PLT-UC05-FL02-S01","title":"In the desktop app, the Reader rests on a control and its tooltip names its keys","flow_id":"LA-PLT-UC05-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC05-FL02-S02","title":"The Reader opens the palette and reads each command's keys","flow_id":"LA-PLT-UC05-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC05-FL02-S03","title":"The app announces the keys to a screen reader","flow_id":"LA-PLT-UC05-FL02","path":"main","position":3}
 {"id":"LA-PLT-UC05-FL02-S04","title":"The Reader rebinds a key, and every hint follows, the shortcuts sheet with them","flow_id":"LA-PLT-UC05-FL02","path":"main","position":4}
@@ -356,8 +356,8 @@
 {"id":"LA-PLT-UC06-FL01-S02","title":"Lathe remembers the sizes; a double-click resets one","flow_id":"LA-PLT-UC06-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC06-FL01-S03","title":"Dragging the navigation or the side bar small folds it away","flow_id":"LA-PLT-UC06-FL01","path":"main","position":3}
 {"id":"LA-PLT-UC06-FL01-S04","title":"They hide the side bar; the main view takes its room and the toggle brings it back","flow_id":"LA-PLT-UC06-FL01","path":"main","position":4}
-{"id":"LA-PLT-UC06-FL02-S01","title":"The Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL02","path":"main","position":1}
-{"id":"LA-PLT-UC06-FL02-S02","title":"Lathe remembers the sizes; a double-click resets one","flow_id":"LA-PLT-UC06-FL02","path":"main","position":2}
+{"id":"LA-PLT-UC06-FL02-S01","title":"In the desktop app, the Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL02","path":"main","position":1}
+{"id":"LA-PLT-UC06-FL02-S02","title":"In the desktop app, Lathe remembers the sizes; a double-click resets one","flow_id":"LA-PLT-UC06-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC06-FL02-S03","title":"The Reader drags the navigation or the side bar small, which folds it away","flow_id":"LA-PLT-UC06-FL02","path":"main","position":3}
 {"id":"LA-PLT-UC06-FL02-S04","title":"The Reader hides the side bar; the main view takes its room and the toggle brings it back","flow_id":"LA-PLT-UC06-FL02","path":"main","position":4}
 {"id":"LA-PLT-UC07-FL01-S01","title":"The Reader presses g then t and arrows through the themes, each shown on the whole app at once","flow_id":"LA-PLT-UC07-FL01","path":"main","position":1}
@@ -370,7 +370,7 @@
 {"id":"LA-PLT-UC07-FL01-S08","title":"They delete their copy, after being asked","flow_id":"LA-PLT-UC07-FL01","path":"alternate","position":2}
 {"id":"LA-PLT-UC07-FL01-S09","title":"They export it to share as a file","flow_id":"LA-PLT-UC07-FL01","path":"main","position":7}
 {"id":"LA-PLT-UC07-FL01-S10","title":"Someone else imports that file as a theme of their own","flow_id":"LA-PLT-UC07-FL01","path":"alternate","position":3}
-{"id":"LA-PLT-UC07-FL02-S01","title":"The Reader presses g then t and arrows through the themes, each shown on the whole app at once","flow_id":"LA-PLT-UC07-FL02","path":"main","position":1}
+{"id":"LA-PLT-UC07-FL02-S01","title":"In the desktop app, the Reader presses g then t and arrows through the themes, each shown on the whole app at once","flow_id":"LA-PLT-UC07-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC07-FL02-S02","title":"The Reader keeps one with Enter, or puts back the one before with Escape","flow_id":"LA-PLT-UC07-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC07-FL02-S03","title":"The Reader switches Light, Dark or System from the palette","flow_id":"LA-PLT-UC07-FL02","path":"main","position":3}
 {"id":"LA-PLT-UC07-FL02-S04","title":"The Reader opens Appearance from the nav's footer: every theme with a preview","flow_id":"LA-PLT-UC07-FL02","path":"main","position":4}
@@ -399,7 +399,7 @@
 {"id":"LA-PLT-UC09-FL01-S09","title":"They switch the theme; only colors change","flow_id":"LA-PLT-UC09-FL01","path":"main","position":9}
 {"id":"LA-PLT-UC09-FL01-S10","title":"On a phone they open and close the sheets; the page behind stays","flow_id":"LA-PLT-UC09-FL01","path":"phone","position":1}
 {"id":"LA-PLT-UC09-FL01-S11","title":"Each move answers within the performance budgets","flow_id":"LA-PLT-UC09-FL01","path":"main","position":10}
-{"id":"LA-PLT-UC09-FL02-S01","title":"The Reader opens a page; nothing drawn moves as the specs and fonts arrive","flow_id":"LA-PLT-UC09-FL02","path":"main","position":1}
+{"id":"LA-PLT-UC09-FL02-S01","title":"In the desktop app, the Reader opens a page; nothing drawn moves as the specs and fonts arrive","flow_id":"LA-PLT-UC09-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC09-FL02-S02","title":"The Reader moves between records by the nav, a link, a graph click, Back and quick find; the frame stays","flow_id":"LA-PLT-UC09-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC09-FL02-S03","title":"The Reader opens, closes and maximizes panes and the side bar; only the panes move","flow_id":"LA-PLT-UC09-FL02","path":"main","position":3}
 {"id":"LA-PLT-UC09-FL02-S04","title":"The Reader folds rows and uses Expand all","flow_id":"LA-PLT-UC09-FL02","path":"main","position":4}
@@ -414,7 +414,7 @@
 {"id":"LA-PLT-UC10-FL01-S03","title":"They switch views and show and hide the side bar; each change is announced","flow_id":"LA-PLT-UC10-FL01","path":"main","position":3}
 {"id":"LA-PLT-UC10-FL01-S04","title":"They pick the High contrast theme by keyboard; every page reads clearly in it, in light and dark","flow_id":"LA-PLT-UC10-FL01","path":"main","position":4}
 {"id":"LA-PLT-UC10-FL01-S05","title":"They open a dialog or a phone sheet; focus is held inside and comes back to the opener","flow_id":"LA-PLT-UC10-FL01","path":"main","position":5}
-{"id":"LA-PLT-UC10-FL02-S01","title":"The Reader tabs round the nav, the page bar, the panes and the side bar; every control is reached, named for what it shows, big enough and never inside another, and every box that scrolls takes focus","flow_id":"LA-PLT-UC10-FL02","path":"main","position":1}
+{"id":"LA-PLT-UC10-FL02-S01","title":"In the desktop app, the Reader tabs round the nav, the page bar, the panes and the side bar; every control is reached, named for what it shows, big enough and never inside another, and every box that scrolls takes focus","flow_id":"LA-PLT-UC10-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC10-FL02-S02","title":"The Reader opens a record from the nav or quick find; focus stays on the page","flow_id":"LA-PLT-UC10-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC10-FL02-S03","title":"The Reader switches views and shows and hides the side bar; each change is announced","flow_id":"LA-PLT-UC10-FL02","path":"main","position":3}
 {"id":"LA-PLT-UC10-FL02-S04","title":"The Reader picks the High contrast theme by keyboard; every page reads clearly in it, in light and dark","flow_id":"LA-PLT-UC10-FL02","path":"main","position":4}
@@ -498,7 +498,7 @@
 {"id":"LA-TRC-UC05-FL03-S04","title":"The file of a manual test or a test not automated yet is checked only for existing","flow_id":"LA-TRC-UC05-FL03","path":"main","position":3}
 {"id":"LA-TRC-UC05-FL03-S05","title":"Lathe check reads each test case in the product's test files for the ID of a test whose file it is in","flow_id":"LA-TRC-UC05-FL03","path":"main","position":4}
 {"id":"LA-TRC-UC05-FL03-S06","title":"A test case that names no such test is an error naming its file and line, and the Agent names it or removes it","flow_id":"LA-TRC-UC05-FL03","path":"refused","position":2}
-{"id":"LA-TRC-UC05-FL04-S01","title":"The Agent writes the test's code, naming the test's own ID in its name","flow_id":"LA-TRC-UC05-FL04","path":"main","position":1}
+{"id":"LA-TRC-UC05-FL04-S01","title":"Through the MCP tools, the Agent writes the test's code, naming the test's own ID in its name","flow_id":"LA-TRC-UC05-FL04","path":"main","position":1}
 {"id":"LA-TRC-UC05-FL04-S02","title":"The check tool finds each automated test's ID, and each product proof's, in its file as a whole ID","flow_id":"LA-TRC-UC05-FL04","path":"main","position":2}
 {"id":"LA-TRC-UC05-FL04-S03","title":"The check tool checks the file of a manual test or a test not automated yet only for existing","flow_id":"LA-TRC-UC05-FL04","path":"main","position":3}
 {"id":"LA-TRC-UC05-FL04-S04","title":"The check tool reads each test case in the product's test files for the ID of a test whose file it is in","flow_id":"LA-TRC-UC05-FL04","path":"main","position":4}
@@ -522,37 +522,37 @@
 {"id":"LA-TRC-UC09-FL01-S02","title":"They read the product's Summary: coverage, tests by state, open questions, errors and warnings","flow_id":"LA-TRC-UC09-FL01","path":"main","position":2}
 {"id":"LA-TRC-UC09-FL01-S03","title":"They read the product's open questions and problems","flow_id":"LA-TRC-UC09-FL01","path":"main","position":3}
 {"id":"LA-TRC-UC09-FL01-S04","title":"They open a domain card to its domain page","flow_id":"LA-TRC-UC09-FL01","path":"main","position":4}
-{"id":"LA-TRC-UC09-FL02-S01","title":"The Reader opens a product and reads each domain card's coverage bars","flow_id":"LA-TRC-UC09-FL02","path":"main","position":1}
+{"id":"LA-TRC-UC09-FL02-S01","title":"In the desktop app, the Reader opens a product and reads each domain card's coverage bars","flow_id":"LA-TRC-UC09-FL02","path":"main","position":1}
 {"id":"LA-TRC-UC09-FL02-S02","title":"The Reader reads the product's Summary: coverage, tests by state, open questions, errors and warnings","flow_id":"LA-TRC-UC09-FL02","path":"main","position":2}
 {"id":"LA-TRC-UC09-FL02-S03","title":"The Reader reads the product's open questions and problems","flow_id":"LA-TRC-UC09-FL02","path":"main","position":3}
 {"id":"LA-TRC-UC09-FL02-S04","title":"The Reader opens a domain card to its domain page","flow_id":"LA-TRC-UC09-FL02","path":"main","position":4}
 {"id":"LA-TRC-UC10-FL01-S01","title":"The Reader focuses an obligation in the graph","flow_id":"LA-TRC-UC10-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC10-FL01-S02","title":"They switch to trace mode and see only its chain and the files it names","flow_id":"LA-TRC-UC10-FL01","path":"main","position":2}
-{"id":"LA-TRC-UC10-FL02-S01","title":"The Reader focuses an obligation in the graph","flow_id":"LA-TRC-UC10-FL02","path":"main","position":1}
+{"id":"LA-TRC-UC10-FL02-S01","title":"In the desktop app, the Reader focuses an obligation in the graph","flow_id":"LA-TRC-UC10-FL02","path":"main","position":1}
 {"id":"LA-TRC-UC10-FL02-S02","title":"The Reader switches to trace mode and sees only its chain and the files it names","flow_id":"LA-TRC-UC10-FL02","path":"main","position":2}
 {"id":"LA-TRC-UC11-FL01-S01","title":"The Reader opens a product, then a domain, and reads one coverage group per obligation kind","flow_id":"LA-TRC-UC11-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC11-FL01-S02","title":"They open a gap, such as an API requirement no test proves yet, on its record page","flow_id":"LA-TRC-UC11-FL01","path":"main","position":2}
 {"id":"LA-TRC-UC11-FL01-S03","title":"On the record page each test shows its state","flow_id":"LA-TRC-UC11-FL01","path":"main","position":3}
-{"id":"LA-TRC-UC11-FL02-S01","title":"The Reader opens a product, then a domain, and reads one coverage group per obligation kind","flow_id":"LA-TRC-UC11-FL02","path":"main","position":1}
+{"id":"LA-TRC-UC11-FL02-S01","title":"In the desktop app, the Reader opens a product, then a domain, and reads one coverage group per obligation kind","flow_id":"LA-TRC-UC11-FL02","path":"main","position":1}
 {"id":"LA-TRC-UC11-FL02-S02","title":"The Reader opens a gap, such as an API requirement no test proves yet, on its record page","flow_id":"LA-TRC-UC11-FL02","path":"main","position":2}
 {"id":"LA-TRC-UC11-FL02-S03","title":"The record page shows each test with its state","flow_id":"LA-TRC-UC11-FL02","path":"main","position":3}
 {"id":"LA-TRC-UC12-FL01-S01","title":"The Reader opens a domain page and unfolds Patterns we follow: each pattern, its rules, and whether this domain proves each","flow_id":"LA-TRC-UC12-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC12-FL01-S02","title":"They open a pattern: its settings, its rules, and the domains and use cases that follow it, with each domain's standing per rule","flow_id":"LA-TRC-UC12-FL01","path":"main","position":2}
 {"id":"LA-TRC-UC12-FL01-S03","title":"In the graph, the pattern's rules sit under the pattern and each follows link is drawn as a cross-link","flow_id":"LA-TRC-UC12-FL01","path":"main","position":3}
-{"id":"LA-TRC-UC12-FL02-S01","title":"The Reader opens a domain page and unfolds Patterns we follow: each pattern, its rules, and whether this domain proves each","flow_id":"LA-TRC-UC12-FL02","path":"main","position":1}
+{"id":"LA-TRC-UC12-FL02-S01","title":"In the desktop app, the Reader opens a domain page and unfolds Patterns we follow: each pattern, its rules, and whether this domain proves each","flow_id":"LA-TRC-UC12-FL02","path":"main","position":1}
 {"id":"LA-TRC-UC12-FL02-S02","title":"The Reader opens a pattern: its settings, its rules, and the domains and use cases that follow it, with each domain's standing per rule","flow_id":"LA-TRC-UC12-FL02","path":"main","position":2}
 {"id":"LA-TRC-UC12-FL02-S03","title":"The graph sets the pattern's rules under the pattern and draws each follows link as a cross-link","flow_id":"LA-TRC-UC12-FL02","path":"main","position":3}
 {"id":"LA-TRC-UC13-FL01-S01","title":"The Reader reads each domain card's tests by state","flow_id":"LA-TRC-UC13-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC13-FL01-S02","title":"In the product's Summary they read the tests by state in total","flow_id":"LA-TRC-UC13-FL01","path":"main","position":2}
 {"id":"LA-TRC-UC13-FL01-S03","title":"They open a domain and read the same in its Coverage section","flow_id":"LA-TRC-UC13-FL01","path":"main","position":3}
-{"id":"LA-TRC-UC13-FL02-S01","title":"The Reader reads each domain card's tests by state","flow_id":"LA-TRC-UC13-FL02","path":"main","position":1}
+{"id":"LA-TRC-UC13-FL02-S01","title":"In the desktop app, the Reader reads each domain card's tests by state","flow_id":"LA-TRC-UC13-FL02","path":"main","position":1}
 {"id":"LA-TRC-UC13-FL02-S02","title":"The Reader reads the tests by state in total in the product's Summary","flow_id":"LA-TRC-UC13-FL02","path":"main","position":2}
 {"id":"LA-TRC-UC13-FL02-S03","title":"The Reader opens a domain and reads the same in its Coverage section","flow_id":"LA-TRC-UC13-FL02","path":"main","position":3}
 {"id":"LA-TRC-UC14-FL01-S01","title":"The Reader opens a domain, searches for a requirement and opens it","flow_id":"LA-TRC-UC14-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC14-FL01-S02","title":"Below its text, its Traceability lists what designs, builds and proves it, with a callout for each gap","flow_id":"LA-TRC-UC14-FL01","path":"main","position":2}
 {"id":"LA-TRC-UC14-FL01-S03","title":"They follow a test to its record page: what it proves and its run by","flow_id":"LA-TRC-UC14-FL01","path":"main","position":3}
 {"id":"LA-TRC-UC14-FL01-S04","title":"They follow a gap's callout to the page of the check that reports it","flow_id":"LA-TRC-UC14-FL01","path":"main","position":4}
-{"id":"LA-TRC-UC14-FL02-S01","title":"The Reader opens a domain, searches for a requirement and opens it","flow_id":"LA-TRC-UC14-FL02","path":"main","position":1}
+{"id":"LA-TRC-UC14-FL02-S01","title":"In the desktop app, the Reader opens a domain, searches for a requirement and opens it","flow_id":"LA-TRC-UC14-FL02","path":"main","position":1}
 {"id":"LA-TRC-UC14-FL02-S02","title":"The record page lists, below its text, what designs, builds and proves it in its Traceability, with a callout for each gap","flow_id":"LA-TRC-UC14-FL02","path":"main","position":2}
 {"id":"LA-TRC-UC14-FL02-S03","title":"The Reader follows a test to its record page: what it proves and its run by","flow_id":"LA-TRC-UC14-FL02","path":"main","position":3}
 {"id":"LA-TRC-UC14-FL02-S04","title":"The Reader follows a gap's callout to the page of the check that reports it","flow_id":"LA-TRC-UC14-FL02","path":"main","position":4}
