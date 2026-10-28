@@ -5,18 +5,20 @@ import { readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, PATTERN_RULE_STANDING_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS } from './coverage.ts';
-import { loadConfig } from './config.ts';
+import { loadConfig, type LatheConfig } from './config.ts';
+import { isTraced, normalizePath, sourceFiles } from './trace/source-files.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
 import { SCHEMA_DIR } from './store/schema.ts';
 import type { Row } from './store/rows.ts';
+import { gatherRouteFacts, writeRouteFacts } from './trace/routes.ts';
 import type { Coverage, CoverageGap, Kind, ObligationCoverage, PatternRuleStanding, Problem, RecordedException, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, Workspace } from './types.ts';
 
 export type * from './types.ts';
 export type * from './reference.ts';
 export { renderReference, kindAnchor, tableAnchor, relationAnchor, stageAnchor, checkAnchor, gapAnchor, ENGINE_CHECKS } from './reference.ts';
 export { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE, type GapRule } from './coverage.ts';
-export { loadConfig, readConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage, type LatheConfig } from './config.ts';
+export { loadConfig, readConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, DEFAULT_SOURCE, DEFAULT_TESTS, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage, type LatheConfig } from './config.ts';
 export { upgradeProduct, readConverters, UPGRADES_DIR, type Converter, type ConverterStep, type RawData, type UpgradeNotes, type UpgradeResult } from './upgrade.ts';
 // The database-first store: the schema, loading data/*.jsonl, the command layer and the merge driver.
 export * from './store/index.ts';
@@ -110,6 +112,17 @@ async function gatherFileFacts(root: string, store: Store): Promise<FileFact[]> 
     const exists = type === 'file' || (type === 'folder' && !tests.has(kind));
     return { record: id, kind, file, file_exists: exists, contains_id: type === 'file' && mentionsId(text, id) };
   }));
+}
+
+// The product's source files, each with whether a technical record (of a technical-specification kind, Lathe's or the
+// product's own) names it or a folder holding it: what code-file-untraced reports (trace/source-files.ts).
+async function gatherSourceFiles(config: Pick<LatheConfig, 'root' | 'source' | 'tests'>, store: Store): Promise<{ file: string; traced: boolean }[]> {
+  const named = new Set(
+    Object.values(store.schema.kinds)
+      .filter((k) => k.stage === 'technical-specification' && store.schema.tables[k.name]?.columns.some((c) => c.name === 'file'))
+      .flatMap((k) => store.rows(k.name).filter((row) => typeof row.file === 'string').map((row) => normalizePath(String(row.file)))),
+  );
+  return (await sourceFiles(config.root, config.source, config.tests)).map((file) => ({ file, traced: isTraced(file, named) }));
 }
 
 async function readRows<T>(connection: DuckDBConnection, sql: string): Promise<T[]> {
@@ -297,8 +310,11 @@ export function recordedExceptions(store: Store): RecordedException[] {
   return store.rows('command_change').map((r) => ({ command: String(r.command_id), aggregate: String(r.aggregate_id), reason: String(r.reason) }));
 }
 
-/** The workspace of an open store: its records and links, every check's problems, the recorded exceptions, and coverage. root resolves the files records name. */
-export async function readWorkspace(store: Store, root: string, timings?: Partial<LoadTimings>): Promise<Workspace> {
+/**
+ * The workspace of an open store: its records and links, every check's problems, the recorded exceptions, and
+ * coverage. The config's root resolves the files records name; its source and test globs find the source files.
+ */
+export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'root' | 'source' | 'tests' | 'routers'>, timings?: Partial<LoadTimings>): Promise<Workspace> {
   let mark = performance.now();
   const lap = (phase: 'files' | 'checks' | 'coverage') => {
     const now = performance.now();
@@ -316,10 +332,17 @@ export async function readWorkspace(store: Store, root: string, timings?: Partia
   };
   const order = await kindOrder(store);
   const read = await step('read records', () => readRecords(store, order));
-  const facts = await step('file facts', () => gatherFileFacts(path.resolve(root), store));
+  // The files records name, the source files and the routes they serve are read side by side.
+  const [facts, sources, routes] = await Promise.all([
+    step('file facts', () => gatherFileFacts(path.resolve(config.root), store)),
+    step('source files', () => gatherSourceFiles({ ...config, root: path.resolve(config.root) }, store)),
+    step('route facts', () => gatherRouteFacts({ ...config, root: path.resolve(config.root) }, store)),
+  ]);
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
   await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.file_exists, f.contains_id]));
+  await append(connection, 'source_file', sources.map((f) => [f.file, f.traced]));
+  await writeRouteFacts(connection, routes);
   await step('coverage tables', () => connection.run(coverageViewsSql(store.schema)));
   lap('files');
   const scope = new Map(read.records.map((r) => [r.id, r.product]));
@@ -352,7 +375,7 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
   }
   if (timings) timings.open = Math.round((performance.now() - started) * 10) / 10;
   try {
-    return await readWorkspace(store, config.root, timings);
+    return await readWorkspace(store, config, timings);
   } finally {
     await store.close();
     if (timings) timings.total = Math.round((performance.now() - started) * 10) / 10;

@@ -1,5 +1,5 @@
 // Calls back when the specs change on disk: through Vite's hot-reload channel in
-// development, or through the server-sent events of `lathe serve` otherwise.
+// development, or through the server-sent events of `lathe serve` otherwise (GET /api/events, LA-PLT-EP02-CL).
 export type LatheEvent = 'spec:changed';
 
 export function onLatheEvent(event: LatheEvent, callback: () => void): () => void {
