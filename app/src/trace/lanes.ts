@@ -1,4 +1,4 @@
-import { byIdOrder, kindLabel, type SpecIndex } from '../specs/data';
+import { byIdOrder, type SpecIndex } from '../specs/data';
 import { isTestKind } from '../specs/parts';
 import { fileKey, gapColumns, holdersOf, obligationsUnder, traceChain, traceShape, untracedUnder, type TraceColumn, type TraceRow } from './chain';
 
@@ -391,5 +391,3 @@ export function visibleIn(p: TracePicture, r: { x0: number; y0: number; x1: numb
 /** Every box of the picture, the tree's first. */
 export const allBoxes = (p: TracePicture): TraceBox[] => [...p.tree.boxes, ...p.lanes.flatMap((l) => l.boxes)];
 
-/** A box's accessible kind word, for a box that is no record. */
-export const roleLabel = (index: SpecIndex, b: TraceBox): string => (b.role === 'record' ? kindLabel(index, index.byId.get(b.id)?.kind ?? '') : b.role === 'file' ? 'File' : b.role === 'gap' ? 'Gap' : 'Untraced');
