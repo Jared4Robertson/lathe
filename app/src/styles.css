@@ -13,6 +13,8 @@
   --node-radius: 4px; /* an ERD box's corners; the graph's canvas rounds a plain box the same (app/src/graph/shapes.ts) */
   /* The Model view's context ring (LA-V94-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges (the graph's canvas draws its own, app/src/graph/paint.ts). */
   --context-opacity: 0.35; --context-scale: 0.9; --spotlight-dim: 0.5; --vignette: 56px;
+  /* The graph's focus fade (LA-EXP-DS09, app/src/graph/fade.ts): what lies outside the focus's subtree, and the trail of its ancestors in Nested and Voronoi. */
+  --focus-fade: 0.25; --focus-trail: 0.45;
   /* The graph's cross-links (the Links switch), dashed apart from the tree's solid lines, and the minimap's mask. */
   --link-edge: var(--spark); --minimap-mask: color-mix(in srgb, var(--ink) 8%, transparent);
   --paper: #F4F6F5; --sheet: #FFFFFF; --ink: #1D2830; --muted: #5A6870; --rule: #CBD3D6;
@@ -270,6 +272,11 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-depth button[aria-pressed="true"] { background: var(--steel); border-color: var(--steel); color: var(--sheet); font-weight: 600; }
 .graph-depth button:disabled { opacity: 0.5; cursor: default; }
 .graph-trace-toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; flex: none; }
+/* Nothing to trace (LA-V93-R52): dimmed and not allowed, in its slot; its name stays legible in the muted ink. */
+.graph-trace-toggle.is-disabled, .graph-trace-toggle.is-disabled input { cursor: not-allowed; }
+.graph-trace-toggle.is-disabled { color: var(--muted); }
+.graph-trace-toggle.is-disabled input { opacity: 0.5; }
+.graph-trace-toggle.is-disabled:hover { color: var(--muted); }
 .graph-filters { flex: none; }
 .graph-filters > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
 .graph-filter-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 12px; width: min(560px, calc(100% - 24px)); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; padding: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }

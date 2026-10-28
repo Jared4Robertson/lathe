@@ -37,8 +37,8 @@ export interface Line {
   label: string;
 }
 
-/** A bar standing for children too small to draw (LA-EXP-DS10), in map units. */
-export interface Bar { x: number; y: number; w: number; h: number }
+/** A bar standing for children too small to draw (LA-EXP-DS10), in map units, under its parent. */
+export interface Bar { parent: string; x: number; y: number; w: number; h: number }
 
 /** What a frame draws, in draw order. */
 export interface Frame { plates: readonly Plate[]; bars: readonly Bar[]; lines: readonly Line[] }
@@ -51,8 +51,8 @@ export interface PaintState {
   armed: string | null;
   /** The hover spotlight: the boxes and lines it keeps bright, and how far its dimming has faded in (0 to 1). */
   lit: ReadonlySet<string> | null;
-  /** On the opening frame, the boxes of other branches that cross its top or bottom edge, drawn faded so nothing is shown cut (frameOnMap). */
-  faded: ReadonlySet<string> | null;
+  /** The focus fade (fade.ts): how strongly each box is drawn, 1 in the focus's subtree; a line takes the fainter of its ends, a bar its parent's. */
+  strength: (id: string) => number;
   litLines: ReadonlySet<string> | null;
   spot: number;
 }
@@ -120,10 +120,13 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
   paintDots(ctx, cam, look);
 
   const dim = (lit: boolean) => (state.lit && !lit ? lerp(1, look.spotlightDim, state.spot) : 1);
+  // The spotlight brings a lit box, faded or not, up to full strength as it fades in.
+  const strength = (id: string, lit: boolean) => (state.lit && lit ? lerp(state.strength(id), 1, state.spot) : state.strength(id));
+  const lineStrength = (line: Line) => Math.min(strength(line.source, !!state.lit?.has(line.source)), strength(line.target, !!state.lit?.has(line.target)));
 
   // Bars, then lines, under the boxes; a link's words over them.
   for (const b of frame.bars) {
-    ctx.globalAlpha = 0.6 * (state.lit ? lerp(1, look.spotlightDim, state.spot) : 1);
+    ctx.globalAlpha = 0.6 * (state.lit ? lerp(1, look.spotlightDim, state.spot) : 1) * state.strength(b.parent);
     ctx.fillStyle = look.rule;
     ctx.beginPath();
     ctx.roundRect(X(b.x), Y(b.y), b.w * zoom, b.h * zoom, 4 * zoom);
@@ -132,7 +135,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
   for (const line of frame.lines) {
     const s = lineStroke(look, line);
     const lit = !state.lit || state.litLines?.has(line.id);
-    ctx.globalAlpha = state.lit ? lerp(s.alpha, lit ? 1 : look.contextOpacity * look.spotlightDim, state.spot) : s.alpha;
+    ctx.globalAlpha = (state.lit ? lerp(s.alpha, lit ? 1 : look.contextOpacity * look.spotlightDim, state.spot) : s.alpha) * lineStrength(line);
     ctx.strokeStyle = s.color;
     ctx.lineWidth = s.width * line.scale * zoom;
     ctx.setLineDash(s.dash.map((d) => d * zoom));
@@ -165,7 +168,8 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
 
   for (const p of frame.plates) {
     if (!onScreen(p, cam)) continue;
-    ctx.globalAlpha = dim(!!state.lit?.has(p.id)) * (state.faded?.has(p.id) ? look.contextOpacity : 1);
+    const lit = !!state.lit?.has(p.id);
+    ctx.globalAlpha = dim(lit) * strength(p.id, lit);
     paintBox(ctx, p, cam, look, fonts, state, X, Y);
   }
 
@@ -181,7 +185,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     const mx = X((a.x + b.x) / 2);
     const my = Y((a.y + b.y) / 2);
     if (mx + w / 2 < 0 || mx - w / 2 > cam.w || my + h / 2 < 0 || my - h / 2 > cam.h) continue;
-    ctx.globalAlpha = state.lit && !state.litLines?.has(line.id) ? lerp(1, look.spotlightDim, state.spot) : 1;
+    ctx.globalAlpha = (state.lit && !state.litLines?.has(line.id) ? lerp(1, look.spotlightDim, state.spot) : 1) * lineStrength(line);
     ctx.fillStyle = look.paper;
     ctx.beginPath();
     ctx.roundRect(mx - w / 2, my - h / 2, w, h, 3 * zoom);

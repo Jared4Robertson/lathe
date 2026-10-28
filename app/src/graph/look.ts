@@ -16,13 +16,15 @@ export interface Look {
   structuralEdge: string; structuralFill: string; fileEdge: string;
   /** How much the hover spotlight dims the rest, and how faint an unlit line then is. */
   spotlightDim: number; contextOpacity: number;
+  /** The focus fade (fade.ts): how strongly a box outside the focus's subtree is drawn, and an ancestor kept as a trail in Nested and Voronoi. */
+  focusFade: number; focusTrail: number;
   /** How long the spotlight's fade takes, in ms: 0 under reduced motion. */
   fade: number;
   /** How wide the vignette of the paper at the canvas's edges is, in CSS pixels. */
   vignette: number;
 }
 
-const COLORS: Record<Exclude<keyof Look, 'spotlightDim' | 'contextOpacity' | 'fade' | 'vignette'>, string> = {
+const COLORS: Record<Exclude<keyof Look, 'spotlightDim' | 'contextOpacity' | 'focusFade' | 'focusTrail' | 'fade' | 'vignette'>, string> = {
   paper: '--paper', sheet: '--sheet', ink: '--ink', muted: '--muted', rule: '--rule',
   steel: '--steel', spark: '--spark', sparkBg: '--spark-bg', warn: '--warn', error: '--error', onMark: '--on-mark',
   hoverRing: '--hover-ring', linkEdge: '--link-edge',
@@ -44,7 +46,7 @@ export const PLAIN_LOOK: Look = {
   interactionDesignEdge: '#6A4C9C', interactionDesignFill: '#EEE8F6', technicalSpecificationEdge: '#B5512A', technicalSpecificationFill: '#F8E8DF',
   testPlanEdge: '#A3365F', testPlanFill: '#F7E4EC',
   structuralEdge: '#1D2830', structuralFill: '#FFFFFF', fileEdge: '#5A6870',
-  spotlightDim: 0.5, contextOpacity: 0.35, fade: 0, vignette: 56,
+  spotlightDim: 0.5, contextOpacity: 0.35, focusFade: 0.25, focusTrail: 0.45, fade: 0, vignette: 56,
 };
 
 /** Reads the look from the tokens as they apply at an element. */
@@ -64,6 +66,8 @@ export function readLook(at: HTMLElement): Look {
     const number = (token: string, fallback: number) => { const n = parseFloat(style.getPropertyValue(token)); return Number.isFinite(n) ? n : fallback; };
     look.spotlightDim = number('--spotlight-dim', PLAIN_LOOK.spotlightDim);
     look.contextOpacity = number('--context-opacity', PLAIN_LOOK.contextOpacity);
+    look.focusFade = number('--focus-fade', PLAIN_LOOK.focusFade);
+    look.focusTrail = number('--focus-trail', PLAIN_LOOK.focusTrail);
     look.fade = readMotion().duration;
     look.vignette = number('--vignette', PLAIN_LOOK.vignette);
   } finally {
