@@ -121,7 +121,7 @@ export function ErdView({ index, focus, onNavigate, onPeek }: ErdViewProps) {
     ? `The aggregates of ${scope?.title}, their entities and relationships`
     : `The entities of ${scope?.title}, and the aggregates it references or that reference it`;
   return (
-    <section className="erd-page" aria-label="Model">
+    <section className="erd-page" aria-label="ERD">
       <header className="erd-header">
         {/* One line of one text, cut with an ellipsis, its whole text in its tooltip: a new caption never moves anything (LA-PAT-APP-UX-R08). */}
         <p className="erd-caption" title={`${caption} · ${counts}`}>{`${caption} · ${counts}`}</p>

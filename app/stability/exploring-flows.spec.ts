@@ -152,7 +152,7 @@ test.describe('Exploring flows', () => {
     await page.goto('/LA-EXP-A1?view=wiki,graph,model');
     await expect(page.locator('.focus-views > .pane')).toHaveCount(3);
     await graphReady(page);
-    // Close Model, resize the panes from the keyboard, show one alone.
+    // Close ERD, resize the panes from the keyboard, show one alone.
     await page.keyboard.press('Control+4');
     await expect(page.locator('.pane-erd')).toHaveCount(0);
     const handle = page.getByRole('separator', { name: 'Resize the wiki and graph panes' });
@@ -365,8 +365,8 @@ test.describe('Exploring flows', () => {
 
   test('LA-EXP-UC11-FL01-T read a domain and its aggregates as an ERD: the ERD view, an aggregate picked, an entity, the key', async ({ page }) => {
     await openPage(page, '/LA-EXP');
-    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Model' }).click();
-    const model = page.getByRole('region', { name: 'Model', exact: true });
+    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'ERD' }).click();
+    const model = page.getByRole('region', { name: 'ERD', exact: true });
     await expect(model.getByRole('group', { name: /^Aggregate / }).first()).toBeVisible();
     expect(await model.getByRole('group', { name: /^Aggregate / }).count()).toBeGreaterThanOrEqual(2);
     await expect(model.getByRole('img', { name: /^Edge from / }).first()).toBeAttached();
@@ -379,7 +379,7 @@ test.describe('Exploring flows', () => {
     await page.waitForURL((u) => /^\/LA-EXP-EN\d+$/.test(u.pathname));
     await expect(page.locator('.pane-erd .react-flow__node .is-focus').first()).toBeVisible();
     // The key under the diagram.
-    await expect(page.getByRole('region', { name: 'Model', exact: true }).getByRole('group', { name: 'Key' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'ERD', exact: true }).getByRole('group', { name: 'Key' })).toBeVisible();
   });
 
   test('LA-EXP-UC12-FL01-T use the side bar: Details following the pointer, Outline, History with its uncommitted change, a commit\'s diff and Load more', async ({ page }) => {
