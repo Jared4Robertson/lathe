@@ -137,7 +137,7 @@ export interface QueryRow {
 export interface EndpointRow {
   /** The endpoint's ID, such as TL-LEND-EP01. */
   id: string;
-  /** What the endpoint does, such as Borrow a tool. */
+  /** Its method and route, one space apart, such as POST /loans: refused otherwise. */
   title: string;
   /** The command it exposes; exactly one of command and query is given. */
   command_id?: string;
@@ -985,6 +985,8 @@ export interface ProductKindRow {
   id_pattern?: string;
   /** An example ID. */
   id_example?: string;
+  /** For a code-bound kind, how its titles are written (meta_kind_title): identifier, invocation or kebab-case; none for a kind titled in words. */
+  title_form?: "identifier" | "invocation" | "kebab-case";
 }
 
 /** One typed field of a product kind, in order: a column of its table. */

@@ -163,7 +163,7 @@ describe('A table kept in a database is checked against the file that creates it
 
   it('LA-TRC-UC16-R03-T01 a table stored as a table with no file is a gap; one in browser storage is not', async () => {
     const data = changing(
-      { ...LIBRARY, table: [...LIBRARY.table.filter((t) => t.id !== 'PX-LEND-RM01-TB'), { id: 'PX-LEND-RM01-TB', title: 'member list', read_model_id: 'PX-LEND-RM01', name: 'memberList', storage: 'browser storage' }] },
+      { ...LIBRARY, table: [...LIBRARY.table.filter((t) => t.id !== 'PX-LEND-RM01-TB'), { id: 'PX-LEND-RM01-TB', title: 'memberList', read_model_id: 'PX-LEND-RM01', name: 'memberList', storage: 'browser storage' }] },
       'table',
       (t) => t.id === 'PX-LEND-EN03-TB',
       { file: undefined },

@@ -358,7 +358,7 @@ describe('Authoring flows', () => {
 
   it('LA-AUT-UC16-FL03-T write the engineering standards the code follows', async () => {
     const tl = product();
-    await tl.seed([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'Open a loan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' })]);
+    await tl.seed([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' })]);
     tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
     tl.write('test/standards.test.ts', "it('TL-STD-LOG-R01-T01 no console.log in src');\n");
     // S01: a standard and its rules.
@@ -370,7 +370,7 @@ describe('Authoring flows', () => {
     // S03: the standard with its rules, what meets them and their tests.
     expect(tl.run('show', 'TL-STD-LOG')).toContain('TL-STD-LOG-R01 (standard_rule): No console.log');
     const rule = tl.run('show', 'TL-STD-LOG-R01');
-    expect(rule).toContain('TL-LEND-CMD01-H: Open a loan [meets, in]');
+    expect(rule).toContain('TL-LEND-CMD01-H: openLoan [meets, in]');
     expect(rule).toContain('TL-STD-LOG-R01-T01 (standard_rule_test): No console.log in src');
     const ws = tl.workspace();
     expect(ws.kinds.find((k) => k.kind === 'standard')?.stage).toBe('technical-specification');
@@ -385,7 +385,7 @@ describe('Authoring flows', () => {
       { op: 'add', table: 'entity_field', row: { entity_id: 'TL-LEND-EN01', position: 2, name: 'Tool ID', meaning: 'The tool lent.', type: 'text', required: true } },
     ]);
     // S01: the technical record under the design record it implements, naming its file.
-    tl.run('add', 'command_handler', '--id', 'TL-LEND-CMD01-H', '--title', 'Open a loan', '--command_id', 'TL-LEND-CMD01', '--file', 'src/loans.ts');
+    tl.run('add', 'command_handler', '--id', 'TL-LEND-CMD01-H', '--title', 'openLoan', '--command_id', 'TL-LEND-CMD01', '--file', 'src/loans.ts');
     tl.run('add', 'repository', '--id', 'TL-LEND-A1-REPO', '--title', 'Loans', '--aggregate_id', 'TL-LEND-A1', '--file', 'src/loans.ts');
     expect(problemsOf(tl.workspace(), 'technical-file-missing').sort()).toEqual([expect.stringMatching(/^TL-LEND-A1-REPO: /), expect.stringMatching(/^TL-LEND-CMD01-H: /)]);
     tl.write('src/loans.ts', '// TL-LEND-CMD01-H TL-LEND-A1-REPO\n');
@@ -410,7 +410,7 @@ describe('Authoring flows', () => {
       add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
     ]);
     // S01: an endpoint under the command it exposes.
-    tl.run('add', 'endpoint', '--id', 'TL-LEND-EP01', '--title', 'Open a loan', '--command_id', 'TL-LEND-CMD01', '--method', 'POST', '--route', '/loans');
+    tl.run('add', 'endpoint', '--id', 'TL-LEND-EP01', '--title', 'POST /loans', '--command_id', 'TL-LEND-CMD01', '--method', 'POST', '--route', '/loans');
     // S02: view requirements under views and API requirements under endpoints.
     tl.run('add', 'view', '--id', 'TL-V01', '--title', 'Loan desk', '--route', '/loans');
     tl.run('add', 'view_requirement', '--id', 'TL-V01-R01', '--title', 'The due date shows', '--view_id', 'TL-V01', '--statement', 'The desk MUST show the loan\'s due date.');

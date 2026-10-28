@@ -83,11 +83,11 @@ describe('patterns', () => {
     expect(ws.coverage.find((c) => c.domain === 'EX-SHOP')!.gaps.find((g) => g.id === 'EX-PAT-ACT-R01')!.message).toBe('Pattern rule EX-PAT-ACT-R01 is not proved yet in EX-SHOP.');
     // The EX-LEND test does not prove the rule in EX-SHOP; a second test for the same rule and domain is refused.
     const test = complete().pattern_rule_test[0];
-    expect(await refusals(withTable(everyKind(), 'pattern_rule_test', [everyKind().pattern_rule_test[0], { ...everyKind().pattern_rule_test[0], id: 'TL-PAT-ACT-R01-T02' }]))).toEqual([
+    expect(await refusals(withTable(everyKind(), 'pattern_rule_test', [everyKind().pattern_rule_test[0], { ...everyKind().pattern_rule_test[0], id: 'TL-PAT-ACT-R01-T02', title: 'A saved tool reads the same twice' }]))).toEqual([
       expect.objectContaining({ rule: 'unique', file: 'data/pattern_rule_test.jsonl', line: 2 }),
     ]);
     // A test naming a domain that does not follow the pattern is an error.
-    const stray = await loadData(adding(complete(), { domain: [shop], pattern_rule_test: [{ ...test, id: 'EX-PAT-ACT-R01-T02', domain_id: 'EX-SHOP' }] }));
+    const stray = await loadData(adding(complete(), { domain: [shop], pattern_rule_test: [{ ...test, id: 'EX-PAT-ACT-R01-T02', title: 'A saved record reads the same in the shop', domain_id: 'EX-SHOP' }] }));
     expect(ofCheck(stray, 'pattern-rule-test-outside-followers')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-PAT-ACT-R01-T02' })]);
   });
 });
@@ -159,13 +159,13 @@ describe('flows', () => {
     expect(await refusals(data)).toEqual([]);
     // TL-IF02 is a second interface of TL; a flow through it ends in FL02, not FL03.
     const second = adding(data, { interface: [{ id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI' }] });
-    expect(await refusals(adding(second, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL02', interface_id: 'TL-IF02' }] }))).toEqual([]);
-    expect(await refusals(adding(second, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL03', interface_id: 'TL-IF02' }] }))).toEqual([
+    expect(await refusals(adding(second, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool through the CLI', interface_id: 'TL-IF02' }] }))).toEqual([]);
+    expect(await refusals(adding(second, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL03', title: 'Borrow a tool through the CLI', interface_id: 'TL-IF02' }] }))).toEqual([
       expect.objectContaining({ rule: 'flow-id-interface', message: 'TL-LEND-UC01-FL03 goes through TL-IF02, so its ID is TL-LEND-UC01-FL02' }),
     ]);
     // An interface of another product is refused.
     const other = adding(second, { product: [{ id: 'XX', title: 'Other' }], interface: [{ id: 'XX-IF02', title: 'CLI', product_id: 'XX', kind: 'CLI' }] });
-    expect((await refusals(adding(other, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL02', interface_id: 'XX-IF02' }] }))).map((p) => p.rule)).toEqual(['reference-crosses-product']);
+    expect((await refusals(adding(other, { flow: [{ ...flow, id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool through the CLI', interface_id: 'XX-IF02' }] }))).map((p) => p.rule)).toEqual(['reference-crosses-product']);
   });
 
   it('LA-AUT-UC06-R09-T01 A step of a flow through an API, a CLI or agent tools happens in no view', async () => {

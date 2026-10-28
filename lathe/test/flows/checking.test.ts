@@ -83,7 +83,7 @@ describe('Checking flows', () => {
       { op: 'add', table: 'command_change', row: { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' } },
       add('policy', { id: 'TL-LEND-PO01', title: 'Remind on loan', command_id: 'TL-LEND-CMD02', statement: 'Whenever a loan is opened, the library MUST open its reminder.' }),
       link('TL-LEND-PO01', 'hears', 'TL-LEND-EV01'),
-      add('event_type', { id: 'TL-LEND-EV01-ET', title: 'Loan opened', domain_event_id: 'TL-LEND-EV01', delivery: 'in process' }),
+      add('event_type', { id: 'TL-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'TL-LEND-EV01', delivery: 'in process' }),
       add('view', { id: 'TL-V01', title: 'Loan page' }),
       add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'integration', state: 'not automated yet' }),
     ]);
