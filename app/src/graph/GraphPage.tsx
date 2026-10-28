@@ -46,6 +46,7 @@ import { Button } from '../components/Button';
 import { measureSpec, pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
+import { focusStrength, FULL_STRENGTH } from './fade';
 import { paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
 
@@ -371,14 +372,25 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
               <div className="graph-more-body">{moreControls}</div>
             </details>
           ) : moreControls}
-          {/* Trace and filters sit at the end. The trace switch keeps its slot where there is nothing to trace, so nothing beside it moves. */}
+          {/* Trace and filters sit at the end. Where there is nothing to trace the switch stays in its slot, so nothing beside it
+              moves, but looks and announces disabled, and its hover and focus hint (on the label, which a disabled control
+              still gets) says what to focus to trace. */}
           <div className="graph-toolbar-end">
-            <label className={`graph-trace-toggle${traceable ? '' : ' is-idle'}`} aria-hidden={!traceable || undefined} inert={!traceable || undefined}>
-              <Tooltip label="Trace mode on or off" command="graphTrace">
-                <input type="checkbox" aria-label="Trace mode" checked={trace && traceable} onChange={(e) => setTrace(e.target.checked)} />
+            {traceable ? (
+              <label className="graph-trace-toggle">
+                <Tooltip label="Trace mode on or off" command="graphTrace">
+                  <input type="checkbox" aria-label="Trace mode" checked={trace} onChange={(e) => setTrace(e.target.checked)} />
+                </Tooltip>
+                <span className="graph-trace-name">Trace</span>
+              </label>
+            ) : (
+              <Tooltip label={TRACE_IDLE_HINT}>
+                <label className="graph-trace-toggle is-disabled">
+                  <input type="checkbox" aria-label="Trace mode" aria-disabled="true" aria-description={TRACE_IDLE_HINT} checked={false} onChange={() => {}} />
+                  <span className="graph-trace-name">Trace</span>
+                </label>
               </Tooltip>
-              <span className="graph-trace-name">Trace</span>
-            </label>
+            )}
             <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
           </div>
         </div>
@@ -391,6 +403,9 @@ export function GraphView({ index, focus, onNavigate, hrefFor, settings: hosted,
     </section>
   );
 }
+
+/** The Trace switch's hint where the focus has nothing to trace (LA-V93-R52). */
+export const TRACE_IDLE_HINT = 'Focus a requirement or rule to trace it';
 
 /** The trace preset's button, worded with the relations' labels (LA-V92-R07): "Only fulfills, invokes and happens in links". */
 export function traceOnlyLabel(index: SpecIndex): string {
@@ -561,8 +576,8 @@ export interface SceneBox {
   ring: boolean;
   armed: boolean;
   lit: boolean | null;
-  /** Drawn faded: a box of another branch crossing the opening frame's top or bottom edge. */
-  faded: boolean;
+  /** How strongly the focus fade draws it (LA-EXP-DS09): 1 in the focus's subtree, less outside it, eased while the fade follows a new focus. */
+  strength: number;
   /** Its box in the map, and its text's and border's scales there: fixed by the map, never by the camera. */
   map: { x: number; y: number; w: number; h: number };
   textScale: number;
@@ -708,15 +723,15 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   const glide = useRef<number | null>(null);
   const stopGlide = () => { if (glide.current !== null) { cancelAnimationFrame(glide.current); glide.current = null; } };
   useEffect(() => stopGlide, []);
-  /** Moves the camera to a viewport: one smooth zoom and pan with the shared motion, or at once. */
-  const moveTo = useCallback((target: Viewport, animate: boolean) => {
+  /** Moves the camera to a viewport: one smooth zoom and pan with the shared motion, or at once. Returns how long the glide takes, in ms (0 at once). */
+  const moveTo = useCallback((target: Viewport, animate: boolean): number => {
     stopGlide();
     const from = getViewport();
     const motion = readMotion();
     if (!size || !animate || motion.duration === 0 || sameView(from, target)) {
       setViewport(target);
       if (!tracing) show(drawnAt(target));
-      return;
+      return 0;
     }
     const path = zoomPath(from, target, size.w, size.h);
     // Everything the glide passes over joins the keyboard's layer once, as it starts, and is trimmed when it ends.
@@ -732,6 +747,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       if (!tracing) show(latestDrawnAt.current(target));
     };
     glide.current = requestAnimationFrame(step);
+    return duration;
   }, [getViewport, setViewport, size, tracing, show, drawnAt]);
 
   // A trace's boxes are leaves at text scale 1, each as tall as its wrapped label needs (text.ts).
@@ -746,36 +762,15 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   // Frame the focus whenever it, the depth or the pane's size changes: a glide, except the first
   // picture, a resize and a map that has just been laid out, which frame at once.
   const framedFor = useRef<{ w: number; h: number } | null>(null);
-  /** The camera that frames the focus, while the camera is there: boxes of other branches crossing its edges fade. */
-  const openingFrame = useRef<Viewport | null>(null);
-  /**
-   * The boxes the opening frame shows faded: those of other branches (outside the focus's own subtree, and not an
-   * ancestor of the focus, whose strip the frame keeps at its left edge) that cross the pane's top or bottom edge, so
-   * the frame shows no box cut (LA-EXP-DS09). Only while the camera is at that frame; once the person zooms or pans,
-   * everything is drawn as it is.
-   */
-  const fadedAt = (v: Viewport, plates: readonly Plate[], h: number): ReadonlySet<string> | null => {
-    if (tracing || !openingFrame.current || !sameView(v, openingFrame.current)) return null;
-    const node = map.nodes.get(focus);
-    if (!node) return null;
-    const ancestors = new Set<string>();
-    for (let at: string | null = node.parent; at !== null; at = map.nodes.get(at)?.parent ?? null) ancestors.add(at);
-    const inBranch = (id: string) => {
-      if (id === focus || ancestors.has(id)) return true;
-      for (let at = map.nodes.get(id)?.parent ?? null; at !== null; at = map.nodes.get(at)?.parent ?? null) if (at === focus) return true;
-      return false;
-    };
-    const [top, bottom] = [-v.y / v.zoom, (h - v.y) / v.zoom];
-    const faded = new Set(plates.filter((p) => !inBranch(p.id) && ((p.y < top && p.y + p.h > top) || (p.y < bottom && p.y + p.h > bottom))).map((p) => p.id));
-    return faded.size > 0 ? faded : null;
-  };
+  /** The focus fade's move to a new focus (fade.ts): from the focus before, eased over the camera's glide to the new one. */
+  const fadeShift = useRef<{ from: string | null; to: string; start: number; duration: number }>({ from: null, to: focus, start: 0, duration: 0 });
   const framedEmpty = useRef(false);
   useLayoutEffect(() => {
     const target = framing();
     if (!target || !size) return;
     const resized = framedFor.current !== null && (framedFor.current.w !== size.w || framedFor.current.h !== size.h);
-    moveTo(target, framedFor.current !== null && !resized && !framedEmpty.current);
-    openingFrame.current = target;
+    const duration = moveTo(target, framedFor.current !== null && !resized && !framedEmpty.current);
+    if (fadeShift.current.to !== focus) fadeShift.current = { from: fadeShift.current.to, to: focus, start: performance.now(), duration };
     framedFor.current = size;
     framedEmpty.current = map.nodes.size === 0;
   }, [framing]);
@@ -874,7 +869,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (!tracing && map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode).order - (map.nodes.get(b.id) as NestedNode).order);
     const bars: Bar[] = [];
     if (!tracing && map.view === 'tree') {
-      for (const bar of drawnAt(v).bars) bars.push({ x: bar.x, y: bar.y, w: bar.w, h: bar.h });
+      for (const bar of drawnAt(v).bars) bars.push({ parent: bar.parent, x: bar.x, y: bar.y, w: bar.w, h: bar.h });
     }
     const byId = new Map(shown.map((p) => [p.id, p]));
     const lines: Line[] = [];
@@ -926,6 +921,26 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     const t = fade > 0 ? Math.min(1, (performance.now() - s.start) / fade) : 1;
     return { value: s.from + (s.to - s.from) * t, done: t >= 1 };
   };
+  /** The focus fade (fade.ts) for each focus, on this map and look; a trace fades nothing. */
+  const strengths = useMemo(() => new Map<string, (id: string) => number>(), [map]);
+  const strengthOf = (f: string) => {
+    const l = look.current;
+    const key = `${f}|${l.focusFade}|${l.focusTrail}`;
+    let at = strengths.get(key);
+    if (!at) { at = focusStrength(map, f, l); strengths.set(key, at); }
+    return at;
+  };
+  /** How strongly each box is drawn now: the new focus's fade, eased in from the old one's over the camera's glide. */
+  const strengthNow = (): { at: (id: string) => number; done: boolean } => {
+    if (tracing) return { at: FULL_STRENGTH, done: true };
+    const shift = fadeShift.current;
+    const to = strengthOf(focus);
+    const t = shift.from === null || shift.to !== focus || shift.duration <= 0 ? 1 : Math.min(1, (performance.now() - shift.start) / shift.duration);
+    if (t >= 1) return { at: to, done: true };
+    const from = strengthOf(shift.from!);
+    const e = readMotion().ease(t);
+    return { at: (id) => from(id) + (to(id) - from(id)) * e, done: false };
+  };
   const ctx = useRef<CanvasRenderingContext2D | null | undefined>(undefined);
   const tap = useRef<ReturnType<typeof useTapToOpen> | null>(null);
 
@@ -938,9 +953,10 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (!ctx.current) return;
     const spot = spotNow();
     const sp = spotlight.current;
-    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, faded: fadedAt(view.current, frame.plates, s.h) };
+    const fade = strengthNow();
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at };
     paint(ctx.current, dpr, camOf(view.current, s), frame, look.current, fonts, state);
-    if (!spot.done) requestPaint();
+    if (!spot.done || !fade.done) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
   };
   // Every render may change what is drawn: the focus, the filters, the plates, the theme.
@@ -1188,7 +1204,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       const rect = (x: number, y: number, w: number, h: number): Rect => ({ left: X(x), top: Y(y), width: w * v.zoom, height: h * v.zoom });
       const measureCtx = canvas.current!.getContext?.('2d') ?? null;
       const sp = spotlight.current;
-      const faded = fadedAt(v, frame.plates, s.h);
+      const strength = strengthNow().at;
       return {
         layout: tracing ? 'trace' : layout,
         camera: roundCamera(v),
@@ -1201,7 +1217,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, label: l.label, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
         boxes: frame.plates.map((p) => ({
           id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, file: p.file, group: p.group,
-          hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, faded: !!faded?.has(p.id),
+          hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, strength: strength(p.id),
           map: { x: p.x, y: p.y, w: p.w, h: p.h }, textScale: p.text, boxScale: p.scale,
           rect: rect(p.x, p.y, p.w, p.h),
           polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,
