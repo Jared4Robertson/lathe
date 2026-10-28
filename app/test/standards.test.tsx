@@ -14,6 +14,7 @@ import { workspace } from './fixtures/workspace';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
 import { indexOf } from './fixtures/load';
+import { Card } from '../src/shell/Card';
 
 // The app's standards (LA-PAT-APP-CODE and LA-PAT-APP-UX): each test proves one of the patterns' rules,
 // by reading the source or by rendering pages. A failure names the file and line to fix.
@@ -338,6 +339,61 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(ruleFor((s) => s === '.row-link:focus-visible::after').map((r) => r.body).join(';')).toMatch(/outline:/);
   });
 
+  it.each(['LA-PAT-APP-UX-R14-T01', 'LA-PAT-APP-UX-R14-T02'])('%s A card has one primary action, taken by clicking anywhere on it: every card is the Card component, its title a link or button stretched over it', async () => {
+    // One way to build a card: the Card component requires its primary action, so a card without one does not compile.
+    // @ts-expect-error a card with neither an href nor an onActivate is refused
+    expect(<Card title="A dead box" />).toBeTruthy();
+    // No element outside the component uses the card classes, in the app or the desktop app's pages.
+    const cardFile = join(SRC, 'shell', 'Card.tsx');
+    const cardClass = /\b(?:[\w-]+-)?cards?(?:-[\w-]+)?\b/;
+    const outside = [
+      ...filesUnder(SRC, /\.tsx?$/).filter((f) => f !== cardFile).flatMap((f) => where(f, readFileSync(f, 'utf8'), new RegExp(`className=[^>]*?${cardClass.source}`))),
+      ...filesUnder(join(ROOT, 'desktop', 'static'), /\.html$/).flatMap((f) => where(f, readFileSync(f, 'utf8'), new RegExp(`class=[^>]*?${cardClass.source}`))),
+    ];
+    expect(outside).toEqual([]);
+    // Every card class in the stylesheets is one the component sets.
+    const own = new Set(readFileSync(cardFile, 'utf8').match(/\bcard(?:-[\w]+)?\b/g));
+    const sheets = [...filesUnder(SRC, /\.css$/), ...filesUnder(join(ROOT, 'desktop', 'static'), /\.html$/)];
+    const strangers = sheets.flatMap((f) => where(f, readFileSync(f, 'utf8'), /\.(?:[\w-]+-)?cards?(?:-[\w-]+)?\b/)
+      .filter((hit) => (hit.match(/\.[\w-]*card[\w-]*/g) ?? []).some((c) => !own.has(c.slice(1)))));
+    expect(strangers).toEqual([]);
+    // The stylesheet: the title's ::after covers the positioned card and shows its hover and focus; one rule lifts the
+    // card's other controls above it; the title takes the pointer.
+    const rules = styleRules(CSS);
+    const ruleFor = (test: (selector: string) => boolean) => rules.filter((r) => topLevel(r.selector).some((s) => test(s.trim())));
+    expect(ruleFor((s) => s === '.card').map((r) => r.body).join(';')).toMatch(/position:\s*relative/);
+    expect(ruleFor((s) => s === '.card-title::after').map((r) => r.body).join(';')).toMatch(/position:\s*absolute[\s\S]*inset:/);
+    expect(ruleFor((s) => s === '.card-title:hover::after').map((r) => r.body).join(';')).toContain('var(--hover-ring)');
+    expect(ruleFor((s) => s === '.card-title:focus-visible::after').map((r) => r.body).join(';')).toMatch(/outline:/);
+    expect(ruleFor((s) => s === '.card .card-title').map((r) => r.body).join(';')).toMatch(/cursor:\s*pointer/);
+    expect(ruleFor((s) => /^\.card :is\(.*\bbutton\b.*\):not\(\.card-title\)$/.test(s)).map((r) => r.body).join(';')).toMatch(/position:\s*relative[\s\S]*z-index:\s*1/);
+    // Every card on the products, product, checks, record, Trace and Appearance pages: one primary action, its title, a real link or a
+    // button with a name; and every problem row, the record's or else its check's, is never a dead box.
+    let cards = 0;
+    let problems = 0;
+    for (const path of ['/', '/DM', '/DM/checks', '/DM-SHOP-UC01-R01-T01', '/DM-SHOP-UC01-R01?view=trace', '/settings/appearance']) {
+      await openApp(path);
+      await screen.findByRole('heading', { level: 1 });
+      // The Trace view loads on its own: its chain's cards.
+      if (path.includes('trace')) await screen.findByRole('list', { name: 'Obligation' });
+      const wrong = [...document.querySelectorAll<HTMLElement>('.card')].filter((card) => {
+        cards += 1;
+        const titles = card.querySelectorAll(':scope > .card-title');
+        const title = titles[0];
+        const acts = title && ((title.tagName === 'A' && /^\//.test(title.getAttribute('href') ?? '')) || (title.tagName === 'BUTTON' && !title.hasAttribute('disabled')));
+        return titles.length !== 1 || !acts || !(title.getAttribute('aria-label') ?? title.textContent ?? '').trim();
+      }).map((card) => `${path}: ${card.outerHTML.slice(0, 160)}`);
+      expect(wrong).toEqual([]);
+      const dead = [...document.querySelectorAll<HTMLElement>('.problems > li')].filter((row) => {
+        problems += 1;
+        return row.querySelectorAll('a.row-link').length !== 1;
+      }).map((row) => `${path}: ${row.outerHTML.slice(0, 160)}`);
+      expect(dead).toEqual([]);
+    }
+    expect(cards).toBeGreaterThan(0);
+    expect(problems).toBeGreaterThan(0);
+  });
+
   it('LA-V92-R06-T01 Every record row on the domain and record pages has exactly one row link, a real link to a record', async () => {
     for (const path of ['/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-CMD01']) {
       await openApp(path);
@@ -388,8 +444,8 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       .filter(Boolean));
     // The nav's rows take their height from --nav-row-height, which the coarse pointer sets to the touch target.
     for (const k of ['.nav-row', '.nav-chevron', '.nav-folder-head', '.nav-section-head']) covered.add(k);
-    // Canvas nodes are sized by the layout and grow with pinch-zoom; cards are whole panels of text.
-    const exempt = new Set(['.graph-node', '.erd-box', '.card', '.domain-card']);
+    // Canvas nodes are sized by the layout and grow with pinch-zoom; a card's title is stretched over the whole card.
+    const exempt = new Set(['.graph-node', '.erd-box', '.card-title']);
     const missing = rules
       .filter((r) => !coarse(r) && /cursor:\s*pointer/.test(r.body))
       .flatMap((r) => topLevel(r.selector).map((s) => ({ key: keyOf(s.trim()), s: s.trim(), line: r.line })))
@@ -459,10 +515,11 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
 
   it.each(['LA-PAT-APP-UX-R09-T01', 'LA-PAT-APP-UX-R09-T02'])('%s Actions look like actions: standalone actions are the one Button, and links stay links for navigation in context', async () => {
     // The controls that are not standalone actions, and so keep their own form: tab close buttons, toggles in a group,
-    // fold chevrons, the nav's rows and rail, the sheet handle, the open-pages list and the title bar's command center.
+    // fold chevrons, the nav's rows and rail, the sheet handle, the open-pages list, the title bar's command center and a
+    // card's title, stretched over its card (LA-PAT-APP-UX-R14).
     // In the source no raw <button> may take the Button's own classes; on the page they are allowed.
     const ALLOWED = ['tab-close', 'tree-toggle', 'nav-chevron', 'nav-row', 'nav-folder-head', 'nav-section-head', 'rail-item',
-      'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'command-center'];
+      'view-segment', 'page-bar-pages', 'pages-open', 'sheet-handle', 'command-center', 'card-title'];
     // On the page, the canvas library's own zoom controls are allowed too.
     const allowed = `.button, .icon-button, ${ALLOWED.map((c) => `.${c}`).join(', ')}, [role="group"] button[aria-pressed], .react-flow__controls-button`;
 

@@ -66,16 +66,24 @@ export function ProblemList({ index, problems, showRecord = true, showCheck = tr
       itemKey={(item) => item.key}
       itemClassName={({ p }) => `problem ${p.severity}`}
       searchText={({ p }) => `${p.record ?? 'workspace'} ${index.byId.get(p.record ?? '')?.title ?? ''} ${p.message} ${p.check}`}
-      render={({ p }) => (
-        <>
-          <span className="severity">{p.severity}</span>
-          <span className="problem-text">
-            {showRecord && (p.record ? <RecordLink index={index} id={p.record} showTitle={false} row /> : <code>workspace</code>)}{' '}
-            {p.message}
-          </span>
-          {showCheck && <SpecLink to={checkPagePath(p.check)} className="check-link" title={`How the ${p.check} check works`}><code className="check-name">{p.check}</code></SpecLink>}
-        </>
-      )}
+      render={({ p }) => {
+        // A problem row is never a dead box (LA-PAT-APP-UX-R14): it opens its record, or its check when it shows no record.
+        const toRecord = showRecord && !!p.record && index.byId.has(p.record);
+        return (
+          <>
+            <span className="severity">{p.severity}</span>
+            <span className="problem-text">
+              {showRecord && (p.record ? <RecordLink index={index} id={p.record} showTitle={false} row /> : <code>workspace</code>)}{' '}
+              {p.message}
+            </span>
+            {(showCheck || !toRecord) && (
+              <SpecLink to={checkPagePath(p.check)} className={toRecord ? 'check-link' : 'check-link row-link'} title={`How the ${p.check} check works`}>
+                <code className="check-name">{p.check}</code>
+              </SpecLink>
+            )}
+          </>
+        );
+      }}
     />
   );
 }
