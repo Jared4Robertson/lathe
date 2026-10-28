@@ -240,25 +240,28 @@ check('command-change-recorded', () => {
 });
 
 check('event-not-by-outbox', () => {
-  it('LA-CHK-UC04-R13-T01 an event a policy hears, or a published one, not delivered by outbox is a warning', async () => {
-    let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
-    data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
-    const ws = await loadData(data);
-    expect(ofCheck(ws, 'event-not-by-outbox').map((p) => p.message)).toEqual([
+  it('LA-CHK-UC04-R13-T01 an event a policy hears that is not delivered by outbox is a warning', async () => {
+    const data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
+    expect(ofCheck(await loadData(data), 'event-not-by-outbox').map((p) => p.message)).toEqual([
       'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but its event type EX-LEND-EV01-ET is delivered in process; deliver it by outbox.',
-      'Domain event EX-LEND-EV02 is published, but its event type EX-LEND-EV02-ET is delivered in process; deliver it by outbox.',
     ]);
   });
 
-  it('LA-CHK-UC04-R13-T01 an event with no event type, or whose event type gives no delivery, is reported too', async () => {
-    let data = without(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET');
-    data = changing(data, 'event_type', () => true, { delivery: undefined });
-    data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
-    const ws = await loadData(data);
-    expect(ofCheck(ws, 'event-not-by-outbox').map((p) => p.message)).toEqual([
+  it('LA-CHK-UC04-R13-T01 an event a policy hears with no event type, or whose event type gives no delivery, is reported too', async () => {
+    const noType = without(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET');
+    expect(ofCheck(await loadData(noType), 'event-not-by-outbox').map((p) => p.message)).toEqual([
       'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but has no event type; give it one delivered by outbox.',
-      'Domain event EX-LEND-EV02 is published, but its event type EX-LEND-EV02-ET gives no delivery; deliver it by outbox.',
     ]);
+    const noDelivery = changing(complete(), 'event_type', () => true, { delivery: undefined });
+    expect(ofCheck(await loadData(noDelivery), 'event-not-by-outbox').map((p) => p.message)).toEqual([
+      'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but its event type EX-LEND-EV01-ET gives no delivery; deliver it by outbox.',
+    ]);
+  });
+
+  it('LA-CHK-UC04-R13-T01 a published event no policy hears, which only keeps read models current, may be delivered in process', async () => {
+    let data = changing(complete(), 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
+    data = adding(data, { fed_by: [{ source_id: 'EX-LEND-RM01', target_id: 'EX-LEND-EV02' }] });
+    expect(ofCheck(await loadData(data), 'event-not-by-outbox')).toEqual([]);
   });
 
   it('LA-CHK-UC04-R13-T01 an event a policy hears whose aggregate is stored in no table, such as one inside a browser tab, is exempt', async () => {
