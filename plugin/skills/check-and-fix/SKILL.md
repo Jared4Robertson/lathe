@@ -10,7 +10,8 @@ The spec is typed data, changed only with Lathe's MCP tools (or the `lathe` CLI 
 ## Run it
 
 - With the plugin: the `check` tool. It returns every error and warning, the recorded exceptions, and a last line `N errors, M warnings.`
-- In a shell, from the repo root (the folder with `lathe.config.json`): `npx lathe check` in a product repo, `npm --prefix lathe run check` in the Lathe repo. It also prints coverage, and exits 1 on any error. Add `--json` for the whole workspace as JSON (its `exceptions` list holds the recorded exceptions).
+- In a shell, from the repo root (the folder with `lathe.config.json`): `npx lathe check` in a product repo, `npm --prefix lathe run check` in the Lathe repo. It also prints coverage, and exits 1 on any error. Add `--json` for each product's whole workspace as JSON, `{ products: [{ root, workspace }] }` (each workspace's `exceptions` list holds its recorded exceptions).
+- A workspace (a repo whose `lathe.config.json` lists other products' folders under `products`, as the Lathe repo lists `examples/tool-library`) is checked whole: each product in its own folder, reported on its own, then the counts of them all. The data commands and the tools change the product of the repo they run in: change a listed product's records with `--root` set to its folder.
 
 Run it before you report or commit.
 

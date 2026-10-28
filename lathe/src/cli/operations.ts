@@ -3,7 +3,7 @@
 // the check. Each operation opens the store afresh, so it always works on the data files as they are now (the Owner,
 // the app or git may have changed them since the last call). Writes never commit: the Agent or the Owner commits.
 import path from 'node:path';
-import { exceptionsText, loadWorkspace, type RecordedException } from '../index.ts';
+import { exceptionsText, loadProducts, type RecordedException } from '../index.ts';
 import { describeKey, rowKey, rowLine, type Row, type Value } from '../store/rows.ts';
 import { sqlString, type KindDescription, type SchemaDescription, type TableDescription } from '../store/schema.ts';
 import { SchemaVersionError } from '../config.ts';
@@ -358,15 +358,15 @@ export interface CheckProblem {
   message: string;
 }
 
-/** Runs the check on the workspace: its errors and warnings, and the recorded exceptions. */
+/** Runs the check on the workspace, every product it shows: their errors and warnings, and the recorded exceptions. */
 export async function check(root: string): Promise<{ errors: number; warnings: number; problems: CheckProblem[]; exceptions: RecordedException[] }> {
-  const workspace = await loadWorkspace(root);
-  const problems = workspace.problems.map((p) => ({ severity: p.severity, check: p.check, record: p.record ?? null, message: p.message }));
+  const products = await loadProducts(root);
+  const problems = products.flatMap(({ workspace }) => workspace.problems).map((p) => ({ severity: p.severity, check: p.check, record: p.record ?? null, message: p.message }));
   return {
     errors: problems.filter((p) => p.severity === 'error').length,
     warnings: problems.filter((p) => p.severity === 'warning').length,
     problems,
-    exceptions: workspace.exceptions,
+    exceptions: products.flatMap(({ workspace }) => workspace.exceptions),
   };
 }
 

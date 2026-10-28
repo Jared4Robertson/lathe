@@ -26,7 +26,7 @@ describe('LA-PLT-SP01-T A folder opens only when it holds lathe.config.json or a
     expect(checkFolder(plainConfig)).toEqual({ ok: true, dataDirs: [path.join(plainConfig, 'data')] });
   });
 
-  it('LA-PLT-UC11-R07-T01 opens a workspace with the data folder of each product it lists, from its own config', () => {
+  it('LA-PLT-UC11-R08-T01 opens a workspace with the data folder of each product it lists, from its own config', () => {
     const root = folder('workspace', {
       'lathe.config.json': '{ "products": ["examples/shop", "examples/gone"] }',
       'examples/shop/lathe.config.json': '{ "data": "spec" }',

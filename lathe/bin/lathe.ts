@@ -61,9 +61,11 @@ function fail(message: string): never {
   process.exit(2);
 }
 
+/** "1 error", "2 warnings". */
+const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
+
 async function check() {
   const products = await loadProducts(root);
-  const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
   const sum = (severity: Problem['severity']) => products.reduce((n, { workspace }) => n + workspace.problems.filter((p) => p.severity === severity).length, 0);
   const errors = sum('error');
   if (values.json) {
@@ -113,7 +115,6 @@ function printProduct(productRoot: string, workspace: Workspace) {
       }
     }
   }
-  const count = (n: number, noun: string) => `${n} ${noun}${n === 1 ? '' : 's'}`;
   console.log(`\n${count(errors.length, 'error')}, ${count(warnings.length, 'warning')}.`);
 }
 
