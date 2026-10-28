@@ -34,6 +34,8 @@ export interface Tool {
   condition: Condition;
   /** TL-LEND-EN03-DM: the damage report's note, stored on the tool while it needs repair. */
   damageNote: string | null;
+  /** TL-LEND-EN03-DM: when the damage was reported, stored on the tool while it needs repair. */
+  damageReportedAt: string | null;
   addedAt: string;
 }
 

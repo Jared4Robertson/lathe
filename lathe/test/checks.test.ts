@@ -46,6 +46,16 @@ const check = (name: string, body: () => void) => {
   describe(name, body);
 };
 
+check('table-schema-mismatch', () => {
+  it('LA-TRC-UC15-R01-T01 a table kept in a database whose file leaves out a column is a warning', async () => {
+    const ws = await loadData(complete(), { files: { 'src/schema.sql': 'CREATE TABLE loans (id INTEGER PRIMARY KEY);\nCREATE TABLE tools (id INTEGER PRIMARY KEY);\n' } });
+    const found = ofCheck(ws, 'table-schema-mismatch');
+    expect(found.length).toBeGreaterThan(0);
+    expect(found.every((p) => p.severity === 'warning' && p.message.includes('names src/schema.sql, which'))).toBe(true);
+    expect(records(found).filter((r, i, all) => all.indexOf(r) === i)).toEqual(['EX-LEND-EN01-TB', 'EX-LEND-EN03-TB', 'EX-LEND-RM01-TB']);
+  });
+});
+
 check('test-file-missing', () => {
   it("LA-TRC-UC05-R05-T01 an automated or manual test's missing file is an error; one not automated yet is a warning", async () => {
     let data = changing(complete(), 'integration_test', () => true, { file: 'manual/mail.md' });

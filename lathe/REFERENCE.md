@@ -1286,7 +1286,8 @@ Where an entity or a read model, its parent, is stored, in a database or not; or
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`table_key`](#table-table_key)
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`table-schema-mismatch`](#check-table-schema-mismatch)
+- **Gaps:** [`table-without-file`](#gap-table-without-file)
 
 <a id="table-table"></a>
 
@@ -1720,6 +1721,16 @@ A ui component that nothing uses.
 
 A ui component has no owner: it exists because it renders views. One that nothing uses is a leftover, or a link is missing. Link the views it renders with renders, or remove it.
 
+<a id="check-table-schema-mismatch"></a>
+
+### `table-schema-mismatch`
+
+**Warning** · Lathe's · Kinds: [`table`](#kind-table)
+
+A table kept in a database whose file does not define it as the spec says: its name, a column or a key.
+
+A table, view or materialized view that names a file is checked against that file read as text (a migration, a SQL schema, or code that creates it): the file defines a table or view of its name; every column its entity's or read model's fields give (a field's column_name, else its name in lower case with underscores; a value object of several fields flattened into its fields' columns; an entity's table also holds the fields of the children kept in its root's table); and each primary, unique and foreign key by its columns, a foreign key also by its target table. It recognizes CREATE TABLE and CREATE VIEW (OR REPLACE, TEMP, MATERIALIZED, IF NOT EXISTS) with their column definitions and inline or table PRIMARY KEY, UNIQUE and REFERENCES, the columns an AS SELECT body selects or names with AS, CREATE UNIQUE INDEX and ALTER TABLE ... ADD. It does not compare types, NOT NULL, CHECKs, a unique key's name or condition, or index keys, and it cannot see a statement built at run time from pieces the text does not show. A missing file is technical-file-missing instead. Change the file to match, or the spec when the file is right.
+
 ### Coverage gaps: technical specification
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -1737,6 +1748,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-query-without-handler"></a>`query-without-handler` | [`query`](#kind-query), [`query_handler`](#kind-query_handler) | A query with no query handler. |
 | <a id="gap-endpoint-without-handler"></a>`endpoint-without-handler` | [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler) | An endpoint with no endpoint handler. |
 | <a id="gap-integration-without-adapter"></a>`integration-without-adapter` | [`integration`](#kind-integration), [`adapter`](#kind-adapter) | An integration with no adapter. |
+| <a id="gap-table-without-file"></a>`table-without-file` | [`table`](#kind-table) | A table stored in a database table that names no file creating it. |
 | <a id="gap-view-without-ui-component"></a>`view-without-ui-component` | [`view`](#kind-view), [`ui_component`](#kind-ui_component) | A view no UI component renders. |
 
 <a id="stage-test-plan"></a>
