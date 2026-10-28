@@ -43,7 +43,7 @@ const label = (column: string) => column.replaceAll('_', ' ');
 export const FIELD_TABLES = ['entity_field', 'value_object_field', 'event_field', 'read_model_field'] as const;
 
 /** The part tables a record's page lays out itself, in place of listing their rows as facts. */
-const SHOWN_PARTS: ReadonlySet<string> = new Set([...FIELD_TABLES, 'table_key', 'command_change', 'pattern_setting', 'role', 'use_case_actor', 'setting_value']);
+const SHOWN_PARTS: ReadonlySet<string> = new Set([...FIELD_TABLES, 'table_key', 'command_change', 'pattern_setting', 'role', 'use_case_actor', 'setting_value', 'package_use']);
 
 const scenarioLabel = (c: string) => c[0].toUpperCase() + c.slice(1);
 
@@ -219,6 +219,8 @@ export function factsOf(index: SpecIndex, record: SpecRecord): Fact[] {
   if (condition) facts.push({ column: null, label: 'applies when', value: appliesWhenText(condition) });
   const actors = partsOf(index, record.id, 'use_case_actor').map((a) => textOf(a, 'role_name'));
   if (actors.length > 0) facts.push({ column: null, label: actors.length === 1 ? 'actor' : 'actors', value: actors.join(', ') });
+  const packages = partsOf(index, record.id, 'package_use').map((p) => textOf(p, 'package'));
+  if (packages.length > 0) facts.push({ column: null, label: packages.length === 1 ? 'package' : 'packages', value: packages.join(', ') });
   for (const v of partsOf(index, record.id, 'setting_value')) {
     facts.push({ column: null, label: textOf(v, 'setting'), value: settingText(settingOfRow(v)) });
   }

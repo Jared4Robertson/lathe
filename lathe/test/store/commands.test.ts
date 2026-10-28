@@ -44,7 +44,7 @@ describe('add', () => {
     await store.close();
   });
 
-  it('adds a record of each new kind: one with no owner, one under either of two parents, and a test', async () => {
+  it('LA-AUT-INV35-T adds a record of each new kind: one with no owner, one under either of two parents, and a test', async () => {
     const { store } = await fresh();
     await store.apply([
       { op: 'add', table: 'specification', row: { id: 'TL-LEND-SP02', title: 'Member in good standing', statement: 'A member owes nothing.' } },
@@ -132,7 +132,7 @@ describe('set', () => {
     await store.close();
   });
 
-  it('refuses a key column, a parent column, an unknown column and a bad value', async () => {
+  it('LA-AUT-INV38-T refuses a key column, a parent column, an unknown column and a bad value', async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'set', table: 'view', key: 'TL-V01', changes: { id: 'TL-V09' } }])).toEqual([expect.objectContaining({ rule: 'command' })]);
     expect(await refused(store, [{ op: 'set', table: 'endpoint', key: 'TL-LEND-EP01', changes: { query_id: 'TL-LEND-QRY01' } }])).toEqual([
@@ -147,7 +147,7 @@ describe('set', () => {
 });
 
 describe('move', () => {
-  it('moves a record between its two parent kinds, setting one parent column and clearing the other', async () => {
+  it('LA-AUT-INV38-T moves a record between its two parent kinds, setting one parent column and clearing the other', async () => {
     const { store } = await fresh();
     await store.move('TL-LEND-EP01', 'TL-LEND-QRY01');
     expect(store.record('TL-LEND-EP01')!.row).toMatchObject({ query_id: 'TL-LEND-QRY01' });
@@ -158,7 +158,7 @@ describe('move', () => {
     await store.close();
   });
 
-  it('moves a record to another parent of its kind, keeping what sits inside it', async () => {
+  it('LA-AUT-INV38-T moves a record to another parent of its kind, keeping what sits inside it', async () => {
     const { store } = await fresh();
     await store.add('capability', { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2 });
     const result = await store.move('TL-LEND-UC01', 'TL-LEND-CAP02');
@@ -173,7 +173,7 @@ describe('move', () => {
     await store.close();
   });
 
-  it("refuses a parent its kind cannot sit under, and a move that leaves an ID outside its domain", async () => {
+  it("LA-AUT-INV37-T refuses a parent its kind cannot sit under, and a move that leaves an ID outside its domain", async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'move', id: 'TL-LEND-UC01', parent: 'TL-LEND-A1' }])).toEqual([
       expect.objectContaining({ rule: 'parent', message: 'a use_case sits under capability, not under aggregate TL-LEND-A1' }),
@@ -189,7 +189,7 @@ describe('move', () => {
 });
 
 describe('link and unlink', () => {
-  it('links and unlinks, keeping the file sorted by its key columns', async () => {
+  it('LA-AUT-INV35-T links and unlinks, keeping the file sorted by its key columns', async () => {
     const { store, root } = await fresh();
     await store.link('calls', 'TL-LEND-QRY01', 'TL-LEND-DS01');
     expect(readFileSync(path.join(root, 'data', 'calls.jsonl'), 'utf8')).toBe(
@@ -219,7 +219,7 @@ describe('link and unlink', () => {
     await store.close();
   });
 
-  it('refuses a link to another product', async () => {
+  it('LA-AUT-INV37-T refuses a link to another product', async () => {
     const { store } = await fresh();
     const problems = await refused(store, [
       { op: 'add', table: 'product', row: { id: 'LA', title: 'Lathe' } },
@@ -292,7 +292,7 @@ describe('a write', () => {
     });
   });
 
-  it('declares a product kind in any stage and adds its records in one write', async () => {
+  it('LA-PLT-UC02-R03-T02 declares a product kind in any stage and adds its records in one write', async () => {
     const { store, root } = await fresh();
     await store.apply([
       { op: 'add', table: 'product_kind', row: { name: 'report', product_id: 'TL', label: 'Report', description: 'A report the library prints.', parent_kind: 'read_model', stage: 'interaction-design', obligation: true, id_pattern: '<read model>-REP<nn>' } },

@@ -102,6 +102,7 @@ export function everyKind(): Data {
     ui_component: [{ id: 'TL-UI01', title: 'CatalogPage', file: 'web/catalog.tsx' }],
     endpoint_handler: [{ id: 'TL-LEND-EP01-H', title: 'postLoan', endpoint_id: 'TL-LEND-EP01' }],
     adapter: [{ id: 'TL-INT01-AD', title: 'mailer', integration_id: 'TL-INT01' }],
+    package_use: [{ record_id: 'TL-INT01-AD', package: 'nodemailer' }],
     standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL' }],
     standard_rule: [{ id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' }],
 

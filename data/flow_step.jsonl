@@ -178,7 +178,7 @@
 {"id":"LA-PLT-UC01-FL06-S01","title":"The Agent's script calls loadWorkspace(root) and reads the records, links, problems and coverage","flow_id":"LA-PLT-UC01-FL06","path":"main","position":1}
 {"id":"LA-PLT-UC01-FL06-S02","title":"Data the store refuses ends the load with one data-refused error per refusal and no records","flow_id":"LA-PLT-UC01-FL06","path":"refused","position":1}
 {"id":"LA-PLT-UC01-FL06-S03","title":"After a write, the script loads again within the budgets","flow_id":"LA-PLT-UC01-FL06","path":"main","position":2}
-{"id":"LA-PLT-UC02-FL03-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix","flow_id":"LA-PLT-UC02-FL03","path":"main","position":1}
+{"id":"LA-PLT-UC02-FL03-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix, and names the test files in lathe.config.json when they differ from the common names","flow_id":"LA-PLT-UC02-FL03","path":"main","position":1}
 {"id":"LA-PLT-UC02-FL03-S02","title":"They set up the merge driver once per clone, as the README says, so git merges the data files through it","flow_id":"LA-PLT-UC02-FL03","path":"main","position":2}
 {"id":"LA-PLT-UC02-FL03-S03","title":"They add the first domain and records with lathe add, or an Agent through the MCP tools, in the data folder the config names, with any kinds of the product's own","flow_id":"LA-PLT-UC02-FL03","path":"main","position":3}
 {"id":"LA-PLT-UC02-FL03-S04","title":"They run lathe serve to browse and edit the spec, with no build tools in the repo","flow_id":"LA-PLT-UC02-FL03","path":"main","position":4}
@@ -302,6 +302,8 @@
 {"id":"LA-TRC-UC05-FL03-S02","title":"Lathe check reads each automated test's file for the test's ID, as a whole ID","flow_id":"LA-TRC-UC05-FL03","path":"main","position":2}
 {"id":"LA-TRC-UC05-FL03-S03","title":"A file that does not name its test is an error naming the test and the file, and the Agent names it","flow_id":"LA-TRC-UC05-FL03","path":"refused","position":1}
 {"id":"LA-TRC-UC05-FL03-S04","title":"The file of a manual test or a test not automated yet is checked only for existing","flow_id":"LA-TRC-UC05-FL03","path":"main","position":3}
+{"id":"LA-TRC-UC05-FL03-S05","title":"Lathe check reads each test case in the product's test files for the ID of a test whose file it is in","flow_id":"LA-TRC-UC05-FL03","path":"main","position":4}
+{"id":"LA-TRC-UC05-FL03-S06","title":"A test case that names no such test is an error naming its file and line, and the Agent names it or removes it","flow_id":"LA-TRC-UC05-FL03","path":"refused","position":2}
 {"id":"LA-TRC-UC06-FL03-S01","title":"The Owner runs lathe check and, after each domain's obligation lines, reads its tests by state","flow_id":"LA-TRC-UC06-FL03","path":"main","position":1}
 {"id":"LA-TRC-UC06-FL03-S02","title":"An Agent reads the same counts from lathe check --json, on each domain's coverage","flow_id":"LA-TRC-UC06-FL03","path":"json","position":1}
 {"id":"LA-TRC-UC07-FL03-S01","title":"The Owner links a domain to a pattern with follows","flow_id":"LA-TRC-UC07-FL03","path":"main","position":1}
@@ -340,3 +342,7 @@
 {"id":"LA-TRC-UC16-FL03-S01","title":"The Agent names, on each table a database keeps, the file that creates it","flow_id":"LA-TRC-UC16-FL03","path":"main","position":1}
 {"id":"LA-TRC-UC16-FL03-S02","title":"Lathe check reads each table's file and compares its name, columns and keys with the spec","flow_id":"LA-TRC-UC16-FL03","path":"main","position":2}
 {"id":"LA-TRC-UC16-FL03-S03","title":"A part the file does not define is a warning naming the table, the file and the part, and the Agent fixes the file or the spec","flow_id":"LA-TRC-UC16-FL03","path":"refused","position":1}
+{"id":"LA-TRC-UC19-FL03-S01","title":"The Agent adds a dependency to a package.json the product lists","flow_id":"LA-TRC-UC19-FL03","path":"main","position":1}
+{"id":"LA-TRC-UC19-FL03-S02","title":"Lathe check reports each package no record names as one gap on the product, with the manifests that list it","flow_id":"LA-TRC-UC19-FL03","path":"main","position":2}
+{"id":"LA-TRC-UC19-FL03-S03","title":"The Agent names the package on the technical record that uses it; the store refuses it on any other record","flow_id":"LA-TRC-UC19-FL03","path":"main","position":3}
+{"id":"LA-TRC-UC19-FL03-S04","title":"Once the package leaves the manifest, the record that still names it is an error until the Agent removes the name","flow_id":"LA-TRC-UC19-FL03","path":"main","position":4}

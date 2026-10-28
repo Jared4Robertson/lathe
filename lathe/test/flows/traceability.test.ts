@@ -219,6 +219,14 @@ describe('Traceability flows from the command line', () => {
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(problemsOf(ws, 'test-file-missing-id')).toEqual([]);
     expect(problemsOf(ws, 'test-file-missing')).toEqual([]);
+    // S05, S06: the check reads each test case in the test files for a test of its file, and one that names none is an
+    // error with its file and line until the Agent names it.
+    tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 a tool on loan is refused');\nit('a tool is refused twice');\n");
+    const unnamed = tl.check();
+    expect(unnamed.status).toBe(1);
+    expect(unnamed.stdout).toContain('[test-case-unnamed] test/loans.test.ts:2: the test case "a tool is refused twice" names no test whose file is test/loans.test.ts');
+    tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 a tool on loan is refused');\nit('TL-LEND-UC01-R01-T01 a tool is refused twice');\n");
+    expect(problemsOf(tl.workspace(), 'test-case-unnamed')).toEqual([]);
   });
 
   it('LA-TRC-UC06-FL03-T see each domain\'s tests by state', async () => {

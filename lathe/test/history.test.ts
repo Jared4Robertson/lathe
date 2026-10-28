@@ -181,14 +181,14 @@ describe.skipIf(!hasGit)('record history', () => {
     expect(slow.timedOut).toBe(true);
   });
 
-  it("git's -G finds a line by its first column's value only", async () => {
+  it("LA-EXP-EP01-R02-T03 git's -G finds a line by its first column's value only", async () => {
     const touched = await runGit(repo, ['log', '--format=%s', '-G', firstColumnPattern('EX-PAT-NOTE'), '--', 'data']);
     // The pattern's commits, and not the link from UC01 that names the pattern as its target.
     expect(touched.stdout.trim().split('\n')).toEqual(['Describe the pattern', 'Add the example product']);
   });
 });
 
-describe('reading history', () => {
+describe('LA-EXP-EP01-R02-T03 reading history', () => {
   it('parses git log records written with its field and record separators', () => {
     const hash = 'a'.repeat(40);
     expect(parseLog(`${hash}\x1faaaaaaa\x1f2026-10-25T10:00:00+00:00\x1fOwner\x1fA subject\x1e\n`)).toEqual([

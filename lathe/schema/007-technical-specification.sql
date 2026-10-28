@@ -301,3 +301,15 @@ INSERT INTO meta_kind_parent VALUES
 INSERT INTO meta_table VALUES
   ('repository', 'kind', NULL), ('data_model', 'kind', NULL), ('value_type', 'kind', NULL), ('predicate', 'kind', NULL), ('event_type', 'kind', NULL), ('projection', 'kind', NULL), ('command_handler', 'kind', NULL), ('query_handler', 'kind', NULL), ('event_handler', 'kind', NULL), ('service', 'kind', NULL), ('endpoint_handler', 'kind', NULL), ('adapter', 'kind', NULL),
   ('table', 'kind', NULL), ('table_key', 'part', 'table_id'), ('ui_component', 'kind', NULL), ('standard', 'kind', NULL), ('standard_rule', 'kind', NULL);
+
+-- The packages technical records use: every package a product's package.json files list is named by a record, so each
+-- dependency is accounted for by what it serves.
+CREATE TABLE package_use (
+  record_id VARCHAR NOT NULL REFERENCES record_id (id),
+  package VARCHAR NOT NULL CHECK (regexp_full_match(package, '(@[a-z0-9~-][a-z0-9._~-]*/)?[a-z0-9~-][a-z0-9._~-]*')),
+  PRIMARY KEY (record_id, package)
+);
+COMMENT ON TABLE package_use IS 'A package a technical record uses: a dependency one of the product''s package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a record of a kind in the technical specification may name one.';
+COMMENT ON COLUMN package_use.record_id IS 'The technical record that uses the package: an adapter, a UI component, or a record of a product''s own technical kind such as a tooling record.';
+COMMENT ON COLUMN package_use.package IS 'The package''s name as package.json lists it, such as @duckdb/node-api.';
+INSERT INTO meta_table VALUES ('package_use', 'part', 'record_id');

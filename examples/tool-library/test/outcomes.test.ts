@@ -43,7 +43,7 @@ function march() {
   return s;
 }
 
-describe('Outcome report', () => {
+describe('TL-LEND-DS02-T01 Outcome report', () => {
   it('TL-LEND-RP01 measures loans per tool, late loans, loans of tools needing repair and active members for a month', () => {
     const { store } = march();
     const now = new Date('2026-04-02T14:00:00.000Z');

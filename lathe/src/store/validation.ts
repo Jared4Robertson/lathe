@@ -315,6 +315,15 @@ JOIN record_scope a ON a.id = k.table_id
 JOIN record_scope b ON b.id = k.target_table_id
 WHERE k.type = 'foreign' AND a.domain_id IS DISTINCT FROM b.domain_id`,
     },
+    {
+      name: 'package-use-technical',
+      description: 'Only a technical record, of a kind in the technical specification, names a package it uses (package_use).',
+      sql: `
+SELECT 'package_use' AS table_name, ${keyOf(schema, 'package_use', 'u')} AS row_key,
+       u.record_id || ' is a ' || lower(k.label) || ', not a technical record, so it cannot name package ' || u.package || '; name it on the adapter, tooling or other technical record that uses it' AS message
+FROM package_use u JOIN record_id r ON r.id = u.record_id JOIN meta_kind k ON k.name = r.kind
+WHERE k.stage IS DISTINCT FROM 'technical-specification'`,
+    },
   ];
   // The relations of domain or aggregate scope, each read from its own link table: the scope is known per relation,
   // so the other relations' links are never joined to record_scope.

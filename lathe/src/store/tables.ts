@@ -841,6 +841,14 @@ export interface MeetsRow {
   target_id: string;
 }
 
+/** A package a technical record uses: a dependency one of the product's package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a record of a kind in the technical specification may name one. */
+export interface PackageUseRow {
+  /** The technical record that uses the package: an adapter, a UI component, or a record of a product's own technical kind such as a tooling record. */
+  record_id: string;
+  /** The package's name as package.json lists it, such as @duckdb/node-api. */
+  package: string;
+}
+
 /** One setting of a pattern, in order: what each follower decides. */
 export interface PatternSettingRow {
   /** The pattern. */
@@ -1508,6 +1516,7 @@ export interface TableRows {
   standard: StandardRow;
   standard_rule: StandardRuleRow;
   meets: MeetsRow;
+  package_use: PackageUseRow;
   pattern_setting: PatternSettingRow;
   pattern_rule: PatternRuleRow;
   pattern_rule_test: PatternRuleTestRow;

@@ -50,7 +50,7 @@ describe('form generation from the schema', () => {
     expect(formFields(schema, 'pattern_rule_test').find((f) => f.name === 'domain_id')).toMatchObject({ input: 'record', references: 'domain', required: true });
   });
 
-  it('turns the text of each input into the value its column takes', () => {
+  it('LA-V92-R30-T02 turns the text of each input into the value its column takes', () => {
     const fields = Object.fromEntries([...formFields(schema, 'capability'), ...formFields(schema, 'pattern_rule'), ...formFields(schema, 'check')].map((f) => [f.name, f]));
     expect(fieldValue(fields.position, ' 3 ')).toBe(3);
     expect(fieldValue(fields.applies_when_negated, 'true')).toBe(true);
@@ -59,7 +59,7 @@ describe('form generation from the schema', () => {
     expect(fieldValue(fields.title, '  Spaced  ')).toBe('Spaced');
   });
 
-  it('lists the part tables a kind owns, without the owner or the position the form keeps, their references as record choices', () => {
+  it('LA-EXP-DS12-T02 lists the part tables a kind owns, without the owner or the position the form keeps, their references as record choices', () => {
     expect(partForms(schema, 'use_case').map((p) => p.table)).toEqual(['setting_value', 'use_case_actor']);
     const fields = partForms(schema, 'entity').find((p) => p.table === 'entity_field')!;
     expect(fields.position).toBe('position');
@@ -74,7 +74,7 @@ describe('form generation from the schema', () => {
     expect(partForms(schema, 'command').map((p) => [p.table, p.fields.map((f) => f.name)])).toEqual([['command_change', ['aggregate_id', 'reason']]]);
   });
 
-  it('offers a field naming a record the records of its kind in the same product', () => {
+  it('LA-EXP-DS12-T03 offers a field naming a record the records of its kind in the same product', () => {
     const model = indexOf(modelWorkspace());
     const field = partForms(model.workspace.schema, 'entity').find((p) => p.table === 'entity_field')!.fields.find((f) => f.name === 'type_aggregate_id')!;
     expect(recordChoices(model, field, 'P').map((r) => r.id)).toEqual(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4', 'P-E-A1']);
@@ -107,7 +107,7 @@ describe('form generation from the schema', () => {
     expect(linkTargets(index, about, 'NF', null).map((r) => r.id)).toEqual(['NF', 'NF-NOTE', 'NF-NOTE-A1']);
   });
 
-  it('lists the kinds that may be added from a page: what may sit under it, and on a product or domain the kinds with no owner of its scope', () => {
+  it('LA-V92-R31-T03 lists the kinds that may be added from a page: what may sit under it, and on a product or domain the kinds with no owner of its scope', () => {
     expect(addableKinds(schema, 'use_case')).toEqual(['uc_requirement', 'flow']);
     expect(addableKinds(schema, 'uc_requirement')).toEqual(['use_case_test']);
     expect(addableKinds(schema, 'command')).toEqual(['policy', 'endpoint', 'command_handler']);
@@ -142,7 +142,7 @@ describe('IDs for new records', () => {
 });
 
 describe('parent columns of a new record', () => {
-  it('fills the one column naming the parent\'s kind', () => {
+  it('LA-V92-R31-T03 fills the one column naming the parent\'s kind', () => {
     const index = indexOf(workspace());
     expect(parentValues(index, 'endpoint', 'DM-SHOP-QRY01')).toEqual({ query_id: 'DM-SHOP-QRY01' });
     expect(parentValues(index, 'endpoint', 'DM-SHOP-CMD01')).toEqual({ command_id: 'DM-SHOP-CMD01' });
@@ -152,7 +152,7 @@ describe('parent columns of a new record', () => {
 });
 
 describe('commands from a draft', () => {
-  it('adds a new record with its parent column, parts and links in one write', () => {
+  it('LA-V92-R08-T02 adds a new record with its parent column, parts and links in one write', () => {
     const index = indexOf(workspace());
     const draft = newDraft(index, 'use_case', 'DM-SHOP-CAP01');
     expect(draft.id).toBe('DM-SHOP-UC02');
@@ -168,7 +168,7 @@ describe('commands from a draft', () => {
     expect(places).toEqual(['fields', 'parts:use_case_actor', 'parts:use_case_actor']);
   });
 
-  it('adds a kind with no owner without a parent column: its ID gives its product', () => {
+  it('LA-V92-R31-T03 adds a kind with no owner without a parent column: its ID gives its product', () => {
     const index = indexOf(workspace());
     const draft = newDraft(index, 'view', 'DM');
     expect(draft).toMatchObject({ id: 'DM-V02', parent: '' });
@@ -218,7 +218,7 @@ describe('commands from a draft', () => {
     ]);
   });
 
-  it('finds what the form can see before it writes: a missing or taken ID, a required field, a bad number, no parent', () => {
+  it('LA-V92-R30-T02 finds what the form can see before it writes: a missing or taken ID, a required field, a bad number, no parent', () => {
     const index = indexOf(patternWorkspace());
     const draft = newDraft(index, 'capability', null);
     draft.id = 'DM-SHOP-UC01';

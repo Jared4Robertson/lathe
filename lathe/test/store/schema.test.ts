@@ -57,7 +57,7 @@ describe('the schema description', () => {
     });
   });
 
-  it('has the kinds with no owner the plan names, each taking its product or domain from its ID', () => {
+  it('LA-AUT-UC03-R04-T01 has the kinds with no owner the plan names, each taking its product or domain from its ID', () => {
     const ownerless = Object.values(schema.kinds).filter((k) => !k.parents.length).map((k) => [k.name, k.idScope]);
     expect(ownerless.sort()).toEqual([
       ['integration', 'product'],
@@ -69,7 +69,7 @@ describe('the schema description', () => {
     ]);
   });
 
-  it('orders the kinds stage by stage, with product first and open questions last', () => {
+  it('LA-AUT-UC08-R01-T03 orders the kinds stage by stage, with product first and open questions last', () => {
     const stages = schema.stages.map((s) => s.name);
     expect(stages).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
     const kinds = Object.values(schema.kinds).sort((a, b) => a.position! - b.position!);
@@ -81,7 +81,7 @@ describe('the schema description', () => {
     expect(kinds.map((k) => k.position)).toEqual(kinds.map((_, i) => i + 1));
   });
 
-  it('makes each obligation kind a member of the obligation supertype', () => {
+  it('LA-AUT-UC03-R06-T02 makes each obligation kind a member of the obligation supertype', () => {
     const obligations = Object.values(schema.kinds).filter((k) => k.obligation).map((k) => k.name).sort();
     expect(obligations).toEqual(schema.supertypes.obligation);
     expect(obligations).toEqual(['api_requirement', 'constraint', 'domain_service', 'invariant', 'pattern_rule', 'policy', 'specification', 'standard_rule', 'uc_requirement', 'view_requirement']);
@@ -101,7 +101,7 @@ describe('the schema description', () => {
     }
   });
 
-  it('lists the stored tables in an order where each comes after the tables it points at', () => {
+  it('LA-AUT-UC03-R01-T02 lists the stored tables in an order where each comes after the tables it points at', () => {
     const seen = new Set<string>();
     for (const name of schema.loadOrder) {
       for (const fk of schema.tables[name].foreignKeys) {

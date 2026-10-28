@@ -175,7 +175,7 @@ describe('traceability', () => {
     expect(linkLabel(index, { source: 'P-D-CMD01', relation: 'checks', target: 'P-D-SP01' }, 'target')).toBe('Checked by');
   }, 120_000);
 
-  it('A record\'s links out show under their forward label and its links in under their reverse label; a UC requirement\'s steps are not repeated beside Designed by', () => {
+  it('LA-V92-R07-T01 A record\'s links out show under their forward label and its links in under their reverse label; a UC requirement\'s steps are not repeated beside Designed by', () => {
     const index = indexOf(modelWorkspace());
     // A policy: what proves it, then the event it hears.
     let trace = show(index, 'P-D-PO02');

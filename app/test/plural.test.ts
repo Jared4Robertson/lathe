@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { countOf, plural } from '../src/plural';
 
-describe('plural', () => {
+describe('LA-V92-R09-T04 plural', () => {
   it('pluralises kind labels as English does', () => {
     expect(plural('Capability')).toBe('Capabilities');
     expect(plural('Use case')).toBe('Use cases');
