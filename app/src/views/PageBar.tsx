@@ -1,7 +1,7 @@
 import type { ReactNode, RefObject } from 'react';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
-import { ModelIcon } from '../model/ModelIcon';
+import { ErdIcon } from '../erd/ErdIcon';
 import { Tooltip } from '../shell/Tooltip';
 import type { SpecIndex } from '../specs/data';
 import { VIEW_LABELS, VIEW_NAMES, type ViewName } from './address';
@@ -10,28 +10,29 @@ import type { PageTabsApi } from './useTabs';
 
 // The page bar (LA-PAT-APP-UX-R03): one strip across the top of the open panes, as the top of
 // VS Code's editor area. A tab is a page and the panes are views of it, so the bar holds what is
-// the page's: at its left the page's tabs, at its right the View group (Wiki, Graph, Model), a
+// the page's: at its left the page's tabs, at its right the View group (Wiki, Graph, ERD, Trace), a
 // divider, and the side bar toggle at the far right, beside the side bar itself. It is one line high
 // whatever it holds (the tabs scroll sideways), so nothing below it moves (UX-R08). Its View group
 // keeps a slot for every view on every page, so the toggles never move under the pointer: a view
-// the page does not offer (Model, outside a domain, an aggregate or an entity) shows dimmed, and
-// its tooltip says where it works.
+// the page does not offer (ERD outside a domain, an aggregate or an entity; Trace where no
+// obligation is) shows dimmed, and its tooltip says where it works.
 //
 // On a phone it is the same bar, compact (notes/mobile-design.md): the tabs fold into an "Open
 // pages" button that opens them as a sheet, the View group shows one view at a time, and the
 // side bar toggle opens the side bar as a bottom sheet. The shell's top bar above it names the page.
 
-export const VIEW_COMMANDS: Record<ViewName, string> = { wiki: 'viewWiki', graph: 'viewGraph', model: 'viewModel' };
+export const VIEW_COMMANDS: Record<ViewName, string> = { wiki: 'viewWiki', graph: 'viewGraph', erd: 'viewErd', trace: 'viewTrace' };
 
 /** Where a view works, for the dimmed slot of a view a page does not offer. */
 const NOT_OFFERED: Record<ViewName, string> = {
   wiki: 'on every page',
   graph: 'on every page',
-  model: 'on a domain, an aggregate or an entity',
+  erd: 'on a domain, an aggregate or an entity',
+  trace: 'on a requirement or rule, or a page with one under it',
 };
 
 export function ViewIcon({ view, size = 16 }: { view: ViewName; size?: number }) {
-  return view === 'model' ? <ModelIcon size={size} /> : <Icon name={view} size={size} />;
+  return view === 'erd' ? <ErdIcon size={size} /> : <Icon name={view} size={size} />;
 }
 
 export interface PageBarProps {

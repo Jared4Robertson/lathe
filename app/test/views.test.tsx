@@ -11,14 +11,14 @@ import { addRows } from './fixtures/load';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, boxElements, isCenter } from './graph/scene';
 
-// The focus page: one address per record or group, its Wiki, Graph and Model views panes you open
+// The focus page: one address per record or group, its Wiki, Graph and ERD views panes you open
 // and close side by side, with the side bar as the page's last column.
 
 const served = () => ({ data: testWorkspace() });
 const node = (id: string) => boxElement(id);
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 /** A view toggle, in the rightmost pane's title bar. */
-const viewToggle = (name: 'Wiki' | 'Graph' | 'Model') => within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name });
+const viewToggle = (name: 'Wiki' | 'Graph' | 'ERD' | 'Trace') => within(screen.getByRole('group', { name: 'View' })).getByRole('button', { name });
 const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
 const graphShown = () => waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
 
@@ -43,15 +43,16 @@ describe('one address, three views', () => {
     expect(addressOf('P-D')).toBe('/P-D');
   });
 
-  it('LA-VO91-C01-T A view set holds Wiki, Graph and Model, each once, in that order', () => {
+  it('LA-VO91-C01-T A view set holds Wiki, Graph, ERD and Trace, each once, in that order', () => {
     expect(viewsFromSearch('?view=split')).toBeNull();
-    expect(viewsFromSearch('?view=model,wiki')).toEqual(['wiki', 'model']);
+    expect(viewsFromSearch('?view=trace,erd,wiki')).toEqual(['wiki', 'erd', 'trace']);
+    expect(viewsFromSearch('?view=model')).toBeNull();
     expect(viewsFromSearch('?view=nonsense')).toBeNull();
     expect(parseViews('graph')).toEqual(['graph']);
   });
 
   it('LA-VO90-C02-T An address names views only in its view query, never in its path', async () => {
-    expect(withView('/X', ['model', 'wiki'])).toBe('/X?view=wiki,model');
+    expect(withView('/X', ['trace', 'erd', 'wiki'])).toBe('/X?view=wiki,erd,trace');
     await openApp('/P-D-UC01?view=graph', served());
     expect(await screen.findByRole('region', { name: 'Graph pane' })).toBeInTheDocument();
     expect(window.location.pathname + window.location.search).toBe('/P-D-UC01?view=graph');
@@ -276,15 +277,15 @@ describe('one address, three views', () => {
 
   it('LA-V96-R04-T01 The page bar holds the tabs at its left and the view toggles, a divider and the side bar toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown side bar share one on look', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'model']);
+    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const page = document.querySelector<HTMLElement>('.page-bar')!;
     expect(within(page.querySelector<HTMLElement>('.page-bar-start')!).getByRole('tab', { selected: true })).toHaveTextContent('P-D-UC01 Lend a thing');
     const order = (el: HTMLElement) => [...el.querySelectorAll<HTMLElement>('button, .pane-divider')].map((b) => b.classList.contains('pane-divider') ? '|' : b.getAttribute('aria-label'));
-    // A use case offers no Model view: its toggle keeps its slot, dimmed, and says where it works (UX-R08).
-    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'Model (on a domain, an aggregate or an entity)', '|', 'Hide the side bar']);
-    expect(within(page).getByRole('button', { name: /^Model \(/ })).toHaveAttribute('aria-disabled', 'true');
+    // A use case offers no ERD view: its toggle keeps its slot, dimmed, and says where it works (UX-R08).
+    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'ERD (on a domain, an aggregate or an entity)', 'Trace', '|', 'Hide the side bar']);
+    expect(within(page).getByRole('button', { name: /^ERD \(/ })).toHaveAttribute('aria-disabled', 'true');
     expect(viewToggle('Wiki')).toHaveClass('icon-button', 'is-on');
     expect(viewToggle('Graph')).not.toHaveClass('is-on');
     expect(within(page).getByRole('button', { name: 'Hide the side bar' })).toHaveClass('icon-button', 'is-on');
@@ -300,7 +301,7 @@ describe('one address, three views', () => {
     expect(graph.querySelector('.pane-name')).toHaveTextContent(/^\s*Graph$/);
     expect(order(wiki().querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Close the wiki pane', 'Full screen: Wiki']);
     expect(order(graph.querySelector<HTMLElement>('.pane-actions')!)).toEqual(['Close the graph pane', 'Full screen: Graph']);
-    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'Model (on a domain, an aggregate or an entity)', '|', 'Hide the side bar']);
+    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'ERD (on a domain, an aggregate or an entity)', 'Trace', '|', 'Hide the side bar']);
     expect(wiki().querySelector('[role="tablist"]')).toBeNull();
     // The toggle that was clicked keeps focus: it does not move.
     await waitFor(() => expect(viewToggle('Graph')).toHaveFocus());

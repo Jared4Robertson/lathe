@@ -3,7 +3,7 @@ import { indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { fireEvent, screen, waitFor } from '@testing-library/react';
 import { relationStyle } from '../../src/graph/GraphPage';
-import { canTrace, neighborhood, traceChain } from '../../src/graph/model';
+import { neighborhood } from '../../src/graph/model';
 import { patternWorkspace } from '../fixtures/patterns';
 import { openApp, startAtDepth } from '../helpers';
 import { boxElement, scene } from './scene';
@@ -41,14 +41,6 @@ describe('patterns in the graph', () => {
     for (const uc of ['DM-SHOP', 'DM-SHOP-UC01', 'DM-PAT-AUDIT-R01']) expect(column(uc)).toBe(column('DM-PAT-AUDIT') + 1);
     // From a use case, its pattern is one step away.
     expect(neighborhood(ix, 'DM-SHOP-UC01', 1, undefined, { links: true }).nodes.map((x) => x.id)).toContain('DM-PAT-AUDIT');
-  });
-
-  it('LA-V93-R30-T03 Trace mode is offered for a pattern rule and shows the tests that prove it, in each domain', () => {
-    const ix = index();
-    expect(canTrace(ix, 'DM-PAT-AUDIT-R01')).toBe(true);
-    expect(canTrace(ix, 'DM-PAT-AUDIT')).toBe(false);
-    const ids = traceChain(ix, 'DM-PAT-AUDIT-R01').nodes.map((x) => x.id);
-    expect(ids).toEqual(expect.arrayContaining(['DM-PAT-AUDIT-R01-T01', 'file:test/audit.test.ts']));
   });
 
   it('LA-V93-R30-T04 The graph view of a pattern draws its rules and the follows lines with their own style', async () => {

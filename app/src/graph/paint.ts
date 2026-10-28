@@ -68,20 +68,19 @@ export function lineStroke(look: Look, line: Pick<Line, 'link' | 'style'>): { co
 
 /**
  * Every look a box is drawn in, by its swatch in the graph's key (panel.tsx): each of the six stages' colors, the
- * structural records' (product, domain), a group's, a file's and an open question's.
+ * structural records' (product, domain), a group's and an open question's.
  */
 export const BOX_LOOKS = [
   'stage-discovery', 'stage-domain-model', 'stage-use-cases', 'stage-interaction-design', 'stage-technical-specification', 'stage-test-plan',
-  'stage-structural', 'stage-group', 'stage-file', 'kind-question',
+  'stage-structural', 'stage-group', 'kind-question',
 ] as const;
 export type BoxLook = (typeof BOX_LOOKS)[number];
 
-/** A box's look: a file's, a group's, an open question's, or its stage's. */
-export function boxLook(p: Pick<Plate, 'file' | 'group' | 'kind' | 'stage'>): BoxLook {
-  if (p.file) return 'stage-file';
+/** A box's look: a group's, an open question's, or its stage's. */
+export function boxLook(p: Pick<Plate, 'group' | 'kind' | 'stage'>): BoxLook {
   if (p.group) return 'stage-group';
   if (p.kind === 'question') return 'kind-question';
-  return `stage-${p.stage as Exclude<Plate['stage'], 'file'>}`;
+  return `stage-${p.stage}`;
 }
 
 /** A stage's edge and fill colors in the look; the structural colors for a box of no stage. */
@@ -98,11 +97,10 @@ export function stageColors(look: Look, stage: Plate['stage']): { edge: string; 
 }
 
 /** A box's edge and fill colors, by its look: an open question keeps its stage's fill. */
-export function boxColors(look: Look, p: Pick<Plate, 'file' | 'group' | 'kind' | 'stage'>): { edge: string; fill: string } {
+export function boxColors(look: Look, p: Pick<Plate, 'group' | 'kind' | 'stage'>): { edge: string; fill: string } {
   switch (boxLook(p)) {
-    case 'stage-file': return { edge: look.fileEdge, fill: look.paper };
     // A group is a folder outlined in its stage's color on the sheet, so it reads as its stage's and as a group.
-    case 'stage-group': return { edge: p.stage === 'structural' || p.stage === 'file' ? look.muted : stageColors(look, p.stage).edge, fill: look.sheet };
+    case 'stage-group': return { edge: p.stage === 'structural' ? look.muted : stageColors(look, p.stage).edge, fill: look.sheet };
     case 'kind-question': return { edge: look.warn, fill: stageColors(look, p.stage).fill };
     default: return stageColors(look, p.stage);
   }
@@ -314,7 +312,7 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
   const isFocus = p.id === state.focus;
   const ringed = state.ring === p.id;
   const armed = state.armed === p.id;
-  const hovered = state.hover === p.id && !isFocus && !p.file;
+  const hovered = state.hover === p.id && !isFocus;
   const s = p.scale;
 
   // The edge: a polygon's or a cell's in its state's color and width; every other box keeps its border and is ringed outside it.

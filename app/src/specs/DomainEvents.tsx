@@ -1,5 +1,5 @@
 import { LongList } from '../components/LongList';
-import { eventsOf, hearingLinks, raisingLinks } from '../model/events';
+import { eventsOf, hearingLinks, raisingLinks } from './events';
 import type { SpecIndex, SpecRecord } from './data';
 import { linkLabel } from './labels';
 import { ProblemBadge, RecordLink, Section, listTitle, recordText } from './parts';

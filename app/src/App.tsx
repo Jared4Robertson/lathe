@@ -19,7 +19,7 @@ import { checksPathOf, HOME_PATH, isFocusRoute } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { APPEARANCE_PATH, ThemeCommands } from './theme/ThemeCommands';
 // The first load ships only the wiki (LA-PAT-APP-UX-R11): the theme editor loads when first opened,
-// as the graph and the Model view do (views/FocusPage.tsx).
+// as the graph and the ERD view do (views/FocusPage.tsx).
 const AppearancePage = lazy(() => import('./theme/AppearancePage').then((m) => ({ default: m.AppearancePage })));
 
 export default function App() {

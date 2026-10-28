@@ -223,14 +223,14 @@
 {"id":"LA-EXP-UC04-FL02-S05","title":"In the desktop app, the graph sits in a pane beside the wiki and reports each move to the page","flow_id":"LA-EXP-UC04-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC05-FL01-S01","title":"The reader opens quick find, types part of an ID or title and opens the record","flow_id":"LA-EXP-UC05-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC05-FL01-S02","title":"The record, group, product or domain opens at its one address, in the views the link names","flow_id":"LA-EXP-UC05-FL01","path":"main","position":2}
-{"id":"LA-EXP-UC05-FL01-S03","title":"They open and close the Wiki, Graph and Model panes, resize them and show one alone; a title above a canvas keeps its height","flow_id":"LA-EXP-UC05-FL01","path":"main","position":3}
+{"id":"LA-EXP-UC05-FL01-S03","title":"They open and close the Wiki, Graph and ERD panes, resize them and show one alone; a title above a canvas keeps its height","flow_id":"LA-EXP-UC05-FL01","path":"main","position":3}
 {"id":"LA-EXP-UC05-FL01-S04","title":"Following a link in any pane moves them all, and Back and Forward move both","flow_id":"LA-EXP-UC05-FL01","path":"main","position":4}
 {"id":"LA-EXP-UC05-FL01-S05","title":"The wiki shows one level deep, grouped requirements under headings, and long lists ten rows at a time","flow_id":"LA-EXP-UC05-FL01","path":"main","position":5}
 {"id":"LA-EXP-UC05-FL01-S06","title":"They fold the nav's sections, collapse it to a rail, or open it as a sheet on a narrow screen","flow_id":"LA-EXP-UC05-FL01","path":"main","position":6}
 {"id":"LA-EXP-UC05-FL01-S07","title":"They fold the side bar away from the page bar","flow_id":"LA-EXP-UC05-FL01","path":"main","position":7}
 {"id":"LA-EXP-UC05-FL02-S01","title":"In the desktop app, the Reader opens quick find, types part of an ID or title and opens the record","flow_id":"LA-EXP-UC05-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC05-FL02-S02","title":"In the desktop app, the record, group, product or domain opens at its one address, in the views the link names","flow_id":"LA-EXP-UC05-FL02","path":"main","position":2}
-{"id":"LA-EXP-UC05-FL02-S03","title":"The Reader opens and closes the Wiki, Graph and Model panes, resizes them and shows one alone; a title above a canvas keeps its height","flow_id":"LA-EXP-UC05-FL02","path":"main","position":3}
+{"id":"LA-EXP-UC05-FL02-S03","title":"The Reader opens and closes the Wiki, Graph and ERD panes, resizes them and shows one alone; a title above a canvas keeps its height","flow_id":"LA-EXP-UC05-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC05-FL02-S04","title":"The Reader follows a link in any pane, which moves them all; Back and Forward move both","flow_id":"LA-EXP-UC05-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC05-FL02-S05","title":"In the desktop app, the wiki shows one level deep, grouped requirements under headings, and long lists ten rows at a time","flow_id":"LA-EXP-UC05-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC05-FL02-S06","title":"The Reader folds the nav's sections or collapses it to a rail","flow_id":"LA-EXP-UC05-FL02","path":"main","position":6}
@@ -238,7 +238,7 @@
 {"id":"LA-EXP-UC06-FL01-S01","title":"The reader opens a flow's page and reads its steps in order, a table per path","flow_id":"LA-EXP-UC06-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC06-FL01-S02","title":"They unfold a step to read more; a step with problems shows its badge","flow_id":"LA-EXP-UC06-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC06-FL01-S03","title":"In the Graph view the steps sit under the flow","flow_id":"LA-EXP-UC06-FL01","path":"main","position":3}
-{"id":"LA-EXP-UC06-FL01-S04","title":"Tracing a requirement, the reader sees the step that fulfills it, its flow and what it invokes","flow_id":"LA-EXP-UC06-FL01","path":"main","position":4}
+{"id":"LA-EXP-UC06-FL01-S04","title":"In the Trace view of a requirement, the reader sees the step that fulfills it, its flow and what it invokes","flow_id":"LA-EXP-UC06-FL01","path":"main","position":4}
 {"id":"LA-EXP-UC06-FL02-S01","title":"In the desktop app, the Reader opens a flow's page and reads its steps in order, a table per path","flow_id":"LA-EXP-UC06-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC06-FL02-S02","title":"The Reader unfolds a step to read more; a step with problems shows its badge","flow_id":"LA-EXP-UC06-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC06-FL02-S03","title":"The graph sets the steps under their flow in the Graph view","flow_id":"LA-EXP-UC06-FL02","path":"main","position":3}
@@ -286,15 +286,15 @@
 {"id":"LA-EXP-UC10-FL02-S04","title":"The app keeps each tab's own views, pane sizes and scroll, and draws the graph the same in every tab","flow_id":"LA-EXP-UC10-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC10-FL02-S05","title":"The Reader closes a tab by its button, a middle-click or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC10-FL02-S06","title":"The app brings back each space's tabs as they were after a reload","flow_id":"LA-EXP-UC10-FL02","path":"main","position":6}
-{"id":"LA-EXP-UC11-FL01-S01","title":"On a domain, aggregate or entity page the reader opens the Model view","flow_id":"LA-EXP-UC11-FL01","path":"main","position":1}
+{"id":"LA-EXP-UC11-FL01-S01","title":"On a domain, aggregate or entity page the reader opens the ERD view","flow_id":"LA-EXP-UC11-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC11-FL01-S02","title":"A domain's ERD shows its aggregates as boundaries around their entities, and the relationship and reference lines between them","flow_id":"LA-EXP-UC11-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC11-FL01-S03","title":"They click an aggregate's box: its entities with their fields, and the aggregates around it faded","flow_id":"LA-EXP-UC11-FL01","path":"main","position":3}
 {"id":"LA-EXP-UC11-FL01-S04","title":"On an entity the same ERD picks it out","flow_id":"LA-EXP-UC11-FL01","path":"main","position":4}
 {"id":"LA-EXP-UC11-FL01-S05","title":"They read the key under the diagram","flow_id":"LA-EXP-UC11-FL01","path":"main","position":5}
-{"id":"LA-EXP-UC11-FL02-S01","title":"The Reader opens the Model view on a domain, aggregate or entity page","flow_id":"LA-EXP-UC11-FL02","path":"main","position":1}
-{"id":"LA-EXP-UC11-FL02-S02","title":"The Model view shows a domain's aggregates as boundaries around their entities, and the relationship and reference lines between them","flow_id":"LA-EXP-UC11-FL02","path":"main","position":2}
+{"id":"LA-EXP-UC11-FL02-S01","title":"The Reader opens the ERD view on a domain, aggregate or entity page","flow_id":"LA-EXP-UC11-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC11-FL02-S02","title":"The ERD view shows a domain's aggregates as boundaries around their entities, and the relationship and reference lines between them","flow_id":"LA-EXP-UC11-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC11-FL02-S03","title":"The Reader clicks an aggregate's box: its entities with their fields, and the aggregates around it faded","flow_id":"LA-EXP-UC11-FL02","path":"main","position":3}
-{"id":"LA-EXP-UC11-FL02-S04","title":"The Model view picks an entity out of the same ERD on its page","flow_id":"LA-EXP-UC11-FL02","path":"main","position":4}
+{"id":"LA-EXP-UC11-FL02-S04","title":"The ERD view picks an entity out of the same ERD on its page","flow_id":"LA-EXP-UC11-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC11-FL02-S05","title":"The Reader reads the key under the diagram","flow_id":"LA-EXP-UC11-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC12-FL01-S01","title":"In the Graph view the side bar is open on Details, and follows the pointer over the boxes","flow_id":"LA-EXP-UC12-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC12-FL01-S02","title":"In the Wiki view they open the side bar, switch to Outline and jump to a section; nothing outside the side bar moves","flow_id":"LA-EXP-UC12-FL01","path":"main","position":2}
@@ -526,10 +526,14 @@
 {"id":"LA-TRC-UC09-FL02-S02","title":"The Reader reads the product's Summary: coverage, tests by state, open questions, errors and warnings","flow_id":"LA-TRC-UC09-FL02","path":"main","position":2}
 {"id":"LA-TRC-UC09-FL02-S03","title":"The Reader reads the product's open questions and problems","flow_id":"LA-TRC-UC09-FL02","path":"main","position":3}
 {"id":"LA-TRC-UC09-FL02-S04","title":"The Reader opens a domain card to its domain page","flow_id":"LA-TRC-UC09-FL02","path":"main","position":4}
-{"id":"LA-TRC-UC10-FL01-S01","title":"The Reader focuses an obligation in the graph","flow_id":"LA-TRC-UC10-FL01","path":"main","position":1}
-{"id":"LA-TRC-UC10-FL01-S02","title":"They switch to trace mode and see only its chain and the files it names","flow_id":"LA-TRC-UC10-FL01","path":"main","position":2}
-{"id":"LA-TRC-UC10-FL02-S01","title":"In the desktop app, the Reader focuses an obligation in the graph","flow_id":"LA-TRC-UC10-FL02","path":"main","position":1}
-{"id":"LA-TRC-UC10-FL02-S02","title":"The Reader switches to trace mode and sees only its chain and the files it names","flow_id":"LA-TRC-UC10-FL02","path":"main","position":2}
+{"id":"LA-TRC-UC10-FL01-S01","title":"The Reader opens the Trace view on an obligation","flow_id":"LA-TRC-UC10-FL01","path":"main","position":1}
+{"id":"LA-TRC-UC10-FL01-S02","title":"They read its chain left to right, to its tests and the files they name","flow_id":"LA-TRC-UC10-FL01","path":"main","position":2}
+{"id":"LA-TRC-UC10-FL01-S03","title":"On a use case or a domain they read the matrix of every obligation under it","flow_id":"LA-TRC-UC10-FL01","path":"main","position":3}
+{"id":"LA-TRC-UC10-FL01-S04","title":"They keep only the rows with a gap","flow_id":"LA-TRC-UC10-FL01","path":"main","position":4}
+{"id":"LA-TRC-UC10-FL02-S01","title":"In the desktop app, the Reader opens the Trace view on an obligation","flow_id":"LA-TRC-UC10-FL02","path":"main","position":1}
+{"id":"LA-TRC-UC10-FL02-S02","title":"The Reader reads its chain left to right, to its tests and the files they name","flow_id":"LA-TRC-UC10-FL02","path":"main","position":2}
+{"id":"LA-TRC-UC10-FL02-S03","title":"The Reader reads the matrix of every obligation under a use case or a domain","flow_id":"LA-TRC-UC10-FL02","path":"main","position":3}
+{"id":"LA-TRC-UC10-FL02-S04","title":"The Reader keeps only the rows with a gap","flow_id":"LA-TRC-UC10-FL02","path":"main","position":4}
 {"id":"LA-TRC-UC11-FL01-S01","title":"The Reader opens a product, then a domain, and reads one coverage group per obligation kind","flow_id":"LA-TRC-UC11-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC11-FL01-S02","title":"They open a gap, such as an API requirement no test proves yet, on its record page","flow_id":"LA-TRC-UC11-FL01","path":"main","position":2}
 {"id":"LA-TRC-UC11-FL01-S03","title":"On the record page each test shows its state","flow_id":"LA-TRC-UC11-FL01","path":"main","position":3}

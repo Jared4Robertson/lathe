@@ -1,12 +1,12 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { LongList } from '../components/LongList';
 import type { SpecIndex, Stage, StageRule } from '../specs/data';
-import { FILE_KIND, PARENT, graphEdgeLabel, nodeParent, parseGroupId, type Neighborhood } from './model';
+import { PARENT, graphEdgeLabel, nodeParent, parseGroupId, type Neighborhood } from './model';
 import { MARKS, SHAPES, type Mark, type Shape } from './shapes';
 import { MarkIcon, ShapeIcon } from './shape-icons';
 
-// The graph's part of the side bar: what the framed picture connects to the center, the files a
-// trace reaches, and the legend. Kept apart from GraphPage (React Flow) so the side bar can show
+// The graph's part of the side bar: what the framed picture connects to the center, and the
+// legend. Kept apart from GraphPage (React Flow) so the side bar can show
 // it without loading the graph.
 
 /** A link to another center: a real address for new tabs, onNavigate on a plain click. */
@@ -38,20 +38,18 @@ export function relationTo(index: SpecIndex, graph: Neighborhood, center: string
 
 export interface GraphInfo {
   graph: Neighborhood;
-  tracing: boolean;
 }
 
-/** The side bar's graph section: the records drawn next to the center and the files a trace reaches. */
+/** The side bar's graph section: the records drawn next to the center. */
 export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: SpecIndex; info: GraphInfo; onNavigate: (id: string) => void; hrefFor: (id: string) => string }) {
-  const { graph, tracing } = info;
+  const { graph } = info;
   // As the picture lays them out: column by column (the parent before the children), each column top to bottom in the tree's order.
-  const near = graph.nodes.filter((n) => n.distance === 1 && n.kind !== FILE_KIND).sort((a, b) => a.column - b.column || a.row - b.row);
-  const files = graph.nodes.filter((n) => n.kind === FILE_KIND);
+  const near = graph.nodes.filter((n) => n.distance === 1).sort((a, b) => a.column - b.column || a.row - b.row);
   return (
     <>
       <section className="side-bar-section" aria-labelledby="side-bar-near">
-        <h3 id="side-bar-near">{tracing ? 'Traceability chain' : 'Connected in the graph'} <span className="section-count">{near.length}</span></h3>
-        {near.length === 0 ? <p className="hint">{tracing ? 'Nothing designs, builds or proves it yet.' : 'Nothing connected (check the filters).'}</p> : (
+        <h3 id="side-bar-near">Connected in the graph <span className="section-count">{near.length}</span></h3>
+        {near.length === 0 ? <p className="hint">Nothing connected (check the filters).</p> : (
           <LongList
             label="Connected records"
             className="plain graph-near"
@@ -67,12 +65,6 @@ export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: 
           />
         )}
       </section>
-      {files.length > 0 && (
-        <section className="side-bar-section" aria-labelledby="side-bar-files">
-          <h3 id="side-bar-files">Files <span className="section-count">{files.length}</span></h3>
-          <LongList label="Files" className="plain" items={files} itemKey={(f) => f.id} searchText={(f) => f.title} render={(f) => <code>{f.title}</code>} />
-        </section>
-      )}
       <Legend stages={index.workspace.stages} />
     </>
   );
@@ -119,21 +111,19 @@ export function Legend({ stages = [] }: { stages?: readonly StageRule[] }) {
           <li><span className="graph-swatch stage-nested" /> Nested view: a box holding its children below its name</li>
           <li><span className="graph-swatch is-cell" /> Voronoi view: a cell made of its children's cells, its name at its top</li>
           <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>
-          <li><span className="graph-swatch stage-file" /> File named by a technical record or a test</li>
           <li><span className="graph-line rel-structure" /> parent / child (the tree, through stages, folders and groups)</li>
           <li><span className="graph-line is-link" /> the center's own links, with Links on (fulfills, invokes, raises and the rest)</li>
-          <li><span className="graph-line rel-trace" /> fulfills (a step and a UC requirement), enforces (a table's unique key and an invariant)</li>
+          <li><span className="graph-line rel-fulfills" /> fulfills (a step and a UC requirement)</li>
           <li><span className="graph-line rel-design" /> invokes, happens in, exchanges with, renders, meets (a standard rule)</li>
           <li><span className="graph-line rel-pattern" /> follows (a domain's or use case's pattern, a cross-link)</li>
           <li><span className="graph-line rel-event" /> raises, hears (a domain event's links)</li>
-          <li><span className="graph-line rel-file" /> names file (a technical record's or test's file)</li>
           <li><span className="graph-line rel-other" /> other links</li>
           <li><span className="graph-mark error">!</span> has errors <span className="graph-mark warning">!</span> has warnings <span className="graph-mark gap">gap</span> not designed or not proved (on a group: among its members)</li>
         </ul>
-        <p className="hint">The graph is one map of the nav's tree: a product holds its own stages and its domains, a domain its five stages, each stage a folder per kind, each folder the records that start a branch of the stage, and each record what sits under it in the same stage. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A trace runs left to right, from an obligation to what designs it, the technical records that build it, the tests that prove it and their files.</p>
+        <p className="hint">The graph is one map of the nav's tree: a product holds its own stages and its domains, a domain its five stages, each stage a folder per kind, each folder the records that start a branch of the stage, and each record what sits under it in the same stage. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. An obligation's chain, from what designs it to the tests that prove it, is the Trace view's.</p>
         <p className="hint">The Nested layout (v) draws the same tree as boxes inside boxes: the product made of its stages and domains, each domain of its stages, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
         <p className="hint">The Voronoi layout draws the same tree as polygon cells inside cells: the product a hexagon split into its stages and domains, each domain split into its stages, and so on down, each cell as big as the records under it and never too small for its name. It frames and labels as the Nested layout does.</p>
-        <p className="hint">Click a record or a group, or press Enter on it, to focus it. Scroll, pinch or drag to look around. Once the graph has focus (click its canvas or a box), the arrow keys step through the tree, each step moving the focus. In the Tree view, Left goes to the parent, Right to the first child, and Up and Down to the previous and next sibling; in the Nested and Voronoi views, which draw children inside their parent, Up goes to the parent, Down to the first child, and Left and Right to the previous and next sibling. Tab and Shift+Tab move between the boxes; + and - change the depth, l switches Links, t switches trace mode, and . frames the focus again.</p>
+        <p className="hint">Click a record or a group, or press Enter on it, to focus it. Scroll, pinch or drag to look around. Once the graph has focus (click its canvas or a box), the arrow keys step through the tree, each step moving the focus. In the Tree view, Left goes to the parent, Right to the first child, and Up and Down to the previous and next sibling; in the Nested and Voronoi views, which draw children inside their parent, Up goes to the parent, Down to the first child, and Left and Right to the previous and next sibling. Tab and Shift+Tab move between the boxes; + and - change the depth, l switches Links, and . frames the focus again.</p>
       </section>
     </details>
   );

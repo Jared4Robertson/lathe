@@ -111,8 +111,8 @@
 {"id":"LA-TRC-UC08-FL04","title":"Report tests that count for nothing through the MCP tools","use_case_id":"LA-TRC-UC08","interface_id":"LA-IF04"}
 {"id":"LA-TRC-UC09-FL01","title":"See a product's coverage in the web app","use_case_id":"LA-TRC-UC09","interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC09-FL02","title":"See a product's coverage in the desktop app","use_case_id":"LA-TRC-UC09","interface_id":"LA-IF02"}
-{"id":"LA-TRC-UC10-FL01","title":"Trace an obligation in the graph in the web app","use_case_id":"LA-TRC-UC10","interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC10-FL02","title":"Trace an obligation in the graph in the desktop app","use_case_id":"LA-TRC-UC10","interface_id":"LA-IF02"}
+{"id":"LA-TRC-UC10-FL01","title":"Trace obligations from design to tests in the web app","use_case_id":"LA-TRC-UC10","interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC10-FL02","title":"Trace obligations from design to tests in the desktop app","use_case_id":"LA-TRC-UC10","interface_id":"LA-IF02"}
 {"id":"LA-TRC-UC11-FL01","title":"See every obligation kind and test state in the web app","use_case_id":"LA-TRC-UC11","interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC11-FL02","title":"See every obligation kind and test state in the desktop app","use_case_id":"LA-TRC-UC11","interface_id":"LA-IF02"}
 {"id":"LA-TRC-UC12-FL01","title":"See a domain's owed pattern rules in the web app","use_case_id":"LA-TRC-UC12","interface_id":"LA-IF01"}

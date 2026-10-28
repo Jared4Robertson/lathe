@@ -43,7 +43,7 @@ const heading = () => screen.findByRole('heading', { level: 1, name: 'Add an ite
 describe('desktop record actions', () => {
   it('LA-V92-R74-T01 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'model']);
+    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
     await openApp('/DM-SHOP-UC01');
     await heading();
     expect(screen.queryByRole('group', { name: 'Data file of DM-SHOP-UC01' })).toBeNull();

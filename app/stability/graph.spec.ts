@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
-import { DOMAIN, GRAPH_CANVAS, GRAPH_HEADER, MODEL_CANVAS, RECORD } from './scenarios';
+import { DOMAIN, GRAPH_CANVAS, GRAPH_HEADER, ERD_CANVAS, RECORD } from './scenarios';
 import { boxOf, cameraOf, clickBox, clippedLabels, focusDrawn, GRAPH, graphDrawn, hitAt, placesOf, pointOnBox, reachableBoxes, sceneOf } from './scene';
 import type { SceneHost } from '../src/graph/GraphPage';
 
@@ -164,7 +164,7 @@ test.describe('graph', () => {
     await nodes(page);
     await page.locator('.pane-graph .graph-layout button', { hasText: 'Nested' }).click();
     await graphDrawn(page, 'nested', 1300);
-    const marks = (await sceneOf(page)).boxes.filter((b) => !b.file)
+    const marks = (await sceneOf(page)).boxes
       .map((b) => ({ id: b.id, icon: b.icons.some((i) => i.draw === 'shape' && i.name === b.shape), outline: b.polygon !== null || b.view !== 'nested' }));
     await test.step("LA-V93-R06-T02 in the Nested view every record shows its kind's shape as a mark", () => {
       expect(marks.length).toBeGreaterThan(5);
@@ -230,8 +230,8 @@ test.describe('graph', () => {
           expect(s.boxes.length, `${layout} at ${domain}: boxes drawn`).toBeGreaterThan(0);
           const nameless = s.boxes
             .filter((b) => { const r = b.rect; return r.left + r.width > c.left && r.left < c.left + c.width && r.top + r.height > c.top && r.top < c.top + c.height; })
-            // Its title, drawn: lines with text (a file's title is in the mono face).
-            .filter((b) => b.lines.filter((l) => l.face === 'title' || (b.file && l !== b.lines[0])).map((l) => l.text).join('').trim() === '')
+            // Its title, drawn: lines with text.
+            .filter((b) => b.lines.filter((l) => l.face === 'title').map((l) => l.text).join('').trim() === '')
             .map((b) => b.id);
           expect(nameless, `${layout} at ${domain}, zoomed in ${z}: boxes with no title`).toEqual([]);
           expect(await clippedLabels(page), `${layout} at ${domain}, zoomed in ${z}: labels not inside their boxes`).toEqual([]);
@@ -293,19 +293,19 @@ test.describe('graph', () => {
   });
 
   test('LA-V61-R32-T01 move around the ERD', async ({ page }) => {
-    await openPage(page, `${DOMAIN}?view=model`);
-    await page.locator('.model-flow .react-flow__node').first().waitFor();
+    await openPage(page, `${DOMAIN}?view=erd`);
+    await page.locator('.erd-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
-    const keys = ['.pane-model > .pane-bar', '.pane-model .pane-title', '.pane-model .model-header', MODEL_CANVAS, '.pane-model .erd-key'];
+    const keys = ['.pane-erd > .pane-bar', '.pane-erd .pane-title', '.pane-erd .erd-header', ERD_CANVAS, '.pane-erd .erd-key'];
     // An aggregate's boundary holds its entities: its head is where the boundary itself takes a click.
-    const box = page.locator('.model-flow .react-flow__node .erd-aggregate .erd-box-head').first();
+    const box = page.locator('.erd-flow .react-flow__node .erd-aggregate .erd-box-head').first();
     const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.side-bar'] }, async () => {
       await box.click();
       await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
-      await page.locator('.model-flow .react-flow__node').first().waitFor();
+      await page.locator('.erd-flow .react-flow__node').first().waitFor();
     });
     expectStable(r);
-    const entity = page.locator('.model-flow .react-flow__node:not(:has(.is-focus))').first();
+    const entity = page.locator('.erd-flow .react-flow__node:not(:has(.is-focus))').first();
     const before = new URL(page.url()).pathname;
     const e = await step(page, 'graph', 'ERD: aggregate to entity', { keys, allow: ['.side-bar'] }, async () => {
       await entity.click();

@@ -121,7 +121,7 @@ test.describe('keyboard', () => {
     await tabUntil(page, (el) => !!el.closest('.graph-box'), 'a box in the graph');
     const first = await page.evaluate(() => document.activeElement!.closest('.graph-box')!.getAttribute('data-id'));
     let target = first;
-    for (let i = 0; i < 8 && (target === first || target === RECORD.slice(1) || target!.startsWith('file:') || target!.includes('/')); i++) {
+    for (let i = 0; i < 8 && (target === first || target === RECORD.slice(1) || target!.includes('/')); i++) {
       await page.keyboard.press('Tab');
       target = await page.evaluate(() => document.activeElement!.closest('.graph-box')?.getAttribute('data-id') ?? '');
     }
