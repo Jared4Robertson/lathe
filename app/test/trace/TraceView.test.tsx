@@ -149,7 +149,7 @@ describe('the Trace stage', () => {
     expect(within(traceStage()).queryByRole('button', { name: /^Show \d+ more$/ })).toBeNull();
   });
 
-  it('LA-PAT-APP-UX-R17-T02 A design, build or test record shows the rows that hold it, marked; one nothing traces to says so above the matrix around it; any other record shows the matrix around it', async () => {
+  it.each(['LA-PAT-APP-UX-R17-T02', 'LA-V98-R08-T01'])('%s A design, build or test record shows the rows that hold it, marked; one nothing traces to says so above the matrix around it; any other record shows the matrix around it', async () => {
     // A command a chain holds: the rows of each obligation whose chain holds it, the command marked in its cell.
     await openApp('/P-D-CMD01?stage=trace', served());
     let table = await matrix();

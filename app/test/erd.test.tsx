@@ -68,7 +68,7 @@ describe('the ERD stage', () => {
     expect(window.location.search).toBe('?stage=graph');
   };
   it('LA-V96-R18-T01 Every focus has an ERD stage: a domain\'s, an aggregate\'s or an entity\'s own diagram, otherwise its domain\'s or product\'s with its nearest entity or aggregate highlighted', proveErdOnEveryFocus);
-  it('LA-PAT-APP-UX-R17-T03 The ERD stage works on every focus, the switch never disabled', proveErdOnEveryFocus);
+  it('LA-V94-R07-T01 Any other record draws its domain\'s ERD, or the product\'s, with its nearest entity or aggregate highlighted', proveErdOnEveryFocus);
 
   const proveLaV94R02T01 = async () => {
     const erd = domainErd(index(), 'P-D');
