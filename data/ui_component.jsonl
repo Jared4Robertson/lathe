@@ -7,7 +7,6 @@
 {"id":"LA-UI101","title":"Graph details","file":"app/src/graph/panel.tsx"}
 {"id":"LA-UI102","title":"Mentions","file":"app/src/specs/mentions.tsx"}
 {"id":"LA-UI103","title":"Flow steps","file":"app/src/specs/FlowSteps.tsx"}
-{"id":"LA-UI104","title":"Folder groups","file":"app/src/specs/FolderGroups.tsx"}
 {"id":"LA-UI105","title":"Graph motion","file":"app/src/graph/motion.ts"}
 {"id":"LA-UI106","title":"Tab strip","file":"app/src/views/TabStrip.tsx"}
 {"id":"LA-UI107","title":"ERD layout","file":"app/src/model/layout.ts"}
@@ -18,7 +17,6 @@
 {"id":"LA-UI112","title":"Side bar Details","file":"app/src/views/SideBarDetails.tsx"}
 {"id":"LA-UI113","title":"Side bar Outline","file":"app/src/views/SideBarOutline.tsx"}
 {"id":"LA-UI114","title":"Side bar History","file":"app/src/views/SideBarHistory.tsx"}
-{"id":"LA-UI115","title":"Endpoint and integration sections","file":"app/src/specs/ApiParts.tsx"}
 {"id":"LA-UI116","title":"Requirement groups","file":"app/src/specs/groups.ts"}
 {"id":"LA-UI117","title":"Graph shapes","file":"app/src/graph/shapes.ts"}
 {"id":"LA-UI118","title":"Graph painter","file":"app/src/graph/paint.ts"}

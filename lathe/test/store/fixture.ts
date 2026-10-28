@@ -14,7 +14,7 @@ export function everyKind(): Data {
   return {
     product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }],
     role: [{ product_id: 'TL', name: 'Member' }, { product_id: 'TL', name: 'Librarian' }],
-    product_setting: [{ product_id: 'TL', max_children: 15 }],
+    product_setting: [{ product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 }],
 
     // Domain model.
     domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }],
