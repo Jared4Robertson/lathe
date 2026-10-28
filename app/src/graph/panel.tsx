@@ -80,11 +80,12 @@ export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: 
 
 /** What each stage's swatch holds, in the key. */
 const STAGE_KINDS: Readonly<Record<Stage, string>> = {
+  discovery: 'business outcome',
   'domain-model': 'domain, aggregate, entity, value object, constraint, invariant, specification, domain event, command, read model, query, policy, domain service, term',
   'use-cases': 'capability, use case, UC requirement, pattern and its rules',
   'interaction-design': 'flow, flow step, view, view requirement, endpoint, API requirement, integration',
   'technical-specification': 'the technical record that implements each design record, a table, a UI component, a standard and its rules',
-  'test-plan': 'every kind of test',
+  'test-plan': 'every kind of test, and the test data sets tests start from',
 };
 const STAGE_NAMES = Object.keys(STAGE_KINDS) as Stage[];
 

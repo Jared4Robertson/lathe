@@ -167,6 +167,24 @@ export interface ApiRequirementRow {
   group_name?: string;
 }
 
+/** A business outcome: a measurable change the product exists to bring about, which its capabilities serve. The trace runs from it to a capability, a use case, the code and the tests. */
+export interface BusinessOutcomeRow {
+  /** The outcome's ID: its product's ID and BO<nn>, such as TL-BO01. */
+  id: string;
+  /** The outcome in a few words, such as More tools in use. */
+  title: string;
+  /** The product it belongs to. */
+  product_id: string;
+  /** The outcome, stated so it can be measured, in one sentence. */
+  statement: string;
+  /** What is measured to know whether it is reached, and how. */
+  measure: string;
+  /** The value of the measure that counts as reached, and by when. */
+  target: string;
+  /** Longer notes, such as where the measure comes from. */
+  notes?: string;
+}
+
 /** Domain logic that belongs to no single entity and is not a yes-or-no check, such as calculating a late fee. Commands and queries of its domain call it; it uses no storage and no outside system. */
 export interface DomainServiceRow {
   /** The domain service's ID, such as TL-LEND-DS01. */
@@ -297,6 +315,12 @@ export interface ConstraintTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** Values the value object accepts, such as a@b.org. */
   accepts?: string;
   /** Values it refuses, and how. */
@@ -365,6 +389,12 @@ export interface DomainServiceTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
@@ -405,6 +435,12 @@ export interface EndpointTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
@@ -575,6 +611,12 @@ export interface FlowTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** What the test does along the main path, step by step. */
   steps?: string[];
   /** What it expects at the end. */
@@ -677,6 +719,12 @@ export interface IntegrationTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
@@ -715,6 +763,12 @@ export interface InvariantTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
@@ -817,6 +871,12 @@ export interface PatternRuleTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
@@ -843,6 +903,12 @@ export interface PolicyTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
@@ -879,8 +945,8 @@ export interface ProductKindRow {
   description: string;
   /** The kind its records sit under, their one parent: one of Lathe's or another product kind. Its table gets a required <parent_kind>_id column. */
   parent_kind: string;
-  /** The stage its records belong to, any of the five, if one; such as technical-specification for a kind of code Lathe has no kind for. */
-  stage?: "domain-model" | "use-cases" | "interaction-design" | "technical-specification" | "test-plan";
+  /** The stage its records belong to, any of the six, if one; such as technical-specification for a kind of code Lathe has no kind for. */
+  stage?: "discovery" | "domain-model" | "use-cases" | "interaction-design" | "technical-specification" | "test-plan";
   /** Whether a record of the kind is an obligation, to be designed, built and proved. An obligation kind joins the obligation supertype. */
   obligation: boolean;
   /** How its IDs are written, its own pattern, such as <command>-CLI. */
@@ -1047,6 +1113,12 @@ export interface SelectsByRow {
   target_id: string;
 }
 
+/** The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities. */
+export interface ServesRow {
+  source_id: string;
+  target_id: string;
+}
+
 /** Its domain service in code. It never uses a repository or an outside system: its inputs are passed in, and it returns a value or a decision. */
 export interface ServiceRow {
   /** The service's ID: its domain service's ID and SV, such as TL-LEND-DS01-SV. */
@@ -1091,6 +1163,12 @@ export interface SpecificationTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
@@ -1117,6 +1195,12 @@ export interface StandardRuleTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
@@ -1125,6 +1209,36 @@ export interface StandardRuleTestRow {
   then?: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
+}
+
+/** What some tests start from: the environment, the accounts and the starting records, how to prepare and reset them, and the file that builds them. Tests link to it with starts_from. */
+export interface TestDataSetRow {
+  /** The data set's ID: its domain's ID and TD<nn>, such as TL-LEND-TD01. */
+  id: string;
+  /** The data set in a few words, such as Two members, one tool on loan. */
+  title: string;
+  /** The domain whose tests it serves. */
+  domain_id: string;
+  /** Where it runs: the database, server or browser storage it is built in. */
+  environment?: string;
+  /** The accounts and roles it signs in as. */
+  accounts?: string;
+  /** The records it starts with. */
+  records?: string;
+  /** How to prepare it before a test. */
+  prepare?: string;
+  /** How to reset it after a test, so the next starts clean. */
+  reset?: string;
+  /** The seed or fixture that builds it, from the product root. */
+  file?: string;
+  /** What it is for, in a sentence or two. */
+  description?: string;
+}
+
+/** The test starts from the test data set: it is prepared before the test and reset after. */
+export interface StartsFromRow {
+  source_id: string;
+  target_id: string;
 }
 
 /** Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables, or computed in memory on each load. */
@@ -1209,6 +1323,12 @@ export interface UseCaseTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
@@ -1287,6 +1407,12 @@ export interface ViewTestRow {
   file?: string;
   /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
   manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
   /** The state the test starts from. */
   given?: string;
   /** What the test does. */
@@ -1311,6 +1437,7 @@ export interface TableRows {
   query: QueryRow;
   endpoint: EndpointRow;
   api_requirement: ApiRequirementRow;
+  business_outcome: BusinessOutcomeRow;
   domain_service: DomainServiceRow;
   calls: CallsRow;
   capability: CapabilityRow;
@@ -1374,10 +1501,13 @@ export interface TableRows {
   repository: RepositoryRow;
   role: RoleRow;
   selects_by: SelectsByRow;
+  serves: ServesRow;
   service: ServiceRow;
   setting_value: SettingValueRow;
   specification_test: SpecificationTestRow;
   standard_rule_test: StandardRuleTestRow;
+  test_data_set: TestDataSetRow;
+  starts_from: StartsFromRow;
   table: TableRow;
   table_key: TableKeyRow;
   term: TermRow;

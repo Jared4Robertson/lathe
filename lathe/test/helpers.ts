@@ -123,6 +123,7 @@ export function complete(): Data {
   return {
     product: [{ id: 'EX', title: 'Example library' }],
     role: [{ product_id: 'EX', name: 'Member' }, { product_id: 'EX', name: 'Librarian' }],
+    business_outcome: [{ id: 'EX-BO01', title: 'More tools in use', product_id: 'EX', statement: 'Members borrow more of the tools the library holds.', measure: 'Loans opened per tool per month.', target: 'Two loans per tool per month within a year.' }],
 
     domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', subdomain_type: 'core' }],
     aggregate: [
@@ -167,6 +168,7 @@ export function complete(): Data {
     term: [{ id: 'EX-LEND-TM01', title: 'Loan', domain_id: 'EX-LEND', meaning: 'One tool lent to one member until it is returned.' }],
 
     capability: [{ id: 'EX-LEND-CAP01', title: 'Lending', domain_id: 'EX-LEND', position: 1 }],
+    serves: [{ source_id: 'EX-LEND-CAP01', target_id: 'EX-BO01' }],
     use_case: [
       { id: 'EX-LEND-UC01', title: 'Borrow a tool', capability_id: 'EX-LEND-CAP01' },
       { id: 'EX-LEND-UC02', title: 'Add a tool', capability_id: 'EX-LEND-CAP01' },
@@ -252,6 +254,8 @@ export function complete(): Data {
       { id: 'EX-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'EX-LEND-UC01-FL', ...automated('e2e-ui', 'e2e/borrow.spec.ts') },
       { id: 'EX-LEND-UC02-FL-T', title: 'Add end to end', flow_id: 'EX-LEND-UC02-FL', level: 'manual', state: 'manual', manual_reason: 'Done at the desk.' },
     ],
+    test_data_set: [{ id: 'EX-LEND-TD01', title: 'One tool on loan', domain_id: 'EX-LEND', records: 'One member, one tool, one active loan.', file: 'test/seed.ts' }],
+    starts_from: [{ source_id: 'EX-LEND-INV01-T', target_id: 'EX-LEND-TD01' }],
     integration_test: [{ id: 'EX-INT01-T01', title: 'A mail is sent', integration_id: 'EX-INT01', level: 'manual', state: 'manual', manual_reason: 'The mail service has no test mode.' }],
     pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T01', title: 'A saved tool reads the same', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-LEND', ...automated('api', 'test/api.test.ts') }],
     standard_rule_test: [{ id: 'EX-STD-CODE-R01-T01', title: 'No bare built-in import', standard_rule_id: 'EX-STD-CODE-R01', ...automated('unit', 'test/imports.test.ts') }],
@@ -293,6 +297,7 @@ export function complete(): Data {
 export function sparse(): Data {
   return {
     product: [{ id: 'SP', title: 'Sparse' }],
+    business_outcome: [{ id: 'SP-BO01', title: 'Unserved', product_id: 'SP', statement: 'Members return tools on time.', measure: 'Loans returned late per month.', target: 'None.' }],
     domain: [
       { id: 'SP-D', title: 'Lending', product_id: 'SP', subdomain_type: 'core' },
       { id: 'SP-E', title: 'Empty', product_id: 'SP', subdomain_type: 'generic' },

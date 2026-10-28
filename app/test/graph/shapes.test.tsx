@@ -16,7 +16,7 @@ import { drawnBox, scene } from './scene';
 
 /** The shapes the brief's table gives each kind, and the marks that tell two kinds of one shape apart. */
 const TABLE: Record<string, [Shape, string?]> = {
-  product: ['product'], domain: ['hexagon'], aggregate: ['double'], entity: ['box'], value_object: ['box', 'value'],
+  product: ['product'], business_outcome: ['box', 'target'], test_data_set: ['box', 'data'], domain: ['hexagon'], aggregate: ['double'], entity: ['box'], value_object: ['box', 'value'],
   constraint: ['octagon'], invariant: ['octagon'], specification: ['octagon'], domain_event: ['flag'], command: ['parallelogram'],
   read_model: ['box', 'lens'], query: ['parallelogram', 'lens'], policy: ['octagon', 'gear'], domain_service: ['box', 'gear'],
   term: ['box', 'marker'], capability: ['slice'], use_case: ['stadium'], uc_requirement: ['page'], pattern: ['stack'],

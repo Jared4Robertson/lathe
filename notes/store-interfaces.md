@@ -4,8 +4,8 @@ What the engine, the CLI and MCP tools, and the app build on: the schema in `lat
 
 ## How it fits together
 
-- **Schema.** `lathe/schema/NNN-name.sql`, applied in order: 001 meta (stages, kinds, parents, relations, supertypes), 002 registry and supertypes, 003 product, 004 domain model, 005 use cases (and patterns), 006 interaction design, 007 technical specification (and standards), 008 test plan, 009 open questions, 010 links, 011 checking, 012 product kinds. There are no upgrade migrations: the database is rebuilt from the data files on every load, so a change to the model rewrites these files and the data with it. Every table has a `COMMENT`, every stored column too. `describeSchema` reads tables, columns, types, enums, keys, foreign keys, CHECKs and comments back from DuckDB, plus the `meta_*` rows. After a change, `npm --prefix lathe run schema` regenerates `lathe/src/store/tables.ts` (a test fails until it does).
-- **Stages.** `meta_stage`, in order: `domain-model`, `use-cases`, `interaction-design`, `technical-specification`, `test-plan`. Each kind has a stage and a `position` (stage by stage, the plan's order within each); product and open question have no stage, product first and question last. Patterns sit in use cases, standards in the technical specification. Folders (`meta_section`) are gone: a kind's stage is its folder.
+- **Schema.** `lathe/schema/NNN-name.sql`, applied in order: 001 meta (stages, kinds, parents, relations, supertypes), 002 registry and supertypes, 003 product (and discovery's business outcomes), 004 domain model, 005 use cases (and patterns), 006 interaction design, 007 technical specification (and standards), 008 test plan, 009 open questions, 010 links, 011 checking, 012 product kinds. There are no upgrade migrations: the database is rebuilt from the data files on every load, so a change to the model rewrites these files and the data with it. Every table has a `COMMENT`, every stored column too. `describeSchema` reads tables, columns, types, enums, keys, foreign keys, CHECKs and comments back from DuckDB, plus the `meta_*` rows. After a change, `npm --prefix lathe run schema` regenerates `lathe/src/store/tables.ts` (a test fails until it does).
+- **Stages.** `meta_stage`, in order: `discovery`, `domain-model`, `use-cases`, `interaction-design`, `technical-specification`, `test-plan`. Each kind has a stage and a `position` (stage by stage, the plan's order within each); product and open question have no stage, product first and question last. Patterns sit in use cases, standards in the technical specification. Folders (`meta_section`) are gone: a kind's stage is its folder.
 - **Table roles** (`meta_table.role`): `kind` (one row per record, `id` a foreign key into `record_id`), `part` (rows owned by one record, removed with it; `owner_column` names it), `link` (one table per relation: `source_id`, `target_id`, primary key both), `declaration` (a product's kinds and relations), `checking` (`check`, `product_setting`), and the unstored `meta`, `registry`, `supertype` and `result` (`problem`).
 - **Data files.** `data/<table>.jsonl` for each stored table with rows (no file when empty; default folder `data/`, or `"data"` in `lathe.config.json`). Rows sorted by primary key (numbers as numbers, text by code point), columns in the table's order, columns without a value left out (never `null`), one JSON object per line, UTF-8, trailing newline. `record_id` and the supertypes are derived from the kind tables on load; they are never stored.
 - **Load and write.** One DuckDB instance per process. Each load and each write builds the new state in a fresh in-memory database (schema copied from a cached schema database, then every table in dependency order), inside one transaction, then runs the validation queries; only then does it replace the current state and rewrite the files of the tables it changed (through a temporary file and a rename). DuckDB checks foreign keys per statement even inside a transaction and refuses to delete or re-key a referenced row even when the same transaction drops the reference, which is why a write never updates in place.
@@ -16,11 +16,12 @@ What the engine, the CLI and MCP tools, and the app build on: the schema in `lat
 
 ## Tables
 
-The full description, with every column's meaning, is `store.schema` at run time and the comments in the migrations. **Run by**, on every test kind: `level` (unit, database, api, contract, e2e-api, e2e-ui, manual), `state` (automated, manual, not automated yet), `file?` (required when automated) and `manual_reason?` (required when manual, and only then).
+The full description, with every column's meaning, is `store.schema` at run time and the comments in the migrations. **Run by**, on every test kind: `level` (unit, database, api, contract, e2e-api, e2e-ui, manual), `state` (automated, manual, not automated yet), `file?` (required when automated), `manual_reason?` (required when manual, and only then), `size?` (volume or worst case; none is small) and the markers `smoke?` and `external?` (only true; none is no).
 
 | Stage | Kind | Parent | Columns besides id and title (? = optional) | ID |
 | --- | --- | --- | --- | --- |
 | — | `product` | none | description?, icon?, color?, notes? | `<P>` |
+| discovery | `business_outcome` | product (product_id) | statement, measure, target, notes? | `<P>-BO<nn>` |
 | domain-model | `domain` | product (product_id) | subdomain_type (core/supporting/generic), description?, notes? | `<P>-<D>` |
 | domain-model | `aggregate` | domain (domain_id) | description?, identity?, notes? | `<P>-<D>-A<n>` |
 | domain-model | `entity` | aggregate (aggregate_id) | role (root/child), in_root_table? (bool), description? | `<P>-<D>-EN<nn>` |
@@ -63,6 +64,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | technical-specification | `adapter` | integration (integration_id) | file?, description? | `<integration>-AD` |
 | technical-specification | `standard` | product (product_id) | description? | `<P>-STD-<name>` |
 | technical-specification | `standard_rule` | standard (standard_id) | statement, group_name? | `<standard>-R<nn>` |
+| test-plan | `test_data_set` | domain (domain_id) | environment?, accounts?, records?, prepare?, reset?, file?, description? | `<P>-<D>-TD<nn>` |
 | test-plan | `constraint_test` | constraint (constraint_id) | run by, accepts?, refuses?, notes? | `<constraint>-T` |
 | test-plan | `invariant_test` | invariant (invariant_id) | run by, given?, when?, then?, notes? | `<invariant>-T` |
 | test-plan | `specification_test` | specification (specification_id) | run by, given?, when?, then?, notes? | `<specification>-T` |
@@ -112,6 +114,8 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `reads` | domain | reads_source | aggregate | read_model→aggregate, specification→aggregate |
 | `renders` | product | ui_component | view | ui_component→view |
 | `selects_by` | domain | query | specification | query→specification |
+| `serves` | product | capability | business_outcome | capability→business_outcome |
+| `starts_from` | product | test | test_data_set | 12 pairs: every test kind→test_data_set |
 
 | Supertype | Members |
 | --- | --- |
@@ -120,12 +124,13 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `obligation` | api_requirement, constraint, domain_service, invariant, pattern_rule, policy, specification, standard_rule, uc_requirement, view_requirement |
 | `operation` | command, query |
 | `reads_source` | read_model, specification |
+| `test` | constraint_test, domain_service_test, endpoint_test, flow_test, integration_test, invariant_test, pattern_rule_test, policy_test, specification_test, standard_rule_test, use_case_test, view_test |
 
 Notes on the tables:
 - **Fields.** `entity_field`, `value_object_field`, `event_field` and `read_model_field` share one shape. A field's type is exactly one of `type` (a basic type: text, whole number, decimal, date, time, date and time, yes/no), `type_value_object_id` or `type_aggregate_id` (a reference by ID; another domain's aggregate is allowed). `required` says whether every record gives it a value; `column_name` names its column when that differs from the field's name (Member ID in `id`). A name is unique in its owner, trimmed and in any letter case. An entity's value objects are the ones its fields are typed with: no link stores them twice.
 - **Tables and keys.** A table's columns follow from its entity's or read model's fields (a value object's fields flattened), so `table` stores its `name`, `storage` (`table`, `view`, `materialized view`, `browser storage`, `file`, `in memory`; an entity's is never a view or a materialized view) and its `table_key` rows (none for browser storage, a file or in memory): `primary` (at most one), `unique` (with the `invariant_id` it enforces and a `condition` for a partial key, both optional), `foreign` (with its `target_table_id`, required, of the same domain) and `index`. An entity has at most one table: a child entity with `in_root_table: true` has none and is stored in its root's table.
 - **Exactly one, at most one.** One flow per use case, one test per constraint, invariant, specification, policy and flow, one technical record per design record (and one table per entity or read model): a `UNIQUE` parent column. One pattern rule test per rule and domain: `UNIQUE (pattern_rule_id, domain_id)`. A policy hears one event, a step invokes one operation and happens in one view: link tables with a unique `source_id`. "At least one" is a check's to report, never a refusal.
-- **Product kinds.** A `product_kind` row with its `product_kind_field` rows gets a table of its own named after it: `id`, `title`, `<parent_kind>_id` (required, a foreign key to the parent kind's table), then its fields typed `text`, `integer`, `boolean` or `date`, `NOT NULL` when required. It may sit in any of the five stages (or none) under any kind, with its own free-form ID pattern (no `id_scope`). `obligation: true` joins the `obligation` supertype. A `product_relation` with a new name gets a link table of scope `product` (its ends point at the one source or target kind, else at `record_id`); one with Lathe's name adds a pair to that relation when the link table's ends accept the two kinds. A product kind may not take a table name Lathe has.
+- **Product kinds.** A `product_kind` row with its `product_kind_field` rows gets a table of its own named after it: `id`, `title`, `<parent_kind>_id` (required, a foreign key to the parent kind's table), then its fields typed `text`, `integer`, `boolean` or `date`, `NOT NULL` when required. It may sit in any of the six stages (or none) under any kind, with its own free-form ID pattern (no `id_scope`). `obligation: true` joins the `obligation` supertype. A `product_relation` with a new name gets a link table of scope `product` (its ends point at the one source or target kind, else at `record_id`); one with Lathe's name adds a pair to that relation when the link table's ends accept the two kinds. A product kind may not take a table name Lathe has.
 
 ## What the database refuses, and the validation queries
 
@@ -209,7 +214,7 @@ What a command does:
 
 ## Notes by part
 
-- **Engine.** Coverage of obligations (designed, built, proved) and the "at least one" and "nothing uses it" checks are the engine's: none are refusals. `record_scope` has `aggregate_id` now; `meta_kind.obligation` is a boolean; sections are gone in favor of `schema.stages`. Allowed test levels per test kind are not in the schema.
+- **Engine.** Coverage of obligations (designed, built, proved) and the "at least one" and "nothing uses it" checks are the engine's: none are refusals. `record_scope` has `aggregate_id` now; `meta_kind.obligation` is a boolean; sections are gone in favor of `schema.stages`. Allowed test levels per test kind are not in the schema. Coverage reports a business outcome no capability serves and a capability that serves none as gaps (`outcome-not-served`, `capability-serves-no-outcome`); the checks `test-data-set-unused` and `test-data-set-file-missing` report a data set no test starts from and one whose file is missing.
 - **App and writers.** Forms read `store.schema.tables[name].columns` (kind, enum values, required, description) and `kinds[name].parents` (zero, one or two) and `idScope`/`idPattern` to suggest IDs. Writes go through `store.apply`; show `StoreError.problems` with their `command` index.
 
 ## Later additions

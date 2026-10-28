@@ -1,6 +1,6 @@
 ---
 name: extend-the-meta-model
-description: Add a product's own kinds to Lathe's schema in any of the five stages (domain model, use cases, interaction design, technical specification, test plan), with their fields and relations, mark an obligation kind and a relation's role, or add a product's own checks. Use when a product needs a record kind or link Lathe does not have, such as a technical kind for code no Lathe kind fits, when a house rule needs a check of its own, or when a write of a product kind or relation is refused, in a repo with lathe.config.json.
+description: Add a product's own kinds to Lathe's schema in any of the six stages (discovery, domain model, use cases, interaction design, technical specification, test plan), with their fields and relations, mark an obligation kind and a relation's role, or add a product's own checks. Use when a product needs a record kind or link Lathe does not have, such as a technical kind for code no Lathe kind fits, when a house rule needs a check of its own, or when a write of a product kind or relation is refused, in a repo with lathe.config.json.
 ---
 
 # Extend the meta-model
@@ -31,15 +31,16 @@ When a write changes the product's kinds or relations, the tools' input schemas 
 
 A product kind may not take a table name Lathe has, and Lathe's own kinds cannot be given another parent or more required fields: that is a change to Lathe's schema, in the Lathe package, not a product's declaration. Ask the Owner when you need one.
 
-## The five stages
+## The six stages
 
-A product kind sits in any of the five stages, or in none, and the app shows it there, in that stage's color:
+A product kind sits in any of the six stages, or in none, and the app shows it there, in that stage's color:
 
+- `discovery`: something about why the product exists that a business outcome leaves out, such as a persona or a market, under the product.
 - `domain-model`: a domain concept Lathe's DDD kinds leave out, such as a saga, under the domain.
 - `use-cases`: something a use case owns, such as an acceptance criterion's example, under the use case.
 - `interaction-design`: a design record of a channel Lathe has no kind for, such as an email template or a CLI command's usage, under the command it exposes or the domain.
 - `technical-specification`: code that implements no design record, such as an entry point, a migration or a graph layout, under the domain or the design record it serves.
-- `test-plan`: a test kind of the product's own, under what it proves.
+- `test-plan`: a test kind of the product's own, under what it proves, or what tests need besides a test data set.
 
 Its `id_pattern` is its own, such as `<domain>-ENTRY<nn>` or `<command>-CLI`: start it with the parent kind's name in angle brackets, so `next_id` numbers it under the parent and every ID starts with its parent's.
 
@@ -73,9 +74,9 @@ add  { "entry_point": { "id": "TL-LEND-ENTRY01", "title": "server.ts", "domain_i
 A relation of the product's own, from a kind of its own to one of Lathe's:
 
 ```
-add  { "product_relation": { "name": "serves", "source_kind": "entry_point", "target_kind": "endpoint", "product_id": "TL",
-       "forward_label": "Serves", "reverse_label": "Served by", "description": "The entry point serves the endpoint when the product starts." } }
-link { "source": "TL-LEND-ENTRY01", "relation": "serves", "target": "TL-LEND-EP01" }
+add  { "product_relation": { "name": "starts_up", "source_kind": "entry_point", "target_kind": "endpoint", "product_id": "TL",
+       "forward_label": "Starts up", "reverse_label": "Started up by", "description": "The entry point starts up the endpoint when the product starts." } }
+link { "source": "TL-LEND-ENTRY01", "relation": "starts_up", "target": "TL-LEND-EP01" }
 ```
 
 Give every kind, field and relation a plain `description`; the app shows it.

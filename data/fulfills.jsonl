@@ -59,6 +59,8 @@
 {"source_id":"LA-AUT-UC12-FL-S04","target_id":"LA-AUT-UC12-R07"}
 {"source_id":"LA-AUT-UC13-FL-S01","target_id":"LA-AUT-UC13-R07"}
 {"source_id":"LA-AUT-UC13-FL-S02","target_id":"LA-AUT-UC13-R06"}
+{"source_id":"LA-AUT-UC13-FL-S03","target_id":"LA-AUT-UC13-R08"}
+{"source_id":"LA-AUT-UC13-FL-S03","target_id":"LA-AUT-UC13-R09"}
 {"source_id":"LA-AUT-UC14-FL-S01","target_id":"LA-AUT-UC14-R09"}
 {"source_id":"LA-AUT-UC14-FL-S02","target_id":"LA-AUT-UC14-R09"}
 {"source_id":"LA-AUT-UC14-FL-S03","target_id":"LA-AUT-UC14-R09"}
@@ -83,6 +85,9 @@
 {"source_id":"LA-AUT-UC20-FL-S03","target_id":"LA-AUT-UC20-R01"}
 {"source_id":"LA-AUT-UC21-FL-S01","target_id":"LA-AUT-UC21-R01"}
 {"source_id":"LA-AUT-UC21-FL-S02","target_id":"LA-AUT-UC21-R01"}
+{"source_id":"LA-AUT-UC22-FL-S01","target_id":"LA-AUT-UC22-R01"}
+{"source_id":"LA-AUT-UC22-FL-S01","target_id":"LA-AUT-UC22-R03"}
+{"source_id":"LA-AUT-UC22-FL-S02","target_id":"LA-AUT-UC22-R02"}
 {"source_id":"LA-CHK-UC01-FL-S02","target_id":"LA-CHK-UC01-R04"}
 {"source_id":"LA-CHK-UC01-FL-S02","target_id":"LA-CHK-UC01-R05"}
 {"source_id":"LA-CHK-UC01-FL-S03","target_id":"LA-CHK-UC01-R01"}
@@ -292,6 +297,7 @@
 {"source_id":"LA-TRC-UC02-FL-S02","target_id":"LA-TRC-UC02-R10"}
 {"source_id":"LA-TRC-UC02-FL-S03","target_id":"LA-TRC-UC02-R03"}
 {"source_id":"LA-TRC-UC02-FL-S04","target_id":"LA-TRC-UC02-R05"}
+{"source_id":"LA-TRC-UC02-FL-S05","target_id":"LA-TRC-UC02-R11"}
 {"source_id":"LA-TRC-UC03-FL-S01","target_id":"LA-TRC-UC03-R01"}
 {"source_id":"LA-TRC-UC03-FL-S01","target_id":"LA-TRC-UC03-R02"}
 {"source_id":"LA-TRC-UC03-FL-S01","target_id":"LA-TRC-UC03-R06"}
@@ -301,6 +307,7 @@
 {"source_id":"LA-TRC-UC03-FL-S05","target_id":"LA-TRC-UC03-R02"}
 {"source_id":"LA-TRC-UC03-FL-S05","target_id":"LA-TRC-UC03-R03"}
 {"source_id":"LA-TRC-UC03-FL-S05","target_id":"LA-TRC-UC03-R06"}
+{"source_id":"LA-TRC-UC03-FL-S06","target_id":"LA-TRC-UC03-R07"}
 {"source_id":"LA-TRC-UC04-FL-S01","target_id":"LA-TRC-UC04-R01"}
 {"source_id":"LA-TRC-UC04-FL-S02","target_id":"LA-TRC-UC04-R06"}
 {"source_id":"LA-TRC-UC04-FL-S03","target_id":"LA-TRC-UC04-R02"}
