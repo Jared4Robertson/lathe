@@ -56,7 +56,7 @@ test.describe('Exploring flows', () => {
   test('LA-EXP-UC02-FL01-T follow a record\'s links: its page, a link by its relation, a row anywhere', async ({ page }) => {
     await openPage(page, '/LA-EXP-UC03-FL01');
     const wiki = page.locator(WIKI);
-    await expect(wikiTitle(page)).toHaveText('Walk the model as a graph');
+    await expect(wikiTitle(page)).toHaveText('Walk the model as a graph in the web app');
     // The parent in the crumb, the children in their table.
     await expect(wiki.locator('.pane-title').getByRole('link', { name: 'Exploring' })).toBeVisible();
     await expect(wiki.getByRole('table', { name: 'Steps of LA-EXP-UC03-FL01, in order' })).toBeVisible();
