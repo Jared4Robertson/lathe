@@ -58,3 +58,77 @@ export function findLathe(root) {
     dir = up;
   }
 }
+
+/** The folder of the Lathe package the repo at root runs: lathe/ in the Lathe repo, else node_modules/@jaredrob/lathe here or above. */
+function latheDir(root) {
+  if (isLatheRepo(root)) return path.join(root, 'lathe');
+  let dir = root;
+  for (;;) {
+    const installed = path.join(dir, 'node_modules', '@jaredrob', 'lathe');
+    if (existsSync(path.join(installed, 'package.json'))) return installed;
+    const up = path.dirname(dir);
+    if (up === dir) return null;
+    dir = up;
+  }
+}
+
+/** The Lathe installed for the repo at root: its package version and schema version (null when unknown), or null. */
+export function installedLathe(root) {
+  const dir = latheDir(root);
+  if (!dir) return null;
+  let version;
+  try {
+    version = JSON.parse(readFileSync(path.join(dir, 'package.json'), 'utf8')).version;
+  } catch {
+    return null;
+  }
+  if (typeof version !== 'string') return null;
+  let schema = null;
+  try {
+    const named = JSON.parse(readFileSync(path.join(dir, 'schema', 'version.json'), 'utf8')).schema;
+    if (Number.isInteger(named)) schema = named;
+  } catch {
+    // A Lathe from before schema versions: its schema is unknown.
+  }
+  return { version, schema };
+}
+
+/** The major version of Lathe the plugin's skills were written for (plugin.json's lathe.major), or null. */
+export function skillsMajor(pluginDir) {
+  try {
+    const major = JSON.parse(readFileSync(path.join(pluginDir, '.claude-plugin', 'plugin.json'), 'utf8')).lathe?.major;
+    return Number.isInteger(major) ? major : null;
+  } catch {
+    return null;
+  }
+}
+
+/** The warning when the installed Lathe's major version is not the one the skills were written for, else null. */
+export function versionWarning(installed, major, root) {
+  if (!installed || major === null) return null;
+  if (Number(installed.version.split('.')[0]) === major) return null;
+  const schema = installed.schema === null ? '' : ` (schema ${installed.schema})`;
+  return (
+    `Warning: the Lathe plugin's skills were written for Lathe ${major}.x, but ${root} has Lathe ${installed.version}${schema}. ` +
+    'The tools match the installed Lathe, but the skills may name tables, columns or steps it does not have: ' +
+    "update the plugin or the product's @jaredrob/lathe so their major versions match."
+  );
+}
+
+/**
+ * One line from the server, passed on: the first tools/call result (its ID in `calls`) gets the warning added to its
+ * content, once (`state.warned`).
+ */
+export function warnOnce(line, calls, state) {
+  if (state.warned || !line.trim()) return line;
+  let message;
+  try {
+    message = JSON.parse(line);
+  } catch {
+    return line;
+  }
+  if (message.id === undefined || !calls.has(message.id) || !Array.isArray(message.result?.content)) return line;
+  state.warned = true;
+  message.result.content.push({ type: 'text', text: state.warning });
+  return JSON.stringify(message);
+}

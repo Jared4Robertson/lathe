@@ -44,6 +44,10 @@ git config merge.lathe-data.driver "node lathe/bin/lathe.ts merge-data %O %A %B 
 
 The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product repo, the same commands are `npx lathe check`, `npx lathe add ...` and `npx lathe serve`; the [package README](lathe/README.md) has every option.
 
+## Upgrading
+
+Lathe's schema has a version (in [lathe/schema/version.json](lathe/schema/version.json)), and each product's `lathe.config.json` names the version its data is for. The package follows semantic versioning: a breaking schema change raises the schema version and the major version, and ships a converter in `lathe/upgrades/`. A Lathe stops on data for another schema, saying what to do. To move a product to a new major version, update `@jaredrob/lathe` in its repo, commit, run `npx lathe upgrade`, finish the to-dos it prints, run `npx lathe check`, and commit the result as one commit. The Claude Code plugin warns once, in its tools' output, when its skills were written for another major version than the product's Lathe (`lathe.major` in [plugin/.claude-plugin/plugin.json](plugin/.claude-plugin/plugin.json)), and the desktop app opens a product with the product's own installed Lathe when it has one, and its bundled copy otherwise (About says which). The [package README](lathe/README.md#upgrading) has the details, and how to write a converter.
+
 ## A tour of the app
 
 - **Spaces.** Each product is a space. The rail at the far left of the nav has one icon per product; Alt+1 to Alt+9 switch between them. The nav, quick find and Checks follow the current space.

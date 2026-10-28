@@ -468,6 +468,7 @@
 {"entity_id":"LA-PLT-EN15","position":1,"name":"Limit","meaning":"The most folders it keeps, latest first: ten (RECENT_LIMIT).","type":"whole number","required":true,"example":"10"}
 {"entity_id":"LA-PLT-EN16","position":1,"name":"Root folder","meaning":"The product repo's folder.","type":"text","required":true,"example":"~/Development/tool-library"}
 {"entity_id":"LA-PLT-EN16","position":2,"name":"Data folder","meaning":"Where its data files are, as `lathe.config.json`'s `data` names it; `data` unless set.","type":"text","required":true,"example":"data"}
+{"entity_id":"LA-PLT-EN16","position":3,"name":"Schema version","meaning":"The schema version its data is for, as `lathe.config.json`'s `schema` names it; 1 unless set. Lathe loads only data for its own version.","type":"whole number","required":true,"example":"1"}
 {"entity_id":"LA-TRC-EN05","position":1,"name":"Follower","meaning":"The ID of the domain or use case that follows the pattern.","type":"text","required":true,"column_name":"source_id","example":"TL-LEND-UC01"}
 {"entity_id":"LA-TRC-EN05","position":2,"name":"Pattern","meaning":"The pattern followed.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"target_id","example":"TL-PAT-LIBRARIAN-ACTION"}
 {"entity_id":"LA-TRC-EN06","position":1,"name":"Setting","meaning":"One of the pattern's settings (a `pattern_setting` name).","type":"text","required":true,"example":"required_input"}

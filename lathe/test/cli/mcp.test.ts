@@ -1,10 +1,10 @@
 // The MCP server's tools: input schemas generated from the schema description, each tool's good result and refusal,
 // and the JSON-RPC exchange over stdio that Claude Code holds with `lathe mcp`.
-import { readFileSync } from 'node:fs';
+import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { afterAll, describe, expect, it } from 'vitest';
-import { openStore } from '../../src/index.ts';
+import { openStore, SCHEMA_VERSION } from '../../src/index.ts';
 import { callTool, serveMcp, tools, type Tool } from '../../src/cli/mcp.ts';
 import { everyKind, removeData, writeData } from '../store/fixture.ts';
 
@@ -225,5 +225,27 @@ describe('the server', () => {
     expect(messages).toContainEqual({ jsonrpc: '2.0', id: null, error: { code: -32700, message: 'Parse error' } });
     expect(messages.filter((m) => m.id === undefined).length).toBe(1);
     expect(readFileSync(path.join(root, 'data', 'view.jsonl'), 'utf8')).toContain('TL-V02');
+  });
+
+  it('LA-PLT-UC17-R01-T02 for a product whose data is for another schema, offers only check, and every tool says what to do', async () => {
+    const root = writeData(everyKind());
+    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ schema: SCHEMA_VERSION + 1 }));
+    const message = `This product's data is for schema ${SCHEMA_VERSION + 1}; this Lathe uses schema ${SCHEMA_VERSION}. It needs a newer Lathe: update @jaredrob/lathe.`;
+    const input = new PassThrough();
+    const output = new PassThrough();
+    let received = '';
+    output.on('data', (chunk) => (received += chunk));
+    const served = serveMcp(root, input, output);
+    const send = (message: object) => input.write(`${JSON.stringify({ jsonrpc: '2.0', ...message })}\n`);
+    send({ id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {} } });
+    send({ id: 2, method: 'tools/list' });
+    send({ id: 3, method: 'tools/call', params: { name: 'check', arguments: {} } });
+    send({ id: 4, method: 'tools/call', params: { name: 'show', arguments: { id: 'TL' } } });
+    input.end();
+    await served;
+    const byId = (id: number) => received.trim().split('\n').map((l) => JSON.parse(l)).find((m) => m.id === id);
+    expect(byId(1).result.instructions).toMatch(new RegExp(`^${message.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')} Until then, only the check tool runs`));
+    expect(byId(2).result.tools.map((t: Tool) => t.name)).toEqual(['check']);
+    for (const id of [3, 4]) expect(byId(id).result).toEqual({ content: [{ type: 'text', text: message }], structuredContent: { refused: true, problems: [{ rule: 'schema-version', message }] }, isError: true });
   });
 });

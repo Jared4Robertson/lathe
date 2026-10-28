@@ -3,6 +3,7 @@
 // JSON-RPC 2.0 over stdio, one message per line. Every write goes through the command layer; a tool's result is the
 // rows it changed, or the refusal with its reasons. Writes never commit: the Agent commits per task.
 import { createInterface } from 'node:readline';
+import { SchemaVersionError } from '../config.ts';
 import type { ColumnDescription, SchemaDescription, TableDescription } from '../store/schema.ts';
 import type { Row, Value } from '../store/rows.ts';
 import {
@@ -80,6 +81,12 @@ function kindIntro(schema: SchemaDescription, table: TableDescription): string {
 }
 
 /** The tools, their input schemas generated from the schema description. */
+const CHECK_TOOL: Tool = {
+  name: 'check',
+  description: 'Run lathe check on the whole workspace: every error (fix them before going on), every warning (gaps and work still to do), and the recorded exceptions (deliberate deviations with their reasons, never problems).',
+  inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+};
+
 export function tools(schema: SchemaDescription): Tool[] {
   const tables = rowTables(schema);
   const kinds = Object.keys(schema.kinds).sort();
@@ -218,11 +225,7 @@ export function tools(schema: SchemaDescription): Tool[] {
         additionalProperties: false,
       },
     },
-    {
-      name: 'check',
-      description: 'Run lathe check on the whole workspace: every error (fix them before going on), every warning (gaps and work still to do), and the recorded exceptions (deliberate deviations with their reasons, never problems).',
-      inputSchema: { type: 'object', properties: {}, additionalProperties: false },
-    },
+    CHECK_TOOL,
   ];
 }
 
@@ -293,6 +296,8 @@ export async function callTool(root: string, name: string, args: Record<string, 
         throw new ArgumentError(`there is no tool ${name}`);
     }
   } catch (error) {
+    // The product's data is for another schema version: every tool says what to do, and nothing changes.
+    if (error instanceof SchemaVersionError) return { content: [{ type: 'text', text: error.message }], structuredContent: { refused: true, problems: [{ rule: 'schema-version', message: error.message }] }, isError: true };
     if (!(error instanceof ArgumentError)) throw error;
     return { content: [{ type: 'text', text: `Refused; nothing changed: ${error.message}.` }], structuredContent: { refused: true, problems: [{ rule: 'arguments', message: error.message }] }, isError: true };
   }
@@ -310,7 +315,13 @@ interface Message {
 
 /** Serves the tools for the repo at root over the given streams until input ends. */
 export async function serveMcp(root: string, input: NodeJS.ReadableStream = process.stdin, output: NodeJS.WritableStream = process.stdout): Promise<void> {
-  let schema = await readSchema(root);
+  // A product whose data is for another schema version still gets a server: its one tool, check, says what to do.
+  let mismatch: SchemaVersionError | null = null;
+  let schema: SchemaDescription | null = await readSchema(root).catch((error: unknown) => {
+    if (!(error instanceof SchemaVersionError)) throw error;
+    mismatch = error;
+    return null;
+  });
   const send = (message: object) => output.write(`${JSON.stringify({ jsonrpc: '2.0', ...message })}\n`);
   const reply = (id: Message['id'], body: { result: unknown } | { error: { code: number; message: string } }) => send({ id, ...body });
 
@@ -326,6 +337,7 @@ export async function serveMcp(root: string, input: NodeJS.ReadableStream = proc
             capabilities: { tools: { listChanged: true } },
             serverInfo: { name: 'lathe', version: '1.0.0' },
             instructions:
+              (mismatch ? `${(mismatch as SchemaVersionError).message} Until then, only the check tool runs, and it says the same. ` : '') +
               'Lathe keeps the spec as typed data in data/*.jsonl. Change it only with these tools, never by editing the files. ' +
               'Every write is validated by the command layer and refused with its reasons when it breaks the model. Writes never commit; commit per task.',
           },
@@ -336,7 +348,7 @@ export async function serveMcp(root: string, input: NodeJS.ReadableStream = proc
         if (isRequest) reply(id, { result: {} });
         return;
       case 'tools/list':
-        reply(id, { result: { tools: tools(schema) } });
+        reply(id, { result: { tools: schema ? tools(schema) : [CHECK_TOOL] } });
         return;
       case 'tools/call': {
         const name = String(params.name ?? '');
@@ -345,7 +357,7 @@ export async function serveMcp(root: string, input: NodeJS.ReadableStream = proc
         reply(id, { result: called });
         // A product's own kinds or relations changed: the tools' schemas change with them.
         const changes = (called.structuredContent?.changes ?? []) as { table: string }[];
-        if (changes.some((c) => DECLARATIONS.has(c.table))) {
+        if (schema && changes.some((c) => DECLARATIONS.has(c.table))) {
           schema = await readSchema(root);
           send({ method: 'notifications/tools/list_changed' });
         }
