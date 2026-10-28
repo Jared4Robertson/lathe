@@ -74,7 +74,7 @@ export function product(): Product {
       return result.stderr;
     },
     check: () => lathe('check'),
-    workspace: () => JSON.parse(lathe('check', '--json').stdout) as Workspace,
+    workspace: () => (JSON.parse(lathe('check', '--json').stdout) as { products: { workspace: Workspace }[] }).products[0].workspace,
     async seed(commands) {
       const store = await openStore(root);
       try {

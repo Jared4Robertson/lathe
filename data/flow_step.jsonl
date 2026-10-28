@@ -145,6 +145,7 @@
 {"id":"LA-EXP-UC07-FL01-S05","title":"They open the space's Checks","flow_id":"LA-EXP-UC07-FL01","path":"main","position":5}
 {"id":"LA-EXP-UC07-FL01-S06","title":"On a phone the rail stays in the nav sheet","flow_id":"LA-EXP-UC07-FL01","path":"main","position":6}
 {"id":"LA-EXP-UC07-FL01-S07","title":"From the products page they choose a space","flow_id":"LA-EXP-UC07-FL01","path":"main","position":7}
+{"id":"LA-EXP-UC07-FL01-S08","title":"With one product there is no rail: the nav takes its width, the product's name and icon at its top","flow_id":"LA-EXP-UC07-FL01","path":"one product","position":1}
 {"id":"LA-EXP-UC08-FL01-S01","title":"Under the current space the nav lists the product page, Shared and each domain, which unfolds into its five stages with counts","flow_id":"LA-EXP-UC08-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC08-FL01-S02","title":"Opening a page opens the nav rows that hold it","flow_id":"LA-EXP-UC08-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC08-FL01-S03","title":"Use cases lists the capabilities in order, then the use cases outside any","flow_id":"LA-EXP-UC08-FL01","path":"main","position":3}
@@ -183,6 +184,8 @@
 {"id":"LA-PLT-UC02-FL03-S03","title":"They add the first domain and records with lathe add, or an Agent through the MCP tools, in the data folder the config names, with any kinds of the product's own","flow_id":"LA-PLT-UC02-FL03","path":"main","position":3}
 {"id":"LA-PLT-UC02-FL03-S04","title":"They run lathe serve to browse and edit the spec, with no build tools in the repo","flow_id":"LA-PLT-UC02-FL03","path":"main","position":4}
 {"id":"LA-PLT-UC02-FL03-S05","title":"They stop lathe serve from the terminal, and it closes the database before it ends","flow_id":"LA-PLT-UC02-FL03","path":"main","position":5}
+{"id":"LA-PLT-UC02-FL03-S06","title":"The Owner lists the other products in the workspace's lathe.config.json, and lathe check checks each in its own folder","flow_id":"LA-PLT-UC02-FL03","path":"workspace","position":1,"description":"A repo with an example product beside its own, such as Lathe's with the Tool Library, lists the example's folder under products; each keeps its own config, checks, tracing and coverage."}
+{"id":"LA-PLT-UC02-FL03-S07","title":"lathe serve shows each product as a space, and writes each change to its own product's folder","flow_id":"LA-PLT-UC02-FL03","path":"workspace","position":2}
 {"id":"LA-PLT-UC03-FL01-S01","title":"An Agent changes records through the command layer while the Reader keeps the page open","flow_id":"LA-PLT-UC03-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC03-FL01-S02","title":"The server sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC03-FL01-S03","title":"When the data cannot be loaded, the page says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL01","path":"refused","position":1}
@@ -240,6 +243,7 @@
 {"id":"LA-PLT-UC11-FL02-S05","title":"They come back to it from File › Open Recent","flow_id":"LA-PLT-UC11-FL02","path":"main","position":4}
 {"id":"LA-PLT-UC11-FL02-S06","title":"The next launch reopens the last folder","flow_id":"LA-PLT-UC11-FL02","path":"main","position":5}
 {"id":"LA-PLT-UC11-FL02-S07","title":"They quit, and the app exits once every window's server has stopped","flow_id":"LA-PLT-UC11-FL02","path":"main","position":6}
+{"id":"LA-PLT-UC11-FL02-S08","title":"A workspace's folder opens with every product it lists, each a space, titled with them all","flow_id":"LA-PLT-UC11-FL02","path":"workspace","position":1}
 {"id":"LA-PLT-UC12-FL02-S01","title":"The Owner runs npm --prefix desktop run dev; a window loads the 5199 dev server when it serves the opened folder","flow_id":"LA-PLT-UC12-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC12-FL02-S02","title":"Otherwise the shell starts a dev server of its own for the folder","flow_id":"LA-PLT-UC12-FL02","path":"alternate","position":1}
 {"id":"LA-PLT-UC12-FL02-S03","title":"A change to the main process or a preload restarts Electron","flow_id":"LA-PLT-UC12-FL02","path":"main","position":2}
