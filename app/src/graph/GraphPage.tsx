@@ -140,7 +140,11 @@ export function stepKey(layout: GraphLayout, step: Step): string {
 /** The step a plain arrow key takes in a view, or none. */
 export const arrowStep = (layout: GraphLayout, key: string): Step | undefined => STEPS.find((s) => stepKey(layout, s) === key);
 
-/** Where a step goes from a node: its parent, its first child, or its previous or next sibling in the tree. */
+/**
+ * Where a step goes from a node: its parent, its first child, or its previous or next sibling in the tree. The siblings
+ * loop (LA-V93-R19): next from the last goes to the first, previous from the first to the last. Out of the root, in to a
+ * node with no children, or across from an only child, there is no step.
+ */
 export function stepTarget(index: SpecIndex, focus: string, step: Step): string | null {
   const ok = (id: string | null | undefined) => (id && isGraphNode(index, id) ? id : null);
   if (step === 'out') return ok(nodeParent(index, focus));
@@ -149,8 +153,8 @@ export function stepTarget(index: SpecIndex, focus: string, step: Step): string 
   if (up === null) return null;
   const siblings = nodeChildren(index, up).filter((c) => isGraphNode(index, c));
   const at = siblings.indexOf(focus);
-  if (at < 0) return null;
-  return ok(siblings[at + (step === 'next' ? 1 : -1)]);
+  if (at < 0 || siblings.length < 2) return null;
+  return ok(siblings[(at + (step === 'next' ? 1 : -1) + siblings.length) % siblings.length]);
 }
 
 /** The summary above the canvas, of the framed picture: "9 records · 2 groups · 8 links". */

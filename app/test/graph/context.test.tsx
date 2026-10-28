@@ -163,7 +163,8 @@ describe('the graph tree, its depth and its camera', () => {
     expect(stepTarget(index, 'P-D-UC01', 'out')).toBe('P-D-CAP01');
     expect(stepTarget(index, 'P-D-UC01', 'in')).toBe('P-D-UC01-R01');
     expect(stepTarget(index, 'P-D/domain-model/aggregate', 'next')).toBe('P-D/domain-model/specification');
-    expect(stepTarget(index, 'P-D/domain-model/aggregate', 'previous')).toBeNull();
+    expect(stepTarget(index, 'P-D-UC01', 'previous')).toBeNull();
+    expect(stepTarget(index, 'P-D-UC01', 'next')).toBeNull();
     expect(stepTarget(index, 'P', 'out')).toBeNull();
     expect(stepTarget(index, 'P-D-UC01-R01', 'in')).toBeNull();
 
@@ -201,11 +202,14 @@ describe('the graph tree, its depth and its camera', () => {
     nested: NESTED_KEYS,
     voronoi: NESTED_KEYS,
   } as const;
+  /** The domain's last child, where previous from its first stage loops to. */
+  const LAST = 'P-D/question';
   const STEP_BUTTONS = { out: 'Step out to the parent', in: 'Step in to the first child', previous: 'Step to the previous sibling', next: 'Step to the next sibling' };
   const MARKS: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' };
 
-  it('LA-V93-R19-T02 Each arrow takes its view\'s step: in Tree, Left out, Right in, Up and Down across; in Nested and Voronoi, Up out, Down in, Left and Right across; the buttons, their tooltips and the shortcuts sheet say the same', async () => {
-    for (const layout of ['tree', 'nested', 'voronoi'] as const) {
+  const VIEWS = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
+  for (const layout of ['tree', 'nested', 'voronoi'] as const) {
+    it(`LA-V93-R19-T02 In the ${VIEWS[layout]} view each arrow takes its view's step (in Tree, Left out, Right in, Up and Down across; in Nested and Voronoi, Up out, Down in, Left and Right across), the siblings loop, and the buttons, their tooltips and the shortcuts sheet say the same`, async () => {
       startAtDepth(1, layout);
       await openApp(`/${FROM}?view=graph`, { data: testWorkspace() });
       await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
@@ -228,16 +232,25 @@ describe('the graph tree, its depth and its camera', () => {
         });
         await waitFor(() => expect(window.location.pathname).toBe(`/${FROM}`));
       }
-    }
-    // The shortcuts sheet lists both mappings on each step's row.
-    fireEvent.keyDown(document.body, { key: '?', code: 'Slash', shiftKey: true });
-    const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
-    const row = (title: string) => within(sheet).getByRole('rowheader', { name: title }).nextElementSibling;
-    expect(row('Step out to the parent')).toHaveTextContent('← in Tree, ↑ in Nested and Voronoi');
-    expect(row('Step in to the first child')).toHaveTextContent('→ in Tree, ↓ in Nested and Voronoi');
-    expect(row('Step to the previous sibling')).toHaveTextContent('↑ in Tree, ← in Nested and Voronoi');
-    expect(row('Step to the next sibling')).toHaveTextContent('↓ in Tree, → in Nested and Voronoi');
-  });
+      // The siblings loop: from the first stage, previous goes to the domain's last child, and from there next comes
+      // back to the first.
+      const [previousKey, nextKey] = (['previous', 'next'] as const).map((step) => Object.entries(ARROWS[layout]).find(([, s]) => s === step)![0]);
+      fireEvent.keyDown(graphHost()!, { key: previousKey, code: previousKey });
+      await waitFor(() => expect(window.location.pathname).toBe(`/${TARGETS.previous}`));
+      fireEvent.keyDown(graphHost()!, { key: previousKey, code: previousKey });
+      await waitFor(() => expect(window.location.pathname, `${layout}: ${previousKey} from the first sibling`).toBe(`/${LAST}`));
+      fireEvent.keyDown(graphHost()!, { key: nextKey, code: nextKey });
+      await waitFor(() => expect(window.location.pathname, `${layout}: ${nextKey} from the last sibling`).toBe(`/${TARGETS.previous}`));
+      // The shortcuts sheet lists both mappings on each step's row, whatever the view.
+      fireEvent.keyDown(document.body, { key: '?', code: 'Slash', shiftKey: true });
+      const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
+      const row = (title: string) => within(sheet).getByRole('rowheader', { name: title }).nextElementSibling;
+      expect(row('Step out to the parent')).toHaveTextContent('← in Tree, ↑ in Nested and Voronoi');
+      expect(row('Step in to the first child')).toHaveTextContent('→ in Tree, ↓ in Nested and Voronoi');
+      expect(row('Step to the previous sibling')).toHaveTextContent('↑ in Tree, ← in Nested and Voronoi');
+      expect(row('Step to the next sibling')).toHaveTextContent('↓ in Tree, → in Nested and Voronoi');
+    }, 30_000);
+  }
 
   it.each(['LA-V93-R18-T01', 'LA-V93-R08-T03'])('%s With Links on, links draw as curves between their boxes, and the edge hints count the linked records past each edge', async () => {
     // The hints' arithmetic: a box's center past an edge counts for that edge; the plain pan moves half the canvas.
