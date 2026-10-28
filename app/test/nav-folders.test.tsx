@@ -5,12 +5,13 @@ import { describe, expect, it } from 'vitest';
 import type { KindDescription } from '../../lathe/src/store/schema';
 import { branchOf, domainFolders, folderPath, productFolders } from '../src/specs/folders';
 import { workspace } from './fixtures/workspace';
+import { modelIndex } from './fixtures/model';
 import { patternWorkspace } from './fixtures/patterns';
 import { main, openApp } from './helpers';
 import { addRows, indexOf } from './fixtures/load';
 
-// The side nav and the domain page read in the five stages: what sits at product level in the
-// product's own stages, and in each domain its Domain model, Use cases, Interaction design, Technical
+// The side nav and the domain page read in the five stages: what the product shares in its own
+// stages (Shared), and in each domain its Domain model, Use cases, Interaction design, Technical
 // specification and Test plan, one folder per kind, then open questions. Names and order come from
 // the schema's stages and kinds.
 
@@ -74,8 +75,8 @@ describe('folders by stage', () => {
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
     await user.click(within(panel()).getByRole('button', { name: 'Unfold Paying' }));
-    // Paying has an aggregate and a use case and nothing designed yet: no Interaction design, no tests.
-    expect(rows(list('Folders of Paying'))).toEqual(['Domain model1', 'Use cases1']);
+    // Paying has an aggregate, a use case and its flow, and nothing built or tested yet: no Technical specification, no Test plan.
+    expect(rows(list('Folders of Paying'))).toEqual(['Domain model1', 'Use cases1', 'Interaction design1']);
     await user.click(head(list('Folders of Paying'), /^Use cases/));
     expect(rows(list('Use cases of Paying'))).toEqual(['Capabilities1']);
   });
@@ -125,15 +126,15 @@ describe('folders by stage', () => {
     expect([...main().querySelectorAll('h2.stage-title')].map((h) => h.childNodes[1]?.textContent)).toEqual(['Tests and checks', 'Domain model', 'Use cases', 'Interaction design', 'Technical specification']);
   });
 
-  it('LA-V90-R16-T02 The product shows its own stages only when it has records at product level, before its domains', async () => {
+  it('LA-V90-R16-T02 The product shows Shared only when it holds anything, before its domains', async () => {
     await openApp('/DM', { data: patternWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    // One Product level folder before the domains holds the product's own stages, as the graph's tree has it.
-    expect(rows(list('Product level of Demo shop'))).toEqual(['Product level4']);
+    // One Shared folder before the domains holds the product's own stages, as the graph's tree has it.
+    expect(rows(list('Shared in Demo shop'))).toEqual(['Shared4']);
     const user = userEvent.setup();
-    await user.click(head(list('Product level of Demo shop'), /^Product level/));
+    await user.click(head(list('Shared in Demo shop'), /^Shared/));
     const own = list('Stages of Demo shop');
-    // A pattern rule test sits under its rule, at product level too.
+    // A pattern rule test sits under its rule, in Shared too.
     expect(rows(own)).toEqual(['Domain model1', 'Use cases1', 'Interaction design1', 'Test plan1']);
     await user.click(head(own, /^Use cases/));
     await user.click(head(list('Use cases of Demo shop'), /^Patterns/));
@@ -141,10 +142,10 @@ describe('folders by stage', () => {
     // The product's open questions are a group of their own.
     expect(within(list('Groups of Demo shop')).getByRole('link', { name: /Open questions/ })).toHaveAttribute('href', '/DM/question');
 
-    // Notebook has nothing at product level.
+    // Notebook shares nothing.
     await openApp('/NF');
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
-    expect(within(panel()).queryByRole('list', { name: 'Product level of Notebook' })).toBeNull();
+    expect(within(panel()).queryByRole('list', { name: 'Shared in Notebook' })).toBeNull();
   });
 
   it("LA-V90-R18-T02 A pattern rule's page opens the product's own Use cases", async () => {
@@ -185,8 +186,8 @@ describe('folders by stage', () => {
     expect(branchOf(index, 'DM-SHOP-CMD01')).toEqual(['domain:DM-SHOP', 'DM-SHOP/domain-model', 'DM-SHOP/domain-model/aggregate']);
     // A flow step folds under its flow, in Interaction design.
     expect(branchOf(index, 'DM-SHOP-UC01-FL-S02')).toEqual(['domain:DM-SHOP', 'DM-SHOP/interaction-design', 'DM-SHOP/interaction-design/flow']);
-    // At product level: a constraint folds under its value object; a view at product level.
-    expect(branchOf(index, 'DM-VO01-C01')).toEqual(['DM/product-level', 'DM/domain-model', 'DM/domain-model/value_object']);
+    // In Shared: a constraint folds under its value object, which both domains use; so does the view.
+    expect(branchOf(index, 'DM-VO01-C01')).toEqual(['DM/shared', 'DM/domain-model', 'DM/domain-model/value_object']);
     expect(productFolders(index, 'DM').stages.filter((s) => s.count > 0).map((s) => [s.label, s.folders.filter((f) => f.count > 0).map((f) => f.label)])).toEqual([
       ['Domain model', ['Value objects']],
       ['Interaction design', ['Views']],
@@ -204,6 +205,23 @@ describe('folders by stage', () => {
     await openApp('/DM-SHOP-UC02', { data: twoUseCases() });
     await screen.findByRole('heading', { level: 1, name: 'Empty the basket' });
     await waitFor(() => expect(list('Capabilities of Shopping').textContent).toBe('Buying'));
+  });
+
+  it('LA-EXP-DS03-T09 A record with no owner sits in the one domain that uses it, in its stage and folder, with what sits under it, and in Shared otherwise', () => {
+    const index = modelIndex();
+    // Only P-D's flow steps happen in the view and exchange with the integration, and the UI component renders that view.
+    const folders = domainFolders(index, 'P-D').stages.flatMap((s) => s.folders);
+    const of = (kind: string) => folders.find((f) => f.kind === kind)?.records.map((r) => r.id);
+    expect(of('view')).toEqual(['P-V01']);
+    expect(of('integration')).toEqual(['P-INT01']);
+    expect(of('ui_component')).toEqual(['P-UI01']);
+    expect(of('adapter')).toEqual(['P-INT01-AD']);
+    expect(branchOf(index, 'P-V01')).toEqual(['domain:P-D', 'P-D/interaction-design', 'P-D/interaction-design/view']);
+    // Both domains have fields typed by the value object, so the product shares it, with its constraint and value type.
+    expect(of('value_object')).toBeUndefined();
+    expect(branchOf(index, 'P-VO01')).toEqual(['P/shared', 'P/domain-model', 'P/domain-model/value_object']);
+    expect(index.byId.get('P-VO01-C01')?.domain).toBeNull();
+    expect(productFolders(index, 'P').stages.flatMap((s) => s.folders).filter((f) => f.count > 0).map((f) => f.kind)).toEqual(['value_object', 'value_type', 'constraint_test']);
   });
 
   it("LA-EXP-DS03-T04 A product's own kind gets its folder in its stage, or after the stages when it has no stage; the path names its stage", () => {

@@ -10,7 +10,7 @@ import { standardWorkspace } from './fixtures/standards';
 import { main, openApp, section } from './helpers';
 import { indexOf } from './fixtures/load';
 
-// Standards in the app (the standard and standard_rule tables): at product level in the nav, in the
+// Standards in the app (the standard and standard_rule tables): in Shared in the nav, in the
 // Technical specification stage, a standard's page listing its rules with what meets each one, a rule's
 // Traceability showing what meets it, the format reference's kind pages, and the graph's boxes and
 // design lines. DM-STD-CODE-R01 is met by the command handler DM-SHOP-CMD01-H, R02 by the table DM-SHOP-EN01-TB.
@@ -24,12 +24,12 @@ const fact = (box: HTMLElement, name: string) => within(box).getByText(name, { s
 const served = () => ({ data: standardWorkspace() });
 
 describe('standards in the nav and the wiki', () => {
-  it('LA-V92-R72-T01 The product lists its standards at product level, in the Technical specification stage', async () => {
+  it('LA-V92-R72-T01 The product lists its standards under Shared, beside its patterns', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    expect(rows(list('Product level of Demo shop'))).toEqual(['Product level3']);
+    expect(rows(list('Shared in Demo shop'))).toEqual(['Shared3']);
     const user = userEvent.setup();
-    await user.click(head(list('Product level of Demo shop'), /^Product level/));
+    await user.click(head(list('Shared in Demo shop'), /^Shared/));
     const own = list('Stages of Demo shop');
     expect(rows(own)).toEqual(['Domain model1', 'Interaction design1', 'Technical specification1']);
     await user.click(head(own, /^Technical specification/));

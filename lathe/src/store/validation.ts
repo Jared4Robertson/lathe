@@ -49,10 +49,15 @@ ${groups.join('\nUNION ALL ')};
 
 /**
  * The record_scope table (id, product_id, domain_id, aggregate_id), made once the data is in, in the same
- * transaction: every record with the product, domain and aggregate it sits in, through its parents; a record of a
+ * transaction: every record with the product, domain and aggregate it sits in, through its parents. A record of a
  * kind with no owner takes its product, or for a specification its domain, from the longest product or domain ID its
- * own ID starts with (followed by a hyphen). A data database never changes after its load (a write builds a new
- * one), so the walk up the parents is worked out once and shared by the validation queries, the checks and coverage.
+ * own ID starts with (followed by a hyphen). The other kinds with no owner take the domain that uses them, worked out
+ * from the links and fields and never stored (USED_BY): a view the domains of the flow steps that happen in it, an
+ * integration those of the flow steps that exchange with it, a value object those of the entities, events and read
+ * models whose fields it types, and a UI component the domains that use the views it renders. Exactly one using
+ * domain is its domain; two or more, or none, leave it in no domain (shared). What sits under such a record follows
+ * it. A data database never changes after its load (a write builds a new one), so this is worked out once and shared
+ * by the validation queries, the checks, coverage and the app.
  */
 export function recordScopeSql(schema: SchemaDescription): string {
   const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
@@ -69,6 +74,9 @@ export function recordScopeSql(schema: SchemaDescription): string {
           : `SELECT r.id, max_by(p.id, length(p.id)), NULL, NULL FROM ${sqlName(k.name)} r LEFT JOIN product p ON starts_with(r.id, p.id || '-') GROUP BY r.id`,
       ),
   ];
+  const uses = USED_BY.map(
+    (u) => `SELECT u.${sqlName(u.used)}, s.domain_id FROM ${sqlName(u.table)} u JOIN placed s ON s.id = u.${sqlName(u.user)} WHERE u.${sqlName(u.used)} IS NOT NULL`,
+  );
   return `
 CREATE TABLE record_scope AS
 WITH RECURSIVE up (id, ancestor) AS (
@@ -78,12 +86,40 @@ WITH RECURSIVE up (id, ancestor) AS (
 ),
 anchor (id, product_id, domain_id, aggregate_id) AS (
   ${anchors.join('\n  UNION ALL ')}
+),
+placed (id, product_id, domain_id, aggregate_id) AS (
+  SELECT up.id, max(a.product_id), max(a.domain_id), max(a.aggregate_id)
+  FROM up LEFT JOIN anchor a ON a.id = up.ancestor
+  GROUP BY up.id
+),
+used (id, domain_id) AS (
+  ${uses.join('\n  UNION ALL ')}
+  UNION ALL
+  SELECT r.source_id, s.domain_id FROM renders r JOIN happens_in h ON h.target_id = r.target_id JOIN placed s ON s.id = h.source_id
+),
+derived (id, domain_id) AS (
+  SELECT id, min(domain_id) FROM used WHERE domain_id IS NOT NULL GROUP BY id HAVING count(DISTINCT domain_id) = 1
+),
+inherited (id, domain_id) AS (
+  SELECT up.id, max(d.domain_id) FROM up JOIN derived d ON d.id = up.ancestor GROUP BY up.id
 )
-SELECT up.id, max(a.product_id) AS product_id, max(a.domain_id) AS domain_id, max(a.aggregate_id) AS aggregate_id
-FROM up LEFT JOIN anchor a ON a.id = up.ancestor
-GROUP BY up.id;
+SELECT p.id, p.product_id, coalesce(p.domain_id, i.domain_id) AS domain_id, p.aggregate_id
+FROM placed p LEFT JOIN inherited i ON i.id = p.id;
 `;
 }
+
+/**
+ * How a domain uses a record with no owner (record_scope): each row of the table names a user, placed in its domain
+ * through its parents, and the record it uses. A UI component is used through the views it renders, by the flow
+ * steps that happen in them.
+ */
+const USED_BY: { table: string; user: string; used: string }[] = [
+  { table: 'happens_in', user: 'source_id', used: 'target_id' },
+  { table: 'exchanges_with', user: 'source_id', used: 'target_id' },
+  { table: 'entity_field', user: 'entity_id', used: 'type_value_object_id' },
+  { table: 'event_field', user: 'domain_event_id', used: 'type_value_object_id' },
+  { table: 'read_model_field', user: 'read_model_id', used: 'type_value_object_id' },
+];
 
 // The columns of a stored kind or part table that name another record without placing the row: a field's value
 // object or aggregate, a key's invariant or target table. Each pairs the column with the column naming the row's own

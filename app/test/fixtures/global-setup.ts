@@ -22,7 +22,7 @@ export default async function setup(project: TestProject) {
         const rows = store.rows(table);
         if (rows.length > 0) tables[table] = rows;
       }
-      fixtures[name] = { schema: store.schema, dataDir: 'data', tables };
+      fixtures[name] = { schema: store.schema, dataDir: 'data', tables, placements: await store.placements() };
     } finally {
       await store.close();
     }

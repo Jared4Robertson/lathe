@@ -3,9 +3,10 @@ import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture } from './load';
 
 // A small workspace for the component tests (data/workspace/). Two products:
-// - DM (Demo shop): a value object and a view at product level; DM-SHOP with an aggregate, its
-//   entities, invariant, event and command, a specification, a read model and query, a use case with
-//   its flow, an endpoint, a handler, a table and two tests; DM-PAY with a use case; questions; problems.
+// - DM (Demo shop): a value object and a view both domains use, so DM shares them; DM-SHOP with an
+//   aggregate, its entities, invariant, event and command, a specification, a read model and query, a
+//   use case with its flow, an endpoint, a handler, a table and two tests; DM-PAY with a use case, its
+//   flow's one step in the view, and an event with a field typed by the value object; questions; problems.
 // - NF (Notebook): one domain.
 
 /** One obligation kind's coverage line. */
@@ -46,7 +47,7 @@ const payCoverage = (): Coverage => ({
   ],
 });
 
-/** DM's records outside every domain: its value object's constraint and its view's requirement. */
+/** What DM shares: its value object's constraint and its view's requirement. */
 const dmCoverage = (): Coverage => ({
   product: 'DM',
   domain: null,

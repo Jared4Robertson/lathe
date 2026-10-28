@@ -282,7 +282,9 @@ describe('lathe show, list and next-id', () => {
 
   it('shows where a record with no owner sits', async () => {
     const root = writeData(everyKind());
-    expect((await lathe(root, 'show', 'TL-V01')).out).toMatch(/^View TL-V01: Catalog\n  kind: view\n  no owner; in product TL\n/);
+    expect((await lathe(root, 'show', 'TL-V01')).out).toMatch(/^View TL-V01: Catalog\n  kind: view\n  no owner; in domain TL-LEND\n/);
+    expect((await lathe(root, 'add', 'value_object', '--id', 'TL-VO09', '--title', 'Postcode')).status).toBe(0);
+    expect((await lathe(root, 'show', 'TL-VO09')).out).toMatch(/^Value object TL-VO09: Postcode\n  kind: value_object\n  no owner; shared in product TL\n/);
     expect((await lathe(root, 'show', 'TL-LEND-SP01')).out).toMatch(/^Specification TL-LEND-SP01: Tool is free\n  kind: specification\n  no owner; in domain TL-LEND\n/);
   });
 

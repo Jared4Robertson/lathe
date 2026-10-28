@@ -132,10 +132,11 @@ describe('loading', () => {
     expect(at('EX-LEND')).toMatchObject({ product: 'EX', domain: 'EX-LEND', aggregate: null, parent: 'EX' });
     expect(at('EX-LEND-EN01-DM')).toMatchObject({ product: 'EX', domain: 'EX-LEND', aggregate: 'EX-LEND-A1', parent: 'EX-LEND-EN01' });
     expect(at('EX-LEND-UC01-R01-T01')).toMatchObject({ product: 'EX', domain: 'EX-LEND', aggregate: null, parent: 'EX-LEND-UC01-R01' });
-    // A value object, a view and a UI component have no owner: their product comes from their ID, and a specification's domain too.
-    expect(at('EX-VO01')).toMatchObject({ product: 'EX', domain: null, parent: null });
-    expect(at('EX-VO01-C01-T')).toMatchObject({ product: 'EX', domain: null, parent: 'EX-VO01-C01' });
-    expect(at('EX-V01')).toMatchObject({ product: 'EX', domain: null, parent: null });
+    // A value object and a view have no owner: their product comes from their ID, a specification's domain too, and
+    // the others' domain is the one domain that uses them (LA-PLT-UC01-R05), with what sits under them.
+    expect(at('EX-VO01')).toMatchObject({ product: 'EX', domain: 'EX-LEND', parent: null });
+    expect(at('EX-VO01-C01-T')).toMatchObject({ product: 'EX', domain: 'EX-LEND', parent: 'EX-VO01-C01' });
+    expect(at('EX-V01')).toMatchObject({ product: 'EX', domain: 'EX-LEND', parent: null });
     expect(at('EX-LEND-SP01')).toMatchObject({ product: 'EX', domain: 'EX-LEND', parent: null });
     // An endpoint sits under the one of its two parent columns that holds a value.
     expect(at('EX-LEND-EP01')).toMatchObject({ parent: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A1' });

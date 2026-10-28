@@ -90,9 +90,9 @@ export const problemsUnder = (index: SpecIndex, key: 'product' | 'domain', id: s
   index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.[key] === id);
 
 /**
- * A product's wiki: its text, its domains (not their contents), what sits at product level in its
- * stages (value objects, patterns, views, integrations, UI components, standards), its summary, open
- * questions and problems.
+ * A product's wiki: its text, its domains (not their contents), what it shares in its stages
+ * (patterns, standards, and the value objects, views, integrations and UI components two or more
+ * domains use, or none), its summary, open questions and problems.
  */
 export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
   const product = index.byId.get(id)!;
@@ -120,11 +120,11 @@ export function ProductWiki({ index, id }: { index: SpecIndex; id: string }) {
         </div>
       </Section>
       {ownCount > 0 && (
-        <Section title="Product level" count={ownCount} className="product-level">
-          <p className="hint">What the product's domains share: records with no domain of their own, and what sits under them.</p>
+        <Section title="Shared" count={ownCount} className="product-shared">
+          <p className="hint">Patterns and standards, and the records with no owner that two or more domains use, or none, with what sits under them.</p>
           <StageSections index={index} folders={{ stages: own.stages.filter((s) => s.count > 0), loose: [] }} query="" level={3} />
           {index.coverage.get(id) && (
-            <Section level={3} title="Coverage at product level" className="product-coverage">
+            <Section level={3} title="Shared coverage" className="product-coverage">
               <CoverageBars coverage={index.coverage.get(id)} />
             </Section>
           )}
