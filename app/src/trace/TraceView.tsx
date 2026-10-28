@@ -1,5 +1,5 @@
-// The Trace view of an address, /<id>?view=trace (LA-TRC-UC10).
-import { useMemo, useState, type FocusEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
+// The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10).
+import { useLayoutEffect, useMemo, useState, type FocusEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { groupName, isGroup } from '../graph/model';
 import { kindLabel, type SpecIndex } from '../specs/data';
@@ -15,7 +15,9 @@ import { plural } from '../plural';
 // design, build and test records under the focus that no obligation's chain reaches (chain.ts,
 // untracedUnder), which the filter keeps. Every cell links to its record; a file
 // links to the record that names it. Long matrices show a page of rows at a time, so a product's
-// stays fast. Like the graph it never reads the address, so it can sit in any pane.
+// stays fast. Like the graph it never reads the address. It scrolls under the floating panels, its
+// content padded to the open space (openSpace.ts), so what it shows sits there; what it holds is
+// told to the header strip, and the "Gaps only" filter floats at the top of the open space.
 
 export interface TraceViewProps {
   index: SpecIndex;
@@ -24,6 +26,8 @@ export interface TraceViewProps {
   hrefFor: (id: string) => string;
   /** Called with the record under the pointer or keyboard focus, for the side bar's Details. */
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
+  /** Called with what the trace holds, for the header strip: "12 obligations · 3 with gaps · 4 untraced". */
+  onCounts?: (counts: string) => void;
 }
 
 /** How many matrix rows show before "Show more". */
@@ -78,7 +82,7 @@ function Ref({ id, props, compact, className }: { id: string; props: TraceViewPr
   const title = record ? `${record.title} (${id})` : id;
   return (
     <TraceLink id={id} props={props} title={title} className={className ?? 'trace-ref'}>
-      {compact ? <code>{id}</code> : (
+      {compact ? <><code className="trace-id">{id}</code><span className="trace-title">{record?.title ?? ''}</span></> : (
         <>
           <small className="meta">{record ? kindLabel(props.index, record.kind) : ''}</small>
           <code>{id}</code>
@@ -127,11 +131,10 @@ function TraceChainView(props: TraceViewProps) {
       </ul>
     );
   };
+  const { onCounts } = props;
+  useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
   return (
     <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
-      <header className="trace-header">
-        <p className="trace-caption" title={caption}>{caption}</p>
-      </header>
       <div className="trace-scroll" role="region" tabIndex={0} aria-label="Traceability chain">
         <ol className="trace-chain">
           <li className="trace-column">
@@ -181,17 +184,18 @@ function TraceMatrixView(props: TraceViewProps) {
   const matching = gapsOnly ? withGaps : total;
   const drawn = visible.reduce((n, g) => n + g.rows.length, 0);
   const name = index.byId.get(focus)?.title ?? (isGroup(index, focus) ? groupName(index, focus) : focus);
-  if (total === 0) return <p className="hint trace-none">Nothing under this page owes a design, a build or a test.</p>;
   const caption = `${total} ${total === 1 ? 'obligation' : 'obligations'} · ${withGaps} with gaps · ${untracedCount} untraced`;
+  const { onCounts } = props;
+  useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
+  if (total === 0) return <p className="hint trace-none">Nothing under this page owes a design, a build or a test.</p>;
   return (
     <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
-      <header className="trace-header">
-        <p className="trace-caption" title={caption}>{caption}</p>
+      <div className="trace-tools stage-tools" data-stage-tools="top">
         <label className="trace-filter">
           <input type="checkbox" checked={gapsOnly} onChange={(e) => { setGapsOnly(e.target.checked); setShown(TRACE_PAGE); }} />
           Gaps only
         </label>
-      </header>
+      </div>
       <div className="trace-scroll" role="region" tabIndex={0} aria-label="Traceability matrix">
         {matching === 0 ? <p className="hint trace-none">No gaps: every obligation here is designed, built, tested and named in a file.</p> : (
           <table className="data-table trace-matrix">
@@ -211,7 +215,7 @@ function TraceMatrixView(props: TraceViewProps) {
                 </tr>
                 {g.rows.map((row) => (
                   <tr key={row.obligation} className={gapColumns(row).length > 0 ? 'has-gap' : undefined}>
-                    <th scope="row"><Ref id={row.obligation} props={props} compact /> <span className="trace-row-title">{index.byId.get(row.obligation)?.title}</span></th>
+                    <th scope="row"><Ref id={row.obligation} props={props} compact /></th>
                     {TRACE_COLUMNS.map((c) => (
                       <td key={c} className={itemsOf(row, c) === 0 && !row.notOwed.has(c) ? 'is-gap' : undefined}>
                         {itemsOf(row, c) === 0 ? <Empty row={row} column={c} /> : (

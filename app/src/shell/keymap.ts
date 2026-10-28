@@ -56,7 +56,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'goFormat', title: 'Record format', group: 'Navigate', keys: ['g f'], when: 'global' },
   { id: 'goHome', title: 'Go home (all products)', group: 'Navigate', keys: ['g h'], when: 'global' },
   // Tabs, as VS Code's editors: Ctrl+K Enter keeps the preview tab (Alt+K Enter off a Mac, where Ctrl+K is quick open);
-  // Alt+Shift+W closes, since Ctrl+W toggles the wiki on a Mac and the browser keeps it elsewhere.
+  // Alt+Shift+W closes, since Ctrl+W toggles the wiki card on a Mac and the browser keeps it elsewhere.
   { id: 'keepTab', title: 'Keep the tab open (no longer a preview)', group: 'Navigate', keys: ['Ctrl+K Enter'], otherKeys: ['Alt+K Enter'], when: 'page' },
   { id: 'closeTab', title: 'Close the tab', group: 'Navigate', keys: ['Alt+Shift+W'], when: 'page' },
   { id: 'nextTab', title: 'Next tab', group: 'Navigate', keys: ['Ctrl+Tab'], when: 'page' },
@@ -68,13 +68,12 @@ export const COMMANDS: readonly Command[] = [
   { id: 'toggleNav', title: 'Show or hide the navigation', group: 'View', keys: ['Mod+B'], when: 'global' },
   { id: 'toggleSideBar', title: 'Show or hide the side bar', group: 'View', keys: ['Mod+Alt+B'], when: 'page' },
   // Ctrl is the Control key on a Mac too, where Cmd+W stays the browser's; elsewhere Ctrl+W closes the tab and Ctrl+G finds the next match, so Alt.
-  { id: 'viewWiki', title: 'Wiki view on or off', group: 'View', keys: ['Ctrl+W', 'Ctrl+1'], otherKeys: ['Alt+W', 'Ctrl+1'], when: 'page' },
-  { id: 'viewGraph', title: 'Graph view on or off', group: 'View', keys: ['Ctrl+G', 'Ctrl+2'], otherKeys: ['Alt+G', 'Ctrl+2'], when: 'page' },
-  { id: 'viewErd', title: 'ERD view on or off', group: 'View', keys: ['Ctrl+E', 'Ctrl+4'], otherKeys: ['Alt+E', 'Ctrl+4'], when: 'page' },
+  { id: 'stageGraph', title: 'Graph stage', group: 'View', keys: ['Ctrl+G', 'Ctrl+1'], otherKeys: ['Alt+G', 'Ctrl+1'], when: 'page' },
+  { id: 'stageErd', title: 'ERD stage', group: 'View', keys: ['Ctrl+E', 'Ctrl+2'], otherKeys: ['Alt+E', 'Ctrl+2'], when: 'page' },
   // Elsewhere Ctrl+T opens a browser tab, so Alt.
-  { id: 'viewTrace', title: 'Trace view on or off', group: 'View', keys: ['Ctrl+T', 'Ctrl+5'], otherKeys: ['Alt+T', 'Ctrl+5'], when: 'page' },
-  { id: 'maximizePane', title: 'Full screen for the focused pane, or back to every pane', group: 'View', keys: ['Ctrl+3'], when: 'page' },
-  { id: 'escape', title: 'Leave full screen, or clear or close the innermost thing', group: 'View', keys: ['Escape'], when: 'global' },
+  { id: 'stageTrace', title: 'Trace stage', group: 'View', keys: ['Ctrl+T', 'Ctrl+3'], otherKeys: ['Alt+T', 'Ctrl+3'], when: 'page' },
+  { id: 'toggleWikiCard', title: 'Show or collapse the wiki card', group: 'View', keys: ['w', 'Ctrl+W'], otherKeys: ['w', 'Alt+W'], when: 'page' },
+  { id: 'escape', title: 'Clear or close the innermost thing', group: 'View', keys: ['Escape'], when: 'global' },
   { id: 'expandAll', title: 'Expand all rows on this page', group: 'View', keys: [], when: 'page' },
   { id: 'collapseAll', title: 'Collapse all rows on this page', group: 'View', keys: [], when: 'page' },
   // Themes (app/src/theme). VS Code's Cmd+K Cmd+T cannot be used: Mod+K is a whole binding (quick open), and a sequence may not start with one.

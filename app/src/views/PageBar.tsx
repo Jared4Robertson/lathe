@@ -4,52 +4,51 @@ import { Icon } from '../components/icons';
 import { ErdIcon } from '../erd/ErdIcon';
 import { Tooltip } from '../shell/Tooltip';
 import type { SpecIndex } from '../specs/data';
-import { VIEW_LABELS, VIEW_NAMES, type ViewName } from './address';
+import { STAGE_LABELS, STAGE_NAMES, type StageName } from './address';
 import { TabStrip } from './TabStrip';
 import type { PageTabsApi } from './useTabs';
 
-// The page bar (LA-PAT-APP-UX-R03): one strip across the top of the open panes, as the top of
-// VS Code's editor area. A tab is a page and the panes are views of it, so the bar holds what is
-// the page's: at its left the page's tabs, at its right the View group (Wiki, Graph, ERD, Trace), a
-// divider, and the side bar toggle at the far right, beside the side bar itself. It is one line high
-// whatever it holds (the tabs scroll sideways), so nothing below it moves (UX-R08). Its View group
-// keeps a slot for every view on every page, so the toggles never move under the pointer: a view
-// the page does not offer (ERD outside a domain, an aggregate or an entity; Trace where no
-// obligation is) shows dimmed, and its tooltip says where it works.
+// The page bar (LA-PAT-APP-UX-R03): the top of the tab panel, floating over the stage, as the top
+// of VS Code's editor area. At its left the page's tabs; at its right the stage switch (Graph, ERD,
+// Trace), a divider, the wiki card toggle and the side bar toggle. It is one line high whatever it
+// holds (the tabs scroll sideways), so nothing below it moves (UX-R08). The stage switch keeps a
+// slot for every stage on every page, so its buttons never move under the pointer: a stage the
+// page does not offer (ERD outside a domain, an aggregate or an entity; Trace where no obligation
+// is) shows dimmed, and its tooltip says where it works.
 //
 // On a phone it is the same bar, compact (notes/mobile-design.md): the tabs fold into an "Open
-// pages" button that opens them as a sheet, the View group shows one view at a time, and the
-// side bar toggle opens the side bar as a bottom sheet. The shell's top bar above it names the page.
+// pages" button that opens them as a sheet, the stage switch shows the stages offered, the wiki
+// button opens the card as a bottom sheet and the side bar toggle opens the side bar as a drawer.
 
-export const VIEW_COMMANDS: Record<ViewName, string> = { wiki: 'viewWiki', graph: 'viewGraph', erd: 'viewErd', trace: 'viewTrace' };
+export const STAGE_COMMANDS: Record<StageName, string> = { graph: 'stageGraph', erd: 'stageErd', trace: 'stageTrace' };
 
-/** Where a view works, for the dimmed slot of a view a page does not offer. */
-const NOT_OFFERED: Record<ViewName, string> = {
-  wiki: 'on every page',
+/** Where a stage works, for the dimmed slot of a stage a page does not offer. */
+const NOT_OFFERED: Record<StageName, string> = {
   graph: 'on every page',
   erd: 'on a domain, an aggregate or an entity',
   trace: 'on a requirement or rule, or a page with one under it',
 };
 
-export function ViewIcon({ view, size = 16 }: { view: ViewName; size?: number }) {
-  return view === 'erd' ? <ErdIcon size={size} /> : <Icon name={view} size={size} />;
+export function StageIcon({ stage, size = 16 }: { stage: StageName; size?: number }) {
+  return stage === 'erd' ? <ErdIcon size={size} /> : <Icon name={stage} size={size} />;
 }
 
 export interface PageBarProps {
   index: SpecIndex;
   tabs: PageTabsApi;
-  /** The views this page offers, in order. */
-  offered: readonly ViewName[];
-  /** The views shown (one on a phone). */
-  open: readonly ViewName[];
-  onView: (view: ViewName) => void;
+  /** The stages this page offers, in order. */
+  offered: readonly StageName[];
+  /** The stage shown. */
+  stage: StageName;
+  onStage: (stage: StageName) => void;
   /** The phone's compact bar. */
   compact: boolean;
+  cardShown: boolean;
+  onCard: (show: boolean) => void;
+  cardButton?: RefObject<HTMLButtonElement | null>;
   sideBarShown: boolean;
   onSideBar: (show: boolean) => void;
   sideBarButton: RefObject<HTMLButtonElement | null>;
-  /** The View toggles' elements, so focus can come back to the one just used. */
-  toggles?: RefObject<Partial<Record<ViewName, HTMLButtonElement | null>>>;
   /** On a phone: whether the open pages sheet is shown, and its button. */
   pagesOpen?: boolean;
   onPages?: () => void;
@@ -57,16 +56,13 @@ export interface PageBarProps {
 }
 
 export function PageBar(props: PageBarProps) {
-  const { index, tabs, offered, open, onView, compact, sideBarShown, onSideBar, sideBarButton, toggles, pagesOpen = false, onPages, pagesButton } = props;
+  const { index, tabs, offered, stage, onStage, compact, cardShown, onCard, cardButton, sideBarShown, onSideBar, sideBarButton, pagesOpen = false, onPages, pagesButton } = props;
   const count = tabs.set.tabs.length;
   const sideBarLabel = `${sideBarShown ? 'Hide' : 'Show'} the side bar`;
+  const cardLabel = `${cardShown ? 'Collapse' : 'Show'} the wiki card`;
 
-  /** A view toggle's tooltip: what a click does, and that the last open view stays open. */
-  const toggleLabel = (v: ViewName) =>
-    !compact && open.length === 1 && open[0] === v ? `${VIEW_LABELS[v]} view (stays open: it is the only one)` : `${VIEW_LABELS[v]} view`;
-
-  /** On a wide screen every view keeps its slot; on a phone the switch shows only the views offered. */
-  const slots: readonly ViewName[] = compact ? offered : VIEW_NAMES;
+  /** On a wide screen every stage keeps its slot; on a phone the switch shows only the stages offered. */
+  const slots: readonly StageName[] = compact ? offered : STAGE_NAMES;
 
   let start: ReactNode;
   if (compact) {
@@ -89,41 +85,52 @@ export function PageBar(props: PageBarProps) {
   }
 
   return (
-    <div className={`page-bar${compact ? ' is-compact' : ' panel'}`}>
+    <div className={`page-bar${compact ? ' is-compact' : ''}`} data-floating={compact ? undefined : 'top'}>
       <div className="page-bar-start">{start}</div>
       <div className="page-bar-actions">
         {offered.length > (compact ? 1 : 0) && (
-          <div className={compact ? 'view-switch' : 'pane-views'} role="group" aria-label="View">
-            {slots.map((v) => offered.includes(v) ? (
-              <Tooltip key={v} label={toggleLabel(v)} command={VIEW_COMMANDS[v]}>
+          <div className={compact ? 'view-switch' : 'stage-switch'} role="group" aria-label="Stage">
+            {slots.map((s) => offered.includes(s) ? (
+              <Tooltip key={s} label={`${STAGE_LABELS[s]} stage`} command={STAGE_COMMANDS[s]}>
                 <button
                   type="button"
-                  ref={(el) => { if (toggles?.current) toggles.current[v] = el; }}
-                  className={compact ? `view-segment${open.includes(v) ? ' is-on' : ''}` : `icon-button${open.includes(v) ? ' is-on' : ''}`}
-                  aria-label={VIEW_LABELS[v]}
-                  aria-pressed={open.includes(v)}
-                  data-command={VIEW_COMMANDS[v]}
-                  onClick={() => onView(v)}
+                  className={compact ? `view-segment${stage === s ? ' is-on' : ''}` : `icon-button${stage === s ? ' is-on' : ''}`}
+                  aria-label={STAGE_LABELS[s]}
+                  aria-pressed={stage === s}
+                  data-command={STAGE_COMMANDS[s]}
+                  onClick={() => onStage(s)}
                 >
-                  <ViewIcon view={v} size={compact ? 18 : 16} />
-                  {compact && <span className="view-segment-label" aria-hidden="true">{VIEW_LABELS[v]}</span>}
+                  <StageIcon stage={s} size={compact ? 18 : 16} />
+                  {compact && <span className="view-segment-label" aria-hidden="true">{STAGE_LABELS[s]}</span>}
                 </button>
               </Tooltip>
             ) : (
-              <Tooltip key={v} label={`${VIEW_LABELS[v]} view: ${NOT_OFFERED[v]}`}>
+              <Tooltip key={s} label={`${STAGE_LABELS[s]} stage: ${NOT_OFFERED[s]}`}>
                 <Button
                   variant="icon"
                   className="is-unavailable"
-                  label={`${VIEW_LABELS[v]} (${NOT_OFFERED[v]})`}
+                  label={`${STAGE_LABELS[s]} (${NOT_OFFERED[s]})`}
                   aria-disabled="true"
                 >
-                  <ViewIcon view={v} size={16} />
+                  <StageIcon stage={s} size={16} />
                 </Button>
               </Tooltip>
             ))}
           </div>
         )}
         <span className="pane-divider" aria-hidden="true" />
+        <Tooltip label={cardLabel} command="toggleWikiCard" placement="left">
+          <Button
+            variant="icon"
+            ref={cardButton}
+            className={`wiki-card-toggle${cardShown ? ' is-on' : ''}`}
+            label={cardLabel}
+            aria-expanded={cardShown}
+            onClick={() => onCard(!cardShown)}
+          >
+            <Icon name="wiki" size={compact ? 20 : 16} />
+          </Button>
+        </Tooltip>
         <Tooltip label={sideBarLabel} command="toggleSideBar" placement="left">
           <Button
             variant="icon"

@@ -1,15 +1,15 @@
 import { forwardRef, useEffect, useRef, type KeyboardEvent } from 'react';
 import { Icon } from '../components/icons';
 import { groupLabel } from '../graph/model';
-import { Link } from '../router';
 import { parseSpecRoute, type SpecIndex } from '../specs/data';
-import { addressOf, HOME_PATH, focusOf, isFocusRoute, viewsFromSearch, withView } from '../views/address';
+import { addressOf, HOME_PATH, focusOf, isFocusRoute, stageFromSearch, withStage } from '../views/address';
+import { Breadcrumb } from '../components/Breadcrumb';
 import { QuickFind } from './QuickFind';
 import { trapTab } from './useNarrow';
 import { Button } from '../components/Button';
 
 // The phone layout's shell (notes/mobile-design.md): a compact top bar with the menu, the page's
-// title on one line under a one-step breadcrumb up to its parent, and quick find; and quick find
+// title on one line under a one-step breadcrumb (the one Breadcrumb) up to its parent, and quick find; and quick find
 // as a full-screen sheet.
 
 export interface Heading {
@@ -23,9 +23,9 @@ const PRODUCTS = { to: HOME_PATH, label: 'Products' };
 /** The title of the page at an address, and the page one step up from it. */
 export function pageHeading(index: SpecIndex | null, path: string, search: string): Heading {
   const route = parseSpecRoute(path, index);
-  // Going up keeps the view in front, as following any link does.
-  const views = viewsFromSearch(search);
-  const keep = (to: string) => (views ? withView(to, views) : to);
+  // Going up keeps the stage, as following any link does.
+  const stage = stageFromSearch(search);
+  const keep = (to: string) => (stage ? withStage(to, stage) : to);
   if (!route) return { title: 'Lathe', up: null };
   if (route.page === 'specs') return { title: 'Products', up: null };
   if (route.page === 'checks') {
@@ -74,12 +74,7 @@ export const TopBar = forwardRef<HTMLButtonElement, TopBarProps>(function TopBar
         <Icon name="menu" />
       </Button>
       <div className="topbar-heading">
-        {heading.up && (
-          <Link to={heading.up.to} className="topbar-up" aria-label={`Up to ${heading.up.label}`}>
-            <Icon name="chevron-left" size={14} />
-            <span className="topbar-up-label">{heading.up.label}</span>
-          </Link>
-        )}
+        {heading.up && <Breadcrumb items={[{ to: heading.up.to, label: heading.up.label, full: `Up to ${heading.up.label}` }]} label="Up" className="topbar-trail" />}
         <p className="topbar-title" title={heading.title}>{heading.title}</p>
       </div>
       <Button variant="icon" label="Quick find" aria-haspopup="dialog" onClick={onFind}>
