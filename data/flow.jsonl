@@ -8,6 +8,7 @@
 {"id":"LA-AUT-UC05-FL03","title":"Organize a domain's use cases into capabilities and patterns through the CLI","use_case_id":"LA-AUT-UC05","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC05-FL04","title":"Organize a domain's use cases into capabilities and patterns through the MCP tools","use_case_id":"LA-AUT-UC05","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC06-FL03","title":"Write a use case's flow as ordered steps through the CLI","use_case_id":"LA-AUT-UC06","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC06-FL04","title":"Write a use case's flow as ordered steps through the MCP tools","use_case_id":"LA-AUT-UC06","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC07-FL03","title":"Name records in text without linking them through the CLI","use_case_id":"LA-AUT-UC07","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC07-FL04","title":"Name records in text without linking them through the MCP tools","use_case_id":"LA-AUT-UC07","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC08-FL03","title":"Read each kind's stage and order from the schema through the CLI","use_case_id":"LA-AUT-UC08","interface_id":"LA-IF03"}
@@ -38,6 +39,7 @@
 {"id":"LA-CHK-UC02-FL03","title":"Add a check through the CLI","use_case_id":"LA-CHK-UC02","interface_id":"LA-IF03"}
 {"id":"LA-CHK-UC02-FL04","title":"Add a check through the MCP tools","use_case_id":"LA-CHK-UC02","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC04-FL03","title":"Find structural problems through the CLI","use_case_id":"LA-CHK-UC04","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC04-FL04","title":"Find structural problems through the MCP tools","use_case_id":"LA-CHK-UC04","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC05-FL03","title":"Add a product's own checks through the CLI","use_case_id":"LA-CHK-UC05","interface_id":"LA-IF03"}
 {"id":"LA-CHK-UC05-FL04","title":"Add a product's own checks through the MCP tools","use_case_id":"LA-CHK-UC05","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC06-FL03","title":"Keep each level of the spec a useful size through the CLI","use_case_id":"LA-CHK-UC06","interface_id":"LA-IF03"}
