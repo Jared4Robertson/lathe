@@ -92,7 +92,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
   });
 
   it('LA-PAT-APP-UX-R08-T01 the bars above a canvas have one height whatever their text', () => {
-    // The pane title above a graph or a model: a fixed block size, each line cut with an ellipsis.
+    // The pane title above a graph, an ERD or a trace: a fixed block size, each line cut with an ellipsis.
     expect(valueFor('.pane-title.is-fixed', 'height') ?? valueFor('.pane-title.is-fixed', 'block-size')).toBe('var(--pane-title-height)');
     expect(valueFor('.pane-title.is-fixed :is(.eyebrow, h1, .record-id)', 'white-space')).toBe('nowrap');
     // The graph's trail and toolbar: one line each; the trail scrolls sideways instead of wrapping.
@@ -105,8 +105,8 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(valueFor('.graph-head-line', 'block-size')).toBeTruthy();
     expect(valueFor('.graph-count', 'white-space')).toBe('nowrap');
     expect(valueFor('.graph-count', 'text-overflow')).toBe('ellipsis');
-    // The Model view: its caption is one line, and its key has one height for every ERD.
-    expect(valueFor('.model-caption', 'white-space')).toBe('nowrap');
+    // The ERD view: its caption is one line, and its key has one height for every ERD.
+    expect(valueFor('.erd-caption', 'white-space')).toBe('nowrap');
     // One height for every ERD at a given pane width: a narrow pane's key is a fixed multiple of it, never sized by its content.
     expect(valueFor('.erd-key', 'block-size')).toMatch(/^(?:var\(--erd-key-height\)|calc\(var\(--erd-key-height\) \* [0-9.]+\))$/);
     expect(CSS).toMatch(/--erd-key-height:\s*[0-9.]+rem/);
@@ -146,7 +146,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
   it('LA-V61-R38-T02 what the graph connects reaches the side bar before paint, not an effect later', () => {
     const source = readFileSync(join(__dirname, '..', 'src', 'graph', 'GraphPage.tsx'), 'utf8');
     expect(source).toMatch(/useLayoutEffect\(\(\) => \{ onGraph\?\.\(/);
-    const model = readFileSync(join(__dirname, '..', 'src', 'model', 'ModelView.tsx'), 'utf8');
+    const model = readFileSync(join(__dirname, '..', 'src', 'erd', 'ErdView.tsx'), 'utf8');
     // The ERD is fitted before its first paint, and observes its size once (each new observer reported the size again and cut the glide short).
     expect(model).toMatch(/useLayoutEffect\(\(\) => \{\n\s*if \(!placed\) return;\n\s*fit\(fitted\.current\);/);
     expect(model).toMatch(/observer\.observe\(el\);\n\s*return \(\) => observer\.disconnect\(\);\n\s*\}, \[\]\);/);

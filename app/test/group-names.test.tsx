@@ -8,7 +8,7 @@ import { openApp, openSideBar } from './helpers';
 describe('group names', () => {
   it('LA-V93-R25-T03 A stage or folder group page names the group by its own name, not by a kind ("Domain model", never "Domain models")', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'model']);
+    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
     await openApp('/DM-SHOP/domain-model?view=wiki');
     await screen.findByRole('heading', { level: 1, name: /^Domain model/ });
     expect(document.querySelector('.group-intro')).toHaveTextContent(/^Domain model of DM-SHOP/);

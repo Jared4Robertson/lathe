@@ -73,7 +73,7 @@ describe('shortcut hints', () => {
 
   const proveLaPltDs01T01 = async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'model']);
+    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
     // In Apple's order: ⌃ ⌥ ⇧ ⌘.
     expect(formatBinding('Mod+Shift+P', true)).toBe('⇧⌘P');
     expect(formatBinding('Mod+Alt+B', true)).toBe('⌥⌘B');
@@ -155,7 +155,7 @@ describe('shortcut hints', () => {
 
   const proveLaPltDs01T02 = async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'model']);
+    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
     expect(ariaKeyShortcuts(['Mod+P', 'Mod+K'], false)).toBe('Control+P Control+K');
     expect(ariaKeyShortcuts(['Mod+P'], true)).toBe('Meta+P');
     expect(ariaKeyShortcuts(['g c'], false)).toBe('');

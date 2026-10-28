@@ -144,17 +144,17 @@ test.describe('Exploring flows', () => {
     await expect.poll(async () => (await sceneOf(page)).lines.some((l) => l.link && l.target === 'LA-PAT-APP-UX' && l.label === 'Follows')).toBe(true);
   });
 
-  test('LA-EXP-UC05-FL01-T read a record as wiki, graph and model side by side: quick find, panes, links, Back, the nav and the side bar', async ({ page }) => {
+  test('LA-EXP-UC05-FL01-T read a record as wiki, graph and ERD side by side: quick find, panes, links, Back, the nav and the side bar', async ({ page }) => {
     await openPage(page, '/LA');
     await quickFind(page, 'LA-EXP-A1');
     await expect(wikiTitle(page)).toHaveText('Page');
     // An address names its views.
-    await page.goto('/LA-EXP-A1?view=wiki,graph,model');
+    await page.goto('/LA-EXP-A1?view=wiki,graph,erd');
     await expect(page.locator('.focus-views > .pane')).toHaveCount(3);
     await graphReady(page);
-    // Close Model, resize the panes from the keyboard, show one alone.
+    // Close ERD, resize the panes from the keyboard, show one alone.
     await page.keyboard.press('Control+4');
-    await expect(page.locator('.pane-model')).toHaveCount(0);
+    await expect(page.locator('.pane-erd')).toHaveCount(0);
     const handle = page.getByRole('separator', { name: 'Resize the wiki and graph panes' });
     const before = await handle.getAttribute('aria-valuenow');
     await handle.focus();
@@ -212,14 +212,15 @@ test.describe('Exploring flows', () => {
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
     await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
-    // A requirement names the step that fulfills it, with its flow and what it invokes.
-    await page.goto('/LA-EXP-UC03-R18?view=wiki');
-    await expect(page.locator(WIKI).getByRole('heading', { name: /^Designed by/ })).toBeVisible();
-    const wiki = page.locator(WIKI);
-    await expect(wiki.getByRole('link', { name: /^LA-EXP-UC03-FL01-S01/ }).first()).toBeVisible();
-    await wiki.getByRole('link', { name: /^LA-EXP-UC03-FL01-S01/ }).first().click();
+    // A requirement's Trace view names the step that fulfills it, with its flow and what it invokes.
+    await page.goto('/LA-EXP-UC03-R18?view=wiki,trace');
+    const design = page.locator('.pane-trace .trace-column').nth(1);
+    await expect(design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ })).toBeVisible();
+    await expect(design.getByRole('link', { name: /LA-EXP-UC03-FL01 / }).first()).toBeVisible();
+    await expect(design.getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
+    await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ }).click();
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL01-S01');
-    await expect(wiki.getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
+    await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
   });
 
   test('LA-EXP-UC07-FL01-T work in one product at a time: the rail, its last page, Alt+1 and Switch to, find, Checks, the phone, the products page', async ({ page }) => {
@@ -362,10 +363,10 @@ test.describe('Exploring flows', () => {
     await expect(tabs.getByRole('tab')).toHaveCount(1);
   });
 
-  test('LA-EXP-UC11-FL01-T read a domain and its aggregates as an ERD: the Model view, an aggregate picked, an entity, the key', async ({ page }) => {
+  test('LA-EXP-UC11-FL01-T read a domain and its aggregates as an ERD: the ERD view, an aggregate picked, an entity, the key', async ({ page }) => {
     await openPage(page, '/LA-EXP');
-    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Model' }).click();
-    const model = page.getByRole('region', { name: 'Model', exact: true });
+    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'ERD' }).click();
+    const model = page.getByRole('region', { name: 'ERD', exact: true });
     await expect(model.getByRole('group', { name: /^Aggregate / }).first()).toBeVisible();
     expect(await model.getByRole('group', { name: /^Aggregate / }).count()).toBeGreaterThanOrEqual(2);
     await expect(model.getByRole('img', { name: /^Edge from / }).first()).toBeAttached();
@@ -374,11 +375,11 @@ test.describe('Exploring flows', () => {
     await page.waitForURL((u) => u.pathname === '/LA-EXP-A5');
     await expect(model.getByRole('list', { name: /^Fields of / }).first()).toBeVisible();
     // On an entity, the same ERD picks it out.
-    await page.locator('.pane-model .model-flow .react-flow__node:not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
+    await page.locator('.pane-erd .erd-flow .react-flow__node:not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
     await page.waitForURL((u) => /^\/LA-EXP-EN\d+$/.test(u.pathname));
-    await expect(page.locator('.pane-model .react-flow__node .is-focus').first()).toBeVisible();
+    await expect(page.locator('.pane-erd .react-flow__node .is-focus').first()).toBeVisible();
     // The key under the diagram.
-    await expect(page.getByRole('region', { name: 'Model', exact: true }).getByRole('group', { name: 'Key' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'ERD', exact: true }).getByRole('group', { name: 'Key' })).toBeVisible();
   });
 
   test('LA-EXP-UC12-FL01-T use the side bar: Details following the pointer, Outline, History with its uncommitted change, a commit\'s diff and Load more', async ({ page }) => {

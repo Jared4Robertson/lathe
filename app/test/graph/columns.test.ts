@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { indexOf } from '../fixtures/load';
-import { neighborhood, traceChain, traceColumn, TRACE_COLUMNS, type Neighborhood } from '../../src/graph/model';
+import { neighborhood, type Neighborhood } from '../../src/graph/model';
 import { graphMap } from '../../src/graph/map';
 import { groupedWorkspace, testIndex } from './workspace';
 
@@ -96,11 +96,5 @@ describe('graph columns by tree depth', () => {
       const ys = inColumn.map((x) => placed.get(x.id)!.y);
       expect(ys).toEqual([...ys].sort((a, b) => a - b));
     }
-  });
-
-  it('LA-V93-R15-T08 Trace mode keeps its own columns, from the obligation to the files', () => {
-    const t = traceChain(index, 'P-D-UC01-R01');
-    for (const node of t.nodes) expect(node.column).toBe(node.distance === 0 ? TRACE_COLUMNS.obligation : traceColumn(index, node.kind));
-    expect(columnOf(t).get('P-D-UC01-R01')).toBe(0);
   });
 });

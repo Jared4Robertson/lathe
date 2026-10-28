@@ -123,25 +123,51 @@ test.describe('performance', () => {
     await record({ name: `${label}: frames over 20 ms`, value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
   });
 
-  test('LA-V61-R37-T04 opening the Model pane takes under 100 ms of main-thread work', async ({ page }) => {
+  test('LA-V61-R37-T04 opening the ERD pane takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, AGGREGATE);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+4');
-      await page.locator('.pane-model .model-flow .react-flow__node').first().waitFor();
+      await page.locator('.pane-erd .erd-flow .react-flow__node').first().waitFor();
     });
     await page.keyboard.press('Control+4');
-    await expect(page.locator('.pane-model')).toHaveCount(0);
+    await expect(page.locator('.pane-erd')).toHaveCount(0);
     const again = await work(page, async () => {
       await page.keyboard.press('Control+4');
-      await page.locator('.pane-model .model-flow .react-flow__node').first().waitFor();
+      await page.locator('.pane-erd .erd-flow .react-flow__node').first().waitFor();
     });
-    await record({ name: 'Model view: first open (loads its code and ELK)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
-    await record({ name: 'view switch: open the Model pane', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
+    await record({ name: 'ERD view: first open (loads its code and ELK)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
+    await record({ name: 'view switch: open the ERD pane', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
     // The time from the key press to the laid-out diagram, on a domain page (the ELK layout in its worker).
-    await page.goto(`${DOMAIN}?view=model`);
+    await page.goto(`${DOMAIN}?view=erd`);
     const start = await page.evaluate(() => performance.now());
-    await page.locator('.pane-model .model-flow .react-flow__node').first().waitFor();
+    await page.locator('.pane-erd .erd-flow .react-flow__node').first().waitFor();
     const laid = (await page.evaluate(() => performance.now())) - start;
-    await record({ name: 'Model view: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
+    await record({ name: 'ERD view: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
+  });
+
+  test("LA-V98-R06-T02 the Trace pane opens, and the product's whole matrix draws, within the view switch budget", async ({ page }) => {
+    const rows = '.pane-trace .trace-matrix tbody tr';
+    // A use case's page, as the other view switches are measured: the Trace pane opened beside its wiki, once to load its code, then again.
+    await open(page, RECORD);
+    const first = await work(page, async () => {
+      await page.keyboard.press('Control+5');
+      await page.locator(rows).first().waitFor();
+    });
+    await page.keyboard.press('Control+5');
+    await expect(page.locator('.pane-trace')).toHaveCount(0);
+    const again = await work(page, async () => {
+      await page.keyboard.press('Control+5');
+      await page.locator(rows).first().waitFor();
+    });
+    await record({ name: 'Trace view: first open (loads its code)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
+    await record({ name: 'view switch: open the Trace pane', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
+    // The product's whole matrix, its first page of rows and its Untraced section: from a domain's Trace view to the product's.
+    await open(page, `${DOMAIN}?view=trace`, rows);
+    const product = await work(page, async () => {
+      await page.evaluate(() => { window.history.pushState(null, '', '/LA?view=trace'); window.dispatchEvent(new PopStateEvent('popstate')); });
+      await page.waitForFunction(() => window.location.pathname === '/LA' && document.querySelector('.pane-trace .trace-untraced') !== null);
+    });
+    const drawn = await page.locator(`${rows}:not(.group-row)`).count();
+    await record({ name: "Trace view: the product's matrix drawn", value: product.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `${drawn} rows drawn; longest frame ${Math.round(product.worstFrameMs)} ms` });
   });
 });

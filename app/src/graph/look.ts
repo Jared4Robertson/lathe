@@ -13,7 +13,7 @@ export interface Look {
   discoveryEdge: string; discoveryFill: string; domainModelEdge: string; domainModelFill: string; useCasesEdge: string; useCasesFill: string;
   interactionDesignEdge: string; interactionDesignFill: string; technicalSpecificationEdge: string; technicalSpecificationFill: string;
   testPlanEdge: string; testPlanFill: string;
-  structuralEdge: string; structuralFill: string; fileEdge: string;
+  structuralEdge: string; structuralFill: string;
   /** How much the hover spotlight dims the rest, and how faint an unlit line then is. */
   spotlightDim: number; contextOpacity: number;
   /** The focus fade (fade.ts): how strongly a box outside the focus's subtree is drawn, and an ancestor kept as a trail in Nested and Voronoi. */
@@ -33,7 +33,7 @@ const COLORS: Record<Exclude<keyof Look, 'spotlightDim' | 'contextOpacity' | 'fo
   interactionDesignEdge: '--g-interaction-design', interactionDesignFill: '--g-interaction-design-bg',
   technicalSpecificationEdge: '--g-technical-specification', technicalSpecificationFill: '--g-technical-specification-bg',
   testPlanEdge: '--g-test-plan', testPlanFill: '--g-test-plan-bg',
-  structuralEdge: '--g-structural', structuralFill: '--g-structural-bg', fileEdge: '--g-file',
+  structuralEdge: '--g-structural', structuralFill: '--g-structural-bg',
 };
 
 /** The look a page without a stylesheet draws in (the unit tests). */
@@ -45,7 +45,7 @@ export const PLAIN_LOOK: Look = {
   domainModelEdge: '#2E6A88', domainModelFill: '#E4EEF3', useCasesEdge: '#2F7148', useCasesFill: '#E2F1E7',
   interactionDesignEdge: '#6A4C9C', interactionDesignFill: '#EEE8F6', technicalSpecificationEdge: '#B5512A', technicalSpecificationFill: '#F8E8DF',
   testPlanEdge: '#A3365F', testPlanFill: '#F7E4EC',
-  structuralEdge: '#1D2830', structuralFill: '#FFFFFF', fileEdge: '#5A6870',
+  structuralEdge: '#1D2830', structuralFill: '#FFFFFF',
   spotlightDim: 0.5, contextOpacity: 0.35, focusFade: 0.25, focusTrail: 0.45, fade: 0, vignette: 56,
 };
 

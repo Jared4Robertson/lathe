@@ -70,7 +70,9 @@ export const COMMANDS: readonly Command[] = [
   // Ctrl is the Control key on a Mac too, where Cmd+W stays the browser's; elsewhere Ctrl+W closes the tab and Ctrl+G finds the next match, so Alt.
   { id: 'viewWiki', title: 'Wiki view on or off', group: 'View', keys: ['Ctrl+W', 'Ctrl+1'], otherKeys: ['Alt+W', 'Ctrl+1'], when: 'page' },
   { id: 'viewGraph', title: 'Graph view on or off', group: 'View', keys: ['Ctrl+G', 'Ctrl+2'], otherKeys: ['Alt+G', 'Ctrl+2'], when: 'page' },
-  { id: 'viewModel', title: 'Model view on or off', group: 'View', keys: ['Ctrl+M', 'Ctrl+4'], otherKeys: ['Alt+M', 'Ctrl+4'], when: 'page' },
+  { id: 'viewErd', title: 'ERD view on or off', group: 'View', keys: ['Ctrl+E', 'Ctrl+4'], otherKeys: ['Alt+E', 'Ctrl+4'], when: 'page' },
+  // Elsewhere Ctrl+T opens a browser tab, so Alt.
+  { id: 'viewTrace', title: 'Trace view on or off', group: 'View', keys: ['Ctrl+T', 'Ctrl+5'], otherKeys: ['Alt+T', 'Ctrl+5'], when: 'page' },
   { id: 'maximizePane', title: 'Full screen for the focused pane, or back to every pane', group: 'View', keys: ['Ctrl+3'], when: 'page' },
   { id: 'escape', title: 'Leave full screen, or clear or close the innermost thing', group: 'View', keys: ['Escape'], when: 'global' },
   { id: 'expandAll', title: 'Expand all rows on this page', group: 'View', keys: [], when: 'page' },
@@ -83,7 +85,6 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphActivate', title: 'Center on the focused box, or open or close a group', group: 'Graph', keys: ['Enter'], when: 'graph', local: true },
   { id: 'graphDepthUp', title: 'More depth', group: 'Graph', keys: ['+', '='], when: 'graph' },
   { id: 'graphDepthDown', title: 'Less depth', group: 'Graph', keys: ['-'], when: 'graph' },
-  { id: 'graphTrace', title: 'Trace mode on or off', group: 'Graph', keys: ['t'], when: 'graph' },
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
   { id: 'graphLinks', title: 'Links on or off: the center\'s own links, one step', group: 'Graph', keys: ['l'], when: 'graph' },
   { id: 'graphLayout', title: 'Tree, Nested or Voronoi layout: parents beside their children, or made of them as boxes or cells', group: 'Graph', keys: ['v'], when: 'graph' },

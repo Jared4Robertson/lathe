@@ -194,7 +194,7 @@ export async function installProbes(page: Page, firstKeys: string[] = []) {
     try {
       if (!localStorage.getItem('lathe:side-bar')) {
         const open = { open: true, view: 'details' };
-        localStorage.setItem('lathe:side-bar', JSON.stringify({ wiki: open, graph: open, model: open }));
+        localStorage.setItem('lathe:side-bar', JSON.stringify({ wiki: open, graph: open, erd: open, trace: open }));
       }
     } catch { /* storage unavailable: the defaults apply */ }
   });

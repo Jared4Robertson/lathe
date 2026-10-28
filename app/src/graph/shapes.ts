@@ -1,7 +1,7 @@
 import type { SpecIndex } from '../specs/data';
 
 // A shape for each kind (LA-V93-R06): a secondary cue, after the label, that keeps a box's
-// rectangular footprint so boxes still stack. In the Tree view (and a trace) a box's outline is its
+// rectangular footprint so boxes still stack. In the Tree view a box's outline is its
 // kind's shape; in the Nested and Voronoi views a box keeps its rectangle or cell and shows its
 // shape as a small mark before its kind and ID line (shape-icons.tsx).
 //
@@ -16,6 +16,10 @@ import type { SpecIndex } from '../specs/data';
 // or badge meets a notch or a corner.
 //
 // Pure data and geometry, with no React, so the Voronoi worker can read it.
+
+/** A leaf's box at text scale 1: the width a Tree box's label wraps at (text.ts), and the size a shape is drawn at. */
+export const NODE_WIDTH = 190;
+export const NODE_HEIGHT = 56;
 
 export type Shape =
   | 'box' | 'product' | 'hexagon' | 'folder' | 'slice'
@@ -150,11 +154,10 @@ const FOLDER: KindShape = { shape: 'folder' };
 /** A kind's shape and mark; a group (a stage or a folder) is a folder, and a kind a product adds is a plain box. */
 export const shapeOf = (kind: string, group = false): KindShape => (group ? FOLDER : KIND_SHAPES[kind] ?? PLAIN);
 
-/** A node's shape by its ID: a record's kind's, a group's folder, a file's plain box. */
+/** A node's shape by its ID: a record's kind's, or a group's folder. */
 export function nodeShape(index: SpecIndex, id: string): KindShape {
   const record = index.byId.get(id);
-  if (record) return shapeOf(record.kind);
-  return id.startsWith('file:') ? PLAIN : FOLDER;
+  return record ? shapeOf(record.kind) : FOLDER;
 }
 
 /** A point of an outline: `fx` of the width plus `dx`, `fy` of the height plus `dy`. */

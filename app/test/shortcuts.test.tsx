@@ -80,9 +80,9 @@ describe('keyboard shortcuts', () => {
     expect(window.location.search).toBe('?view=graph');
     press(document.body, '1', 'Digit1', { ctrlKey: true });
     expect(window.location.search).toBe('?view=wiki,graph');
-    // Ctrl+4 and Alt+M do nothing where Model is not offered; Ctrl+3 is not Split any more.
+    // Ctrl+4 and Alt+E do nothing where ERD is not offered; Ctrl+3 is not Split any more.
     press(document.body, '4', 'Digit4', { ctrlKey: true });
-    press(document.body, 'm', 'KeyM', { altKey: true });
+    press(document.body, 'e', 'KeyE', { altKey: true });
     expect(window.location.search).toBe('?view=wiki,graph');
 
     // Ctrl+3 maximizes the focused pane; Ctrl+3 again restores, and so does Escape.
@@ -209,7 +209,7 @@ describe('keyboard shortcuts', () => {
     expect(window.location.pathname).toBe('/');
   });
 
-  it('LA-V61-R08-T06 In the graph, + and - change the depth, t switches trace mode and . frames the focus again', async () => {
+  it('LA-V61-R08-T06 In the graph, + and - change the depth and . frames the focus again, and no key turns a trace on', async () => {
     await openApp('/P-D?view=graph', { data: testWorkspace() });
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     press(document.body, '+', 'Equal', { shiftKey: true });
@@ -220,17 +220,13 @@ describe('keyboard shortcuts', () => {
     press(document.body, '.', 'Period');
     expect(isCenter('P-D')).toBe(true);
     expect(COMMANDS.some((c) => c.id === 'graphToggleGroup')).toBe(false);
-
-    await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
-    await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
-    press(document.body, 't', 'KeyT');
-    expect(screen.getByRole('checkbox', { name: 'Trace mode' })).toBeChecked();
-    await waitFor(() => expect(node('file:test/lend.test.ts')).not.toBeNull());
+    // An obligation's chain is the Trace view's: the graph has no trace command.
+    expect(COMMANDS.filter((c) => c.group === 'Graph' && /trace/i.test(`${c.id} ${c.title}`))).toEqual([]);
   });
 
   it('LA-V61-R08-T07 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'model']);
+    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const sideBar = screen.getByRole('complementary', { name: 'Side bar' });

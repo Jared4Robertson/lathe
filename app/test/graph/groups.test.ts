@@ -10,7 +10,6 @@ import {
   parseGroupId,
   PARENT,
   pluralLabel,
-  traceChain,
   type Filters,
   type Neighborhood,
 } from '../../src/graph/model';
@@ -49,7 +48,6 @@ describe('graph groups', () => {
     expect(parseGroupId('P-D-A3/entity')).toEqual({ parent: 'P-D-A3', kind: 'entity', path: [] });
     expect(parseGroupId('P-D/domain-model/aggregate')).toEqual({ parent: 'P-D', kind: 'domain-model', path: ['aggregate'] });
     expect(parseGroupId('P-D-UC01')).toBeNull();
-    expect(parseGroupId('file:src/loans.ts')).toBeNull();
     expect(index.byId.has('P-D/domain-model')).toBe(false);
     expect(isGraphNode(index, 'P-D/domain-model')).toBe(true);
     // Only the tree's groups are groups: a parent and a kind outside it name nothing.
@@ -151,12 +149,11 @@ describe('graph groups', () => {
     expect(groupMarks(index, 'P-D/test-plan/use_case_test')).toEqual({ errors: 1, warnings: 0, gaps: [] });
     expect(groupMarks(grouped, 'P-D-A4/command')).toEqual({ errors: 0, warnings: 0, gaps: [] });
     // A group is a folder outlined in its stage's color; a group of no stage (open questions) in gray.
-    expect(boxColors(PLAIN_LOOK, { file: false, group: true, kind: 'use_case_test', stage: 'test-plan' })).toEqual({ edge: PLAIN_LOOK.testPlanEdge, fill: PLAIN_LOOK.sheet });
-    expect(boxColors(PLAIN_LOOK, { file: false, group: true, kind: 'question', stage: 'structural' })).toEqual({ edge: PLAIN_LOOK.muted, fill: PLAIN_LOOK.sheet });
+    expect(boxColors(PLAIN_LOOK, { group: true, kind: 'use_case_test', stage: 'test-plan' })).toEqual({ edge: PLAIN_LOOK.testPlanEdge, fill: PLAIN_LOOK.sheet });
+    expect(boxColors(PLAIN_LOOK, { group: true, kind: 'question', stage: 'structural' })).toEqual({ edge: PLAIN_LOOK.muted, fill: PLAIN_LOOK.sheet });
   });
 
-  it.each(['LA-EXP-DS05-T04', 'LA-V93-R23-T03'])('%s Trace mode has no groups, and filters hide groups with their kind or with the parent relation', () => {
-    expect(traceChain(index, 'P-D-UC01-R01').nodes.some((x) => x.group)).toBe(false);
+  it('LA-V93-R23-T07 Filters hide groups with their kind or with the parent relation', () => {
     // A kind group and a folder go with their kind; a stage has no kind of its own and stays.
     expect(ids(neighborhood(grouped, 'P-D-A4', 1, filters(['command'])))).not.toContain('P-D-A4/command');
     expect(ids(neighborhood(index, 'P-D', 1, filters(['question'])))).not.toContain('P-D/question');

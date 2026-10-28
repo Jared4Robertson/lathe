@@ -30,7 +30,6 @@
     "--g-test-plan-bg": "#F7E4EC",
     "--g-structural": "var(--ink)",
     "--g-structural-bg": "var(--sheet)",
-    "--g-file": "var(--muted)",
     "--on-mark": "#fff",
     "--shadow-soft": "rgb(0 0 0 / 0.12)",
     "--shadow": "rgb(0 0 0 / 0.16)",
