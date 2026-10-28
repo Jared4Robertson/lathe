@@ -142,4 +142,33 @@ describe('the schema version', () => {
     writeFileSync(path.join(dir, '2-to-4.ts'), 'export default {};\n');
     await expect(readConverters(dir)).rejects.toThrow('a converter moves the data forward one version, such as 1-to-2.ts.');
   });
+  it("LA-AUT-UC03-R08-T02 1-to-2 puts every flow through its product's one new interface, renaming its flows, steps and tests wherever they are named", async () => {
+    const line = (row: object) => `${JSON.stringify(row)}\n`;
+    const root = committedProduct({ id: 'TL', title: 'Tool Library' });
+    const files: Record<string, object[]> = {
+      domain: [{ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }],
+      capability: [{ id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1 }],
+      use_case: [{ id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01' }],
+      uc_requirement: [{ id: 'TL-LEND-UC01-R01', title: 'Refused', use_case_id: 'TL-LEND-UC01', statement: 'A tool on loan MUST be refused, as TL-LEND-UC01-FL-S01 shows.' }],
+      flow: [{ id: 'TL-LEND-UC01-FL', title: 'Borrow', use_case_id: 'TL-LEND-UC01' }],
+      flow_step: [{ id: 'TL-LEND-UC01-FL-S01', title: 'Borrow', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 }],
+      flow_test: [{ id: 'TL-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'TL-LEND-UC01-FL', level: 'e2e-api', state: 'not automated yet', steps: ['Run TL-LEND-UC01-FL-S01'] }],
+      fulfills: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }],
+    };
+    for (const [table, rows] of Object.entries(files)) writeFileSync(path.join(root, 'data', `${table}.jsonl`), rows.map(line).join(''));
+    git(root, 'add', '.');
+    git(root, 'commit', '-q', '-m', 'A flow before interfaces');
+    const result = await upgradeProduct(root, { converters: (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1), target: 2 });
+    expect(result.done).toBe(true);
+    expect(result.todos).toEqual([expect.stringMatching(/^1-to-2: TL-IF01 stands for every interface TL's flows went through/), expect.stringMatching(/^1-to-2: Rename the flow, step and flow test IDs your code names/)]);
+    const read = (table: string) => readFileSync(path.join(root, 'data', `${table}.jsonl`), 'utf8');
+    expect(read('interface')).toBe(line({ id: 'TL-IF01', title: 'Interface', product_id: 'TL', kind: 'other', description: 'Every flow written before interfaces were declared goes through this one.' }));
+    expect(read('flow')).toBe(line({ id: 'TL-LEND-UC01-FL01', title: 'Borrow', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }));
+    expect(read('flow_step')).toContain('"id":"TL-LEND-UC01-FL01-S01"');
+    expect(read('flow_test')).toContain('"id":"TL-LEND-UC01-FL01-T","title":"Borrow end to end","flow_id":"TL-LEND-UC01-FL01"');
+    expect(read('flow_test')).toContain('"steps":["Run TL-LEND-UC01-FL01-S01"]');
+    expect(read('fulfills')).toBe(line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC01-R01' }));
+    expect(read('uc_requirement')).toContain('as TL-LEND-UC01-FL01-S01 shows.');
+    expect(readConfig(root).schema).toBe(2);
+  });
 });
