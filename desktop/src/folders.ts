@@ -8,36 +8,57 @@ export const CONFIG_FILE = 'lathe.config.json';
 /** How many folders File › Open Recent lists. */
 export const RECENT_LIMIT = 10;
 
-export type FolderCheck = { ok: true; dataDir: string } | { ok: false; message: string };
+/** A folder that opens: its data folder, then the data folder of each other product its config lists under products. */
+export type FolderCheck = { ok: true; dataDirs: string[] } | { ok: false; message: string };
 
 const isDir = (p: string) => existsSync(p) && statSync(p).isDirectory();
 
+type Config = { data?: unknown; products?: unknown };
+
+// A folder's config, or why it cannot be read.
+function readConfig(folder: string): { config: Config } | { message: string } {
+  try {
+    const parsed: unknown = JSON.parse(readFileSync(path.join(folder, CONFIG_FILE), 'utf8'));
+    return { config: parsed && typeof parsed === 'object' ? (parsed as Config) : {} };
+  } catch (error) {
+    return { message: `${CONFIG_FILE} in ${folder} is not valid JSON: ${error instanceof Error ? error.message : String(error)}` };
+  }
+}
+
+const dataOf = (folder: string, config: Config) => path.resolve(folder, typeof config.data === 'string' ? config.data : 'data');
+
 /**
  * A folder opens when it holds a lathe.config.json (valid JSON, whose "data" names the data folder, data by
- * default), or else a data/ folder. Otherwise the message says what is missing.
+ * default, and whose "products" lists the folders of the other products the workspace shows), or else a data/
+ * folder. Otherwise the message says what is missing. A listed folder's own config gives its data folder; one that
+ * cannot be read is left for the server to report when it loads the workspace.
  */
 export function checkFolder(folder: string): FolderCheck {
   if (!isDir(folder)) return { ok: false, message: `${folder} is not a folder.` };
-  const config = path.join(folder, CONFIG_FILE);
-  if (existsSync(config)) {
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(readFileSync(config, 'utf8'));
-    } catch (error) {
-      return { ok: false, message: `${CONFIG_FILE} in ${folder} is not valid JSON: ${error instanceof Error ? error.message : String(error)}` };
-    }
-    const data = parsed && typeof parsed === 'object' && typeof (parsed as { data?: unknown }).data === 'string' ? (parsed as { data: string }).data : 'data';
-    return { ok: true, dataDir: path.resolve(folder, data) };
+  if (existsSync(path.join(folder, CONFIG_FILE))) {
+    const own = readConfig(folder);
+    if ('message' in own) return { ok: false, message: own.message };
+    const listed = Array.isArray(own.config.products) ? own.config.products.filter((p): p is string => typeof p === 'string') : [];
+    const others = listed.flatMap((p) => {
+      const product = path.resolve(folder, p);
+      const read = existsSync(path.join(product, CONFIG_FILE)) ? readConfig(product) : null;
+      return read && 'config' in read ? [dataOf(product, read.config)] : [];
+    });
+    return { ok: true, dataDirs: [dataOf(folder, own.config), ...others] };
   }
-  if (isDir(path.join(folder, 'data'))) return { ok: true, dataDir: path.join(folder, 'data') };
+  if (isDir(path.join(folder, 'data'))) return { ok: true, dataDirs: [path.join(folder, 'data')] };
   return {
     ok: false,
     message: `${folder} has no ${CONFIG_FILE} and no data folder. Choose the root of a product repo: the folder that holds ${CONFIG_FILE}, or its data folder's parent.`,
   };
 }
 
-/** The title of each product (the rows of data/product.jsonl), in the file's order, which is by ID. */
-export function productNames(dataDir: string): string[] {
+/** The title of each product (the rows of each data folder's product.jsonl), folder by folder, each file in its order, which is by ID. */
+export function productNames(dataDirs: readonly string[]): string[] {
+  return dataDirs.flatMap(productNamesIn);
+}
+
+function productNamesIn(dataDir: string): string[] {
   const file = path.join(dataDir, 'product.jsonl');
   if (!existsSync(file)) return [];
   const names: string[] = [];

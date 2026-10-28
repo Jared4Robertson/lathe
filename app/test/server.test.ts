@@ -88,10 +88,10 @@ describe('dev API plugin', () => {
     expect(spec.status).toBe(200);
     expect(decodeURIComponent(spec.headers['x-lathe-root'])).toBe(root);
     const data = spec.json() as SpecData;
-    expect(data.dataDir).toBe('data');
-    expect(data.tables.product).toEqual([{ id: 'EX', title: 'Example' }]);
-    expect(data.tables.use_case.map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
-    expect(data.tables.uc_requirement).toBeUndefined();
+    expect(data.sources.map((s) => s.dataDir)).toEqual(['data']);
+    expect(data.sources[0].tables.product).toEqual([{ id: 'EX', title: 'Example' }]);
+    expect(data.sources[0].tables.use_case.map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
+    expect(data.sources[0].tables.uc_requirement).toBeUndefined();
     expect(data.schema.kinds.use_case.parents.map((p) => p.kind)).toEqual(['capability']);
     expect(Array.isArray(data.problems) && Array.isArray(data.coverage)).toBe(true);
     // Non-API paths pass through.
@@ -115,7 +115,7 @@ describe('dev API plugin', () => {
     expect(written.status).toBe(200);
     expect(await readFile(path.join(root, 'data/uc_requirement.jsonl'), 'utf8')).toContain('The note MUST be saved.');
     const data = (await request(fake.middlewares[0], '/api/spec')).json() as SpecData;
-    expect(data.tables.uc_requirement.map((r) => r.id)).toEqual(['EX-NOTE-UC01-R01']);
+    expect(data.sources[0].tables.uc_requirement.map((r) => r.id)).toEqual(['EX-NOTE-UC01-R01']);
   });
 
   it('LA-AUT-EP02-R01-T01 answers an accepted write with the tables and the rows it changed, before and after', async () => {
@@ -176,7 +176,7 @@ describe('dev API plugin', () => {
     const file = path.join(root, 'data/use_case.jsonl');
     await writeFile(file, (await readFile(file, 'utf8')).replace('Write a note', 'Write a long note'));
     const data = (await request(fake.middlewares[0], '/api/spec')).json() as SpecData;
-    expect(data.tables.use_case[0].title).toBe('Write a long note');
+    expect(data.sources[0].tables.use_case[0].title).toBe('Write a long note');
     // A file that breaks the schema is an error naming the file and line, until it is fixed.
     const good = await readFile(file, 'utf8');
     await writeFile(file, `${good}{"id":"EX-NOTE-UC02","title":"No domain"}\n`);

@@ -33,9 +33,10 @@ async function freePort(): Promise<number> {
 if (!process.env.PERF_PORT) process.env.PERF_PORT = String(await freePort());
 if (!process.env.PERF_ROOT) {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-data-'));
-  for (const part of ['data', 'lathe.config.json']) {
+  // The data and config, and the product the config lists beside its own (its folder without its packages).
+  for (const part of ['data', 'lathe.config.json', 'examples/tool-library']) {
     const from = path.join(repo, part);
-    if (existsSync(from)) cpSync(from, path.join(root, part), { recursive: true });
+    if (existsSync(from)) cpSync(from, path.join(root, part), { recursive: true, filter: (file) => path.basename(file) !== 'node_modules' });
   }
   process.env.PERF_ROOT = root;
 }

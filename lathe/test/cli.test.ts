@@ -82,10 +82,10 @@ describe('lathe check', () => {
     expect(run.stdout).toContain('data/product.jsonl:1');
   });
 
-  it('LA-CHK-UC01-R03-T01 With --json the check prints the whole workspace', async () => {
+  it('LA-CHK-UC01-R03-T01 With --json the check prints each product\'s whole workspace', async () => {
     const { stdout, status } = lathe('check', '--json', '--root', broken);
     expect(status).toBe(1);
-    expect(JSON.parse(stdout)).toEqual(await loadWorkspace(broken));
+    expect(JSON.parse(stdout)).toEqual({ products: [{ root: '.', workspace: await loadWorkspace(broken) }] });
   });
 });
 

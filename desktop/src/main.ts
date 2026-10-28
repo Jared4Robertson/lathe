@@ -336,7 +336,7 @@ async function openFolder(input: string) {
   rememberRecent(addRecent(recent, folder));
   app.addRecentDocument(folder);
 
-  const names = productNames(check.dataDir);
+  const names = productNames(check.dataDirs);
   const placed = windowFor(windowStates, folder, screen.getAllDisplays().map((d) => d.workArea));
   // No system title bar: the app draws its own, in the shell's color, so the window never flashes white.
   const chromeOptions = chromeWindowOptions(process.platform, dark(), savedChrome);
@@ -356,7 +356,7 @@ async function openFolder(input: string) {
     },
   });
   if (MAC) win.setRepresentedFilename(folder);
-  const entry: Entry = { folder, product: names.length === 1 ? names[0] : path.basename(folder), win, errors: 0, dataFiles: new DataFiles(check.dataDir), launchRun: 0 };
+  const entry: Entry = { folder, product: names.length === 1 ? names[0] : path.basename(folder), win, errors: 0, dataFiles: new DataFiles(check.dataDirs), launchRun: 0 };
   open.set(folder, entry);
 
   // The window keeps the product's name and folder, whatever the page calls itself.
