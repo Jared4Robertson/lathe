@@ -1,12 +1,12 @@
 // Checking's flows, each walked through the real `lathe` command on a temporary product: checking the workspace,
 // adding a check, finding structural problems, a product's own checks, keeping each level a useful size and keeping
-// every change checked.
+// every change checked. Checking's other flows through the MCP tools are in agent-tools.test.ts.
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { add, flags, LATHE_DIR, LENDING, link, problemsOf, product, removeProducts } from './product.ts';
+import { add, flags, LATHE_DIR, LENDING, link, mcp, problemsOf, product, removeProducts } from './product.ts';
 
 afterAll(removeProducts);
 
@@ -167,7 +167,7 @@ describe('Checking flows', () => {
     expect(fixed.problems.filter((p) => ['too-many-children', 'aggregate-too-large', 'lone-child'].includes(p.check))).toEqual([]);
   });
 
-  it('LA-CHK-UC08-FL04-T keep every change to the spec checked', () => {
+  it('LA-CHK-UC08-FL04-T keep every change to the spec checked', async () => {
     // S01: the plugin declares the guard hook on every tool that edits a file by hand.
     const hooks = JSON.parse(readFileSync(path.join(PLUGIN, 'hooks', 'hooks.json'), 'utf8'));
     const [entry] = hooks.hooks.PreToolUse;
@@ -179,9 +179,17 @@ describe('Checking flows', () => {
       expect(result.status).toBe(0);
       return result.stdout.trim() ? JSON.parse(result.stdout).hookSpecificOutput : null;
     };
-    // S02: the Agent changes records through the command, which validates each write.
-    tl.run('add', 'domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core');
-    expect(tl.refused('add', 'domain', '--id', 'TL-SHOP', '--title', 'Shop', '--product_id', 'TL', '--subdomain_type', 'central')).toContain('subdomain_type');
+    // S02: the Agent changes records through the MCP tools, which validate each write.
+    const server = mcp(tl.root);
+    try {
+      await server.initialize();
+      expect((await server.call('add', { domain: { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' } })).result!.isError).toBeUndefined();
+      const refused = await server.call('add', { domain: { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'central' } });
+      expect(refused.result!.isError).toBe(true);
+      expect(refused.result!.content[0].text).toContain('subdomain_type');
+    } finally {
+      await server.close();
+    }
     // S03: a hand edit of a data file is refused before it happens, pointing at the tools.
     for (const tool of ['Write', 'Edit', 'MultiEdit']) {
       const denied = hook(tool, path.join(tl.root, 'data', 'domain.jsonl'));

@@ -1,13 +1,14 @@
-// Authoring's flows, each walked through the real `lathe` command (or its MCP server, or the scripts the flow names)
+// Authoring's flows, each walked through the real `lathe` command (or the scripts the flow names)
 // on a temporary product: deciding domains, changing the schema, declaring a product's own kinds, organizing use
 // cases, writing flows, models, rules, tests, technical records and standards, reading the reference and merging two
-// branches' data. The Reader's flow in the app is in app/stability/authoring.spec.ts.
+// branches' data. The Reader's flow in the app is in app/stability/authoring.spec.ts; the flows through the MCP tools are in
+// agent-tools.test.ts.
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, cpSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { add, flags, gapsOf, LATHE_DIR, LENDING, link, mcp, node, problemsOf, product, removeProducts, type Product } from './product.ts';
+import { add, flags, gapsOf, LATHE_DIR, LENDING, link, node, problemsOf, product, removeProducts, type Product } from './product.ts';
 
 const temps: string[] = [];
 afterAll(() => {
@@ -87,25 +88,14 @@ describe('Authoring flows', () => {
   it('LA-AUT-UC04-FL03-T declare a product\'s own kinds and relations', async () => {
     const tl = product();
     await tl.seed(LENDING);
-    const server = mcp(tl.root);
-    try {
-      await server.initialize();
-      const tables = async () => {
-        const listed = await server.request('tools/list');
-        return JSON.stringify(listed.result!.tools!.find((t) => t.name === 'add')!.inputSchema);
-      };
-      expect(await tables()).not.toContain('entry_point');
-      // S01: a product kind with its fields, in a stage.
-      expect((await server.call('add', { product_kind: HOUSE_KIND })).result!.isError).toBeUndefined();
-      expect((await server.call('add', { product_kind_field: { kind: 'entry_point', position: 1, name: 'file', type: 'text', required: true, description: 'The file it starts from.' } })).result!.isError).toBeUndefined();
-      // S02: a new relation, and a pair added to one of Lathe's.
-      expect((await server.call('add', { product_relation: { name: 'starts', source_kind: 'entry_point', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: 'The entry point starts the command.' } })).result!.isError).toBeUndefined();
-      // S04: the next load generates the tables, and the server announces its tools again.
-      expect(server.notifications).toContain('notifications/tools/list_changed');
-      expect(await tables()).toContain('entry_point');
-    } finally {
-      await server.close();
-    }
+    // S01: a product kind with its fields, in a stage; until then lathe add has no such table.
+    expect(tl.run('add', 'entry_point', '--help')).not.toContain('--file');
+    tl.run('add', 'product_kind', ...flags(HOUSE_KIND));
+    tl.run('add', 'product_kind_field', ...flags({ kind: 'entry_point', position: 1, name: 'file', type: 'text', required: true, description: 'The file it starts from.' }));
+    // S02: a new relation, and a pair added to one of Lathe's.
+    tl.run('add', 'product_relation', ...flags({ name: 'starts', source_kind: 'entry_point', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: 'The entry point starts the command.' }));
+    // S04: the next load generates the tables, and lathe add takes the new kind with its columns.
+    expect(tl.run('add', 'entry_point', '--help')).toContain('--file');
     tl.run('add', 'entry_point', '--id', 'TL-LEND-EP1', '--title', 'Start the lending service', '--domain_id', 'TL-LEND', '--file', 'src/main.ts');
     tl.run('link', 'TL-LEND-EP1', 'starts', 'TL-LEND-CMD01');
     expect(tl.read('data/entry_point.jsonl')).toContain('"id":"TL-LEND-EP1"');
