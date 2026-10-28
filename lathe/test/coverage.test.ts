@@ -226,6 +226,14 @@ describe('minimums', () => {
     expect(gaps(clean)).toEqual([]);
   });
 
+  it('LA-AUT-UC12-R07-T01 An aggregate changed only through a recorded exception (command_change) has a command', async () => {
+    const lone = adding(complete(), { aggregate: [{ id: 'EX-LEND-A3', title: 'Shelf', domain_id: 'EX-LEND' }] });
+    const ofCommand = (ws: Workspace) => gaps(ws).filter((g) => g.startsWith('aggregate-without-command'));
+    expect(ofCommand(await loadData(lone))).toEqual(['aggregate-without-command EX-LEND-A3']);
+    const changed = adding(lone, { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A3', reason: 'Opening a loan takes the tool off its shelf.' }] });
+    expect(ofCommand(await loadData(changed))).toEqual([]);
+  });
+
   it('an entity kept in its root\'s table needs no table of its own', async () => {
     const ws = await loadData(changing(complete(), 'entity', (r) => r.id === 'EX-LEND-EN02', { in_root_table: undefined }));
     expect(gaps(ws)).toEqual(['entity-without-table EX-LEND-EN02']);

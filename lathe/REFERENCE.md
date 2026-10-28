@@ -653,7 +653,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | --- | --- | --- |
 | <a id="gap-domain-without-aggregate"></a>`domain-without-aggregate` | [`domain`](#kind-domain), [`aggregate`](#kind-aggregate) | A domain with no aggregate. |
 | <a id="gap-aggregate-without-root"></a>`aggregate-without-root` | [`aggregate`](#kind-aggregate), [`entity`](#kind-entity) | An aggregate with no root entity. |
-| <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes. |
+| <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes, directly or through a recorded exception. |
 | <a id="gap-entity-without-fields"></a>`entity-without-fields` | [`entity`](#kind-entity), `entity_field` | An entity with no fields. |
 | <a id="gap-value-object-without-fields"></a>`value-object-without-fields` | [`value_object`](#kind-value_object), `value_object_field` | A value object with no fields. |
 | <a id="gap-event-without-fields"></a>`event-without-fields` | [`domain_event`](#kind-domain_event), `event_field` | A domain event that carries no fields. |
@@ -1228,7 +1228,7 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 
 ### Table (`table`)
 
-Where an entity or a read model, its parent, is stored; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table is always a table, normalized and the source of truth; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables.
+Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table is a table, normalized and the source of truth, or the browser storage that holds it; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables, or computed in memory on each load.
 
 - **Parents:** [`entity`](#kind-entity) (`entity_id`), [`read_model`](#kind-read_model) (`read_model_id`), [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
@@ -1248,9 +1248,9 @@ Where an entity or a read model, its parent, is stored; or, under a domain, a ta
 | `entity_id` | VARCHAR → [`entity`](#table-entity) | no | The entity it stores; exactly one of entity, read model and domain is given. An entity has at most one table: a child entity marked in_root_table has none and is stored in its root's. |
 | `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | no | The read model it stores; exactly one of entity, read model and domain is given, and a read model has one table. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | no | The domain whose own infrastructure it stores, such as its outbox, when it stores no entity or read model; its ID is the domain's and TB with a number, such as TL-LEND-TB01, and its storage is a table. |
-| `name` | VARCHAR | yes | Its name in the database, such as loans. |
-| `storage` | ENUM('table', 'view', 'materialized view') | yes | table: rows of its own; view: a query over other tables; materialized view: a query's result, kept. An entity's table is always table. |
-| `file` | VARCHAR | no | The file that creates it, such as a migration, from the product root; it may not exist yet. |
+| `name` | VARCHAR | yes | Its name where it is stored: in the database, such as loans, or the key it is kept under in browser storage, such as lathe:tabs. |
+| `storage` | ENUM('table', 'view', 'materialized view', 'browser storage', 'in memory') | yes | table: rows of its own in a database; view: a query over other tables; materialized view: a query's result, kept; browser storage: kept in the browser (local or session storage), under the key its name gives; in memory: computed on each load and kept only while the program runs. An entity's table is a table or browser storage. Keys are asked only of a table in a database: browser storage and in memory have none. |
+| `file` | VARCHAR | no | The file that creates it, such as a migration, or that reads and writes it, from the product root; it may not exist yet. |
 | `description` | VARCHAR | no | Anything its keys do not say, in a sentence or two. |
 
 - **Key:** `id`
@@ -1260,13 +1260,13 @@ Where an entity or a read model, its parent, is stored; or, under a domain, a ta
 - **Rule:** `("trim"("name") != '')`
 - **Rule:** `(((CAST((entity_id IS NOT NULL) AS INTEGER) + CAST((read_model_id IS NOT NULL) AS INTEGER)) + CAST((domain_id IS NOT NULL) AS INTEGER)) = 1)`
 - **Rule:** `((domain_id IS NULL) OR ("storage" = 'table'))`
-- **Rule:** `((entity_id IS NULL) OR ("storage" = 'table'))`
+- **Rule:** `((entity_id IS NULL) OR ("storage" IN ('table', 'browser storage')))`
 
 <a id="table-table_key"></a>
 
 #### `table_key`
 
-One key or index of a table, in order: its primary key, a unique key with the invariant it enforces, a foreign key with the table it points at, or an index. A foreign key points at a table of the same domain: a reference to another domain's aggregate stays a plain ID.
+One key or index of a table in a database (never of browser storage or in memory), in order: its primary key, a unique key with the invariant it enforces, a foreign key with the table it points at, or an index. A foreign key points at a table of the same domain: a reference to another domain's aggregate stays a plain ID.
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |

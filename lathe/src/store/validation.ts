@@ -270,6 +270,17 @@ SELECT 'table' AS table_name, k.table_id AS row_key,
 FROM table_key k WHERE k.type = 'primary' GROUP BY k.table_id HAVING count(*) > 1`,
     },
     {
+      name: 'key-outside-database',
+      description: 'Keys are asked only of a table in a database: a table kept in browser storage or in memory has none, and no foreign key points at one.',
+      sql: `
+SELECT 'table_key' AS table_name, ${keyOf(schema, 'table_key', 'k')} AS row_key,
+       CASE WHEN t.storage IN ('browser storage', 'in memory')
+         THEN 'table ' || t.id || ' is kept in ' || t.storage || ', not in a database, so it has no keys'
+         ELSE 'table ' || k.target_table_id || ' is kept in ' || g.storage || ', not in a database, so no foreign key can point at it' END AS message
+FROM table_key k JOIN "table" t ON t.id = k.table_id LEFT JOIN "table" g ON g.id = k.target_table_id
+WHERE t.storage IN ('browser storage', 'in memory') OR g.storage IN ('browser storage', 'in memory')`,
+    },
+    {
       name: 'foreign-key-crosses-domain',
       description:
         "A table's foreign key points at a table of the same domain: domains don't share tables, so a field's reference to another domain's aggregate stays a plain ID.",
