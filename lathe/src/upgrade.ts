@@ -73,7 +73,7 @@ export async function readConverters(dir = UPGRADES_DIR): Promise<ConverterStep[
     const from = Number(match[1]);
     const to = Number(match[2]);
     if (to !== from + 1) throw new Error(`${path.join(dir, file)}: a converter moves the data forward one version, such as 1-to-2.ts.`);
-    const module = (await import(pathToFileURL(path.join(dir, file)).href)) as { default?: Converter };
+    const module = (await import(/* @vite-ignore */ pathToFileURL(path.join(dir, file)).href)) as { default?: Converter };
     if (!module.default || typeof module.default !== 'object') throw new Error(`${path.join(dir, file)}: a converter's default export holds its files and records phases.`);
     steps.push({ from, to, name: `${from}-to-${to}`, converter: module.default });
   }
