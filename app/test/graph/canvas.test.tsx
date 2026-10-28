@@ -8,7 +8,7 @@ import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
 import { hitPlate, inPlate, inPolygon, onScreen } from '../../src/graph/hit';
 import { TEXT_BAR_PX } from '../../src/graph/paint';
 import { canvasMeasure, fontFor } from '../../src/graph/fonts';
-import { META_FONT, PLAIN_MEASURE, TITLE_FONT, FILE_FONT } from '../../src/graph/text';
+import { META_FONT, PLAIN_MEASURE, TITLE_FONT } from '../../src/graph/text';
 import type { NestedNode } from '../../src/graph/nested';
 import type { VoronoiNode } from '../../src/graph/voronoi';
 import type { PlacedMap } from '../../src/graph/map';
@@ -34,7 +34,7 @@ describe('text sizing', () => {
         expect(p.lines.length, p.id).toBeGreaterThan(0);
         for (const line of p.lines) {
           // Its size is its face's at text scale 1 times the box's text scale, fixed by the map.
-          const base = line.tone === 'muted' ? META_FONT : p.file ? FILE_FONT : TITLE_FONT;
+          const base = line.tone === 'muted' ? META_FONT : TITLE_FONT;
           expect(line.size, `${p.id} ${line.text}`).toBeCloseTo(base * p.text, 9);
           // The whole line lies inside its box: within its rectangle, and a cell's within its outline.
           const eps = 1e-6 * Math.max(1, p.w);

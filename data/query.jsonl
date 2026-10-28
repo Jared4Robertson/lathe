@@ -14,7 +14,6 @@
 {"id":"LA-EXP-QRY06","title":"Get a domain","read_model_id":"LA-EXP-RM02"}
 {"id":"LA-EXP-QRY07","title":"Get a group","read_model_id":"LA-EXP-RM02"}
 {"id":"LA-EXP-QRY08","title":"Get a focus's frame","read_model_id":"LA-EXP-RM03"}
-{"id":"LA-EXP-QRY09","title":"Get an obligation's trace","read_model_id":"LA-EXP-RM03"}
 {"id":"LA-EXP-QRY10","title":"Get an ERD","read_model_id":"LA-EXP-RM04"}
 {"id":"LA-EXP-QRY11","title":"Get a record's history","read_model_id":"LA-EXP-RM05"}
 {"id":"LA-EXP-QRY12","title":"List the spaces","read_model_id":"LA-EXP-RM06"}
@@ -30,8 +29,9 @@
 {"id":"LA-TRC-QRY03","title":"Get test counts by state","read_model_id":"LA-TRC-RM03","description":"Coverage.tests"}
 {"id":"LA-TRC-QRY04","title":"List the pattern rules a domain owes","read_model_id":"LA-TRC-RM04","description":"Coverage.pattern_rules, each followed rule's standing per domain: Patterns we follow, the pattern and pattern rule pages, and Traceability's owing domains"}
 {"id":"LA-TRC-QRY05","title":"Get a record's traceability","read_model_id":"LA-TRC-RM06","description":"A record's Traceability section"}
-{"id":"LA-TRC-QRY06","title":"Get an obligation's trace in the graph","read_model_id":"LA-TRC-RM06","description":"The graph's trace mode"}
+{"id":"LA-TRC-QRY06","title":"Get an obligation's trace","read_model_id":"LA-TRC-RM06","description":"The Trace view's chain of one obligation."}
 {"id":"LA-TRC-QRY07","title":"Find the files that are missing or silent","read_model_id":"LA-TRC-RM05","description":"The checks that read the file facts: a test's file missing or not naming it, a manual test's file naming it, and a technical record's file missing."}
 {"id":"LA-TRC-QRY08","title":"List routes traced both ways","read_model_id":"LA-TRC-RM05","description":"route_facts (each endpoint's and view's route, and whether the files of what implements it name it) and served_routes (each route the code serves): the endpoint-route-not-in-file and view-route-not-in-file checks and the route-without-record gap."}
 {"id":"LA-TRC-QRY09","title":"Find the tables their files do not define","read_model_id":"LA-TRC-RM07","description":"The table-schema-mismatch check, a query of table_facts."}
 {"id":"LA-TRC-QRY12","title":"Find the packages no record uses","read_model_id":"LA-TRC-RM02","description":"The packages the product's package.json files list that no technical record names: one package-not-accounted-for gap per product."}
+{"id":"LA-TRC-QRY13","title":"List the obligations under a record","read_model_id":"LA-TRC-RM06","description":"The Trace view's matrix: every obligation under a record or group, grouped by its parent."}

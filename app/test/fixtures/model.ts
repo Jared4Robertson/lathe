@@ -3,7 +3,7 @@ import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture, indexOf } from './load';
 import { gap, obligation } from './workspace';
 
-// A product with a whole domain model, for the Model view, the graph and the record pages
+// A product with a whole domain model, for the ERD view, the graph and the record pages
 // (data/model/). P shares a value object (P-VO01 Name, with its constraint, value type and test) that
 // both domains' fields use; a view, a UI component and an integration with its adapter, which only
 // P-D's flow uses, sit in P-D. P-D (Domain, core):

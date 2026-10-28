@@ -3,7 +3,7 @@ import type { RelationRule, SpecIndex, SpecLink } from './data';
 // The words a link is shown by (LA-V92-R07): each relation rule's `forward_label`, read from the
 // link's source ("Fulfills"), and `reverse_label`, read from its target ("Fulfilled by"), from
 // the schema's relations. Every page that shows a link reads them from here, never the relation's
-// code, so the wiki, the side bar, the graph and the Model view say the same thing.
+// code, so the wiki, the side bar, the graph and the ERD view say the same thing.
 
 type Rules = readonly RelationRule[];
 

@@ -11,7 +11,7 @@
   /* Motion: the speed and easing every move and fade shares, in CSS and in JS (app/src/graph/motion.ts); reduced motion turns each off (LA-PAT-APP-UX-R04). */
   --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --node-radius: 4px; /* an ERD box's corners; the graph's canvas rounds a plain box the same (app/src/graph/shapes.ts) */
-  /* The Model view's context ring (LA-V94-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges (the graph's canvas draws its own, app/src/graph/paint.ts). */
+  /* The ERD view's context ring (LA-V94-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges (the graph's canvas draws its own, app/src/graph/paint.ts). */
   --context-opacity: 0.35; --context-scale: 0.9; --spotlight-dim: 0.5; --vignette: 56px;
   /* The graph's focus fade (LA-EXP-DS09, app/src/graph/fade.ts): what lies outside the focus's subtree, and the trail of its ancestors in Nested and Voronoi. */
   --focus-fade: 0.25; --focus-trail: 0.45;
@@ -31,8 +31,7 @@
   --g-technical-specification: #B5512A; --g-technical-specification-bg: #F8E8DF;
   --g-test-plan: #A3365F; --g-test-plan-bg: #F7E4EC;
   --g-structural: var(--ink); --g-structural-bg: var(--sheet);
-  --g-file: var(--muted);
-  /* The title above a graph or a model pane: one fixed height, so the canvas below it never moves. */
+  /* The title above a graph, ERD or trace pane: one fixed height, so the canvas below it never moves. */
   --pane-title-height: 104px;
   /* The page bar above the panes and each pane's slim header: one fixed height each, so nothing below them moves (UX-R03, UX-R08). */
   --page-bar-height: 40px; --pane-bar-height: 32px;
@@ -40,7 +39,7 @@
   --tab-width: 14rem;
   /* Touch (LA-PAT-APP-UX-R07): the least size of a target under a finger, and the radius of a sheet's top corners. */
   --touch-target: 44px; --sheet-radius: 14px;
-  /* The ERD's key under the Model view: one height for every ERD, so the canvas never resizes (LA-PAT-APP-UX-R08). */
+  /* The ERD's key under the ERD view: one height for every ERD, so the canvas never resizes (LA-PAT-APP-UX-R08). */
   --erd-key-height: 9rem;
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
@@ -271,12 +270,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-depth button { font: inherit; font-size: 0.82rem; padding: 3px 8px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; }
 .graph-depth button[aria-pressed="true"] { background: var(--steel); border-color: var(--steel); color: var(--sheet); font-weight: 600; }
 .graph-depth button:disabled { opacity: 0.5; cursor: default; }
-.graph-trace-toggle { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; flex: none; }
-/* Nothing to trace (LA-V93-R52): dimmed and not allowed, in its slot; its name stays legible in the muted ink. */
-.graph-trace-toggle.is-disabled, .graph-trace-toggle.is-disabled input { cursor: not-allowed; }
-.graph-trace-toggle.is-disabled { color: var(--muted); }
-.graph-trace-toggle.is-disabled input { opacity: 0.5; }
-.graph-trace-toggle.is-disabled:hover { color: var(--muted); }
 .graph-filters { flex: none; }
 .graph-filters > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
 .graph-filter-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 12px; width: min(560px, calc(100% - 24px)); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; padding: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
@@ -286,7 +279,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-filters > summary .icon { align-self: center; }
 /* The toolbar's narrower forms (TOOLBAR_TIERS): compact hides the names beside the icons and tightens the steps, narrow
    shows each layout by its first letter, menu moves depth, Links and the steps into More. The names stay the accessible ones. */
-.graph-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-trace-name, .graph-filters-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.graph-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-filters-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .graph-toolbar:not([data-tier="full"]) { gap: 6px; }
 .graph-toolbar:not([data-tier="full"]) .graph-step { padding-inline: 4px; }
 .graph-toolbar:is([data-tier="narrow"], [data-tier="menu"]) .graph-depth button { padding-inline: 6px; }
@@ -346,13 +339,11 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-swatch.stage-interaction-design { border-color: var(--g-interaction-design); background: var(--g-interaction-design-bg); }
 .graph-swatch.stage-technical-specification { border-color: var(--g-technical-specification); background: var(--g-technical-specification-bg); }
 .graph-swatch.stage-test-plan { border-color: var(--g-test-plan); background: var(--g-test-plan-bg); }
-.graph-swatch.stage-file { border-style: dashed; border-color: var(--g-file); background: var(--paper); }
 .graph-swatch.stage-bar { background: var(--rule); border-color: var(--rule); opacity: 0.6; }
 .graph-line { display: inline-block; width: 22px; height: 0; border-top: 1.5px solid var(--muted); vertical-align: middle; }
 .graph-line.rel-structure { border-top: 2.5px solid var(--ink); }
-.graph-line.rel-trace { border-top: 1.5px dashed var(--steel); }
+.graph-line.rel-fulfills { border-top: 1.5px dashed var(--steel); }
 .graph-line.rel-design { border-top: 1.5px dotted var(--spark); }
-.graph-line.rel-file { border-top: 1.5px dotted var(--muted); }
 .graph-line.rel-pattern { border-top: 1.5px dashed var(--steel); border-top-style: dashed; opacity: 0.9; }
 .graph-line.rel-other { border-top: 1.5px dashed var(--muted); }
 /* Links, a toggle beside the depth, and the steps through the tree. */
@@ -698,7 +689,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-UX-R01).
    Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
    The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
-.card, .button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary {
+.card, .button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-filters > summary, .graph-legend summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
 /* A row that leads to one record is one link (LA-PAT-APP-UX-R05): its record link, marked row-link, stretches over
@@ -719,9 +710,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .spec-body .domain-card:hover .card-title strong { color: var(--steel); }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
 .quick-find-results li:not(.active):hover, .palette-list li:not(.active):hover { background: var(--hover-bg); }
-.graph-trace-toggle:hover, .graph-filters > summary:hover, .graph-legend summary:hover { color: var(--steel); }
+.graph-filters > summary:hover, .graph-legend summary:hover { color: var(--steel); }
 @media (prefers-reduced-motion: reduce) {
-  .card, .button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-trace-toggle, .graph-filters > summary, .graph-legend summary { transition: none; }
+  .card, .button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-filters > summary, .graph-legend summary { transition: none; }
 }
 
 /* The workbench (LA-PAT-APP-UX-R02): each panel is a rounded box on the shell; the gap between two
@@ -773,27 +764,27 @@ a.row-link.row-link:focus-visible { outline: none; }
 .pane-body { flex: 1; min-height: 0; display: flex; flex-direction: column; }
 .pane-body > .graph-page { flex: 1; }
 .pane-title .spec-header { padding: 16px 24px 0; flex-wrap: wrap; }
-/* Above a graph or a model the title has one height whatever the record, so the canvas never moves on a re-center: one line each, cut with an ellipsis. */
+/* Above a graph, an ERD or a trace the title has one height whatever the record, so the canvas never moves on a re-center: one line each, cut with an ellipsis. */
 .pane-title.is-fixed { flex: none; height: var(--pane-title-height); box-sizing: border-box; overflow: hidden; }
 .pane-title.is-fixed .spec-header { flex-wrap: nowrap; align-items: center; }
 .pane-title.is-fixed .spec-header > div { min-width: 0; }
 .pane-title.is-fixed :is(.eyebrow, h1, .record-id) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .pane-title.is-fixed h1 { font-size: 1.45rem; overflow-wrap: normal; }
-.pane-model > .pane-body > .model-page { flex: 1; }
+.pane-erd > .pane-body > .erd-page { flex: 1; }
 
-/* ---------- The Model view: a domain's ERD and an aggregate's (app/src/model) ---------- */
+/* ---------- The ERD view: a domain's ERD and an aggregate's (app/src/erd) ---------- */
 /* Entities and aggregates in the domain model stage's colors: an aggregate a boundary tinted with its fill around its
    entities, each entity a sheet edged in its color. Another domain's box is gray (--muted on --paper, dashed) and faded. */
-.model-page { flex: 1; min-height: 0; display: flex; flex-direction: column; container: model-page / inline-size; }
-.model-header { padding: 10px 20px; border-bottom: 1px solid var(--rule); }
+.erd-page { flex: 1; min-height: 0; display: flex; flex-direction: column; container: erd-page / inline-size; }
+.erd-header { padding: 10px 20px; border-bottom: 1px solid var(--rule); }
 /* One line, cut with an ellipsis (its whole text in its tooltip), so the canvas below never moves (LA-PAT-APP-UX-R08). */
-.model-caption { margin: 0; font-size: 0.86rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.erd-caption { margin: 0; font-size: 0.86rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 /* The canvas takes what the title and the key leave, so the key always shows whole below it; the fit scales the model to it. */
-.model-canvas { position: relative; flex: 1; min-height: 160px; }
-.model-flow { position: absolute; inset: 0; }
-.model-empty, .model-missing { flex: 1; margin: 0; padding: 24px; }
-.model-flow .react-flow__node:focus { outline: none; }
-.model-flow .react-flow__node:focus-visible .erd-box { outline: 3px solid var(--steel); outline-offset: 3px; }
+.erd-canvas { position: relative; flex: 1; min-height: 160px; }
+.erd-flow { position: absolute; inset: 0; }
+.erd-empty, .erd-missing { flex: 1; margin: 0; padding: 24px; }
+.erd-flow .react-flow__node:focus { outline: none; }
+.erd-flow .react-flow__node:focus-visible .erd-box { outline: 3px solid var(--steel); outline-offset: 3px; }
 .erd-handle { opacity: 0; pointer-events: none; }
 .erd-box { --box-edge: var(--g-domain-model); --box-fill: var(--sheet); width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; overflow: hidden; border: 1.5px solid var(--box-edge); border-radius: var(--node-radius); background: var(--box-fill); color: var(--ink); cursor: pointer; transition: box-shadow var(--hover-speed); }
 .erd-box:not(.is-focus):hover { box-shadow: 0 0 0 3px var(--hover-ring); }
@@ -803,7 +794,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-box.tone-other { border-style: dashed; --box-edge: var(--muted); --box-fill: var(--paper); }
 .erd-box.is-highlight, .erd-box.is-highlight:hover { box-shadow: 0 0 0 3px var(--ink); }
 @media (prefers-reduced-motion: reduce) { .erd-box { transition: none; } }
-/* Heights match boxSize in app/src/model/erd.ts: an entity's title of up to two lines, then 20px rows; an aggregate's title on one line, then its kind line. */
+/* Heights match boxSize in app/src/erd/erd.ts: an entity's title of up to two lines, then 20px rows; an aggregate's title on one line, then its kind line. */
 .erd-box-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; min-width: 0; }
 .erd-box-head strong { font: 700 0.8125rem/1.25 var(--display); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: anywhere; }
 .erd-aggregate .erd-box-head strong { -webkit-line-clamp: 1; }
@@ -831,9 +822,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-key-line { flex: none; overflow: visible; }
 /* The key's button shows only in a narrow pane. */
 .erd-key-toggle { display: none; }
-/* In a narrow model pane the key is one bar of one height, so the canvas keeps the room: its button opens the whole
+/* In a narrow ERD pane the key is one bar of one height, so the canvas keeps the room: its button opens the whole
    key over the bottom of the canvas, and nothing below or beside it moves (LA-PAT-APP-UX-R08). */
-@container model-page (max-width: 640px) {
+@container erd-page (max-width: 640px) {
   .erd-key { position: relative; block-size: calc(var(--erd-key-height) * 0.28); overflow: visible; justify-content: center; padding: 0 14px; font-size: 0.75rem; line-height: 1.3; }
   .erd-key-toggle { display: inline-flex; align-self: flex-start; padding: 2px 12px; border-color: var(--rule); border-radius: 10px; background: var(--sheet); color: var(--ink); font: 600 0.75rem var(--body); }
   .erd-key-grid { display: none; grid-template-columns: repeat(auto-fill, 9.5rem); gap: 1px 10px; }
@@ -845,12 +836,12 @@ a.row-link.row-link:focus-visible { outline: none; }
 }
 .erd-key-highlight { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
 /* The ERD's context (LA-V94-R06): faded and a little smaller, readable on hover, its lines faded with it. */
-.model-flow .react-flow__node.is-context .erd-box { opacity: var(--context-opacity); scale: var(--context-scale); }
-.model-flow .react-flow__node.is-context:hover .erd-box { opacity: 1; }
-.model-flow .erd-line.is-context { opacity: var(--context-opacity); }
+.erd-flow .react-flow__node.is-context .erd-box { opacity: var(--context-opacity); scale: var(--context-scale); }
+.erd-flow .react-flow__node.is-context:hover .erd-box { opacity: 1; }
+.erd-flow .erd-line.is-context { opacity: var(--context-opacity); }
 .erd-key-context { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px dashed var(--muted); background: var(--paper); border-radius: 2px; opacity: var(--context-opacity); }
-.model-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
-@media (pointer: coarse) { .model-flow .react-flow__node.is-context.is-armed .erd-box { opacity: 1; } }
+.erd-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
+@media (pointer: coarse) { .erd-flow .react-flow__node.is-context.is-armed .erd-box { opacity: 1; } }
 /* A dashed reference line shows its fields on hover, over a wider unseen stroke that is easy to point at, fading in on
    the shared hover speed. */
 .erd-line-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
@@ -860,6 +851,48 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* By touch there is no hover: dashed lines always show their fields (LA-PAT-APP-UX-R07). */
 @media (pointer: coarse) { .erd-line.has-hover-label .erd-line-label { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .erd-line-label { transition: none; } }
+
+/* ---------- The Trace view: an obligation's chain, or the matrix of those under the focus (app/src/trace) ---------- */
+.pane-trace > .pane-body > .trace-page { flex: 1; }
+.trace-page { flex: 1; min-height: 0; display: flex; flex-direction: column; container: trace-page / inline-size; }
+/* One line high whatever the focus, so the chain or matrix below never moves (LA-PAT-APP-UX-R08). */
+.trace-header { flex: none; display: flex; gap: 16px; align-items: center; min-height: 40px; box-sizing: border-box; padding: 6px 20px; border-bottom: 1px solid var(--rule); }
+.trace-caption { flex: 1; min-width: 0; margin: 0; font-size: 0.86rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.trace-filter { flex: none; display: inline-flex; gap: 6px; align-items: center; font-size: 0.86rem; cursor: pointer; }
+.trace-filter:hover { color: var(--steel); }
+.trace-scroll { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; padding: 12px 20px 20px; }
+.trace-scroll:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
+.trace-none { margin: 0; padding: 24px; }
+.trace-scroll > .trace-none { padding: 0 0 4px; }
+/* The chain: five columns left to right, each a stack of cards; one column under another in a narrow pane. */
+.trace-chain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(150px, 1fr)); gap: 16px; }
+@container trace-page (max-width: 640px) { .trace-chain { grid-template-columns: minmax(0, 1fr); } }
+.trace-column { min-width: 0; }
+.trace-column-name { margin: 0 0 8px; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.trace-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.trace-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); text-decoration: none; min-width: 0; overflow-wrap: anywhere; }
+a.trace-card:hover { border-color: var(--steel); }
+.trace-card.is-focus { border-color: var(--steel); box-shadow: inset 3px 0 0 var(--steel); }
+.trace-card code { font-size: 0.8rem; }
+.trace-card-title { font-size: 0.88rem; }
+.trace-cell-empty { margin: 0; }
+/* An owed column left empty is a gap, in the warning color; a column the kind does not owe is a quiet note. */
+.trace-missing { display: inline-block; padding: 2px 8px; border: 1px solid var(--warn); border-radius: 6px; color: var(--ink); font-size: 0.82rem; }
+.trace-not-owed { color: var(--muted); font-size: 0.82rem; font-style: italic; }
+/* The matrix: one row per obligation, grouped by its parent. */
+.data-table.trace-matrix { width: 100%; }
+.trace-matrix th[scope="row"] { min-width: 14rem; }
+.trace-matrix .trace-row-title { color: var(--ink); }
+.trace-refs { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; }
+.trace-ref { display: inline-flex; min-block-size: 24px; align-items: center; gap: 6px; }
+.trace-matrix td.is-gap { background: color-mix(in srgb, var(--warn) 8%, transparent); }
+.trace-more { margin: 12px 0 0; display: flex; gap: 8px; align-items: center; }
+/* What no obligation's chain reaches, under the matrix. */
+.trace-untraced { margin: 20px 0 0; }
+.trace-untraced > h3 { margin: 0 0 8px; font-size: 0.95rem; }
+.trace-untraced-kinds { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.trace-untraced-kinds dt { font-size: 0.82rem; color: var(--muted); }
+.trace-untraced-kinds dd { margin: 2px 0 0; }
 
 /* ---------- Themes and the Appearance page (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
 /* A theme's chip in the picker and its preview on the page take the theme's tokens inline, so they draw with its colors. */
@@ -972,7 +1005,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .app.is-narrow .graph-trail ol { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
 .app.is-narrow .graph-toolbar { flex-wrap: wrap; row-gap: 4px; }
 .app.is-narrow .erd-key { max-height: 30dvh; overflow-y: auto; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
-.app.is-narrow .model-header { padding: 8px 16px; }
+.app.is-narrow .erd-header { padding: 8px 16px; }
 .app.is-narrow .placeholder { padding: 16px; }
 
 /* The nav sheet: the whole screen, the rail (with two or more products) kept at its left, sliding in from the left edge. */
@@ -1030,7 +1063,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 }
 
 /* A canvas by touch: the selected node is outlined, and a card at the bottom names it with an Open chip. */
-.graph-flow, .model-flow { touch-action: none; }
+.graph-flow, .erd-flow { touch-action: none; }
 .react-flow__node.is-armed .erd-box { box-shadow: 0 0 0 3px var(--steel); }
 .tap-card { position: absolute; z-index: 6; left: 56px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; align-items: center; gap: 8px; max-width: 420px; box-sizing: border-box; padding: 6px 6px 6px 14px; background: var(--sheet); color: var(--ink); border: 1px solid var(--rule); border-radius: 12px; box-shadow: 0 6px 20px var(--shadow); }
 .tap-card-text { flex: 1; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
@@ -1051,7 +1084,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   /* A gap between panels keeps its look, and its target reaches over the panels' edges. */
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
-    .graph-depth button, .graph-filters > summary, .graph-legend summary, .graph-trace-toggle, .quick-find-results li,
+    .graph-depth button, .graph-filters > summary, .graph-legend summary, .trace-filter, .quick-find-results li,
     .palette-list li, .tab, .long-list-tools input, .quick-find input, .dialog-search, .segment, .file-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }

@@ -21,7 +21,8 @@ export const VIEW_COMMANDS: readonly MenuCommand[] = [
   { id: 'quickOpen', label: 'Quick Open…', keys: 'Mod+P' },
   { id: 'viewWiki', label: 'Wiki View', keys: 'Ctrl+1' },
   { id: 'viewGraph', label: 'Graph View', keys: 'Ctrl+2' },
-  { id: 'viewModel', label: 'Model View', keys: 'Ctrl+4' },
+  { id: 'viewErd', label: 'ERD View', keys: 'Ctrl+4' },
+  { id: 'viewTrace', label: 'Trace View', keys: 'Ctrl+5' },
   { id: 'toggleNav', label: 'Show or Hide Navigation', keys: 'Mod+B' },
   { id: 'toggleSideBar', label: 'Show or Hide Side Bar', keys: 'Mod+Alt+B' },
 ];

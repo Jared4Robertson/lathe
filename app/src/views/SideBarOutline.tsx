@@ -2,9 +2,11 @@ import { useCallback, useEffect, useMemo, useState, type RefObject } from 'react
 import { Button } from '../components/Button';
 import { LongList } from '../components/LongList';
 import { readMotion } from '../graph/motion';
-import { FILE_KIND, groupLabel } from '../graph/model';
+import { groupLabel } from '../graph/model';
 import { NodeLink, type GraphInfo } from '../graph/panel';
-import { erdFor } from '../model/erd';
+import { erdFor } from '../erd/erd';
+import { obligationsUnder } from '../trace/chain';
+import { isObligation } from '../trace/offer';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { listTitle } from '../specs/parts';
 import type { SideMode } from './sideBarState';
@@ -13,7 +15,8 @@ import type { SideMode } from './sideBarState';
 // - Wiki: the page's sections and headings (Traceability and its groups, children, problems, the
 //   body's Markdown headings), each a row that scrolls the wiki there, the section in view marked.
 // - Graph: the records the camera frames, grouped by level from left to right.
-// - Model: the boxes, those in focus first.
+// - ERD: the boxes, those in focus first.
+// - Trace: the obligations the matrix rows hold, under their parents; nothing more for one obligation's chain.
 // Each list is rows that are clickable anywhere (LA-PAT-APP-UX-R05), searchable past 10 rows.
 
 export interface SideBarOutlineProps {
@@ -28,7 +31,8 @@ export interface SideBarOutlineProps {
 
 export function SideBarOutline(props: SideBarOutlineProps) {
   if (props.mode === 'graph') return <GraphOutline {...props} />;
-  if (props.mode === 'model') return <ModelOutline {...props} />;
+  if (props.mode === 'erd') return <ErdOutline {...props} />;
+  if (props.mode === 'trace') return <TraceOutline {...props} />;
   return <WikiOutline {...props} />;
 }
 
@@ -120,7 +124,7 @@ function WikiOutline({ index, focus, wikiPane }: SideBarOutlineProps) {
 function GraphOutline({ index, graph, onNavigate, hrefFor }: SideBarOutlineProps) {
   const levels = useMemo(() => {
     if (!graph) return [];
-    const nodes = graph.graph.nodes.filter((n) => n.kind !== FILE_KIND);
+    const nodes = graph.graph.nodes;
     const columns = [...new Set(nodes.map((n) => n.column))].sort((a, b) => a - b);
     return columns.map((c, i) => ({ level: i + 1, nodes: nodes.filter((n) => n.column === c).sort((a, b) => a.row - b.row) }));
   }, [graph]);
@@ -152,11 +156,11 @@ function GraphOutline({ index, graph, onNavigate, hrefFor }: SideBarOutlineProps
   );
 }
 
-// ---------- Model ----------
+// ---------- ERD ----------
 
-function ModelOutline({ index, focus, onNavigate, hrefFor }: SideBarOutlineProps) {
+function ErdOutline({ index, focus, onNavigate, hrefFor }: SideBarOutlineProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
-  if (!erd) return <p className="hint">The Model view shows the entities of a domain, an aggregate or an entity's aggregate.</p>;
+  if (!erd) return <p className="hint">The ERD view shows the entities of a domain, an aggregate or an entity's aggregate.</p>;
   if (erd.boxes.length === 0) return <p className="hint">{erd.level === 'domain' ? 'This domain has no aggregates yet.' : 'This aggregate has no entities yet.'}</p>;
   // What the diagram draws in focus, kind by kind in the schema's order, then the faded context.
   const inFocus = erd.boxes.filter((b) => !b.context);
@@ -190,5 +194,32 @@ function ModelOutline({ index, focus, onNavigate, hrefFor }: SideBarOutlineProps
         </section>
       ))}
     </>
+  );
+}
+
+// ---------- Trace ----------
+
+function TraceOutline({ index, focus, onNavigate, hrefFor }: SideBarOutlineProps) {
+  const ids = useMemo(() => (isObligation(index, focus) ? [] : obligationsUnder(index, focus)), [index, focus]);
+  if (ids.length === 0) return <p className="hint">The chain is one row: its columns are the outline.</p>;
+  const records = ids.map((id) => index.byId.get(id)!);
+  const title = listTitle(index, records, 'Obligations');
+  return (
+    <section className="side-bar-section" aria-labelledby="outline-obligations">
+      <h3 id="outline-obligations">{title}<span className="section-count">{ids.length}</span></h3>
+      <LongList
+        label={title}
+        className="record-list outline-list"
+        items={records}
+        itemKey={(r) => r.id}
+        searchText={(r) => `${r.id} ${r.title}`}
+        render={(r) => (
+          <NodeLink id={r.id} onNavigate={onNavigate} hrefFor={hrefFor} className="row-link outline-record">
+            <code>{r.id}</code> <span>{r.title}</span>
+            {r.parent && <small className="meta">{r.parent}</small>}
+          </NodeLink>
+        )}
+      />
+    </section>
   );
 }

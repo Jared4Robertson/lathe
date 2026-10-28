@@ -39,10 +39,10 @@
 {"id":"LA-EXP-TM12","title":"Tab","domain_id":"LA-EXP","meaning":"One open page with its own views and settings, in a space's row of tabs."}
 {"id":"LA-EXP-TM13","title":"Preview tab","domain_id":"LA-EXP","meaning":"The tab a plain open replaces, shown in italics."}
 {"id":"LA-EXP-TM14","title":"Side bar","domain_id":"LA-EXP","meaning":"The page's last column, with its Details, Outline and History views."}
-{"id":"LA-EXP-TM15","title":"ERD","domain_id":"LA-EXP","meaning":"A domain's or an aggregate's model drawn as boxes and lines in the Model view."}
+{"id":"LA-EXP-TM15","title":"ERD","domain_id":"LA-EXP","meaning":"A domain's or an aggregate's model drawn as boxes and lines in the ERD view."}
 {"id":"LA-PLT-TM01","title":"Workbench","domain_id":"LA-PLT","meaning":"The wide-screen layout: panels a gap apart on the shell, every gap a resize handle."}
 {"id":"LA-PLT-TM02","title":"Panel","domain_id":"LA-PLT","meaning":"A part of the workbench a person shows, hides and resizes: the navigation, a pane or the side bar."}
-{"id":"LA-PLT-TM03","title":"Pane","domain_id":"LA-PLT","meaning":"One view of the page (Wiki, Graph or Model), side by side with the others."}
+{"id":"LA-PLT-TM03","title":"Pane","domain_id":"LA-PLT","meaning":"One view of the page (Wiki, Graph, ERD or Trace), side by side with the others."}
 {"id":"LA-PLT-TM04","title":"Keymap","domain_id":"LA-PLT","meaning":"The one table of keyboard commands and their bindings, which every key, the palette, the sheet and every hint read."}
 {"id":"LA-PLT-TM05","title":"Theme","domain_id":"LA-PLT","meaning":"A named set of token values with a light set and a dark set."}
 {"id":"LA-PLT-TM06","title":"Color mode","domain_id":"LA-PLT","meaning":"System, Light or Dark: which of every theme's two sets shows."}
