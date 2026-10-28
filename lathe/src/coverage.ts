@@ -16,6 +16,7 @@
 // the schema leaves to the checks because records are written stage by stage (GAP_RULES): a use case with no flow, an
 // aggregate with no root, a command with no handler. The checks read the same views and tables.
 import { sqlName, sqlString, type SchemaDescription, type Stage } from './store/schema.ts';
+import { MEASURE_GAPS } from './trace/measures.ts';
 
 /** The run by levels each test kind allows: a test at another level is reported by test-level-not-allowed and proves nothing. */
 export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
@@ -123,6 +124,7 @@ export const GAP_RULES: GapRule[] = [
   // Discovery: the trace runs from a business outcome through the capabilities that serve it.
   gap('outcome-not-served', 'discovery', ['business_outcome', 'capability'], 'A business outcome no capability serves.',
     `SELECT o.id, 'Business outcome ' || o.id || ' is served by no capability.' AS message FROM business_outcome o WHERE NOT EXISTS (SELECT 1 FROM serves s WHERE s.target_id = o.id)`),
+  ...MEASURE_GAPS,
   // Domain model.
   gap('domain-without-aggregate', 'domain-model', ['domain', 'aggregate'], 'A domain with no aggregate.',
     `SELECT d.id, 'Domain ' || d.id || ' has no aggregate.' AS message FROM domain d WHERE NOT EXISTS (SELECT 1 FROM aggregate a WHERE a.domain_id = d.id)`),

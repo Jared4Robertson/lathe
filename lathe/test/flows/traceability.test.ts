@@ -110,6 +110,10 @@ describe('Traceability flows from the command line', () => {
     expect(tl.check().stdout).toContain('[outcome-not-served] Business outcome TL-BO01 is served by no capability.');
     tl.run('link', 'TL-LEND-CAP01', 'serves', 'TL-BO01');
     expect(tl.check().stdout).not.toMatch(/outcome-not-served|capability-serves-no-outcome/);
+    // S06: and an outcome nothing measures, until a test that runs measures it.
+    expect(tl.check().stdout).toContain('[outcome-not-measured] Business outcome TL-BO01 is measured by nothing;');
+    tl.run('link', 'TL-BO01', 'measured_by', 'TL-LEND-UC01-R01-T01');
+    expect(tl.check().stdout).not.toContain('outcome-not-measured');
   });
 
   it('LA-TRC-UC03-FL-T record how a test is run', async () => {
