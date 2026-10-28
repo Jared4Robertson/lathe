@@ -193,6 +193,8 @@ describe('tabs for open pages', () => {
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
     const cardScroll = () => document.querySelector<HTMLElement>('.wiki-panel-scroll')!;
+    // The card follows the focus once it settles, and its scroll is the page's from the moment it shows it.
+    const cardShows = (page: string) => waitFor(() => expect(screen.getByRole('region', { name: 'Wiki card' })).toHaveAttribute('data-page', page));
     cardScroll().scrollTop = 120;
     fireEvent.scroll(cardScroll());
     // The ERD for this tab, its side bar hidden there.
@@ -203,7 +205,8 @@ describe('tabs for open pages', () => {
     await go('/P-V01', 'Loan desk');
     expect(address()).toBe('/P-V01');
     expect(stageButton('ERD')).toHaveAttribute('aria-pressed', 'true');
-    await waitFor(() => expect(cardScroll().scrollTop).toBe(0));
+    await cardShows('P-V01');
+    expect(cardScroll().scrollTop).toBe(0);
     fireEvent.click(stageButton('Graph'));
     await waitFor(() => expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true'));
     fireEvent.click(screen.getByRole('button', { name: '3' }));
@@ -216,7 +219,8 @@ describe('tabs for open pages', () => {
     expect(address()).toBe('/P-D-UC01?stage=erd');
     expect(screen.getByRole('region', { name: 'ERD stage' })).toBeInTheDocument();
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
-    await waitFor(() => expect(cardScroll().scrollTop).toBe(120));
+    await cardShows('P-D-UC01');
+    expect(cardScroll().scrollTop).toBe(120);
     // The depth is the one last set, in any tab.
     fireEvent.click(stageButton('Graph'));
     await waitFor(() => expect(screen.getByRole('button', { name: '3' })).toHaveAttribute('aria-pressed', 'true'));
