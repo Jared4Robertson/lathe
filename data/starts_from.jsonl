@@ -462,6 +462,7 @@
 {"source_id":"LA-PLT-UC13-R03-T01","target_id":"LA-PLT-TD03"}
 {"source_id":"LA-PLT-UC16-FL05-T","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-PLT-UC17-R01-T02","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-PLT-UC18-R01-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-STD-CODE-R01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-CODE-R01-T01","target_id":"LA-EXP-TD03"}
 {"source_id":"LA-STD-MODELING-R01-T01","target_id":"LA-AUT-TD02"}
