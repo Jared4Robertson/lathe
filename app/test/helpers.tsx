@@ -75,7 +75,7 @@ export function section(name: string | RegExp) {
 
 /** Starts the graph at a depth for the session, as if the person had chosen it (the default is 1). */
 export function startAtDepth(depth: number, layout: 'tree' | 'nested' | 'voronoi' = 'tree') {
-  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null }));
+  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null, chat: false, chatWidth: null }));
 }
 
 /**
@@ -101,5 +101,14 @@ export const desktopBridgeStub = (over: Partial<LatheDesktop> = {}): LatheDeskto
   openRecordInEditor: () => {},
   copyRecordId: () => {},
   showRecordMenu: () => {},
+  chat: {
+    sessions: async () => ({ claude: null, configured: false, current: null, sessions: [] }),
+    open: async () => false,
+    send: async () => false,
+    answer: async () => false,
+    stop: async () => false,
+    onPatch: () => () => {},
+  },
+  onAppRequest: () => () => {},
   ...over,
 });
