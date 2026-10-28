@@ -1,4 +1,5 @@
 {
   "schema": 1,
-  "data": "data"
+  "data": "data",
+  "routers": ["lathe/src/server/serve.ts", "app/server/lathe.ts", "app/src/views/address.ts", "app/src/theme/ThemeCommands.tsx", "app/src/specs/data.ts"]
 }

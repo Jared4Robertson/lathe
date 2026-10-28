@@ -114,5 +114,6 @@ When a file moves, `set` the record's `file`: `set { "command_handler": { "id": 
 - One technical record per design record: the store refuses a second.
 - A record whose `file` does not exist yet is not built; it is built once the file is written.
 - Describe what in the file implements the record, by name, so a reader can find it.
+- An endpoint handler's file names its endpoint's method and route, and a UI component's file the route of a view it renders, any way routes are written (`/tools/{toolId}`, `/tools/:id`, a regular expression, or a comment); otherwise `endpoint-route-not-in-file` or `view-route-not-in-file` is an error. Every route the code serves, in the handlers' files and the files `routers` in `lathe.config.json` names, needs an endpoint or a view (the `route-without-record` gap).
 - A technical kind has no test kind of its own: it is proved by the tests of what it implements (see `plan-tests`).
 - Finish with the `check-and-fix` skill.
