@@ -1,4 +1,4 @@
-{"id":"TL-LEND-UC01","title":"Register a member","capability_id":"TL-LEND-CAP01","goal":"A librarian registers a new member so that the member can borrow tools."}
+{"id":"TL-LEND-UC01","title":"Register a member","capability_id":"TL-LEND-CAP03","goal":"A librarian registers a new member so that the member can borrow tools."}
 {"id":"TL-LEND-UC02","title":"Add a tool","capability_id":"TL-LEND-CAP02","goal":"A librarian adds a donated or bought tool to the catalog."}
 {"id":"TL-LEND-UC03","title":"Borrow a tool","capability_id":"TL-LEND-CAP03","goal":"A member borrows an available tool for the loan period.","notes":"When a check fails, the library says which one, in this order: unknown member, unknown tool, member has an overdue loan, member is at the loan limit, tool needs repair, tool is on loan."}
 {"id":"TL-LEND-UC04","title":"Return a tool","capability_id":"TL-LEND-CAP03","goal":"A member brings a tool back; the librarian checks it and records the return."}
