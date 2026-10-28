@@ -1,11 +1,11 @@
-// Reading a test file's test cases as text (LA-TRC-DS04, test-case-unnamed): which calls are test cases, the names
+// Reading a test file's test cases as text (LA-TRC-DS05, test-case-unnamed): which calls are test cases, the names
 // they inherit from their describes, and the IDs they name.
 import { describe, expect, it } from 'vitest';
 import { readTestCases } from '../../src/trace/test-cases.ts';
 
 const read = (lines: string[]) => readTestCases(lines.join('\n')).map((c) => [c.line, c.name, c.ids]);
 
-describe('LA-TRC-DS04-T01 test case reading', () => {
+describe('LA-TRC-DS05-T01 test case reading', () => {
   it('reads it and test calls with their modifiers and each forms, under the names of the describes around them', () => {
     expect(read([
       "describe('TL-LEND-UC01-R01-T01 borrowing', () => {",
