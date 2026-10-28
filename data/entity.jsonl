@@ -67,7 +67,7 @@
 {"id":"LA-AUT-EN73","title":"Integration test","aggregate_id":"LA-AUT-A1","role":"child","description":"Proves an exchange with its integration's outside system."}
 {"id":"LA-AUT-EN74","title":"Pattern rule test","aggregate_id":"LA-AUT-A1","role":"child","description":"Proves its pattern rule in one domain that adopts the pattern: one test per pattern rule and adopting domain."}
 {"id":"LA-CHK-EN01","title":"Check","aggregate_id":"LA-CHK-A1","role":"root","description":"One rule the engine applies: a row of the `check` table whose query returns a row for each problem it finds."}
-{"id":"LA-CHK-EN03","title":"Product setting","aggregate_id":"LA-CHK-A2","role":"root","description":"A product's `product_setting` row: the most children of one kind a record of the product should hold."}
+{"id":"LA-CHK-EN03","title":"Product setting","aggregate_id":"LA-CHK-A2","role":"root","description":"A product's `product_setting` row: the most children of one kind a record of the product should hold, and the most entities an aggregate should hold."}
 {"id":"LA-EXP-EN01","title":"Page","aggregate_id":"LA-EXP-A1","role":"root","description":"One place in the app, identified by its address, showing a view of one loaded workspace."}
 {"id":"LA-EXP-EN02","title":"Space","aggregate_id":"LA-EXP-A2","role":"root","description":"One product as a place to work in, in the rail."}
 {"id":"LA-EXP-EN03","title":"Nav row","aggregate_id":"LA-EXP-A3","role":"root","description":"A row of the nav that folds, and whether the reader has it folded."}

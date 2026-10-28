@@ -106,6 +106,23 @@ describe('designed and built', () => {
     expect(gaps(nowhere)).toEqual(['built EX-LEND-UC01-R01']);
     expect(nowhere.coverage[0].gaps[0]).toEqual({ id: 'EX-LEND-UC01-R01', kind: 'uc_requirement', missing: 'built', message: 'UC requirement EX-LEND-UC01-R01 is not built yet: no file of what implements it exists.' });
   });
+
+  it("LA-TRC-UC02-R10-T01 a UC requirement is built by the adapter of an integration its step exchanges with, or a product kind's record under it", async () => {
+    // The step that fulfills UC01-R01 invokes nothing and happens in no view; it exchanges with the mail integration.
+    let alone = without(complete(), 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL-S01');
+    alone = without(alone, 'happens_in', (r) => r.source_id === 'EX-LEND-UC01-FL-S01');
+    const exchanging = adding(alone, { exchanges_with: [{ source_id: 'EX-LEND-UC01-FL-S01', target_id: 'EX-INT01' }] });
+    expect(obligation(await loadData(exchanging), 'EX-LEND', 'uc_requirement')).toMatchObject(covered(2));
+    // With no adapter, a hook of the product's own kind under the integration carries it out, once its file exists.
+    const hooked = adding(without(exchanging, 'adapter', () => true), {
+      product_kind: [{ name: 'hook', product_id: 'EX', label: 'Hook', description: 'Code the mail service calls.', parent_kind: 'integration', stage: 'technical-specification', obligation: false }],
+      product_kind_field: [{ kind: 'hook', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' }],
+      hook: [{ id: 'EX-INT01-HK01', title: 'On bounce', integration_id: 'EX-INT01', file: 'src/bounce.ts' }],
+    });
+    expect(obligation(await loadData(hooked), 'EX-LEND', 'uc_requirement')).toMatchObject(covered(2));
+    expect(gaps(await loadData(hooked, { missing: ['src/bounce.ts'] }))).toContain('built EX-LEND-UC01-R01');
+    expect(gaps(await loadData(alone))).toContain('built EX-LEND-UC01-R01');
+  });
 });
 
 describe('proved', () => {
