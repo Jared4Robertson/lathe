@@ -386,9 +386,9 @@ describe('recorded exceptions', () => {
       expect(ws.exceptions).toEqual([{ command: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A2', reason }]);
       expect(ws.problems).toEqual([]);
       expect(clean.exceptions).toEqual([]);
-      const text = checkText({ errors: 0, warnings: 0, problems: [], exceptions: ws.exceptions });
+      const text = checkText({ errors: 0, warnings: 0, problems: [], exceptions: ws.exceptions, products: [] });
       expect(text).toBe(`Recorded exceptions (1):\n  EX-LEND-CMD01 also changes aggregate EX-LEND-A2 in the same transaction: ${reason}\n\n0 errors, 0 warnings.`);
-      expect(checkText({ errors: 0, warnings: 0, problems: [], exceptions: [] })).not.toContain('Recorded exceptions');
+      expect(checkText({ errors: 0, warnings: 0, problems: [], exceptions: [], products: [] })).not.toContain('Recorded exceptions');
     });
   });
 });
