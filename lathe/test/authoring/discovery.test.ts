@@ -106,7 +106,7 @@ describe('business outcomes', () => {
 });
 
 describe('measuring outcomes', () => {
-  it('LA-TRC-UC02-R12-T01 A business outcome nothing that runs measures, and that names no measure outside the code, is a coverage gap', async () => {
+  it('LA-TRC-UC02-R13-T01 A business outcome nothing that runs measures, and that names no measure outside the code, is a coverage gap', async () => {
     expect(gaps(await loadData(complete()))).toEqual([]);
     const unmeasured = await loadData(without(complete(), 'measured_by', () => true));
     expect(gaps(unmeasured)).toEqual(['outcome-not-measured EX-BO01']);
