@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { main, openApp, section } from './helpers';
 
-const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('article') as HTMLElement;
+const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('.card') as HTMLElement;
 const bars = (element: HTMLElement) =>
   [...element.querySelectorAll('.bar')].map((bar) => [...bar.children].map((c) => c.textContent).filter(Boolean).join(' '));
 
@@ -10,7 +10,7 @@ describe('product page', () => {
   it('LA-V51-R01-T01 The product page shows each domain as a card with its coverage bars and counts', async () => {
     await openApp('/DM');
     expect(await screen.findByRole('heading', { level: 1, name: 'Demo shop' })).toBeInTheDocument();
-    const cards = within(section(/^Domains/)).getAllByRole('article');
+    const cards = [...screen.getByRole('list', { name: 'Domains' }).querySelectorAll(':scope > .card')];
     expect(cards).toHaveLength(2);
 
     const shop = card('Shopping');

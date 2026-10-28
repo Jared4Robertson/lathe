@@ -38,8 +38,9 @@ describe('discovery', () => {
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const outcomes = section(/^Business outcomes/);
     expect(outcomes).toHaveClass('stage-discovery');
-    const items = within(outcomes).getAllByRole('listitem').filter((li) => li.classList.contains('outcome'));
-    expect(items.map((li) => li.querySelector('a.row-link code')?.textContent)).toEqual(['DM-BO01', 'DM-BO02']);
+    const items = [...within(outcomes).getByRole('list', { name: 'Business outcomes' }).querySelectorAll<HTMLElement>(':scope > .card')];
+    // Each outcome is a card that opens the outcome anywhere on it.
+    expect(items.map((li) => li.querySelector('a.card-title')?.getAttribute('href'))).toEqual(['/DM-BO01', '/DM-BO02']);
     expect(items[0]).toHaveTextContent('More of the baskets shoppers fill are checked out.');
     expect(items[0]).toHaveTextContent(/Measure\s*Baskets checked out over baskets started, each week\./);
     expect(items[0]).toHaveTextContent(/Target\s*Two in three within a quarter\./);
