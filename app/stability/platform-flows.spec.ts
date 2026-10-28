@@ -335,11 +335,14 @@ test.describe('Platform flows in the app', () => {
       await page.keyboard.press('Control+2');
       await page.locator(`${FLOW} .graph-box`).first().waitFor({ state: 'attached' });
     }));
-    // Fold rows with Expand all.
+    // Fold rows with Expand all, scrolled to first by the Reader when it sits below the fold.
+    const expand = page.locator(WIKI).getByRole('button', { name: 'Expand all' }).first();
+    if (await expand.count()) await expand.scrollIntoViewIfNeeded();
     expectStable(await step(page, 'flow', 'Expand all', { keys: KEYS, allow: ['.pane-wiki .pane-scroll'] }, async () => {
-      const expand = page.locator(WIKI).getByRole('button', { name: 'Expand all' }).first();
       if (await expand.count()) await expand.click();
     }));
+    // The Reader scrolls back to the top, where the steps below start.
+    await page.locator(`${WIKI} .pane-scroll`).evaluate((e) => e.scrollTo(0, 0));
     // The graph: change its depth; the canvas and its bars hold still.
     const graphKeys = ['nav#nav', GRAPH_CANVAS, '.pane-graph .graph-header'];
     expectStable(await step(page, 'flow', 'graph depth', { keys: graphKeys, allow: ['.side-bar', '.pane-graph .graph-flow'] }, async () => {
