@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { latheApi } from './server/lathe.ts';
 
-// The product repo Lathe reads: LATHE_ROOT, or this repo (Lathe dogfooding itself).
+// The product repo Lathe reads: LATHE_ROOT, or this repo (Lathe dogfooding itself, with the Tool Library its config lists).
 const root = process.env.LATHE_ROOT ?? fileURLToPath(new URL('..', import.meta.url));
 
 export default defineConfig({

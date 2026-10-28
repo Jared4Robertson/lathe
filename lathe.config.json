@@ -1,6 +1,7 @@
 {
   "schema": 2,
   "data": "data",
+  "products": ["examples/tool-library"],
   "tests": [
     "**/*.test.{ts,tsx,js,mjs}",
     "**/*.spec.{ts,tsx,js}",

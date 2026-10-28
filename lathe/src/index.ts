@@ -5,7 +5,7 @@ import { glob, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, PATTERN_RULE_STANDING_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS } from './coverage.ts';
-import { CONFIG_FILE, loadConfig, type LatheConfig } from './config.ts';
+import { CONFIG_FILE, loadConfig, productClash, workspaceProducts, type LatheConfig } from './config.ts';
 import { readPackageFacts } from './trace/packages.ts';
 import { readTestCases } from './trace/test-cases.ts';
 import { isTraced, normalizePath, sourceFiles } from './trace/source-files.ts';
@@ -21,7 +21,7 @@ export type * from './types.ts';
 export type * from './reference.ts';
 export { renderReference, kindAnchor, tableAnchor, relationAnchor, stageAnchor, checkAnchor, gapAnchor, ENGINE_CHECKS } from './reference.ts';
 export { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE, type GapRule } from './coverage.ts';
-export { loadConfig, readConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, DEFAULT_SOURCE, DEFAULT_TESTS, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage, type LatheConfig } from './config.ts';
+export { loadConfig, readConfig, workspaceProducts, productClash, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, DEFAULT_SOURCE, DEFAULT_TESTS, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage, type LatheConfig } from './config.ts';
 export { upgradeProduct, readConverters, UPGRADES_DIR, type Converter, type ConverterStep, type RawData, type UpgradeNotes, type UpgradeResult } from './upgrade.ts';
 // The database-first store: the schema, loading data/*.jsonl, the command layer and the merge driver.
 export * from './store/index.ts';
@@ -425,6 +425,26 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     await store.close();
     if (timings) timings.total = Math.round((performance.now() - started) * 10) / 10;
   }
+}
+
+/** One product of a workspace: its config (its root, data folder, globs) and its loaded, checked workspace. */
+export interface ProductWorkspace {
+  config: LatheConfig;
+  workspace: Workspace;
+}
+
+/**
+ * Loads, checks and measures every product the workspace under root shows: its own, then each its config's products
+ * key lists, each from its own folder with its own config, checks, tracing and coverage. A product ID found in two
+ * products' folders stops the load.
+ */
+export async function loadProducts(root: string, options: Pick<LoadOptions, 'latheDataDir'> = {}): Promise<ProductWorkspace[]> {
+  const configs = workspaceProducts(root);
+  const loaded: ProductWorkspace[] = [];
+  for (const config of configs) loaded.push({ config, workspace: await loadWorkspace(config.root, options) });
+  const clash = productClash(configs[0].root, loaded.map(({ config, workspace }) => ({ root: config.root, ids: workspace.records.filter((r) => r.kind === 'product').map((r) => r.id) })));
+  if (clash) throw new Error(clash);
+  return loaded;
 }
 
 const storeOptions = (options: LoadOptions): StoreOptions => ({

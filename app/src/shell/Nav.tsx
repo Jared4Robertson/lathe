@@ -18,14 +18,16 @@ import { Tooltip } from './Tooltip';
 import { trapTab } from './useNarrow';
 import { addressOf, checksPathOf, HOME_PATH } from '../views/address';
 
-// The side navigation. At its far left is the space rail: one square icon per product (each
-// product is its own space). Beside it, the panel, all of it the current space's: a quick find of
+// The side navigation. At its far left, when the workspace shows two or more products, is the space
+// rail: one square icon per product (each product is its own space); with one product there is no
+// rail, the panel takes its width, and the product's name and icon head the panel. The panel is all
+// the current space's: a quick find of
 // the space, its overview, its own stages (its business outcomes and what it shares, in Shared), its domains (each
 // folded into its stages and their folders) and its groups, then Tools (the space's Checks), a section that folds on its
 // own, and a footer with Appearance and where the specs come from (the record format is a command and a
 // link in the shortcuts sheet). The nav
-// collapses to the rail alone (remembered), and on a narrow screen it is a drawer that keeps
-// the rail.
+// collapses to the rail alone (remembered; with one product it holds no spaces), and on a narrow
+// screen it is a drawer that keeps the rail.
 //
 // Nothing in it jumps (LA-PAT-APP-UX-R08): its lists are drawn once the specs have loaded, never
 // drawn and then pushed down; and only a move made in the nav reshapes it.
@@ -49,6 +51,8 @@ export interface NavProps {
 
 type SectionId = 'tools';
 const SECTIONS_KEY = 'lathe:nav-sections';
+/** Whether the last workspace loaded had two or more products, so the rail is drawn where it will stay before the specs load. */
+const RAIL_KEY = 'lathe:space-rail';
 const isOpenMap = (v: unknown): v is Record<string, boolean> => !!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(isBool);
 
 const here = (path: string, to: string) => (path === to ? 'page' : undefined);
@@ -80,6 +84,12 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
 
   // The nav's lists wait for the specs, so nothing is drawn and then pushed down.
   const loaded = index !== null || !!spec.error;
+  // The space rail shows only with two or more products. Until the specs load, it shows as it did last time, so the
+  // panel beside it does not move sideways once they have.
+  const several = (spaces?.spaces.length ?? 0) > 1;
+  const [railBefore, setRailBefore] = usePref<boolean>(RAIL_KEY, true, isBool);
+  const showRail = index ? several : railBefore;
+  useEffect(() => { if (index) setRailBefore(several); }, [index, several, setRailBefore]);
 
   // The address last followed from a link in the nav (its rows or its rail). Only that move may
   // reshape the nav; once the address moves on another way, it is forgotten.
@@ -122,11 +132,11 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   );
   const sourceNote = index ? <span>Data from <code>{index.workspace.dataDir}/</code></span> : <span>Loading the data…</span>;
 
-  const className = ['menu', 'panel', 'has-spaces', collapsed && !drawer ? 'is-rail' : '', drawer ? 'is-drawer' : '', drawer && drawerOpen ? 'is-open' : '', keyboard ? 'is-keyboard' : ''].filter(Boolean).join(' ');
+  const className = ['menu', 'panel', collapsed && !drawer ? 'is-rail' : '', drawer ? 'is-drawer' : '', drawer && drawerOpen ? 'is-open' : '', keyboard ? 'is-keyboard' : ''].filter(Boolean).join(' ');
 
   const rail = (
     <SpaceRail
-      spaces={spaces?.spaces ?? []}
+      spaces={showRail ? spaces?.spaces ?? [] : []}
       current={space}
       lastPage={spaces?.lastPage}
       loaded={loaded}
@@ -170,7 +180,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
       onPointerDown={() => { if (keyboard) setKeyboard(false); }}
       onClickCapture={onClickCapture}
     >
-      {rail}
+      {showRail && rail}
       <div className="nav-panel">
         <div className="nav-head">
           <Link to={HOME_PATH} className="brand"><LatheLogo /> <span>Lathe</span></Link>
@@ -189,7 +199,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
         <QuickFind ref={findRef} index={index} />
         <div className="nav-scroll" ref={scroller} aria-busy={!loaded || undefined}>
           {loaded && <>
-          {/* The current space needs no heading of its own: the rail names it, and its first row is its overview. */}
+          {/* The current space needs no heading of its own: its first row, its name and icon, is its overview. */}
           <div className="nav-space">
             {spec.error && !index && <p className="error">{spec.error}</p>}
             {index && space && <SpaceItems index={index} space={space} path={path} reveal={fromNav} />}

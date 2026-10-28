@@ -106,8 +106,8 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     const spec = await fetch(`${BASE}/api/spec`);
     expect(spec.status).toBe(200);
     const data = (await spec.json()) as SpecData;
-    expect(data.dataDir).toBe('data');
-    expect(data.tables.use_case.map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
+    expect(data.sources.map((s) => s.dataDir)).toEqual(['data']);
+    expect(data.sources[0].tables.use_case.map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
     expect(data.schema.tables.use_case.role).toBe('kind');
     expect(Array.isArray(data.problems)).toBe(true);
 
@@ -122,7 +122,7 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
 
     // The next request sees the change: the store reads the files again when they change under it.
     const reloaded = (await (await fetch(`${BASE}/api/spec`)).json()) as SpecData;
-    expect(reloaded.tables.use_case[0].title).toBe('Write a long note');
+    expect(reloaded.sources[0].tables.use_case[0].title).toBe('Write a long note');
 
     // A write goes through the store and comes back as the rows it changed.
     const written = await fetch(`${BASE}/api/write`, {

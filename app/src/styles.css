@@ -75,7 +75,7 @@ html { font-size: calc(var(--text-size) * 16 / 15); }
 body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(--line-height) var(--body); }
 .app { height: 100%; box-sizing: border-box; display: grid; grid-template-columns: var(--nav-width, 336px) var(--panel-gap) minmax(0, 1fr); padding: var(--panel-gap); background: var(--shell); }
 .placeholder { display: grid; place-items: center; color: var(--muted); }
-.menu { background: var(--sheet); padding: 12px 10px; display: flex; flex-direction: column; gap: 8px; min-height: 0; overflow: hidden; box-sizing: border-box; }
+.menu { background: var(--sheet); padding: 0; display: flex; flex-direction: row; gap: 0; min-height: 0; overflow: hidden; box-sizing: border-box; }
 .brand { margin: 0; font: 700 1.3rem var(--display); display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; }
 .menu .eyebrow { margin: 0 6px; }
 .menu ul { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
@@ -501,14 +501,13 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .qf-title { color: var(--ink); font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .qf-meta { color: var(--muted); font-size: 0.75rem; }
 /* The rail: the nav collapsed to icons. */
-.menu.is-rail { padding: 10px 6px; align-items: center; }
 .rail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; justify-items: center; }
 .menu .rail-item { position: relative; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
 .menu .rail-item:hover { background: var(--paper); color: var(--ink); }
 .menu .rail-item[aria-current] { background: var(--steel-bg); color: var(--steel); box-shadow: none; }
 /* Narrow screens: a top bar and drawers. */
 .drawer-backdrop { position: fixed; inset: 0; z-index: 70; background: var(--backdrop); }
-.menu.is-drawer { position: fixed; z-index: 80; inset: 0 auto 0 0; width: min(300px, 86vw); box-shadow: 4px 0 24px var(--shadow-strong); }
+.menu.is-drawer { position: fixed; z-index: 80; inset: 0 auto 0 0; width: min(356px, 92vw); box-shadow: 4px 0 24px var(--shadow-strong); }
 
 /* The focus page: header, views, sideBar. */
 .focus-page { display: flex; flex-direction: column; gap: var(--panel-gap); min-width: 0; min-height: 0; height: 100%; overflow: hidden; }
@@ -641,8 +640,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* ---------- End of flow steps ---------- */
 
 /* ---------- Product spaces and shortcut hints ---------- */
-.menu.has-spaces { flex-direction: row; gap: 0; padding: 0; }
-.menu.has-spaces.is-rail { padding: 0; align-items: stretch; }
 .space-rail { flex: none; width: 56px; box-sizing: border-box; padding: 10px 0; display: flex; flex-direction: column; align-items: center; gap: 6px; border-right: 1px solid var(--rule); background: var(--paper); overflow-y: auto; overflow-x: hidden; }
 .menu.is-rail .space-rail { border-right: 0; background: none; }
 .menu .rail-spaces { display: flex; flex-direction: column; align-items: center; gap: 6px; }
@@ -661,7 +658,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .nav-panel { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 8px; padding: 12px 10px; box-sizing: border-box; }
 /* Every nav grid is one column as wide as the panel (minmax(0, 1fr)), so a long title truncates instead of widening the column. */
 .space-items { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; min-width: 0; }
-.menu.has-spaces .nav-scroll { overflow-x: hidden; }
+.menu .nav-scroll { overflow-x: hidden; }
 /* A domain's and a product's stages and folders in the nav: each stage's row carries its color mark. */
 /* A space's own lists (its own stages and its domains) sit side by side at the top level; only what is inside them is indented. */
 .menu .nav-tree { margin: 0; padding: 0; }
@@ -673,7 +670,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .menu .nav-records .nav-row { color: var(--muted); font-size: 0.84rem; }
 .menu .nav-records .nav-row:hover { color: var(--ink); }
 .menu .nav-groups { margin-top: 2px; }
-.menu.is-drawer.has-spaces { width: min(356px, 92vw); }
 /* The checks page's space filter. */
 /* Quick find: the current space first, then everything else under a divider. */
 /* Tooltips: a name and the keys, after a short hover or on keyboard focus. */
@@ -1004,8 +1000,8 @@ a.trace-card:hover { border-color: var(--steel); }
 .app.is-narrow .erd-header { padding: 8px 16px; }
 .app.is-narrow .placeholder { padding: 16px; }
 
-/* The nav sheet: the whole screen, the rail kept at its left, sliding in from the left edge. */
-.menu.is-drawer, .menu.is-drawer.has-spaces { inset: 0; width: auto; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); border: 0; border-radius: 0; box-shadow: none; }
+/* The nav sheet: the whole screen, the rail (with two or more products) kept at its left, sliding in from the left edge. */
+.menu.is-drawer { inset: 0; width: auto; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); border: 0; border-radius: 0; box-shadow: none; }
 
 /* Bottom sheets (the side bar, the open pages): half the screen, or all of it below the top safe area. */
 .sheet-backdrop { position: fixed; inset: 0; z-index: 70; background: var(--backdrop); }

@@ -28,7 +28,7 @@
 import { glob, readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import type { LatheConfig } from '../config.ts';
+import { otherProductHolds, type LatheConfig } from '../config.ts';
 import type { GapRule } from '../coverage.ts';
 import type { Store } from '../store/store.ts';
 
@@ -398,7 +398,10 @@ export async function gatherRouteFacts({ root, routers }: Pick<LatheConfig, 'roo
   }
   const routerFiles: string[] = [];
   for (const pattern of routers) {
-    for await (const file of glob(pattern, { cwd: root, exclude: (name) => ['node_modules', '.git'].includes(path.basename(name)) })) routerFiles.push(file);
+    // Never a file of another product (a folder with its own lathe.config.json is that product's).
+    for await (const file of glob(pattern, { cwd: root, exclude: (name) => ['node_modules', '.git'].includes(path.basename(name)) })) {
+      if (!otherProductHolds(root, path.dirname(file))) routerFiles.push(file);
+    }
   }
   const served: ServedFact[] = [];
   const seen = new Set<string>();

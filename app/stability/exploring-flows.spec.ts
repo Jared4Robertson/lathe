@@ -257,6 +257,24 @@ test.describe('Exploring flows', () => {
     await page.waitForURL((u) => u.pathname.startsWith('/LA'));
   });
 
+  test('LA-EXP-UC07-R12-T01 the rail shows with the workspace\'s two products, and not when it shows one', async ({ page }) => {
+    await openPage(page, '/LA');
+    const rail = page.locator('nav#nav .rail-spaces');
+    await expect(rail.locator('a.space-item')).toHaveCount(2);
+    await expect(rail.locator('a.space-item[data-space="TL"]')).toBeVisible();
+    // The same workspace with its own product alone: no rail, the product at the top of the nav.
+    await page.route('**/api/spec', async (route) => {
+      const answer = await route.fetch();
+      const spec = (await answer.json()) as { sources: unknown[] };
+      await route.fulfill({ response: answer, json: { ...spec, sources: spec.sources.slice(0, 1) } });
+    });
+    await page.reload();
+    await nav(page).getByRole('link', { name: 'Lathe', exact: true }).first().waitFor();
+    await expect(page.locator('nav#nav .space-rail')).toHaveCount(0);
+    await expect(nav(page).locator('.space-items a[href="/LA"] .space-mark')).toBeVisible();
+    await page.unroute('**/api/spec');
+  });
+
   test('LA-EXP-UC08-FL01-T read a product in stage folders: the nav\'s domains and stages, the open branch, capabilities in order, the domain page', async ({ page }) => {
     await openPage(page, '/LA');
     const n = nav(page);

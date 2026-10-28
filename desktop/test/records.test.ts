@@ -50,13 +50,20 @@ describe('LA-AUT-UC15-R01-T01 The record actions take only a known action and a 
     expect(findDataFile(data, 'SMK-NOTE')).toBeNull();
     expect(findDataFile(path.join(temp, 'missing'), 'SMK')).toBeNull();
 
-    const files = new DataFiles(data);
+    const files = new DataFiles([data]);
     expect(files.find('SMK-ORD')).toBe(path.join(data, 'domain.jsonl'));
     expect(files.find('SMK-NONE')).toBeNull();
     // A record that became another kind is in that kind's file now.
     write(path.join(data, 'domain.jsonl'), '{"id":"SMK-ORDERS","title":"Longer","product_id":"SMK"}\n');
     write(path.join(data, 'pattern.jsonl'), '{"id":"SMK-ORD","title":"Orders","product_id":"SMK"}\n');
     expect(files.find('SMK-ORD')).toBe(path.join(data, 'pattern.jsonl'));
+
+    // In a workspace, each product's records are found in its own data folder.
+    const other = path.join(temp, 'examples/shop/data');
+    write(path.join(other, 'product.jsonl'), '{"id":"SH","title":"Shop"}\n');
+    const workspace = new DataFiles([data, other]);
+    expect(workspace.find('SMK')).toBe(path.join(data, 'product.jsonl'));
+    expect(workspace.find('SH')).toBe(path.join(other, 'product.jsonl'));
   });
 
   it('offers reveal, open in the editor and copy ID in the native menu, the first two only for a record with a file', () => {
