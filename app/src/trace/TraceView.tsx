@@ -1,27 +1,38 @@
-// The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10).
-import { useLayoutEffect, useMemo, useState, type FocusEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
+// The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10, LA-V98).
+import { lazy, Suspense, useLayoutEffect, useMemo, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { groupName, isGroup } from '../graph/model';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { gapColumns, TRACE_COLUMN_LABELS, TRACE_COLUMNS, traceChain, traceShape, untracedUnder, type TraceColumn, type TraceFile, type TraceGroup, type TraceRow } from './chain';
 import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
+import { useNarrow } from '../shell/useNarrow';
+import type { OpenSpaceStore } from '../views/openSpace';
+import { tracePicture } from './lanes';
 
-// What the focus owes and how far it has come, as columns left to right: obligation, design, build,
-// tests, files (chain.ts). It works on every focus (LA-PAT-APP-UX-R17), by the shape chain.ts's
-// traceShape gives it:
+// What the focus owes and how far it has come, drawn on the canvas with the graph's renderer
+// (TraceCanvas.tsx, laid out by lanes.ts): one obligation's chain with its "why" columns, or a "why"
+// tree on the left and one lane per obligation on the right, gaps as dashed empty boxes and the
+// Untraced records in a lane of their own. It works on every focus (LA-PAT-APP-UX-R17).
+//
+// The table is its accessible layer and its phone form, the way the graph keeps a layer of its boxes
+// for the keyboard and assistive technology: on a wide screen it is visually hidden under the
+// canvas, its links carrying keyboard focus (the canvas rings the box a focused link stands for and
+// brings it into view) and the arrow keys walking it; on a phone it is the stage. By the shape
+// chain.ts's traceShape gives the focus:
 // - an obligation: its chain, each column a list of cards;
 // - a record or group with obligations under it: a traceability matrix, one row per obligation
-//   grouped by its parent, each empty cell a visible gap, with a "Gaps only" filter, and under it the
-//   Untraced section (the design, build and test records under the focus no chain reaches);
+//   grouped by its parent, each empty cell a visible gap, and under it the Untraced section (the
+//   design, build and test records under the focus no chain reaches);
 // - a design, build or test record a chain holds: the rows it belongs to, the record marked;
 // - a record nothing traces to: the untraced state, with the matrix of the nearest container with
 //   obligations below it, the record marked; any other record: that container's matrix, marked.
 // Every cell shows each record's ID and title and links to it; a file links to the record that
-// names it. Long matrices show a page of rows at a time, so a product's stays fast. It never reads
-// the address. It scrolls under the floating panels, its content padded to the open space
-// (openSpace.ts); what it holds is told to the header strip, and the "Gaps only" filter floats at
-// the top of the open space.
+// names it. Long matrices show a page of rows at a time. It never reads the address. Its tools (the
+// "Gaps only" filter, a note on why it shows what it shows, Show more) float at the top of the open
+// space (openSpace.ts); what it holds is told to the header strip.
+
+const TraceCanvas = lazy(() => import('./TraceCanvas').then((m) => ({ default: m.TraceCanvas })));
 
 export interface TraceViewProps {
   index: SpecIndex;
@@ -32,6 +43,8 @@ export interface TraceViewProps {
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   /** Called with what the trace holds, for the header strip: "12 obligations · 3 with gaps · 4 untraced". */
   onCounts?: (counts: string) => void;
+  /** The open space the host's floating panels leave over the stage, where the canvas frames the trace. */
+  space?: OpenSpaceStore;
 }
 
 /** How many matrix rows show before "Show more". */
@@ -48,49 +61,173 @@ const MISSING: Record<TraceColumn, string> = { design: 'No design', build: 'Not 
 
 const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
-export function TraceView(props: TraceViewProps) {
-  const { index, focus } = props;
-  const shape = useMemo(() => traceShape(index, focus), [index, focus]);
+/** The items of one column of a row. */
+const itemsOf = (row: TraceRow, column: TraceColumn): number => (column === 'files' ? row.files.length : row[column].length);
+
+/** What a matrix shows, from the focus's shape: its groups, its label, its Untraced section's owner, its caption and its note. */
+interface MatrixSpec { groups: TraceGroup[]; label: string; untracedOf?: string; caption?: string; lead?: ReactNode }
+
+function matrixSpec(index: SpecIndex, focus: string): MatrixSpec | null {
+  const shape = traceShape(index, focus);
   const nameOf = (id: string) => index.byId.get(id)?.title ?? (isGroup(index, id) ? groupName(index, id) : id);
   const name = nameOf(focus);
   switch (shape.shape) {
-    case 'chain': return <TraceChainView key={focus} {...props} />;
-    case 'matrix':
-      return <TraceMatrixView key={focus} {...props} groups={shape.groups} untracedOf={focus} label={`Traceability matrix of ${name}`} />;
+    case 'chain': return null;
+    case 'matrix': return { groups: shape.groups, untracedOf: focus, label: `Traceability matrix of ${name}` };
     case 'rows': {
       const n = shape.groups.reduce((s, g) => s + g.rows.length, 0);
-      return (
-        <TraceMatrixView
-          key={focus}
-          {...props}
-          groups={shape.groups}
-          label={`The obligations whose chains hold ${name}`}
-          caption={`${count(n, 'obligation')} ${n === 1 ? 'holds' : 'hold'} this record`}
-          lead={<p className="trace-note">The rows this record belongs to: each requirement or rule whose chain holds it, the record marked in its cell.</p>}
-        />
-      );
+      return {
+        groups: shape.groups,
+        label: `The obligations whose chains hold ${name}`,
+        caption: `${count(n, 'obligation')} ${n === 1 ? 'holds' : 'hold'} this record`,
+        lead: <p className="trace-note">Each requirement or rule whose chain holds this record, the record marked.</p>,
+      };
     }
     case 'context': {
       const scopeName = shape.scope ? nameOf(shape.scope) : '';
-      const lead = (
-        <p className={`trace-note${shape.untraced ? ' is-untraced' : ''}`}>
-          {shape.untraced ? 'Nothing traces to this record: it serves no requirement or rule.' : 'This record sits outside every chain: no requirement or rule names it.'}
-          {shape.scope && <> Below, the matrix of <strong>{scopeName}</strong>, around it.</>}
-        </p>
-      );
-      return (
-        <TraceMatrixView
-          key={focus}
-          {...props}
-          groups={shape.groups}
-          untracedOf={shape.scope ?? undefined}
-          label={shape.scope ? `Traceability matrix of ${scopeName}` : `Trace of ${name}`}
-          caption={shape.untraced ? 'Untraced' : shape.scope ? `Outside the chains · matrix of ${scopeName}` : 'Outside the chains'}
-          lead={lead}
-        />
-      );
+      return {
+        groups: shape.groups,
+        untracedOf: shape.scope ?? undefined,
+        label: shape.scope ? `Traceability matrix of ${scopeName}` : `Trace of ${name}`,
+        caption: shape.untraced ? 'Untraced' : shape.scope ? `Outside the chains · matrix of ${scopeName}` : 'Outside the chains',
+        lead: (
+          <p className={`trace-note${shape.untraced ? ' is-untraced' : ''}`}>
+            {shape.untraced ? 'Nothing traces to this record: it serves no requirement or rule.' : 'This record sits outside every chain: no requirement or rule names it.'}
+            {shape.scope && <> Around it, the trace of <strong>{scopeName}</strong>.</>}
+          </p>
+        ),
+      };
     }
   }
+}
+
+/** A page of a matrix: the rows the filter keeps, then the first `shown` of them, each group with its heading. */
+interface MatrixPage { visible: TraceGroup[]; matching: number; drawn: number; withGaps: number }
+
+function pageOf(groups: readonly TraceGroup[], gapsOnly: boolean, shown: number): MatrixPage {
+  let left = shown;
+  const visible: TraceGroup[] = [];
+  let matching = 0;
+  let withGaps = 0;
+  for (const g of groups) {
+    const gapped = g.rows.filter((r) => gapColumns(r).length > 0);
+    withGaps += gapped.length;
+    const kept = gapsOnly ? gapped : g.rows;
+    matching += kept.length;
+    if (left <= 0) continue;
+    const rows = kept.slice(0, left);
+    if (rows.length === 0) continue;
+    visible.push({ parent: g.parent, rows });
+    left -= rows.length;
+  }
+  return { visible, matching, drawn: visible.reduce((n, g) => n + g.rows.length, 0), withGaps };
+}
+
+/** The record and lane a link in the table stands for: its `data-trace-id`, and its row's `data-trace-lane` (the focus, in a chain). */
+function linkTarget(el: Element | null, focus: string): { id: string; lane: string | null } | null {
+  const link = el?.closest<HTMLElement>('[data-trace-id]');
+  if (!link) return null;
+  const lane = link.closest<HTMLElement>('[data-trace-lane]')?.dataset.traceLane ?? (link.closest('.trace-chain') ? focus : null);
+  return { id: link.dataset.traceId!, lane };
+}
+
+/**
+ * The arrow keys in the table: Left and Right to the link before or after, Up and Down to the same cell of the row
+ * above or below (outside the table's rows, to the link before or after).
+ */
+function walk(e: KeyboardEvent<HTMLElement>) {
+  if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+  const from = (e.target as HTMLElement).closest?.<HTMLElement>('a[data-trace-id]');
+  if (!from) return;
+  const links = [...e.currentTarget.querySelectorAll<HTMLElement>('a[data-trace-id]')];
+  const row = from.closest('tr');
+  let to: HTMLElement | null | undefined;
+  if ((e.key === 'ArrowUp' || e.key === 'ArrowDown') && row) {
+    const column = [...row.children].indexOf(from.closest('td, th')!);
+    const rows = [...row.closest('table')!.querySelectorAll('tr')].filter((r) => r.querySelector('a[data-trace-id]'));
+    const next = rows[rows.indexOf(row) + (e.key === 'ArrowDown' ? 1 : -1)];
+    if (next) to = next.children[Math.min(column, next.children.length - 1)]?.querySelector<HTMLElement>('a[data-trace-id]') ?? next.querySelector<HTMLElement>('a[data-trace-id]');
+  } else {
+    to = links[links.indexOf(from) + (e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : -1)];
+  }
+  e.preventDefault();
+  to?.focus();
+}
+
+export function TraceView(props: TraceViewProps) {
+  return <TraceStage key={props.focus} {...props} />;
+}
+
+function TraceStage(props: TraceViewProps) {
+  const { index, focus, onCounts } = props;
+  const narrow = useNarrow();
+  const spec = useMemo(() => matrixSpec(index, focus), [index, focus]);
+  const [gapsOnly, setGapsOnly] = useState(false);
+  const [shown, setShown] = useState(TRACE_PAGE);
+  const page = useMemo(() => (spec ? pageOf(spec.groups, gapsOnly, shown) : null), [spec, gapsOnly, shown]);
+  const picture = useMemo(() => (narrow ? null : tracePicture(index, focus, { gapsOnly })), [narrow, index, focus, gapsOnly]);
+  const [ring, setRing] = useState<{ id: string; lane: string | null } | null>(null);
+
+  // What the header strip says.
+  const untraced = useMemo(() => (spec?.untracedOf ? untracedUnder(index, spec.untracedOf) : []), [index, spec]);
+  const untracedCount = untraced.reduce((n, g) => n + g.ids.length, 0);
+  const total = spec ? spec.groups.reduce((n, g) => n + g.rows.length, 0) : 0;
+  const caption = useMemo(() => {
+    if (!spec) {
+      const row = traceChain(index, focus)!;
+      const gaps = gapColumns(row);
+      return `${kindLabel(index, index.byId.get(focus)!.kind)} · ${TRACE_COLUMNS.map((c) => `${itemsOf(row, c)} ${TRACE_COLUMN_LABELS[c].toLowerCase()}`).join(' · ')}${gaps.length > 0 ? ` · ${count(gaps.length, 'gap')}` : ''}`;
+    }
+    return spec.caption ?? `${count(total, 'obligation')} · ${page!.withGaps} with gaps · ${untracedCount} untraced`;
+  }, [spec, index, focus, total, page, untracedCount]);
+  useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
+
+  const drawn = !narrow && picture !== null;
+  // Show more pages the table. Under the canvas, which draws every lane, it is for the keyboard alone: hidden until focused.
+  const more = page && page.drawn < page.matching ? (
+    <p className={`trace-more${drawn ? ' is-keys' : ''}`}>
+      <Button onClick={() => setShown((n) => n + TRACE_PAGE)}>Show {Math.min(TRACE_PAGE, page.matching - page.drawn)} more</Button>
+      <span className="hint"> {page.drawn} of {page.matching} shown</span>
+    </p>
+  ) : null;
+  const filter = total > 0 ? (
+    <label className="trace-filter">
+      <input type="checkbox" checked={gapsOnly} onChange={(e) => { setGapsOnly(e.target.checked); setShown(TRACE_PAGE); }} />
+      Gaps only
+    </label>
+  ) : null;
+  const table = spec && page
+    ? <TraceMatrix {...props} spec={spec} page={page} untraced={untraced} access={drawn} more={drawn ? null : more} />
+    : <TraceChainCards {...props} access={drawn} />;
+
+  if (!drawn) {
+    return (
+      <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
+        {filter && <div className="trace-tools stage-tools" data-stage-tools="top">{filter}</div>}
+        {table}
+      </section>
+    );
+  }
+  const onFocus = (e: FocusEvent<HTMLElement>) => setRing(linkTarget(e.target as Element, focus));
+  const onBlur = (e: FocusEvent<HTMLElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setRing(null); };
+  return (
+    <section className="trace-page is-drawn" aria-label="Trace" {...peekHandlers(props)}>
+      {(filter || spec?.lead || more) && (
+        <div className="trace-tools stage-tools" data-stage-tools="top">
+          {filter}
+          {spec?.lead}
+          {more}
+        </div>
+      )}
+      <Suspense fallback={<div className="graph-flow trace-flow" aria-busy="true" />}>
+        <TraceCanvas index={index} focus={focus} picture={picture} onNavigate={props.onNavigate} onPeek={props.onPeek} space={props.space} ring={ring} />
+      </Suspense>
+      <div className="trace-access" onFocus={onFocus} onBlur={onBlur} onKeyDown={walk}>
+        {table}
+      </div>
+    </section>
+  );
 }
 
 /**
@@ -119,7 +256,7 @@ const tracedAt = (target: EventTarget | null) => (target instanceof Element ? ta
 function peekHandlers(props: TraceViewProps) {
   const peek = (id: string | null) => props.onPeek?.('hover', id);
   return {
-    onPointerOver: (e: PointerEvent) => peek(tracedAt(e.target)),
+    onPointerOver: (e: PointerEvent) => { const id = tracedAt(e.target); if (id) peek(id); },
     onPointerLeave: () => peek(null),
     onFocus: (e: FocusEvent) => peek(tracedAt(e.target)),
     onBlur: () => peek(null),
@@ -180,18 +317,16 @@ function Empty({ row, column }: { row: TraceRow; column: TraceColumn }) {
   return <span className="trace-missing">{MISSING[column]}</span>;
 }
 
-/** The items of one column of a row. */
-const itemsOf = (row: TraceRow, column: TraceColumn): number => (column === 'files' ? row.files.length : row[column].length);
-
 // ---------- One obligation's chain ----------
 
-function TraceChainView(props: TraceViewProps) {
-  const { index, focus, onCounts } = props;
+/** The scrolling region the table sits in: a focus stop on a phone, where it scrolls; only a landmark under the canvas. */
+function Region({ label, access, children }: { label: string; access: boolean; children: ReactNode }) {
+  return <div className="trace-scroll" role="region" tabIndex={access ? undefined : 0} aria-label={label}>{children}</div>;
+}
+
+function TraceChainCards(props: TraceViewProps & { access: boolean }) {
+  const { index, focus, access } = props;
   const row = useMemo(() => traceChain(index, focus)!, [index, focus]);
-  const gaps = gapColumns(row);
-  const record = index.byId.get(focus)!;
-  const caption = `${kindLabel(index, record.kind)} · ${TRACE_COLUMNS.map((c) => `${itemsOf(row, c)} ${TRACE_COLUMN_LABELS[c].toLowerCase()}`).join(' · ')}${gaps.length > 0 ? ` · ${count(gaps.length, 'gap')}` : ''}`;
-  useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
   const column = (c: TraceColumn): ReactNode => {
     if (itemsOf(row, c) === 0) return <p className="trace-cell-empty"><Empty row={row} column={c} /></p>;
     return (
@@ -203,134 +338,94 @@ function TraceChainView(props: TraceViewProps) {
     );
   };
   return (
-    <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
-      <div className="trace-scroll" role="region" tabIndex={0} aria-label="Traceability chain">
-        <ol className="trace-chain">
-          <li className="trace-column">
-            <h3 className="trace-column-name">Obligation</h3>
-            <CardGrid stack label="Obligation"><RecordCard id={focus} props={props} current /></CardGrid>
+    <Region label="Traceability chain" access={access}>
+      <ol className="trace-chain">
+        <li className="trace-column">
+          <h3 className="trace-column-name">Obligation</h3>
+          <CardGrid stack label="Obligation"><RecordCard id={focus} props={props} current /></CardGrid>
+        </li>
+        {TRACE_COLUMNS.map((c) => (
+          <li key={c} className="trace-column">
+            <h3 className="trace-column-name">{TRACE_COLUMN_LABELS[c]} <span className="section-count">{itemsOf(row, c)}</span></h3>
+            {column(c)}
           </li>
-          {TRACE_COLUMNS.map((c) => (
-            <li key={c} className="trace-column">
-              <h3 className="trace-column-name">{TRACE_COLUMN_LABELS[c]} <span className="section-count">{itemsOf(row, c)}</span></h3>
-              {column(c)}
-            </li>
-          ))}
-        </ol>
-      </div>
-    </section>
+        ))}
+      </ol>
+    </Region>
   );
 }
 
 // ---------- A matrix: of the obligations under a record or group, of the rows holding a record, or around it ----------
 
 interface MatrixProps extends TraceViewProps {
-  groups: TraceGroup[];
-  /** The table's accessible name. */
-  label: string;
-  /** Whose Untraced section shows under the matrix; none when absent. */
-  untracedOf?: string;
-  /** What the header strip says, when not the matrix's own counts. */
-  caption?: string;
-  /** A note above the matrix: why it shows what it shows. */
-  lead?: ReactNode;
+  spec: MatrixSpec;
+  page: MatrixPage;
+  untraced: { kind: string; ids: string[] }[];
+  /** Under the canvas: no focus stop of its own, and its note and paging float with the stage's tools instead. */
+  access: boolean;
+  more: ReactNode;
 }
 
-function TraceMatrixView(props: MatrixProps) {
-  const { index, groups, label, untracedOf, caption: given, lead, onCounts } = props;
-  const untraced = useMemo(() => (untracedOf ? untracedUnder(index, untracedOf) : []), [index, untracedOf]);
+function TraceMatrix(props: MatrixProps) {
+  const { index, spec, page, untraced, access, more } = props;
+  const { label, untracedOf, lead } = spec;
+  const total = spec.groups.reduce((n, g) => n + g.rows.length, 0);
   const untracedCount = untraced.reduce((n, g) => n + g.ids.length, 0);
-  const [gapsOnly, setGapsOnly] = useState(false);
-  const [shown, setShown] = useState(TRACE_PAGE);
-  const total = groups.reduce((n, g) => n + g.rows.length, 0);
-  const withGaps = useMemo(() => groups.reduce((n, g) => n + g.rows.filter((r) => gapColumns(r).length > 0).length, 0), [groups]);
-  // The rows the filter keeps, then the first `shown` of them, each group with its heading.
-  const visible = useMemo(() => {
-    let left = shown;
-    const out: TraceGroup[] = [];
-    for (const g of groups) {
-      if (left <= 0) break;
-      const rows = (gapsOnly ? g.rows.filter((r) => gapColumns(r).length > 0) : g.rows).slice(0, left);
-      if (rows.length === 0) continue;
-      out.push({ parent: g.parent, rows });
-      left -= rows.length;
-    }
-    return out;
-  }, [groups, gapsOnly, shown]);
-  const matching = gapsOnly ? withGaps : total;
-  const drawn = visible.reduce((n, g) => n + g.rows.length, 0);
-  const caption = given ?? `${count(total, 'obligation')} · ${withGaps} with gaps · ${untracedCount} untraced`;
-  useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
   return (
-    <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
-      {total > 0 && (
-        <div className="trace-tools stage-tools" data-stage-tools="top">
-          <label className="trace-filter">
-            <input type="checkbox" checked={gapsOnly} onChange={(e) => { setGapsOnly(e.target.checked); setShown(TRACE_PAGE); }} />
-            Gaps only
-          </label>
-        </div>
-      )}
-      <div className="trace-scroll" role="region" tabIndex={0} aria-label={label}>
-        {lead}
-        {total === 0 ? null : matching === 0 ? <p className="hint trace-none">No gaps: every obligation here is designed, built, tested and named in a file.</p> : (
-          <table className="data-table trace-matrix">
-            <caption className="sr-only">{label}</caption>
-            <thead>
-              <tr>
-                <th scope="col">Obligation</th>
-                {TRACE_COLUMNS.map((c) => <th key={c} scope="col">{TRACE_COLUMN_LABELS[c]}</th>)}
+    <Region label={label} access={access}>
+      {access ? null : lead}
+      {total === 0 ? null : page.matching === 0 ? <p className="hint trace-none">No gaps: every obligation here is designed, built, tested and named in a file.</p> : (
+        <table className="data-table trace-matrix">
+          <caption className="sr-only">{label}</caption>
+          <thead>
+            <tr>
+              <th scope="col">Obligation</th>
+              {TRACE_COLUMNS.map((c) => <th key={c} scope="col">{TRACE_COLUMN_LABELS[c]}</th>)}
+            </tr>
+          </thead>
+          {page.visible.map((g) => (
+            <tbody key={g.parent?.id ?? ''}>
+              <tr className="group-row">
+                <th scope="colgroup" colSpan={TRACE_COLUMNS.length + 1}>
+                  {g.parent ? <Ref id={g.parent.id} props={props} className="trace-ref trace-parent" /> : 'No parent'}
+                </th>
               </tr>
-            </thead>
-            {visible.map((g) => (
-              <tbody key={g.parent?.id ?? ''}>
-                <tr className="group-row">
-                  <th scope="colgroup" colSpan={TRACE_COLUMNS.length + 1}>
-                    {g.parent ? <Ref id={g.parent.id} props={props} className="trace-ref trace-parent" /> : 'No parent'}
-                  </th>
+              {g.rows.map((row) => (
+                <tr key={row.obligation} className={gapColumns(row).length > 0 ? 'has-gap' : undefined} data-trace-lane={row.obligation}>
+                  <th scope="row"><Ref id={row.obligation} props={props} /></th>
+                  {TRACE_COLUMNS.map((c) => (
+                    <td key={c} className={itemsOf(row, c) === 0 && !row.notOwed.has(c) ? 'is-gap' : undefined}>
+                      {itemsOf(row, c) === 0 ? <Empty row={row} column={c} /> : (
+                        <span className="trace-refs">
+                          {c === 'files'
+                            ? row.files.map((f) => <FileRef key={f.path} file={f} props={props} />)
+                            : row[c].map((id) => <Ref key={id} id={id} props={props} />)}
+                        </span>
+                      )}
+                    </td>
+                  ))}
                 </tr>
-                {g.rows.map((row) => (
-                  <tr key={row.obligation} className={gapColumns(row).length > 0 ? 'has-gap' : undefined}>
-                    <th scope="row"><Ref id={row.obligation} props={props} /></th>
-                    {TRACE_COLUMNS.map((c) => (
-                      <td key={c} className={itemsOf(row, c) === 0 && !row.notOwed.has(c) ? 'is-gap' : undefined}>
-                        {itemsOf(row, c) === 0 ? <Empty row={row} column={c} /> : (
-                          <span className="trace-refs">
-                            {c === 'files'
-                              ? row.files.map((f) => <FileRef key={f.path} file={f} props={props} />)
-                              : row[c].map((id) => <Ref key={id} id={id} props={props} />)}
-                          </span>
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            ))}
-          </table>
-        )}
-        {drawn < matching && (
-          <p className="trace-more">
-            <Button onClick={() => setShown((n) => n + TRACE_PAGE)}>Show {Math.min(TRACE_PAGE, matching - drawn)} more</Button>
-            <span className="hint"> {drawn} of {matching} shown</span>
-          </p>
-        )}
-        {untracedOf && (
-          <section className="trace-untraced" aria-labelledby="trace-untraced">
-            <h3 id="trace-untraced">Untraced <span className="section-count">{untracedCount}</span></h3>
-            {untracedCount === 0 ? <p className="hint">Everything here serves a requirement or rule.</p> : (
-              <dl className="trace-untraced-kinds">
-                {untraced.map((g) => (
-                  <div key={g.kind}>
-                    <dt>{plural(kindLabel(index, g.kind))} <span className="section-count">{g.ids.length}</span></dt>
-                    <dd><span className="trace-refs">{g.ids.map((id) => <Ref key={id} id={id} props={props} />)}</span></dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-          </section>
-        )}
-      </div>
-    </section>
+              ))}
+            </tbody>
+          ))}
+        </table>
+      )}
+      {more}
+      {untracedOf && (
+        <section className="trace-untraced" aria-labelledby="trace-untraced">
+          <h3 id="trace-untraced">Untraced <span className="section-count">{untracedCount}</span></h3>
+          {untracedCount === 0 ? <p className="hint">Everything here serves a requirement or rule.</p> : (
+            <dl className="trace-untraced-kinds">
+              {untraced.map((g) => (
+                <div key={g.kind}>
+                  <dt>{plural(kindLabel(index, g.kind))} <span className="section-count">{g.ids.length}</span></dt>
+                  <dd><span className="trace-refs">{g.ids.map((id) => <Ref key={id} id={id} props={props} />)}</span></dd>
+                </div>
+              ))}
+            </dl>
+          )}
+        </section>
+      )}
+    </Region>
   );
 }

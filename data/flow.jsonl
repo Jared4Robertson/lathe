@@ -8,6 +8,7 @@
 {"id":"LA-AUT-UC05-FL03","title":"Organize a domain's use cases into capabilities and patterns through the CLI","use_case_id":"LA-AUT-UC05","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC05-FL04","title":"Organize a domain's use cases into capabilities and patterns through the MCP tools","use_case_id":"LA-AUT-UC05","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC06-FL03","title":"Write a use case's flow as ordered steps through the CLI","use_case_id":"LA-AUT-UC06","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC06-FL04","title":"Write a use case's flow as ordered steps through the MCP tools","use_case_id":"LA-AUT-UC06","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC07-FL03","title":"Name records in text without linking them through the CLI","use_case_id":"LA-AUT-UC07","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC07-FL04","title":"Name records in text without linking them through the MCP tools","use_case_id":"LA-AUT-UC07","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC08-FL03","title":"Read each kind's stage and order from the schema through the CLI","use_case_id":"LA-AUT-UC08","interface_id":"LA-IF03"}
@@ -38,6 +39,7 @@
 {"id":"LA-CHK-UC02-FL03","title":"Add a check through the CLI","use_case_id":"LA-CHK-UC02","interface_id":"LA-IF03"}
 {"id":"LA-CHK-UC02-FL04","title":"Add a check through the MCP tools","use_case_id":"LA-CHK-UC02","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC04-FL03","title":"Find structural problems through the CLI","use_case_id":"LA-CHK-UC04","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC04-FL04","title":"Find structural problems through the MCP tools","use_case_id":"LA-CHK-UC04","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC05-FL03","title":"Add a product's own checks through the CLI","use_case_id":"LA-CHK-UC05","interface_id":"LA-IF03"}
 {"id":"LA-CHK-UC05-FL04","title":"Add a product's own checks through the MCP tools","use_case_id":"LA-CHK-UC05","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC06-FL03","title":"Keep each level of the spec a useful size through the CLI","use_case_id":"LA-CHK-UC06","interface_id":"LA-IF03"}
@@ -98,6 +100,7 @@
 {"id":"LA-PLT-UC16-FL05","title":"Accept writes only from the app through the HTTP API","use_case_id":"LA-PLT-UC16","interface_id":"LA-IF05"}
 {"id":"LA-PLT-UC17-FL03","title":"Move a product to a new Lathe through the CLI","use_case_id":"LA-PLT-UC17","interface_id":"LA-IF03"}
 {"id":"LA-PLT-UC18-FL04","title":"Start the plugin's tools in a product repo through the MCP tools","use_case_id":"LA-PLT-UC18","interface_id":"LA-IF04"}
+{"id":"LA-PLT-UC19-FL02","title":"Work with Claude beside the stage in the desktop app","use_case_id":"LA-PLT-UC19","interface_id":"LA-IF02","description":"The Owner shows the chat, resumes a session, asks Claude about the product and has it change records; they answer its permission prompts, stop a turn, read the records it changed, and follow a record it names onto the stage."}
 {"id":"LA-TRC-UC01-FL03","title":"See a domain's coverage through the CLI","use_case_id":"LA-TRC-UC01","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC02-FL03","title":"Count coverage by the meta-model through the CLI","use_case_id":"LA-TRC-UC02","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC03-FL03","title":"Record how a test is run through the CLI","use_case_id":"LA-TRC-UC03","interface_id":"LA-IF03"}

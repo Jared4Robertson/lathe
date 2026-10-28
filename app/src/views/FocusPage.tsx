@@ -23,6 +23,7 @@ import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { rememberStage, usePageTabs, type PageTabsApi } from './useTabs';
 import { WikiCard } from './WikiCard';
 import { Button } from '../components/Button';
+import { useViewState } from '../chat/appRequests';
 
 // One page for one thing (a record, a group, a product or a domain), at one address. One stage
 // fills the window behind everything: the Graph, the ERD (of a domain, an aggregate or an entity's
@@ -198,6 +199,10 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   ), [card.width, setCard, collapseCard]);
   useEffect(() => { setSheet(false); }, [narrow]);
 
+  // What the page shows, for Claude's app_focus tool in the desktop chat (LA-PLT-UC19-R06).
+  const selectedNow = useCallback(() => peek.get().selected, [peek]);
+  useViewState({ focus, stage, selected: null, wikiCard: cardShown }, selectedNow);
+
   const [graphInfo, setGraphInfo] = useState<GraphInfo | null>(null);
   const onGraph = useCallback((info: GraphInfo) => setGraphInfo(info), []);
   const [counts, setCounts] = useState('');
@@ -292,7 +297,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     ),
     trace: (
       <Suspense fallback={<p className="hint graph-loading">Loading the trace…</p>}>
-        <TraceView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} />
+        <TraceView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} />
       </Suspense>
     ),
   };
