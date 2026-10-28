@@ -55,7 +55,7 @@ describe('editing a record', () => {
     await waitFor(() => expect(within(toolbar('DM-SHOP-UC01-R01')).getByRole('button', { name: 'Edit' })).toHaveFocus());
   });
 
-  it('offers both kinds of parent where a record may sit under either, and moves it between them', async () => {
+  it('LA-V92-R30-T01 offers both kinds of parent where a record may sit under either, and moves it between them', async () => {
     const user = userEvent.setup();
     const { writes } = await openApp('/DM-SHOP-EP01', { write: () => ({ answer: ok }) });
     await user.click(within(toolbar('DM-SHOP-EP01')).getByRole('button', { name: 'Edit' }));
@@ -73,7 +73,7 @@ describe('editing a record', () => {
     expect(writes[0]).toEqual([{ op: 'move', id: 'DM-SHOP-EP01', parent: 'DM-SHOP-QRY01' }]);
   });
 
-  it('edits part rows in place: a field\'s name and its type, a value object or an aggregate chosen among the product\'s', async () => {
+  it('LA-V92-R29-T01 edits part rows in place: a field\'s name and its type, a value object or an aggregate chosen among the product\'s', async () => {
     const user = userEvent.setup();
     const { writes } = await openApp('/DM-SHOP-EN02', { write: () => ({ answer: ok }) });
     await user.click(within(toolbar('DM-SHOP-EN02')).getByRole('button', { name: 'Edit' }));
@@ -127,7 +127,7 @@ describe('editing a record', () => {
     expect(within(form).getByRole('textbox', { name: /^group name/ })).toHaveValue('Display');
   });
 
-  it('does not write while the form has a problem it can see, and says what to fix beside each input', async () => {
+  it('LA-V92-R30-T01 does not write while the form has a problem it can see, and says what to fix beside each input', async () => {
     const user = userEvent.setup();
     const { writes } = await openApp('/DM-SHOP-UC01-R01');
     await user.click(within(toolbar('DM-SHOP-UC01-R01')).getByRole('button', { name: 'Edit' }));
@@ -145,7 +145,7 @@ describe('editing a record', () => {
     expect(within(main()).getByText(/The basket MUST show the item at once/)).toBeInTheDocument();
   });
 
-  it('adds a link only to a valid target, and removes one', async () => {
+  it('LA-V92-R30-T01 adds a link only to a valid target, and removes one', async () => {
     const user = userEvent.setup();
     const { writes } = await openApp('/DM-SHOP-UC01-FL-S01', { write: () => ({ answer: ok }) });
     await user.click(within(toolbar('DM-SHOP-UC01-FL-S01')).getByRole('button', { name: 'Edit' }));
@@ -191,7 +191,7 @@ describe('adding a record', () => {
     expect(window.location.pathname).toBe('/DM-SHOP-UC01-R03');
   });
 
-  it('adds a kind with no owner from the product\'s page: its ID takes the product, and it has no parent to choose', async () => {
+  it('LA-V92-R31-T01 adds a kind with no owner from the product\'s page: its ID takes the product, and it has no parent to choose', async () => {
     const user = userEvent.setup();
     const { writes } = await openApp('/DM', { write: () => ({ answer: ok }) });
     const actions = toolbar('DM');
@@ -211,7 +211,7 @@ describe('adding a record', () => {
     expect(writes[0]).toEqual([{ op: 'add', table: 'view', row: { id: 'DM-V02', title: 'Checkout' } }]);
   });
 
-  it('adds from a domain\'s page the kinds that sit under it, and a specification, which takes its domain from its ID', async () => {
+  it('LA-V92-R31-T01 adds from a domain\'s page the kinds that sit under it, and a specification, which takes its domain from its ID', async () => {
     const user = userEvent.setup();
     await openApp('/DM-SHOP');
     const actions = toolbar('DM-SHOP');
@@ -225,7 +225,7 @@ describe('adding a record', () => {
     expect(within(form).queryByRole('combobox', { name: /^Parent/ })).toBeNull();
   });
 
-  it('refuses an ID that is already a record before writing', async () => {
+  it('LA-V92-R30-T01 refuses an ID that is already a record before writing', async () => {
     const user = userEvent.setup();
     const { writes } = await openApp('/DM-SHOP-UC01');
     await user.click(within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Add…' }));
@@ -276,7 +276,7 @@ describe('removing a record', () => {
     await waitFor(() => expect(within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Edit' })).toHaveFocus());
   });
 
-  it('removes a record nothing references, and goes to its parent', async () => {
+  it('LA-V92-R32-T01 removes a record nothing references, and goes to its parent', async () => {
     const user = userEvent.setup();
     const removed = (): SpecData => removeRows(workspace(), 'question', (r) => r.id === 'DM-SHOP-Q01');
     const { writes } = await openApp('/DM-SHOP-Q01', { write: () => ({ answer: ok, data: removed() }) });

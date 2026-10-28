@@ -240,6 +240,7 @@
 {"source_id":"LA-TRC-UC04-FL-S07","target_id":"LA-CHK-QRY01"}
 {"source_id":"LA-TRC-UC05-FL-S02","target_id":"LA-TRC-QRY01"}
 {"source_id":"LA-TRC-UC05-FL-S04","target_id":"LA-CHK-QRY01"}
+{"source_id":"LA-TRC-UC05-FL-S05","target_id":"LA-TRC-QRY07"}
 {"source_id":"LA-TRC-UC06-FL-S01","target_id":"LA-TRC-QRY03"}
 {"source_id":"LA-TRC-UC06-FL-S02","target_id":"LA-TRC-QRY03"}
 {"source_id":"LA-TRC-UC07-FL-S01","target_id":"LA-TRC-CMD01"}
