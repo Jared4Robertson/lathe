@@ -12,7 +12,7 @@ export interface LatheConfig {
   dataDir: string;
   /** The schema version the product's data is for; 1 when the config names none. */
   schema: number;
-  /** Globs, relative to the root, of the product's test files; DEFAULT_TESTS when the config names none. */
+  /** Globs, relative to the root, of the product's test files, which test-case-unnamed reads; DEFAULT_TESTS when the config names none. */
   tests: string[];
   /** Globs, relative to the root, of the product's source files, which code-file-untraced reads; DEFAULT_SOURCE when the config names none. */
   source: string[];

@@ -29,7 +29,7 @@ const quoted = (text: string) => [...text.matchAll(/'([A-Za-z0-9_-]+)'|"([A-Za-z
 const handled = new Set([...source.matchAll(/useCommand\(\s*'([A-Za-z0-9]+)'/g)].map((m) => m[1]));
 if (/useCommand\(\s*spaceCommandId\(/.test(source)) for (let n = 1; n <= SPACE_KEYS; n++) handled.add(spaceCommandId(n));
 
-describe('commands', () => {
+describe('LA-STD-PRINCIPLES-R04-T03 commands', () => {
   it('Every command in the keymap is handled and can be reached', () => {
     const unhandled = COMMANDS.filter((c) => !c.local && !c.browser && !handled.has(c.id)).map((c) => c.id);
     expect(unhandled, 'commands no component registers with useCommand').toEqual([]);
@@ -49,7 +49,7 @@ describe('commands', () => {
   });
 });
 
-describe('icons', () => {
+describe('LA-STD-PRINCIPLES-R04-T03 icons', () => {
   it('Every icon in icons.tsx is drawn somewhere', () => {
     const table = readFileSync(ICONS_FILE, 'utf8').match(/const PATHS[^{]*\{([\s\S]*?)\n\};/)![1];
     const icons = [...table.matchAll(/^\s+'?([a-z][a-z-]*)'?:/gm)].map((m) => m[1]);

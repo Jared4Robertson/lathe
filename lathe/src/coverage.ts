@@ -85,13 +85,18 @@ const list = (items: readonly string[]) => items.map(sqlString).join(', ');
 
 /**
  * The tables the engine fills before the checks run: file_facts, a row for each record that names a file (a technical
- * record, a test, or a product's own kind with a file field), whether it exists and whether it names the record's own
- * ID; test_level_allowed, the levels each test kind allows; source_file, each of the product's source files and
- * whether a technical record names it or a folder holding it (trace/source-files.ts); and package_facts, the packages
- * the product's package.json files list (trace/packages.ts).
+ * record, a test, or a product's own kind with a file field), the file as a path from the product root (null outside
+ * it), whether it exists and whether it names the record's own ID; test_case, each test case read from the product's
+ * test files (its file as a path from the root, its place among the file's test cases, its line, and its name after
+ * its describes' names), with test_case_id, each ID it or its describes name; test_level_allowed, the levels each test
+ * kind allows; and source_file, each of the product's source files and whether a technical record names it or a
+ * folder holding it (trace/source-files.ts); and package_facts, the packages the product's package.json files list
+ * (trace/packages.ts).
  */
 export const FACT_TABLES_SQL = `
-CREATE OR REPLACE TABLE file_facts (record VARCHAR NOT NULL, kind VARCHAR NOT NULL, file VARCHAR NOT NULL, file_exists BOOLEAN NOT NULL, contains_id BOOLEAN NOT NULL);
+CREATE OR REPLACE TABLE file_facts (record VARCHAR NOT NULL, kind VARCHAR NOT NULL, file VARCHAR NOT NULL, path VARCHAR, file_exists BOOLEAN NOT NULL, contains_id BOOLEAN NOT NULL);
+CREATE OR REPLACE TABLE test_case (file VARCHAR NOT NULL, position INTEGER NOT NULL, line INTEGER NOT NULL, name VARCHAR NOT NULL);
+CREATE OR REPLACE TABLE test_case_id (file VARCHAR NOT NULL, position INTEGER NOT NULL, id VARCHAR NOT NULL);
 CREATE OR REPLACE TABLE test_level_allowed (kind VARCHAR NOT NULL, level VARCHAR NOT NULL);
 CREATE OR REPLACE TABLE source_file (file VARCHAR NOT NULL, traced BOOLEAN NOT NULL);
 ${PACKAGE_FACTS_SQL}

@@ -404,7 +404,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   it('LA-V61-R26-T01 Every control is a touch target of at least 44 x 44 px on a coarse pointer', touchTargets);
   it.each(['LA-PAT-APP-UX-R07-T01', 'LA-PAT-APP-UX-R07-T02'])('%s Everything works by touch: on a coarse pointer every clickable control is at least 44 x 44 px', touchTargets);
 
-  it('Nothing is reachable only by hover: a control a hover reveals is always shown on a coarse pointer, and every tooltip also shows on keyboard focus', () => {
+  it.each(['LA-PAT-APP-UX-R07-T01', 'LA-PAT-APP-UX-R07-T02'])('%s Nothing is reachable only by hover: a control a hover reveals is always shown on a coarse pointer, and every tooltip also shows on keyboard focus', () => {
     const rules = styleRules(CSS);
     const coarse = (r: { within: string[] }) => r.within.some((w) => /pointer:\s*coarse/.test(w));
     const keyOf = (s: string) => { const classes = s.replace(/:[\w-]+(\([^)]*\))?/g, '').match(/\.[\w-]+/g); return classes?.[classes.length - 1] ?? null; };

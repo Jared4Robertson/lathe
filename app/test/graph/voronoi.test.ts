@@ -186,7 +186,7 @@ describe('the Voronoi map', () => {
 
 describe('graph camera in the Voronoi layout', () => {
   const map = readyVoronoiMap(testIndex(), 'P')!;
-  it('LA-EXP-DS09-T12 The camera frames the focus cell; what is drawn is in view, big enough, a parent before its children, within the budget', () => {
+  it('LA-EXP-DS09-T14 The camera frames the focus cell; what is drawn is in view, big enough, a parent before its children, within the budget', () => {
     for (const focus of ['P', 'P-D', 'P-D-UC01']) {
       const n = map.nodes.get(focus)!;
       const v = frameNested(map, focus, 1000, 800);

@@ -37,7 +37,7 @@ describe('lathe add', () => {
     expect(line(root, 'capability', 'TL-LEND-CAP02')).toBe('{"id":"TL-LEND-CAP02","title":"Returns","domain_id":"TL-LEND","position":2}');
   });
 
-  it('adds a kind with no owner, and one of a kind with two possible parents', async () => {
+  it('LA-AUT-UC01-R05-T01 adds a kind with no owner, and one of a kind with two possible parents', async () => {
     const root = writeData(everyKind());
     expect((await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Return desk')).out).toBe('Added view TL-V02: {"id":"TL-V02","title":"Return desk"}\nWrote data/view.jsonl\n');
     expect((await lathe(root, 'add', 'specification', '--id', 'TL-LEND-SP02', '--title', 'Tool needs repair', '--statement', 'A tool needs repair when its condition says so.')).status).toBe(0);
@@ -46,7 +46,7 @@ describe('lathe add', () => {
     expect((await lathe(root, 'add', 'table', '--id', 'TL-LEND-EN02-TB', '--title', 'Returns', '--entity_id', 'TL-LEND-EN02', '--name', 'returns', '--storage', 'table')).err).toContain('[entity-table]');
   });
 
-  it('says which parent to give when a kind has two, before the table rule', async () => {
+  it('LA-AUT-UC01-R07-T01 says which parent to give when a kind has two, before the table rule', async () => {
     const root = writeData(everyKind());
     const both = await lathe(root, 'add', 'endpoint', '--id', 'TL-LEND-EP02', '--title', 'X', '--command_id', 'TL-LEND-CMD01', '--query_id', 'TL-LEND-QRY01', '--method', 'GET', '--route', '/x');
     expect(both.status).toBe(1);
@@ -56,7 +56,7 @@ describe('lathe add', () => {
     );
   });
 
-  it('takes a list column as the flag given once per item, and part rows by their columns', async () => {
+  it('LA-AUT-UC01-R06-T04 takes a list column as the flag given once per item, and part rows by their columns', async () => {
     const root = writeData(everyKind());
     expect((await lathe(root, 'add', 'check', '--name', 'my-check', '--position', '2', '--severity', 'warning', '--summary', 'S.', '--explanation', 'E.', '--query', 'SELECT 1', '--kinds', 'domain', '--kinds', 'view')).status).toBe(0);
     expect(readFileSync(path.join(root, 'data', 'check.jsonl'), 'utf8')).toContain('"kinds":["domain","view"]');
@@ -70,7 +70,7 @@ describe('lathe add', () => {
     expect((await lathe(root, 'add', 'read_model_field', '--read_model_id', 'TL-LEND-RM01', '--position', '2', '--name', 'Member', '--meaning', 'Whose loans.', '--type_aggregate_id', 'TL-LEND-A1', '--required', 'true')).status).toBe(0);
   });
 
-  it('refuses a command change of the command\'s own aggregate, with the store\'s reason', async () => {
+  it('LA-AUT-UC01-R07-T01 refuses a command change of the command\'s own aggregate, with the store\'s reason', async () => {
     const root = writeData(everyKind());
     const own = await lathe(root, 'add', 'command_change', '--command_id', 'TL-LEND-CMD01', '--aggregate_id', 'TL-LEND-A1', '--reason', 'Because.');
     expect(own.status).toBe(1);
@@ -89,7 +89,7 @@ describe('lathe add', () => {
     expect(files(root)).toEqual(before);
   });
 
-  it('says a broken table rule in words', async () => {
+  it('LA-AUT-UC01-R07-T01 says a broken table rule in words', async () => {
     const root = writeData(everyKind());
     const field = await lathe(root, 'add', 'entity_field', '--entity_id', 'TL-LEND-EN02', '--position', '1', '--name', 'Returned at', '--meaning', 'When.', '--required', 'true');
     expect(field.err).toBe(
@@ -118,7 +118,7 @@ describe('lathe add', () => {
     );
   });
 
-  it('prints the result as JSON with --json', async () => {
+  it('LA-AUT-UC01-R05-T09 prints the result as JSON with --json', async () => {
     const root = writeData(everyKind());
     const result = await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Desk', '--json');
     expect(JSON.parse(result.out)).toEqual({
@@ -158,7 +158,7 @@ describe('lathe set', () => {
     expect(line(root, 'view', 'TL-V01')).toBe('{"id":"TL-V01","title":"Catalog","route":"/tools"}');
   });
 
-  it('changes part rows named by their key columns', async () => {
+  it('LA-AUT-UC01-R05-T02 changes part rows named by their key columns', async () => {
     const root = writeData(everyKind());
     expect((await lathe(root, 'set', 'entity_field', '--entity_id', 'TL-LEND-EN01', '--position', '1', '--example', '32')).status).toBe(0);
     expect(readFileSync(path.join(root, 'data', 'entity_field.jsonl'), 'utf8')).toContain('"example":"32"');
@@ -166,7 +166,7 @@ describe('lathe set', () => {
     expect(change.out).toContain('Changed command_change command_id TL-LEND-CMD01, aggregate_id TL-LEND-A2');
   });
 
-  it('refuses a parent column, an unknown ID and a missing key', async () => {
+  it('LA-AUT-UC01-R07-T01 refuses a parent column, an unknown ID and a missing key', async () => {
     const root = writeData(everyKind());
     const parent = await lathe(root, 'set', 'TL-LEND-UC01-R01', '--use_case_id', 'TL-LEND-UC01');
     expect(parent.status).toBe(1);
@@ -190,13 +190,13 @@ describe('lathe move', () => {
     expect(result.out).toContain('Wrote data/use_case.jsonl');
   });
 
-  it('moves a record between its two kinds of parent, clearing the other column', async () => {
+  it('LA-AUT-UC01-R05-T03 moves a record between its two kinds of parent, clearing the other column', async () => {
     const root = writeData(everyKind());
     const result = await lathe(root, 'move', 'TL-LEND-EP01', '--parent', 'TL-LEND-QRY01');
     expect(result.out).toContain('Changed endpoint TL-LEND-EP01: {"id":"TL-LEND-EP01","title":"Borrow a tool","method":"POST","route":"/loans","query_id":"TL-LEND-QRY01"}');
   });
 
-  it('refuses a parent of the wrong kind, a record with no owner, and needs --parent', async () => {
+  it('LA-AUT-UC01-R07-T01 refuses a parent of the wrong kind, a record with no owner, and needs --parent', async () => {
     const root = writeData(everyKind());
     const wrong = await lathe(root, 'move', 'TL-LEND-UC01', '--parent', 'TL-LEND-A1');
     expect(wrong.status).toBe(1);
@@ -215,7 +215,7 @@ describe('lathe link and unlink', () => {
     expect(unlinked.out).toBe('Removed link TL-LEND-QRY01 calls TL-LEND-DS01\nWrote data/calls.jsonl\n');
   });
 
-  it('refuses a pair the relation does not allow, a second link where one is allowed, and a missing link', async () => {
+  it('LA-AUT-UC01-R07-T01 refuses a pair the relation does not allow, a second link where one is allowed, and a missing link', async () => {
     const root = writeData(everyKind());
     const pair = await lathe(root, 'link', 'TL-V01', 'calls', 'TL-LEND-DS01');
     expect(pair.status).toBe(1);
@@ -245,7 +245,7 @@ describe('lathe remove', () => {
     expect(field.out).toContain('Wrote data/entity_field.jsonl');
   });
 
-  it('refuses columns besides the key', async () => {
+  it('LA-AUT-UC01-R06-T02 refuses columns besides the key', async () => {
     const root = writeData(everyKind());
     expect((await lathe(root, 'remove', 'entity_field', '--entity_id', 'TL-LEND-EN01', '--position', '1', '--name', 'Loan ID')).err).toContain('remove takes only the key of entity_field, not name');
   });
@@ -280,7 +280,7 @@ describe('lathe show, list and next-id', () => {
     expect((await lathe(root, 'show', 'TL-NOPE')).err).toContain('no record has the ID TL-NOPE [missing]');
   });
 
-  it('shows where a record with no owner sits', async () => {
+  it('LA-AUT-UC01-R05-T06 shows where a record with no owner sits', async () => {
     const root = writeData(everyKind());
     expect((await lathe(root, 'show', 'TL-V01')).out).toMatch(/^View TL-V01: Catalog\n  kind: view\n  no owner; in domain TL-LEND\n/);
     expect((await lathe(root, 'add', 'value_object', '--id', 'TL-VO09', '--title', 'Postcode')).status).toBe(0);
@@ -348,7 +348,7 @@ describe('lathe show, list and next-id', () => {
 });
 
 describe('the data after writes', () => {
-  it('loads with every key and check', async () => {
+  it('LA-AUT-UC01-R05-T01 loads with every key and check', async () => {
     const root = writeData(everyKind());
     await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Desk');
     await lathe(root, 'add', 'flow_step', '--id', 'TL-LEND-UC01-FL-S02', '--title', 'Return it', '--flow_id', 'TL-LEND-UC01-FL', '--path', 'main', '--position', '2');
