@@ -1,6 +1,6 @@
 ---
 name: write-use-cases
-description: Write or change Lathe use cases - the capabilities that group a domain's use cases, each use case's actors and goal, its UC requirements, the product's roles, and the patterns use cases share with their settings and rules. Use when adding what an actor does with the product, splitting a use case, grouping use cases into capabilities, or writing behavior several use cases share as a pattern, in a repo with lathe.config.json.
+description: Write or change Lathe use cases - the capabilities that group a domain's use cases, each use case's actors and goal, its UC requirements, the product's roles, and the patterns use cases share with their settings and rules. Use when adding what an actor does with the product, splitting a use case, grouping use cases into capabilities, naming or renaming a capability or use case, or writing behavior several use cases share as a pattern, in a repo with lathe.config.json.
 ---
 
 # Write use cases
@@ -48,6 +48,29 @@ Every record's `title` is in sentence case, with no trailing period, and unique 
 ## Capabilities
 
 Every use case sits in a capability: an ordered slice of its domain, such as 01 Catalog, 02 Lending. Add the domain's capabilities first, then each use case under the one it belongs to. Move a use case to another capability with `move`; its ID never changes. A capability with no use case, or one with a single use case, is a gap the check reports, and so is a capability that serves no business outcome.
+
+## Naming capabilities and use cases
+
+Names follow two conventions (`LA-STD-MODELING-R02` and `R03`), and the `title-breaks-convention` check warns of the parts it can read.
+
+**A capability is a noun phrase naming a lasting ability of the business**, two to four words: a subject and an activity noun, or a single noun when the area is clear on its own. It says what, not how: it does not start with an -ing word or "The", and names no screen, tool or technology. It would still be true if the product were rebuilt on other technology.
+
+| Good | Not | Why not |
+| --- | --- | --- |
+| Invoice management | Managing invoices | Starts with an -ing word |
+| Payment processing | The payment screen | Starts with "The"; names a screen |
+| Member registration | Members, sign-up and profiles | A list, not one ability |
+| Lending | Lending through the web app | Names an interface |
+
+**A use case is an actor's goal, verb first**, two to six words: an imperative verb and its object, with a qualifier only when needed. Use the domain's own verb (Borrow, Approve, Refund) over Create, Read, Update or Delete, unless that really is the goal. One goal: no "and" joining two goals, and no list. It names no interface or mechanism (the command line, the desktop app, a page, the API, the command layer): the use case happens through interfaces, and each flow names its own.
+
+| Good | Not | Why not |
+| --- | --- | --- |
+| Borrow a tool | Create a loan record | A CRUD verb where the domain has its own |
+| Approve an invoice | Approve an invoice from the web app | Names an interface |
+| Register a member | Register a member and send a welcome | Two goals |
+| Read an invoice | Read invoices, credit notes and receipts | A list |
+| Report damage | Damage report page | Not verb first; names a page |
 
 ## Roles
 
