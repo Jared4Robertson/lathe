@@ -17,7 +17,7 @@ or a record of a product's own kind such as a report, or it says how it is measu
 
 **Words.** What clean architecture calls a use case or an interactor is what Lathe calls a command handler
 (`command_handler`): the application service that carries out one command. A Lathe use case (`use_case`) is the
-actor's goal, one level up: its flow's steps invoke commands and queries.
+actor's goal, one level up: its flows' steps, one flow per interface it happens through, invoke commands and queries.
 
 **Checks** are rows of the `check` table. Each holds the query that finds its problems: a SELECT over the tables
 returning `severity`, `record` and `message` for each problem. An error means the data is broken; a warning is
@@ -757,7 +757,7 @@ An ordered slice of a domain that groups its use cases, such as Catalog or Lendi
 
 ### Use case (`use_case`)
 
-An actor's goal: its actors (use_case_actor rows), its UC requirements and its one flow. It changes nothing itself; its flow's steps invoke commands and queries.
+An actor's goal: its actors (use_case_actor rows), its UC requirements and its flows, one per interface it happens through. It changes nothing itself; its flows' steps invoke commands and queries.
 
 - **Parents:** [`capability`](#kind-capability) (`capability_id`)
 - **Children:** [`uc_requirement`](#kind-uc_requirement), [`flow`](#kind-flow)
@@ -802,12 +802,12 @@ One actor of a use case, in order: a role of the use case's product.
 
 ### UC requirement (`uc_requirement`)
 
-One rule a use case must follow. Steps of the use case's own flow fulfill it.
+One rule a use case must follow, whatever the interface: a step of each of the use case's own flows fulfills it. A rule only one interface can meet is a view or API requirement instead.
 
 - **Parents:** [`use_case`](#kind-use_case) (`use_case_id`)
 - **Children:** [`use_case_test`](#kind-use_case_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** A step of its use case's flow fulfills it.
+  - **Designed:** A step of each of its use case's flows fulfills it: one flow per interface the use case happens through, and at least one.
   - **Built:** A fulfilling step's command or query handler, a UI component of the view it happens in, or the adapter of an integration it exchanges with or a record of a product's own kind under that integration, names a file that exists.
   - **Proved:** One of its use case tests.
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`; it starts with its parent's ID
@@ -963,55 +963,84 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 ## Interaction design
 
-Each use case's flow and its steps, and the views, endpoints and integrations the steps reach, with their requirements.
+The product's interfaces, each use case's flows (one per interface it happens through) and their steps, and the views, endpoints and integrations the steps reach, with their requirements.
+
+<a id="kind-interface"></a>
+
+### Interface (`interface`)
+
+A way people or programs use the product, such as its web app, its HTTP API or its command line. A use case happens through one or more interfaces, with one flow for each, and the kind says what that flow's steps go through.
+
+- **Parents:** [`product`](#kind-product) (`product_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<P>-IF<nn>`, such as `TL-IF01`; it starts with its parent's ID
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`flow-test-level-for-interface`](#check-flow-test-level-for-interface)
+- **Gaps:** [`interface-without-flow`](#gap-interface-without-flow)
+
+<a id="table-interface"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The interface's ID: its product's ID and IF<nn>, such as TL-IF01. Its number ends the ID of every flow through it. |
+| `title` | VARCHAR | yes | The interface's name, such as Web app, HTTP API, CLI, MCP tools or Desktop app. |
+| `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
+| `kind` | ENUM('web app', 'API', 'CLI', 'agent tools', 'desktop', 'other') | yes | What it is: web app or desktop (a flow's steps happen in views), API (they call endpoints, through the command or query each exposes), CLI or agent tools (they run commands and queries), or other. A step of an API, CLI or agent tools flow happens in no view. |
+| `description` | VARCHAR | no | Who uses it and how, in a sentence or two. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
 
 <a id="kind-flow"></a>
 
 ### Flow (`flow`)
 
-How its use case is carried out: the steps on its main path and its alternate paths. A use case has exactly one flow, and the flow belongs only to it.
+How its use case is carried out through one interface: the steps on its main path and its alternate paths. A use case has one flow per interface it happens through, and each flow belongs only to it.
 
 - **Parents:** [`use_case`](#kind-use_case) (`use_case_id`)
 - **Children:** [`flow_step`](#kind-flow_step), [`flow_test`](#kind-flow_test)
 - **Obligation:** no
-- **ID:** `<use case>-FL`, such as `TL-LEND-UC01-FL`; it starts with its parent's ID
+- **ID:** `<use case>-FL<nn>`, such as `TL-LEND-UC01-FL01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order)
+- **Checks:** [`step-order`](#check-step-order), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface)
 - **Gaps:** [`flow-without-main-path`](#gap-flow-without-main-path), [`flow-without-test`](#gap-flow-without-test)
 
 <a id="table-flow"></a>
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL. |
+| `id` | VARCHAR → `record_id` | yes | The flow's ID: its use case's ID, FL and its interface's number, such as TL-LEND-UC01-FL01 for the flow through TL-IF01. |
 | `title` | VARCHAR | yes | The flow's name, such as Borrow a tool at the desk. |
-| `use_case_id` | VARCHAR → [`use_case`](#table-use_case) | yes | The use case it carries out; one flow per use case. |
+| `use_case_id` | VARCHAR → [`use_case`](#table-use_case) | yes | The use case it carries out. |
+| `interface_id` | VARCHAR → [`interface`](#table-interface) | yes | The interface it goes through, of the same product; at most one flow per use case and interface. |
 | `description` | VARCHAR | no | The path, in a paragraph. |
 
 - **Key:** `id`
-- **Unique:** `use_case_id`
+- **Unique:** `use_case_id`, `interface_id`
 - **Rule:** `("trim"(title) != '')`
 
 <a id="kind-flow_step"></a>
 
 ### Flow step (`flow_step`)
 
-One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view and may exchange with integrations.
+One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view (only on a web app, desktop or other interface) and may exchange with integrations.
 
 - **Parents:** [`flow`](#kind-flow) (`flow_id`)
 - **Children:** none
 - **Obligation:** no
-- **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL-S01`; it starts with its parent's ID
+- **ID:** `<flow>-S<nn>`, such as `TL-LEND-UC01-FL01-S01`; it starts with its parent's ID
 - **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Happens in ([`happens_in`](#relation-happens_in)), Invokes ([`invokes`](#relation-invokes))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`step-order`](#check-step-order)
+- **Checks:** [`step-order`](#check-step-order), [`step-without-endpoint`](#check-step-without-endpoint)
 
 <a id="table-flow_step"></a>
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. |
+| `id` | VARCHAR → `record_id` | yes | The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL01-S01. |
 | `title` | VARCHAR | yes | What happens, in a few words. |
 | `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it belongs to. |
 | `path` | VARCHAR | yes | The path through the flow the step is on, such as main or refused. |
@@ -1095,7 +1124,7 @@ An HTTP endpoint that exposes exactly one command or query, its parent. Flow ste
 - **ID:** `<P>-<D>-EP<nn>`, such as `TL-LEND-EP01`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file)
+- **Checks:** [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file), [`step-without-endpoint`](#check-step-without-endpoint)
 - **Gaps:** [`endpoint-without-requirement`](#gap-endpoint-without-requirement), [`endpoint-without-handler`](#gap-endpoint-without-handler)
 
 <a id="table-endpoint"></a>
@@ -1226,6 +1255,16 @@ A view whose route no file of the UI components that render it names.
 
 A view's route is the address it is shown at, and the UI components that render it show it there, so one of their files names the route, written any way routes are written (`/tools/{toolId}`, `/tools/:toolId`, `/tools/<tool-id>`, `/tools/[toolId]`, a template's `${toolId}`, or a regular expression literal that matches it, such as `/^\/tools\/(\d+)$/`), in code, a string or a comment. Parameters match whatever their names, and only the path counts: a query string or fragment is not part of a route. Then a reader of the record finds the code, and an address changed on one side and not the other is caught. A view with no route, or whose components' files do not exist yet, is not checked. Correct the view's route, or name it in the file of the component that shows the view at that address.
 
+<a id="check-step-without-endpoint"></a>
+
+### `step-without-endpoint`
+
+**Warning** · Lathe's · Kinds: [`flow_step`](#kind-flow_step), [`endpoint`](#kind-endpoint)
+
+A step of a flow through an API that invokes a command or query no endpoint exposes.
+
+A flow through an interface of kind API happens as requests: each step that invokes a command or query calls the endpoint that exposes it, so an endpoint must expose what the step invokes. (A step of a flow through a web app, a desktop app, a CLI or agent tools names its command or query the same way; only an API's are reached through endpoints. A step of an API, CLI or agent tools flow that happens in a view is refused by the store, step-fits-interface.) Add the endpoint under the command or query, or have the step invoke what an endpoint exposes.
+
 ### Coverage gaps: interaction design
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -1233,6 +1272,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
 | <a id="gap-use-case-without-flow"></a>`use-case-without-flow` | [`use_case`](#kind-use_case), [`flow`](#kind-flow) | A use case with no flow. |
+| <a id="gap-interface-without-flow"></a>`interface-without-flow` | [`interface`](#kind-interface), [`flow`](#kind-flow) | An interface no flow goes through. |
 | <a id="gap-flow-without-main-path"></a>`flow-without-main-path` | [`flow`](#kind-flow), [`flow_step`](#kind-flow_step) | A flow with no step on its main path. |
 | <a id="gap-endpoint-without-requirement"></a>`endpoint-without-requirement` | [`endpoint`](#kind-endpoint), [`api_requirement`](#kind-api_requirement) | An endpoint with no API requirement. |
 | <a id="gap-route-without-record"></a>`route-without-record` | [`product`](#kind-product), [`endpoint`](#kind-endpoint), [`view`](#kind-view) | A route the code serves that no endpoint or view has. |
@@ -2162,22 +2202,22 @@ Proves its API requirement at the endpoint: the request and the response.
 
 ### Flow test (`flow_test`)
 
-A smoke test of its flow's main path, end to end.
+A smoke test of its flow's main path, end to end, at the level that fits its interface: e2e-ui for a web app or desktop, e2e-api for an API, a CLI or agent tools, manual only with a reason.
 
 - **Parents:** [`flow`](#kind-flow) (`flow_id`)
 - **Children:** none
 - **Obligation:** no
 - **Run by levels:** `e2e-ui`, `e2e-api`, `manual`
-- **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL-T`; it starts with its parent's ID
+- **ID:** `<flow>-T`, such as `TL-LEND-UC01-FL01-T`; it starts with its parent's ID
 - **Links out:** Starts from ([`starts_from`](#relation-starts_from))
 - **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
-- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed)
+- **Checks:** [`test-file-missing`](#check-test-file-missing), [`test-file-missing-id`](#check-test-file-missing-id), [`manual-test-file-silent`](#check-manual-test-file-silent), [`test-level-not-allowed`](#check-test-level-not-allowed), [`test-case-unnamed`](#check-test-case-unnamed), [`flow-test-level-for-interface`](#check-flow-test-level-for-interface)
 
 <a id="table-flow_test"></a>
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL-T. |
+| `id` | VARCHAR → `record_id` | yes | The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it proves; it has exactly one test. |
 | `level` | ENUM('unit', 'database', 'api', 'contract', 'e2e-api', 'e2e-ui', 'manual') | yes | The level it runs at: unit, database, api, contract, e2e-api, e2e-ui or manual. |
@@ -2364,7 +2404,7 @@ A manual test may name a file that holds the steps a person follows. Nothing tie
 
 A test whose run by level its test kind does not allow.
 
-Each test kind is run at the levels that can prove what it tests: a constraint test at unit or database (a constraint enforced by a SQL CHECK can only be tested against the database); an invariant or specification test at unit or database; a domain service test at unit; a policy test at database, api or e2e-api, or at e2e-ui or manual where only the running app shows the reaction; a use case test at api, e2e-api, e2e-ui or manual; a view test at unit, e2e-ui or manual; an endpoint test at contract or api; a flow test at e2e-ui, e2e-api (a product whose flows run through a CLI or an API rather than a browser) or manual; an integration test at contract, e2e-api or manual; a pattern rule test at any level. A test at another level proves nothing in coverage. Run the test at an allowed level and set its level, or make it the test kind of what it really proves.
+Each test kind is run at the levels that can prove what it tests: a constraint test at unit or database (a constraint enforced by a SQL CHECK can only be tested against the database); an invariant or specification test at unit or database; a domain service test at unit; a policy test at database, api or e2e-api, or at e2e-ui or manual where only the running app shows the reaction; a use case test at api, e2e-api, e2e-ui or manual; a view test at unit, e2e-ui or manual; an endpoint test at contract or api; a flow test at e2e-ui, e2e-api or manual (and at the one that fits its flow's interface, flow-test-level-for-interface); an integration test at contract, e2e-api or manual; a pattern rule test at any level. A test at another level proves nothing in coverage. Run the test at an allowed level and set its level, or make it the test kind of what it really proves.
 
 <a id="check-pattern-rule-test-outside-followers"></a>
 
@@ -2406,6 +2446,16 @@ A test case in the product's test files names a test whose file it is in, so eve
 
 test-file-missing-id follows a test record to its code; this check follows the code back. The engine reads the product's test files (those matching the tests globs in lathe.config.json, by default **/*.test.{ts,tsx,js,mjs} and **/*.spec.{ts,tsx,js}, never in node_modules, dist or another product's folder, and every file a test record names) as text and finds each test case: a call of it or test, with its modifiers and each forms, whose name is a string or template literal, inside the describe calls around it. A test case must name, in its own name, its describes' names or its each rows, the ID of a test (or of a product kind's record that proves an obligation) whose file is the file it is in. One that names none proves nothing anyone can find. Start its name, or its describe's, with the ID of the test it proves, adding that test when the spec lacks it, or remove the test case if it proves nothing.
 
+<a id="check-flow-test-level-for-interface"></a>
+
+### `flow-test-level-for-interface`
+
+**Warning** · Lathe's · Kinds: [`flow_test`](#kind-flow_test), [`flow`](#kind-flow), [`interface`](#kind-interface)
+
+A flow test at a level that does not fit its flow's interface.
+
+A flow test walks its flow's main path the way its interface is used: through the pages (e2e-ui) for a web app or a desktop app, and through requests or commands (e2e-api) for an API, a CLI or agent tools. Manual is allowed for any interface, with its reason; a flow through an interface of kind other may be tested at any level a flow test allows. Run the test at the level that fits, or give the flow the interface it really goes through.
+
 ### Coverage gaps: test plan
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -2425,7 +2475,7 @@ The product, the roles its records name and its open questions, which belong to 
 A product: the root of a set of specifications.
 
 - **Parents:** none (a root record)
-- **Children:** [`business_outcome`](#kind-business_outcome), [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`standard`](#kind-standard), [`question`](#kind-question)
+- **Children:** [`business_outcome`](#kind-business_outcome), [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`interface`](#kind-interface), [`standard`](#kind-standard), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>`, such as `TL`
 - **Links out:** none

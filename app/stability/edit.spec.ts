@@ -15,7 +15,7 @@ const TITLE = '.pane-wiki .pane-title';
 const CONTENT = ['.pane-wiki .pane-scroll'];
 
 test.describe('editing', () => {
-  test('LA-EXP-UC14-FL-T open the form, save an edit', async ({ page }) => {
+  test('LA-EXP-UC14-FL01-T open the form, save an edit', async ({ page }) => {
     const restore = keepData();
     try {
       await openPage(page, EDITED);

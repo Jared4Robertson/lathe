@@ -5,7 +5,7 @@ description: Write or change Lathe use cases - the capabilities that group a dom
 
 # Write use cases
 
-A use case is an actor's goal: who acts, what they want, and the rules the product must follow while they reach it. It changes nothing itself. Its one flow's steps invoke the domain's commands and queries (see `design-interactions`), so write use cases after the domain model (`model-a-domain`), whose commands, queries and terms they use.
+A use case is an actor's goal: who acts, what they want, and the rules the product must follow while they reach it. It changes nothing itself. It happens through one or more of the product's interfaces (its web app, its API, its CLI), with one flow for each, whose steps invoke the domain's commands and queries (see `design-interactions`), so write use cases after the domain model (`model-a-domain`), whose commands, queries and terms they use.
 
 ## How you write
 
@@ -49,7 +49,7 @@ A UC requirement is one rule the use case must follow, stated at the level of th
 - One rule per record, each testable on its own. A use case test proves it (see `plan-tests`).
 - It does not restate the domain model. An invariant, a specification or a constraint the use case's command keeps is already owed there; write a requirement only for what this use case adds: an order of checks, what the actor sees, what is refused and how.
 - It says what, not how. A rule that names a route, a status code, a field limit or a screen element belongs to a view or an endpoint, as a view or API requirement (see `design-interactions`).
-- Steps of the use case's own flow fulfill it, and only they. A requirement no step fulfills is a gap.
+- It holds whatever the interface: a step of each of the use case's flows fulfills it, and only steps of its own flows do. A requirement a flow misses is a gap. A rule only one interface can meet, such as a button or a status code, is a view or API requirement instead.
 - Sort more than about 8 into groups with `group_name`, such as Validation or Errors; give each group at least two.
 
 ## Patterns
@@ -99,6 +99,6 @@ To stop following a pattern, `remove` the setting values first, then `unlink`.
 ## Rules
 
 - Every use case has at least one actor and one UC requirement, unless all its rules come from its patterns; the check reports what is missing.
-- A use case changes nothing itself: it names no aggregate and no event. What it changes follows from the commands its flow's steps invoke.
+- A use case changes nothing itself: it names no aggregate and no event. What it changes follows from the commands its flows' steps invoke.
 - Something undecided is a `question` with an `owner` (a role, such as Owner), linked with `about` to the use case, never "TBD" in a requirement.
-- Next, write each use case's flow with the `design-interactions` skill, then finish with `check-and-fix`.
+- Next, write each use case's flows, one per interface it happens through, with the `design-interactions` skill, then finish with `check-and-fix`.

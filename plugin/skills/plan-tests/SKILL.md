@@ -26,12 +26,12 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `use_case_test` | a UC requirement | at least one | `<UC requirement>-T<nn>` | api, e2e-api, e2e-ui, manual |
 | `view_test` | a view requirement | at least one | `<view requirement>-T<nn>` | unit, e2e-ui, manual |
 | `endpoint_test` | an API requirement | at least one | `<API requirement>-T<nn>` | contract, api |
-| `flow_test` | a flow: a smoke test of its main path | exactly one | `<flow>-T` | e2e-ui, manual |
+| `flow_test` | a flow: a smoke test of its main path | exactly one | `<flow>-T` | e2e-ui for a web app or desktop flow, e2e-api for an API, CLI or agent tools flow, manual with a reason |
 | `integration_test` | an integration | any | `<integration>-T<nn>` | contract, e2e-api, manual |
 | `pattern_rule_test` | a pattern rule, in one adopting domain (`domain_id`) | one per rule and domain | `<pattern rule>-T<nn>` | any |
 | `standard_rule_test` | a standard rule | any | `<standard rule>-T<nn>` | any |
 
-Technical records have no tests of their own: each is proved by the tests of what it implements. A standard rule is proved by its standard rule tests, such as a scan of the code for what the rule forbids; the technical records that `meets` it show where it is applied, and prove nothing. A test at a level its kind does not allow is a warning.
+Technical records have no tests of their own: each is proved by the tests of what it implements. A standard rule is proved by its standard rule tests, such as a scan of the code for what the rule forbids; the technical records that `meets` it show where it is applied, and prove nothing. A test at a level its kind does not allow is a warning, and so is a flow test at a level its flow's interface does not fit (`flow-test-level-for-interface`).
 
 Most kinds take `given`, `when` and `then`: the state it starts from, the action, and what it expects. A constraint test takes `accepts` and `refuses` (the values the value object takes and refuses); a flow test takes `steps` (a list, one item per step of the main path) and `expected_result`.
 
@@ -117,7 +117,7 @@ Once it is written: `set { "endpoint_test": { "id": "TL-LEND-EP05-R02-T01", "sta
 A manual flow test, a pattern rule test in the domain that adopts the pattern, and a standard rule test:
 
 ```
-add  { "flow_test": { "id": "TL-LEND-UC04-FL-T", "title": "The README returns a tool against a running server", "flow_id": "TL-LEND-UC04-FL",
+add  { "flow_test": { "id": "TL-LEND-UC04-FL01-T", "title": "The README returns a tool against a running server", "flow_id": "TL-LEND-UC04-FL01",
        "level": "manual", "state": "manual",
        "manual_reason": "It checks what a newcomer meets: the real entry point, the documented port and the README's commands as written.",
        "steps": ["Start the server with npm start", "Borrow a tool with the README's command", "Return it with the README's command"],

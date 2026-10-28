@@ -64,7 +64,7 @@ describe('designed and built', () => {
     data = without(data, 'renders', () => true);
     data = without(data, 'endpoint_handler', () => true);
     data = without(data, 'meets', (r) => r.source_id === 'EX-LEND-CMD01-H');
-    data = without(data, 'fulfills', (r) => r.source_id === 'EX-LEND-UC02-FL-S01');
+    data = without(data, 'fulfills', (r) => r.source_id === 'EX-LEND-UC02-FL01-S01');
     ws = await loadData(data, { missing: ['src/dates.ts'] });
   });
 
@@ -101,18 +101,18 @@ describe('designed and built', () => {
 
   it("LA-TRC-UC01-R04-T03 a UC requirement is built through what its steps invoke, or a UI component of the view a step happens in", async () => {
     // The step that fulfills UC01-R01 invokes nothing now; it still happens in the catalog, which a UI component renders.
-    const viaView = await loadData(without(complete(), 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL-S01'));
+    const viaView = await loadData(without(complete(), 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL01-S01'));
     expect(obligation(viaView, 'EX-LEND', 'uc_requirement')).toMatchObject(covered(2));
-    const nowhere = await loadData(without(without(complete(), 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL-S01'), 'happens_in', (r) => r.source_id === 'EX-LEND-UC01-FL-S01'));
+    const nowhere = await loadData(without(without(complete(), 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL01-S01'), 'happens_in', (r) => r.source_id === 'EX-LEND-UC01-FL01-S01'));
     expect(gaps(nowhere)).toEqual(['built EX-LEND-UC01-R01']);
     expect(nowhere.coverage[0].gaps[0]).toEqual({ id: 'EX-LEND-UC01-R01', kind: 'uc_requirement', missing: 'built', message: 'UC requirement EX-LEND-UC01-R01 is not built yet: no file of what implements it exists.' });
   });
 
   it("LA-TRC-UC02-R10-T01 a UC requirement is built by the adapter of an integration its step exchanges with, or a product kind's record under it", async () => {
     // The step that fulfills UC01-R01 invokes nothing and happens in no view; it exchanges with the mail integration.
-    let alone = without(complete(), 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL-S01');
-    alone = without(alone, 'happens_in', (r) => r.source_id === 'EX-LEND-UC01-FL-S01');
-    const exchanging = adding(alone, { exchanges_with: [{ source_id: 'EX-LEND-UC01-FL-S01', target_id: 'EX-INT01' }] });
+    let alone = without(complete(), 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL01-S01');
+    alone = without(alone, 'happens_in', (r) => r.source_id === 'EX-LEND-UC01-FL01-S01');
+    const exchanging = adding(alone, { exchanges_with: [{ source_id: 'EX-LEND-UC01-FL01-S01', target_id: 'EX-INT01' }] });
     expect(obligation(await loadData(exchanging), 'EX-LEND', 'uc_requirement')).toMatchObject(covered(2));
     // With no adapter, a hook of the product's own kind under the integration carries it out, once its file exists.
     const hooked = adding(without(exchanging, 'adapter', () => true), {

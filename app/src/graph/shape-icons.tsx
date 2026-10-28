@@ -3,7 +3,7 @@ import type { Mark, Shape } from './shapes';
 // The small marks for a kind's shape (LA-V93-R06): drawn before a box's kind and ID line in the
 // Nested and Voronoi views, where every box keeps its rectangle or cell (by the canvas, paint.ts,
 // from these same paths), and in the graph's key.
-// A mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder) tells apart two kinds that share a shape, in every
+// A mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder, a plug) tells apart two kinds that share a shape, in every
 // view. Each is a line drawing in its box's edge and fill colors.
 
 /** Each shape's drawing in a 16 by 11 box: one path, or layers drawn back to front. */
@@ -40,6 +40,7 @@ export const MARK_PATHS: Readonly<Record<Mark, string>> = {
   marker: 'M3 1h5v9L5.5 7.8 3 10z',
   target: 'M5.5 1a4.5 4.5 0 1 0 0 9 4.5 4.5 0 1 0 0-9z M5.5 3.3a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 1 0 0-4.4z M5.5 5.5h0.1',
   data: 'M1.5 2.5a4 1.5 0 1 0 8 0 4 1.5 0 1 0-8 0z M1.5 2.5v6a4 1.5 0 0 0 8 0v-6 M1.5 5.5a4 1.5 0 0 0 8 0',
+  plug: 'M3.5 1v2.5 M7.5 1v2.5 M2 3.5h7v2a3.5 3.5 0 0 1-7 0z M5.5 9v1.5',
 };
 
 /** A shape's mark, as a box shows it before its kind and ID line or the key beside its meaning. */
@@ -51,7 +52,7 @@ export function ShapeIcon({ shape }: { shape: Shape }) {
   );
 }
 
-/** A kind's mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder). */
+/** A kind's mark (a tag, a gear, a lens, a marker, a ruler, a port, a target, a cylinder, a plug). */
 export function MarkIcon({ mark }: { mark: Mark }) {
   return (
     <svg className={`graph-mark-icon mark-${mark}`} viewBox="0 0 11 11" aria-hidden="true" focusable="false">

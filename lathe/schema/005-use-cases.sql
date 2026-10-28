@@ -23,7 +23,7 @@ CREATE TABLE use_case (
   goal VARCHAR,
   notes VARCHAR
 );
-COMMENT ON TABLE use_case IS 'An actor''s goal: its actors (use_case_actor rows), its UC requirements and its one flow. It changes nothing itself; its flow''s steps invoke commands and queries.';
+COMMENT ON TABLE use_case IS 'An actor''s goal: its actors (use_case_actor rows), its UC requirements and its flows, one per interface it happens through. It changes nothing itself; its flows'' steps invoke commands and queries.';
 COMMENT ON COLUMN use_case.id IS 'The use case''s ID, such as TL-LEND-UC01.';
 COMMENT ON COLUMN use_case.title IS 'What the actor does, such as Borrow a tool.';
 COMMENT ON COLUMN use_case.capability_id IS 'The capability it sits in.';
@@ -49,7 +49,7 @@ CREATE TABLE uc_requirement (
   statement VARCHAR NOT NULL CHECK (trim(statement) <> ''),
   group_name VARCHAR
 );
-COMMENT ON TABLE uc_requirement IS 'One rule a use case must follow. Steps of the use case''s own flow fulfill it.';
+COMMENT ON TABLE uc_requirement IS 'One rule a use case must follow, whatever the interface: a step of each of the use case''s own flows fulfills it. A rule only one interface can meet is a view or API requirement instead.';
 COMMENT ON COLUMN uc_requirement.id IS 'The requirement''s ID: its use case''s ID and R<nn>, such as TL-LEND-UC01-R01.';
 COMMENT ON COLUMN uc_requirement.title IS 'The requirement in a few words.';
 COMMENT ON COLUMN uc_requirement.use_case_id IS 'The use case it belongs to.';

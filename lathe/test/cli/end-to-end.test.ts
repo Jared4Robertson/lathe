@@ -1,6 +1,6 @@
 // End to end, as the Owner and the Agent work: the `lathe` command and the `lathe mcp` server, run as child
 // processes, write a small product in the domain model: a domain, an aggregate with its root entity and fields, a
-// command raising an event, then a capability, a use case and its requirement, the use case's flow with a step that
+// command raising an event, then a capability, a use case and its requirement, the product's interface, the use case's flow through it with a step that
 // invokes the command and fulfills the requirement, and a use case test under the requirement. The data files change
 // line by line as expected, a refused write changes nothing, and the data loads with every key and check.
 import { spawn, spawnSync } from 'node:child_process';
@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
-import { openStore } from '../../src/index.ts';
+import { openStore, SCHEMA_VERSION } from '../../src/index.ts';
 
 const bin = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'bin', 'lathe.ts');
 const roots: string[] = [];
@@ -21,7 +21,7 @@ afterAll(() => {
 function productRepo(): string {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-writers-'));
   roots.push(root);
-  writeFileSync(path.join(root, 'lathe.config.json'), '{}\n');
+  writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   mkdirSync(path.join(root, 'data'));
   writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library"}\n');
   return root;
@@ -47,13 +47,14 @@ const EVENT = { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND
 const CAPABILITY = { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1 };
 const USE_CASE = { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home for the loan period.' };
 const REQUIREMENT = { id: 'TL-LEND-UC01-R01', title: 'A tool on loan is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse to lend a tool that is on loan.' };
-const FLOW = { id: 'TL-LEND-UC01-FL', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01' };
-const STEP = { id: 'TL-LEND-UC01-FL-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 };
+const INTERFACE = { id: 'TL-IF01', title: 'HTTP API', product_id: 'TL', kind: 'API' };
+const FLOW = { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' };
+const STEP = { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 };
 const TEST = { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'api', state: 'not automated yet', given: 'A tool on loan', when: 'A member borrows it', then: 'It is refused' };
 const LINKS: [string, string, string][] = [
   ['TL-LEND-CMD01', 'raises', 'TL-LEND-EV01'],
-  ['TL-LEND-UC01-FL-S01', 'invokes', 'TL-LEND-CMD01'],
-  ['TL-LEND-UC01-FL-S01', 'fulfills', 'TL-LEND-UC01-R01'],
+  ['TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-CMD01'],
+  ['TL-LEND-UC01-FL01-S01', 'fulfills', 'TL-LEND-UC01-R01'],
 ];
 
 const line = (row: object) => `${JSON.stringify(row)}\n`;
@@ -66,9 +67,10 @@ const EXPECTED = {
   'entity.jsonl': line(ENTITY),
   'entity_field.jsonl': FIELDS.map(line).join(''),
   'flow.jsonl': line(FLOW),
+  'interface.jsonl': line(INTERFACE),
   'flow_step.jsonl': line(STEP),
-  'fulfills.jsonl': line({ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }),
-  'invokes.jsonl': line({ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-CMD01' }),
+  'fulfills.jsonl': line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC01-R01' }),
+  'invokes.jsonl': line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-CMD01' }),
   'product.jsonl': line({ id: 'TL', title: 'Tool Library' }),
   'raises.jsonl': line({ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-EV01' }),
   'uc_requirement.jsonl': line(REQUIREMENT),
@@ -80,7 +82,7 @@ async function loads(root: string) {
   const store = await openStore(root);
   try {
     return {
-      records: ['TL', 'TL-LEND', 'TL-LEND-A1', 'TL-LEND-EN01', 'TL-LEND-CMD01', 'TL-LEND-EV01', 'TL-LEND-UC01', 'TL-LEND-UC01-R01', 'TL-LEND-UC01-FL', 'TL-LEND-UC01-FL-S01', 'TL-LEND-UC01-R01-T01'].map(
+      records: ['TL', 'TL-LEND', 'TL-LEND-A1', 'TL-LEND-EN01', 'TL-LEND-CMD01', 'TL-LEND-EV01', 'TL-LEND-UC01', 'TL-LEND-UC01-R01', 'TL-LEND-UC01-FL01', 'TL-LEND-UC01-FL01-S01', 'TL-LEND-UC01-R01-T01'].map(
         (id) => store.record(id)?.kind,
       ),
       obligations: await store.query('SELECT id FROM obligation ORDER BY id'),
@@ -104,7 +106,7 @@ const LOADED = {
 const flags = (row: Record<string, string | number | boolean>) => Object.entries(row).flatMap(([column, value]) => [`--${column}`, String(value)]);
 
 describe('writing a spec end to end', () => {
-  it('LA-AUT-UC01-FL-T with the lathe command', async () => {
+  it('LA-AUT-UC01-FL03-T with the lathe command', async () => {
     const root = productRepo();
     const run = (...args: string[]) => {
       const result = lathe(root, ...args);
@@ -125,9 +127,11 @@ describe('writing a spec end to end', () => {
     expect(run('next-id', 'use_case', '--parent', 'TL-LEND-CAP01')).toBe('TL-LEND-UC01');
     run('add', 'use_case', ...flags(USE_CASE));
     run('add', 'uc_requirement', ...flags(REQUIREMENT));
-    expect(run('next-id', 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL');
+    expect(run('next-id', 'interface', '--parent', 'TL')).toBe('TL-IF01');
+    run('add', 'interface', ...flags(INTERFACE));
+    expect(run('next-id', 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL01');
     run('add', 'flow', ...flags(FLOW));
-    expect(run('next-id', 'flow_step', '--parent', 'TL-LEND-UC01-FL')).toBe('TL-LEND-UC01-FL-S01');
+    expect(run('next-id', 'flow_step', '--parent', 'TL-LEND-UC01-FL01')).toBe('TL-LEND-UC01-FL01-S01');
     run('add', 'flow_step', ...flags(STEP));
     expect(run('next-id', 'use_case_test', '--parent', 'TL-LEND-UC01-R01')).toBe('TL-LEND-UC01-R01-T01');
     run('add', 'use_case_test', ...flags(TEST));
@@ -135,14 +139,14 @@ describe('writing a spec end to end', () => {
 
     // A refused write leaves every file as it was: a step invokes a command or query, not an event.
     const before = data(root);
-    const refused = lathe(root, 'link', 'TL-LEND-UC01-FL-S01', 'invokes', 'TL-LEND-EV01');
+    const refused = lathe(root, 'link', 'TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-EV01');
     expect(refused.status).toBe(1);
     expect(refused.stderr).toMatch(/^Refused; nothing changed:\n/);
     expect(data(root)).toEqual(before);
 
     expect(data(root)).toEqual(EXPECTED);
     expect(await loads(root)).toEqual(LOADED);
-    expect(run('show', 'TL-LEND-UC01-R01')).toContain('Fulfilled by TL-LEND-UC01-FL-S01: The member borrows a free tool [fulfills, in]');
+    expect(run('show', 'TL-LEND-UC01-R01')).toContain('Fulfilled by TL-LEND-UC01-FL01-S01: The member borrows a free tool [fulfills, in]');
   }, 120_000);
 
   it('LA-INT01-T01 with the MCP tools, as the plugin starts them', async () => {
@@ -184,11 +188,12 @@ describe('writing a spec end to end', () => {
       await call('add', { capability: CAPABILITY });
       await call('add', { use_case: USE_CASE });
       await call('add', { uc_requirement: REQUIREMENT });
+      await call('add', { interface: INTERFACE });
       await call('add', { flow: FLOW });
       await call('add', { flow_step: STEP });
       await call('add', { use_case_test: TEST });
       for (const [source, relation, target] of LINKS) await call('link', { source, relation, target });
-      const refused = await request('tools/call', { name: 'link', arguments: { source: 'TL-LEND-UC01-FL-S01', relation: 'invokes', target: 'TL-LEND-EV01' } });
+      const refused = await request('tools/call', { name: 'link', arguments: { source: 'TL-LEND-UC01-FL01-S01', relation: 'invokes', target: 'TL-LEND-EV01' } });
       expect(refused.result!.isError).toBe(true);
     } finally {
       server.stdin.end();

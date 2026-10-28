@@ -5,7 +5,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { normalRoute, regexRoute, servedRoutes } from '../../src/trace/routes.ts';
 import { writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { readConfig } from '../../src/config.ts';
+import { readConfig, SCHEMA_VERSION } from '../../src/config.ts';
 import { complete, loadData, removeData, writeData } from '../helpers.ts';
 import { add, gapsOf, LENDING, problemsOf, product, removeProducts } from '../flows/product.ts';
 import type { Workspace } from '../../src/index.ts';
@@ -40,7 +40,7 @@ describe('every route the code serves has a record', () => {
   it('LA-TRC-UC15-R03-T01 A route the code serves with no endpoint or view is a gap', async () => {
     const ws = await loadData(complete(), {
       files: {
-        'lathe.config.json': '{ "routers": ["web/*.tsx"] }\n',
+        'lathe.config.json': `${JSON.stringify({ schema: SCHEMA_VERSION, routers: ['web/*.tsx'] })}\n`,
         'src/router.ts': [
           '// EX-LEND-EP01-H: POST /loans, and GET /old-loans only in a comment',
           "router.post('/loans', openLoan);",
@@ -70,7 +70,7 @@ describe('every route the code serves has a record', () => {
 });
 
 describe('Routes kept in step from the command line', () => {
-  it('LA-TRC-UC15-FL-T routes and records are kept in step from the command line', async () => {
+  it('LA-TRC-UC15-FL03-T routes and records are kept in step from the command line', async () => {
     const tl = product();
     // S01: an Agent writes an endpoint and its handler, whose file names the route with its parameter written another way.
     await tl.seed([

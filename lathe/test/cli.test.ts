@@ -1,6 +1,6 @@
 // The `lathe` command line, run as a child process the way a person or agent runs it.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
@@ -92,6 +92,7 @@ describe('lathe check', () => {
 describe('lathe init', () => {
   it('LA-PLT-UC02-R01-T01 Init writes a config and a first product record through the store, and refuses bad or repeated input', () => {
     const root = writeData({});
+    rmSync(path.join(root, 'lathe.config.json'));
     const first = lathe('init', '--root', root, '--name', 'Tool Library', '--prefix', 'TL');
     expect(first.status).toBe(0);
     expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ schema: SCHEMA_VERSION, data: 'data' });
@@ -108,6 +109,7 @@ describe('lathe init', () => {
 
     // It refuses a prefix that is not a valid ID, and a missing name or prefix, writing nothing.
     const other = writeData({});
+    rmSync(path.join(other, 'lathe.config.json'));
     for (const args of [['--name', 'X', '--prefix', 'tl'], ['--name', 'X', '--prefix', 'T-L'], ['--name', 'X'], ['--prefix', 'TL']]) {
       const refused = lathe('init', '--root', other, ...args);
       expect(refused.status).toBe(2);
@@ -116,7 +118,7 @@ describe('lathe init', () => {
 
     // An existing config is kept, and its data folder is used.
     const configured = writeData({});
-    const config = `${JSON.stringify({ data: 'spec-data' })}\n`;
+    const config = `${JSON.stringify({ schema: SCHEMA_VERSION, data: 'spec-data' })}\n`;
     writeFileSync(path.join(configured, 'lathe.config.json'), config);
     expect(lathe('init', '--root', configured, '--name', 'Notes', '--prefix', 'NT').status).toBe(0);
     expect(readFileSync(path.join(configured, 'lathe.config.json'), 'utf8')).toBe(config);

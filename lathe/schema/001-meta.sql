@@ -123,6 +123,6 @@ INSERT INTO meta_stage VALUES
   ('discovery', 1, 'Discovery', 'The business outcomes the product exists to achieve, each a measurable statement with its measure and target, which its capabilities serve.'),
   ('domain-model', 2, 'Domain model', 'Domains and their aggregates, entities, value objects, rules (constraints, invariants, specifications and policies), events, commands, read models, queries, domain services and glossary terms.'),
   ('use-cases', 3, 'Use cases', 'Capabilities, the use cases in them with their actors and UC requirements, and the patterns use cases and domains follow.'),
-  ('interaction-design', 4, 'Interaction design', 'Each use case''s flow and its steps, and the views, endpoints and integrations the steps reach, with their requirements.'),
+  ('interaction-design', 4, 'Interaction design', 'The product''s interfaces, each use case''s flows (one per interface it happens through) and their steps, and the views, endpoints and integrations the steps reach, with their requirements.'),
   ('technical-specification', 5, 'Technical specification', 'The technical record that implements each design record, such as a command''s handler or an entity''s table, and the standards code meets.'),
   ('test-plan', 6, 'Test plan', 'The tests, one kind per thing tested, each proving exactly its parent, and the test data sets they start from.');

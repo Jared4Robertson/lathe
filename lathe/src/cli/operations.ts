@@ -289,10 +289,27 @@ function idBase(kind: KindDescription): 'product' | 'domain' | 'parent' {
   return pattern.startsWith('<P>-<D>-') ? 'domain' : pattern.startsWith('<P>-') ? 'product' : 'parent';
 }
 
+/** A use case's next flow: through the first interface of its product, by ID, that it has no flow through yet. */
+async function nextFlowId(store: Store, useCase: string): Promise<string> {
+  const [free] = await store.query<{ id: string; product_id: string }>(`
+SELECT i.id, s.product_id FROM record_scope s JOIN interface i ON i.product_id = s.product_id
+WHERE s.id = ${sqlString(useCase)} AND NOT EXISTS (SELECT 1 FROM flow f WHERE f.use_case_id = ${sqlString(useCase)} AND f.interface_id = i.id)
+ORDER BY i.id LIMIT 1`);
+  if (!free) {
+    const [scope] = await store.query<{ product_id: string }>(`SELECT product_id FROM record_scope WHERE id = ${sqlString(useCase)}`);
+    const has = store.rows('interface').some((i) => i.product_id === scope?.product_id);
+    refuse('exists', has
+      ? `${useCase} has a flow through every interface of ${scope?.product_id}; a flow's ID ends in its interface's number, so declare the interface first`
+      : `${scope?.product_id ?? useCase} declares no interface yet; a flow's ID ends in its interface's number (<use case>-FL<nn>), so add an interface under the product first`);
+  }
+  return `${useCase}-FL${/-IF(\d+)$/.exec(free.id)![1]}`;
+}
+
 /**
  * The next free ID for a record of the kind, by its ID pattern. Under is the record it will sit under; for a kind with
  * no owner it is the product (or a domain of it) its ID starts with, and for a specification its domain. A kind with
- * one record per parent (<use case>-FL, <aggregate>-REPO, <constraint>-T) gives that ID while it is free.
+ * one record per parent (<aggregate>-REPO, <constraint>-T) gives that ID while it is free. A flow's ID ends in its interface's
+ * number, so under a use case it is the first interface of the product with no flow of that use case yet.
  */
 export async function nextId(root: string, kind: string, under: string): Promise<Outcome<string>> {
   return withStore(root, async (store) => {
@@ -303,6 +320,7 @@ export async function nextId(root: string, kind: string, under: string): Promise
     if (owned && !description.parents.some((p) => p.kind === record.kind)) {
       refuse('parent', `${a(kind)} sits under ${description.parents.map((p) => p.kind).join(' or ')}, not under ${record.kind} ${under}`);
     }
+    if (kind === 'flow') return nextFlowId(store, under);
     const base = idBase(description);
     if (!owned) {
       if (kind === 'product') refuse('id-pattern', 'a product\'s ID is its prefix, which you choose (such as TL)');

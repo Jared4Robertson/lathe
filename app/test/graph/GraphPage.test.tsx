@@ -18,7 +18,7 @@ const sideBar = () => within(screen.getByRole('complementary', { name: 'Side bar
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 /** The address of a record in the test workspace (the product and domain have overview pages). */
 const addressOf = (id: string) => `/${id}`;
-const STEP = 'P-D-UC01-FL-S01';
+const STEP = 'P-D-UC01-FL01-S01';
 
 async function back() {
   await act(async () => {
@@ -160,15 +160,15 @@ describe('graph page', () => {
     expect(document.activeElement).toBe(center);
     // Left steps out to the parent, and the keyboard follows to its box.
     fireEvent.keyDown(center, { key: 'ArrowLeft' });
-    expect(window.location.pathname).toBe('/P-D-UC01-FL');
-    await waitFor(() => expect(document.activeElement).toBe(node('P-D-UC01-FL')));
+    expect(window.location.pathname).toBe('/P-D-UC01-FL01');
+    await waitFor(() => expect(document.activeElement).toBe(node('P-D-UC01-FL01')));
     // Right steps in to the first child; Down and Up walk the siblings in the tree's order.
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowRight' });
     expect(window.location.pathname).toBe(`/${STEP}`);
     await waitFor(() => expect(document.activeElement).toBe(node(STEP)));
     fireEvent.keyDown(document.activeElement!, { key: 'ArrowDown' });
     const sibling = window.location.pathname;
-    expect(sibling).toMatch(/^\/P-D-UC01-FL-S0[23]$/);
+    expect(sibling).toMatch(/^\/P-D-UC01-FL01-S0[23]$/);
     // From the canvas itself (a click there gives the graph focus) the arrows step too, and focus stays on the canvas.
     const canvas = graphHost()!;
     canvas.focus();
@@ -265,7 +265,7 @@ describe('graph page', () => {
     await showGraph(`/${STEP}`);
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
     const left = (id: string) => drawnBox(id)!.map.x;
-    expect(left('P-D-UC01-FL')).toBeLessThan(left(STEP));
+    expect(left('P-D-UC01-FL01')).toBeLessThan(left(STEP));
     // What the step links to keeps its own place in the map: the view in its domain's Interaction design, left of the deeper requirement.
     expect(left('P-V01')).toBeLessThan(left('P-D-UC01-R01'));
     expect(scene().lines.some((l) => l.style === 'structure' && !l.link)).toBe(true);

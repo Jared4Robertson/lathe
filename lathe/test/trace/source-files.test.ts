@@ -3,7 +3,7 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { DEFAULT_SOURCE, DEFAULT_TESTS, loadConfig, loadWorkspace, type Workspace } from '../../src/index.ts';
+import { DEFAULT_SOURCE, DEFAULT_TESTS, loadConfig, loadWorkspace, SCHEMA_VERSION, type Workspace } from '../../src/index.ts';
 import { isTraced, sourceFiles } from '../../src/trace/source-files.ts';
 import { build, loadData, removeData, writeData } from '../helpers.ts';
 
@@ -76,7 +76,7 @@ describe('source file tracing', () => {
       'Source file src/helpers.ts is named by no technical record, directly or through a folder.',
     );
     // The source setting narrows what counts as source; an empty or wrong one is refused.
-    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'data', source: ['src/**/*.ts'] }));
+    writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ schema: SCHEMA_VERSION, data: 'data', source: ['src/**/*.ts'] }));
     expect(untraced(await loadWorkspace(root)).map((g) => g.id)).toEqual(['src/helpers.ts']);
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'data', source: [] }));
     expect(() => loadConfig(root)).toThrow(/source must list globs of the source files/);

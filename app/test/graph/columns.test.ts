@@ -28,7 +28,7 @@ describe('graph columns by tree depth', () => {
     for (const [child, parent] of parentOf) byParent.set(parent, (byParent.get(parent) ?? new Set()).add(column.get(child)!));
     for (const cols of byParent.values()) expect(cols.size).toBe(1);
     // In the map: the records straight in a domain's folders, whatever their stage and kind, at one level; a folder's records at one x.
-    const members = ['P-D-A1', 'P-D-CAP01', 'P-D-UC01-FL', 'P-D-EN02-TB', 'P-D-INV01-T'];
+    const members = ['P-D-A1', 'P-D-CAP01', 'P-D-UC01-FL01', 'P-D-EN02-TB', 'P-D-INV01-T'];
     expect(new Set(members.map((id) => map.nodes.get(id)!.level)).size).toBe(1);
     expect(new Set(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4'].map(x)).size).toBe(1);
   });
@@ -44,10 +44,10 @@ describe('graph columns by tree depth', () => {
 
   it.each(['LA-EXP-DS05-T07', 'LA-V93-R15-T07'])('%s A cross-linked record sits one column after the record it is reached from, unless its tree position places it', () => {
     // Without parent lines, what the step links to is reached from it, one column after it.
-    const chain = neighborhood(index, 'P-D-UC01-FL-S01', 1, { hiddenKinds: new Set(), hiddenRelations: new Set(['parent']) }, { links: true });
+    const chain = neighborhood(index, 'P-D-UC01-FL01-S01', 1, { hiddenKinds: new Set(), hiddenRelations: new Set(['parent']) }, { links: true });
     const column = columnOf(chain);
-    expect(chain.via.get('P-V01')).toBe('P-D-UC01-FL-S01');
-    expect(column.get('P-V01')).toBe(column.get('P-D-UC01-FL-S01')! + 1);
+    expect(chain.via.get('P-V01')).toBe('P-D-UC01-FL01-S01');
+    expect(column.get('P-V01')).toBe(column.get('P-D-UC01-FL01-S01')! + 1);
     // With the tree: the specification a command checks sits one column after it.
     const command = columnOf(neighborhood(index, 'P-D-CMD01', 1, undefined, { links: true }));
     expect(command.get('P-D-SP01')).toBe(command.get('P-D-CMD01')! + 1);

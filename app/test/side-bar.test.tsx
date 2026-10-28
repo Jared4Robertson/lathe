@@ -73,21 +73,21 @@ describe('the side bar', () => {
   it('LA-V95-R06-T01 In the Graph view Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
     window.sessionStorage.setItem('lathe:graph-settings', JSON.stringify({ layout: 'tree', depth: 1, trace: false, hiddenKinds: [], hiddenRelations: [], links: true, minimap: false }));
     await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
-    await waitFor(() => expect(node('P-D-UC01-FL-S01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL01-S01')).not.toBeNull());
     expect(name()).toBe('The loan is recorded');
     expect(side().queryByRole('link', { name: 'Open' })).toBeNull();
     const trace = side().getByRole('region', { name: /^Traceability/ });
     expect(within(trace).getByText(/^Designed by/)).toBeInTheDocument();
-    expect(within(trace).getByRole('link', { name: 'P-D-UC01-FL-S01' })).toBeInTheDocument();
+    expect(within(trace).getByRole('link', { name: 'P-D-UC01-FL01-S01' })).toBeInTheDocument();
     expect(within(trace).getByText(/^Proved by/)).toBeInTheDocument();
     expect(side().getByText('Data file')).toBeInTheDocument();
     await waitFor(() => expect(side().getByRole('heading', { name: /Connected in the graph/ })).toBeInTheDocument());
 
     // Hover: the node lit by the spotlight.
-    hoverBox('P-D-UC01-FL-S01');
+    hoverBox('P-D-UC01-FL01-S01');
     await waitFor(() => expect(name()).toBe('Librarian lends the thing'));
     expect(sideBar().querySelector('.side-bar-identity .eyebrow')).toHaveTextContent(/^Under the pointer/);
-    expect(side().getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/P-D-UC01-FL-S01?view=graph');
+    expect(side().getByRole('link', { name: 'Open' })).toHaveAttribute('href', '/P-D-UC01-FL01-S01?view=graph');
     // Leaving gives the page's record back, in the same box.
     const box = sideBar();
     leaveCanvas();
@@ -103,7 +103,7 @@ describe('the side bar', () => {
 
   const proveLaV95R06T02 = async () => {
     openSideBar();
-    await openApp('/P-D-UC01-FL-S01', { data: testWorkspace() });
+    await openApp('/P-D-UC01-FL01-S01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Librarian lends the thing' });
     expect(side().getByRole('heading', { name: 'Data file' })).toBeInTheDocument();
     expect(side().getByRole('heading', { name: 'Columns' })).toBeInTheDocument();

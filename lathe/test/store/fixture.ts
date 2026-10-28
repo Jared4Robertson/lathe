@@ -3,7 +3,7 @@
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import type { Row } from '../../src/index.ts';
+import { SCHEMA_VERSION, type Row } from '../../src/index.ts';
 
 export type Data = Record<string, Row[]>;
 
@@ -69,8 +69,9 @@ export function everyKind(): Data {
     ],
 
     // Interaction design.
-    flow: [{ id: 'TL-LEND-UC01-FL', title: 'Borrow at the desk', use_case_id: 'TL-LEND-UC01' }],
-    flow_step: [{ id: 'TL-LEND-UC01-FL-S01', title: 'Pick a tool', flow_id: 'TL-LEND-UC01-FL', path: 'main', position: 1 }],
+    interface: [{ id: 'TL-IF01', title: 'Web app', product_id: 'TL', kind: 'web app' }],
+    flow: [{ id: 'TL-LEND-UC01-FL01', title: 'Borrow at the desk', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }],
+    flow_step: [{ id: 'TL-LEND-UC01-FL01-S01', title: 'Pick a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }],
     view: [{ id: 'TL-V01', title: 'Catalog', route: '/catalog' }],
     view_requirement: [{ id: 'TL-V01-R01', title: 'Free tools first', view_id: 'TL-V01', statement: 'The catalog MUST list free tools first.' }],
     endpoint: [{ id: 'TL-LEND-EP01', title: 'Borrow a tool', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans' }],
@@ -114,7 +115,7 @@ export function everyKind(): Data {
     use_case_test: [{ id: 'TL-LEND-UC01-R01-T01', title: 'A lent tool is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'e2e-api', state: 'automated', file: 'test/borrow.test.ts' }],
     view_test: [{ id: 'TL-V01-R01-T01', title: 'Free tools come first', view_requirement_id: 'TL-V01-R01', level: 'e2e-ui', state: 'automated', file: 'e2e/catalog.spec.ts' }],
     endpoint_test: [{ id: 'TL-LEND-EP01-R01-T01', title: 'Unknown tool gives 404', api_requirement_id: 'TL-LEND-EP01-R01', level: 'api', state: 'automated', file: 'test/api.test.ts' }],
-    flow_test: [{ id: 'TL-LEND-UC01-FL-T', title: 'Borrow end to end', flow_id: 'TL-LEND-UC01-FL', level: 'e2e-ui', state: 'automated', file: 'e2e/borrow.spec.ts', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }],
+    flow_test: [{ id: 'TL-LEND-UC01-FL01-T', title: 'Borrow end to end', flow_id: 'TL-LEND-UC01-FL01', level: 'e2e-ui', state: 'automated', file: 'e2e/borrow.spec.ts', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }],
     test_data_set: [{ id: 'TL-LEND-TD01', title: 'One tool on loan', domain_id: 'TL-LEND', environment: 'A fresh database.', accounts: 'One member.', records: 'One tool, on loan to the member.', prepare: 'Run the seed.', reset: 'Drop the database.', file: 'test/seed.ts', description: 'What the lending tests start from.' }],
     integration_test: [{ id: 'TL-INT01-T01', title: 'A mail is sent', integration_id: 'TL-INT01', level: 'manual', state: 'manual', manual_reason: 'The mail service has no test mode.', size: 'volume', smoke: true, external: true }],
     pattern_rule_test: [{ id: 'TL-PAT-ACT-R01-T01', title: 'A saved tool reads the same', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-LEND', ...automated('test/catalog.test.ts') }],
@@ -136,10 +137,10 @@ export function everyKind(): Data {
     hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV01' }],
     fed_by: [{ source_id: 'TL-LEND-RM01', target_id: 'TL-LEND-EV01' }],
     calls: [{ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-DS01' }],
-    fulfills: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-UC01-R01' }],
-    invokes: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-CMD01' }],
-    happens_in: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-V01' }],
-    exchanges_with: [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-INT01' }],
+    fulfills: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC01-R01' }],
+    invokes: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-CMD01' }],
+    happens_in: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-V01' }],
+    exchanges_with: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-INT01' }],
     renders: [{ source_id: 'TL-UI01', target_id: 'TL-V01' }],
     follows: [{ source_id: 'TL-LEND-UC01', target_id: 'TL-PAT-ACT' }],
     setting_value: [{ follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting: 'record', value: 'Tool' }],
@@ -168,14 +169,25 @@ export function removeData(): void {
   for (const root of roots.splice(0)) rmSync(root, { recursive: true, force: true });
 }
 
-/** A fresh folder (a product repo root) holding the data as data/<table>.jsonl files, one JSON object per line. */
+/**
+ * A fresh folder (a product repo root) holding the data as data/<table>.jsonl files, one JSON object per line, and a
+ * lathe.config.json naming this Lathe's schema version.
+ */
 export function writeData(data: Data): string {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-store-'));
   roots.push(root);
   mkdirSync(path.join(root, 'data'));
+  writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION, data: 'data' }, null, 2)}\n`);
   for (const [table, rows] of Object.entries(data)) {
     if (rows.length) writeFileSync(path.join(root, 'data', `${table}.jsonl`), rows.map((r) => `${JSON.stringify(r)}\n`).join(''));
   }
+  return root;
+}
+
+/** A fresh, empty folder named by its prefix in the temp folder, with a lathe.config.json naming this Lathe's schema version. */
+export function configuredRoot(prefix: string): string {
+  const root = mkdtempSync(path.join(tmpdir(), prefix));
+  writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   return root;
 }
 

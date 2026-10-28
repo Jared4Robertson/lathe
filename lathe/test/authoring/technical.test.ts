@@ -51,7 +51,7 @@ describe('the interaction design', () => {
     expect((await refusals(withTable(everyKind(), 'endpoint', [{ ...endpoint, query_id: 'TL-LEND-QRY01' }]))).map((p) => p.rule)).toEqual(['check']);
     // A step invokes a command or a query, never an endpoint.
     expect(pairsOf(schema, 'invokes')).toEqual(['flow_step>command', 'flow_step>query']);
-    const direct = await refusals(withTable(everyKind(), 'invokes', [{ source_id: 'TL-LEND-UC01-FL-S01', target_id: 'TL-LEND-EP01' }]));
+    const direct = await refusals(withTable(everyKind(), 'invokes', [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-EP01' }]));
     expect(direct).toEqual([expect.objectContaining({ table: 'invokes', file: 'data/invokes.jsonl', line: 1 })]);
   });
 

@@ -7,7 +7,7 @@ import { add, gapsOf, LENDING, problemsOf, product, removeProducts } from './pro
 afterAll(removeProducts);
 
 describe('Packages from the command line', () => {
-  it('LA-TRC-UC19-FL-T account for every package the product depends on', async () => {
+  it('LA-TRC-UC19-FL03-T account for every package the product depends on', async () => {
     const tl = product();
     await tl.seed([
       ...LENDING,

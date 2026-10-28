@@ -21,7 +21,7 @@ A refused write changed nothing. Its result lists every reason, each with the ru
 - `[foreign-key]`, `[missing]`: an ID that names nothing, usually a typo. `show` the record, or `list` the table with a `parent`, to find the right one.
 - `[required]`, `[type]`, `[check]`: a column missing, of the wrong type, or breaking a rule of its table, said in words (exactly one of two parents, exactly one type per field, a file for an automated test, a reason for a manual one and only for it).
 - `[parent]`: the record names no parent, two, or one of a kind it may not sit under. An endpoint sits under exactly one command or query; a question under its product or one domain.
-- `[primary-key]`, `[unique]`: it exists already, or its parent has its one already (one flow per use case, one test per invariant, one technical record per design record, one event a policy hears, one operation a step invokes, one view it happens in).
+- `[primary-key]`, `[unique]`: it exists already, or its parent has its one already (one flow per use case and interface, one test per invariant, one technical record per design record, one event a policy hears, one operation a step invokes, one view it happens in).
 - `[id-prefix]`: the ID does not start with its scope's ID and a hyphen: its parent's, its domain's or its product's. `next_id` gives a right one.
 - `[relation-pair]`, `[link-scope]`, `[link-crosses-product]`: a link between kinds its relation does not join, across domains where the relation stays in one (`checks`, `reads`, `selects_by`, `calls`) or across aggregates (`raises`), or across products.
 - `[step-fulfills-own-use-case]`, `[policy-hears-published]`, `[command-change-in-domain]`: a step fulfilling another use case's requirement, a policy hearing another domain's unpublished event, a command change of the command's own aggregate or another domain's.
@@ -61,7 +61,7 @@ Gaps are the "at least one" and "exactly one" a later stage still owes: a capabi
 
 The obligations are constraints, invariants, specifications, policies, domain services, UC requirements, view requirements, API requirements, pattern rules and standard rules, and a product's own obligation kinds. Coverage counts each one, per domain:
 
-- **designed**: its implementation is specified. A UC requirement is designed once a step of its flow fulfills it; the others once the technical record that implements them exists.
+- **designed**: its implementation is specified. A UC requirement is designed once a step of each of its use case's flows fulfills it; the others once the technical record that implements them exists.
 - **built**: that technical record names a file that exists.
 - **proved**: its tests exist at a level its kind allows, automated or manual. A test not automated yet is not proof. A standard rule is proved by its standard rule tests.
 

@@ -23,6 +23,7 @@ const PAGES: State[] = [
   { name: 'product page', url: PRODUCT, ready: '.pane-title' },
   { name: 'domain page', url: DOMAIN, ready: '.pane-title' },
   { name: 'record page', url: RECORD, ready: '.pane-title' },
+  { name: 'interface page', url: '/LA-IF03', ready: '.interface-flows' },
   { name: 'group page', url: GROUP, ready: '.pane-title' },
   { name: 'graph', url: `${RECORD}?view=graph`, ready: '.pane-graph .graph-flow .graph-box' },
   { name: 'Model view', url: `${AGGREGATE}?view=model`, ready: '.pane-model .model-canvas' },

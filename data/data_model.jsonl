@@ -67,6 +67,7 @@
 {"id":"LA-AUT-EN73-DM","title":"IntegrationTestRow","entity_id":"LA-AUT-EN73","file":"lathe/src/store/tables.ts","description":"Its row type, `IntegrationTestRow`, generated from the schema."}
 {"id":"LA-AUT-EN74-DM","title":"PatternRuleTestRow","entity_id":"LA-AUT-EN74","file":"lathe/src/store/tables.ts","description":"Its row type, `PatternRuleTestRow`, generated from the schema."}
 {"id":"LA-AUT-EN75-DM","title":"StandardRuleTestRow","entity_id":"LA-AUT-EN75","file":"lathe/src/store/tables.ts","description":"Its row type, `StandardRuleTestRow`, generated from the schema."}
+{"id":"LA-AUT-EN76-DM","title":"InterfaceRow","entity_id":"LA-AUT-EN76","file":"lathe/src/store/tables.ts","description":"Its row type, `InterfaceRow`, generated from the schema."}
 {"id":"LA-CHK-EN01-DM","title":"CheckRow","entity_id":"LA-CHK-EN01","file":"lathe/src/store/tables.ts"}
 {"id":"LA-CHK-EN03-DM","title":"ProductSettingRow","entity_id":"LA-CHK-EN03","file":"lathe/src/store/tables.ts"}
 {"id":"LA-EXP-EN01-DM","title":"SpecRoute","entity_id":"LA-EXP-EN01","file":"app/src/specs/data.ts","description":"SpecRoute, parseSpecRoute"}

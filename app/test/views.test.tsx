@@ -183,11 +183,11 @@ describe('one address, three views', () => {
     expect(within(screen.getByRole('region', { name: 'Wiki pane' })).getByText('The loan MUST be recorded.')).toBeInTheDocument();
 
     // A node in the graph moves the wiki: the flow step that fulfills it, reached by the Links switch.
-    await waitFor(() => expect(node('P-D-UC01-FL-S01')).not.toBeNull());
-    fireEvent.click(node('P-D-UC01-FL-S01')!);
-    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01-FL-S01?view=wiki,graph');
+    await waitFor(() => expect(node('P-D-UC01-FL01-S01')).not.toBeNull());
+    fireEvent.click(node('P-D-UC01-FL01-S01')!);
+    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01-FL01-S01?view=wiki,graph');
     await waitFor(() => expect(title()).toBe('Librarian lends the thing'));
-    await waitFor(() => expect(isCenter('P-D-UC01-FL-S01')).toBe(true));
+    await waitFor(() => expect(isCenter('P-D-UC01-FL01-S01')).toBe(true));
   });
 
   it('LA-V96-R06-T01 Both panes follow one focus, Back moves both, and graph settings survive', async () => {
@@ -199,8 +199,8 @@ describe('one address, three views', () => {
     const wiki = within(screen.getByRole('region', { name: 'Wiki pane' }));
     await userEvent.setup().click(wiki.getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    await waitFor(() => expect(node('P-D-UC01-FL-S01')).not.toBeNull());
-    fireEvent.click(node('P-D-UC01-FL-S01')!);
+    await waitFor(() => expect(node('P-D-UC01-FL01-S01')).not.toBeNull());
+    fireEvent.click(node('P-D-UC01-FL01-S01')!);
     await waitFor(() => expect(title()).toBe('Librarian lends the thing'));
 
     // Back moves both.

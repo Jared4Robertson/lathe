@@ -2,7 +2,7 @@ import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { expect } from 'vitest';
-import { loadWorkspace } from '../../../lathe/src/index';
+import { loadWorkspace, SCHEMA_VERSION } from '../../../lathe/src/index';
 import type { SpecData } from '../../../lathe/src/server/contract';
 import type { Workspace } from '../../../lathe/src/types';
 
@@ -16,6 +16,7 @@ export async function throughEngine(data: SpecData, files: Record<string, string
   try {
     const dataDir = path.join(root, 'data');
     await mkdir(dataDir);
+    await writeFile(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
     for (const [table, rows] of Object.entries(data.sources[0].tables)) {
       await writeFile(path.join(dataDir, `${table}.jsonl`), rows.map((r) => JSON.stringify(r)).join('\n') + '\n');
     }

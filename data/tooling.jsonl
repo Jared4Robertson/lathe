@@ -12,3 +12,4 @@
 {"id":"LA-PLT-TOOL14","title":"Browser suites","domain_id":"LA-PLT","file":"app/stability/playwright.config.ts"}
 {"id":"LA-PLT-TOOL15","title":"Accessibility audit","domain_id":"LA-PLT","file":"app/a11y/axe.ts"}
 {"id":"LA-PLT-TOOL16","title":"Unused code finder","domain_id":"LA-PLT","file":"lathe/knip.json"}
+{"id":"LA-PLT-TOOL17","title":"Schema converters","domain_id":"LA-PLT","file":"lathe/upgrades"}

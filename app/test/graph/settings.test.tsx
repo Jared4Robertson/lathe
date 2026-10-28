@@ -15,7 +15,7 @@ import { testWorkspace } from './workspace';
 // in (one already open, the preview, or a new one). Only the person's own change in the graph
 // (the toolbar, v, + and -) changes them.
 
-const FLOW = 'P-D-UC01-FL';
+const FLOW = 'P-D-UC01-FL01';
 const layoutGroup = () => within(screen.getByRole('group', { name: 'Layout' }));
 /** The layout and depth the toolbar shows, and the Links switch. */
 const drawn = () => ({

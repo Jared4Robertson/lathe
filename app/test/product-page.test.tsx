@@ -71,7 +71,7 @@ describe('product page', () => {
     const stages = [...level.querySelectorAll('.stage')].map((s) => [s.className, s.querySelector('.stage-title')?.textContent]);
     expect(stages).toEqual([
       ['stage stage-domain-model', 'Domain model1'],
-      ['stage stage-interaction-design', 'Interaction design1'],
+      ['stage stage-interaction-design', 'Interaction design2'],
     ]);
     expect(within(level).getByRole('heading', { name: /^Value objects/ })).toBeInTheDocument();
     expect(within(level).getByRole('heading', { name: /^Views/ })).toBeInTheDocument();

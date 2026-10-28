@@ -138,13 +138,13 @@ async function eventsUntil(response: Response, wanted: string, timeoutMs: number
 }
 
 describe('Platform flows', () => {
-  it('LA-PLT-UC01-FL-T an Agent\'s script loads the workspace, sees refused data as data-refused errors, and loads again after a write', async () => {
+  it('LA-PLT-UC01-FL06-T an Agent\'s script loads the workspace, sees refused data as data-refused errors, and loads again after a write', async () => {
     // A product with a record of nearly every kind, every obligation designed, built and proved.
     const root = await build(complete());
 
     // The script loads it and reads the records, links, problems and coverage.
     const ws = await loadWorkspace(root);
-    expect(ws.records.map((r) => r.id)).toEqual(expect.arrayContaining(['EX', 'EX-LEND', 'EX-LEND-A1', 'EX-LEND-UC01', 'EX-LEND-UC01-FL']));
+    expect(ws.records.map((r) => r.id)).toEqual(expect.arrayContaining(['EX', 'EX-LEND', 'EX-LEND-A1', 'EX-LEND-UC01', 'EX-LEND-UC01-FL01']));
     expect(ws.links.length).toBeGreaterThan(0);
     expect(ws.problems.filter((p) => p.severity === 'error')).toEqual([]);
     expect(ws.coverage.map((c) => c.domain)).toContain('EX-LEND');
@@ -174,7 +174,7 @@ describe('Platform flows', () => {
     expect(timings.total).toBeGreaterThan(0);
   }, 120_000);
 
-  it.skipIf(!canServe)('LA-PLT-UC02-FL-T the Owner sets Lathe up in a product repo: init, the merge driver, the first records, serve and stop', async () => {
+  it.skipIf(!canServe)('LA-PLT-UC02-FL03-T the Owner sets Lathe up in a product repo: init, the merge driver, the first records, serve and stop', async () => {
     const root = temp('lathe-setup-');
     git(root, 'init', '-q');
 
@@ -212,7 +212,7 @@ describe('Platform flows', () => {
     expect(child.signalCode).toBe('SIGINT');
   }, 120_000);
 
-  it.skipIf(!canServe)('LA-PLT-UC16-FL-T every change goes through one command layer: the CLI, the MCP tools and POST /api/write, refusals change nothing, open pages reload, and git merges row by row', async () => {
+  it.skipIf(!canServe)('LA-PLT-UC16-FL05-T every change goes through one command layer: the CLI, the MCP tools and POST /api/write, refusals change nothing, open pages reload, and git merges row by row', async () => {
     const root = temp('lathe-layer-');
     git(root, 'init', '-q');
     writeFileSync(path.join(root, '.gitattributes'), '**/data/*.jsonl merge=lathe-data\n');

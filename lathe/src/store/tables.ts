@@ -543,7 +543,7 @@ export interface EventTypeRow {
   description?: string;
 }
 
-/** An actor's goal: its actors (use_case_actor rows), its UC requirements and its one flow. It changes nothing itself; its flow's steps invoke commands and queries. */
+/** An actor's goal: its actors (use_case_actor rows), its UC requirements and its flows, one per interface it happens through. It changes nothing itself; its flows' steps invoke commands and queries. */
 export interface UseCaseRow {
   /** The use case's ID, such as TL-LEND-UC01. */
   id: string;
@@ -557,21 +557,37 @@ export interface UseCaseRow {
   notes?: string;
 }
 
-/** How its use case is carried out: the steps on its main path and its alternate paths. A use case has exactly one flow, and the flow belongs only to it. */
+/** A way people or programs use the product, such as its web app, its HTTP API or its command line. A use case happens through one or more interfaces, with one flow for each, and the kind says what that flow's steps go through. */
+export interface InterfaceRow {
+  /** The interface's ID: its product's ID and IF<nn>, such as TL-IF01. Its number ends the ID of every flow through it. */
+  id: string;
+  /** The interface's name, such as Web app, HTTP API, CLI, MCP tools or Desktop app. */
+  title: string;
+  /** The product it belongs to. */
+  product_id: string;
+  /** What it is: web app or desktop (a flow's steps happen in views), API (they call endpoints, through the command or query each exposes), CLI or agent tools (they run commands and queries), or other. A step of an API, CLI or agent tools flow happens in no view. */
+  kind: "web app" | "API" | "CLI" | "agent tools" | "desktop" | "other";
+  /** Who uses it and how, in a sentence or two. */
+  description?: string;
+}
+
+/** How its use case is carried out through one interface: the steps on its main path and its alternate paths. A use case has one flow per interface it happens through, and each flow belongs only to it. */
 export interface FlowRow {
-  /** The flow's ID: its use case's ID and FL, such as TL-LEND-UC01-FL. */
+  /** The flow's ID: its use case's ID, FL and its interface's number, such as TL-LEND-UC01-FL01 for the flow through TL-IF01. */
   id: string;
   /** The flow's name, such as Borrow a tool at the desk. */
   title: string;
-  /** The use case it carries out; one flow per use case. */
+  /** The use case it carries out. */
   use_case_id: string;
+  /** The interface it goes through, of the same product; at most one flow per use case and interface. */
+  interface_id: string;
   /** The path, in a paragraph. */
   description?: string;
 }
 
-/** One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view and may exchange with integrations. */
+/** One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view (only on a web app, desktop or other interface) and may exchange with integrations. */
 export interface FlowStepRow {
-  /** The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL-S01. */
+  /** The step's ID: its flow's ID and S<nn>, such as TL-LEND-UC01-FL01-S01. */
   id: string;
   /** What happens, in a few words. */
   title: string;
@@ -597,9 +613,9 @@ export interface FedByRow {
   target_id: string;
 }
 
-/** A smoke test of its flow's main path, end to end. */
+/** A smoke test of its flow's main path, end to end, at the level that fits its interface: e2e-ui for a web app or desktop, e2e-api for an API, a CLI or agent tools, manual only with a reason. */
 export interface FlowTestRow {
-  /** The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL-T. */
+  /** The test's ID: its flow's ID and T, such as TL-LEND-UC01-FL01-T. */
   id: string;
   /** What the test shows, in a sentence. */
   title: string;
@@ -647,7 +663,7 @@ export interface FollowsRow {
   target_id: string;
 }
 
-/** One rule a use case must follow. Steps of the use case's own flow fulfill it. */
+/** One rule a use case must follow, whatever the interface: a step of each of the use case's own flows fulfills it. A rule only one interface can meet is a view or API requirement instead. */
 export interface UcRequirementRow {
   /** The requirement's ID: its use case's ID and R<nn>, such as TL-LEND-UC01-R01. */
   id: string;
@@ -1477,6 +1493,7 @@ export interface TableRows {
   event_handler: EventHandlerRow;
   event_type: EventTypeRow;
   use_case: UseCaseRow;
+  interface: InterfaceRow;
   flow: FlowRow;
   flow_step: FlowStepRow;
   exchanges_with: ExchangesWithRow;

@@ -9,6 +9,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
+import { SCHEMA_VERSION } from '../src/index.ts';
 
 const SERVE_MODULE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'src', 'server', 'serve.ts');
 const temp = mkdtempSync(path.join(tmpdir(), 'lathe-serve-stop-'));
@@ -62,7 +63,7 @@ describe('A server stops cleanly, even while a reload is in progress', () => {
     mkdirSync(path.join(root, 'data'), { recursive: true });
     mkdirSync(appDir);
     writeFileSync(path.join(appDir, 'index.html'), '<!doctype html><title>Lathe</title>\n');
-    writeFileSync(path.join(root, 'lathe.config.json'), '{}\n');
+    writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
     writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"STP","title":"Stop Shop","description":"A product for the stop test."}\n');
     const dataFile = path.join(root, 'data', 'domain.jsonl');
     writeFileSync(dataFile, '{"id":"STP-ORD","title":"Orders","product_id":"STP","subdomain_type":"core","description":"Orders."}\n');
