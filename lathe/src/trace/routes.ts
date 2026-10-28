@@ -253,13 +253,22 @@ export function servedRoutes(text: string): ServedRoute[] {
   return served;
 }
 
+/** What a file names: its routes, and the methods on each line. Read once per file, however many records ask. */
+interface Named {
+  mentions: Mention[];
+  methods: Set<string>[];
+}
+
+function namedIn(text: string): Named {
+  // Only a regular expression that matches a path needs the text tokenized: one holds an escaped slash.
+  return { mentions: mentionedRoutes(text, text.includes('\\/') ? tokenize(text).tokens : []), methods: methodsByLine(text) };
+}
+
 /** True when a file names the route, with the method on its line or within two lines of it when one is given. */
-export function namesRoute(text: string, route: string, method: string | null): boolean {
+function namesRoute({ mentions: all, methods }: Named, route: string, method: string | null): boolean {
   const normal = normalRoute(route);
-  const { tokens } = tokenize(text);
-  const mentions = mentionedRoutes(text, tokens).filter((m) => m.normal === normal);
+  const mentions = all.filter((m) => m.normal === normal);
   if (method === null) return mentions.length > 0;
-  const methods = methodsByLine(text);
   return mentions.some((m) => {
     for (let l = m.line - METHOD_REACH; l <= m.line + METHOD_REACH; l++) if (methods[l]?.has(method)) return true;
     return false;
@@ -354,19 +363,28 @@ export async function gatherRouteFacts(root: string, store: Store): Promise<{ fa
     const file = components.get(String(link.source_id));
     if (typeof file === 'string') renderers.set(String(link.target_id), [...(renderers.get(String(link.target_id)) ?? []), file]);
   }
+  const names = new Map<string, Named>();
+  const namedBy = (file: string, text: string) => {
+    let known = names.get(file);
+    if (!known) names.set(file, (known = namedIn(text)));
+    return known;
+  };
   const check = async (record: string, kind: RouteFact['kind'], method: string | null, route: string, named: string[]): Promise<RouteFact> => {
     const files: string[] = [];
     let found = false;
     for (const file of named) {
       const got = await read(file);
       files.push(...got.files);
-      if (!found) found = got.texts.some((text) => namesRoute(text, route, method));
+      if (!found) found = got.files.some((f, at) => namesRoute(namedBy(f, got.texts[at]), route, method));
     }
     return { record, kind, method, route, normal: normalRoute(route), files: [...new Set(files)].join(', '), found };
   };
+  const handlerFiles = new Map(handlers.map((h) => [String(h.endpoint_id), String(h.file)]));
   const facts = await Promise.all([
-    ...store.rows('endpoint').map((e) =>
-      check(String(e.id), 'endpoint', String(e.method), String(e.route), handlers.filter((h) => h.endpoint_id === e.id).map((h) => String(h.file)))),
+    ...store.rows('endpoint').map((e) => {
+      const file = handlerFiles.get(String(e.id));
+      return check(String(e.id), 'endpoint', String(e.method), String(e.route), file === undefined ? [] : [file]);
+    }),
     ...store.rows('view').filter((v) => typeof v.route === 'string' && v.route.trim() !== '').map((v) =>
       check(String(v.id), 'view', null, String(v.route), renderers.get(String(v.id)) ?? [])),
   ]);
@@ -380,7 +398,7 @@ export async function gatherRouteFacts(root: string, store: Store): Promise<{ fa
   }
   const routerFiles: string[] = [];
   for (const pattern of readConfig(root).routers) {
-    for await (const file of glob(pattern, { cwd: root, exclude: (name) => name === 'node_modules' || name === '.git' })) routerFiles.push(file);
+    for await (const file of glob(pattern, { cwd: root, exclude: (name) => ['node_modules', '.git'].includes(path.basename(name)) })) routerFiles.push(file);
   }
   const served: ServedFact[] = [];
   const seen = new Set<string>();
