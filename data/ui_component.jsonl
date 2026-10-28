@@ -37,7 +37,7 @@
 {"id":"LA-UI135","title":"Trace stage","file":"app/src/trace/TraceView.tsx","description":"The Trace stage: an obligation's chain, the matrix of those under the focus, or the rows that hold the focus or the matrix around it, padded into the open space."}
 {"id":"LA-UI136","title":"Card","file":"app/src/shell/Card.tsx","description":"The one card: a title that is its link or button, stretched over the whole card, and what else the card holds; and the grid that lists cards."}
 {"id":"LA-UI137","title":"Header strip","file":"app/src/views/HeaderStrip.tsx","description":"The one line under the active tab: the focus's breadcrumb, kind, ID and title, and what the stage draws of it."}
-{"id":"LA-UI138","title":"Breadcrumb","file":"app/src/components/Breadcrumb.tsx","description":"The one trail of places above a page, collapsed past three places with a menu of the hidden levels."}
+{"id":"LA-UI138","title":"Breadcrumb","file":"app/src/shell/Breadcrumb.tsx","description":"The one trail of places above a page, collapsed past three places with a menu of the hidden levels."}
 {"id":"LA-UI139","title":"Open space","file":"app/src/views/openSpace.ts","description":"The stage's measure of what the floating panels leave of it, as CSS variables and a store the stages frame their focus in."}
 {"id":"LA-UI140","title":"Wiki card","file":"app/src/views/WikiCard.tsx","description":"The focus's wiki page, floating over the left of the open space: its breadcrumb, title and content, its collapse button and resize handle."}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
