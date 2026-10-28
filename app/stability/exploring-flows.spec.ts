@@ -10,14 +10,14 @@ import { clickBox, focusDrawn, sceneOf } from './scene';
 // Chromium over the suite's copy of Lathe's data, as the Reader does. They prove the flow end to
 // end; the scenarios beside them hold each move to "nothing jumps".
 
-const WIKI = '.pane-wiki';
-const GRAPH_PANE = '.pane-graph';
-const FLOW = `${GRAPH_PANE} .graph-flow`;
-const wikiTitle = (page: Page) => page.locator(`${WIKI} .pane-title h1`);
+const WIKI = '.wiki-panel';
+const STAGE_BOX = '.focus-stage';
+const FLOW = `${STAGE_BOX} .graph-flow`;
+const wikiTitle = (page: Page) => page.locator(`.header-strip h1`);
 const nav = (page: Page) => page.getByRole('navigation', { name: 'Main' });
 const sideBarViews = (page: Page) => page.getByRole('group', { name: 'Side bar views' });
 
-/** Waits for the graph pane to draw its boxes and settle. */
+/** Waits for the graph stage to draw its boxes and settle. */
 async function graphReady(page: Page) {
   await page.locator(`${FLOW} .graph-box`).first().waitFor({ state: 'attached' });
   await page.waitForTimeout(700);
@@ -57,8 +57,13 @@ test.describe('Exploring flows', () => {
     await openPage(page, '/LA-EXP-UC03-FL01');
     const wiki = page.locator(WIKI);
     await expect(wikiTitle(page)).toHaveText('Walk the model as a graph');
-    // The parent in the crumb, the children in their table.
-    await expect(wiki.locator('.pane-title').getByRole('link', { name: 'Exploring' })).toBeVisible();
+    // The places above it in the card's breadcrumb (the deep middle folded into "…"), the children in their table.
+    const crumb = wiki.locator('.wiki-panel-head .breadcrumb');
+    await expect(crumb.getByRole('link', { name: 'Lathe' })).toBeVisible();
+    await crumb.locator('.crumb-more-button').click();
+    await expect(crumb.getByRole('list', { name: 'Hidden levels' }).getByRole('link', { name: 'Exploring' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(crumb.locator('.crumb-more-button')).toBeFocused();
     await expect(wiki.getByRole('table', { name: 'Steps of LA-EXP-UC03-FL01, in order' })).toBeVisible();
     // A link out, named by its relation: the first step invokes a command.
     const invokes = wiki.getByRole('list', { name: 'LA-EXP-UC03-FL01-S01 invokes' });
@@ -75,11 +80,11 @@ test.describe('Exploring flows', () => {
 
   test('LA-EXP-UC03-FL01-T walk the model as a graph: turn it on, click a node, filter, switch layout, the keyboard, open a record', async ({ page }) => {
     await openPage(page, '/LA-EXP-UC03');
-    // The Graph view of the page in hand, from the page bar.
-    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Graph' }).click();
+    // The Graph stage of the page in hand, from the page bar's stage switch.
+    await page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'Graph' }).click();
     await graphReady(page);
-    // The graph alone, so its whole toolbar shows.
-    await page.keyboard.press('Control+1');
+    // The wiki card collapsed (w), so the graph has the open space and its whole toolbar shows.
+    await page.keyboard.press('w');
     await expect(page.locator(WIKI)).toHaveCount(0);
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03');
@@ -90,22 +95,23 @@ test.describe('Exploring flows', () => {
     expect(focus.stage).toBe('use-cases');
     expect(focus.kind).toBe('use_case');
     await expect(page.locator('.side-bar .graph-legend')).toBeAttached();
-    // Hovering spotlights; clicking focuses, the address and the trail follow, the side bar describes it.
+    // Hovering spotlights; clicking focuses, the address and the header strip follow, the side bar describes it.
     await clickBox(page, 'LA-EXP-UC03-R18');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-R18');
     await focusDrawn(page, 'LA-EXP-UC03-R18');
-    await expect(page.locator(`${GRAPH_PANE} .graph-trail li`)).toHaveCount(2);
+    await expect(page.locator('.header-strip-id')).toHaveText('LA-EXP-UC03-R18');
+    await expect(page.locator('.header-strip .breadcrumb .crumb').first()).toContainText('Lathe');
     await expect(page.getByRole('complementary', { name: 'Side bar' }).getByRole('region', { name: 'Details' })).toContainText('LA-EXP-UC03-R18');
     // Filters: Links on, the minimap.
-    await page.locator(`${GRAPH_PANE} .graph-links button`).click();
-    await expect(page.locator(`${GRAPH_PANE} .graph-links button`)).toHaveAttribute('aria-pressed', 'true');
-    await page.locator(`${GRAPH_PANE} .graph-filters > summary`).click();
-    await page.locator(`${GRAPH_PANE} .graph-filter-body input[role="switch"]`).check();
-    await expect(page.locator(`${GRAPH_PANE} .graph-minimap`)).toBeVisible();
-    await page.locator(`${GRAPH_PANE} .graph-filters > summary`).click();
+    await page.locator(`${STAGE_BOX} .graph-links button`).click();
+    await expect(page.locator(`${STAGE_BOX} .graph-links button`)).toHaveAttribute('aria-pressed', 'true');
+    await page.locator(`${STAGE_BOX} .graph-filters > summary`).click();
+    await page.locator(`${STAGE_BOX} .graph-filter-body input[role="switch"]`).check();
+    await expect(page.locator(`${STAGE_BOX} .graph-minimap`)).toBeVisible();
+    await page.locator(`${STAGE_BOX} .graph-filters > summary`).click();
     // Nested, then Voronoi.
     for (const layout of ['Nested', 'Voronoi', 'Tree']) {
-      await page.locator(`${GRAPH_PANE} .graph-layout button`, { hasText: layout }).click();
+      await page.locator(`${STAGE_BOX} .graph-layout button`, { hasText: layout }).click();
       await expect(page.locator(FLOW)).toHaveAttribute('data-layout', layout.toLowerCase());
     }
     await graphReady(page);
@@ -113,8 +119,9 @@ test.describe('Exploring flows', () => {
     await page.locator(FLOW).focus();
     await page.keyboard.press('ArrowLeft');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03');
-    // Open the node's record page in the wiki.
-    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Wiki' }).click();
+    // Read the node's record page in the wiki card, shown again (w).
+    await page.keyboard.press('w');
+    await expect(page.locator(`${WIKI} .wiki-panel-title h2`)).toHaveText('Walk the model as a graph');
     await expect(wikiTitle(page)).toHaveText('Walk the model as a graph');
   });
 
@@ -138,35 +145,37 @@ test.describe('Exploring flows', () => {
     await page.goto('/LA-PAT-APP-UX?stage=graph');
     await graphReady(page);
     expect((await sceneOf(page)).boxes.some((b) => b.id === 'LA-PAT-APP-UX-R01')).toBe(true);
-    // Links, by its key (the pane beside the wiki folds it into the toolbar's More).
+    // Links, by its key (beside the wiki card the open space is narrow, and the toolbar folds it into More).
     await page.locator(FLOW).focus();
     await page.keyboard.press('l');
     await expect.poll(async () => (await sceneOf(page)).lines.some((l) => l.link && l.target === 'LA-PAT-APP-UX' && l.label === 'Follows')).toBe(true);
   });
 
-  test('LA-EXP-UC05-FL01-T read a record as wiki, graph and ERD side by side: quick find, panes, links, Back, the nav and the side bar', async ({ page }) => {
+  test('LA-EXP-UC05-FL01-T read a record on a stage with its wiki card: quick find, stages, the card, links, Back, the nav and the side bar', async ({ page }) => {
     await openPage(page, '/LA');
     await quickFind(page, 'LA-EXP-A1');
     await expect(wikiTitle(page)).toHaveText('Page');
-    // An address names its views.
+    // An address names its stage.
     await page.goto('/LA-EXP-A1?stage=erd');
-    await expect(page.locator('.focus-views > .pane')).toHaveCount(3);
+    await expect(page.locator('.focus-stage')).toHaveAttribute('data-stage', 'erd');
+    await page.locator('.focus-stage .erd-flow .react-flow__node').first().waitFor();
+    await expect(page.locator(`${WIKI} .wiki-panel-title h2`)).toHaveText('Page');
+    // Back to the graph; resize the wiki card from the keyboard, collapse it and bring it back.
+    await page.keyboard.press('Control+1');
+    await expect(page.locator('.focus-stage')).toHaveAttribute('data-stage', 'graph');
     await graphReady(page);
-    // Close ERD, resize the panes from the keyboard, show one alone.
-    await page.keyboard.press('Control+4');
-    await expect(page.locator('.pane-erd')).toHaveCount(0);
-    const handle = page.getByRole('separator', { name: 'Resize the wiki and graph panes' });
+    const handle = page.getByRole('separator', { name: 'Resize the wiki card' });
     const before = await handle.getAttribute('aria-valuenow');
     await handle.focus();
     await page.keyboard.press('ArrowRight');
     await expect(handle).not.toHaveAttribute('aria-valuenow', before ?? '');
-    await page.locator(`${WIKI} .pane-title`).click();
-    await page.keyboard.press('Control+3');
-    await expect(page.locator('.pane.is-fullscreen')).toHaveCount(1);
-    await page.keyboard.press('Escape');
-    await expect(page.locator('.pane.is-fullscreen')).toHaveCount(0);
-    // A link in the wiki moves every pane; Back and Forward move both.
-    await page.locator(`${WIKI} .pane-title`).getByRole('link', { name: 'Exploring' }).click();
+    await page.keyboard.press('w');
+    await expect(page.locator(WIKI)).toHaveCount(0);
+    await page.keyboard.press('w');
+    await expect(page.locator(WIKI)).toHaveCount(1);
+    // A link in the card moves the stage and the strip; Back and Forward move them all.
+    await page.locator(`${WIKI} .wiki-panel-head .crumb-more-button`).click();
+    await page.locator(`${WIKI} .wiki-panel-head`).getByRole('list', { name: 'Hidden levels' }).getByRole('link', { name: 'Exploring' }).click();
     await page.waitForURL((u) => u.pathname === '/LA-EXP');
     await focusDrawn(page, 'LA-EXP');
     await page.goBack();
@@ -204,23 +213,26 @@ test.describe('Exploring flows', () => {
     const unfold = steps.getByRole('button', { name: 'Expand LA-EXP-UC03-FL01-S01' });
     await unfold.click();
     await expect(steps.getByRole('button', { name: 'Collapse LA-EXP-UC03-FL01-S01' })).toHaveAttribute('aria-expanded', 'true');
-    // In the Graph view the steps sit under the flow.
-    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Graph' }).click();
+    // On the Graph stage, with the wiki card collapsed, the steps sit under the flow.
+    await page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'Graph' }).click();
     await graphReady(page);
-    await page.keyboard.press('Control+1');
+    await page.keyboard.press('w');
     await expect(page.locator(WIKI)).toHaveCount(0);
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
     await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
     // A requirement's Trace view names the step that fulfills it, with its flow and what it invokes.
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
-    const design = page.locator('.pane-trace .trace-column').nth(1);
+    const design = page.locator('.focus-stage .trace-column').nth(1);
     await expect(design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ })).toBeVisible();
     await expect(design.getByRole('link', { name: /LA-EXP-UC03-FL01 / }).first()).toBeVisible();
     await expect(design.getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
     await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ }).click();
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL01-S01');
+    // The step's own page in the wiki card, shown again (w); the Trace stage now shows the rows it belongs to.
+    await page.keyboard.press('w');
     await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
+    await expect(page.locator('.focus-stage .trace-matrix [aria-current="page"]').first()).toContainText('LA-EXP-UC03-FL01-S01');
   });
 
   test('LA-EXP-UC07-FL01-T work in one product at a time: the rail, its last page, Alt+1 and Switch to, find, Checks, the phone, the products page', async ({ page }) => {
@@ -316,7 +328,7 @@ test.describe('Exploring flows', () => {
     await expect(nav(page).getByRole('list', { name: 'Technical specification of Exploring' }).getByRole('button', { name: /^Repositories \d+$/ })).toBeVisible();
     await folders.getByRole('button', { name: /^Test plan \d+/ }).click();
     await expect(nav(page).getByRole('list', { name: 'Test plan of Exploring' }).getByRole('button', { name: /^Constraint tests \d+$/ })).toBeVisible();
-    // The graph reaches the same records through the same groups; the trail names each visit.
+    // The graph reaches the same records through the same groups; the header strip names each.
     await page.goto('/LA-EXP?stage=graph');
     await graphReady(page);
     await page.locator(`${FLOW} .graph-box[data-id="LA-EXP/technical-specification"]`).focus();
@@ -324,10 +336,11 @@ test.describe('Exploring flows', () => {
     await page.waitForURL((u) => u.pathname === '/LA-EXP/technical-specification');
     await graphReady(page);
     expect((await sceneOf(page)).boxes.some((b) => b.id === 'LA-EXP/technical-specification/repository')).toBe(true);
-    await expect(page.locator(`${GRAPH_PANE} .graph-trail li`)).toHaveCount(2);
+    await expect(wikiTitle(page)).toHaveText(/^Technical specification/);
+    await expect(page.locator('.header-strip .breadcrumb .crumb').last()).toContainText('Exploring');
   });
 
-  test('LA-EXP-UC10-FL01-T keep several records open in tabs: the preview, keep, Ctrl+Tab, each tab\'s views, close, reload', async ({ page }) => {
+  test('LA-EXP-UC10-FL01-T keep several records open in tabs: the preview, keep, Ctrl+Tab, each tab\'s stage, close, reload', async ({ page }) => {
     const tabs = page.getByRole('tablist', { name: 'Open pages' });
     await openPage(page, '/LA-EXP-A1');
     await expect(tabs.getByRole('tab')).toHaveCount(1);
@@ -337,19 +350,19 @@ test.describe('Exploring flows', () => {
     await expect(page.locator('.tab.is-preview')).toHaveCount(0);
     await quickFind(page, 'LA-EXP-A2');
     await expect(tabs.getByRole('tab')).toHaveCount(2);
-    // A change to its views keeps a tab too; each keeps its own.
+    // A change to its stage keeps a tab too; each keeps its own.
     await page.keyboard.press('Control+2');
-    await graphReady(page);
+    await page.locator('.focus-stage .erd-flow .react-flow__node').first().waitFor();
     await expect(page.locator('.tab.is-preview')).toHaveCount(0);
     await page.keyboard.press('Control+Tab');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-A1');
-    await expect(page.locator('.pane-graph')).toHaveCount(0);
+    await expect(page.locator('.focus-stage')).toHaveAttribute('data-stage', 'graph');
     await page.keyboard.press('Control+Tab');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-A2');
-    await expect(page.locator('.pane-graph')).toHaveCount(1);
+    await expect(page.locator('.focus-stage')).toHaveAttribute('data-stage', 'erd');
     // A reload brings the tabs back as they were.
     await page.reload();
-    await page.locator('.focus-views .pane-title').first().waitFor();
+    await page.locator('.header-strip h1').first().waitFor();
     await expect(tabs.getByRole('tab')).toHaveCount(2);
     // Close one by Alt+Shift+W, then the other's button.
     await quickFind(page, 'LA-EXP-A3');
@@ -363,10 +376,10 @@ test.describe('Exploring flows', () => {
     await expect(tabs.getByRole('tab')).toHaveCount(1);
   });
 
-  test('LA-EXP-UC11-FL01-T read a domain and its aggregates as an ERD: the ERD view, an aggregate picked, an entity, the key', async ({ page }) => {
+  test('LA-EXP-UC11-FL01-T read a domain and its aggregates as an ERD: the ERD stage, an aggregate picked, an entity, the key', async ({ page }) => {
     await openPage(page, '/LA-EXP');
-    await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'ERD' }).click();
-    const model = page.getByRole('region', { name: 'ERD', exact: true });
+    await page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'ERD' }).click();
+    const model = page.getByRole('region', { name: /^ERD: / });
     await expect(model.getByRole('group', { name: /^Aggregate / }).first()).toBeVisible();
     expect(await model.getByRole('group', { name: /^Aggregate / }).count()).toBeGreaterThanOrEqual(2);
     await expect(model.getByRole('img', { name: /^Edge from / }).first()).toBeAttached();
@@ -375,11 +388,11 @@ test.describe('Exploring flows', () => {
     await page.waitForURL((u) => u.pathname === '/LA-EXP-A5');
     await expect(model.getByRole('list', { name: /^Fields of / }).first()).toBeVisible();
     // On an entity, the same ERD picks it out.
-    await page.locator('.pane-erd .erd-flow .react-flow__node:not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
+    await page.locator('.focus-stage .erd-flow .react-flow__node:not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
     await page.waitForURL((u) => /^\/LA-EXP-EN\d+$/.test(u.pathname));
-    await expect(page.locator('.pane-erd .react-flow__node .is-focus').first()).toBeVisible();
-    // The key under the diagram.
-    await expect(page.getByRole('region', { name: 'ERD', exact: true }).getByRole('group', { name: 'Key' })).toBeVisible();
+    await expect(page.locator('.focus-stage .react-flow__node .is-focus').first()).toBeVisible();
+    // The key at the foot of the open space.
+    await expect(page.locator('.focus-stage .erd-tools').getByRole('group', { name: 'Key' })).toBeVisible();
   });
 
   test('LA-EXP-UC12-FL01-T use the side bar: Details following the pointer, Outline, History with its uncommitted change, a commit\'s diff and Load more', async ({ page }) => {
@@ -402,17 +415,21 @@ test.describe('Exploring flows', () => {
       await openPage(page, '/LA-EXP?stage=graph');
       await graphReady(page);
       const side = page.getByRole('complementary', { name: 'Side bar' });
-      // In the Graph view Details is open and follows the pointer.
+      // On the Graph stage Details is open and follows the pointer.
       await expect(sideBarViews(page).getByRole('button', { name: 'Details' })).toHaveAttribute('aria-pressed', 'true');
       await page.locator(`${FLOW} .graph-box[data-id="LA-EXP/domain-model"]`).focus();
       await expect(side.getByRole('region', { name: 'Details' })).toContainText('Domain model');
-      // In the Wiki view alone: Outline, and a jump to a section.
+      // On the ERD stage: Outline, and a jump to a box.
       await page.keyboard.press('Control+2');
-      await expect(page.locator(GRAPH_PANE)).toHaveCount(0);
+      await expect(page.locator(STAGE_BOX)).toHaveAttribute('data-stage', 'erd');
       await sideBarViews(page).getByRole('button', { name: 'Outline' }).click();
-      const sections = side.getByRole('list', { name: 'Sections' });
-      await expect(sections.getByRole('button').first()).toBeVisible();
-      await sections.getByRole('button').first().click();
+      const boxes = side.getByRole('region', { name: 'Outline' }).getByRole('link');
+      await expect(boxes.first()).toBeVisible();
+      const to = await boxes.first().getAttribute('href');
+      await boxes.first().click();
+      await page.waitForURL((u) => u.pathname === new URL(to!, u).pathname);
+      await page.goBack();
+      await page.waitForURL((u) => u.pathname === '/LA-EXP');
       // History: the uncommitted change first, then the commits; an older one's diff; Load more.
       await sideBarViews(page).getByRole('button', { name: 'History' }).click();
       const history = side.getByRole('region', { name: 'History' });

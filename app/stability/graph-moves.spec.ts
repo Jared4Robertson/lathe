@@ -16,9 +16,9 @@ const ARROWS = { tree: { out: 'ArrowLeft', in: 'ArrowRight', previous: 'ArrowUp'
 const at = (page: Page) => new URL(page.url()).pathname.slice(1);
 const drawn = async (page: Page) => ({
   layout: await page.locator(GRAPH).getAttribute('data-layout'),
-  pressed: (await page.locator('.pane-graph .graph-layout button[aria-pressed="true"]').textContent())?.trim(),
-  depth: (await page.locator('.pane-graph .graph-depth:not(.graph-layout) button[aria-pressed="true"]').textContent())?.trim(),
-  links: await page.locator('.pane-graph button', { hasText: /^Links/ }).getAttribute('aria-pressed'),
+  pressed: (await page.locator('.focus-stage .graph-layout button[aria-pressed="true"]').textContent())?.trim(),
+  depth: (await page.locator('.focus-stage .graph-depth:not(.graph-layout) button[aria-pressed="true"]').textContent())?.trim(),
+  links: await page.locator('.focus-stage button', { hasText: /^Links/ }).getAttribute('aria-pressed'),
 });
 
 /** One move: the address changes, and the graph draws the new focus. */
@@ -52,9 +52,9 @@ for (const layout of ['tree', 'nested', 'voronoi'] as const) {
     const step = at(page);
     // A lasting tab on its first step, where the person sets depth 2, Links on and the layout.
     await page.locator('.tab.is-preview [role="tab"]').dblclick();
-    await page.locator('.pane-graph .graph-depth:not(.graph-layout) button', { hasText: '2' }).click();
-    await page.locator('.pane-graph button', { hasText: /^Links/ }).click();
-    await page.locator('.pane-graph .graph-layout button', { hasText: LAYOUTS[layout] }).click();
+    await page.locator('.focus-stage .graph-depth:not(.graph-layout) button', { hasText: '2' }).click();
+    await page.locator('.focus-stage button', { hasText: /^Links/ }).click();
+    await page.locator('.focus-stage .graph-layout button', { hasText: LAYOUTS[layout] }).click();
     await graphDrawn(page, layout, 900);
     const set = { layout, pressed: LAYOUTS[layout], depth: '2', links: 'true' };
     expect(await drawn(page)).toEqual(set);

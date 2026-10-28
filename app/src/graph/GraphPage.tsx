@@ -658,11 +658,12 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
 
   /** The camera that frames the focus: the focus and the levels the depth shows, in the frame. */
   const framing = useCallback((): Viewport | null => {
-    if (!size) return null;
+    // With a host that floats panels, never before their first measure: the first picture is framed once, in place.
+    if (!size || (space && !open)) return null;
     const box = frameBox(size);
     const v = map.view !== 'tree' ? frameNested(map, focus, box.w, box.h) : frameOnMap(map, focus, depth, box.w, box.h);
     return { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
-  }, [size, map, focus, depth, frameBox]);
+  }, [size, map, focus, depth, frameBox, space, open]);
 
   // Frame the focus whenever it, the depth, the stage's size or the open space changes: a glide,
   // except the first picture, a resize of the stage and a map that has just been laid out, which

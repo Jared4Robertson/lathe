@@ -30,20 +30,21 @@ const NONE: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 const same = (a: Insets, b: Insets) => SIDES.every((s) => Math.abs(a[s] - b[s]) < 0.5);
 
 export interface OpenSpaceStore {
-  get: () => OpenSpace;
+  /** The measure, or null before the first one, so a stage never frames on a guess. */
+  get: () => OpenSpace | null;
   subscribe: (listener: () => void) => () => void;
   /** Sets the measure; tells the listeners only when it changed. */
   set: (next: OpenSpace) => void;
 }
 
 export function createOpenSpaceStore(): OpenSpaceStore {
-  let value: OpenSpace = { open: NONE, frame: NONE };
+  let value: OpenSpace | null = null;
   const listeners = new Set<() => void>();
   return {
     get: () => value,
     subscribe: (l) => { listeners.add(l); return () => { listeners.delete(l); }; },
     set: (next) => {
-      if (same(next.open, value.open) && same(next.frame, value.frame)) return;
+      if (value && same(next.open, value.open) && same(next.frame, value.frame)) return;
       value = next;
       for (const l of listeners) l();
     },

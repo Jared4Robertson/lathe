@@ -13,8 +13,8 @@ import { cameraOf, sceneOf } from './scene';
 // menus in the desktop smoke test.
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const WIKI = '.pane-wiki';
-const FLOW = '.pane-graph .graph-flow';
+const WIKI = '.wiki-panel';
+const FLOW = '.focus-stage .graph-flow';
 const nav = (page: Page) => page.getByRole('navigation', { name: 'Main' });
 const announcer = (page: Page) => page.getByTestId('announcer');
 const palette = (page: Page) => page.getByRole('dialog', { name: 'Command palette' });
@@ -60,10 +60,10 @@ test.describe('Platform flows in the app', () => {
     const restore = keepData();
     try {
       await openPage(page, '/LA-EXP-UC03');
-      await expect(page.locator(`${WIKI} .pane-title h1`)).toHaveText('Walk the model as a graph');
+      await expect(page.locator(`.header-strip h1`)).toHaveText('Walk the model as a graph');
       // An Agent changes the record through the command layer while the page is open.
       lathe('set', 'LA-EXP-UC03', '--title', 'Walk the model as a graph, retitled by an Agent');
-      await expect(page.locator(`${WIKI} .pane-title h1`)).toHaveText('Walk the model as a graph, retitled by an Agent', { timeout: 20_000 });
+      await expect(page.locator(`.header-strip h1`)).toHaveText('Walk the model as a graph, retitled by an Agent', { timeout: 20_000 });
       expect(new URL(page.url()).pathname).toBe('/LA-EXP-UC03');
       // A data file the store refuses: the page says what is wrong, not other data.
       appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'use_case.jsonl'), '{"id":"LA-EXP-UC99","title":"Under no capability","capability_id":"LA-EXP-CAP99"}\n');
@@ -73,7 +73,7 @@ test.describe('Platform flows in the app', () => {
       restore();
     }
     // Put back, the page loads the data again.
-    await expect(page.locator(`${WIKI} .pane-title h1`)).toHaveText('Walk the model as a graph', { timeout: 20_000 });
+    await expect(page.locator(`.header-strip h1`)).toHaveText('Walk the model as a graph', { timeout: 20_000 });
   });
 
   test('LA-PLT-UC04-FL01-T work the app from the keyboard: the palette, VS Code keys, the announcement, a search box, the shortcuts sheet', async ({ page }) => {
@@ -85,7 +85,7 @@ test.describe('Platform flows in the app', () => {
     await page.keyboard.press('Escape');
     await expect(palette(page)).toHaveCount(0);
     // Cmd/Ctrl+B hides the navigation, and a screen reader hears it.
-    await page.locator('#main').click({ position: { x: 400, y: 300 } });
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('Control+b');
     await expect(nav(page).getByRole('button', { name: 'Expand the navigation' })).toBeVisible();
     await expect(announcer(page)).not.toBeEmpty();
@@ -105,7 +105,7 @@ test.describe('Platform flows in the app', () => {
     await expect(filter).toHaveValue('gt?');
     await expect(page.getByRole('dialog')).toHaveCount(0);
     // ? opens the shortcuts sheet: every shortcut by group, a search, how to override a binding.
-    await page.locator('#main').click({ position: { x: 400, y: 300 } });
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('Shift+?');
     const sheet = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
     await expect(sheet).toBeVisible();
@@ -117,7 +117,7 @@ test.describe('Platform flows in the app', () => {
 
   test('LA-PLT-UC05-FL01-T see each command\'s shortcut where it is used: a tooltip, the palette, the screen reader, a rebinding followed everywhere', async ({ page }) => {
     await openPage(page, RECORD);
-    const graphButton = page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Graph' });
+    const graphButton = page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'Graph' });
     await graphButton.hover();
     await expect(page.locator('.tooltip')).toContainText('Alt+G');
     await expect(graphButton).toHaveAttribute('aria-keyshortcuts', /Alt\+G/i);
@@ -128,7 +128,7 @@ test.describe('Platform flows in the app', () => {
     // Rebind toggleNav, as the sheet says, and reload: every hint follows.
     await page.evaluate(() => localStorage.setItem('lathe:keybindings', JSON.stringify({ toggleNav: 'Mod+J' })));
     await page.reload();
-    await page.locator('.focus-views .pane-title').first().waitFor();
+    await page.locator('.header-strip h1').first().waitFor();
     await nav(page).getByRole('button', { name: 'Collapse the navigation' }).hover();
     await expect(page.locator('.tooltip')).toContainText('Ctrl+J');
     await expect(nav(page).getByRole('button', { name: 'Collapse the navigation' })).toHaveAttribute('aria-keyshortcuts', /Control\+J/);
@@ -136,14 +136,14 @@ test.describe('Platform flows in the app', () => {
     await page.keyboard.type('navigation');
     await expect(palette(page).getByRole('option', { name: /Show or hide the navigation Ctrl\+J$/ })).toBeVisible();
     await page.keyboard.press('Escape');
-    await page.locator('#main').click({ position: { x: 400, y: 300 } });
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('Shift+?');
     await page.getByRole('dialog', { name: 'Keyboard shortcuts' }).getByRole('searchbox', { name: 'Search shortcuts' }).fill('navigation');
     await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' }).getByRole('row', { name: /^Show or hide the navigation/ })).toContainText('Ctrl+J');
     await page.evaluate(() => localStorage.removeItem('lathe:keybindings'));
   });
 
-  test('LA-PLT-UC06-FL01-T arrange the workbench: drag and step a gap, sizes kept, reset by double-click, fold by dragging small, hide the side bar', async ({ page }) => {
+  test('LA-PLT-UC06-FL01-T arrange the panels: drag and step an edge, sizes kept, reset by double-click, fold by dragging small, hide the side bar and the wiki card', async ({ page }) => {
     await openPage(page, RECORD);
     const handle = page.getByRole('separator', { name: 'Resize the navigation' });
     const start = Number(await handle.getAttribute('aria-valuenow'));
@@ -157,7 +157,7 @@ test.describe('Platform flows in the app', () => {
     expect(stepped).toBeGreaterThan(dragged);
     // Remembered across a reload; a double-click resets it.
     await page.reload();
-    await page.locator('.focus-views .pane-title').first().waitFor();
+    await page.locator('.header-strip h1').first().waitFor();
     await expect(handle).toHaveAttribute('aria-valuenow', String(stepped));
     await handle.dblclick();
     await expect(handle).toHaveAttribute('aria-valuenow', String(start));
@@ -166,14 +166,23 @@ test.describe('Platform flows in the app', () => {
     await drag(page, { x: b.x + b.width / 2, y: b.y + 200 }, { x: 20, y: b.y + 200 });
     await expect(nav(page).getByRole('button', { name: 'Expand the navigation' })).toBeVisible();
     await nav(page).getByRole('button', { name: 'Expand the navigation' }).click();
-    // Hide the side bar: the main view takes its room; the toggle brings it back.
+    // Hide the side bar: the open space over the stage takes its room; the toggle brings it back.
     if (!(await page.getByRole('complementary', { name: 'Side bar' }).count())) await page.getByRole('button', { name: 'Show the side bar' }).click();
-    const wide = (await page.locator('.focus-views').boundingBox())!.width;
+    const openRight = () => page.locator('.focus-stage').evaluate((el) => parseFloat((el as HTMLElement).style.getPropertyValue('--open-right')));
+    const narrow = await openRight();
     await page.getByRole('complementary', { name: 'Side bar' }).getByRole('button', { name: 'Hide the side bar' }).click();
     await expect(page.getByRole('complementary', { name: 'Side bar' })).toHaveCount(0);
-    expect((await page.locator('.focus-views').boundingBox())!.width).toBeGreaterThan(wide);
+    await expect.poll(openRight).toBeLessThan(narrow);
     await page.getByRole('button', { name: 'Show the side bar' }).click();
     await expect(page.getByRole('complementary', { name: 'Side bar' })).toBeVisible();
+    // The wiki card collapses by its button and comes back by the page bar's.
+    const openLeft = () => page.locator('.focus-stage').evaluate((el) => parseFloat((el as HTMLElement).style.getPropertyValue('--open-left')));
+    const withCard = await openLeft();
+    await page.locator('.wiki-panel').getByRole('button', { name: 'Collapse the wiki card' }).click();
+    await expect(page.locator('.wiki-panel')).toHaveCount(0);
+    await expect.poll(openLeft).toBeLessThan(withCard);
+    await page.getByRole('button', { name: 'Show the wiki card' }).click();
+    await expect(page.locator('.wiki-panel')).toBeVisible();
   });
 
   test('LA-PLT-UC07-FL01-T set how Lathe looks: g t, Escape, the palette, Appearance, duplicate, change, reset, delete, export, import', async ({ page, browser }) => {
@@ -181,7 +190,7 @@ test.describe('Platform flows in the app', () => {
     const html = page.locator('html');
     const before = await html.getAttribute('data-theme');
     // g then t: each theme shown on the whole app as the arrows reach it; Escape puts back the one before.
-    await page.locator('#main').click({ position: { x: 400, y: 300 } });
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('g');
     await page.keyboard.press('t');
     await page.locator('.dialog-search').waitFor();
@@ -258,16 +267,21 @@ test.describe('Platform flows in the app', () => {
       await hit.waitFor();
       await hit.tap();
       await page.waitForURL((u) => u.pathname === '/LA-PLT-UC05');
-      const pane = (await page.locator('.pane-wiki').boundingBox())!;
-      expect(pane.width).toBeGreaterThan(360);
+      // The stage fills the screen under the bars; the wiki card opens as a bottom sheet.
+      const stage = (await page.locator('.focus-stage').boundingBox())!;
+      expect(stage.width).toBeGreaterThan(360);
+      await page.getByRole('button', { name: 'Show the wiki card' }).tap();
+      await expect(page.locator('.wiki-panel-sheet .wiki-panel-title h2')).toHaveText(/./);
+      await page.locator('.wiki-panel-sheet').getByRole('button', { name: 'Collapse the wiki card' }).tap();
+      await expect(page.locator('.wiki-panel-sheet')).toHaveCount(0);
       // Keep it open, from the Open pages sheet, to come back to.
       await page.getByRole('button', { name: /^Open pages: \d+$/ }).tap();
       const pages = page.getByRole('dialog', { name: 'Open pages' });
       await pages.getByRole('button', { name: /^Keep LA-PLT-UC05 / }).tap();
       await pages.getByRole('button', { name: 'Close the open pages' }).tap();
       await expect(pages).toHaveCount(0);
-      // Graph, from the page bar.
-      await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Graph' }).tap();
+      // Graph, from the page bar's stage switch.
+      await page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'Graph' }).tap();
       await page.locator(`${FLOW} .graph-box`).first().waitFor({ state: 'attached' });
       await page.waitForTimeout(900);
       // Pinch out: the camera zooms in.
@@ -275,20 +289,26 @@ test.describe('Platform flows in the app', () => {
       const zoom = s.camera.zoom;
       await pinch(page, { x: s.canvas.left + s.canvas.width / 2, y: s.canvas.top + s.canvas.height / 2 }, 40, 120);
       await expect.poll(async () => (await sceneOf(page)).camera.zoom).toBeGreaterThan(zoom);
-      await page.locator('.pane-graph').getByRole('button', { name: 'Frame the focus' }).tap();
+      await page.locator('.focus-stage').getByRole('button', { name: 'Frame the focus' }).tap();
       await page.waitForTimeout(1300);
       // Tap a node to see its name, and Open.
       const scene = await sceneOf(page);
       const node = scene.boxes.find((b) => b.id.startsWith('LA-') && !b.focus && b.label.top > scene.canvas.top + 30 && b.label.top + b.label.height < scene.canvas.top + scene.canvas.height - 60 && b.label.left > 0 && b.label.left + b.label.width < 375);
       expect(node, 'a node on screen').toBeTruthy();
       await page.touchscreen.tap(node!.label.left + node!.label.width / 2, node!.label.top + node!.label.height / 2);
-      const open = page.locator('.pane-graph').getByRole('button', { name: /^Open / });
+      const open = page.locator('.focus-stage').getByRole('button', { name: /^Open / });
       await expect(open).toBeVisible();
       await open.tap();
       await page.waitForURL((u) => u.pathname === `/${node!.id}`);
-      // The side bar sheet: up, to full height, swiped away.
+      // The side bar is a drawer from the right, closed by Escape.
       await page.getByRole('button', { name: 'Show the side bar' }).tap();
-      const sheet = page.locator('.side-bar-sheet');
+      const drawer = page.locator('.side-bar-drawer');
+      await expect(drawer).toBeVisible();
+      await page.keyboard.press('Escape');
+      await expect(drawer).toHaveCount(0);
+      // The wiki card's sheet: up, to full height, swiped away.
+      await page.getByRole('button', { name: 'Show the wiki card' }).tap();
+      const sheet = page.locator('.wiki-panel-sheet');
       await expect(sheet).toBeVisible();
       // Once it has slid up into place.
       await page.waitForTimeout(600);
@@ -307,59 +327,63 @@ test.describe('Platform flows in the app', () => {
       await page.getByRole('button', { name: /^Open pages: \d+$/ }).tap();
       await page.getByRole('dialog', { name: 'Open pages' }).getByRole('button', { name: /^LA-PLT-UC05 / }).tap();
       await page.waitForURL((u) => u.pathname === '/LA-PLT-UC05');
-      // A tablet in landscape keeps the workbench, with targets sized for a finger.
+      // A tablet in landscape keeps the floating panels, with targets sized for a finger.
       await page.setViewportSize({ width: 1180, height: 820 });
       await expect(page.locator('nav#nav')).toBeVisible();
       await expect(page.locator('.topbar')).toHaveCount(0);
-      const target = (await page.getByRole('group', { name: 'View' }).getByRole('button', { name: 'Wiki' }).boundingBox())!;
+      const target = (await page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'Graph' }).boundingBox())!;
       expect(target.height).toBeGreaterThanOrEqual(40);
     });
   });
 
-  test('LA-PLT-UC09-FL01-T read without anything jumping: open, move, panes, folds, resize, the graph, a reload, overlays, the theme', async ({ page }) => {
+  test('LA-PLT-UC09-FL01-T read without anything jumping: open, move, stages, folds, resize, the graph, a reload, overlays, the theme', async ({ page }) => {
     const KEYS = [...SHELL, ...FOCUS];
-    const CONTENT = ['.pane-scroll', '.side-bar'];
-    const TITLE = [FOCUS[1]];
+    const CONTENT = ['.wiki-panel-scroll', '.header-strip', '.side-bar'];
     await openPage(page, RECORD);
     // Move by a link and Back: the frame stays.
-    expectStable(await step(page, 'flow', 'a link', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
-      await page.locator(`${WIKI} .pane-title`).getByRole('link', { name: 'Platform' }).click();
+    expectStable(await step(page, 'flow', 'a link', { keys: KEYS, allow: CONTENT }, async () => {
+      // The domain sits in the card's breadcrumb, behind "…" when the trail is long.
+      const more = page.locator(`${WIKI} .wiki-panel-head .crumb-more-button`);
+      if (await more.count()) await more.click();
+      await page.locator(`${WIKI} .wiki-panel-head`).getByRole('link', { name: 'Platform', exact: true }).click();
       await page.waitForURL((u) => u.pathname === '/LA-PLT');
     }));
-    expectStable(await step(page, 'flow', 'Back', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
+    expectStable(await step(page, 'flow', 'Back', { keys: KEYS, allow: CONTENT }, async () => {
       await page.goBack();
       await page.waitForURL((u) => u.pathname === RECORD);
     }));
-    // Open the Graph pane: only the panes move.
-    expectStable(await step(page, 'flow', 'open Graph', { keys: ['nav#nav'], allow: ['.focus-views'], resizes: ['.pane-wiki .pane-title h1'] }, async () => {
+    // Switch to the ERD stage and back: only the stage changes.
+    expectStable(await step(page, 'flow', 'switch the stage', { keys: KEYS, allow: ['.focus-stage', '.header-strip-counts', '.side-bar'] }, async () => {
       await page.keyboard.press('Control+2');
+      await page.locator('.focus-stage .erd-page').first().waitFor();
+      await page.keyboard.press('Control+1');
       await page.locator(`${FLOW} .graph-box`).first().waitFor({ state: 'attached' });
     }));
     // Fold rows with Expand all. The Reader scrolls to the button first; the step measures the rows opening.
     const expand = page.locator(WIKI).getByRole('button', { name: 'Expand all' }).first();
     await expand.scrollIntoViewIfNeeded();
-    expectStable(await step(page, 'flow', 'Expand all', { keys: KEYS, allow: ['.pane-wiki .pane-scroll'] }, async () => {
+    expectStable(await step(page, 'flow', 'Expand all', { keys: KEYS, allow: ['.wiki-panel-scroll'] }, async () => {
       await expand.click();
       await expect(page.locator(WIKI).getByRole('button', { name: 'Collapse all' }).first()).toBeVisible();
     }));
     // The graph: change its depth; the canvas and its bars hold still.
-    const graphKeys = ['nav#nav', GRAPH_CANVAS, '.pane-graph .graph-header'];
-    expectStable(await step(page, 'flow', 'graph depth', { keys: graphKeys, allow: ['.side-bar', '.pane-graph .graph-flow'] }, async () => {
-      await page.locator('.pane-graph .graph-flow').focus();
+    const graphKeys = ['nav#nav', GRAPH_CANVAS, '.focus-stage .graph-tools'];
+    expectStable(await step(page, 'flow', 'graph depth', { keys: graphKeys, allow: ['.side-bar', '.focus-stage .graph-flow'] }, async () => {
+      await page.locator('.focus-stage .graph-flow').focus();
       const camera = await cameraOf(page);
-      await page.locator('.pane-graph .graph-zoom-out').click({ trial: false }).catch(() => page.keyboard.press('-'));
+      await page.locator('.focus-stage .graph-zoom-out').click({ trial: false }).catch(() => page.keyboard.press('-'));
       await expect.poll(() => cameraOf(page)).not.toBe(camera);
     }));
-    // Resize the panes: they follow the pointer.
-    const handle = page.getByRole('separator', { name: 'Resize the wiki and graph panes' });
-    expectStable(await step(page, 'flow', 'resize panes', { keys: ['nav#nav', '.side-bar-column'], allow: ['*'], resizes: [] }, async () => {
+    // Resize the wiki card: it follows the pointer, the stage and the other panels hold still.
+    const handle = page.getByRole('separator', { name: 'Resize the wiki card' });
+    expectStable(await step(page, 'flow', 'resize the wiki card', { keys: ['nav#nav', '.stage-layout > .side-bar-column', '.focus-stage'], allow: ['*'], resizes: ['.wiki-panel'] }, async () => {
       const b = (await handle.boundingBox())!;
-      await drag(page, { x: b.x + b.width / 2, y: b.y + 100 }, { x: b.x + b.width / 2 - 80, y: b.y + 100 });
+      await drag(page, { x: b.x + b.width / 2, y: b.y + 100 }, { x: b.x + b.width / 2 + 80, y: b.y + 100 });
     }));
     // A reload of the specs while scrolled part-way: what was in view stays.
     const restore = keepData();
     try {
-      expectStable(await step(page, 'flow', 'specs reload', { keys: ['nav#nav', '.pane-wiki > .pane-bar'], allow: ['.pane-wiki .pane-scroll', '.side-bar'], settle: 1500 }, async () => {
+      expectStable(await step(page, 'flow', 'specs reload', { keys: ['nav#nav', '.wiki-panel-head'], allow: ['.wiki-panel-scroll', '.side-bar'], settle: 1500 }, async () => {
         lathe('set', RECORD.slice(1), '--goal', 'A goal the flow test writes while the page is open.');
         await expect(page.locator(WIKI)).toContainText('A goal the flow test writes', { timeout: 20_000 });
       }));
@@ -376,11 +400,11 @@ test.describe('Platform flows in the app', () => {
       await page.keyboard.press('Escape');
     }));
     // The theme: only colors change.
-    await page.locator('#main').click({ position: { x: 300, y: 400 } });
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('g');
     await page.keyboard.press('t');
     await page.locator('.dialog-search').fill('Graphite');
-    expectStable(await step(page, 'flow', 'theme', { keys: [...SHELL, '.page-bar'] }, async () => {
+    expectStable(await step(page, 'flow', 'theme', { keys: [...SHELL, ...FOCUS] }, async () => {
       await page.keyboard.press('Enter');
       await expect(page.locator('html')).toHaveAttribute('data-theme', /graphite/);
     }));
@@ -390,9 +414,9 @@ test.describe('Platform flows in the app', () => {
     await openPage(page, RECORD);
     await page.keyboard.press('Control+Alt+b');
     await page.keyboard.press('Control+Alt+b');
-    // Tab round the nav, the page bar, the panes and the side bar.
+    // Tab round the nav, the page bar, the wiki card, the stage and the side bar.
     const reached = new Set<string>();
-    for (let i = 0; i < 250 && reached.size < 4; i++) {
+    for (let i = 0; i < 250 && reached.size < 5; i++) {
       await page.keyboard.press('Tab');
       const where = await page.evaluate(() => {
         const el = document.activeElement;
@@ -400,12 +424,13 @@ test.describe('Platform flows in the app', () => {
         if (el.closest('nav#nav')) return 'nav';
         if (el.closest('.page-bar')) return 'page bar';
         if (el.closest('.side-bar-column')) return 'side bar';
-        if (el.closest('.focus-views')) return 'panes';
+        if (el.closest('.wiki-panel')) return 'wiki card';
+        if (el.closest('.focus-stage')) return 'stage';
         return '';
       });
       if (where) reached.add(where);
     }
-    expect([...reached].sort()).toEqual(['nav', 'page bar', 'panes', 'side bar']);
+    expect([...reached].sort()).toEqual(['nav', 'page bar', 'side bar', 'stage', 'wiki card']);
     // Open a record from quick find: focus stays on the page.
     await page.keyboard.press('Control+k');
     await page.locator('.quick-find input').fill('LA-EXP-UC03');
@@ -414,9 +439,12 @@ test.describe('Platform flows in the app', () => {
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03');
     // Focus is not dropped to the document's body by the move.
     expect(await page.evaluate(() => !!document.activeElement && document.activeElement !== document.body && document.activeElement.isConnected)).toBe(true);
-    // Switch views and the side bar: each change is announced.
+    // Switch the stage and the side bar: each change is announced.
     await page.keyboard.press('Control+2');
-    await expect(announcer(page)).toContainText(/graph/i);
+    await expect(announcer(page)).toContainText(/ERD stage/i);
+    await page.keyboard.press('w');
+    await expect(announcer(page)).toContainText(/wiki card collapsed/i);
+    await page.keyboard.press('w');
     await page.keyboard.press('Control+Alt+b');
     await expect(announcer(page)).toContainText(/side bar/i);
     // High contrast, by keyboard.

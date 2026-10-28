@@ -1,16 +1,16 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
-import { GRAPH_CANVAS, GRAPH_HEADER, RECORD } from './scenarios';
+import { GRAPH_CANVAS, GRAPH_TOOLS, RECORD } from './scenarios';
 import { reachableBoxes } from './scene';
 
 // LA-V95-R09-T01: the side bar. Switching its view between Details, Outline and History,
 // and the node under the pointer changing what Details shows, change only the side bar's own
-// content: the nav, the panes, the canvas, the side bar's box and its switcher hold still.
+// content: the nav, the panels, the stage's canvas, the side bar's box and its switcher hold still.
 
 const NAV = 'nav#nav';
-const SIDE = '.side-bar-column';
+const SIDE = '.stage-layout > .side-bar-column';
 const SWITCH = '.side-bar .side-switch';
-const KEYS = [NAV, '.pane-wiki > .pane-bar', '.pane-wiki .pane-title', '.pane-graph > .pane-bar', GRAPH_HEADER, GRAPH_CANVAS, SIDE, SWITCH];
+const KEYS = [NAV, '.wiki-panel-head', '.wiki-panel-title', '.header-strip', GRAPH_TOOLS, GRAPH_CANVAS, SIDE, SWITCH];
 /** The side bar's content is what changes. */
 const ALLOW = ['.side-bar'];
 

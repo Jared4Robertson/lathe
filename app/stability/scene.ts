@@ -5,9 +5,9 @@ import type { Scene, SceneBox, SceneHost } from '../src/graph/GraphPage';
 // box with its place on screen and in the map, its label lines and their font sizes, its badges,
 // and the camera. The boxes' keyboard layer (`.graph-box`) carries focus and names.
 
-export const GRAPH = '.pane-graph .graph-flow';
+export const GRAPH = '.focus-stage .graph-flow';
 
-/** What the graph pane's canvas draws now. */
+/** What the graph stage's canvas draws now. */
 export const sceneOf = (page: Page): Promise<Scene> => page.evaluate((sel) => (document.querySelector(sel) as SceneHost).graphScene!(), GRAPH);
 /** A drawn box, or undefined. */
 export const boxOf = async (page: Page, id: string): Promise<SceneBox | undefined> => (await sceneOf(page)).boxes.find((b) => b.id === id);
