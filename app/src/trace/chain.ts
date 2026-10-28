@@ -73,8 +73,16 @@ function enforcing(index: SpecIndex): Map<string, string[]> {
   return known;
 }
 
-/** An obligation's chain, or null for any other record. */
+const chains = new WeakMap<SpecIndex, Map<string, TraceRow | null>>();
+/** An obligation's chain, or null for any other record, worked out once per index: the matrix and Untraced share them. */
 export function traceChain(index: SpecIndex, id: string): TraceRow | null {
+  let known = chains.get(index);
+  if (!known) { known = new Map(); chains.set(index, known); }
+  if (!known.has(id)) known.set(id, chainOf(index, id));
+  return known.get(id)!;
+}
+
+function chainOf(index: SpecIndex, id: string): TraceRow | null {
   if (!isObligation(index, id)) return null;
   const record = index.byId.get(id)!;
   const design = new Set<string>();
