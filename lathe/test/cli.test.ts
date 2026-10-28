@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace, SCHEMA_VERSION } from '../src/index.ts';
-import { build, changing, complete, removeData, sparse, writeData } from './helpers.ts';
+import { build, changing, complete, removeData, sparse, SPARSE_FILES, writeData } from './helpers.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const lathe = (...args: string[]) => {
@@ -20,7 +20,7 @@ let short = '';
 beforeAll(async () => {
   broken = await build(changing(complete(), 'specification_test', () => true, { state: 'not automated yet' }), { silent: ['EX-LEND-INV01-T'], missing: ['src/dates.ts'] });
   clean = await build(complete());
-  short = await build(sparse());
+  short = await build(sparse(), SPARSE_FILES);
 });
 afterAll(removeData);
 

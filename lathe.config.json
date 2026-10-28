@@ -1,4 +1,20 @@
 {
   "schema": 2,
-  "data": "data"
+  "data": "data",
+  "tests": [
+    "**/*.test.{ts,tsx,js,mjs}",
+    "**/*.spec.{ts,tsx,js}",
+    "app/a11y/**/*.ts",
+    "app/perf/**/*.ts",
+    "app/stability/**/*.ts",
+    "lathe/perf/**/*.ts",
+    "desktop/src/smoke.ts"
+  ],
+  "routers": [
+    "lathe/src/server/serve.ts",
+    "app/server/lathe.ts",
+    "app/src/views/address.ts",
+    "app/src/theme/ThemeCommands.tsx",
+    "app/src/specs/data.ts"
+  ]
 }

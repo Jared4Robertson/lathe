@@ -581,3 +581,80 @@ check('lone-child', () => {
     ]);
   });
 });
+
+check('endpoint-route-not-in-file', () => {
+  it('LA-TRC-UC15-R01-T01 An endpoint handler\'s file that does not name its method and route is an error', async () => {
+    const data = adding(complete(), {
+      endpoint: [
+        { id: 'EX-LEND-EP02', title: 'Get a tool', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/tools/{toolId}' },
+        { id: 'EX-LEND-EP03', title: 'Add a tool', command_id: 'EX-LEND-CMD02', method: 'POST', route: '/tools' },
+        { id: 'EX-LEND-EP04', title: 'Remind', command_id: 'EX-LEND-CMD03', method: 'POST', route: '/loans/{loanId}/remind' },
+        { id: 'EX-LEND-EP05', title: 'List members', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/members' },
+        { id: 'EX-LEND-EP06', title: 'List fees', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/fees' },
+      ],
+      endpoint_handler: [
+        { id: 'EX-LEND-EP02-H', title: 'getTool', endpoint_id: 'EX-LEND-EP02', file: 'src/tool.ts' },
+        { id: 'EX-LEND-EP03-H', title: 'postTool', endpoint_id: 'EX-LEND-EP03', file: 'src/add-tool.ts' },
+        { id: 'EX-LEND-EP04-H', title: 'postReminder', endpoint_id: 'EX-LEND-EP04', file: 'src/remind.ts' },
+        { id: 'EX-LEND-EP05-H', title: 'getMembers', endpoint_id: 'EX-LEND-EP05', file: 'src/members.ts' },
+        { id: 'EX-LEND-EP06-H', title: 'getFees', endpoint_id: 'EX-LEND-EP06', file: 'src/fees.ts' },
+      ],
+    });
+    const ws = await loadData(data, {
+      missing: ['src/fees.ts'],
+      files: {
+        'src/router.ts': "// EX-LEND-EP01-H\nrouter.post('/loans', openLoan);\n",
+        'src/tool.ts': "// EX-LEND-EP02-H\nconst routes = [{ method: 'GET', pattern: /^\\/tools\\/(\\d+)$/ }];\n",
+        'src/add-tool.ts': "// EX-LEND-EP03-H\napp.get('/tools', addTool);\n",
+        'src/remind.ts': "// EX-LEND-EP04-H: POST\n\n\n\nconst at = '/loans/:id/remind';\n",
+        'src/members.ts': '// EX-LEND-EP05-H\n',
+      },
+    });
+    const found = ofCheck(ws, 'endpoint-route-not-in-file');
+    expect(records(found)).toEqual(['EX-LEND-EP03', 'EX-LEND-EP04', 'EX-LEND-EP05']);
+    expect(found.every((p) => p.severity === 'error')).toBe(true);
+    expect(found.find((p) => p.record === 'EX-LEND-EP03')?.message).toBe(
+      "Endpoint EX-LEND-EP03 is POST /tools, but its handler's file src/add-tool.ts does not name that route with that method; correct the endpoint, or point its handler at the file that serves it.",
+    );
+    // A handler file not there yet is technical-file-missing's, not this check's.
+    expect(records(ofCheck(ws, 'technical-file-missing'))).toContain('EX-LEND-EP06-H');
+  });
+});
+
+check('view-route-not-in-file', () => {
+  it('LA-TRC-UC15-R02-T01 A view whose route no component file names is an error', async () => {
+    const data = adding(complete(), {
+      view: [
+        { id: 'EX-V02', title: 'Tool', route: '/tools/<tool-id>' },
+        { id: 'EX-V03', title: 'Members', route: '/members' },
+        { id: 'EX-V04', title: 'Fees', route: '/fees' },
+        { id: 'EX-V05', title: 'Menu' },
+      ],
+      ui_component: [
+        { id: 'EX-UI02', title: 'ToolPage', file: 'web/tool.tsx' },
+        { id: 'EX-UI03', title: 'MembersPage', file: 'web/members.tsx' },
+        { id: 'EX-UI04', title: 'FeesPage', file: 'web/fees.tsx' },
+      ],
+      renders: [
+        { source_id: 'EX-UI02', target_id: 'EX-V02' },
+        { source_id: 'EX-UI03', target_id: 'EX-V03' },
+        { source_id: 'EX-UI03', target_id: 'EX-V05' },
+        { source_id: 'EX-UI04', target_id: 'EX-V04' },
+      ],
+    });
+    const ws = await loadData(data, {
+      missing: ['web/fees.tsx'],
+      files: {
+        'web/tool.tsx': '// EX-UI02\n<Route path="/tools/:toolId" element={<ToolPage />} />\n',
+        'web/members.tsx': '// EX-UI03\nexport function MembersPage() {}\n',
+      },
+    });
+    const found = ofCheck(ws, 'view-route-not-in-file');
+    expect(found).toEqual([{
+      severity: 'error',
+      check: 'view-route-not-in-file',
+      record: 'EX-V03',
+      message: "View EX-V03 is at /members, but no file of the UI components that render it (web/members.tsx) names that route; correct the view's route, or name it in the file of the component that shows the view there.",
+    }]);
+  });
+});
