@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { CONFIG_FILE, exceptionsText, loadWorkspace, mergeDataFiles, openStore, StoreError, type Problem } from '../src/index.ts';
+import { CONFIG_FILE, exceptionsText, loadWorkspace, mergeDataFiles, openStore, SCHEMA_VERSION, SchemaVersionError, StoreError, upgradeProduct, type Problem } from '../src/index.ts';
 import { serve } from '../src/server/serve.ts';
 import { serveMcp } from '../src/cli/mcp.ts';
 import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
@@ -15,8 +15,13 @@ const lowerLabel = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.c
 const USAGE = `Usage: lathe <command> [options]
 
 Commands:
-  init     Set up Lathe in a product repo: writes ${CONFIG_FILE} and a first product record in data/.
+  init     Set up Lathe in a product repo: writes ${CONFIG_FILE} (with this Lathe's schema version,
+           ${SCHEMA_VERSION}) and a first product record in data/.
            --name "Tool Library" --prefix TL
+  upgrade  Move the product's data forward to this Lathe's schema version, one converter at a time, and
+           print what changed and anything left to do by hand. Refuses a git working tree with changes,
+           so the upgrade is one reviewable commit.
+           --allow-dirty upgrades anyway.
   check    Load the data and check it. Prints errors, warnings, the recorded exceptions (each command that
            also changes another aggregate, with its reason) and coverage (one line per domain and obligation
            kind); exits 1 on any error.
@@ -44,6 +49,7 @@ const { positionals, values } = parseArgs({
     prefix: { type: 'string' },
     port: { type: 'string' },
     help: { type: 'boolean' },
+    'allow-dirty': { type: 'boolean' },
   },
 });
 const command = positionals[0] ?? 'help';
@@ -104,7 +110,7 @@ async function init() {
 
   const configFile = path.join(root, CONFIG_FILE);
   if (!existsSync(configFile)) {
-    await writeFile(configFile, `${JSON.stringify({ data: 'data' }, null, 2)}\n`);
+    await writeFile(configFile, `${JSON.stringify({ schema: SCHEMA_VERSION, data: 'data' }, null, 2)}\n`);
     console.log(`Wrote ${CONFIG_FILE}`);
   }
   const store = await openStore(root);
@@ -146,6 +152,30 @@ function startServer() {
 /** The longest `lathe serve` waits for its server to stop on SIGINT or SIGTERM. */
 const STOP_TIMEOUT = 10_000;
 
+async function upgrade() {
+  let result: Awaited<ReturnType<typeof upgradeProduct>>;
+  try {
+    result = await upgradeProduct(root, { allowDirty: values['allow-dirty'] ?? false });
+  } catch (error) {
+    fail(error instanceof Error ? error.message : String(error));
+  }
+  if (result.from === result.to && result.done) {
+    console.log(`${root} is already at schema ${result.to}; there is nothing to upgrade.`);
+    return;
+  }
+  console.log(result.done ? `Upgraded ${root} from schema ${result.from} to schema ${result.to}.` : `The upgrade of ${root} stopped: its data is still for schema ${result.from}.`);
+  for (const step of result.steps) {
+    console.log(`\n${step.name}:`);
+    console.log(step.changes.length ? step.changes.map((c) => `  ${c}`).join('\n') : '  no changes');
+  }
+  if (result.done) console.log(`\n${CONFIG_FILE}: schema ${result.from} -> ${result.to}`);
+  if (result.todos.length) console.log(`\nTo do by hand (${result.todos.length}):\n${result.todos.map((t) => `  - ${t}`).join('\n')}`);
+  console.log(result.done
+    ? '\nNext: run `lathe check`, review the changes with `git diff`, and commit them as one commit.'
+    : '\nNothing was committed. Fix the to-dos and run `lathe upgrade` again, or undo the half-converted files with `git checkout -- .`.');
+  process.exitCode = result.done ? 0 : 1;
+}
+
 async function mergeData() {
   const [base, ours, theirs, file] = positionals.slice(1);
   if (!base || !ours || !theirs || !file) fail('lathe merge-data needs <base> <ours> <theirs> <path>, as git passes them: %O %A %B %P.');
@@ -155,20 +185,28 @@ async function mergeData() {
   process.exitCode = result.clashes.length || result.problems.length ? 1 : 0;
 }
 
-if (dataCommand) {
-  process.exitCode = await runDataCommand(process.argv.slice(2));
-} else if (values.help || command === 'help') {
-  console.log(USAGE);
-} else if (command === 'check') {
-  await check();
-} else if (command === 'init') {
-  await init();
-} else if (command === 'serve') {
-  startServer();
-} else if (command === 'mcp') {
-  await serveMcp(root);
-} else if (command === 'merge-data') {
-  await mergeData();
-} else {
-  fail(`Unknown command "${command}".\n\n${USAGE}`);
+try {
+  if (dataCommand) {
+    process.exitCode = await runDataCommand(process.argv.slice(2));
+  } else if (values.help || command === 'help') {
+    console.log(USAGE);
+  } else if (command === 'check') {
+    await check();
+  } else if (command === 'init') {
+    await init();
+  } else if (command === 'upgrade') {
+    await upgrade();
+  } else if (command === 'serve') {
+    startServer();
+  } else if (command === 'mcp') {
+    await serveMcp(root);
+  } else if (command === 'merge-data') {
+    await mergeData();
+  } else {
+    fail(`Unknown command "${command}".\n\n${USAGE}`);
+  }
+} catch (error) {
+  // A product whose data is for another schema: one clear message, never a stack trace.
+  if (error instanceof SchemaVersionError) fail(error.message);
+  throw error;
 }

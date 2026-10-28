@@ -16,7 +16,8 @@ export type * from './types.ts';
 export type * from './reference.ts';
 export { renderReference, kindAnchor, tableAnchor, relationAnchor, stageAnchor, checkAnchor, gapAnchor, ENGINE_CHECKS } from './reference.ts';
 export { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE, type GapRule } from './coverage.ts';
-export { loadConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, type LatheConfig } from './config.ts';
+export { loadConfig, readConfig, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage, type LatheConfig } from './config.ts';
+export { upgradeProduct, readConverters, UPGRADES_DIR, type Converter, type ConverterStep, type RawData, type UpgradeNotes, type UpgradeResult } from './upgrade.ts';
 // The database-first store: the schema, loading data/*.jsonl, the command layer and the merge driver.
 export * from './store/index.ts';
 

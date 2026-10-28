@@ -16,6 +16,7 @@
 {"id":"LA-AUT-UC03-FL-S01","title":"The Owner writes the change into Lathe's migrations and reviews the diff in git","flow_id":"LA-AUT-UC03-FL","path":"main","position":1}
 {"id":"LA-AUT-UC03-FL-S02","title":"They regenerate the row types and the reference; a test fails while either is stale","flow_id":"LA-AUT-UC03-FL","path":"main","position":2}
 {"id":"LA-AUT-UC03-FL-S03","title":"The next load applies the migrations in order and checks every product's data against them","flow_id":"LA-AUT-UC03-FL","path":"main","position":3}
+{"id":"LA-AUT-UC03-FL-S04","title":"When existing data may not pass the change, they raise the schema version and write the converter that moves it forward","flow_id":"LA-AUT-UC03-FL","path":"main","position":4}
 {"id":"LA-AUT-UC04-FL-S01","title":"The Owner or the Agent declares a product kind with its fields, in a stage","flow_id":"LA-AUT-UC04-FL","path":"main","position":1}
 {"id":"LA-AUT-UC04-FL-S02","title":"They declare product relations, new or adding a pair to Lathe's","flow_id":"LA-AUT-UC04-FL","path":"main","position":2}
 {"id":"LA-AUT-UC04-FL-S03","title":"A kind declared twice is refused, naming the file and line of each","flow_id":"LA-AUT-UC04-FL","path":"refused","position":1}
@@ -264,6 +265,11 @@
 {"id":"LA-PLT-UC16-FL-S03","title":"A write from another site, not sent as JSON or over the limits is refused before the store sees it","flow_id":"LA-PLT-UC16-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC16-FL-S04","title":"The store refuses a write that breaks a rule, with every reason, and no file changes","flow_id":"LA-PLT-UC16-FL","path":"refused","position":2}
 {"id":"LA-PLT-UC16-FL-S05","title":"Open pages load the data again, and the change is reviewed and committed in git, merged row by row","flow_id":"LA-PLT-UC16-FL","path":"main","position":3}
+{"id":"LA-PLT-UC17-FL-S01","title":"The Owner updates Lathe in the product repo, and the next load stops with what to do","flow_id":"LA-PLT-UC17-FL","path":"main","position":1}
+{"id":"LA-PLT-UC17-FL-S02","title":"With the work committed, they run lathe upgrade, which converts the data one version at a time and says what changed","flow_id":"LA-PLT-UC17-FL","path":"main","position":2}
+{"id":"LA-PLT-UC17-FL-S03","title":"They finish what it lists to do by hand, run lathe check, and commit the upgrade as one commit","flow_id":"LA-PLT-UC17-FL","path":"main","position":3}
+{"id":"LA-PLT-UC17-FL-S04","title":"An Agent's first tool call says when the plugin's skills were written for another major version of Lathe","flow_id":"LA-PLT-UC17-FL","path":"main","position":4}
+{"id":"LA-PLT-UC17-FL-S05","title":"The desktop app opens the product with its own installed Lathe, and About says which","flow_id":"LA-PLT-UC17-FL","path":"main","position":5}
 {"id":"LA-TRC-UC01-FL-S01","title":"The Owner runs lathe check and reads one coverage line per domain and obligation kind: designed, built, proved and not automated yet","flow_id":"LA-TRC-UC01-FL","path":"main","position":1}
 {"id":"LA-TRC-UC01-FL-S02","title":"Each gap names the obligation and what it lacks: its design, a built file or a test","flow_id":"LA-TRC-UC01-FL","path":"main","position":2}
 {"id":"LA-TRC-UC01-FL-S03","title":"The gaps are warnings, so the check still passes","flow_id":"LA-TRC-UC01-FL","path":"main","position":3}

@@ -55,6 +55,7 @@
 {"id":"LA-PLT-UC14-FL","title":"Work under Lathe's own title bar","use_case_id":"LA-PLT-UC14"}
 {"id":"LA-PLT-UC15-FL","title":"Keep Lathe in the Dock","use_case_id":"LA-PLT-UC15"}
 {"id":"LA-PLT-UC16-FL","title":"Change the data through any writer","use_case_id":"LA-PLT-UC16"}
+{"id":"LA-PLT-UC17-FL","title":"Move a product to a new Lathe","use_case_id":"LA-PLT-UC17"}
 {"id":"LA-TRC-UC01-FL","title":"Read and close a domain's coverage gaps","use_case_id":"LA-TRC-UC01"}
 {"id":"LA-TRC-UC02-FL","title":"Count coverage for every obligation kind","use_case_id":"LA-TRC-UC02"}
 {"id":"LA-TRC-UC03-FL","title":"Write a test and its run by","use_case_id":"LA-TRC-UC03"}

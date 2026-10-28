@@ -55,13 +55,17 @@ export interface AboutModel {
   colors: Chrome;
 }
 
-/** The About window: the app, engine and Electron versions, and links to the repo and the data reference. */
-export function aboutModel(versions: { app: string; engine: string | null; electron: string; chrome: string; node: string }, colors: Chrome): AboutModel {
+/**
+ * The About window: the app, engine and Electron versions, the Lathe the product in front opened with (its own
+ * installed Lathe or the bundled one), and links to the repo and the data reference.
+ */
+export function aboutModel(versions: { app: string; engine: string | null; electron: string; chrome: string; node: string }, colors: Chrome, product: { lathe: string } | null = null): AboutModel {
   return {
     name: 'Lathe',
     versions: [
       { label: 'Version', value: versions.app },
       { label: 'Engine', value: versions.engine ?? 'unknown' },
+      ...(product ? [{ label: 'Opened with', value: product.lathe }] : []),
       { label: 'Electron', value: versions.electron },
       { label: 'Chromium', value: versions.chrome },
       { label: 'Node.js', value: versions.node },
