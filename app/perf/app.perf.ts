@@ -169,29 +169,48 @@ test.describe('performance', () => {
     await record({ name: 'ERD stage: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
   });
 
-  test("LA-V98-R06-T02 the Trace stage opens, and the product's whole matrix draws, within the stage switch budget", async ({ page }) => {
+  test("LA-V98-R06-T02 the Trace stage opens, and the product's whole trace draws, within the stage switch budget", async ({ page }) => {
+    // The canvas laid out and drawn, with the table under it.
+    const drawnTrace = '.focus-stage .trace-flow[data-ready]';
     const rows = '.focus-stage .trace-matrix tbody tr';
     // A use case's page, as the other stage switches are measured: the Trace stage switched to once to load its code, then again.
     await open(page, RECORD);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+3');
-      await page.locator(rows).first().waitFor();
+      await page.locator(drawnTrace).first().waitFor();
+      await page.locator(rows).first().waitFor({ state: 'attached' });
     });
     await page.keyboard.press('Control+1');
     await boxesDrawn(page);
     const again = await work(page, async () => {
       await page.keyboard.press('Control+3');
-      await page.locator(rows).first().waitFor();
+      await page.locator(drawnTrace).first().waitFor();
+      await page.locator(rows).first().waitFor({ state: 'attached' });
     });
     await record({ name: 'Trace stage: first switch (loads its code)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
     await record({ name: 'stage switch: to the Trace', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
-    // The product's whole matrix, its first page of rows and its Untraced section: from a domain's Trace stage to the product's.
-    await open(page, `${DOMAIN}?stage=trace`, rows);
+    // The product's whole trace: its picture laid out and what is in view drawn, the table's first page and its Untraced section, from a domain's Trace stage.
+    await open(page, `${DOMAIN}?stage=trace`, drawnTrace);
     const product = await work(page, async () => {
       await page.evaluate(() => { window.history.pushState(null, '', '/LA?stage=trace'); window.dispatchEvent(new PopStateEvent('popstate')); });
-      await page.waitForFunction(() => window.location.pathname === '/LA' && document.querySelector('.focus-stage .trace-untraced') !== null);
+      await page.waitForFunction(() => window.location.pathname === '/LA' && document.querySelector('.focus-stage .trace-untraced') !== null && document.querySelector('.focus-stage .trace-flow[data-ready]') !== null);
     });
-    const drawn = await page.locator(`${rows}:not(.group-row)`).count();
-    await record({ name: "Trace stage: the product's matrix drawn", value: product.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `${drawn} rows drawn; longest frame ${Math.round(product.worstFrameMs)} ms` });
+    const scene = await page.evaluate(() => {
+      const host = document.querySelector('.focus-stage .trace-flow') as HTMLElement & { traceScene?: (whole?: boolean) => { boxes: unknown[]; bars: number } };
+      const now = host.traceScene!();
+      return { drawn: now.boxes.length, bars: now.bars, whole: host.traceScene!(true).boxes.length };
+    });
+    expect(scene.drawn).toBeLessThanOrEqual(260);
+    await record({ name: "Trace stage: the product's trace drawn", value: product.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `${scene.drawn} of ${scene.whole} boxes drawn, ${scene.bars} bars; longest frame ${Math.round(product.worstFrameMs)} ms` });
+    // Panning the product's trace: a frame draws only what is in view, so a drag stays within the frame budget.
+    const canvas = page.locator('.focus-stage .trace-flow canvas');
+    const box = (await canvas.boundingBox())!;
+    const pan = await work(page, async () => {
+      await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.8);
+      await page.mouse.down();
+      for (let i = 1; i <= 20; i++) await page.mouse.move(box.x + box.width * 0.7, box.y + box.height * 0.8 - i * 30);
+      await page.mouse.up();
+    });
+    await record({ name: "Trace stage: panning the product's trace", value: pan.worstFrameMs, unit: 'ms', budget: BUDGETS.traceDragFrameMs, detail: `${pan.slowFrames} of ${pan.frames} frames over 20 ms while dragging 600 px` });
   });
 });
