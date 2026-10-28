@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
-import { normalizeRow, openStore, type Row } from '../../src/index.ts';
+import { normalizeRow, openStore, SCHEMA_VERSION, type Row } from '../../src/index.ts';
 import { everyKind, removeData, writeData } from '../store/fixture.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -22,7 +22,7 @@ afterAll(() => {
 function productRepo(): string {
   const root = realpathSync(mkdtempSync(path.join(tmpdir(), 'lathe-plugin-')));
   roots.push(root);
-  writeFileSync(path.join(root, 'lathe.config.json'), '{}\n');
+  writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   mkdirSync(path.join(root, 'data'));
   writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library"}\n');
   mkdirSync(path.join(root, 'node_modules', '.bin'), { recursive: true });
@@ -123,7 +123,7 @@ describe('the guard hook', () => {
     expect(decision).toMatchObject({ hookEventName: 'PreToolUse', permissionDecision: 'deny' });
     expect(decision.permissionDecisionReason).toContain("data/product.jsonl is Lathe data: change it only with Lathe's MCP tools");
     // A relative path, and a configured data folder.
-    writeFileSync(path.join(root, 'lathe.config.json'), '{ "data": "spec-data" }\n');
+    writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION, data: 'spec-data' })}\n`);
     expect(guard({ tool_name: 'Write', cwd: root, tool_input: { file_path: 'spec-data/view.jsonl' } }).stdout).toContain('"deny"');
   });
 

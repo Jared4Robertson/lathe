@@ -91,7 +91,7 @@ describe('record_scope', () => {
       { op: 'add', table: 'domain', row: { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting' } },
       { op: 'add', table: 'capability', row: { id: 'TL-CAT-CAP01', title: 'Browsing', domain_id: 'TL-CAT', position: 1 } },
       { op: 'add', table: 'use_case', row: { id: 'TL-CAT-UC01', title: 'Browse the tools', capability_id: 'TL-CAT-CAP01' } },
-      { op: 'add', table: 'flow', row: { id: 'TL-CAT-UC01-FL01', title: 'Browse', use_case_id: 'TL-CAT-UC01' } },
+      { op: 'add', table: 'flow', row: { id: 'TL-CAT-UC01-FL01', title: 'Browse', use_case_id: 'TL-CAT-UC01', interface_id: 'TL-IF01' } },
       { op: 'add', table: 'flow_step', row: { id: 'TL-CAT-UC01-FL01-S01', title: 'Open the catalog', flow_id: 'TL-CAT-UC01-FL01', path: 'main', position: 1 } },
       { op: 'link', relation: 'happens_in', source: 'TL-CAT-UC01-FL01-S01', target: 'TL-V01' },
       { op: 'add', table: 'value_object', row: { id: 'TL-VO02', title: 'Tool size' } },

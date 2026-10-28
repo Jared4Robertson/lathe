@@ -101,5 +101,8 @@ export function readConfig(root: string): LatheConfig {
   if (config.schema !== undefined && (typeof config.schema !== 'number' || !Number.isInteger(config.schema) || config.schema < 1)) {
     throw new Error(`${CONFIG_FILE}: schema must be a whole number from 1, such as 1.`);
   }
-  return { root, dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'), schema: (config.schema as number | undefined) ?? 1 };
+  // A config with no schema is for schema 1, the first versioned one. Lathe's own package, opened for its own
+  // reference and checks with no config of its own, is always at its own schema.
+  const unnamed = root === PACKAGE_DIR && !existsSync(file) ? SCHEMA_VERSION : 1;
+  return { root, dataDir: path.resolve(root, (config.data as string | undefined) ?? 'data'), schema: (config.schema as number | undefined) ?? unnamed };
 }

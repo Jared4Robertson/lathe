@@ -2,11 +2,11 @@
 // files, against a temporary git repo made here. The repo gets its author from the environment and ignores the
 // machine's own git config, so the test reads and writes no git config.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdtempSync, rmSync } from 'node:fs';
+import { existsSync, rmSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { configuredRoot } from './store/fixture.ts';
 import type { HistoryAnswer } from '../src/server/contract.ts';
 import { closeStores, handleApi } from '../src/server/api.ts';
 import { HISTORY_PAGE, changesInDiff, firstColumnPattern, parseLog, recordTables, runGit } from '../src/server/history.ts';
@@ -52,8 +52,8 @@ async function seed(root: string) {
 
 beforeAll(async () => {
   if (!hasGit) return;
-  repo = mkdtempSync(path.join(tmpdir(), 'lathe-history-'));
-  plain = mkdtempSync(path.join(tmpdir(), 'lathe-no-git-'));
+  repo = configuredRoot('lathe-history-');
+  plain = configuredRoot('lathe-no-git-');
   temps.push(repo, plain);
   await (await seed(plain)).close();
   store = await seed(repo);
@@ -198,7 +198,7 @@ describe('reading history', () => {
   });
 
   it("reads a diff into the record's changed rows, ignoring other records and lines that are not rows", async () => {
-    const empty = mkdtempSync(path.join(tmpdir(), 'lathe-schema-'));
+    const empty = configuredRoot('lathe-schema-');
     temps.push(empty);
     const s = await openStore(empty);
     const tables = new Map(recordTables(s.schema, 'use_case').map((t) => [t.name, t]));

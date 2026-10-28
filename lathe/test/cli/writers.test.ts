@@ -324,9 +324,12 @@ describe('lathe show, list and next-id', () => {
     const root = writeData(everyKind());
     expect(await next(root, 'repository', '--parent', 'TL-LEND-A2')).toBe('TL-LEND-A2-REPO');
     expect(await next(root, 'table', '--parent', 'TL-LEND-EN02')).toBe('TL-LEND-EN02-TB');
+    // A flow's ID ends in its interface's number: the first interface of the product the use case has no flow through.
     const taken = await lathe(root, 'next-id', 'flow', '--parent', 'TL-LEND-UC01');
     expect(taken.status).toBe(1);
-    expect(taken.err).toContain('TL-LEND-UC01 already has its flow: TL-LEND-UC01-FL01');
+    expect(taken.err).toContain("TL-LEND-UC01 has a flow through every interface of TL; a flow's ID ends in its interface's number, so declare the interface first");
+    await lathe(root, 'add', 'interface', '--id', 'TL-IF02', '--title', 'CLI', '--product_id', 'TL', '--kind', 'CLI');
+    expect(await next(root, 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL02');
   });
 
   it('LA-AUT-UC01-R05-T07 gives the next ID of a kind with no owner or two possible parents, and refuses what has no next ID', async () => {

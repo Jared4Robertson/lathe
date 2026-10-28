@@ -1,7 +1,7 @@
 // Each kind's keys and checks: a good row loads; a bad parent, a duplicate ID, a bad enum value or a missing required
 // field fails to load, naming the file, the line and the rule. The refusals across tables are in refusals.test.ts.
 import { afterAll, describe, expect, it } from 'vitest';
-import { openStore, StoreError, type Row, type StoreProblem } from '../../src/index.ts';
+import { openStore, SCHEMA_VERSION, StoreError, type Row, type StoreProblem } from '../../src/index.ts';
 import { everyKind, removeData, withTable, writeData, type Data } from './fixture.ts';
 
 afterAll(removeData);
@@ -111,7 +111,7 @@ describe('loading files', () => {
     const { renameSync, writeFileSync } = await import('node:fs');
     const elsewhere = writeData(data);
     renameSync(`${elsewhere}/data`, `${root}/records`);
-    writeFileSync(`${root}/lathe.config.json`, JSON.stringify({ data: 'records' }));
+    writeFileSync(`${root}/lathe.config.json`, JSON.stringify({ schema: SCHEMA_VERSION, data: 'records' }));
     const opened = await openStore(root);
     expect(opened.dataDir).toBe(`${root}/records`);
     expect(opened.record('TL-LEND-UC01')?.kind).toBe('use_case');

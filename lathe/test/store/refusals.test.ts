@@ -140,8 +140,8 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     }
   });
 
-  it('refuses a second flow for a use case', async () => {
-    const problems = await refusal(adding({ flow: [{ id: 'TL-LEND-UC01-FLB', title: 'Borrow online', use_case_id: 'TL-LEND-UC01' }] }));
+  it('refuses a second flow for a use case through one interface', async () => {
+    const problems = await refusal(adding({ flow: [{ id: 'TL-LEND-UC01-FLB', title: 'Borrow online', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/flow.jsonl', line: 2 })]);
   });
 

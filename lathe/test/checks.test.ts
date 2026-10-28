@@ -260,7 +260,7 @@ describe('coverage gaps as warnings', () => {
   mirrors('not-proved', 'proved');
 
   it('LA-TRC-UC01-R02-T01 they say which obligation lacks what', () => {
-    expect(ofCheck(ws, 'not-designed').map((p) => p.message)).toEqual(['UC requirement EX-LEND-UC02-R01 is not designed yet.']);
+    expect(ofCheck(ws, 'not-designed').map((p) => p.message)).toEqual(['UC requirement EX-LEND-UC02-R01 is not designed yet: no step of EX-LEND-UC02-FL01 fulfills it.']);
     expect(ofCheck(ws, 'not-built').map((p) => p.record)).toEqual(['EX-LEND-DS01']);
     expect(ofCheck(ws, 'not-proved').map((p) => p.message)).toEqual(['Specification EX-LEND-SP01 is not proved yet: its test is not automated yet.']);
   });
@@ -414,6 +414,38 @@ check('step-order', () => {
         message: 'Flow step EX-LEND-UC01-FL01-S03 has position 2 on path refused in flow EX-LEND-UC01-FL01, but no step of that path has position 1; number the steps of a path 1, 2, 3 and so on, with no gaps.',
       },
     ]);
+  });
+});
+
+// The complete product's interface made an API: its steps happen in no view.
+const throughApi = () => changing(without(complete(), 'happens_in', () => true), 'interface', () => true, { kind: 'API' });
+
+check('step-without-endpoint', () => {
+  it('LA-AUT-UC06-R09-T02 a step of an API flow that invokes what no endpoint exposes is reported, on the step', async () => {
+    expect(ofCheck(clean, 'step-without-endpoint')).toEqual([]);
+    expect(ofCheck(await loadData(throughApi()), 'step-without-endpoint')).toEqual([
+      {
+        severity: 'warning', check: 'step-without-endpoint', record: 'EX-LEND-UC01-FL01-S02',
+        message: 'Flow step EX-LEND-UC01-FL01-S02 goes through EX-IF01, an API, so it calls an endpoint, but no endpoint exposes EX-LEND-QRY01, which it invokes; add one under EX-LEND-QRY01, or have the step invoke what an endpoint exposes.',
+      },
+      {
+        severity: 'warning', check: 'step-without-endpoint', record: 'EX-LEND-UC02-FL01-S01',
+        message: 'Flow step EX-LEND-UC02-FL01-S01 goes through EX-IF01, an API, so it calls an endpoint, but no endpoint exposes EX-LEND-CMD02, which it invokes; add one under EX-LEND-CMD02, or have the step invoke what an endpoint exposes.',
+      },
+    ]);
+  });
+});
+
+check('flow-test-level-for-interface', () => {
+  it("LA-AUT-UC06-R10-T01 a flow test at a level its flow's interface does not fit is reported; manual fits any", async () => {
+    expect(ofCheck(clean, 'flow-test-level-for-interface')).toEqual([]);
+    expect(ofCheck(await loadData(throughApi()), 'flow-test-level-for-interface')).toEqual([
+      {
+        severity: 'warning', check: 'flow-test-level-for-interface', record: 'EX-LEND-UC01-FL01-T',
+        message: 'Flow test EX-LEND-UC01-FL01-T runs at level e2e-ui, but its flow EX-LEND-UC01-FL01 goes through EX-IF01, an interface of kind API, which is tested at e2e-api (or manual, with a reason).',
+      },
+    ]);
+    expect(ofCheck(await loadData(changing(complete(), 'interface', () => true, { kind: 'other' })), 'flow-test-level-for-interface')).toEqual([]);
   });
 });
 
