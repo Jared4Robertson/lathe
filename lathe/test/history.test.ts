@@ -148,12 +148,13 @@ describe.skipIf(!hasGit)('record history', () => {
     expect([400, 404]).toContain((await get(repo, '/api/history?id=../data/use_case.jsonl')).status);
   });
 
-  it('LA-EXP-EP01-R02-T02 git runs with an argument array, which no shell reads, and changes nothing', async () => {
-    const before = git(repo, 'status', '--porcelain');
-    const echoed = await runGit(repo, ['log', '--format=%s', '-1', '--grep=$(touch pwned)']);
-    expect(echoed.code).toBe(0);
-    expect(existsSync(path.join(repo, 'pwned'))).toBe(false);
-    expect(git(repo, 'status', '--porcelain')).toBe(before);
+  it('LA-EXP-EP01-R02-T02 GET /api/history changes nothing in the repo', async () => {
+    const status = git(repo, 'status', '--porcelain');
+    const config = git(repo, 'config', '--local', '--list');
+    expect((await get(repo, `/api/history?id=${UC}`)).status).toBe(200);
+    expect((await get(repo, `/api/history?id=${UC}&skip=${HISTORY_PAGE}`)).status).toBe(200);
+    expect(git(repo, 'status', '--porcelain')).toBe(status);
+    expect(git(repo, 'config', '--local', '--list')).toBe(config);
   });
 
   it('LA-INT04-T02 History runs git itself, inside the product root', async () => {
@@ -162,7 +163,15 @@ describe.skipIf(!hasGit)('record history', () => {
     expect(top.stdout.trim()).toBe('');
   });
 
-  it('LA-EXP-EP01-R01-T03 git output is cut at the output cap and stopped at the time limit', async () => {
+  it('LA-INT04-T03 git runs with an argument array, which no shell reads, and changes nothing', async () => {
+    const before = git(repo, 'status', '--porcelain');
+    const echoed = await runGit(repo, ['log', '--format=%s', '-1', '--grep=$(touch pwned)']);
+    expect(echoed.code).toBe(0);
+    expect(existsSync(path.join(repo, 'pwned'))).toBe(false);
+    expect(git(repo, 'status', '--porcelain')).toBe(before);
+  });
+
+  it('LA-INT04-T04 git output is cut at the output cap and stopped at the time limit', async () => {
     const cut = await runGit(repo, ['log', '-p'], { cap: 64 });
     expect(cut.truncated).toBe(true);
     expect(cut.stdout.length).toBe(64);

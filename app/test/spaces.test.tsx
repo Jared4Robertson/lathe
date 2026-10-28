@@ -130,7 +130,7 @@ describe('product spaces', () => {
     return user;
   };
 
-  it('LA-EXP-PO01-T A page opened in a space becomes its last page', async () => {
+  it('LA-V90-R11-T02 The rail\'s link to a space names the last page opened in it', async () => {
     await twoSpacesVisited();
     expect(spaceLink('Demo shop')).toHaveAttribute('href', '/DM-SHOP-UC01');
     expect(spaceLink('Notebook')).toHaveAttribute('href', '/NF-NOTE');

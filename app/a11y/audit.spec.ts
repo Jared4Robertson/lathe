@@ -135,7 +135,16 @@ async function auditAll(page: Page, state: string) {
   await test.step('LA-PAT-APP-UX-R10-T01 the page passes the accessibility audit with no finding', () => {
     expect.soft(findings.map((f) => f.rule), state).toEqual([]);
   });
+  // Exploring's own pages and states: reading the model as pages, a graph and a model, and finding a record.
+  if (EXPLORING.test(state.replace(/^.*: /, ''))) {
+    await test.step("LA-PAT-APP-UX-R10-T02 Exploring's page passes the accessibility audit with no finding", () => {
+      expect.soft(findings.map((f) => f.rule), state).toEqual([]);
+    });
+  }
 }
+
+/** The states that are Exploring's pages (LA-EXP): the product, domain, record and group pages, the graph and the Model view, quick find, the nav and the side bar. */
+const EXPLORING = /^(product page|domain page|record page|group page|graph|Model view|quick find|the quick find sheet|the nav drawer|the side bar sheet)/;
 
 for (const look of LOOKS) {
   test.describe(`desktop at 1440 px in ${look.name}`, () => {
