@@ -1,8 +1,10 @@
 {"id":"LA-AUT-TOOL01","title":"Generate the row types","domain_id":"LA-AUT","file":"lathe/scripts/schema-types.ts"}
+{"id":"LA-AUT-TOOL02","title":"Write the reference","domain_id":"LA-AUT","file":"lathe/scripts/reference.ts"}
 {"id":"LA-PLT-TOOL01","title":"Merge driver attributes","domain_id":"LA-PLT","file":".gitattributes"}
 {"id":"LA-PLT-TOOL02","title":"Development watcher","domain_id":"LA-PLT","file":"desktop/scripts/dev.ts"}
 {"id":"LA-PLT-TOOL03","title":"Local build","domain_id":"LA-PLT","file":"desktop/scripts/stage-lathe.ts"}
 {"id":"LA-PLT-TOOL04","title":"App icon renderer","domain_id":"LA-PLT","file":"desktop/scripts/icon.ts"}
+{"id":"LA-PLT-TOOL05","title":"Brand preview builder","domain_id":"LA-PLT","file":"brand/build-preview.py"}
 {"id":"LA-PLT-TOOL10","title":"Type checking","domain_id":"LA-PLT","file":"lathe/tsconfig.json"}
 {"id":"LA-PLT-TOOL11","title":"The app's React types","domain_id":"LA-PLT","file":"app/tsconfig.json"}
 {"id":"LA-PLT-TOOL12","title":"Unit and component test runner","domain_id":"LA-PLT","file":"app/vitest.config.ts"}
