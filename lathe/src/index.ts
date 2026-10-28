@@ -317,11 +317,15 @@ export async function readWorkspace(store: Store, root: string, timings?: Partia
   };
   const order = await kindOrder(store);
   const read = await step('read records', () => readRecords(store, order));
-  const facts = await step('file facts', () => gatherFileFacts(path.resolve(root), store));
+  // The files records name and the routes they serve are read side by side.
+  const [facts, routes] = await Promise.all([
+    step('file facts', () => gatherFileFacts(path.resolve(root), store)),
+    step('route facts', () => gatherRouteFacts(path.resolve(root), store)),
+  ]);
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
   await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.file_exists, f.contains_id]));
-  await writeRouteFacts(connection, await step('route facts', () => gatherRouteFacts(path.resolve(root), store)));
+  await writeRouteFacts(connection, routes);
   await step('coverage tables', () => connection.run(coverageViewsSql(store.schema)));
   lap('files');
   const scope = new Map(read.records.map((r) => [r.id, r.product]));
