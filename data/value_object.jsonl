@@ -27,3 +27,4 @@
 {"id":"LA-VO90","title":"App address","description":"A place in the app: a path and its view query parameter."}
 {"id":"LA-VO91","title":"View set","description":"The views a page or a tab has open."}
 {"id":"LA-VO92","title":"Graph settings","description":"How a tab's graph is drawn."}
+{"id":"LA-VO93","title":"Entities limit","description":"The most entities an aggregate should hold."}
