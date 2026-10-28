@@ -178,7 +178,7 @@
 {"id":"LA-PLT-UC01-FL-S01","title":"The Agent's script calls loadWorkspace(root) and reads the records, links, problems and coverage","flow_id":"LA-PLT-UC01-FL","path":"main","position":1}
 {"id":"LA-PLT-UC01-FL-S02","title":"Data the store refuses ends the load with one data-refused error per refusal and no records","flow_id":"LA-PLT-UC01-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC01-FL-S03","title":"After a write, the script loads again within the budgets","flow_id":"LA-PLT-UC01-FL","path":"main","position":2}
-{"id":"LA-PLT-UC02-FL-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix","flow_id":"LA-PLT-UC02-FL","path":"main","position":1}
+{"id":"LA-PLT-UC02-FL-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix, and names the test files in lathe.config.json when they differ from the common names","flow_id":"LA-PLT-UC02-FL","path":"main","position":1}
 {"id":"LA-PLT-UC02-FL-S02","title":"They set up the merge driver once per clone, as the README says, so git merges the data files through it","flow_id":"LA-PLT-UC02-FL","path":"main","position":2}
 {"id":"LA-PLT-UC02-FL-S03","title":"They add the first domain and records with lathe add, or an Agent through the MCP tools, in the data folder the config names, with any kinds of the product's own","flow_id":"LA-PLT-UC02-FL","path":"main","position":3}
 {"id":"LA-PLT-UC02-FL-S04","title":"They run lathe serve to browse and edit the spec, with no build tools in the repo","flow_id":"LA-PLT-UC02-FL","path":"main","position":4}
@@ -302,6 +302,8 @@
 {"id":"LA-TRC-UC05-FL-S02","title":"Lathe check reads each automated test's file for the test's ID, as a whole ID","flow_id":"LA-TRC-UC05-FL","path":"main","position":2}
 {"id":"LA-TRC-UC05-FL-S03","title":"A file that does not name its test is an error naming the test and the file, and the Agent names it","flow_id":"LA-TRC-UC05-FL","path":"refused","position":1}
 {"id":"LA-TRC-UC05-FL-S04","title":"The file of a manual test or a test not automated yet is checked only for existing","flow_id":"LA-TRC-UC05-FL","path":"main","position":3}
+{"id":"LA-TRC-UC05-FL-S05","title":"Lathe check reads each test case in the product's test files for the ID of a test whose file it is in","flow_id":"LA-TRC-UC05-FL","path":"main","position":4}
+{"id":"LA-TRC-UC05-FL-S06","title":"A test case that names no such test is an error naming its file and line, and the Agent names it or removes it","flow_id":"LA-TRC-UC05-FL","path":"refused","position":2}
 {"id":"LA-TRC-UC06-FL-S01","title":"The Owner runs lathe check and, after each domain's obligation lines, reads its tests by state","flow_id":"LA-TRC-UC06-FL","path":"main","position":1}
 {"id":"LA-TRC-UC06-FL-S02","title":"An Agent reads the same counts from lathe check --json, on each domain's coverage","flow_id":"LA-TRC-UC06-FL","path":"json","position":1}
 {"id":"LA-TRC-UC07-FL-S01","title":"The Owner links a domain to a pattern with follows","flow_id":"LA-TRC-UC07-FL","path":"main","position":1}

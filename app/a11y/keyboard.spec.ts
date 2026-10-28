@@ -264,7 +264,7 @@ test.describe('changing records by keyboard', () => {
     }
   });
 
-  test('the remove question takes focus, and Cancel gives it back', async ({ page }) => {
+  test('LA-V61-R42-T01 the remove question takes focus, and Cancel gives it back', async ({ page }) => {
     await open(page, RECORD);
     await tabUntil(page, (el) => el.textContent?.trim() === 'Remove' && !!el.closest('[role="toolbar"]'), 'the record\'s Remove');
     await page.keyboard.press('Enter');

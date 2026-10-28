@@ -90,7 +90,7 @@ describe('designed and built', () => {
     expect(gaps(ws)).not.toContain('built EX-LEND-UC02-R01');
   });
 
-  it('an invariant is built by a data model of its aggregate, or by the table of a unique key naming it', async () => {
+  it('LA-TRC-UC01-R04-T02 an invariant is built by a data model of its aggregate, or by the table of a unique key naming it', async () => {
     const noModels = without(complete(), 'data_model', (r) => r.entity_id !== 'EX-LEND-EN03');
     const bare = await loadData(noModels);
     expect(gaps(bare)).toEqual(['built EX-LEND-INV01', 'entity-without-data-model EX-LEND-EN01', 'entity-without-data-model EX-LEND-EN02']);
@@ -99,7 +99,7 @@ describe('designed and built', () => {
     expect(obligation(await loadData(adding(noModels, key), { missing: ['src/schema.sql'] }), 'EX-LEND', 'invariant')).toMatchObject({ designed: 1, built: 0 });
   });
 
-  it("a UC requirement is built through what its steps invoke, or a UI component of the view a step happens in", async () => {
+  it("LA-TRC-UC01-R04-T03 a UC requirement is built through what its steps invoke, or a UI component of the view a step happens in", async () => {
     // The step that fulfills UC01-R01 invokes nothing now; it still happens in the catalog, which a UI component renders.
     const viaView = await loadData(without(complete(), 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL-S01'));
     expect(obligation(viaView, 'EX-LEND', 'uc_requirement')).toMatchObject(covered(2));
@@ -158,7 +158,7 @@ describe('proved', () => {
     expect(ws.coverage[0].tests).toEqual({ automated: 9, manual: 3, not_automated: 1 });
   });
 
-  it('a standard rule with no standard rule test is not proved', () => {
+  it('LA-AUT-UC16-R02-T03 a standard rule with no standard rule test is not proved', () => {
     expect(obligation(ws, null, 'standard_rule')).toMatchObject({ total: 1, designed: 1, built: 1, proved: 0 });
   });
 });
@@ -207,7 +207,7 @@ describe('pattern rules', () => {
   });
 });
 
-describe('minimums', () => {
+describe('LA-TRC-UC01-R05-T01 minimums', () => {
   it('a record short of each minimum is a gap, under its own scope, named by the rule', async () => {
     // A source file no record names, for code-file-untraced, a route no endpoint has, for route-without-record, and a
     // package no record names, for package-not-accounted-for.

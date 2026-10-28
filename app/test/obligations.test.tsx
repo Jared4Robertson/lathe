@@ -126,7 +126,7 @@ describe('obligation kinds and test states', () => {
     expect(section(/^Run by/)).toHaveTextContent('test/basket.test.ts');
   });
 
-  it('An obligation\'s Traceability shows what designs it and what proves it, and names a gap', async () => {
+  it('LA-V92-R57-T02 An obligation\'s Traceability shows what designs it and what proves it, and names a gap', async () => {
     await openApp('/DM-SHOP-UC01-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     const trace = section(/^Traceability/);
@@ -183,7 +183,7 @@ describe('tests by state and tests not automated yet', () => {
   };
   const testsLine = (element: HTMLElement) => within(element).getByLabelText('Tests by state').textContent;
 
-  it('The not automated bar counts the obligations not proved whose test is not automated yet', async () => {
+  it('LA-V91-R51-T01 The not automated bar counts the obligations not proved whose test is not automated yet', async () => {
     await openApp('/DM', { data: states() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const bar = card('Shopping').querySelector('[data-kind="invariant"] .bar.not-automated') as HTMLElement;
