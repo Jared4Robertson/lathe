@@ -462,6 +462,17 @@
 {"id":"LA-PLT-UC18-FL04-S01","title":"Claude Code starts the plugin's launcher, which finds the product repo and starts its installed Lathe's MCP tools","flow_id":"LA-PLT-UC18-FL04","path":"main","position":1}
 {"id":"LA-PLT-UC18-FL04-S02","title":"The Agent calls a tool; when the skills were written for another major version, the first result alone carries one warning naming both","flow_id":"LA-PLT-UC18-FL04","path":"main","position":2}
 {"id":"LA-PLT-UC18-FL04-S03","title":"The launcher says why it cannot start outside a Lathe repo","flow_id":"LA-PLT-UC18-FL04","path":"refused","position":1}
+{"id":"LA-PLT-UC19-FL02-S01","title":"The Owner shows the chat from the title bar or its key; the stage frames its focus in what the chat leaves","flow_id":"LA-PLT-UC19-FL02","path":"main","position":1,"description":"The chat floats at the right, the full height of the window; the page's panels keep clear of it, and the stage measures it."}
+{"id":"LA-PLT-UC19-FL02-S02","title":"The chat lists the folder's saved sessions by title and date, marking one another Claude client may have open","flow_id":"LA-PLT-UC19-FL02","path":"main","position":2}
+{"id":"LA-PLT-UC19-FL02-S03","title":"They resume a session, or fork the one open elsewhere; the saved conversation shows first","flow_id":"LA-PLT-UC19-FL02","path":"main","position":3,"description":"Their own Claude Code starts headless in the folder on that session."}
+{"id":"LA-PLT-UC19-FL02-S04","title":"They ask Claude in their own words; it answers as rich text, with their login, settings, skills, plugins and CLAUDE.md","flow_id":"LA-PLT-UC19-FL02","path":"main","position":4}
+{"id":"LA-PLT-UC19-FL02-S05","title":"Claude asks what the Reader is looking at","flow_id":"LA-PLT-UC19-FL02","path":"main","position":5,"description":"Lathe's MCP tool app_focus, which reaches the window by its app bridge."}
+{"id":"LA-PLT-UC19-FL02-S06","title":"Claude opens a record in the window","flow_id":"LA-PLT-UC19-FL02","path":"main","position":6,"description":"Lathe's MCP tool app_open."}
+{"id":"LA-PLT-UC19-FL02-S07","title":"Each tool call Claude makes shows as a row that expands to its input and result","flow_id":"LA-PLT-UC19-FL02","path":"main","position":7}
+{"id":"LA-PLT-UC19-FL02-S08","title":"A tool that needs permission waits in the chat until they allow it once or deny it","flow_id":"LA-PLT-UC19-FL02","path":"main","position":8}
+{"id":"LA-PLT-UC19-FL02-S09","title":"They stop the turn under way","flow_id":"LA-PLT-UC19-FL02","path":"main","position":9,"description":"With the Stop button or Escape; a prompt still waiting is withdrawn."}
+{"id":"LA-PLT-UC19-FL02-S10","title":"After the turn, the records it changed show as diffs, by record","flow_id":"LA-PLT-UC19-FL02","path":"main","position":10,"description":"Each record added, removed or changed, with each field before and after."}
+{"id":"LA-PLT-UC19-FL02-S11","title":"A record ID in Claude's answer opens the record on the stage","flow_id":"LA-PLT-UC19-FL02","path":"main","position":11}
 {"id":"LA-TRC-UC01-FL03-S01","title":"The Owner runs lathe check and reads one coverage line per domain and obligation kind: designed, built, proved and not automated yet","flow_id":"LA-TRC-UC01-FL03","path":"main","position":1}
 {"id":"LA-TRC-UC01-FL03-S02","title":"Each gap names the obligation and what it lacks: its design, a built file or a test","flow_id":"LA-TRC-UC01-FL03","path":"main","position":2}
 {"id":"LA-TRC-UC01-FL03-S03","title":"The gaps are warnings, so the check still passes","flow_id":"LA-TRC-UC01-FL03","path":"main","position":3}

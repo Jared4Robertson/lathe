@@ -125,11 +125,13 @@ export function ChatPanel({ bridge, index, width, onWidth, onClose, input }: Cha
           <span className="chat-title-text">{title}</span>
         </h2>
         <div className="chat-head-actions">
-          <Tooltip label="Sessions" placement="bottom">
-            <Button variant="icon" label="Sessions" aria-expanded={showPicker} aria-controls="chat-sessions" className={showPicker ? 'is-on' : undefined} disabled={!view.open} onClick={() => setPicker(!picker)}>
-              <Icon name="history" size={16} />
-            </Button>
-          </Tooltip>
+          {view.open && (
+            <Tooltip label="Sessions" placement="bottom">
+              <Button variant="icon" label="Sessions" aria-expanded={showPicker} aria-controls="chat-sessions" className={showPicker ? 'is-on' : undefined} onClick={() => setPicker(!picker)}>
+                <Icon name="history" size={16} />
+              </Button>
+            </Tooltip>
+          )}
           {!showPicker && (
             <Tooltip label="New session" placement="bottom">
               <Button variant="icon" label="New session" disabled={working} onClick={() => void choose({ mode: 'new' })}>
