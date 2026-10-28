@@ -324,6 +324,34 @@ describe('Authoring flows', () => {
       ['TL-LEND-UC01-R04', 'Dates'],
     ]);
     expect(problemsOf(ws, 'lone-child').filter((p) => p.startsWith('TL-LEND-UC01:'))).toEqual([]);
+    // S03: the data set the tests start from, with the fixture that builds it, and the tests linked to it.
+    tl.run('add', 'test_data_set', ...flags({ id: 'TL-LEND-TD01', title: 'One tool on loan', domain_id: 'TL-LEND', records: 'One member, one tool on loan.', prepare: 'Run the seed.', reset: 'Drop the database.', file: 'test/seed.ts' }));
+    expect(problemsOf(tl.workspace(), 'test-data-set-unused')).toEqual([expect.stringMatching(/^TL-LEND-TD01: /)]);
+    tl.run('link', 'TL-LEND-INV01-T', 'starts_from', 'TL-LEND-TD01');
+    tl.run('link', 'TL-LEND-UC01-R01-T01', 'starts_from', 'TL-LEND-TD01');
+    const linked = tl.workspace();
+    expect(problemsOf(linked, 'test-data-set-unused')).toEqual([]);
+    expect(linked.problems.filter((p) => p.check === 'test-data-set-file-missing').map((p) => [p.severity, p.record])).toEqual([['error', 'TL-LEND-TD01']]);
+    tl.write('test/seed.ts', '// One member, one tool on loan.\n');
+    expect(problemsOf(tl.workspace(), 'test-data-set-file-missing')).toEqual([]);
+  });
+
+  it('LA-AUT-UC22-FL-T write the business outcomes the product exists to achieve', async () => {
+    const tl = product();
+    await tl.seed([...LENDING]);
+    // S01: a measurable outcome under the product; one without its measure is refused.
+    expect(tl.run('next-id', 'business_outcome', '--parent', 'TL')).toBe('TL-BO01');
+    tl.refused('add', 'business_outcome', ...flags({ id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow more tools.', target: 'Twice as many.' }));
+    tl.run('add', 'business_outcome', ...flags({ id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow the library\'s tools more often.', measure: 'Loans opened per tool per month.', target: 'Two per tool per month within a year.' }));
+    const before = tl.workspace();
+    expect(gapsOf(before, 'TL-LEND')).toContain('capability-serves-no-outcome TL-LEND-CAP01');
+    expect(gapsOf(before, null)).toContain('outcome-not-served TL-BO01');
+    expect(before.kinds.find((k) => k.kind === 'business_outcome')).toMatchObject({ stage: 'discovery' });
+    // S02: each capability linked to the outcomes it serves closes both gaps.
+    tl.run('link', 'TL-LEND-CAP01', 'serves', 'TL-BO01');
+    const after = tl.workspace();
+    expect([...gapsOf(after, 'TL-LEND'), ...gapsOf(after, null)].filter((g) => g.includes('outcome'))).toEqual([]);
+    expect(tl.run('show', 'TL-BO01')).toContain('Served by TL-LEND-CAP01');
   });
 
   it('LA-AUT-UC16-FL-T write the engineering standards the code follows', async () => {

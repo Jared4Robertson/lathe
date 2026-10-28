@@ -104,6 +104,12 @@ describe('Traceability flows from the command line', () => {
       'TL-LEND UC requirement: 1/1 designed, 1/1 built, 1/1 proved',
       'TL-LEND house rule: 0/1 designed, 0/1 built, 1/1 proved',
     ]);
+    // S05: the report lists, as gaps, a capability that serves no business outcome until it serves one.
+    expect(out).toContain('[capability-serves-no-outcome] Capability TL-LEND-CAP01 serves no business outcome.');
+    tl.run('add', 'business_outcome', '--id', 'TL-BO01', '--title', 'More tools in use', '--product_id', 'TL', '--statement', 'Members borrow more tools.', '--measure', 'Loans per tool per month.', '--target', 'Two within a year.');
+    expect(tl.check().stdout).toContain('[outcome-not-served] Business outcome TL-BO01 is served by no capability.');
+    tl.run('link', 'TL-LEND-CAP01', 'serves', 'TL-BO01');
+    expect(tl.check().stdout).not.toMatch(/outcome-not-served|capability-serves-no-outcome/);
   });
 
   it('LA-TRC-UC03-FL-T record how a test is run', async () => {
@@ -132,6 +138,11 @@ describe('Traceability flows from the command line', () => {
     expect(refusals[1]).toContain('level');
     expect(refusals[2]).toContain('file');
     expect(refusals[3]).toContain('manual_reason');
+    // S06: its size and markers: small unless it says otherwise, and a marker only when it is set.
+    tl.run('set', 'TL-LEND-UC01-R01-T01', '--size', 'volume', '--smoke', 'true');
+    expect(tl.workspace().records.find((r) => r.id === 'TL-LEND-UC01-R01-T01')?.fields).toMatchObject({ size: 'volume', smoke: true });
+    expect(tl.refused('set', 'TL-LEND-UC01-R01-T01', '--size', 'small')).toContain('size');
+    expect(tl.refused('set', 'TL-LEND-UC01-R01-T01', '--external', 'false')).toContain('external');
   });
 
   it('LA-TRC-UC04-FL-T prove the rules of the patterns a domain follows', async () => {
