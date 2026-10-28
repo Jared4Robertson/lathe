@@ -177,7 +177,7 @@
 {"id":"LA-PLT-UC01-FL-S01","title":"The Agent's script calls loadWorkspace(root) and reads the records, links, problems and coverage","flow_id":"LA-PLT-UC01-FL","path":"main","position":1}
 {"id":"LA-PLT-UC01-FL-S02","title":"Data the store refuses ends the load with one data-refused error per refusal and no records","flow_id":"LA-PLT-UC01-FL","path":"refused","position":1}
 {"id":"LA-PLT-UC01-FL-S03","title":"After a write, the script loads again within the budgets","flow_id":"LA-PLT-UC01-FL","path":"main","position":2}
-{"id":"LA-PLT-UC02-FL-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix","flow_id":"LA-PLT-UC02-FL","path":"main","position":1}
+{"id":"LA-PLT-UC02-FL-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix, and names the test files in lathe.config.json when they differ from the common names","flow_id":"LA-PLT-UC02-FL","path":"main","position":1}
 {"id":"LA-PLT-UC02-FL-S02","title":"They set up the merge driver once per clone, as the README says, so git merges the data files through it","flow_id":"LA-PLT-UC02-FL","path":"main","position":2}
 {"id":"LA-PLT-UC02-FL-S03","title":"They add the first domain and records with lathe add, or an Agent through the MCP tools, in the data folder the config names, with any kinds of the product's own","flow_id":"LA-PLT-UC02-FL","path":"main","position":3}
 {"id":"LA-PLT-UC02-FL-S04","title":"They run lathe serve to browse and edit the spec, with no build tools in the repo","flow_id":"LA-PLT-UC02-FL","path":"main","position":4}
