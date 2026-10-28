@@ -83,7 +83,9 @@ function kindIntro(schema: SchemaDescription, table: TableDescription): string {
 /** The tools, their input schemas generated from the schema description. */
 const CHECK_TOOL: Tool = {
   name: 'check',
-  description: 'Run lathe check on the whole workspace: every error (fix them before going on), every warning (gaps and work still to do), and the recorded exceptions (deliberate deviations with their reasons, never problems).',
+  description:
+    'Run lathe check on the whole workspace: every error (fix them before going on), every warning (work still to do), the recorded exceptions (deliberate deviations with their reasons, never problems), ' +
+    'and each product\'s coverage as lathe check --json gives it: per domain and obligation kind, how many are designed, built and proved, with its gaps (what each obligation still lacks, and each record short of a minimum, such as interface-without-flow).',
   inputSchema: { type: 'object', properties: {}, additionalProperties: false },
 };
 
