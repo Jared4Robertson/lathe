@@ -358,3 +358,7 @@
 {"source_id":"LA-TRC-UC16-FL-S02","target_id":"LA-TRC-UC16-R01"}
 {"source_id":"LA-TRC-UC16-FL-S02","target_id":"LA-TRC-UC16-R02"}
 {"source_id":"LA-TRC-UC16-FL-S03","target_id":"LA-TRC-UC16-R01"}
+{"source_id":"LA-TRC-UC19-FL-S02","target_id":"LA-TRC-UC19-R01"}
+{"source_id":"LA-TRC-UC19-FL-S02","target_id":"LA-TRC-UC19-R04"}
+{"source_id":"LA-TRC-UC19-FL-S03","target_id":"LA-TRC-UC19-R03"}
+{"source_id":"LA-TRC-UC19-FL-S04","target_id":"LA-TRC-UC19-R02"}

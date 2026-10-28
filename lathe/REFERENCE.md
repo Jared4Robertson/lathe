@@ -1255,7 +1255,7 @@ Loads and saves its aggregate, whole: the way command handlers reach the aggrega
 - **ID:** `<aggregate>-REPO`, such as `TL-LEND-A1-REPO`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-repository"></a>
 
@@ -1283,7 +1283,7 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 - **ID:** `<entity>-DM`, such as `TL-LEND-EN01-DM`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-data_model"></a>
 
@@ -1312,7 +1312,7 @@ Where an entity or a read model, its parent, is stored, in a database or not; or
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`table_key`](#table-table_key)
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`table-schema-mismatch`](#check-table-schema-mismatch)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`table-schema-mismatch`](#check-table-schema-mismatch), [`package-not-in-manifest`](#check-package-not-in-manifest)
 - **Gaps:** [`table-without-file`](#gap-table-without-file)
 
 <a id="table-table"></a>
@@ -1374,7 +1374,7 @@ Its value object in code, which checks the value object's constraints when a val
 - **ID:** `<value object>-VT`, such as `TL-VO01-VT`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-value_type"></a>
 
@@ -1402,7 +1402,7 @@ Its specification in code: a yes-or-no test over the records it is given.
 - **ID:** `<specification>-PR`, such as `TL-LEND-SP01-PR`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-predicate"></a>
 
@@ -1430,7 +1430,7 @@ Its domain event's shape in code; a contract with other domains when the event i
 - **ID:** `<domain event>-ET`, such as `TL-LEND-EV01-ET`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`event-not-by-outbox`](#check-event-not-by-outbox)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`event-not-by-outbox`](#check-event-not-by-outbox), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-event_type"></a>
 
@@ -1459,7 +1459,7 @@ Fills its read model's table and keeps it current, from events or as a view's qu
 - **ID:** `<read model>-PJ`, such as `TL-LEND-RM01-PJ`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-projection"></a>
 
@@ -1487,7 +1487,7 @@ Carries out its command: an application service that owns the transaction, loads
 - **ID:** `<command>-H`, such as `TL-LEND-CMD01-H`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-command_handler"></a>
 
@@ -1515,7 +1515,7 @@ Answers its query from its read model's table: an application service that chang
 - **ID:** `<query>-H`, such as `TL-LEND-QRY01-H`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-query_handler"></a>
 
@@ -1543,7 +1543,7 @@ Carries out its policy: hears the policy's event and sends its command.
 - **ID:** `<policy>-H`, such as `TL-LEND-PO01-H`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-event_handler"></a>
 
@@ -1571,7 +1571,7 @@ Its domain service in code. It never uses a repository or an outside system: its
 - **ID:** `<domain service>-SV`, such as `TL-LEND-DS01-SV`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-service"></a>
 
@@ -1599,7 +1599,7 @@ A piece of the user interface that renders one or more views. It has no owner: i
 - **ID:** `<P>-UI<nn>`, such as `TL-UI01`; it starts with its product's ID
 - **Links out:** Meets ([`meets`](#relation-meets)), Renders ([`renders`](#relation-renders))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused), [`view-route-not-in-file`](#check-view-route-not-in-file)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused), [`view-route-not-in-file`](#check-view-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-ui_component"></a>
 
@@ -1625,7 +1625,7 @@ Serves its endpoint: reads the request, calls the command or query handler and w
 - **ID:** `<endpoint>-H`, such as `TL-LEND-EP01-H`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`endpoint-route-not-in-file`](#check-endpoint-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-endpoint_handler"></a>
 
@@ -1653,7 +1653,7 @@ Talks to its integration's outside system, so the rest of the code does not.
 - **ID:** `<integration>-AD`, such as `TL-INT01-AD`; it starts with its parent's ID
 - **Links out:** Meets ([`meets`](#relation-meets))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
 <a id="table-adapter"></a>
 
@@ -1757,6 +1757,16 @@ A table kept in a database whose file does not define it as the spec says: its n
 
 A table, view or materialized view that names a file is checked against that file read as text (a migration, a SQL schema, or code that creates it): the file defines a table or view of its name; every column its entity's or read model's fields give (a field's column_name, else its name in lower case with underscores; a value object of several fields flattened into its fields' columns; an entity's table also holds the fields of the children kept in its root's table); and each primary, unique and foreign key by its columns, a foreign key also by its target table. It recognizes CREATE TABLE and CREATE VIEW (OR REPLACE, TEMP, MATERIALIZED, IF NOT EXISTS) with their column definitions and inline or table PRIMARY KEY, UNIQUE and REFERENCES, the columns an AS SELECT body selects or names with AS, CREATE UNIQUE INDEX and ALTER TABLE ... ADD. It does not compare types, NOT NULL, CHECKs, a unique key's name or condition, or index keys, and it cannot see a statement built at run time from pieces the text does not show. A missing file is technical-file-missing instead. Change the file to match, or the spec when the file is right.
 
+<a id="check-package-not-in-manifest"></a>
+
+### `package-not-in-manifest`
+
+**Error** · Lathe's · Kinds: [`adapter`](#kind-adapter), [`repository`](#kind-repository), [`data_model`](#kind-data_model), [`table`](#kind-table), [`value_type`](#kind-value_type), [`predicate`](#kind-predicate), [`event_type`](#kind-event_type), [`projection`](#kind-projection), [`command_handler`](#kind-command_handler), [`query_handler`](#kind-query_handler), [`event_handler`](#kind-event_handler), [`service`](#kind-service), [`ui_component`](#kind-ui_component), [`endpoint_handler`](#kind-endpoint_handler)
+
+A record names a package that none of its product's package.json files lists.
+
+A package_use row says a technical record uses a package, so that every dependency is accounted for by what it serves. Naming a package no manifest lists is a stale or mistyped claim: the package was removed, renamed or never added, and the record no longer tells the truth about the code. Fix the name, add the dependency to the package.json the code runs from, or remove the package_use row.
+
 ### Coverage gaps: technical specification
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -1774,6 +1784,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-query-without-handler"></a>`query-without-handler` | [`query`](#kind-query), [`query_handler`](#kind-query_handler) | A query with no query handler. |
 | <a id="gap-endpoint-without-handler"></a>`endpoint-without-handler` | [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler) | An endpoint with no endpoint handler. |
 | <a id="gap-integration-without-adapter"></a>`integration-without-adapter` | [`integration`](#kind-integration), [`adapter`](#kind-adapter) | An integration with no adapter. |
+| <a id="gap-package-not-accounted-for"></a>`package-not-accounted-for` | [`product`](#kind-product), `package_use` | A product whose package.json files list a package no record of it uses. |
 | <a id="gap-table-without-file"></a>`table-without-file` | [`table`](#kind-table) | A table stored in a database table that names no file creating it. |
 | <a id="gap-view-without-ui-component"></a>`view-without-ui-component` | [`view`](#kind-view), [`ui_component`](#kind-ui_component) | A view no UI component renders. |
 | <a id="gap-code-file-untraced"></a>`code-file-untraced` |  | A source file no technical record names, directly or through a folder. |
@@ -2420,7 +2431,7 @@ A product: the root of a set of specifications.
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`role`](#table-role)
-- **Gaps:** [`route-without-record`](#gap-route-without-record)
+- **Gaps:** [`route-without-record`](#gap-route-without-record), [`package-not-accounted-for`](#gap-package-not-accounted-for)
 
 <a id="table-product"></a>
 
@@ -2596,6 +2607,20 @@ A product's typed settings for its checks. A product without a row takes the def
 - **Rule:** `(max_entities_per_aggregate >= 1)`
 
 ### Other part tables: rows that belong to one record and are removed with it.
+
+<a id="table-package_use"></a>
+
+#### `package_use`
+
+A package a technical record uses: a dependency one of the product's package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a record of a kind in the technical specification may name one.
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `record_id` | VARCHAR → `record_id` | yes | The technical record that uses the package: an adapter, a UI component, or a record of a product's own technical kind such as a tooling record. |
+| `package` | VARCHAR | yes | The package's name as package.json lists it, such as @duckdb/node-api. |
+
+- **Key:** `record_id`, `package`
+- **Rule:** `regexp_full_match(package, '(@[a-z0-9~-][a-z0-9._~-]*/)?[a-z0-9~-][a-z0-9._~-]*')`
 
 <a id="table-setting_value"></a>
 

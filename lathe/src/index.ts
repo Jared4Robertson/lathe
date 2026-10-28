@@ -6,6 +6,7 @@ import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, PATTERN_RULE_STANDING_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS } from './coverage.ts';
 import { CONFIG_FILE, loadConfig, type LatheConfig } from './config.ts';
+import { readPackageFacts } from './trace/packages.ts';
 import { readTestCases } from './trace/test-cases.ts';
 import { isTraced, normalizePath, sourceFiles } from './trace/source-files.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
@@ -350,7 +351,7 @@ export function recordedExceptions(store: Store): RecordedException[] {
  * The workspace of an open store: its records and links, every check's problems, the recorded exceptions, and
  * coverage. The config's root resolves the files records name; its source and test globs find the source files.
  */
-export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'root' | 'source' | 'tests' | 'routers'>, timings?: Partial<LoadTimings>): Promise<Workspace> {
+export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'root' | 'source' | 'tests' | 'routers' | 'packages'>, timings?: Partial<LoadTimings>): Promise<Workspace> {
   let mark = performance.now();
   const lap = (phase: 'files' | 'checks' | 'coverage') => {
     const now = performance.now();
@@ -374,6 +375,7 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
     step('source files', () => gatherSourceFiles({ ...config, root: path.resolve(config.root) }, store)),
     step('route facts', () => gatherRouteFacts({ ...config, root: path.resolve(config.root) }, store)),
   ]);
+  const packages = await step('package facts', async () => readPackageFacts(path.resolve(config.root), config.packages));
   const cases = await step('test cases', () => gatherTestCases(path.resolve(config.root), config.tests, facts));
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
@@ -382,6 +384,7 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   await append(connection, 'test_case', cases.map((c) => [c.file, c.position, c.line, c.name]));
   await append(connection, 'test_case_id', cases.flatMap((c) => c.ids.map((id) => [c.file, c.position, id])));
   await writeRouteFacts(connection, routes);
+  await append(connection, 'package_facts', packages.map((p) => [p.manifest, p.package]));
   const tableFacts = await step('table facts', () => gatherTableFacts(path.resolve(config.root), store));
   await connection.run(TABLE_FACTS_SQL);
   await append(connection, 'table_facts', tableFacts.map((f) => [f.record, f.name, f.file, f.part, f.expected, f.found]));

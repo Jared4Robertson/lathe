@@ -271,3 +271,6 @@
 {"source_id":"LA-TRC-UC16-FL-S01","target_id":"LA-AUT-CMD02"}
 {"source_id":"LA-TRC-UC16-FL-S02","target_id":"LA-TRC-QRY09"}
 {"source_id":"LA-TRC-UC16-FL-S03","target_id":"LA-TRC-QRY09"}
+{"source_id":"LA-TRC-UC19-FL-S02","target_id":"LA-TRC-QRY12"}
+{"source_id":"LA-TRC-UC19-FL-S03","target_id":"LA-AUT-CMD01"}
+{"source_id":"LA-TRC-UC19-FL-S04","target_id":"LA-CHK-QRY01"}

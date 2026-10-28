@@ -21,6 +21,11 @@ export interface LatheConfig {
    * handlers' files (a router, a server's entry, a client's route table); none when the config names none.
    */
   routers: string[];
+  /**
+   * The folders, from the root, whose package.json lists the product's packages (its runtime and dev dependencies);
+   * null when the config names none, and then the root and each folder directly under it that holds a package.json.
+   */
+  packages: string[] | null;
 }
 
 /**
@@ -50,10 +55,12 @@ interface ConfigFile {
   source?: unknown;
   /** Glob patterns of the router files; default none. */
   routers?: unknown;
+  /** The package folders whose package.json lists the product's packages; default the root and the folders under it. */
+  packages?: unknown;
 }
 
 /** The keys lathe.config.json may hold; any other key is an error, never silently ignored. */
-const CONFIG_KEYS = ['schema', 'data', 'tests', 'source', 'routers'] as const;
+const CONFIG_KEYS = ['schema', 'data', 'tests', 'source', 'routers', 'packages'] as const;
 
 /** The installed Lathe package's own folder (holding schema/ and data/), from source or from dist. */
 export const PACKAGE_DIR = (() => {
@@ -148,5 +155,18 @@ export function readConfig(root: string): LatheConfig {
     tests: tests ?? [...DEFAULT_TESTS],
     source: source ?? [...DEFAULT_SOURCE],
     routers: (config.routers as string[] | undefined) ?? [],
+    packages: packageFolders(root, config.packages),
   };
+}
+
+// The package folders the config lists, each a folder inside the root, as paths from the root ('.' for the root).
+function packageFolders(root: string, value: unknown): string[] | null {
+  if (value === undefined) return null;
+  const shape = `${CONFIG_FILE}: packages must list folders inside the product root that hold a package.json, such as ["app", "server"].`;
+  if (!Array.isArray(value) || value.some((v) => typeof v !== 'string' || v.trim() === '')) throw new Error(shape);
+  return (value as string[]).map((folder) => {
+    const rel = path.relative(root, path.resolve(root, folder));
+    if (rel.startsWith('..') || path.isAbsolute(rel)) throw new Error(`${shape} ${folder} is outside it.`);
+    return rel.split(path.sep).join('/') || '.';
+  });
 }

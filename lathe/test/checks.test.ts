@@ -246,6 +246,16 @@ check('technical-file-missing', () => {
   });
 });
 
+check('package-not-in-manifest', () => {
+  it('LA-TRC-UC19-R02-T02 a record that names a package no package.json lists is an error; one a manifest lists is not', async () => {
+    const data = adding(complete(), { package_use: [{ record_id: 'EX-INT01-AD', package: 'nodemailer' }, { record_id: 'EX-INT01-AD', package: 'left-pad' }] });
+    const ws = await loadData(data, { files: { 'package.json': '{ "dependencies": { "nodemailer": "^7.0.0" } }\n' } });
+    expect(ofCheck(ws, 'package-not-in-manifest')).toEqual([
+      { severity: 'error', check: 'package-not-in-manifest', record: 'EX-INT01-AD', message: 'Adapter EX-INT01-AD names package left-pad, which no package.json of its product lists.' },
+    ]);
+  });
+});
+
 check('test-data-set-file-missing', () => {
   it('LA-AUT-UC13-R09-T01 a test data set no test starts from is an error; one whose file does not exist is an error when an automated test starts from it, else a warning; a folder will do', async () => {
     const unused = await loadData(without(complete(), 'starts_from', () => true));
