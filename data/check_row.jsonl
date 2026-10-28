@@ -26,4 +26,4 @@
 {"id":"LA-TRC-CK10","title":"manual-test-file-silent","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK12","title":"technical-file-missing","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK13","title":"test-data-set-file-missing","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
-{"id":"LA-TRC-CK14","title":"table-schema-mismatch","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
+{"id":"LA-TRC-CK16","title":"table-schema-mismatch","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}

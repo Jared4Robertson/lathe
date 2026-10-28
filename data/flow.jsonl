@@ -71,4 +71,4 @@
 {"id":"LA-TRC-UC12-FL","title":"Check how a domain proves the patterns it follows","use_case_id":"LA-TRC-UC12"}
 {"id":"LA-TRC-UC13-FL","title":"See tests by state with coverage","use_case_id":"LA-TRC-UC13"}
 {"id":"LA-TRC-UC14-FL","title":"Trace a requirement to what designs, builds and proves it","use_case_id":"LA-TRC-UC14"}
-{"id":"LA-TRC-UC15-FL","title":"Check a table against its file","use_case_id":"LA-TRC-UC15"}
+{"id":"LA-TRC-UC16-FL","title":"Check a table against its file","use_case_id":"LA-TRC-UC16"}
