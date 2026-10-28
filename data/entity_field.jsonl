@@ -444,7 +444,7 @@
 {"entity_id":"LA-EXP-EN10","position":6,"name":"Wiki scroll","meaning":"How far down the wiki pane was, in pixels.","type":"whole number","required":true,"example":"120"}
 {"entity_id":"LA-EXP-EN10","position":7,"name":"Side bar","meaning":"For each view mode, whether the side bar is open and which of its views it shows (UC12-R02).","type":"text","required":true,"example":"graph: open, details"}
 {"entity_id":"LA-EXP-EN11","position":1,"name":"Settings","meaning":"The graph's layout, depth, trace, Links, minimap and filters.","type_value_object_id":"LA-VO92","required":true,"example":"nested, depth 2"}
-{"entity_id":"LA-PLT-EN02","position":1,"name":"Panel","meaning":"Which part of the page it is: the navigation, the wiki, graph or model pane, or the side bar.","type":"text","required":true,"example":"Side bar"}
+{"entity_id":"LA-PLT-EN02","position":1,"name":"Panel","meaning":"Which part of the page it is: the navigation, the wiki, graph, ERD or trace pane, or the side bar.","type":"text","required":true,"example":"Side bar"}
 {"entity_id":"LA-PLT-EN02","position":2,"name":"Shown","meaning":"Whether it is on screen; a hidden panel keeps a control that brings it back.","type":"yes/no","required":true,"example":"yes"}
 {"entity_id":"LA-PLT-EN02","position":3,"name":"Size","meaning":"Its width in pixels (the navigation, the side bar), or a pane's share of the panes' width, within its limits.","type":"decimal","required":true,"example":"340"}
 {"entity_id":"LA-PLT-EN03","position":1,"name":"Command ID","meaning":"The command's name in the keymap, unique.","type":"text","required":true,"example":"commandPalette"}

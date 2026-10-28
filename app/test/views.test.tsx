@@ -11,7 +11,7 @@ import { addRows } from './fixtures/load';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, boxElements, isCenter } from './graph/scene';
 
-// The focus page: one address per record or group, its Wiki, Graph and Model views panes you open
+// The focus page: one address per record or group, its Wiki, Graph and ERD views panes you open
 // and close side by side, with the side bar as the page's last column.
 
 const served = () => ({ data: testWorkspace() });
@@ -45,7 +45,7 @@ describe('one address, three views', () => {
 
   it('LA-VO91-C01-T A view set holds Wiki, Graph and Model, each once, in that order', () => {
     expect(viewsFromSearch('?view=split')).toBeNull();
-    expect(viewsFromSearch('?view=model,wiki')).toEqual(['wiki', 'model']);
+    expect(viewsFromSearch('?view=erd,wiki')).toEqual(['wiki', 'model']);
     expect(viewsFromSearch('?view=nonsense')).toBeNull();
     expect(parseViews('graph')).toEqual(['graph']);
   });
@@ -276,13 +276,13 @@ describe('one address, three views', () => {
 
   it('LA-V96-R04-T01 The page bar holds the tabs at its left and the view toggles, a divider and the side bar toggle at its right; each pane header names its view and holds its close and Full screen buttons; the pressed views and a shown side bar share one on look', async () => {
     // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details', ['wiki', 'graph', 'model']);
+    openSideBar('details', ['wiki', 'graph', 'erd', 'trace']);
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const page = document.querySelector<HTMLElement>('.page-bar')!;
     expect(within(page.querySelector<HTMLElement>('.page-bar-start')!).getByRole('tab', { selected: true })).toHaveTextContent('P-D-UC01 Lend a thing');
     const order = (el: HTMLElement) => [...el.querySelectorAll<HTMLElement>('button, .pane-divider')].map((b) => b.classList.contains('pane-divider') ? '|' : b.getAttribute('aria-label'));
-    // A use case offers no Model view: its toggle keeps its slot, dimmed, and says where it works (UX-R08).
+    // A use case offers no ERD view: its toggle keeps its slot, dimmed, and says where it works (UX-R08).
     expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Wiki', 'Graph', 'Model (on a domain, an aggregate or an entity)', '|', 'Hide the side bar']);
     expect(within(page).getByRole('button', { name: /^Model \(/ })).toHaveAttribute('aria-disabled', 'true');
     expect(viewToggle('Wiki')).toHaveClass('icon-button', 'is-on');

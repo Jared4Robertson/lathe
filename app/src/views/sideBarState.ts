@@ -1,34 +1,37 @@
 import { useSyncExternalStore } from 'react';
 import { readPref, writePref } from '../shell/prefs';
-import type { ViewName } from './address';
+import { VIEW_NAMES, type ViewName } from './address';
 
 // The side bar's state (LA-EXP-UC12), apart from React: which views it has, how it opens in each
 // view mode, and what the canvases tell it about the node under the pointer or selected.
 //
-// - The mode is what the main area shows: the wiki alone, or the graph or the Model view (the first
-//   of them open beside the wiki). Each mode has its own open state and view, kept per tab and,
-//   for a space's first tab, as last used.
-// - Closed in the Wiki view, which shows the record's facts itself; open in the Graph and Model views.
+// - The mode is what the main area shows: the wiki alone, or the graph, the ERD or the Trace view
+//   (the first of them open beside the wiki). Each mode has its own open state and view, kept per
+//   tab and, for a space's first tab, as last used.
+// - Closed in the Wiki view, which shows the record's facts itself, and in the Trace view, whose
+//   matrix wants the width; open in the Graph and ERD views.
 
 export const SIDE_VIEWS = ['details', 'outline', 'history'] as const;
 export type SideView = (typeof SIDE_VIEWS)[number];
 export const SIDE_VIEW_LABELS: Record<SideView, string> = { details: 'Details', outline: 'Outline', history: 'History' };
 export const SIDE_VIEW_ICONS: Record<SideView, string> = { details: 'info', outline: 'outline', history: 'history' };
 
-export type SideMode = 'wiki' | 'graph' | 'model';
+/** The side bar's mode: the view it describes. */
+export type SideMode = ViewName;
 export interface SideModeState { open: boolean; view: SideView }
 export type SideState = Partial<Record<SideMode, SideModeState>>;
 
 export const SIDE_DEFAULTS: Record<SideMode, SideModeState> = {
   wiki: { open: false, view: 'details' },
   graph: { open: true, view: 'details' },
-  model: { open: true, view: 'details' },
+  erd: { open: true, view: 'details' },
+  trace: { open: false, view: 'details' },
 };
 
 /** The last choices made in each mode, for a space's first tab. */
 export const SIDE_KEY = 'lathe:side-bar';
 
-/** The mode for the open views: the graph or Model view when one is open, else the wiki. On a phone, the one view shown. */
+/** The mode for the open views: the first view open beside the wiki, else the wiki. On a phone, the one view shown. */
 export function sideModeOf(open: readonly ViewName[], narrow: boolean): SideMode {
   if (narrow) return open[0] ?? 'wiki';
   return open.find((v) => v !== 'wiki') ?? 'wiki';
@@ -40,7 +43,7 @@ const isSideView = (v: unknown): v is SideView => typeof v === 'string' && (SIDE
 export function sideStateFrom(v: unknown): SideState {
   if (!v || typeof v !== 'object' || Array.isArray(v)) return {};
   const out: SideState = {};
-  for (const mode of ['wiki', 'graph', 'model'] as const) {
+  for (const mode of VIEW_NAMES) {
     const m = (v as Record<string, unknown>)[mode] as Partial<SideModeState> | undefined;
     if (m && typeof m === 'object' && typeof m.open === 'boolean' && isSideView(m.view)) out[mode] = { open: m.open, view: m.view };
   }

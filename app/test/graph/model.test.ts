@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { addRows, indexOf } from '../fixtures/load';
-import { canTrace, fileNodeId, neighborhood, nextTrail, TRACE_COLUMNS, traceChain, traceColumn, type Filters } from '../../src/graph/model';
-import { NODE_HEIGHT, NODE_WIDTH, traceGrid } from '../../src/graph/layout';
+import { neighborhood, nextTrail, type Filters } from '../../src/graph/model';
 import { graphMap } from '../../src/graph/map';
 import { testIndex, testWorkspace } from './workspace';
 
@@ -76,62 +75,6 @@ describe('graph neighborhood', () => {
     expect(ids(neighborhood(index, 'P-D-UC01-FL01-S01', 3, filters([], ['parent', 'fulfills']), links))).toEqual(['P-D-CMD01', 'P-D-UC01-FL01-S01', 'P-V01']);
   });
 
-  it('LA-V93-R51-T01 Trace mode shows what designs, builds and proves an obligation, and the files they name', () => {
-    // A UC requirement: the step that fulfills it, its flow, where it happens and what it invokes, that command's
-    // handler, the test under the requirement, and their files.
-    // On its left, why it is there: its use case and the use case's capability.
-    const t = traceChain(index, 'P-D-UC01-R01');
-    expect(ids(t)).toEqual([
-      'P-D-CAP01', 'P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01', 'P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-D-UC01-R01', 'P-D-UC01-R01-T01', 'P-V01',
-      fileNodeId('src/loans.ts'), fileNodeId('test/lend.test.ts'),
-    ].sort());
-    expect(t.edges.map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
-      'P-D-CAP01 parent P-D-UC01',
-      'P-D-CMD01 parent P-D-CMD01-H',
-      'P-D-CMD01-H names file:src/loans.ts',
-      'P-D-UC01 parent P-D-UC01-R01',
-      'P-D-UC01-FL01 parent P-D-UC01-FL01-S01',
-      'P-D-UC01-FL01-S01 fulfills P-D-UC01-R01',
-      'P-D-UC01-FL01-S01 happens_in P-V01',
-      'P-D-UC01-FL01-S01 invokes P-D-CMD01',
-      'P-D-UC01-R01 parent P-D-UC01-R01-T01',
-      'P-D-UC01-R01-T01 names file:test/lend.test.ts',
-    ]);
-    // Steps that fulfill nothing are not part of the chain.
-    expect(ids(t)).not.toContain('P-D-UC01-FL01-S02');
-    // An invariant: its aggregate and the aggregate's repository, the table whose unique key enforces it, its test.
-    const inv = traceChain(index, 'P-D-INV01');
-    expect(ids(inv)).toEqual(['P-D-A3', 'P-D-A3-REPO', 'P-D-EN03-TB', 'P-D-INV01', 'P-D-INV01-T', fileNodeId('src/loans.ts'), fileNodeId('test/loans.test.ts')].sort());
-    expect(inv.edges.map((e) => `${e.source} ${e.relation} ${e.target}`)).toContain('P-D-EN03-TB enforces P-D-INV01');
-    // A constraint: its value object and the value object's value type.
-    expect(ids(traceChain(index, 'P-VO01-C01'))).toEqual(['P-VO01', 'P-VO01-C01', 'P-VO01-C01-T', 'P-VO01-VT', fileNodeId('src/name.ts'), fileNodeId('test/name.test.ts')].sort());
-    // An obligation nothing implements or proves has only itself.
-    expect(ids(traceChain(index, 'P-D-SP01'))).toEqual(['P-D-SP01']);
-    // Filters apply to the chain too.
-    expect(ids(traceChain(index, 'P-D-UC01-R01', filters(['use_case_test', 'file', 'use_case'])))).toEqual(['P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-D-UC01-R01', 'P-V01']);
-  });
-
-  it('LA-V93-R51-T03 A UC requirement\'s trace starts from the business outcomes its capability serves, each in a column of its own', () => {
-    const w = testWorkspace();
-    addRows(w, 'business_outcome', { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans per month.', target: 'Twice as many in a year.' });
-    addRows(w, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' });
-    const outcomes = indexOf(w);
-    const t = traceChain(outcomes, 'P-D-UC01-R01');
-    expect(t.edges.map((e) => `${e.source} ${e.relation} ${e.target}`)).toEqual(expect.arrayContaining(['P-D-CAP01 serves P-BO01', 'P-D-CAP01 parent P-D-UC01', 'P-D-UC01 parent P-D-UC01-R01']));
-    const column = new Map(t.nodes.map((x) => [x.id, x.column]));
-    expect(['P-BO01', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-FL01-S01', 'P-D-CMD01-H', 'P-D-UC01-R01-T01'].map((id) => column.get(id))).toEqual([
-      TRACE_COLUMNS.outcome, TRACE_COLUMNS.capability, TRACE_COLUMNS.useCase, TRACE_COLUMNS.obligation, TRACE_COLUMNS.step, TRACE_COLUMNS.technical, TRACE_COLUMNS.test,
-    ]);
-    // Hiding the serves relation leaves the outcome out.
-    expect(ids(traceChain(outcomes, 'P-D-UC01-R01', filters([], ['serves'])))).not.toContain('P-BO01');
-  });
-
-  it('LA-V93-R52-T01 Trace mode is offered for every obligation, and for nothing else', () => {
-    for (const id of ['P-D-UC01-R01', 'P-D-INV01', 'P-VO01-C01', 'P-D-SP01', 'P-D-PO02', 'P-D-DS01', 'P-D-EP01-R01', 'P-V01-R01']) expect(canTrace(index, id), id).toBe(true);
-    for (const id of ['P', 'P-D', 'P-D-UC01', 'P-D-CMD01', 'P-D-UC01-R01-T01', 'P-V01', 'missing']) expect(canTrace(index, id), id).toBe(false);
-    expect(traceChain(index, 'P-D-UC01').nodes).toEqual([]);
-  });
-
   it('LA-EXP-DS05-T01 The layout gives the same map every time, whatever the focus, with no overlaps', async () => {
     const map = graphMap(index, 'P');
     // Built once per index, and the same for an index built again from the same workspace.
@@ -147,8 +90,6 @@ describe('graph neighborhood', () => {
     }
     // The order within a level is the nav's: the tables in ID order.
     expect(map.nodes.get('P-D-EN02-TB')!.y).toBeLessThan(map.nodes.get('P-D-EN03-TB')!.y);
-    // A trace is a picture of its own, its focus at the center.
-    expect(traceGrid(traceChain(index, 'P-D-SP01')).positions.get('P-D-SP01')).toEqual({ x: -NODE_WIDTH / 2, y: -NODE_HEIGHT / 2 });
   });
 
   it('LA-V93-R11-T01 The breadcrumb trail adds each record visited and cuts back when a visited record is revisited', () => {
@@ -159,7 +100,7 @@ describe('graph neighborhood', () => {
     expect(nextTrail(['1', '2', '3'], '4', 3)).toEqual(['2', '3', '4']);
   });
 
-  it('LA-V93-R15-T01 Columns follow the parent/child tree around the focus, and trace mode has its own columns', () => {
+  it('LA-V93-R15-T01 Columns follow the parent/child tree around the focus', () => {
     const n = neighborhood(index, 'P-D/use-cases', 4);
     const column = new Map(n.nodes.map((x) => [x.id, x.column]));
     // The parent one column to the left, each level below one more to the right; the leftmost column is 0.
@@ -172,17 +113,9 @@ describe('graph neighborhood', () => {
     expect(dc.get('P-D/domain-model')).toBe(dc.get('P-D/test-plan'));
     const folders = ['P-D/domain-model/aggregate', 'P-D/use-cases/capability', 'P-D/interaction-design/flow', 'P-D/technical-specification/table', 'P-D/test-plan/use_case_test'];
     expect(new Set(folders.map((id) => dc.get(id)))).toEqual(new Set([dc.get('P-D/domain-model')! + 1]));
-    // Trace columns, left to right, by stage; a kind a product adds goes with the design kinds.
-    expect(['flow', 'flow_step', 'view', 'command_handler', 'use_case_test', 'file'].map((k) => traceColumn(index, k))).toEqual([
-      TRACE_COLUMNS.flow, TRACE_COLUMNS.step, TRACE_COLUMNS.design, TRACE_COLUMNS.technical, TRACE_COLUMNS.test, TRACE_COLUMNS.file,
-    ]);
-    expect(Object.values(TRACE_COLUMNS)).toEqual([...Object.values(TRACE_COLUMNS)].sort((a, b) => a - b));
-    expect(traceColumn(index, 'scenario')).toBe(TRACE_COLUMNS.design);
-    const t = traceChain(index, 'P-D-UC01-R01');
-    for (const node of t.nodes) expect(node.column).toBe(node.id === 'P-D-UC01-R01' ? TRACE_COLUMNS.obligation : traceColumn(index, node.kind));
   });
 
-  it.each(['LA-EXP-DS06-T01', 'LA-V93-R15-T02'])('%s The graph reads left to right by column, and so does a trace', async () => {
+  it.each(['LA-EXP-DS06-T01', 'LA-V93-R15-T02'])('%s The graph reads left to right by column', async () => {
     const map = graphMap(index, 'P');
     // Siblings share one x and one width, each column right of its parent's.
     for (const parent of map.nodes.values()) {
@@ -196,13 +129,6 @@ describe('graph neighborhood', () => {
     const col = (id: string) => map.nodes.get(id)!.x;
     const chain = ['P-D/use-cases', 'P-D/use-cases/capability', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'];
     for (let i = 1; i < chain.length; i++) expect(col(chain[i - 1])).toBeLessThan(col(chain[i]));
-
-    const traced = traceGrid(traceChain(index, 'P-D-UC01-R01')).positions;
-    const x = (id: string) => traced.get(id)!.x;
-    const order = ['P-D-UC01-R01', 'P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-V01', 'P-D-CMD01-H', 'P-D-UC01-R01-T01', 'file:test/lend.test.ts'];
-    for (let i = 1; i < order.length; i++) expect(x(order[i - 1])).toBeLessThan(x(order[i]));
-    expect(x('P-D-CMD01')).toBe(x('P-V01'));
-    expect(x('file:src/loans.ts')).toBe(x('file:test/lend.test.ts'));
   });
 
   it.each(['LA-V93-R15-T03', 'LA-V93-R08-T01'])('%s Links between records in one column are drawn but never change the map', async () => {

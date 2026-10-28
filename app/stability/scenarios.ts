@@ -6,7 +6,7 @@ export const PRODUCT = '/LA';
 export const DOMAIN = '/LA-EXP';
 /** A use case with requirements, links and a long body. */
 export const RECORD = '/LA-PLT-UC05';
-/** An aggregate: its page offers the Model view. */
+/** An aggregate: its page offers the ERD view. */
 export const AGGREGATE = '/LA-EXP-A1';
 /** A UC requirement of RECORD: what the edit scenarios change, then put back. */
 export const EDITED = '/LA-PLT-UC05-R05';
@@ -17,7 +17,7 @@ export const SHELL = ['nav#nav', '#main'];
 export const FOCUS = ['.focus-views > .pane:first-of-type > .pane-bar', '.focus-views > .pane:first-of-type .pane-title', '.side-bar-column'];
 export const GRAPH_CANVAS = '.pane-graph .graph-canvas';
 export const GRAPH_HEADER = '.pane-graph .graph-header';
-export const MODEL_CANVAS = '.pane-model .model-canvas';
+export const ERD_CANVAS = '.pane-erd .erd-canvas';
 
 /**
  * Keeps the served copy's data files as they are now, for a scenario that writes; the returned

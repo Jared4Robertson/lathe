@@ -7,7 +7,7 @@ import { Button } from '../components/Button';
 // selects it: the node is outlined and a card at the bottom of the canvas names it with an Open
 // chip. A second tap on the same node, or the chip, opens it. A tap on the empty canvas lets go.
 // With a mouse a click still opens at once. Pan and pinch-zoom are the canvas's own (the graph's
-// camera, or React Flow's in the Model view).
+// camera, or React Flow's in the ERD view).
 
 /** Whether a click came from a finger or a pen (or, when the event does not say, from a touch screen). */
 export function isTap(event: SyntheticEvent | Event | undefined, coarse: boolean): boolean {
@@ -30,7 +30,7 @@ export interface TapToOpen {
 /**
  * The tap-to-select, tap-again-to-open behavior of a canvas. `open` follows a node; `canOpen`
  * says whether a node can be opened at all (the center node and file nodes cannot). The selected
- * node's element (the element with its `data-id` under `wrapper`: the Model view's node, the graph's
+ * node's element (the element with its `data-id` under `wrapper`: the ERD view's node, the graph's
  * box in its accessibility layer) carries `is-armed` while selected.
  * The selection is let go when `resetKey` changes (a new focus).
  */

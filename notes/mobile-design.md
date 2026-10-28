@@ -171,7 +171,7 @@ The page bar's ⧉ button shows the count and opens a bottom sheet: one row per 
 
 With the in-app browser at 375 × 812 and 320 × 640 in touch emulation, against `npx vite --port 5414`:
 
-- the record page, a domain's Graph view and its Model view (ERD): `document.documentElement.scrollWidth` equal to the viewport, and no element wider than the viewport outside a scrolling box, at both widths;
+- the record page, a domain's Graph view and its ERD view (ERD): `document.documentElement.scrollWidth` equal to the viewport, and no element wider than the viewport outside a scrolling box, at both widths;
 - the inspector sheet opening at half height, a drag up to full, a drag down to half and a further drag closing it, with focus back on its toggle;
 - the nav sheet full screen with the rail, 44 px rows and indent guides; quick find full screen with 16 px text and inline results;
 - a touch tap on a graph node arming it and showing the card;

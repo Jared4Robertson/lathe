@@ -129,7 +129,7 @@ describe('columns and text', () => {
         expect(n.lines.title.join(''), n.id).toBe(label.title);
         expect(n.lines.meta.join(''), n.id).toBe(label.meta);
         const inner = across - 2 * LABEL_PAD - room.l - room.r;
-        for (const line of n.lines.title) expect((label.file ? metaWidth(line.trimEnd(), 11) : titleWidth(line.trimEnd())), n.id).toBeLessThanOrEqual(inner + 1e-6);
+        for (const line of n.lines.title) expect(titleWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(inner + 1e-6);
         const meta = inner - (label.marks ?? 0) * MARK_ROOM - (label.marked ? 2 * BADGE_ROOM : 0);
         for (const line of n.lines.meta) expect(metaWidth(line.trimEnd()), n.id).toBeLessThanOrEqual(meta + 1e-6);
         expect(n.text * labelHeight(n.lines) + 2 * border, n.id).toBeLessThanOrEqual(n.h * (1 + eps));
@@ -256,8 +256,6 @@ describe('real titles', () => {
         expect(title.join(''), r.title).toBe(r.title);
         // Every line but the last ends after a space, or after a hyphen inside one word too wide for a line.
         for (const line of title.slice(0, -1)) expect(/\s$/.test(line) || (line.endsWith('-') && !/\s/.test(line)), `${r.title}: "${line}"`).toBe(true);
-        // A file's path breaks only after a slash or a hyphen.
-        if (r.file) for (const line of wrapLabel({ title: r.file, meta: '' }, { file: true }).title.slice(0, -1)) expect(/[\s/-]$/.test(line), `${r.file}: "${line}"`).toBe(true);
       }
     }
   });

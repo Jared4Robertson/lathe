@@ -2,8 +2,8 @@
 
 The accessibility suite (`app/a11y`, `npm --prefix app run test:a11y`, rule `LA-PAT-APP-UX-R10`) runs axe-core at WCAG 2.2 AA (`wcag2a`, `wcag2aa`, `wcag21a`, `wcag21aa`, `wcag22aa`) on every page and state the stability suite visits, and walks the keyboard paths axe can't check. Each page or state in each look is one test.
 
-- **Pages:** product, domain, record and group pages; the graph; the Model view; Checks; Format; Appearance.
-- **States:** quick find, the command palette, the shortcuts sheet and a tooltip on a wide screen; the nav drawer, the quick find sheet and the inspector sheet on a phone. The side bar (the inspector) is open beside the graph and the Model view.
+- **Pages:** product, domain, record and group pages; the graph; the ERD view; Checks; Format; Appearance.
+- **States:** quick find, the command palette, the shortcuts sheet and a tooltip on a wide screen; the nav drawer, the quick find sheet and the inspector sheet on a phone. The side bar (the inspector) is open beside the graph and the ERD view.
 - **Widths and looks:** 1440 px and 375 px (touch), each in Lathe light, Lathe dark, High contrast light and High contrast dark, with reduced motion so colors are read at rest.
 - **Keyboard** (`keyboard.spec.ts`): Tab round the whole page and back with no trap; the main tasks by keyboard (open a record from the nav and from quick find, switch views, re-center the graph, fold a row, hide, show and focus the inspector, pick a theme); focus after a move and back on the opener when a dialog or a sheet closes; the announcer's words.
 
@@ -46,7 +46,7 @@ Before: 156 findings in 5 rules; 94 of the 100 audit tests failed (on a phone, t
 
 - Markdown code blocks (`<pre>`, `app/src/specs/Markdown.tsx`) and the Format page's example header (`app/src/format/FormatPages.tsx`), seen on a phone;
 - the shortcuts sheet's groups (`app/src/shell/commands.tsx`), a region named "Shortcuts";
-- the ERD's key in the Model view (`app/src/model/ModelView.tsx`, a one-line attribute);
+- the ERD's key in the ERD view (`app/src/erd/ErdView.tsx`, a one-line attribute);
 - the graph's trail on a phone (`app/src/graph/GraphPage.tsx`, a one-line attribute).
 
 ## `color-contrast`: muted text on the shell (WCAG 1.4.3)

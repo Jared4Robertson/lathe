@@ -1,6 +1,6 @@
 {"id":"LA-AUT-MOD01","title":"CLI data commands","domain_id":"LA-AUT","file":"lathe/src/cli/writers.ts"}
 {"id":"LA-EXP-MOD01","title":"Layout engine","domain_id":"LA-EXP","file":"app/src/elk.ts"}
-{"id":"LA-EXP-MOD02","title":"Domain event lookups","domain_id":"LA-EXP","file":"app/src/model/events.ts"}
+{"id":"LA-EXP-MOD02","title":"Domain event lookups","domain_id":"LA-EXP","file":"app/src/specs/events.ts"}
 {"id":"LA-EXP-MOD03","title":"Label plurals","domain_id":"LA-EXP","file":"app/src/plural.ts"}
 {"id":"LA-EXP-MOD04","title":"Side bar state","domain_id":"LA-EXP","file":"app/src/views/sideBarState.ts"}
 {"id":"LA-PLT-MOD01","title":"Phone layout","domain_id":"LA-PLT","file":"app/src/shell/useNarrow.ts"}

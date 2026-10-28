@@ -1,5 +1,4 @@
 import type { GraphMap, MapNode, PlacedMap } from './map';
-import { heightOf, widthOf, type Point } from './layout';
 
 // The camera over the one map (LA-EXP-DS09). Focusing a node, by a click, the address, Back and
 // Forward, the step keys or the trail, moves the camera only: it frames the focus and the levels
@@ -114,18 +113,6 @@ export function frameOnMap(map: GraphMap, focus: string, depth: number, width: n
 export function frameMap(map: GraphMap, width: number, height: number): Viewport {
   const zoom = Math.min(MAX_ZOOM, (width - 2 * FRAME_PADDING) / Math.max(1, map.width), (height - 2 * FRAME_PADDING) / Math.max(1, map.height));
   return { x: width / 2 - (map.width / 2) * zoom, y: height / 2 - (map.height / 2) * zoom, zoom };
-}
-
-/** The viewport that fits some boxes in a pane, centered, never zoomed in past 1 (a trace's camera). */
-export function fitBoxes(positions: ReadonlyMap<string, Point>, width: number, height: number, padding = 40, heights?: ReadonlyMap<string, number>, widths?: ReadonlyMap<string, number>): Viewport {
-  const all = [...positions];
-  if (all.length === 0) return { x: width / 2, y: height / 2, zoom: 1 };
-  const minX = Math.min(...all.map(([, p]) => p.x));
-  const minY = Math.min(...all.map(([, p]) => p.y));
-  const maxX = Math.max(...all.map(([id, p]) => p.x + widthOf(widths, id)));
-  const maxY = Math.max(...all.map(([id, p]) => p.y + heightOf(heights, id)));
-  const zoom = Math.max(0.1, Math.min(1, (width - 2 * padding) / (maxX - minX), (height - 2 * padding) / (maxY - minY)));
-  return { x: width / 2 - ((minX + maxX) / 2) * zoom, y: height / 2 - ((minY + maxY) / 2) * zoom, zoom };
 }
 
 // ---------- The glide ----------

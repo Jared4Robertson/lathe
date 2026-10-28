@@ -128,10 +128,10 @@ describe('the keymap', () => {
   it('LA-V61-R08-T08 The view toggles have Ctrl+W, Ctrl+G and Ctrl+M on a Mac and Alt+W, Alt+G and Alt+M elsewhere, then Ctrl+1, 2 and 4', () => {
     expect(keysOn('viewWiki', true)).toEqual(['Ctrl+W', 'Ctrl+1']);
     expect(keysOn('viewGraph', true)).toEqual(['Ctrl+G', 'Ctrl+2']);
-    expect(keysOn('viewModel', true)).toEqual(['Ctrl+M', 'Ctrl+4']);
+    expect(keysOn('viewErd', true)).toEqual(['Ctrl+M', 'Ctrl+4']);
     expect(keysOn('viewWiki', false)).toEqual(['Alt+W', 'Ctrl+1']);
     expect(keysOn('viewGraph', false)).toEqual(['Alt+G', 'Ctrl+2']);
-    expect(keysOn('viewModel', false)).toEqual(['Alt+M', 'Ctrl+4']);
+    expect(keysOn('viewErd', false)).toEqual(['Alt+M', 'Ctrl+4']);
   });
 
   it('LA-V61-R12-T02 A key means the platform\'s own key, and no platform is offered a browser key, even by an override', () => {

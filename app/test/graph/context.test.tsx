@@ -115,7 +115,7 @@ describe('the graph tree, its depth and its camera', () => {
     // Each drawn box draws its kind and ID line and its title, and is a keyboard stop with its name.
     for (const box of scene().boxes) {
       expect(box.lines.some((l) => l.face === 'meta' && l.text !== ''), box.id).toBe(true);
-      expect(box.lines.filter((l) => l.face === 'title' || box.file).map((l) => l.text).join(''), box.id).toBeTruthy();
+      expect(box.lines.filter((l) => l.face === 'title').map((l) => l.text).join(''), box.id).toBeTruthy();
     }
     for (const el of boxElements()) {
       expect(el.hasAttribute('aria-label'), el.dataset.id).toBe(true);

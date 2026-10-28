@@ -8,7 +8,7 @@ import { usePref } from './prefs';
 // the spaces are kept hard apart. The rail at the far left of the nav has one icon per product; the
 // current space is the product of the page you are on (or the last one you chose, on a page that
 // belongs to no product). Everything inside a space reads the space's own index (spaceIndex): the
-// nav, quick find, the space's Checks page, the graph, the Model view, the side bar and the format
+// nav, quick find, the space's Checks page, the graph, the ERD view, the side bar and the format
 // reference's records, so nothing of another product shows in it. Choosing a space opens the last
 // page you visited in it this session, or its product page.
 

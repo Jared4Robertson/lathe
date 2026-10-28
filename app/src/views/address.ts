@@ -1,4 +1,5 @@
 import type { SpecIndex, SpecRoute } from '../specs/data';
+import { hasTrace } from '../trace/chain';
 
 // One address per thing, whichever views show it (LA-PAT-APP-CODE-R19). A record is at its bare
 // ID (`/LA-TRC-UC09`), a product and a domain included, whose one page is their overview (`/LA`,
@@ -7,8 +8,8 @@ import type { SpecIndex, SpecRoute } from '../specs/data';
 // (`/DM-SHOP/design/test-plan/acceptance/…`).
 // App pages are lowercase words (`/`, `/format`, `/settings/appearance`), so they never clash with
 // an ID, which starts with a capital; a space's Checks page is its product's ID and a word (`/LA/checks`). Every address
-// of a record or group is made here, by addressOf. The open views (wiki, graph, model, one pane
-// each) are a query parameter, `?view=wiki,graph`, so a shared link opens as it was seen.
+// of a record or group is made here, by addressOf. The open views (wiki, graph, ERD and trace,
+// one pane each) are a query parameter, `?view=wiki,graph`, so a shared link opens as it was seen.
 
 /** A record ID, as the schema shapes it: a capital first, then capitals and digits, in parts joined by hyphens. */
 export const RECORD_ID = /^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$/;
@@ -47,10 +48,12 @@ export function isFocusPath(path: string): boolean {
   }
 }
 
-export type ViewName = 'wiki' | 'graph' | 'model';
+export type ViewName = 'wiki' | 'graph' | 'erd' | 'trace';
 /** Every view, in the order its panes sit, left to right. */
-export const VIEW_NAMES: readonly ViewName[] = ['wiki', 'graph', 'model'];
-export const VIEW_LABELS: Record<ViewName, string> = { wiki: 'Wiki', graph: 'Graph', model: 'Model' };
+export const VIEW_NAMES: readonly ViewName[] = ['wiki', 'graph', 'erd', 'trace'];
+export const VIEW_LABELS: Record<ViewName, string> = { wiki: 'Wiki', graph: 'Graph', erd: 'ERD', trace: 'Trace' };
+/** A view's name inside a sentence ("Close the ERD pane"): its label in lowercase, the acronym kept. */
+export const VIEW_WORDS: Record<ViewName, string> = { wiki: 'wiki', graph: 'graph', erd: 'ERD', trace: 'trace' };
 
 /** True for a page a space remembers as its last: a focus page or the space's Checks page. */
 export function isSpacePath(path: string): boolean {
@@ -76,13 +79,20 @@ export function viewsFromSearch(search: string): ViewName[] | null {
 export const withView = (path: string, views: ViewName | readonly ViewName[]) =>
   `${path}?view=${(typeof views === 'string' ? [views] : VIEW_NAMES.filter((v) => views.includes(v))).join(',')}`;
 
-/** The kinds whose pages offer the Model view: a domain's ERD, an aggregate's, or an entity's aggregate's. */
-export const MODEL_KINDS: ReadonlySet<string> = new Set(['domain', 'aggregate', 'entity']);
+/** The kinds whose pages offer the ERD view: a domain's ERD, an aggregate's, or an entity's aggregate's. */
+export const ERD_KINDS: ReadonlySet<string> = new Set(['domain', 'aggregate', 'entity']);
 
-/** The views a page offers: Model only on the kinds the Model view draws. */
+/**
+ * The views a page offers: Wiki and Graph everywhere; ERD only on the kinds it draws; Trace only on
+ * an obligation, or a record or group with an obligation under it, so it is never empty.
+ */
 export function viewsOffered(index: SpecIndex, focus: string): ViewName[] {
   const kind = index.byId.get(focus)?.kind;
-  return VIEW_NAMES.filter((v) => v !== 'model' || (kind !== undefined && MODEL_KINDS.has(kind)));
+  return VIEW_NAMES.filter((v) => {
+    if (v === 'erd') return kind !== undefined && ERD_KINDS.has(kind);
+    if (v === 'trace') return hasTrace(index, focus);
+    return true;
+  });
 }
 
 /** What a page shows of the views asked for: those it offers, or the wiki when none of them is. */
