@@ -475,7 +475,7 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
         <dl className="fields format-facts">
           <div><dt>Stage</dt><dd>{stage ? <>{stage.label}<span className="meta"> · {stage.description}</span></> : 'None: it sits outside the stages.'}</dd></div>
           <div><dt>Parent</dt><dd>{kind.parent_kinds.length === 0
-            ? (kind.kind === 'product' ? 'None: a product holds everything else.' : 'None: it has no owner. It exists because other records use it, and its product follows from its ID.')
+            ? (kind.kind === 'product' ? 'None: a product holds everything else.' : kind.idScope === 'domain' ? 'None: it has no owner. Its product and domain follow from its ID.' : 'None: it has no owner. Its product follows from its ID; it belongs to the one domain that uses it, or is shared when two or more domains use it, or none.')
             : kind.parent_kinds.length === 1 ? 'Exactly one, of the kind below.' : 'Exactly one, of one of the kinds below.'}</dd></div>
         </dl>
         <Section level={3} title="Allowed parents" count={kind.parent_kinds.length}>

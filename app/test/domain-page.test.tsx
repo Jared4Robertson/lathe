@@ -65,7 +65,7 @@ describe('domain page', () => {
     expect(section(/^Use case tests/)).toHaveTextContent('api · test/basket.test.ts');
     // A test not automated yet is marked so.
     expect(within(section(/^Invariant tests/)).getByText('not automated yet')).toHaveClass('test-state', 'not-automated');
-    // What sits at product level is the product's: the domain lists no value object or view.
+    // Both domains use the value object and the view, so the product shares them: the domain lists neither.
     expect(main()).not.toHaveTextContent('DM-VO01');
     expect(main()).not.toHaveTextContent('DM-V01 ');
   });

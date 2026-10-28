@@ -162,7 +162,7 @@
 {"id":"LA-EXP-UC12-FL-S01","title":"In the Graph view the side bar is open on Details, and follows the pointer over the boxes","flow_id":"LA-EXP-UC12-FL","path":"main","position":1}
 {"id":"LA-EXP-UC12-FL-S02","title":"In the Wiki view they open the side bar, switch to Outline and jump to a section; nothing outside the side bar moves","flow_id":"LA-EXP-UC12-FL","path":"main","position":2}
 {"id":"LA-EXP-UC12-FL-S03","title":"They switch to History: the uncommitted change first, an older commit's diff, Load more","flow_id":"LA-EXP-UC12-FL","path":"main","position":3}
-{"id":"LA-EXP-UC13-FL-S01","title":"The reader opens a domain's Interaction design and sees its endpoints, and the integrations in Shared","flow_id":"LA-EXP-UC13-FL","path":"main","position":1}
+{"id":"LA-EXP-UC13-FL-S01","title":"The reader opens a domain's Interaction design and sees its endpoints, and the integrations only its steps exchange with","flow_id":"LA-EXP-UC13-FL","path":"main","position":1}
 {"id":"LA-EXP-UC13-FL-S02","title":"They open a command and read its endpoint, method, route and API requirements","flow_id":"LA-EXP-UC13-FL","path":"main","position":2}
 {"id":"LA-EXP-UC13-FL-S03","title":"They open an integration and read the steps that exchange with its system","flow_id":"LA-EXP-UC13-FL","path":"main","position":3}
 {"id":"LA-EXP-UC14-FL-S01","title":"The Owner chooses Edit; the form opens in place, shaped by the schema, from the keyboard too","flow_id":"LA-EXP-UC14-FL","path":"main","position":1}

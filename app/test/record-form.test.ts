@@ -237,7 +237,7 @@ describe('before a removal', () => {
     expect(referrers).toEqual(['DM-SHOP-UC01-FL sits under it', 'DM-SHOP-UC01-R01 sits under it', 'DM-SHOP-UC01-R02 sits under it']);
     expect(referrersOf(index, 'DM-PAT-AUDIT').map((r) => r.how)).toEqual(expect.arrayContaining(['links to it (follows)', 'names it in a setting value row']));
     // A value object is named by the fields typed by it.
-    expect(referrersOf(index, 'DM-VO01').map((r) => `${r.id} ${r.how}`)).toEqual(['DM-VO01-C01 sits under it', 'DM-SHOP-EN02 names it in a entity field row']);
+    expect(referrersOf(index, 'DM-VO01').map((r) => `${r.id} ${r.how}`)).toEqual(['DM-VO01-C01 sits under it', 'DM-SHOP-EN02 names it in a entity field row', 'DM-PAY-EV01 names it in a event field row']);
     expect(removedWith(index, 'DM-SHOP-UC01')).toEqual({ parts: 1, links: 1 });
   });
 });

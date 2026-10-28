@@ -44,13 +44,14 @@ describe('lathe check', () => {
     expect(lines).toContain('  EX-LEND specification: 1/1 designed, 1/1 built, 0/1 proved, 1/1 not automated yet');
     expect(lines).toContain('  EX-LEND domain service: 1/1 designed, 0/1 built, 1/1 proved');
     expect(lines).toContain('  EX-LEND pattern rule: proof only, 1/1 proved');
-    expect(lines).toContain('  EX (outside the domains) constraint: 1/1 designed, 1/1 built, 1/1 proved');
-    expect(lines).toContain('  EX-LEND tests: 8 automated, 1 manual, 1 not automated yet');
+    expect(lines).toContain('  EX-LEND constraint: 1/1 designed, 1/1 built, 1/1 proved');
+    expect(lines).toContain('  EX Shared standard rule: 1/1 designed, 1/1 built, 1/1 proved');
+    expect(lines).toContain('  EX-LEND tests: 10 automated, 2 manual, 1 not automated yet');
 
     const gaps = lathe('check', '--root', short).stdout;
     expect(gaps).toContain('  SP-D records short of a minimum (');
     expect(gaps).toContain('    [use-case-without-flow] Use case SP-D-UC01 has no flow.');
-    expect(gaps).toContain('  SP (outside the domains) records short of a minimum (5):');
+    expect(gaps).toContain('  SP Shared records short of a minimum (');
   });
 
   it('LA-CHK-UC01-R02-T01 The check exits 1 on any error and 0 otherwise, whatever the warnings and gaps', () => {

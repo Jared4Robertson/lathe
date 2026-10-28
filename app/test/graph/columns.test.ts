@@ -58,8 +58,8 @@ describe('graph columns by tree depth', () => {
     expect(lc.get('P-D-EN04')).toBe(lc.get('P-D-EN03'));
     expect(lc.get('P-D-EN05')).toBe(lc.get('P-D-EN03'));
     expect(loan.edges.map((e) => e.id)).toContain('P-D-A3/entity|parent|P-D-EN04');
-    // In the map a linked record keeps its own place: links never move anything.
-    expect(map.nodes.get('P-V01')!.parent).toBe('P/interaction-design/view');
+    // In the map a linked record keeps its own place, the view in P-D, the one domain that uses it: links never move anything.
+    expect(map.nodes.get('P-V01')!.parent).toBe('P-D/interaction-design/view');
   });
 
   it.each(['LA-EXP-DS05-T08', 'LA-V93-R27-T02'])('%s A group sits in its own column between its parent and its members', () => {

@@ -63,10 +63,11 @@ describe('product page', () => {
     expect(main()).not.toHaveTextContent('NF-NOTE has no use cases yet');
   });
 
-  it('The product page lists what sits at product level in its stages, each in its stage\'s color', async () => {
+  it('The product page lists what it shares in its stages, each in its stage\'s color', async () => {
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const level = section(/^Product level/);
+    // Both domains use the value object and the view, so the product shares them.
+    const level = section(/^Shared\s*\d/);
     const stages = [...level.querySelectorAll('.stage')].map((s) => [s.className, s.querySelector('.stage-title')?.textContent]);
     expect(stages).toEqual([
       ['stage stage-domain-model', 'Domain model1'],
@@ -75,7 +76,7 @@ describe('product page', () => {
     expect(within(level).getByRole('heading', { name: /^Value objects/ })).toBeInTheDocument();
     expect(within(level).getByRole('heading', { name: /^Views/ })).toBeInTheDocument();
     expect(within(level).getByRole('link', { name: /DM-V01\s*Basket page/ })).toHaveAttribute('href', '/DM-V01');
-    // A domain's records are never listed at product level.
+    // A domain's records are never listed in Shared.
     expect(level).not.toHaveTextContent('DM-SHOP-SP01');
   });
 

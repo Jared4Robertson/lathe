@@ -141,11 +141,20 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
   );
 }
 
-/** Why a record has no parent: a product is the top; a kind with no owner exists because other records use it. */
-export const parentlessText = (index: SpecIndex, record: SpecRecord) =>
-  record.kind === 'product' ? 'None (top level).' : (index.kinds.get(record.kind)?.parent_kinds.length ?? 0) === 0
-    ? 'None: it has no owner. It exists because other records use it.'
-    : 'None (its parent is missing).';
+/**
+ * Why a record has no parent: a product is the top; a kind with no owner exists because other records use it, and
+ * belongs to the domain its ID names (a specification), to the one domain that uses it, or else is shared.
+ */
+export function parentlessText(index: SpecIndex, record: SpecRecord): string {
+  if (record.kind === 'product') return 'None (top level).';
+  const kind = index.kinds.get(record.kind);
+  if ((kind?.parent_kinds.length ?? 0) > 0) return 'None (its parent is missing).';
+  const domain = record.domain ? index.byId.get(record.domain)?.title ?? record.domain : null;
+  if (kind?.id_scope === 'domain') return `None: it has no owner. It belongs to the domain its ID names${domain ? `, ${domain}` : ''}.`;
+  return domain
+    ? `None: it has no owner. It belongs to ${domain}, the one domain that uses it.`
+    : 'None: it has no owner. It is shared: two or more domains use it, or none.';
+}
 
 /**
  * A record's facts: kind, stage, short fields, data file and line, parent, children (their own children folded) and

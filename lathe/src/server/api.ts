@@ -1,6 +1,6 @@
 // Lathe's HTTP API, shared by `lathe serve`, the desktop shell and the app's Vite dev server. Its shapes are in
 // contract.ts:
-//   GET  /api/spec                SpecData: the schema, every stored table's rows, and the checks' problems and coverage
+//   GET  /api/spec                SpecData: the schema, every stored table's rows, where each record with no owner sits, and the checks' problems and coverage
 //   POST /api/write               { commands } -> WriteAnswer: one transaction through the store's command layer
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 //   GET  /api/reference           the product's Reference (reference.ts): kinds, tables, relations, folders, checks
@@ -140,6 +140,7 @@ async function specData(root: string): Promise<SpecData> {
       schema: opened.store.schema,
       dataDir: path.relative(config.root, config.dataDir).split(path.sep).join('/'),
       tables: tablesOf(opened.store),
+      placements: await opened.store.placements(),
       problems,
       coverage,
     };
