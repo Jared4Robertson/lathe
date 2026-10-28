@@ -42,6 +42,11 @@ const coverage = (): Coverage[] => [{
   gaps: [
     gap('P-D-INV02', 'invariant', 'proved'),
     gap('P-D-UC01-R02', 'uc_requirement', 'proved'),
+    // What no obligation's chain reaches, as the engine reports it (trace/chain.test.ts holds the app to it).
+    gap('P-D-CMD02', 'command', 'record-untraced'),
+    gap('P-D-CMD03', 'command', 'record-untraced'),
+    gap('P-D-QRY01', 'query', 'record-untraced'),
+    gap('P-D-UC01-FL01-S02', 'flow_step', 'record-untraced'),
   ],
 }, {
   product: 'P',
@@ -50,7 +55,7 @@ const coverage = (): Coverage[] => [{
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
   pattern_rules: {},
-  gaps: [],
+  gaps: [gap('P-E-CMD01', 'command', 'record-untraced')],
 }];
 
 export const modelWorkspace = (): SpecData => fixture('model', { problems: structuredClone(PROBLEMS), exceptions: structuredClone(EXCEPTIONS), coverage: coverage() });

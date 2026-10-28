@@ -1,13 +1,13 @@
 // What the app's server answers, shared by the server (api.ts, history.ts) and the web app, which imports these
 // types only. The server reads each product's data through its own store and serves the typed rows as they are.
 //
-//   GET  /api/spec               SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
+//   GET  /api/spec               SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions, coverage and each obligation's chain
 //   POST /api/write              { commands: Command[] } -> WriteAnswer: one transaction through the command layer of the product the commands name
 //   GET  /api/history?id=<ID>    HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 import type { Command, StoreProblem } from '../store/store.ts';
 import type { Row, Value } from '../store/rows.ts';
 import type { SchemaDescription } from '../store/schema.ts';
-import type { Coverage, Problem, RecordedException } from '../types.ts';
+import type { Coverage, Problem, RecordedException, TraceChain } from '../types.ts';
 
 export type { Row, StoreProblem, Value };
 
@@ -31,6 +31,8 @@ export interface SpecData {
   /** Every recorded exception (a command_change row): listed, never a problem. */
   exceptions: RecordedException[];
   coverage: Coverage[];
+  /** Every obligation's traceability chain, each product's worked out in its own folder. */
+  chains: TraceChain[];
 }
 
 /** One product folder's data. */

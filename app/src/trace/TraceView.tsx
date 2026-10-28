@@ -3,7 +3,7 @@ import { lazy, Suspense, useLayoutEffect, useMemo, useState, type FocusEvent, ty
 import { Button } from '../components/Button';
 import { groupName, isGroup } from '../graph/model';
 import { kindLabel, type SpecIndex } from '../specs/data';
-import { gapColumns, TRACE_COLUMN_LABELS, TRACE_COLUMNS, traceChain, traceShape, untracedUnder, type TraceColumn, type TraceFile, type TraceGroup, type TraceRow } from './chain';
+import { TRACE_COLUMN_LABELS, TRACE_COLUMNS, traceChain, traceShape, untracedUnder, type GapColumn, type TraceColumn, type TraceFile, type TraceGroup, type TraceRow } from './chain';
 import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
 import { useNarrow } from '../shell/useNarrow';
@@ -22,8 +22,8 @@ import { tracePicture } from './lanes';
 // chain.ts's traceShape gives the focus:
 // - an obligation: its chain, each column a list of cards;
 // - a record or group with obligations under it: a traceability matrix, one row per obligation
-//   grouped by its parent, each empty cell a visible gap, and under it the Untraced section (the
-//   design, build and test records under the focus no chain reaches);
+//   grouped by its parent, each gap coverage reports visible in its cell, and under it the Untraced
+//   section (the records under the focus coverage reports untraced);
 // - a design, build or test record a chain holds: the rows it belongs to, the record marked;
 // - a record nothing traces to: the untraced state, with the matrix of the nearest container with
 //   obligations below it, the record marked; any other record: that container's matrix, marked.
@@ -50,14 +50,11 @@ export interface TraceViewProps {
 /** How many matrix rows show before "Show more". */
 export const TRACE_PAGE = 100;
 
-/** Why a column is not owed, for its cell. */
-const NOT_OWED: Record<'design' | 'build', string> = {
-  design: 'Designed by its technical records',
-  build: 'Proved only',
-};
+/** A gap coverage reports, in words, by its column. */
+const MISSING: Record<GapColumn, string> = { design: 'Not designed', build: 'Not built', tests: 'Not proved' };
 
-/** A column's empty cell, as a gap in words. */
-const MISSING: Record<TraceColumn, string> = { design: 'No design', build: 'Not built', tests: 'No tests', files: 'No files' };
+/** Whether coverage reports a gap in a row's column. */
+const isGap = (row: TraceRow, column: TraceColumn) => (row.gaps as readonly TraceColumn[]).includes(column);
 
 const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 
@@ -110,7 +107,7 @@ function pageOf(groups: readonly TraceGroup[], gapsOnly: boolean, shown: number)
   let matching = 0;
   let withGaps = 0;
   for (const g of groups) {
-    const gapped = g.rows.filter((r) => gapColumns(r).length > 0);
+    const gapped = g.rows.filter((r) => r.gaps.length > 0);
     withGaps += gapped.length;
     const kept = gapsOnly ? gapped : g.rows;
     matching += kept.length;
@@ -176,7 +173,7 @@ function TraceStage(props: TraceViewProps) {
   const caption = useMemo(() => {
     if (!spec) {
       const row = traceChain(index, focus)!;
-      const gaps = gapColumns(row);
+      const gaps = row.gaps;
       return `${kindLabel(index, index.byId.get(focus)!.kind)} · ${TRACE_COLUMNS.map((c) => `${itemsOf(row, c)} ${TRACE_COLUMN_LABELS[c].toLowerCase()}`).join(' · ')}${gaps.length > 0 ? ` · ${count(gaps.length, 'gap')}` : ''}`;
     }
     return spec.caption ?? `${count(total, 'obligation')} · ${page!.withGaps} with gaps · ${untracedCount} untraced`;
@@ -311,10 +308,15 @@ function FileCard({ file, props }: { file: TraceFile; props: TraceViewProps }) {
   );
 }
 
-/** What an empty cell says: a gap, or why the column is not owed. */
+/** What an empty cell says: the gap coverage reports there, or that nothing is owed or listed. */
 function Empty({ row, column }: { row: TraceRow; column: TraceColumn }) {
-  if (row.notOwed.has(column)) return <span className="trace-not-owed">{NOT_OWED[column as 'design' | 'build']}</span>;
-  return <span className="trace-missing">{MISSING[column]}</span>;
+  if (column !== 'files' && isGap(row, column)) return <span className="trace-missing">{MISSING[column]}</span>;
+  return <span className="trace-not-owed">{row.proofOnly && column !== 'tests' && column !== 'files' ? 'Proved only' : 'None'}</span>;
+}
+
+/** A gap in a cell that holds records: a test that does not count as proof yet, a technical record whose file is missing. */
+function GapNote({ row, column }: { row: TraceRow; column: TraceColumn }) {
+  return column !== 'files' && isGap(row, column) ? <span className="trace-missing">{MISSING[column]}</span> : null;
 }
 
 // ---------- One obligation's chain ----------
@@ -330,11 +332,14 @@ function TraceChainCards(props: TraceViewProps & { access: boolean }) {
   const column = (c: TraceColumn): ReactNode => {
     if (itemsOf(row, c) === 0) return <p className="trace-cell-empty"><Empty row={row} column={c} /></p>;
     return (
+      <>
+      {isGap(row, c) && <p className="trace-cell-empty"><GapNote row={row} column={c} /></p>}
       <CardGrid stack label={TRACE_COLUMN_LABELS[c]}>
         {c === 'files'
           ? row.files.map((f) => <FileCard key={f.path} file={f} props={props} />)
           : row[c].map((id) => <RecordCard key={id} id={id} props={props} />)}
       </CardGrid>
+      </>
     );
   };
   return (
@@ -374,7 +379,7 @@ function TraceMatrix(props: MatrixProps) {
   return (
     <Region label={label} access={access}>
       {access ? null : lead}
-      {total === 0 ? null : page.matching === 0 ? <p className="hint trace-none">No gaps: every obligation here is designed, built, tested and named in a file.</p> : (
+      {total === 0 ? null : page.matching === 0 ? <p className="hint trace-none">No gaps: every obligation here is designed, built and proved.</p> : (
         <table className="data-table trace-matrix">
           <caption className="sr-only">{label}</caption>
           <thead>
@@ -391,15 +396,16 @@ function TraceMatrix(props: MatrixProps) {
                 </th>
               </tr>
               {g.rows.map((row) => (
-                <tr key={row.obligation} className={gapColumns(row).length > 0 ? 'has-gap' : undefined} data-trace-lane={row.obligation}>
+                <tr key={row.obligation} className={row.gaps.length > 0 ? 'has-gap' : undefined} data-trace-lane={row.obligation}>
                   <th scope="row"><Ref id={row.obligation} props={props} /></th>
                   {TRACE_COLUMNS.map((c) => (
-                    <td key={c} className={itemsOf(row, c) === 0 && !row.notOwed.has(c) ? 'is-gap' : undefined}>
+                    <td key={c} className={isGap(row, c) ? 'is-gap' : undefined}>
                       {itemsOf(row, c) === 0 ? <Empty row={row} column={c} /> : (
                         <span className="trace-refs">
                           {c === 'files'
                             ? row.files.map((f) => <FileRef key={f.path} file={f} props={props} />)
                             : row[c].map((id) => <Ref key={id} id={id} props={props} />)}
+                          <GapNote row={row} column={c} />
                         </span>
                       )}
                     </td>

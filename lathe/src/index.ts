@@ -4,7 +4,7 @@ import { existsSync, readdirSync, statSync, type Dirent } from 'node:fs';
 import { glob, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, PATTERN_RULE_STANDING_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS } from './coverage.ts';
+import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, PATTERN_RULE_STANDING_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS, TRACE_FILES_SQL, TRACE_LINKS_SQL, TRACE_OBLIGATIONS_SQL } from './coverage.ts';
 import { CONFIG_FILE, loadConfig, productClash, workspaceProducts, type LatheConfig } from './config.ts';
 import { readPackageFacts } from './trace/packages.ts';
 import { readTestCases } from './trace/test-cases.ts';
@@ -15,7 +15,7 @@ import { SCHEMA_DIR } from './store/schema.ts';
 import { gatherTableFacts, TABLE_FACTS_SQL } from './trace/tables.ts';
 import type { Row } from './store/rows.ts';
 import { gatherRouteFacts, writeRouteFacts } from './trace/routes.ts';
-import type { Coverage, CoverageGap, Kind, ObligationCoverage, PatternRuleStanding, Problem, RecordedException, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, Workspace } from './types.ts';
+import type { Coverage, CoverageGap, Kind, ObligationCoverage, PatternRuleStanding, Problem, RecordedException, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, TraceChain, Workspace } from './types.ts';
 
 export type * from './types.ts';
 export type * from './reference.ts';
@@ -269,6 +269,42 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
   }));
 }
 
+/**
+ * Every obligation's chain, from trace_link: its design, build and test records in kind order then by ID, the files
+ * its build and test records name, and its links.
+ */
+async function computeChains(store: Store, records: SpecRecord[], order: string[]): Promise<TraceChain[]> {
+  // One connection runs one query at a time; coverage's queries run on connections of their own beside these.
+  const obligations = await store.query<{ id: string }>(TRACE_OBLIGATIONS_SQL);
+  const links = await store.query<{ obligation_id: string; source_id: string; target_id: string; part: 'design' | 'build' | 'tests' }>(TRACE_LINKS_SQL);
+  const files = await store.query<{ record: string; file: string }>(TRACE_FILES_SQL);
+  const kindOf = new Map(records.map((r) => [r.id, r.kind]));
+  const rank = new Map(order.map((k, i) => [k, i]));
+  const of = (id: string) => rank.get(kindOf.get(id) ?? '') ?? rank.size;
+  const sorted = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => of(a) - of(b) || a.localeCompare(b, 'en', { numeric: true }));
+  const fileOf = new Map(files.map((f) => [f.record, f.file]));
+  const by = new Map<string, typeof links>();
+  for (const l of links) by.set(l.obligation_id, [...(by.get(l.obligation_id) ?? []), l]);
+  return obligations.map(({ id }) => {
+    const own = by.get(id) ?? [];
+    const part = (p: 'design' | 'build' | 'tests') => sorted(own.filter((l) => l.part === p).map((l) => l.target_id));
+    const [design, build, tests] = [part('design'), part('build'), part('tests')];
+    const named = new Map<string, string[]>();
+    for (const r of [...build, ...tests]) {
+      const file = fileOf.get(r);
+      if (file) named.set(file, [...(named.get(file) ?? []), r]);
+    }
+    return {
+      obligation: id,
+      design,
+      build,
+      tests,
+      files: [...named].map(([path, named_by]) => ({ path, named_by })).sort((a, b) => a.path.localeCompare(b.path)),
+      links: own.map((l) => [l.source_id, l.target_id] as [string, string]),
+    };
+  });
+}
+
 /** The kinds in the order people read them: Lathe's by meta_kind.position, then the product's by name. */
 async function kindOrder(store: Store): Promise<string[]> {
   return (await store.query<{ name: string }>('SELECT name FROM meta_kind ORDER BY position NULLS LAST, name')).map((k) => k.name);
@@ -393,15 +429,15 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   const scope = new Map(read.records.map((r) => [r.id, r.product]));
   const problems = await runChecks(store, orderChecks(store.rows('check')), scope, steps);
   lap('checks');
-  const coverage = await computeCoverage(store);
+  const [coverage, chains] = await Promise.all([computeCoverage(store), computeChains(store, read.records, order)]);
   lap('coverage');
-  return { ...read, problems, exceptions: recordedExceptions(store), coverage };
+  return { ...read, problems, exceptions: recordedExceptions(store), coverage, chains };
 }
 
 /** A workspace whose data did not load: no records, and the store's refusals as data-refused errors. */
 function refusedWorkspace(error: StoreError): Workspace {
   return {
-    kinds: [], stages: [], relations: [], records: [], links: [], exceptions: [], coverage: [],
+    kinds: [], stages: [], relations: [], records: [], links: [], exceptions: [], coverage: [], chains: [],
     problems: error.problems.map((p) => ({ severity: 'error', check: 'data-refused', record: p.key && /^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$/.test(p.key) ? p.key : null, message: formatProblem(p) })),
   };
 }

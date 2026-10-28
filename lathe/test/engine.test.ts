@@ -105,7 +105,8 @@ describe('checks', () => {
 
 describe('loading', () => {
   it('LA-PLT-UC01-R01-T01 loadWorkspace returns the Workspace contract', () => {
-    expect(Object.keys(ws).sort()).toEqual(['coverage', 'exceptions', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
+    expect(Object.keys(ws).sort()).toEqual(['chains', 'coverage', 'exceptions', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
+    expect(Object.keys(ws.chains[0]).sort()).toEqual(['build', 'design', 'files', 'links', 'obligation', 'tests']);
     expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'id_scope', 'kind', 'label', 'obligation', 'parent_kinds', 'position', 'required_fields', 'stage']);
     expect(ws.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
     expect(Object.keys(ws.stages[0]).sort()).toEqual(['description', 'label', 'position', 'stage']);
