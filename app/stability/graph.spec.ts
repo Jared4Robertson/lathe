@@ -297,7 +297,8 @@ test.describe('graph', () => {
     await page.locator('.model-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
     const keys = ['.pane-model > .pane-bar', '.pane-model .pane-title', '.pane-model .model-header', MODEL_CANVAS, '.pane-model .erd-key'];
-    const box = page.locator('.model-flow .react-flow__node').first();
+    // An aggregate's boundary holds its entities: its head is where the boundary itself takes a click.
+    const box = page.locator('.model-flow .react-flow__node .erd-aggregate .erd-box-head').first();
     const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.side-bar'] }, async () => {
       await box.click();
       await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
