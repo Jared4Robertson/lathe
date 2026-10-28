@@ -4,7 +4,7 @@ import { rowsOf, served, testsText } from './flows';
 import { PRODUCT } from './scenarios';
 
 // Traceability's flows that the Reader walks in the app, each on its main path, over the suite's copy
-// of this repo's data: the product's and the domains' coverage, a trace in the graph, every
+// of this repo's data: the product's and the domains' coverage, the Trace view, every
 // obligation kind and test state, the patterns a domain follows, tests by state, and what designs,
 // builds and proves a record. Each page is checked against the coverage the engine worked out
 // (GET /api/spec). The flows run from the command line are in lathe/test/flows/traceability.test.ts.
@@ -50,30 +50,39 @@ test.describe('Traceability flows', () => {
     await expect(page.locator(`${WIKI} .pane-title h1`)).toHaveText('Traceability');
   });
 
-  test('LA-TRC-UC10-FL01-T trace an obligation in the graph', async ({ page }) => {
+  test('LA-TRC-UC10-FL01-T trace obligations in the Trace view', async ({ page }) => {
     const spec = await served(page);
-    // The chain coverage traces, and what it is for: the steps that fulfill it, their flows, what they invoke and where they
-    // happen, the handlers of what they invoke, and the tests under it.
+    // The chain: the steps that fulfill it, their flows, what they invoke and where they happen, the handlers of what
+    // they invoke, the tests under it and the files those name.
     const steps = rowsOf(spec, 'fulfills').filter((l) => l.target_id === REQUIREMENT).map((l) => String(l.source_id));
     const flows = rowsOf(spec, 'flow_step').filter((s) => steps.includes(String(s.id))).map((s) => String(s.flow_id));
     const operations = rowsOf(spec, 'invokes').filter((l) => steps.includes(String(l.source_id))).map((l) => String(l.target_id));
     const views = rowsOf(spec, 'happens_in').filter((l) => steps.includes(String(l.source_id))).map((l) => String(l.target_id));
     const handlers = [...rowsOf(spec, 'command_handler'), ...rowsOf(spec, 'query_handler')].filter((h) => operations.includes(String(h.command_id ?? h.query_id))).map((h) => String(h.id));
     const tests = rowsOf(spec, 'use_case_test').filter((t) => t.uc_requirement_id === REQUIREMENT).map((t) => String(t.id));
-    // Why it is there: its use case, the use case's capability and the business outcomes that capability serves.
+    expect(steps.length && tests.length).toBeTruthy();
+    const pane = page.locator('.pane-trace');
+    const column = (name: string) => pane.locator('.trace-column').filter({ has: page.locator('.trace-column-name', { hasText: new RegExp(`^${name}`) }) });
+    const ids = (name: string) => column(name).locator('a.trace-card code').allTextContents();
+    // S01, S02: the requirement's Trace view: its chain, column by column, every card a link.
+    await openPage(page, `/${REQUIREMENT}?view=trace`, '.pane-trace .trace-chain');
+    await expect(pane.locator('[aria-current="page"]')).toContainText(REQUIREMENT);
+    expect((await ids('Design')).sort()).toEqual([...new Set([...steps, ...flows, ...views, ...operations])].sort());
+    expect(await ids('Build')).toEqual(expect.arrayContaining(handlers));
+    expect((await ids('Tests')).sort()).toEqual([...tests].sort());
+    // S03: the use case's matrix, a row per requirement under it, then the domain's, grouped by parent.
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
-    const capability = String(rowsOf(spec, 'use_case').find((u) => u.id === useCase)!.capability_id);
-    const outcomes = rowsOf(spec, 'serves').filter((l) => l.source_id === capability).map((l) => String(l.target_id));
-    expect(steps.length && tests.length && outcomes.length).toBeTruthy();
-    // S01: the Reader focuses the obligation in the graph.
-    await openPage(page, `/${REQUIREMENT}?view=graph`, '.pane-graph .graph-flow .graph-box');
-    const boxes = () => page.locator('.pane-graph .graph-flow .graph-box').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')!).sort());
-    // S02: trace mode shows its chain alone, and the side bar lists it.
-    await page.getByRole('checkbox', { name: 'Trace mode' }).check();
-    await page.locator('.pane-graph .graph-flow[data-layout="trace"] .graph-box').first().waitFor({ state: 'attached' });
-    await expect.poll(boxes).toEqual([...new Set([...outcomes, capability, useCase, REQUIREMENT, ...flows, ...steps, ...operations, ...handlers, ...views, ...tests])].sort());
-    const chain = page.getByRole('complementary', { name: 'Side bar' }).getByRole('region', { name: /^Traceability chain \d+$/ });
-    for (const id of [...steps, ...tests]) await expect(chain.getByRole('link', { name: new RegExp(`^${id} `) })).toBeVisible();
+    const requirements = rowsOf(spec, 'uc_requirement').filter((r) => r.use_case_id === useCase).map((r) => String(r.id));
+    await openPage(page, `/${useCase}?view=trace`, '.pane-trace .trace-matrix');
+    const rows = pane.locator('.trace-matrix tbody tr:not(.group-row)');
+    await expect(rows).toHaveCount(requirements.length);
+    await openPage(page, `/${TRC}?view=trace`, '.pane-trace .trace-matrix');
+    await expect(pane.locator('.trace-matrix tr.group-row').first()).toBeVisible();
+    expect(await pane.locator('.trace-matrix tr.group-row').count()).toBeGreaterThan(1);
+    // S04: Gaps only keeps the rows with a gap, and each of them has one.
+    await pane.getByRole('checkbox', { name: 'Gaps only' }).check();
+    const left = await rows.count();
+    for (let i = 0; i < Math.min(left, 20); i++) await expect(rows.nth(i).locator('td.is-gap').first()).toBeAttached();
   });
 
   test('LA-TRC-UC11-FL01-T see every obligation kind and test state', async ({ page }) => {

@@ -35,9 +35,10 @@ describe('the side bar', () => {
   const proveLaV95R04T01 = async () => {
     expect(sideModeOf(['wiki'], false)).toBe('wiki');
     expect(sideModeOf(['wiki', 'graph'], false)).toBe('graph');
-    expect(sideModeOf(['wiki', 'model'], false)).toBe('model');
+    expect(sideModeOf(['wiki', 'erd'], false)).toBe('erd');
+    expect(sideModeOf(['wiki', 'trace'], false)).toBe('trace');
     expect(sideModeOf(['graph'], true)).toBe('graph');
-    expect(sideStateFrom({ wiki: { open: 'yes', view: 'details' }, graph: { open: true, view: 'nope' }, model: { open: false, view: 'history' } })).toEqual({ model: { open: false, view: 'history' } });
+    expect(sideStateFrom({ wiki: { open: 'yes', view: 'details' }, graph: { open: true, view: 'nope' }, erd: { open: false, view: 'history' }, model: { open: true, view: 'details' } })).toEqual({ erd: { open: false, view: 'history' } });
 
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -147,7 +148,7 @@ describe('the side bar', () => {
     expect(problems).toHaveAttribute('aria-current', 'location');
 
     // The ERD view: the boxes, those in focus first.
-    openSideBar('outline', ['model']);
+    openSideBar('outline', ['erd']);
     await openApp('/P-D?view=erd', { data: modelWorkspace() });
     await screen.findAllByRole('heading', { level: 1 });
     await waitFor(() => expect(side().getByRole('heading', { name: /^Aggregates/ })).toBeInTheDocument());

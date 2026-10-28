@@ -153,7 +153,7 @@ describe('graph groups', () => {
     expect(boxColors(PLAIN_LOOK, { group: true, kind: 'question', stage: 'structural' })).toEqual({ edge: PLAIN_LOOK.muted, fill: PLAIN_LOOK.sheet });
   });
 
-  it('LA-V93-R23-T04 Filters hide groups with their kind or with the parent relation', () => {
+  it('LA-V93-R23-T07 Filters hide groups with their kind or with the parent relation', () => {
     // A kind group and a folder go with their kind; a stage has no kind of its own and stays.
     expect(ids(neighborhood(grouped, 'P-D-A4', 1, filters(['command'])))).not.toContain('P-D-A4/command');
     expect(ids(neighborhood(index, 'P-D', 1, filters(['question'])))).not.toContain('P-D/question');

@@ -144,4 +144,22 @@ test.describe('performance', () => {
     const laid = (await page.evaluate(() => performance.now())) - start;
     await record({ name: 'ERD view: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
   });
+
+  test("LA-V98-R06-T02 opening the product's Trace pane takes under the view switch budget", async ({ page }) => {
+    await open(page, '/LA');
+    const rows = '.pane-trace .trace-matrix tbody tr';
+    const first = await work(page, async () => {
+      await page.keyboard.press('Control+5');
+      await page.locator(rows).first().waitFor();
+    });
+    await page.keyboard.press('Control+5');
+    await expect(page.locator('.pane-trace')).toHaveCount(0);
+    const again = await work(page, async () => {
+      await page.keyboard.press('Control+5');
+      await page.locator(rows).first().waitFor();
+    });
+    const drawn = await page.locator(`${rows}:not(.group-row)`).count();
+    await record({ name: 'Trace view: first open (loads its code)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
+    await record({ name: "view switch: open the product's Trace pane", value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `${drawn} rows drawn; longest frame ${Math.round(again.worstFrameMs)} ms` });
+  });
 });

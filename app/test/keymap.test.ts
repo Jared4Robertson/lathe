@@ -86,7 +86,7 @@ describe('the keymap', () => {
     expect(match(['G'], pc, false, all)).toEqual({ pending: true });
     expect(match(['G', 'C'], pc, false, all).command?.id).toBe('goChecks');
     // A command without a handler right now does not match; local and browser keys never do.
-    expect(match(['T'], pc, false, (id) => id !== 'graphTrace').command).toBeUndefined();
+    expect(match(['L'], pc, false, (id) => id !== 'graphLinks').command).toBeUndefined();
     expect(match(['Alt+ArrowLeft'], pc, false, all).command).toBeUndefined();
   });
 
@@ -125,13 +125,15 @@ describe('the keymap', () => {
 
   const keysOn = (id: string, mac: boolean) => resolveCommands({}, mac).find((c) => c.id === id)!.keys;
 
-  it('LA-V61-R08-T08 The view toggles have Ctrl+W, Ctrl+G and Ctrl+M on a Mac and Alt+W, Alt+G and Alt+M elsewhere, then Ctrl+1, 2 and 4', () => {
+  it('LA-V61-R08-T08 The view toggles have Ctrl+W, Ctrl+G, Ctrl+E and Ctrl+T on a Mac and Alt+W, Alt+G, Alt+E and Alt+T elsewhere, then Ctrl+1, 2, 4 and 5', () => {
     expect(keysOn('viewWiki', true)).toEqual(['Ctrl+W', 'Ctrl+1']);
     expect(keysOn('viewGraph', true)).toEqual(['Ctrl+G', 'Ctrl+2']);
-    expect(keysOn('viewErd', true)).toEqual(['Ctrl+M', 'Ctrl+4']);
+    expect(keysOn('viewErd', true)).toEqual(['Ctrl+E', 'Ctrl+4']);
+    expect(keysOn('viewTrace', true)).toEqual(['Ctrl+T', 'Ctrl+5']);
     expect(keysOn('viewWiki', false)).toEqual(['Alt+W', 'Ctrl+1']);
     expect(keysOn('viewGraph', false)).toEqual(['Alt+G', 'Ctrl+2']);
-    expect(keysOn('viewErd', false)).toEqual(['Alt+M', 'Ctrl+4']);
+    expect(keysOn('viewErd', false)).toEqual(['Alt+E', 'Ctrl+4']);
+    expect(keysOn('viewTrace', false)).toEqual(['Alt+T', 'Ctrl+5']);
   });
 
   it('LA-V61-R12-T02 A key means the platform\'s own key, and no platform is offered a browser key, even by an override', () => {

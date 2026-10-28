@@ -8,7 +8,7 @@ import path from 'node:path';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { relationStyle } from '../src/graph/GraphPage';
-import { NAMES, PARENT } from '../src/graph/model';
+import { PARENT } from '../src/graph/model';
 import { Legend } from '../src/graph/panel';
 import { BOX_LOOKS } from '../src/graph/paint';
 import { BADGE_TONES } from '../src/graph/plate';
@@ -44,7 +44,7 @@ describe('LA-V93-R12-T06 the Graph view key', () => {
     needs('a Voronoi cell', '.graph-swatch.is-cell');
     needs('bar', '.graph-swatch.stage-bar');
     for (const badge of BADGE_TONES) needs(`badge ${badge}`, `.graph-mark.${badge}`);
-    const relations = [PARENT, NAMES, ...new Set(indexOf(testWorkspace()).workspace.relations.map((r) => r.relation))];
+    const relations = [PARENT, ...new Set(indexOf(testWorkspace()).workspace.relations.map((r) => r.relation))];
     for (const style of new Set(relations.map(relationStyle))) needs(`line ${style}`, `.graph-line.rel-${style}`);
     needs('cross-link', '.graph-line.is-link');
     expect(missing).toEqual([]);
