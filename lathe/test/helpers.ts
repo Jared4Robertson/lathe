@@ -57,6 +57,18 @@ export async function build(data: Data, options: BuildOptions = {}): Promise<str
       files.set(row.file, lines);
     }
   }
+  // An endpoint handler's file names its endpoint's method and route, and a UI component's the routes of the views it
+  // renders (endpoint-route-not-in-file, view-route-not-in-file).
+  const byId = new Map(Object.values(data).flat().filter((r) => typeof r.id === 'string').map((r) => [r.id as string, r]));
+  for (const handler of data.endpoint_handler ?? []) {
+    const endpoint = byId.get(String(handler.endpoint_id));
+    if (endpoint && typeof handler.file === 'string') files.get(handler.file)?.push(`// ${endpoint.method} ${endpoint.route}`);
+  }
+  for (const link of data.renders ?? []) {
+    const component = byId.get(String(link.source_id));
+    const route = byId.get(String(link.target_id))?.route;
+    if (typeof component?.file === 'string' && typeof route === 'string') files.get(component.file)?.push(`// ${route}`);
+  }
   for (const [file, lines] of files) {
     if (options.missing?.includes(file) || options.files?.[file] !== undefined) continue;
     write(root, file, `${lines.join('\n')}\n`);
@@ -169,6 +181,7 @@ export function complete(): Data {
 
     capability: [{ id: 'EX-LEND-CAP01', title: 'Lending', domain_id: 'EX-LEND', position: 1 }],
     serves: [{ source_id: 'EX-LEND-CAP01', target_id: 'EX-BO01' }],
+    measured_by: [{ source_id: 'EX-BO01', target_id: 'EX-LEND-UC01-R01-T01' }],
     use_case: [
       { id: 'EX-LEND-UC01', title: 'Borrow a tool', capability_id: 'EX-LEND-CAP01' },
       { id: 'EX-LEND-UC02', title: 'Add a tool', capability_id: 'EX-LEND-CAP01' },
@@ -293,7 +306,12 @@ export function complete(): Data {
   };
 }
 
-/** A product with one record short of every minimum coverage reports (GAP_RULES). */
+/** The code of sparse(): its router serves a route no endpoint has (route-without-record). */
+export const SPARSE_FILES: BuildOptions = {
+  files: { 'src/router.ts': "// SP-D-EP02-H\napp.get('/loans', listLoans);\napp.post('/members', register);\n" },
+};
+
+/** A product with one record short of every minimum coverage reports (GAP_RULES), with SPARSE_FILES as its code. */
 export function sparse(): Data {
   return {
     product: [{ id: 'SP', title: 'Sparse' }],
@@ -330,7 +348,11 @@ export function sparse(): Data {
     flow: [{ id: 'SP-D-UC02-FL', title: 'Return', use_case_id: 'SP-D-UC02' }],
     flow_step: [{ id: 'SP-D-UC02-FL-S01', title: 'Refuse', flow_id: 'SP-D-UC02-FL', path: 'refused', position: 1 }],
     view: [{ id: 'SP-V01', title: 'Catalog' }],
-    endpoint: [{ id: 'SP-D-EP01', title: 'Add a tool', command_id: 'SP-D-CMD01', method: 'POST', route: '/tools' }],
+    endpoint: [
+      { id: 'SP-D-EP01', title: 'Add a tool', command_id: 'SP-D-CMD01', method: 'POST', route: '/tools' },
+      { id: 'SP-D-EP02', title: 'List loans', query_id: 'SP-D-QRY01', method: 'GET', route: '/loans' },
+    ],
+    endpoint_handler: [{ id: 'SP-D-EP02-H', title: 'getLoans', endpoint_id: 'SP-D-EP02', file: 'src/router.ts' }],
     integration: [{ id: 'SP-INT01', title: 'Mail' }],
     checks: [{ source_id: 'SP-D-CMD01', target_id: 'SP-D-SP01' }],
     happens_in: [{ source_id: 'SP-D-UC02-FL-S01', target_id: 'SP-V01' }],

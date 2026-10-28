@@ -11,6 +11,7 @@ import { orderChecks, referenceOf, type Reference } from './reference.ts';
 import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
 import { SCHEMA_DIR } from './store/schema.ts';
 import type { Row } from './store/rows.ts';
+import { gatherRouteFacts, writeRouteFacts } from './trace/routes.ts';
 import type { Coverage, CoverageGap, Kind, ObligationCoverage, PatternRuleStanding, Problem, RecordedException, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, Workspace } from './types.ts';
 
 export type * from './types.ts';
@@ -313,7 +314,7 @@ export function recordedExceptions(store: Store): RecordedException[] {
  * The workspace of an open store: its records and links, every check's problems, the recorded exceptions, and
  * coverage. The config's root resolves the files records name; its source and test globs find the source files.
  */
-export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'root' | 'source' | 'tests'>, timings?: Partial<LoadTimings>): Promise<Workspace> {
+export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'root' | 'source' | 'tests' | 'routers'>, timings?: Partial<LoadTimings>): Promise<Workspace> {
   let mark = performance.now();
   const lap = (phase: 'files' | 'checks' | 'coverage') => {
     const now = performance.now();
@@ -331,14 +332,17 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   };
   const order = await kindOrder(store);
   const read = await step('read records', () => readRecords(store, order));
-  const [facts, sources] = await Promise.all([
+  // The files records name, the source files and the routes they serve are read side by side.
+  const [facts, sources, routes] = await Promise.all([
     step('file facts', () => gatherFileFacts(path.resolve(config.root), store)),
     step('source files', () => gatherSourceFiles({ ...config, root: path.resolve(config.root) }, store)),
+    step('route facts', () => gatherRouteFacts({ ...config, root: path.resolve(config.root) }, store)),
   ]);
   const connection = store.connection;
   await connection.run(FACT_TABLES_SQL);
   await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.file_exists, f.contains_id]));
   await append(connection, 'source_file', sources.map((f) => [f.file, f.traced]));
+  await writeRouteFacts(connection, routes);
   await step('coverage tables', () => connection.run(coverageViewsSql(store.schema)));
   lap('files');
   const scope = new Map(read.records.map((r) => [r.id, r.product]));

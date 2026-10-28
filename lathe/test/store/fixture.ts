@@ -145,6 +145,7 @@ export function everyKind(): Data {
     meets: [{ source_id: 'TL-LEND-CMD01-H', target_id: 'TL-STD-CODE-R01' }],
     about: [{ source_id: 'TL-LEND-Q01', target_id: 'TL-LEND-UC01' }],
     serves: [{ source_id: 'TL-LEND-CAP01', target_id: 'TL-BO01' }],
+    measured_by: [{ source_id: 'TL-BO01', target_id: 'TL-LEND-DS01-T01' }],
     starts_from: [{ source_id: 'TL-INT01-T01', target_id: 'TL-LEND-TD01' }],
 
     // A product's own kind, a technical kind under the command, with a relation of its own.

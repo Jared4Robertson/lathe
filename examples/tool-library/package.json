@@ -9,6 +9,7 @@
   },
   "scripts": {
     "start": "node src/server.ts",
+    "outcomes": "node src/outcomes.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },
