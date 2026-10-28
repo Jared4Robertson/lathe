@@ -1,9 +1,10 @@
 // The smoke run (test/smoke.test.ts): with LATHE_DESKTOP_SMOKE set to a file, the shell opens the
 // folder in a hidden window, notes the launch view over it, waits for the page and its GET /api/spec
 // and for the launch view to lift, checks the app's own title bar and the chrome colors it sent, notes
-// the Dock icon, chooses Help › Keyboard Shortcuts, starts a reload by touching a data file and asking for the specs,
+// the Dock icon, reads the application menu and runs View › Show or Hide Navigation by its command ID, chooses
+// Help › Keyboard Shortcuts, starts a reload by touching a data file and asking for the specs,
 // writes what it saw to that file as JSON, and quits while that reload is in progress.
-import type { BrowserWindow } from 'electron';
+import { Menu, type BrowserWindow } from 'electron';
 import { readdirSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Chrome } from './chrome.ts';
@@ -21,6 +22,10 @@ export interface SmokeResult {
   /** The chrome the page sent through setChrome, as the main process applied it. */
   chrome?: Chrome;
   shortcutsOpened?: boolean;
+  /** The application menu: its top-level labels, and the labels in View. */
+  menu?: { top: string[]; view: string[] };
+  /** Whether the navigation was shown before View › Show or Hide Navigation ran, and after. */
+  navShown?: { before: boolean; after: boolean };
   /** The launch view: the text it showed before the page loaded, and whether it lifted once the specs came. */
   launch?: { seen?: string; lifted: boolean };
   /** The Dock icon the unpacked app set, with its size in pixels. */
@@ -94,6 +99,17 @@ export async function runSmoke(
     };
   })()`);
   result.chrome = await until(async () => frame.chrome(), Boolean, 10_000);
+  const items = Menu.getApplicationMenu()?.items ?? [];
+  result.menu = {
+    top: items.map((i) => i.label),
+    view: items.find((i) => i.label === 'View')?.submenu?.items.map((i) => i.label).filter(Boolean) ?? [],
+  };
+  // The hidden window is never the focused one, which a click on the menu item sends to, so the run sends the item's
+  // command ID to it as that click does.
+  const navShown = () => js<boolean>("!document.querySelector('.app')?.classList.contains('nav-collapsed')");
+  const before = await navShown();
+  runCommand('toggleNav');
+  result.navShown = { before, after: await until(navShown, (shown) => shown !== before, 10_000) };
   runCommand('showShortcuts');
   result.shortcutsOpened = await until(() => js<boolean>('!!document.querySelector(\'[role="dialog"][aria-label="Keyboard shortcuts"]\')'), Boolean, 10_000);
   return result;
