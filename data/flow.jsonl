@@ -1,30 +1,49 @@
 {"id":"LA-AUT-UC01-FL03","title":"Change a record through the command layer","use_case_id":"LA-AUT-UC01","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC01-FL04","title":"Change a product's data through the MCP tools","use_case_id":"LA-AUT-UC01","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC02-FL03","title":"Split a product into domains and check their names","use_case_id":"LA-AUT-UC02","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC02-FL04","title":"Split a product into domains by capability through the MCP tools","use_case_id":"LA-AUT-UC02","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC03-FL03","title":"Change Lathe's schema","use_case_id":"LA-AUT-UC03","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC04-FL03","title":"Declare a product's own kinds","use_case_id":"LA-AUT-UC04","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC04-FL04","title":"Declare a product's own kinds and relations through the MCP tools","use_case_id":"LA-AUT-UC04","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC05-FL03","title":"Put use cases in capabilities and patterns","use_case_id":"LA-AUT-UC05","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC05-FL04","title":"Organize a domain's use cases into capabilities and patterns through the MCP tools","use_case_id":"LA-AUT-UC05","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC06-FL03","title":"Write a flow as steps and check it","use_case_id":"LA-AUT-UC06","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC07-FL03","title":"Name records in text","use_case_id":"LA-AUT-UC07","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC07-FL04","title":"Name records in text without linking them through the MCP tools","use_case_id":"LA-AUT-UC07","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC08-FL03","title":"Read kinds by stage","use_case_id":"LA-AUT-UC08","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC10-FL03","title":"Model an aggregate's entities and value objects","use_case_id":"LA-AUT-UC10","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC10-FL04","title":"Model each aggregate's entities and value objects through the MCP tools","use_case_id":"LA-AUT-UC10","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC11-FL03","title":"Read the reference","use_case_id":"LA-AUT-UC11","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC12-FL03","title":"Model commands, events and policies","use_case_id":"LA-AUT-UC12","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC12-FL04","title":"Model commands and their events through the MCP tools","use_case_id":"LA-AUT-UC12","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC13-FL03","title":"Write the test plan","use_case_id":"LA-AUT-UC13","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC13-FL04","title":"Write the test plan through the MCP tools","use_case_id":"LA-AUT-UC13","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC14-FL01","title":"Read a kind's or a check's page","use_case_id":"LA-AUT-UC14","interface_id":"LA-IF01"}
+{"id":"LA-AUT-UC14-FL02","title":"Look up a kind or check in the desktop app","use_case_id":"LA-AUT-UC14","interface_id":"LA-IF02"}
 {"id":"LA-AUT-UC15-FL02","title":"Open a record's file from the desktop app","use_case_id":"LA-AUT-UC15","interface_id":"LA-IF02"}
 {"id":"LA-AUT-UC16-FL03","title":"Write a standard and meet it","use_case_id":"LA-AUT-UC16","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC16-FL04","title":"Write the engineering standards the code follows through the MCP tools","use_case_id":"LA-AUT-UC16","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC17-FL03","title":"Write the technical records","use_case_id":"LA-AUT-UC17","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC17-FL04","title":"Write the technical records that build the design through the MCP tools","use_case_id":"LA-AUT-UC17","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC18-FL03","title":"Write a flow's views, endpoints and integrations","use_case_id":"LA-AUT-UC18","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC18-FL04","title":"Write what a flow reaches through the MCP tools","use_case_id":"LA-AUT-UC18","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC19-FL03","title":"Merge two branches' data","use_case_id":"LA-AUT-UC19","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC20-FL03","title":"Sort a domain's rules","use_case_id":"LA-AUT-UC20","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC20-FL04","title":"Sort a domain's rules by what they do through the MCP tools","use_case_id":"LA-AUT-UC20","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC21-FL03","title":"Model read models and queries","use_case_id":"LA-AUT-UC21","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC21-FL04","title":"Model read models and queries through the MCP tools","use_case_id":"LA-AUT-UC21","interface_id":"LA-IF04"}
 {"id":"LA-AUT-UC22-FL03","title":"Write the business outcomes","use_case_id":"LA-AUT-UC22","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC22-FL04","title":"Write the business outcomes the product exists to achieve through the MCP tools","use_case_id":"LA-AUT-UC22","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC01-FL03","title":"Check the workspace and fix its errors","use_case_id":"LA-CHK-UC01","interface_id":"LA-IF03"}
 {"id":"LA-CHK-UC02-FL03","title":"Add a check","use_case_id":"LA-CHK-UC02","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC02-FL04","title":"Add a check through the MCP tools","use_case_id":"LA-CHK-UC02","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC04-FL03","title":"Find structural problems","use_case_id":"LA-CHK-UC04","interface_id":"LA-IF03"}
 {"id":"LA-CHK-UC05-FL03","title":"Add a product's own check","use_case_id":"LA-CHK-UC05","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC05-FL04","title":"Add a product's own checks through the MCP tools","use_case_id":"LA-CHK-UC05","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC06-FL03","title":"Keep each level a useful size","use_case_id":"LA-CHK-UC06","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC06-FL04","title":"Keep each level of the spec a useful size through the MCP tools","use_case_id":"LA-CHK-UC06","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC07-FL01","title":"Review problems while an agent edits","use_case_id":"LA-CHK-UC07","interface_id":"LA-IF01"}
+{"id":"LA-CHK-UC07-FL02","title":"Review every problem of a product in the desktop app","use_case_id":"LA-CHK-UC07","interface_id":"LA-IF02"}
 {"id":"LA-CHK-UC08-FL04","title":"Write through the command layer","use_case_id":"LA-CHK-UC08","interface_id":"LA-IF04"}
 {"id":"LA-EXP-UC01-FL01","title":"Find a record in a domain","use_case_id":"LA-EXP-UC01","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC01-FL02","title":"Find a record in a domain in the desktop app","use_case_id":"LA-EXP-UC01","interface_id":"LA-IF02"}
