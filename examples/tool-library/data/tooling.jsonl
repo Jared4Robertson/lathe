@@ -1,0 +1,2 @@
+{"id":"TL-LEND-TOOL01","title":"Type checking","domain_id":"TL-LEND","file":"tsconfig.json"}
+{"id":"TL-LEND-TOOL02","title":"Test runner","domain_id":"TL-LEND","file":"vitest.config.ts"}
