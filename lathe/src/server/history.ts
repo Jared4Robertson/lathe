@@ -157,9 +157,10 @@ export function parseLog(text: string): Omit<HistoryCommit, 'changes' | 'truncat
 /**
  * The pattern git's -G takes (a basic regular expression) for a line whose first column holds the ID: the line starts
  * with {"<column>":"<ID>" and then a comma or the line's end. An ID is capitals, digits and hyphens, so it needs no
- * escaping.
+ * escaping. The opening brace is written as [{]: a bare leading { is accepted by macOS's regex library but refused by
+ * glibc's ("Invalid preceding regular expression"), and \{ means an interval in a basic regular expression.
  */
-export const firstColumnPattern = (id: string) => `^{"[a-z_]*":"${id}"[,}]`;
+export const firstColumnPattern = (id: string) => `^[{]"[a-z_]*":"${id}"[,}]`;
 
 async function inBatches<T, R>(items: T[], size: number, task: (item: T) => Promise<R>): Promise<R[]> {
   const results: R[] = [];
