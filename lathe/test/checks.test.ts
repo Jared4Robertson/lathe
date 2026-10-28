@@ -472,6 +472,48 @@ check('domain-named-for-technology', () => {
   });
 });
 
+check('title-breaks-convention', () => {
+  const named = async (capabilities: string[], useCases: string[]) => {
+    const data = adding(complete(), {
+      interface: [{ id: 'EX-IF02', title: 'Member portal', product_id: 'EX', kind: 'web app' }],
+      capability: capabilities.map((title, i) => ({ id: `EX-LEND-CAP${String(i + 2).padStart(2, '0')}`, title, domain_id: 'EX-LEND', position: i + 2 })),
+      use_case: useCases.map((title, i) => ({ id: `EX-LEND-UC${String(i + 3).padStart(2, '0')}`, title, capability_id: 'EX-LEND-CAP01' })),
+    });
+    return ofCheck(await loadData(data), 'title-breaks-convention');
+  };
+
+  it('LA-STD-MODELING-R02-T01 a capability starting with The or an -ing word, naming an interface or holding a list is a warning; a noun phrase or a single -ing noun is not', async () => {
+    expect(ofCheck(clean, 'title-breaks-convention')).toEqual([]);
+    const found = await named(
+      ['Invoice management', 'Billing', 'The catalog', 'Writing invoices', 'Web app', 'Tools, members and loans', 'String lending'],
+      [],
+    );
+    expect(records(found)).toEqual(['EX-LEND-CAP04', 'EX-LEND-CAP05', 'EX-LEND-CAP06', 'EX-LEND-CAP07']);
+    expect(found.every((p) => p.severity === 'warning')).toBe(true);
+    expect(found.find((p) => p.record === 'EX-LEND-CAP05')?.message).toBe(
+      'Capability EX-LEND-CAP05 is titled "Writing invoices", which starts with the -ing word "writing"; name a capability as a noun phrase for a lasting ability of the business, such as "Payment processing" or "Lending".',
+    );
+  });
+
+  it("LA-STD-MODELING-R03-T01 a use case naming one of its product's interfaces, an interface word or a list is a warning; one goal of verb and object is not", async () => {
+    const found = await named([], [
+      'Check the workspace from the command line',
+      'Approve an invoice in the member portal',
+      'Change a record on its page',
+      'Read tools, members and loans',
+      'Borrow a tool, or reserve one',
+      'Return a tool and its case',
+      'Refund a late fee',
+      'Read the APIs',
+      'Grant capital approval',
+    ]);
+    expect(records(found)).toEqual(['EX-LEND-UC03', 'EX-LEND-UC04', 'EX-LEND-UC05', 'EX-LEND-UC06', 'EX-LEND-UC07', 'EX-LEND-UC10']);
+    expect(found.find((p) => p.record === 'EX-LEND-UC04')?.message).toBe(
+      'Use case EX-LEND-UC04 is titled "Approve an invoice in the member portal", which names an interface or mechanism ("member portal"); name a use case for one goal of its actor, verb first, such as "Borrow a tool", and leave the interface to its flows.',
+    );
+  });
+});
+
 check('step-order', () => {
   it('LA-AUT-INV18-T a path whose positions skip a number is reported once, on the first step after the gap', async () => {
     const data = adding(complete(), {
