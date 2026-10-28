@@ -155,6 +155,7 @@ describe('Authoring flows', () => {
     ]);
     // S01: the flow through the product's interface, its ID ending in the interface's number, and its steps in order on
     // their paths.
+    tl.run('add', 'interface', '--id', 'TL-IF01', '--title', 'Loan desk', '--product_id', 'TL', '--kind', 'web app');
     expect(tl.run('next-id', 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL01');
     tl.run('add', 'flow', '--id', 'TL-LEND-UC01-FL01', '--title', 'Borrow a tool', '--use_case_id', 'TL-LEND-UC01', '--interface_id', 'TL-IF01');
     const step = (n: string, title: string, pathName: string, position: string) =>
@@ -414,6 +415,7 @@ describe('Authoring flows', () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
+      add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app' }),
       add('flow', { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }),
       add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
     ]);

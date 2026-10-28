@@ -8,6 +8,7 @@ afterAll(removeProducts);
 
 /** The loan flow: a step that opens the loan, fulfilling the first requirement, and its command's handler. */
 const DESIGNED = [
+  add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app' }),
   add('flow', { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }),
   add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
   link('TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-CMD01'),

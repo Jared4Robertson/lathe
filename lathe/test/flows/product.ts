@@ -151,7 +151,6 @@ export const LENDING: Command[] = [
   add('domain_event', { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false }),
   link('TL-LEND-CMD01', 'raises', 'TL-LEND-EV01'),
   add('capability', { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1 }),
-  add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app' }),
   add('use_case', { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01' }),
   add('uc_requirement', { id: 'TL-LEND-UC01-R01', title: 'A tool on loan is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse to lend a tool that is on loan.' }),
 ];
