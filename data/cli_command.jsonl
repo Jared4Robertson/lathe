@@ -9,7 +9,7 @@
 {"id":"LA-AUT-QRY02-CLI","title":"lathe show","domain_id":"LA-AUT","usage":"lathe show <id>","mcp_tool":"show","file":"lathe/src/cli/writers.ts"}
 {"id":"LA-AUT-QRY03-CLI","title":"lathe list","domain_id":"LA-AUT","usage":"lathe list <table> [--parent <id>]","mcp_tool":"list","file":"lathe/src/cli/writers.ts"}
 {"id":"LA-AUT-QRY04-CLI","title":"lathe next-id","domain_id":"LA-AUT","usage":"lathe next-id <kind> --parent <id>","mcp_tool":"next_id","file":"lathe/src/cli/writers.ts"}
-{"id":"LA-CHK-QRY01-CLI","title":"lathe check","domain_id":"LA-CHK","usage":"lathe check [--json]","mcp_tool":"check","file":"lathe/bin/lathe.ts"}
+{"id":"LA-CHK-QRY01-CLI","title":"lathe check","domain_id":"LA-CHK","usage":"lathe check [--json]","mcp_tool":"check","file":"lathe/src/cli/check.ts"}
 {"id":"LA-PLT-CMD17-CLI","title":"lathe serve","domain_id":"LA-PLT","usage":"lathe serve [--port <port>]","file":"lathe/bin/lathe.ts"}
 {"id":"LA-PLT-CMD21-CLI","title":"lathe init","domain_id":"LA-PLT","usage":"lathe init --name <name> --prefix <prefix>","file":"lathe/bin/lathe.ts"}
 {"id":"LA-PLT-CMD24-CLI","title":"lathe upgrade","domain_id":"LA-PLT","usage":"lathe upgrade [--allow-dirty]","file":"lathe/bin/lathe.ts"}
