@@ -1,76 +1,76 @@
-{"id":"LA-AUT-UC01-FL03","title":"Change a record through the command layer","use_case_id":"LA-AUT-UC01","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC02-FL03","title":"Split a product into domains and check their names","use_case_id":"LA-AUT-UC02","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC03-FL03","title":"Change Lathe's schema","use_case_id":"LA-AUT-UC03","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC04-FL03","title":"Declare a product's own kinds","use_case_id":"LA-AUT-UC04","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC05-FL03","title":"Put use cases in capabilities and patterns","use_case_id":"LA-AUT-UC05","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC06-FL03","title":"Write a flow as steps and check it","use_case_id":"LA-AUT-UC06","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC07-FL03","title":"Name records in text","use_case_id":"LA-AUT-UC07","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC08-FL03","title":"Read kinds by stage","use_case_id":"LA-AUT-UC08","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC10-FL03","title":"Model an aggregate's entities and value objects","use_case_id":"LA-AUT-UC10","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC11-FL03","title":"Read the reference","use_case_id":"LA-AUT-UC11","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC12-FL03","title":"Model commands, events and policies","use_case_id":"LA-AUT-UC12","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC13-FL03","title":"Write the test plan","use_case_id":"LA-AUT-UC13","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC14-FL01","title":"Read a kind's or a check's page","use_case_id":"LA-AUT-UC14","interface_id":"LA-IF01"}
-{"id":"LA-AUT-UC15-FL02","title":"Open a record's file from the desktop app","use_case_id":"LA-AUT-UC15","interface_id":"LA-IF02"}
-{"id":"LA-AUT-UC16-FL03","title":"Write a standard and meet it","use_case_id":"LA-AUT-UC16","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC17-FL03","title":"Write the technical records","use_case_id":"LA-AUT-UC17","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC18-FL03","title":"Write a flow's views, endpoints and integrations","use_case_id":"LA-AUT-UC18","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC19-FL03","title":"Merge two branches' data","use_case_id":"LA-AUT-UC19","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC20-FL03","title":"Sort a domain's rules","use_case_id":"LA-AUT-UC20","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC21-FL03","title":"Model read models and queries","use_case_id":"LA-AUT-UC21","interface_id":"LA-IF03"}
-{"id":"LA-AUT-UC22-FL03","title":"Write the business outcomes","use_case_id":"LA-AUT-UC22","interface_id":"LA-IF03"}
-{"id":"LA-CHK-UC01-FL03","title":"Check the workspace and fix its errors","use_case_id":"LA-CHK-UC01","interface_id":"LA-IF03"}
-{"id":"LA-CHK-UC02-FL03","title":"Add a check","use_case_id":"LA-CHK-UC02","interface_id":"LA-IF03"}
-{"id":"LA-CHK-UC04-FL03","title":"Find structural problems","use_case_id":"LA-CHK-UC04","interface_id":"LA-IF03"}
-{"id":"LA-CHK-UC05-FL03","title":"Add a product's own check","use_case_id":"LA-CHK-UC05","interface_id":"LA-IF03"}
-{"id":"LA-CHK-UC06-FL03","title":"Keep each level a useful size","use_case_id":"LA-CHK-UC06","interface_id":"LA-IF03"}
-{"id":"LA-CHK-UC07-FL01","title":"Review problems while an agent edits","use_case_id":"LA-CHK-UC07","interface_id":"LA-IF01"}
-{"id":"LA-CHK-UC08-FL04","title":"Write through the command layer","use_case_id":"LA-CHK-UC08","interface_id":"LA-IF04"}
-{"id":"LA-EXP-UC01-FL01","title":"Find a record in a domain","use_case_id":"LA-EXP-UC01","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC02-FL01","title":"Follow a record's links","use_case_id":"LA-EXP-UC02","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC03-FL01","title":"Walk the model as a graph","use_case_id":"LA-EXP-UC03","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC04-FL01","title":"Walk the graph through folder-like groups","use_case_id":"LA-EXP-UC04","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC05-FL01","title":"Read a record as wiki, graph or model, from the keyboard","use_case_id":"LA-EXP-UC05","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC06-FL01","title":"Read a flow step by step","use_case_id":"LA-EXP-UC06","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC07-FL01","title":"Move between products as spaces","use_case_id":"LA-EXP-UC07","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC08-FL01","title":"Read a product's stage folders","use_case_id":"LA-EXP-UC08","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC09-FL01","title":"Read the technical specification and test plan by kind","use_case_id":"LA-EXP-UC09","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC10-FL01","title":"Keep several records open in tabs","use_case_id":"LA-EXP-UC10","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC11-FL01","title":"Read a domain's ERD","use_case_id":"LA-EXP-UC11","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC12-FL01","title":"Look something up in the side bar","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC13-FL01","title":"Read a domain's endpoints and integrations","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC14-FL01","title":"Fix a record where it is read","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC01-FL06","title":"Load the workspace in code","use_case_id":"LA-PLT-UC01","interface_id":"LA-IF06"}
-{"id":"LA-PLT-UC02-FL03","title":"Start using Lathe in a product","use_case_id":"LA-PLT-UC02","interface_id":"LA-IF03"}
-{"id":"LA-PLT-UC03-FL01","title":"See the data files change on the page","use_case_id":"LA-PLT-UC03","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC04-FL01","title":"Work the app from the keyboard","use_case_id":"LA-PLT-UC04","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC05-FL01","title":"Learn a shortcut from where it is used","use_case_id":"LA-PLT-UC05","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC06-FL01","title":"Arrange the workbench","use_case_id":"LA-PLT-UC06","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC07-FL01","title":"Set how Lathe looks","use_case_id":"LA-PLT-UC07","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC08-FL01","title":"Read Lathe on a phone","use_case_id":"LA-PLT-UC08","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC09-FL01","title":"Read without anything jumping","use_case_id":"LA-PLT-UC09","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC10-FL01","title":"Use Lathe by keyboard and screen reader","use_case_id":"LA-PLT-UC10","interface_id":"LA-IF01"}
-{"id":"LA-PLT-UC11-FL02","title":"Open a product in a window","use_case_id":"LA-PLT-UC11","interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC12-FL02","title":"Change Lathe and see the desktop app reload","use_case_id":"LA-PLT-UC12","interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC13-FL02","title":"Work from the native menus","use_case_id":"LA-PLT-UC13","interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC14-FL02","title":"Work under Lathe's own title bar","use_case_id":"LA-PLT-UC14","interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC15-FL02","title":"Keep Lathe in the Dock","use_case_id":"LA-PLT-UC15","interface_id":"LA-IF02"}
-{"id":"LA-PLT-UC16-FL05","title":"Change the data through any writer","use_case_id":"LA-PLT-UC16","interface_id":"LA-IF05"}
-{"id":"LA-PLT-UC17-FL03","title":"Move a product to a new Lathe","use_case_id":"LA-PLT-UC17","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC01-FL03","title":"Read and close a domain's coverage gaps","use_case_id":"LA-TRC-UC01","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC02-FL03","title":"Count coverage for every obligation kind","use_case_id":"LA-TRC-UC02","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC03-FL03","title":"Write a test and its run by","use_case_id":"LA-TRC-UC03","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC04-FL03","title":"Prove a followed pattern's rules in each domain","use_case_id":"LA-TRC-UC04","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC05-FL03","title":"Name the test in its code","use_case_id":"LA-TRC-UC05","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC06-FL03","title":"See tests by state","use_case_id":"LA-TRC-UC06","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC07-FL03","title":"Follow a pattern for a whole domain","use_case_id":"LA-TRC-UC07","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC08-FL03","title":"Find pattern rule tests that count nowhere","use_case_id":"LA-TRC-UC08","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC09-FL01","title":"Read a product's coverage","use_case_id":"LA-TRC-UC09","interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC10-FL01","title":"Trace an obligation in the graph","use_case_id":"LA-TRC-UC10","interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC11-FL01","title":"Read coverage for every obligation kind","use_case_id":"LA-TRC-UC11","interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC12-FL01","title":"Check how a domain proves the patterns it follows","use_case_id":"LA-TRC-UC12","interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC13-FL01","title":"See tests by state with coverage","use_case_id":"LA-TRC-UC13","interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC14-FL01","title":"Trace a requirement to what designs, builds and proves it","use_case_id":"LA-TRC-UC14","interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC15-FL03","title":"Keep routes and records in step","use_case_id":"LA-TRC-UC15","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC16-FL03","title":"Check a table against its file","use_case_id":"LA-TRC-UC16","interface_id":"LA-IF03"}
-{"id":"LA-TRC-UC19-FL03","title":"Account for a new package","use_case_id":"LA-TRC-UC19","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC01-FL03","title":"Change a product's data through the CLI","use_case_id":"LA-AUT-UC01","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC02-FL03","title":"Split a product into domains by capability through the CLI","use_case_id":"LA-AUT-UC02","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC03-FL03","title":"Change Lathe's schema with a migration through the CLI","use_case_id":"LA-AUT-UC03","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC04-FL03","title":"Declare a product's own kinds and relations through the CLI","use_case_id":"LA-AUT-UC04","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC05-FL03","title":"Organize a domain's use cases into capabilities and patterns through the CLI","use_case_id":"LA-AUT-UC05","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC06-FL03","title":"Write a use case's flow as ordered steps through the CLI","use_case_id":"LA-AUT-UC06","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC07-FL03","title":"Name records in text without linking them through the CLI","use_case_id":"LA-AUT-UC07","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC08-FL03","title":"Read each kind's stage and order from the schema through the CLI","use_case_id":"LA-AUT-UC08","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC10-FL03","title":"Model each aggregate's entities and value objects through the CLI","use_case_id":"LA-AUT-UC10","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC11-FL03","title":"Read the reference generated from the schema through the CLI","use_case_id":"LA-AUT-UC11","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC12-FL03","title":"Model commands and their events through the CLI","use_case_id":"LA-AUT-UC12","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC13-FL03","title":"Write the test plan through the CLI","use_case_id":"LA-AUT-UC13","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC14-FL01","title":"Look up a kind or check in the web app","use_case_id":"LA-AUT-UC14","interface_id":"LA-IF01"}
+{"id":"LA-AUT-UC15-FL02","title":"Open a record's data file in the desktop app","use_case_id":"LA-AUT-UC15","interface_id":"LA-IF02"}
+{"id":"LA-AUT-UC16-FL03","title":"Write the engineering standards the code follows through the CLI","use_case_id":"LA-AUT-UC16","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC17-FL03","title":"Write the technical records that build the design through the CLI","use_case_id":"LA-AUT-UC17","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC18-FL03","title":"Write what a flow reaches through the CLI","use_case_id":"LA-AUT-UC18","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC19-FL03","title":"Merge two branches' data through the CLI","use_case_id":"LA-AUT-UC19","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC20-FL03","title":"Sort a domain's rules by what they do through the CLI","use_case_id":"LA-AUT-UC20","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC21-FL03","title":"Model read models and queries through the CLI","use_case_id":"LA-AUT-UC21","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC22-FL03","title":"Write the business outcomes the product exists to achieve through the CLI","use_case_id":"LA-AUT-UC22","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC01-FL03","title":"Check the workspace through the CLI","use_case_id":"LA-CHK-UC01","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC02-FL03","title":"Add a check through the CLI","use_case_id":"LA-CHK-UC02","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC04-FL03","title":"Find structural problems through the CLI","use_case_id":"LA-CHK-UC04","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC05-FL03","title":"Add a product's own checks through the CLI","use_case_id":"LA-CHK-UC05","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC06-FL03","title":"Keep each level of the spec a useful size through the CLI","use_case_id":"LA-CHK-UC06","interface_id":"LA-IF03"}
+{"id":"LA-CHK-UC07-FL01","title":"Review every problem of a product in the web app","use_case_id":"LA-CHK-UC07","interface_id":"LA-IF01"}
+{"id":"LA-CHK-UC08-FL04","title":"Keep every change to the spec checked through the MCP tools","use_case_id":"LA-CHK-UC08","interface_id":"LA-IF04"}
+{"id":"LA-EXP-UC01-FL01","title":"Find a record in a domain in the web app","use_case_id":"LA-EXP-UC01","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC02-FL01","title":"Follow a record's links in the web app","use_case_id":"LA-EXP-UC02","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC03-FL01","title":"Walk the model as a graph in the web app","use_case_id":"LA-EXP-UC03","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC04-FL01","title":"Walk the graph through folder-like groups in the web app","use_case_id":"LA-EXP-UC04","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC05-FL01","title":"Read a record several ways at once in the web app","use_case_id":"LA-EXP-UC05","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC06-FL01","title":"Read a flow step by step in the web app","use_case_id":"LA-EXP-UC06","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC07-FL01","title":"Work in one product at a time in the web app","use_case_id":"LA-EXP-UC07","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC08-FL01","title":"Read a product laid out in stage folders in the web app","use_case_id":"LA-EXP-UC08","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC09-FL01","title":"Read the technical specification and test plan by kind in the web app","use_case_id":"LA-EXP-UC09","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC10-FL01","title":"Keep several records open in tabs in the web app","use_case_id":"LA-EXP-UC10","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC11-FL01","title":"Read a domain and its aggregates as an ERD in the web app","use_case_id":"LA-EXP-UC11","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC12-FL01","title":"Look up a record's details in the web app","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC13-FL01","title":"Read a domain's endpoints and integrations in the web app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC14-FL01","title":"Fix a record while reading in the web app","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC01-FL06","title":"Load the workspace through the package API","use_case_id":"LA-PLT-UC01","interface_id":"LA-IF06"}
+{"id":"LA-PLT-UC02-FL03","title":"Set up Lathe in a product repo through the CLI","use_case_id":"LA-PLT-UC02","interface_id":"LA-IF03"}
+{"id":"LA-PLT-UC03-FL01","title":"See the current data in the web app","use_case_id":"LA-PLT-UC03","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC04-FL01","title":"Work the app from the keyboard in the web app","use_case_id":"LA-PLT-UC04","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC05-FL01","title":"See each command's shortcut where it is used in the web app","use_case_id":"LA-PLT-UC05","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC06-FL01","title":"Arrange the workbench in the web app","use_case_id":"LA-PLT-UC06","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC07-FL01","title":"Set how Lathe looks in the web app","use_case_id":"LA-PLT-UC07","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC08-FL01","title":"Read the spec on a phone in the web app","use_case_id":"LA-PLT-UC08","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC09-FL01","title":"Read without anything jumping in the web app","use_case_id":"LA-PLT-UC09","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC10-FL01","title":"Use Lathe with a keyboard and a screen reader in the web app","use_case_id":"LA-PLT-UC10","interface_id":"LA-IF01"}
+{"id":"LA-PLT-UC11-FL02","title":"Open a product in a window in the desktop app","use_case_id":"LA-PLT-UC11","interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC12-FL02","title":"Iterate on Lathe with hot reload in the desktop app","use_case_id":"LA-PLT-UC12","interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC13-FL02","title":"Use Lathe from the native menus in the desktop app","use_case_id":"LA-PLT-UC13","interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC14-FL02","title":"Work under Lathe's own title bar in the desktop app","use_case_id":"LA-PLT-UC14","interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC15-FL02","title":"Feel like a native Mac app in the desktop app","use_case_id":"LA-PLT-UC15","interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC16-FL05","title":"Keep other sites from writing through the HTTP API","use_case_id":"LA-PLT-UC16","interface_id":"LA-IF05"}
+{"id":"LA-PLT-UC17-FL03","title":"Move a product to a new Lathe through the CLI","use_case_id":"LA-PLT-UC17","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC01-FL03","title":"See a domain's coverage through the CLI","use_case_id":"LA-TRC-UC01","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC02-FL03","title":"Count coverage by the meta-model through the CLI","use_case_id":"LA-TRC-UC02","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC03-FL03","title":"Record how a test is run through the CLI","use_case_id":"LA-TRC-UC03","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC04-FL03","title":"Prove the rules of the patterns a domain follows through the CLI","use_case_id":"LA-TRC-UC04","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC05-FL03","title":"Check that each test's file names it through the CLI","use_case_id":"LA-TRC-UC05","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC06-FL03","title":"See each domain's tests by state through the CLI","use_case_id":"LA-TRC-UC06","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC07-FL03","title":"Follow a pattern per domain through the CLI","use_case_id":"LA-TRC-UC07","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC08-FL03","title":"Report tests that count for nothing through the CLI","use_case_id":"LA-TRC-UC08","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC09-FL01","title":"See a product's coverage in the web app","use_case_id":"LA-TRC-UC09","interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC10-FL01","title":"Trace an obligation in the graph in the web app","use_case_id":"LA-TRC-UC10","interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC11-FL01","title":"See every obligation kind and test state in the web app","use_case_id":"LA-TRC-UC11","interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC12-FL01","title":"See a domain's owed pattern rules in the web app","use_case_id":"LA-TRC-UC12","interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC13-FL01","title":"See tests by state with each domain's coverage in the web app","use_case_id":"LA-TRC-UC13","interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC14-FL01","title":"Trace a record in the web app","use_case_id":"LA-TRC-UC14","interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC15-FL03","title":"Check that routes match the code both ways through the CLI","use_case_id":"LA-TRC-UC15","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC16-FL03","title":"Check each table against the file that creates it through the CLI","use_case_id":"LA-TRC-UC16","interface_id":"LA-IF03"}
+{"id":"LA-TRC-UC19-FL03","title":"Account for every package the product depends on through the CLI","use_case_id":"LA-TRC-UC19","interface_id":"LA-IF03"}

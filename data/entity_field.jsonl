@@ -206,11 +206,6 @@
 {"entity_id":"LA-AUT-EN43","position":1,"name":"Use case","meaning":"The use case.","type_value_object_id":"LA-VO01","required":true,"column_name":"use_case_id"}
 {"entity_id":"LA-AUT-EN43","position":2,"name":"Position","meaning":"The actor's place among the use case's actors, from 1; the first is the main actor.","type_value_object_id":"LA-VO04","required":true}
 {"entity_id":"LA-AUT-EN43","position":3,"name":"Role name","meaning":"The role, which the product names in its role rows.","type":"text","required":true}
-{"entity_id":"LA-AUT-EN44","position":1,"name":"Follower","meaning":"The use case or domain that follows the pattern.","type_value_object_id":"LA-VO01","required":true,"column_name":"follower_id"}
-{"entity_id":"LA-AUT-EN44","position":2,"name":"Pattern","meaning":"The pattern it follows.","type_value_object_id":"LA-VO01","required":true,"column_name":"pattern_id"}
-{"entity_id":"LA-AUT-EN44","position":3,"name":"Setting","meaning":"The setting, one of the pattern's.","type_value_object_id":"LA-VO06","required":true}
-{"entity_id":"LA-AUT-EN44","position":4,"name":"Value","meaning":"The value it gives the setting.","type":"text","required":false}
-{"entity_id":"LA-AUT-EN44","position":5,"name":"Not applicable","meaning":"Why the setting does not apply to it, in place of a value.","type":"text","required":false}
 {"entity_id":"LA-AUT-EN45","position":1,"name":"ID","meaning":"The requirement's ID: its view's ID and R<nn>, such as TL-V01-R01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN45","position":2,"name":"Title","meaning":"The requirement in a few words.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN45","position":3,"name":"View","meaning":"The view it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"view_id"}

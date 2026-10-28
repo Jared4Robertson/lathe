@@ -6,10 +6,8 @@
 {"id":"LA-AUT-TM06","title":"Part","domain_id":"LA-AUT","meaning":"A row a record owns that is no record itself, such as an entity's fields or a table's keys, removed with it.","group_name":"Records"}
 {"id":"LA-AUT-TM07","title":"Link","domain_id":"LA-AUT","meaning":"A row of a relation's table joining two records of one product.","group_name":"Records"}
 {"id":"LA-AUT-TM08","title":"Relation","domain_id":"LA-AUT","meaning":"A sort of link, with the pairs of kinds it may join and its words read both ways.","group_name":"Records"}
-{"id":"LA-AUT-TM09","title":"Obligation","domain_id":"LA-AUT","meaning":"A record that is owed design, build and proof: a constraint, invariant, specification, policy, domain service, UC requirement, view requirement, API requirement, pattern rule or standard rule.","group_name":"Proof"}
 {"id":"LA-AUT-TM10","title":"Designed, built, proved","domain_id":"LA-AUT","meaning":"An obligation's three states: its implementation specified, its technical record naming a file that exists, its test written at a level its kind allows.","group_name":"Proof"}
 {"id":"LA-AUT-TM11","title":"Technical record","domain_id":"LA-AUT","meaning":"The one record of a technical kind that implements a design record, naming its file.","group_name":"Proof"}
-{"id":"LA-AUT-TM12","title":"Run by","domain_id":"LA-AUT","meaning":"How a test runs: a level, a state, and its file or why it is manual.","group_name":"Proof"}
 {"id":"LA-AUT-TM13","title":"Product kind","domain_id":"LA-AUT","meaning":"A kind a product declares for itself, in any stage, under any kind.","group_name":"Records"}
 {"id":"LA-AUT-TM14","title":"Command layer","domain_id":"LA-AUT","meaning":"The commands every writer uses to change data (add, set, move, link, unlink, remove, apply), each one transaction that the store accepts or refuses whole.","group_name":"Writing"}
 {"id":"LA-AUT-TM15","title":"Data file","domain_id":"LA-AUT","meaning":"`data/<table>.jsonl`: one table's rows, one JSON object per line, sorted by key. The source of truth, reviewed in git.","group_name":"Writing"}
@@ -24,7 +22,7 @@
 {"id":"LA-CHK-TM04","title":"Warning","domain_id":"LA-CHK","meaning":"A problem that means work is still to do. Warnings never fail `lathe check`."}
 {"id":"LA-CHK-TM05","title":"Lathe's checks","domain_id":"LA-CHK","meaning":"The check rows that ship with Lathe, in `lathe/data/check.jsonl`, read-only to every product."}
 {"id":"LA-CHK-TM06","title":"Product check","domain_id":"LA-CHK","meaning":"A check row a product adds for its own house rule, in its own `data/check.jsonl`."}
-{"id":"LA-CHK-TM07","title":"Refusal","domain_id":"LA-CHK","meaning":"A row the store will not load or write, reported once as a `data-refused` error naming the file, the line and the rule."}
+{"id":"LA-CHK-TM07","title":"Refused row","domain_id":"LA-CHK","meaning":"A row the store will not load or write, reported once as a `data-refused` error naming the file, the line and the rule."}
 {"id":"LA-CHK-TM08","title":"Children limit","domain_id":"LA-CHK","meaning":"The most children of one kind a record of a product should hold: its `max_children` setting, 15 by default."}
 {"id":"LA-CHK-TM09","title":"Lone child","domain_id":"LA-CHK","meaning":"The one record a capability or a group holds, which makes the level group nothing."}
 {"id":"LA-CHK-TM10","title":"Entities limit","domain_id":"LA-CHK","meaning":"The most entities an aggregate of a product should hold: its `max_entities_per_aggregate` setting, 7 by default."}
@@ -38,7 +36,6 @@
 {"id":"LA-EXP-TM08","title":"Kind group","domain_id":"LA-EXP","meaning":"The records of one kind in a stage or under a parent, shown together when there are several kinds to tell apart."}
 {"id":"LA-EXP-TM09","title":"Map","domain_id":"LA-EXP","meaning":"A product's tree laid out once as boxes, which focusing never moves."}
 {"id":"LA-EXP-TM10","title":"Depth","domain_id":"LA-EXP","meaning":"How many levels below the focus the camera frames."}
-{"id":"LA-EXP-TM11","title":"Trace","domain_id":"LA-EXP","meaning":"A chain from an obligation through its design and implementation to its tests."}
 {"id":"LA-EXP-TM12","title":"Tab","domain_id":"LA-EXP","meaning":"One open page with its own views and settings, in a space's row of tabs."}
 {"id":"LA-EXP-TM13","title":"Preview tab","domain_id":"LA-EXP","meaning":"The tab a plain open replaces, shown in italics."}
 {"id":"LA-EXP-TM14","title":"Side bar","domain_id":"LA-EXP","meaning":"The page's last column, with its Details, Outline and History views."}
@@ -52,9 +49,8 @@
 {"id":"LA-PLT-TM07","title":"Product folder","domain_id":"LA-PLT","meaning":"A folder with a `lathe.config.json` or a `data/` folder, which Lathe opens."}
 {"id":"LA-PLT-TM08","title":"Product window","domain_id":"LA-PLT","meaning":"One desktop window showing one product folder."}
 {"id":"LA-PLT-TM09","title":"App server","domain_id":"LA-PLT","meaning":"What a window or `lathe serve` serves Lathe from."}
-{"id":"LA-PLT-TM10","title":"Command layer","domain_id":"LA-PLT","meaning":"The one path every change to the data goes through."}
 {"id":"LA-PLT-TM11","title":"Write","domain_id":"LA-PLT","meaning":"One or more commands to the data, all taking effect or none."}
-{"id":"LA-PLT-TM12","title":"Refusal","domain_id":"LA-PLT","meaning":"One reason the store refused a write or a load: the rule broken and where."}
+{"id":"LA-PLT-TM12","title":"Refusal reason","domain_id":"LA-PLT","meaning":"One reason the store refused a write or a load: the rule broken and where."}
 {"id":"LA-TRC-TM01","title":"Obligation","domain_id":"LA-TRC","meaning":"A record that must be designed, built and proved: a constraint, invariant, specification, policy, domain service, UC requirement, view requirement, API requirement, pattern rule or standard rule, or a product's own obligation kind."}
 {"id":"LA-TRC-TM02","title":"Designed","domain_id":"LA-TRC","meaning":"An obligation whose design is specified: a flow step fulfills the UC requirement, or a technical record implements the design record."}
 {"id":"LA-TRC-TM03","title":"Built","domain_id":"LA-TRC","meaning":"A designed obligation whose implementing technical record names a file that exists."}

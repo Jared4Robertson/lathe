@@ -2,7 +2,7 @@
 {"id":"LA-UI02","title":"Format reference","file":"app/src/format/reference.ts"}
 {"id":"LA-UI04","title":"Desktop record actions","file":"app/src/shell/desktopRecord.tsx"}
 {"id":"LA-UI05","title":"Standard parts","file":"app/src/specs/StandardParts.tsx"}
-{"id":"LA-UI100","title":"the shared spec parts and TestStateTag","file":"app/src/specs/parts.tsx","description":"the shared spec parts and TestStateTag"}
+{"id":"LA-UI100","title":"Shared spec parts","file":"app/src/specs/parts.tsx","description":"The shared spec parts and TestStateTag."}
 {"id":"LA-UI101","title":"Graph details","file":"app/src/graph/panel.tsx"}
 {"id":"LA-UI102","title":"Mentions","file":"app/src/specs/mentions.tsx"}
 {"id":"LA-UI103","title":"Flow steps","file":"app/src/specs/FlowSteps.tsx"}
@@ -36,28 +36,28 @@
 {"id":"LA-UI133","title":"Focus fade","file":"app/src/graph/fade.ts","description":"How strongly the graph draws each box for its focus: the focus's subtree at full strength, the trail and the rest faded."}
 {"id":"LA-UI134","title":"Flows by interface sections","file":"app/src/specs/InterfaceParts.tsx"}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
-{"id":"LA-UI53","title":"Traceability and its gap callouts","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by"}
+{"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
 {"id":"LA-UI56","title":"linkLabel","file":"app/src/specs/labels.ts","description":"linkLabel, relationLabelOf, groupByLabel"}
 {"id":"LA-UI61","title":"App shell","file":"app/src/App.tsx"}
-{"id":"LA-UI62","title":"Command dispatcher, palette and shortcuts sheet","file":"app/src/shell/commands.tsx"}
+{"id":"LA-UI62","title":"Command palette and sheet","file":"app/src/shell/commands.tsx","description":"The command dispatcher, the palette and the shortcuts sheet."}
 {"id":"LA-UI63","title":"Tooltip","file":"app/src/shell/Tooltip.tsx"}
 {"id":"LA-UI64","title":"Resize handle","file":"app/src/components/ResizeHandle.tsx"}
 {"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx"}
 {"id":"LA-UI66","title":"Bottom sheet","file":"app/src/shell/BottomSheet.tsx"}
-{"id":"LA-UI67","title":"Phone top bar and quick find sheet","file":"app/src/shell/MobileBar.tsx"}
+{"id":"LA-UI67","title":"Phone top bar","file":"app/src/shell/MobileBar.tsx","description":"The phone top bar and the quick find sheet."}
 {"id":"LA-UI68","title":"Shared styles","file":"app/src/styles.css"}
 {"id":"LA-UI69","title":"Button","file":"app/src/components/Button.tsx"}
 {"id":"LA-UI70","title":"Theme stylesheet","file":"app/src/theme/css.ts"}
 {"id":"LA-UI71","title":"Early theme script","file":"app/index.html"}
 {"id":"LA-UI72","title":"Theme color","file":"app/src/shell/themeColor.ts"}
-{"id":"LA-UI73","title":"Theme commands and quick pick","file":"app/src/theme/ThemeCommands.tsx"}
-{"id":"LA-UI74","title":"Appearance page and theme editor","file":"app/src/theme/AppearancePage.tsx"}
+{"id":"LA-UI73","title":"Theme quick pick","file":"app/src/theme/ThemeCommands.tsx","description":"The theme commands and their quick pick."}
+{"id":"LA-UI74","title":"Theme editor","file":"app/src/theme/AppearancePage.tsx","description":"The Appearance page and its theme editor."}
 {"id":"LA-UI75","title":"Desktop title bar","file":"app/src/shell/DesktopTitleBar.tsx"}
 {"id":"LA-UI76","title":"Theme to window chrome","file":"app/src/shell/desktopChrome.ts"}
 {"id":"LA-UI77","title":"Window title bar options","file":"desktop/src/chrome.ts"}
 {"id":"LA-UI78","title":"Native menus","file":"desktop/src/menu.ts"}
-{"id":"LA-UI79","title":"Launch view, error page and About window","file":"desktop/src/launch.ts"}
+{"id":"LA-UI79","title":"Shell pages","file":"desktop/src/launch.ts","description":"The launch view, the error page and the About window."}
 {"id":"LA-UI80","title":"Dock icon and menu","file":"desktop/src/dock.ts"}
 {"id":"LA-UI90","title":"ProductWiki","file":"app/src/specs/SpecPages.tsx","description":"ProductWiki"}
 {"id":"LA-UI91","title":"Markdown","file":"app/src/specs/Markdown.tsx"}

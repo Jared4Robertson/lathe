@@ -1,4 +1,4 @@
-{"id":"LA-AUT-EP02-CL","title":"Write client","endpoint_id":"LA-AUT-EP02","file":"app/src/edit/write.ts"}
-{"id":"LA-EXP-EP01-CL","title":"History client","endpoint_id":"LA-EXP-EP01","file":"app/src/views/history.ts"}
-{"id":"LA-PLT-EP01-CL","title":"Spec data client","endpoint_id":"LA-PLT-EP01","file":"app/src/specs/data.ts"}
-{"id":"LA-PLT-EP02-CL","title":"Change events client","endpoint_id":"LA-PLT-EP02","file":"app/src/events.ts"}
+{"id":"LA-AUT-EP02-CL","title":"postWrite","endpoint_id":"LA-AUT-EP02","file":"app/src/edit/write.ts"}
+{"id":"LA-EXP-EP01-CL","title":"fetchHistory","endpoint_id":"LA-EXP-EP01","file":"app/src/views/history.ts"}
+{"id":"LA-PLT-EP01-CL","title":"useSpec","endpoint_id":"LA-PLT-EP01","file":"app/src/specs/data.ts"}
+{"id":"LA-PLT-EP02-CL","title":"onLatheEvent","endpoint_id":"LA-PLT-EP02","file":"app/src/events.ts"}
