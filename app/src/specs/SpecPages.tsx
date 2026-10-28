@@ -2,6 +2,7 @@ import { useState, type ReactNode } from 'react';
 import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
 import { RecordText } from './RecordText';
+import { Prose } from './mentions';
 import { DomainPatterns } from './PatternParts';
 import { patternsFollowedBy } from './patterns';
 import { CoverageBars, ProductSummary } from './ProductHealth';
@@ -100,16 +101,16 @@ function BusinessOutcomes({ index, productId }: { index: SpecIndex; productId: s
     <Section title="Business outcomes" count={outcomes.length} className="stage stage-discovery product-outcomes">
       <p className="hint">What the product exists to achieve, each measurable, and the capabilities that serve it.</p>
       {outcomes.length === 0 && <p className="hint">No business outcomes yet.</p>}
-      <ul className="plain outcome-list">
+      <ul className="outcome-list">
         {outcomes.map((o) => {
           const servedBy = (index.incoming.get(o.id) ?? []).filter((l) => l.relation === 'serves').map((l) => l.source).sort();
           return (
             <li key={o.id} className="outcome">
               <RecordLink index={index} id={o.id} row />
-              <p className="outcome-statement">{textOf(o.row, 'statement')}</p>
+              <div className="outcome-statement"><Prose index={index} source={textOf(o.row, 'statement')} self={o.id} /></div>
               <dl className="fields">
-                <div><dt>Measure</dt><dd>{textOf(o.row, 'measure')}</dd></div>
-                <div><dt>Target</dt><dd>{textOf(o.row, 'target')}</dd></div>
+                <div><dt>Measure</dt><dd><Prose index={index} source={textOf(o.row, 'measure')} self={o.id} /></dd></div>
+                <div><dt>Target</dt><dd><Prose index={index} source={textOf(o.row, 'target')} self={o.id} /></dd></div>
                 <div>
                   <dt>Served by</dt>
                   <dd>
