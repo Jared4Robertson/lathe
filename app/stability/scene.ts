@@ -1,5 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import type { Scene, SceneBox, SceneHost } from '../src/graph/GraphPage';
+import type { TraceHost, TraceScene } from '../src/trace/TraceCanvas';
 
 // The graph as its canvas draws it (LA-UI92), read through the canvas's test hook: every drawn
 // box with its place on screen and in the map, its label lines and their font sizes, its badges,
@@ -106,3 +107,17 @@ export const clippedLabels = (page: Page) => page.evaluate((sel) => {
   }
   return out;
 }, GRAPH);
+
+// ---------- The Trace stage's canvas (LA-V98), read the same way ----------
+
+export const TRACE = '.focus-stage .trace-flow';
+
+/** Waits for the Trace stage's canvas to be laid out and drawn, then for the camera to settle. */
+export async function traceDrawn(page: Page, settle = 400) {
+  await page.locator(`${TRACE}[data-ready]`).first().waitFor({ state: 'attached' });
+  await page.waitForTimeout(settle);
+}
+
+/** What the Trace stage's canvas draws now, or (`whole`) every box of its picture. */
+export const traceSceneOf = (page: Page, whole = false): Promise<TraceScene> =>
+  page.evaluate(({ sel, whole }) => (document.querySelector(sel) as TraceHost).traceScene!(whole), { sel: TRACE, whole });
