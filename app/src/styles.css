@@ -859,6 +859,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .trace-header { flex: none; display: flex; gap: 16px; align-items: center; min-height: 40px; box-sizing: border-box; padding: 6px 20px; border-bottom: 1px solid var(--rule); }
 .trace-caption { flex: 1; min-width: 0; margin: 0; font-size: 0.86rem; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .trace-filter { flex: none; display: inline-flex; gap: 6px; align-items: center; font-size: 0.86rem; cursor: pointer; }
+.trace-filter:hover { color: var(--steel); }
 .trace-scroll { flex: 1; min-height: 0; overflow: auto; scrollbar-gutter: stable; padding: 12px 20px 20px; }
 .trace-scroll:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
 .trace-none { margin: 0; padding: 24px; }
@@ -867,8 +868,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 @container trace-page (max-width: 640px) { .trace-chain { grid-template-columns: minmax(0, 1fr); } }
 .trace-column { min-width: 0; }
 .trace-column-name { margin: 0 0 8px; font-size: 0.8rem; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.trace-cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
-.trace-card { display: grid; gap: 2px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); text-decoration: none; min-width: 0; overflow-wrap: anywhere; }
+.trace-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.trace-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 8px 10px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); text-decoration: none; min-width: 0; overflow-wrap: anywhere; }
 a.trace-card:hover { border-color: var(--steel); }
 .trace-card.is-focus { border-color: var(--steel); box-shadow: inset 3px 0 0 var(--steel); }
 .trace-card code { font-size: 0.8rem; }
@@ -878,7 +879,7 @@ a.trace-card:hover { border-color: var(--steel); }
 .trace-missing { display: inline-block; padding: 2px 8px; border: 1px solid var(--warn); border-radius: 6px; color: var(--ink); font-size: 0.82rem; }
 .trace-not-owed { color: var(--muted); font-size: 0.82rem; font-style: italic; }
 /* The matrix: one row per obligation, grouped by its parent. */
-.data-table.trace-matrix { width: 100%; min-width: 720px; }
+.data-table.trace-matrix { width: 100%; }
 .trace-matrix th[scope="row"] { min-width: 14rem; }
 .trace-matrix .trace-row-title { color: var(--ink); }
 .trace-refs { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; }
@@ -1076,7 +1077,7 @@ a.trace-card:hover { border-color: var(--steel); }
   /* A gap between panels keeps its look, and its target reaches over the panels' edges. */
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
-    .graph-depth button, .graph-filters > summary, .graph-legend summary, .quick-find-results li,
+    .graph-depth button, .graph-filters > summary, .graph-legend summary, .trace-filter, .quick-find-results li,
     .palette-list li, .tab, .long-list-tools input, .quick-find input, .dialog-search, .segment, .file-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }

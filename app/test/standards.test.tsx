@@ -230,12 +230,12 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
           expect(pane).toHaveClass('panel');
           expect(pane.firstElementChild).toHaveClass('pane-bar');
           const label = pane.querySelector('.pane-bar > .pane-head > .pane-name');
-          expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph|Model)$/);
+          expect(label?.textContent?.trim()).toMatch(/^(Wiki|Graph|ERD|Trace)$/);
           expect(label?.querySelector('button, a, [tabindex]')).toBeNull();
           const own = [...pane.querySelectorAll<HTMLElement>('.pane-bar button')];
           for (const b of own) {
             expect(b).toHaveClass('icon-button');
-            expect(b.getAttribute('aria-label')).toMatch(/^Close the (wiki|graph|model) pane$|^Full screen|^Leave full screen/);
+            expect(b.getAttribute('aria-label')).toMatch(/^Close the (wiki|graph|ERD|trace) pane$|^Full screen|^Leave full screen/);
           }
           // Close shows only when more than one pane is open.
           expect(own.some((b) => /^Close the/.test(b.getAttribute('aria-label') ?? ''))).toBe(panes.length > 1);
@@ -250,7 +250,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(CSS).toMatch(/\.pane-bar \{[^}]*height: var\(--pane-bar-height\)/);
   });
 
-  it('LA-V96-R04-T03 Wiki, Graph and Model are pressed toggles in the page bar, the open ones shown as panes in that order, each naming its view and closable while another is open', async () => {
+  it('LA-V96-R04-T03 Wiki, Graph, ERD and Trace are pressed toggles in the page bar, the open ones shown as panes in that order, each naming its view and closable while another is open', async () => {
     await openApp('/DM-SHOP-UC01?view=wiki,graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const toggles = within(screen.getByRole('group', { name: 'View' })).getAllByRole('button');

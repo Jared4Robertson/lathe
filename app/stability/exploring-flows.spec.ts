@@ -212,14 +212,15 @@ test.describe('Exploring flows', () => {
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
     await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
-    // A requirement names the step that fulfills it, with its flow and what it invokes.
-    await page.goto('/LA-EXP-UC03-R18?view=wiki');
-    await expect(page.locator(WIKI).getByRole('heading', { name: /^Designed by/ })).toBeVisible();
-    const wiki = page.locator(WIKI);
-    await expect(wiki.getByRole('link', { name: /^LA-EXP-UC03-FL01-S01/ }).first()).toBeVisible();
-    await wiki.getByRole('link', { name: /^LA-EXP-UC03-FL01-S01/ }).first().click();
+    // A requirement's Trace view names the step that fulfills it, with its flow and what it invokes.
+    await page.goto('/LA-EXP-UC03-R18?view=wiki,trace');
+    const design = page.locator('.pane-trace .trace-column').nth(1);
+    await expect(design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ })).toBeVisible();
+    await expect(design.getByRole('link', { name: /LA-EXP-UC03-FL01 / }).first()).toBeVisible();
+    await expect(design.getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
+    await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ }).click();
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL01-S01');
-    await expect(wiki.getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
+    await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
   });
 
   test('LA-EXP-UC07-FL01-T work in one product at a time: the rail, its last page, Alt+1 and Switch to, find, Checks, the phone, the products page', async ({ page }) => {

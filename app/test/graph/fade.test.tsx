@@ -1,6 +1,6 @@
 import './setup';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fireEvent, screen, waitFor } from '@testing-library/react';
+import { fireEvent, waitFor } from '@testing-library/react';
 import { graphMap } from '../../src/graph/map';
 import { nestedMap } from '../../src/graph/nested';
 import { readyVoronoiMap } from '../../src/graph/voronoi';
@@ -60,15 +60,5 @@ describe('focus fade', () => {
     await waitFor(() => expect(isCenter(faded!.id)).toBe(true));
     await waitFor(() => expectFade(layout, faded!.id), { timeout: 3000 });
     expect(scene().boxes.find((b) => b.id === faded!.id)!.strength).toBe(1);
-  });
-
-  it('LA-V93-R73-T01 A trace keeps its own highlighting: every box at full strength', async () => {
-    startAtDepth(1);
-    await openApp('/P-D-UC01-R01?view=graph', { data: testWorkspace() });
-    await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    fireEvent.click(screen.getByRole('checkbox', { name: 'Trace mode' }));
-    await waitFor(() => expect(scene().layout).toBe('trace'));
-    expect(scene().boxes.length).toBeGreaterThan(1);
-    for (const b of scene().boxes) expect(b.strength, b.id).toBe(1);
   });
 });
