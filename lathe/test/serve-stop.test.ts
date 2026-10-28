@@ -16,7 +16,7 @@ const temp = mkdtempSync(path.join(tmpdir(), 'lathe-serve-stop-'));
 afterAll(() => rmSync(temp, { recursive: true, force: true }));
 
 // One round, in a worker: serve, load, touch a data file and ask for the specs again (a reload, as an edit makes),
-// wait `delay` ms, stop, and end the thread.
+// wait `delay` ms (or, for null, until the reload has answered), stop, and end the thread.
 const ROUND = `
 import { workerData, parentPort } from 'node:worker_threads';
 import { utimesSync } from 'node:fs';
@@ -29,8 +29,8 @@ try {
   const later = new Date(Date.now() + 1000 * (workerData.round + 1));
   utimesSync(workerData.dataFile, later, later);
   let answered = false;
-  fetch(url + '/api/spec').then((res) => res.arrayBuffer()).then(() => { answered = true; }, () => {});
-  await new Promise((resolve) => setTimeout(resolve, workerData.delay));
+  const reloaded = fetch(url + '/api/spec').then((res) => res.arrayBuffer()).then(() => { answered = true; }, () => {});
+  await (workerData.delay === null ? reloaded : new Promise((resolve) => setTimeout(resolve, workerData.delay)));
   const inProgress = !answered;
   await running.stop();
   parentPort.postMessage({ inProgress });
@@ -68,13 +68,13 @@ describe('A server stops cleanly, even while a reload is in progress', () => {
     const dataFile = path.join(root, 'data', 'domain.jsonl');
     writeFileSync(dataFile, '{"id":"STP-ORD","title":"Orders","product_id":"STP","subdomain_type":"core","description":"Orders."}\n');
 
-    // From a stop as the reload begins to one after it has finished, when only the close itself is left.
-    const delays = [0, 5, 10, 20, 40, 80, 2_000];
+    // From a stop as the reload begins to one after it has answered, when only the close itself is left.
+    const delays = [0, 5, 10, 20, 40, 80, null];
     const env = { ...process.env, LATHE_STOP_ROUNDS: JSON.stringify({ serveModule: SERVE_MODULE, root, appDir, dataFile, delays }) };
     const child = spawnSync(process.execPath, ['--input-type=module', '-e', ROUNDS], { env, encoding: 'utf8', timeout: 120_000 });
 
     expect({ status: child.status, signal: child.signal, stderr: child.stderr }).toEqual({ status: 0, signal: null, stderr: '' });
-    const rounds = JSON.parse(child.stdout.trim().split('\n').at(-1)!) as { delay: number; code: number; inProgress: boolean }[];
+    const rounds = JSON.parse(child.stdout.trim().split('\n').at(-1)!) as { delay: number | null; code: number; inProgress: boolean }[];
     expect(rounds.map((r) => r.code)).toEqual(delays.map(() => 0));
     // The early rounds stopped while the reload was still running; the last one after it had finished.
     expect(rounds[0].inProgress).toBe(true);

@@ -1,6 +1,6 @@
-// Checking's flows, each walked through the real `lathe` command on a temporary product: checking the workspace,
+// Checking's flows, each walked through the `lathe` command in process on a temporary product: checking the workspace,
 // adding a check, finding structural problems, a product's own checks, keeping each level a useful size and keeping
-// every change checked. Checking's other flows through the MCP tools are in agent-tools.test.ts.
+// every change checked (the plugin's guard hook runs as the process Claude Code starts). Checking's other flows through the MCP tools are in agent-tools.test.ts.
 import { spawnSync } from 'node:child_process';
 import { appendFileSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -31,7 +31,7 @@ describe('Checking flows', () => {
       add('view', { id: 'TL-V01', title: 'Loan page' }),
     ]);
     // S01, S03, S04: the check prints the error, then the warnings and the coverage, and exits 1.
-    const broken = tl.check();
+    const broken = await tl.check();
     expect(broken.status).toBe(1);
     const errors = broken.stdout.indexOf('Errors (1):\n  [view-unused] TL-V01:');
     const warnings = broken.stdout.indexOf('Warnings (');
@@ -41,17 +41,17 @@ describe('Checking flows', () => {
     expect(coverage).toBeGreaterThan(warnings);
     expect(broken.stdout).toMatch(/1 error, \d+ warnings?\.\n$/);
     // S05: with --json, the whole workspace instead.
-    const ws = tl.workspace();
+    const ws = await tl.workspace();
     expect(ws.records.map((r) => r.id)).toContain('TL-LEND-UC01-R01');
     expect(problemsOf(ws, 'view-unused')).toEqual([expect.stringMatching(/^TL-V01: /)]);
     // S06: the Agent fixes the error and checks again: no error, status 0.
-    tl.run('remove', 'TL-V01');
-    const fixed = tl.check();
+    await tl.run('remove', 'TL-V01');
+    const fixed = await tl.check();
     expect(fixed.status).toBe(0);
     expect(fixed.stdout).toMatch(/\n0 errors, \d+ warnings?\.\n$/);
     // S02: data the store refuses is a data-refused error naming the file, the line and the rule; nothing else is checked.
     appendFileSync(path.join(tl.root, 'data', 'domain.jsonl'), '{"id":"TL-SHOP","title":"Shop","product_id":"TL","subdomain_type":"central"}\n');
-    const refused = tl.check();
+    const refused = await tl.check();
     expect(refused.status).toBe(1);
     expect(refused.stdout).toContain('Errors (1):\n  [data-refused]');
     expect(refused.stdout).toContain('data/domain.jsonl:2:');
@@ -63,12 +63,12 @@ describe('Checking flows', () => {
     const tl = product();
     await tl.seed([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' })]);
     // S01: the check as one row through the command layer.
-    expect(tl.run('add', 'check', ...flags(NO_COMMAND))).toContain('Added check aggregate-without-command');
+    expect(await tl.run('add', 'check', ...flags(NO_COMMAND))).toContain('Added check aggregate-without-command');
     expect(tl.read('data/check.jsonl')).toContain('"name":"aggregate-without-command"');
     // S02: the next check runs it among the others, reading the typed tables.
-    const ws = tl.workspace();
+    const ws = await tl.workspace();
     expect(problemsOf(ws, 'aggregate-without-command')).toEqual(['TL-LEND-A2: Aggregate TL-LEND-A2 has no command.']);
-    expect(tl.check().stdout).toContain('[aggregate-without-command] TL-LEND-A2: Aggregate TL-LEND-A2 has no command.');
+    expect((await tl.check()).stdout).toContain('[aggregate-without-command] TL-LEND-A2: Aggregate TL-LEND-A2 has no command.');
   });
 
   it('LA-CHK-UC04-FL03-T find structural problems', async () => {
@@ -88,24 +88,24 @@ describe('Checking flows', () => {
       add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'integration', state: 'not automated yet' }),
     ]);
     // S01, S03: what nothing uses is an error.
-    const ws = tl.workspace();
+    const ws = await tl.workspace();
     expect(problemsOf(ws, 'view-unused')).toEqual([expect.stringMatching(/^TL-V01: /)]);
     // S04: the shape warnings, the recorded exception listed apart, and the use case with no flow in coverage.
     expect(problemsOf(ws, 'test-level-not-allowed')).toEqual([expect.stringMatching(/^TL-LEND-UC01-R01-T01: /)]);
     expect(problemsOf(ws, 'event-not-by-outbox')).toEqual([expect.stringMatching(/^TL-LEND-EV01: /)]);
     expect(ws.exceptions).toEqual([expect.objectContaining({ command: 'TL-LEND-CMD01', aggregate: 'TL-LEND-A2' })]);
-    const out = tl.check().stdout;
+    const out = (await tl.check()).stdout;
     expect(out).toMatch(/\n\nRecorded exceptions[^\n]*\n[^\n]*TL-LEND-CMD01/);
     expect(out).toContain('[use-case-without-flow] ');
     // S05: they fix the error and the warnings as the stages fill in.
-    tl.run('remove', 'TL-V01');
-    tl.run('set', 'TL-LEND-UC01-R01-T01', '--level', 'service');
-    tl.run('set', 'TL-LEND-EV01-ET', '--delivery', 'outbox');
-    const fixed = tl.workspace();
+    await tl.run('remove', 'TL-V01');
+    await tl.run('set', 'TL-LEND-UC01-R01-T01', '--level', 'service');
+    await tl.run('set', 'TL-LEND-EV01-ET', '--delivery', 'outbox');
+    const fixed = await tl.workspace();
     expect(fixed.problems.filter((p) => ['view-unused', 'test-level-not-allowed', 'event-not-by-outbox'].includes(p.check))).toEqual([]);
     // S02: a test given its parent's ID is refused once, naming its rule, file and line, and nothing that follows from it.
     appendFileSync(path.join(tl.root, 'data', 'use_case_test.jsonl'), '{"id":"TL-LEND-UC01-R01","title":"Given its parent\'s ID","uc_requirement_id":"TL-LEND-UC01-R01","level":"service","state":"not automated yet"}\n');
-    const refused = tl.workspace();
+    const refused = await tl.workspace();
     expect(refused.problems).toHaveLength(1);
     expect(refused.problems[0]).toMatchObject({ severity: 'error', check: 'data-refused' });
     expect(refused.problems[0].message).toMatch(/^data\/use_case_test\.jsonl:2: .*\[[a-z-]+\]$/);
@@ -115,27 +115,27 @@ describe('Checking flows', () => {
     const tl = product();
     await tl.seed([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' })]);
     // S01, S02: a house rule, as a check row with the product's product_id, in the product's data.
-    tl.run('add', 'check', ...flags(NO_COMMAND));
+    await tl.run('add', 'check', ...flags(NO_COMMAND));
     expect(tl.read('data/check.jsonl')).toContain('"product_id":"TL"');
     // S04: Lathe's checks run first, then the product's, its problems carrying its row's name.
-    const ws = tl.workspace();
+    const ws = await tl.workspace();
     const names = ws.problems.map((p) => p.check);
     expect(problemsOf(ws, 'aggregate-without-command')).toEqual(['TL-LEND-A2: Aggregate TL-LEND-A2 has no command.']);
     expect(names.lastIndexOf('aggregate-without-command')).toBe(names.length - 1);
     // S07: they fix what it finds and check again until it is clean of it.
-    tl.run('add', 'command', '--id', 'TL-LEND-CMD02', '--title', 'Add a tool', '--aggregate_id', 'TL-LEND-A2');
-    expect(problemsOf(tl.workspace(), 'aggregate-without-command')).toEqual([]);
+    await tl.run('add', 'command', '--id', 'TL-LEND-CMD02', '--title', 'Add a tool', '--aggregate_id', 'TL-LEND-A2');
+    expect(problemsOf(await tl.workspace(), 'aggregate-without-command')).toEqual([]);
     // S03: a check named like one of Lathe's is refused, naming lathe/data/check.jsonl.
-    expect(tl.refused('add', 'check', ...flags({ ...NO_COMMAND, name: 'view-unused' }))).toContain('lathe/data/check.jsonl');
+    expect(await tl.refused('add', 'check', ...flags({ ...NO_COMMAND, name: 'view-unused' }))).toContain('lathe/data/check.jsonl');
     // S05: a product check whose query fails is an error naming it, and the other checks still run.
-    tl.run('add', 'check', ...flags({ ...NO_COMMAND, name: 'broken-house-rule', position: 2, query: 'SELECT id AS record, title AS message FROM no_such_table' }));
+    await tl.run('add', 'check', ...flags({ ...NO_COMMAND, name: 'broken-house-rule', position: 2, query: 'SELECT id AS record, title AS message FROM no_such_table' }));
     await tl.seed([add('view', { id: 'TL-V01', title: 'Loan page' })]);
-    const failing = tl.workspace();
+    const failing = await tl.workspace();
     expect(failing.problems.filter((p) => p.message.includes('broken-house-rule')).map((p) => p.severity)).toEqual(['error']);
     expect(problemsOf(failing, 'view-unused')).toHaveLength(1);
     // S06: a checks key in lathe.config.json is refused as an unknown setting.
     tl.write('lathe.config.json', '{ "checks": [] }\n');
-    const config = tl.check();
+    const config = await tl.check();
     expect(config.status).toBe(1);
     expect(`${config.stdout}${config.stderr}`).toContain('unknown setting "checks"');
   });
@@ -153,17 +153,17 @@ describe('Checking flows', () => {
       add('uc_requirement', { id: 'TL-LEND-UC01-R04', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.', group_name: 'Dates' }),
     ]);
     // S01: the Owner sets the product's limits.
-    tl.run('add', 'product_setting', '--product_id', 'TL', '--max_children', '2', '--max_entities_per_aggregate', '2');
+    await tl.run('add', 'product_setting', '--product_id', 'TL', '--max_children', '2', '--max_entities_per_aggregate', '2');
     // S02, S03: too many children, too many entities, and a capability and a group with one child.
-    const ws = tl.workspace();
+    const ws = await tl.workspace();
     expect(problemsOf(ws, 'too-many-children').sort()).toEqual([expect.stringMatching(/^TL-LEND-A1: .*3 children of kind entity/), expect.stringMatching(/^TL-LEND-UC01: .*3 /)]);
     expect(problemsOf(ws, 'aggregate-too-large')).toEqual([expect.stringMatching(/^TL-LEND-A1: /)]);
     expect(problemsOf(ws, 'lone-child').sort()).toEqual([expect.stringMatching(/^TL-LEND-CAP01: /), expect.stringMatching(/^TL-LEND-UC01: .*"Dates"/)]);
     // S04: they add a level, merge one and raise nothing, then check again.
-    tl.run('set', 'product_setting', '--product_id', 'TL', '--max_children', '15', '--max_entities_per_aggregate', '7');
-    tl.run('add', 'use_case', '--id', 'TL-LEND-UC02', '--title', 'Return a tool', '--capability_id', 'TL-LEND-CAP01');
-    tl.run('set', 'TL-LEND-UC01-R04', '--group_name', '');
-    const fixed = tl.workspace();
+    await tl.run('set', 'product_setting', '--product_id', 'TL', '--max_children', '15', '--max_entities_per_aggregate', '7');
+    await tl.run('add', 'use_case', '--id', 'TL-LEND-UC02', '--title', 'Return a tool', '--capability_id', 'TL-LEND-CAP01');
+    await tl.run('set', 'TL-LEND-UC01-R04', '--group_name', '');
+    const fixed = await tl.workspace();
     expect(fixed.problems.filter((p) => ['too-many-children', 'aggregate-too-large', 'lone-child'].includes(p.check))).toEqual([]);
   });
 
