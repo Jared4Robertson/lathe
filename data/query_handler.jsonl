@@ -12,7 +12,7 @@
 {"id":"LA-EXP-QRY04-H","title":"Editable opening a form","query_id":"LA-EXP-QRY04","file":"app/src/edit/Editing.tsx","description":"Editable opening a form"}
 {"id":"LA-EXP-QRY05-H","title":"the space's folders","query_id":"LA-EXP-QRY05","file":"app/src/shell/Nav.tsx","description":"the space's folders"}
 {"id":"LA-EXP-QRY06-H","title":"DomainWiki","query_id":"LA-EXP-QRY06","file":"app/src/specs/SpecPages.tsx","description":"DomainWiki"}
-{"id":"LA-EXP-QRY07-H","title":"a group's page","query_id":"LA-EXP-QRY07","file":"app/src/views/FocusPage.tsx","description":"a group's page"}
+{"id":"LA-EXP-QRY07-H","title":"a group's page","query_id":"LA-EXP-QRY07","file":"app/src/views/WikiCard.tsx","description":"a group's page, in the wiki card"}
 {"id":"LA-EXP-QRY08-H","title":"neighborhood","query_id":"LA-EXP-QRY08","file":"app/src/graph/model.ts","description":"neighborhood, treeColumns, the group functions"}
 {"id":"LA-EXP-QRY10-H","title":"erdFor","query_id":"LA-EXP-QRY10","file":"app/src/erd/erd.ts","description":"erdFor"}
 {"id":"LA-EXP-QRY11-H","title":"recordTables","query_id":"LA-EXP-QRY11","file":"lathe/src/server/history.ts","description":"recordTables, parseLog, changesInDiff"}

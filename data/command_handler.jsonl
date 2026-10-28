@@ -18,9 +18,9 @@
 {"id":"LA-EXP-CMD06-H","title":"usePageTabs","command_id":"LA-EXP-CMD06","file":"app/src/views/useTabs.ts","description":"usePageTabs, through openTab, keepTab, closeTab, activateTab, cycleTab, updateTab"}
 {"id":"LA-EXP-CMD07-H","title":"usePageTabs","command_id":"LA-EXP-CMD07","file":"app/src/views/useTabs.ts","description":"usePageTabs, through openTab, keepTab, closeTab, activateTab, cycleTab, updateTab"}
 {"id":"LA-EXP-CMD08-H","title":"usePageTabs","command_id":"LA-EXP-CMD08","file":"app/src/views/useTabs.ts","description":"usePageTabs, through openTab, keepTab, closeTab, activateTab, cycleTab, updateTab"}
-{"id":"LA-EXP-CMD09-H","title":"useGraphSettings","command_id":"LA-EXP-CMD09","file":"app/src/graph/settings.ts","description":"useGraphSettings: the session's settings, and the setter the graph calls for the person's own change"}
+{"id":"LA-EXP-CMD09-H","title":"useSessionSettings","command_id":"LA-EXP-CMD09","file":"app/src/graph/settings.ts","description":"useSessionSettings: the session's settings, and the setters the graph and the wiki card call for the person's own change"}
 {"id":"LA-PLT-CMD01-H","title":"usePanelSize's setter","command_id":"LA-PLT-CMD01","file":"app/src/shell/prefs.ts","description":"usePanelSize's setter, within the limits"}
-{"id":"LA-PLT-CMD02-H","title":"toggleNav","command_id":"LA-PLT-CMD02","file":"app/src/App.tsx","description":"toggleNav, and the side bar, view and full screen commands the shell registers"}
+{"id":"LA-PLT-CMD02-H","title":"toggleNav","command_id":"LA-PLT-CMD02","file":"app/src/App.tsx","description":"toggleNav, and the side bar, wiki card and stage commands the shell registers"}
 {"id":"LA-PLT-CMD03-H","title":"choose","command_id":"LA-PLT-CMD03","file":"app/src/theme/ThemeProvider.tsx"}
 {"id":"LA-PLT-CMD04-H","title":"setMode","command_id":"LA-PLT-CMD04","file":"app/src/theme/ThemeProvider.tsx"}
 {"id":"LA-PLT-CMD05-H","title":"duplicate","command_id":"LA-PLT-CMD05","file":"app/src/theme/ThemeProvider.tsx"}
