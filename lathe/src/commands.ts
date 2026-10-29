@@ -27,6 +27,14 @@ import { PATTERN_COMMANDS } from './authoring/pattern/commands/index.ts';
 import { PATTERN_QUERIES } from './authoring/pattern/queries.ts';
 import { STANDARD_COMMANDS } from './authoring/standard/commands/index.ts';
 import { STANDARD_QUERIES } from './authoring/standard/queries.ts';
+import { SPECIFICATION_COMMANDS } from './authoring/specification/commands/index.ts';
+import { SPECIFICATION_QUERIES } from './authoring/specification/queries.ts';
+import { VALUE_OBJECT_COMMANDS } from './authoring/value-object/commands/index.ts';
+import { VALUE_OBJECT_QUERIES } from './authoring/value-object/queries.ts';
+import { READ_MODEL_COMMANDS } from './authoring/read-model/commands/index.ts';
+import { READ_MODEL_QUERIES } from './authoring/read-model/queries.ts';
+import { TABLE_COMMANDS } from './authoring/table/commands/index.ts';
+import { TABLE_QUERIES } from './authoring/table/queries.ts';
 import { VIEW_COMMANDS } from './authoring/view/commands/index.ts';
 import { VIEW_QUERIES } from './authoring/view/queries.ts';
 import { ENDPOINT_COMMANDS } from './authoring/endpoint/commands/index.ts';
@@ -57,6 +65,10 @@ export const ALL_COMMANDS: readonly AnyCommand[] = [
   ...AGGREGATE_COMMANDS,
   ...DOMAIN_EVENT_COMMANDS,
   ...COMMAND_COMMANDS,
+  ...SPECIFICATION_COMMANDS,
+  ...VALUE_OBJECT_COMMANDS,
+  ...READ_MODEL_COMMANDS,
+  ...TABLE_COMMANDS,
   ...VIEW_COMMANDS,
   ...ENDPOINT_COMMANDS,
   ...INTEGRATION_COMMANDS,
@@ -80,6 +92,10 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   ...AGGREGATE_QUERIES,
   ...DOMAIN_EVENT_QUERIES,
   ...COMMAND_QUERIES,
+  ...SPECIFICATION_QUERIES,
+  ...VALUE_OBJECT_QUERIES,
+  ...READ_MODEL_QUERIES,
+  ...TABLE_QUERIES,
   ...VIEW_QUERIES,
   ...ENDPOINT_QUERIES,
   ...INTEGRATION_QUERIES,

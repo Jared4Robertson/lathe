@@ -1,0 +1,43 @@
+// Change a read model (LA-AUT-CMD286): Changes a read model's title or description, its fields (the whole list, in order), or the aggregates it reads, the domain services it calls or the events that feed it (each the whole list). Its domain never changes.
+import { column, ids, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
+import type { Transaction } from '../../../platform/data/transaction.ts';
+import type { ReadModelRow } from '../../../platform/data/tables.ts';
+import { FIELD_COLUMNS, READ_MODEL_SLICE, changed, type ReadModelField } from '../model.ts';
+import { ReadModelRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
+
+/** The read model's changes: a column given is set; a list given replaces the list. */
+export type ChangeReadModel = Pick<ReadModelRow, 'id'> & { title?: ReadModelRow['title']; description?: ReadModelRow['description']; fields?: ReadModelField[]; reads?: string[]; calls?: string[]; fed_by?: string[] };
+
+/** Change a read model (LA-AUT-CMD286). */
+export const CHANGE_READ_MODEL: CommandDefinition<ChangeReadModel> = {
+  id: 'LA-AUT-CMD286',
+  slice: READ_MODEL_SLICE,
+  name: 'change-read-model',
+  description: "Changes a read model's title or description, its fields (the whole list, in order), or the aggregates it reads, the domain services it calls or the events that feed it (each the whole list). Its domain never changes.",
+  method: 'POST',
+  route: '/api/read-model/change-read-model',
+  input: {
+    id: column('read_model', 'id', 'required'),
+    title: column('read_model', 'title', 'optional'),
+    description: column('read_model', 'description', 'optional'),
+    fields: parts('read_model_field', FIELD_COLUMNS, "Its fields in order, each a name, what it means, exactly one type (a basic type, a value object or an aggregate), whether it is required, and its column's name and an example when they help. Replaces the list.", 'optional'),
+    reads: ids('The aggregates it reads, of its own domain. Replaces the list.', 'optional'),
+    calls: ids('The domain services its projection calls, of its own domain. Replaces the list.', 'optional'),
+    fed_by: ids("The events that keep it current: its own domain's, or another domain's published ones. Replaces the list.", 'optional'),
+  },
+  handler: changeReadModel,
+};
+
+/** Changes the read model's columns, fields and links. */
+export function changeReadModel(tx: Transaction, input: ChangeReadModel): void {
+  const readModels = new ReadModelRepository(tx);
+  const readModel = readModels.load(input.id) ?? tx.refuse('missing', `there is no read model ${input.id}`);
+  readModel.readModel = changed(readModel.readModel, input, ['title', 'description']);
+  if (input.fields) readModel.fields = input.fields;
+  if (input.reads) readModel.reads = input.reads;
+  if (input.calls) readModel.calls = input.calls;
+  if (input.fed_by) readModel.fedBy = input.fed_by;
+  holdToRules(tx, readModel);
+  readModels.save(readModel);
+}
