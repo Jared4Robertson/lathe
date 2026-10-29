@@ -73,7 +73,7 @@ const gaps = (checked: Checked, missing: string) =>
 const data = (tl: Product, table: string) => tl.read(`data/${table}.jsonl`).split('\n').filter(Boolean).map((l) => JSON.parse(l));
 
 /** A product kind several flows declare. */
-const HOUSE_KIND = { name: 'entry_point', product_id: 'TL', label: 'Entry point', description: 'A file the product starts from.', parent_kind: 'domain', stage: 'technical-specification', obligation: false };
+const HOUSE_KIND = { name: 'launcher', product_id: 'TL', label: 'Launcher', description: 'A file the product starts from.', parent_kind: 'domain', stage: 'technical-specification', obligation: false };
 const NO_COMMAND = {
   name: 'aggregate-without-command',
   product_id: 'TL',
@@ -146,16 +146,16 @@ describe('Authoring flows through the MCP tools', () => {
   it('LA-AUT-UC04-FL04-T declare a product\'s own kinds and relations through the MCP tools', async () => {
     await walk(LENDING, async (a) => {
       const addSchema = async () => JSON.stringify((await a.server.request('tools/list')).result!.tools!.find((t) => t.name === 'add')!.inputSchema);
-      expect(await addSchema()).not.toContain('entry_point');
+      expect(await addSchema()).not.toContain('launcher');
       // S01: a product kind with its fields, in a stage.
       await a.ok('add', { product_kind: HOUSE_KIND });
-      await a.ok('add', { product_kind_field: { kind: 'entry_point', position: 1, name: 'file', type: 'text', required: true, description: 'The file it starts from.' } });
+      await a.ok('add', { product_kind_field: { kind: 'launcher', position: 1, name: 'file', type: 'text', required: true, description: 'The file it starts from.' } });
       // S02: a new relation.
-      await a.ok('add', { product_relation: { name: 'starts', source_kind: 'entry_point', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: 'The entry point starts the command.' } });
+      await a.ok('add', { product_relation: { name: 'starts', source_kind: 'launcher', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: 'The launcher starts the command.' } });
       // S03: the server announces its tools again, and add takes the new kind.
-      expect(await addSchema()).toContain('entry_point');
+      expect(await addSchema()).toContain('launcher');
       expect(a.server.notifications).toContain('notifications/tools/list_changed');
-      await a.ok('add', { entry_point: { id: 'TL-LEND-EP1', title: 'Start the lending service', domain_id: 'TL-LEND', file: 'src/main.ts' } });
+      await a.ok('add', { launcher: { id: 'TL-LEND-EP1', title: 'Start the lending service', domain_id: 'TL-LEND', file: 'src/main.ts' } });
       await a.ok('link', { source: 'TL-LEND-EP1', relation: 'starts', target: 'TL-LEND-CMD01' });
       expect(await a.ok('show', { id: 'TL-LEND-EP1' })).toContain('Starts TL-LEND-CMD01: Open a loan [starts]');
       // S04: a kind declared twice is refused; in the data files, naming the file and line of each.

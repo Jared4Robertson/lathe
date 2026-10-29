@@ -104,6 +104,8 @@ export function everyKind(): Data {
     ui_component: [{ id: 'TL-UI01', title: 'CatalogPage', file: 'web/catalog.tsx', description: 'The catalog page.' }],
     endpoint_handler: [{ id: 'TL-LEND-EP01-H', title: 'postLoan', endpoint_id: 'TL-LEND-EP01', description: 'Reads the body and calls openLoan.' }],
     adapter: [{ id: 'TL-INT01-AD', title: 'mailer', integration_id: 'TL-INT01', description: 'Sends mail over SMTP.' }],
+    entry_point: [{ id: 'TL-LEND-ENTRY01', title: 'server.ts', domain_id: 'TL-LEND', file: 'src/server.ts', description: 'Opens the database and serves the API.' }],
+    tooling: [{ id: 'TL-LEND-TOOL01', title: 'vitest.config.ts', domain_id: 'TL-LEND', file: 'vitest.config.ts' }],
     package_use: [{ record_id: 'TL-INT01-AD', package: 'nodemailer' }],
     standard: [{ id: 'TL-STD-CODE', title: 'Code', product_id: 'TL', description: 'How the code is written.' }],
     standard_rule: [{ id: 'TL-STD-CODE-R01', title: 'Node prefix', standard_id: 'TL-STD-CODE', statement: 'Code MUST import node: modules.' }],

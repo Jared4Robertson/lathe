@@ -471,6 +471,20 @@ export interface EntityFieldRow {
   example?: string;
 }
 
+/** A start-up file: what runs first and wires the rest together, such as a server's main file or a desktop app's main process. No design record is implemented by it alone, so it sits under the domain it starts. */
+export interface EntryPointRow {
+  /** The entry point's ID: its domain's ID and ENTRY<nn>, such as TL-LEND-ENTRY01. */
+  id: string;
+  /** Its file's name, or its name in code, such as server.ts. */
+  title: string;
+  /** The domain it starts. */
+  domain_id: string;
+  /** The start-up file, from the product root. */
+  file: string;
+  /** What it does at start-up, in a sentence or two: what it reads, opens and serves. */
+  description: string;
+}
+
 /** One field a domain event carries, in order. A published event's fields are a contract with other domains. */
 export interface EventFieldRow {
   /** The domain event. */
@@ -827,7 +841,7 @@ export interface MeetsRow {
 
 /** A package a technical record uses: a dependency one of the product's package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a record of a kind in the technical specification may name one. */
 export interface PackageUseRow {
-  /** The technical record that uses the package: an adapter, a UI component, or a record of a product's own technical kind such as a tooling record. */
+  /** The technical record that uses the package: an adapter, a UI component, an entry point, a tooling record, or a record of a product's own technical kind. */
   record_id: string;
   /** The package's name as package.json lists it, such as @duckdb/node-api. */
   package: string;
@@ -1317,6 +1331,18 @@ export interface TermRow {
   group_name?: string;
 }
 
+/** A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker's or a test runner's. Its title and file say what it is. */
+export interface ToolingRow {
+  /** The tooling record's ID: its domain's ID and TOOL<nn>, such as TL-LEND-TOOL01. */
+  id: string;
+  /** Its file's name, such as vitest.config.ts. */
+  title: string;
+  /** The domain whose code it builds, checks or tests. */
+  domain_id: string;
+  /** The script or config file, or the folder of them, from the product root. */
+  file: string;
+}
+
 /** One actor of a use case, in order: a role of the use case's product. */
 export interface UseCaseActorRow {
   /** The use case. */
@@ -1470,6 +1496,7 @@ export interface TableRows {
   endpoint_handler: EndpointHandlerRow;
   endpoint_test: EndpointTestRow;
   entity_field: EntityFieldRow;
+  entry_point: EntryPointRow;
   event_field: EventFieldRow;
   policy: PolicyRow;
   event_handler: EventHandlerRow;
@@ -1530,6 +1557,7 @@ export interface TableRows {
   table: TableRow;
   table_key: TableKeyRow;
   term: TermRow;
+  tooling: ToolingRow;
   use_case_actor: UseCaseActorRow;
   use_case_test: UseCaseTestRow;
   value_object_field: ValueObjectFieldRow;

@@ -101,7 +101,7 @@ Domains and their aggregates, entities, value objects, rules (constraints, invar
 A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`repository`](#kind-repository), [`table`](#kind-table), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
+- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
@@ -1800,6 +1800,62 @@ Talks to its integration's outside system, so the rest of the code does not.
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(description) != '')`
 
+<a id="kind-entry_point"></a>
+
+### Entry point (`entry_point`)
+
+A start-up file: what runs first and wires the rest together, such as a server's main file or a desktop app's main process. No design record is implemented by it alone, so it sits under the domain it starts.
+
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<domain>-ENTRY<nn>`, such as `TL-LEND-ENTRY01`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
+- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-entry_point"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The entry point's ID: its domain's ID and ENTRY<nn>, such as TL-LEND-ENTRY01. |
+| `title` | VARCHAR | yes | Its file's name, or its name in code, such as server.ts. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it starts. |
+| `file` | VARCHAR | yes | The start-up file, from the product root. |
+| `description` | VARCHAR | yes | What it does at start-up, in a sentence or two: what it reads, opens and serves. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(file) != '')`
+- **Rule:** `("trim"(description) != '')`
+
+<a id="kind-tooling"></a>
+
+### Tooling (`tooling`)
+
+A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker's or a test runner's. Its title and file say what it is.
+
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<domain>-TOOL<nn>`, such as `TL-LEND-TOOL01`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
+- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-tooling"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The tooling record's ID: its domain's ID and TOOL<nn>, such as TL-LEND-TOOL01. |
+| `title` | VARCHAR | yes | Its file's name, such as vitest.config.ts. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain whose code it builds, checks or tests. |
+| `file` | VARCHAR | yes | The script or config file, or the folder of them, from the product root. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(file) != '')`
+
 <a id="kind-standard"></a>
 
 ### Standard (`standard`)
@@ -2801,7 +2857,7 @@ A package a technical record uses: a dependency one of the product's package.jso
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `record_id` | VARCHAR → `record_id` | yes | The technical record that uses the package: an adapter, a UI component, or a record of a product's own technical kind such as a tooling record. |
+| `record_id` | VARCHAR → `record_id` | yes | The technical record that uses the package: an adapter, a UI component, an entry point, a tooling record, or a record of a product's own technical kind. |
 | `package` | VARCHAR | yes | The package's name as package.json lists it, such as @duckdb/node-api. |
 
 - **Key:** `record_id`, `package`
@@ -3029,6 +3085,7 @@ The technical record follows the standard rule: it shows where the rule is appli
 | [`command_handler`](#kind-command_handler) | [`standard_rule`](#kind-standard_rule) | The command handler follows the standard rule. |
 | [`data_model`](#kind-data_model) | [`standard_rule`](#kind-standard_rule) | The data model follows the standard rule. |
 | [`endpoint_handler`](#kind-endpoint_handler) | [`standard_rule`](#kind-standard_rule) | The endpoint handler follows the standard rule. |
+| [`entry_point`](#kind-entry_point) | [`standard_rule`](#kind-standard_rule) | The entry point follows the standard rule. |
 | [`event_handler`](#kind-event_handler) | [`standard_rule`](#kind-standard_rule) | The event handler follows the standard rule. |
 | [`event_type`](#kind-event_type) | [`standard_rule`](#kind-standard_rule) | The event type follows the standard rule. |
 | [`predicate`](#kind-predicate) | [`standard_rule`](#kind-standard_rule) | The predicate follows the standard rule. |
@@ -3037,6 +3094,7 @@ The technical record follows the standard rule: it shows where the rule is appli
 | [`repository`](#kind-repository) | [`standard_rule`](#kind-standard_rule) | The repository follows the standard rule. |
 | [`service`](#kind-service) | [`standard_rule`](#kind-standard_rule) | The service follows the standard rule. |
 | [`table`](#kind-table) | [`standard_rule`](#kind-standard_rule) | The table follows the standard rule. |
+| [`tooling`](#kind-tooling) | [`standard_rule`](#kind-standard_rule) | The tooling record follows the standard rule. |
 | [`ui_component`](#kind-ui_component) | [`standard_rule`](#kind-standard_rule) | The UI component follows the standard rule. |
 | [`value_type`](#kind-value_type) | [`standard_rule`](#kind-standard_rule) | The value type follows the standard rule. |
 
