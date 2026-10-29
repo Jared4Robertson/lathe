@@ -919,6 +919,26 @@ export interface PatternRuleTestRow {
   notes?: string;
 }
 
+/** Loads and saves aggregates, each whole: the way command handlers reach their storage. It persists one aggregate or several, each linked with persists, and sits under the domain of the aggregates it persists, or, shared by several domains, under the domain that holds what they share. */
+export interface RepositoryRow {
+  /** The repository's ID: its domain's ID and REPO<nn>, such as TL-LEND-REPO01. */
+  id: string;
+  /** Its name in code, such as LoanRepository. */
+  title: string;
+  /** The domain it sits under: that of the aggregates it persists, or, for one several domains share, the domain that holds what they share. */
+  domain_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it works, in a sentence or two. */
+  description?: string;
+}
+
+/** The repository loads and saves the aggregate, whole: one repository per aggregate, and one repository may persist several aggregates, of its domain or, when it is shared, of several. */
+export interface PersistsRow {
+  source_id: string;
+  target_id: string;
+}
+
 /** Proves its policy: when its event happens, its command is sent. */
 export interface PolicyTestRow {
   /** The test's ID: its policy's ID and T, such as TL-LEND-PO01-T. */
@@ -1115,20 +1135,6 @@ export interface UiComponentRow {
 export interface RendersRow {
   source_id: string;
   target_id: string;
-}
-
-/** Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage. */
-export interface RepositoryRow {
-  /** The repository's ID: its aggregate's ID and REPO, such as TL-LEND-A1-REPO. */
-  id: string;
-  /** Its name in code, such as LoanRepository. */
-  title: string;
-  /** The aggregate it loads and saves; one repository each. */
-  aggregate_id: string;
-  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
-  file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
 }
 
 /** A role the product's records name, such as Owner, Reader or Agent: a use case's actors and a question's owner. Specs name roles, never people. */
@@ -1522,6 +1528,8 @@ export interface TableRows {
   pattern_setting: PatternSettingRow;
   pattern_rule: PatternRuleRow;
   pattern_rule_test: PatternRuleTestRow;
+  repository: RepositoryRow;
+  persists: PersistsRow;
   policy_test: PolicyTestRow;
   predicate: PredicateRow;
   product_kind: ProductKindRow;
@@ -1535,7 +1543,6 @@ export interface TableRows {
   reads: ReadsRow;
   ui_component: UiComponentRow;
   renders: RendersRow;
-  repository: RepositoryRow;
   role: RoleRow;
   selects_by: SelectsByRow;
   serves: ServesRow;

@@ -38,7 +38,7 @@ describe('an obligation\'s chain', () => {
     const inv = traceChain(index, 'P-D-INV01')!;
     expect(inv.design).toEqual(['P-D-A3']);
     expect(inv.build).toContain('P-D-EN03-TB');
-    expect(inv.build).not.toContain('P-D-A3-REPO');
+    expect(inv.build).not.toContain('P-D-REPO01');
     expect(inv.links).toEqual(expect.arrayContaining([['P-D-INV01', 'P-D-A3'], ['P-D-INV01', 'P-D-EN03-TB']]));
     expect(inv.tests).toEqual(['P-D-INV01-T']);
     // A constraint: its value object and the value object's value type.

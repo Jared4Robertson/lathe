@@ -435,6 +435,27 @@ check('has-crosses-aggregate', () => {
   });
 });
 
+check('repository-persists-nothing', () => {
+  it('LA-AUT-INV40-T a repository that persists no aggregate is an error, and its aggregate has no repository', async () => {
+    expect(ofCheck(clean, 'repository-persists-nothing')).toEqual([]);
+    const ws = await loadData(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'));
+    expect(ofCheck(ws, 'repository-persists-nothing')).toEqual([
+      {
+        severity: 'error',
+        check: 'repository-persists-nothing',
+        record: 'EX-LEND-REPO02',
+        message: 'Repository EX-LEND-REPO02 persists no aggregate: link the aggregates it loads and saves with persists, or remove it.',
+      },
+    ]);
+    expect(gaps(ws).filter((g) => g.startsWith('aggregate-without-repository'))).toEqual(['aggregate-without-repository EX-LEND-A2']);
+    // One repository that persists both aggregates, as a shared one does, leaves neither without one.
+    const shared = adding(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), { persists: [{ source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A2' }] });
+    const one = await loadData(without(shared, 'repository', (r) => r.id === 'EX-LEND-REPO02'));
+    expect(ofCheck(one, 'repository-persists-nothing')).toEqual([]);
+    expect(gaps(one).filter((g) => g.startsWith('aggregate-without-repository'))).toEqual([]);
+  });
+});
+
 check('entity-unreferenced', () => {
   it("LA-AUT-INV28-T a child entity its root does not reach by has_one or has_many is a warning", async () => {
     const ws = await loadData(without(complete(), 'has_one', () => true));

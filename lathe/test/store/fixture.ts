@@ -79,7 +79,8 @@ export function everyKind(): Data {
     integration: [{ id: 'TL-INT01', title: 'Mail', system: 'Mail service' }],
 
     // Technical specification.
-    repository: [{ id: 'TL-LEND-A1-REPO', title: 'LoanRepository', aggregate_id: 'TL-LEND-A1', file: 'src/lending/loans.ts' }],
+    repository: [{ id: 'TL-LEND-REPO01', title: 'LoanRepository', domain_id: 'TL-LEND', file: 'src/lending/loans.ts' }],
+    persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-LEND-A1' }],
     data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }],
     table: [
       { id: 'TL-LEND-EN01-TB', title: 'loans', entity_id: 'TL-LEND-EN01', name: 'loans', storage: 'table', file: 'migrations/001.sql' },

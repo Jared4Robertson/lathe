@@ -204,7 +204,9 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   // Every route the code serves has an endpoint or a view (trace/routes.ts).
   ...ROUTE_GAP_RULES,
   // Technical specification: one technical record per design record.
-  missingImpl('aggregate-without-repository', 'aggregate', 'Aggregate', 'repository', 'aggregate_id', 'repository'),
+  // A repository may persist several aggregates, of its domain or, shared, of several: each aggregate needs one that persists it.
+  gap('aggregate-without-repository', 'technical-specification', ['aggregate', 'repository'], 'An aggregate no repository persists.',
+    `SELECT a.id, 'Aggregate ' || a.id || ' has no repository: none persists it.' AS message FROM aggregate a WHERE NOT EXISTS (SELECT 1 FROM persists p WHERE p.target_id = a.id)`),
   missingImpl('entity-without-data-model', 'entity', 'Entity', 'data_model', 'entity_id', 'data model'),
   missingImpl('entity-without-table', 'entity', 'Entity', 'table', 'entity_id', 'table', ' AND r.in_root_table IS NULL'),
   missingImpl('value-object-without-value-type', 'value_object', 'Value object', 'value_type', 'value_object_id', 'value type'),

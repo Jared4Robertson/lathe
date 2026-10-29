@@ -223,8 +223,12 @@ export function complete(): Data {
     integration: [{ id: 'EX-INT01', title: 'Mail', system: 'Mail service' }],
 
     repository: [
-      { id: 'EX-LEND-A1-REPO', title: 'Loans', aggregate_id: 'EX-LEND-A1', file: 'src/store.ts' },
-      { id: 'EX-LEND-A2-REPO', title: 'Tools', aggregate_id: 'EX-LEND-A2', file: 'src/store.ts' },
+      { id: 'EX-LEND-REPO01', title: 'Loans', domain_id: 'EX-LEND', file: 'src/store.ts' },
+      { id: 'EX-LEND-REPO02', title: 'Tools', domain_id: 'EX-LEND', file: 'src/store.ts' },
+    ],
+    persists: [
+      { source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A1' },
+      { source_id: 'EX-LEND-REPO02', target_id: 'EX-LEND-A2' },
     ],
     data_model: [
       { id: 'EX-LEND-EN01-DM', title: 'Loan', entity_id: 'EX-LEND-EN01', file: 'src/model.ts' },

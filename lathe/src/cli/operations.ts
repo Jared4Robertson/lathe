@@ -274,7 +274,7 @@ export function placement(kind: KindDescription): string {
   return `No owner: no parent column; its ${kind.idScope === 'domain' ? 'domain' : 'product'} is the one its ID starts with.`;
 }
 
-// The end of a kind's ID after its base: letters and a number (C<nn>), letters alone (FL, REPO), or null for a name
+// The end of a kind's ID after its base: letters and a number (C<nn>), letters alone (DM, T), or null for a name
 // the writer chooses (<P>-PAT-<name>) or none (<P>-<D>). Alternatives joined by "or" share their end.
 function idEnd(pattern: string): { letters: string; width: number } | null {
   const alternative = pattern.split(/,?\s+or\s+(?![^<]*>)/)[0].trim();
@@ -308,7 +308,7 @@ ORDER BY i.id LIMIT 1`);
 /**
  * The next free ID for a record of the kind, by its ID pattern. Under is the record it will sit under; for a kind with
  * no owner it is the product (or a domain of it) its ID starts with, and for a specification its domain. A kind with
- * one record per parent (<aggregate>-REPO, <constraint>-T) gives that ID while it is free. A flow's ID ends in its interface's
+ * one record per parent (<entity>-DM, <constraint>-T) gives that ID while it is free. A flow's ID ends in its interface's
  * number, so under a use case it is the first interface of the product with no flow of that use case yet.
  */
 export async function nextId(root: string, kind: string, under: string): Promise<Outcome<string>> {

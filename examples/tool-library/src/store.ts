@@ -1,5 +1,5 @@
 // Storage for members, tools and loans in SQLite (node:sqlite).
-// Spec: the repositories TL-LEND-A1-REPO, A2-REPO and A3-REPO and the tables TL-LEND-EN01-TB, EN02-TB
+// Spec: the repositories TL-LEND-REPO01, REPO02 and REPO03 and the tables TL-LEND-EN01-TB, EN02-TB
 // and EN04-TB (examples/tool-library/data/).
 // The schema backs up two invariants even if a command handler forgets them:
 // TL-LEND-INV01 (unique email) and TL-LEND-INV03 (one active loan per tool).

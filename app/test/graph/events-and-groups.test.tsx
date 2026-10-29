@@ -54,7 +54,7 @@ describe('components and tests in the graph', () => {
   it('LA-V93-R33-T01 A domain reaches its technical records through Technical specification, then a folder per kind, one column each', () => {
     expect(treeChildren(index, 'P-D')).toContain('P-D/technical-specification');
     expect(treeChildren(index, 'P-D/technical-specification')).toContain('P-D/technical-specification/repository');
-    expect(treeParent(index, 'P-D-A3-REPO')).toBe('P-D/technical-specification/repository');
+    expect(treeParent(index, 'P-D-REPO01')).toBe('P-D/technical-specification/repository');
     expect(treeParent(index, 'P-D-CMD01-H')).toBe('P-D/technical-specification/command_handler');
   });
 

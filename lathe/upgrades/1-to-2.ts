@@ -11,6 +11,11 @@
 // api and contract), system (was e2e-api) and browser (was e2e-ui). Manual stops being a level: a manual test's state
 // already says a person runs it, and it takes the level that fits its kind, browser for a flow, view, use case or
 // policy test (a person using the product), otherwise the lowest level its kind allows.
+//
+// And a repository sits under a domain and persists one aggregate or several: each repository moves from under its
+// aggregate to under that aggregate's domain, renamed <domain>-REPO<nn> (TL-LEND-A1-REPO becomes TL-LEND-REPO01) wherever
+// it is named, and persists its aggregate. Which records are one piece of code persisting several aggregates only the
+// Owner knows: merging them, and the IDs in code, are the to-dos.
 import { ALLOWED_LEVELS } from '../src/coverage.ts';
 import type { Converter, RawData, UpgradeNotes } from '../src/upgrade.ts';
 
@@ -55,9 +60,54 @@ function useCaseProducts(data: RawData): Map<string, string> {
 
 const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
+/** Moves every repository under its aggregate's domain, numbered there in its aggregates' order, persisting its aggregate. */
+function domainRepositories(data: RawData, notes: UpgradeNotes): void {
+  const repositories = data.read('repository').filter((r) => r.aggregate_id !== undefined);
+  if (repositories.length === 0) return;
+  const domains = new Map(data.read('aggregate').map((a) => [String(a.id), String(a.domain_id)]));
+  const byAggregate = (a: Raw, b: Raw) => String(a.aggregate_id).localeCompare(String(b.aggregate_id), 'en', { numeric: true });
+  const numbers = new Map<string, number>();
+  const renamed = new Map<string, string>();
+  const persists: Raw[] = [];
+  const rows = data.read('repository').filter((r) => r.aggregate_id === undefined);
+  for (const repository of [...repositories].sort(byAggregate)) {
+    const { id, title, aggregate_id: aggregate, ...rest } = repository;
+    const domain = domains.get(String(aggregate));
+    if (!domain) {
+      notes.todo(`Repository ${String(id)} names aggregate ${String(aggregate)}, which does not exist: give it the domain it sits under and link the aggregates it persists with persists.`);
+      continue;
+    }
+    const number = (numbers.get(domain) ?? 0) + 1;
+    numbers.set(domain, number);
+    const next = `${domain}-REPO${String(number).padStart(2, '0')}`;
+    renamed.set(String(id), next);
+    rows.push({ id: next, title, domain_id: domain, ...rest });
+    persists.push({ source_id: next, target_id: aggregate });
+  }
+  // Every mention of an old ID, in any table and column, the repositories' own text among them, names the new one.
+  const mention = new RegExp(`(?<![A-Za-z0-9-])(${[...renamed.keys()].sort((a, b) => b.length - a.length).map(escape).join('|')})(?![A-Za-z0-9-])`, 'g');
+  const rename = (value: unknown): unknown =>
+    typeof value === 'string' ? value.replace(mention, (old) => renamed.get(old)!) : Array.isArray(value) ? value.map(rename) : value;
+  const renameRow = (row: Raw): Raw => Object.fromEntries(Object.entries(row).map(([column, value]) => [column, rename(value)]));
+  if (renamed.size) {
+    for (const table of data.tables()) {
+      if (table === 'repository') continue;
+      const before = data.read(table);
+      const after = before.map(renameRow);
+      if (JSON.stringify(after) !== JSON.stringify(before)) data.write(table, after);
+    }
+  }
+  data.write('repository', renamed.size ? rows.map(renameRow) : rows);
+  data.write('persists', [...data.read('persists'), ...persists]);
+  notes.changed(`Every repository sits under its aggregate's domain and persists its aggregate: ${renamed.size} renamed from <aggregate>-REPO to <domain>-REPO<nn>.`);
+  notes.todo('A repository is one record per piece of code: where several records name one class that persists several aggregates, keep one, link it to each aggregate it persists with persists, and remove the others.');
+  notes.todo('Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.');
+}
+
 const converter: Converter = {
   files(data, notes) {
     testLevels(data, notes);
+    domainRepositories(data, notes);
     const flows = data.read('flow');
     if (flows.length === 0) return;
     const products = useCaseProducts(data);

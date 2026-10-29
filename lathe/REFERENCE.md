@@ -100,7 +100,7 @@ Domains and their aggregates, entities, value objects, rules (constraints, invar
 A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`table`](#kind-table), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
+- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`repository`](#kind-repository), [`table`](#kind-table), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
@@ -129,11 +129,11 @@ A part of the product with its own model, language and owner, for one business c
 The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
-- **Children:** [`entity`](#kind-entity), [`invariant`](#kind-invariant), [`domain_event`](#kind-domain_event), [`command`](#kind-command), [`repository`](#kind-repository)
+- **Children:** [`entity`](#kind-entity), [`invariant`](#kind-invariant), [`domain_event`](#kind-domain_event), [`command`](#kind-command)
 - **Obligation:** no
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about)), Read by ([`reads`](#relation-reads))
+- **Links in:** Questions about this ([`about`](#relation-about)), Persisted by ([`persists`](#relation-persists)), Read by ([`reads`](#relation-reads))
 - **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
@@ -1331,29 +1331,28 @@ The technical record that implements each design record, such as a command's han
 
 ### Repository (`repository`)
 
-Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage.
+Loads and saves aggregates, each whole: the way command handlers reach their storage. It persists one aggregate or several, each linked with persists, and sits under the domain of the aggregates it persists, or, shared by several domains, under the domain that holds what they share.
 
-- **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
+- **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
 - **Obligation:** no
-- **ID:** `<aggregate>-REPO`, such as `TL-LEND-A1-REPO`; it starts with its parent's ID
+- **ID:** `<domain>-REPO<nn>`, such as `TL-LEND-REPO01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** Meets ([`meets`](#relation-meets)), Persists ([`persists`](#relation-persists))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest)
+- **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest), [`repository-persists-nothing`](#check-repository-persists-nothing)
 
 <a id="table-repository"></a>
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `id` | VARCHAR → `record_id` | yes | The repository's ID: its aggregate's ID and REPO, such as TL-LEND-A1-REPO. |
+| `id` | VARCHAR → `record_id` | yes | The repository's ID: its domain's ID and REPO<nn>, such as TL-LEND-REPO01. |
 | `title` | VARCHAR | yes | Its name in code, such as LoanRepository. |
-| `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The aggregate it loads and saves; one repository each. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it sits under: that of the aggregates it persists, or, for one several domains share, the domain that holds what they share. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
 | `description` | VARCHAR | no | How it works, in a sentence or two. |
 
 - **Key:** `id`
-- **Unique:** `aggregate_id`
 - **Rule:** `("trim"(title) != '')`
 
 <a id="kind-data_model"></a>
@@ -1864,13 +1863,23 @@ A record names a package that none of its product's package.json files lists.
 
 A package_use row says a technical record uses a package, so that every dependency is accounted for by what it serves. Naming a package no manifest lists is a stale or mistyped claim: the package was removed, renamed or never added, and the record no longer tells the truth about the code. Fix the name, add the dependency to the package.json the code runs from, or remove the package_use row.
 
+<a id="check-repository-persists-nothing"></a>
+
+### `repository-persists-nothing`
+
+**Error** · Lathe's · Kinds: [`repository`](#kind-repository)
+
+A repository that persists no aggregate.
+
+A repository exists to load and save aggregates, each whole, and says which with persists links; one shared by several domains links each aggregate it persists. One that persists none is a leftover, or its links are missing. Link the aggregates it persists with persists, or remove it.
+
 ### Coverage gaps: technical specification
 
 Each is reported in coverage, under the record that falls short, never as a problem.
 
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
-| <a id="gap-aggregate-without-repository"></a>`aggregate-without-repository` | [`aggregate`](#kind-aggregate), [`repository`](#kind-repository) | An aggregate with no repository. |
+| <a id="gap-aggregate-without-repository"></a>`aggregate-without-repository` | [`aggregate`](#kind-aggregate), [`repository`](#kind-repository) | An aggregate no repository persists. |
 | <a id="gap-entity-without-data-model"></a>`entity-without-data-model` | [`entity`](#kind-entity), [`data_model`](#kind-data_model) | An entity with no data model. |
 | <a id="gap-entity-without-table"></a>`entity-without-table` | [`entity`](#kind-entity), [`table`](#kind-table) | An entity with no table. |
 | <a id="gap-value-object-without-value-type"></a>`value-object-without-value-type` | [`value_object`](#kind-value_object), [`value_type`](#kind-value_type) | A value object with no value type. |
@@ -2972,6 +2981,19 @@ The technical record follows the standard rule: it shows where the rule is appli
 | [`table`](#kind-table) | [`standard_rule`](#kind-standard_rule) | The table follows the standard rule. |
 | [`ui_component`](#kind-ui_component) | [`standard_rule`](#kind-standard_rule) | The UI component follows the standard rule. |
 | [`value_type`](#kind-value_type) | [`standard_rule`](#kind-standard_rule) | The value type follows the standard rule. |
+
+<a id="relation-persists"></a>
+
+### `persists`
+
+The repository loads and saves the aggregate, whole: one repository per aggregate, and one repository may persist several aggregates, of its domain or, when it is shared, of several.
+
+- **Reads:** Persists / Persisted by
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`repository`](#kind-repository) | [`aggregate`](#kind-aggregate) | The repository loads and saves the aggregate, whole. |
 
 <a id="relation-raises"></a>
 

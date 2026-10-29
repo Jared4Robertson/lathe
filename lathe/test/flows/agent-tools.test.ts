@@ -370,9 +370,10 @@ describe('Authoring flows through the MCP tools', () => {
     ], async (a) => {
       // S01: the technical records under the design records they implement, naming their file.
       await a.ok('add', { command_handler: { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' } });
-      await a.ok('add', { repository: { id: 'TL-LEND-A1-REPO', title: 'Loans', aggregate_id: 'TL-LEND-A1', file: 'src/loans.ts' } });
-      expect(found(await a.check(), 'technical-file-missing').sort()).toEqual([expect.stringMatching(/^TL-LEND-A1-REPO: /), expect.stringMatching(/^TL-LEND-CMD01-H: /)]);
-      a.tl.write('src/loans.ts', '// TL-LEND-CMD01-H TL-LEND-A1-REPO\n');
+      await a.ok('add', { repository: { id: 'TL-LEND-REPO01', title: 'Loans', domain_id: 'TL-LEND', file: 'src/loans.ts' } });
+      await a.ok('link', { source: 'TL-LEND-REPO01', relation: 'persists', target: 'TL-LEND-A1' });
+      expect(found(await a.check(), 'technical-file-missing').sort()).toEqual([expect.stringMatching(/^TL-LEND-CMD01-H: /), expect.stringMatching(/^TL-LEND-REPO01: /)]);
+      a.tl.write('src/loans.ts', '// TL-LEND-CMD01-H TL-LEND-REPO01\n');
       // S02: the entity's table with its keys, the unique key naming the invariant it enforces.
       await a.ok('add', { table: { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loan', storage: 'table', file: 'src/loans.ts' } });
       await a.ok('add', { table_key: { table_id: 'TL-LEND-EN01-TB', position: 1, type: 'primary', columns: ['id'] } });

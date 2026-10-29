@@ -317,12 +317,12 @@ describe('lathe show, list and next-id', () => {
     expect(await next(root, 'uc_requirement', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-R02');
     expect(await next(root, 'constraint', '--parent', 'TL-VO01')).toBe('TL-VO01-C02');
     expect(await next(root, 'flow_step', '--parent', 'TL-LEND-UC01-FL01')).toBe('TL-LEND-UC01-FL01-S02');
+    expect(await next(root, 'repository', '--parent', 'TL-LEND')).toBe('TL-LEND-REPO02');
     expect(await next(root, 'use_case_test', '--parent', 'TL-LEND-UC01-R01')).toBe('TL-LEND-UC01-R01-T02');
   });
 
   it('LA-AUT-UC01-R05-T07 gives the one ID of a kind with one record per parent while it is free', async () => {
     const root = writeData(everyKind());
-    expect(await next(root, 'repository', '--parent', 'TL-LEND-A2')).toBe('TL-LEND-A2-REPO');
     expect(await next(root, 'table', '--parent', 'TL-LEND-EN02')).toBe('TL-LEND-EN02-TB');
     // A flow's ID ends in its interface's number: the first interface of the product the use case has no flow through.
     const taken = await lathe(root, 'next-id', 'flow', '--parent', 'TL-LEND-UC01');
