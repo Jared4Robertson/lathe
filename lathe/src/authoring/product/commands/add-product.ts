@@ -24,7 +24,7 @@ export const ADD_PRODUCT: CommandDefinition<AddProduct> = {
     icon: column('product', 'icon', 'optional'),
     color: column('product', 'color', 'optional'),
     notes: column('product', 'notes', 'optional'),
-    roles: parts('role', ['product_id'], 'The roles its records name, such as Owner or Librarian, each with its name and description.', 'optional'),
+    roles: parts('role', ['name', 'description'], 'The roles its records name, such as Owner or Librarian, each with its name and description.', 'optional'),
   },
   handler: addProduct,
 };

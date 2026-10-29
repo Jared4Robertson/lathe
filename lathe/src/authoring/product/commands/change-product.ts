@@ -24,7 +24,7 @@ export const CHANGE_PRODUCT: CommandDefinition<ChangeProduct> = {
     icon: column('product', 'icon', 'clearable'),
     color: column('product', 'color', 'clearable'),
     notes: column('product', 'notes', 'clearable'),
-    roles: parts('role', ['product_id'], 'The roles its records name, such as Owner or Librarian, each with its name and description. Replaces the list.', 'optional'),
+    roles: parts('role', ['name', 'description'], 'The roles its records name, such as Owner or Librarian, each with its name and description. Replaces the list.', 'optional'),
   },
   handler: changeProduct,
 };

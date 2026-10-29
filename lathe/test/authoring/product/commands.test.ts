@@ -125,7 +125,7 @@ describe('LA-AUT-UC23-R01-T51 each Product command changes one product through P
     await expect(runCommand(store, ADD_INTERFACE, { id: 'TL-IF02', title: 'CLI', product_id: 'TL', kind: 'CLI' })).rejects.toThrow(new InputError('add-interface needs description'));
     await expect(runCommand(store, CHANGE_INTERFACE, { id: 'TL-IF01', product_id: 'TL' })).rejects.toThrow(/change-interface takes no product_id/);
     await expect(runCommand(store, CHANGE_INTERFACE, { id: 'TL-IF01', kind: 'phone' })).rejects.toThrow(/kind "phone" is not one of/);
-    await expect(runCommand(store, CHANGE_PRODUCT, { id: 'TL', roles: [{ name: 'Member' }] })).rejects.toThrow(/roles .* item 1 needs description/);
+    await expect(runCommand(store, CHANGE_PRODUCT, { id: 'TL', roles: [{ name: 'Member' }] })).rejects.toThrow(/roles .* has an item with no description/);
     await expect(runCommand(store, CHANGE_PRODUCT, { id: 'TL', title: null })).rejects.toThrow(/title cannot be cleared/);
     expect((await refusal(store, CHANGE_PRODUCT, { id: 'XX', title: 'Nothing' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no product XX' });
     expect((await refusal(store, ADD_INTERFACE, { id: 'TL-IF01', title: 'Again', product_id: 'TL', kind: 'CLI', description: 'Twice.' })).problems[0].rule).toBe('primary-key');

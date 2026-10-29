@@ -13,6 +13,14 @@ import { TOOLING_COMMANDS } from './authoring/tooling/commands/index.ts';
 import { TOOLING_QUERIES } from './authoring/tooling/queries.ts';
 import { USE_CASE_COMMANDS } from './authoring/use-case/commands/index.ts';
 import { USE_CASE_QUERIES } from './authoring/use-case/queries.ts';
+import { DOMAIN_COMMANDS } from './authoring/domain/commands/index.ts';
+import { DOMAIN_QUERIES } from './authoring/domain/queries.ts';
+import { TEST_DATA_SET_COMMANDS } from './authoring/test-data-set/commands/index.ts';
+import { TEST_DATA_SET_QUERIES } from './authoring/test-data-set/queries.ts';
+import { PATTERN_COMMANDS } from './authoring/pattern/commands/index.ts';
+import { PATTERN_QUERIES } from './authoring/pattern/queries.ts';
+import { STANDARD_COMMANDS } from './authoring/standard/commands/index.ts';
+import { STANDARD_QUERIES } from './authoring/standard/queries.ts';
 import type { AnyCommand, AnyQuery } from './platform/commands/definition.ts';
 
 export const ALL_COMMANDS: readonly AnyCommand[] = [
@@ -22,6 +30,10 @@ export const ALL_COMMANDS: readonly AnyCommand[] = [
   ...EXTENSION_RECORD_COMMANDS,
   ...ENTRY_POINT_COMMANDS,
   ...TOOLING_COMMANDS,
+  ...DOMAIN_COMMANDS,
+  ...TEST_DATA_SET_COMMANDS,
+  ...PATTERN_COMMANDS,
+  ...STANDARD_COMMANDS,
 ];
 
 export const ALL_QUERIES: readonly AnyQuery[] = [
@@ -31,4 +43,8 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   ...EXTENSION_RECORD_QUERIES,
   ...ENTRY_POINT_QUERIES,
   ...TOOLING_QUERIES,
+  ...DOMAIN_QUERIES,
+  ...TEST_DATA_SET_QUERIES,
+  ...PATTERN_QUERIES,
+  ...STANDARD_QUERIES,
 ];

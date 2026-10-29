@@ -52,6 +52,48 @@
 {"id":"LA-AUT-CMD155","title":"Add a tooling record","entity_id":"LA-AUT-EN83","description":"Adds a tooling record under its domain, with the packages it uses and the standard rules it meets."}
 {"id":"LA-AUT-CMD156","title":"Change a tooling record","entity_id":"LA-AUT-EN83","description":"Changes a tooling record's title, file, packages or standard rules met. Its domain stays."}
 {"id":"LA-AUT-CMD157","title":"Remove a tooling record","entity_id":"LA-AUT-EN83","description":"Removes a tooling record whole, with the packages it names and the links it starts. Refused while anything references it."}
+{"id":"LA-AUT-CMD160","title":"Add a domain","entity_id":"LA-AUT-EN04","description":"Adds a domain to its product, with nothing in it yet."}
+{"id":"LA-AUT-CMD161","title":"Change a domain","entity_id":"LA-AUT-EN04","description":"Changes a domain's title, subdomain type, description or notes. Its product never changes."}
+{"id":"LA-AUT-CMD162","title":"Remove a domain","entity_id":"LA-AUT-EN04","description":"Removes a domain whole: its capabilities, terms, domain services with their services and tests, repositories, and the links they start. Refused while anything outside it references what is in it."}
+{"id":"LA-AUT-CMD163","title":"Add a capability","entity_id":"LA-AUT-EN05","description":"Adds a capability to its domain, at a position, with the business outcomes it serves."}
+{"id":"LA-AUT-CMD164","title":"Change a capability","entity_id":"LA-AUT-EN05","description":"Changes a capability's title, position or description, or the business outcomes it serves (the whole list)."}
+{"id":"LA-AUT-CMD165","title":"Remove a capability","entity_id":"LA-AUT-EN05","description":"Removes a capability and the links it starts. Refused while a use case sits under it or anything else references it."}
+{"id":"LA-AUT-CMD166","title":"Add a term","entity_id":"LA-AUT-EN30","description":"Adds a term to its domain's glossary, with what it means there."}
+{"id":"LA-AUT-CMD167","title":"Change a term","entity_id":"LA-AUT-EN30","description":"Changes a term's title, meaning or group."}
+{"id":"LA-AUT-CMD168","title":"Remove a term","entity_id":"LA-AUT-EN30","description":"Removes a term from its domain. Refused while anything references it."}
+{"id":"LA-AUT-CMD169","title":"Add a domain service","entity_id":"LA-AUT-EN42","description":"Adds a domain service to its domain, with what it must work out."}
+{"id":"LA-AUT-CMD170","title":"Change a domain service","entity_id":"LA-AUT-EN42","description":"Changes a domain service's title or statement."}
+{"id":"LA-AUT-CMD171","title":"Remove a domain service","entity_id":"LA-AUT-EN42","description":"Removes a domain service with its service and tests and the links they start. Refused while a command or query calls it, or anything else references it or them."}
+{"id":"LA-AUT-CMD172","title":"Add a repository","entity_id":"LA-AUT-EN47","description":"Adds a repository to its domain, with the aggregate it persists, the standard rules it meets and the packages it uses."}
+{"id":"LA-AUT-CMD173","title":"Change a repository","entity_id":"LA-AUT-EN47","description":"Changes a repository's title, file or description, the aggregate it persists (null clears it), or the standard rules it meets or packages it uses (each the whole list)."}
+{"id":"LA-AUT-CMD174","title":"Remove a repository","entity_id":"LA-AUT-EN47","description":"Removes a repository with the links it starts and the packages it uses. Refused while anything references it."}
+{"id":"LA-AUT-CMD175","title":"Add a service","entity_id":"LA-AUT-EN58","description":"Adds the service that implements a domain service in code, with the standard rules it meets and the packages it uses."}
+{"id":"LA-AUT-CMD176","title":"Change a service","entity_id":"LA-AUT-EN58","description":"Changes a service's title or file, or the standard rules it meets or packages it uses (each the whole list)."}
+{"id":"LA-AUT-CMD177","title":"Remove a service","entity_id":"LA-AUT-EN58","description":"Removes a service with the links it starts and the packages it uses. Refused while anything references it."}
+{"id":"LA-AUT-CMD178","title":"Add a domain service test","entity_id":"LA-AUT-EN68","description":"Adds a domain service test under its domain service, with the test data sets it starts from."}
+{"id":"LA-AUT-CMD179","title":"Change a domain service test","entity_id":"LA-AUT-EN68","description":"Changes a domain service test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD180","title":"Remove a domain service test","entity_id":"LA-AUT-EN68","description":"Removes a domain service test and the links it starts. Refused while anything references it."}
+{"id":"LA-AUT-CMD185","title":"Add a test data set","entity_id":"LA-AUT-EN85","description":"Adds a test data set to the domain whose tests it serves: where it runs, what it starts with, how to prepare and reset it, and the file that builds it."}
+{"id":"LA-AUT-CMD186","title":"Change a test data set","entity_id":"LA-AUT-EN85","description":"Changes a test data set's columns. Its domain never changes."}
+{"id":"LA-AUT-CMD187","title":"Remove a test data set","entity_id":"LA-AUT-EN85","description":"Removes a test data set. Refused while a test starts from it or anything else references it."}
+{"id":"LA-AUT-CMD190","title":"Add a pattern","entity_id":"LA-AUT-EN13","description":"Adds a pattern to its product, with its settings in order."}
+{"id":"LA-AUT-CMD191","title":"Change a pattern","entity_id":"LA-AUT-EN13","description":"Changes a pattern's title, description or notes, or its settings (the whole list, in order). Its product never changes."}
+{"id":"LA-AUT-CMD192","title":"Remove a pattern","entity_id":"LA-AUT-EN13","description":"Removes a pattern whole: its settings, rules and rule tests, and the links they start. Refused while anything outside it references what is in it, such as a follower."}
+{"id":"LA-AUT-CMD193","title":"Add a pattern rule","entity_id":"LA-AUT-EN14","description":"Adds a rule to its pattern, with the setting of the pattern it depends on, if any."}
+{"id":"LA-AUT-CMD194","title":"Change a pattern rule","entity_id":"LA-AUT-EN14","description":"Changes a pattern rule's title, statement, group, setting or notes."}
+{"id":"LA-AUT-CMD195","title":"Remove a pattern rule","entity_id":"LA-AUT-EN14","description":"Removes a pattern rule with its tests and the links they start. Refused while anything references it or them."}
+{"id":"LA-AUT-CMD196","title":"Add a pattern rule test","entity_id":"LA-AUT-EN74","description":"Adds a test of a pattern rule in one domain that follows its pattern, with the test data sets it starts from."}
+{"id":"LA-AUT-CMD197","title":"Change a pattern rule test","entity_id":"LA-AUT-EN74","description":"Changes a pattern rule test's columns, the domain it proves the rule in, or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD198","title":"Remove a pattern rule test","entity_id":"LA-AUT-EN74","description":"Removes a pattern rule test and the links it starts. Refused while anything references it."}
+{"id":"LA-AUT-CMD200","title":"Add a standard","entity_id":"LA-AUT-EN62","description":"Adds a standard to its product, with no rules yet."}
+{"id":"LA-AUT-CMD201","title":"Change a standard","entity_id":"LA-AUT-EN62","description":"Changes a standard's title or description. Its product never changes."}
+{"id":"LA-AUT-CMD202","title":"Remove a standard","entity_id":"LA-AUT-EN62","description":"Removes a standard whole: its rules and rule tests, and the links they start. Refused while anything outside it references what is in it, such as a technical record that meets a rule."}
+{"id":"LA-AUT-CMD203","title":"Add a standard rule","entity_id":"LA-AUT-EN63","description":"Adds a rule to its standard."}
+{"id":"LA-AUT-CMD204","title":"Change a standard rule","entity_id":"LA-AUT-EN63","description":"Changes a standard rule's title, statement or group."}
+{"id":"LA-AUT-CMD205","title":"Remove a standard rule","entity_id":"LA-AUT-EN63","description":"Removes a standard rule with its tests and the links they start. Refused while a technical record meets it or anything else references it or its tests."}
+{"id":"LA-AUT-CMD206","title":"Add a standard rule test","entity_id":"LA-AUT-EN75","description":"Adds a standard rule test under its rule, with the test data sets it starts from."}
+{"id":"LA-AUT-CMD207","title":"Change a standard rule test","entity_id":"LA-AUT-EN75","description":"Changes a standard rule test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD208","title":"Remove a standard rule test","entity_id":"LA-AUT-EN75","description":"Removes a standard rule test and the links it starts. Refused while anything references it."}
 {"id":"LA-CHK-CMD01","title":"Add a check","entity_id":"LA-CHK-EN01","description":"Adds a check row through the command layer: a name, a position, a severity, a summary, an explanation and one SELECT."}
 {"id":"LA-CHK-CMD02","title":"Change a check","entity_id":"LA-CHK-EN01","description":"Changes a product's check row; Lathe's own are read-only."}
 {"id":"LA-CHK-CMD03","title":"Remove a check","entity_id":"LA-CHK-EN01","description":"Removes a product's check row; Lathe's own are read-only."}
