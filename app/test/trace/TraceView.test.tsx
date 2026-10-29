@@ -2,12 +2,15 @@ import '../graph/setup';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { withEngineChains } from '../fixtures/engine';
 import { addRows } from '../fixtures/load';
 import { modelIndex, modelWorkspace } from '../fixtures/model';
 import { TRACE_PAGE } from '../../src/trace/TraceView';
 import type { TraceHost, TraceScene } from '../../src/trace/TraceCanvas';
+import type { ColumnScene, ColumnsHost } from '../../src/trace/TraceColumns';
+import { TRACE_LAYOUT_KEY } from '../../src/trace/layout';
+import { TITLE_FONT } from '../../src/graph/text';
 import { obligationsUnder, untracedUnder } from '../../src/trace/chain';
 import { openApp } from '../helpers';
 
@@ -49,6 +52,9 @@ const lineIds = (scene: TraceScene, link: boolean) => {
 const access = () => traceStage().querySelector<HTMLElement>('.trace-access')!;
 
 describe('the Trace stage', () => {
+  // The tree layout's tests; the columns' are below (LA-V98-R13).
+  beforeEach(() => window.sessionStorage.setItem(TRACE_LAYOUT_KEY, JSON.stringify('tree')));
+
   it('LA-V98-R01-T01 Trace works on every focus: Ctrl+3 or the switch shows it, never disabled, on an obligation, above one, and on a record no chain holds', async () => {
     // On an aggregate: Ctrl+3 switches to the Trace stage, Alt+E to the ERD (off a Mac).
     await openApp('/P-D-A3?stage=erd', served());
@@ -381,6 +387,83 @@ describe('the Trace stage', () => {
       expect(traceStage().querySelector('.trace-flow')).toBeNull();
       expect(table.closest('.trace-scroll')).toHaveAttribute('tabindex', '0');
       expect(within(traceStage()).getByRole('checkbox', { name: 'Gaps only' })).toBeInTheDocument();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+});
+
+describe('the Trace stage as columns', () => {
+  const columnScene = async (whole = false) => (await canvasHost() as ColumnsHost).traceScene!(whole) as ColumnScene;
+  const layoutButton = (name: string) => within(within(traceStage()).getByRole('group', { name: 'Layout' })).getByRole('button', { name });
+
+  it('LA-V98-R13-T05 Columns are the default: the path to the focus as columns of one readable size, a click focuses a box; Tree | Columns and v switch the layout, keeping the focus', async () => {
+    await openApp('/P-D-UC01-R01?stage=trace', served());
+    expect(await canvasHost()).toHaveAttribute('data-layout', 'columns');
+    expect(layoutButton('Columns')).toHaveAttribute('aria-pressed', 'true');
+    const whole = await columnScene(true);
+    expect(whole.columns.map((c) => c.parent)).toEqual(['P', 'P-D', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01']);
+    expect(whole.boxes.filter((b) => b.chosen).map((b) => b.key)).toEqual(['P-D', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01']);
+    expect(whole.boxes.filter((b) => b.focus).map((b) => b.key)).toEqual(['P-D-UC01-R01']);
+    expect(new Set(whole.boxes.map((b) => `${b.rect.width}x${b.rect.height}`)).size).toBe(1);
+    for (const b of whole.boxes) expect(b.textScale * TITLE_FONT * whole.camera.zoom, b.key).toBeGreaterThanOrEqual(11);
+    expect(whole.boxes.find((b) => b.key === 'P-D-UC01')!.count).toBe(2);
+    expect(whole.lines).toEqual([]);
+    // In view: the focus's column and its children's, the last column ending inside the canvas.
+    const now = await columnScene();
+    const focusBox = now.boxes.find((b) => b.focus)!;
+    expect(inView(now, focusBox)).toBe(true);
+    expect(now.boxes.filter((b) => b.column === whole.columns.length - 1).every((b) => b.rect.left + b.rect.width <= now.canvas.left + now.canvas.width)).toBe(true);
+    // The key says what the columns draw: the path and the counts.
+    const key = within(traceStage()).getByRole('region', { name: 'Key' });
+    expect(within(key).getByText('Path')).toBeInTheDocument();
+    expect(within(key).getByText('Count')).toBeInTheDocument();
+    expect(within(key).queryByText('Chain')).toBeNull();
+
+    // A click on a box in a column focuses its record, on the same stage.
+    const sibling = now.boxes.find((b) => b.key === 'P-D-UC01-R02')!;
+    const canvas = (await canvasHost()).querySelector('canvas')!;
+    const at = { clientX: sibling.rect.left + sibling.rect.width / 2, clientY: sibling.rect.top + sibling.rect.height / 2, pointerType: 'mouse', pointerId: 1, button: 0 };
+    fireEvent.pointerDown(canvas, at);
+    fireEvent.pointerUp(canvas, at);
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-R02'));
+    expect(window.location.search).toBe('?stage=trace');
+    await waitFor(async () => expect((await columnScene(true)).boxes.filter((b) => b.chosen).map((b) => b.key)).toContain('P-D-UC01-R02'));
+
+    // Tree: the same focus on the tree, the choice kept for the session; v switches back.
+    fireEvent.click(layoutButton('Tree'));
+    await waitFor(() => expect(traceStage().querySelector('.trace-flow[data-ready]:not([data-layout])')).not.toBeNull());
+    expect(window.location.pathname).toBe('/P-D-UC01-R02');
+    expect((await drawn(true)).boxes.filter((b) => b.focus).map((b) => b.key)).toEqual(['P-D-UC01-R02']);
+    expect(JSON.parse(window.sessionStorage.getItem(TRACE_LAYOUT_KEY)!)).toBe('tree');
+    fireEvent.keyDown(document.body, { key: 'v', code: 'KeyV' });
+    await waitFor(() => expect(traceStage().querySelector('.trace-flow[data-layout="columns"][data-ready]')).not.toBeNull());
+    expect(window.location.pathname).toBe('/P-D-UC01-R02');
+    expect((await columnScene(true)).boxes.filter((b) => b.focus).map((b) => b.key)).toEqual(['P-D-UC01-R02']);
+  });
+
+  it('LA-V98-R13-T06 On a phone the columns are one column at a time, a back row naming the box above, the walk\'s levels', async () => {
+    vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
+    try {
+      await openApp('/P-D-UC01?stage=trace', served());
+      const list = await within(traceStage()).findByRole('region', { name: 'Trace columns' });
+      expect(traceStage().querySelector('.trace-flow')).toBeNull();
+      const index = modelIndex();
+      // The use case's column: its requirements, each with its count; the back row names its capability.
+      expect(within(list).getByRole('heading', { level: 3 })).toHaveTextContent(index.byId.get('P-D-UC01')!.title);
+      expect(list.querySelector('.trace-col-back')).toHaveTextContent(index.byId.get('P-D-CAP01')!.title);
+      const row = within(list).getByRole('link', { name: /P-D-UC01-R01/ });
+      fireEvent.click(row);
+      await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-R01'));
+      // In: the requirement's chain; back: the use case's column again.
+      await waitFor(() => expect(within(traceStage()).getByRole('region', { name: 'Trace columns' })).toHaveTextContent('P-D-UC01-FL01'));
+      const back = traceStage().querySelector<HTMLElement>('.trace-col-back')!;
+      expect(back).toHaveTextContent(index.byId.get('P-D-UC01')!.title);
+      fireEvent.click(back);
+      await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
+      // Tree on a phone is the table.
+      fireEvent.click(layoutButton('Tree'));
+      await matrix();
     } finally {
       vi.unstubAllGlobals();
     }

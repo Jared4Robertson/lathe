@@ -162,7 +162,8 @@ describe('the stage key bar', () => {
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(stage().querySelector('.trace-flow[data-ready]')).not.toBeNull());
     expect(key()).toHaveAttribute('data-floating', 'bottom');
-    expect(entries()).toEqual(expect.arrayContaining(['link', 'focus']));
+    // The Trace's columns, its default layout (LA-V98-R13): the path to the focus and the counts.
+    expect(entries()).toEqual(expect.arrayContaining(['path', 'count', 'focus']));
     // The Gaps only fade only while Gaps only is on.
     expect(entries()).not.toContain('complete');
   });
