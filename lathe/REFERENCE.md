@@ -830,7 +830,7 @@ One rule a use case must follow, whatever the interface: a step of each of the u
 - **Children:** [`use_case_test`](#kind-use_case_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A step of each of its use case's flows fulfills it: one flow per interface the use case happens through, and at least one.
-  - **Built:** A fulfilling step's command or query handler, a UI component of the view it happens in, or the adapter of an integration it exchanges with or a record of a product's own kind under that integration, names a file that exists.
+  - **Built:** Every record that carries out its fulfilling steps names a file that exists, and there is at least one: the handler of each command or query a step invokes, with the predicates and services of what that command or query checks, selects by or calls; each UI component of the view a step happens in; the adapter of each integration a step exchanges with, or a record of a product's own kind under that integration.
   - **Proved:** One of its use case tests.
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -1124,7 +1124,7 @@ One rule a view must follow, such as what it shows while loading or a field's li
 - **Children:** [`view_test`](#kind-view_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its view.
-  - **Built:** A UI component that renders its view names a file that exists.
+  - **Built:** Every UI component that renders its view names a file that exists, and there is at least one.
   - **Proved:** One of its view tests.
 - **ID:** `<view>-R<nn>`, such as `TL-V01-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -1818,7 +1818,7 @@ One rule of a standard. Technical records that follow it link to it with meets; 
 - **Children:** [`standard_rule_test`](#kind-standard_rule_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A technical record meets it.
-  - **Built:** A technical record that meets it names a file that exists.
+  - **Built:** Every technical record that meets it names a file that exists, and there is at least one.
   - **Proved:** One of its standard rule tests.
 - **ID:** `<standard>-R<nn>`, such as `TL-STD-CODE-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -3123,9 +3123,9 @@ Coverage counts an obligation as designed once its implementation is specified: 
 
 **Warning** · Lathe's
 
-An obligation no file of what implements it exists for yet, as coverage counts it.
+An obligation not every file of what implements it exists for yet, as coverage counts it.
 
-Coverage counts an obligation as built once a technical record that implements it names a file that exists: a constraint's value type, an invariant's data model or the table whose unique key names it, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handler or the UI component of the view its step happens in, a view requirement's UI component, an API requirement's endpoint handler, a standard rule's meeting record. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write the file it names.
+Coverage counts an obligation as built once every technical record that implements it names a file that exists, and there is at least one: a constraint's value type, an invariant's data model (any one of its aggregate's) or the table whose unique key names it, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handlers with the predicates and services of what they check or call, or the UI components of the views its steps happen in, a view requirement's UI components, an API requirement's endpoint handler, a standard rule's meeting records. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write each file it names.
 
 <a id="check-not-proved"></a>
 
