@@ -96,6 +96,34 @@ check('query-title-verb', () => {
   });
 });
 
+check('term-used-unlinked', () => {
+  it("LA-STD-MODELING-R12-T01 a meaning that uses another term's title without a builds_on link is a warning", async () => {
+    expect(ofCheck(clean, 'term-used-unlinked')).toEqual([]);
+    const term = (id: string, title: string, meaning: string) => ({ id, title, domain_id: 'EX-LEND', meaning });
+    const data = adding(complete(), {
+      term: [
+        term('EX-LEND-TM02', 'Tool', 'One item lent out.'),
+        term('EX-LEND-TM03', 'Overdue loan', 'A loan past its due date.'),
+        term('EX-LEND-TM04', 'Late fee', 'Money owed for an Overdue loan, counted in `loan` days, kept in a toolbox.'),
+        term('EX-LEND-TM05', 'Active loan', 'A loan not yet returned.'),
+        term('EX-LEND-TM06', 'Borrower', 'Someone holding tools.'),
+      ],
+      builds_on: [{ source_id: 'EX-LEND-TM05', target_id: 'EX-LEND-TM01' }],
+    });
+    const found = ofCheck(await loadData(data), 'term-used-unlinked');
+    // Loan's own meaning (One tool lent…) uses Tool; Overdue loan uses Loan; Late fee uses Overdue loan, but not Loan
+    // inside it, nor `loan` in code, nor tool inside toolbox; Active loan links Loan; Borrower uses Tools, plural.
+    expect(found.map((p) => `${p.record} ${/uses "(.*?)"/.exec(p.message)?.[1]}`)).toEqual([
+      'EX-LEND-TM01 Tool',
+      'EX-LEND-TM03 Loan',
+      'EX-LEND-TM04 Overdue loan',
+      'EX-LEND-TM06 Tool',
+    ]);
+    expect(found.every((p) => p.severity === 'warning')).toBe(true);
+    expect(found[1].message).toBe('Term EX-LEND-TM03 (Overdue loan) uses "Loan" in its meaning but does not build on EX-LEND-TM01: link it with builds_on, or say it in plain words.');
+  });
+});
+
 check('flow-title-off-pattern', () => {
   it("LA-STD-MODELING-R06-T02 a flow not titled as its use case's title, in or through, and its interface's title is a warning", async () => {
     expect(ofCheck(clean, 'flow-title-off-pattern')).toEqual([]);

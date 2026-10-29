@@ -25,7 +25,7 @@ export const GET_DOMAIN: QueryDefinition<{ id: string }, DomainPage, DomainReade
   id: 'LA-AUT-QRY130',
   slice: DOMAIN_SLICE,
   name: 'get-domain',
-  description: 'Reads a domain whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the domain\'s row, its capabilities in order with the outcomes they serve and their use cases, its terms, its domain services with their services and tests, and its repositories with the aggregates they persist.',
+  description: 'Reads a domain whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the domain\'s row, its capabilities in order with the outcomes they serve and their use cases, its terms bottom-up with the terms they build on, its domain services with their services and tests, and its repositories with the aggregates they persist.',
   method: 'GET',
   route: '/api/domain/get-domain',
   input: { id: id('The domain, or a capability, term, domain service, service, test or repository in it.', 'required') },
@@ -121,7 +121,7 @@ function domainText(page: DomainPage): string {
   const technical = (t: { meets: string[]; packages: string[] }) => [...t.meets.map((x) => `meets ${x}`), ...t.packages.map((x) => `uses ${x}`)];
   const listed = (links: string[]) => (links.length ? ` [${links.join('; ')}]` : '');
   for (const c of page.capabilities) lines.push(`Capability ${c.capability.id}: ${c.capability.title} (position ${c.capability.position})${listed(c.serves.map((x) => `serves ${x}`))}`);
-  for (const t of page.terms) lines.push(`Term ${t.id}: ${t.title}`);
+  for (const t of page.terms) lines.push(`Term ${t.term.id}: ${t.term.title}${listed(t.buildsOn.map((x) => `builds on ${x}`))}`);
   for (const s of page.domainServices) {
     lines.push(`Domain service ${s.domainService.id}: ${s.domainService.title}`);
     if (s.service) lines.push(`  service ${s.service.service.id}: ${s.service.service.title}${listed(technical(s.service))}`);

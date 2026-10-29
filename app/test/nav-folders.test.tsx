@@ -168,6 +168,18 @@ describe('folders by stage', () => {
     return w;
   };
 
+  it('LA-STD-MODELING-R12-T03 A domain\'s terms are listed bottom-up: each after the terms it builds on, otherwise by title', () => {
+    const w = workspace();
+    addRows(w, 'term',
+      { id: 'DM-SHOP-TM02', title: 'Apple', domain_id: 'DM-SHOP', meaning: 'Built on Zebra.' },
+      { id: 'DM-SHOP-TM03', title: 'Zebra', domain_id: 'DM-SHOP', meaning: 'Plain.' },
+      { id: 'DM-SHOP-TM04', title: 'Mango', domain_id: 'DM-SHOP', meaning: 'Plain.' });
+    addRows(w, 'builds_on', { source_id: 'DM-SHOP-TM02', target_id: 'DM-SHOP-TM03' });
+    const index = indexOf(w);
+    const terms = domainFolders(index, 'DM-SHOP').stages.flatMap((s) => s.folders).find((f) => f.kind === 'term')!.records;
+    expect(terms.map((r) => r.title)).toEqual(['Basket', 'Mango', 'Zebra', 'Apple']);
+  });
+
   it("LA-EXP-DS03-T03 A record is listed in its stage's folder when its parent is of another stage, and folds under its parent in the same stage", () => {
     const w = twoUseCases();
     const index = indexOf(w);

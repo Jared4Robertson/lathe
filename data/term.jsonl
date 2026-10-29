@@ -1,69 +1,72 @@
-{"id":"LA-AUT-TM01","title":"Product","domain_id":"LA-AUT","meaning":"The root of a set of specifications, its own space: its records link only to each other.","group_name":"Use cases and design"}
-{"id":"LA-AUT-TM04","title":"Stage","domain_id":"LA-AUT","meaning":"One of the five places a kind is read in, in order: domain model, use cases, interaction design, technical specification, test plan.","group_name":"Records"}
+{"id":"LA-AUT-TM01","title":"Product","domain_id":"LA-AUT","meaning":"A set of specs about one piece of software, kept apart from every other: nothing in it points outside it.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM04","title":"Stage","domain_id":"LA-AUT","meaning":"One of the six steps of work, in order, that every kind belongs to, from discovery to the test plan.","group_name":"Records"}
 {"id":"LA-AUT-TM10","title":"Designed, built, proved","domain_id":"LA-AUT","meaning":"An obligation's three states: its implementation specified, every technical record of it naming a file that exists, its test written at a level its kind allows.","group_name":"Proof"}
 {"id":"LA-AUT-TM11","title":"Technical record","domain_id":"LA-AUT","meaning":"The one record of a technical kind that implements a design record, naming its file.","group_name":"Proof"}
 {"id":"LA-AUT-TM13","title":"Product kind","domain_id":"LA-AUT","meaning":"A kind a product declares for itself, in any stage, under any kind.","group_name":"Records"}
-{"id":"LA-AUT-TM14","title":"Command layer","domain_id":"LA-AUT","meaning":"The commands every writer uses to change data (add, set, move, link, unlink, remove, apply), each one transaction that the store accepts or refuses whole.","group_name":"Writing"}
-{"id":"LA-AUT-TM16","title":"Reference","domain_id":"LA-AUT","meaning":"Every kind, table, relation, stage and check of a product, generated from its schema and check rows.","group_name":"Writing"}
+{"id":"LA-AUT-TM14","title":"Command layer","domain_id":"LA-AUT","meaning":"The commands every writer uses to change data, each one transaction that the store accepts or refuses whole: the CLI, the MCP tools and the app send only these.","group_name":"Writing"}
+{"id":"LA-AUT-TM16","title":"Reference","domain_id":"LA-AUT","meaning":"Every kind, relation, stage and check of a product, with the columns of each, generated from its schema and check rows.","group_name":"Writing"}
 {"id":"LA-AUT-TM17","title":"Refusal","domain_id":"LA-AUT","meaning":"A write the store does not accept, with every reason and no data changed.","group_name":"Writing"}
 {"id":"LA-AUT-TM18","title":"Recorded exception","domain_id":"LA-AUT","meaning":"Another aggregate of its domain that a command also changes in its transaction, named with the reason.","group_name":"Writing"}
-{"id":"LA-AUT-TM19","title":"Pattern","domain_id":"LA-AUT","meaning":"Behavior several use cases share, written once with its rules and settings; each follower answers its settings.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM19","title":"Pattern","domain_id":"LA-AUT","meaning":"Behavior several use cases share, written once with its rules and settings; each use case or domain that follows it answers its settings.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM20","title":"Standard","domain_id":"LA-AUT","meaning":"Engineering rules the product's code follows, which technical records meet and standard rule tests prove.","group_name":"Build and test"}
-{"id":"LA-AUT-TM21","title":"Domain","domain_id":"LA-AUT","meaning":"A part of the product with its own model and language, for one business capability: its capabilities and use cases, glossary, domain services and repositories.","group_name":"Domain model"}
-{"id":"LA-AUT-TM22","title":"Aggregate","domain_id":"LA-AUT","meaning":"A cluster of entities changed together as one unit by one command at a time, with the invariants its own rule code enforces.","group_name":"Domain model"}
-{"id":"LA-AUT-TM23","title":"Domain event","domain_id":"LA-AUT","meaning":"Something that happened to an aggregate, in the past tense, with the fields it carries and the event type that delivers it.","group_name":"Domain model"}
-{"id":"LA-AUT-TM24","title":"Command","domain_id":"LA-AUT","meaning":"One intent on one aggregate: its handler loads the aggregate through its repository, holds it to its rules and saves it, or refuses with every reason.","group_name":"Domain model"}
-{"id":"LA-AUT-TM25","title":"Value object","domain_id":"LA-AUT","meaning":"A value with no identity, such as an email address, defined by its fields and checked by its constraints.","group_name":"Domain model"}
-{"id":"LA-AUT-TM26","title":"Specification","domain_id":"LA-AUT","meaning":"A named yes-or-no rule over aggregates of one domain, which commands check and queries select by.","group_name":"Domain model"}
-{"id":"LA-AUT-TM27","title":"Read model","domain_id":"LA-AUT","meaning":"A shape of data built for reading, from the aggregates it reads or the events it hears: its projection fills its table, and its queries read that table only through its reader.","group_name":"Domain model"}
-{"id":"LA-AUT-TM28","title":"Use case","domain_id":"LA-AUT","meaning":"One goal of an actor, with its requirements, its flows through the interfaces it happens in, and its tests.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM21","title":"Domain","domain_id":"LA-AUT","meaning":"An area of the business with its own model and language: a product is split into domains, each owning its records end to end.","group_name":"Domain model"}
+{"id":"LA-AUT-TM22","title":"Aggregate","domain_id":"LA-AUT","meaning":"A cluster of entities changed together as one unit, by one change at a time; one of them is its root, which it is named for, and the others are its children, reached only through the root.","group_name":"Domain model"}
+{"id":"LA-AUT-TM23","title":"Domain event","domain_id":"LA-AUT","meaning":"A fact that something happened to an aggregate.","group_name":"Domain model"}
+{"id":"LA-AUT-TM24","title":"Command","domain_id":"LA-AUT","meaning":"A request to change one aggregate, aimed at the entity it changes and carrying the values the change needs; it is accepted whole or refused with every reason, and changes nothing else.","group_name":"Domain model"}
+{"id":"LA-AUT-TM25","title":"Value object","domain_id":"LA-AUT","meaning":"A value with no identity, such as an amount of money or an email, defined by its fields and checked by its constraints.","group_name":"Domain model"}
+{"id":"LA-AUT-TM26","title":"Specification","domain_id":"LA-AUT","meaning":"A named yes-or-no rule over aggregates of one domain, which commands test before they act and queries select by.","group_name":"Domain model"}
+{"id":"LA-AUT-TM27","title":"Read model","domain_id":"LA-AUT","meaning":"Data kept in the shape someone needs to read it, copied from aggregates or worked out from domain events, and never changed directly.","group_name":"Domain model"}
+{"id":"LA-AUT-TM28","title":"Use case","domain_id":"LA-AUT","meaning":"One goal of an actor, with the requirements it must keep and the tests that show it is met.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM29","title":"View","domain_id":"LA-AUT","meaning":"A page or panel a flow's steps happen in, with its route and its view requirements.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM30","title":"Endpoint","domain_id":"LA-AUT","meaning":"The route that exposes one command or query, with its API requirements and handler.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM31","title":"Integration","domain_id":"LA-AUT","meaning":"An outside system the product exchanges with, through its adapter.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM32","title":"UI component","domain_id":"LA-AUT","meaning":"The code that draws the views it renders.","group_name":"Use cases and design"}
-{"id":"LA-AUT-TM33","title":"Business outcome","domain_id":"LA-AUT","meaning":"A measurable change the product exists to bring about, with its measure and target, which capabilities serve and tests measure.","group_name":"Use cases and design"}
-{"id":"LA-AUT-TM34","title":"Test data set","domain_id":"LA-AUT","meaning":"The starting records, environment and accounts some tests need, built with its aggregate's own commands.","group_name":"Build and test"}
+{"id":"LA-AUT-TM33","title":"Business outcome","domain_id":"LA-AUT","meaning":"A measurable change the product exists to bring about, with its measure and target, which tests measure.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM34","title":"Test data set","domain_id":"LA-AUT","meaning":"The starting records, environment and accounts some tests need, made with its aggregate's own commands.","group_name":"Build and test"}
 {"id":"LA-AUT-TM35","title":"Table","domain_id":"LA-AUT","meaning":"Where an entity's or read model's rows, or a domain's links, are stored, with its storage and keys.","group_name":"Build and test"}
 {"id":"LA-AUT-TM36","title":"Extension record","domain_id":"LA-AUT","meaning":"A record of a kind a product declares for itself, held to its kind's declaration.","group_name":"Build and test"}
 {"id":"LA-AUT-TM37","title":"Entry point","domain_id":"LA-AUT","meaning":"A file that starts the product or one of its processes, named as in code.","group_name":"Build and test"}
-{"id":"LA-AUT-TM38","title":"Tooling","domain_id":"LA-AUT","meaning":"A script or configuration that builds, checks or tests the product, named as in code.","group_name":"Build and test"}
-{"id":"LA-AUT-TM39","title":"Entity","domain_id":"LA-AUT","meaning":"A record the domain keeps, with an identity: its aggregate's root, which the aggregate is named for, or one of its children, reached only through the root. Its fields are typed by a basic type, a value object, or another aggregate by ID; its commands sit under it.","group_name":"Domain model"}
-{"id":"LA-AUT-TM40","title":"Invariant","domain_id":"LA-AUT","meaning":"A rule an aggregate always keeps, enforced by its own rule code before every save and proved by its test.","group_name":"Domain model"}
-{"id":"LA-AUT-TM41","title":"Repository","domain_id":"LA-AUT","meaning":"The one way an aggregate is loaded and saved whole, one per aggregate; a command handler reaches its aggregate only through it.","group_name":"Domain model"}
+{"id":"LA-AUT-TM38","title":"Tooling","domain_id":"LA-AUT","meaning":"A script or configuration that builds, lints or tests the product, named as in code.","group_name":"Build and test"}
+{"id":"LA-AUT-TM39","title":"Entity","domain_id":"LA-AUT","meaning":"A thing the domain keeps track of, with an identity of its own; its fields are typed by a basic type, a value object or the ID of another cluster's root.","group_name":"Domain model"}
+{"id":"LA-AUT-TM40","title":"Invariant","domain_id":"LA-AUT","meaning":"A rule an aggregate always keeps, enforced by its own rule code before every save and shown to hold by its test.","group_name":"Domain model"}
+{"id":"LA-AUT-TM41","title":"Repository","domain_id":"LA-AUT","meaning":"The one way an aggregate is loaded and saved whole, one per aggregate.","group_name":"Domain model"}
 {"id":"LA-AUT-TM42","title":"Capability","domain_id":"LA-AUT","meaning":"A lasting ability of the business that groups a domain's use cases, in order, and serves business outcomes.","group_name":"Domain model"}
 {"id":"LA-AUT-TM43","title":"Policy","domain_id":"LA-AUT","meaning":"A reaction under the command it runs, which hears one event: when that happens, run this command.","group_name":"Domain model"}
-{"id":"LA-AUT-TM44","title":"Query","domain_id":"LA-AUT","meaning":"A question asked of one read model, with the handler that answers it.","group_name":"Domain model"}
-{"id":"LA-AUT-TM45","title":"UC requirement","domain_id":"LA-AUT","meaning":"One rule a use case must keep, stated with MUST, SHOULD or MAY, fulfilled by its flows' steps and proved by its tests.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM44","title":"Query","domain_id":"LA-AUT","meaning":"A question asked of one read model; it changes nothing.","group_name":"Domain model"}
+{"id":"LA-AUT-TM45","title":"UC requirement","domain_id":"LA-AUT","meaning":"One rule a use case must keep, stated with MUST, SHOULD or MAY, fulfilled by its flows' steps and shown to hold by its tests.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM46","title":"Flow","domain_id":"LA-AUT","meaning":"How a use case happens through one interface, as ordered steps on their paths, each invoking at most one command or query.","group_name":"Use cases and design"}
-{"id":"LA-AUT-TM47","title":"Interface","domain_id":"LA-AUT","meaning":"A way the product is used, such as the web app, the CLI or the MCP tools, that flows go through.","group_name":"Use cases and design"}
-{"id":"LA-AUT-TM48","title":"Role","domain_id":"LA-AUT","meaning":"Who acts in the product's use cases, such as the Owner, the Reader or an Agent.","group_name":"Use cases and design"}
-{"id":"LA-AUT-TM49","title":"Reader","domain_id":"LA-AUT","meaning":"The one way a query handler reaches its read model's storage, one per read model: an interface the handlers depend on, given to them by the query runner, reading only its read model's table, which its projection alone fills.","group_name":"Build and test"}
-{"id":"LA-CHK-TM01","title":"Check","domain_id":"LA-CHK","meaning":"One rule the engine applies on every load: a row of the `check` table whose query returns a row for each problem."}
+{"id":"LA-AUT-TM47","title":"Interface","domain_id":"LA-AUT","meaning":"A way the product is used, such as the web app, the CLI or the MCP tools.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM48","title":"Role","domain_id":"LA-AUT","meaning":"Who acts in the product's use cases, such as the Owner or an Agent.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM49","title":"Reader","domain_id":"LA-AUT","meaning":"How a query reaches its read model's stored data: the one code that knows where it is stored.","group_name":"Build and test"}
+{"id":"LA-AUT-TM50","title":"Projection","domain_id":"LA-AUT","meaning":"The code that builds a read model and keeps it current as its sources change; the only code that fills it.","group_name":"Build and test"}
+{"id":"LA-AUT-TM51","title":"Query handler","domain_id":"LA-AUT","meaning":"The code that answers a query through its reader.","group_name":"Build and test"}
+{"id":"LA-AUT-TM52","title":"Command handler","domain_id":"LA-AUT","meaning":"The code that carries out a command: it loads its aggregate through the aggregate's repository, holds it to the aggregate's rules and to the specifications the command names, saves it, and raises the domain events something hears.","group_name":"Build and test"}
+{"id":"LA-CHK-TM01","title":"Check","domain_id":"LA-CHK","meaning":"One rule the engine applies on every load: a row of `check.jsonl` whose SELECT returns a row for each thing it finds wrong or still to do."}
 {"id":"LA-CHK-TM02","title":"Problem","domain_id":"LA-CHK","meaning":"One thing a check found wrong or still to do in the loaded data. Problems are the result of a run, never stored."}
 {"id":"LA-CHK-TM03","title":"Error","domain_id":"LA-CHK","meaning":"A problem that means the data is broken. `lathe check` exits 1 on any error."}
 {"id":"LA-CHK-TM04","title":"Warning","domain_id":"LA-CHK","meaning":"A problem that means work is still to do. Warnings never fail `lathe check`."}
 {"id":"LA-CHK-TM05","title":"Lathe's checks","domain_id":"LA-CHK","meaning":"The check rows that ship with Lathe, in `lathe/data/check.jsonl`, read-only to every product."}
 {"id":"LA-CHK-TM06","title":"Product check","domain_id":"LA-CHK","meaning":"A check row a product adds for its own house rule, in its own `data/check.jsonl`."}
-{"id":"LA-CHK-TM07","title":"Refused row","domain_id":"LA-CHK","meaning":"A row the store will not load or write, reported once as a `data-refused` error naming the file, the line and the rule."}
+{"id":"LA-CHK-TM07","title":"Refused row","domain_id":"LA-CHK","meaning":"A row the store will not load or save, reported once as a `data-refused` error naming the file, the line and the rule."}
 {"id":"LA-CHK-TM08","title":"Children limit","domain_id":"LA-CHK","meaning":"The most children of one kind a record of a product should hold: its `max_children` setting, 15 by default."}
 {"id":"LA-CHK-TM09","title":"Lone child","domain_id":"LA-CHK","meaning":"The one record a capability or a group holds, which makes the level group nothing."}
 {"id":"LA-CHK-TM10","title":"Entities limit","domain_id":"LA-CHK","meaning":"The most entities an aggregate of a product should hold: its `max_entities_per_aggregate` setting, 7 by default."}
-{"id":"LA-EXP-TM01","title":"Page","domain_id":"LA-EXP","meaning":"One place in the app at its own address, showing one focus."}
-{"id":"LA-EXP-TM02","title":"Address","domain_id":"LA-EXP","meaning":"A page's path and its `view` query parameter."}
-{"id":"LA-EXP-TM03","title":"Focus","domain_id":"LA-EXP","meaning":"The product, domain, record or group a page is about."}
+{"id":"LA-EXP-TM01","title":"Page","domain_id":"LA-EXP","meaning":"One screen of the app at its own address, showing one focus."}
+{"id":"LA-EXP-TM02","title":"Address","domain_id":"LA-EXP","meaning":"A path in the app and its `view` parameter, such as `/TL-LEND?view=graph`."}
+{"id":"LA-EXP-TM03","title":"Focus","domain_id":"LA-EXP","meaning":"The product, domain, record or group an address shows."}
 {"id":"LA-EXP-TM04","title":"Page stage","domain_id":"LA-EXP","meaning":"The one way a focus page draws its focus, full window behind the floating panels: Graph, ERD or Trace."}
-{"id":"LA-EXP-TM05","title":"Space","domain_id":"LA-EXP","meaning":"One product as a place to work in, chosen from the rail."}
+{"id":"LA-EXP-TM05","title":"Space","domain_id":"LA-EXP","meaning":"One product as somewhere to work, chosen from the column of icons at the far left of the nav."}
 {"id":"LA-EXP-TM06","title":"Rail","domain_id":"LA-EXP","meaning":"The column of space icons at the far left of the nav."}
 {"id":"LA-EXP-TM07","title":"Stage folder","domain_id":"LA-EXP","meaning":"One of a domain's five stages in the nav, listing its records by kind."}
 {"id":"LA-EXP-TM08","title":"Kind group","domain_id":"LA-EXP","meaning":"The records of one kind in a stage or under a parent, shown together when there are several kinds to tell apart."}
 {"id":"LA-EXP-TM09","title":"Map","domain_id":"LA-EXP","meaning":"A product's tree laid out once as boxes, which focusing never moves."}
 {"id":"LA-EXP-TM10","title":"Depth","domain_id":"LA-EXP","meaning":"How many levels below the focus the camera frames."}
-{"id":"LA-EXP-TM12","title":"Tab","domain_id":"LA-EXP","meaning":"One place in the desktop app's row of tabs, as a browser tab: its own focus, stage, view and Back and Forward. On the web the browser's own tabs are the tabs."}
-{"id":"LA-EXP-TM15","title":"ERD","domain_id":"LA-EXP","meaning":"A domain's or an aggregate's model drawn as boxes and lines on the ERD stage."}
-{"id":"LA-EXP-TM16","title":"Place","domain_id":"LA-EXP","meaning":"Where the Reader explores: the focus, stage, camera, depth, kind filters, the wiki card's open and expanded state and scroll, and its own Back and Forward history. One per browser tab on the web, one per tab in the desktop app."}
-{"id":"LA-PLT-TM01","title":"Workbench","domain_id":"LA-PLT","meaning":"The wide-screen layout: panels a gap apart on the shell, every gap a resize handle."}
-{"id":"LA-PLT-TM02","title":"Panel","domain_id":"LA-PLT","meaning":"A part of the app that floats over the stage, which a person shows, hides and resizes: the navigation, the tab panel or the wiki card."}
-{"id":"LA-PLT-TM04","title":"Keymap","domain_id":"LA-PLT","meaning":"The one table of keyboard commands and their bindings, which every key, the palette, the sheet and every hint read."}
+{"id":"LA-EXP-TM12","title":"Tab","domain_id":"LA-EXP","meaning":"One of the desktop app's row of tabs, like a browser tab: its own focus, its own way of drawing it, and its own Back and Forward history. On the web the browser's own tabs are the tabs."}
+{"id":"LA-EXP-TM15","title":"ERD","domain_id":"LA-EXP","meaning":"A domain's or an aggregate's model drawn as boxes and lines, one of the ways a page draws its focus."}
+{"id":"LA-EXP-TM16","title":"Place","domain_id":"LA-EXP","meaning":"Where a person exploring is: the focus, page stage, camera, depth, kind filters, the wiki card's open and expanded state and scroll, and its own Back and Forward history. One per browser tab on the web, one per tab in the desktop app."}
+{"id":"LA-PLT-TM01","title":"Workbench","domain_id":"LA-PLT","meaning":"The wide-screen layout: panels set apart on the shell, the room between them a resize handle."}
+{"id":"LA-PLT-TM02","title":"Panel","domain_id":"LA-PLT","meaning":"A box that floats over a page's drawing, which a person shows, hides and resizes: the navigation, the tab panel or the wiki card."}
+{"id":"LA-PLT-TM04","title":"Keymap","domain_id":"LA-PLT","meaning":"The one list of keyboard shortcuts and what each does, which every key, the palette, the sheet and every hint read."}
 {"id":"LA-PLT-TM05","title":"Theme","domain_id":"LA-PLT","meaning":"A named set of token values with a light set and a dark set."}
 {"id":"LA-PLT-TM06","title":"Color mode","domain_id":"LA-PLT","meaning":"System, Light or Dark: which of every theme's two sets shows."}
 {"id":"LA-PLT-TM07","title":"Product folder","domain_id":"LA-PLT","meaning":"A folder with a `lathe.config.json` or a `data/` folder, which Lathe opens."}
@@ -71,14 +74,14 @@
 {"id":"LA-PLT-TM09","title":"App server","domain_id":"LA-PLT","meaning":"What a window or `lathe serve` serves Lathe from."}
 {"id":"LA-PLT-TM11","title":"Write","domain_id":"LA-PLT","meaning":"One or more commands to the data, all taking effect or none."}
 {"id":"LA-PLT-TM12","title":"Refusal reason","domain_id":"LA-PLT","meaning":"One reason the store refused a write or a load: the rule broken and where."}
-{"id":"LA-PLT-TM13","title":"Record","domain_id":"LA-PLT","meaning":"One row of a kind's table, kept as one line of its data file: an ID unique across every kind, a title, at most one parent (none for the product and the kinds with no owner), typed columns, its part rows, and links as rows of each relation's table.","group_name":"Data files"}
-{"id":"LA-PLT-TM14","title":"Kind","domain_id":"LA-PLT","meaning":"A sort of record, with its own table, stage, parents and ID pattern. Lathe has fifty; a product may declare more.","group_name":"Data files"}
+{"id":"LA-PLT-TM13","title":"Record","domain_id":"LA-PLT","meaning":"One thing of a kind in a product's specs, kept as one row: an ID unique across every kind, a title, typed columns, and at most one other record it sits under.","group_name":"Data files"}
+{"id":"LA-PLT-TM14","title":"Kind","domain_id":"LA-PLT","meaning":"A sort of thing a product's specs describe, with its own columns and the shape of its IDs. Lathe has fifty; a product may declare more.","group_name":"Data files"}
 {"id":"LA-PLT-TM15","title":"Parent","domain_id":"LA-PLT","meaning":"The one record a record sits under, named by one of its kind's parent columns.","group_name":"Data files"}
 {"id":"LA-PLT-TM16","title":"Part","domain_id":"LA-PLT","meaning":"A row a record owns that is no record itself, such as an entity's fields or a table's keys, removed with it.","group_name":"Data files"}
-{"id":"LA-PLT-TM17","title":"Link","domain_id":"LA-PLT","meaning":"A row of a relation's table joining two records of one product.","group_name":"Data files"}
-{"id":"LA-PLT-TM18","title":"Relation","domain_id":"LA-PLT","meaning":"A sort of link, with the pairs of kinds it may join and its words read both ways.","group_name":"Data files"}
-{"id":"LA-PLT-TM19","title":"Data file","domain_id":"LA-PLT","meaning":"`data/<table>.jsonl`: one table's rows, one JSON object per line, sorted by key. The source of truth, reviewed in git.","group_name":"Data files"}
-{"id":"LA-TRC-TM01","title":"Obligation","domain_id":"LA-TRC","meaning":"A record that must be designed, built and proved: a constraint, invariant, specification, policy, domain service, UC requirement, view requirement, API requirement, pattern rule or standard rule, or a product's own obligation kind."}
+{"id":"LA-PLT-TM17","title":"Link","domain_id":"LA-PLT","meaning":"One connection of a relation, joining two records of one product.","group_name":"Data files"}
+{"id":"LA-PLT-TM18","title":"Relation","domain_id":"LA-PLT","meaning":"A sort of connection between two records, with the pairs of kinds it may join and its words read both ways.","group_name":"Data files"}
+{"id":"LA-PLT-TM19","title":"Data file","domain_id":"LA-PLT","meaning":"`data/<table>.jsonl`: the rows of one kind, one of its parts or one relation's links, one JSON object per line, sorted by key. The source of truth, reviewed in git.","group_name":"Data files"}
+{"id":"LA-TRC-TM01","title":"Obligation","domain_id":"LA-TRC","meaning":"A rule a product must design, build and prove: a constraint, invariant, specification, policy, domain service, UC requirement, view requirement, API requirement, pattern rule or standard rule, or a product's own obligation kind."}
 {"id":"LA-TRC-TM02","title":"Designed","domain_id":"LA-TRC","meaning":"An obligation whose design is specified: a flow step fulfills the UC requirement, or a technical record implements the design record."}
 {"id":"LA-TRC-TM03","title":"Built","domain_id":"LA-TRC","meaning":"A designed obligation every technical record implementing which names a file that exists."}
 {"id":"LA-TRC-TM04","title":"Proved","domain_id":"LA-TRC","meaning":"An obligation with a test, automated or manual, at a level its kind allows."}

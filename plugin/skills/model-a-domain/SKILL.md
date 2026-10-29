@@ -88,7 +88,7 @@ The tools of this stage, by aggregate:
 | `read_model` | the domain | `<P>-<D>-RM<nn>` | A view of the domain's data shaped for reading; `description`: what it shows and from what, in a sentence or two. `fields`: its fields, in order. Link: `reads` the aggregates it reads. |
 | `query` | a read model | `<P>-<D>-QRY<nn>` | A question asked of that read model; it changes nothing. `description`: what it returns, in what order, in a sentence or two. Links: `selects_by` specifications, `calls` domain services. |
 | `domain_service` | the domain | `<P>-<D>-DS<nn>` | `statement`: domain logic that belongs to no single entity and is not a yes-or-no check, such as a due date or a late fee. |
-| `term` | the domain | `<P>-<D>-TM<nn>` | The word as `title`, and `meaning`: what it means in this domain. |
+| `term` | the domain | `<P>-<D>-TM<nn>` | The word as `title`, `meaning`: what it means in this domain, and `builds_on`: the terms its meaning uses. |
 
 Every `statement` is one rule in one sentence or two, with MUST / MUST NOT where it is a rule.
 
@@ -151,6 +151,7 @@ Sort each rule by what it does:
 
 - A domain service holds logic that belongs to no single entity and is not a yes-or-no check, such as counting days in the library's time zone. Commands and queries of its domain `calls` it. It uses no storage and no outside system: its inputs are passed in.
 - Each term of the domain's language is a `term` with its `meaning` in this domain. Use the terms in titles, statements and code alike.
+- Definitions build up, never in a circle (LA-STD-MODELING-R12): define a term only with plain words and terms below it, and link each term its meaning uses with `builds_on`. Start from the smallest ideas; when two terms would name each other, say the lower one in plain words. The store refuses a loop (`term-builds-on-itself`), and `term-used-unlinked` warns of a meaning that uses a term's title without the link.
 
 ## Example: the Tool Library's Lending domain
 
@@ -220,7 +221,7 @@ read_model_add_query { "id": "TL-LEND-QRY01", "title": "List the catalog", "read
        "description": "Every tool in the catalog, in ID order, with its status." }
 domain_add_domain_service { "id": "TL-LEND-DS01", "title": "Library calendar", "domain_id": "TL-LEND",
        "statement": "Counts days in the library's time zone: the date of a moment there, and the date a number of calendar days after another." }
-domain_add_term { "id": "TL-LEND-TM06", "title": "Active loan", "domain_id": "TL-LEND", "meaning": "A loan that has not been returned." }
+domain_add_term { "id": "TL-LEND-TM06", "title": "Active loan", "domain_id": "TL-LEND", "meaning": "A loan that has not been returned.", "builds_on": ["TL-LEND-TM05"] }
 ```
 
 In a shell the same commands are `lathe command add-command --id TL-LEND-CMD06 --title "Return a tool" --entity_id TL-LEND-EN05 --raises TL-LEND-EV06 ...` (a list's flag once per item), or `lathe command add-command --json -` with the object above piped in.
