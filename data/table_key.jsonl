@@ -207,6 +207,7 @@
 {"table_id":"LA-AUT-TB86","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB87","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-AUT-TB88","position":1,"type":"primary","columns":["source_id","target_id"]}
+{"table_id":"LA-AUT-TB89","position":1,"type":"primary","columns":["source_id","target_id"]}
 {"table_id":"LA-CHK-EN01-TB","position":1,"type":"primary","columns":["name"]}
 {"table_id":"LA-CHK-EN03-TB","position":1,"type":"primary","columns":["product_id"]}
 {"table_id":"LA-TRC-EN05-TB","position":1,"type":"primary","columns":["source_id","target_id"]}
