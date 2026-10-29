@@ -1,10 +1,11 @@
 // The Domain aggregate's read model (LA-AUT-RM24), shaped for its readers: the Domain page reads a domain whole (its
-// capabilities in order, each with the outcomes it serves and its use cases; its terms; its domain services, each with
-// its service and tests; its repositories, each with the aggregate it persists) with the record the page is about, a
-// product's list reads each domain's ID and title, and the editor's next ID reads the IDs in use. The projection
-// (domainTableFrom) is the only code that reads the source rows and the only code that writes the read model's table;
-// the query handlers read that table only through the reader (reader.ts). Nothing here is the aggregate's own
-// instance type.
+// capabilities in order, each with the outcomes it serves and its use cases; its terms bottom-up, each with the terms
+// it builds on; its domain services, each with its service and tests; its repositories, each with the aggregate it
+// persists) with the record the page is about, a product's list reads each domain's ID and title, and the editor's
+// next ID reads the IDs in use. The projection (domainTableFrom) is the only code that reads the source rows and the
+// only code that writes the read model's table; the query handlers read that table only through the reader
+// (reader.ts). Nothing here is the aggregate's own instance type. termsBottomUp is the one order every glossary list
+// shows terms in, the app's included.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, RepositoryShareRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
@@ -46,13 +47,19 @@ export interface RepositoryOnPage {
   packages: string[];
 }
 
+/** A term as the page shows it: its row and the terms its meaning builds on, by ID. */
+export interface TermOnPage {
+  term: TermRow;
+  buildsOn: string[];
+}
+
 /** A domain whole, as its page shows it. */
 export interface DomainTree {
   domain: DomainRow;
   /** Its capabilities, by position, then ID. */
   capabilities: CapabilityOnPage[];
-  /** Its terms, by ID. */
-  terms: TermRow[];
+  /** Its terms, bottom-up: each after every term it builds on (termsBottomUp). */
+  terms: TermOnPage[];
   /** Its domain services, by ID. */
   domainServices: DomainServiceOnPage[];
   /** Its repositories, by ID. */
@@ -97,9 +104,43 @@ function targets(view: ReadView, table: string, source = 'source_id', target = '
   return (id) => (bySource.get(id) ?? []).map((l) => String(l[target])).sort();
 }
 
+/**
+ * Terms bottom-up, as every glossary lists them: each after everything it builds on, through any chain, and otherwise
+ * by title (then ID). `buildsOn` gives the targets of a term's builds_on links, of any domain; a link to a term not
+ * listed still orders through that term's own links. A loop (which the rules refuse) is broken at its lowest title.
+ */
+export function termsBottomUp<T extends { id: string; title: string }>(terms: readonly T[], buildsOn: (id: string) => readonly string[]): T[] {
+  const byTitle = (a: T, b: T) => a.title.localeCompare(b.title, 'en') || byId(a, b);
+  // The listed terms each one builds on, through any chain of links (listed or not).
+  const listed = new Set(terms.map((t) => t.id));
+  const below = (id: string): Set<string> => {
+    const found = new Set<string>();
+    const seen = new Set<string>([id]);
+    const walk = (from: string) => {
+      for (const to of buildsOn(from)) {
+        if (seen.has(to)) continue;
+        seen.add(to);
+        if (listed.has(to)) found.add(to);
+        walk(to);
+      }
+    };
+    walk(id);
+    return found;
+  };
+  const waiting = new Map(terms.map((t) => [t.id, below(t.id)]));
+  const out: T[] = [];
+  const left = [...terms].sort(byTitle);
+  while (left.length) {
+    const at = left.findIndex((t) => [...waiting.get(t.id)!].every((id) => !left.some((l) => l.id === id)));
+    const [next] = left.splice(at === -1 ? 0 : at, 1);
+    out.push(next);
+  }
+  return out;
+}
+
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function domainTableFrom(view: ReadView): DomainTable {
-  const [serves, persists, meets, startsFrom] = ['serves', 'persists', 'meets', 'starts_from'].map((t) => targets(view, t));
+  const [serves, persists, meets, startsFrom, buildsOn] = ['serves', 'persists', 'meets', 'starts_from', 'builds_on'].map((t) => targets(view, t));
   const packages = targets(view, 'package_use', 'record_id', 'package');
   const capabilities = grouped<CapabilityRow>(view.rows('capability'), 'domain_id');
   const useCases = grouped<{ id: string }>(view.rows('use_case'), 'capability_id');
@@ -122,7 +163,7 @@ export function domainTableFrom(view: ReadView): DomainTable {
       capabilities: [...(capabilities.get(root) ?? [])]
         .sort((a, b) => a.position - b.position || byId(a, b))
         .map((capability) => ({ capability, serves: serves(capability.id), useCases: (useCases.get(capability.id) ?? []).map((u) => u.id).sort() })),
-      terms: [...(terms.get(root) ?? [])].sort(byId),
+      terms: termsBottomUp(terms.get(root) ?? [], buildsOn).map((term) => ({ term, buildsOn: buildsOn(term.id) })),
       domainServices: [...(domainServices.get(root) ?? [])].sort(byId).map((domainService) => {
         const service = (services.get(domainService.id) ?? [])[0];
         return {
@@ -140,7 +181,7 @@ export function domainTableFrom(view: ReadView): DomainTable {
       })),
     };
     for (const c of tree.capabilities) hold(c.capability.id, 'capability');
-    for (const t of tree.terms) hold(t.id, 'term');
+    for (const t of tree.terms) hold(t.term.id, 'term');
     for (const s of tree.domainServices) {
       hold(s.domainService.id, 'domain_service');
       if (s.service) hold(s.service.service.id, 'service');
