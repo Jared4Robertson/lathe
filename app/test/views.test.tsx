@@ -145,7 +145,7 @@ describe('one address, one stage', () => {
     expect(css).toMatch(/\.trace-scroll \{[^}]*padding: calc\(var\(--frame-top/);
   });
 
-  it('LA-V96-R05-T01 The measure follows the stage the page makes anew when it changes between the phone and the wide layout', async () => {
+  it('LA-V96-R05-T03 The measure follows the stage the page makes anew when it changes between the phone and the wide layout', async () => {
     // A screen that narrows and widens again: the page makes its stage anew each way.
     let narrow = false;
     const listeners = new Set<() => void>();
