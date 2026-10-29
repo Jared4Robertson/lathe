@@ -52,7 +52,7 @@ describe.each(kinds)('the %s table', (kind) => {
     expect(problems.find((p) => p.file === file)!.message).toContain('TL-NOPE');
   });
 
-  it('LA-PAT-RECORD-IDENTITY-R01-T02 refuses an ID another record has, of any kind', async () => {
+  it('LA-PLT-UC01-R12-T02 refuses an ID another record has, of any kind', async () => {
     const other = kind === 'domain' ? 'TL' : 'TL-LEND';
     const problems = await refusal(withTable(data, kind, [...data[kind], { ...row, id: other }]));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique-id', key: other })]);
@@ -60,7 +60,7 @@ describe.each(kinds)('the %s table', (kind) => {
     expect(`${problems[0].file}:${problems[0].line} ${problems[0].message}`).toContain(`${file}:${data[kind].length + 1}`);
   });
 
-  it('LA-PAT-RECORD-IDENTITY-R01-T02 refuses the same ID twice in its file', async () => {
+  it('LA-PLT-UC01-R12-T02 refuses the same ID twice in its file', async () => {
     const problems = await refusal(withTable(data, kind, [...data[kind], row]));
     expect(problems).toEqual([expect.objectContaining({ rule: 'primary-key', file, line: data[kind].length + 1 })]);
   });
