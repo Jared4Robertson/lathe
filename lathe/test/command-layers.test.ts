@@ -66,6 +66,33 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     expect(drafting.sort()).toEqual(['lathe/src/platform/data/data-files.ts', 'lathe/src/platform/data/generic-write.ts']);
   });
 
+  // The slices whose reads are converted to their own read model: each group adds its own line when its slice is
+  // converted, so nothing converted can regress while the rest still convert. The cutover removes this list and the
+  // check then holds for every slice that has a queries.ts.
+  const READ_MODEL_SLICES: string[] = [
+  ];
+
+  it('lets a converted slice\'s queries read only its read model: queries.ts and read-model.ts import neither its repository nor its model type or row builder', () => {
+    const crossing = READ_MODEL_SLICES.flatMap((slice) => {
+      const model = files.find((f) => f.file === `${slice}/model.ts`)!;
+      // The model's types (the instance type and its parts) and every function over them (the row builders).
+      const types = [...model.text.matchAll(/^export interface (\w+)/gm)].map((m) => m[1]);
+      const mentions = (signature: string) => types.some((t) => new RegExp(`\\b${t}\\b`).test(signature));
+      const builders = [...model.text.matchAll(/^export function (\w+)[^{]*/gm)].filter((m) => mentions(m[0])).map((m) => m[1]);
+      const forbidden = new Set([...types, ...builders]);
+      return ['queries.ts', 'read-model.ts'].flatMap((name) => {
+        const reader = files.find((f) => f.file === `${slice}/${name}`);
+        if (!reader) return [`${slice}/${name} is missing`];
+        const fromModel = [...reader.text.matchAll(/^import\s([^;]*?)from\s+'\.\/model\.ts'/gms)].flatMap((m) => m[1].match(/\w+/g) ?? []);
+        return [
+          ...(reader.imports.includes(`${slice}/repository.ts`) ? [`${reader.file} imports repository.ts`] : []),
+          ...fromModel.filter((n) => forbidden.has(n)).map((n) => `${reader.file} imports ${n} from model.ts`),
+        ];
+      });
+    });
+    expect(crossing).toEqual([]);
+  });
+
   it('LA-STD-PRINCIPLES-R02-T01 matches each command definition to its command, handler, endpoint and CLI records, one to one', () => {
     const handlerFiles = files.filter((f) => isHandler(f.file));
     const commands = new Map(data('command').map((r) => [r.id, r]));
