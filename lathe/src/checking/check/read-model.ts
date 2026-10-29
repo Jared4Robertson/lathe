@@ -1,6 +1,7 @@
 // The Check read model (LA-CHK-RM10): a check as its readers see it, and the checks that run on a product, in run
-// order. Its projection builds them from the rows; it shares no type with the aggregate.
+// order. Its projection builds its table from the rows; it shares no type with the aggregate.
 import type { Row } from '../../platform/data/rows.ts';
+import type { ReadView } from '../../platform/data/rules.ts';
 
 /** One check, whole. */
 export interface CheckPage {
@@ -34,17 +35,16 @@ const pageOf = (c: Row): CheckPage => ({
   kinds: ((c.kinds as string[] | undefined) ?? []).map(String),
 });
 
-/** The page of the check with the name, from the rows (the projection, LA-CHK-RM10-PJ); undefined when there is none. */
-export function checkPageFrom(rows: (table: string) => Row[], name: string): CheckPage | undefined {
-  const check = rows('check').find((c) => c.name === name);
-  return check ? pageOf(check) : undefined;
+/** The read model's table, kept in memory: what the reader reads, and all it reads. */
+export interface CheckTable {
+  /** Each check whole, by its name: Lathe's, then each product's, each in its run order. */
+  checks: Map<string, CheckPage>;
+  /** Every product's ID. */
+  products: Set<string>;
 }
 
-/** The checks that run on the product: Lathe's, then the product's own, each in its run order. */
-export function checkSummariesFrom(rows: (table: string) => Row[], productId: string): CheckSummary[] {
-  return rows('check')
-    .map(pageOf)
-    .filter((c) => c.product === null || c.product === productId)
-    .sort((a, b) => Number(a.product !== null) - Number(b.product !== null) || a.position - b.position)
-    .map((c) => ({ name: c.name, product: c.product, severity: c.severity, summary: c.summary }));
+/** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
+export function checkTableFrom(view: ReadView): CheckTable {
+  const pages = view.rows('check').map(pageOf).sort((a, b) => Number(a.product !== null) - Number(b.product !== null) || a.position - b.position);
+  return { checks: new Map(pages.map((c) => [c.name, c])), products: new Set(view.rows('product').map((p) => String(p.id))) };
 }
