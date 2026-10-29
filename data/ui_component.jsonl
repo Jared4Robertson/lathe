@@ -3,7 +3,6 @@
 {"id":"LA-UI04","title":"Desktop record actions","file":"app/src/shell/desktopRecord.tsx"}
 {"id":"LA-UI05","title":"Standard parts","file":"app/src/specs/StandardParts.tsx"}
 {"id":"LA-UI100","title":"Shared spec parts","file":"app/src/specs/parts.tsx","description":"The shared spec parts and TestStateTag."}
-{"id":"LA-UI101","title":"Graph details","file":"app/src/graph/panel.tsx"}
 {"id":"LA-UI102","title":"Mentions","file":"app/src/specs/mentions.tsx"}
 {"id":"LA-UI103","title":"Flow steps","file":"app/src/specs/FlowSteps.tsx"}
 {"id":"LA-UI105","title":"Graph motion","file":"app/src/graph/motion.ts"}
@@ -13,9 +12,6 @@
 {"id":"LA-UI109","title":"Tap to open","file":"app/src/graph/touch.tsx"}
 {"id":"LA-UI110","title":"Edge hints","file":"app/src/graph/hints.tsx"}
 {"id":"LA-UI111","title":"Domain events section","file":"app/src/specs/DomainEvents.tsx"}
-{"id":"LA-UI112","title":"Side bar Details","file":"app/src/views/SideBarDetails.tsx"}
-{"id":"LA-UI113","title":"Side bar Outline","file":"app/src/views/SideBarOutline.tsx"}
-{"id":"LA-UI114","title":"Side bar History","file":"app/src/views/SideBarHistory.tsx"}
 {"id":"LA-UI116","title":"Requirement groups","file":"app/src/specs/groups.ts"}
 {"id":"LA-UI117","title":"Graph shapes","file":"app/src/graph/shapes.ts"}
 {"id":"LA-UI118","title":"Graph painter","file":"app/src/graph/paint.ts"}
@@ -39,7 +35,7 @@
 {"id":"LA-UI137","title":"Header strip","file":"app/src/views/HeaderStrip.tsx","description":"The one line under the active tab: the focus's breadcrumb, kind, ID and title, and what the stage draws of it."}
 {"id":"LA-UI138","title":"Breadcrumb","file":"app/src/shell/Breadcrumb.tsx","description":"The one trail of places above a page, collapsed past three places with a menu of the hidden levels."}
 {"id":"LA-UI139","title":"Open space","file":"app/src/views/openSpace.ts","description":"The stage's measure of what the floating panels leave of it, as CSS variables and a store the stages frame their focus in and report where they framed it, for the wiki card."}
-{"id":"LA-UI140","title":"Wiki card","file":"app/src/views/WikiCard.tsx","description":"The focus's wiki page as a callout in the map, floating over the right of the open space, between it and the side bar, in one spot just under the stage's toolbar row and a steady share of the stage high: its breadcrumb, kind line, title, summary or whole page (More and Less), its collapse button and resize handle."}
+{"id":"LA-UI140","title":"Wiki card","file":"app/src/views/WikiCard.tsx","description":"The focus's wiki page as a callout in the map, floating over the right of the open space, in one spot just under the stage's toolbar row and a steady share of the stage high: its breadcrumb, kind line, title, summary or whole page (More and Less), its collapse button and resize handle."}
 {"id":"LA-UI141","title":"Trace canvas","file":"app/src/trace/TraceCanvas.tsx","description":"The Trace stage drawn on the canvas with the graph's painter and camera: what is in view of its picture, the hover spotlight over every copy of a record, the keyboard's ring, and the column names over the frame."}
 {"id":"LA-UI142","title":"Trace picture","file":"app/src/trace/lanes.ts","description":"The Trace stage's picture, laid out once in map units: one obligation's chain with its why columns, or a why tree and a lane per obligation, gaps as boxes and the Untraced lane last; and what a rectangle of it holds."}
 {"id":"LA-UI143","title":"Chat panel","file":"app/src/chat/ChatPanel.tsx","description":"The chat panel: its head, the session picker, the log with its tool rows, permission prompts and record diffs, and the composer."}
@@ -48,6 +44,7 @@
 {"id":"LA-UI147","title":"ChecksPanel","file":"app/src/views/ChecksPanel.tsx","description":"The Checks panel over the stage: the space's problems by check, the workspace's and the recorded exceptions."}
 {"id":"LA-UI148","title":"ProductsPicker","file":"app/src/views/ProductsPicker.tsx","description":"The products picker: a card of every product, centered over the last product's dimmed stage."}
 {"id":"LA-UI149","title":"ToolPanelFrame","file":"app/src/views/ToolPanel.tsx","description":"The one frame of a tool over the stage: a frosted panel at the left of the open space, a bottom sheet on a phone."}
+{"id":"LA-UI150","title":"RecordHistory","file":"app/src/views/RecordHistory.tsx","description":"The History section at the end of the expanded wiki card: the \"Show the history\" button, then the record's commits, the uncommitted change first, each with its diff, and Load more."}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
 {"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
@@ -56,7 +53,7 @@
 {"id":"LA-UI62","title":"Commands and shortcuts sheet","file":"app/src/shell/commands.tsx","description":"The command dispatcher, the dialog and keys every overlay shares, and the shortcuts sheet."}
 {"id":"LA-UI63","title":"Tooltip","file":"app/src/shell/Tooltip.tsx"}
 {"id":"LA-UI64","title":"Resize handle","file":"app/src/components/ResizeHandle.tsx"}
-{"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx","description":"The top of the tab panel: the tabs, the stage switch, and the wiki card and side bar toggles."}
+{"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx","description":"The top of the tab panel: the tabs, the stage switch, and the wiki card toggle."}
 {"id":"LA-UI66","title":"Bottom sheet","file":"app/src/shell/BottomSheet.tsx"}
 {"id":"LA-UI67","title":"Phone top bar","file":"app/src/shell/MobileBar.tsx","description":"The phone top bar and the quick find sheet."}
 {"id":"LA-UI68","title":"Shared styles","file":"app/src/styles.css"}
@@ -78,7 +75,6 @@
 {"id":"LA-UI93","title":"Record content","file":"app/src/specs/RecordContent.tsx"}
 {"id":"LA-UI94","title":"Long list","file":"app/src/components/LongList.tsx"}
 {"id":"LA-UI95","title":"Focus page","file":"app/src/views/FocusPage.tsx","description":"The stage and the panels floating over it, for one focus."}
-{"id":"LA-UI96","title":"Side bar","file":"app/src/views/SideBar.tsx"}
 {"id":"LA-UI97","title":"Nav","file":"app/src/shell/Nav.tsx"}
 {"id":"LA-UI98","title":"Quick open","file":"app/src/shell/QuickOpen.tsx","description":"Quick find and the command palette in one overlay, with the stage's preview of the highlighted record."}
 {"id":"LA-UI99","title":"Tree list","file":"app/src/components/TreeList.tsx"}

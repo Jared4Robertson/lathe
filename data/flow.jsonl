@@ -69,8 +69,8 @@
 {"id":"LA-EXP-UC10-FL02","title":"Keep several records open in tabs in the desktop app","use_case_id":"LA-EXP-UC10","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC11-FL01","title":"Read a domain and its aggregates as an ERD in the web app","use_case_id":"LA-EXP-UC11","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC11-FL02","title":"Read a domain and its aggregates as an ERD in the desktop app","use_case_id":"LA-EXP-UC11","interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC12-FL01","title":"Look up a record's details in the web app","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC12-FL02","title":"Look up a record's details in the desktop app","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF02"}
+{"id":"LA-EXP-UC12-FL01","title":"Look up a record's history in the web app","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC12-FL02","title":"Look up a record's history in the desktop app","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC13-FL01","title":"Read a domain's endpoints and integrations in the web app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC13-FL02","title":"Read a domain's endpoints and integrations in the desktop app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC14-FL01","title":"Fix a record while reading in the web app","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF01"}
