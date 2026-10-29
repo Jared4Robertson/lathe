@@ -9,12 +9,16 @@ import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
 import { useNarrow } from '../shell/useNarrow';
 import type { OpenSpaceStore } from '../views/openSpace';
-import { useStageWalk } from '../shell/commands';
+import { useCommand, useStageWalk } from '../shell/commands';
+import { Tooltip } from '../shell/Tooltip';
 import { graphWalkLabels } from '../graph/steps';
 import type { Move } from '../views/levels';
 import { StageKey, StageToolbar } from '../views/StageChrome';
 import { copyInChain, focusKey, keptFor, traceMap, type TraceMap } from './tree';
-import { traceKeyEntries } from './TraceKey';
+import { traceColumnKeyEntries, traceKeyEntries } from './TraceKey';
+import { traceColumns } from './columns';
+import { ColumnList } from './ColumnList';
+import { TRACE_LAYOUTS, useTraceLayout, type TraceLayout } from './layout';
 import { useChangesKey } from '../changes/ChangesKey';
 import { nodeWords, traceTarget } from './walk';
 
@@ -44,6 +48,7 @@ import { nodeWords, traceTarget } from './walk';
 // key, which also says why it shows what it shows; what it holds is told to the header strip.
 
 const TraceCanvas = lazy(() => import('./TraceCanvas').then((m) => ({ default: m.TraceCanvas })));
+const TraceColumns = lazy(() => import('./TraceColumns').then((m) => ({ default: m.TraceColumns })));
 
 export interface TraceViewProps {
   index: SpecIndex;
@@ -176,14 +181,19 @@ export function TraceView(props: TraceViewProps) {
 function TraceStage(props: TraceViewProps & { product: string }) {
   const { index, focus, onCounts, product } = props;
   const narrow = useNarrow();
+  // The tree or the columns (LA-V98-R13): the window's preference, switched by the toolbar's control or v.
+  const [layout, setLayout] = useTraceLayout();
+  const columnsOn = layout === 'columns';
+  useCommand('graphLayout', () => setLayout(columnsOn ? 'tree' : 'columns'), true, 'Tree or Columns layout: the product\'s whole tree, or the path to the focus as columns');
   const spec = useMemo(() => matrixSpec(index, focus), [index, focus]);
   const [gapsOnly, setGapsOnly] = useState(false);
   // The table's page and the keyboard's ring are the focus's: a new focus starts them again.
   const [paging, setPaging] = useState({ focus, shown: TRACE_PAGE });
   const shown = paging.focus === focus ? paging.shown : TRACE_PAGE;
   const page = useMemo(() => (spec ? pageOf(spec.groups, gapsOnly, shown) : null), [spec, gapsOnly, shown]);
-  // The product's one map: laid out once per product and data change, whatever the focus or the filter.
-  const map = useMemo(() => (narrow ? null : traceMap(index, product)), [narrow, index, product]);
+  // The product's one map: laid out once per product and data change, whatever the focus or the filter. On a phone only
+  // the columns draw it.
+  const map = useMemo(() => (narrow && !columnsOn ? null : traceMap(index, product)), [narrow, columnsOn, index, product]);
   const [ringAt, setRing] = useState<{ focus: string; at: { id: string; chain: string | null } | null }>({ focus, at: null });
   // Where the walk or a click is on the tree (walk.ts), for the focus it left there: a node's key, so a record in several
   // chains keeps the copy arrived on, and a node that is no record (a gap, a file, the branch, the mark) holds the ring.
@@ -247,7 +257,9 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   const drawn = !narrow && map !== null;
   // The key bar, while the map is drawn: what it draws, then the live marks.
   const changesKey = useChangesKey();
-  const keyEntries = useMemo(() => (drawn && map ? [...traceKeyEntries(index, map, kept, gapsOnly), ...changesKey] : []), [drawn, index, map, kept, gapsOnly, changesKey]);
+  const keyEntries = useMemo(() => (drawn && map
+    ? [...(columnsOn ? traceColumnKeyEntries(index, map, traceColumns(map, at), gapsOnly) : traceKeyEntries(index, map, kept, gapsOnly)), ...changesKey]
+    : []), [drawn, columnsOn, index, map, at, kept, gapsOnly, changesKey]);
   // Show more pages the table. Under the canvas, which draws every chain, it is for the keyboard alone, hidden with the table.
   const more = page && page.drawn < page.matching ? (
     <p className="trace-more">
@@ -264,8 +276,17 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   const table = spec && page
     ? <TraceMatrix {...props} spec={spec} page={page} untraced={untraced} access={drawn} more={more} />
     : <TraceChainCards {...props} access={drawn} />;
-  const toolbar = <StageToolbar can={(move) => targetOf(move) !== null} walkLabels={graphWalkLabels('tree')} own={() => ({ primary: filter })} />;
+  const layouts = (narrowTools: boolean) => <LayoutSwitch layout={layout} onChange={setLayout} narrow={narrowTools} />;
+  const toolbar = <StageToolbar can={(move) => targetOf(move) !== null} walkLabels={graphWalkLabels('tree')} own={(n) => ({ primary: <>{layouts(n)}{filter}</> })} />;
 
+  if (narrow && columnsOn && map) {
+    return (
+      <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
+        {toolbar}
+        <ColumnList index={index} map={map} focus={focus} at={at} gapsOnly={gapsOnly} hrefFor={props.hrefFor} onNavigate={openFromCanvas} />
+      </section>
+    );
+  }
   if (!drawn) {
     return (
       <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
@@ -281,12 +302,27 @@ function TraceStage(props: TraceViewProps & { product: string }) {
       {toolbar}
       <StageKey entries={keyEntries} />
       <Suspense fallback={<div className="graph-flow trace-flow" aria-busy="true" />}>
-        <TraceCanvas index={index} focus={focus} map={map} at={at} kept={kept} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} cameraKey={props.cameraKey} onOpenNew={props.onOpenNew} />
+        {columnsOn
+          ? <TraceColumns index={index} focus={focus} map={map} at={at} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} cameraKey={props.cameraKey} onOpenNew={props.onOpenNew} />
+          : <TraceCanvas index={index} focus={focus} map={map} at={at} kept={kept} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} cameraKey={props.cameraKey} onOpenNew={props.onOpenNew} />}
       </Suspense>
       <div className="trace-access" data-arrows="own" onFocus={onFocus} onBlur={onBlur} onKeyDown={walk}>
         {table}
       </div>
     </section>
+  );
+}
+
+/** The Tree | Columns control (LA-V98-R13), as the Graph's layout control; one letter each in the narrow toolbar. */
+function LayoutSwitch({ layout, onChange, narrow }: { layout: TraceLayout; onChange: (layout: TraceLayout) => void; narrow: boolean }) {
+  return (
+    <div className={`graph-depth graph-layout trace-layout${narrow ? ' is-narrow' : ''}`} role="group" aria-label="Layout">
+      {TRACE_LAYOUTS.map((l) => (
+        <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
+          <button type="button" aria-pressed={layout === l.layout} aria-label={narrow ? l.label : undefined} onClick={() => onChange(l.layout)}>{narrow ? l.label[0] : l.label}</button>
+        </Tooltip>
+      ))}
+    </div>
   );
 }
 

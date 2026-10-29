@@ -4,7 +4,7 @@ import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { openPage } from './measure';
 import { keepData } from './scenarios';
-import { clickBox, focusDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
+import { clickBox, focusDrawn, sceneOf, traceDrawn, traceLayout, traceSceneOf } from './scene';
 
 // Exploring's flow tests (LA-EXP-UC01-FL01 to UC13-FL01): one per flow, each walking its main path in
 // Chromium over the suite's copy of Lathe's data, as the Reader does. They prove the flow end to
@@ -221,6 +221,7 @@ test.describe('Exploring flows', () => {
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
     await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
     // A requirement's Trace stage frames its box in the product's tree, its chain to its right: the step that fulfills it, with its flow and what it invokes, an arrow for each link.
+    await traceLayout(page, 'tree');
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
     await traceDrawn(page);
     const chain = await traceSceneOf(page, true);
