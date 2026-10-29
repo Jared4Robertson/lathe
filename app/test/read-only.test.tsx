@@ -13,7 +13,7 @@ const RECORD_ACTIONS = ['Edit', 'Add…', 'Move', 'Remove'];
 const isRecordAction = (button: HTMLButtonElement) => RECORD_ACTIONS.includes(button.textContent ?? '') || /^Add /.test(button.textContent ?? '');
 
 /** The aggregates' reads: GET /api/<aggregate>/<query>, each a query of an aggregate. */
-const QUERY_ROUTES = ALL_QUERIES.map((q) => `GET /api/${q.slice.name}/${q.name}`);
+const QUERY_ROUTES = ALL_QUERIES.map((q) => `${q.method} ${q.route}`);
 /** What a page reads: the spec, its aggregate's reads, and the Changes baseline it compares the spec with (GET /api/baseline, LA-EXP-EP02). */
 const isRead = (r: string) => r === 'GET /api/spec' || r.startsWith('GET /api/baseline?') || QUERY_ROUTES.includes(r.split('?')[0]);
 

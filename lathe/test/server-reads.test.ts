@@ -5,14 +5,15 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { describe, expect, it } from 'vitest';
 import type { UseCase } from '../src/authoring/use-case/model.ts';
-import { closeStores, handleApi, queryRoute } from '../src/server/api.ts';
+import { closeStores, handleApi } from '../src/server/api.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../src/commands.ts';
 import { everyKind } from './store/fixture.ts';
 import { writeData } from './helpers.ts';
 
 describe('LA-AUT-UC06-R14-T02 each Use case query is read by name over HTTP, GET /api/use-case/<query>', () => {
   it('gives every query its own route beside the commands\', and none is both', () => {
-    const routes = ALL_QUERIES.map(queryRoute);
+    const routes = ALL_QUERIES.map((q) => q.route);
+    for (const q of ALL_QUERIES) expect(q.route, q.id).toBe(`/api/${q.slice.name}/${q.name}`);
     expect(routes).toEqual(expect.arrayContaining(['/api/use-case/get-use-case', '/api/use-case/list-use-cases', '/api/use-case/next-id']));
     expect(new Set(routes).size).toBe(routes.length);
     expect(routes.filter((r) => ALL_COMMANDS.some((c) => c.route === r))).toEqual([]);

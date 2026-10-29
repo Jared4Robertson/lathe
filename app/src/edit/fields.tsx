@@ -198,7 +198,7 @@ export function IdsField({ id, label, description, ids, choices, onChange, rende
       )}
       <div className={`form-link-add${error ? ' has-error' : ''}`}>
         <label htmlFor={id} className="sr-only">Add to {label}</label>
-        <input id={id} type="text" list={listId} value={typed} placeholder={`Add: an ID among ${open.length}`} spellCheck={false}
+        <input id={id} type="text" list={listId} value={typed} placeholder="An ID" spellCheck={false}
           aria-invalid={error ? true : undefined} aria-describedby={[description ? `${id}-help` : '', error ? `${id}-error` : ''].filter(Boolean).join(' ') || undefined}
           onChange={(e) => { setTyped(e.target.value); setError(null); }}
           onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} />

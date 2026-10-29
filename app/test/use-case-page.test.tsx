@@ -96,6 +96,13 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/move-use-case', input: { id: 'DM-SHOP-UC01', capability_id: 'DM-PAY-CAP01' } }]));
   });
 
+  it('offers Move only for a kind the aggregate has a Move command for', async () => {
+    await openApp('/DM-SHOP-UC01-FL01');
+    const actions = await screen.findByRole('toolbar', { name: 'Change DM-SHOP-UC01-FL01' });
+    expect(within(actions).queryByRole('button', { name: 'Move' })).toBeNull();
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Edit', 'Add flow step', 'Remove']));
+  });
+
   it('adds a use case from its capability\'s page through the aggregate\'s own Add', async () => {
     const user = userEvent.setup();
     const { commands, writes } = await openApp('/DM-SHOP-CAP01', { command: () => ({ answer: ok }) });

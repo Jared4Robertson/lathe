@@ -17,7 +17,8 @@ import '../../edit/edit.css';
 // The Use case editor (LA-AUT-A11): the actions on a record of a use case, each sending one of the aggregate's own
 // commands, POST /api/use-case/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
 // opens an empty form for a kind that sits under the record in the use case, with the next free ID read from the
-// aggregate (next-id), and sends its Add; Move (a use case only) sends Move a use case to another capability; Remove
+// aggregate (next-id), and sends its Add; Move, offered only for a kind the aggregate has a Move command for (a use
+// case: Move a use case, to another capability), sends that command; Remove
 // says what goes with the record and sends its Remove. Each form is built from the shared field inputs, its fields
 // those of its command's input. A refusal shows every reason the command gave, in its own words, keeps what was
 // entered, and changes nothing.
@@ -43,6 +44,9 @@ const ADDED_UNDER: Record<UseCaseKind, UseCaseKind[]> = {
   flow_test: [],
 };
 
+/** The kinds the aggregate has a Move command for, each with it: a record of another kind is never moved. */
+const MOVE: Partial<Record<UseCaseKind, '/api/use-case/move-use-case'>> = { use_case: '/api/use-case/move-use-case' };
+
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: UseCaseKind } | { mode: 'move' } | { mode: 'remove' };
 
 /** A record of the use case with its actions; a form or the remove question shows in place of its page. */
@@ -66,7 +70,7 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: S
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {kind === 'use_case' && <Button onClick={() => setMode({ mode: 'move' })}>Move</Button>}
+        {MOVE[kind] && <Button onClick={() => setMode({ mode: 'move' })}>Move</Button>}
         {addable.map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'add', kind: k })}>Add {LABEL[k]}</Button>)}
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
@@ -415,7 +419,7 @@ function MoveForm({ context }: { context: FormContext }) {
   const choices = productChoices(index, useCase, ['capability']);
   const submit = async () => {
     if (capability === useCase.useCase.capability_id) { announce('Nothing changed'); onDone(); return null; }
-    const answer = await sendUseCase(writer, '/api/use-case/move-use-case', { id: useCase.root, capability_id: capability });
+    const answer = await sendUseCase(writer, MOVE.use_case!, { id: useCase.root, capability_id: capability });
     if (answer.ok) { announce(`Moved ${useCase.root}`); onDone(); }
     return answer;
   };

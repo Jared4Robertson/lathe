@@ -390,14 +390,10 @@ async function runRoute(workspace: string, definition: AnyCommand, input: Record
 /** Each aggregate command's route, POST /api/<aggregate>/<command>, with the one command it runs. */
 const COMMAND_ROUTES = new Map(ALL_COMMANDS.map((definition) => [definition.route, definition]));
 
-/** A query's route: its aggregate's and its own name, as its MCP tool and CLI name them, such as /api/use-case/get-use-case. */
-export const queryRoute = (definition: Pick<AnyQuery, 'slice' | 'name'>): string => `/api/${definition.slice.name}/${definition.name}`;
-
 /** Each aggregate query's route, GET /api/<aggregate>/<query>, with the one query it reads. A route is a command's or a query's, never both. */
 const QUERY_ROUTES = new Map(ALL_QUERIES.map((definition) => {
-  const route = queryRoute(definition);
-  if (COMMAND_ROUTES.has(route)) throw new Error(`${route} is both a command's route and a query's`);
-  return [route, definition];
+  if (COMMAND_ROUTES.has(definition.route)) throw new Error(`${definition.route} is both a command's route and a query's`);
+  return [definition.route, definition];
 }));
 
 /**
@@ -490,7 +486,7 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
   }
   const read = QUERY_ROUTES.get(pathname);
   if (read) {
-    if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
+    if (req.method !== read.method) return (send(res, 405, { error: 'Method not allowed' }), true);
     try {
       const { status, answer } = await runRead(root, read, new URL(req.url ?? '/', 'http://localhost').searchParams);
       send(res, status, answer, { 'cache-control': 'no-store' });

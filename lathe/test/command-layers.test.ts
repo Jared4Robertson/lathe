@@ -92,15 +92,31 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     expect([...commands.values()].filter((c) => aggregates.has(String(aggregateOf.get(c.entity_id))) && !defined.has(String(c.id))).map((c) => c.id)).toEqual([]);
   });
 
-  it('matches each query definition to its query, handler and CLI records', () => {
+  it('matches each query definition to its query, handler, CLI, endpoint and endpoint handler records, one to one', () => {
     const queries = new Map(data('query').map((r) => [r.id, r]));
     const handlers = new Map(data('query_handler').map((r) => [r.query_id, r]));
     const clis = new Map(data('cli_query').map((r) => [r.id, r]));
+    const endpoints = new Map(data('endpoint').filter((r) => r.query_id).map((r) => [r.query_id, r]));
+    const endpointHandlers = new Map(data('endpoint_handler').map((r) => [r.endpoint_id, r]));
     for (const definition of ALL_QUERIES) {
       expect(queries.has(definition.id), definition.id).toBe(true);
       expect(handlers.get(definition.id), definition.id).toMatchObject({ title: definition.run.name });
-      expect(readFileSync(path.join(REPO, String(handlers.get(definition.id)!.file)), 'utf8')).toContain(`id: '${definition.id}'`);
+      const file = String(handlers.get(definition.id)!.file);
+      const text = readFileSync(path.join(REPO, file), 'utf8');
+      expect(text).toContain(`id: '${definition.id}'`);
       expect(clis.get(`${definition.id}-CLI`), definition.id).toMatchObject({ query_id: definition.id, title: `lathe ${definition.slice.name} ${definition.name}`, mcp_tool: toolName(definition) });
+      // Its endpoint takes its number plus 400 (166-id-ranges.md), and is served from the route written whole beside it.
+      expect(definition.route).toBe(`/api/${definition.slice.name}/${definition.name}`);
+      const endpoint = endpoints.get(definition.id);
+      expect(endpoint, definition.id).toMatchObject({ id: definition.id.replace(/QRY(\d+)$/, (_, n: string) => `EP${Number(n) + 400}`), method: definition.method, route: definition.route, title: `${definition.method} ${definition.route}` });
+      const served = endpointHandlers.get(endpoint!.id);
+      expect(served, String(endpoint!.id)).toMatchObject({ id: `${endpoint!.id}-H`, file });
+      expect(text, String(served!.id)).toMatch(new RegExp(`export const ${String(served!.title)}: QueryDefinition<[^\\n]*\\n  id: '${definition.id}'`));
     }
+    // And back: every query whose handler is an aggregate's queries.ts has its definition, and so does every endpoint of one.
+    const defined = new Set(ALL_QUERIES.map((d) => d.id));
+    const sliced = [...handlers.values()].filter((h) => typeof h.file === 'string' && h.file.startsWith('lathe/src/') && h.file.endsWith('/queries.ts'));
+    expect(sliced.filter((h) => !defined.has(String(h.query_id))).map((h) => h.query_id)).toEqual([]);
+    expect([...endpoints.values()].filter((e) => sliced.some((h) => h.query_id === e.query_id) && !defined.has(String(e.query_id))).map((e) => e.id)).toEqual([]);
   });
 });
