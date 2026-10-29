@@ -1,4 +1,4 @@
-// A product's data at a baseline, from git (LA-EXP-QRY_CHANGES): the rows its data files held at a commit, which the
+// A product's data at a baseline, from git (LA-EXP-EP02, for LA-EXP-QRY13): the rows its data files held at a commit, which the
 // record diff (../changes.ts) compares the data now with. It backs GET /api/baseline in api.ts.
 //
 //   GET /api/baseline?product=<ID>&since=commit    the last commit (HEAD)

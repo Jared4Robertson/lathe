@@ -7,7 +7,7 @@ import type { LookMark, Since } from '../changes/changes';
 // The one reader setting for the browser session, shared by every tab and every page (LA-V93-R72):
 // how the graph is drawn (its layout, depth, kind filters and minimap), and whether the
 // wiki card is open, how wide it is and whether it shows its summary or its whole page, and whether the desktop app's chat panel is open and how
-// wide (LA-PLT-UC19), and the Changes lens (LA-EXP-UC13): whether it is on, the baseline it compares with, whether
+// wide (LA-PLT-UC19), and the Changes lens (LA-EXP-UC15): whether it is on, the baseline it compares with, whether
 // Follow is on, and the moment the Reader last looked at each product. Moving through the stage (an arrow step, a click or Enter on a box, a link, a
 // tab, Back or Forward) never changes it; only the person changing a setting does: the graph's
 // toolbar, the v, +/- and w keys, the card's and the chat's buttons and resize handles. Every part

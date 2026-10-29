@@ -3,7 +3,7 @@ import { keptFade, type Fade, type FadeLook } from '../graph/fade';
 import { prefersReducedMotion } from '../graph/motion';
 import { useChanges, type LiveMark, type RecordChange } from './changes';
 
-// The live marks every stage draws (LA-EXP-UC13, LA-V96): a record added as the data reloaded gets a soft glow that
+// The live marks every stage draws (LA-EXP-UC15-R02, LA-V96-R29): a record added as the data reloaded gets a soft glow that
 // fades and a lasting "new" dot; one changed, a brief pulse in its own color and then a lasting "changed" dot; one
 // removed, a ghost of its outline where it was, fading over a few seconds. Under reduced motion only the dots show:
 // no glow, pulse or ghost. The canvas stages (the Graph and the Trace) draw them through paint.ts; the ERD sets them

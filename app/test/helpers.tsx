@@ -2,6 +2,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import { expect, vi } from 'vitest';
 import App from '../src/App';
 import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { BaselineAnswer } from '../../lathe/src/server/baseline';
 import type { Command } from '../../lathe/src/store/store';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
 import { SETTINGS_KEY } from '../src/graph/settings';
@@ -14,6 +15,8 @@ export interface Served {
    * changes nothing. A function that returns new data serves it from then on.
    */
   write?: (commands: Command[]) => { answer: WriteAnswer; data?: SpecData };
+  /** What GET /api/baseline answers, by its query's `since` (commit, branch or a hash); by default a 404. */
+  baseline?: (since: string) => BaselineAnswer;
 }
 
 /** Every request the page made, as "METHOD /path". */
@@ -32,6 +35,7 @@ export function serve(served: Served = {}): { requests: Requests; writes: Writes
     requests.push(`${init?.method ?? 'GET'} ${url}`);
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
     if (url === '/api/spec') return json(data);
+    if (url.startsWith('/api/baseline') && served.baseline) return json(served.baseline(new URLSearchParams(url.split('?')[1]).get('since') ?? ''));
     if (url === '/api/write' && init?.method === 'POST') {
       const { commands } = JSON.parse(String(init.body)) as { commands: Command[] };
       writes.push(commands);
