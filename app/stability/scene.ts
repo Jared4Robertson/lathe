@@ -118,6 +118,6 @@ export async function traceDrawn(page: Page, settle = 400) {
   await page.waitForTimeout(settle);
 }
 
-/** What the Trace stage's canvas draws now, or (`whole`) every box of its picture. */
+/** What the Trace stage's canvas draws now, or (`whole`) every box of the product's map. */
 export const traceSceneOf = (page: Page, whole = false): Promise<TraceScene> =>
   page.evaluate(({ sel, whole }) => (document.querySelector(sel) as TraceHost).traceScene!(whole), { sel: TRACE, whole });
