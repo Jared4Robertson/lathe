@@ -2,7 +2,6 @@ import './graph/setup';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { relationStyle } from '../src/graph/GraphPage';
 import { neighborhood } from '../src/graph/model';
 import { Legend } from '../src/graph/panel';
 import { shapeOf } from '../src/graph/shapes';
@@ -87,7 +86,7 @@ describe('standards in the nav and the wiki', () => {
 });
 
 describe('standards in the graph', () => {
-  it('LA-V93-R71-T01 The graph draws a standard as stacked boxes with a ruler in the product\'s Technical specification, and meets as a design line in its key', () => {
+  it('LA-V93-R71-T01 The graph draws a standard as stacked boxes with a ruler in the product\'s Technical specification', () => {
     const ix = indexOf(standardWorkspace());
     const n = neighborhood(ix, 'DM-STD-CODE', 1);
     expect(n.edges.map((e) => `${e.source} ${e.relation} ${e.target}`)).toEqual(expect.arrayContaining([
@@ -96,7 +95,6 @@ describe('standards in the graph', () => {
       'DM-STD-CODE parent DM-STD-CODE-R02',
     ]));
     expect(n.nodes.find((x) => x.id === 'DM-STD-CODE')?.stage).toBe('technical-specification');
-    expect(relationStyle('meets')).toBe('design');
     cleanup();
     const { container } = render(<Legend />);
     expect(container.querySelector('.graph-swatch.stage-technical-specification')?.closest('li')).toHaveTextContent(/a standard and its rules/);
@@ -104,6 +102,5 @@ describe('standards in the graph', () => {
     expect(shapeOf('standard_rule')).toEqual({ shape: 'octagon', mark: 'ruler' });
     expect(container.querySelector('.graph-swatch.shape-stack')?.closest('li')).toHaveTextContent(/a standard with a ruler/);
     expect(container.querySelector('.graph-swatch.mark-ruler')?.closest('li')).toHaveTextContent(/a standard or a standard rule/);
-    expect(container.querySelector('.graph-line.rel-design')?.closest('li')).toHaveTextContent(/meets/);
   });
 });

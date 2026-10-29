@@ -42,7 +42,7 @@ beforeEach(() => {
   window.sessionStorage.clear();
   // The wiki's tests read the card's whole page, so the card starts expanded (More) here; the card's own tests clear
   // this to see the summary it opens with by default.
-  window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
+  window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
   resetExpanded();
 });
 
