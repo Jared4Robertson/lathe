@@ -1,14 +1,14 @@
 // Measures the Tool Library's business outcomes for one month, from the library's own records.
 // Spec: the projection TL-LEND-RM02-PJ, the query handler TL-LEND-QRY02-H and the report TL-LEND-RP01, which
-// measures TL-BO01 to TL-BO04 (examples/tool-library/data/). The counting is the service TL-LEND-DS02-SV.
+// measures TL-BO01, TL-BO02, TL-BO04 and TL-BO05 (examples/tool-library/data/). The counting is the service TL-LEND-DS02-SV.
 // Usage: DB=library.db node src/outcomes.ts 2026-03
 //   TIME_ZONE defaults to America/New_York; dates are counted in the library's time zone (TL-LEND-DS01).
 // What it counts, for the month given:
 // - TL-BO01 More tools in use: the loans opened in the month, over the tools in the catalog by its end.
 // - TL-BO02 Tools back on time: of the loans due in the month, the share returned on a day after their due date,
 //   or still out and overdue now.
-// - TL-BO03 No damaged tool lent: the loans opened in the month on a tool that needed repair then, from the
-//   DamageReported and ToolRepaired events the outbox keeps.
+// - TL-BO05 Damaged tools back in service quickly: the repairs made in the month and the median days from each
+//   tool's damage report to its repair, from the DamageReported and ToolRepaired events the outbox keeps.
 // - TL-BO04 More neighbors borrowing: the members who opened at least one loan in the 90 days up to the month's end.
 import { Database } from './database.ts';
 import { Outbox } from './events.ts';
