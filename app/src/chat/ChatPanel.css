@@ -85,13 +85,6 @@
 .chat-change.is-removed .chat-change-kind { color: var(--change-before-ink); }
 .chat-change-id { flex: none; font-family: var(--mono); font-size: 0.76rem; }
 .chat-change-title { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chat-change-fields { margin: 4px 0 0; display: grid; gap: 4px; }
-.chat-change-fields > div { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
-.chat-change-fields dt { color: var(--muted); font-size: 0.74rem; }
-.chat-change-fields dd { margin: 0; display: grid; gap: 2px; }
-.chat-change-fields del, .chat-change-fields ins { display: block; padding: 2px 6px; border-radius: 3px; text-decoration: none; white-space: pre-wrap; overflow-wrap: anywhere; }
-.chat-change-fields del { background: var(--change-before-bg); color: var(--change-before-ink); }
-.chat-change-fields ins { background: var(--change-after-bg); color: var(--change-after-ink); }
 
 /* The foot: what Claude is doing, and the composer. */
 .chat-status { flex: none; min-height: 0; padding: 0 12px; font-size: 0.76rem; color: var(--muted); }

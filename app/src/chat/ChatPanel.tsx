@@ -10,7 +10,8 @@ import type { SpecIndex } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
 import { proseLinks } from '../specs/mentions';
 import { addressOf } from '../views/address';
-import { diffIndexes, type RecordDiff } from './diff';
+import { reloadChanges, type RecordChange } from '../changes/changes';
+import { CHANGE_LABEL, ChangeDetails } from '../changes/ChangeDetails';
 import type { ChatBridge, ChatItem, ChatSessions, OpenChoice, SessionSummary } from './types';
 import { useChat, type Turn } from './useChat';
 import './ChatPanel.css';
@@ -394,46 +395,34 @@ function PermissionPrompt({ item, answer }: { item: Extract<ChatItem, { kind: 'p
 
 // ---------- A turn's changes ----------
 
-const CHANGE_LABEL = { added: 'Added', removed: 'Removed', changed: 'Changed' } as const;
 /** The most records a turn's changes list; the rest are counted. */
 const MOST_RECORDS = 40;
 
+/** The records a turn changed (LA-PLT-UC19-R03): the engine's record diff (changes/changes.ts) of the spec before the turn against the spec after it. */
 function TurnChanges({ before, after }: { before: SpecIndex; after: SpecIndex }) {
-  const diffs = useMemo(() => diffIndexes(before, after), [before, after]);
+  const diffs = useMemo(() => reloadChanges(before, after), [before, after]);
   if (diffs.length === 0) return null;
   const shown = diffs.slice(0, MOST_RECORDS);
   return (
     <details className="chat-changes" open>
       <summary>{diffs.length === 1 ? '1 record changed' : `${diffs.length} records changed`}</summary>
       <ul className="chat-change-list">
-        {shown.map((d) => <RecordChange key={d.id} diff={d} />)}
+        {shown.map((d) => <TurnChange key={d.id} index={after} change={d} />)}
       </ul>
       {diffs.length > shown.length && <p className="hint">and {diffs.length - shown.length} more.</p>}
     </details>
   );
 }
 
-function RecordChange({ diff }: { diff: RecordDiff }) {
+function TurnChange({ index, change }: { index: SpecIndex; change: RecordChange }) {
   return (
-    <li className={`chat-change is-${diff.change}`}>
+    <li className={`chat-change is-${change.change}`}>
       <div className="chat-change-head">
-        <span className="chat-change-kind">{CHANGE_LABEL[diff.change]}</span>
-        {diff.change === 'removed' ? <span className="chat-change-id">{diff.id}</span> : <Link to={addressOf(diff.id)} className="chat-change-id mention">{diff.id}</Link>}
-        <span className="chat-change-title">{diff.title}</span>
+        <span className="chat-change-kind">{CHANGE_LABEL[change.change]}</span>
+        {change.change === 'removed' ? <span className="chat-change-id">{change.id}</span> : <Link to={addressOf(change.id)} className="chat-change-id mention">{change.id}</Link>}
+        <span className="chat-change-title">{change.title}</span>
       </div>
-      {diff.change === 'changed' && (
-        <dl className="chat-change-fields">
-          {diff.fields.map((f) => (
-            <div key={f.field}>
-              <dt>{f.field}</dt>
-              <dd>
-                {f.before !== null && <del>{f.before}</del>}
-                {f.after !== null && <ins>{f.after}</ins>}
-              </dd>
-            </div>
-          ))}
-        </dl>
-      )}
+      <ChangeDetails index={index} change={change} />
     </li>
   );
 }

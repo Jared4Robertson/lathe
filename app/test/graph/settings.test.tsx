@@ -3,7 +3,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest';
 import { GRAPH_LAYOUTS } from '../../src/graph/GraphPage';
 import { stepKey } from '../../src/graph/steps';
-import { DEFAULT_CARD, DEFAULT_CHAT, DEFAULT_GRAPH_SETTINGS, saveSessionSettings, sessionSettings } from '../../src/graph/settings';
+import { DEFAULT_CARD, DEFAULT_CHANGES, DEFAULT_CHAT, DEFAULT_GRAPH_SETTINGS, saveSessionSettings, sessionSettings } from '../../src/graph/settings';
 import { activateTab, closeTab, cycleTab, emptyTabs, keepTab } from '../../src/views/tabs';
 import { arrive, type PageTabs } from '../../src/views/useTabs';
 import type { GraphSettings } from '../../src/graph/GraphPage';
@@ -36,7 +36,7 @@ async function step(key: string) {
 describe('moving through the graph keeps how it is drawn', () => {
   it('LA-EXP-INV09-T Opening, activating, cycling and closing tabs never touch the graph settings; only the person\'s change does', () => {
     const mine: GraphSettings = { ...DEFAULT_GRAPH_SETTINGS, layout: 'nested', depth: 2, minimap: true };
-    saveSessionSettings({ graph: mine, card: DEFAULT_CARD, chat: DEFAULT_CHAT });
+    saveSessionSettings({ graph: mine, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES });
     const unchanged = (set: PageTabs) => {
       expect(sessionSettings().graph).toEqual(mine);
       expect(set.tabs.flatMap((t) => Object.keys(t.state))).not.toContain('graph');
@@ -54,7 +54,7 @@ describe('moving through the graph keeps how it is drawn', () => {
     set = closeTab(set, set.active!);
     unchanged(set);
     // The person's own change is the only one.
-    saveSessionSettings({ graph: { ...mine, layout: 'voronoi' }, card: DEFAULT_CARD, chat: DEFAULT_CHAT });
+    saveSessionSettings({ graph: { ...mine, layout: 'voronoi' }, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES });
     expect(sessionSettings().graph.layout).toBe('voronoi');
   });
 

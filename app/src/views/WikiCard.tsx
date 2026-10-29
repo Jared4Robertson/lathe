@@ -20,6 +20,7 @@ import { factsOf, leadOf } from '../specs/RecordText';
 import { DomainWiki, ProductWiki, problemsUnder } from '../specs/SpecPages';
 import { addressOf, focusOf, type FocusRoute } from './address';
 import { focusTrail } from './HeaderStrip';
+import { CardChanges } from '../changes/CardChanges';
 
 // The wiki card (LA-V96): the one card, the focused record's or group's wiki page, with its editing,
 // floating over the right of the open space above whichever stage shows, in one constant spot just under the stage's toolbar row, its height a steady share of
@@ -185,6 +186,7 @@ function CardSummary({ index, route }: { index: SpecIndex; route: FocusRoute }) 
         <dl className="fields">
           {keyFacts(index, record).map((f, i) => <div key={`${i}-${f.label}`}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}
         </dl>
+        <CardChanges index={index} id={focus} summary />
       </div>
     </Editable>
   );
@@ -212,7 +214,7 @@ function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) 
   return (
     <>
       <WikiPage index={index} route={route} />
-      <div className="spec-body"><HistorySection index={index} id={focusOf(route)} /></div>
+      <div className="spec-body"><CardChanges index={index} id={focusOf(route)} /><HistorySection index={index} id={focusOf(route)} /></div>
     </>
   );
 }

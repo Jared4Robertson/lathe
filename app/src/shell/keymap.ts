@@ -60,6 +60,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'goToDefinition', title: "Go to the focused link's record", group: 'Navigate', keys: ['F12'], when: 'global' },
   { id: 'showReferences', title: 'Show incoming links in the wiki card', group: 'Navigate', keys: ['Shift+F12'], when: 'page' },
   { id: 'openChecks', title: 'Open Checks', group: 'Navigate', keys: ['Mod+Shift+M'], when: 'global' },
+  { id: 'openChanges', title: 'Open the Changes panel', group: 'Navigate', keys: ['g d'], when: 'global' },
   { id: 'nextProblem', title: 'Next problem on this page', group: 'Navigate', keys: ['F8'], when: 'global' },
   { id: 'previousProblem', title: 'Previous problem on this page', group: 'Navigate', keys: ['Shift+F8'], when: 'global' },
   { id: 'focusNav', title: 'Move focus to the navigation', group: 'Navigate', keys: ['Mod+Shift+E'], when: 'global' },
@@ -88,6 +89,9 @@ export const COMMANDS: readonly Command[] = [
   // collapses, once nothing above the card is open (each overlay takes its own Escape first, LA-V96-R19).
   { id: 'toggleWikiCard', title: 'Show or collapse the wiki card', group: 'View', keys: ['Enter', 'Ctrl+W'], otherKeys: ['Enter', 'Alt+W'], when: 'page' },
   { id: 'collapseWikiCard', title: 'Collapse the wiki card', group: 'View', keys: ['Escape'], when: 'page' },
+  // The Changes lens and Follow (LA-EXP-UC13), the same on every stage.
+  { id: 'toggleChangesLens', title: 'Changes lens: dim everything unchanged, or show everything again', group: 'View', keys: ['g l'], when: 'page' },
+  { id: 'toggleFollow', title: 'Follow the changes: glide to each change as it lands', group: 'View', keys: [], when: 'page' },
   { id: 'expandAll', title: 'Expand all rows on this page', group: 'View', keys: [], when: 'page' },
   { id: 'collapseAll', title: 'Collapse all rows on this page', group: 'View', keys: [], when: 'page' },
   // Themes (app/src/theme). VS Code's Cmd+K Cmd+T cannot be used: Mod+K is a whole binding (quick open), and a sequence may not start with one.

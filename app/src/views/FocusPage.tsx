@@ -24,6 +24,9 @@ import { Button } from '../components/Button';
 import { useViewState } from '../chat/appRequests';
 import { parseFormatPage } from '../format/reference';
 import { overlaysOf, pageHref } from './overlays';
+import { ChangesTools } from '../changes/ChangesTools';
+import { useChanges } from '../changes/changes';
+import { useLiveVersion } from '../changes/marks';
 
 // One page for one thing (a record, a group, a product or a domain), at one address. One stage
 // fills the window behind everything: the Graph, the ERD (of a domain, an aggregate or an entity's
@@ -287,6 +290,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useCommand('nextTab', () => tabs.cycle(1), tabs.set.tabs.length > 1);
   useCommand('previousTab', () => tabs.cycle(-1), tabs.set.tabs.length > 1);
 
+  useFollow(focus, onNavigate, stageEl);
+
   const content: Record<StageName, ReactNode> = {
     graph: (
       <Suspense fallback={<p className="hint graph-loading">Loading the graph…</p>}>
@@ -307,6 +312,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const stageBox = (
     <div ref={stageEl} className="focus-stage" data-stage={stage} aria-label={`${STAGE_LABELS[stage]} stage`} role="region">
       {content[stage]}
+      <ChangesTools search={search} />
     </div>
   );
 
@@ -366,6 +372,44 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
 }
 
 const ignore = () => {};
+
+/**
+ * Follow (LA-EXP-UC13): while it is on, the focus moves to each change as it lands, the newest, and the camera glides
+ * there as for any focus. The Reader's own move turns it off, with a note saying so: a focus Follow did not make, or a
+ * drag, a pinch or the wheel on the stage.
+ */
+function useFollow(focus: string, onNavigate: (id: string) => void, stageEl: RefObject<HTMLDivElement | null>) {
+  const { follow, setFollow, live, product } = useChanges();
+  const version = useLiveVersion();
+  /** The focus Follow moved to, and the newest change it has followed. */
+  const went = useRef<string | null>(null);
+  const seen = useRef(0);
+  useEffect(() => {
+    if (!follow) { went.current = null; seen.current = performance.now(); return; }
+    const newest = live.all().filter((m) => m.product === product && m.change !== 'removed' && m.t > seen.current).sort((a, b) => b.t - a.t)[0];
+    if (!newest) return;
+    seen.current = newest.t;
+    if (newest.id === focus) return;
+    went.current = newest.id;
+    onNavigate(newest.id);
+  }, [follow, version, live, product]);
+  const shown = useRef(focus);
+  useEffect(() => {
+    const was = shown.current;
+    shown.current = focus;
+    if (!follow || was === focus || focus === went.current) return;
+    setFollow(false, 'Follow is off: you moved the focus.');
+  }, [focus, follow, setFollow]);
+  useEffect(() => {
+    const el = stageEl.current;
+    if (!el || !follow) return;
+    const moved = () => setFollow(false, 'Follow is off: you moved the camera.');
+    const pressed = (e: PointerEvent) => { if ((e.target as Element | null)?.closest?.('canvas, .react-flow__pane, .react-flow__node, .graph-controls, .react-flow__controls')) moved(); };
+    el.addEventListener('wheel', moved, { passive: true });
+    el.addEventListener('pointerdown', pressed);
+    return () => { el.removeEventListener('wheel', moved); el.removeEventListener('pointerdown', pressed); };
+  }, [follow, setFollow, stageEl]);
+}
 
 /**
  * The stage behind the products picker (LA-V97): the last product's stage, on the stage last used, dimmed and out of

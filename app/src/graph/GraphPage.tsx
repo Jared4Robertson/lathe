@@ -37,6 +37,8 @@ import { boxColors, paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type P
 import { hitPlate } from './hit';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
+import { useChanges } from '../changes/changes';
+import { GHOST_MS, lensFade, marksMoving, useStageMarks } from '../changes/marks';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
 // Clicking a record or a group focuses it (through onNavigate, so the host changes the address and
@@ -381,6 +383,8 @@ export interface SceneBox {
   lit: boolean | null;
   /** How strongly the focus fade draws it (LA-EXP-DS09): 1 in the focus's subtree, less outside it, eased while the fade follows a new focus. */
   strength: number;
+  /** Its live mark (changes/marks.ts): new or changed as the data reloaded, or null. */
+  change: 'added' | 'changed' | null;
   /** Its box in the map, and its text's and border's scales there: fixed by the map, never by the camera. */
   map: { x: number; y: number; w: number; h: number };
   textScale: number;
@@ -410,6 +414,8 @@ export interface Scene {
   bars: Rect[];
   lines: { id: string; source: string; target: string; style: string; link: boolean; lit: boolean | null; points: [number, number][] }[];
   spotlight: boolean;
+  /** The removed records' ghosts drawn now, by ID. */
+  ghosts: string[];
 }
 /** A camera as the scene reports it: to a hundredth of a pixel, and the zoom to nine significant digits. */
 export const roundCamera = (v: Viewport) => ({ x: Math.round(v.x * 100) / 100, y: Math.round(v.y * 100) / 100, zoom: Number(v.zoom.toPrecision(9)) });
@@ -697,8 +703,15 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (!at) { at = focusStrength(map, f, l); strengths.set(key, at); }
     return at;
   };
-  /** How strongly each box is drawn now: the new focus's fade, eased in from the old one's over the camera's glide. */
+  // The live marks (changes/marks.ts), the removed records' ghosts placed where the map drawn before had them; and the
+  // Changes lens, which fades everything unchanged from its baseline in place of the focus fade.
+  const changes = useChanges();
+  const placeOf = useCallback((id: string) => { const n = map.nodes.get(id); return n ? { x: n.x, y: n.y, w: n.w, h: n.h } : null; }, [map]);
+  const marks = useStageMarks(placeOf);
+  const lens = useMemo(() => (changes.lens ? lensFade(changes.byId, { get focusFade() { return look.current.focusFade; } }) : null), [changes.lens, changes.byId]);
+  /** How strongly each box is drawn now: the new focus's fade, eased in from the old one's over the camera's glide; with the lens on, the lens's. */
   const strengthNow = (): { at: (id: string) => number; done: boolean } => {
+    if (lens) return { at: lens, done: true };
     const shift = fadeShift.current;
     const to = strengthOf(focus);
     const t = shift.from === null || shift.to !== focus || shift.duration <= 0 ? 1 : Math.min(1, (performance.now() - shift.start) / shift.duration);
@@ -720,7 +733,8 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     const spot = spotNow();
     const sp = spotlight.current;
     const fade = strengthNow();
-    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at };
+    const live = marks.at(performance.now());
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at, marks: live };
     paint(ctx.current, dpr, camOf(view.current, s), frame, look.current, fonts, state);
     // The leader line to the wiki card (LA-V96-R24), under this camera, from the focus's box in its outline's color.
     const v = view.current;
@@ -730,10 +744,10 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       host: wrapper.current, space, dpr, color: focusPlate ? boxColors(look.current, focusPlate).edge : look.current.ink,
       box: node ? { left: node.x * v.zoom + v.x, top: node.y * v.zoom + v.y, right: (node.x + node.w) * v.zoom + v.x, bottom: (node.y + node.h) * v.zoom + v.y } : null,
     });
-    if (!spot.done || !fade.done) requestPaint();
+    if (!spot.done || !fade.done || marksMoving(live, frame.plates.map((p) => p.id))) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
   };
-  // Every render may change what is drawn: the focus, the filters, the plates, the theme.
+  // Every render may change what is drawn: the focus, the filters, the plates, the theme, a change landing.
   useEffect(() => { requestPaint(); });
   // The wiki card moving without the camera draws its leader line again in the same frame.
   useLeaderFollow(wrapper, space, () => paintRef.current());
@@ -891,11 +905,13 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         canvas: { left: r.left, top: r.top, width: s.w, height: s.h },
         textBarPx: TEXT_BAR_PX,
         spotlight: sp.id !== null,
+        ghosts: ((live) => live.reduced ? [] : live.ghosts.filter((g) => live.now - g.t < GHOST_MS).map((g) => g.id))(marks.at(performance.now())),
         bars: frame.bars.map((b) => rect(b.x, b.y, b.w, b.h)),
         lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
         boxes: frame.plates.map((p) => ({
           id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, group: p.group,
           hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, strength: strength(p.id),
+          change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(p.id)),
           map: { x: p.x, y: p.y, w: p.w, h: p.h }, textScale: p.text, boxScale: p.scale,
           rect: rect(p.x, p.y, p.w, p.h),
           polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,

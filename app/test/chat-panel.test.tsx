@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SETTINGS_KEY } from '../src/graph/settings';
 import { focusAnswer, openAnswer } from '../src/chat/appRequests';
-import { diffIndexes } from '../src/chat/diff';
+import { reloadChanges } from '../src/changes/changes';
 import { sessionDate } from '../src/chat/ChatPanel';
 import type { ChatBridge, ChatItem, ChatPatch, ChatSessions, ChatStatus, OpenChoice } from '../src/chat/types';
 import { indexOf, setRow } from './fixtures/load';
@@ -59,7 +59,7 @@ function fakeChat(sessions: ChatSessions = SESSIONS) {
 }
 
 const openChat = (open = true) =>
-  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: open, chatWidth: null }));
+  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: open, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
 const chat = () => screen.getByRole('complementary', { name: 'Chat with Claude' });
 const log = () => within(chat()).getByRole('log', { name: 'Conversation' });
 
@@ -166,11 +166,12 @@ describe('LA-PLT-UC19-R03-T01 Tool calls are rows that expand, and a turn\'s cha
     commands.push({ ...removed, id: 'DM-SHOP-CMD09', title: 'Empty basket' });
     const views = after.sources[0].tables.view;
     views[0] = { ...views[0], description: 'Changed.' };
-    const diffs = diffIndexes(indexOf(before), indexOf(after));
+    const diffs = reloadChanges(indexOf(before), indexOf(after));
     expect(diffs.map((d) => [d.id, d.change])).toEqual(expect.arrayContaining([['DM-SHOP-CMD01', 'removed'], ['DM-SHOP-CMD09', 'added'], [views[0].id, 'changed']]));
-    expect(diffs.find((d) => d.id === views[0].id)!.fields).toEqual([{ field: 'description', before: before.sources[0].tables.view[0].description ?? null, after: 'Changed.' }]);
+    const was = before.sources[0].tables.view[0].description;
+    expect(diffs.find((d) => d.id === views[0].id)!.fields).toEqual([{ name: 'description', ...(was === undefined ? {} : { before: was }), after: 'Changed.' }]);
     const same = indexOf(before);
-    expect(diffIndexes(same, same)).toEqual([]);
+    expect(reloadChanges(same, same)).toEqual([]);
   });
 });
 

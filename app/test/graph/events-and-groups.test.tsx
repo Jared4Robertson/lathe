@@ -72,7 +72,7 @@ describe('the rules the graph keeps', () => {
   });
 
   it('LA-VO92-C01-T A graph\'s depth is a whole number from 1 to 3, and its layout one of tree, nested and voronoi', () => {
-    const stored = (layout: string, depth: number) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
+    const stored = (layout: string, depth: number) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
     for (const layout of ['tree', 'nested', 'voronoi'] as const) {
       for (const depth of [1, 2, 3]) {
         stored(layout, depth);

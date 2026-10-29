@@ -26,7 +26,7 @@ function serveHistory(answer: (query: URLSearchParams) => unknown) {
 }
 
 /** The wiki card open on the whole page, for the session. */
-const expanded = () => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
+const expanded = () => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
 
 describe('a record\'s History in the wiki card', () => {
   it('LA-V96-R26-T01 History in the wiki card lists the commits that touched the record\'s rows, the uncommitted change first, shows a commit\'s diff inline, loads more, and says calmly when there is no git', async () => {

@@ -96,6 +96,10 @@ body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(-
   --change-before-bg: color-mix(in srgb, var(--spark) 16%, transparent);
   --change-after-ink: var(--steel);
   --change-before-ink: var(--error);
+  /* The live marks on every stage and the Changes panel's (app/src/changes): a new record, a changed one, a removed one's ghost. */
+  --change-new: var(--g-use-cases);
+  --change-changed: var(--spark);
+  --change-gone: var(--muted);
 }
 /* The app (LA-V96): the stage behind everything, the nav and the page's panels floating over it, inset from the window
    and each other by --float-inset. Nothing replaces the stage (LA-PAT-APP-UX-R20): a tool (Checks, Appearance, the theme
@@ -1051,17 +1055,17 @@ a.row-link.row-link:focus-visible { outline: none; }
 .tool-panel { position: absolute; z-index: 15; left: var(--nav-space); box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--float-border); border-radius: var(--panel-radius); background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); }
 .tool-panel:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
 .tool-panel:focus { outline: none; }
-.tool-panel.checks-panel, .tool-panel.theme-panel { top: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); bottom: var(--float-inset); }
+.tool-panel.checks-panel, .tool-panel.changes-panel, .tool-panel.theme-panel { top: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); bottom: var(--float-inset); }
 .tool-panel.appearance-popover { bottom: var(--float-inset); max-height: calc(100% - 3 * var(--float-inset) - var(--page-bar-height) - var(--strip-height)); }
 /* The tools' widths (App.tsx's TOOL_WIDTHS, which the crowding rule counts); on a phone each is a sheet. */
 @media (min-width: 901px) {
-  .tool-panel.checks-panel { width: 380px; }
+  .tool-panel.checks-panel, .tool-panel.changes-panel { width: 380px; }
   .tool-panel.theme-panel { width: 600px; max-width: calc(100% - var(--nav-space) - var(--chat-space)); }
   .tool-panel.appearance-popover { width: 360px; }
 }
 .tool-panel-head { flex: none; display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 4px 4px 14px; border-bottom: 1px solid var(--float-border); }
 .tool-panel-title { flex: 1 1 auto; min-width: 0; margin: 0; font: 700 0.98rem var(--display); }
-.tool-panel-head .checks { margin: 0; font-size: 0.78rem; white-space: nowrap; }
+.tool-panel-head :is(.checks, .changes-count) { margin: 0; font-size: 0.78rem; white-space: nowrap; }
 .tool-panel-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
 .tool-panel .spec-body { padding: 4px 14px 16px; }
 .tool-panel .spec-section-head h3, .tool-panel .spec-section-head h4 { font-size: 0.92rem; }

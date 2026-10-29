@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Coverage, Kind, Problem, RecordedException, RelationRule, StageRule, TraceChain } from '../../../lathe/src/types';
-import type { Row, SpecData, Value } from '../../../lathe/src/server/contract';
+import type { Row, SpecData, SpecSource, Value } from '../../../lathe/src/server/contract';
 import type { SchemaDescription, Stage } from '../../../lathe/src/store/schema';
 import { onLatheEvent } from '../events';
 import { isRecordId } from '../views/address';
 
-export type { Coverage, Kind, Problem, RecordedException, RelationRule, Row, SchemaDescription, SpecData, Stage, StageRule, TraceChain, Value };
+export type { Coverage, Kind, Problem, RecordedException, RelationRule, Row, SchemaDescription, SpecData, SpecSource, Stage, StageRule, TraceChain, Value };
 
 // The app's spec index, built from the typed rows GET /api/spec serves (lathe/src/server/contract.ts):
 // a record per row of a kind's table, its parent from the one of its kind's parent columns that
@@ -57,6 +57,8 @@ export interface Workspace {
    * whole workspace the workspace's own product's.
    */
   dataDir: string;
+  /** Each product folder's rows as served, every product's in the workspace: what the record diff reads (changes/changes.ts). */
+  sources: SpecSource[];
   /** Every kind, in the schema's kind order (kindOrder). */
   kinds: Kind[];
   /** The six stages, in order. */
@@ -193,6 +195,7 @@ export function buildWorkspace(data: SpecData): Workspace {
   return {
     schema,
     dataDir: data.sources[0]?.dataDir.replace(/\/+$/, '') ?? '',
+    sources: data.sources,
     kinds,
     stages,
     relations,

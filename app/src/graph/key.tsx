@@ -3,6 +3,7 @@ import { Tooltip } from '../shell/Tooltip';
 import type { Stage, StageRule } from '../specs/data';
 import { MARKS, SHAPES, type Mark, type Shape } from './shapes';
 import { MarkIcon, ShapeIcon } from './shape-icons';
+import { ChangesKey } from '../changes/ChangesKey';
 
 // The Graph stage's key (LA-V93-R12): what each color, shape, mark and line means, and how to move
 // around. It opens from a small Key button at the end of the stage's toolbar, as a popover over the
@@ -65,6 +66,7 @@ export function GraphKey({ stages = [] }: { stages?: readonly StageRule[] }) {
         <li><span className="graph-line" /> parent / child (the tree, through stages, folders and groups)</li>
         <li><span className="graph-mark error">!</span> has errors <span className="graph-mark warning">!</span> has warnings <span className="graph-mark gap">gap</span> not designed or not proved (on a group: among its members)</li>
       </ul>
+      <ChangesKey />
       <p className="hint">The graph is one map of the nav's tree: a product holds its own stages and its domains, a domain its five stages, each stage a folder per kind, each folder the records that start a branch of the stage, and each record what sits under it in the same stage. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A record's links to records in other branches are the Trace view's, which draws an obligation's chain from what designs it to the tests that prove it, and the wiki card's, which lists every link.</p>
       <p className="hint">The Nested layout (v) draws the same tree as boxes inside boxes: the product made of its stages and domains, each domain of its stages, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
       <p className="hint">The Voronoi layout draws the same tree as polygon cells inside cells: the product a hexagon split into its stages and domains, each domain split into its stages, and so on down, each cell as big as the records under it and never too small for its name. It frames and labels as the Nested layout does.</p>

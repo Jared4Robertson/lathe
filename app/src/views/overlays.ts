@@ -3,9 +3,9 @@ import { navigate } from '../router';
 import { isFocusPath } from './address';
 
 // Nothing replaces the stage: tools open as panels over it (LA-PAT-APP-UX-R20). The stage is what the
-// Reader navigates; Checks, Appearance and the theme editor open as frosted panels over it, and a
+// Reader navigates; Checks, Changes, Appearance and the theme editor open as frosted panels over it, and a
 // format page opens in the wiki card. Each is layered on the current focus in the address's query
-// (`?panel=checks`, `?panel=appearance`, `?panel=theme&theme=<id>`, `?page=format/kinds/use_case`),
+// (`?panel=checks`, `?panel=changes`, `?panel=appearance`, `?panel=theme&theme=<id>`, `?page=format/kinds/use_case`),
 // so the stage underneath keeps its place and every overlay is still a link: a link to one is a
 // patch of the current address (router.tsx). A move to another focus carries the open tool along
 // (the Checks panel stays open to work down its list), while the card follows the new focus, so a
@@ -13,8 +13,8 @@ import { isFocusPath } from './address';
 // closes the last one opened, the topmost, and focus goes back where it was before it opened.
 
 /** The tools that open as panels over the stage. */
-export type ToolPanel = 'checks' | 'appearance' | 'theme';
-const TOOL_PANELS: readonly ToolPanel[] = ['checks', 'appearance', 'theme'];
+export type ToolPanel = 'checks' | 'changes' | 'appearance' | 'theme';
+const TOOL_PANELS: readonly ToolPanel[] = ['checks', 'changes', 'appearance', 'theme'];
 
 /** The query parameters of the overlays: the tool panel, the theme the editor edits, and the format page in the wiki card. */
 export const PANEL_PARAM = 'panel';

@@ -17,6 +17,8 @@ import { isBool, usePanelSize, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage, StageBackdrop } from './views/FocusPage';
 import { ChecksPanel } from './views/ChecksPanel';
+import { ChangesPanel } from './changes/ChangesPanel';
+import { ChangesProvider } from './changes/ChangesProvider';
 import { ProductsPicker } from './views/ProductsPicker';
 import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost, type ToolPanel } from './views/overlays';
 import { ChatPanel } from './chat/ChatPanel';
@@ -36,7 +38,7 @@ const ThemeEditorPanel = lazy(() => import('./theme/Appearance').then((m) => ({ 
 setCarry(carryOverlays);
 
 /** The width of each tool over the stage, right of the nav, in px: what the open space leaves room for (openSpace.ts). */
-const TOOL_WIDTHS: Record<ToolPanel, number> = { checks: 380, appearance: 360, theme: 600 };
+const TOOL_WIDTHS: Record<ToolPanel, number> = { checks: 380, changes: 380, appearance: 360, theme: 600 };
 
 export default function App() {
   return (
@@ -134,6 +136,7 @@ function Shell() {
   const space = spaces.current?.id ?? null;
   useCommand('openChecks', () => navigate(panelHref('checks')), !!space);
   useCommand('goChecks', () => navigate(panelHref('checks')), !!space);
+  useCommand('openChanges', () => navigate(panelHref('changes')), !!space);
   useCommand('goFormat', () => navigate(formatPath));
   useCommand('goHome', () => navigate(HOME_PATH));
   useCommand('goToDefinition', () => {
@@ -197,6 +200,8 @@ function Shell() {
   let toolPanel = null;
   if (tool === 'checks' && spaces.index && product) {
     toolPanel = <ChecksPanel index={spaces.index} product={product} focus={focusRoute ? focusOf(focusRoute) : null} sheet={narrow} onClose={closeTool} />;
+  } else if (tool === 'changes' && spaces.index && product) {
+    toolPanel = <ChangesPanel index={spaces.index} focus={focusRoute ? focusOf(focusRoute) : null} sheet={narrow} onClose={closeTool} />;
   } else if (tool === 'appearance') {
     toolPanel = <Suspense fallback={null}><AppearancePopover sheet={narrow} onClose={closeTool} /></Suspense>;
   } else if (tool === 'theme') {
@@ -206,6 +211,7 @@ function Shell() {
   return (
     <WriterProvider value={writer}>
     <SpacesProvider value={spaces}>
+    <ChangesProvider index={spec.index} product={spaces.current?.id ?? null}>
     <RoomContext.Provider value={room}>
     <SpaceCommands spaces={spaces} />
     <DesktopTitleBar index={spaces.index} />
@@ -275,6 +281,7 @@ function Shell() {
       )}
     </div>
     </RoomContext.Provider>
+    </ChangesProvider>
     </SpacesProvider>
     </WriterProvider>
   );

@@ -1,0 +1,61 @@
+/* What changed (app/src/changes, LA-EXP-UC13): the stages' Changes controls, the Changes panel, the wiki card's Changes
+   section, the ERD's live marks, and the marks' key entries. Colors are the --change-* tokens (styles.css). */
+
+/* The Changes controls float at the foot of the open space, centered, on every stage. */
+.changes-tools[data-stage-tools="bottom"] { left: 50%; right: auto; transform: translateX(-50%); display: flex; align-items: center; gap: 4px; padding: 4px 6px; font-size: 0.84rem; white-space: nowrap; max-width: calc(100% - 2 * max(var(--open-left, 0px), var(--chat-space, 0px))); }
+.changes-tools .button[aria-pressed="true"] { background: var(--steel-bg); color: var(--steel); }
+.changes-tools .section-count.is-on { background: var(--change-changed); color: var(--on-mark); }
+.changes-note { position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); margin: 0; padding: 4px 10px; border: 1px solid var(--float-border); border-radius: var(--panel-radius); background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; white-space: nowrap; }
+.changes-since { display: inline-flex; align-items: center; gap: 6px; }
+.changes-since-name { color: var(--muted); font-size: 0.78rem; }
+.changes-tools .changes-since-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.changes-since select { font: inherit; color: inherit; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 2px 4px; }
+.changes-since.is-panel { margin: 8px 0 4px; }
+@media (max-width: 900px) { .changes-tools[data-stage-tools="bottom"] { font-size: 0.78rem; } }
+
+/* A change's dot: green for new, the spark for changed. */
+.change-dot { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--change-changed); vertical-align: middle; margin-right: 6px; }
+:is(.is-added, [data-change="added"]) > .change-dot { background: var(--change-new); }
+
+/* The panel's cards and the card's section. */
+.changes-count { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
+.changes-list { margin-top: 8px; }
+.changes-kind { color: var(--muted); font-size: 0.78rem; }
+.changes-what { margin: 2px 0 0; font-size: 0.8rem; color: var(--muted); }
+.changes-when { white-space: nowrap; }
+.changes-line { margin: 8px 0 0; font-size: 0.84rem; }
+.changes-since-detail { color: var(--muted); font-size: 0.8rem; }
+.change-details { display: grid; gap: 6px; margin-top: 6px; }
+.change-fields dd { font-size: 0.82rem; }
+.change-before, .change-after { padding: 0 4px; border-radius: 3px; overflow-wrap: anywhere; white-space: pre-wrap; }
+.change-before { background: var(--change-before-bg); color: var(--change-before-ink); text-decoration: line-through; }
+.change-after { background: var(--change-after-bg); color: var(--change-after-ink); text-decoration: none; }
+.change-arrow { color: var(--muted); }
+.change-part h4 { margin: 0 0 2px; font-size: 0.8rem; font-weight: 600; overflow-wrap: break-word; }
+.change-part h4 small { color: var(--muted); font-weight: 400; }
+.change-links { display: grid; gap: 2px; font-size: 0.82rem; }
+.change-links .change-sign { font-size: 0.72rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.02em; }
+.change-links .is-added .change-sign { color: var(--change-after-ink); }
+.change-links .is-removed .change-sign { color: var(--change-before-ink); }
+
+/* The ERD's live marks: a new box's glow and a changed box's pulse, once, and the lasting dot. */
+.erd-box.has-change { position: relative; }
+.erd-change-dot { position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--change-changed); box-shadow: 0 0 0 1.5px var(--sheet); pointer-events: none; }
+.erd-box.is-added > .erd-change-dot { background: var(--change-new); }
+.erd-change-flash { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; }
+.erd-box.is-added > .erd-change-flash { box-shadow: inset 0 0 0 3px var(--change-new), inset 0 0 18px var(--change-new); animation: change-glow 4s ease-out; }
+.erd-box.is-changed > .erd-change-flash { box-shadow: inset 0 0 0 3px var(--box-edge); animation: change-pulse 1.4s ease-out; }
+.erd-ghost { position: absolute; top: 0; left: 0; box-sizing: border-box; border: 1.5px dashed var(--change-gone); border-radius: var(--node-radius); pointer-events: none; opacity: 0; animation: change-ghost 4s ease-out; }
+@keyframes change-glow { from { opacity: 0.8; } to { opacity: 0; } }
+@keyframes change-pulse { 0% { opacity: 1; } 30% { opacity: 0.4; } 55% { opacity: 1; } 100% { opacity: 0; } }
+@keyframes change-ghost { from { opacity: 0.8; } to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .erd-change-flash, .erd-ghost { display: none; } }
+
+/* The marks in a stage's key. */
+.changes-key { margin-top: 8px; }
+.change-swatch { display: inline-block; width: 18px; height: 11px; box-sizing: border-box; border: 1.5px solid var(--g-structural); border-radius: 2px; background: var(--sheet); position: relative; vertical-align: middle; }
+.change-swatch:is(.is-added, .is-changed)::after { content: ''; position: absolute; top: -4px; right: -4px; width: 7px; height: 7px; border-radius: 50%; background: var(--change-changed); box-shadow: 0 0 0 1.5px var(--sheet); }
+.change-swatch.is-added { box-shadow: 0 0 6px var(--change-new); }
+.change-swatch.is-added::after { background: var(--change-new); }
+.change-swatch.is-removed { border-style: dashed; border-color: var(--change-gone); background: none; }
+.change-swatch.is-lens { opacity: 0.35; }
