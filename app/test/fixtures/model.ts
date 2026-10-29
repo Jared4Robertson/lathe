@@ -21,9 +21,10 @@ export const PROBLEMS: Problem[] = [
   { severity: 'warning', check: 'not-proved', record: 'P-D-INV02', message: 'No test proves invariant P-D-INV02.' },
 ];
 
-/** Return thing's recorded exception, as the engine lists it from its command_change row. */
+/** The recorded exceptions, as the engine lists them: Return thing's command_change row, then LoanRepository's repository_share row. */
 export const EXCEPTIONS: RecordedException[] = [
   { command: 'P-D-CMD02', aggregate: 'P-D-A1', reason: 'The thing must be lendable again in the same transaction as its return.' },
+  { repository: 'P-D-REPO01', aggregate: 'P-D-A4', reason: 'Shelves are stored with the loans that take things off them.' },
 ];
 
 const coverage = (): Coverage[] => [{

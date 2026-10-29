@@ -241,6 +241,6 @@ describe('the schema version', () => {
     expect(tables.meets).toEqual([{ source_id: 'TL-LEND-REPO01', target_id: 'TL-STD-CODE-R01' }]);
     expect(tables.package_use).toEqual([{ record_id: 'TL-CAT-REPO01', package: 'better-sqlite3' }]);
     expect(changes).toEqual(["Every repository sits under its aggregate's domain and persists its aggregate: 4 renamed from <aggregate>-REPO to <domain>-REPO<nn>."]);
-    expect(todos).toEqual([expect.stringMatching(/^A repository is one record per piece of code/), 'Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.']);
+    expect(todos).toEqual([expect.stringMatching(/^A repository persists one aggregate: .* add a repository_share row with its reason/), 'Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.']);
   });
 });

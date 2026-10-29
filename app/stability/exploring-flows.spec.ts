@@ -170,7 +170,7 @@ test.describe('Exploring flows', () => {
     const handle = page.getByRole('separator', { name: 'Resize the wiki card' });
     const before = await handle.getAttribute('aria-valuenow');
     await handle.focus();
-    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('ArrowLeft');
     await expect(handle).not.toHaveAttribute('aria-valuenow', before ?? '');
     await page.keyboard.press('w');
     await expect(page.locator(WIKI)).toHaveCount(0);

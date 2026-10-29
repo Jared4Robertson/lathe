@@ -296,9 +296,10 @@ product adds its own as rows of its \`data/check.jsonl\` with its \`product_id\`
 check: the store refuses it.
 
 **Recorded exceptions** are deliberate deviations recorded with their reason: a command that also changes another
-aggregate of its domain in the same transaction (a \`command_change\` row). They are not problems: \`lathe check\`
-and the Checks page list every one in a section of their own, with its command, aggregate and reason, so each stays
-visible.
+aggregate of its domain in the same transaction (a \`command_change\` row), or a repository that also persists an
+aggregate with no repository of its own (a \`repository_share\` row), such as one generic store. They are not
+problems: \`lathe check\` and the Checks page list every one in a section of their own, with its command or
+repository, aggregate and reason, so each stays visible.
 
 **Coverage** counts every obligation as designed, built and proved, per domain and for the product outside every
 domain, and lists as gaps each obligation still short of one, and each record short of a minimum the schema leaves to

@@ -390,6 +390,27 @@ describe('recorded exceptions', () => {
       expect(text).toBe(`Recorded exceptions (1):\n  EX-LEND-CMD01 also changes aggregate EX-LEND-A2 in the same transaction: ${reason}\n\n0 errors, 0 warnings.`);
       expect(checkText({ errors: 0, warnings: 0, problems: [], exceptions: [], products: [] })).not.toContain('Recorded exceptions');
     });
+
+    it("LA-CHK-UC04-R14-T01 a repository's recorded exceptions are listed with their repository, aggregate and reason, never as warnings", async () => {
+      const reason = 'One generic store persists every table.';
+      const one = without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
+      const ws = await loadData(adding(one, {
+        command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as free while lent.' }],
+        repository_share: [{ repository_id: 'EX-LEND-REPO01', aggregate_id: 'EX-LEND-A2', reason }],
+      }));
+      expect(ws.exceptions).toEqual([
+        { command: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A2', reason: 'The tool must never show as free while lent.' },
+        { repository: 'EX-LEND-REPO01', aggregate: 'EX-LEND-A2', reason },
+      ]);
+      expect(ws.problems).toEqual([]);
+      // The check's text, which lathe check and the MCP check tool print alike.
+      const text = checkText({ errors: 0, warnings: 0, problems: [], exceptions: ws.exceptions, products: [] });
+      expect(text).toBe(
+        'Recorded exceptions (2):\n' +
+          '  EX-LEND-CMD01 also changes aggregate EX-LEND-A2 in the same transaction: The tool must never show as free while lent.\n' +
+          `  EX-LEND-REPO01 also persists aggregate EX-LEND-A2: ${reason}\n\n0 errors, 0 warnings.`,
+      );
+    });
   });
 });
 
@@ -444,15 +465,10 @@ check('repository-persists-nothing', () => {
         severity: 'error',
         check: 'repository-persists-nothing',
         record: 'EX-LEND-REPO02',
-        message: 'Repository EX-LEND-REPO02 persists no aggregate: link the aggregates it loads and saves with persists, or remove it.',
+        message: 'Repository EX-LEND-REPO02 persists no aggregate: link the aggregate it loads and saves with persists, or remove it.',
       },
     ]);
     expect(gaps(ws).filter((g) => g.startsWith('aggregate-without-repository'))).toEqual(['aggregate-without-repository EX-LEND-A2']);
-    // One repository that persists both aggregates, as a shared one does, leaves neither without one.
-    const shared = adding(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), { persists: [{ source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A2' }] });
-    const one = await loadData(without(shared, 'repository', (r) => r.id === 'EX-LEND-REPO02'));
-    expect(ofCheck(one, 'repository-persists-nothing')).toEqual([]);
-    expect(gaps(one).filter((g) => g.startsWith('aggregate-without-repository'))).toEqual([]);
   });
 });
 

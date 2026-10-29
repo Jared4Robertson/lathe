@@ -26,9 +26,10 @@ product adds its own as rows of its `data/check.jsonl` with its `product_id`. Wh
 check: the store refuses it.
 
 **Recorded exceptions** are deliberate deviations recorded with their reason: a command that also changes another
-aggregate of its domain in the same transaction (a `command_change` row). They are not problems: `lathe check`
-and the Checks page list every one in a section of their own, with its command, aggregate and reason, so each stays
-visible.
+aggregate of its domain in the same transaction (a `command_change` row), or a repository that also persists an
+aggregate with no repository of its own (a `repository_share` row), such as one generic store. They are not
+problems: `lathe check` and the Checks page list every one in a section of their own, with its command or
+repository, aggregate and reason, so each stays visible.
 
 **Coverage** counts every obligation as designed, built and proved, per domain and for the product outside every
 domain, and lists as gaps each obligation still short of one, and each record short of a minimum the schema leaves to
@@ -1331,7 +1332,7 @@ The technical record that implements each design record, such as a command's han
 
 ### Repository (`repository`)
 
-Loads and saves aggregates, each whole: the way command handlers reach their storage. It persists one aggregate or several, each linked with persists, and sits under the domain of the aggregates it persists, or, shared by several domains, under the domain that holds what they share.
+Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage. It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
@@ -1340,6 +1341,7 @@ Loads and saves aggregates, each whole: the way command handlers reach their sto
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets)), Persists ([`persists`](#relation-persists))
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Parts:** [`repository_share`](#table-repository_share)
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest), [`repository-persists-nothing`](#check-repository-persists-nothing)
 
 <a id="table-repository"></a>
@@ -1348,12 +1350,28 @@ Loads and saves aggregates, each whole: the way command handlers reach their sto
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The repository's ID: its domain's ID and REPO<nn>, such as TL-LEND-REPO01. |
 | `title` | VARCHAR | yes | Its name in code, such as LoanRepository. |
-| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it sits under: that of the aggregates it persists, or, for one several domains share, the domain that holds what they share. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it sits under: that of the aggregate it persists, or, for one several domains share, the domain that holds what they share. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
 | `description` | VARCHAR | no | How it works, in a sentence or two. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+
+<a id="table-repository_share"></a>
+
+#### `repository_share`
+
+A recorded exception to one repository per aggregate: another aggregate the repository also persists, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning.
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `repository_id` | VARCHAR → [`repository`](#table-repository) | yes | The repository that also persists the aggregate. |
+| `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The other aggregate it persists: never its own, and one no other repository persists. |
+| `reason` | VARCHAR | yes | Why the aggregate has no repository of its own. |
+
+- **Key:** `repository_id`, `aggregate_id`
+- **Unique:** `aggregate_id`
+- **Rule:** `("trim"(reason) != '')`
 
 <a id="kind-data_model"></a>
 
@@ -1871,7 +1889,7 @@ A package_use row says a technical record uses a package, so that every dependen
 
 A repository that persists no aggregate.
 
-A repository exists to load and save aggregates, each whole, and says which with persists links; one shared by several domains links each aggregate it persists. One that persists none is a leftover, or its links are missing. Link the aggregates it persists with persists, or remove it.
+A repository exists to load and save its aggregate, whole, and says which with its one persists link; other aggregates it also persists are recorded exceptions (repository_share rows). One that persists none is a leftover, or its link is missing. Link the aggregate it persists with persists, or remove it.
 
 ### Coverage gaps: technical specification
 
@@ -1879,7 +1897,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
-| <a id="gap-aggregate-without-repository"></a>`aggregate-without-repository` | [`aggregate`](#kind-aggregate), [`repository`](#kind-repository) | An aggregate no repository persists. |
+| <a id="gap-aggregate-without-repository"></a>`aggregate-without-repository` | [`aggregate`](#kind-aggregate), [`repository`](#kind-repository) | An aggregate no repository persists, directly or through a recorded exception. |
 | <a id="gap-entity-without-data-model"></a>`entity-without-data-model` | [`entity`](#kind-entity), [`data_model`](#kind-data_model) | An entity with no data model. |
 | <a id="gap-entity-without-table"></a>`entity-without-table` | [`entity`](#kind-entity), [`table`](#kind-table) | An entity with no table. |
 | <a id="gap-value-object-without-value-type"></a>`value-object-without-value-type` | [`value_object`](#kind-value_object), [`value_type`](#kind-value_type) | A value object with no value type. |
@@ -2986,7 +3004,7 @@ The technical record follows the standard rule: it shows where the rule is appli
 
 ### `persists`
 
-The repository loads and saves the aggregate, whole: one repository per aggregate, and one repository may persist several aggregates, of its domain or, when it is shared, of several.
+The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository. Another aggregate a repository also persists is a recorded exception, a repository_share row.
 
 - **Reads:** Persists / Persisted by
 - **Role:** none
