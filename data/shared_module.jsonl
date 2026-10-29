@@ -12,5 +12,9 @@
 {"id":"LA-PLT-MOD07","title":"contract.ts","domain_id":"LA-PLT","file":"lathe/src/server/contract.ts"}
 {"id":"LA-PLT-MOD08","title":"lathe-root.mjs","domain_id":"LA-PLT","file":"plugin/scripts/lathe-root.mjs"}
 {"id":"LA-PLT-MOD09","title":"gestures.ts","domain_id":"LA-PLT","file":"app/src/graph/gestures.ts"}
+{"id":"LA-PLT-MOD10","title":"chat/types.ts","domain_id":"LA-PLT","file":"app/src/chat/types.ts"}
+{"id":"LA-PLT-MOD11","title":"chat.ts","domain_id":"LA-PLT","file":"desktop/src/chat.ts"}
+{"id":"LA-PLT-MOD12","title":"bridge.ts","domain_id":"LA-PLT","file":"desktop/src/bridge.ts"}
+{"id":"LA-PLT-MOD13","title":"app-tools.ts","domain_id":"LA-PLT","file":"lathe/src/cli/app-tools.ts"}
 {"id":"LA-TRC-MOD01","title":"measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
 {"id":"LA-TRC-MOD02","title":"offer.ts","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}
