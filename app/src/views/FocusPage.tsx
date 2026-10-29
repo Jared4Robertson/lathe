@@ -22,7 +22,6 @@ import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, type SideMode
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { rememberStage, usePageTabs, type PageTabsApi } from './useTabs';
 import { WikiCard } from './WikiCard';
-import { useCardPlace } from './cardPlace';
 import { Button } from '../components/Button';
 import { useViewState } from '../chat/appRequests';
 
@@ -275,8 +274,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const [space] = useState(createOpenSpaceStore);
   const stageEl = useRef<HTMLDivElement>(null);
   useOpenSpaceMeasure(stageEl, space, layout);
-  // The card settles level with the focused box, once the focus settles and the stage has framed it (cardPlace.ts).
-  useCardPlace(cardScroll, space, settledFocus, cardShown && !narrow);
 
   // Commands.
   useCommand('stageGraph', () => setStage('graph'));
