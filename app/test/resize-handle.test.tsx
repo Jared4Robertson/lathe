@@ -37,10 +37,10 @@ describe('resizable panels', () => {
     // The wiki card sits before its handle, so Right grows it; its width is the session's.
     const card = handle('Resize the wiki card');
     fireEvent.keyDown(card, { key: 'Home' });
-    expect(card).toHaveAttribute('aria-valuenow', '300');
+    expect(card).toHaveAttribute('aria-valuenow', '360');
     fireEvent.keyDown(card, { key: 'ArrowRight', shiftKey: true });
-    expect(card).toHaveAttribute('aria-valuenow', '364');
-    expect(JSON.parse(window.sessionStorage.getItem('lathe:session-settings')!)).toMatchObject({ cardWidth: 364 });
+    expect(card).toHaveAttribute('aria-valuenow', '424');
+    expect(JSON.parse(window.sessionStorage.getItem('lathe:session-settings')!)).toMatchObject({ cardWidth: 424 });
     fireEvent.doubleClick(card);
     expect(JSON.parse(window.sessionStorage.getItem('lathe:session-settings')!)).toMatchObject({ cardWidth: null });
   };
