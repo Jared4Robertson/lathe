@@ -5,7 +5,7 @@ description: Write or change a Lathe product's technical specification - the one
 
 # Write the technical specification
 
-The technical specification says which code implements each design record, and how the domain's data is stored. One concrete kind implements each design kind, and each technical record names the file that holds it. An obligation is **built** once the technical record that implements it names a file that exists. Write it after the domain model and the interaction design it implements.
+The technical specification says which code implements each design record, and how the domain's data is stored. One concrete kind implements each design kind, and each technical record names the file that holds it. An obligation is **built** once every technical record that implements it names a file that exists; a record that names a file not written yet keeps it unbuilt, which is what you want until the code is there. Write it after the domain model and the interaction design it implements.
 
 ## How you write
 

@@ -115,6 +115,7 @@
 {"id":"LA-AUT-TB85","title":"measured_by","domain_id":"LA-AUT","name":"measured_by","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-AUT-TB86","title":"starts_from","domain_id":"LA-AUT","name":"starts_from","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-AUT-TB87","title":"about","domain_id":"LA-AUT","name":"about","storage":"table","file":"lathe/schema/010-links.sql"}
+{"id":"LA-AUT-TB88","title":"builds_on","domain_id":"LA-AUT","name":"builds_on","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-CHK-EN01-TB","title":"check","entity_id":"LA-CHK-EN01","name":"check","storage":"table","file":"lathe/schema/011-checking.sql"}
 {"id":"LA-CHK-EN03-TB","title":"product_setting","entity_id":"LA-CHK-EN03","name":"product_setting","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-CHK-RM01-TB","title":"problem","read_model_id":"LA-CHK-RM01","name":"problem","storage":"table","file":"lathe/schema/011-checking.sql"}

@@ -609,8 +609,9 @@ A word of the domain's glossary and what it means there, so specs, code and conv
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<P>-<D>-TM<nn>`, such as `TL-LEND-TM01`; it starts with its domain's ID
-- **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Builds on ([`builds_on`](#relation-builds_on))
+- **Links in:** Questions about this ([`about`](#relation-about)), Built on by ([`builds_on`](#relation-builds_on))
+- **Checks:** [`term-used-unlinked`](#check-term-used-unlinked)
 
 <a id="table-term"></a>
 
@@ -728,6 +729,16 @@ A query whose title does not start with Get, List or Find.
 
 A query asks for data and changes nothing, so its title starts with the verb that says what comes back: Get for one thing, List for several, Find for a search, such as "Get a member's loans", "List overdue loans" or "Find a tool by name". A query titled like a command ("Check the workspace", "Export a theme") reads as a change. Retitle the query with Get, List or Find.
 
+<a id="check-term-used-unlinked"></a>
+
+### `term-used-unlinked`
+
+**Warning** · Lathe's · Kinds: [`term`](#kind-term)
+
+A term's meaning uses another term of its product by title without a builds_on link to it.
+
+Definitions build up, never in a circle (LA-STD-MODELING-R12): a term is defined only by plain words and terms below it, and names each one it uses with builds_on, so the store can refuse a loop. The check reads each meaning in lower case, with text in backticks left out as code, and looks for every other term of the product by title as a whole word, singular or plural (a title ending in a consonant and y also as -ies); a shorter title found only inside a longer term's title (Domain inside Domain event) does not count. It cannot tell a word used in another sense, so it is a warning. Link the term with builds_on to the term it uses, or say it in plain words.
+
 ### Coverage gaps: domain model
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -841,7 +852,7 @@ One rule a use case must follow, whatever the interface: a step of each of the u
 - **Children:** [`use_case_test`](#kind-use_case_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A step of each of its use case's flows fulfills it: one flow per interface the use case happens through, and at least one.
-  - **Built:** A fulfilling step's command or query handler, a UI component of the view it happens in, or the adapter of an integration it exchanges with or a record of a product's own kind under that integration, names a file that exists.
+  - **Built:** Every record that carries out its fulfilling steps names a file that exists, and there is at least one: the handler of each command or query a step invokes, with the predicates and services of what that command or query checks, selects by or calls; each UI component of the view a step happens in; the adapter of each integration a step exchanges with, or a record of a product's own kind under that integration.
   - **Proved:** One of its use case tests.
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -1137,7 +1148,7 @@ One rule a view must follow, such as what it shows while loading or a field's li
 - **Children:** [`view_test`](#kind-view_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its view.
-  - **Built:** A UI component that renders its view names a file that exists.
+  - **Built:** Every UI component that renders its view names a file that exists, and there is at least one.
   - **Proved:** One of its view tests.
 - **ID:** `<view>-R<nn>`, such as `TL-V01-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -1919,7 +1930,7 @@ One rule of a standard. Technical records that follow it link to it with meets; 
 - **Children:** [`standard_rule_test`](#kind-standard_rule_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A technical record meets it.
-  - **Built:** A technical record that meets it names a file that exists.
+  - **Built:** Every technical record that meets it names a file that exists, and there is at least one.
   - **Proved:** One of its standard rule tests.
 - **ID:** `<standard>-R<nn>`, such as `TL-STD-CODE-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -2927,6 +2938,19 @@ The open question concerns the record.
 | --- | --- | --- |
 | [`question`](#kind-question) | any record | The open question concerns that record. |
 
+<a id="relation-builds_on"></a>
+
+### `builds_on`
+
+The term is defined with the other term: its meaning uses it, so the other term is defined first and never builds on it in turn, through any chain.
+
+- **Reads:** Builds on / Built on by
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`term`](#kind-term) | [`term`](#kind-term) | The term's meaning uses the other term, which is defined before it. |
+
 <a id="relation-calls"></a>
 
 ### `calls`
@@ -3250,9 +3274,9 @@ Coverage counts an obligation as designed once its implementation is specified: 
 
 **Warning** · Lathe's
 
-An obligation no file of what implements it exists for yet, as coverage counts it.
+An obligation not every file of what implements it exists for yet, as coverage counts it.
 
-Coverage counts an obligation as built once a technical record that implements it names a file that exists: a constraint's value type, an invariant's data model or the table whose unique key names it, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handler or the UI component of the view its step happens in, a view requirement's UI component, an API requirement's endpoint handler, a standard rule's meeting record. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write the file it names.
+Coverage counts an obligation as built once every technical record that implements it names a file that exists, and there is at least one: a constraint's value type, an invariant's data model (any one of its aggregate's) or the table whose unique key names it, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handlers with the predicates and services of what they check or call, or the UI components of the views its steps happen in, a view requirement's UI components, an API requirement's endpoint handler, a standard rule's meeting records. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write each file it names.
 
 <a id="check-not-proved"></a>
 
