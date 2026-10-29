@@ -248,15 +248,12 @@ describe('rules', () => {
     expect((await refusals(withTable(everyKind(), 'invariant', [bare]))).map((p) => p.message)).toEqual(['invariant.statement is required']);
   });
 
-  it('LA-AUT-UC10-R09-T01 Uniqueness is an invariant that the unique key enforcing it names, and only a unique key may name one', async () => {
-    // A table built only through the unique key that names the invariant: the data model's file does not exist.
+  it('LA-AUT-UC10-R09-T01 Uniqueness is an invariant that a unique key may name and back up, built only by its rule, and only a unique key may name one', async () => {
+    // The unique key names the invariant, but the rule's file does not exist: the key builds nothing.
     const keyed = adding(complete(), { table_key: [{ table_id: 'EX-LEND-EN01-TB', position: 2, type: 'unique', columns: ['tool_id'], invariant_id: 'EX-LEND-INV01' }] });
-    const [withKey, withoutKey] = await Promise.all([
-      build(keyed, { missing: ['src/model.ts'] }).then(loadWorkspace),
-      build(complete(), { missing: ['src/model.ts'] }).then(loadWorkspace),
-    ]);
-    expect(obligation(withKey, 'EX-LEND', 'invariant')).toMatchObject({ total: 1, built: 1 });
-    expect(obligation(withoutKey, 'EX-LEND', 'invariant')).toMatchObject({ total: 1, built: 0 });
+    const [withKey, withRule] = await Promise.all([build(keyed, { missing: ['src/loans.ts'] }).then(loadWorkspace), build(keyed).then(loadWorkspace)]);
+    expect(obligation(withKey, 'EX-LEND', 'invariant')).toMatchObject({ total: 1, built: 0 });
+    expect(obligation(withRule, 'EX-LEND', 'invariant')).toMatchObject({ total: 1, built: 1 });
     expect(fieldsOf(withKey, 'EX-LEND-EN01-TB', 'table_key')[1]).toMatchObject({ type: 'unique', invariant_id: 'EX-LEND-INV01' });
     // A primary key or an index cannot name an invariant.
     for (const type of ['primary', 'index']) {

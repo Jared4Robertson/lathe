@@ -3293,7 +3293,7 @@ Coverage counts an obligation as designed once its implementation is specified: 
 
 An obligation no file of what implements it exists for yet, as coverage counts it.
 
-Coverage counts an obligation as built once a technical record that implements it names a file that exists: a constraint's value type, an invariant's data model or the table whose unique key names it, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handler or the UI component of the view its step happens in, a view requirement's UI component, an API requirement's endpoint handler, a standard rule's meeting record. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write the file it names.
+Coverage counts an obligation as built once a technical record that implements it names a file that exists: a constraint's value type, an invariant's rule, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handler (of what a fulfilling step invokes) or the adapter of an integration its step exchanges with, a view requirement's UI component that builds it, an API requirement's endpoint handler, a standard rule's meeting record. Nothing else counts: no data model, unique key or UI component that only renders the view. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write the file it names.
 
 <a id="check-not-proved"></a>
 
