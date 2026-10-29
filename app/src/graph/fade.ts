@@ -29,3 +29,55 @@ export function focusStrength(map: FadeMap, focus: string, look: FadeLook): (id:
     return strength;
   };
 }
+
+// ---------- The one way a stage's map shows less (LA-PAT-APP-UX-R19) ----------
+//
+// Every canvas stage is one map, laid out once (one-map.ts): a filter, the depth or a focus that
+// shows only part of it never takes boxes out or moves them; it fades the rest back to the focus
+// fade's strength. A fade is by place (a placed box's key; on the graph a record's ID, each record
+// having one place there), so a record a map draws twice can be faded in one place and not the other.
+
+/** How strongly each place of a map is drawn, 0 to 1. */
+export type Fade = (place: string) => number;
+
+/** Draws what `keeps` keeps at full strength and every other place faded back, at the focus fade's strength. */
+export function keptFade(keeps: (place: string) => boolean, look: Pick<FadeLook, 'focusFade'>): Fade {
+  return (place) => (keeps(place) ? 1 : look.focusFade);
+}
+
+/** Several fades at once (a focus's and a filter's): each place as faint as the faintest of them draws it. */
+export function faintest(...fades: readonly Fade[]): Fade {
+  return (place) => fades.reduce((s, f) => Math.min(s, f(place)), 1);
+}
+
+/** A fade `t` of the way (0 to 1, eased) from one fade to another. */
+export function blendFade(from: Fade, to: Fade, t: number): Fade {
+  return t >= 1 ? to : (place) => from(place) + (to(place) - from(place)) * t;
+}
+
+/**
+ * A fade that eases to each new one it is sent over a time (the camera's glide to a new focus, the spotlight's
+ * fade for a filter): `now` is the fade to draw this frame, and whether it has arrived.
+ */
+export function fadeTween(ease: (t: number) => number) {
+  let from: Fade | null = null;
+  let to: Fade | null = null;
+  let start = 0;
+  let duration = 0;
+  const now = (): { at: Fade; done: boolean } => {
+    if (!to) return { at: () => 1, done: true };
+    const t = !from || duration <= 0 ? 1 : Math.min(1, (performance.now() - start) / duration);
+    return t >= 1 ? { at: to, done: true } : { at: blendFade(from!, to, ease(t)), done: false };
+  };
+  return {
+    now,
+    /** Eases to a new fade over `ms`: at once for 0, and for the first fade sent. */
+    send(next: Fade, ms: number) {
+      if (next === to) return;
+      from = to ? now().at : null;
+      to = next;
+      start = performance.now();
+      duration = ms;
+    },
+  };
+}

@@ -1,16 +1,14 @@
-import { forwardRef, useEffect, useRef, type KeyboardEvent } from 'react';
+import { forwardRef } from 'react';
 import { Icon } from '../components/icons';
 import { groupLabel } from '../graph/model';
 import { parseSpecRoute, type SpecIndex } from '../specs/data';
 import { addressOf, HOME_PATH, focusOf, isFocusRoute, stageFromSearch, withStage } from '../views/address';
 import { Breadcrumb } from './Breadcrumb';
-import { QuickFind } from './QuickFind';
-import { trapTab } from './useNarrow';
 import { Button } from '../components/Button';
 
 // The phone layout's shell (notes/mobile-design.md): a compact top bar with the menu, the page's
-// title on one line under a one-step breadcrumb (the one Breadcrumb) up to its parent, and quick find; and quick find
-// as a full-screen sheet.
+// title on one line under a one-step breadcrumb (the one Breadcrumb) up to its parent, and a button that opens quick
+// find (QuickOpen.tsx), a full-width sheet at the top on a phone.
 
 export interface Heading {
   title: string;
@@ -74,29 +72,3 @@ export const TopBar = forwardRef<HTMLButtonElement, TopBarProps>(function TopBar
     </header>
   );
 });
-
-/** Quick find as a full-screen sheet: the search box at the top, the results below it, Escape or Close to leave. */
-export function QuickFindSheet({ index, onClose }: { index: SpecIndex | null; onClose: () => void }) {
-  const sheet = useRef<HTMLDivElement>(null);
-  const input = useRef<HTMLInputElement>(null);
-  useEffect(() => {
-    const before = document.activeElement as HTMLElement | null;
-    input.current?.focus();
-    return () => { if (before?.isConnected) before.focus(); };
-  }, []);
-  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
-    if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onClose(); return; }
-    trapTab(e, sheet.current);
-  };
-  return (
-    <div ref={sheet} className="sheet find-sheet" role="dialog" aria-modal="true" aria-label="Quick find" onKeyDown={onKeyDown}>
-      <QuickFind
-        ref={input}
-        index={index}
-        onGo={onClose}
-        inline
-        trailing={<Button className="sheet-close" onClick={onClose}>Close</Button>}
-      />
-    </div>
-  );
-}
