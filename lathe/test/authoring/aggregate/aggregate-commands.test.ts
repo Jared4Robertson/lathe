@@ -47,7 +47,7 @@ const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dat
 type Whole = ReturnType<typeof GET_AGGREGATE.run>;
 
 describe('LA-AUT-UC10-R50-T01 each Aggregate command (LA-AUT-A6) changes one aggregate through AggregateRepository, held to its rules, and is reached by name from the CLI, the MCP tools and HTTP', () => {
-  it('builds the data set with its own Add commands, and reads an aggregate whole by any record in it', async () => {
+  it('LA-PAT-AGGREGATE-TESTS-R03-T01 builds the data set with its own Add commands, and reads an aggregate whole by any record in it', async () => {
     const store = await aggregateDataSet();
     const whole = runQuery(store, GET_AGGREGATE, { id: 'TL-LEND-INV01-T' }) as Whole;
     expect(whole.root).toBe('TL-LEND-A1');
