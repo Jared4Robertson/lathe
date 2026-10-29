@@ -65,15 +65,17 @@ test.describe('Traceability flows', () => {
     const pane = page.locator('.focus-stage');
     const column = (name: string) => pane.locator('.trace-column').filter({ has: page.locator('.trace-column-name', { hasText: new RegExp(`^${name}`) }) });
     const ids = (name: string) => column(name).locator('a.card-title code').allTextContents();
-    /** The ids the canvas draws in some columns, every box of its picture. */
-    const drawnIn = async (...columns: string[]) => [...new Set((await traceSceneOf(page, true)).boxes.filter((b) => columns.includes(b.column)).map((b) => b.id))].sort();
-    // S01, S02: the requirement's Trace stage: its chain drawn on the canvas, column by column, from its use case on, and the same in the table under it.
+    /** The ids the product's map holds in some columns at full strength: under the focus, the rest of the map faded (LA-PAT-APP-UX-R19). */
+    const drawnIn = async (...columns: string[]) => [...new Set((await traceSceneOf(page, true)).boxes.filter((b) => b.strength === 1 && columns.includes(b.column)).map((b) => b.id))].sort();
+    // S01, S02: the requirement's Trace stage: the camera on its lane of the product's map, its chain column by column, its use case over it, and the same in the table under it.
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
     await openPage(page, `/${REQUIREMENT}?stage=trace`);
     await traceDrawn(page);
     const chain = await traceSceneOf(page, true);
-    expect(chain.boxes.filter((b) => b.focus).map((b) => b.id)).toEqual([REQUIREMENT]);
-    expect(chain.boxes.find((b) => b.column === 'parent')?.id).toBe(useCase);
+    expect([...new Set(chain.boxes.filter((b) => b.focus).map((b) => b.id))]).toEqual([REQUIREMENT]);
+    expect(await drawnIn('parent')).toEqual([useCase]);
+    const own = (await traceSceneOf(page)).boxes.find((b) => b.focus)!;
+    expect(own.rect.left >= chain.canvas.left && own.rect.left + own.rect.width <= chain.canvas.left + chain.canvas.width, 'the camera frames the requirement').toBe(true);
     expect(await drawnIn('flow', 'step', 'design')).toEqual([...new Set([...steps, ...flows, ...views, ...operations])].sort());
     expect(await drawnIn('build')).toEqual(expect.arrayContaining(handlers));
     expect(await drawnIn('tests')).toEqual([...tests].sort());
@@ -81,32 +83,35 @@ test.describe('Traceability flows', () => {
     await expect(pane.locator('.trace-access [aria-current="page"]')).toContainText(REQUIREMENT);
     expect((await ids('Design')).sort()).toEqual([...new Set([...steps, ...flows, ...views, ...operations])].sort());
     expect((await ids('Tests')).sort()).toEqual([...tests].sort());
-    // S03: the use case's lanes, one per requirement under it, under its box; then the domain's, under its capabilities.
+    // S03: the use case's lanes, one per requirement under it, under its box, framed; then the domain's, under its capabilities.
     const requirements = rowsOf(spec, 'uc_requirement').filter((r) => r.use_case_id === useCase).map((r) => String(r.id));
     await openPage(page, `/${useCase}?stage=trace`);
     await traceDrawn(page);
     expect(await drawnIn('obligation')).toEqual([...requirements].sort());
-    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.lane === -1).map((b) => b.id)).toEqual([useCase]);
+    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.lane === -1 && b.focus).map((b) => b.id)).toContain(useCase);
     const rows = pane.locator('.trace-matrix tbody tr:not(.group-row)');
     await expect(rows).toHaveCount(requirements.length);
     await openPage(page, `/${TRC}?stage=trace`);
     await traceDrawn(page);
     const capabilities = rowsOf(spec, 'capability').filter((c) => c.domain_id === TRC).map((c) => String(c.id));
-    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.lane === -1 && b.column === 'capability').map((b) => b.id)).toEqual(expect.arrayContaining(capabilities.filter((c) => rowsOf(spec, 'use_case').some((u) => u.capability_id === c))));
+    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.lane === -1 && b.column === 'capability' && b.strength === 1).map((b) => b.id)).toEqual(expect.arrayContaining(capabilities.filter((c) => rowsOf(spec, 'use_case').some((u) => u.capability_id === c))));
     expect(await pane.locator('.trace-matrix tr.group-row').count()).toBeGreaterThan(1);
-    // S04: Gaps only keeps the lanes with a gap, each with a dashed gap box, and the table's rows with one.
+    // S04: Gaps only fades the lanes with no gap and keeps every lane in its place; those at full strength each have a dashed gap box. The table keeps the rows with one.
+    const before = (await traceSceneOf(page, true)).boxes.length;
     await pane.getByRole('checkbox', { name: 'Gaps only' }).check();
     await traceDrawn(page);
     const gapped = await traceSceneOf(page, true);
-    const lanes = new Set(gapped.boxes.filter((b) => b.lane >= 0 && b.column === 'obligation' && b.role === 'record').map((b) => b.lane));
+    expect(gapped.boxes.length, 'no lane is taken out').toBe(before);
+    const lanes = new Set(gapped.boxes.filter((b) => b.lane >= 0 && b.column === 'obligation' && b.role === 'record' && b.strength === 1).map((b) => b.lane));
     for (const lane of lanes) expect(gapped.boxes.some((b) => b.lane === lane && b.role === 'gap' && b.dashed), `lane ${lane} has a gap`).toBe(true);
+    expect(gapped.boxes.some((b) => b.column === 'obligation' && b.role === 'record' && b.strength < 1), 'the complete lanes are faded').toBe(true);
     const left = await rows.count();
     for (let i = 0; i < Math.min(left, 20); i++) await expect(rows.nth(i).locator('td.is-gap').first()).toBeAttached();
-    // Every stage works on every focus (LA-PAT-APP-UX-R17): on a step, the lanes it belongs to, the step drawn as the focus.
+    // Every stage works on every focus (LA-PAT-APP-UX-R17): on a step, the lanes it belongs to at full strength, the step drawn as the focus in each.
     await openPage(page, `/${steps[0]}?stage=trace`);
     await traceDrawn(page);
     const held = await traceSceneOf(page, true);
-    expect(held.boxes.filter((b) => b.column === 'obligation').map((b) => b.id)).toContain(REQUIREMENT);
+    expect(await drawnIn('obligation')).toContain(REQUIREMENT);
     expect(held.boxes.filter((b) => b.focus).every((b) => b.id === steps[0])).toBe(true);
     await expect(pane.locator('.trace-matrix td [aria-current="page"]').first()).toContainText(steps[0]);
   });

@@ -65,7 +65,7 @@ const PAGES: State[] = [
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
-  { name: 'Trace stage, the lanes a flow step belongs to', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-shape="rows"][data-ready]' },
+  { name: 'Trace stage, framed on the lanes a flow step belongs to', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
   { name: 'Trace stage, an entity in its aggregate\'s lanes', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
@@ -126,13 +126,13 @@ const DESKTOP: State[] = [
   { name: 'quick find', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
     await page.keyboard.press('Control+k');
-    await page.locator('.quick-find input').fill('graph');
-    await page.locator('.quick-find-results li').first().waitFor();
+    await page.locator('.quick-open input').fill('graph');
+    await page.locator('.quick-open .palette-list li').first().waitFor();
   } },
   { name: 'the command palette', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
     await page.keyboard.press('Control+Shift+p');
-    await page.locator('.dialog-search').waitFor();
+    await page.locator('.quick-open input').waitFor();
   } },
   { name: 'the shortcuts sheet', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
@@ -185,10 +185,10 @@ const PHONE: State[] = [
     await page.getByRole('button', { name: 'Open the navigation' }).click();
     await page.locator('nav#nav').waitFor();
   } },
-  { name: 'the quick find sheet', run: async (page) => {
+  { name: 'quick find on a phone', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
     await page.locator('.topbar').getByRole('button', { name: 'Quick find' }).click();
-    await page.locator('.find-sheet input').fill('graph');
+    await page.locator('.quick-open input').fill('graph');
     await page.waitForTimeout(300);
   } },
   { name: 'the wiki card sheet', run: async (page) => {

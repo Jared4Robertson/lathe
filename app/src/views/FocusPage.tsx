@@ -21,6 +21,7 @@ import { SideBar } from './SideBar';
 import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, type SideModeState, type SideView } from './sideBarState';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { rememberStage, usePageTabs, type PageTabsApi } from './useTabs';
+import { usePreview } from './preview';
 import { WikiCard } from './WikiCard';
 import { useCardPlace } from './cardPlace';
 import { Button } from '../components/Button';
@@ -112,6 +113,13 @@ function useSettled<T>(value: T, ms: number): T {
 
 function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute; search: string }) {
   const focus = focusOf(route);
+  // What the stage and the wiki card show: the focus, or the record quick find previews (preview.ts). The address,
+  // the tabs, the header strip and the side bar stay on the focus; when the preview ends the stage glides back.
+  const previewed = usePreview();
+  const preview = previewed !== null && previewed !== focus && (index.byId.has(previewed) || isGroup(index, previewed)) ? previewed : null;
+  const shownFocus = preview ?? focus;
+  const previewing = useRef(false);
+  previewing.current = preview !== null;
   const announce = useAnnounce();
   const narrow = useNarrow();
 
@@ -210,6 +218,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   }, [narrow, setCard, hold, announce, format]);
   const collapseCard = useCallback(() => setCardShown(false), [setCardShown]);
   const expandCard = useCallback((expanded: boolean) => setCard({ expanded }), [setCard]);
+  // A preview shows in the card's compact summary, whatever the session's setting, which it leaves alone.
+  const cardExpanded = preview === null && card.expanded;
   // Made once per width, so the memoized card draws again only for a new page.
   const cardHandle = useMemo(() => (
     <CardHandle width={card.width} onWidth={(width) => setCard({ width })} onReset={() => setCard({ width: null })} onCollapse={collapseCard} />
@@ -229,10 +239,10 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const hrefFor = useCallback((id: string) => withStage(addressOf(id), asked), [asked]);
   const onNavigate = useCallback((id: string) => navigate(hrefFor(id)), [hrefFor]);
 
-  // The wiki card follows the focus once it settles, and draws only then.
-  const resting = useSettled(focus, CARD_SETTLE_MS);
+  // The wiki card follows the focus (or the preview) once it settles, and draws only then.
+  const resting = useSettled(shownFocus, CARD_SETTLE_MS);
   // A page the index no longer holds (another space's, or one just removed) is never drawn: the card takes the focus at once.
-  const settledFocus = index.byId.has(resting) || isGroup(index, resting) ? resting : focus;
+  const settledFocus = index.byId.has(resting) || isGroup(index, resting) ? resting : shownFocus;
   const cardRoute = useCardRoute(index, settledFocus, route);
 
   // The card's scroll is the tab's: it comes back when the tab is active again. Within a tab, a new
@@ -245,6 +255,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useLayoutEffect(() => {
     // A format page in the card sets its own scroll; closing it brings back the focus's page where it was.
     if (format) return;
+    // A preview starts at its top and leaves the tab's scroll as it was, for the card to come back to.
+    if (preview !== null) { if (settledFocus === preview && cardScroll.current) cardScroll.current.scrollTop = 0; return; }
     // Until the card settles on the focus (a page just opened, or a tab just switched to), it still
     // shows the page before, at that page's scroll; the scroll is the new page's once it is drawn.
     if (settledFocus !== focus) return;
@@ -266,17 +278,19 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     const observer = new ResizeObserver(() => { el.scrollTop = top; observer.disconnect(); });
     for (const child of el.children) observer.observe(child);
     return () => observer.disconnect();
-  }, [tab.key, focus, settledFocus, cardShown, format, tabs.scrollOf, tabs.setScroll]);
+  }, [tab.key, focus, preview, settledFocus, cardShown, format, tabs.scrollOf, tabs.setScroll]);
   // The entry notes the card's scroll as it changes (after a pause) and as a new page is opened from it.
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noteScroll = useCallback(() => {
     if (noteTimer.current) { clearTimeout(noteTimer.current); noteTimer.current = null; }
-    if (cardScroll.current) noteInEntry(CARD_SCROLL, Math.round(cardScroll.current.scrollTop));
-  }, []);
+    // While a preview shows, the page's own scroll is the tab's, kept aside.
+    if (previewing.current) noteInEntry(CARD_SCROLL, tabs.scrollOf(tabRef.current));
+    else if (cardScroll.current) noteInEntry(CARD_SCROLL, Math.round(cardScroll.current.scrollTop));
+  }, [tabs.scrollOf]);
   useEffect(() => onLeaveEntry(noteScroll), [noteScroll]);
   useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
   const onCardScroll = useCallback(() => {
-    if (!cardScroll.current || format) return;
+    if (!cardScroll.current || previewing.current || format) return;
     tabs.setScroll(tabRef.current, cardScroll.current.scrollTop);
     if (noteTimer.current) clearTimeout(noteTimer.current);
     noteTimer.current = setTimeout(noteScroll, 200);
@@ -308,17 +322,17 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const content: Record<StageName, ReactNode> = {
     graph: (
       <Suspense fallback={<p className="hint graph-loading">Loading the graph…</p>}>
-        <GraphView index={index} focus={focus} onNavigate={onNavigate} settings={settings} onSettingsChange={setGraph} onGraph={onGraph} onPeek={peek.set} onCounts={setCounts} space={space} />
+        <GraphView index={index} focus={shownFocus} onNavigate={onNavigate} settings={settings} onSettingsChange={setGraph} onGraph={onGraph} onPeek={peek.set} onCounts={setCounts} space={space} />
       </Suspense>
     ),
     erd: (
       <Suspense fallback={<p className="hint graph-loading">Loading the ERD…</p>}>
-        <ErdView index={index} focus={focus} onNavigate={onNavigate} onPeek={peek.set} onCounts={setCounts} space={space} />
+        <ErdView index={index} focus={shownFocus} onNavigate={onNavigate} onPeek={peek.set} onCounts={setCounts} space={space} />
       </Suspense>
     ),
     trace: (
       <Suspense fallback={<p className="hint graph-loading">Loading the trace…</p>}>
-        <TraceView index={index} focus={focus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} />
+        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} />
       </Suspense>
     ),
   };
@@ -356,7 +370,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         onStage={setStage}
         stageBox={stageBox}
         strip={<HeaderStrip index={index} focus={focus} counts={counts} />}
-        card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} expanded={card.expanded} onExpanded={expandCard} format={format} sheet /> : null}
+        card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} expanded={cardExpanded} onExpanded={expandCard} format={format} sheet /> : null}
         onCard={setCardShown}
         cardButton={cardButton}
         sideBarShown={showing}
@@ -399,7 +413,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
             route={cardRoute}
             onScroll={onCardScroll}
             onCollapse={collapseCard}
-            expanded={card.expanded}
+            expanded={cardExpanded}
             onExpanded={expandCard}
             handle={cardHandle}
             format={format}
