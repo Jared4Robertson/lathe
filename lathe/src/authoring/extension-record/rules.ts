@@ -5,13 +5,14 @@
 import { StoreError } from '../../platform/data/problems.ts';
 import type { AggregateRules, ReadView, RuleProblem } from '../../platform/data/rules.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { EXTENSION_RECORD_AGGREGATE, extensionRecordsFrom, productOf, type ExtensionRecord } from './model.ts';
+import { placeIn, productOf } from './declaration.ts';
+import { EXTENSION_RECORD_AGGREGATE, extensionRecordsFrom, type ExtensionRecord } from './model.ts';
 
 /** Every rule the record breaks (LA-AUT-INV55 a record of a product's own kind sits in the product that declares it). */
 export function extensionRecordProblems(record: ExtensionRecord, view: ReadView): RuleProblem[] {
   const declaredBy = view.schema.kinds[record.kind]?.productId;
   if (!declaredBy) return [];
-  const product = productOf(view, record.root);
+  const product = productOf(placeIn(view), view.rows('product').map((p) => String(p.id)), record.root);
   if (product === declaredBy) return [];
   return [
     {

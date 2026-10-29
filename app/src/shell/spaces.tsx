@@ -1,6 +1,8 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { navigate } from '../router';
-import { textOf, parseSpecRoute, spaceIndex, type SpecIndex, type SpecRecord } from '../specs/data';
+import type { ProductSummary } from '../../../lathe/src/authoring/product/read-model';
+import { useProducts } from '../authoring/product/reads';
+import { parseSpecRoute, spaceIndex, type SpecIndex } from '../specs/data';
 import { addressOf, isFocusPath } from '../views/address';
 import { withoutOverlays } from '../views/overlays';
 import { usePref } from './prefs';
@@ -54,14 +56,15 @@ export function colorOf(id: string): string {
   return `hsl(${h % 360} 48% 36%)`;
 }
 
-export function spaceOf(product: SpecRecord): Space {
-  const icon = iconField(textOf(product.row, 'icon'));
+/** A product's space, from the product as the Product aggregate lists it (list-products). */
+export function spaceOf(product: ProductSummary): Space {
+  const icon = iconField(product.icon);
   return {
     id: product.id,
     title: product.title,
     mark: icon ?? monogramOf(product.id),
     monogram: icon === null,
-    color: colorField(textOf(product.row, 'color')) ?? colorOf(product.id),
+    color: colorField(product.color) ?? colorOf(product.id),
   };
 }
 
@@ -86,8 +89,10 @@ const isString = (v: unknown): v is string => typeof v === 'string';
 const isPages = (v: unknown): v is Record<string, string> => !!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(isString);
 
 export interface SpacesApi {
-  /** Every product's space, in rail order (the products' ID order). */
+  /** Every product's space, in rail order (the products' ID order), as the Product aggregate lists them. */
   spaces: Space[];
+  /** Whether the products have been read: until then `spaces` is empty, and the nav keeps the rail as it was. */
+  read: boolean;
   /** The current space, or null while there are no products. */
   current: Space | null;
   /** The current space's index: its own records and problems only (the whole workspace while there are no products). */
@@ -109,7 +114,10 @@ export const useSpaces = () => useContext(SpacesContext);
 
 /** Works out the current space and remembers each space's last page (for the session). */
 export function useSpaceState(index: SpecIndex | null, path: string, search: string): SpacesApi {
-  const spaces = useMemo(() => (index?.products ?? []).map(spaceOf), [index]);
+  // The products, read through the Product aggregate's own query, again whenever the data is.
+  const products = useProducts(index);
+  const listed = products.state === 'read' ? products.answer : null;
+  const spaces = useMemo(() => (listed ?? []).map(spaceOf), [listed]);
   const [chosen, setChosen] = usePref<string>(SPACE_KEY, '', isString);
   const [stored, setPages] = usePref<Record<string, string>>(PAGES_KEY, {}, isPages, 'session');
   // A saved page that is not a page of a space is dropped.
@@ -134,7 +142,7 @@ export function useSpaceState(index: SpecIndex | null, path: string, search: str
   }, [setChosen]);
   const lastPage = useCallback((id: string) => pages[id], [pages]);
   const last = spaces.find((s) => s.id === (pageProduct ?? chosen)) ?? null;
-  return useMemo(() => ({ spaces, current, index: scoped, onPage: !!pageProduct && pageProduct === current?.id, last, go, lastPage }), [spaces, current, scoped, pageProduct, last, go, lastPage]);
+  return useMemo(() => ({ spaces, read: listed !== null, current, index: scoped, onPage: !!pageProduct && pageProduct === current?.id, last, go, lastPage }), [spaces, listed, current, scoped, pageProduct, last, go, lastPage]);
 }
 
 export function SpacesProvider({ value, children }: { value: SpacesApi; children: ReactNode }) {

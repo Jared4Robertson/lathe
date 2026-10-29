@@ -61,6 +61,10 @@ const PAGES: State[] = [
   { name: 'domain page', url: DOMAIN, ready: '.header-strip h1' },
   { name: 'record page', url: RECORD, ready: '.header-strip h1' },
   { name: 'interface page', url: '/LA-IF03', ready: '.interface-flows' },
+  { name: 'business outcome page', url: '/LA-BO05', ready: '[data-aggregate="business-outcome"]' },
+  { name: 'extension record page', url: '/LA-AUT-MOD10', ready: '[data-aggregate="extension-record"]' },
+  { name: 'entry point page', url: '/LA-PLT-ENTRY01', ready: '[data-aggregate="entry-point"]' },
+  { name: 'tooling page', url: '/LA-AUT-TOOL01', ready: '[data-aggregate="tooling"]' },
   // The Domain, Test data set, Pattern and Standard aggregates' own pages.
   { name: 'capability page', url: '/LA-AUT-CAP02', ready: '[data-aggregate="domain"] .capability-use-cases' },
   { name: 'test data set page', url: '/LA-AUT-TD30', ready: '[data-aggregate="test-data-set"] .record-lead' },
