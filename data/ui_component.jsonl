@@ -45,6 +45,9 @@
 {"id":"LA-UI143","title":"Chat panel","file":"app/src/chat/ChatPanel.tsx","description":"The chat panel: its head, the session picker, the log with its tool rows, permission prompts and record diffs, and the composer."}
 {"id":"LA-UI144","title":"diffIndexes","file":"app/src/chat/diff.ts","description":"The records a chat turn changed, for the chat panel's record diffs: the spec before the turn against the spec after it, each record added, removed or changed, with its fields before and after."}
 {"id":"LA-UI145","title":"useChat","file":"app/src/chat/useChat.ts","description":"The chat as the panel keeps it: the items and status the shell sends as patches, and each turn with the spec as it was when the turn began, which the record diffs compare."}
+{"id":"LA-UI146","title":"ErdLeader","file":"app/src/erd/leader.tsx","description":"The ERD's canvas over React Flow's boxes that draws the leader line to the wiki card from the focused box."}
+{"id":"LA-UI147","title":"erdStep","file":"app/src/erd/walk.ts","description":"The ERD stage's arrow walk: the nearest box in the arrow's direction on the map, within the focus's own area first."}
+{"id":"LA-UI148","title":"traceStep","file":"app/src/trace/walk.ts","description":"The Trace stage's arrow walk over the map as drawn: along the lane, up the why tree and across a column's boxes."}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
 {"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
