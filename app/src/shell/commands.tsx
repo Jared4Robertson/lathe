@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -16,12 +17,14 @@ import {
   ariaKeyShortcuts,
   eventChord,
   formatBinding,
+  isArrowChord,
   isMac,
   isSingleKey,
   isTyping,
   match,
   readOverrides,
   resolveCommands,
+  usesArrows,
   type Command,
 } from './keymap';
 import { Link } from '../router';
@@ -32,9 +35,13 @@ import { formatPath } from '../specs/data';
 // listener matches key presses against the keymap, and the command palette and the shortcuts
 // sheet are drawn from the same table. A command only runs (and only shows as available in the
 // palette) while something has registered a handler for it, so "when it applies" follows what is
-// on screen: the graph's commands exist while a graph is shown.
+// on screen: the graph's commands exist while a graph is shown. The same listener sends the plain arrow keys to the
+// stage's walk (useStageWalk) from anywhere on the page, except a control that uses arrows itself (keymap usesArrows).
 
 type Handler = () => void;
+/** A stage's walk: takes a plain arrow's key ("ArrowLeft"), moves the focus, and returns what to announce, or null. */
+type Walk = (key: string) => string | null;
+type WalkRef = { current: Walk };
 /** A registered handler, and the title it gives its command while mounted ("Switch to Lathe"). */
 type HandlerRef = { current: Handler; title?: string };
 
@@ -42,6 +49,7 @@ interface CommandsApi {
   commands: Command[];
   mac: boolean;
   register: (id: string, handler: HandlerRef) => () => void;
+  registerWalk: (walk: WalkRef) => () => void;
   run: (id: string) => boolean;
   available: (id: string) => boolean;
   /** The command's title: the one its current handler gives, or the keymap's. */
@@ -89,6 +97,22 @@ export function useCommand(id: string, handler: Handler, enabled = true, title?:
   }, [api, id, enabled, title]);
 }
 
+/**
+ * Registers the shown stage's walk while mounted (and `enabled`): the plain arrow keys go to it from anywhere on the
+ * page but a control that uses arrows itself, and what it returns is announced. The last one registered walks.
+ */
+export function useStageWalk(walk: Walk, enabled = true) {
+  const api = useContext(CommandsContext);
+  const ref = useRef<WalkRef>({ current: walk });
+  ref.current.current = walk;
+  // A layout effect, so a stage Suspense hides while the next one loads stops walking at once: React keeps the hidden
+  // stage's passive effects, and only its layout effects go.
+  useLayoutEffect(() => {
+    if (!api || !enabled) return;
+    return api.registerWalk(ref.current);
+  }, [api, enabled]);
+}
+
 export function useAnnounce() {
   const api = useContext(CommandsContext);
   return api?.announce ?? (() => {});
@@ -105,6 +129,7 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
   const mac = useMemo(() => isMac(), []);
   const commands = useMemo(() => resolveCommands(readOverrides(), mac), [mac]);
   const handlers = useRef(new Map<string, HandlerRef[]>());
+  const walks = useRef<WalkRef[]>([]);
   const [, setVersion] = useState(0);
   const [message, setMessage] = useState('');
   const [pending, setPending] = useState<string[]>([]);
@@ -129,6 +154,10 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
       setVersion((v) => v + 1);
     };
   }, []);
+  const registerWalk = useCallback((walk: WalkRef) => {
+    walks.current = [...walks.current, walk];
+    return () => { walks.current = walks.current.filter((w) => w !== walk); };
+  }, []);
   const available = useCallback((id: string) => (handlers.current.get(id)?.length ?? 0) > 0, []);
   const run = useCallback((id: string) => {
     const list = handlers.current.get(id);
@@ -141,7 +170,7 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setMessage(text), 30);
   }, []);
   const titleOf = useCallback((c: Command) => handlers.current.get(c.id)?.at(-1)?.title ?? c.title, []);
-  const api = useMemo(() => ({ commands, mac, register, run, available, titleOf, announce }), [commands, mac, register, run, available, titleOf, announce]);
+  const api = useMemo(() => ({ commands, mac, register, registerWalk, run, available, titleOf, announce }), [commands, mac, register, registerWalk, run, available, titleOf, announce]);
 
   // In the desktop app, a native menu choice arrives as a command ID and runs like its keys would (LA-V66-R02).
   useEffect(() => window.latheDesktop?.onCommand((id: string) => { run(id); }), [run]);
@@ -153,6 +182,15 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
       const chord = eventChord(e);
       const typing = isTyping(e.target);
       const before = pendingRef.current;
+      // A plain arrow walks the stage, wherever keyboard focus is, unless it is in a control that uses arrows itself.
+      const walk = walks.current.at(-1);
+      if (isArrowChord(chord) && walk && !usesArrows(e.target)) {
+        e.preventDefault();
+        if (before.length) setPendingKeys([]);
+        const said = walk.current(chord);
+        if (said) announce(said);
+        return;
+      }
       if (typing && isSingleKey(chord) && before.length === 0) return;
       let result = match([...before, chord], commands, mac, available);
       // A key that does not continue the sequence starts afresh.
@@ -171,7 +209,7 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [commands, mac, available, run]);
+  }, [commands, mac, available, run, announce]);
 
   return (
     <CommandsContext.Provider value={api}>

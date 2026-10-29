@@ -12,10 +12,11 @@
 // already says a person runs it, and it takes the level that fits its kind, browser for a flow, view, use case or
 // policy test (a person using the product), otherwise the lowest level its kind allows.
 //
-// And a repository sits under a domain and persists one aggregate or several: each repository moves from under its
-// aggregate to under that aggregate's domain, renamed <domain>-REPO<nn> (TL-LEND-A1-REPO becomes TL-LEND-REPO01) wherever
-// it is named, and persists its aggregate. Which records are one piece of code persisting several aggregates only the
-// Owner knows: merging them, and the IDs in code, are the to-dos.
+// And a repository sits under a domain and persists its one aggregate with a persists link: each repository moves
+// from under its aggregate to under that aggregate's domain, renamed <domain>-REPO<nn> (TL-LEND-A1-REPO becomes
+// TL-LEND-REPO01) wherever it is named, and persists its aggregate, one to one as before. Which records are one piece of
+// code persisting several aggregates only the Owner knows: recording those as one repository with recorded exceptions
+// (repository_share), and the IDs in code, are the to-dos.
 import { ALLOWED_LEVELS } from '../src/coverage.ts';
 import type { Converter, RawData, UpgradeNotes } from '../src/upgrade.ts';
 
@@ -74,7 +75,7 @@ function domainRepositories(data: RawData, notes: UpgradeNotes): void {
     const { id, title, aggregate_id: aggregate, ...rest } = repository;
     const domain = domains.get(String(aggregate));
     if (!domain) {
-      notes.todo(`Repository ${String(id)} names aggregate ${String(aggregate)}, which does not exist: give it the domain it sits under and link the aggregates it persists with persists.`);
+      notes.todo(`Repository ${String(id)} names aggregate ${String(aggregate)}, which does not exist: give it the domain it sits under and link the aggregate it persists with persists.`);
       continue;
     }
     const number = (numbers.get(domain) ?? 0) + 1;
@@ -100,7 +101,7 @@ function domainRepositories(data: RawData, notes: UpgradeNotes): void {
   data.write('repository', renamed.size ? rows.map(renameRow) : rows);
   data.write('persists', [...data.read('persists'), ...persists]);
   notes.changed(`Every repository sits under its aggregate's domain and persists its aggregate: ${renamed.size} renamed from <aggregate>-REPO to <domain>-REPO<nn>.`);
-  notes.todo('A repository is one record per piece of code: where several records name one class that persists several aggregates, keep one, link it to each aggregate it persists with persists, and remove the others.');
+  notes.todo('A repository persists one aggregate: where several records name one class that persists several aggregates, such as a generic store, keep the record of one, add a repository_share row with its reason for each other aggregate it persists, and remove the other records; or split the class into one repository per aggregate.');
   notes.todo('Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.');
 }
 

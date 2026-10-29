@@ -107,7 +107,7 @@ function HiddenLevels({ items, onFollow }: { items: readonly Crumb[]; onFollow?:
         onClick={() => setOpen((o) => !o)}
       >…</Button>
       {open && (
-        <ul ref={menu} id={id} className="crumb-menu" aria-label="Hidden levels" onKeyDown={onMenuKey}>
+        <ul ref={menu} id={id} className="crumb-menu" data-arrows="own" aria-label="Hidden levels" onKeyDown={onMenuKey}>
           {items.map((c, i) => (
             <li key={i}>
               <Link

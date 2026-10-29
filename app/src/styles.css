@@ -281,6 +281,8 @@ code { font: 0.86em var(--mono); }
 .fields dt { color: var(--muted); }
 .fields dt::first-letter { text-transform: uppercase; }
 .fields dd { margin: 0; overflow-wrap: anywhere; }
+/* A recorded exception names an aggregate by its ID and title, too long for the label column: the reason goes under it. */
+.recorded-exceptions .fields > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .link-groups dt { font: 500 0.72rem var(--mono); color: var(--muted); }
 .link-groups dd { margin: 2px 0 0 8px; font-size: 0.88rem; }
 ul.plain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }

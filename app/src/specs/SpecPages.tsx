@@ -15,6 +15,7 @@ import { allFolders, domainFolders, foldedChildren, productFolders, type Folder,
 import { ActionsSlotContext } from '../components/ActionsSlot';
 import {
   byIdOrder,
+  exceptionOwner,
   kindLabel,
   isWorkspaceProblem,
   problemOrder,
@@ -373,24 +374,28 @@ function ChecksPage({ index, product }: { index: SpecIndex; product: SpecRecord 
 
 /**
  * The recorded exceptions (LA-V41-R04): each command that also changes another aggregate of its
- * domain in the same transaction, with the aggregate and the reason. They are deliberate deviations,
- * not problems: listed in a section of their own, never counted or marked as warnings.
+ * domain in the same transaction, and each repository that also persists another aggregate, with the
+ * aggregate and the reason. They are deliberate deviations, not problems: listed in a section of
+ * their own, never counted or marked as warnings.
  */
 function RecordedExceptions({ index, exceptions }: { index: SpecIndex; exceptions: RecordedException[] }) {
-  const items = exceptions.map((e) => ({ e, key: `${e.command} ${e.aggregate}` }));
+  const items = exceptions.map((e) => ({ e, owner: exceptionOwner(e), key: `${exceptionOwner(e)} ${e.aggregate}` }));
   return (
     <Section title="Recorded exceptions" count={exceptions.length}>
-      <p className="hint">Deliberate deviations, each recorded with its reason: a command that also changes another aggregate in the same transaction. They are not problems.</p>
+      <p className="hint">Deliberate deviations, each recorded with its reason: a command that also changes another aggregate in the same transaction, or a repository that also persists another aggregate. They are not problems.</p>
       <LongList
         label="Recorded exceptions"
         className="record-list exceptions"
         items={items}
         itemKey={(item) => item.key}
-        searchText={({ e }) => `${idText(index, e.command)} ${idText(index, e.aggregate)} ${e.reason}`}
-        render={({ e }) => (
+        searchText={({ e, owner }) => `${idText(index, owner)} ${idText(index, e.aggregate)} ${e.reason}`}
+        render={({ e, owner }) => (
           <>
-            <RecordLink index={index} id={e.command} showTitle={false} row />
-            <span className="exception-text">also changes <RecordLink index={index} id={e.aggregate} showTitle={false} /> in the same transaction: {e.reason}</span>
+            <RecordLink index={index} id={owner} showTitle={false} row />
+            <span className="exception-text">
+              {'command' in e ? 'also changes' : 'also persists'} <RecordLink index={index} id={e.aggregate} showTitle={false} />
+              {'command' in e ? ' in the same transaction' : ''}: {e.reason}
+            </span>
           </>
         )}
       />

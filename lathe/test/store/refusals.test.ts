@@ -301,7 +301,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/pattern_rule.jsonl', line: 1 })]);
   });
 
-  it('LA-AUT-INV41-T refuses a second repository for one aggregate, and a second repository of one identifier; one repository may persist several aggregates', async () => {
+  it('LA-AUT-INV41-T refuses a second repository for one aggregate, a second aggregate for one repository, and a second repository of one identifier', async () => {
     const second = adding({
       repository: [{ id: 'TL-LEND-REPO02', title: 'LoanStore', domain_id: 'TL-LEND', file: 'src/lending/loans.ts' }],
       persists: [{ source_id: 'TL-LEND-REPO02', target_id: 'TL-LEND-A1' }],
@@ -315,8 +315,11 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
       ['title-unique', 'TL-LEND-REPO01'],
       ['title-unique', 'TL-LEND-REPO02'],
     ]);
-    // A repository shared by two domains persists an aggregate of each.
-    await loads(adding({ ...catalog, persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-CAT-A1' }] }));
+    // A repository persists one aggregate: another it also persists is a recorded exception, of its domain or another.
+    expect(await refusal(adding({ ...catalog, persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-CAT-A1' }] }))).toEqual([
+      expect.objectContaining({ rule: 'unique', file: 'data/persists.jsonl', line: 2, message: expect.stringContaining('has the same source_id as persists') }),
+    ]);
+    await loads(adding({ ...catalog, repository_share: [{ repository_id: 'TL-LEND-REPO01', aggregate_id: 'TL-CAT-A1', reason: 'One store holds every table.' }] }));
   });
 
   it('LA-STD-MODELING-R04-T01 refuses a title another record of its kind and product has, or one ending with a period', async () => {
