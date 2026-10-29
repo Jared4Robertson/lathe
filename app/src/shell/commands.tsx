@@ -45,7 +45,9 @@ import { formatPath } from '../specs/data';
 type Handler = () => void;
 /** A stage's walk: takes a plain arrow's key ("ArrowLeft", for W, A, S and D too), moves the focus, and returns what to announce, or null. */
 type Walk = (key: string) => string | null;
-type WalkRef = { current: Walk };
+/** A stage's own meaning for a plain Enter where the walk stands (the Trace stage's "+N more" opens): true when it took it. */
+type StageEnter = () => boolean;
+type WalkRef = { current: Walk; enter?: StageEnter };
 /** A registered handler, and the title it gives its command while mounted ("Switch to Lathe"). */
 type HandlerRef = { current: Handler; title?: string };
 
@@ -105,12 +107,14 @@ export function useCommand(id: string, handler: Handler, enabled = true, title?:
 
 /**
  * Registers the shown stage's walk while mounted (and `enabled`): the plain arrow keys go to it from anywhere on the
- * page but a control that uses arrows itself, and what it returns is announced. The last one registered walks.
+ * page but a control that uses arrows itself, and what it returns is announced. The last one registered walks. `enter`
+ * is offered a plain Enter from the same places as the wiki card's toggle, first; when it takes it, the card is left.
  */
-export function useStageWalk(walk: Walk, enabled = true) {
+export function useStageWalk(walk: Walk, enabled = true, enter?: StageEnter) {
   const api = useContext(CommandsContext);
-  const ref = useRef<WalkRef>({ current: walk });
+  const ref = useRef<WalkRef>({ current: walk, enter });
   ref.current.current = walk;
+  ref.current.enter = enter;
   // A layout effect, so a stage Suspense hides while the next one loads stops walking at once: React keeps the hidden
   // stage's passive effects, and only its layout effects go.
   useLayoutEffect(() => {
@@ -215,6 +219,8 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
       if (typing && isSingleKey(chord) && before.length === 0) return;
       // Enter is a control's own where it handles Enter; Escape is a field's own while typing.
       if (chord === 'Enter' && before.length === 0 && usesEnter(e.target)) return;
+      // The stage's own Enter where its walk stands comes before the wiki card's.
+      if (chord === 'Enter' && before.length === 0 && walk?.enter?.()) { e.preventDefault(); return; }
       if (chord === 'Escape' && typing) return;
       let result = match([...before, chord], commands, mac, available);
       // A key that does not continue the sequence starts afresh.

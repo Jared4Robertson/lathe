@@ -210,7 +210,7 @@ test.describe('keyboard', () => {
     await page.keyboard.press('Escape');
   });
 
-  test('LA-V61-R49-T07 W, A, S and D walk the stage from the wiki card and stay typed in quick find', async ({ page }) => {
+  test('LA-V61-R49-T08 W, A, S and D walk the stage from the wiki card and stay typed in quick find', async ({ page }) => {
     await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
     const path = () => decodeURIComponent(new URL(page.url()).pathname);
     const start = path();
