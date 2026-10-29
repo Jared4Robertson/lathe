@@ -34,13 +34,6 @@ export const pointOn = (id: string, within: ParentNode = document) => {
   const b = drawnBox(id, within)!;
   return { x: b.label.left + b.label.width / 2, y: b.label.top + b.label.height / 2 };
 };
-/** The mouse over a drawn box (or off every box, for null). */
-export function hoverBox(id: string | null, within: ParentNode = document) {
-  const at = id ? pointOn(id, within) : { x: -1e6, y: -1e6 };
-  fireEvent.pointerMove(canvasOf(within), { clientX: at.x, clientY: at.y, pointerType: 'mouse', pointerId: 1 });
-}
-/** The mouse leaves the canvas. */
-export const leaveCanvas = (within: ParentNode = document) => fireEvent.pointerLeave(canvasOf(within), { pointerType: 'mouse', pointerId: 1 });
 /** A press and release at a point of the canvas, by a finger or the mouse. */
 export function tapAt(at: { x: number; y: number }, pointerType: 'touch' | 'mouse' = 'touch', within: ParentNode = document) {
   const c = canvasOf(within);

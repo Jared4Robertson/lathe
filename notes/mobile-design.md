@@ -24,7 +24,7 @@ Each decision lists the options weighed, the choice and why.
 
 ### 3. The stage full screen, the panels as sheets and drawers
 
-- **Chosen (superseding the one-view-at-a-time design):** the phone shows the stage full screen under the top bar, the compact page bar and the header strip. The stage switch shows Graph, ERD and Trace as named segments; switching writes `?stage=` (replacing the history entry) and the tab's stage, but not the stage remembered for a wide screen (`lathe:stage`). The wiki card opens as a bottom sheet from the page bar's wiki button, and the side bar as a drawer from the right.
+- **Chosen (superseding the one-view-at-a-time design):** the phone shows the stage full screen under the top bar, the compact page bar and the header strip. The stage switch shows Graph, ERD and Trace as named segments; switching writes `?stage=` (replacing the history entry) and the tab's stage, but not the stage remembered for a wide screen (`lathe:stage`). The wiki card opens as a bottom sheet from the page bar's wiki button.
 - **Why:** the address must say what is on screen (UX-R06); the stage is the page's canvas on every screen, and the panels that float over it on a wide screen need the whole width on a phone.
 - No resize handles on a phone.
 
