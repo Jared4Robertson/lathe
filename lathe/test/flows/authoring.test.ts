@@ -245,13 +245,14 @@ describe('Authoring flows', () => {
     await tl.seed([
       add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
       add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
+      add('entity', { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' }),
       add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
       add('specification', { id: 'TL-LEND-SP01', title: 'Tool is free', statement: 'A tool is free when no active loan names it.' }),
       link('TL-LEND-SP01', 'reads', 'TL-LEND-A1'),
     ]);
     // S01: the commands, and the events each raises with their fields.
-    tl.run('add', 'command', '--id', 'TL-LEND-CMD01', '--title', 'Open a loan', '--aggregate_id', 'TL-LEND-A1', '--description', 'Lends a free tool to a member.');
-    tl.run('add', 'command', '--id', 'TL-LEND-CMD02', '--title', 'Open a reminder', '--aggregate_id', 'TL-LEND-A1', '--description', 'Sets a reminder for the loan\'s due date.');
+    tl.run('add', 'command', '--id', 'TL-LEND-CMD01', '--title', 'Open a loan', '--entity_id', 'TL-LEND-EN01', '--description', 'Lends a free tool to a member.');
+    tl.run('add', 'command', '--id', 'TL-LEND-CMD02', '--title', 'Open a reminder', '--entity_id', 'TL-LEND-EN01', '--description', 'Sets a reminder for the loan\'s due date.');
     tl.run('add', 'domain_event', '--id', 'TL-LEND-EV01', '--title', 'Loan opened', '--aggregate_id', 'TL-LEND-A1', '--published', 'false', '--description', 'A tool went out on loan.');
     tl.run('add', 'event_field', ...flags({ domain_event_id: 'TL-LEND-EV01', position: 1, name: 'Loan ID', meaning: 'Which loan.', type_aggregate_id: 'TL-LEND-A1', required: true }));
     // S02: what each command raises and checks; the event other domains hear is published.

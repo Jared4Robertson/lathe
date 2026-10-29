@@ -1,7 +1,7 @@
 // Remove a use case (LA-AUT-CMD103): Removes a use case whole: its actors, requirements, flows, steps, tests and the links they start. Refused while anything outside it references what is in it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { USE_CASE_SLICE, useCaseChanged } from '../model.ts';
+import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 
 /** The use case to remove. */
@@ -26,5 +26,4 @@ export function removeUseCase(tx: Transaction, input: RemoveUseCase): void {
   const useCases = new UseCaseRepository(tx);
   const useCase = useCases.load(input.id) ?? tx.refuse('missing', `there is no use case ${input.id}`);
   useCases.remove(useCase);
-  useCaseChanged(tx, useCase);
 }

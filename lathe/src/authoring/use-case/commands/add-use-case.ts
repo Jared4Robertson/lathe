@@ -2,7 +2,7 @@
 import { column, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UseCaseRow } from '../../../platform/data/tables.ts';
-import { newUseCase, USE_CASE_SLICE, useCaseChanged } from '../model.ts';
+import { newUseCase, USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
@@ -35,5 +35,4 @@ export function addUseCase(tx: Transaction, input: AddUseCase): void {
   const useCase = useCases.create(newUseCase(row, actors));
   holdToRules(tx, useCase);
   useCases.save(useCase);
-  useCaseChanged(tx, useCase);
 }

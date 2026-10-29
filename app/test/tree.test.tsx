@@ -20,9 +20,9 @@ describe('one level deep', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(cap).toHaveTextContent('1 use case');
     expect(cap.querySelector('ul.nested')).toBeNull();
-    // An aggregate folds what sits under it in the domain model: its entities, invariant, event and command.
+    // An aggregate folds what sits under it in the domain model: its entities, invariant and event.
     const aggregates = section(/^Aggregates/);
-    expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('5 children');
+    expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('4 children');
 
     // The button opens and closes it, showing the use case within with its actor.
     fireEvent.click(toggle);

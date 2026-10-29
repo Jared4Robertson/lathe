@@ -20,7 +20,7 @@ const NO_COMMAND = {
   severity: 'warning',
   summary: 'An aggregate with no command.',
   explanation: 'Each aggregate of this product is changed by at least one command of its own.',
-  query: "SELECT a.id AS record, 'Aggregate ' || a.id || ' has no command.' AS message FROM aggregate a WHERE NOT EXISTS (SELECT 1 FROM command c WHERE c.aggregate_id = a.id) ORDER BY record",
+  query: "SELECT a.id AS record, 'Aggregate ' || a.id || ' has no command.' AS message FROM aggregate a WHERE NOT EXISTS (SELECT 1 FROM command c JOIN entity e ON e.id = c.entity_id WHERE e.aggregate_id = a.id) ORDER BY record",
 };
 
 describe('Checking flows', () => {
@@ -79,7 +79,7 @@ describe('Checking flows', () => {
       ...LENDING,
       add('table', { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loan', storage: 'table' }),
       add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
-      add('command', { id: 'TL-LEND-CMD02', title: 'Open a reminder', aggregate_id: 'TL-LEND-A1', description: 'Sets a reminder for the loan\'s due date.' }),
+      add('command', { id: 'TL-LEND-CMD02', title: 'Open a reminder', entity_id: 'TL-LEND-EN01', description: 'Sets a reminder for the loan\'s due date.' }),
       { op: 'add', table: 'command_change', row: { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' } },
       add('policy', { id: 'TL-LEND-PO01', title: 'Remind on loan', command_id: 'TL-LEND-CMD02', statement: 'Whenever a loan is opened, the library MUST open its reminder.' }),
       link('TL-LEND-PO01', 'hears', 'TL-LEND-EV01'),
@@ -123,7 +123,8 @@ describe('Checking flows', () => {
     expect(problemsOf(ws, 'aggregate-without-command')).toEqual(['TL-LEND-A2: Aggregate TL-LEND-A2 has no command.']);
     expect(names.lastIndexOf('aggregate-without-command')).toBe(names.length - 1);
     // S07: they fix what it finds and check again until it is clean of it.
-    tl.run('add', 'command', '--id', 'TL-LEND-CMD02', '--title', 'Add a tool', '--aggregate_id', 'TL-LEND-A2', '--description', 'Puts a named tool in the catalog.');
+    tl.run('add', 'entity', '--id', 'TL-LEND-EN09', '--title', 'Tool', '--aggregate_id', 'TL-LEND-A2', '--role', 'root', '--description', 'A tool on the shelf or out.');
+    tl.run('add', 'command', '--id', 'TL-LEND-CMD02', '--title', 'Add a tool', '--entity_id', 'TL-LEND-EN09', '--description', 'Puts a named tool in the catalog.');
     expect(problemsOf(tl.workspace(), 'aggregate-without-command')).toEqual([]);
     // S03: a check named like one of Lathe's is refused, naming lathe/data/check.jsonl.
     expect(tl.refused('add', 'check', ...flags({ ...NO_COMMAND, name: 'view-unused' }))).toContain('lathe/data/check.jsonl');

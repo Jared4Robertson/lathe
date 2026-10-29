@@ -72,14 +72,15 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     const handlers = new Map(data('command_handler').map((r) => [r.command_id, r]));
     const endpoints = new Map(data('endpoint').filter((r) => r.command_id).map((r) => [r.command_id, r]));
     const clis = new Map(data('cli_command').map((r) => [r.id, r]));
+    const aggregateOf = new Map(data('entity').map((e) => [e.id, e.aggregate_id]));
     for (const definition of ALL_COMMANDS) {
       const own = handlerFiles.filter((f) => f.text.includes(`id: '${definition.id}'`));
       expect(own.map((f) => f.file), definition.id).toHaveLength(1);
-      expect(commands.get(definition.id), definition.id).toMatchObject({ aggregate_id: definition.slice.aggregate });
+      expect(aggregateOf.get(commands.get(definition.id)?.entity_id), definition.id).toBe(definition.slice.aggregate);
       expect(handlers.get(definition.id), definition.id).toMatchObject({ id: `${definition.id}-H`, title: definition.handler.name, file: own[0].file });
       expect(definition.route).toBe(`/api/${definition.slice.name}/${definition.name}`);
       expect(endpoints.get(definition.id), definition.id).toMatchObject({ method: definition.method, route: definition.route });
-      expect(clis.get(`${definition.id}-CLI`), definition.id).toMatchObject({ title: `lathe ${definition.slice.name} ${definition.name}`, mcp_tool: toolName(definition) });
+      expect(clis.get(`${definition.id}-CLI`), definition.id).toMatchObject({ command_id: definition.id, title: `lathe ${definition.slice.name} ${definition.name}`, mcp_tool: toolName(definition) });
     }
     // And back: every handler file defines one command, every handler record in a slice is a definition's, and every
     // command of an aggregate with a slice has its definition.
@@ -88,18 +89,18 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     const sliced = [...handlers.values()].filter((h) => typeof h.file === 'string' && /\/commands\/[^/]+\.ts$/.test(h.file) && h.file.startsWith('lathe/src/'));
     expect(sliced.filter((h) => !defined.has(String(h.command_id))).map((h) => h.id)).toEqual([]);
     const aggregates = new Set(ALL_COMMANDS.map((d) => d.slice.aggregate));
-    expect([...commands.values()].filter((c) => aggregates.has(String(c.aggregate_id)) && !defined.has(String(c.id))).map((c) => c.id)).toEqual([]);
+    expect([...commands.values()].filter((c) => aggregates.has(String(aggregateOf.get(c.entity_id))) && !defined.has(String(c.id))).map((c) => c.id)).toEqual([]);
   });
 
   it('matches each query definition to its query, handler and CLI records', () => {
     const queries = new Map(data('query').map((r) => [r.id, r]));
     const handlers = new Map(data('query_handler').map((r) => [r.query_id, r]));
-    const clis = new Map(data('cli_command').map((r) => [r.id, r]));
+    const clis = new Map(data('cli_query').map((r) => [r.id, r]));
     for (const definition of ALL_QUERIES) {
       expect(queries.has(definition.id), definition.id).toBe(true);
       expect(handlers.get(definition.id), definition.id).toMatchObject({ title: definition.run.name });
       expect(readFileSync(path.join(REPO, String(handlers.get(definition.id)!.file)), 'utf8')).toContain(`id: '${definition.id}'`);
-      expect(clis.get(`${definition.id}-CLI`), definition.id).toMatchObject({ title: `lathe ${definition.slice.name} ${definition.name}`, mcp_tool: toolName(definition) });
+      expect(clis.get(`${definition.id}-CLI`), definition.id).toMatchObject({ query_id: definition.id, title: `lathe ${definition.slice.name} ${definition.name}`, mcp_tool: toolName(definition) });
     }
   });
 });
