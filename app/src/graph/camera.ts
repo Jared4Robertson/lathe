@@ -1,4 +1,4 @@
-import type { GraphMap, MapNode, PlacedMap } from './map';
+import { COLUMN_GAP_SHARE, MAX_COLUMN_SHARE, type GraphMap, type MapNode, type PlacedMap } from './map';
 import { TITLE_FONT } from './text';
 
 // The camera over the one map (LA-EXP-DS09). Focusing a node, by a click, the address, Back and
@@ -164,15 +164,25 @@ function frameRows(map: GraphMap, node: MapNode, depth: number, width: number, h
 }
 
 /**
+ * The width a focus's own frame always gives it, over its own width: the focus and its children's column at its widest
+ * (MAX_COLUMN_SHARE of its width, after its gap). A column narrowed by many children, or a narrow column next that leaves
+ * little gap to end the frame in, never zooms the focus in further, so its header reads at the same size on screen
+ * however its children and the levels past them grow (LA-EXP-DS06, LA-EXP-DS09).
+ */
+export const FOCUS_SPAN = 1 + MAX_COLUMN_SHARE * (1 + COLUMN_GAP_SHARE);
+
+/**
  * The focus's own frame: whole rows of its level from the parent's right edge, the parent's level in a strip at the left
- * edge (frameOnMap), before its children's rule.
+ * edge (frameOnMap), before its children's rule. Zoomed in no further than frames FOCUS_SPAN of the focus's width with
+ * the padding past it: what width is left over goes to the parent's strip.
  */
 export function frameFocus(map: GraphMap, node: MapNode, depth: number, width: number, height: number, max = MAX_ZOOM): Viewport {
   // From the parent's right edge (the gap to the focus included), or the focus's left edge for a root.
   const parent = node.parent === null ? null : map.nodes.get(node.parent)!;
   const left = parent ? parent.x + parent.w : node.x;
   const strip = parent ? Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP) : 0;
-  return frameRows(map, node, depth, width, height, max, left, strip, null);
+  const span = Math.min(max, (width - strip - 2 * FRAME_PADDING) / (node.x + FOCUS_SPAN * node.w - left));
+  return frameRows(map, node, depth, width, height, span, left, strip, null);
 }
 
 /**
