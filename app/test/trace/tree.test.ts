@@ -7,7 +7,8 @@ import { spaceIndex } from '../../src/specs/data';
 import { obligationsUnder } from '../../src/trace/chain';
 import { focusKey, keptFor, traceFade, traceMap, type TraceMap } from '../../src/trace/tree';
 import { UNTRACED } from '../../src/trace/top';
-import { drawnFor, frameMap, frameOnMap, MAX_DRAWN, viewRect } from '../../src/graph/camera';
+import { CHILD_READ_PX, drawnFor, frameFocus, frameMap, frameOnMap, MAX_DRAWN, viewRect } from '../../src/graph/camera';
+import { TITLE_FONT } from '../../src/graph/text';
 import { treeText } from '../../src/graph/map';
 
 // The Trace stage's tree (app/src/trace/tree.ts): one tree per product laid out by the Graph's Tree layout, below its
@@ -168,5 +169,28 @@ describe('the Trace stage\'s tree', () => {
     const near = drawnFor(map.map, v, 1440, 900, [requirement]);
     expect(near.boxes.map((b) => b.id)).toContain(requirement);
     for (const b of near.boxes) { const n = map.map.nodes.get(b.id)!; expect(n.x + n.w >= r.x0 && n.x <= r.x1 && n.y + n.h >= r.y0 && n.y <= r.y1, b.id).toBe(true); }
+  }, 120_000);
+
+  it("LA-V98-R03-T05 An outcome's seven links and a capability's eight use cases read when focused: the camera frames their column", async () => {
+    const index = spaceIndex(indexOf(await repoData({ chains: true })), 'LA');
+    const map = traceMap(index, 'LA');
+    const outcome = [...map.map.nodes.values()].find((n) => index.byId.get(n.id)?.kind === 'business_outcome' && n.children.length === 7 && n.children.every((c) => map.nodes.get(c)!.role === 'link'));
+    expect(outcome, 'an outcome with seven links').toBeDefined();
+    for (const focus of [outcome!.id, focusKey(map, index, 'LA-TRC-CAP01')]) {
+      const node = map.map.nodes.get(focus)!;
+      const first = map.map.nodes.get(node.children[0])!;
+      for (const [w, h] of [[1000, 700], [770, 640]] as const) {
+        const titlePx = (zoom: number) => first.text * zoom * TITLE_FONT;
+        expect(titlePx(frameFocus(map.map, node, 1, w, h, 1e9).zoom), `${focus} in its own frame`).toBeLessThan(CHILD_READ_PX);
+        const v = frameOnMap(map.map, focus, 1, w, h, 1e9);
+        expect(titlePx(v.zoom), focus).toBeGreaterThanOrEqual(CHILD_READ_PX * (1 - 1e-9));
+        // Every child in view, whole; the focus at the left of them.
+        for (const c of node.children.map((k) => map.map.nodes.get(k)!)) {
+          expect(c.y * v.zoom + v.y, c.id).toBeGreaterThanOrEqual(-0.5);
+          expect((c.y + c.h) * v.zoom + v.y, c.id).toBeLessThanOrEqual(h + 0.5);
+        }
+        expect((node.x + node.w) * v.zoom + v.x).toBeGreaterThan(0);
+      }
+    }
   }, 120_000);
 });
