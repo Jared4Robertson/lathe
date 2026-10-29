@@ -4,6 +4,7 @@ import { modelWorkspace } from '../fixtures/model';
 import { gap } from '../fixtures/workspace';
 import { traceMap, type TraceMap } from '../../src/trace/tree';
 import { nodeWords, traceTarget } from '../../src/trace/walk';
+import { tracesOf } from './traces';
 import type { Move } from '../../src/views/levels';
 
 // The Trace stage's walk (app/src/trace/walk.ts): the arrow keys move over the tree as on the Graph's Tree, Left out to
@@ -26,7 +27,7 @@ describe('the Trace stage\'s walk', () => {
     const data = modelWorkspace();
     data.coverage[0].gaps.push(gap('P-D-SP01', 'specification', 'built'));
     const index = indexOf(data);
-    const map = traceMap(index, 'P');
+    const map = traceMap(index, tracesOf(index, 'P'), 'P');
 
     // Right in to the first child, along the chain; Left back out; Out and In as Left and Right.
     expect(walk(map, 'P-D-UC01-R01', ['right', 'right', 'right', 'left', 'left', 'left'])).toEqual([

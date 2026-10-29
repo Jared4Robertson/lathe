@@ -1,3 +1,4 @@
+import type { ProductTraces } from '../../../lathe/src/traceability/trace/read-model';
 import type { SpecIndex } from '../specs/data';
 import { layoutTree, type GraphMap } from '../graph/map';
 import { treeChildren, treeParent } from '../graph/tree';
@@ -67,8 +68,8 @@ const GAP_WORDS: Record<GapColumn, string> = { design: 'Not designed', build: 'N
 /** A product's tree: each key's children and what it is. */
 interface Built { children: Map<string, string[]>; nodes: Map<string, TraceNode>; links: Set<string>; gapped: Set<string>; obligations: number; withGaps: number; untraced: number }
 
-function build(index: SpecIndex, product: string): Built {
-  const untracedIds = untracedUnder(index, product).flatMap((g) => g.ids);
+function build(index: SpecIndex, traces: ProductTraces, product: string): Built {
+  const untracedIds = untracedUnder(index, traces, product).flatMap((g) => g.ids);
   const top = traceTop(index, product, untracedIds.length > 0);
   const children = new Map<string, string[]>();
   const nodes = new Map<string, TraceNode>();
@@ -89,7 +90,7 @@ function build(index: SpecIndex, product: string): Built {
   // Each obligation's gaps and chain, in each place it sits.
   const gappedIds = new Set<string>();
   for (const { key: o, id } of top.obligations) {
-    const row = traceChain(index, id)!;
+    const row = traceChain(index, traces, id)!;
     nodes.get(o)!.chain = o;
     if (row.gaps.length > 0) { gapped.add(o); gappedIds.add(id); }
     for (const gap of row.gaps) {
@@ -142,9 +143,21 @@ export function nodeLabel(index: SpecIndex, n: TraceNode): MapLabel {
   return n.note ? { ...label, meta: `${label.meta} · ${n.note}` } : label;
 }
 
-/** A product's Trace map, laid out once per product and data change (one-map.ts) by the Graph's Tree layout. */
-export const traceMap = onePerData((index: SpecIndex, product: string): TraceMap => {
-  const built = build(index, product);
+/** Each Trace read's layouts, one per product and data change. */
+const mapsOf = new WeakMap<ProductTraces, (index: SpecIndex, product: string) => TraceMap>();
+
+/**
+ * A product's Trace map, laid out once per product and data change (one-map.ts) by the Graph's Tree layout, and again
+ * for each answer of its Trace read (list-traces), which follows each data change.
+ */
+export function traceMap(index: SpecIndex, traces: ProductTraces, product: string): TraceMap {
+  let layout = mapsOf.get(traces);
+  if (!layout) { layout = onePerData((i, p) => layOut(i, traces, p)); mapsOf.set(traces, layout); }
+  return layout(index, product);
+}
+
+function layOut(index: SpecIndex, traces: ProductTraces, product: string): TraceMap {
+  const built = build(index, traces, product);
   const { nodes, children } = built;
   // Every copy of each record, in the tree's order: depth first from the product.
   const copies = new Map<string, string[]>();
@@ -169,7 +182,7 @@ export const traceMap = onePerData((index: SpecIndex, product: string): TraceMap
     product, map, nodes, copies, links: built.links, gapped: built.gapped, above,
     counts: { obligations: built.obligations, withGaps: built.withGaps, untraced: built.untraced },
   };
-});
+}
 
 // ---------- Focusing ----------
 

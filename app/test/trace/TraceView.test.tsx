@@ -12,6 +12,7 @@ import type { ColumnScene, ColumnsHost } from '../../src/trace/TraceColumns';
 import { TRACE_LAYOUT_KEY } from '../../src/trace/layout';
 import { TITLE_FONT } from '../../src/graph/text';
 import { obligationsUnder, untracedUnder } from '../../src/trace/chain';
+import { tracesOf } from './traces';
 import { openApp } from '../helpers';
 
 // The Trace stage (LA-V98): drawn on the canvas, the product's one tree, each obligation's chain to its right with its
@@ -78,8 +79,10 @@ describe('the Trace stage', () => {
   });
 
   it('LA-V98-R02-T02 An obligation\'s Trace stage frames its box and its chain: an arrow for each link, the obligation as the focus', async () => {
-    await openApp('/P-D-UC01-R01?stage=trace', served());
+    const { requests } = await openApp('/P-D-UC01-R01?stage=trace', served());
     const whole = await drawn(true);
+    // The chains, gaps and untraced records are the Trace read's.
+    expect(requests).toContain('GET /api/trace/list-traces?product_id=P');
     // The requirement drawn as the focus, its chain to its right.
     expect(whole.boxes.filter((b) => b.focus).map((b) => b.key)).toEqual(['P-D-UC01-R01']);
     expect(whole.boxes.find((b) => b.id === 'P-D-UC01-FL01-S01')).toMatchObject({ kind: 'flow_step', stage: 'interaction-design', name: 'Flow step Librarian lends the thing' });
@@ -160,7 +163,8 @@ describe('the Trace stage', () => {
     await openApp('/P-D?stage=trace', served());
     await matrix();
     const section = () => within(traceStage()).getByRole('region', { name: /^Untraced/ });
-    const expected = untracedUnder(modelIndex(), 'P-D');
+    const index = modelIndex();
+    const expected = untracedUnder(index, tracesOf(index, 'P'), 'P-D');
     const count = expected.reduce((n, g) => n + g.ids.length, 0);
     expect(count).toBeGreaterThan(0);
     await waitFor(() => expect(counts()).toHaveTextContent(`· ${count} untraced`));

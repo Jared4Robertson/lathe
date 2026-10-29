@@ -1,10 +1,10 @@
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { AGGREGATE, EDITED, keepData, RECORD } from './scenarios';
 
 // Changing records in place, with nothing jumping (LA-PAT-APP-UX-R08): on the Use case page (its own editor, sending
 // the Use case aggregate's commands) and on the Domain, Test data set, Pattern, Standard, Product, Business outcome,
-// Entry point and Tooling pages, opening a record's form, saving an edit, adding a child from its parent's page,
+// Entry point, Tooling, View, UI component, Check and Pattern pages and the Product page's Limits, opening a record's form, saving an edit, adding a child from its parent's page,
 // and asking to remove a record that is still referenced, which the command refuses inline; and on the page of a kind
 // whose aggregate has no editor yet, the record form generated from the schema. The form takes the place of the page's content,
 // so shifts inside the wiki card's scroll box are the change itself; the nav, the card's head and
@@ -114,16 +114,58 @@ test.describe('editing', () => {
   test('LA-AUT-UC22-FL01-T on the Business outcome page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-BO05', /^notes/, 'Noted by the stability suite.'));
   test('LA-AUT-UC29-FL01-T on the Entry point page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PLT-ENTRY01', /^description/, 'Starts the server, as the stability suite describes it.'));
   test('LA-AUT-UC30-FL01-T on the Tooling page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TOOL01', /^title/, 'schema-types.ts'));
+  // The View and UI component pages: each saves one field as its kind's Change command, with nothing jumping. Each is its
+  // aggregate's web-app flow test.
+  test('LA-AUT-UC18-FL01-T on the View page, open a requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-V123-R04', /^group name/, 'Stability'));
+  test('LA-AUT-UC28-FL01-T on the UI component page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-UI226', /^description/, 'The Standard page, as the stability suite describes it.'));
+  // The Endpoint and Integration pages: each saves one field as its kind's Change command, with nothing jumping. Each is
+  // its aggregate's web-app flow test.
+  test('LA-AUT-UC26-FL01-T on the Endpoint page, open an API requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EP02-R01', /^group name/, 'Stability'));
+  test('LA-AUT-UC27-FL01-T on the Integration page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-INT04', /^system/, 'git, as the stability suite names it'));
+  // The Check page, the Product page's Limits and the Pattern page's Followed by: each sends one of its aggregate's
+  // commands, with nothing jumping.
+  test('LA-V03-R03-T02 on the Check page, open a product check\'s form and save an edit', ({ page }) =>
+    saveAnEdit(page, '/LA?page=format/checks/actor-not-a-role', /^summary/, "A use case's actor is one of its product's roles, as the stability suite says.", 'actor-not-a-role'));
+  test('LA-V51-R11-T02 on the Product page, set the product\'s limits', ({ page }) =>
+    sendAForm(page, '/LA', 'Change the limits of LA', 'Set limits', 'Set limits', async (form) => {
+      await form.getByRole('spinbutton', { name: /^Children of one kind/ }).fill('16');
+    }));
+  test('LA-V122-R07-T02 on the Pattern page, make a use case follow the pattern', ({ page }) =>
+    sendAForm(page, '/LA-PAT-RECORD-PAGE', 'Followers of LA-PAT-RECORD-PAGE', 'Follow', 'Follow LA-PAT-RECORD-PAGE', async (form) => {
+      await form.getByRole('combobox', { name: /^Follower/ }).selectOption({ index: 1 });
+    }, 'Follow'));
 });
 
-/** Opens the record's page, opens its Edit form, fills one field and saves it, with nothing outside the card moving. */
-async function saveAnEdit(page: Page, address: string, field: RegExp, value: string) {
+/** Opens the page, opens a form from one of its toolbars, fills it and sends it, with nothing outside the card moving. */
+async function sendAForm(page: Page, address: string, toolbar: string, button: string, formName: string, fill: (form: Locator) => Promise<void>, save = button) {
   const restore = keepData();
   try {
     await openPage(page, address);
-    const form = page.getByRole('form', { name: `Edit ${address.slice(1)}` });
+    const form = page.getByRole('form', { name: formName });
     const open = await step(page, 'edit', 'open the form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {
-      await page.getByRole('toolbar', { name: `Change ${address.slice(1)}` }).getByRole('button', { name: 'Edit' }).click();
+      await page.getByRole('toolbar', { name: toolbar }).getByRole('button', { name: button }).click();
+      await form.waitFor();
+    });
+    expectStable(open);
+    await fill(form);
+    const sent = await step(page, 'edit', 'send the form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT, settle: 1500 }, async () => {
+      await form.getByRole('button', { name: save, exact: true }).click();
+      await expect(form).toHaveCount(0, { timeout: 20_000 });
+    });
+    expectStable(sent);
+  } finally {
+    restore();
+  }
+}
+
+/** Opens the record's page, opens its Edit form, fills one field and saves it, with nothing outside the card moving. */
+async function saveAnEdit(page: Page, address: string, field: RegExp, value: string, name = address.slice(1)) {
+  const restore = keepData();
+  try {
+    await openPage(page, address);
+    const form = page.getByRole('form', { name: `Edit ${name}` });
+    const open = await step(page, 'edit', 'open the form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {
+      await page.getByRole('toolbar', { name: `Change ${name}` }).getByRole('button', { name: 'Edit' }).click();
       await form.waitFor();
     });
     expectStable(open);

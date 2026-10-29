@@ -10,10 +10,11 @@ const card = () => screen.getByRole('region', { name: 'Wiki card' });
 
 describe('checks panel', () => {
   it("LA-V41-R01-T01 A space's Checks page lists its product's problems, errors first, grouped by check, each linking to its record, then the workspace's", async () => {
-    await openApp('/DM?panel=checks');
+    const { requests } = await openApp('/DM?panel=checks');
     await waitFor(() => expect(checksPanel()).toBeInTheDocument());
-    // Demo shop's one error and three warnings, and the workspace's one error; not Notebook's.
-    expect(within(checksPanel()).getByText('2 errors · 3 warnings')).toBeInTheDocument();
+    // Demo shop's one error and three warnings, and the workspace's one error; not Notebook's: the Problems read's.
+    expect(await within(checksPanel()).findByText('2 errors · 3 warnings')).toBeInTheDocument();
+    expect(requests).toContain('GET /api/problems/list-problems?product_id=DM');
 
     const groups = [...checksPanel().querySelectorAll('section')].map((s) => ({
       check: s.querySelector('h3, h4')?.firstChild?.textContent,
@@ -37,7 +38,7 @@ describe('checks panel', () => {
     await openApp('/DM?panel=checks');
     await waitFor(() => expect(checksPanel()).toBeInTheDocument());
     const user = userEvent.setup();
-    await user.click(within(checksPanel()).getByRole('link', { name: 'DM-SHOP-INV01' }));
+    await user.click(await within(checksPanel()).findByRole('link', { name: 'DM-SHOP-INV01' }));
     expect(window.location.pathname + window.location.search).toBe('/DM-SHOP-INV01?panel=checks');
     await waitFor(() => expect(card()).toHaveAttribute('data-page', 'DM-SHOP-INV01'));
     expect(checksPanel().querySelector('li.problem.is-current')).toHaveTextContent('DM-SHOP-INV01');
@@ -57,7 +58,7 @@ describe('checks panel', () => {
     await openApp('/P?panel=checks', { data: modelWorkspace() });
     await waitFor(() => expect(checksPanel()).toBeInTheDocument());
     // The model's one error and one warning; Return thing's and LoanRepository's recorded exceptions are not counted.
-    expect(within(checksPanel()).getByText('1 error · 1 warning')).toBeInTheDocument();
+    expect(await within(checksPanel()).findByText('1 error · 1 warning')).toBeInTheDocument();
     const section = within(checksPanel()).getByRole('heading', { level: 3, name: /^Recorded exceptions/ }).closest('section')!;
     const rows = within(within(section).getByRole('list', { name: 'Recorded exceptions' })).getAllByRole('listitem');
     expect(rows).toHaveLength(2);
