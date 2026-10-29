@@ -23,7 +23,7 @@ describe('LA-AUT-UC16-R01-T02 each Standard command (LA-AUT-A3) changes one stan
   it('builds a standard with its rule and test, reads it whole, and removes it whole', async () => {
     const store = await codeStandard();
     open.push(store);
-    expect((runQuery(store, GET_STANDARD, { id: 'TL-STD-CODE-R01' }) as ReturnType<typeof GET_STANDARD.run>).ruleTests.map((t) => t.row.id)).toEqual(['TL-STD-CODE-R01-T01']);
+    expect((runQuery(store, GET_STANDARD, { id: 'TL-STD-CODE-R01' }) as ReturnType<typeof GET_STANDARD.run>).rules.flatMap((r) => r.tests.map((t) => t.test.id))).toEqual(['TL-STD-CODE-R01-T01']);
     expect(runQuery(store, LIST_STANDARDS, { product_id: 'TL' })).toEqual([{ id: 'TL-STD-CODE', title: 'Code' }]);
     expect(runQuery(store, NEXT_STANDARD_ID, { kind: 'standard_rule_test', parent: 'TL-STD-CODE-R01' })).toBe('TL-STD-CODE-R01-T02');
     expect((await runCommand(store, CHANGE_STANDARD_RULE, { id: 'TL-STD-CODE-R01', group_name: 'Imports' })).tables).toEqual(['standard_rule']);

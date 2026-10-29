@@ -46,7 +46,7 @@ describe('standards in the nav and the wiki', () => {
     expect(within(list('Standards of Demo shop')).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-STD-CODE']);
   });
 
-  it('LA-V92-R72-T02 A standard\'s page lists its rules with what meets each one and the tests that prove it', async () => {
+  it('LA-V123-R04-T01 A standard\'s page lists its rules with what meets each one and the tests that prove it', async () => {
     await openApp('/DM-STD-CODE', served());
     await screen.findByRole('heading', { level: 1, name: 'Code standard' });
     const rules = section(/^Rules/);
