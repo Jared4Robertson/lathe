@@ -2,7 +2,9 @@ import { expect, test } from '@playwright/test';
 import { openPage } from './measure';
 import { rowsOf, served, testsText } from './flows';
 import { PRODUCT } from './scenarios';
-import { traceDrawn, traceSceneOf } from './scene';
+import { traceDrawn, traceLayout, traceSceneOf } from './scene';
+import type { ColumnScene, ColumnsHost } from '../src/trace/TraceColumns';
+import { TITLE_FONT } from '../src/graph/text';
 
 // Traceability's flows that the Reader walks in the app, each on its main path, over the suite's copy
 // of this repo's data: the product's and the domains' coverage, the Trace stage, every
@@ -52,6 +54,8 @@ test.describe('Traceability flows', () => {
   });
 
   test('LA-TRC-UC10-FL01-T trace obligations on the Trace stage', async ({ page }) => {
+    // The tree's scenario (the columns' is LA-V98-R13-T07).
+    await traceLayout(page, 'tree');
     const spec = await served(page);
     // The chain: the steps that fulfill it, their flows, what they invoke and where they happen, the handlers of what
     // they invoke, the tests under it and the files those name.
@@ -127,6 +131,54 @@ test.describe('Traceability flows', () => {
     expect(focused.every((b) => b.id === steps[0] && b.strength === 1)).toBe(true);
     expect(focused.some((b) => b.key === `${REQUIREMENT}|${steps[0]}`)).toBe(true);
     await expect(pane.locator('.trace-matrix td [aria-current="page"]').first()).toContainText(steps[0]);
+  });
+
+  test('LA-V98-R13-T07 the Trace stage as columns: the path to a requirement readable, the walk and a click moving along it, the tree a click away', async ({ page }) => {
+    const spec = await served(page);
+    const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
+    const capability = String(rowsOf(spec, 'use_case').find((u) => u.id === useCase)!.capability_id);
+    const requirements = rowsOf(spec, 'uc_requirement').filter((r) => r.use_case_id === useCase);
+    const pane = page.locator('.focus-stage');
+    const columnsOf = (whole = false): Promise<ColumnScene> => page.evaluate((w) => (document.querySelector('.focus-stage .trace-flow') as ColumnsHost).traceScene!(w), whole);
+    await openPage(page, `/${REQUIREMENT}?stage=trace`);
+    await traceDrawn(page);
+    await expect(pane.locator('.trace-flow')).toHaveAttribute('data-layout', 'columns');
+    // S01: a column for each box on the path from the product, each chosen box the next one on it, the requirement's chain last.
+    const whole = await columnsOf(true);
+    expect(whole.columns.map((c) => c.parent).slice(0, 5)).toEqual(['LA', TRC, capability, useCase, REQUIREMENT]);
+    expect(whole.boxes.filter((b) => b.chosen).map((b) => b.key)).toEqual([TRC, capability, useCase, REQUIREMENT]);
+    expect(whole.boxes.find((b) => b.key === useCase)!.count).toBe(requirements.length);
+    // The columns above the use case's compact, their boxes titles alone; the rest one size; every title at 11 px at least.
+    expect(whole.columns.map((c) => c.compact).slice(0, 5)).toEqual([true, true, false, false, false]);
+    expect(new Set(whole.boxes.filter((b) => !b.compact).map((b) => `${Math.round(b.rect.width)}x${Math.round(b.rect.height)}`)).size).toBe(1);
+    for (const b of whole.boxes) expect(b.textScale * TITLE_FONT * whole.camera.zoom, b.key).toBeGreaterThanOrEqual(11);
+    // In view: the requirement's box and its chain's column whole, the use case's column beside them.
+    const now = await columnsOf();
+    const shows = (b: ColumnScene['boxes'][number]) => b.rect.left >= now.canvas.left && b.rect.left + b.rect.width <= now.canvas.left + now.canvas.width && b.rect.top + b.rect.height <= now.canvas.top + now.canvas.height;
+    expect(shows(now.boxes.find((b) => b.focus)!), 'the requirement is in view').toBe(true);
+    expect(now.boxes.some((b) => b.column === whole.columns.length - 1 && shows(b)), 'its chain is in view').toBe(true);
+    // S02: the walk: Right in to the first of its chain, a column more; Left back out.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('ArrowRight');
+    await page.waitForURL((u) => u.pathname !== `/${REQUIREMENT}`);
+    await traceDrawn(page);
+    expect((await columnsOf(true)).boxes.filter((b) => b.chosen).map((b) => b.key)).toContain(REQUIREMENT);
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}`);
+    // S03: a click on a sibling requirement's box focuses it, on the same stage.
+    await traceDrawn(page);
+    const sibling = (await columnsOf()).boxes.find((b) => b.parent === useCase && b.key !== REQUIREMENT)!;
+    await page.mouse.click(sibling.rect.left + sibling.rect.width / 2, sibling.rect.top + sibling.rect.height / 2);
+    await page.waitForURL((u) => u.pathname === `/${sibling.id}`);
+    expect(new URL(page.url()).searchParams.get('stage')).toBe('trace');
+    // S04: Tree draws the same focus on the product's tree; v brings the columns back.
+    await pane.getByRole('group', { name: 'Layout' }).getByRole('button', { name: 'Tree' }).click();
+    await expect(pane.locator('.trace-flow:not([data-layout])')).toHaveAttribute('data-ready', 'true');
+    await traceDrawn(page);
+    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.focus).map((b) => b.id)).toContain(sibling.id);
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('v');
+    await expect(pane.locator('.trace-flow')).toHaveAttribute('data-layout', 'columns');
   });
 
   test('LA-TRC-UC11-FL01-T see every obligation kind and test state', async ({ page }) => {

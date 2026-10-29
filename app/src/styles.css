@@ -892,6 +892,26 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* On a wide screen the trace is drawn on the canvas (TraceCanvas.tsx) and the table is its accessible layer, visually hidden
    (its links carry focus and the arrow keys; the canvas rings the box a focused link stands for), its paging with it. */
 .trace-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+/* The column layout (TraceColumns.tsx, LA-V98-R13): its key's path ring and count. */
+.graph-swatch.is-chosen { box-shadow: 0 0 0 1px var(--sheet), 0 0 0 3px var(--steel); }
+.trace-key-count { display: inline-block; min-width: 18px; font: 500 0.72rem var(--mono); color: var(--muted); text-align: right; }
+/* On a phone the columns are one column at a time (ColumnList.tsx): a back row naming the box above, then its rows. */
+.trace-col-back { display: flex; align-items: center; gap: 4px; min-block-size: 44px; padding: 0 4px; color: var(--steel); font-weight: 600; text-decoration: none; }
+.trace-col-head { margin: 4px 0 8px; font-size: 1rem; }
+.trace-col-rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.trace-col-row { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; min-block-size: 44px; padding: 8px 44px 8px 12px; border: 1.5px solid var(--g-structural); border-radius: 6px; background: var(--g-structural-bg); color: var(--ink); text-decoration: none; }
+.trace-col-row.stage-discovery { border-color: var(--g-discovery); background: var(--g-discovery-bg); }
+.trace-col-row.stage-domain-model { border-color: var(--g-domain-model); background: var(--g-domain-model-bg); }
+.trace-col-row.stage-use-cases { border-color: var(--g-use-cases); background: var(--g-use-cases-bg); }
+.trace-col-row.stage-interaction-design { border-color: var(--g-interaction-design); background: var(--g-interaction-design-bg); }
+.trace-col-row.stage-technical-specification { border-color: var(--g-technical-specification); background: var(--g-technical-specification-bg); }
+.trace-col-row.stage-test-plan { border-color: var(--g-test-plan); background: var(--g-test-plan-bg); }
+.trace-col-row:is(.is-gap, .is-untraced) { border-style: dashed; border-color: var(--warn); background: var(--sheet); }
+.trace-col-row[aria-current="page"] { box-shadow: 0 0 0 2px var(--steel); }
+.trace-col-row.is-faded { opacity: var(--focus-fade); }
+.trace-col-meta { font: 0.72rem var(--mono); color: var(--muted); overflow-wrap: anywhere; }
+.trace-col-title { font-size: 0.92rem; font-weight: 600; }
+.trace-col-count { position: absolute; right: 12px; bottom: 8px; font: 500 0.75rem var(--mono); color: var(--muted); }
 
 /* ---------- Themes and Appearance (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
 /* A theme's chip in the picker and its preview on the page take the theme's tokens inline, so they draw with its colors. */
