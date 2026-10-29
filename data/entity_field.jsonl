@@ -430,13 +430,16 @@
 {"entity_id":"LA-EXP-EN03","position":2,"name":"Row","meaning":"The row: a record's ID, or a stage's or kind group's address.","type":"text","required":true,"example":"LA-EXP/domain-model"}
 {"entity_id":"LA-EXP-EN03","position":3,"name":"Folded","meaning":"Whether it is folded in the nav, for this browser session.","type":"yes/no","required":true,"example":"no"}
 {"entity_id":"LA-EXP-EN09","position":1,"name":"Space","meaning":"The space whose tabs these are.","type_aggregate_id":"LA-EXP-A2","required":true,"example":"LA"}
-{"entity_id":"LA-EXP-EN09","position":2,"name":"Active page","meaning":"The page of the tab shown, which the address names.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-EXP-UC10"}
-{"entity_id":"LA-EXP-EN10","position":1,"name":"Page","meaning":"The page it holds, by its address path, without the stage.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-EXP-UC10"}
+{"entity_id":"LA-EXP-EN09","position":2,"name":"Active tab","meaning":"The tab shown, whose place the address and the window's history name.","type":"text","required":true,"example":"t2"}
+{"entity_id":"LA-EXP-EN10","position":1,"name":"Page","meaning":"The page its place is focused on, by its address path, without the stage.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-EXP-UC10"}
 {"entity_id":"LA-EXP-EN10","position":2,"name":"Position","meaning":"Its place in the row, left to right.","type":"whole number","required":true,"example":"2"}
-{"entity_id":"LA-EXP-EN10","position":3,"name":"Preview","meaning":"Whether the next plain open replaces it.","type":"yes/no","required":true,"example":"yes"}
-{"entity_id":"LA-EXP-EN10","position":4,"name":"Stage","meaning":"The stage it shows.","type_value_object_id":"LA-VO91","required":true,"example":"erd"}
+{"entity_id":"LA-EXP-EN10","position":4,"name":"Stage","meaning":"The stage its place shows.","type_value_object_id":"LA-VO91","required":true,"example":"erd"}
 {"entity_id":"LA-EXP-EN10","position":6,"name":"Card scroll","meaning":"How far down the wiki card was, in pixels.","type":"whole number","required":true,"example":"120"}
-{"entity_id":"LA-EXP-EN11","position":1,"name":"Settings","meaning":"The graph's layout, depth, minimap and kind filters, and the wiki card's open state and width.","type_value_object_id":"LA-VO92","required":true,"example":"nested, depth 2, card open"}
+{"entity_id":"LA-EXP-EN10","position":7,"name":"View","meaning":"Its depth, kind filters and wiki card.","type_value_object_id":"LA-VO94","required":true,"example":"depth 2, card open"}
+{"entity_id":"LA-EXP-EN10","position":8,"name":"Current entry","meaning":"Which entry of its history it shows; Back and Forward move it, and a move drops the entries after it.","type":"whole number","required":true,"example":"3"}
+{"entity_id":"LA-EXP-EN11","position":1,"name":"Settings","meaning":"The graph's layout and minimap, and the wiki card's width.","type_value_object_id":"LA-VO92","required":true,"example":"nested, minimap on, 480 px"}
+{"entity_id":"LA-EXP-EN12","position":1,"name":"Address","meaning":"The page and stage the entry goes back to.","type_value_object_id":"LA-VO90","required":true,"example":"/LA-EXP-UC10?stage=erd"}
+{"entity_id":"LA-EXP-EN12","position":2,"name":"Position","meaning":"Its place in the tab's history, oldest first.","type":"whole number","required":true,"example":"1"}
 {"entity_id":"LA-PLT-EN02","position":1,"name":"Panel","meaning":"Which part of the app it is: the navigation or the wiki card.","type":"text","required":true,"example":"Wiki card"}
 {"entity_id":"LA-PLT-EN02","position":2,"name":"Shown","meaning":"Whether it is on screen; a hidden panel keeps a control that brings it back.","type":"yes/no","required":true,"example":"yes"}
 {"entity_id":"LA-PLT-EN02","position":3,"name":"Size","meaning":"Its width in pixels, within its limits.","type":"decimal","required":true,"example":"340"}

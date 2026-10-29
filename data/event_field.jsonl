@@ -14,8 +14,8 @@
 {"domain_event_id":"LA-EXP-EV01","position":4,"name":"Stage","meaning":"The stage the page shows.","type_value_object_id":"LA-VO91","required":true,"example":"Graph"}
 {"domain_event_id":"LA-EXP-EV01","position":5,"name":"Opened at","meaning":"When the page opened.","type":"date and time","required":true,"example":"2026-10-24T14:05:00Z"}
 {"domain_event_id":"LA-EXP-EV02","position":1,"name":"Space","meaning":"The space whose tab is now active.","type_aggregate_id":"LA-EXP-A2","required":true}
-{"domain_event_id":"LA-EXP-EV02","position":2,"name":"Page","meaning":"That tab's page.","type_value_object_id":"LA-VO90","required":true}
-{"domain_event_id":"LA-EXP-EV02","position":3,"name":"Stage","meaning":"That tab's stage.","type_value_object_id":"LA-VO91","required":true}
+{"domain_event_id":"LA-EXP-EV02","position":2,"name":"Page","meaning":"That tab's place's page.","type_value_object_id":"LA-VO90","required":true}
+{"domain_event_id":"LA-EXP-EV02","position":3,"name":"Stage","meaning":"That tab's place's stage.","type_value_object_id":"LA-VO91","required":true}
 {"domain_event_id":"LA-PLT-EV01","position":1,"name":"Theme","meaning":"The theme now chosen.","type":"text","required":true,"example":"Workshop"}
 {"domain_event_id":"LA-PLT-EV01","position":2,"name":"Previous theme","meaning":"The theme it replaced.","type":"text","required":true,"example":"Lathe"}
 {"domain_event_id":"LA-PLT-EV01","position":3,"name":"Chosen at","meaning":"When it was kept.","type":"date and time","required":true,"example":"2026-10-24T14:40:00Z"}

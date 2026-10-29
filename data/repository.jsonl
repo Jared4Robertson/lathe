@@ -1,7 +1,7 @@
 {"id":"LA-EXP-REPO01","title":"window.history","domain_id":"LA-EXP","file":"app/src/router.tsx","description":"The browser's history, `window.history`: navigate, useLocation, entryState, noteInEntry."}
 {"id":"LA-EXP-REPO02","title":"lathe:space","domain_id":"LA-EXP","file":"app/src/shell/spaces.tsx","description":"`lathe:space` and `lathe:space-pages` in session storage."}
 {"id":"LA-EXP-REPO03","title":"lathe:nav-folders","domain_id":"LA-EXP","file":"app/src/shell/Nav.tsx","description":"`lathe:nav-folders` and `lathe:nav-sections` in session storage."}
-{"id":"LA-EXP-REPO04","title":"lathe:tabs","domain_id":"LA-EXP","file":"app/src/views/useTabs.ts","description":"`lathe:tabs` in session storage, read with `parseTabSet`."}
+{"id":"LA-EXP-REPO04","title":"lathe:tabs","domain_id":"LA-EXP","file":"app/src/views/useTabs.ts","description":"`lathe:tabs` in session storage, per space, read with `parseTabSet`: the desktop app's tabs. On the web, where each browser tab is one place, its view (depth, kind filters, wiki card) is kept under `lathe:place` in the browser tab's own session storage, read by `usePlace` (app/src/views/usePlace.ts)."}
 {"id":"LA-EXP-REPO05","title":"lathe:graph-settings","domain_id":"LA-EXP","file":"app/src/graph/settings.ts","description":"`lathe:session-settings` in session storage, with `sessionSettings` and `saveSessionSettings`."}
 {"id":"LA-PLT-REPO01","title":"readPref","domain_id":"LA-PLT","file":"app/src/shell/prefs.ts","description":"readPref, writePref, usePanelSize: sizes and shown states in local storage"}
 {"id":"LA-PLT-REPO02","title":"COMMANDS","domain_id":"LA-PLT","file":"app/src/shell/keymap.ts","description":"COMMANDS, SPACE_KEYS, readOverrides (lathe:keybindings)"}
