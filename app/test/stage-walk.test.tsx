@@ -32,10 +32,14 @@ describe('the stage walk', () => {
 
     // A modifier keeps the arrow's own meaning: nothing steps.
     press(document.body, 'ArrowLeft', { altKey: true });
-    // Quick find (a combobox) keeps its arrows.
-    const find = document.querySelector<HTMLInputElement>('#nav input')!;
-    find.focus();
+    // Quick find (a combobox in a modal dialog) keeps its arrows.
+    fireEvent.keyDown(document.body, { key: 'p', code: 'KeyP', ctrlKey: true });
+    const find = document.querySelector<HTMLInputElement>('.quick-open input')!;
+    expect(find).toHaveFocus();
     press(find, 'ArrowLeft');
+    press(find, 'ArrowDown');
+    fireEvent.keyDown(find, { key: 'Escape' });
+    expect(document.querySelector('.quick-open')).toBeNull();
     await new Promise((r) => setTimeout(r, 50));
     expect(at()).toBe('/P-D-UC01');
     // The nav's links don't use arrows: with one focused (the record just clicked in the nav), the arrows walk the stage.

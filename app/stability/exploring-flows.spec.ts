@@ -26,10 +26,10 @@ async function graphReady(page: Page) {
 /** Opens quick find and the record whose ID is typed. */
 async function quickFind(page: Page, id: string) {
   await page.keyboard.press('Control+k');
-  const find = page.locator('.quick-find input');
+  const find = page.locator('.quick-open input');
   await expect(find).toBeFocused();
   await find.fill(id);
-  await page.locator('.quick-find-results li').first().waitFor();
+  await page.locator('.quick-open .palette-list li').first().waitFor();
   await page.keyboard.press('Enter');
   await page.waitForURL((u) => u.pathname === `/${id}`);
 }
@@ -259,7 +259,7 @@ test.describe('Exploring flows', () => {
     await page.keyboard.press('Alt+1');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03');
     await page.keyboard.press('Control+Shift+p');
-    await page.locator('.dialog-search').fill('Switch to');
+    await page.locator('.quick-open input').fill('>Switch to');
     await expect(page.locator('.palette-list')).toContainText('Lathe');
     await page.keyboard.press('Escape');
     // Find a record in the space, and open its Checks.
@@ -397,8 +397,8 @@ test.describe('Exploring flows', () => {
     await model.getByRole('group', { name: 'Aggregate Tab group' }).locator('.erd-box-head').first().click();
     await page.waitForURL((u) => u.pathname === '/LA-EXP-A5');
     await expect(model.getByRole('list', { name: /^Fields of / }).first()).toBeVisible();
-    // On an entity, the same ERD picks it out.
-    await page.locator('.focus-stage .erd-flow .react-flow__node:not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
+    // On an entity, the same map picks it out, framed; what lies outside its aggregate faded and hidden from the keyboard.
+    await page.locator('.focus-stage .erd-flow .react-flow__node:not([aria-hidden]):not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
     await page.waitForURL((u) => /^\/LA-EXP-EN\d+$/.test(u.pathname));
     await expect(page.locator('.focus-stage .react-flow__node .is-focus').first()).toBeVisible();
     // The key at the foot of the open space.

@@ -126,13 +126,13 @@ const DESKTOP: State[] = [
   { name: 'quick find', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
     await page.keyboard.press('Control+k');
-    await page.locator('.quick-find input').fill('graph');
-    await page.locator('.quick-find-results li').first().waitFor();
+    await page.locator('.quick-open input').fill('graph');
+    await page.locator('.quick-open .palette-list li').first().waitFor();
   } },
   { name: 'the command palette', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
     await page.keyboard.press('Control+Shift+p');
-    await page.locator('.dialog-search').waitFor();
+    await page.locator('.quick-open input').waitFor();
   } },
   { name: 'the shortcuts sheet', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
@@ -185,10 +185,10 @@ const PHONE: State[] = [
     await page.getByRole('button', { name: 'Open the navigation' }).click();
     await page.locator('nav#nav').waitFor();
   } },
-  { name: 'the quick find sheet', run: async (page) => {
+  { name: 'quick find on a phone', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
     await page.locator('.topbar').getByRole('button', { name: 'Quick find' }).click();
-    await page.locator('.find-sheet input').fill('graph');
+    await page.locator('.quick-open input').fill('graph');
     await page.waitForTimeout(300);
   } },
   { name: 'the wiki card sheet', run: async (page) => {
