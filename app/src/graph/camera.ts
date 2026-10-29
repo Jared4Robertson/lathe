@@ -1,9 +1,11 @@
 import type { GraphMap, MapNode, PlacedMap } from './map';
+import { TITLE_FONT } from './text';
 
 // The camera over the one map (LA-EXP-DS09). Focusing a node, by a click, the address, Back and
 // Forward, the step keys or the trail, moves the camera only: it frames the focus and the levels
-// the depth shows below it, with the parent's level kept at the left edge for context, in one
-// smooth zoom and pan (a van Wijk and Nuij path, as d3's zoom uses). Nothing in the map moves or
+// the depth shows below it, with the parent's level kept at the left edge for context (or, when its children would be
+// too small to read, their column at reading size with the focus at the left edge), in one smooth zoom and pan (a van
+// Wijk and Nuij path, as d3's zoom uses). Nothing in the map moves or
 // changes size. What is drawn is chosen by the level of detail (LA-EXP-DS10): only what is in
 // view and big enough to see, each box with its label, and never more than a budget.
 //
@@ -30,83 +32,172 @@ export const MAX_ZOOM = 64;
 export const MIN_ZOOM = 1e-4;
 
 /**
- * The camera that frames a focus (LA-EXP-DS09): the focus and its descendants down to `depth`
- * levels below it fill the pane, the parent's level showing in a strip at the left edge (the frame
- * starts at the parent's right edge, past the strip). A node with fewer levels below it frames what
- * it has. Zoomed in no further than `max` (MAX_ZOOM; the Trace stage's deeper tree takes more).
+ * The least size a framed focus's children's titles are drawn at on screen, in CSS pixels (LA-EXP-DS06, LA-EXP-DS09):
+ * about the app's small UI text, so a child's title reads comfortably. A Tree box's title is about a fifth of its height
+ * (its text is at most its width over 250 and it is at most 6 times as wide as tall), so a 6:1 child reads from about
+ * 55 pixels tall.
+ */
+export const CHILD_READ_PX = 11;
+
+/** A box and everything under it. */
+const subtree = (map: GraphMap, n: MapNode): MapNode[] => [n, ...n.children.flatMap((c) => subtree(map, map.nodes.get(c)!))];
+
+/** The right edge of some boxes and their descendants down to `depth` levels below them. */
+function framedRightOf(map: GraphMap, boxes: readonly MapNode[], depth: number): number {
+  let right = -Infinity;
+  const walk = (n: MapNode, d: number) => {
+    right = Math.max(right, n.x + n.w);
+    if (d >= depth) return;
+    for (const c of n.children) walk(map.nodes.get(c)!, d + 1);
+  };
+  for (const b of boxes) walk(b, 0);
+  return right;
+}
+
+/**
+ * Where a frame ends on the right, among some boxes in view: in the middle of the gap before the first box past the
+ * framed ones (with no padding), or past the framed ones with the padding; a box it would cut is taken in.
+ */
+function rightEdge(framedRight: number, shown: readonly MapNode[]): { right: number; pad: number } {
+  let edge = framedRight;
+  for (let pass = 0; pass < shown.length + 1; pass++) {
+    const beyond = shown.filter((n) => n.x >= edge).map((n) => n.x);
+    const at = beyond.length > 0 ? (edge + Math.min(...beyond)) / 2 : edge;
+    const cut = shown.filter((n) => n.x < at && n.x + n.w > at);
+    if (cut.length === 0) return { right: at, pad: beyond.length > 0 ? 0 : FRAME_PADDING };
+    edge = Math.max(...cut.map((n) => n.x + n.w));
+  }
+  return { right: edge, pad: FRAME_PADDING };
+}
+
+/**
+ * Rows i to j of a level, taken whole: their top, the padding above them, and the zoom that fits them in `height`. The
+ * margin past a row is half the gap to the next row, at most half a sibling gap (a twentieth of the row), so a wide gap
+ * to a cousin far away is not framed; past the level's first or last row, the frame's padding.
+ */
+function rowsFit(row: readonly MapNode[], i: number, j: number, height: number): { top: number; topPad: number; zoom: number } {
+  const margin = (gap: number, h: number) => Math.min(gap / 2, h / 20);
+  const top = i > 0 ? row[i].y - margin(row[i].y - (row[i - 1].y + row[i - 1].h), row[i].h) : row[i].y;
+  const bottom = j < row.length - 1 ? row[j].y + row[j].h + margin(row[j + 1].y - (row[j].y + row[j].h), row[j].h) : row[j].y + row[j].h;
+  const topPad = i > 0 ? 0 : FRAME_PADDING;
+  const pads = topPad + (j < row.length - 1 ? 0 : FRAME_PADDING);
+  return { top, topPad, zoom: (height - pads) / (bottom - top) };
+}
+
+/** The viewport of rows i to j of a level, right-aligned on their edge at `zoom`: filling the height, or centered when they are shorter. */
+function placeRows(row: readonly MapNode[], i: number, j: number, fit: { top: number; topPad: number; zoom: number }, edge: { right: number; pad: number }, zoom: number, width: number, height: number): Viewport {
+  const y = fit.zoom <= zoom ? fit.topPad - fit.top * zoom : height / 2 - (row[i].y + (row[j].y + row[j].h)) / 2 * zoom;
+  return { x: width - edge.pad - edge.right * zoom, y, zoom };
+}
+
+/**
+ * The camera that frames a focus (LA-EXP-DS09): the focus and its descendants down to `depth` levels below it fill the
+ * pane, the parent's level showing in a strip at the left edge (the frame starts at the parent's right edge, past the
+ * strip). A node with fewer levels below it frames what it has. Zoomed in no further than `max` (MAX_ZOOM; the Trace
+ * stage's deeper tree takes more).
  *
- * No box of the framed levels is cut at an edge. Top and bottom, the frame takes whole rows of the
- * focus's level, the focus and as many of its neighbors as the width leaves room for, its edges in
- * the gaps between rows (or the padding past the first and last row); every deeper box lies inside
- * a box of the focus's level, so it is whole too. On the right, the frame ends in the gap before the
- * first box past the framed ones in the rows taken (or the padding past the last), and takes in any box it would cut;
- * what width is left over goes to the parent's strip on the left.
+ * No box of the framed levels is cut at an edge. Top and bottom, the frame takes whole rows of the focus's level, the
+ * focus and as many of its neighbors as the width leaves room for, its edges in the gaps between rows (or the padding
+ * past the first and last row); every deeper box lies inside a box of the focus's level, so it is whole too. On the
+ * right, the frame ends in the gap before the first box past the framed ones in the rows taken (or the padding past the
+ * last), and takes in any box it would cut; what width is left over goes to the parent's strip on the left.
+ *
+ * When that frame would draw the focus's children's titles under CHILD_READ_PX (a focus with many children, whose
+ * column is short boxes), it frames the children's column instead (frameChildren): the children read, and the focus
+ * keeps the strip at the left edge.
  */
 export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number, max = MAX_ZOOM): Viewport {
   const node = map.nodes.get(focus);
   if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: 1 };
-  // The framed boxes: the focus and its descendants down to `depth` levels below it.
-  let framedRight = node.x + node.w;
-  const walk = (n: MapNode, d: number) => {
-    framedRight = Math.max(framedRight, n.x + n.w);
-    if (d >= depth) return;
-    for (const c of n.children) walk(map.nodes.get(c)!, d + 1);
-  };
-  walk(node, 0);
-  const subtree = (n: MapNode): MapNode[] => [n, ...n.children.flatMap((c) => subtree(map.nodes.get(c)!))];
-  // Where the frame ends on the right, among some boxes in view: in the middle of the gap before the first box past
-  // the framed ones (with no padding), or past the framed ones with the padding; a box it would cut is taken in.
-  const rightEdge = (shown: readonly MapNode[]) => {
-    let edge = framedRight;
-    for (let pass = 0; pass < shown.length + 1; pass++) {
-      const beyond = shown.filter((n) => n.x >= edge).map((n) => n.x);
-      const at = beyond.length > 0 ? (edge + Math.min(...beyond)) / 2 : edge;
-      const cut = shown.filter((n) => n.x < at && n.x + n.w > at);
-      if (cut.length === 0) return { right: at, pad: beyond.length > 0 ? 0 : FRAME_PADDING };
-      edge = Math.max(...cut.map((n) => n.x + n.w));
-    }
-    return { right: edge, pad: FRAME_PADDING };
-  };
-  // From the parent's right edge (the gap to the focus included), or the focus's left edge for a root.
-  const parent = node.parent === null ? null : map.nodes.get(node.parent)!;
-  const left = parent ? parent.x + parent.w : node.x;
-  const strip = parent ? Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP) : 0;
+  const v = frameFocus(map, node, depth, width, height, max);
+  if (depth < 1 || node.children.length === 0) return v;
+  const first = map.nodes.get(node.children[0])!;
+  const read = Math.min(max, CHILD_READ_PX / (first.text * TITLE_FONT));
+  if (!(first.text > 0) || v.zoom >= read * (1 - 1e-9)) return v;
+  const children = frameChildren(map, node, depth, width, height, read, max);
+  return children.zoom > v.zoom ? children : v;
+}
+
+/**
+ * Whole rows of the focus's level, from `left` (the parent's right edge, or the focus's own when its children's column
+ * is framed), `strip` pixels left over for what lies left of it, and the focus's descendants down to `depth`
+ * (frameOnMap). With no `least`, siblings are taken in until the rows fit the width's zoom (the focus's frame); with one,
+ * while the rows still fit at it (the children's frame: they keep reading).
+ */
+function frameRows(map: GraphMap, node: MapNode, depth: number, width: number, height: number, max: number, left: number, strip: number, least: number | null): Viewport {
+  const framedRight = framedRightOf(map, [node], depth);
   const zoomFor = (edge: { right: number; pad: number }) => Math.min(max, (width - strip - FRAME_PADDING - edge.pad) / (edge.right - left));
-  const widthZoom = zoomFor(rightEdge(subtree(node)));
+  const widthZoom = zoomFor(rightEdge(framedRight, subtree(map, node)));
 
   // The rows of the focus's level the frame takes, from row i to row j, and the zoom that fits them.
   const row = map.byLevel[node.level];
   let i = row.indexOf(node);
   let j = i;
-  // The margin past a row: half the gap to the next row, at most half a sibling gap (a twentieth of the row), so a
-  // wide gap to a cousin far away is not framed.
-  const margin = (gap: number, h: number) => Math.min(gap / 2, h / 20);
-  const rows = () => {
-    const top = i > 0 ? row[i].y - margin(row[i].y - (row[i - 1].y + row[i - 1].h), row[i].h) : row[i].y;
-    const bottom = j < row.length - 1 ? row[j].y + row[j].h + margin(row[j + 1].y - (row[j].y + row[j].h), row[j].h) : row[j].y + row[j].h;
-    const topPad = i > 0 ? 0 : FRAME_PADDING;
-    const pads = topPad + (j < row.length - 1 ? 0 : FRAME_PADDING);
-    return { top, topPad, zoom: (height - pads) / (bottom - top) };
-  };
-  let frame = rows();
-  // Take in a sibling at a time, above and below in turn, until the rows fit the width's zoom. Only siblings: a
-  // cousin may be far taller, and framing it would shrink the focus. A sibling that would take the zoom below
-  // ROWS_KEEP of the width's is left out (the frame then centers on the rows it has): framing whole rows never costs
-  // the focus much of its size on screen.
+  let frame = rowsFit(row, i, j, height);
+  // Take in a sibling at a time, above and below in turn. Only siblings: a cousin may be far taller, and framing it
+  // would shrink the focus. Without `least`, until the rows fit the width's zoom, a sibling that would take the zoom
+  // below ROWS_KEEP of the width's left out (the frame then centers on the rows it has): framing whole rows never costs
+  // the focus much of its size on screen. With `least`, while the rows fit at it (or at the width's zoom, if less).
+  const floor = least === null ? ROWS_KEEP * widthZoom : Math.min(least, widthZoom);
   const sibling = (k: number) => k >= 0 && k < row.length && row[k].parent === node.parent;
-  for (let up = true; frame.zoom > widthZoom && (sibling(i - 1) || sibling(j + 1)); up = !up) {
+  for (let up = true; (least !== null || frame.zoom > widthZoom) && (sibling(i - 1) || sibling(j + 1)); up = !up) {
     const [was, wasI, wasJ] = [frame, i, j];
     if ((up && sibling(i - 1)) || !sibling(j + 1)) i--;
     else j++;
-    frame = rows();
-    if (frame.zoom < ROWS_KEEP * widthZoom) { [frame, i, j] = [was, wasI, wasJ]; break; }
+    frame = rowsFit(row, i, j, height);
+    if (frame.zoom < floor) { [frame, i, j] = [was, wasI, wasJ]; break; }
   }
   // The right edge for every row taken (a sibling's own column may reach further than the focus's).
-  const edge = rightEdge(row.slice(i, j + 1).flatMap(subtree));
-  const zoom = Math.min(zoomFor(edge), frame.zoom);
-  // Rows that fit at the width's zoom fill the height; rows narrower than the pane are centered on their middle.
-  const y = frame.zoom <= zoom ? frame.topPad - frame.top * zoom : height / 2 - (row[i].y + (row[j].y + row[j].h)) / 2 * zoom;
-  return { x: width - edge.pad - edge.right * zoom, y, zoom };
+  const edge = rightEdge(framedRight, row.slice(i, j + 1).flatMap((n) => subtree(map, n)));
+  return placeRows(row, i, j, frame, edge, Math.min(zoomFor(edge), frame.zoom), width, height);
+}
+
+/**
+ * The focus's own frame: whole rows of its level from the parent's right edge, the parent's level in a strip at the left
+ * edge (frameOnMap), before its children's rule.
+ */
+export function frameFocus(map: GraphMap, node: MapNode, depth: number, width: number, height: number, max = MAX_ZOOM): Viewport {
+  // From the parent's right edge (the gap to the focus included), or the focus's left edge for a root.
+  const parent = node.parent === null ? null : map.nodes.get(node.parent)!;
+  const left = parent ? parent.x + parent.w : node.x;
+  const strip = parent ? Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP) : 0;
+  return frameRows(map, node, depth, width, height, max, left, strip, null);
+}
+
+/**
+ * The frame of a focus's children's column at reading size, `read` (frameOnMap): from the focus's right edge, the
+ * focus keeping the strip at the left edge that the parent's level keeps in the focus's own frame, and whatever width
+ * is left over, the levels the depth shows below the children running on to their right. When the focus's row fits
+ * the height at that size, whole rows of the focus's level, as many as keep the children reading; when it does not (a
+ * focus with many children), whole rows of its children from the first, as many as read. Should the width not let
+ * the children read, they are framed as large as it lets them be.
+ */
+function frameChildren(map: GraphMap, node: MapNode, depth: number, width: number, height: number, read: number, max: number): Viewport {
+  const left = node.x + node.w;
+  const strip = Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP);
+  const zoomFor = (edge: { right: number; pad: number }) => Math.min(max, (width - strip - FRAME_PADDING - edge.pad) / (edge.right - left));
+  const level = map.byLevel[node.level];
+  const own = level.indexOf(node);
+  if (rowsFit(level, own, own, height).zoom >= Math.min(read, zoomFor(rightEdge(framedRightOf(map, [node], depth), subtree(map, node))))) {
+    return frameRows(map, node, depth, width, height, max, left, strip, read);
+  }
+  const kids = node.children.map((c) => map.nodes.get(c)!);
+  const row = map.byLevel[node.level + 1];
+  const i = row.indexOf(kids[0]);
+  const last = row.indexOf(kids[kids.length - 1]);
+  const edgeOf = (j: number) => { const taken = row.slice(i, j + 1); return rightEdge(framedRightOf(map, taken, depth - 1), taken.flatMap((n) => subtree(map, n))); };
+  // Take in the next child while the rows still fit at the least zoom they need: reading size, or what the width allows.
+  let j = i;
+  let least = Math.min(read, zoomFor(edgeOf(j)));
+  for (;;) {
+    while (j < last && rowsFit(row, i, j + 1, height).zoom >= least * (1 - 1e-9)) j++;
+    const narrower = Math.min(read, zoomFor(edgeOf(j)));
+    if (narrower >= least * (1 - 1e-9)) break;
+    least = narrower;
+  }
+  const fit = rowsFit(row, i, j, height);
+  const edge = edgeOf(j);
+  return placeRows(row, i, j, fit, edge, Math.min(zoomFor(edge), fit.zoom), width, height);
 }
 
 /** The whole map in the pane: the overview's camera, and the least the camera zooms out. */
