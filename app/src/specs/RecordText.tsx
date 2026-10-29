@@ -127,25 +127,26 @@ export function FieldsTable({ index, rows, owner }: { index: SpecIndex; rows: Ro
   const columns = rows.some((r) => textOf(r, 'column_name'));
   return (
     <Section title="Fields" count={rows.length}>
-      <div className="table-scroll">
-        <table className="data-table entity-fields">
+      {/* Where its columns can't all fit, as in the wiki card, each field's row stacks (LA-PAT-APP-UX-R18). */}
+      <div className="table-scroll table-stack">
+        <table className="data-table entity-fields" role="table">
           <caption className="sr-only">The fields of {owner}</caption>
-          <thead>
-            <tr>
-              <th scope="col">Field</th><th scope="col">Meaning</th><th scope="col">Type</th><th scope="col">Required</th>
-              {columns && <th scope="col">Column</th>}
-              {examples && <th scope="col">Example</th>}
+          <thead role="rowgroup">
+            <tr role="row">
+              <th scope="col" role="columnheader">Field</th><th scope="col" role="columnheader">Meaning</th><th scope="col" role="columnheader">Type</th><th scope="col" role="columnheader">Required</th>
+              {columns && <th scope="col" role="columnheader">Column</th>}
+              {examples && <th scope="col" role="columnheader">Example</th>}
             </tr>
           </thead>
-          <tbody>
+          <tbody role="rowgroup">
             {rows.map((f) => (
-              <tr key={String(f.position)}>
-                <th scope="row">{textOf(f, 'name')}</th>
-                <td>{textOf(f, 'meaning')}</td>
-                <td><FieldType index={index} field={f} /></td>
-                <td>{f.required === true ? 'yes' : 'no'}</td>
-                {columns && <td>{textOf(f, 'column_name') && <code>{textOf(f, 'column_name')}</code>}</td>}
-                {examples && <td>{textOf(f, 'example')}</td>}
+              <tr key={String(f.position)} role="row">
+                <th scope="row" role="rowheader">{textOf(f, 'name')}</th>
+                <td role="cell" data-label="Meaning">{textOf(f, 'meaning')}</td>
+                <td role="cell" data-label="Type"><FieldType index={index} field={f} /></td>
+                <td role="cell" data-label="Required">{f.required === true ? 'yes' : 'no'}</td>
+                {columns && <td role="cell" data-label="Column">{textOf(f, 'column_name') && <code>{textOf(f, 'column_name')}</code>}</td>}
+                {examples && <td role="cell" data-label="Example">{textOf(f, 'example')}</td>}
               </tr>
             ))}
           </tbody>
