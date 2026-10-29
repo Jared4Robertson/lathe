@@ -245,3 +245,23 @@ test.describe('the stage toolbar', () => {
     }
   });
 });
+
+// A flow's steps in the narrow wiki card (LA-V101-R06): the table keeps room for every column's words and scrolls
+// sideways in its own box, rather than squeezing "What happens" to a word per line (LA-PAT-APP-UX-R18).
+test.describe('a flow\'s steps in the wiki card', () => {
+  test('LA-V101-R06-T02 in the 360 px wiki card, What happens keeps its width and the steps table scrolls sideways', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openPage(page, '/LA-EXP-UC03-FL01?stage=graph', STRIP);
+    await page.locator(CARD).getByRole('button', { name: 'More' }).click();
+    const table = page.locator(`${CARD} table.flow-steps`).first();
+    await table.waitFor();
+    const sizes = await table.evaluate((el) => {
+      const box = el.parentElement!;
+      const what = el.querySelector('td.step-what')!.getBoundingClientRect();
+      return { what: what.width, scrolls: box.scrollWidth > box.clientWidth, ids: [...el.querySelectorAll('.step-ids > li')].every((li) => li.getClientRects().length === 1) };
+    });
+    expect(sizes.what, 'What happens keeps room for its words').toBeGreaterThanOrEqual(300);
+    expect(sizes.scrolls, 'the table scrolls sideways in its own box').toBe(true);
+    expect(sizes.ids, 'each linked ID stays on one line').toBe(true);
+  });
+});
