@@ -355,7 +355,7 @@ describe('one address, one stage', () => {
     window.sessionStorage.clear();
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    // The summary: the box's kind line, the title, the lead text clamped, and at most three key facts, its parent first.
+    // The summary: the box's kind line, the title, the whole lead text, and at most three key facts, its parent first.
     expect(card()).not.toHaveClass('is-expanded');
     expect(card().querySelector('.wiki-panel-kind')).toHaveTextContent('Use case · P-D-UC01');
     expect(within(card()).getByRole('heading', { level: 2, name: 'Lend a thing' })).toBeInTheDocument();
