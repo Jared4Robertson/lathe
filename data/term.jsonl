@@ -1,6 +1,6 @@
 {"id":"LA-AUT-TM01","title":"Product","domain_id":"LA-AUT","meaning":"A set of specs about one piece of software, kept apart from every other: nothing in it points outside it.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM04","title":"Stage","domain_id":"LA-AUT","meaning":"One of the six steps of work, in order, that every kind belongs to, from discovery to the test plan.","group_name":"Records"}
-{"id":"LA-AUT-TM10","title":"Designed, built, proved","domain_id":"LA-AUT","meaning":"An obligation's three states: its implementation specified, its technical record naming a file that exists, its test written at a level its kind allows.","group_name":"Proof"}
+{"id":"LA-AUT-TM10","title":"Designed, built, proved","domain_id":"LA-AUT","meaning":"An obligation's three states: its implementation specified, every technical record of it naming a file that exists, its test written at a level its kind allows.","group_name":"Proof"}
 {"id":"LA-AUT-TM11","title":"Technical record","domain_id":"LA-AUT","meaning":"The one record of a technical kind that implements a design record, naming its file.","group_name":"Proof"}
 {"id":"LA-AUT-TM13","title":"Product kind","domain_id":"LA-AUT","meaning":"A kind a product declares for itself, in any stage, under any kind.","group_name":"Records"}
 {"id":"LA-AUT-TM14","title":"Command layer","domain_id":"LA-AUT","meaning":"The commands every writer uses to change data, each one transaction that the store accepts or refuses whole: the CLI, the MCP tools and the app send only these.","group_name":"Writing"}
@@ -83,7 +83,7 @@
 {"id":"LA-PLT-TM19","title":"Data file","domain_id":"LA-PLT","meaning":"`data/<table>.jsonl`: the rows of one kind, one of its parts or one relation's links, one JSON object per line, sorted by key. The source of truth, reviewed in git.","group_name":"Data files"}
 {"id":"LA-TRC-TM01","title":"Obligation","domain_id":"LA-TRC","meaning":"A rule a product must design, build and prove: a constraint, invariant, specification, policy, domain service, UC requirement, view requirement, API requirement, pattern rule or standard rule, or a product's own obligation kind."}
 {"id":"LA-TRC-TM02","title":"Designed","domain_id":"LA-TRC","meaning":"An obligation whose design is specified: a flow step fulfills the UC requirement, or a technical record implements the design record."}
-{"id":"LA-TRC-TM03","title":"Built","domain_id":"LA-TRC","meaning":"A designed obligation whose implementing technical record names a file that exists."}
+{"id":"LA-TRC-TM03","title":"Built","domain_id":"LA-TRC","meaning":"A designed obligation every technical record implementing which names a file that exists."}
 {"id":"LA-TRC-TM04","title":"Proved","domain_id":"LA-TRC","meaning":"An obligation with a test, automated or manual, at a level its kind allows."}
 {"id":"LA-TRC-TM05","title":"Gap","domain_id":"LA-TRC","meaning":"An obligation that is not yet designed, built or proved, reported as a warning."}
 {"id":"LA-TRC-TM06","title":"Run by","domain_id":"LA-TRC","meaning":"How a test runs: its level, its state, and its file or the reason it is manual."}
