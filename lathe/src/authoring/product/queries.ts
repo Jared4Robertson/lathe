@@ -1,40 +1,35 @@
-// The Product aggregate's own reads (read model LA-AUT-RM21): a product whole, the interfaces of a product, and the
-// next free ID for an open question or an interface. Each reads the current data and changes nothing.
+// The Product aggregate's own reads (read model LA-AUT-RM21): a product's page, every product as the nav lists it, the
+// interfaces of a product, and the next free ID for an open question or an interface. Each reads only the read model,
+// through its reader (reader.ts), and changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
-import { PRODUCT_SLICE, productsFrom, relationKey, type Product } from './model.ts';
+import { PRODUCT_SLICE } from './model.ts';
+import type { ProductPage, ProductSummary } from './read-model.ts';
+import { productReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
-// The product a domain sits in, read from the domain.
-const productOfDomain = (view: ReadView) => (domain: string) => {
-  const record = view.record(domain);
-  return record?.kind === 'domain' ? String(record.row.product_id) : undefined;
-};
-
-/** The product that holds the record: the product itself, an open question or interface in it, or a kind it declares. */
-export function getProduct(view: ReadView, input: { id: string }): Product {
-  const declared = view.rows('product_kind').find((k) => k.name === input.id);
-  const record = view.record(input.id);
-  let product: string | undefined;
-  if (declared) product = String(declared.product_id);
-  else if (!record) refuse('missing', `no record or product kind has the ID ${input.id}`);
-  else if (record.kind === 'product') product = input.id;
-  else if (record.kind === 'interface') product = String(record.row.product_id);
-  else if (record.kind === 'question') product = record.row.product_id !== undefined ? String(record.row.product_id) : productOfDomain(view)(String(record.row.domain_id));
-  else refuse('kind', `${input.id} is a ${record.kind}, not a product, an open question, an interface or a product kind`);
-  return productsFrom((table) => view.rows(table), productOfDomain(view), product)[0];
+/** The page of the product that holds the record: the product itself, an open question or interface in it, or a kind it declares. */
+export function getProduct(view: ReadView, input: { id: string }): ProductPage {
+  const reader = productReader(view);
+  const product = reader.productHolding(input.id);
+  if (product === undefined) {
+    const kind = reader.kindOf(input.id);
+    if (!kind) refuse('missing', `no record or product kind has the ID ${input.id}`);
+    refuse('kind', `${input.id} is a ${kind}, not a product, an open question, an interface or a product kind`);
+  }
+  return reader.page(product!);
 }
 
 /** GET a product whole (LA-AUT-QRY110). */
-export const GET_PRODUCT: QueryDefinition<{ id: string }, Product> = {
+export const GET_PRODUCT: QueryDefinition<{ id: string }, ProductPage> = {
   id: 'LA-AUT-QRY110',
   slice: PRODUCT_SLICE,
   name: 'get-product',
-  description: 'Reads a product whole, by its ID, the ID of an open question or interface in it, or the name of a kind it declares: its row, roles, declared kinds with their fields, relations, open questions with what they are about, and interfaces.',
+  description: 'Reads a product whole, by its ID, the ID of an open question or interface in it, or the name of a kind it declares: its row, roles, business outcomes and domains, declared kinds with their fields, relations, open questions with what they are about, and interfaces with the flows through each.',
   method: 'GET',
   route: '/api/product/get-product',
   input: { id: id('The product, an open question or interface in it, or a product kind it declares.', 'required') },
@@ -42,14 +37,29 @@ export const GET_PRODUCT: QueryDefinition<{ id: string }, Product> = {
   text: productText,
 };
 
+/** Every product, as the nav's space rail lists it: its ID, title, icon and color, by ID. */
+export function listProducts(view: ReadView): ProductSummary[] {
+  return productReader(view).products();
+}
+
+/** List the products (LA-AUT-QRY113). */
+export const LIST_PRODUCTS: QueryDefinition<Record<string, never>, ProductSummary[]> = {
+  id: 'LA-AUT-QRY113',
+  slice: PRODUCT_SLICE,
+  name: 'list-products',
+  description: 'Lists every product, by ID, with its title, and its icon and color when it gives them.',
+  method: 'GET',
+  route: '/api/product/list-products',
+  input: {},
+  run: listProducts,
+  text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No products.'),
+};
+
 /** The interfaces of a product, by ID. */
 export function listInterfaces(view: ReadView, input: { product_id: string }): { id: string; title: string; kind: string }[] {
-  if (view.record(input.product_id)?.kind !== 'product') refuse('missing', `there is no product ${input.product_id}`);
-  return view
-    .rows('interface')
-    .filter((i) => i.product_id === input.product_id)
-    .map((i) => ({ id: String(i.id), title: String(i.title), kind: String(i.kind) }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+  const reader = productReader(view);
+  if (reader.kindOf(input.product_id) !== 'product') refuse('missing', `there is no product ${input.product_id}`);
+  return reader.page(input.product_id).interfaces.map((i) => ({ id: i.id, title: i.title, kind: i.kind }));
 }
 
 /** List the interfaces of a product (LA-AUT-QRY111). */
@@ -65,12 +75,12 @@ export const LIST_INTERFACES: QueryDefinition<{ product_id: string }, { id: stri
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title} (${r.kind})`).join('\n') : 'No interfaces.'),
 };
 
-// One past the highest number in the kind's IDs after the prefix, padded to two digits.
-function onePast(view: ReadView, kind: string, prefix: string): string {
+// One past the highest number in the IDs after the prefix, padded to two digits.
+function onePast(ids: string[], prefix: string): string {
   const shape = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
   let highest = 0;
-  for (const row of view.rows(kind)) {
-    const m = shape.exec(String(row.id));
+  for (const id of ids) {
+    const m = shape.exec(id);
     if (m) highest = Math.max(highest, Number(m[1]));
   }
   return `${prefix}${String(highest + 1).padStart(2, '0')}`;
@@ -81,14 +91,15 @@ function onePast(view: ReadView, kind: string, prefix: string): string {
  * its ID and IF): one past the highest in use.
  */
 export function nextProductId(view: ReadView, input: { kind: string; parent: string }): string {
-  const parent = view.record(input.parent);
+  const reader = productReader(view);
+  const parent = reader.kindOf(input.parent);
   if (input.kind === 'question') {
-    if (parent?.kind !== 'product' && parent?.kind !== 'domain') refuse('parent', `an open question sits under a product or a domain, and ${input.parent} is ${parent ? `a ${parent.kind}` : 'no record'}`);
-    return onePast(view, 'question', `${input.parent}-Q`);
+    if (parent !== 'product' && parent !== 'domain') refuse('parent', `an open question sits under a product or a domain, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
+    return onePast(reader.ids('question'), `${input.parent}-Q`);
   }
   if (input.kind === 'interface') {
-    if (parent?.kind !== 'product') refuse('parent', `an interface sits under a product, and ${input.parent} is ${parent ? `a ${parent.kind}` : 'no record'}`);
-    return onePast(view, 'interface', `${input.parent}-IF`);
+    if (parent !== 'product') refuse('parent', `an interface sits under a product, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
+    return onePast(reader.ids('interface'), `${input.parent}-IF`);
   }
   return refuse('kind', `${input.kind} is not a kind of the Product aggregate with an ID under a parent; its kinds are question and interface`);
 }
@@ -109,21 +120,24 @@ export const NEXT_PRODUCT_ID: QueryDefinition<{ kind: string; parent: string }, 
   text: (next) => next,
 };
 
+// A relation's key: its name and the pair of kinds it links.
+const relationKey = (r: { name: string; source_kind: string; target_kind: string }) => `${r.name} ${r.source_kind} -> ${r.target_kind}`;
+
 /** A product as text: its row, roles, declarations, questions and interfaces. */
-function productText(product: Product): string {
+function productText(product: ProductPage): string {
   const { product: row } = product;
   const lines = [`Product ${row.id}: ${row.title}`, `  description: ${row.description}`];
   if (row.notes) lines.push(`  notes: ${row.notes}`);
   for (const r of product.roles) lines.push(`Role ${r.name}: ${r.description}`);
   for (const k of product.kinds) {
-    lines.push(`Product kind ${k.row.name}: ${k.row.label} (under ${k.row.parent_kind}${k.row.stage ? `, ${k.row.stage}` : ''})`);
+    lines.push(`Product kind ${k.name}: ${k.label} (under ${k.parent_kind}${k.stage ? `, ${k.stage}` : ''})`);
     for (const f of k.fields) lines.push(`  ${f.position}. ${f.name} (${f.type}${f.required ? ', required' : ''}): ${f.description}`);
   }
   for (const r of product.relations) lines.push(`Product relation ${relationKey(r)}: ${r.forward_label} / ${r.reverse_label}`);
-  for (const q of product.questions) lines.push(`Open question ${q.row.id}: ${q.row.title} (owner ${q.row.owner}, under ${q.row.product_id ?? q.row.domain_id})${q.about.length ? ` [about ${q.about.join(', ')}]` : ''}`);
+  for (const q of product.questions) lines.push(`Open question ${q.id}: ${q.title} (owner ${q.owner}, under ${q.product_id ?? q.domain_id})${q.about.length ? ` [about ${q.about.join(', ')}]` : ''}`);
   for (const i of product.interfaces) lines.push(`Interface ${i.id}: ${i.title} (${i.kind})`);
   return lines.join('\n');
 }
 
 /** The Product aggregate's queries, as the CLI and the MCP server register them. */
-export const PRODUCT_QUERIES: readonly AnyQuery[] = [GET_PRODUCT, LIST_INTERFACES, NEXT_PRODUCT_ID];
+export const PRODUCT_QUERIES: readonly AnyQuery[] = [GET_PRODUCT, LIST_PRODUCTS, LIST_INTERFACES, NEXT_PRODUCT_ID];

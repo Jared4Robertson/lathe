@@ -1,27 +1,31 @@
-// The Business outcome aggregate's own reads (read model LA-AUT-RM36): an outcome whole, the outcomes of a product, and
-// the next free ID for one. Each reads the current data and changes nothing.
+// The Business outcome aggregate's own reads (read model LA-AUT-RM36): an outcome's page, the outcomes of a product,
+// and the next free ID for one. Each reads only the read model, through its reader (reader.ts), and changes
+// nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
-import { BUSINESS_OUTCOME_SLICE, businessOutcomesFrom, type BusinessOutcome } from './model.ts';
+import { BUSINESS_OUTCOME_SLICE } from './model.ts';
+import type { BusinessOutcomePage, BusinessOutcomeSummary } from './read-model.ts';
+import { businessOutcomeReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
-/** The business outcome with this ID, whole. */
-export function getBusinessOutcome(view: ReadView, input: { id: string }): BusinessOutcome {
-  const record = view.record(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
-  if (record.kind !== 'business_outcome') refuse('kind', `${input.id} is ${/^[aeiou]/.test(record.kind) ? 'an' : 'a'} ${record.kind}, not a business outcome`);
-  return businessOutcomesFrom((table) => view.rows(table), input.id)[0];
+/** The page of the business outcome with this ID. */
+export function getBusinessOutcome(view: ReadView, input: { id: string }): BusinessOutcomePage {
+  const reader = businessOutcomeReader(view);
+  const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
+  if (kind !== 'business_outcome') refuse('kind', `${input.id} is ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind}, not a business outcome`);
+  return reader.page(input.id);
 }
 
 /** Get a business outcome whole (LA-AUT-QRY115). */
-export const GET_BUSINESS_OUTCOME: QueryDefinition<{ id: string }, BusinessOutcome> = {
+export const GET_BUSINESS_OUTCOME: QueryDefinition<{ id: string }, BusinessOutcomePage> = {
   id: 'LA-AUT-QRY115',
   slice: BUSINESS_OUTCOME_SLICE,
   name: 'get-business-outcome',
-  description: 'Reads a business outcome whole, by its ID: its statement, measure and target, and the tests and records that measure it.',
+  description: 'Reads a business outcome whole, by its ID: its statement, measure and target, the tests and records that measure it, and the capabilities that serve it.',
   method: 'GET',
   route: '/api/business-outcome/get-business-outcome',
   input: { id: id('The business outcome.', 'required') },
@@ -30,17 +34,14 @@ export const GET_BUSINESS_OUTCOME: QueryDefinition<{ id: string }, BusinessOutco
 };
 
 /** The business outcomes of a product, by ID. */
-export function listBusinessOutcomes(view: ReadView, input: { product_id: string }): { id: string; title: string }[] {
-  if (view.record(input.product_id)?.kind !== 'product') refuse('missing', `there is no product ${input.product_id}`);
-  return view
-    .rows('business_outcome')
-    .filter((o) => o.product_id === input.product_id)
-    .map((o) => ({ id: String(o.id), title: String(o.title) }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+export function listBusinessOutcomes(view: ReadView, input: { product_id: string }): BusinessOutcomeSummary[] {
+  const reader = businessOutcomeReader(view);
+  if (reader.kindOf(input.product_id) !== 'product') refuse('missing', `there is no product ${input.product_id}`);
+  return reader.list(input.product_id);
 }
 
 /** List the business outcomes of a product (LA-AUT-QRY116). */
-export const LIST_BUSINESS_OUTCOMES: QueryDefinition<{ product_id: string }, { id: string; title: string }[]> = {
+export const LIST_BUSINESS_OUTCOMES: QueryDefinition<{ product_id: string }, BusinessOutcomeSummary[]> = {
   id: 'LA-AUT-QRY116',
   slice: BUSINESS_OUTCOME_SLICE,
   name: 'list-business-outcomes',
@@ -54,11 +55,11 @@ export const LIST_BUSINESS_OUTCOMES: QueryDefinition<{ product_id: string }, { i
 
 /** The next free ID for a business outcome of the product: its ID and BO, one past the highest number in use. */
 export function nextBusinessOutcomeId(view: ReadView, input: { product_id: string }): string {
-  if (view.record(input.product_id)?.kind !== 'product') refuse('parent', `a business outcome sits under a product, and ${input.product_id} is not one`);
+  const reader = businessOutcomeReader(view);
+  if (reader.kindOf(input.product_id) !== 'product') refuse('parent', `a business outcome sits under a product, and ${input.product_id} is not one`);
   const prefix = `${input.product_id}-BO`;
   let highest = 0;
-  for (const row of view.rows('business_outcome')) {
-    const id = String(row.id);
+  for (const id of reader.ids()) {
     if (id.startsWith(prefix) && /^\d+$/.test(id.slice(prefix.length))) highest = Math.max(highest, Number(id.slice(prefix.length)));
   }
   return `${prefix}${String(highest + 1).padStart(2, '0')}`;
@@ -78,12 +79,13 @@ export const NEXT_BUSINESS_OUTCOME_ID: QueryDefinition<{ product_id: string }, s
 };
 
 /** An outcome as text: its row, then what measures it. */
-function outcomeText(outcome: BusinessOutcome): string {
+function outcomeText(outcome: BusinessOutcomePage): string {
   const row = outcome.outcome;
   const lines = [`Business outcome ${row.id}: ${row.title}`, `  product: ${row.product_id}`, `  statement: ${row.statement}`, `  measure: ${row.measure}`, `  target: ${row.target}`];
   if (row.measured_outside) lines.push(`  measured outside: ${row.measured_outside}`);
   if (row.notes) lines.push(`  notes: ${row.notes}`);
   if (outcome.measuredBy.length) lines.push(`  measured by: ${outcome.measuredBy.join(', ')}`);
+  if (outcome.servedBy.length) lines.push(`  served by: ${outcome.servedBy.join(', ')}`);
   return lines.join('\n');
 }
 

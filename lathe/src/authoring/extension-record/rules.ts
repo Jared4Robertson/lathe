@@ -5,7 +5,8 @@
 import { StoreError } from '../../platform/data/problems.ts';
 import type { AggregateRules, ReadView, RuleProblem } from '../../platform/data/rules.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { EXTENSION_RECORD_AGGREGATE, extensionRecordsFrom, productOf, type ExtensionRecord } from './model.ts';
+import { productOf } from './declaration.ts';
+import { EXTENSION_RECORD_AGGREGATE, extensionRecordsFrom, type ExtensionRecord } from './model.ts';
 
 /** Every rule the record breaks (LA-AUT-INV55 a record of a product's own kind sits in the product that declares it). */
 export function extensionRecordProblems(record: ExtensionRecord, view: ReadView): RuleProblem[] {

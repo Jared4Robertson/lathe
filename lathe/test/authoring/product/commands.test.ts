@@ -22,7 +22,7 @@ import { REMOVE_INTERFACE } from '../../../src/authoring/product/commands/remove
 import { REMOVE_PRODUCT_KIND } from '../../../src/authoring/product/commands/remove-product-kind.ts';
 import { REMOVE_PRODUCT_RELATION } from '../../../src/authoring/product/commands/remove-product-relation.ts';
 import { REMOVE_QUESTION } from '../../../src/authoring/product/commands/remove-question.ts';
-import { GET_PRODUCT, LIST_INTERFACES, NEXT_PRODUCT_ID } from '../../../src/authoring/product/queries.ts';
+import { GET_PRODUCT, LIST_PRODUCTS, LIST_INTERFACES, NEXT_PRODUCT_ID } from '../../../src/authoring/product/queries.ts';
 import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
 import { callTool, tools } from '../../../src/cli/mcp.ts';
 import { readSchema } from '../../../src/cli/operations.ts';
@@ -113,9 +113,10 @@ describe('LA-AUT-UC23-R01-T51 each Product command changes one product through P
     expect(store.record('TL')?.row).toEqual({ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' });
     expect((await runCommand(store, CHANGE_INTERFACE, { id: 'TL-IF01', kind: 'desktop' })).tables).toEqual(['interface']);
     const whole = runQuery(store, GET_PRODUCT, { id: 'TL-IF01' }) as ReturnType<typeof GET_PRODUCT.run>;
-    expect(whole).toMatchObject({ root: 'TL', interfaces: [{ id: 'TL-IF01', kind: 'desktop' }], questions: [{ row: { id: 'TL-Q01' }, about: [] }] });
+    expect(whole).toMatchObject({ product: { id: 'TL' }, interfaces: [{ id: 'TL-IF01', kind: 'desktop' }], questions: [{ id: 'TL-Q01', about: [] }] });
     expect(whole.roles.map((r) => r.name).sort()).toEqual(['Librarian', 'Member', 'Owner']);
     expect(runQuery(store, LIST_INTERFACES, { product_id: 'TL' })).toEqual([{ id: 'TL-IF01', title: 'Web app', kind: 'desktop' }]);
+    expect(runQuery(store, LIST_PRODUCTS, {})).toEqual([{ id: 'TL', title: 'Tool Library' }]);
     expect(runQuery(store, NEXT_PRODUCT_ID, { kind: 'interface', parent: 'TL' })).toBe('TL-IF02');
     expect(runQuery(store, NEXT_PRODUCT_ID, { kind: 'question', parent: 'TL' })).toBe('TL-Q02');
   });
@@ -175,7 +176,7 @@ describe('LA-AUT-UC23-R02-T51 an open question sits under its product or one of 
     expect(store.rows('about').filter((a) => a.source_id === 'TL-Q01')).toEqual([]);
     const removed = await runCommand(store, REMOVE_QUESTION, { id: 'TL-LEND-Q01' });
     expect(removed.tables).toEqual(['about', 'question']);
-    expect(runQuery(store, GET_PRODUCT, { id: 'TL' })).toMatchObject({ questions: [{ row: { id: 'TL-Q01' } }] });
+    expect(runQuery(store, GET_PRODUCT, { id: 'TL' })).toMatchObject({ questions: [{ id: 'TL-Q01' }] });
   });
 });
 
