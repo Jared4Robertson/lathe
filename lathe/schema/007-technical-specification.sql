@@ -230,27 +230,27 @@ CREATE TABLE entry_point (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_id VARCHAR NOT NULL REFERENCES domain (id),
-  file VARCHAR NOT NULL CHECK (trim(file) <> ''),
+  file VARCHAR,
   description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE entry_point IS 'A start-up file: what runs first and wires the rest together, such as a server''s main file or a desktop app''s main process. No design record is implemented by it alone, so it sits under the domain it starts.';
 COMMENT ON COLUMN entry_point.id IS 'The entry point''s ID: its domain''s ID and ENTRY<nn>, such as TL-LEND-ENTRY01.';
 COMMENT ON COLUMN entry_point.title IS 'Its file''s name, or its name in code, such as server.ts.';
 COMMENT ON COLUMN entry_point.domain_id IS 'The domain it starts.';
-COMMENT ON COLUMN entry_point.file IS 'The start-up file, from the product root.';
+COMMENT ON COLUMN entry_point.file IS 'The start-up file, from the product root; it may not exist yet.';
 COMMENT ON COLUMN entry_point.description IS 'What it does at start-up, in a sentence or two: what it reads, opens and serves.';
 
 CREATE TABLE tooling (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_id VARCHAR NOT NULL REFERENCES domain (id),
-  file VARCHAR NOT NULL CHECK (trim(file) <> '')
+  file VARCHAR
 );
 COMMENT ON TABLE tooling IS 'A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker''s or a test runner''s. Its title and file say what it is.';
 COMMENT ON COLUMN tooling.id IS 'The tooling record''s ID: its domain''s ID and TOOL<nn>, such as TL-LEND-TOOL01.';
 COMMENT ON COLUMN tooling.title IS 'Its file''s name, such as vitest.config.ts.';
 COMMENT ON COLUMN tooling.domain_id IS 'The domain whose code it builds, checks or tests.';
-COMMENT ON COLUMN tooling.file IS 'The script or config file, or the folder of them, from the product root.';
+COMMENT ON COLUMN tooling.file IS 'The script or config file, or the folder of them, from the product root; it may not exist yet.';
 
 CREATE TABLE ui_component (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),

@@ -74,7 +74,7 @@ export const NEXT_ENTRY_POINT_ID: QueryDefinition<{ domain_id: string }, string>
 /** An entry point as text: its row, then what it uses and meets. */
 function entryPointText(record: EntryPoint): string {
   const row = record.entryPoint;
-  const lines = [`Entry point ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, `  file: ${row.file}`];
+  const lines = [`Entry point ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, ...(row.file ? [`  file: ${row.file}`] : [])];
   lines.push(`  description: ${row.description}`);
   if (record.packages.length) lines.push(`  packages: ${record.packages.join(', ')}`);
   if (record.meets.length) lines.push(`  meets: ${record.meets.join(', ')}`);

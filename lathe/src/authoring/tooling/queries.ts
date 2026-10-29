@@ -74,7 +74,7 @@ export const NEXT_TOOLING_ID: QueryDefinition<{ domain_id: string }, string> = {
 /** A tooling record as text: its row, then what it uses and meets. */
 function toolingText(record: Tooling): string {
   const row = record.tooling;
-  const lines = [`Tooling ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, `  file: ${row.file}`];
+  const lines = [`Tooling ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, ...(row.file ? [`  file: ${row.file}`] : [])];
 
   if (record.packages.length) lines.push(`  packages: ${record.packages.join(', ')}`);
   if (record.meets.length) lines.push(`  meets: ${record.meets.join(', ')}`);

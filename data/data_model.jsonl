@@ -67,6 +67,10 @@
 {"id":"LA-AUT-EN74-DM","title":"PatternRuleTestRow","entity_id":"LA-AUT-EN74","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN75-DM","title":"StandardRuleTestRow","entity_id":"LA-AUT-EN75","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN76-DM","title":"InterfaceRow","entity_id":"LA-AUT-EN76","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-AUT-EN80-DM","title":"BusinessOutcomeRow","entity_id":"LA-AUT-EN80","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-AUT-EN81-DM","title":"ExtensionRecord","entity_id":"LA-AUT-EN81","file":"lathe/src/authoring/extension-record/model.ts"}
+{"id":"LA-AUT-EN82-DM","title":"EntryPointRow","entity_id":"LA-AUT-EN82","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-AUT-EN83-DM","title":"ToolingRow","entity_id":"LA-AUT-EN83","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-CHK-EN01-DM","title":"CheckRow","entity_id":"LA-CHK-EN01","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-CHK-EN03-DM","title":"ProductSettingRow","entity_id":"LA-CHK-EN03","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-EXP-EN01-DM","title":"SpecRoute","entity_id":"LA-EXP-EN01","file":"app/src/specs/data.ts"}

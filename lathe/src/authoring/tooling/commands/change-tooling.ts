@@ -6,7 +6,7 @@ import { changed, TOOLING_SLICE } from '../model.ts';
 import { ToolingRepository } from '../repository.ts';
 
 /** The tooling record's changes: a column given is set; packages and meets, when given, replace the list. */
-export type ChangeTooling = Pick<ToolingRow, 'id'> & { title?: string; file?: string; packages?: string[]; meets?: string[] };
+export type ChangeTooling = Pick<ToolingRow, 'id'> & { title?: string; file?: string | null; packages?: string[]; meets?: string[] };
 
 /** Change a tooling record (LA-AUT-CMD156). */
 export const CHANGE_TOOLING: CommandDefinition<ChangeTooling> = {
@@ -19,7 +19,7 @@ export const CHANGE_TOOLING: CommandDefinition<ChangeTooling> = {
   input: {
     id: column('tooling', 'id', 'required'),
     title: column('tooling', 'title', 'optional'),
-    file: column('tooling', 'file', 'optional'),
+    file: column('tooling', 'file', 'clearable'),
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
     meets: ids('The standard rules it meets. Replaces the list.', 'optional'),
   },

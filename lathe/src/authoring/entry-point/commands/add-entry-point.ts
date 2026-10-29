@@ -20,7 +20,7 @@ export const ADD_ENTRY_POINT: CommandDefinition<AddEntryPoint> = {
     id: column('entry_point', 'id', 'required'),
     title: column('entry_point', 'title', 'required'),
     domain_id: column('entry_point', 'domain_id', 'required'),
-    file: column('entry_point', 'file', 'required'),
+    file: column('entry_point', 'file', 'optional'),
     description: column('entry_point', 'description', 'required'),
     packages: texts('The packages it uses, as the product\'s package.json files list them.', 'optional'),
     meets: ids('The standard rules it meets.', 'optional'),

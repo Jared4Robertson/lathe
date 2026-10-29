@@ -6,7 +6,7 @@ import { changed, ENTRY_POINT_SLICE } from '../model.ts';
 import { EntryPointRepository } from '../repository.ts';
 
 /** The entry point's changes: a column given is set; packages and meets, when given, replace the list. */
-export type ChangeEntryPoint = Pick<EntryPointRow, 'id'> & { title?: string; file?: string; description?: string; packages?: string[]; meets?: string[] };
+export type ChangeEntryPoint = Pick<EntryPointRow, 'id'> & { title?: string; file?: string | null; description?: string; packages?: string[]; meets?: string[] };
 
 /** Change an entry point (LA-AUT-CMD151). */
 export const CHANGE_ENTRY_POINT: CommandDefinition<ChangeEntryPoint> = {
@@ -19,7 +19,7 @@ export const CHANGE_ENTRY_POINT: CommandDefinition<ChangeEntryPoint> = {
   input: {
     id: column('entry_point', 'id', 'required'),
     title: column('entry_point', 'title', 'optional'),
-    file: column('entry_point', 'file', 'optional'),
+    file: column('entry_point', 'file', 'clearable'),
     description: column('entry_point', 'description', 'optional'),
     packages: texts('The packages it uses. Replaces the list.', 'optional'),
     meets: ids('The standard rules it meets. Replaces the list.', 'optional'),
