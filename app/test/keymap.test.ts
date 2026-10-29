@@ -87,7 +87,7 @@ describe('the keymap', () => {
     expect(match(['G'], pc, false, all)).toEqual({ pending: true });
     expect(match(['G', 'C'], pc, false, all).command?.id).toBe('goChecks');
     // A command without a handler right now does not match; local and browser keys never do.
-    expect(match(['L'], pc, false, (id) => id !== 'graphLinks').command).toBeUndefined();
+    expect(match(['V'], pc, false, (id) => id !== 'graphLayout').command).toBeUndefined();
     expect(match(['Alt+ArrowLeft'], pc, false, all).command).toBeUndefined();
   });
 

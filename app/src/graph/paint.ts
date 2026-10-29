@@ -23,19 +23,18 @@ const FOCUS_MIN_PX = 1.5;
 
 type P = { x: number; y: number };
 
-/** A line between two boxes: a parent line (level, solid) or a link (a dashed curve with an arrow, its words at its middle). */
+/** A line between two boxes: a parent line (level, solid) or a Trace stage's arrow (a curve with an arrow at its end). */
 export interface Line {
   id: string;
   /** The places (Plate.place) it joins: the fade and the spotlight read them. */
   source: string;
   target: string;
-  /** Its line style's family (GraphPage's `relationStyle`). */
+  /** Its line style's family: 'structure' for a parent line, 'trace' for a Trace stage's arrow. */
   style: string;
   link: boolean;
   points: [P, P];
-  /** Its stroke's scale: its child's box scale for a parent line, 1 for a link. */
+  /** Its stroke's scale: its child's box scale for a parent line, 1 for an arrow. */
   scale: number;
-  label: string;
 }
 
 /** A bar standing for children too small to draw (LA-EXP-DS10), in map units, under its parent: the place it fades with. */
@@ -63,13 +62,10 @@ export interface PaintState {
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
 
-/** A line's stroke: color, width over its scale, dashes and opacity, as the stylesheet drew each relation's family. */
-export function lineStroke(look: Look, line: Pick<Line, 'link' | 'style'>): { color: string; width: number; dash: number[]; alpha: number } {
+/** A line's stroke: color, width over its scale, dashes and opacity: a parent line in ink, a Trace stage's arrow (LA-V98) solid in the links' color. */
+export function lineStroke(look: Look, line: Pick<Line, 'link'>): { color: string; width: number; dash: number[]; alpha: number } {
   if (!line.link) return { color: look.ink, width: 2, dash: [], alpha: 0.75 };
-  // A Trace stage's arrow (LA-V98): solid, in the links' color.
-  if (line.style === 'trace') return { color: look.linkEdge, width: 1.5, dash: [], alpha: 0.9 };
-  if (line.style === 'event') return { color: look.spark, width: 1.2, dash: [4, 4], alpha: 1 };
-  return { color: look.linkEdge, width: 1.2, dash: [6, 4], alpha: 1 };
+  return { color: look.linkEdge, width: 1.5, dash: [], alpha: 0.9 };
 }
 
 /**
@@ -132,7 +128,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
   const strength = (id: string, lit: boolean) => (state.lit && lit ? lerp(state.strength(id), 1, state.spot) : state.strength(id));
   const lineStrength = (line: Line) => Math.min(strength(line.source, !!state.lit?.has(line.source)), strength(line.target, !!state.lit?.has(line.target)));
 
-  // Bars, then lines, under the boxes; a link's words over them.
+  // Bars, then lines, under the boxes.
   for (const b of frame.bars) {
     ctx.globalAlpha = 0.6 * (state.lit ? lerp(1, look.spotlightDim, state.spot) : 1) * state.strength(b.parent);
     ctx.fillStyle = look.rule;
@@ -181,30 +177,6 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     paintBox(ctx, p, cam, look, fonts, state, X, Y);
   }
 
-  ctx.globalAlpha = 1;
-  for (const line of frame.lines) {
-    if (!line.link || !line.label) continue;
-    const [a, b] = line.points;
-    const size = 10 * zoom;
-    if (size < TEXT_BAR_PX) continue;
-    ctx.font = fontFor(fonts, 'edge', size);
-    const w = ctx.measureText(line.label).width + 8 * zoom;
-    const h = size * 1.3;
-    const mx = X((a.x + b.x) / 2);
-    const my = Y((a.y + b.y) / 2);
-    if (mx + w / 2 < 0 || mx - w / 2 > cam.w || my + h / 2 < 0 || my - h / 2 > cam.h) continue;
-    ctx.globalAlpha = (state.lit && !state.litLines?.has(line.id) ? lerp(1, look.spotlightDim, state.spot) : 1) * lineStrength(line);
-    ctx.fillStyle = look.paper;
-    ctx.beginPath();
-    ctx.roundRect(mx - w / 2, my - h / 2, w, h, 3 * zoom);
-    ctx.fill();
-    ctx.fillStyle = look.muted;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText(line.label, mx, my);
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'alphabetic';
-  }
   ctx.globalAlpha = 1;
   paintVignette(ctx, dpr, cam, look);
 }

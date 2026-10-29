@@ -195,9 +195,6 @@ type Rect = Pick<MapNode, 'x' | 'y' | 'w' | 'h'>;
 type Scaled = Rect & Pick<MapNode, 'text'>;
 type Point = { x: number; y: number };
 
-/** A node's center in the map. */
-export const centerOf = (n: Rect) => ({ x: n.x + n.w / 2, y: n.y + n.h / 2 });
-
 /**
  * A parent line (LA-EXP-DS05): level, at the child's middle, from the parent's outline on its
  * right side to the child's outline on its left (LA-V93-R06). A box's outline is its edge; a
@@ -210,10 +207,4 @@ export function parentLine(parent: Scaled, child: Scaled, parentShape: Shape = '
     { x: parent.x + parent.w - outlineInset(parent, parentShape, parent.text, y, 'right'), y },
     { x: child.x + outlineInset(child, childShape, child.text, y, 'left'), y },
   ];
-}
-
-/** A cross-link's ends: each box's middle, on the side that faces the other box (the right side when they overlap). */
-export function linkEnds(s: Rect, t: Rect): [Point, Point] {
-  const left = t.x + t.w <= s.x;
-  return [{ x: left ? s.x : s.x + s.w, y: s.y + s.h / 2 }, { x: left ? t.x + t.w : t.x >= s.x + s.w ? t.x : t.x + t.w, y: t.y + t.h / 2 }];
 }

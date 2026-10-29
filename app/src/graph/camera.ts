@@ -222,8 +222,8 @@ export function viewRect(v: Viewport, width: number, height: number) {
  * What a viewport draws of the map (LA-EXP-DS10), level by level from the roots: a node in view
  * and at least MIN_DRAWN pixels tall is drawn, with its label. A run of drawn parent's children too small to see is one bar.
  * A level that would take the boxes past MAX_DRAWN is drawn as one bar per parent instead, and
- * nothing below it. `always` adds nodes drawn whatever their size or place (the focus, linked
- * records). The same viewport always draws the same.
+ * nothing below it. `always` adds nodes drawn whatever their size or place (the focus). The same
+ * viewport always draws the same.
  */
 export function drawnFor(map: GraphMap, v: Viewport, width: number, height: number, always: Iterable<string> = []): Drawn {
   const rect = viewRect(v, width, height);

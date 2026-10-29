@@ -23,7 +23,7 @@ const ids = (n: Neighborhood) => n.nodes.map((x) => x.id).sort();
 const groups = (n: Neighborhood) => n.nodes.filter((x) => x.group).map((x) => x.id).sort();
 const records = (n: Neighborhood) => n.nodes.filter((x) => !x.group).map((x) => x.id).sort();
 const spine = (n: Neighborhood) => n.edges.filter((e) => e.relation === 'parent').map((e) => `${e.source} > ${e.target}`).sort();
-const filters = (kinds: string[] = [], relations: string[] = []): Filters => ({ hiddenKinds: new Set(kinds), hiddenRelations: new Set(relations) });
+const filters = (kinds: string[] = []): Filters => ({ hiddenKinds: new Set(kinds) });
 const STAGES = ['P-D/domain-model', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan', 'P-D/use-cases'];
 
 describe('graph groups', () => {
@@ -84,10 +84,6 @@ describe('graph groups', () => {
     const shelf = neighborhood(grouped, 'P-D-A4', 1);
     expect(groups(shelf)).toEqual(['P-D-A4/command', 'P-D-A4/entity', 'P-D/domain-model/aggregate']);
     expect(records(shelf)).toEqual(['P-D-A4']);
-    // Cross-links still go record to record.
-    const step = neighborhood(index, 'P-D-UC01-FL01-S01', 3, undefined, { links: true });
-    expect(step.edges.filter((e) => e.relation !== 'parent').every((e) => !parseGroupId(e.source) && !parseGroupId(e.target))).toBe(true);
-    expect(step.edges.map((e) => e.id)).toContain('P-D-UC01-FL01-S01|fulfills|P-D-UC01-R01');
   });
 
   it('LA-V93-R10-T04 At depth 1 the graph frames the tree around the focus: its parent or folder at the left edge, its children or their groups, and no other links', () => {
@@ -166,8 +162,6 @@ describe('graph groups', () => {
     expect(ids(neighborhood(index, 'P-D', 2, filters(['aggregate'])))).toContain('P-D/domain-model');
     expect(ids(neighborhood(index, 'P-D', 2, filters(['capability'])))).toContain('P-D/use-cases');
     expect(ids(neighborhood(index, 'P-D', 4, filters(['use_case'])))).not.toContain('P-D-UC01');
-    expect(groups(neighborhood(index, 'P-D', 2, filters([], ['parent'])))).toEqual([]);
-    expect(groups(neighborhood(index, 'P-D-UC01-R01', 3, filters([], ['parent'])))).toEqual([]);
     // The same graph every time.
     expect(neighborhood(grouped, 'P-D-UC01', 3)).toEqual(neighborhood(grouped, 'P-D-UC01', 3));
   });
