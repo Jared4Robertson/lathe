@@ -73,7 +73,7 @@ describe('the tools', () => {
 });
 
 describe('LA-AUT-UC01-R05-T10 each tool', () => {
-  it('LA-AUT-UC01-R07-T02 add returns the row added, and a refusal with its reason', async () => {
+  it('add returns the row added, and a refusal with its reason', async () => {
     const root = writeData(everyKind());
     const added = await callTool(root, 'add', { uc_requirement: { id: 'TL-LEND-UC01-R02', title: 'Member known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' } });
     expect(added.isError).toBeUndefined();
