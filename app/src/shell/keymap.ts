@@ -234,6 +234,8 @@ const ENTER_CONTROLS = [
   ...['button', 'link', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option', 'tab', 'checkbox', 'radio', 'switch',
     'menu', 'menubar', 'listbox', 'combobox', 'tree', 'treeitem', 'treegrid', 'grid', 'gridcell'].map((r) => `[role="${r}"]`),
   '[aria-modal="true"]',
+  // A tool over the stage (views/ToolPanel.tsx): Enter stays with it, whatever in it has focus.
+  '.tool-panel',
 ].join(', ');
 
 /** True when a plain Enter pressed with keyboard focus on `target` belongs to it (ENTER_CONTROLS); anywhere else it toggles the wiki card. */

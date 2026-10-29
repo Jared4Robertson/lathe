@@ -242,6 +242,8 @@ describe('the keymap', () => {
       ...['button', 'link', 'menuitem', 'option', 'tab', 'checkbox', 'switch', 'treeitem', 'gridcell'].map((r) => `<div role="${r}" tabindex="0">x</div>`),
       ...['menu', 'listbox', 'combobox', 'tree', 'grid'].map((r) => `<div role="${r}"><span>x</span></div>`),
       '<div role="dialog" aria-modal="true"><p>x</p></div>',
+      // A tool over the stage keeps Enter, its frame included (LA-PAT-APP-UX-R20).
+      '<section class="tool-panel" tabindex="-1"><p>x</p></section>',
     ];
     for (const html of own) {
       const el = make(html);
