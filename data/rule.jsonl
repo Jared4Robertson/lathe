@@ -19,6 +19,7 @@
 {"id":"LA-AUT-INV43-RL","title":"step-fits-interface","invariant_id":"LA-AUT-INV43","file":"lathe/src/authoring/use-case/rules.ts"}
 {"id":"LA-AUT-INV50-RL","title":"question-owner-role","invariant_id":"LA-AUT-INV50","file":"lathe/src/authoring/product/rules.ts"}
 {"id":"LA-AUT-INV55-RL","title":"product-kind-product","invariant_id":"LA-AUT-INV55","file":"lathe/src/authoring/extension-record/rules.ts"}
+{"id":"LA-AUT-INV60-RL","title":"term-builds-on-itself","invariant_id":"LA-AUT-INV60","file":"lathe/src/authoring/domain/rules.ts"}
 {"id":"LA-AUT-INV70-RL","title":"policy-hears-published","invariant_id":"LA-AUT-INV70","file":"lathe/src/authoring/command/rules.ts"}
 {"id":"LA-AUT-INV80-RL","title":"read-model-fed-by-published","invariant_id":"LA-AUT-INV80","file":"lathe/src/authoring/read-model/rules.ts"}
 {"id":"LA-AUT-INV81-RL","title":"foreign-key-crosses-domain","invariant_id":"LA-AUT-INV81","file":"lathe/src/authoring/table/rules.ts"}
