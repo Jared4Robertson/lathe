@@ -1,27 +1,52 @@
-// The Entry point reader: the interface the Entry point aggregate's query handlers depend on to read the Entry point
-// read model (LA-AUT-RM40), and today's implementation over the current data, built by the read model's projection. A
-// handler reads through it only, never the aggregate's model or repository.
+// The Entry point read model's reader (LA-AUT-RM40-RD): the one way the Entry point queries reach the read model's storage.
+// The query handlers depend only on the EntryPointReader interface; the query runner injects the reader each query's
+// definition makes (`reader`), so keeping the read model elsewhere is a new implementation of this interface and
+// nothing more. Today's implementation reads the projection's table, kept in memory and built on each read.
 import type { ReadView } from '../../platform/data/rules.ts';
-import { entryPointPagesFrom, entryPointSummariesFrom, type EntryPointPage, type EntryPointSummary } from './read-model.ts';
+import { entryPointTableFrom, type EntryPointPage, type EntryPointSummary, type EntryPointTable } from './read-model.ts';
 
-/** What the Entry point queries read. */
+/** What the Entry point queries read, and all they read. */
 export interface EntryPointReader {
-  /** The kind of the record with this ID, or undefined when there is none. */
+  /** The kind of the record with this ID, of any kind, or undefined when no record has it. */
   kindOf(id: string): string | undefined;
-  /** The page of the record with this ID. */
-  page(id: string): EntryPointPage;
-  /** The records under a domain, by ID. */
+  /** The page of the record with this ID, or undefined when there is none. */
+  page(id: string): EntryPointPage | undefined;
+  /** The records under the domain, by ID. */
   list(domain: string): EntryPointSummary[];
-  /** The IDs in use. */
-  ids(): string[];
+  /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
+  highestAfter(prefix: string): number;
 }
 
-/** The reader over the current data. */
-export function entryPointReader(view: ReadView): EntryPointReader {
-  return {
-    kindOf: (id) => view.record(id)?.kind,
-    page: (id) => entryPointPagesFrom(view, id)[0],
-    list: (domain) => entryPointSummariesFrom(view, domain),
-    ids: () => view.rows('entry_point').map((r) => String(r.id)),
-  };
+/** The reader over the read model's table in memory. */
+export class InMemoryEntryPointReader implements EntryPointReader {
+  private readonly table: EntryPointTable;
+
+  constructor(table: EntryPointTable) {
+    this.table = table;
+  }
+
+  kindOf(id: string): string | undefined {
+    return this.table.kinds.get(id);
+  }
+
+  page(id: string): EntryPointPage | undefined {
+    return this.table.pages.get(id);
+  }
+
+  list(domain: string): EntryPointSummary[] {
+    return this.table.lists.get(domain) ?? [];
+  }
+
+  highestAfter(prefix: string): number {
+    const shape = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
+    let highest = 0;
+    for (const id of this.table.kinds.keys()) {
+      const m = shape.exec(id);
+      if (m) highest = Math.max(highest, Number(m[1]));
+    }
+    return highest;
+  }
 }
+
+/** The reader the query runner gives each Entry point query: today's, over the projection's table built from the data. */
+export const entryPointReader = (view: ReadView): EntryPointReader => new InMemoryEntryPointReader(entryPointTableFrom(view));

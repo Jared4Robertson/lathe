@@ -3,7 +3,8 @@
 // with each record's shape read from its kind's declaration. It shares no types with the aggregate's model.
 import type { Value } from '../../platform/data/rows.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
-import { parentColumn, productKinds, startedRelations } from './declaration.ts';
+import type { KindDescription } from '../../platform/data/schema.ts';
+import { domainOf, parentColumn, placeIn, productKinds, productOf, startedRelations, type Place } from './declaration.ts';
 
 /** One record of a product's own kind, as its page shows it. */
 export interface ExtensionRecordPage {
@@ -28,13 +29,12 @@ export interface ExtensionRecordSummary {
   title: string;
 }
 
-/** The projection: each extension record's page, from the rows; only the one given, when given. */
-export function extensionRecordPagesFrom(view: ReadView, only?: string): ExtensionRecordPage[] {
+// Each extension record's page, from the rows.
+function extensionRecordPagesFrom(view: ReadView): ExtensionRecordPage[] {
   const pages: ExtensionRecordPage[] = [];
   const packages = view.rows('package_use');
   for (const kind of productKinds(view.schema)) {
-    const own = view.rows(kind.name).filter((r) => only === undefined || r.id === only);
-    if (!own.length) continue;
+    const own = view.rows(kind.name);
     const parent = parentColumn(kind);
     const columns = view.schema.tables[kind.name].columns.map((c) => c.name).filter((c) => c !== 'id' && c !== parent);
     const relations = startedRelations(view.schema, kind.name).map((name) => ({ name, rows: view.rows(name) }));
@@ -61,13 +61,43 @@ export function extensionRecordPagesFrom(view: ReadView, only?: string): Extensi
   return pages;
 }
 
-/** The projection's list: the records of a product kind under one parent, by ID. */
-export function extensionRecordSummariesFrom(view: ReadView, kind: string, parent: string): ExtensionRecordSummary[] {
-  const declared = view.schema.kinds[kind];
-  const column = parentColumn(declared);
-  return view
-    .rows(kind)
-    .filter((r) => r[column] === parent)
-    .map((r) => ({ id: String(r.id), title: String(r.title) }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+/** The read model's table: each record's page, each parent's records by kind, the declared kinds, and where every record sits. */
+export interface ExtensionRecordTable {
+  pages: Map<string, ExtensionRecordPage>;
+  /** The records of each product kind under each parent, by ID, keyed by the kind and the parent. */
+  lists: Map<string, ExtensionRecordSummary[]>;
+  /** The kinds the products declare, by name. */
+  productKinds: KindDescription[];
+  /** Every record ID in use, with its kind and the record it sits under. */
+  places: Map<string, Place>;
+  /** Every product's ID. */
+  products: string[];
 }
+
+/** The key of a parent's records of a kind in the table's lists. */
+export const listKey = (kind: string, parent: string) => `${kind} ${parent}`;
+
+/**
+ * The projection: the read model's table, built from the rows on each read. It is the only code that reads the source
+ * rows for the queries.
+ */
+export function extensionRecordTableFrom(view: ReadView): ExtensionRecordTable {
+  const pages = new Map<string, ExtensionRecordPage>();
+  const lists = new Map<string, ExtensionRecordSummary[]>();
+  for (const page of extensionRecordPagesFrom(view)) {
+    pages.set(page.id, page);
+    const key = listKey(page.kind, page.parent);
+    lists.set(key, [...(lists.get(key) ?? []), { id: page.id, title: String(page.values.title) }]);
+  }
+  for (const list of lists.values()) list.sort((a, b) => a.id.localeCompare(b.id));
+  const place = placeIn(view);
+  const places = new Map<string, Place>();
+  for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) places.set(String(row.id), place(String(row.id))!);
+  return { pages, lists, productKinds: productKinds(view.schema), places, products: view.rows('product').map((p) => String(p.id)) };
+}
+
+/** The product a record sits in, from the table's places. */
+export const productIn = (table: ExtensionRecordTable, id: string) => productOf((at) => table.places.get(at), table.products, id);
+
+/** The domain a record sits in, from the table's places. */
+export const domainIn = (table: ExtensionRecordTable, id: string) => domainOf((at) => table.places.get(at), id);

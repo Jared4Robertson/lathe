@@ -20,10 +20,9 @@ export interface BusinessOutcomeSummary {
 }
 
 
-/** The projection: each business outcome's page, from the rows; only the one given, when given. */
-export function businessOutcomePagesFrom(view: ReadView, only?: string): BusinessOutcomePage[] {
-  const outcomes = (view.rows('business_outcome') as unknown as BusinessOutcomeRow[]).filter((o) => only === undefined || o.id === only);
-  if (!outcomes.length) return [];
+// Each record's page, from the rows.
+function businessOutcomePagesFrom(view: ReadView): BusinessOutcomePage[] {
+  const outcomes = (view.rows('business_outcome') as unknown as BusinessOutcomeRow[]);
   const measures = view.rows('measured_by');
   const serves = view.rows('serves');
   return outcomes.map((outcome) => ({
@@ -33,11 +32,29 @@ export function businessOutcomePagesFrom(view: ReadView, only?: string): Busines
   }));
 }
 
-/** The projection's list: a product's business outcomes, by ID. */
-export function businessOutcomeSummariesFrom(view: ReadView, product: string): BusinessOutcomeSummary[] {
-  return view
-    .rows('business_outcome')
-    .filter((o) => o.product_id === product)
-    .map((o) => ({ id: String(o.id), title: String(o.title) }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+/** The read model's table: each record's page, each product's list, and every record's kind. */
+export interface BusinessOutcomeTable {
+  pages: Map<string, BusinessOutcomePage>;
+  /** Each product's records, by ID. */
+  lists: Map<string, BusinessOutcomeSummary[]>;
+  /** Every record ID in use, with its kind: what a next ID is one past, and what a refusal names. */
+  kinds: Map<string, string>;
+}
+
+/**
+ * The projection: the read model's table, built from the rows on each read. It is the only code that reads the source
+ * rows for the queries.
+ */
+export function businessOutcomeTableFrom(view: ReadView): BusinessOutcomeTable {
+  const pages = new Map<string, BusinessOutcomePage>();
+  const lists = new Map<string, BusinessOutcomeSummary[]>();
+  for (const page of businessOutcomePagesFrom(view)) {
+    const row = page.outcome;
+    pages.set(row.id, page);
+    lists.set(row.product_id, [...(lists.get(row.product_id) ?? []), { id: row.id, title: row.title }]);
+  }
+  for (const list of lists.values()) list.sort((a, b) => a.id.localeCompare(b.id));
+  const kinds = new Map<string, string>();
+  for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
+  return { pages, lists, kinds };
 }

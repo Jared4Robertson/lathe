@@ -19,10 +19,9 @@ export interface EntryPointSummary {
   title: string;
 }
 
-/** The projection: each entry point's page, from the rows; only the one given, when given. */
-export function entryPointPagesFrom(view: ReadView, only?: string): EntryPointPage[] {
-  const found = (view.rows('entry_point') as unknown as EntryPointRow[]).filter((r) => only === undefined || r.id === only);
-  if (!found.length) return [];
+// Each record's page, from the rows.
+function entryPointPagesFrom(view: ReadView): EntryPointPage[] {
+  const found = (view.rows('entry_point') as unknown as EntryPointRow[]);
   const packages = view.rows('package_use');
   const meets = view.rows('meets');
   return found.map((entryPoint) => ({
@@ -32,11 +31,29 @@ export function entryPointPagesFrom(view: ReadView, only?: string): EntryPointPa
   }));
 }
 
-/** The projection's list: a domain's entry points, by ID. */
-export function entryPointSummariesFrom(view: ReadView, domain: string): EntryPointSummary[] {
-  return view
-    .rows('entry_point')
-    .filter((r) => r.domain_id === domain)
-    .map((r) => ({ id: String(r.id), title: String(r.title) }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+/** The read model's table: each record's page, each domain's list, and every record's kind. */
+export interface EntryPointTable {
+  pages: Map<string, EntryPointPage>;
+  /** Each domain's records, by ID. */
+  lists: Map<string, EntryPointSummary[]>;
+  /** Every record ID in use, with its kind: what a next ID is one past, and what a refusal names. */
+  kinds: Map<string, string>;
+}
+
+/**
+ * The projection: the read model's table, built from the rows on each read. It is the only code that reads the source
+ * rows for the queries.
+ */
+export function entryPointTableFrom(view: ReadView): EntryPointTable {
+  const pages = new Map<string, EntryPointPage>();
+  const lists = new Map<string, EntryPointSummary[]>();
+  for (const page of entryPointPagesFrom(view)) {
+    const row = page.entryPoint;
+    pages.set(row.id, page);
+    lists.set(row.domain_id, [...(lists.get(row.domain_id) ?? []), { id: row.id, title: row.title }]);
+  }
+  for (const list of lists.values()) list.sort((a, b) => a.id.localeCompare(b.id));
+  const kinds = new Map<string, string>();
+  for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
+  return { pages, lists, kinds };
 }

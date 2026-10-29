@@ -3,25 +3,23 @@
 // nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import type { ReadView } from '../../platform/data/rules.ts';
 import { TOOLING_SLICE } from './model.ts';
 import type { ToolingPage, ToolingSummary } from './read-model.ts';
-import { toolingReader } from './reader.ts';
+import { toolingReader, type ToolingReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
 /** The tooling record with this ID, whole. */
-export function getTooling(view: ReadView, input: { id: string }): ToolingPage {
-  const reader = toolingReader(view);
+export function getTooling(reader: ToolingReader, input: { id: string }): ToolingPage {
   const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
   if (kind !== 'tooling') refuse('kind', `${input.id} is ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind}, not a tooling record`);
-  return reader.page(input.id);
+  return reader.page(input.id)!;
 }
 
 /** Get a tooling record whole (LA-AUT-QRY123). */
-export const GET_TOOLING: QueryDefinition<{ id: string }, ToolingPage> = {
+export const GET_TOOLING: QueryDefinition<{ id: string }, ToolingPage, ToolingReader> = {
   id: 'LA-AUT-QRY123',
   slice: TOOLING_SLICE,
   name: 'get-tooling',
@@ -29,19 +27,19 @@ export const GET_TOOLING: QueryDefinition<{ id: string }, ToolingPage> = {
   method: 'GET',
   route: '/api/tooling/get-tooling',
   input: { id: id('The tooling record.', 'required') },
+  reader: toolingReader,
   run: getTooling,
   text: toolingText,
 };
 
 /** The tooling records of a domain, by ID. */
-export function listTooling(view: ReadView, input: { domain_id: string }): ToolingSummary[] {
-  const reader = toolingReader(view);
+export function listTooling(reader: ToolingReader, input: { domain_id: string }): ToolingSummary[] {
   if (reader.kindOf(input.domain_id) !== 'domain') refuse('missing', `there is no domain ${input.domain_id}`);
   return reader.list(input.domain_id);
 }
 
 /** List the tooling records of a domain (LA-AUT-QRY124). */
-export const LIST_TOOLING: QueryDefinition<{ domain_id: string }, ToolingSummary[]> = {
+export const LIST_TOOLING: QueryDefinition<{ domain_id: string }, ToolingSummary[], ToolingReader> = {
   id: 'LA-AUT-QRY124',
   slice: TOOLING_SLICE,
   name: 'list-tooling',
@@ -49,24 +47,20 @@ export const LIST_TOOLING: QueryDefinition<{ domain_id: string }, ToolingSummary
   method: 'GET',
   route: '/api/tooling/list-tooling',
   input: { domain_id: id('The domain.', 'required') },
+  reader: toolingReader,
   run: listTooling,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No tooling records.'),
 };
 
 /** The next free ID for a tooling record of the domain: its domain's ID and TOOL, one past the highest number in use. */
-export function nextToolingId(view: ReadView, input: { domain_id: string }): string {
-  const reader = toolingReader(view);
+export function nextToolingId(reader: ToolingReader, input: { domain_id: string }): string {
   if (reader.kindOf(input.domain_id) !== 'domain') refuse('parent', `a tooling record sits under a domain, and ${input.domain_id} is not one`);
   const prefix = `${input.domain_id}-TOOL`;
-  let highest = 0;
-  for (const id of reader.ids()) {
-    if (id.startsWith(prefix) && /^\d+$/.test(id.slice(prefix.length))) highest = Math.max(highest, Number(id.slice(prefix.length)));
-  }
-  return `${prefix}${String(highest + 1).padStart(2, '0')}`;
+  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
 }
 
 /** Get the next ID for a tooling record (LA-AUT-QRY125). */
-export const NEXT_TOOLING_ID: QueryDefinition<{ domain_id: string }, string> = {
+export const NEXT_TOOLING_ID: QueryDefinition<{ domain_id: string }, string, ToolingReader> = {
   id: 'LA-AUT-QRY125',
   slice: TOOLING_SLICE,
   name: 'next-id',
@@ -74,6 +68,7 @@ export const NEXT_TOOLING_ID: QueryDefinition<{ domain_id: string }, string> = {
   method: 'GET',
   route: '/api/tooling/next-id',
   input: { domain_id: id('The domain it will sit under.', 'required') },
+  reader: toolingReader,
   run: nextToolingId,
   text: (next) => next,
 };

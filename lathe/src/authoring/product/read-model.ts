@@ -71,10 +71,9 @@ function bySource(links: Row[]): Map<string, string[]> {
   return found;
 }
 
-/** The projection: each product's page, from the rows; only the one given, when given. */
-export function productPagesFrom(view: ReadView, only?: string): ProductPage[] {
-  const products = (view.rows('product') as unknown as ProductRow[]).filter((p) => only === undefined || p.id === only);
-  if (!products.length) return [];
+// Each product's page, from the rows.
+function productPagesFrom(view: ReadView): ProductPage[] {
+  const products = view.rows('product') as unknown as ProductRow[];
   const domains = view.rows('domain');
   const productOfDomain = new Map(domains.map((d) => [String(d.id), String(d.product_id)]));
   const about = bySource(view.rows('about'));
@@ -133,9 +132,37 @@ export function productPagesFrom(view: ReadView, only?: string): ProductPage[] {
   });
 }
 
-/** The projection's list: every product as the nav's space rail shows it, by ID. */
-export function productSummariesFrom(view: ReadView): ProductSummary[] {
+// Every product as the nav's space rail shows it, by ID.
+function productSummariesFrom(view: ReadView): ProductSummary[] {
   return (view.rows('product') as unknown as ProductRow[])
     .map((p) => ({ id: p.id, title: p.title, ...(p.icon !== undefined ? { icon: p.icon } : {}), ...(p.color !== undefined ? { color: p.color } : {}) }))
     .sort(byId);
+}
+
+/** The read model's table: each product's page and summary, which product holds each record, and every record's kind. */
+export interface ProductTable {
+  pages: Map<string, ProductPage>;
+  summaries: ProductSummary[];
+  /** The product that holds each product, open question and interface, and declares each product kind (by name). */
+  holding: Map<string, string>;
+  /** Every record ID in use, with its kind: what a next ID is one past, and what a refusal names. */
+  kinds: Map<string, string>;
+}
+
+/**
+ * The projection: the read model's table, built from the rows on each read. It is the only code that reads the source
+ * rows for the queries.
+ */
+export function productTableFrom(view: ReadView): ProductTable {
+  const pages = new Map(productPagesFrom(view).map((p) => [p.product.id, p]));
+  const holding = new Map<string, string>();
+  for (const page of pages.values()) {
+    holding.set(page.product.id, page.product.id);
+    for (const q of page.questions) holding.set(q.id, page.product.id);
+    for (const i of page.interfaces) holding.set(i.id, page.product.id);
+    for (const k of page.kinds) holding.set(k.name, page.product.id);
+  }
+  const kinds = new Map<string, string>();
+  for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
+  return { pages, summaries: productSummariesFrom(view), holding, kinds };
 }

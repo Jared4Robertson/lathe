@@ -3,25 +3,23 @@
 // nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import type { ReadView } from '../../platform/data/rules.ts';
 import { BUSINESS_OUTCOME_SLICE } from './model.ts';
 import type { BusinessOutcomePage, BusinessOutcomeSummary } from './read-model.ts';
-import { businessOutcomeReader } from './reader.ts';
+import { businessOutcomeReader, type BusinessOutcomeReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
 /** The page of the business outcome with this ID. */
-export function getBusinessOutcome(view: ReadView, input: { id: string }): BusinessOutcomePage {
-  const reader = businessOutcomeReader(view);
+export function getBusinessOutcome(reader: BusinessOutcomeReader, input: { id: string }): BusinessOutcomePage {
   const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
   if (kind !== 'business_outcome') refuse('kind', `${input.id} is ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind}, not a business outcome`);
-  return reader.page(input.id);
+  return reader.page(input.id)!;
 }
 
 /** Get a business outcome whole (LA-AUT-QRY115). */
-export const GET_BUSINESS_OUTCOME: QueryDefinition<{ id: string }, BusinessOutcomePage> = {
+export const GET_BUSINESS_OUTCOME: QueryDefinition<{ id: string }, BusinessOutcomePage, BusinessOutcomeReader> = {
   id: 'LA-AUT-QRY115',
   slice: BUSINESS_OUTCOME_SLICE,
   name: 'get-business-outcome',
@@ -29,19 +27,19 @@ export const GET_BUSINESS_OUTCOME: QueryDefinition<{ id: string }, BusinessOutco
   method: 'GET',
   route: '/api/business-outcome/get-business-outcome',
   input: { id: id('The business outcome.', 'required') },
+  reader: businessOutcomeReader,
   run: getBusinessOutcome,
   text: outcomeText,
 };
 
 /** The business outcomes of a product, by ID. */
-export function listBusinessOutcomes(view: ReadView, input: { product_id: string }): BusinessOutcomeSummary[] {
-  const reader = businessOutcomeReader(view);
+export function listBusinessOutcomes(reader: BusinessOutcomeReader, input: { product_id: string }): BusinessOutcomeSummary[] {
   if (reader.kindOf(input.product_id) !== 'product') refuse('missing', `there is no product ${input.product_id}`);
   return reader.list(input.product_id);
 }
 
 /** List the business outcomes of a product (LA-AUT-QRY116). */
-export const LIST_BUSINESS_OUTCOMES: QueryDefinition<{ product_id: string }, BusinessOutcomeSummary[]> = {
+export const LIST_BUSINESS_OUTCOMES: QueryDefinition<{ product_id: string }, BusinessOutcomeSummary[], BusinessOutcomeReader> = {
   id: 'LA-AUT-QRY116',
   slice: BUSINESS_OUTCOME_SLICE,
   name: 'list-business-outcomes',
@@ -49,24 +47,20 @@ export const LIST_BUSINESS_OUTCOMES: QueryDefinition<{ product_id: string }, Bus
   method: 'GET',
   route: '/api/business-outcome/list-business-outcomes',
   input: { product_id: id('The product.', 'required') },
+  reader: businessOutcomeReader,
   run: listBusinessOutcomes,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No business outcomes.'),
 };
 
 /** The next free ID for a business outcome of the product: its ID and BO, one past the highest number in use. */
-export function nextBusinessOutcomeId(view: ReadView, input: { product_id: string }): string {
-  const reader = businessOutcomeReader(view);
+export function nextBusinessOutcomeId(reader: BusinessOutcomeReader, input: { product_id: string }): string {
   if (reader.kindOf(input.product_id) !== 'product') refuse('parent', `a business outcome sits under a product, and ${input.product_id} is not one`);
   const prefix = `${input.product_id}-BO`;
-  let highest = 0;
-  for (const id of reader.ids()) {
-    if (id.startsWith(prefix) && /^\d+$/.test(id.slice(prefix.length))) highest = Math.max(highest, Number(id.slice(prefix.length)));
-  }
-  return `${prefix}${String(highest + 1).padStart(2, '0')}`;
+  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
 }
 
 /** Get the next ID for a business outcome (LA-AUT-QRY117). */
-export const NEXT_BUSINESS_OUTCOME_ID: QueryDefinition<{ product_id: string }, string> = {
+export const NEXT_BUSINESS_OUTCOME_ID: QueryDefinition<{ product_id: string }, string, BusinessOutcomeReader> = {
   id: 'LA-AUT-QRY117',
   slice: BUSINESS_OUTCOME_SLICE,
   name: 'next-id',
@@ -74,6 +68,7 @@ export const NEXT_BUSINESS_OUTCOME_ID: QueryDefinition<{ product_id: string }, s
   method: 'GET',
   route: '/api/business-outcome/next-id',
   input: { product_id: id('The product it will sit under.', 'required') },
+  reader: businessOutcomeReader,
   run: nextBusinessOutcomeId,
   text: (next) => next,
 };
