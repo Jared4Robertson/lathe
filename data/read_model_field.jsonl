@@ -52,7 +52,8 @@
 {"read_model_id":"LA-AUT-RM28","position":3,"name":"Handler","meaning":"Its command handler, with the standard rules it meets and the packages it uses.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM28","position":4,"name":"Policies","meaning":"Its policies by ID, each with the event it hears, its event handler (with the standard rules it meets and the packages it uses) and its test (with the test data sets it starts from).","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM28","position":5,"name":"Endpoints","meaning":"The endpoints that expose it, by ID.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM28","position":6,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the command: the command, its handler, a policy, or a policy's event handler or test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":6,"name":"Also changes","meaning":"The other aggregates it also changes in its transaction, each with its reason (its recorded exceptions).","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":7,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the command: the command, its handler, a policy, or a policy's event handler or test.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM29","position":1,"name":"Value object","meaning":"The value object's row: its ID, title and description.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM29","position":2,"name":"Fields","meaning":"Its fields in order, each with its type and whether it is required.","type":"text","required":false}
 {"read_model_id":"LA-AUT-RM29","position":3,"name":"Constraints","meaning":"Its constraints, each with its test and the data sets that test starts from.","type":"text","required":false}
