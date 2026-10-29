@@ -46,7 +46,7 @@ describe('lathe add', () => {
     expect((await lathe(root, 'add', 'table', '--id', 'TL-LEND-EN02-TB', '--title', 'Returns', '--entity_id', 'TL-LEND-EN02', '--name', 'returns', '--storage', 'table')).err).toContain('[entity-table]');
   });
 
-  it('LA-AUT-UC01-R07-T01 says which parent to give when a kind has two, before the table rule', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 says which parent to give when a kind has two, before the table rule', async () => {
     const root = writeData(everyKind());
     const both = await lathe(root, 'add', 'endpoint', '--id', 'TL-LEND-EP02', '--title', 'GET /x', '--command_id', 'TL-LEND-CMD01', '--query_id', 'TL-LEND-QRY01', '--method', 'GET', '--route', '/x');
     expect(both.status).toBe(1);
@@ -70,14 +70,14 @@ describe('lathe add', () => {
     expect((await lathe(root, 'add', 'read_model_field', '--read_model_id', 'TL-LEND-RM01', '--position', '2', '--name', 'Member', '--meaning', 'Whose loans.', '--type_aggregate_id', 'TL-LEND-A1', '--required', 'true')).status).toBe(0);
   });
 
-  it('LA-AUT-UC01-R07-T01 refuses a command change of the command\'s own aggregate, with the store\'s reason', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 refuses a command change of the command\'s own aggregate, with the store\'s reason', async () => {
     const root = writeData(everyKind());
     const own = await lathe(root, 'add', 'command_change', '--command_id', 'TL-LEND-CMD01', '--aggregate_id', 'TL-LEND-A1', '--reason', 'Because.');
     expect(own.status).toBe(1);
     expect(own.err).toContain('[command-change-in-domain]');
   });
 
-  it('LA-AUT-UC01-R07-T01 refuses a write the command layer refuses, printing the reason, and changes nothing', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 refuses a write the command layer refuses, printing the reason, and changes nothing', async () => {
     const root = writeData(everyKind());
     const before = files(root);
     const result = await lathe(root, 'add', 'aggregate', '--id', 'TL-LEND-A3', '--title', 'Member', '--domain_id', 'TL-NOPE', '--identity', 'Member ID', '--description', 'A member of the library.');
@@ -89,7 +89,7 @@ describe('lathe add', () => {
     expect(files(root)).toEqual(before);
   });
 
-  it('LA-AUT-UC01-R07-T01 says a broken table rule in words', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 says a broken table rule in words', async () => {
     const root = writeData(everyKind());
     const field = await lathe(root, 'add', 'entity_field', '--entity_id', 'TL-LEND-EN02', '--position', '1', '--name', 'Returned at', '--meaning', 'When.', '--required', 'true');
     expect(field.err).toBe(
@@ -166,7 +166,7 @@ describe('lathe set', () => {
     expect(change.out).toContain('Changed command_change command_id TL-LEND-CMD01, aggregate_id TL-LEND-A2');
   });
 
-  it('LA-AUT-UC01-R07-T01 refuses a parent column, an unknown ID and a missing key', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 refuses a parent column, an unknown ID and a missing key', async () => {
     const root = writeData(everyKind());
     const parent = await lathe(root, 'set', 'TL-LEND-UC01-R01', '--use_case_id', 'TL-LEND-UC01');
     expect(parent.status).toBe(1);
@@ -196,7 +196,7 @@ describe('lathe move', () => {
     expect(result.out).toContain('Changed endpoint TL-LEND-EP01: {"id":"TL-LEND-EP01","title":"POST /loans","method":"POST","route":"/loans","description":"Takes a member and a tool; answers 201 with the loan.","query_id":"TL-LEND-QRY01"}');
   });
 
-  it('LA-AUT-UC01-R07-T01 refuses a parent of the wrong kind, a record with no owner, and needs --parent', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 refuses a parent of the wrong kind, a record with no owner, and needs --parent', async () => {
     const root = writeData(everyKind());
     const wrong = await lathe(root, 'move', 'TL-LEND-UC01', '--parent', 'TL-LEND-A1');
     expect(wrong.status).toBe(1);
@@ -215,7 +215,7 @@ describe('lathe link and unlink', () => {
     expect(unlinked.out).toBe('Removed link TL-LEND-QRY01 calls TL-LEND-DS01\nWrote data/calls.jsonl\n');
   });
 
-  it('LA-AUT-UC01-R07-T01 refuses a pair the relation does not allow, a second link where one is allowed, and a missing link', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R02-T01 refuses a pair the relation does not allow, a second link where one is allowed, and a missing link', async () => {
     const root = writeData(everyKind());
     const pair = await lathe(root, 'link', 'TL-V01', 'calls', 'TL-LEND-DS01');
     expect(pair.status).toBe(1);
@@ -374,7 +374,7 @@ describe('a write given as JSON', () => {
   }
   const LONG = 'He said "stop" and left.\nThen:\n\n```ts\nconst x = `a ${b}`;\n```\n\tTabbed, \\ back-slashed, and é accented — all of it.';
 
-  it('LA-AUT-UC01-R11-T01 keeps text with quotes, newlines and backticks exactly, from stdin or a file', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 keeps text with quotes, newlines and backticks exactly, from stdin or a file', async () => {
     const root = writeData(everyKind());
     const added = await piped(root, JSON.stringify({ uc_requirement: { id: 'TL-LEND-UC01-R02', title: 'Kept "as is"', use_case_id: 'TL-LEND-UC01', statement: LONG } }), 'add', '--json', '-');
     expect(added.status).toBe(0);
@@ -392,7 +392,7 @@ describe('a write given as JSON', () => {
     expect(line(flagged, 'uc_requirement', 'TL-LEND-UC01-R02')).toBe(line(root, 'uc_requirement', 'TL-LEND-UC01-R02'));
   });
 
-  it("LA-AUT-UC01-R11-T01 takes every write in the MCP tools' shape", async () => {
+  it("LA-PAT-AGGREGATE-COMMANDS-R03-T01 takes every write in the MCP tools' shape", async () => {
     const root = writeData(everyKind());
     expect((await piped(root, '{"source": "TL-LEND-QRY01", "relation": "calls", "target": "TL-LEND-DS01"}', 'link', '--json', '-')).status).toBe(0);
     expect((await piped(root, '{"source": "TL-LEND-QRY01", "relation": "calls", "target": "TL-LEND-DS01"}', 'unlink', '--json', '-')).status).toBe(0);
@@ -406,7 +406,7 @@ describe('a write given as JSON', () => {
     await store.close();
   });
 
-  it('LA-AUT-UC01-R11-T02 refuses as the flags do, with every reason, and changes nothing', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 refuses as the flags do, with every reason, and changes nothing', async () => {
     const root = writeData(everyKind());
     const before = files(root);
     const viaFlags = await lathe(root, 'add', 'aggregate', '--id', 'TL-OTHER-A3', '--title', 'Member', '--domain_id', 'TL-NOPE', '--identity', 'Member ID', '--description', 'A member of the library.', '--json');
@@ -424,7 +424,7 @@ describe('a write given as JSON', () => {
     expect(files(root)).toEqual(before);
   });
 
-  it('LA-AUT-UC01-R11-T03 refuses --json with field flags, a table or ID, or a read, as bad usage', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 refuses --json with field flags, a table or ID, or a read, as bad usage', async () => {
     const root = writeData(everyKind());
     const before = files(root);
     const both = await piped(root, '{"view": {"id": "TL-V02", "title": "Desk"}}', 'add', '--json', '-', '--title', 'Other');
@@ -439,7 +439,7 @@ describe('a write given as JSON', () => {
     expect(files(root)).toEqual(before);
   });
 
-  it('LA-AUT-UC01-R11-T04 writes an array as one write, all or nothing', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 writes an array as one write, all or nothing', async () => {
     const root = writeData(everyKind());
     const both = await piped(root, JSON.stringify([{ view: { id: 'TL-V02', title: 'Desk', description: 'The desk where tools go out.' } }, { view: { id: 'TL-V03', title: 'Shelf', description: 'The shelf of free tools.' } }]), 'add', '--json', '-');
     expect(JSON.parse(both.out).changes.map((c: { key: string }) => c.key)).toEqual(['TL-V02', 'TL-V03']);

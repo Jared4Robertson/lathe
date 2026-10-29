@@ -1,4 +1,9 @@
-{"source_id":"LA-AUT-EN37-TB","target_id":"LA-STD-PRINCIPLES-R03"}
+{"source_id":"LA-AUT-CMD103-H","target_id":"LA-STD-CODE-R07"}
+{"source_id":"LA-AUT-CMD106-H","target_id":"LA-STD-CODE-R07"}
+{"source_id":"LA-AUT-CMD109-H","target_id":"LA-STD-CODE-R07"}
+{"source_id":"LA-AUT-CMD112-H","target_id":"LA-STD-CODE-R07"}
+{"source_id":"LA-AUT-CMD115-H","target_id":"LA-STD-CODE-R07"}
+{"source_id":"LA-AUT-CMD118-H","target_id":"LA-STD-CODE-R07"}
 {"source_id":"LA-AUT-QRY01-H","target_id":"LA-STD-PRINCIPLES-R04"}
 {"source_id":"LA-AUT-QRY05-H","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-CHK-EN01-TB","target_id":"LA-STD-CODE-R01"}
