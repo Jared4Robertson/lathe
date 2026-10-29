@@ -53,7 +53,7 @@ describe('the keymap', () => {
     expect(keysOf('quickOpen')).toEqual(['Mod+P', 'Mod+K']);
     expect(keysOf('commandPalette')).toEqual(['Mod+Shift+P']);
     expect(keysOf('toggleNav')).toEqual(['Mod+B']);
-    expect(keysOf('toggleSideBar')).toEqual(['Mod+Alt+B']);
+    expect(COMMANDS.some((c) => ['toggleSideBar', 'focusSideBar'].includes(c.id))).toBe(false);
     expect(keysOf('stageGraph')).toEqual(['Ctrl+G', 'Ctrl+1']);
     expect(keysOf('toggleWikiCard')).toEqual(['Enter', 'Ctrl+W']);
     expect(keysOf('collapseWikiCard')).toEqual(['Escape']);

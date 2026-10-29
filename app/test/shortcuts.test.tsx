@@ -2,7 +2,7 @@ import './graph/setup';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { openApp, openSideBar } from './helpers';
+import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
 import { COMMANDS } from '../src/shell/keymap';
 import { boxElement, isCenter } from './graph/scene';
@@ -45,31 +45,27 @@ describe('keyboard shortcuts', () => {
     expect(other.defaultPrevented).toBe(false);
   });
 
-  it('LA-V61-R08-T02 Ctrl+B hides and shows the nav, Ctrl+Alt+B the side bar', async () => {
+  it('LA-V61-R08-T02 Ctrl+B hides and shows the nav', async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     expect(nav().className).toContain('is-rail');
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     expect(nav().className).not.toContain('is-rail');
-
-    // On the Graph stage the side bar starts open.
-    expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
-    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
-    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
-    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
-    expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
+    // Ctrl+Alt+B toggles nothing any more: the page keeps its panels.
+    const event = new KeyboardEvent('keydown', { key: '∫', code: 'KeyB', ctrlKey: true, altKey: true, bubbles: true, cancelable: true });
+    act(() => { document.body.dispatchEvent(event); });
+    expect(event.defaultPrevented).toBe(false);
+    expect(nav().className).not.toContain('is-rail');
   });
 
-  it('LA-V61-R11-T01 Hiding and showing the nav and the side bar is announced', async () => {
+  it('LA-V61-R11-T01 Hiding or showing the nav by keyboard is announced', async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, 'b', 'KeyB', { ctrlKey: true });
     await waitFor(() => expect(announcer()).toHaveTextContent('Navigation collapsed'));
-    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
-    await waitFor(() => expect(announcer()).toHaveTextContent('Side bar hidden'));
-    press(document.body, '∫', 'KeyB', { ctrlKey: true, altKey: true });
-    await waitFor(() => expect(announcer()).toHaveTextContent('Side bar shown'));
+    press(document.body, 'b', 'KeyB', { ctrlKey: true });
+    await waitFor(() => expect(announcer()).toHaveTextContent('Navigation expanded'));
   });
 
   it('LA-V61-R08-T03 Alt+G, Alt+E and Alt+T (or Ctrl+1, 2 and 3) switch the stage off a Mac, on every focus; Enter and Alt+W collapse and show the wiki card', async () => {
@@ -149,9 +145,9 @@ describe('keyboard shortcuts', () => {
     for (const group of ['Navigate', 'View', 'Graph', 'Lists']) expect(within(sheet).getByRole('heading', { name: group })).toBeInTheDocument();
     expect(within(sheet).getByRole('rowheader', { name: 'Command palette' }).nextElementSibling).toHaveTextContent('Ctrl+Shift+P');
     const user = userEvent.setup();
-    await user.type(within(sheet).getByRole('searchbox', { name: 'Search shortcuts' }), 'side bar');
+    await user.type(within(sheet).getByRole('searchbox', { name: 'Search shortcuts' }), 'hide the navigation');
     expect(within(sheet).queryByRole('heading', { name: 'Graph' })).toBeNull();
-    expect(within(sheet).getByRole('rowheader', { name: 'Show or hide the side bar' })).toBeInTheDocument();
+    expect(within(sheet).getByRole('rowheader', { name: 'Show or hide the navigation' })).toBeInTheDocument();
     await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
 
@@ -224,29 +220,26 @@ describe('keyboard shortcuts', () => {
     expect(COMMANDS.filter((c) => c.group === 'Graph' && /trace/i.test(`${c.id} ${c.title}`))).toEqual([]);
   });
 
-  it('LA-V61-R08-T07 F12, Shift+F12, Ctrl+Shift+E, Ctrl+Shift+I, / and Ctrl+- reach links, incoming links, the nav, the side bar, search and Back', async () => {
-
-    openSideBar('details');
+  it('LA-V61-R08-T07 F12, Shift+F12, Ctrl+Shift+E, / and Ctrl+- move focus and history', async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    const sideBar = screen.getByRole('complementary', { name: 'Side bar' });
+    const card = () => screen.getByRole('region', { name: 'Wiki card' });
 
     // F12 on a focused link opens its record.
-    const link = within(sideBar).getAllByRole('link', { name: /P-D-CAP01/ })[0];
+    const link = within(card()).getAllByRole('link').find((a) => a.getAttribute('href') === '/P-D-CAP01')!;
     link.focus();
     press(link, 'F12', 'F12');
     expect(window.location.pathname).toBe('/P-D-CAP01');
     await screen.findByRole('heading', { level: 1, name: 'Lending' });
 
-    // Shift+F12 shows the record's links, in and out, in the side bar's Traceability.
+    // Shift+F12 opens the wiki card's whole page at what links to the record.
     press(document.body, 'F12', 'F12', { shiftKey: true });
-    await waitFor(() => expect(within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('heading', { name: /^Traceability/ })).toHaveFocus());
+    await waitFor(() => expect(within(card()).getByRole('heading', { name: 'Links in' })).toHaveFocus());
+    expect(card()).toHaveClass('is-expanded');
 
-    // Ctrl+Shift+E: the nav; Ctrl+Shift+I: the side bar.
+    // Ctrl+Shift+E: the nav.
     press(document.body, 'E', 'KeyE', { ctrlKey: true, shiftKey: true });
     await waitFor(() => expect(nav().contains(document.activeElement)).toBe(true));
-    press(document.body, 'I', 'KeyI', { ctrlKey: true, shiftKey: true });
-    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toHaveFocus());
 
     // / focuses the nearest search box: the page's, or opens quick find.
     press(document.body, '/', 'Slash');

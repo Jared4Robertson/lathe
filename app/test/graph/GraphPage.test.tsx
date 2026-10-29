@@ -11,10 +11,9 @@ import { createOpenSpaceStore } from '../../src/views/openSpace';
 import { boxElement, boxElements, cameraOf, drawnBox, graphHost, isCenter, scene } from './scene';
 
 // The graph as the focus page hosts it: on the Graph stage of a record's, group's, product's or
-// domain's own address, with the side bar beside it.
+// domain's own address, with the wiki card over it.
 
 const node = (id: string) => boxElement(id);
-const sideBar = () => within(screen.getByRole('complementary', { name: 'Side bar' }));
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 /** The address of a record in the test workspace (the product and domain have overview pages). */
 const addressOf = (id: string) => `/${id}`;
@@ -54,18 +53,6 @@ describe('graph page', () => {
     expect(window.location.pathname).toBe(`/${STEP}`);
     await waitFor(() => expect(title()).toBe('Librarian lends the thing'));
     await waitFor(() => expect(isCenter(STEP)).toBe(true));
-  });
-
-  it('LA-V95-R02-T01 The side bar shows the kind, title, problems, coverage gaps and a link to the record page', async () => {
-    await showGraph('/P-D-INV02');
-    const side = sideBar();
-    expect(side.getAllByText('Invariant').length).toBeGreaterThan(0);
-    expect(side.getByText('A loan is returned once', { selector: '.side-bar-name' })).toBeTruthy();
-    expect(side.getByText('No test proves invariant P-D-INV02.')).toBeTruthy();
-    // The gaps in the words of the wiki's Traceability callouts, in the side bar's compact Traceability.
-    const gaps = side.getByRole('region', { name: /^Traceability/ });
-    expect([...gaps.querySelectorAll('li[data-gap]')].map((li) => li.textContent)).toContain('Not proved yet');
-    expect(side.getByRole('link', { name: 'P-D-INV02' }).getAttribute('href')).toBe('/P-D-INV02');
   });
 
   it('LA-V93-R21-T02 Depth shows only in the Tree layout: in Nested and Voronoi its slot stays but is neither shown nor reachable', async () => {
@@ -109,13 +96,13 @@ describe('graph page', () => {
     expect(screen.queryByRole('button', { name: /^Links/ })).toBeNull();
   });
 
-  it('LA-V93-R12-T01 Nodes show their stage and kind, records with errors or gaps are marked, parent lines join them, and there is a legend', async () => {
+  it('LA-V93-R12-T01 Nodes show their stage and kind, records with errors or gaps are marked, parent lines join them, and there is a key', async () => {
     await showGraph(`/${STEP}`);
     await waitFor(() => expect(node('P-D-UC01-FL01')).not.toBeNull());
     expect(drawnBox(STEP)!.stage).toBe('interaction-design');
     expect(drawnBox(STEP)!.focus).toBe(true);
     expect(drawnBox('P-D-UC01-FL01')!.stage).toBe('interaction-design');
-    expect(screen.getByRole('region', { name: 'Legend' })).toBeTruthy();
+    expect(screen.getByRole('region', { name: 'Key' })).toBeTruthy();
     expect(scene().lines.map((l) => l.style)).toContain('structure');
     // A capability in the use cases' colors, its use case beside it.
     await showGraph('/P-D-CAP01');
@@ -252,13 +239,13 @@ describe('graph groups on the page', () => {
 
   it('LA-V93-R25-T02 A group has its own address showing its parent to the left and its members to the right, and Back works', async () => {
     await showGraph('/P-D');
-    // The domain's side bar lists its stages, linking to their addresses.
-    const link = sideBar().getByRole('link', { name: /^Domain model \(\d+\)$/ });
-    const stageTitle = link.textContent!;
-    expect(link.getAttribute('href')).toBe('/P-D/domain-model?stage=graph');
-    fireEvent.click(link);
+    // The domain's stage, drawn as a group: clicking it goes to its address.
+    await waitFor(() => expect(node('P-D/domain-model')).not.toBeNull());
+    fireEvent.click(node('P-D/domain-model')!);
     expect(window.location.pathname).toBe('/P-D/domain-model');
-    await waitFor(() => expect(title()).toBe(stageTitle));
+    expect(window.location.search).toBe('?stage=graph');
+    await waitFor(() => expect(title()).toMatch(/^Domain model \(\d+\)$/));
+    const stageTitle = title();
     await waitFor(() => expect(groupNode('P-D/domain-model')?.focus).toBe(true));
     const left = (id: string) => drawnBox(id)!.map.x;
     expect(left('P-D')).toBeLessThan(left('P-D/domain-model'));
@@ -268,7 +255,8 @@ describe('graph groups on the page', () => {
     const crumbs = within(screen.getByRole('navigation', { name: 'Breadcrumb' }));
     expect(crumbs.getByRole('link', { name: 'Domain (P-D)' })).toHaveAttribute('title', 'Domain (P-D)');
 
-    fireEvent.click(sideBar().getByRole('link', { name: /Aggregates/ }));
+    await waitFor(() => expect(node('P-D/domain-model/aggregate')).not.toBeNull());
+    fireEvent.click(node('P-D/domain-model/aggregate')!);
     expect(window.location.pathname).toBe('/P-D/domain-model/aggregate');
     await back();
     expect(window.location.pathname).toBe('/P-D/domain-model');
@@ -283,7 +271,7 @@ describe('graph groups on the page', () => {
     await screen.findByText(/There's no record or group/);
   });
 
-  it('LA-V93-R23-T05 LA-V93-R26-T02 Groups are drawn as folders and carry a mark when a member or anything beneath it has errors or gaps; the legend explains them', async () => {
+  it('LA-V93-R23-T05 LA-V93-R26-T02 Groups are drawn as folders and carry a mark when a member or anything beneath it has errors or gaps; the key explains them', async () => {
     await showGraph('/P-D');
     await waitFor(() => expect(node('P-D/test-plan')).not.toBeNull());
     expect(groupNode('P-D/test-plan')!.badges.map((b) => [b.label, b.tone])).toContainEqual(['!', 'error']);
@@ -291,8 +279,8 @@ describe('graph groups on the page', () => {
     // Each group carries its stage's color: a stage its own, a folder its kind's.
     expect(groupNode('P-D/test-plan')!.stage).toBe('test-plan');
     expect(groupNode('P-D/domain-model')!.stage).toBe('domain-model');
-    const legend = within(screen.getByRole('region', { name: 'Legend' }));
-    expect(legend.getByText(/Stage, folder or group/)).toBeTruthy();
+    const key = within(screen.getByRole('region', { name: 'Key' }));
+    expect(key.getByText(/Stage, folder or group/)).toBeTruthy();
     // A labeled group is named for assistive technology by its name, count and owner; one with nothing wrong beneath it carries no mark.
     expect(node('P-D/test-plan')!.getAttribute('aria-label')).toMatch(/^Stage Test plan \(\d+\) in P-D$/);
     expect(marksOf(testIndex(), 'P-D/question')).toEqual({ errors: 0, warnings: 0, gaps: [] });

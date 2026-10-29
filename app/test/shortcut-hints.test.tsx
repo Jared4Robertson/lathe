@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { COMMANDS, OVERRIDES_KEY, ariaKeyShortcuts, formatBinding, resolveCommands } from '../src/shell/keymap';
 import { TOOLTIP_DELAY } from '../src/shell/Tooltip';
-import { openApp, openSideBar } from './helpers';
+import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
 import { addRows } from './fixtures/load';
 
@@ -72,11 +72,9 @@ describe('shortcut hints', () => {
   });
 
   const proveLaPltDs01T01 = async () => {
-
-    openSideBar('details');
     // In Apple's order: ⌃ ⌥ ⇧ ⌘.
     expect(formatBinding('Mod+Shift+P', true)).toBe('⇧⌘P');
-    expect(formatBinding('Mod+Alt+B', true)).toBe('⌥⌘B');
+    expect(formatBinding('Mod+Alt+F', true)).toBe('⌥⌘F');
     expect(formatBinding('Ctrl+-', true)).toBe('⌃-');
     expect(formatBinding('Alt+1', true)).toBe('⌥1');
     expect(formatBinding('Mod+Shift+P', false)).toBe('Ctrl+Shift+P');
@@ -87,8 +85,6 @@ describe('shortcut hints', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     keyFocus(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     expect(tooltip()).toHaveTextContent('Collapse the navigation ⌘B');
-    keyFocus(screen.getByRole('button', { name: 'Hide the side bar', expanded: true }));
-    expect(tooltip()).toHaveTextContent('the side bar ⌥⌘B');
     keyFocus(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link')[0]);
     expect(tooltip().querySelector('kbd')).toHaveTextContent('⌥1');
     expect(within(nav()).getByRole('button', { name: 'Go to…' }).querySelector('kbd')).toHaveTextContent('⌘P');
@@ -154,13 +150,11 @@ describe('shortcut hints', () => {
   });
 
   const proveLaPltDs01T02 = async () => {
-
-    openSideBar('details');
     expect(ariaKeyShortcuts(['Mod+P', 'Mod+K'], false)).toBe('Control+P Control+K');
     expect(ariaKeyShortcuts(['Mod+P'], true)).toBe('Meta+P');
     expect(ariaKeyShortcuts(['g c'], false)).toBe('');
     expect(ariaKeyShortcuts(['+', '='], false)).toBe('Plus =');
-    expect(ariaKeyShortcuts(['Mod+Alt+B'], false)).toBe('Control+Alt+B');
+    expect(ariaKeyShortcuts(['Mod+Alt+F'], false)).toBe('Control+Alt+F');
 
     await openApp('/P-D-UC01', { data: twoProducts() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -173,9 +167,6 @@ describe('shortcut hints', () => {
       expect(within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', keys);
     }
     expect(screen.getByRole('button', { name: 'Collapse the wiki card', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Enter Alt+W');
-    // The corner toggle and the side bar's own close button.
-    expect(screen.getByRole('button', { name: 'Hide the side bar', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
-    expect(within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('button', { name: 'Hide the side bar' })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
 
     // On the Graph stage: the depth buttons.
     fireEvent.keyDown(document.body, { key: '1', code: 'Digit1', ctrlKey: true });

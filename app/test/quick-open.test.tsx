@@ -88,11 +88,11 @@ describe('quick open', () => {
 
     // ">" switches to commands, each with its keys; deleting it goes back to records.
     await user.clear(input);
-    await user.type(input, '>hide the side bar');
+    await user.type(input, '>hide the navigation');
     expect(screen.getByRole('dialog', { name: 'Command palette' })).toBe(dialog);
     const commands = within(dialog).getByRole('listbox', { name: 'Commands' });
-    expect(within(commands).getAllByRole('option')[0]).toHaveTextContent('Show or hide the side bar');
-    expect(within(commands).getAllByRole('option')[0].querySelector('kbd')).toHaveTextContent('Ctrl+Alt+B');
+    expect(within(commands).getAllByRole('option')[0]).toHaveTextContent('Show or hide the navigation');
+    expect(within(commands).getAllByRole('option')[0].querySelector('kbd')).toHaveTextContent('Ctrl+B');
     await user.clear(input);
     await user.type(input, 'lend');
     expect(screen.getByRole('dialog', { name: 'Quick find' })).toBe(dialog);

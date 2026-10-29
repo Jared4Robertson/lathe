@@ -5,17 +5,20 @@ import { renderMarkdown } from '../src/specs/Markdown';
 import { factsOf } from '../src/specs/RecordText';
 import { addRows, indexOf } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
-import { main, openApp, openSideBar, sideBar } from './helpers';
+import { SETTINGS_KEY } from '../src/graph/settings';
+import { main, openApp } from './helpers';
 
 // The record page's wiki card shows its text fields, its parts (fields with their types, a table's
-// keys, a command's recorded exceptions), its Traceability, children and problems; the side bar's
-// Details adds its facts: its data file and line, its parent, and its Traceability in brief.
-const side = () => main().querySelector('aside.record-side') as HTMLElement;
+// keys, a command's recorded exceptions), its Traceability, children and problems; its whole page
+// adds its facts after the body: its kind, its fields, its data file and line, and its links out and in.
 const card = () => screen.getByRole('region', { name: 'Wiki card' });
-/** A fact's value in the side bar's Details, by its name. */
-const fact = (name: string) => within(side()).getByText(name, { selector: 'dt' }).closest('div')!.querySelector('dd')!;
+const facts = () => within(card()).getByRole('complementary', { name: 'Facts' });
+/** A fact's value in the wiki card's Facts, by its name. */
+const fact = (name: string) => within(facts()).getByText(name, { selector: 'dt' }).closest('div')!.querySelector('dd')!;
+/** The wiki card open on the whole page, for the session. */
+const expanded = () => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
 
-/** The wiki card's section under this heading (the side bar has a Traceability and Problems of its own). */
+/** The wiki card's section under this heading. */
 function section(name: string | RegExp) {
   const element = within(card()).getByRole('heading', { name }).closest('section');
   expect(element).not.toBeNull();
@@ -31,24 +34,24 @@ function traceGroups() {
   ]));
 }
 
-/** The records the side bar's Traceability in brief links to, by ID. */
-const briefLinks = () => [...within(side()).getByRole('heading', { name: /^Traceability/ }).closest('section')!.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+/** The records the Facts' Links out and Links in lead to. */
+const factLinks = () => [...facts().querySelectorAll('a')].map((a) => a.getAttribute('href'));
 
 /** A table's body rows, each as its cells' text (a link's ID and title run together). */
 const rows = (table: Element) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent?.replace(/\s+/g, ' ').trim()));
 
 describe('record page', () => {
   it('LA-V92-R13-T01 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
-    openSideBar();
+    expanded();
     await openApp('/DM-SHOP-UC01');
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
     // The card's kind line reads as the box's: the kind and the ID; its stripe takes the box's stage color.
     expect(card().querySelector('.wiki-panel-kind')).toHaveTextContent('Use case · DM-SHOP-UC01');
     expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-use-cases)');
     expect(within(card()).getByText('A shopper adds an item.').closest('.markdown')).not.toBeNull();
-    // The side bar: its data file and line, and its parent.
+    // The facts: its data file and line; its parent is the breadcrumb's last step.
     expect(fact('Data file')).toHaveTextContent('data/use_case.jsonl:2');
-    expect(fact('Parent').querySelector('a')).toHaveAttribute('href', '/DM-SHOP-CAP01');
+    expect([...card().querySelector('.breadcrumb')!.querySelectorAll('a')].at(-1)).toHaveAttribute('href', '/DM-SHOP-CAP01');
 
     // The children are the wiki's: its UC requirements, and its flow listed by interface.
     const children = within(card()).getByRole('heading', { name: /^UC requirements/ });
@@ -57,7 +60,9 @@ describe('record page', () => {
     expect(items.map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-R01', '/DM-SHOP-UC01-R02']);
     const flows = within(card()).getByRole('heading', { name: /^Flows by interface/ }).closest('section')!;
     expect([...flows.querySelectorAll('a.row-link')].map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-FL01']);
-    expect(within(side()).queryByRole('heading', { name: /^UC requirements|^Children/ })).toBeNull();
+    // The facts do not repeat the parent or the children.
+    expect(within(facts()).queryByText('Parent', { selector: 'dt' })).toBeNull();
+    expect(within(facts()).queryByRole('heading', { name: /^UC requirements|^Children/ })).toBeNull();
 
     // Markdown in a text field is rendered.
     await openApp('/DM');
@@ -65,7 +70,7 @@ describe('record page', () => {
   });
 
   it('LA-V92-R14-T01 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
-    openSideBar();
+    expanded();
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     // A UC requirement is designed, built and proved by what its chain holds.
@@ -74,8 +79,9 @@ describe('record page', () => {
       'Built by': ['/DM-SHOP-CMD01-H'],
       'Proved by': ['/DM-SHOP-UC01-R01-T01'],
     });
-    // In brief in the side bar, each a link.
-    expect(briefLinks()).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-FL01-S01', '/DM-SHOP-UC01-R01-T01']));
+    // In the facts, each a link: the kind to its page in the format reference, and the step that links in.
+    expect(factLinks()).toEqual(['/DM-SHOP-UC01-R01?page=format/kinds/uc_requirement', '/DM-SHOP-UC01-FL01-S01']);
+    expect(within(facts()).getByRole('heading', { name: 'Links in' })).toBeInTheDocument();
 
     // Follow it to the step, then see its links out by their labels.
     const user = userEvent.setup();
@@ -87,7 +93,7 @@ describe('record page', () => {
       Invokes: ['/DM-SHOP-CMD01'],
       'Happens in': ['/DM-V01'],
     }));
-    expect(briefLinks()).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-CMD01', '/DM-V01']));
+    expect(factLinks()).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-CMD01', '/DM-V01']));
   });
 
   it('LA-V92-R15-T01 A record body is sanitized before it is shown', async () => {
@@ -175,14 +181,12 @@ describe('record page', () => {
     expect(also).toHaveTextContent(/one repository per aggregate/);
   });
 
-  it('LA-V92-R13-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner says why it has no parent', async () => {
-    openSideBar('details', ['graph']);
+  it('LA-V92-R13-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner sits in its product, in no domain', async () => {
     await openApp('/DM-V01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Basket page' });
     expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-interaction-design)');
     // Both domains' flow steps happen in the view, so the product shares it: its breadcrumb starts at the product, in no domain.
     expect(within(card().querySelector<HTMLElement>('.breadcrumb')!).getAllByRole('link')[0]).toHaveTextContent('Demo shop');
     expect(card().querySelector('.breadcrumb')).not.toHaveTextContent('Shopping');
-    expect(sideBar()).toHaveTextContent('None: it has no owner. It is shared: two or more domains use it, or none.');
   });
 });

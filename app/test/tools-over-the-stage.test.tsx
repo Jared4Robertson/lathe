@@ -20,7 +20,7 @@ const stage = () => screen.getByRole('region', { name: /stage$/ });
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 const NONE = new Set<CrowdPanel>();
 const room = (width: number, patch: Partial<Room> = {}): Room => ({
-  width, inset: 8, nav: { open: true, width: 336, rail: 56 }, card: true, sideBar: 340, chat: null, tool: null, held: NONE, ...patch,
+  width, inset: 8, nav: { open: true, width: 336, rail: 56 }, card: true, chat: null, tool: null, held: NONE, ...patch,
 });
 
 describe('LA-PAT-APP-UX-R20 Nothing replaces the stage: tools open as panels over it', () => {
@@ -55,8 +55,8 @@ describe('LA-PAT-APP-UX-R20 Nothing replaces the stage: tools open as panels ove
 
     // A tool covers part of the stage, so it shrinks the open space; it never collapses for space, the others give way.
     expect(openWidth(room(1920, { tool: 380 }), NONE)).toBe(openWidth(room(1920), NONE) - 388);
-    expect([...crowded(room(1440))]).toEqual([]);
-    expect([...crowded(room(1440, { tool: 380 }))].sort()).toEqual(['sideBar']);
+    expect([...crowded(room(1280))]).toEqual([]);
+    expect([...crowded(room(1280, { tool: 380 }))]).toEqual(['card']);
     for (const width of [1440, 1920]) expect(openWidth(room(width, { tool: 600 }), crowded(room(width, { tool: 600 }))), String(width)).toBeGreaterThanOrEqual(STAGE_MIN);
 
     // One way to take and give back focus: the dialogs (quick open, the products picker) and the tool panels share it.

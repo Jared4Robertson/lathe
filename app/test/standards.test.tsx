@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { openApp, openSideBar } from './helpers';
+import { openApp } from './helpers';
 import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
 import { contrast } from '../src/theme/contrast';
 import { themeCss } from '../src/theme/css';
@@ -170,17 +170,17 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     // One implementation: no other component draws a separator of its own.
     const separators = filesUnder(SRC, /\.tsx$/).filter((f) => !f.endsWith('ResizeHandle.tsx')).flatMap((f) => where(f, readFileSync(f, 'utf8'), /role="separator"/));
     expect(separators).toEqual([]);
-    // On a record with the side bar shown: the nav, the wiki card and the side bar each have a handle at their edge.
+    // On a record: the nav and the wiki card each have a handle at their edge.
     await openApp('/DM-SHOP-UC01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     // A focusable separator (one with a value) is a splitter; a plain divider line such as the rail's is not.
     const handles = screen.getAllByRole('separator').filter((h) => h.hasAttribute('aria-valuenow')).map((h) => [h.getAttribute('aria-label'), h.classList.contains('resize-handle')]);
-    expect(handles).toEqual([['Resize the navigation', true], ['Resize the wiki card', true], ['Resize the side bar', true]]);
+    expect(handles).toEqual([['Resize the navigation', true], ['Resize the wiki card', true]]);
     // The stage fills the window behind; every panel floats over it, naming the side it sits on.
     const stage = screen.getByRole('region', { name: 'Graph stage' });
     expect(stage).toHaveClass('focus-stage');
     expect(stage.closest('[data-floating]')).toBeNull();
-    for (const [panel, side] of [[document.querySelector('#nav'), 'left'], [document.querySelector('.wiki-panel'), 'right'], [document.querySelector('.page-bar'), 'top'], [document.querySelector('.header-strip'), 'top'], [document.querySelector('.side-bar-column'), 'right']] as const) {
+    for (const [panel, side] of [[document.querySelector('#nav'), 'left'], [document.querySelector('.wiki-panel'), 'right'], [document.querySelector('.page-bar'), 'top'], [document.querySelector('.header-strip'), 'top']] as const) {
       expect(panel).toHaveAttribute('data-floating', side);
     }
     expect(CSS).toMatch(/\.focus-stage \{ position: absolute; inset: 0; z-index: 0;/);
@@ -194,16 +194,15 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   });
 
   it('LA-PAT-APP-UX-R03-T01 LA-PAT-APP-UX-R03-T02 The page bar holds the page\'s tabs and controls; a stage\'s own tools float in the open space, on wide and narrow screens alike', async () => {
-    openSideBar('details');
     for (const [path, narrow] of [['/DM-SHOP-UC01?stage=graph', false], ['/DM-SHOP-UC01?stage=erd', false], ['/DM-SHOP-UC01?stage=graph', true]] as const) {
       if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-      // One page bar, at the top of the tab panel, outside the stage, the wiki card and the side bar.
+      // One page bar, at the top of the tab panel, outside the stage and the wiki card.
       const bars = [...document.querySelectorAll<HTMLElement>('.page-bar')];
       expect(bars).toHaveLength(1);
       const bar = bars[0];
-      expect(bar.closest('.focus-stage, .wiki-panel, .side-bar, .side-bar-column')).toBeNull();
+      expect(bar.closest('.focus-stage, .wiki-panel')).toBeNull();
       // Its left: the tabs (on a phone, the Open pages control that opens them as a sheet).
       if (narrow) {
         expect(within(bar).getByRole('button', { name: /^Open pages: \d+$/ })).toBeInTheDocument();
@@ -212,18 +211,16 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
         expect(screen.getAllByRole('tablist')).toHaveLength(1);
         expect(bar.querySelector('.page-bar-start [role="tablist"]')).not.toBeNull();
       }
-      // Its right: the stage switch, one pressed stage, then the wiki card and side bar toggles, the side bar's last.
+      // Its right: the stage switch, one pressed stage, then the wiki card toggle, last.
       const groups = screen.queryAllByRole('group', { name: 'Stage' });
       expect(groups).toHaveLength(1);
       expect(bar.contains(groups[0])).toBe(true);
       const stages = within(groups[0]).getAllByRole('button');
       for (const t of stages) expect(t).toHaveAttribute('aria-pressed');
       expect(stages.filter((t) => t.getAttribute('aria-pressed') === 'true')).toHaveLength(1);
-      expect(within(bar).getByRole('button', { name: /the wiki card$/ })).toBeInTheDocument();
-      const sideBar = screen.getByRole('button', { name: /the side bar$/, expanded: !narrow });
-      expect(bar.contains(sideBar)).toBe(true);
+      const card = within(bar).getByRole('button', { name: /the wiki card$/ });
       const actions = [...bar.querySelectorAll('.page-bar-actions button')];
-      expect(actions[actions.length - 1]).toBe(sideBar);
+      expect(actions[actions.length - 1]).toBe(card);
       if (!narrow) for (const t of stages) expect(t).toHaveClass('icon-button');
       // No panes and no pane headers: a stage's own controls float as its tools, inside the stage, never in the page bar.
       expect(document.querySelector('.pane, .pane-bar')).toBeNull();

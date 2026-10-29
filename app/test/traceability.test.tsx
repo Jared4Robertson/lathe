@@ -18,8 +18,8 @@ import { indexOf } from './fixtures/load';
 afterEach(() => cleanup());
 
 /** Renders one record's content on its own, as a host does. */
-function show(index: SpecIndex, id: string, side = false) {
-  render(<RecordContent index={index} id={id} onNavigate={vi.fn()} side={side} />);
+function show(index: SpecIndex, id: string) {
+  render(<RecordContent index={index} id={id} onNavigate={vi.fn()} />);
   return screen.getByRole('heading', { level: 2, name: 'Traceability' }).closest('section') as HTMLElement;
 }
 /** The group headings inside the Traceability section, in order, without their counts. */

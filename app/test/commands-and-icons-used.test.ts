@@ -8,7 +8,6 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { COMMANDS, SPACE_KEYS, spaceCommandId } from '../src/shell/keymap';
-import { SIDE_VIEW_ICONS } from '../src/views/sideBarState';
 import { STAGE_NAMES } from '../src/views/address';
 
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../src');
@@ -59,7 +58,6 @@ describe('LA-STD-PRINCIPLES-R04-T03 icons', () => {
     const drawn = new Set([
       ...[...outsideIcons.matchAll(/\b(?:name|icon)=(?:"([^"]+)"|\{([^}]+)\})/g)].flatMap((m) => (m[1] ? [m[1]] : quoted(m[2]))),
       ...[...outsideIcons.matchAll(/\bicon:\s*'([^']+)'/g)].map((m) => m[1]),
-      ...Object.values(SIDE_VIEW_ICONS),
       ...STAGE_NAMES,
     ]);
     expect(icons.filter((name) => !drawn.has(name))).toEqual([]);
