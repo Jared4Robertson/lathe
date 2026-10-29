@@ -303,15 +303,15 @@ test.describe('graph', () => {
     await page.locator('.erd-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
     const keys = ['.stage-layout > .page-bar', '.header-strip', '.focus-stage .erd-tools', ERD_CANVAS, '.focus-stage .erd-key'];
-    // An aggregate's boundary holds its entities: its head is where the boundary itself takes a click.
-    const box = page.locator('.erd-flow .react-flow__node .erd-aggregate .erd-box-head').first();
+    // On the product's one map, the boxes in the domain's scope: an aggregate's boundary holds its entities, so its head is where the boundary itself takes a click.
+    const box = page.locator('.erd-flow .react-flow__node:not([aria-hidden]) .erd-aggregate .erd-box-head').first();
     const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.side-bar'] }, async () => {
       await box.click();
       await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
       await page.locator('.erd-flow .react-flow__node').first().waitFor();
     });
     expectStable(r);
-    const entity = page.locator('.erd-flow .react-flow__node:not(:has(.is-focus))').first();
+    const entity = page.locator('.erd-flow .react-flow__node:not([aria-hidden]):not(:has(.is-focus)):has(.erd-entity)').first();
     const before = new URL(page.url()).pathname;
     const e = await step(page, 'graph', 'ERD: aggregate to entity', { keys, allow: ['.side-bar'] }, async () => {
       await entity.click();
@@ -357,9 +357,6 @@ async function labeledInView(page: Page, orFocus = false): Promise<{ id: string;
   throw new Error('no labeled record box in view');
 }
 
-/** A flow step of RECORD's use case: it invokes a query, fulfills a requirement and happens in a view, so Links has something to draw. */
-const LINKED = `${RECORD}-FL01-S01`;
-
 /** The table: each feature of the graph, checked the same way in either layout. */
 const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<void> }[] = [
   {
@@ -367,23 +364,6 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     run: async (page, layout) => {
       await expect(page.locator('.focus-stage .graph-layout button[aria-pressed="true"]')).toHaveText(LAYOUT_NAMES[layout]);
       await expect(page.locator(GRAPH)).toHaveAttribute('data-layout', layout);
-    },
-  },
-  {
-    feature: 'Links draws the focus\'s links as curves (on a flow step, which invokes a query, fulfills a requirement and happens in a view)',
-    run: async (page) => {
-      // The use case has no links of its own: its flow's first step has, so the graph goes there and back, in the app.
-      const here = path(page);
-      await page.evaluate((to) => { window.history.pushState(null, '', `${to}?stage=graph`); window.dispatchEvent(new PopStateEvent('popstate')); }, LINKED);
-      await page.waitForURL((u) => u.pathname === LINKED);
-      await page.waitForTimeout(900);
-      await page.locator('.focus-stage .graph-links button').click();
-      await expect.poll(async () => (await sceneOf(page)).lines.filter((l) => l.link).length).toBeGreaterThan(0);
-      await page.locator('.focus-stage .graph-links button').click();
-      await expect.poll(async () => (await sceneOf(page)).lines.filter((l) => l.link).length).toBe(0);
-      await page.goBack();
-      await page.waitForURL((u) => u.pathname === here);
-      await page.waitForTimeout(900);
     },
   },
   {

@@ -39,13 +39,17 @@ describe('LA-PAT-APP-UX-R18 Panels never crowd the page', () => {
   it('LA-PAT-APP-UX-R18-T01 Panels collapse for space side bar first, then the wiki card, then the nav, never the chat, and titles never break mid-word', () => {
     // With every panel open, from the widest window down.
     expect(sorted(crowded(room(1920)))).toEqual([]);
-    expect(sorted(crowded(room(1440)))).toEqual(['sideBar']);
+    // The card's 28 px right gap: at 1440 px with the chat open the card gives way too; from 1456 px it fits.
+    expect(sorted(crowded(room(1456)))).toEqual(['sideBar']);
+    expect(sorted(crowded(room(1440)))).toEqual(['card', 'sideBar']);
     expect(sorted(crowded(room(1280)))).toEqual(['card', 'sideBar']);
     expect(sorted(crowded(room(1024)))).toEqual(['card', 'nav', 'sideBar']);
     // Without the chat, 1440 px holds them all.
     expect(sorted(crowded(room(1440, { chat: null })))).toEqual([]);
+    expect(sorted(crowded(room(1280, { chat: null })))).toEqual(['sideBar']);
+    expect(sorted(crowded(room(1024, { chat: null })))).toEqual(['card', 'sideBar']);
     // Whatever collapses leaves the stage its minimum, and the card its own (the chat never gives way).
-    for (const width of [1024, 1280, 1440, 1920]) expect(openWidth(room(width), crowded(room(width)))).toBeGreaterThanOrEqual(STAGE_MIN);
+    for (const width of [1024, 1280, 1440, 1456, 1920]) expect(openWidth(room(width), crowded(room(width)))).toBeGreaterThanOrEqual(STAGE_MIN);
     expect(CARD_MIN).toBeGreaterThanOrEqual(360);
     // A panel the Reader closed takes no room and is never "collapsed for space".
     expect(sorted(crowded(room(1280, { sideBar: null })))).toEqual(['card']);

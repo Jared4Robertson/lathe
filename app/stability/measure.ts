@@ -198,7 +198,7 @@ export async function installProbes(page: Page, firstKeys: string[] = []) {
       }
       // They read the wiki card's whole page (More), as a Reader who expanded it (it opens as a summary).
       if (!sessionStorage.getItem('lathe:session-settings')) {
-        sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
+        sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
       }
     } catch { /* storage unavailable: the defaults apply */ }
   });

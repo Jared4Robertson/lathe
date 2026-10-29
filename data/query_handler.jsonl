@@ -14,7 +14,7 @@
 {"id":"LA-EXP-QRY06-H","title":"DomainWiki","query_id":"LA-EXP-QRY06","file":"app/src/specs/SpecPages.tsx","description":"DomainWiki"}
 {"id":"LA-EXP-QRY07-H","title":"GroupWiki","query_id":"LA-EXP-QRY07","file":"app/src/views/WikiCard.tsx","description":"A group's page, `GroupWiki`, in the wiki card."}
 {"id":"LA-EXP-QRY08-H","title":"neighborhood","query_id":"LA-EXP-QRY08","file":"app/src/graph/model.ts","description":"neighborhood, treeColumns, the group functions"}
-{"id":"LA-EXP-QRY10-H","title":"erdFor","query_id":"LA-EXP-QRY10","file":"app/src/erd/erd.ts","description":"erdFor, modelScope"}
+{"id":"LA-EXP-QRY10-H","title":"erdFocus","query_id":"LA-EXP-QRY10","file":"app/src/erd/erd.ts","description":"erdMap, erdFocus, erdStrength and scopeContents: the product's map, and what a focus fades, picks out and frames on it."}
 {"id":"LA-EXP-QRY11-H","title":"recordTables","query_id":"LA-EXP-QRY11","file":"lathe/src/server/history.ts","description":"recordTables, parseLog, changesInDiff"}
 {"id":"LA-EXP-QRY12-H","title":"ProductsPicker","query_id":"LA-EXP-QRY12","file":"app/src/views/ProductsPicker.tsx","description":"The products picker, `ProductsPicker`, and the rail's list, `SpaceRail`."}
 {"id":"LA-PLT-QRY01-H","title":"loadWorkspace","query_id":"LA-PLT-QRY01","file":"lathe/src/index.ts","description":"loadWorkspace (la-chk.md's QRY01-H names it too)"}
