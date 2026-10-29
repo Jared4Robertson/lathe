@@ -17,7 +17,7 @@ const view = schema.tables.view;
 const reads = schema.tables.reads;
 
 const line = (row: object) => `${JSON.stringify(row)}\n`;
-const v = (n: number, title = `View ${n}`) => line({ id: `TL-V0${n}`, title });
+const v = (n: number, title = `View ${n}`) => line({ id: `TL-V0${n}`, title, description: 'A page of the desk app.' });
 
 describe('mergeData', () => {
   it('LA-AUT-UC19-R01-T01 keeps the rows both sides added, sorted', async () => {

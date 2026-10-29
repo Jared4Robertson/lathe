@@ -37,10 +37,10 @@ const UC = 'EX-NOTE-UC01';
 async function seed(root: string) {
   const s = await openStore(root);
   await s.apply([
-    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core' } },
-    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1 } },
-    { op: 'add', table: 'use_case', row: { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01' } },
+    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example', description: 'A small product for writing notes.' } },
+    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' } },
+    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' } },
+    { op: 'add', table: 'use_case', row: { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' } },
   ]);
   return s;
 }

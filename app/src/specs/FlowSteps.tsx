@@ -1,7 +1,6 @@
 import { Fragment, useState } from 'react';
 import { Icon } from '../components/icons';
 import { textOf, kindLabel, type SpecIndex, type SpecRecord } from './data';
-import { Prose } from './mentions';
 import { ProblemBadge, RecordLink, Section } from './parts';
 import { Button } from '../components/Button';
 
@@ -9,8 +8,8 @@ import { Button } from '../components/Button';
 // query it invokes, the view it happens in, the UC requirements it fulfills and the integrations it
 // exchanges with. A flow with several paths shows a table per path, main first, then the others by
 // name, each in its own order. Each row shows one level: the step's title and the IDs it links to.
-// What sits a level deeper (the step's description, and the titles and kinds of what it links to) is
-// folded under the row's disclosure triangle, as in every other list.
+// What sits a level deeper (the titles and kinds of what it links to) is folded under the row's
+// disclosure triangle, as in every other list. A step has no text beyond its title.
 
 /** The link columns after "What happens", each a relation a step starts. */
 const COLUMNS: readonly { relation: string; heading: string }[] = [
@@ -144,7 +143,7 @@ export function FlowSteps({ index, flow }: { index: SpecIndex; flow: SpecRecord 
                     <tr className="flow-step-detail">
                       <td colSpan={2 + linked.length}>
                         <div className="flow-step-more" role="region" aria-label={`Details of ${step.id}`}>
-                          {textOf(step.row, 'description').trim() ? <Prose index={index} source={textOf(step.row, 'description')} self={step.id} /> : <p className="hint">The step says nothing more.</p>}
+                          {linked.every((c) => c.ids.length === 0) && <p className="hint">The step links to nothing.</p>}
                           {linked.map((c) => <TitledLinks key={c.relation} index={index} ids={c.ids} heading={c.heading} />)}
                         </div>
                       </td>

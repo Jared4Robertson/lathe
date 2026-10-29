@@ -1,2 +1,2 @@
-{"id":"DM-PAY-CAP01","title":"Paying","domain_id":"DM-PAY","position":1}
-{"id":"DM-SHOP-CAP01","title":"Buying","domain_id":"DM-SHOP","position":1}
+{"id":"DM-PAY-CAP01","title":"Paying","domain_id":"DM-PAY","position":1,"description":"The fixture's capability Paying."}
+{"id":"DM-SHOP-CAP01","title":"Buying","domain_id":"DM-SHOP","position":1,"description":"The fixture's capability Buying."}

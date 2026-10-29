@@ -6,7 +6,7 @@ CREATE TABLE capability (
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_id VARCHAR NOT NULL REFERENCES domain (id),
   position INTEGER NOT NULL CHECK (position >= 1),
-  description VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
   UNIQUE (domain_id, position)
 );
 COMMENT ON TABLE capability IS 'An ordered slice of a domain that groups its use cases, such as Catalog or Lending.';
@@ -20,14 +20,14 @@ CREATE TABLE use_case (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   capability_id VARCHAR NOT NULL REFERENCES capability (id),
-  goal VARCHAR,
+  goal VARCHAR NOT NULL CHECK (trim(goal) <> ''),
   notes VARCHAR
 );
 COMMENT ON TABLE use_case IS 'An actor''s goal: its actors (use_case_actor rows), its UC requirements and its flows, one per interface it happens through. It changes nothing itself; its flows'' steps invoke commands and queries.';
 COMMENT ON COLUMN use_case.id IS 'The use case''s ID, such as TL-LEND-UC01.';
 COMMENT ON COLUMN use_case.title IS 'What the actor does, such as Borrow a tool.';
 COMMENT ON COLUMN use_case.capability_id IS 'The capability it sits in.';
-COMMENT ON COLUMN use_case.goal IS 'What the actor wants to reach, in a sentence.';
+COMMENT ON COLUMN use_case.goal IS 'What the actor wants to reach and from where they start, in a sentence or a short paragraph.';
 COMMENT ON COLUMN use_case.notes IS 'Longer notes, such as the order in which refusals are reported.';
 
 CREATE TABLE use_case_actor (
@@ -60,7 +60,7 @@ CREATE TABLE pattern (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   product_id VARCHAR NOT NULL REFERENCES product (id),
-  description VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
   notes VARCHAR
 );
 COMMENT ON TABLE pattern IS 'Behavior several use cases share, stated once with the settings each use case that follows it fills in. Its settings are pattern_setting rows and its rules pattern_rule records.';
@@ -74,7 +74,7 @@ CREATE TABLE pattern_setting (
   pattern_id VARCHAR NOT NULL REFERENCES pattern (id),
   position INTEGER NOT NULL CHECK (position >= 1),
   name VARCHAR NOT NULL CHECK (regexp_full_match(name, '[a-z][a-z0-9_]*')),
-  meaning VARCHAR,
+  meaning VARCHAR NOT NULL CHECK (trim(meaning) <> ''),
   PRIMARY KEY (pattern_id, position),
   UNIQUE (pattern_id, name)
 );

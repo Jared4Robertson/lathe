@@ -61,22 +61,24 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 | Kind | Parent | ID | Holds |
 | --- | --- | --- | --- |
-| `domain` | the product | `<P>-<D>` | `subdomain_type`; `description`: what it covers. |
-| `aggregate` | the domain | `<P>-<D>-A<n>` | The consistency boundary, named for its root. `identity`: what tells two apart in the business. |
-| `entity` | an aggregate | `<P>-<D>-EN<nn>` | A record with an identity. `role`: `root` (exactly one per aggregate) or `child`; `in_root_table: true` for a child stored in its root's table. Its fields are `entity_field` rows. |
-| `command` | an aggregate | `<P>-<D>-CMD<nn>` | A request to change that one aggregate, named as an imperative (Borrow a tool). Links: `raises` events, `checks` specifications, `calls` domain services. |
-| `domain_event` | an aggregate | `<P>-<D>-EV<nn>` | Something that happened, in the past tense (Loan opened). `published`: whether other domains may hear it. Its fields are `event_field` rows. |
+| `domain` | the product | `<P>-<D>` | `subdomain_type`; `description`: what it covers, in a paragraph. |
+| `aggregate` | the domain | `<P>-<D>-A<n>` | The consistency boundary, named for its root. `identity`: what tells two apart in the business; `description`: what it keeps and why its entities change together, in a paragraph. |
+| `entity` | an aggregate | `<P>-<D>-EN<nn>` | A record with an identity. `role`: `root` (exactly one per aggregate) or `child`; `in_root_table: true` for a child stored in its root's table; `description`: what it is, in a sentence or two. Its fields are `entity_field` rows. |
+| `command` | an aggregate | `<P>-<D>-CMD<nn>` | A request to change that one aggregate, named as an imperative (Borrow a tool); `description`: what it changes and when it is refused, in a sentence or two, never how its handler does it. Links: `raises` events, `checks` specifications, `calls` domain services. |
+| `domain_event` | an aggregate | `<P>-<D>-EV<nn>` | Something that happened, in the past tense (Loan opened); `description`: what happened and what brings it about, in a sentence. `published`: whether other domains may hear it. Its fields are `event_field` rows. |
 | `invariant` | an aggregate | `<P>-<D>-INV<nn>` | `statement`: what holds for that aggregate on every change. |
-| `value_object` | none | `<P>-VO<nn>` | A value with no identity, such as an email address. Its fields are `value_object_field` rows when it has more than one part. |
+| `value_object` | none | `<P>-VO<nn>` | A value with no identity, such as an email address; `description`: what the value is, in a sentence or two. Its fields are `value_object_field` rows when it has more than one part. |
 | `constraint` | a value object | `<value object>-C<nn>` | `statement`: the value object's own rule, checked when a value is created. |
 | `specification` | none | `<P>-<D>-SP<nn>` | `statement`: a named yes-or-no predicate. Links: `reads` the aggregates it reads, all of its domain. |
 | `policy` | the command it invokes | `<P>-<D>-PO<nn>` | `statement`: whenever an event, then this command. Link: `hears` its one event. |
-| `read_model` | the domain | `<P>-<D>-RM<nn>` | A view of the domain's data shaped for reading. Its fields are `read_model_field` rows. Link: `reads` the aggregates it reads. |
-| `query` | a read model | `<P>-<D>-QRY<nn>` | A question asked of that read model; it changes nothing. Links: `selects_by` specifications, `calls` domain services. |
+| `read_model` | the domain | `<P>-<D>-RM<nn>` | A view of the domain's data shaped for reading; `description`: what it shows and from what, in a sentence or two. Its fields are `read_model_field` rows. Link: `reads` the aggregates it reads. |
+| `query` | a read model | `<P>-<D>-QRY<nn>` | A question asked of that read model; it changes nothing. `description`: what it returns, in what order, in a sentence or two. Links: `selects_by` specifications, `calls` domain services. |
 | `domain_service` | the domain | `<P>-<D>-DS<nn>` | `statement`: domain logic that belongs to no single entity and is not a yes-or-no check, such as a due date or a late fee. |
 | `term` | the domain | `<P>-<D>-TM<nn>` | The word as `title`, and `meaning`: what it means in this domain. |
 
 Every `statement` is one rule in one sentence or two, with MUST / MUST NOT where it is a rule.
+
+Every kind's text is required or absent (`LA-STD-MODELING-R10`): each kind above has one lead (`statement`, `meaning` or `description`), and the store refuses a record without it. Write what a reader cannot get from the title, the parent and the links, and never restate another record.
 
 ## Naming
 

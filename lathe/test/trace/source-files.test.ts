@@ -58,13 +58,13 @@ describe('source file tracing', () => {
 
   it('LA-TRC-UC02-R12-T01 a source file no technical record names is a gap; tests, configs, generated files and build output are left out', async () => {
     const data = {
-      product: [{ id: 'EX', title: 'Example' }],
-      domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', subdomain_type: 'core' }],
-      aggregate: [{ id: 'EX-LEND-A1', title: 'Loan', domain_id: 'EX-LEND' }],
-      repository: [{ id: 'EX-LEND-REPO01', title: 'Loans', domain_id: 'EX-LEND', file: 'src/lending' }],
+      product: [{ id: 'EX', title: 'Example', description: 'A small library that lends tools.' }],
+      domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', subdomain_type: 'core', description: 'Lending tools to members.' }],
+      aggregate: [{ id: 'EX-LEND-A1', title: 'Loan', domain_id: 'EX-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' }],
+      repository: [{ id: 'EX-LEND-REPO01', title: 'Loans', domain_id: 'EX-LEND', file: 'src/lending', description: 'Keeps loans in the loans table.' }],
       persists: [{ source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A1' }],
-      command: [{ id: 'EX-LEND-CMD01', title: 'Open a loan', aggregate_id: 'EX-LEND-A1' }],
-      command_handler: [{ id: 'EX-LEND-CMD01-H', title: 'openLoan', command_id: 'EX-LEND-CMD01', file: './src/open.ts' }],
+      command: [{ id: 'EX-LEND-CMD01', title: 'Open a loan', aggregate_id: 'EX-LEND-A1', description: 'Lends a free tool to a member.' }],
+      command_handler: [{ id: 'EX-LEND-CMD01-H', title: 'openLoan', command_id: 'EX-LEND-CMD01', file: './src/open.ts', description: 'Saves the loan in one transaction.' }],
     };
     const root = await build(data, { missing: ['src/lending'], files: { ...LEFT_OUT, 'src/lending/store.ts': '', 'src/helpers.ts': '', 'scripts/seed.js': '' } });
     const ws = await loadWorkspace(root);

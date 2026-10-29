@@ -4,7 +4,7 @@
 CREATE TABLE product (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
-  description VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
   icon VARCHAR,
   color VARCHAR,
   notes VARCHAR
@@ -20,13 +20,13 @@ COMMENT ON COLUMN product.notes IS 'Longer notes on the product, such as how it 
 CREATE TABLE role (
   product_id VARCHAR NOT NULL REFERENCES product (id),
   name VARCHAR NOT NULL CHECK (trim(name) <> ''),
-  description VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
   PRIMARY KEY (product_id, name)
 );
 COMMENT ON TABLE role IS 'A role the product''s records name, such as Owner, Reader or Agent: a use case''s actors and a question''s owner. Specs name roles, never people.';
 COMMENT ON COLUMN role.product_id IS 'The product.';
 COMMENT ON COLUMN role.name IS 'The role''s name, such as Librarian.';
-COMMENT ON COLUMN role.description IS 'Who takes the role and what they do.';
+COMMENT ON COLUMN role.description IS 'Who takes the role and what they do in the product, in a sentence.';
 
 CREATE TABLE product_setting (
   product_id VARCHAR PRIMARY KEY REFERENCES product (id),

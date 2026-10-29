@@ -24,7 +24,7 @@ function productRepo(): string {
   roots.push(root);
   writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   mkdirSync(path.join(root, 'data'));
-  writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library"}\n');
+  writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library","description":"A neighborhood tool library."}\n');
   mkdirSync(path.join(root, 'node_modules', '.bin'), { recursive: true });
   const shim = path.join(root, 'node_modules', '.bin', 'lathe');
   writeFileSync(shim, `#!/bin/sh\nexec ${JSON.stringify(process.execPath)} ${JSON.stringify(bin)} "$@"\n`);
@@ -151,7 +151,7 @@ describe('the MCP launcher', () => {
     expect(code).toBe(0);
     const messages = out.trim().split('\n').map((l) => JSON.parse(l));
     expect(messages[0].result.serverInfo.name).toBe('lathe');
-    expect(messages[1].result.content[0].text).toBe('Product TL: Tool Library\n  kind: product');
+    expect(messages[1].result.content[0].text).toBe('Product TL: Tool Library\n  kind: product\n  description: A neighborhood tool library.');
   });
 
   it('LA-PLT-UC18-R01-T01 LA-PLT-UC18-FL04-T warns once, in the first tool result, when the installed Lathe is not the major version the skills were written for', async () => {
@@ -176,14 +176,14 @@ describe('the MCP launcher', () => {
     const other = await results(`${major + 1}.3.0`);
     expect(other.calls).toEqual([
       [
-        'Product TL: Tool Library\n  kind: product',
+        'Product TL: Tool Library\n  kind: product\n  description: A neighborhood tool library.',
         `Warning: the Lathe plugin's skills were written for Lathe ${major}.x, but ${other.root} has Lathe ${major + 1}.3.0 (schema 7). ` +
           "The tools match the installed Lathe, but the skills may name tables, columns or steps it does not have: update the plugin or the product's @jaredrob/lathe so their major versions match.",
       ],
-      ['Product TL: Tool Library\n  kind: product'],
+      ['Product TL: Tool Library\n  kind: product\n  description: A neighborhood tool library.'],
     ]);
     // The same major version: no warning.
-    expect((await results(`${major}.9.1`)).calls).toEqual([['Product TL: Tool Library\n  kind: product'], ['Product TL: Tool Library\n  kind: product']]);
+    expect((await results(`${major}.9.1`)).calls).toEqual([['Product TL: Tool Library\n  kind: product\n  description: A neighborhood tool library.'], ['Product TL: Tool Library\n  kind: product\n  description: A neighborhood tool library.']]);
   });
 
   it('LA-INT01-T03 LA-PLT-UC18-R02-T01 says why it cannot start outside a Lathe repo', () => {

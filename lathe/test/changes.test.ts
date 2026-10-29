@@ -16,13 +16,13 @@ beforeAll(async () => {
   root = configuredRoot('lathe-changes-');
   store = await openStore(root);
   await store.apply([
-    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example' } },
-    { op: 'add', table: 'role', row: { product_id: 'EX', name: 'Writer' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core' } },
-    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1 } },
-    { op: 'add', table: 'pattern', row: { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX' } },
-    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01' } },
-    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC02', title: 'Throw a note away', capability_id: 'EX-NOTE-CAP01' } },
+    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example', description: 'A small product for writing notes.' } },
+    { op: 'add', table: 'role', row: { product_id: 'EX', name: 'Writer', description: 'Someone who writes notes.' } },
+    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' } },
+    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' } },
+    { op: 'add', table: 'pattern', row: { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX', description: 'An action on one note.' } },
+    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.' } },
+    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC02', title: 'Throw a note away', capability_id: 'EX-NOTE-CAP01', goal: 'A writer drops a note they no longer need.' } },
   ]);
 }, 60_000);
 
@@ -35,11 +35,11 @@ describe('the record diff', () => {
   it('LA-EXP-UC15-R01-T01 One definition of what changed: records added, removed and changed field by field, their part rows, and the links they start', async () => {
     const before = tablesOf(store);
     await store.apply([
-      { op: 'set', table: 'use_case', key: 'EX-NOTE-UC01', changes: { title: 'Write a short note', goal: 'A writer keeps a thought.' } },
+      { op: 'set', table: 'use_case', key: 'EX-NOTE-UC01', changes: { title: 'Write a short note', goal: 'A writer keeps a short thought.' } },
       { op: 'add', table: 'use_case_actor', row: { use_case_id: 'EX-NOTE-UC01', position: 1, role_name: 'Writer' } },
       { op: 'link', relation: 'follows', source: 'EX-NOTE-UC01', target: 'EX-PAT-NOTE' },
       { op: 'remove', table: 'use_case', key: 'EX-NOTE-UC02' },
-      { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC03', title: 'Share a note', capability_id: 'EX-NOTE-CAP01' } },
+      { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC03', title: 'Share a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer lets someone else read a note.' } },
     ]);
     const after = tablesOf(store);
     const changes = recordChanges(store.schema, before, after);
@@ -47,7 +47,7 @@ describe('the record diff', () => {
     const [changed, removed, added] = changes;
     expect(changed).toEqual({
       id: 'EX-NOTE-UC01', kind: 'use_case', title: 'Write a short note', change: 'changed',
-      fields: [{ name: 'title', before: 'Write a note', after: 'Write a short note' }, { name: 'goal', after: 'A writer keeps a thought.' }],
+      fields: [{ name: 'title', before: 'Write a note', after: 'Write a short note' }, { name: 'goal', before: 'A writer keeps a thought.', after: 'A writer keeps a short thought.' }],
       parts: [{ table: 'use_case_actor', key: 'use_case_id EX-NOTE-UC01, position 1', change: 'added', fields: [{ name: 'use_case_id', after: 'EX-NOTE-UC01' }, { name: 'position', after: 1 }, { name: 'role_name', after: 'Writer' }] }],
       links: { added: [{ relation: 'follows', target: 'EX-PAT-NOTE' }], removed: [] },
     });

@@ -25,7 +25,7 @@ When a write changes the product's kinds or relations, the tools' input schemas 
 | You add | Effect |
 | --- | --- |
 | A `product_kind` row | Adds the kind and its table, named after it: `id`, `title`, `<parent_kind>_id` (required: its one parent, of one of Lathe's kinds or another product kind), then its fields. `label` is how people read it, `description` what a record of it is, `stage` the stage it belongs to, `obligation` whether its records are obligations, `id_pattern` and `id_example` how its IDs are written. |
-| A `product_kind_field` row | Adds a column to that kind's table: `name` (lower case with underscores; not `id`, `title` or the parent column), `type` (`text`, `integer`, `boolean` or `date`), `required`, `description`, in `position` order. |
+| A `product_kind_field` row | Adds a column to that kind's table: `name` (lower case with underscores; not `id`, `title` or the parent column), `type` (`text`, `integer`, `boolean` or `date`), `required`, `description`, in `position` order. A field named `statement`, `goal`, `meaning` or `description` is the kind's lead text, shown first on its records' pages: a kind has at most one, and it must be required (the store refuses an optional lead or a second one). |
 | A `product_relation` row with a new `name` | Adds the relation and its link table, from `source_kind` to `target_kind` (or `*` for any record), read as `forward_label` from its source and `reverse_label` from its target, each in sentence case. Its links stay inside one product. |
 | A `product_relation` row with a name Lathe has | Lets that relation join one more pair of kinds, when its link table's ends accept the two kinds. Most of Lathe's link tables accept only the kinds they name, so this is rare; a new relation is the usual way. Reuse Lathe's labels for it. |
 
@@ -60,7 +60,7 @@ add  { "product_kind": { "name": "entry_point", "product_id": "TL", "label": "En
        "id_pattern": "<domain>-ENTRY<nn>", "id_example": "TL-LEND-ENTRY01" } }
 add  { "product_kind_field": { "kind": "entry_point", "position": 1, "name": "file", "type": "text", "required": true,
        "description": "The file, from the product root." } }
-add  { "product_kind_field": { "kind": "entry_point", "position": 2, "name": "description", "type": "text", "required": false,
+add  { "product_kind_field": { "kind": "entry_point", "position": 2, "name": "description", "type": "text", "required": true,
        "description": "What it does at start-up." } }
 ```
 
@@ -80,6 +80,8 @@ link { "source": "TL-LEND-ENTRY01", "relation": "starts_up", "target": "TL-LEND-
 ```
 
 Give every kind, field and relation a plain `description`; the app shows it.
+
+Every kind's text is required or absent (`LA-STD-MODELING-R10`). Give a kind a lead field only when its records need text the title, parent, links and other fields cannot say, such as what an entry point does at start-up; then it is required. A code-bound kind whose title and file say what it is, such as tooling or a shared module, has none.
 
 ## Naming a product kind's records
 
@@ -104,6 +106,6 @@ Run the `check` tool after adding one and fix what it finds; a check whose query
 ## Rules
 
 - Keep each `description` a plain sentence; the app shows it.
-- A required field must be given by every record of the kind, so a write that makes it required while a record lacks it is refused. On a kind that has records, add the field with `required: false`, `set` it on each record, then `set` the field's `required` to true.
+- A required field must be given by every record of the kind, so a write that makes it required while a record lacks it is refused. On a kind that has records, add the field with `required: false`, `set` it on each record, then `set` the field's `required` to true. A lead field cannot pass through optional: declare it before the kind has records, or add it in one write with each record's text, through the app or `POST /api/write` (`{ "commands": [ { "op": "add", "table": "product_kind_field", "row": … }, { "op": "set", "table": "<kind>", "key": "<id>", "changes": { "description": "…" } }, … ] }`).
 - To remove a kind, first `remove` its records, then its fields and declaration; a declaration still in use is refused.
 - Finish with the `check-and-fix` skill, and report the new coverage lines for a new obligation kind.

@@ -17,17 +17,17 @@ const field = (entity_id: string, position: number, name: string, more: Record<s
 
 /** Members, loans and tools in one domain, each with a table in db/schema.sql, and a view of members in db/views.sql. */
 const LIBRARY: Data = {
-  product: [{ id: 'PX', title: 'Product X' }],
-  domain: [{ id: 'PX-LEND', title: 'Lending', product_id: 'PX', subdomain_type: 'core' }],
+  product: [{ id: 'PX', title: 'Product X', description: 'A library that lends tools to members.' }],
+  domain: [{ id: 'PX-LEND', title: 'Lending', product_id: 'PX', subdomain_type: 'core', description: 'Lending tools to members.' }],
   aggregate: [
-    { id: 'PX-LEND-A1', title: 'Member', domain_id: 'PX-LEND' },
-    { id: 'PX-LEND-A2', title: 'Loan', domain_id: 'PX-LEND' },
-    { id: 'PX-LEND-A3', title: 'Tool', domain_id: 'PX-LEND' },
+    { id: 'PX-LEND-A1', title: 'Member', domain_id: 'PX-LEND', identity: 'Member ID', description: 'Someone who may borrow.' },
+    { id: 'PX-LEND-A2', title: 'Loan', domain_id: 'PX-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' },
+    { id: 'PX-LEND-A3', title: 'Tool', domain_id: 'PX-LEND', identity: 'Tool ID', description: 'A tool the library holds.' },
   ],
   entity: [
-    { id: 'PX-LEND-EN01', title: 'Member', aggregate_id: 'PX-LEND-A1', role: 'root' },
-    { id: 'PX-LEND-EN02', title: 'Loan', aggregate_id: 'PX-LEND-A2', role: 'root' },
-    { id: 'PX-LEND-EN03', title: 'Tool', aggregate_id: 'PX-LEND-A3', role: 'root' },
+    { id: 'PX-LEND-EN01', title: 'Member', aggregate_id: 'PX-LEND-A1', role: 'root', description: 'The member.' },
+    { id: 'PX-LEND-EN02', title: 'Loan', aggregate_id: 'PX-LEND-A2', role: 'root', description: 'The loan.' },
+    { id: 'PX-LEND-EN03', title: 'Tool', aggregate_id: 'PX-LEND-A3', role: 'root', description: 'The tool.' },
   ],
   entity_field: [
     field('PX-LEND-EN01', 1, 'Member ID', { type: 'whole number', column_name: 'id' }),
@@ -38,7 +38,7 @@ const LIBRARY: Data = {
     field('PX-LEND-EN02', 3, 'Due date', { type: 'date' }),
     field('PX-LEND-EN03', 1, 'Tool ID', { type: 'whole number', column_name: 'id' }),
   ],
-  read_model: [{ id: 'PX-LEND-RM01', title: 'Member list', domain_id: 'PX-LEND' }],
+  read_model: [{ id: 'PX-LEND-RM01', title: 'Member list', domain_id: 'PX-LEND', description: 'Every member, by name.' }],
   read_model_field: [
     { read_model_id: 'PX-LEND-RM01', position: 1, name: 'Member ID', meaning: 'The member.', type: 'whole number', required: true, column_name: 'id' },
     { read_model_id: 'PX-LEND-RM01', position: 2, name: 'Name', meaning: 'What the list shows.', type: 'text', required: true },
@@ -97,15 +97,15 @@ describe('A table kept in a database is checked against the file that creates it
     const data: Data = {
       ...LIBRARY,
       value_object: [
-        { id: 'PX-VO01', title: 'Money' },
-        { id: 'PX-VO02', title: 'Email address' },
+        { id: 'PX-VO01', title: 'Money', description: 'An amount in one currency.' },
+        { id: 'PX-VO02', title: 'Email address', description: 'Where a member gets mail.' },
       ],
       value_object_field: [
         { value_object_id: 'PX-VO01', position: 1, name: 'Amount', meaning: 'How much.', type: 'decimal', required: true },
         { value_object_id: 'PX-VO01', position: 2, name: 'Currency code', meaning: 'Which money.', type: 'text', required: true, column_name: 'currency' },
         { value_object_id: 'PX-VO02', position: 1, name: 'Address', meaning: 'The address.', type: 'text', required: true },
       ],
-      entity: [...LIBRARY.entity, { id: 'PX-LEND-EN04', title: 'Return', aggregate_id: 'PX-LEND-A2', role: 'child', in_root_table: true }],
+      entity: [...LIBRARY.entity, { id: 'PX-LEND-EN04', title: 'Return', aggregate_id: 'PX-LEND-A2', role: 'child', in_root_table: true, description: 'The tool coming back.' }],
       entity_field: [
         ...LIBRARY.entity_field.filter((f) => f.entity_id !== 'PX-LEND-EN02' || f.position !== 3),
         field('PX-LEND-EN02', 3, 'Late fee', { type: undefined, type_value_object_id: 'PX-VO01' }),

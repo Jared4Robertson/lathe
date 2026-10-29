@@ -56,7 +56,7 @@ export function product(): Product {
   roots.push(root);
   writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   mkdirSync(path.join(root, 'data'));
-  writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library"}\n');
+  writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library","description":"A library that lends tools to its members."}\n');
   const lathe = (...args: string[]) => node(BIN, [...args, '--root', root]);
   return {
     root,
@@ -143,15 +143,15 @@ export const link = (source: string, relation: string, target: string): Command 
  * event, and a capability with a use case and one requirement.
  */
 export const LENDING: Command[] = [
-  add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }),
-  add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND' }),
-  add('entity', { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root' }),
+  add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
+  add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
+  add('entity', { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' }),
   add('entity_field', { entity_id: 'TL-LEND-EN01', position: 1, name: 'Loan ID', meaning: 'The loan number.', type: 'whole number', required: true, column_name: 'id' }),
-  add('command', { id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1' }),
-  add('domain_event', { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false }),
+  add('command', { id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' }),
+  add('domain_event', { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool went out on loan.' }),
   link('TL-LEND-CMD01', 'raises', 'TL-LEND-EV01'),
-  add('capability', { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1 }),
-  add('use_case', { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01' }),
+  add('capability', { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' }),
+  add('use_case', { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member takes a free tool home.' }),
   add('uc_requirement', { id: 'TL-LEND-UC01-R01', title: 'A tool on loan is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse to lend a tool that is on loan.' }),
 ];
 

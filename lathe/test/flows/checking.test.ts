@@ -28,7 +28,7 @@ describe('Checking flows', () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
-      add('view', { id: 'TL-V01', title: 'Loan page' }),
+      add('view', { id: 'TL-V01', title: 'Loan page', description: 'Shows one loan and its due date.' }),
     ]);
     // S01, S03, S04: the check prints the error, then the warnings and the coverage, and exits 1.
     const broken = tl.check();
@@ -50,7 +50,7 @@ describe('Checking flows', () => {
     expect(fixed.status).toBe(0);
     expect(fixed.stdout).toMatch(/\n0 errors, \d+ warnings?\.\n$/);
     // S02: data the store refuses is a data-refused error naming the file, the line and the rule; nothing else is checked.
-    appendFileSync(path.join(tl.root, 'data', 'domain.jsonl'), '{"id":"TL-SHOP","title":"Shop","product_id":"TL","subdomain_type":"central"}\n');
+    appendFileSync(path.join(tl.root, 'data', 'domain.jsonl'), '{"id":"TL-SHOP","title":"Shop","product_id":"TL","subdomain_type":"central","description":"Selling tools to members."}\n');
     const refused = tl.check();
     expect(refused.status).toBe(1);
     expect(refused.stdout).toContain('Errors (1):\n  [data-refused]');
@@ -61,7 +61,7 @@ describe('Checking flows', () => {
 
   it('LA-CHK-UC02-FL03-T add a check', async () => {
     const tl = product();
-    await tl.seed([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' })]);
+    await tl.seed([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' })]);
     // S01: the check as one row through the command layer.
     expect(tl.run('add', 'check', ...flags(NO_COMMAND))).toContain('Added check aggregate-without-command');
     expect(tl.read('data/check.jsonl')).toContain('"name":"aggregate-without-command"');
@@ -78,14 +78,14 @@ describe('Checking flows', () => {
     await tl.seed([
       ...LENDING,
       add('table', { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loan', storage: 'table' }),
-      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' }),
-      add('command', { id: 'TL-LEND-CMD02', title: 'Open a reminder', aggregate_id: 'TL-LEND-A1' }),
+      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
+      add('command', { id: 'TL-LEND-CMD02', title: 'Open a reminder', aggregate_id: 'TL-LEND-A1', description: 'Sets a reminder for the loan\'s due date.' }),
       { op: 'add', table: 'command_change', row: { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' } },
       add('policy', { id: 'TL-LEND-PO01', title: 'Remind on loan', command_id: 'TL-LEND-CMD02', statement: 'Whenever a loan is opened, the library MUST open its reminder.' }),
       link('TL-LEND-PO01', 'hears', 'TL-LEND-EV01'),
       add('event_type', { id: 'TL-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'TL-LEND-EV01', delivery: 'in process' }),
-      add('view', { id: 'TL-V01', title: 'Loan page' }),
-      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'integration', state: 'not automated yet' }),
+      add('view', { id: 'TL-V01', title: 'Loan page', description: 'Shows one loan and its due date.' }),
+      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'integration', state: 'not automated yet', when: 'A member borrows a tool that is on loan', then: 'The loan is refused' }),
     ]);
     // S01, S03: what nothing uses is an error.
     const ws = tl.workspace();
@@ -104,7 +104,7 @@ describe('Checking flows', () => {
     const fixed = tl.workspace();
     expect(fixed.problems.filter((p) => ['view-unused', 'test-level-not-allowed', 'event-not-by-outbox'].includes(p.check))).toEqual([]);
     // S02: a test given its parent's ID is refused once, naming its rule, file and line, and nothing that follows from it.
-    appendFileSync(path.join(tl.root, 'data', 'use_case_test.jsonl'), '{"id":"TL-LEND-UC01-R01","title":"Given its parent\'s ID","uc_requirement_id":"TL-LEND-UC01-R01","level":"service","state":"not automated yet"}\n');
+    appendFileSync(path.join(tl.root, 'data', 'use_case_test.jsonl'), '{"id":"TL-LEND-UC01-R01","title":"Given its parent\'s ID","uc_requirement_id":"TL-LEND-UC01-R01","level":"service","state":"not automated yet","when":"A member borrows a tool that is on loan","then":"The loan is refused"}\n');
     const refused = tl.workspace();
     expect(refused.problems).toHaveLength(1);
     expect(refused.problems[0]).toMatchObject({ severity: 'error', check: 'data-refused' });
@@ -113,7 +113,7 @@ describe('Checking flows', () => {
 
   it('LA-CHK-UC05-FL03-T add a product\'s own checks', async () => {
     const tl = product();
-    await tl.seed([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' })]);
+    await tl.seed([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' })]);
     // S01, S02: a house rule, as a check row with the product's product_id, in the product's data.
     tl.run('add', 'check', ...flags(NO_COMMAND));
     expect(tl.read('data/check.jsonl')).toContain('"product_id":"TL"');
@@ -123,13 +123,13 @@ describe('Checking flows', () => {
     expect(problemsOf(ws, 'aggregate-without-command')).toEqual(['TL-LEND-A2: Aggregate TL-LEND-A2 has no command.']);
     expect(names.lastIndexOf('aggregate-without-command')).toBe(names.length - 1);
     // S07: they fix what it finds and check again until it is clean of it.
-    tl.run('add', 'command', '--id', 'TL-LEND-CMD02', '--title', 'Add a tool', '--aggregate_id', 'TL-LEND-A2');
+    tl.run('add', 'command', '--id', 'TL-LEND-CMD02', '--title', 'Add a tool', '--aggregate_id', 'TL-LEND-A2', '--description', 'Puts a named tool in the catalog.');
     expect(problemsOf(tl.workspace(), 'aggregate-without-command')).toEqual([]);
     // S03: a check named like one of Lathe's is refused, naming lathe/data/check.jsonl.
     expect(tl.refused('add', 'check', ...flags({ ...NO_COMMAND, name: 'view-unused' }))).toContain('lathe/data/check.jsonl');
     // S05: a product check whose query fails is an error naming it, and the other checks still run.
     tl.run('add', 'check', ...flags({ ...NO_COMMAND, name: 'broken-house-rule', position: 2, query: 'SELECT id AS record, title AS message FROM no_such_table' }));
-    await tl.seed([add('view', { id: 'TL-V01', title: 'Loan page' })]);
+    await tl.seed([add('view', { id: 'TL-V01', title: 'Loan page', description: 'Shows one loan and its due date.' })]);
     const failing = tl.workspace();
     expect(failing.problems.filter((p) => p.message.includes('broken-house-rule')).map((p) => p.severity)).toEqual(['error']);
     expect(problemsOf(failing, 'view-unused')).toHaveLength(1);
@@ -144,8 +144,8 @@ describe('Checking flows', () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
-      add('entity', { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true }),
-      add('entity', { id: 'TL-LEND-EN03', title: 'Renewal', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true }),
+      add('entity', { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true, description: 'The tool coming back.' }),
+      add('entity', { id: 'TL-LEND-EN03', title: 'Renewal', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true, description: 'The loan running longer.' }),
       link('TL-LEND-EN01', 'has_many', 'TL-LEND-EN02'),
       link('TL-LEND-EN01', 'has_many', 'TL-LEND-EN03'),
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }),
@@ -161,7 +161,7 @@ describe('Checking flows', () => {
     expect(problemsOf(ws, 'lone-child').sort()).toEqual([expect.stringMatching(/^TL-LEND-CAP01: /), expect.stringMatching(/^TL-LEND-UC01: .*"Dates"/)]);
     // S04: they add a level, merge one and raise nothing, then check again.
     tl.run('set', 'product_setting', '--product_id', 'TL', '--max_children', '15', '--max_entities_per_aggregate', '7');
-    tl.run('add', 'use_case', '--id', 'TL-LEND-UC02', '--title', 'Return a tool', '--capability_id', 'TL-LEND-CAP01');
+    tl.run('add', 'use_case', '--id', 'TL-LEND-UC02', '--title', 'Return a tool', '--capability_id', 'TL-LEND-CAP01', '--goal', 'A member brings a tool back.');
     tl.run('set', 'TL-LEND-UC01-R04', '--group_name', '');
     const fixed = tl.workspace();
     expect(fixed.problems.filter((p) => ['too-many-children', 'aggregate-too-large', 'lone-child'].includes(p.check))).toEqual([]);
@@ -183,8 +183,8 @@ describe('Checking flows', () => {
     const server = mcp(tl.root);
     try {
       await server.initialize();
-      expect((await server.call('add', { domain: { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' } })).result!.isError).toBeUndefined();
-      const refused = await server.call('add', { domain: { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'central' } });
+      expect((await server.call('add', { domain: { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' } })).result!.isError).toBeUndefined();
+      const refused = await server.call('add', { domain: { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'central', description: 'Selling tools to members.' } });
       expect(refused.result!.isError).toBe(true);
       expect(refused.result!.content[0].text).toContain('subdomain_type');
     } finally {
