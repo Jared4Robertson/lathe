@@ -4,7 +4,7 @@
 {"source_id":"LA-AUT-INV08-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-INV10-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-INV11-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-INV12-T","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-AUT-INV12-T","target_id":"LA-AUT-TD40"}
 {"source_id":"LA-AUT-INV13-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-INV14-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-INV15-T","target_id":"LA-AUT-TD01"}
@@ -26,6 +26,7 @@
 {"source_id":"LA-AUT-INV31-T","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-INV32-T","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-INV38-T","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-AUT-INV70-T","target_id":"LA-AUT-TD42"}
 {"source_id":"LA-AUT-SP01-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-SP02-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-SP03-T","target_id":"LA-AUT-TD01"}
@@ -35,7 +36,6 @@
 {"source_id":"LA-AUT-SP07-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-SP08-T","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-SP09-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-SP10-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC01-FL04-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-AUT-UC01-R05-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC01-R05-T02","target_id":"LA-AUT-TD01"}
@@ -117,6 +117,7 @@
 {"source_id":"LA-AUT-UC10-R08-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-UC10-R09-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC10-R09-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-AUT-UC10-R50-T01","target_id":"LA-AUT-TD40"}
 {"source_id":"LA-AUT-UC11-FL03-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-AUT-UC11-R01-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC11-R01-T01","target_id":"LA-AUT-TD02"}
@@ -140,6 +141,7 @@
 {"source_id":"LA-AUT-UC12-R06-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-UC12-R07-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-UC12-R07-T01","target_id":"LA-TRC-TD01"}
+{"source_id":"LA-AUT-UC12-R50-T01","target_id":"LA-AUT-TD42"}
 {"source_id":"LA-AUT-UC13-FL03-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-AUT-UC13-FL04-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-AUT-UC13-R08-T01","target_id":"LA-AUT-TD01"}
@@ -200,6 +202,7 @@
 {"source_id":"LA-AUT-UC25-R02-T02","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC25-R02-T02","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-UC25-R03-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-AUT-UC25-R50-T01","target_id":"LA-AUT-TD41"}
 {"source_id":"LA-AUT-UC26-R01-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC26-R01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-CHK-DS01-T01","target_id":"LA-AUT-TD02"}
@@ -478,6 +481,9 @@
 {"source_id":"LA-STD-CODE-R01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-CODE-R01-T01","target_id":"LA-EXP-TD03"}
 {"source_id":"LA-STD-CODE-R07-T02","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-STD-CODE-R07-T30","target_id":"LA-AUT-TD40"}
+{"source_id":"LA-STD-CODE-R07-T31","target_id":"LA-AUT-TD41"}
+{"source_id":"LA-STD-CODE-R07-T32","target_id":"LA-AUT-TD42"}
 {"source_id":"LA-STD-MODELING-R01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-MODELING-R02-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-MODELING-R03-T01","target_id":"LA-AUT-TD02"}
