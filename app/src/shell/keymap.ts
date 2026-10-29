@@ -37,6 +37,18 @@ export interface Command {
 export const SPACE_KEYS = 9;
 export const spaceCommandId = (n: number) => `switchSpace${n}`;
 
+/** The plain arrow keys, which walk the stage from anywhere (LA-V61-R49). */
+const ARROW_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'] as const;
+/** The plain letters that walk the stage as the arrows do, as a game's keys: W Up, A Left, S Down, D Right (LA-V61-R49). */
+const WALK_LETTERS: Readonly<Record<string, string>> = { W: 'ArrowUp', A: 'ArrowLeft', S: 'ArrowDown', D: 'ArrowRight' };
+/** An arrow's walking keys: the arrow, then its letter. */
+const walkKeys = (arrow: string) => [arrow, Object.keys(WALK_LETTERS).find((l) => WALK_LETTERS[l] === arrow)!];
+/**
+ * The arrow a chord walks the stage by: a plain arrow itself, or a plain W, A, S or D as Up, Left, Down or Right. With
+ * Cmd, Ctrl, Alt or Shift held, nothing: those keep their own meanings.
+ */
+export const walkArrow = (chord: string): string | undefined => ((ARROW_KEYS as readonly string[]).includes(chord) ? chord : WALK_LETTERS[chord]);
+
 export const COMMANDS: readonly Command[] = [
   // Navigate
   { id: 'quickOpen', title: 'Quick open: go to a record, domain or product', group: 'Navigate', keys: ['Mod+P', 'Mod+K'], when: 'global' },
@@ -72,7 +84,10 @@ export const COMMANDS: readonly Command[] = [
   { id: 'stageErd', title: 'ERD stage', group: 'View', keys: ['Ctrl+E', 'Ctrl+2'], otherKeys: ['Alt+E', 'Ctrl+2'], when: 'page' },
   // Elsewhere Ctrl+T opens a browser tab, so Alt.
   { id: 'stageTrace', title: 'Trace stage', group: 'View', keys: ['Ctrl+T', 'Ctrl+3'], otherKeys: ['Alt+T', 'Ctrl+3'], when: 'page' },
-  { id: 'toggleWikiCard', title: 'Show or collapse the wiki card', group: 'View', keys: ['w', 'Ctrl+W'], otherKeys: ['w', 'Alt+W'], when: 'page' },
+  // Enter from anywhere but a control that handles Enter itself (usesEnter), a focused graph box included; Escape only
+  // collapses, once nothing above the card is open (each overlay takes its own Escape first, LA-V96-R19).
+  { id: 'toggleWikiCard', title: 'Show or collapse the wiki card', group: 'View', keys: ['Enter', 'Ctrl+W'], otherKeys: ['Enter', 'Alt+W'], when: 'page' },
+  { id: 'collapseWikiCard', title: 'Collapse the wiki card', group: 'View', keys: ['Escape'], when: 'page' },
   { id: 'expandAll', title: 'Expand all rows on this page', group: 'View', keys: [], when: 'page' },
   { id: 'collapseAll', title: 'Collapse all rows on this page', group: 'View', keys: [], when: 'page' },
   // Themes (app/src/theme). VS Code's Cmd+K Cmd+T cannot be used: Mod+K is a whole binding (quick open), and a sequence may not start with one.
@@ -80,19 +95,21 @@ export const COMMANDS: readonly Command[] = [
   { id: 'chooseColorMode', title: 'Light, dark or system', group: 'View', keys: [], when: 'global' },
   { id: 'openAppearance', title: 'Open Appearance settings', group: 'View', keys: [], when: 'global' },
   // Graph
-  { id: 'graphActivate', title: 'Center on the focused box, or open or close a group', group: 'Graph', keys: ['Enter'], when: 'graph', local: true },
+  // On a box that is not the focus, Enter focuses it; on the focus's own box it goes on to show or collapse the wiki card.
+  { id: 'graphActivate', title: 'Focus the box with keyboard focus', group: 'Graph', keys: ['Enter'], when: 'graph', local: true },
   { id: 'graphDepthUp', title: 'More depth', group: 'Graph', keys: ['+', '='], when: 'graph' },
   { id: 'graphDepthDown', title: 'Less depth', group: 'Graph', keys: ['-'], when: 'graph' },
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
   { id: 'graphLayout', title: 'Tree, Nested or Voronoi layout: parents beside their children, or made of them as boxes or cells', group: 'Graph', keys: ['v'], when: 'graph' },
-  // Stepping through the tree with the plain arrows from anywhere but a control that uses arrows itself (usesArrows), by
-  // the commands layer's stage walk (LA-V61-R49). Each step moves the stage's focus. Tab steps through the boxes. The Tree view steps as a
-  // file explorer does (Left out, Right in, Up and Down across); the Nested and Voronoi views, which draw children inside
-  // their parent, step Up out, Down in, and Left and Right across (`nestedKeys`).
-  { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: ['ArrowLeft'], nestedKeys: ['ArrowUp'], when: 'graph', local: true },
-  { id: 'graphStepIn', title: 'Step in to the first child', group: 'Graph', keys: ['ArrowRight'], nestedKeys: ['ArrowDown'], when: 'graph', local: true },
-  { id: 'graphStepPrevious', title: 'Step to the previous sibling', group: 'Graph', keys: ['ArrowUp'], nestedKeys: ['ArrowLeft'], when: 'graph', local: true },
-  { id: 'graphStepNext', title: 'Step to the next sibling', group: 'Graph', keys: ['ArrowDown'], nestedKeys: ['ArrowRight'], when: 'graph', local: true },
+  // Stepping through the tree with the plain arrows, or W, A, S and D as Up, Left, Down and Right (WALK_LETTERS), from
+  // anywhere but a control that uses arrows itself (usesArrows), by the commands layer's stage walk (LA-V61-R49). Each step
+  // moves the stage's focus. Tab steps through the boxes. The Tree view steps as a file explorer does (Left out, Right in,
+  // Up and Down across); the Nested and Voronoi views, which draw children inside their parent, step Up out, Down in, and
+  // Left and Right across (`nestedKeys`). The arrow comes first: it is the key a step is known by (graph/steps.ts stepKey).
+  { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: walkKeys('ArrowLeft'), nestedKeys: walkKeys('ArrowUp'), when: 'graph', local: true },
+  { id: 'graphStepIn', title: 'Step in to the first child', group: 'Graph', keys: walkKeys('ArrowRight'), nestedKeys: walkKeys('ArrowDown'), when: 'graph', local: true },
+  { id: 'graphStepPrevious', title: 'Step to the previous sibling', group: 'Graph', keys: walkKeys('ArrowUp'), nestedKeys: walkKeys('ArrowLeft'), when: 'graph', local: true },
+  { id: 'graphStepNext', title: 'Step to the next sibling', group: 'Graph', keys: walkKeys('ArrowDown'), nestedKeys: walkKeys('ArrowRight'), when: 'graph', local: true },
   // Lists
   { id: 'focusSearch', title: 'Focus the nearest search box', group: 'Lists', keys: ['/'], when: 'global' },
   { id: 'treeExpand', title: 'Expand the row (or move into it)', group: 'Lists', keys: ['ArrowRight'], when: 'list', local: true },
@@ -169,10 +186,6 @@ export function isTyping(target: EventTarget | null): boolean {
   return !['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color'].includes(type);
 }
 
-/** The plain arrow keys, which walk the stage from anywhere (LA-V61-R49). */
-export const ARROW_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'] as const;
-export const isArrowChord = (chord: string) => (ARROW_KEYS as readonly string[]).includes(chord);
-
 /**
  * Controls that use the arrow keys themselves, so a plain arrow inside one is theirs and never walks the stage: a field
  * that takes text or picks by arrows (every input but a checkbox and the buttons, a textarea, a select, editable text
@@ -198,12 +211,37 @@ const SCROLL_BOX = 'pre[tabindex="0"], [role="region"][tabindex="0"]';
 /**
  * True when a plain arrow pressed with keyboard focus on `target` belongs to it: the target is in a control that uses
  * arrows (ARROW_CONTROLS), or is itself a box that took focus to scroll by them. Anywhere else the arrow walks the stage.
+ * The walking letters (W, A, S, D) ask the same: every element that takes text is among those controls, so a letter typed
+ * there stays text, and one pressed in a list or menu stays with it (to find a row by its first letter).
  */
 export function usesArrows(target: EventTarget | null): boolean {
   const el = target as HTMLElement | null;
   if (!el || typeof el.closest !== 'function') return false;
   if (el.isContentEditable) return true;
   return el.closest(ARROW_CONTROLS) !== null || el.matches(SCROLL_BOX);
+}
+
+/**
+ * Controls that handle a plain Enter themselves, so Enter there is theirs and never toggles the wiki card (LA-V96-R19): a
+ * link, a button, a summary, every field (a text field submits, a checkbox or radio is its own), editable text (the chat
+ * box), the widgets that act on Enter (a menu and its items, a listbox and its options, a combobox, a tab, a tree and its
+ * rows, a grid) and a modal dialog. A graph box is none of these: Enter on one is
+ * the stage's (it focuses that box, and on the focus's own box goes on to the card).
+ */
+const ENTER_CONTROLS = [
+  'a[href]', 'button', 'summary', 'input', 'textarea', 'select',
+  '[contenteditable=""]', '[contenteditable="true"]', '[contenteditable="plaintext-only"]',
+  ...['button', 'link', 'menuitem', 'menuitemcheckbox', 'menuitemradio', 'option', 'tab', 'checkbox', 'radio', 'switch',
+    'menu', 'menubar', 'listbox', 'combobox', 'tree', 'treeitem', 'treegrid', 'grid', 'gridcell'].map((r) => `[role="${r}"]`),
+  '[aria-modal="true"]',
+].join(', ');
+
+/** True when a plain Enter pressed with keyboard focus on `target` belongs to it (ENTER_CONTROLS); anywhere else it toggles the wiki card. */
+export function usesEnter(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el || typeof el.closest !== 'function') return false;
+  if (el.isContentEditable) return true;
+  return el.closest(ENTER_CONTROLS) !== null;
 }
 
 // ---------- Overrides ----------

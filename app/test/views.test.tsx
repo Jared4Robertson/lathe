@@ -308,7 +308,7 @@ describe('one address, one stage', () => {
     expect(css).toMatch(/\.header-strip-title \{[^}]*text-overflow: ellipsis/);
   });
 
-  it('LA-V96-R19-T01 The wiki card shows the focus\'s page, follows it once it settles, collapses by w and its button, and keeps its width for the session', async () => {
+  it('LA-V96-R19-T01 The wiki card shows the focus\'s page, follows it once it settles, collapses by Enter and its button, and keeps its width for the session', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(card()).toHaveAttribute('data-page', 'P-D-UC01');
@@ -328,11 +328,11 @@ describe('one address, one stage', () => {
     expect(card().getAttribute('data-page')).not.toBe(settled);
     await waitFor(() => expect(card()).toHaveAttribute('data-page', settled));
 
-    // w collapses it, and brings it back; so does its own button. Both are the session's setting.
-    fireEvent.keyDown(document.body, { key: 'w' });
+    // Enter collapses it, and brings it back; so does its own button. Both are the session's setting.
+    fireEvent.keyDown(document.body, { key: 'Enter' });
     expect(screen.queryByRole('region', { name: 'Wiki card' })).toBeNull();
     expect(settings()).toMatchObject({ card: false });
-    fireEvent.keyDown(document.body, { key: 'w' });
+    fireEvent.keyDown(document.body, { key: 'Enter' });
     expect(card()).toBeInTheDocument();
     fireEvent.click(within(card()).getByRole('button', { name: 'Collapse the wiki card' }));
     expect(screen.queryByRole('region', { name: 'Wiki card' })).toBeNull();

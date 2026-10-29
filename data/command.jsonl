@@ -18,7 +18,7 @@
 {"id":"LA-EXP-CMD06","title":"Close a tab","aggregate_id":"LA-EXP-A5","description":"closeTab"}
 {"id":"LA-EXP-CMD07","title":"Activate a tab","aggregate_id":"LA-EXP-A5","description":"activateTab, cycleTab"}
 {"id":"LA-EXP-CMD08","title":"Change a tab's state","aggregate_id":"LA-EXP-A5","description":"updateTab; the stage and the wiki card scroll"}
-{"id":"LA-EXP-CMD09","title":"Change the session settings","aggregate_id":"LA-EXP-A6","description":"The graph's toolbar (layout, depth, kind filters, minimap), the v, + and - keys, and the wiki card's toggle, w key and resize handle; nothing else changes them."}
+{"id":"LA-EXP-CMD09","title":"Change the session settings","aggregate_id":"LA-EXP-A6","description":"The graph's toolbar (layout, depth, kind filters, minimap), the v, + and - keys, and the wiki card's toggle, Enter, Escape and Ctrl+W (Alt+W) keys and resize handle; nothing else changes them."}
 {"id":"LA-PLT-CMD01","title":"Resize a panel","aggregate_id":"LA-PLT-A2","description":"by drag or keys, within the panel's limits; a double-click resets it; a drag below the fold threshold hides it instead (CMD02)."}
 {"id":"LA-PLT-CMD02","title":"Show or hide a panel","aggregate_id":"LA-PLT-A2"}
 {"id":"LA-PLT-CMD03","title":"Choose a theme","aggregate_id":"LA-PLT-A4"}
@@ -47,6 +47,6 @@
 {"id":"LA-PLT-CMD27","title":"Send a message to Claude","aggregate_id":"LA-PLT-A6","description":"Writes the Owner's message to the chat's CLI as a stream-json user line, starting the CLI again on the session when it has ended."}
 {"id":"LA-PLT-CMD28","title":"Answer a permission prompt","aggregate_id":"LA-PLT-A6","description":"Answers the CLI's can_use_tool request with a control response: allow once, with the tool's input unchanged, or deny."}
 {"id":"LA-PLT-CMD29","title":"Stop Claude's turn","aggregate_id":"LA-PLT-A6","description":"Sends the CLI an interrupt control request; the turn ends, its waiting prompts are withdrawn, and the chat waits for the next message."}
-{"id":"LA-PLT-CMD30","title":"Open a record for Claude","aggregate_id":"LA-PLT-A6","description":"The MCP tool app_open: moves the window's focus to a record, on the stage asked for, through the window's app bridge; refused for a record the window does not have, or when no window is connected."}
+{"id":"LA-PLT-CMD30","title":"Open a record for Claude","aggregate_id":"LA-PLT-A6","description":"The MCP tool app_open, and `lathe app open` from a shell: moves the window's focus to a record, on the stage asked for, through the window's app bridge; refused for a record the window does not have, or when no window is connected."}
 {"id":"LA-TRC-CMD01","title":"Follow a pattern","aggregate_id":"LA-TRC-A3","description":"Links a domain or a use case to a pattern with `follows`."}
 {"id":"LA-TRC-CMD02","title":"Give a setting value","aggregate_id":"LA-TRC-A3","description":"Gives one of a followed pattern's settings its value, or a not-applicable reason, as a `setting_value` row."}

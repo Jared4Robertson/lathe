@@ -170,14 +170,17 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const cardCrowded = !narrow && cardOpen && crowded.has('card');
   const cardShown = narrow ? sheet || format !== null : cardOpen && !cardCrowded;
   usePageRoom(cardOpen);
-  const setCardShown = useCallback((show: boolean) => {
-    // Collapsing the card closes a format page in it too.
+  // Collapsed from inside the card (its own button or handle, or a key pressed with focus in it), focus goes to the page
+  // bar's toggle (LA-V61-R42); collapsed by a key from the stage, it stays where it was. Collapsing it closes a format
+  // page in it too.
+  const setCardShown = useCallback((show: boolean, fromInside = false) => {
+    const inside = fromInside || document.activeElement?.closest('.wiki-panel') != null;
     if (!show && format) navigate(pageHref(null));
     if (narrow) setSheet(show); else { setCard({ open: show }); hold('card', show); }
     announce(show ? 'Wiki card shown' : 'Wiki card collapsed');
-    if (!show) setTimeout(() => cardButton.current?.focus(), 0);
+    if (!show && inside) setTimeout(() => cardButton.current?.focus(), 0);
   }, [narrow, setCard, hold, announce, format]);
-  const collapseCard = useCallback(() => setCardShown(false), [setCardShown]);
+  const collapseCard = useCallback(() => setCardShown(false, true), [setCardShown]);
   const expandCard = useCallback((expanded: boolean) => setCard({ expanded }), [setCard]);
   // A preview shows in the card's compact summary, whatever the session's setting, which it leaves alone.
   const cardExpanded = preview === null && card.expanded;
@@ -265,6 +268,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useCommand('stageErd', () => setStage('erd'));
   useCommand('stageTrace', () => setStage('trace'));
   useCommand('toggleWikiCard', () => setCardShown(!cardShown));
+  useCommand('collapseWikiCard', () => setCardShown(false), cardShown);
   // Shift+F12: the wiki card's whole page, with focus on what links to the record.
   useCommand('showReferences', () => {
     if (!cardShown) setCardShown(true);

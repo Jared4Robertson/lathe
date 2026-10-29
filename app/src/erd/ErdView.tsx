@@ -468,6 +468,8 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasP
     if (e.key !== 'Enter' && e.key !== ' ') return;
     const id = (e.target as HTMLElement).closest?.('.react-flow__node')?.getAttribute('data-id');
     if (!id) return;
+    // Enter on the focus's own box is left to the commands layer, where it shows or collapses the wiki card (LA-V96-R19).
+    if (id === focus && e.key === 'Enter') return;
     e.preventDefault();
     go(id);
   };

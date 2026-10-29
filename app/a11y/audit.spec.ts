@@ -33,10 +33,10 @@ const STAGES = [
   { name: 'Trace stage, a domain\'s lanes', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
 ];
 
-/** Collapses the wiki card (w) and hides the side bar, so the stage has the whole window under the tab panel. */
+/** Collapses the wiki card (Enter) and hides the side bar, so the stage has the whole window under the tab panel. */
 async function collapsePanels(page: Page) {
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-  await page.keyboard.press('w');
+  await page.keyboard.press('Enter');
   await page.locator('.wiki-panel').waitFor({ state: 'detached' });
   if (await page.locator('.stage-layout > .side-bar-column').count()) await page.keyboard.press('Control+Alt+b');
   await page.locator('.stage-layout > .side-bar-column').waitFor({ state: 'detached' });
@@ -67,6 +67,7 @@ const PAGES: State[] = [
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
   { name: 'Trace stage, framed on the lanes a flow step belongs to', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
   { name: 'Trace stage, an entity in its aggregate\'s lanes', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
+  { name: 'Trace stage, the product\'s overview in labeled bands', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-band-names li' },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.

@@ -22,7 +22,7 @@ export const VIEW_COMMANDS: readonly MenuCommand[] = [
   { id: 'stageGraph', label: 'Graph Stage', keys: 'Ctrl+1' },
   { id: 'stageErd', label: 'ERD Stage', keys: 'Ctrl+2' },
   { id: 'stageTrace', label: 'Trace Stage', keys: 'Ctrl+3' },
-  { id: 'toggleWikiCard', label: 'Show or Collapse Wiki Card', keys: 'w' },
+  { id: 'toggleWikiCard', label: 'Show or Collapse Wiki Card', keys: 'Ctrl+W', otherKeys: 'Alt+W' },
   { id: 'toggleNav', label: 'Show or Hide Navigation', keys: 'Mod+B' },
   { id: 'toggleChat', label: 'Show or Hide Chat', keys: 'Ctrl+Meta+I', otherKeys: 'Ctrl+Alt+C' },
 ];

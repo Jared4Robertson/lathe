@@ -1,5 +1,6 @@
 // The MCP server the Claude Code plugin starts (`lathe mcp`): the data commands as tools (add, set, move, link,
-// unlink, remove, show, list, next_id and check), with input schemas generated from the schema description, and,
+// unlink, remove, show, list, next_id and check), with input schemas generated from the schema description (the
+// write tools' arguments are also what the CLI's `--json <file>` reads, through writeRequests), and,
 // under the desktop app's chat, the app tools app_focus and app_open (app-tools.ts). It speaks
 // JSON-RPC 2.0 over stdio, one message per line. Every write goes through the command layer; a tool's result is the
 // rows it changed, or the refusal with its reasons. Writes never commit: the Agent commits per task.
@@ -240,7 +241,8 @@ export interface ToolResult {
   isError?: boolean;
 }
 
-class ArgumentError extends Error {}
+/** A tool's argument of the wrong shape: refused before anything is read or written. */
+export class ArgumentError extends Error {}
 
 const text = (value: unknown, name: string): string => {
   if (typeof value !== 'string' || value.trim() === '') throw new ArgumentError(`${name} is a non-empty string`);
@@ -261,29 +263,40 @@ function result<T>(outcome: Outcome<T>, describe: (value: T) => string, structur
   return { content: [{ type: 'text', text: describe(outcome.value) }], structuredContent: structured(outcome.value) };
 }
 
+/** The tools that write. The CLI's `--json <file>` takes the same arguments, so both read a write's fields one way. */
+const WRITE_TOOLS = ['add', 'set', 'move', 'link', 'unlink', 'remove'] as const;
+export type WriteTool = (typeof WRITE_TOOLS)[number];
+export const isWriteTool = (name: string): name is WriteTool => (WRITE_TOOLS as readonly string[]).includes(name);
+
+/** A write tool's arguments as the writers' requests; an argument of the wrong shape throws ArgumentError. */
+export function writeRequests(name: WriteTool, args: Record<string, unknown>): WriteRequest {
+  switch (name) {
+    case 'add': {
+      const [table, row] = single(args, 'add');
+      return { op: 'add', table, row: row as Row };
+    }
+    case 'set': {
+      const [table, fields] = single(args, 'set');
+      return { op: 'set', target: table, fields: fields as Record<string, Value | null> };
+    }
+    case 'remove': {
+      const [table, key] = typeof args.id === 'string' && Object.keys(args).length === 1 ? [text(args.id, 'id'), {}] : single(args, 'remove');
+      return { op: 'remove', target: table, fields: key as Record<string, Value> };
+    }
+    case 'move':
+      return { op: 'move', id: text(args.id, 'id'), parent: text(args.parent, 'parent') };
+    case 'link':
+    case 'unlink':
+      return { op: name, source: text(args.source, 'source'), relation: text(args.relation, 'relation'), target: text(args.target, 'target') };
+  }
+}
+
 /** Runs one tool on the repo at root; the app tools go to the window's bridge, when there is one. */
 export async function callTool(root: string, name: string, args: Record<string, unknown> = {}, app: AppBridge | null = null): Promise<ToolResult> {
   if (isAppTool(name)) return callAppTool(app, name, args);
   try {
-    const written = (requests: WriteRequest[]) => write(root, requests).then((o) => result(o, writtenText, (w) => ({ ...w })));
+    if (isWriteTool(name)) return result(await write(root, [writeRequests(name, args)]), writtenText, (w) => ({ ...w }));
     switch (name) {
-      case 'add': {
-        const [table, row] = single(args, 'add');
-        return await written([{ op: 'add', table, row: row as Row }]);
-      }
-      case 'set': {
-        const [table, fields] = single(args, 'set');
-        return await written([{ op: 'set', target: table, fields: fields as Record<string, Value | null> }]);
-      }
-      case 'remove': {
-        const [table, key] = typeof args.id === 'string' && Object.keys(args).length === 1 ? [text(args.id, 'id'), {}] : single(args, 'remove');
-        return await written([{ op: 'remove', target: table, fields: key as Record<string, Value> }]);
-      }
-      case 'move':
-        return await written([{ op: 'move', id: text(args.id, 'id'), parent: text(args.parent, 'parent') }]);
-      case 'link':
-      case 'unlink':
-        return await written([{ op: name, source: text(args.source, 'source'), relation: text(args.relation, 'relation'), target: text(args.target, 'target') }]);
       case 'show':
         return result(await show(root, text(args.id, 'id')), shownText, (s) => ({ ...s }));
       case 'list': {

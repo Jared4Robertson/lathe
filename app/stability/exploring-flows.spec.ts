@@ -83,8 +83,9 @@ test.describe('Exploring flows', () => {
     // The Graph stage of the page in hand, from the page bar's stage switch.
     await page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'Graph' }).click();
     await graphReady(page);
-    // The wiki card collapsed (w), so the graph has the open space and its whole toolbar shows.
-    await page.keyboard.press('w');
+    // The wiki card collapsed (Enter, from the page rather than the stage switch's button), so the graph has the open space and its whole toolbar shows.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Enter');
     await expect(page.locator(WIKI)).toHaveCount(0);
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03');
@@ -117,8 +118,8 @@ test.describe('Exploring flows', () => {
     await page.locator(FLOW).focus();
     await page.keyboard.press('ArrowLeft');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03');
-    // Read the node's record page in the wiki card, shown again (w).
-    await page.keyboard.press('w');
+    // Read the node's record page in the wiki card, shown again (Enter, from the stage).
+    await page.keyboard.press('Enter');
     await expect(page.locator(`${WIKI} .wiki-panel-title h2`)).toHaveText('Walk the model as a graph');
     await expect(wikiTitle(page)).toHaveText('Walk the model as a graph');
   });
@@ -139,11 +140,12 @@ test.describe('Exploring flows', () => {
     const events = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-A1/domain_event');
     expect(events?.group).toBe(true);
     expect((await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-EV01')?.kind).toBe('domain_event');
-    // Under a pattern, its rules. With the wiki card collapsed (w): beside it, the open space is narrow and the
+    // Under a pattern, its rules. With the wiki card collapsed (Enter): beside it, the open space is narrow and the
     // pattern's fifteen rules are each under MIN_DRAWN pixels, drawn as one bar.
     await page.goto('/LA-PAT-APP-UX?stage=graph');
     await graphReady(page);
-    await page.keyboard.press('w');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Enter');
     await expect(page.locator(WIKI)).toHaveCount(0);
     await expect.poll(async () => (await sceneOf(page)).boxes.some((b) => b.id === 'LA-PAT-APP-UX-R01')).toBe(true);
     // Only the tree's lines: the domains that follow the pattern are the Trace stage's and the wiki card's.
@@ -168,9 +170,10 @@ test.describe('Exploring flows', () => {
     await handle.focus();
     await page.keyboard.press('ArrowLeft');
     await expect(handle).not.toHaveAttribute('aria-valuenow', before ?? '');
-    await page.keyboard.press('w');
+    // Enter on the handle collapses the card, and focus goes to the page bar's toggle, where Enter shows it again.
+    await page.keyboard.press('Enter');
     await expect(page.locator(WIKI)).toHaveCount(0);
-    await page.keyboard.press('w');
+    await page.keyboard.press('Enter');
     await expect(page.locator(WIKI)).toHaveCount(1);
     // A link in the card moves the stage and the strip; Back and Forward move them all.
     await page.locator(`${WIKI} .wiki-panel-head .crumb-more-button`).click();
@@ -215,7 +218,8 @@ test.describe('Exploring flows', () => {
     // On the Graph stage, with the wiki card collapsed, the steps sit under the flow.
     await page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'Graph' }).click();
     await graphReady(page);
-    await page.keyboard.press('w');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Enter');
     await expect(page.locator(WIKI)).toHaveCount(0);
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
@@ -235,8 +239,9 @@ test.describe('Exploring flows', () => {
     await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ }).focus();
     await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL01-S01');
-    // The step's own page in the wiki card, shown again (w); the Trace stage's camera now frames the lanes it belongs to, the step as the focus.
-    await page.keyboard.press('w');
+    // The step's own page in the wiki card, shown again (Enter, from the page); the Trace stage's camera now frames the lanes it belongs to, the step as the focus.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Enter');
     await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
     await traceDrawn(page);
     expect((await traceSceneOf(page, true)).boxes.filter((b) => b.focus).map((b) => b.id)).toContain('LA-EXP-UC03-FL01-S01');

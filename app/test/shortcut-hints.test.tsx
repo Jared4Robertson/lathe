@@ -172,7 +172,7 @@ describe('shortcut hints', () => {
     for (const [name, keys] of [['Graph', 'Alt+G Control+1'], ['ERD', 'Alt+E Control+2']]) {
       expect(within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name })).toHaveAttribute('aria-keyshortcuts', keys);
     }
-    expect(screen.getByRole('button', { name: 'Collapse the wiki card', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'W Alt+W');
+    expect(screen.getByRole('button', { name: 'Collapse the wiki card', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Enter Alt+W');
     // The corner toggle and the side bar's own close button.
     expect(screen.getByRole('button', { name: 'Hide the side bar', expanded: true })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');
     expect(within(screen.getByRole('complementary', { name: 'Side bar' })).getByRole('button', { name: 'Hide the side bar' })).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+B');

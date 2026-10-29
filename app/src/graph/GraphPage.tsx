@@ -45,8 +45,8 @@ import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 //
 // The map is drawn on a canvas, every frame (paint.ts): each box in view its shape, its colors and
 // its label, the lines at the label's map size times the zoom, so text is crisp at any zoom. A
-// visually hidden layer of the drawn boxes, in the keyboard's order, carries focus, the arrow keys,
-// Enter and Escape, and each box's role and name for assistive technology; the box it focuses gets
+// visually hidden layer of the drawn boxes, in the keyboard's order, carries focus, the arrow keys
+// (and W, A, S and D), Enter and Escape, and each box's role and name for assistive technology; the box it focuses gets
 // the drawn focus ring. The pointer finds a box from the map's own outlines (hit.ts).
 //
 // GraphView is the graph on its own: it takes the focus and an onNavigate callback and never reads
@@ -827,11 +827,12 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     return true;
   }, []);
   useStepWalk(index, focus, layout, onNavigate, followFromBox);
-  // Enter centers on the box with keyboard focus. Tab and Shift+Tab step through the boxes, as the page's own focus order.
+  // Enter focuses the box with keyboard focus; on the focus's own box it is left to the commands layer, where it shows or
+  // collapses the wiki card (LA-V96-R19). Tab and Shift+Tab step through the boxes, as the page's own focus order.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    if (e.key === 'Enter' && active.current && target.closest?.('.graph-box')) {
+    if (e.key === 'Enter' && active.current && canOpen(active.current) && target.closest?.('.graph-box')) {
       e.preventDefault();
       activate(active.current, true);
     }
