@@ -1,21 +1,27 @@
 import './graph/setup';
-import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import App from '../src/App';
 import { navigate } from '../src/router';
 import { COMMANDS } from '../src/shell/keymap';
 import { workspace } from './fixtures/workspace';
-import { openApp } from './helpers';
+import { desktopBridgeStub, openApp, serve } from './helpers';
 import { testWorkspace } from './graph/workspace';
-import { boxElements } from './graph/scene';
+import { boxElement, boxElements, cameraOf } from './graph/scene';
+import type { TraceHost } from '../src/trace/TraceCanvas';
 
-// Tabs for open pages, as editors are in VS Code (LA-EXP-UC10): the preview tab, lasting tabs,
-// closing and cycling, each tab's own stage and wiki card scroll, and the address following
-// the active tab, so a reload brings every tab back (LA-PAT-APP-UX-R06).
+// The desktop app's tabs, as a browser's (LA-EXP-UC10): each tab is its own place, a move never leaves it, a new tab
+// opens only when asked for, closing and cycling, and each tab's own history, which the window's follows, so a
+// reload brings every tab back with its place and history (LA-PAT-APP-UX-R06).
 
 const served = () => ({ data: testWorkspace() });
+const host = window as unknown as { latheDesktop?: LatheDesktop };
+beforeEach(() => { host.latheDesktop = desktopBridgeStub(); });
+afterEach(() => { delete host.latheDesktop; });
+
 const strip = () => screen.getByRole('tablist', { name: 'Open pages' });
-/** The tabs as "name" with "*" for the preview and "<" for the active one. */
-const tabs = () => within(strip()).getAllByRole('tab').map((t) => `${t.querySelector('.tab-title')!.textContent}${t.closest('.tab')!.classList.contains('is-preview') ? '*' : ''}${t.getAttribute('aria-selected') === 'true' ? '<' : ''}`);
+/** The tabs by title, "<" marking the active one. */
+const tabs = () => within(strip()).getAllByRole('tab').map((t) => `${t.querySelector('.tab-title')!.textContent}${t.getAttribute('aria-selected') === 'true' ? '<' : ''}`);
 const tab = (title: string) => within(strip()).getAllByRole('tab').find((t) => t.querySelector('.tab-title')!.textContent === title)!;
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 const address = () => window.location.pathname + window.location.search;
@@ -25,139 +31,169 @@ const go = async (to: string, heading: string) => {
 };
 const stageButton = (name: 'Graph' | 'ERD' | 'Trace') => within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
 const key = (init: KeyboardEventInit & { key: string; code?: string }) => fireEvent.keyDown(document.body, init);
+/** The new tab command: Alt+Shift+T (Cmd+T is the menu's). */
+const newTabKey = () => key({ key: 'T', code: 'KeyT', altKey: true, shiftKey: true });
+const closeKey = () => key({ key: 'W', code: 'KeyW', altKey: true, shiftKey: true });
+/** The window's Back or Forward, waiting for the page to land. */
+const step = async (back: boolean, heading: string) => {
+  await act(async () => { if (back) window.history.back(); else window.history.forward(); });
+  await waitFor(() => expect(title()).toBe(heading));
+};
+/** The window catches up with the tab shown (its history is given to it after a tab switch). */
+const settled = (to: string) => waitFor(() => expect(address()).toBe(to));
+/** Reloads the app where it is: the window's history and the session's storage stay. */
+const reload = async () => {
+  cleanup();
+  serve(served());
+  render(<App />);
+  await waitFor(() => expect(document.querySelector('.app[data-specs]')?.getAttribute('data-specs')).not.toBe('loading'));
+};
 
-describe('tabs for open pages', () => {
-  /** A use case's page in its preview tab. */
-  const firstTab = async () => {
-    await openApp('/P-D-UC01', served());
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-  };
-  /** From the use case, a wiki link opened in the preview tab. */
-  const linkOpened = async () => {
-    await firstTab();
-    fireEvent.click(within(screen.getByRole('region', { name: 'Wiki card' })).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
-    await waitFor(() => expect(title()).toBe('The loan is recorded'));
-  };
+/** The use case's page, in the first tab. */
+const firstTab = async (at = '/P-D-UC01?stage=graph') => {
+  await openApp(at, served());
+  await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+  await settled(at);
+};
 
-  it('LA-V96-R16-T01 Each tab shows its record\'s ID and title, a group\'s tab its label', async () => {
+describe('the desktop app\'s tabs', () => {
+  it('LA-V96-R16-T01 Each tab shows its record\'s ID and title, a group\'s tab its label, never in italics', async () => {
     await firstTab();
     const first = tab('Lend a thing');
-    expect(first).toHaveAccessibleName('P-D-UC01 Lend a thing, preview');
+    expect(first).toHaveAccessibleName('P-D-UC01 Lend a thing');
     expect(first.querySelector('.tab-id')).toHaveTextContent('P-D-UC01');
     expect(screen.getByRole('tabpanel')).toHaveAttribute('aria-labelledby', first.id);
     await go('/P-D/domain-model/term', 'Terms (1)');
-    expect(tab('Terms (1)').querySelector('code')).toBeNull();
+    expect(tabs()).toEqual(['Terms (1)<']);
+    expect(tab('Terms (1)').querySelector('code, .tab-id')).toBeNull();
+    // No tab is a preview: no italic class, no "preview" in its name.
+    expect(document.querySelector('.is-preview')).toBeNull();
+    expect(tab('Terms (1)')).toHaveAccessibleName('Terms (1)');
   });
 
-  it('LA-V96-R10-T02 A plain open replaces the italic preview tab, and a page already open activates its tab', async () => {
+  it('LA-V96-R10-T02 Walking onto a record open in another tab stays in the current tab', async () => {
     await firstTab();
-    expect(tabs()).toEqual(['Lend a thing*<']);
-    await linkOpened();
-    expect(tabs()).toEqual(['The loan is recorded*<']);
-    fireEvent.doubleClick(tab('The loan is recorded'));
-    await go('/P-V01', 'Loan desk');
-    await go('/P-D-UC01-R01', 'The loan is recorded');
-    expect(tabs()).toEqual(['The loan is recorded<', 'Loan desk*']);
-  });
-
-  it('LA-V96-R11-T01 A double-click keeps the preview tab, and the next open adds a preview after it', async () => {
-    await linkOpened();
-    fireEvent.doubleClick(tab('The loan is recorded'));
-    expect(tabs()).toEqual(['The loan is recorded<']);
-    await go('/P-V01', 'Loan desk');
-    expect(tabs()).toEqual(['The loan is recorded', 'Loan desk*<']);
-  });
-
-  it('LA-V96-R10-T03 A page opened shows in a tab: a link to an open page activates it, and Back reopens a closed page as the preview', async () => {
-    await firstTab();
-    const first = tab('Lend a thing');
-    // The active preview tab's tooltip names the keep command; its close button, the close command.
-    expect(first.closest('.tab')!.querySelector('.tab-close[aria-label="Close P-D-UC01 Lend a thing"]')).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+W');
-    await linkOpened();
-    expect(tabs()).toEqual(['The loan is recorded*<']);
-
-    // Double-click keeps it; the next open adds a preview after it.
-    fireEvent.doubleClick(tab('The loan is recorded'));
-    expect(tabs()).toEqual(['The loan is recorded<']);
-    await go('/P-V01', 'Loan desk');
-    expect(tabs()).toEqual(['The loan is recorded', 'Loan desk*<']);
-    // A group tab shows its label.
-    await go('/P-D/domain-model/term', 'Terms (1)');
-    expect(tabs()).toEqual(['The loan is recorded', 'Terms (1)*<']);
-    expect(tab('Terms (1)').querySelector('code')).toBeNull();
-
-    // A link to a page already open activates its tab.
-    await go('/P-D-UC01-R01', 'The loan is recorded');
-    expect(tabs()).toEqual(['The loan is recorded<', 'Terms (1)*']);
-
-    // Clicking a tab activates it and the address follows.
-    fireEvent.click(tab('Terms (1)'));
-    await waitFor(() => expect(title()).toBe('Terms (1)'));
-    expect(window.location.pathname).toBe('/P-D/domain-model/term');
-
-    // Close the group tab; Back to it reopens it, as the preview.
-    fireEvent.click(tab('Terms (1)').closest('.tab')!.querySelector('.tab-close[aria-label="Close Terms (1)"]')!);
-    await waitFor(() => expect(title()).toBe('The loan is recorded'));
-    expect(tabs()).toEqual(['The loan is recorded<']);
-    await act(async () => {
-      window.history.back();
-      await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
-    });
-    await waitFor(() => expect(title()).toBe('Terms (1)'));
-    expect(tabs()).toEqual(['The loan is recorded', 'Terms (1)*<']);
-  });
-
-  it('LA-V96-R13-T02 The address follows the active tab, clicked or cycled', async () => {
-    await firstTab();
-    fireEvent.doubleClick(tab('Lend a thing'));
-    await go('/P-V01', 'Loan desk');
+    await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
+    // Out from the use case: where the walk leads.
+    key({ key: 'ArrowUp', code: 'ArrowUp', shiftKey: true });
+    await waitFor(() => expect(title()).not.toBe('Lend a thing'));
+    const parent = title()!;
+    const parentAddress = address();
+    // Back on the use case; a second tab holds the parent.
+    await step(true, 'Lend a thing');
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    await go(parentAddress, parent);
+    expect(tabs()).toEqual(['Lend a thing', `${parent}<`]);
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
-    expect(window.location.pathname).toBe('/P-D-UC01');
-    key({ key: 'Tab', code: 'Tab', ctrlKey: true });
-    await waitFor(() => expect(title()).toBe('Loan desk'));
-    expect(window.location.pathname).toBe('/P-V01');
+    await settled('/P-D-UC01?stage=graph');
+    // The walk onto the parent stays in the first tab: both tabs now hold it.
+    key({ key: 'ArrowUp', code: 'ArrowUp', shiftKey: true });
+    await waitFor(() => expect(title()).toBe(parent));
+    expect(tabs()).toEqual([`${parent}<`, parent]);
+    expect(tab(parent)).toBe(within(strip()).getAllByRole('tab')[0]);
+    // And so does a link to it, or the address.
+    await go('/P-V01', 'Loan desk');
+    expect(tabs()).toEqual(['Loan desk<', parent]);
   });
 
-  it('LA-V96-R12-T02 Closing by button, middle-click or Alt+Shift+W activates the right neighbor or else the left, and the last tab stays as the preview', async () => {
-    await openApp('/P-D-UC01', served());
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    fireEvent.doubleClick(tab('Lend a thing'));
+  it('LA-V96-R11-T02 Cmd or Ctrl+click and middle-click on a box or link, Cmd+Enter in quick open and the new tab command open a tab after the active one', async () => {
+    await firstTab('/P-D-UC01?stage=erd');
+    // The new tab command: at the product, on the active tab's stage.
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    expect(tabs()[1].endsWith('<')).toBe(true);
+    await settled('/P?stage=erd');
+    fireEvent.click(tab('Lend a thing'));
+    await settled('/P-D-UC01?stage=erd');
+    fireEvent.click(stageButton('Graph'));
+    await waitFor(() => expect(boxElements().length).toBeGreaterThan(1));
+
+    // Cmd+click on a box: a new tab after the active one, active, focused there, on the same stage.
+    const other = boxElements().find((b) => b.dataset.id !== 'P-D-UC01' && /^P-/.test(b.dataset.id ?? ''))!;
+    const id = other.dataset.id!;
+    fireEvent.click(other, { metaKey: true });
+    await waitFor(() => expect(tabs()).toHaveLength(3));
+    expect(within(strip()).getAllByRole('tab')[1]).toHaveAttribute('aria-selected', 'true');
+    await settled(`/${id}?stage=graph`);
+    fireEvent.click(tab('Lend a thing'));
+    await settled('/P-D-UC01?stage=graph');
+
+    // A middle-click on a link in the card: a new tab in the background.
+    await waitFor(() => expect(screen.getByRole('region', { name: 'Wiki card' })).toHaveAttribute('data-page', 'P-D-UC01'));
+    const link = (await within(screen.getByRole('region', { name: 'Wiki card' })).findAllByRole('link', { name: /P-D-UC01-R01/ }))[0];
+    const linked = new URL(link.getAttribute('href')!, window.location.href).pathname;
+    fireEvent(link, new MouseEvent('auxclick', { bubbles: true, cancelable: true, button: 1 }));
+    await waitFor(() => expect(tabs()).toHaveLength(4));
+    expect(tabs()[0]).toBe('Lend a thing<');
+    expect(tabs()[1].endsWith('<')).toBe(false);
+    // Ctrl+click on a link: a new tab, active.
+    fireEvent.click(link, { ctrlKey: true });
+    await waitFor(() => expect(tabs()).toHaveLength(5));
+    expect(tabs()[1].endsWith('<')).toBe(true);
+    await settled(`${linked}?stage=graph`);
+
+    // Cmd/Ctrl+Enter in quick open: a new tab (Ctrl off a Mac, as here).
+    key({ key: 'p', code: 'KeyP', ctrlKey: true });
+    const box = within(await screen.findByRole('dialog')).getByRole('combobox');
+    fireEvent.change(box, { target: { value: 'Loan desk' } });
+    await waitFor(() => expect(within(screen.getByRole('listbox', { name: 'Quick find results' })).getAllByRole('option')[0]).toHaveTextContent('P-V01'));
+    fireEvent.keyDown(box, { key: 'Enter', ctrlKey: true });
+    await waitFor(() => expect(tabs()).toHaveLength(6));
+    expect(tabs()[2]).toBe('Loan desk<');
+    await settled('/P-V01?stage=graph');
+  });
+
+  it('LA-V96-R11-T03 Duplicate tab copies the active tab with its history', async () => {
+    await firstTab();
+    await go('/P-V01?stage=erd', 'Loan desk');
+    key({ key: 'D', code: 'KeyD', altKey: true, shiftKey: true });
+    await waitFor(() => expect(tabs()).toEqual(['Loan desk', 'Loan desk<']));
+    await settled('/P-V01?stage=erd');
+    expect(stageButton('ERD')).toHaveAttribute('aria-pressed', 'true');
+    // Its Back goes where the tab it copies had been.
+    await step(true, 'Lend a thing');
+    expect(tabs()).toEqual(['Loan desk', 'Lend a thing<']);
+  });
+
+  it('LA-V96-R12-T02 Closing by button, middle-click or the close command activates the right neighbor or else the left, and the last tab leaves one on the product', async () => {
+    await firstTab();
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
     await go('/P-V01', 'Loan desk');
-    fireEvent.doubleClick(tab('Loan desk'));
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(3));
     await go('/P-D-A1', 'Thing');
-    fireEvent.doubleClick(tab('Thing'));
-    // Back to the middle tab, then close it: its right neighbor becomes active.
+    expect(tabs()).toEqual(['Lend a thing', 'Loan desk', 'Thing<']);
+    // The middle tab, active, closed by the command: its right neighbor becomes active.
     fireEvent.click(tab('Loan desk'));
     await waitFor(() => expect(title()).toBe('Loan desk'));
-    key({ key: 'W', code: 'KeyW', altKey: true, shiftKey: true });
+    closeKey();
     await waitFor(() => expect(title()).toBe('Thing'));
     expect(tabs()).toEqual(['Lend a thing', 'Thing<']);
-    expect(window.location.pathname).toBe('/P-D-A1');
-    // The rightmost closes: its left neighbor becomes active.
+    await settled('/P-D-A1?stage=graph');
+    // The rightmost by a middle-click: its left neighbor.
     fireEvent(tab('Thing'), new MouseEvent('auxclick', { bubbles: true, button: 1 }));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
     expect(tabs()).toEqual(['Lend a thing<']);
-    // The last tab stays open, as a preview.
-    key({ key: 'W', code: 'KeyW', altKey: true, shiftKey: true });
-    expect(tabs()).toEqual(['Lend a thing*<']);
-    expect(title()).toBe('Lend a thing');
-  });
-
-  it('LA-V96-R11-T02 The keep command keeps the preview tab', async () => {
-    await firstTab();
-    // Off a Mac the keep command is Alt+K then Enter (Ctrl+K is quick open there).
-    key({ key: 'k', code: 'KeyK', altKey: true });
-    key({ key: 'Enter', code: 'Enter' });
-    expect(tabs()).toEqual(['Lend a thing<']);
+    // Its close button names the close command; the last tab closed leaves one tab at the product.
+    const close = tab('Lend a thing').closest('.tab')!.querySelector<HTMLElement>('.tab-close[aria-label="Close P-D-UC01 Lend a thing"]')!;
+    expect(close).toHaveAttribute('aria-keyshortcuts', 'Alt+Shift+W');
+    fireEvent.click(close);
+    await waitFor(() => expect(within(strip()).getAllByRole('tab')).toHaveLength(1));
+    await settled('/P?stage=graph');
+    expect(tabs()[0].endsWith('<')).toBe(true);
   });
 
   it('LA-V96-R13-T01 Ctrl+Tab and Ctrl+Shift+Tab cycle, and on the focused strip the arrow keys move and Delete closes', async () => {
-    for (const id of ['keepTab', 'closeTab', 'nextTab', 'previousTab']) expect(COMMANDS.find((c) => c.id === id)?.group).toBe('Navigate');
+    for (const id of ['newTab', 'closeTab', 'duplicateTab', 'nextTab', 'previousTab']) expect(COMMANDS.find((c) => c.id === id)?.group).toBe('Navigate');
+    expect(COMMANDS.some((c) => c.id === 'keepTab')).toBe(false);
     await firstTab();
-    fireEvent.doubleClick(tab('Lend a thing'));
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
     await go('/P-V01', 'Loan desk');
-    expect(tabs()).toEqual(['Lend a thing', 'Loan desk*<']);
+    expect(tabs()).toEqual(['Lend a thing', 'Loan desk<']);
 
     key({ key: 'Tab', code: 'Tab', ctrlKey: true });
     await waitFor(() => expect(title()).toBe('Lend a thing'));
@@ -180,113 +216,204 @@ describe('tabs for open pages', () => {
     await waitFor(() => expect(tab('Lend a thing')).toHaveFocus());
   });
 
-  it('LA-V96-R11-T03 Switching a preview tab\'s stage keeps it open', async () => {
+  it('LA-V96-R13-T02 The address follows the active tab, clicked or cycled', async () => {
     await firstTab();
-    fireEvent.click(stageButton('ERD'));
-    expect(tabs()).toEqual(['Lend a thing<']);
-    expect(address()).toBe('/P-D-UC01?stage=erd');
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    await go('/P-V01', 'Loan desk');
+    fireEvent.click(tab('Lend a thing'));
+    await waitFor(() => expect(title()).toBe('Lend a thing'));
+    await settled('/P-D-UC01?stage=graph');
+    key({ key: 'Tab', code: 'Tab', ctrlKey: true });
+    await waitFor(() => expect(title()).toBe('Loan desk'));
+    await settled('/P-V01?stage=graph');
   });
 
-  it('LA-V96-R14-T01 Each tab keeps its own stage and wiki card scroll, and the graph\'s settings are the session\'s, whatever the tab', async () => {
+  it('LA-V96-R14-T01 Each tab keeps its own stage, depth, filters, wiki card and scroll; the layout is the window\'s', async () => {
     await firstTab();
-    // The graph's depth, set here, is the session's.
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
-    fireEvent.click(screen.getByRole('button', { name: '2' }));
     const cardScroll = () => document.querySelector<HTMLElement>('.wiki-panel-scroll')!;
-    // The card follows the focus once it settles, and its scroll is the page's from the moment it shows it.
     const cardShows = (page: string) => waitFor(() => expect(screen.getByRole('region', { name: 'Wiki card' })).toHaveAttribute('data-page', page));
+    // The first tab: depth 2, and the card scrolled.
+    fireEvent.click(screen.getByRole('button', { name: '2' }));
+    await cardShows('P-D-UC01');
     cardScroll().scrollTop = 120;
     fireEvent.scroll(cardScroll());
-    // The ERD for this tab.
-    fireEvent.click(stageButton('ERD'));
+    await new Promise((r) => setTimeout(r, 260));
 
-    // A new tab starts from the active one's stage; change it there.
+    // A new tab copies the stage, depth and filters; there, the ERD, and the card collapsed.
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
     await go('/P-V01', 'Loan desk');
-    expect(address()).toBe('/P-V01');
-    expect(stageButton('ERD')).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true'));
     await cardShows('P-V01');
     expect(cardScroll().scrollTop).toBe(0);
-    fireEvent.click(stageButton('Graph'));
-    await waitFor(() => expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true'));
     fireEvent.click(screen.getByRole('button', { name: '3' }));
-    expect(tabs()).toEqual(['Lend a thing', 'Loan desk<']);
+    // The layout is the window's: Nested here is Nested in every tab.
+    fireEvent.click(screen.getByRole('button', { name: 'Nested' }));
+    fireEvent.click(stageButton('ERD'));
+    await settled('/P-V01?stage=erd');
+    fireEvent.click(document.querySelector<HTMLElement>('.page-bar .wiki-panel-toggle')!);
+    expect(screen.queryByRole('region', { name: 'Wiki card' })).toBeNull();
 
-    // Back on the first tab: its ERD and its scroll.
+    // Back on the first tab: its Graph, its depth, its card, open, where it was scrolled.
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
-    expect(address()).toBe('/P-D-UC01?stage=erd');
-    expect(screen.getByRole('region', { name: 'ERD stage' })).toBeInTheDocument();
+    await settled('/P-D-UC01?stage=graph');
+    expect(screen.getByRole('region', { name: 'Graph stage' })).toBeInTheDocument();
     await cardShows('P-D-UC01');
     expect(cardScroll().scrollTop).toBe(120);
-    // The depth is the one last set, in any tab.
+    expect(screen.getByRole('button', { name: 'Nested' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(screen.getByRole('button', { name: 'Tree' }));
+    await waitFor(() => expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true'));
+    // And the second: its ERD, its card collapsed, its depth.
+    fireEvent.click(tab('Loan desk'));
+    await waitFor(() => expect(title()).toBe('Loan desk'));
+    await settled('/P-V01?stage=erd');
+    expect(screen.queryByRole('region', { name: 'Wiki card' })).toBeNull();
     fireEvent.click(stageButton('Graph'));
     await waitFor(() => expect(screen.getByRole('button', { name: '3' })).toHaveAttribute('aria-pressed', 'true'));
-    fireEvent.click(stageButton('ERD'));
-    // And the second: the graph.
-    fireEvent.click(tab('Loan desk'));
-    await waitFor(() => expect(title()).toBe('Loan desk'));
-    expect(address()).toBe('/P-V01?stage=graph');
-    // A link naming another stage to a page open in a tab shows the tab as it was, and the address says so.
-    await go('/P-D-UC01?stage=trace', 'Lend a thing');
-    await waitFor(() => expect(address()).toBe('/P-D-UC01?stage=erd'));
-    // A tab stores no graph or card settings.
-    const stored = JSON.parse(window.sessionStorage.getItem('lathe:tabs')!) as Record<string, { tabs: { state: object }[] }>;
-    const keys = Object.values(stored).flatMap((set) => set.tabs.map((t) => Object.keys(t.state))).flat();
-    expect(keys).not.toContain('graph');
-    expect(keys).not.toContain('card');
+    // The window's settings hold no depth, filters or card state; the tabs hold them.
+    const settings = JSON.parse(window.sessionStorage.getItem('lathe:session-settings')!) as Record<string, unknown>;
+    expect(Object.keys(settings)).not.toContain('depth');
+    expect(Object.keys(settings)).not.toContain('hiddenKinds');
+    expect(Object.keys(settings)).not.toContain('cardExpanded');
   });
 
-  it('LA-V96-R15-T04 Reloading brings back each tab\'s stage', async () => {
-    await openApp('/P-D-UC01?stage=trace', served());
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    fireEvent.doubleClick(tab('Lend a thing'));
-    await go('/P-V01?stage=erd', 'Loan desk');
-    fireEvent.doubleClick(tab('Loan desk'));
+  it('LA-V96-R14-T02 Each tab keeps its own camera on the Graph and the Trace, taken back at once when it is active again', async () => {
+    const traceCamera = () => JSON.stringify((document.querySelector('.trace-flow') as TraceHost).traceScene!().camera);
+    /** The camera, once it has stopped moving. */
+    const still = async (read: () => string) => {
+      let before = read();
+      for (;;) {
+        await act(async () => { await new Promise((r) => setTimeout(r, 120)); });
+        const now = read();
+        if (now === before) return now;
+        before = now;
+      }
+    };
+    /** A scroll on the stage's canvas: the camera pans by it. */
+    const pan = (deltaY: number) => fireEvent.wheel(document.querySelector('.focus-stage canvas')!, { deltaY, clientX: 200, clientY: 200 });
+    await firstTab();
+    await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
+    const framedGraph = await still(cameraOf);
+    pan(40);
+    const graph = await still(cameraOf);
+    expect(graph).not.toBe(framedGraph);
+    // A second tab, elsewhere; back on the first, its camera as it was.
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    await settled('/P?stage=graph');
+    await still(cameraOf);
+    await new Promise((r) => setTimeout(r, 200));
+    pan(-90);
+    expect(await still(cameraOf)).not.toBe(graph);
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
-    await openApp(address(), served());
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(screen.getByRole('region', { name: 'Trace stage' })).toBeInTheDocument();
-    fireEvent.click(tab('Loan desk'));
-    await waitFor(() => expect(title()).toBe('Loan desk'));
-    expect(address()).toBe('/P-V01?stage=erd');
+    expect(await still(cameraOf)).toBe(graph);
+    // The Trace: the first tab's camera there too.
+    fireEvent.click(stageButton('Trace'));
+    await waitFor(() => expect(document.querySelector('.trace-flow[data-ready]')).not.toBeNull());
+    const framedTrace = await still(traceCamera);
+    pan(40);
+    const trace = await still(traceCamera);
+    expect(trace).not.toBe(framedTrace);
+    // The second tab's Trace, zoomed out: its own camera.
+    fireEvent.click(tab('Product'));
+    await waitFor(() => expect(title()).toBe('Product'));
+    fireEvent.click(stageButton('Trace'));
+    await waitFor(() => expect(document.querySelector('.trace-flow[data-ready]')).not.toBeNull());
+    await still(traceCamera);
+    await new Promise((r) => setTimeout(r, 200));
+    pan(-90);
+    expect(await still(traceCamera)).not.toBe(trace);
+    fireEvent.click(tab('Lend a thing'));
+    await waitFor(() => expect(title()).toBe('Lend a thing'));
+    expect(await still(traceCamera)).toBe(trace);
   });
 
-  it('LA-PAT-APP-UX-R06-T01 LA-PAT-APP-UX-R06-T02 Reloading brings back the same tabs, the preview, the active tab and each tab\'s stage', async () => {
-    await openApp('/P-D-UC01?stage=graph', served());
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    fireEvent.doubleClick(tab('Lend a thing'));
+  it('LA-V96-R15-T04 Reloading brings back every tab with its place and history', async () => {
+    await firstTab('/P-D-UC01?stage=trace');
+    await go('/P-V01?stage=erd', 'Loan desk');
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    await go('/P-D-A1', 'Thing');
+    fireEvent.click(tab('Loan desk'));
+    await settled('/P-V01?stage=erd');
+    await reload();
+    await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
+    expect(tabs()).toEqual(['Loan desk<', 'Thing']);
+    expect(screen.getByRole('region', { name: 'ERD stage' })).toBeInTheDocument();
+    // Its history came back with it.
+    await step(true, 'Lend a thing');
+    expect(screen.getByRole('region', { name: 'Trace stage' })).toBeInTheDocument();
+    await step(false, 'Loan desk');
+    fireEvent.click(tab('Thing'));
+    await settled('/P-D-A1?stage=erd');
+    await step(true, 'Product');
+  });
+
+  it('LA-PAT-APP-UX-R06-T01 LA-PAT-APP-UX-R06-T02 Reloading brings back the same tabs in order, the active tab and each tab\'s stage', async () => {
+    await firstTab();
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
     await go('/P-V01?stage=trace', 'Loan desk');
-    fireEvent.doubleClick(tab('Loan desk'));
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(3));
     await go('/P-D-A1', 'Thing');
     fireEvent.click(tab('Lend a thing'));
-    await waitFor(() => expect(title()).toBe('Lend a thing'));
-    const before = { tabs: tabs(), address: address() };
-    expect(before).toEqual({ tabs: ['Lend a thing<', 'Loan desk', 'Thing*'], address: '/P-D-UC01?stage=graph' });
+    await settled('/P-D-UC01?stage=graph');
+    const before = tabs();
+    expect(before).toEqual(['Lend a thing<', 'Loan desk', 'Thing']);
 
-    // Reload at the same address.
-    await openApp(address(), served());
+    await reload();
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(tabs()).toEqual(before.tabs);
+    expect(tabs()).toEqual(before);
     expect(screen.getByRole('region', { name: 'Graph stage' })).toBeInTheDocument();
     fireEvent.click(tab('Loan desk'));
     await waitFor(() => expect(title()).toBe('Loan desk'));
-    expect(address()).toBe('/P-V01?stage=trace');
+    await settled('/P-V01?stage=trace');
     expect(screen.getByRole('region', { name: 'Trace stage' })).toBeInTheDocument();
+  });
+
+  it('LA-V96-R31-T02 Back and Forward step through the active tab\'s history, and switching tabs gives the window the new tab\'s history', async () => {
+    await firstTab();
+    await go('/P-V01', 'Loan desk');
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    await settled('/P?stage=graph');
+    await go('/P-D-A1', 'Thing');
+    // Back and Forward in the second tab: its own entries.
+    await step(true, 'Product');
+    await step(false, 'Thing');
+    expect(tabs()).toEqual(['Loan desk', 'Thing<']);
+    // The first tab: the window now holds its history.
+    fireEvent.click(tab('Loan desk'));
+    await settled('/P-V01?stage=graph');
+    await step(true, 'Lend a thing');
+    expect(tabs()).toEqual(['Lend a thing<', 'Thing']);
+    await step(false, 'Loan desk');
+    // And the second tab's history is as it was.
+    fireEvent.click(tab('Thing'));
+    await settled('/P-D-A1?stage=graph');
+    await step(true, 'Product');
+    expect(tabs()).toEqual(['Loan desk', 'Product<']);
   });
 
   it('LA-V96-R15-T01 Each space keeps its own tabs: switching spaces swaps the tab set', async () => {
     await openApp('/DM-SHOP-UC01', { data: workspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-    fireEvent.doubleClick(tab('Add an item to the basket'));
-    await go('/DM', 'Demo shop');
-    expect(tabs()).toEqual(['Add an item to the basket', 'Demo shop*<']);
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    await waitFor(() => expect(title()).toBe('Demo shop'));
+    expect(tabs()).toEqual(['Add an item to the basket', 'Demo shop<']);
     // Another product's page: its own tabs.
     await go('/NF', 'Notebook');
-    expect(tabs()).toEqual(['Notebook*<']);
-    // Back to the first space by its rail icon: the last page there, in its tab set.
+    expect(tabs()).toEqual(['Notebook<']);
+    // Back to the first space by its rail icon: its tabs, as they were.
     fireEvent.click(within(screen.getByRole('list', { name: 'Spaces' })).getByRole('link', { name: 'Demo shop' }));
     await waitFor(() => expect(title()).toBe('Demo shop'));
-    expect(tabs()).toEqual(['Add an item to the basket', 'Demo shop*<']);
+    expect(tabs()).toEqual(['Add an item to the basket', 'Demo shop<']);
+    expect(boxElement('DM')).toBeDefined();
   });
 });

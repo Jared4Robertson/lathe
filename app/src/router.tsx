@@ -4,12 +4,24 @@ import { useEffect, useState, type AnchorHTMLAttributes } from 'react';
 
 const NAVIGATE = 'lathe:navigate';
 
-/** How the address last changed: a new entry, the same entry replaced, or Back and Forward. */
-export type AddressMove = 'push' | 'replace' | 'pop';
+/** How the address last changed: a new entry, the same entry replaced, Back and Forward, or the history rewritten (rewriteHistory). */
+export type AddressMove = 'push' | 'replace' | 'pop' | 'rewrite';
 let lastMove: AddressMove = 'push';
 /** How the address last changed, so a page can tell Back and Forward (restore where it was) from a new page (start at the top). */
 export const lastAddressMove = () => lastMove;
-if (typeof window !== 'undefined') window.addEventListener('popstate', () => { lastMove = 'pop'; });
+
+// While the window's history is rewritten (rewriteHistory), its own moves are not the Reader's: no page hears them,
+// and a navigate() waits until the rewrite is done.
+let rewriting = false;
+const waiting: (() => void)[] = [];
+let onPopped: (() => void) | null = null;
+if (typeof window !== 'undefined') {
+  window.addEventListener('popstate', (e) => {
+    if (!rewriting) { lastMove = 'pop'; return; }
+    e.stopImmediatePropagation();
+    onPopped?.();
+  }, true);
+}
 
 const leaving = new Set<() => void>();
 /** Runs `fn` just before navigate() leaves the current history entry, so a page can note in it where it was. */
@@ -63,6 +75,7 @@ export function resolveAddress(to: string, search = window.location.search): str
 }
 
 export function navigate(to: string, replace = false) {
+  if (rewriting) { waiting.push(() => navigate(to, replace)); return; }
   to = to.startsWith('?') ? resolveAddress(to) : carry(to, new URLSearchParams(window.location.search));
   if (window.location.pathname + window.location.search + window.location.hash === to) return;
   if (!replace) for (const fn of leaving) fn();
@@ -71,6 +84,53 @@ export function navigate(to: string, replace = false) {
   if (replace) window.history.replaceState(window.history.state, '', to);
   else window.history.pushState(null, '', to);
   window.dispatchEvent(new Event(NAVIGATE));
+}
+
+/** One entry of the window's history: its address and the state it carries. */
+export interface HistoryEntry { address: string; state: Record<string, unknown> }
+
+/** Goes `delta` entries through the window's history and waits until it is there (or a short while, should nothing come). */
+function goAndWait(delta: number): Promise<void> {
+  if (delta === 0) return Promise.resolve();
+  return new Promise((resolve) => {
+    const timer = setTimeout(done, 400);
+    function done() { clearTimeout(timer); onPopped = null; resolve(); }
+    onPopped = done;
+    window.history.go(delta);
+  });
+}
+
+let queue: Promise<void> = Promise.resolve();
+
+/**
+ * Rewrites the window's history as `plan` says, once the rewrites before it are done (it may say there is nothing left
+ * to do): from `back` entries before the current one, those entries become `entries`, and the window stands on the one
+ * at `at`, so the browser's Back and Forward go through them. No page hears the moves it
+ * makes; once it is done (and `done` has run) the page hears one move, a rewrite, to the entry it stands on. The desktop app's tabs use it to give the
+ * window the active tab's history (views/tabHistory.ts). Rewrites run one after another.
+ */
+export function rewriteHistory(plan: () => { back: number; entries: readonly HistoryEntry[]; at: number; done?: () => void } | null): Promise<void> {
+  queue = queue.then(async () => {
+    const p = plan();
+    if (!p || p.entries.length === 0) return;
+    const { back, entries, at, done } = p;
+    rewriting = true;
+    try {
+      await goAndWait(-back);
+      entries.forEach((e, i) => {
+        if (i === 0) window.history.replaceState(e.state, '', e.address);
+        else window.history.pushState(e.state, '', e.address);
+      });
+      await goAndWait(at - (entries.length - 1));
+    } finally {
+      rewriting = false;
+    }
+    lastMove = 'rewrite';
+    done?.();
+    window.dispatchEvent(new Event(NAVIGATE));
+    for (const run of waiting.splice(0)) run();
+  });
+  return queue;
 }
 
 /** The current pathname, query string and hash, updated on back/forward and on navigate(). */

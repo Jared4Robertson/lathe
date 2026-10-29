@@ -106,15 +106,15 @@ test.describe('keyboard', () => {
 
   test('LA-V61-R41-T02 switch the stage from the page bar and by its keys', async ({ page }) => {
     await open(page, RECORD);
-    await tabUntil(page, (el) => el.getAttribute('aria-label') === 'ERD' && !!el.closest('.page-bar'), 'the ERD stage button');
+    await tabUntil(page, (el) => el.getAttribute('aria-label') === 'ERD' && !!el.closest('.page-bar-actions'), 'the ERD stage button');
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/stage=erd/);
-    await expect(page.locator('.page-bar').getByRole('button', { name: 'ERD', exact: true })).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.page-bar-actions').getByRole('button', { name: 'ERD', exact: true })).toHaveAttribute('aria-pressed', 'true');
     await test.step('LA-V61-R43-T01 switching the stage is announced', () => expect(announcer(page)).toHaveText(/ERD stage/));
     // Focus stays on the button that was pressed.
     expect((await focused(page)).name).toBe('ERD');
     // Every stage works on every focus: the switch never disables one (LA-PAT-APP-UX-R17).
-    await expect(page.locator('.page-bar .stage-switch button[aria-disabled]')).toHaveCount(0);
+    await expect(page.locator('.page-bar-actions .stage-switch button[aria-disabled]')).toHaveCount(0);
     // Off a Mac, Ctrl+3 for the Trace stage and Ctrl+1 for the graph.
     await page.keyboard.press('Control+3');
     await expect(page).toHaveURL(/stage=trace/);
@@ -196,7 +196,7 @@ test.describe('keyboard', () => {
     await page.keyboard.press('Control+2');
     await expect(page.locator('.focus-stage[data-stage="erd"] .erd-flow[data-framed]')).toBeVisible();
     const before = path();
-    await page.locator('.page-bar .wiki-panel-toggle').focus();
+    await page.locator('.page-bar-actions .wiki-panel-toggle').focus();
     await page.keyboard.press('ArrowRight');
     await expect.poll(path).not.toBe(before);
     // Quick find keeps its arrows: Down moves through its results, the focus stays.
@@ -319,7 +319,7 @@ test.describe('keyboard', () => {
 
   test('LA-V61-R41-T02 pick a theme, and focus comes back', async ({ page }) => {
     await open(page, RECORD);
-    await tabUntil(page, (el) => el.getAttribute('aria-label') === 'Graph' && !!el.closest('.page-bar'), 'the Graph stage button');
+    await tabUntil(page, (el) => el.getAttribute('aria-label') === 'Graph' && !!el.closest('.page-bar-actions'), 'the Graph stage button');
     await page.keyboard.press('g');
     await page.keyboard.press('t');
     await page.locator('.dialog-search').waitFor();

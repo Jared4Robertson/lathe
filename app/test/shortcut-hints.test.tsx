@@ -186,7 +186,7 @@ describe('shortcut hints', () => {
   it('LA-V65-R01-T01 The shortcuts sheet matches the hints: one Switch to row per product, with the same keys', async () => {
     const resolved = resolveCommands({}, false);
     expect(resolved.filter((c) => c.id.startsWith('switchSpace')).map((c) => c.keys[0])).toEqual(['Alt+1', 'Alt+2', 'Alt+3', 'Alt+4', 'Alt+5', 'Alt+6', 'Alt+7', 'Alt+8', 'Alt+9']);
-    expect(COMMANDS.filter((c) => c.dynamic).length).toBe(9);
+    expect(COMMANDS.filter((c) => c.dynamic && c.id.startsWith('switchSpace')).length).toBe(9);
 
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });

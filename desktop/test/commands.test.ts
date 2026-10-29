@@ -123,17 +123,23 @@ describe('The app menu has About and Settings, File chooses the editor, and View
     expect(actions.chooseEditor).toHaveBeenCalledWith('zed');
   });
 
-  it('LA-V96-R17-T01 has View › Tabs: Ctrl+Tab and Ctrl+Shift+Tab owned by the menu, keep and close through the app\'s keys', () => {
+  it('LA-V96-R17-T01 has View › Tabs: new, close, duplicate, next, previous, back and forward, with Cmd+T, Cmd+W, Ctrl+Tab, Cmd+[ and Cmd+] owned by the menu', () => {
     const { menu, actions } = full(true);
     const tabs = submenu(submenu(menu.find((m) => m.label === 'View')).find((m) => m.label === 'Tabs'));
     expect(tabs.map((m) => [m.label, m.accelerator])).toEqual([
+      ['New Tab', 'CmdOrCtrl+T'],
+      ['Close Tab', 'CmdOrCtrl+W'],
+      ['Duplicate Tab', undefined],
       ['Show Next Tab', 'Ctrl+Tab'],
       ['Show Previous Tab', 'Ctrl+Shift+Tab'],
-      ['Keep Tab Open', undefined],
-      ['Close Tab', undefined],
+      ['Back', 'CmdOrCtrl+['],
+      ['Forward', 'CmdOrCtrl+]'],
     ]);
     for (const item of tabs) (item.click as () => void)();
-    expect(actions.runCommand.mock.calls.map(([id]) => id)).toEqual(['nextTab', 'previousTab', 'keepTab', 'closeTab']);
-    expect(TAB_COMMANDS.map((c) => c.id)).toEqual(['nextTab', 'previousTab', 'keepTab', 'closeTab']);
+    const ids = ['newTab', 'closeTab', 'duplicateTab', 'nextTab', 'previousTab', 'goBack', 'goForward'];
+    expect(actions.runCommand.mock.calls.map(([id]) => id)).toEqual(ids);
+    expect(TAB_COMMANDS.map((c) => c.id)).toEqual(ids);
+    // Cmd/Ctrl+W is the tab's, so the window closes with Shift too.
+    expect(submenu(menu.find((m) => m.label === 'File')).find((m) => m.role === 'close')?.accelerator).toBe('CmdOrCtrl+Shift+W');
   });
 });

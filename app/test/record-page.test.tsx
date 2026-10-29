@@ -5,7 +5,6 @@ import { renderMarkdown } from '../src/specs/Markdown';
 import { factsOf } from '../src/specs/RecordText';
 import { addRows, indexOf } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
-import { SETTINGS_KEY } from '../src/graph/settings';
 import { main, openApp } from './helpers';
 
 // The record page's wiki card shows its text fields, its parts (fields with their types, a table's
@@ -16,7 +15,7 @@ const facts = () => within(card()).getByRole('complementary', { name: 'Facts' })
 /** A fact's value in the wiki card's Facts, by its name. */
 const fact = (name: string) => within(facts()).getByText(name, { selector: 'dt' }).closest('div')!.querySelector('dd')!;
 /** The wiki card open on the whole page, for the session. */
-const expanded = () => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
+const expanded = () => window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
 
 /** The wiki card's section under this heading. */
 function section(name: string | RegExp) {
