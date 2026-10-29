@@ -25,22 +25,23 @@ async function walksOutAndIn(target: () => Element) {
 }
 
 describe('the stage walk', () => {
-  it('LA-V61-R49-T02 From the page the plain arrows walk the Graph, ERD and Trace stages and are announced, and stay with quick find, the nav tree and the Trace table', async () => {
+  it('LA-V61-R49-T02 From the page the plain arrows walk the Graph, ERD and Trace stages and are announced, and stay with quick find and the Trace table, but not with a nav link clicked last', async () => {
     await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });
     await waitFor(() => expect(document.querySelector('.focus-stage .graph-box')).not.toBeNull());
     await walksOutAndIn(() => document.body);
 
     // A modifier keeps the arrow's own meaning: nothing steps.
     press(document.body, 'ArrowLeft', { altKey: true });
-    // Quick find (a combobox) and the nav tree keep their arrows.
+    // Quick find (a combobox) keeps its arrows.
     const find = document.querySelector<HTMLInputElement>('#nav input')!;
     find.focus();
     press(find, 'ArrowLeft');
-    const navLink = document.querySelector<HTMLElement>('#nav .space-items a')!;
-    navLink.focus();
-    press(navLink, 'ArrowLeft');
     await new Promise((r) => setTimeout(r, 50));
     expect(at()).toBe('/P-D-UC01');
+    // The nav's links don't use arrows: with one focused (the record just clicked in the nav), the arrows walk the stage.
+    const navLink = document.querySelector<HTMLElement>('#nav .space-items a')!;
+    navLink.focus();
+    await walksOutAndIn(() => navLink);
 
     // The ERD stage walks by the Tree view's keys.
     fireEvent.click(stageButton('ERD'));

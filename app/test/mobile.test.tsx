@@ -173,7 +173,7 @@ describe('Lathe on a phone', () => {
 
   const proveLaV61R23T01 = async () => {
     phone();
-    window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, chat: false, chatWidth: null }));
+    window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
     await openApp('/P-D-UC01-R01?stage=graph', served());
     // The requirement's use case, its parent, is drawn beside it.
     await waitFor(() => expect(boxElement('P-D-UC01')).not.toBeNull());

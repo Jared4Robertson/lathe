@@ -65,7 +65,7 @@ const PAGES: State[] = [
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
-  { name: 'Trace stage, the lanes a flow step belongs to', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-shape="rows"][data-ready]' },
+  { name: 'Trace stage, framed on the lanes a flow step belongs to', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
   { name: 'Trace stage, an entity in its aggregate\'s lanes', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
@@ -161,6 +161,12 @@ const DESKTOP: State[] = [
     await open(page, RECORD, '.chat-session-open');
     await page.locator('.chat-session-open', { hasText: 'Plan the graph stage' }).click();
     await page.locator('.chat-warning').waitFor();
+  } },
+  // The wiki card opens as its summary on every page above; More shows the whole page in place (LA-V96-R22).
+  { name: 'the wiki card expanded to the whole page', run: async (page) => {
+    await open(page, RECORD, '.header-strip h1');
+    await page.locator('.wiki-panel').getByRole('button', { name: 'More' }).click();
+    await page.locator('.wiki-panel.is-expanded').waitFor();
   } },
   { name: 'a tooltip on keyboard focus', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');

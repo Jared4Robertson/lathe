@@ -370,7 +370,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
   const ownStages = own.stages.filter((s) => s.count > 0);
 
   return (
-    <div className="space-items" data-space={space.id} data-arrows="own">
+    <div className="space-items" data-space={space.id}>
       <ul>
         <li>
           <NavRow depth={0} selected={path === addressOf(space.id)}>

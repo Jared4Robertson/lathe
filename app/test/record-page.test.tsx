@@ -42,11 +42,9 @@ describe('record page', () => {
     openSideBar();
     await openApp('/DM-SHOP-UC01');
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
-    expect(card().querySelector('.record-id')).toHaveTextContent('DM-SHOP-UC01');
-    // The kind is a badge in its stage's color.
-    const badge = card().querySelector('.wiki-panel-title .eyebrow .kind-badge')!;
-    expect(badge).toHaveTextContent('Use case');
-    expect(badge).toHaveClass('stage-use-cases');
+    // The card's kind line reads as the box's: the kind and the ID; its stripe takes the box's stage color.
+    expect(card().querySelector('.wiki-panel-kind')).toHaveTextContent('Use case · DM-SHOP-UC01');
+    expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-use-cases)');
     expect(within(card()).getByText('A shopper adds an item.').closest('.markdown')).not.toBeNull();
     // The side bar: its data file and line, and its parent.
     expect(fact('Data file')).toHaveTextContent('data/use_case.jsonl:2');
@@ -181,7 +179,7 @@ describe('record page', () => {
     openSideBar('details', ['graph']);
     await openApp('/DM-V01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Basket page' });
-    expect(card().querySelector('.wiki-panel-title .eyebrow .kind-badge')).toHaveClass('stage-interaction-design');
+    expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-interaction-design)');
     // Both domains' flow steps happen in the view, so the product shares it: its breadcrumb starts at the product, in no domain.
     expect(within(card().querySelector<HTMLElement>('.breadcrumb')!).getAllByRole('link')[0]).toHaveTextContent('Demo shop');
     expect(card().querySelector('.breadcrumb')).not.toHaveTextContent('Shopping');

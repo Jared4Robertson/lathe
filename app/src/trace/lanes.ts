@@ -1,29 +1,30 @@
 import { byIdOrder, type SpecIndex } from '../specs/data';
 import { isTestKind } from '../specs/parts';
-import { fileKey, holdersOf, obligationsUnder, traceChain, traceShape, untracedUnder, type GapColumn, type TraceRow } from './chain';
+import { treeParent } from '../graph/tree';
+import type { MapRect } from '../graph/camera';
+import { faintest, keptFade, type Fade, type FadeLook } from '../graph/fade';
+import { onePerData } from '../graph/one-map';
+import { fileKey, obligationsUnder, traceChain, untracedUnder, type GapColumn, type TraceRow } from './chain';
 
-// The Trace stage's picture (LA-V98), pure and tested directly: what it draws for a focus, laid out
-// once in map units, left to right.
+// The Trace stage's map (LA-V98), pure and tested directly: one map per product, laid out once per
+// product and data change in map units, left to right, that the stage navigates (LA-PAT-APP-UX-R19).
 //
-// - One obligation: its chain, exactly as the graph's trace mode drew it, "why" columns included:
-//   the business outcomes its capability serves → the capability → the use case (or the
-//   obligation's parent) → the obligation → flow → step → design → build → tests → files, boxes in
-//   stage colors and arrows for the chain's actual links (TraceRow.links).
-// - Anything above obligations: a "why" tree on the left and one lane per obligation on the right.
-//   The tree fans out from the focus (a product from its business outcomes, a capability that serves
-//   several repeated under each and marked "also serves"; a domain from its capabilities, their
-//   outcomes as notes on the capability's box; a capability, a use case or a parent from itself),
-//   each parent as tall as its children (the graph's Tree rule). Each lane is an obligation's chain
-//   across the columns after it; each gap coverage reports (not designed, not built, not proved)
-//   is a dashed box in its column. A record held by several lanes is repeated in each, with "in N lanes" on each copy. The
-//   records coverage reports untraced (record-untraced) sit in an Untraced lane at the bottom.
-// - A record that is no obligation: the lanes that hold it, the record marked as the focus; a record
-//   nothing traces to (or any other record) the lanes of the nearest container with obligations,
-//   the record in the Untraced lane when it is untraced.
+// - On the left the "why" tree, from the product's business outcomes: a capability serving several
+//   repeated under each, marked "Also serves" the others, then its use cases; an obligation with no
+//   capability hangs from its own parent (an aggregate, a view, a pattern), one with neither from no
+//   tree, after the tree. Each parent is as tall as the lanes beneath it (the graph's Tree rule).
+// - On the right one lane per obligation in the tree's order: its chain across the columns after it,
+//   flow → step → design → build → tests → files, boxes in stage colors and arrows for the chain's
+//   actual links (TraceRow.links). Each gap coverage reports (not designed, not built, not proved) is
+//   a dashed box in its column. A record held by several lanes is repeated in each, with "In N lanes"
+//   on each copy; an obligation whose capability serves several outcomes has a lane under each.
+// - At the bottom the Untraced lane: the records coverage reports untraced (record-untraced).
 //
-// Boxes share one size at text scale 1, a tree box as tall as the lanes beneath it. Columns no box
-// uses are left out, so a trace with no flows has no flow column. The picture keeps its lanes in
-// order, top to bottom, so the canvas finds what is in view by halving (visibleIn) and draws only that.
+// Focusing anything moves the camera to frame it (traceFocus) and fades what is not under it; Gaps
+// only fades the complete lanes (traceFade). Nothing here depends on the focus or a filter, so no box
+// ever moves. Boxes share one size, a tree box as tall as the lanes beneath it. Columns no box uses
+// are left out. The lanes are kept in order, top to bottom, so the canvas finds what is in view by
+// halving (visibleIn, lanesIn) and draws only that.
 
 /** The Trace stage's columns, left to right: why, the obligation, then its chain. */
 export type LaneColumn = 'outcome' | 'capability' | 'parent' | 'obligation' | 'flow' | 'step' | 'design' | 'build' | 'tests' | 'files';
@@ -43,7 +44,7 @@ export const LANE_GAP = 24;
 export type BoxRole = 'record' | 'file' | 'gap' | 'untraced';
 
 export interface TraceBox {
-  /** Unique in the picture: a record repeated in several lanes has a box in each. */
+  /** Unique in the map, and its place for the fade (fade.ts): a record repeated in several lanes has a box in each. */
   key: string;
   /** The record it is (every copy shares it), `file:<path>`, `gap:<lane>:<column>`, or `untraced`. */
   id: string;
@@ -66,6 +67,9 @@ export interface TraceLine {
   /** The ids of its ends (shared by copies), for the hover spotlight. */
   source: string;
   target: string;
+  /** The keys of the boxes it joins: its places for the fade. */
+  from: string;
+  to: string;
   /** A tree's parent line (level and plain) rather than a chain's arrow. */
   tree: boolean;
   points: [{ x: number; y: number }, { x: number; y: number }];
@@ -76,21 +80,18 @@ export interface TraceLane {
   obligation: string | null;
   top: number;
   height: number;
+  /** Where its boxes start and end, left to right: its bar's extent far out. */
+  left: number;
+  right: number;
   boxes: TraceBox[];
   lines: TraceLine[];
   /** Its gaps (TraceRow's): the columns coverage reports missing. */
   gaps: GapColumn[];
 }
 
-/** What the picture is of, for the header strip and the note over it. */
-export type PictureShape = 'chain' | 'lanes' | 'rows' | 'context';
-
-export interface TracePicture {
-  shape: PictureShape;
-  /** Whether the focus is a design, build or test record nothing traces to (the context shape). */
-  untraced: boolean;
-  /** The container whose lanes the context shape shows, or null. */
-  scope: string | null;
+/** One product's Trace map. */
+export interface TraceMap {
+  product: string;
   lanes: TraceLane[];
   /** The "why" tree's boxes and lines, which span lanes. */
   tree: { boxes: TraceBox[]; lines: TraceLine[] };
@@ -98,8 +99,14 @@ export interface TracePicture {
   columns: { column: LaneColumn; x: number }[];
   width: number;
   height: number;
-  /** How many lanes trace an obligation, how many of those have a gap, and how many records are untraced. */
+  /** How many obligations it traces, how many of those have a gap, and how many records are untraced. */
   counts: { obligations: number; withGaps: number; untraced: number };
+  /** Every box of a record or file, the tree's first, then lane by lane. */
+  copies: ReadonlyMap<string, readonly TraceBox[]>;
+  /** The lanes of each obligation, in order: several when its capability serves several outcomes. */
+  lanesOf: ReadonlyMap<string, readonly number[]>;
+  /** Each place's lanes, the first and the last: a lane box's (and a lane's bar, `lane:<n>`) its own; a tree box's those beneath it. */
+  places: ReadonlyMap<string, readonly [number, number]>;
 }
 
 /** A step of the "why" tree above an obligation, with its notes. */
@@ -128,16 +135,12 @@ function whyOf(index: SpecIndex, obligation: string): { chain: { id: string; col
 const servesNote = (index: SpecIndex, outcomes: readonly string[], also = false) => (outcomes.length === 0 ? [] : [`${also ? 'Also serves' : 'Serves'} ${outcomes.map((o) => titleOf(index, o)).join(', ')}`]);
 
 /**
- * The tree paths above an obligation, from the focus: one path, or on a product's picture one per outcome its
- * capability serves (the capability repeated under each, marked "also serves" the others).
+ * The tree paths above an obligation, from the product's outcomes: one per outcome its capability serves (the
+ * capability repeated under each, marked "Also serves" the others); from the capability or its parent when it serves none.
  */
-export function whyPaths(index: SpecIndex, focus: string, obligation: string): Why[][] {
+function whyPaths(index: SpecIndex, obligation: string): Why[][] {
   const { chain, outcomes } = whyOf(index, obligation);
-  const steps = (from: number, tags: boolean): Why[] => chain.slice(from).map((s) => ({ ...s, notes: tags && s.column === 'capability' ? servesNote(index, outcomes) : [] }));
-  const at = chain.findIndex((s) => s.id === focus);
-  if (at >= 0) return [steps(at, true)];
-  const fromOutcomes = index.byId.get(focus)?.kind === 'product' && outcomes.length > 0;
-  if (!fromOutcomes) return [steps(0, true)];
+  if (outcomes.length === 0) return [chain.map((s) => ({ ...s, notes: [] }))];
   return outcomes.map((o) => [
     { id: o, column: 'outcome' as const, notes: [] },
     ...chain.map((s) => ({ ...s, notes: s.column === 'capability' ? servesNote(index, outcomes.filter((x) => x !== o), true) : [] })),
@@ -164,7 +167,7 @@ interface LaneDraft {
   columns: Map<LaneColumn, { id: string; role: BoxRole; opens: string | null; notes: string[]; words?: { title: string; meta: string } }[]>;
   links: (readonly [string, string])[];
   gaps: GapColumn[];
-  /** Its "why" path in the tree (lanes mode), outermost first. */
+  /** Its "why" path in the tree, outermost first. */
   path: Why[];
 }
 
@@ -199,48 +202,15 @@ function untracedLane(index: SpecIndex, ids: readonly string[]): LaneDraft {
   return d;
 }
 
-/** The chain of one obligation as one lane, its "why" columns in it: the outcomes stacked, each leading to the capability. */
-function chainLane(index: SpecIndex, obligation: string): LaneDraft {
-  const d = laneOf(index, traceChain(index, obligation)!, []);
-  const { chain, outcomes } = whyOf(index, obligation);
-  const record = (id: string) => ({ id, role: 'record' as const, opens: id, notes: [] });
-  const cap = chain.find((s) => s.column === 'capability');
-  for (const o of cap ? outcomes : []) { push(d, 'outcome', record(o)); d.links.push([o, cap!.id]); }
-  chain.forEach((s, i) => { push(d, s.column, record(s.id)); d.links.push([s.id, chain[i + 1]?.id ?? obligation]); });
-  return d;
-}
-
-/** Everything the Trace stage draws for a focus, laid out; `gapsOnly` keeps only the lanes with a gap (and the Untraced lane). */
-export function tracePicture(index: SpecIndex, focus: string, { gapsOnly = false }: { gapsOnly?: boolean } = {}): TracePicture {
-  const shape = traceShape(index, focus);
-  let drafts: LaneDraft[] = [];
-  let untraced: string[] = [];
-  let scope: string | null = null;
-  let isUntraced = false;
-  if (shape.shape === 'chain') {
-    drafts = [chainLane(index, focus)];
-  } else {
-    let obligations: string[];
-    let start = focus;
-    let untracedOf: string | null = null;
-    if (shape.shape === 'matrix') { obligations = obligationsUnder(index, focus); untracedOf = focus; }
-    else if (shape.shape === 'rows') { obligations = holdersOf(index, focus); start = ''; }
-    else {
-      scope = shape.scope;
-      isUntraced = shape.untraced;
-      obligations = scope ? obligationsUnder(index, scope) : [];
-      start = scope ?? '';
-      untracedOf = scope;
-    }
-    for (const o of obligations) for (const path of whyPaths(index, start, o)) drafts.push(laneOf(index, traceChain(index, o)!, path));
-    if (gapsOnly) drafts = drafts.filter((d) => d.gaps.length > 0);
-    drafts = treeOrder(drafts);
-    if (untracedOf) untraced = untracedUnder(index, untracedOf).flatMap((g) => g.ids);
-    if (isUntraced && !untraced.includes(focus)) untraced.push(focus);
-    if (untraced.length > 0) drafts.push(untracedLane(index, untraced));
-  }
-  return place(shape.shape === 'matrix' ? 'lanes' : shape.shape, drafts, { untraced: isUntraced, scope, untracedCount: untraced.length });
-}
+/** A product's Trace map, laid out once per product and data change (one-map.ts). */
+export const traceMap = onePerData((index: SpecIndex, product: string): TraceMap => {
+  const drafts: LaneDraft[] = [];
+  for (const o of obligationsUnder(index, product)) for (const path of whyPaths(index, o)) drafts.push(laneOf(index, traceChain(index, o)!, path));
+  const ordered = treeOrder(drafts);
+  const untraced = untracedUnder(index, product).flatMap((g) => g.ids);
+  if (untraced.length > 0) ordered.push(untracedLane(index, untraced));
+  return place(product, ordered, untraced.length);
+});
 
 /**
  * The drafts in the tree's order: each path's lanes together, the tree's branches in the order they first appear,
@@ -266,7 +236,7 @@ function treeOrder(drafts: LaneDraft[]): LaneDraft[] {
 }
 
 /** Places the lanes top to bottom and the tree over them, keeping only the columns some box uses. */
-function place(shape: PictureShape, drafts: LaneDraft[], info: { untraced: boolean; scope: string | null; untracedCount: number }): TracePicture {
+function place(product: string, drafts: LaneDraft[], untracedCount: number): TraceMap {
   const used = new Set<LaneColumn>();
   for (const d of drafts) {
     for (const c of d.columns.keys()) used.add(c);
@@ -285,6 +255,7 @@ function place(shape: PictureShape, drafts: LaneDraft[], info: { untraced: boole
     }
   }
 
+  const places = new Map<string, readonly [number, number]>();
   const lanes: TraceLane[] = [];
   let y = 0;
   drafts.forEach((d, lane) => {
@@ -292,6 +263,7 @@ function place(shape: PictureShape, drafts: LaneDraft[], info: { untraced: boole
     const height = tallest * BOX_H + (tallest - 1) * ROW_GAP;
     const boxes: TraceBox[] = [];
     const byId = new Map<string, TraceBox>();
+    const at = [lane, lane] as const;
     for (const [column, items] of d.columns) {
       const stack = items.length * BOX_H + (items.length - 1) * ROW_GAP;
       // Each column centered in its lane; the Untraced lane's from its top, where its head sits.
@@ -304,23 +276,27 @@ function place(shape: PictureShape, drafts: LaneDraft[], info: { untraced: boole
         };
         boxes.push(box);
         byId.set(it.id, box);
+        places.set(box.key, at);
         top += BOX_H + ROW_GAP;
       }
     }
+    places.set(`lane:${lane}`, at);
     const lines: TraceLine[] = [];
     for (const [from, to] of d.links) {
       const a = byId.get(from);
       const b = byId.get(to);
       if (!a || !b || a === b) continue;
-      lines.push({ key: `${lane}|${from}|${to}`, source: from, target: to, tree: false, points: [{ x: a.x + a.w, y: a.y + a.h / 2 }, { x: b.x, y: b.y + b.h / 2 }] });
+      lines.push({ key: `${lane}|${from}|${to}`, source: from, target: to, from: a.key, to: b.key, tree: false, points: [{ x: a.x + a.w, y: a.y + a.h / 2 }, { x: b.x, y: b.y + b.h / 2 }] });
     }
-    lanes.push({ obligation: d.obligation, top: y, height, boxes, lines, gaps: d.gaps });
+    const left = Math.min(...boxes.map((b) => b.x));
+    const right = Math.max(...boxes.map((b) => b.x + b.w));
+    lanes.push({ obligation: d.obligation, top: y, height, left, right, boxes, lines, gaps: d.gaps });
     y += height + LANE_GAP;
   });
 
   // The "why" tree: a box per path prefix, as tall as the lanes beneath it, each joined to its children by a level line.
-  const tree: TracePicture['tree'] = { boxes: [], lines: [] };
-  interface Span { why: Why; top: number; bottom: number; children: string[]; firstLane: number }
+  const tree: TraceMap['tree'] = { boxes: [], lines: [] };
+  interface Span { why: Why; top: number; bottom: number; children: string[]; first: number; last: number }
   const spans = new Map<string, Span>();
   const order: string[] = [];
   lanes.forEach((l, i) => {
@@ -331,12 +307,13 @@ function place(shape: PictureShape, drafts: LaneDraft[], info: { untraced: boole
       prefix = `${prefix}/${s.id}`;
       let span = spans.get(prefix);
       if (!span) {
-        span = { why: s, top: l.top, bottom: l.top + l.height, children: [], firstLane: i };
+        span = { why: s, top: l.top, bottom: l.top + l.height, children: [], first: i, last: i };
         spans.set(prefix, span);
         order.push(prefix);
         if (depth > 0) spans.get(parent)!.children.push(prefix);
       }
       span.bottom = l.top + l.height;
+      span.last = i;
       if (depth === path.length - 1 && !span.children.includes(`lane:${i}`)) span.children.push(`lane:${i}`);
     });
   });
@@ -346,6 +323,7 @@ function place(shape: PictureShape, drafts: LaneDraft[], info: { untraced: boole
     const box: TraceBox = { key: `tree${key}`, id: s.why.id, role: 'record', column: s.why.column, lane: -1, x: xOf.get(s.why.column)!, y: s.top, w: BOX_W, h: s.bottom - s.top, opens: s.why.id, notes: s.why.notes };
     treeBox.set(key, box);
     tree.boxes.push(box);
+    places.set(box.key, [s.first, s.last]);
   }
   for (const key of order) {
     const s = spans.get(key)!;
@@ -354,40 +332,150 @@ function place(shape: PictureShape, drafts: LaneDraft[], info: { untraced: boole
       const c = child.startsWith('lane:') ? lanes[Number(child.slice(5))].boxes.find((b) => b.column === 'obligation') : treeBox.get(child);
       if (!c) continue;
       const cy = child.startsWith('lane:') ? c.y + c.h / 2 : c.y + Math.min(c.h, BOX_H) / 2;
-      tree.lines.push({ key: `tree${key}>${c.key}`, source: p.id, target: c.id, tree: true, points: [{ x: p.x + p.w, y: cy }, { x: c.x, y: cy }] });
+      tree.lines.push({ key: `tree${key}>${c.key}`, source: p.id, target: c.id, from: p.key, to: c.key, tree: true, points: [{ x: p.x + p.w, y: cy }, { x: c.x, y: cy }] });
     }
   }
 
+  const copies = new Map<string, TraceBox[]>();
+  for (const b of [...tree.boxes, ...lanes.flatMap((l) => l.boxes)]) { const list = copies.get(b.id); if (list) list.push(b); else copies.set(b.id, [b]); }
+  const lanesOf = new Map<string, number[]>();
+  lanes.forEach((l, i) => { if (l.obligation) { const list = lanesOf.get(l.obligation); if (list) list.push(i); else lanesOf.set(l.obligation, [i]); } });
   const traced = lanes.filter((l) => l.obligation !== null);
   return {
-    shape,
-    untraced: info.untraced,
-    scope: info.scope,
+    product,
     lanes,
     tree,
     columns,
     width: columns.length > 0 ? columns.length * (BOX_W + COLUMN_GAP) - COLUMN_GAP : 0,
     height: Math.max(0, y - LANE_GAP),
-    counts: { obligations: new Set(traced.map((l) => l.obligation)).size, withGaps: new Set(traced.filter((l) => l.gaps.length > 0).map((l) => l.obligation)).size, untraced: info.untracedCount },
+    counts: { obligations: lanesOf.size, withGaps: new Set(traced.filter((l) => l.gaps.length > 0).map((l) => l.obligation)).size, untraced: untracedCount },
+    copies,
+    lanesOf,
+    places,
   };
 }
 
-/** What a rectangle of the picture holds: the tree's boxes and lines that meet it, and the lanes' (found by halving, lanes being in order). */
-export function visibleIn(p: TracePicture, r: { x0: number; y0: number; x1: number; y1: number }): { boxes: TraceBox[]; lines: TraceLine[] } {
-  const meets = (b: { x: number; y: number; w: number; h: number }) => b.x + b.w >= r.x0 && b.x <= r.x1 && b.y + b.h >= r.y0 && b.y <= r.y1;
-  const boxes = p.tree.boxes.filter(meets);
-  const lines = p.tree.lines.filter((l) => l.points[0].y >= r.y0 && l.points[0].y <= r.y1);
+// ---------- Focusing: where the camera goes, and what stays at full strength ----------
+
+/** What focusing a record frames on the map: a rectangle, the box the camera centers on when it is too wide, and the lanes kept at full strength (null for all). */
+export interface TraceFocus { rect: MapRect; anchor: MapRect | null; lanes: ReadonlySet<number> | null }
+
+const laneRect = (map: TraceMap, lanes: readonly number[]): MapRect => {
+  const top = Math.min(...lanes.map((i) => map.lanes[i].top));
+  const bottom = Math.max(...lanes.map((i) => map.lanes[i].top + map.lanes[i].height));
+  return { x: 0, y: top, w: map.width, h: bottom - top };
+};
+const boxRect = (b: TraceBox): MapRect => ({ x: b.x, y: b.y, w: b.w, h: Math.min(b.h, BOX_H) });
+const range = (from: number, to: number) => Array.from({ length: to - from + 1 }, (_, i) => from + i);
+
+/** Where a record is on the map, or null when it is not drawn and nothing under it is. */
+function focusAt(map: TraceMap, index: SpecIndex, focus: string): TraceFocus | null {
+  if (focus === map.product) return { rect: { x: 0, y: 0, w: map.width, h: map.height }, anchor: null, lanes: null };
+  const copies = map.copies.get(focus) ?? [];
+  // A box of the why tree (an outcome, a capability, a use case, an obligation's parent): it and every lane beneath it, from its left edge.
+  const tree = copies.filter((b) => b.lane < 0);
+  if (tree.length > 0) {
+    const first = tree[0];
+    const lanes = new Set(tree.flatMap((b) => { const [a, z] = map.places.get(b.key)!; return range(a, z); }));
+    return { rect: { x: first.x, y: first.y, w: map.width - first.x, h: first.h }, anchor: null, lanes };
+  }
+  // An obligation: its first lane, centered on it; every lane of it kept.
+  const own = map.lanesOf.get(focus);
+  if (own) {
+    const box = map.lanes[own[0]].boxes.find((b) => b.column === 'obligation')!;
+    return { rect: laneRect(map, [own[0]]), anchor: boxRect(box), lanes: new Set(own) };
+  }
+  // A record or group with obligations under it (a domain, a stage, a folder): all their lanes, its Untraced records' lane too.
+  const under = obligationsUnder(index, focus).flatMap((o) => map.lanesOf.get(o) ?? []);
+  if (under.length > 0) {
+    const untraced = map.lanes.length - 1;
+    const kept = new Set(under);
+    if (map.lanes[untraced]?.obligation === null && untracedUnder(index, focus).length > 0) kept.add(untraced);
+    return { rect: laneRect(map, under), anchor: null, lanes: kept };
+  }
+  // A design, build or test record a chain holds, or an untraced one: its first lane (in the Untraced lane, its own row), centered on it; every lane holding a copy kept.
+  if (copies.length > 0) {
+    const first = copies[0];
+    const lane = map.lanes[first.lane];
+    const rect = lane.obligation === null ? { x: 0, y: first.y, w: map.width, h: first.h } : laneRect(map, [first.lane]);
+    return { rect, anchor: boxRect(first), lanes: new Set(copies.map((b) => b.lane)) };
+  }
+  return null;
+}
+
+/**
+ * What focusing a record does on its product's map (LA-V98-R08): the product frames the whole map; a tree box frames
+ * itself and its lanes; an obligation, or a record a chain holds, its first lane, centered on its box, every copy kept;
+ * a record or group with obligations under it frames all their lanes; any other record frames the nearest container
+ * above it that is drawn (an entity its aggregate), and the product when none is.
+ */
+export function traceFocus(map: TraceMap, index: SpecIndex, focus: string): TraceFocus {
+  for (let at: string | null = focus; at !== null; at = treeParent(index, at)) {
+    const found = focusAt(map, index, at);
+    if (found) return found;
+  }
+  return focusAt(map, index, map.product)!;
+}
+
+/**
+ * How strongly each place is drawn (LA-PAT-APP-UX-R19): the focus's lanes and the tree boxes over them at full strength,
+ * and under Gaps only the lanes with a gap and the Untraced lane; everything else faded back, never taken out.
+ */
+export function traceFade(map: TraceMap, lanes: ReadonlySet<number> | null, gapsOnly: boolean, look: Pick<FadeLook, 'focusFade'>): Fade {
+  const keeps = (test: (lane: number) => boolean) => {
+    const known = new Map<string, boolean>();
+    return (place: string) => {
+      const seen = known.get(place);
+      if (seen !== undefined) return seen;
+      const [from, to] = map.places.get(place) ?? [0, -1];
+      let kept = false;
+      for (let i = from; i <= to && !kept; i++) kept = test(i);
+      known.set(place, kept);
+      return kept;
+    };
+  };
+  const fades: Fade[] = [];
+  if (lanes) fades.push(keptFade(keeps((i) => lanes.has(i)), look));
+  if (gapsOnly) fades.push(keptFade(keeps((i) => map.lanes[i].obligation === null || map.lanes[i].gaps.length > 0), look));
+  return fades.length === 0 ? () => 1 : faintest(...fades);
+}
+
+// ---------- What is in view ----------
+
+/** The first lane that reaches a height, and the lane past the last that starts above another: found by halving. */
+function laneRange(map: TraceMap, y0: number, y1: number): [number, number] {
   let lo = 0;
-  let hi = p.lanes.length;
-  while (lo < hi) { const mid = (lo + hi) >> 1; if (p.lanes[mid].top + p.lanes[mid].height < r.y0) lo = mid + 1; else hi = mid; }
-  for (let i = lo; i < p.lanes.length && p.lanes[i].top <= r.y1; i++) {
-    const lane = p.lanes[i];
-    for (const b of lane.boxes) if (meets(b)) boxes.push(b);
+  let hi = map.lanes.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (map.lanes[mid].top + map.lanes[mid].height < y0) lo = mid + 1; else hi = mid; }
+  let end = lo;
+  while (end < map.lanes.length && map.lanes[end].top <= y1) end++;
+  return [lo, end];
+}
+
+type Rect = { x0: number; y0: number; x1: number; y1: number };
+const meets = (r: Rect) => (b: { x: number; y: number; w: number; h: number }) => b.x + b.w >= r.x0 && b.x <= r.x1 && b.y + b.h >= r.y0 && b.y <= r.y1;
+
+/** What a rectangle of the map holds: the tree's boxes and lines that meet it, and the lanes'. */
+export function visibleIn(map: TraceMap, r: Rect): { boxes: TraceBox[]; lines: TraceLine[] } {
+  const inside = meets(r);
+  const boxes = map.tree.boxes.filter(inside);
+  const lines = map.tree.lines.filter((l) => l.points[0].y >= r.y0 && l.points[0].y <= r.y1);
+  const [lo, hi] = laneRange(map, r.y0, r.y1);
+  for (let i = lo; i < hi; i++) {
+    const lane = map.lanes[i];
+    for (const b of lane.boxes) if (inside(b)) boxes.push(b);
     for (const l of lane.lines) if (Math.max(l.points[0].x, l.points[1].x) >= r.x0 && Math.min(l.points[0].x, l.points[1].x) <= r.x1) lines.push(l);
   }
   return { boxes, lines };
 }
 
-/** Every box of the picture, the tree's first. */
-export const allBoxes = (p: TracePicture): TraceBox[] => [...p.tree.boxes, ...p.lanes.flatMap((l) => l.boxes)];
+/** Far out, what a rectangle holds without its lanes' boxes: the lanes that meet it (each drawn as one bar) and the tree's boxes. */
+export function lanesIn(map: TraceMap, r: Rect): { lanes: number[]; tree: TraceBox[] } {
+  const [lo, hi] = laneRange(map, r.y0, r.y1);
+  const lanes: number[] = [];
+  for (let i = lo; i < hi; i++) if (map.lanes[i].right >= r.x0 && map.lanes[i].left <= r.x1) lanes.push(i);
+  return { lanes, tree: map.tree.boxes.filter(meets(r)) };
+}
 
+/** Every box of the map, the tree's first. */
+export const allBoxes = (map: TraceMap): TraceBox[] => [...map.tree.boxes, ...map.lanes.flatMap((l) => l.boxes)];
