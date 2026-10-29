@@ -89,7 +89,7 @@ export const COMMANDS: readonly Command[] = [
   // collapses, once nothing above the card is open (each overlay takes its own Escape first, LA-V96-R19).
   { id: 'toggleWikiCard', title: 'Show or collapse the wiki card', group: 'View', keys: ['Enter', 'Ctrl+W'], otherKeys: ['Enter', 'Alt+W'], when: 'page' },
   { id: 'collapseWikiCard', title: 'Collapse the wiki card', group: 'View', keys: ['Escape'], when: 'page' },
-  // The Changes lens and Follow (LA-EXP-UC13), the same on every stage.
+  // The Changes lens and Follow (LA-EXP-UC15), the same on every stage.
   { id: 'toggleChangesLens', title: 'Changes lens: dim everything unchanged, or show everything again', group: 'View', keys: ['g l'], when: 'page' },
   { id: 'toggleFollow', title: 'Follow the changes: glide to each change as it lands', group: 'View', keys: [], when: 'page' },
   { id: 'expandAll', title: 'Expand all rows on this page', group: 'View', keys: [], when: 'page' },

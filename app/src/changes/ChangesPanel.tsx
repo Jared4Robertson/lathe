@@ -7,7 +7,7 @@ import { CHANGE_LABEL, ChangeDetails, changeSummary, SincePicker } from './Chang
 import { ago, countsText, useChanges, type RecordChange } from './changes';
 import { useLiveVersion } from './marks';
 
-// The Changes panel (LA-V99), Tools › Changes: a tool over the stage (LA-PAT-APP-UX-R20) at `?panel=changes` on
+// The Changes panel (LA-V100), Tools › Changes: a tool over the stage (LA-PAT-APP-UX-R20) at `?panel=changes` on
 // whatever focus the stage shows. It lists the product's changes from the baseline the Reader picked, by record,
 // newest first: the records that changed while the page was open first, by when they landed, then the rest by ID.
 // Each is a card: its kind, ID and title, what changed and when, and the fields old → new; a click focuses it on the

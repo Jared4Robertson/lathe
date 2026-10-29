@@ -374,7 +374,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
 const ignore = () => {};
 
 /**
- * Follow (LA-EXP-UC13): while it is on, the focus moves to each change as it lands, the newest, and the camera glides
+ * Follow (LA-EXP-UC15): while it is on, the focus moves to each change as it lands, the newest, and the camera glides
  * there as for any focus. The Reader's own move turns it off, with a note saying so: a focus Follow did not make, or a
  * drag, a pinch or the wheel on the stage.
  */

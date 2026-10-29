@@ -5,7 +5,7 @@ import { SINCE_LABELS, SINCES, useChanges, type RecordChange, type Since } from 
 import './changes.css';
 
 // One record's change from the baseline, as the wiki card's Changes section and the Changes panel show it
-// (LA-EXP-UC13): each changed field old → new, each part row added, removed or changed, and the links added and removed.
+// (LA-EXP-UC15): each changed field old → new, each part row added, removed or changed, and the links added and removed.
 
 /** What a change is called: "Changed", "New", "Removed". */
 export const CHANGE_LABEL: Record<RecordChange['change'], string> = { changed: 'Changed', added: 'New', removed: 'Removed' };

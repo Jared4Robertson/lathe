@@ -5,7 +5,7 @@ import type { SpecIndex, SpecSource } from '../specs/data';
 
 export type { BaselineAnswer, Delta, RecordChange, Tables };
 
-// What changed in the product (LA-EXP-UC13): the engine's one record diff (lathe/src/changes.ts) between the data now
+// What changed in the product (LA-EXP-UC15): the engine's one record diff (lathe/src/changes.ts) between the data now
 // and a baseline, and the live changes as the data reloads. Three baselines: the last commit (the default), where the
 // branch left the default branch, and the moment the Reader last looked at the product, kept in the session setting
 // as the commit it was on and the rows that differed from it then (a LookMark). The live changes are the diff of each
@@ -110,10 +110,18 @@ export async function markNow(index: SpecIndex, product: string): Promise<LookMa
   return { commit: null, delta: rowDelta(schema, {}, source.tables), at };
 }
 
-/** The changes from a baseline to the product's rows now. */
+/**
+ * The changes from a baseline to the product's rows now: its folder's, of its own records only (a folder may hold
+ * other products), a removed record known as the product's by its ID.
+ */
 export function changesSince(index: SpecIndex, product: string, baseline: Tables): RecordChange[] {
   const source = productSource(index, product);
-  return source ? recordChanges(index.workspace.schema, baseline, source.tables) : [];
+  if (!source) return [];
+  const own = (c: RecordChange) => {
+    const now = index.byId.get(c.id);
+    return now ? now.product === product || now.product === null : c.id === product || c.id.startsWith(`${product}-`);
+  };
+  return recordChanges(index.workspace.schema, baseline, source.tables).filter(own);
 }
 
 // ---------- Live changes ----------
