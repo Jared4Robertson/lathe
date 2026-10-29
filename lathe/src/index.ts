@@ -374,13 +374,19 @@ async function readRecords(store: Store, order: string[]): Promise<{ kinds: Kind
 
 /** The recorded exceptions as lathe check prints them: a heading with their count, then one line each. */
 export function exceptionsText(exceptions: RecordedException[]): string {
-  const line = (e: RecordedException) => `  ${e.command} also changes aggregate ${e.aggregate} in the same transaction: ${e.reason}`;
+  const line = (e: RecordedException) =>
+    'command' in e
+      ? `  ${e.command} also changes aggregate ${e.aggregate} in the same transaction: ${e.reason}`
+      : `  ${e.repository} also persists aggregate ${e.aggregate}: ${e.reason}`;
   return `Recorded exceptions (${exceptions.length}):\n${exceptions.map(line).join('\n')}`;
 }
 
-/** Every recorded exception (command_change), by command and aggregate. */
+/** Every recorded exception: each command_change, by command and aggregate, then each repository_share, by repository and aggregate. */
 export function recordedExceptions(store: Store): RecordedException[] {
-  return store.rows('command_change').map((r) => ({ command: String(r.command_id), aggregate: String(r.aggregate_id), reason: String(r.reason) }));
+  return [
+    ...store.rows('command_change').map((r) => ({ command: String(r.command_id), aggregate: String(r.aggregate_id), reason: String(r.reason) })),
+    ...store.rows('repository_share').map((r) => ({ repository: String(r.repository_id), aggregate: String(r.aggregate_id), reason: String(r.reason) })),
+  ];
 }
 
 /**
