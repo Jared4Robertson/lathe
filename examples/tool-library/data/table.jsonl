@@ -1,5 +1,6 @@
-{"id":"TL-LEND-EN01-TB","title":"members","entity_id":"TL-LEND-EN01","name":"members","storage":"table","file":"src/store.ts"}
-{"id":"TL-LEND-EN02-TB","title":"tools","entity_id":"TL-LEND-EN02","name":"tools","storage":"table","file":"src/store.ts"}
-{"id":"TL-LEND-EN04-TB","title":"loans","entity_id":"TL-LEND-EN04","name":"loans","storage":"table","file":"src/store.ts"}
-{"id":"TL-LEND-RM01-TB","title":"catalog","read_model_id":"TL-LEND-RM01","name":"catalog","storage":"in memory","file":"src/tool-service.ts"}
-{"id":"TL-LEND-RM02-TB","title":"OutcomeMeasures","read_model_id":"TL-LEND-RM02","name":"OutcomeMeasures","storage":"in memory","file":"src/outcomes.ts"}
+{"id":"TL-LEND-EN01-TB","title":"members","entity_id":"TL-LEND-EN01","name":"members","storage":"table","file":"src/database.ts"}
+{"id":"TL-LEND-EN02-TB","title":"tools","entity_id":"TL-LEND-EN02","name":"tools","storage":"table","file":"src/database.ts"}
+{"id":"TL-LEND-EN04-TB","title":"loans","entity_id":"TL-LEND-EN04","name":"loans","storage":"table","file":"src/database.ts"}
+{"id":"TL-LEND-RM01-TB","title":"Catalog","read_model_id":"TL-LEND-RM01","name":"Catalog","storage":"in memory","file":"src/catalog.ts"}
+{"id":"TL-LEND-RM02-TB","title":"OutcomeMeasures","read_model_id":"TL-LEND-RM02","name":"OutcomeMeasures","storage":"in memory","file":"src/outcome-measures.ts"}
+{"id":"TL-LEND-TB01","title":"Outbox","domain_id":"TL-LEND","name":"outbox","storage":"table","file":"src/database.ts"}
