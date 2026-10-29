@@ -40,9 +40,9 @@ beforeEach(() => {
   // Remembered choices (view, nav, open rows) start fresh in every test.
   window.localStorage.clear();
   window.sessionStorage.clear();
-  // The wiki's tests read the card's whole page, so the card starts expanded (More) here; the card's own tests clear
-  // this to see the summary it opens with by default.
-  window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
+  // The wiki's tests read the card's whole page, so the web's place starts with its card expanded (More) here; the
+  // card's own tests clear this to see the summary it opens with by default.
+  window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
   resetExpanded();
 });
 

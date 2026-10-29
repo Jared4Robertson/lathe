@@ -7,15 +7,16 @@ import type { SpecIndex } from '../specs/data';
 import { STAGE_LABELS, STAGE_NAMES, type StageName } from './address';
 import { crowdedLabel } from './openSpace';
 import { TabStrip } from './TabStrip';
-import type { PageTabsApi } from './useTabs';
+import type { TabsApi } from './usePlace';
 
 // The page bar (LA-PAT-APP-UX-R03): the top of the tab panel, floating over the stage, as the top
-// of VS Code's editor area. At its left the page's tabs; at its right the stage switch (Graph, ERD,
+// of VS Code's editor area. At its left the desktop app's tabs (none on the web, where the browser's tabs are the
+// places); at its right the stage switch (Graph, ERD,
 // Trace), a divider and the wiki card toggle. It is one line high whatever it
 // holds (the tabs scroll sideways), so nothing below it moves (UX-R08). Every stage works on every
 // focus (LA-PAT-APP-UX-R17): the switch always holds all three, never disabled or hidden.
 //
-// On a phone it is the same bar, compact (notes/mobile-design.md): the tabs fold into an "Open
+// On a phone it is the same bar, compact (notes/mobile-design.md): in the desktop app the tabs fold into an "Open
 // pages" button that opens them as a sheet, the stage switch is segments with names, the wiki
 // button opens the card as a bottom sheet.
 
@@ -27,7 +28,8 @@ export function StageIcon({ stage, size = 16 }: { stage: StageName; size?: numbe
 
 export interface PageBarProps {
   index: SpecIndex;
-  tabs: PageTabsApi;
+  /** The desktop app's tabs; null on the web. */
+  tabs: TabsApi | null;
   /** The stage shown. */
   stage: StageName;
   onStage: (stage: StageName) => void;
@@ -46,12 +48,13 @@ export interface PageBarProps {
 
 export function PageBar(props: PageBarProps) {
   const { index, tabs, stage, onStage, compact, cardShown, cardCrowded = false, onCard, cardButton, pagesOpen = false, onPages, pagesButton } = props;
-  const count = tabs.set.tabs.length;
+  const count = tabs?.set.tabs.length ?? 0;
   // A panel collapsed for space says so on its toggle, which opens it anyway.
   const cardLabel = cardCrowded ? crowdedLabel('card') : `${cardShown ? 'Collapse' : 'Show'} the wiki card`;
 
-  let start: ReactNode;
-  if (compact) {
+  let start: ReactNode = null;
+  if (!tabs) start = null;
+  else if (compact) {
     start = (
       <button
         ref={pagesButton}
@@ -67,7 +70,7 @@ export function PageBar(props: PageBarProps) {
       </button>
     );
   } else {
-    start = <TabStrip index={index} set={tabs.set} onActivate={tabs.activate} onClose={tabs.close} onKeep={tabs.keep} />;
+    start = <TabStrip index={index} set={tabs.set} onActivate={tabs.activate} onClose={tabs.close} />;
   }
 
   return (

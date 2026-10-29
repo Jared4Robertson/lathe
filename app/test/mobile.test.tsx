@@ -5,7 +5,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { settle } from '../src/shell/BottomSheet';
 import { useThemeColor } from '../src/shell/themeColor';
 import { isTap } from '../src/graph/touch';
-import { openApp } from './helpers';
+import { desktopBridgeStub, openApp } from './helpers';
+import { navigate } from '../src/router';
 import { testWorkspace } from './graph/workspace';
 import { boxElement, drawnBox, pointOn, tapAt, tapEmpty } from './graph/scene';
 
@@ -102,37 +103,47 @@ describe('Lathe on a phone', () => {
     expect(settle('full', 300, 0.1)).toBeNull();
   });
 
-  it('LA-V61-R21-T01 The open pages are a sheet from the page bar: each tab a row, the active one marked, the preview one kept from its row; choosing one goes there, and a row closes its tab', async () => {
+  it('LA-V61-R21-T01 In the desktop app, the open pages are a sheet from the page bar: each tab a row, the active one marked; choosing one goes there, and a row\'s close button closes its tab', async () => {
     phone();
+    // On the web a browser tab is one place: no Open pages button.
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    const pagesButton = () => within(pageBar()).getByRole('button', { name: /^Open pages: \d+$/ });
-    expect(pagesButton()).toHaveAccessibleName('Open pages: 1');
-    // The first page opens as the preview; keep it from its row.
-    fireEvent.click(pagesButton());
-    let sheet = screen.getByRole('dialog', { name: 'Open pages' });
-    await waitFor(() => expect(within(sheet).getByRole('button', { current: 'page' })).toHaveFocus());
-    fireEvent.click(within(sheet).getByRole('button', { name: 'Keep P-D-UC01 Lend a thing open' }));
-    fireEvent.keyDown(sheet, { key: 'Escape' });
-    expect(screen.queryByRole('dialog', { name: 'Open pages' })).toBeNull();
-    await waitFor(() => expect(pagesButton()).toHaveFocus());
-    // Another page opens in a second tab.
-    await openApp('/P-V01', served());
-    await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
-    expect(pagesButton()).toHaveAccessibleName('Open pages: 2');
-    fireEvent.click(pagesButton());
-    sheet = screen.getByRole('dialog', { name: 'Open pages' });
-    const rows = within(within(sheet).getByRole('list', { name: 'Open pages' })).getAllByRole('listitem');
-    expect(rows.map((r) => r.querySelector('.tab-title')!.textContent)).toEqual(['Lend a thing', 'Loan desk']);
-    expect(within(sheet).getByRole('button', { current: 'page' })).toHaveTextContent('Loan desk');
-    // Choosing a page goes there and closes the sheet.
-    fireEvent.click(within(sheet).getByRole('button', { name: 'P-D-UC01 Lend a thing' }));
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(screen.queryByRole('dialog', { name: 'Open pages' })).toBeNull();
-    // A row's close button closes its tab.
-    fireEvent.click(pagesButton());
-    fireEvent.click(within(screen.getByRole('dialog', { name: 'Open pages' })).getByRole('button', { name: /^Close P-V01 Loan desk/ }));
-    await waitFor(() => expect(pagesButton()).toHaveAccessibleName('Open pages: 1'));
+    expect(within(pageBar()).queryByRole('button', { name: /^Open pages/ })).toBeNull();
+    const host = window as unknown as { latheDesktop?: LatheDesktop };
+    host.latheDesktop = desktopBridgeStub();
+    try {
+      await openApp('/P-D-UC01', served());
+      await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+      const pagesButton = () => within(pageBar()).getByRole('button', { name: /^Open pages: \d+$/ });
+      expect(pagesButton()).toHaveAccessibleName('Open pages: 1');
+      fireEvent.click(pagesButton());
+      let sheet = screen.getByRole('dialog', { name: 'Open pages' });
+      await waitFor(() => expect(within(sheet).getByRole('button', { current: 'page' })).toHaveFocus());
+      expect(within(sheet).queryByRole('button', { name: /^Keep/ })).toBeNull();
+      fireEvent.keyDown(sheet, { key: 'Escape' });
+      expect(screen.queryByRole('dialog', { name: 'Open pages' })).toBeNull();
+      await waitFor(() => expect(pagesButton()).toHaveFocus());
+      // A new tab, moved to another page.
+      fireEvent.keyDown(document.body, { key: 'T', code: 'KeyT', altKey: true, shiftKey: true });
+      await waitFor(() => expect(pagesButton()).toHaveAccessibleName('Open pages: 2'));
+      act(() => navigate('/P-V01'));
+      await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
+      fireEvent.click(pagesButton());
+      sheet = screen.getByRole('dialog', { name: 'Open pages' });
+      const rows = within(within(sheet).getByRole('list', { name: 'Open pages' })).getAllByRole('listitem');
+      expect(rows.map((r) => r.querySelector('.tab-title')!.textContent)).toEqual(['Lend a thing', 'Loan desk']);
+      expect(within(sheet).getByRole('button', { current: 'page' })).toHaveTextContent('Loan desk');
+      // Choosing a page goes there and closes the sheet.
+      fireEvent.click(within(sheet).getByRole('button', { name: 'P-D-UC01 Lend a thing' }));
+      await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+      expect(screen.queryByRole('dialog', { name: 'Open pages' })).toBeNull();
+      // A row's close button closes its tab.
+      fireEvent.click(pagesButton());
+      fireEvent.click(within(screen.getByRole('dialog', { name: 'Open pages' })).getByRole('button', { name: /^Close P-V01 Loan desk/ }));
+      await waitFor(() => expect(pagesButton()).toHaveAccessibleName('Open pages: 1'));
+    } finally {
+      delete host.latheDesktop;
+    }
   });
 
   it('LA-V61-R22-T01 Quick find on a phone is a full-width sheet at the top: the results list under the box, choosing one goes there, Close or Escape closes it and focus returns', async () => {
@@ -177,7 +188,7 @@ describe('Lathe on a phone', () => {
 
   const proveLaV61R23T01 = async () => {
     phone();
-    window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
+    window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
     await openApp('/P-D-UC01-R01?stage=graph', served());
     // The requirement's use case, its parent, is drawn beside it.
     await waitFor(() => expect(boxElement('P-D-UC01')).not.toBeNull());

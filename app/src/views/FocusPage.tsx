@@ -3,21 +3,24 @@ import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
-import { CARD_MAX, CARD_MIN, useSessionSettings } from '../graph/settings';
+import { CARD_MAX, CARD_MIN, DEFAULT_GRAPH_SETTINGS, useSessionSettings } from '../graph/settings';
+import type { GraphSettings } from '../graph/GraphPage';
 import { isGroup } from '../graph/model';
-import { entryState, lastAddressMove, Link, navigate, noteInEntry, onLeaveEntry } from '../router';
+import { Link, navigate, onLeaveEntry } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { BottomSheet } from '../shell/BottomSheet';
 import { useNarrow } from '../shell/useNarrow';
 import { parseSpecRoute, type SpecIndex, type SpecState } from '../specs/data';
 import { NotFound } from '../specs/SpecPages';
-import { addressOf, HOME_PATH, focusOf, isFocusRoute, STAGE_LABELS, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
+import { addressOf, HOME_PATH, focusOf, isFocusRoute, pathOf, STAGE_LABELS, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
 import { HeaderStrip } from './HeaderStrip';
 import { createOpenSpaceStore, usePageRoom, useOpenSpaceMeasure, useRoom } from './openSpace';
 import { PageBar, STAGE_COMMANDS } from './PageBar';
 import { createPeekStore } from './peek';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
-import { firstTabView, rememberStage, usePageTabs, type PageTabsApi } from './useTabs';
+import { rememberedStage, rememberStage, useNewPlaceOpener, usePlace, withStageIn, type TabsApi } from './usePlace';
+import { hereOf, type PlaceView } from './place';
+import { takeMenuRecord } from '../shell/desktopRecord';
 import { usePreview } from './preview';
 import { WikiCard } from './WikiCard';
 import { Button } from '../components/Button';
@@ -35,18 +38,16 @@ import { useLiveVersion } from '../changes/marks';
 // shell's), the tab panel (the page bar, then the header strip naming the focus), the wiki card (the
 // focus's wiki page, its History at the end of the whole page). The stage frames
 // its focus in the open space the panels leave (openSpace.ts), and every part follows one focus:
-// a click on the stage, a link in the card, a tab, Back and Forward all change the address.
+// a click on the stage, a link in the card, Back and Forward all move the place it shows.
 //
-// Several pages can be open at once, as tabs (useTabs.ts and tabs.ts); each tab keeps its own
-// stage and wiki card scroll. How the graph is drawn and the wiki card's open state and
-// width are one setting for the session, not a tab's (graph/settings.ts).
+// The page shows one place (usePlace.ts): on the web the browser tab's, in the desktop app the active tab's (useTabs.ts),
+// each with its own stage, focus, camera, depth, filters, wiki card and history. How the graph is laid out, the
+// minimap and the wiki card's width are the window's, not a place's (graph/settings.ts).
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ErdView = lazy(() => import('../erd/ErdView').then((m) => ({ default: m.ErdView })));
 const TraceView = lazy(() => import('../trace/TraceView').then((m) => ({ default: m.TraceView })));
 
-/** The key a history entry notes the wiki card's scroll under. */
-const CARD_SCROLL = 'cardScroll';
 /**
  * How long the focus must rest before the wiki card draws its page, in ms. A focus that moves after
  * a rest draws at once; moves that follow each other closer than this (arrowing through the stage)
@@ -108,7 +109,23 @@ function useSettled<T>(value: T, ms: number): T {
   return settled;
 }
 
-function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute; search: string }) {
+/** The route and query of the place's address; the window's own while the place's is not a focus page's. */
+function useShownRoute(index: SpecIndex, address: string, addressRoute: FocusRoute, addressSearch: string): { route: FocusRoute; search: string } {
+  return useMemo(() => {
+    const q = address.indexOf('?');
+    const path = q < 0 ? address : address.slice(0, q);
+    const search = q < 0 ? '' : address.slice(q);
+    if (path === pathOf(addressRoute)) return { route: addressRoute, search };
+    const parsed = parseSpecRoute(path, index);
+    return isFocusRoute(parsed) ? { route: parsed, search } : { route: addressRoute, search: addressSearch };
+  }, [index, address, addressRoute, addressSearch]);
+}
+
+function Focused({ index, route: addressRoute, search: addressSearch }: { index: SpecIndex; route: FocusRoute; search: string }) {
+  // The place shown: the browser tab's on the web, the active tab's in the desktop app, whose address the window's follows.
+  const place = usePlace(index, addressRoute, addressSearch);
+  const { route, search } = useShownRoute(index, place.address, addressRoute, addressSearch);
+  const tabs = place.tabs;
   const focus = focusOf(route);
   // What the stage and the wiki card show: the focus, or the record quick find previews (preview.ts). The address,
   // the tabs and the header strip stay on the focus; when the preview ends the stage glides back.
@@ -120,23 +137,17 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const announce = useAnnounce();
   const narrow = useNarrow();
 
-  // The open tabs, and the active one's state. The stage is the tab's: the one the link named when
-  // it opened, otherwise that of the tab it was opened from. Every stage works on every focus
-  // (LA-PAT-APP-UX-R17), so the switch never hides or disables one.
-  const tabs = usePageTabs(index, route, search);
-  const tab = tabs.active;
-  const { update } = tabs;
-  const stage = tab.state.stage;
+  // The stage is the place's, named in its address: the one a link named, otherwise the one the place was on. Every
+  // stage works on every focus (LA-PAT-APP-UX-R17), so the switch never hides or disables one.
+  const { stage } = place;
 
   const setStage = useCallback((next: StageName) => {
     if (next === stage) return;
-    // Switching a tab's stage keeps it open, as in VS Code.
-    update((s) => ({ ...s, stage: next }), true);
     // A phone's switch leaves the stage remembered for a wide screen alone.
     if (!narrow) rememberStage(next);
-    navigate(withStage(window.location.pathname, next), true);
+    navigate(withStageIn(place.address, next), true);
     announce(`${STAGE_LABELS[next]} stage`);
-  }, [stage, narrow, update, announce]);
+  }, [stage, narrow, place.address, announce]);
   // The stage a link names becomes the one remembered, for the first tab of a new session.
   const linked = stageFromSearch(search);
   useEffect(() => { if (linked && !narrow) rememberStage(linked); }, [linked, narrow]);
@@ -159,15 +170,30 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const [peek] = useState(createPeekStore);
   useLayoutEffect(() => { peek.clear(); }, [peek, focus]);
 
-  // How the graph is drawn, and the wiki card's open state and width, are one setting for the
-  // session, whatever the tab or page (LA-V93-R72): moving through the stage never changes them.
-  const { graph: settings, setGraph, card, setCard } = useSessionSettings();
+  // How the graph is laid out, the minimap and the wiki card's width are the window's, whatever the place; the depth,
+  // the kind filters and the card's open and expanded state are the place's (LA-V93-R72): moving through the stage
+  // never changes either.
+  const { graph: look, setGraph, card, setCard } = useSessionSettings();
+  const { view, setView } = place;
+  const filters = useMemo(() => ({ hiddenKinds: new Set(view.hiddenKinds) }), [view.hiddenKinds]);
+  const settings = useMemo<GraphSettings>(() => ({ ...look, depth: view.depth, filters }), [look, view.depth, filters]);
+  const onSettings = useCallback((next: GraphSettings) => {
+    setGraph({ layout: next.layout, minimap: next.minimap });
+    setView((v) => {
+      const kinds = [...next.filters.hiddenKinds];
+      const same = next.depth === v.depth && kinds.length === v.hiddenKinds.length && kinds.every((k) => v.hiddenKinds.includes(k));
+      return same ? v : { ...v, depth: next.depth, hiddenKinds: kinds };
+    });
+  }, [setGraph, setView]);
+  const setCardView = useCallback((patch: Partial<PlaceView['card']>) => setView((v) => (
+    Object.entries(patch).every(([k, x]) => v.card[k as keyof PlaceView['card']] === x) ? v : { ...v, card: { ...v.card, ...patch } }
+  )), [setView]);
   const [sheet, setSheet] = useState(false);
   const cardButton = useRef<HTMLButtonElement>(null);
   // A format page opened over the focus (`?page=format/…`) shows in the card, open whatever the card's setting.
   const formatPage = overlaysOf(search).page;
   const format = useMemo(() => parseFormatPage(formatPage), [formatPage]);
-  const cardOpen = card.open || format !== null;
+  const cardOpen = view.card.open || format !== null;
   useEffect(() => { if (format && !narrow) hold('card', true); }, [format, narrow, hold]);
   const cardCrowded = !narrow && cardOpen && crowded.has('card');
   const cardShown = narrow ? sheet || format !== null : cardOpen && !cardCrowded;
@@ -178,14 +204,14 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const setCardShown = useCallback((show: boolean, fromInside = false) => {
     const inside = fromInside || document.activeElement?.closest('.wiki-panel, .wiki-panel-sheet') != null;
     if (!show && format) navigate(pageHref(null));
-    if (narrow) setSheet(show); else { setCard({ open: show }); hold('card', show); }
+    if (narrow) setSheet(show); else { setCardView({ open: show }); hold('card', show); }
     announce(show ? 'Wiki card shown' : 'Wiki card collapsed');
     if (!show && inside) setTimeout(() => cardButton.current?.focus(), 0);
-  }, [narrow, setCard, hold, announce, format]);
+  }, [narrow, setCardView, hold, announce, format]);
   const collapseCard = useCallback(() => setCardShown(false, true), [setCardShown]);
-  const expandCard = useCallback((expanded: boolean) => setCard({ expanded }), [setCard]);
-  // A preview shows in the card's compact summary, whatever the session's setting, which it leaves alone.
-  const cardExpanded = preview === null && card.expanded;
+  const expandCard = useCallback((expanded: boolean) => setCardView({ expanded }), [setCardView]);
+  // A preview shows in the card's compact summary, whatever the place's setting, which it leaves alone.
+  const cardExpanded = preview === null && view.card.expanded;
   // Made once per width, so the memoized card draws again only for a new page.
   const cardHandle = useMemo(() => (
     <CardHandle width={card.width} onWidth={(width) => setCard({ width })} onReset={() => setCard({ width: null })} onCollapse={collapseCard} />
@@ -198,10 +224,13 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
 
   const [counts, setCounts] = useState('');
 
-  // A link keeps the stage asked for.
-  const asked = tab.state.stage;
-  const hrefFor = useCallback((id: string) => withStage(addressOf(id), asked), [asked]);
+  // A link keeps the stage the place is on.
+  const hrefFor = useCallback((id: string) => withStage(addressOf(id), stage), [stage]);
   const onNavigate = useCallback((id: string) => navigate(hrefFor(id)), [hrefFor]);
+  // Cmd or Ctrl+click, or a middle-click, on a box opens it in a new place: a tab, or a browser tab on the web.
+  const { openNew } = place;
+  const onOpenNew = useCallback((id: string, background: boolean) => openNew(hrefFor(id), background), [openNew, hrefFor]);
+  useNewPlaceOpener(openNew);
 
   // The wiki card follows the focus (or the preview) once it settles, and draws only then.
   const resting = useSettled(shownFocus, CARD_SETTLE_MS);
@@ -209,31 +238,22 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const settledFocus = index.byId.has(resting) || isGroup(index, resting) ? resting : shownFocus;
   const cardRoute = useCardRoute(index, settledFocus, route);
 
-  // The card's scroll is the tab's: it comes back when the tab is active again. Within a tab, a new
-  // page starts at the top, and Back and Forward come back to where that history entry was scrolled
-  // (noted in the entry), set before paint so the page is never drawn at the wrong place (UX-R08).
+  // The card's scroll is the place's, noted in each entry of its history: a page just opened starts at the top, and a
+  // place shown again (Back, Forward, another tab activated) comes back to where its entry was scrolled, set before
+  // paint so the page is never drawn at the wrong place (UX-R08).
   const cardScroll = useRef<HTMLDivElement>(null);
-  const tabRef = useRef(tab);
-  tabRef.current = tab;
-  const shown = useRef<{ key: string; page: string } | null>(null);
+  const { scroll: placeScroll, setScroll: setPlaceScroll } = place;
   useLayoutEffect(() => {
     // A format page in the card sets its own scroll; closing it brings back the focus's page where it was.
     if (format) return;
-    // A preview starts at its top and leaves the tab's scroll as it was, for the card to come back to.
+    // A preview starts at its top and leaves the place's scroll as it was, for the card to come back to.
     if (preview !== null) { if (settledFocus === preview && cardScroll.current) cardScroll.current.scrollTop = 0; return; }
     // Until the card settles on the focus (a page just opened, or a tab just switched to), it still
     // shows the page before, at that page's scroll; the scroll is the new page's once it is drawn.
     if (settledFocus !== focus) return;
-    const before = shown.current;
-    shown.current = { key: tab.key, page: settledFocus };
     const el = cardScroll.current;
     if (!el) return;
-    let top = tabs.scrollOf(tabRef.current);
-    if (before && before.key === tab.key && before.page !== settledFocus) {
-      const noted = entryState<number>(CARD_SCROLL);
-      top = lastAddressMove() === 'pop' && typeof noted === 'number' ? noted : 0;
-      tabs.setScroll(tabRef.current, top);
-    }
+    const top = placeScroll();
     el.scrollTop = top;
     // Parts of the page may still settle their size before the first paint (a section's actions
     // slot, a list measuring its rows), so the scroll is set again once layout is done, still
@@ -242,23 +262,21 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     const observer = new ResizeObserver(() => { el.scrollTop = top; observer.disconnect(); });
     for (const child of el.children) observer.observe(child);
     return () => observer.disconnect();
-  }, [tab.key, focus, preview, settledFocus, cardShown, format, tabs.scrollOf, tabs.setScroll]);
-  // The entry notes the card's scroll as it changes (after a pause) and as a new page is opened from it.
+  }, [place.key, place.address, focus, preview, settledFocus, cardShown, format, placeScroll]);
+  // The place notes the card's scroll as it changes (after a pause) and as a new page is opened from it.
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noteScroll = useCallback(() => {
     if (noteTimer.current) { clearTimeout(noteTimer.current); noteTimer.current = null; }
-    // While a preview shows, the page's own scroll is the tab's, kept aside.
-    if (previewing.current) noteInEntry(CARD_SCROLL, tabs.scrollOf(tabRef.current));
-    else if (cardScroll.current) noteInEntry(CARD_SCROLL, Math.round(cardScroll.current.scrollTop));
-  }, [tabs.scrollOf]);
+    // While a preview shows, the page's own scroll stays as noted.
+    if (!previewing.current && !format && cardScroll.current) setPlaceScroll(cardScroll.current.scrollTop);
+  }, [setPlaceScroll, format]);
   useEffect(() => onLeaveEntry(noteScroll), [noteScroll]);
   useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
   const onCardScroll = useCallback(() => {
     if (!cardScroll.current || previewing.current || format) return;
-    tabs.setScroll(tabRef.current, cardScroll.current.scrollTop);
     if (noteTimer.current) clearTimeout(noteTimer.current);
     noteTimer.current = setTimeout(noteScroll, 200);
-  }, [tabs.setScroll, noteScroll, format]);
+  }, [noteScroll, format]);
 
   // The open space the floating panels leave over the stage, where it frames the focus.
   const [space] = useState(createOpenSpaceStore);
@@ -274,7 +292,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   // Shift+F12: the wiki card's whole page, with focus on what links to the record.
   useCommand('showReferences', () => {
     if (!cardShown) setCardShown(true);
-    if (!card.expanded) setCard({ expanded: true });
+    if (!view.card.expanded) setCardView({ expanded: true });
     setTimeout(() => {
       const heading = document.querySelector<HTMLElement>('.wiki-panel .links-in-heading');
       heading?.focus();
@@ -283,23 +301,30 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   }, index.byId.has(focus));
   useCommand('expandAll', () => { expandAllOnPage(true); announce('Expanded every row'); });
   useCommand('collapseAll', () => { expandAllOnPage(false); announce('Collapsed every row'); });
-  // Tabs.
-  useCommand('keepTab', () => { tabs.keep(tab.key); announce('Tab kept open'); });
-  useCommand('closeTab', () => { tabs.close(tab.key); announce(tabs.set.tabs.length > 1 ? 'Tab closed' : 'The last tab stays open, as a preview'); });
-  useCommand('nextTab', () => tabs.cycle(1), tabs.set.tabs.length > 1);
-  useCommand('previousTab', () => tabs.cycle(-1), tabs.set.tabs.length > 1);
+  // The desktop app's tabs; on the web the browser's own tabs do all of this.
+  const many = !!tabs && tabs.set.tabs.length > 1;
+  useCommand('newTab', () => { tabs?.openHome(); announce('New tab'); }, !!tabs);
+  useCommand('closeTab', () => {
+    if (!tabs?.set.active) return;
+    tabs.close(tabs.set.active);
+    announce(many ? 'Tab closed' : 'Tab closed: a new tab at the product');
+  }, !!tabs);
+  useCommand('duplicateTab', () => { tabs?.duplicate(); announce('Tab duplicated'); }, !!tabs);
+  useCommand('nextTab', () => tabs?.cycle(1), many);
+  useCommand('previousTab', () => tabs?.cycle(-1), many);
+  useCommand('openRecordInNewTab', () => { const id = takeMenuRecord(); if (id) openNew(hrefFor(id)); }, !!tabs);
 
   useFollow(focus, onNavigate, stageEl);
 
   const content: Record<StageName, ReactNode> = {
     graph: (
       <Suspense fallback={<p className="hint graph-loading">Loading the graph…</p>}>
-        <GraphView index={index} focus={shownFocus} onNavigate={onNavigate} settings={settings} onSettingsChange={setGraph} onPeek={peek.set} onCounts={setCounts} space={space} />
+        <GraphView index={index} focus={shownFocus} onNavigate={onNavigate} settings={settings} onSettingsChange={onSettings} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
       </Suspense>
     ),
     erd: (
       <Suspense fallback={<p className="hint graph-loading">Loading the ERD…</p>}>
-        <ErdView index={index} focus={shownFocus} onNavigate={onNavigate} onPeek={peek.set} onCounts={setCounts} space={space} />
+        <ErdView index={index} focus={shownFocus} onNavigate={onNavigate} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
       </Suspense>
     ),
     trace: (
@@ -348,7 +373,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         onCard={setCardShown}
         cardButton={cardButton}
       />
-      <div id={TAB_PANEL_ID} role="tabpanel" aria-labelledby={tab.key ? tabId(tab.key) : undefined} className="tab-body">
+      <div id={TAB_PANEL_ID} role={tabs ? 'tabpanel' : undefined} aria-labelledby={tabs?.set.active ? tabId(tabs.set.active) : undefined} className="tab-body">
         <HeaderStrip index={index} focus={focus} counts={counts} />
         {cardShown && (
           <WikiCard
@@ -418,9 +443,10 @@ export function StageBackdrop({ index, focus }: { index: SpecIndex | null; focus
   const stageEl = useRef<HTMLDivElement>(null);
   const layout = useRef<HTMLDivElement>(null);
   useOpenSpaceMeasure(stageEl, space, layout);
-  const { graph: settings } = useSessionSettings();
+  const { graph: look } = useSessionSettings();
+  const settings = useMemo(() => ({ ...DEFAULT_GRAPH_SETTINGS, ...look }), [look]);
   const [peek] = useState(createPeekStore);
-  const stage = firstTabView().stage;
+  const stage = rememberedStage();
   const shown = index && focus && index.byId.has(focus) ? focus : null;
   let content: ReactNode = null;
   if (index && shown) {
@@ -481,7 +507,8 @@ function CardHandle({ width, onWidth, onReset, onCollapse }: { width: number | n
 
 interface PhoneLayoutProps {
   index: SpecIndex;
-  tabs: PageTabsApi;
+  /** The desktop app's tabs, shown as the Open pages sheet; null on the web. */
+  tabs: TabsApi | null;
   stage: StageName;
   onStage: (stage: StageName) => void;
   stageBox: ReactNode;
@@ -496,14 +523,14 @@ interface PhoneLayoutProps {
 
 /**
  * On a phone (notes/mobile-design.md) the stage stays full screen under the shell's top bar and the
- * compact page bar: the open pages as a sheet, the stage switch, and the wiki card as a bottom sheet.
+ * compact page bar: the stage switch and the wiki card as a bottom sheet, and in the desktop app the open tabs as a sheet.
  */
 function PhoneLayout(props: PhoneLayoutProps) {
   const { index, tabs, stage, onStage, stageBox, strip, card, onCard, cardButton, layout } = props;
   const [pagesOpen, setPagesOpen] = useState(false);
   const pagesButton = useRef<HTMLButtonElement>(null);
   const pagesSheet = useRef<HTMLUListElement>(null);
-  const count = tabs.set.tabs.length;
+  const count = tabs?.set.tabs.length ?? 0;
   const closePages = useCallback(() => { setPagesOpen(false); setTimeout(() => pagesButton.current?.focus(), 0); }, []);
   useEffect(() => { if (pagesOpen) pagesSheet.current?.querySelector<HTMLElement>('[aria-current], button')?.focus(); }, [pagesOpen]);
   // The wiki card's sheet takes focus as it opens; closing it gives focus back to its toggle (setCardShown).
@@ -511,8 +538,8 @@ function PhoneLayout(props: PhoneLayoutProps) {
   useEffect(() => {
     if (cardOpen) setTimeout(() => document.querySelector<HTMLElement>('.wiki-panel-sheet .wiki-panel-head button, .wiki-panel-sheet button')?.focus(), 0);
   }, [cardOpen]);
-  const page = tabs.active.page;
-  useEffect(() => { setPagesOpen(false); }, [page]);
+  const active = tabs?.set.active;
+  useEffect(() => { setPagesOpen(false); }, [active]);
 
   return (
     <div ref={layout} className="stage-layout is-phone">
@@ -526,7 +553,7 @@ function PhoneLayout(props: PhoneLayoutProps) {
         onCard={onCard}
         cardButton={cardButton}
         pagesOpen={pagesOpen}
-        onPages={() => setPagesOpen(true)}
+        onPages={tabs ? () => setPagesOpen(true) : undefined}
         pagesButton={pagesButton}
       />
       {strip}
@@ -536,7 +563,7 @@ function PhoneLayout(props: PhoneLayoutProps) {
           {card}
         </BottomSheet>
       )}
-      {pagesOpen && (
+      {pagesOpen && tabs && (
         <BottomSheet label="Open pages" className="pages-sheet" onClose={closePages}>
           <div className="sheet-head">
             <h2 className="sheet-title">Open pages <span className="section-count">{count}</span></h2>
@@ -544,24 +571,21 @@ function PhoneLayout(props: PhoneLayoutProps) {
           </div>
           <ul ref={pagesSheet} className="pages-list" aria-label="Open pages">
             {tabs.set.tabs.map((t) => {
-              const { id, title } = tabLabel(index, t.page);
-              const active = t.key === tabs.set.active;
+              const { id, title } = tabLabel(index, hereOf(t.place).address);
+              const current = t.key === tabs.set.active;
               const name = id ? `${id} ${title}` : title;
               return (
-                <li key={t.key} className={`pages-row${active ? ' is-active' : ''}${t.preview ? ' is-preview' : ''}`}>
+                <li key={t.key} className={`pages-row${current ? ' is-active' : ''}`}>
                   <button
                     type="button"
                     className="pages-open"
-                    aria-current={active ? 'page' : undefined}
-                    aria-label={t.preview ? `${name}, preview` : name}
+                    aria-current={current ? 'page' : undefined}
+                    aria-label={name}
                     onClick={() => { tabs.activate(t.key); closePages(); }}
                   >
                     {id && <span className="tab-id">{id}</span>}
                     <span className="tab-title">{title}</span>
                   </button>
-                  {t.preview && (
-                    <Button className="pages-keep" label={`Keep ${name} open`} onClick={() => tabs.keep(t.key)}>Keep</Button>
-                  )}
                   <Button variant="icon" label={`Close ${name}`} onClick={() => tabs.close(t.key)}>
                     <Icon name="x" size={16} />
                   </Button>
@@ -569,7 +593,6 @@ function PhoneLayout(props: PhoneLayoutProps) {
               );
             })}
           </ul>
-          <p className="hint pages-hint">A page you open replaces the preview (in italics); keep one to hold it open.</p>
         </BottomSheet>
       )}
     </div>
