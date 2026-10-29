@@ -26,7 +26,7 @@ import { CardChanges } from '../changes/CardChanges';
 // floating over the right of the open space above whichever stage shows, in one constant spot just under the stage's toolbar row, its height a steady share of
 // the stage (the stylesheet's). It reads as part of the graph: the boxes' kind line and a stripe in the
 // focused box's own color along its top, with round corners, a hairline border and a shadow that set it
-// off the map. It opens as a summary (the kind line, the title, the lead text clamped to a few lines and up to
+// off the map. It opens as a summary (the kind line, the title, the whole lead text and up to
 // three key facts); More shows the whole wiki page in place and Less goes back, the session's setting
 // like its open state and width (graph/settings.ts). It follows the focus once the focus settles
 // (FocusPage.tsx), cross-fading to the new page, so arrowing through the stage never draws a page per
@@ -174,7 +174,7 @@ function CardTitle({ index, route }: { index: SpecIndex; route: FocusRoute }) {
 const SUMMARY_FACTS = 3;
 
 /**
- * The summary: the lead text, clamped to a few lines, and the key facts. Edit and Add stay in reach, as on the whole page.
+ * The summary: the whole lead text and the key facts. Edit and Add stay in reach, as on the whole page.
  */
 function CardSummary({ index, route }: { index: SpecIndex; route: FocusRoute }) {
   const focus = focusOf(route);
