@@ -138,17 +138,17 @@ function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseC
     }
     case 'flow_step': {
       const step = useCase.steps.find((s) => s.row.id === id)!;
-      const links: { label: string; ids: string[] }[] = [
-        { label: 'Invokes', ids: step.invokes ? [step.invokes] : [] },
-        { label: 'Happens in', ids: step.happensIn ? [step.happensIn] : [] },
-        { label: 'Fulfills', ids: step.fulfills },
-        { label: 'Exchanges with', ids: step.exchangesWith },
+      const links: { label: string; words: string; ids: string[] }[] = [
+        { label: 'Invokes', words: 'invokes', ids: step.invokes ? [step.invokes] : [] },
+        { label: 'Happens in', words: 'happens in', ids: step.happensIn ? [step.happensIn] : [] },
+        { label: 'Fulfills', words: 'fulfills', ids: step.fulfills },
+        { label: 'Exchanges with', words: 'exchanges with', ids: step.exchangesWith },
       ];
       return (
         <>
           <Facts facts={[{ label: 'Flow', value: <RecordLink index={index} id={step.row.flow_id} /> }, { label: 'Path', value: step.row.path }, { label: 'Position', value: step.row.position }]} />
           {links.filter((l) => l.ids.length > 0).map((l) => (
-            <Section key={l.label} title={l.label} count={l.ids.length} level={3}><Rows index={index} ids={l.ids} label={`${id} ${l.label.toLowerCase()}`} /></Section>
+            <Section key={l.label} title={l.label} count={l.ids.length} level={3}><Rows index={index} ids={l.ids} label={`${id} ${l.words}`} /></Section>
           ))}
           {links.every((l) => l.ids.length === 0) && <p className="hint">The step links to nothing.</p>}
         </>
@@ -158,10 +158,13 @@ function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseC
       const test = useCase.useCaseTests.find((t) => t.row.id === id)!;
       return (
         <>
-          <dl className="scenario" aria-label="Scenario">
-            <div data-field="when"><dt>When</dt><dd><Prose index={index} source={test.row.when} self={id} /></dd></div>
-            <div data-field="then"><dt>Then</dt><dd><Prose index={index} source={test.row.then} self={id} /></dd></div>
-          </dl>
+          {/* A scenario's parts as the data holds them: a test loaded from a file may still lack one. */}
+          {(test.row.when || test.row.then) && (
+            <dl className="scenario" aria-label="Scenario">
+              {test.row.when && <div data-field="when"><dt>When</dt><dd><Prose index={index} source={test.row.when} self={id} /></dd></div>}
+              {test.row.then && <div data-field="then"><dt>Then</dt><dd><Prose index={index} source={test.row.then} self={id} /></dd></div>}
+            </dl>
+          )}
           <Text index={index} id={id} source={test.row.notes} title="Notes" field="notes" />
           <StartsFrom index={index} id={id} sets={test.startsFrom} />
         </>
@@ -171,9 +174,11 @@ function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseC
       const test = useCase.flowTests.find((t) => t.row.id === id)!;
       return (
         <>
-          <Section title="Steps" count={test.row.steps.length}>
-            <ol className="test-steps">{test.row.steps.map((s, i) => <li key={i}><Prose index={index} source={s} self={id} /></li>)}</ol>
-          </Section>
+          {(test.row.steps ?? []).length > 0 && (
+            <Section title="Steps" count={test.row.steps.length}>
+              <ol className="test-steps">{test.row.steps.map((s, i) => <li key={i}><Prose index={index} source={s} self={id} /></li>)}</ol>
+            </Section>
+          )}
           <Text index={index} id={id} source={test.row.expected_result} title="Expected result" field="expected_result" />
           <Text index={index} id={id} source={test.row.notes} title="Notes" field="notes" />
           <StartsFrom index={index} id={id} sets={test.startsFrom} />
