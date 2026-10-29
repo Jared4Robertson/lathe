@@ -238,13 +238,13 @@ export function ErdKey({ map, at, relations = [] }: { map: ErdMap; at: ErdFocus;
   });
   const cells = (entries: Entry[]) => entries.map((e, i) => <li key={i} title={e.title}>{e.mark} {text(e.words)}</li>);
   return (
-    <section className="erd-key" aria-label="Key">
+    <div className="erd-key">
       <div className="erd-key-grid">
         <ul className="erd-key-ends" aria-label="Boxes">{cells(boxes)}</ul>
         <ul className="erd-key-ends" aria-label="Lines">{cells(lineEntries)}</ul>
       </div>
       <p className="hint">Click a box, or press Enter on it, to focus it. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys (or W, A, S and D) move to the nearest box that way in the same area, going on to the next area at the edge; Shift+Up (Shift+W) goes out to the box around, Shift+Down (Shift+S) in to the first box inside.</p>
-    </section>
+    </div>
   );
 }
 
