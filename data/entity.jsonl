@@ -72,9 +72,10 @@
 {"id":"LA-EXP-EN01","title":"Page","aggregate_id":"LA-EXP-A1","role":"root","description":"One place in the app, identified by its address, showing a view of one loaded workspace."}
 {"id":"LA-EXP-EN02","title":"Space","aggregate_id":"LA-EXP-A2","role":"root","description":"One product as a place to work in, in the rail."}
 {"id":"LA-EXP-EN03","title":"Nav row","aggregate_id":"LA-EXP-A3","role":"root","description":"A row of the nav that folds, and whether the reader has it folded."}
-{"id":"LA-EXP-EN09","title":"Tab group","aggregate_id":"LA-EXP-A5","role":"root","description":"The tabs open in one space, in order, with one active."}
-{"id":"LA-EXP-EN10","title":"Tab","aggregate_id":"LA-EXP-A5","role":"child","in_root_table":true,"description":"One open page, with what it shows and where the reader was in it."}
-{"id":"LA-EXP-EN11","title":"Session settings","aggregate_id":"LA-EXP-A6","role":"root","description":"How the graph is drawn and how the wiki card shows, for this browser session."}
+{"id":"LA-EXP-EN09","title":"Tab set","aggregate_id":"LA-EXP-A5","role":"root","description":"The tabs open in one space of the desktop app, in order, with one active."}
+{"id":"LA-EXP-EN10","title":"Tab","aggregate_id":"LA-EXP-A5","role":"child","in_root_table":true,"description":"One place in the row: its focus and stage, its view, and its own history of where the Reader went in it."}
+{"id":"LA-EXP-EN11","title":"Session settings","aggregate_id":"LA-EXP-A6","role":"root","description":"How the graph is laid out and how wide the wiki card is, for this browser session."}
+{"id":"LA-EXP-EN12","title":"History entry","aggregate_id":"LA-EXP-A5","role":"child","in_root_table":true,"description":"One place a tab went to, in its own Back and Forward history."}
 {"id":"LA-PLT-EN02","title":"Panel","aggregate_id":"LA-PLT-A2","role":"root","description":"One part of the page's layout, which always shows the page's focus and can be hidden without losing it."}
 {"id":"LA-PLT-EN03","title":"Keyboard command","aggregate_id":"LA-PLT-A3","role":"root","description":"Something a person can do from anywhere in the app, listed once in the keymap."}
 {"id":"LA-PLT-EN04","title":"Key binding","aggregate_id":"LA-PLT-A3","role":"child","in_root_table":true,"description":"One chord or sequence that runs the command, never shared with another command active at the same time."}

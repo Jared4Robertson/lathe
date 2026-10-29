@@ -20,6 +20,7 @@ import {
 import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
 import { StageCamera, StageKey, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
 import { DEFAULT_GRAPH_SETTINGS } from './settings';
+import { keepCamera, keptCamera } from '../views/cameras';
 import { graphMap, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { setTextMeasure, type TextMeasure } from './text';
@@ -105,9 +106,13 @@ export interface GraphViewProps {
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the camera frames the focus. */
   space?: OpenSpaceStore;
+  /** The place the graph shows (views/cameras.ts): its camera is kept as the place is left and taken back as it shows again. */
+  cameraKey?: string;
+  /** Opens a box in a new place (Cmd or Ctrl+click, or a middle-click for the background), when the host has places. */
+  onOpenNew?: (id: string, background: boolean) => void;
 }
 
-export function GraphView({ index, focus, onNavigate, settings: hosted, onSettingsChange, onPeek, onCounts, space }: GraphViewProps) {
+export function GraphView({ index, focus, onNavigate, settings: hosted, onSettingsChange, onPeek, onCounts, space, cameraKey, onOpenNew }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
   const { layout, depth, filters, minimap } = settings;
@@ -185,7 +190,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
       <StageKey entries={keyEntries} beside={minimap ? 'minimap' : undefined} />
       <div className="graph-workspace">
         <div className="graph-canvas">
-          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} space={space} />
+          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} />
         </div>
       </div>
     </section>
@@ -409,9 +414,11 @@ interface CanvasProps {
   minimap: boolean;
   onPeek?: GraphViewProps['onPeek'];
   space?: OpenSpaceStore;
+  cameraKey?: string;
+  onOpenNew?: GraphViewProps['onOpenNew'];
 }
 
-function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek, space, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
+function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
   const focus = graph.focus;
   // The focus's own product's map (no other product's nodes are in it), in any layout (LA-V93-R21): the Tree map (map.ts), or the Nested map (nested.ts), under one camera.
   const root = useMemo(() => mapRootOf(index, focus), [index, focus]);
@@ -514,11 +521,39 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   /** The focus fade's move to a new focus (fade.ts): from the focus before, eased over the camera's glide to the new one. */
   const fadeShift = useRef<{ from: string | null; to: string; start: number; duration: number }>({ from: null, to: focus, start: 0, duration: 0 });
   const framedEmpty = useRef(false);
+
+  // Each place keeps its camera (views/cameras.ts): as the place shown changes (another tab), the one left keeps where
+  // its camera was, and the one shown takes its own back, at once, when it still frames the same focus, layout and depth.
+  const framedNow = `${focus} ${layout} ${depth}`;
+  const cameraPlace = useRef<{ key: string | undefined; framed: string }>({ key: cameraKey, framed: framedNow });
+  /** A kept camera waiting for the stage's first measure; and the framing a camera taken back stands in for. */
+  const keptView = useRef<Viewport | null>(cameraKey ? keptCamera<Viewport>(cameraKey, 'graph', framedNow) : null);
+  const skipFraming = useRef<unknown>(null);
   useLayoutEffect(() => {
-    const target = framing();
-    if (!target || !size) return;
+    const was = cameraPlace.current;
+    if (was.key === cameraKey) { cameraPlace.current = { key: cameraKey, framed: framedNow }; return; }
+    if (was.key && sizeRef.current) keepCamera(was.key, 'graph', { framed: was.framed, view: view.current });
+    cameraPlace.current = { key: cameraKey, framed: framedNow };
+    const back = cameraKey ? keptCamera<Viewport>(cameraKey, 'graph', framedNow) : null;
+    if (back && size) {
+      moveTo(back, false);
+      framedFor.current = size;
+      fadeShift.current = { from: null, to: focus, start: 0, duration: 0 };
+      skipFraming.current = framing;
+    } else keptView.current = back;
+  });
+  useEffect(() => () => {
+    const { key, framed } = cameraPlace.current;
+    if (key && sizeRef.current) keepCamera(key, 'graph', { framed, view: view.current });
+  }, []);
+  useLayoutEffect(() => {
+    if (skipFraming.current === framing) { skipFraming.current = null; return; }
+    const kept = keptView.current;
+    const target = kept ?? framing();
+    if (!target || !size || (kept && !framing())) return;
+    keptView.current = null;
     const resized = framedFor.current !== null && (framedFor.current.w !== size.w || framedFor.current.h !== size.h);
-    const duration = moveTo(target, framedFor.current !== null && !resized && !framedEmpty.current);
+    const duration = moveTo(target, !kept && framedFor.current !== null && !resized && !framedEmpty.current);
     if (fadeShift.current.to !== focus) fadeShift.current = { from: fadeShift.current.to, to: focus, start: performance.now(), duration };
     framedFor.current = size;
     framedEmpty.current = map.nodes.size === 0;
@@ -741,7 +776,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   /** Whether a box can be focused by a click: a record or a group, not the focus. */
   const canOpen = useCallback((id: string) => id !== focus && isGraphNode(index, id), [focus, index]);
   // By touch, a first tap selects a node and a second tap (or a tap on its card) opens it.
-  const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus);
+  const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus, onOpenNew);
   tap.current = tapToOpen;
   const armedPlate = tapToOpen.armed ? plateFor(tapToOpen.armed) : null;
   useEffect(() => { onPeek?.('selected', tapToOpen.armed); requestPaint(); }, [tapToOpen.armed, onPeek]);
@@ -897,6 +932,11 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         className="graph-canvas-draw"
         aria-hidden="true"
         {...gestures.handlers}
+        onAuxClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          const hit = hitAt(e.clientX - r.left, e.clientY - r.top);
+          if (hit) tapToOpen.onNodeAuxClick(e, hit.id);
+        }}
         onPointerLeave={(e) => { if (!gestures.pressed(e.pointerId)) setHover(null); }}
       />
       <div
@@ -925,6 +965,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
               aria-label={plateName(p, id === focus)}
               tabIndex={0}
               onClick={(e) => tapToOpen.onNodeClick(e, id)}
+              onAuxClick={(e) => tapToOpen.onNodeAuxClick(e, id)}
             />
           );
         })}

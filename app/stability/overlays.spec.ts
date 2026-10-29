@@ -9,7 +9,7 @@ import { FOCUS, RECORD, SHELL } from './scenarios';
 test.describe('overlays', () => {
   test('LA-V61-R34-T01 a tooltip shows in place', async ({ page }) => {
     await openPage(page, `${RECORD}?stage=graph`);
-    const button = page.locator('.page-bar .stage-switch button').first();
+    const button = page.locator('.page-bar-actions .stage-switch button').first();
     const r = await step(page, 'overlays', 'tooltip on hover', { keys: [...SHELL, ...FOCUS, '.tooltip'] }, async () => {
       await button.hover();
       await page.locator('.tooltip').waitFor();
@@ -17,7 +17,7 @@ test.describe('overlays', () => {
     });
     expectStable(r);
     const next = await step(page, 'overlays', 'tooltip moving to the next button', { keys: [...SHELL, ...FOCUS] }, async () => {
-      await page.locator('.page-bar .stage-switch button').nth(1).hover();
+      await page.locator('.page-bar-actions .stage-switch button').nth(1).hover();
       await page.waitForTimeout(400);
     });
     expectStable(next);
@@ -63,13 +63,13 @@ test.describe('overlays', () => {
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): a tool opens over it, and the stage, the nav and the tab panel stay put.
   test('LA-V61-R34-T01 the Checks panel and the Appearance popover open over the stage, and nothing on the page jumps', async ({ page }) => {
     await openPage(page, RECORD);
-    const r = await step(page, 'overlays', 'Checks panel: open', { keys: ['nav#nav', '.stage-layout > .page-bar', '.header-strip', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage'] }, async () => {
+    const r = await step(page, 'overlays', 'Checks panel: open', { keys: ['nav#nav', '.page-bar-actions', '.header-strip', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage'] }, async () => {
       await page.locator('nav#nav').getByRole('link', { name: /^Checks/ }).click();
       await page.locator('.tool-panel.checks-panel .problems').first().waitFor();
       await page.waitForTimeout(400);
     });
     expectStable(r);
-    const pick = await step(page, 'overlays', 'Checks panel: select a problem', { keys: ['nav#nav', '.stage-layout > .page-bar', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage', '.header-strip'] }, async () => {
+    const pick = await step(page, 'overlays', 'Checks panel: select a problem', { keys: ['nav#nav', '.page-bar-actions', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage', '.header-strip'] }, async () => {
       await page.locator('.tool-panel.checks-panel li.problem a.row-link').first().click();
       await page.locator('.tool-panel.checks-panel li.problem.is-current').first().waitFor();
       await page.waitForTimeout(400);
@@ -77,7 +77,7 @@ test.describe('overlays', () => {
     expectStable(pick);
     await page.keyboard.press('Escape');
     await expect(page.locator('.tool-panel')).toHaveCount(0);
-    const pop = await step(page, 'overlays', 'Appearance popover: open', { keys: ['nav#nav', '.stage-layout > .page-bar', '.header-strip', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage'] }, async () => {
+    const pop = await step(page, 'overlays', 'Appearance popover: open', { keys: ['nav#nav', '.page-bar-actions', '.header-strip', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage'] }, async () => {
       await page.locator('nav#nav').getByRole('link', { name: 'Appearance' }).click();
       await page.locator('.tool-panel.appearance-popover .theme-rows').waitFor();
       await page.waitForTimeout(400);

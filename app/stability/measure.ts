@@ -192,8 +192,8 @@ export async function installProbes(page: Page, firstKeys: string[] = []) {
   // summary); a choice made in a scenario is kept.
   await page.addInitScript(() => {
     try {
-      if (!sessionStorage.getItem('lathe:session-settings')) {
-        sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
+      if (!sessionStorage.getItem('lathe:place')) {
+        sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
       }
     } catch { /* storage unavailable: the defaults apply */ }
   });

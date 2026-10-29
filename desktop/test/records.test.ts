@@ -67,15 +67,24 @@ describe('LA-AUT-UC15-R01-T01 The record actions take only a known action and a 
   });
 
   it('offers reveal, open in the editor and copy ID in the native menu, the first two only for a record with a file', () => {
-    const actions = { reveal: vi.fn(), openInEditor: vi.fn(), copyId: vi.fn() };
+    const actions = { openInNewTab: vi.fn(), reveal: vi.fn(), openInEditor: vi.fn(), copyId: vi.fn() };
     const menu = recordMenuTemplate('SMK-ORD', true, 'VS Code', actions, 'darwin');
-    expect(menu.map((m) => m.label ?? m.type)).toEqual(['Reveal Data File in Finder', 'Open in VS Code', 'separator', 'Copy ID “SMK-ORD”']);
+    expect(menu.map((m) => m.label ?? m.type)).toEqual(['Open in New Tab', 'separator', 'Reveal Data File in Finder', 'Open in VS Code', 'separator', 'Copy ID “SMK-ORD”']);
     expect(menu.every((m) => m.enabled !== false)).toBe(true);
-    (menu[3].click as () => void)();
+    (menu[5].click as () => void)();
     expect(actions.copyId).toHaveBeenCalled();
     const missing = recordMenuTemplate('SMK-X', false, 'VS Code', actions, 'darwin');
     expect(missing.filter((m) => m.enabled === false).map((m) => m.label)).toEqual(['Reveal Data File in Finder', 'Open in VS Code']);
     expect(revealLabel('win32')).toBe('Show Data File in File Explorer');
     expect(revealLabel('linux')).toBe('Show Data File in Folder');
+  });
+
+  it('LA-V96-R11-T04 The record\'s right-click menu offers Open in New Tab', () => {
+    const actions = { openInNewTab: vi.fn(), reveal: vi.fn(), openInEditor: vi.fn(), copyId: vi.fn() };
+    const menu = recordMenuTemplate('SMK-ORD', false, 'VS Code', actions, 'darwin');
+    expect(menu[0]).toMatchObject({ label: 'Open in New Tab' });
+    expect(menu[0].enabled).not.toBe(false);
+    (menu[0].click as () => void)();
+    expect(actions.openInNewTab).toHaveBeenCalled();
   });
 });

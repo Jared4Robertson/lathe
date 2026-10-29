@@ -10,18 +10,22 @@ import { Card } from '../shell/Card';
 // With a mouse a click still opens at once. Pan and pinch-zoom are the canvas's own (the graph's
 // camera, or React Flow's in the ERD view).
 
+/** The native event of a React or DOM event. */
+const nativeOf = (event: SyntheticEvent | Event | undefined) => (event && 'nativeEvent' in event ? event.nativeEvent : event) as MouseEvent | undefined;
+
 /** Whether a click came from a finger or a pen (or, when the event does not say, from a touch screen). */
 export function isTap(event: SyntheticEvent | Event | undefined, coarse: boolean): boolean {
-  const native = event && 'nativeEvent' in event ? event.nativeEvent : event;
-  const type = (native as PointerEvent | undefined)?.pointerType;
+  const type = (nativeOf(event) as PointerEvent | undefined)?.pointerType;
   return type ? type !== 'mouse' : coarse;
 }
 
 export interface TapToOpen {
   /** The node selected by a first tap, waiting for a second tap or a tap on its card. */
   armed: string | null;
-  /** Handles a click on a node: opens it with a mouse, selects it (or opens it when already selected) with a finger. */
+  /** Handles a click on a node: opens it with a mouse, selects it (or opens it when already selected) with a finger; with Cmd or Ctrl held, opens it in a new place. */
   onNodeClick: (event: SyntheticEvent | Event | undefined, id: string) => void;
+  /** Handles a middle-click on a node: opens it in a new place in the background. */
+  onNodeAuxClick: (event: SyntheticEvent | Event | undefined, id: string) => void;
   /** Lets go of the selected node. */
   clear: () => void;
   /** Opens the selected node. */
@@ -33,9 +37,11 @@ export interface TapToOpen {
  * says whether a node can be opened at all (the center node and file nodes cannot). The selected
  * node's element (the element with its `data-id` under `wrapper`: the ERD view's node, the graph's
  * box in its accessibility layer) carries `is-armed` while selected.
- * The selection is let go when `resetKey` changes (a new focus).
+ * The selection is let go when `resetKey` changes (a new focus). With `openNew` (a host with places, views/place.ts),
+ * Cmd or Ctrl+click opens a node in a new place and a middle-click opens it there in the background, as a browser
+ * opens a link in a new tab.
  */
-export function useTapToOpen(open: (id: string) => void, canOpen: (id: string) => boolean, wrapper: RefObject<HTMLElement | null>, resetKey: string): TapToOpen {
+export function useTapToOpen(open: (id: string) => void, canOpen: (id: string) => boolean, wrapper: RefObject<HTMLElement | null>, resetKey: string, openNew?: (id: string, background: boolean) => void): TapToOpen {
   const coarse = useCoarsePointer();
   const [armed, setArmed] = useState<string | null>(null);
   useEffect(() => { setArmed(null); }, [resetKey]);
@@ -48,13 +54,20 @@ export function useTapToOpen(open: (id: string) => void, canOpen: (id: string) =
   }, [armed, wrapper]);
 
   const onNodeClick = useCallback((event: SyntheticEvent | Event | undefined, id: string) => {
+    const native = nativeOf(event);
+    if (openNew && (native?.metaKey || native?.ctrlKey) && (canOpen(id) || id === resetKey)) { event?.preventDefault?.(); setArmed(null); openNew(id, false); return; }
     if (!canOpen(id)) return;
     if (!isTap(event, coarse) || armed === id) { setArmed(null); open(id); return; }
     setArmed(id);
-  }, [armed, coarse, canOpen, open]);
+  }, [armed, coarse, canOpen, open, openNew, resetKey]);
+  const onNodeAuxClick = useCallback((event: SyntheticEvent | Event | undefined, id: string) => {
+    if (!openNew || nativeOf(event)?.button !== 1 || !(canOpen(id) || id === resetKey)) return;
+    event?.preventDefault?.();
+    openNew(id, true);
+  }, [canOpen, openNew, resetKey]);
   const clear = useCallback(() => setArmed(null), []);
   const openArmed = useCallback(() => { if (armed) { setArmed(null); open(armed); } }, [armed, open]);
-  return { armed, onNodeClick, clear, openArmed };
+  return { armed, onNodeClick, onNodeAuxClick, clear, openArmed };
 }
 
 /** The card for the selected node, at the bottom of the canvas: its kind and name; a tap on it opens the node. */

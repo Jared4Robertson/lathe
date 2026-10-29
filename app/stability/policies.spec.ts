@@ -1,17 +1,39 @@
 import { expect, test, type Page } from '@playwright/test';
+import { asDesktop } from './desktop';
 import { openPage } from './measure';
 import { RECORD } from './scenarios';
 
 // Exploring's policies in a real browser (LA-EXP-PO01 to PO03): what a page opened, or a tab
 // activated, leads to. Each test drives the app as the Reader does and reads the address, the
-// tab strip and the rail.
+// tab strip (the desktop app's, with its bridge stood in for) and the rail.
 
-/** The tab strip as "ID" with "*" for the preview and "<" for the active tab. */
+/** The tab strip as "ID" with "<" for the active tab. */
 async function tabsOf(page: Page): Promise<string[]> {
   return page.locator('[role="tablist"][aria-label="Open pages"] .tab').evaluateAll((tabs) => tabs.map((t) => {
     const id = t.querySelector('.tab-id')?.textContent ?? t.querySelector('.tab-title')?.textContent ?? '';
-    return `${id}${t.classList.contains('is-preview') ? '*' : ''}${t.querySelector('[role="tab"]')?.getAttribute('aria-selected') === 'true' ? '<' : ''}`;
+    return `${id}${t.querySelector('[role="tab"]')?.getAttribute('aria-selected') === 'true' ? '<' : ''}`;
   }));
+}
+
+/** Goes to a record by quick find, in the tab shown. */
+async function quickFind(page: Page, id: string) {
+  await page.keyboard.press('Control+k');
+  const find = page.locator('.quick-open input');
+  await expect(find).toBeFocused();
+  await find.fill(id);
+  await page.locator('.quick-open .palette-list li').first().waitFor();
+  await page.keyboard.press('Enter');
+  await page.waitForURL((u) => u.pathname === `/${id}`);
+}
+
+/** Opens a box other than the focus in a new tab, by Cmd+click, and returns its ID. */
+async function openBoxInNewTab(page: Page): Promise<string> {
+  const box = page.locator('.focus-stage .graph-box:not(.is-focus)').first();
+  await box.waitFor({ state: 'attached' });
+  const id = (await box.getAttribute('data-id'))!;
+  await box.dispatchEvent('click', { metaKey: true, button: 0 });
+  await page.waitForURL((u) => u.pathname === `/${id}`);
+  return id;
 }
 
 /** Follows the first link in the wiki card to a record other than the one shown, and returns its ID. */
@@ -40,43 +62,48 @@ test.describe('Exploring policies', () => {
     await page.waitForURL((u) => u.pathname === `/${last}`);
   });
 
-  test('LA-EXP-PO02-T a page opened shows in a tab: the preview is replaced in place, an open page activates its tab, and Back reopens a closed page as the preview', async ({ page }) => {
+  test('LA-EXP-PO02-T a move changes only the active tab\'s place, even onto a record another tab holds', async ({ page }) => {
+    await asDesktop(page);
     const first = RECORD.slice(1);
-    await openPage(page, RECORD);
-    expect(await tabsOf(page)).toEqual([`${first}*<`]);
-    // A plain open replaces the preview tab's page in place.
-    const second = await followLink(page);
-    expect(await tabsOf(page)).toEqual([`${second}*<`]);
-    // Kept by a double-click; the next open adds a preview after it.
-    await page.locator('.tab.is-preview [role="tab"]').dblclick();
-    expect(await tabsOf(page)).toEqual([`${second}<`]);
-    const third = await followLink(page);
-    expect(await tabsOf(page)).toEqual([second, `${third}*<`]);
-    // Back to a page already open activates its tab: no second tab.
+    await openPage(page, `${RECORD}?stage=graph`);
+    expect(await tabsOf(page)).toEqual([`${first}<`]);
+    // A second tab, by Cmd+click on a box, after the first and active.
+    const box = await openBoxInNewTab(page);
+    await expect.poll(() => tabsOf(page)).toEqual([first, `${box}<`]);
+    // In it, a link followed and a move onto the record the first tab holds: still the second tab.
+    const linked = await followLink(page);
+    expect(await tabsOf(page)).toEqual([first, `${linked}<`]);
+    await quickFind(page, first);
+    expect(await tabsOf(page)).toEqual([first, `${first}<`]);
+    // Back steps within the second tab.
     await page.goBack();
-    await page.waitForURL((u) => u.pathname === `/${second}`);
-    await expect.poll(() => tabsOf(page)).toEqual([`${second}<`, `${third}*`]);
-    // Closing the preview, then Forward to its page, reopens it as the preview.
-    await page.locator('.tab.is-preview .tab-close').click({ force: true });
-    await expect.poll(() => tabsOf(page)).toEqual([`${second}<`]);
-    await page.goForward();
-    await page.waitForURL((u) => u.pathname === `/${third}`);
-    await expect.poll(() => tabsOf(page)).toEqual([second, `${third}*<`]);
+    await page.waitForURL((u) => u.pathname === `/${linked}`);
+    await expect.poll(() => tabsOf(page)).toEqual([first, `${linked}<`]);
   });
 
-  test('LA-EXP-PO03-T the address follows the active tab, clicked or cycled', async ({ page }) => {
+  test('LA-EXP-PO03-T the address and the window\'s history follow the active tab, clicked or cycled', async ({ page }) => {
+    await asDesktop(page);
     const first = RECORD.slice(1);
-    await openPage(page, RECORD);
-    await page.locator('.tab.is-preview [role="tab"]').dblclick();
-    const second = await followLink(page);
-    expect(await tabsOf(page)).toEqual([first, `${second}*<`]);
-    // Clicking a tab activates it, and the address follows.
-    await page.locator('.tab', { has: page.locator('.tab-id', { hasText: new RegExp(`^${first}$`) }) }).locator('[role="tab"]').click();
-    await page.waitForURL((u) => u.pathname === `/${first}`);
-    expect(await tabsOf(page)).toEqual([`${first}<`, `${second}*`]);
-    // Ctrl+Tab cycles to the next tab, and the address follows.
+    await openPage(page, `${RECORD}?stage=graph`);
+    const firstNext = await followLink(page);
+    await page.goBack();
+    await page.waitForURL((u) => u.pathname === RECORD);
+    const box = await openBoxInNewTab(page);
+    const boxNext = await followLink(page);
+    expect(await tabsOf(page)).toEqual([first, `${boxNext}<`]);
+    // Clicking the first tab: the address is its place, and Back steps through its own history.
+    await page.locator('.tab [role="tab"]').first().click();
+    await page.waitForURL((u) => u.pathname === RECORD);
+    await page.goForward();
+    await page.waitForURL((u) => u.pathname === `/${firstNext}`);
+    await page.goBack();
+    await page.waitForURL((u) => u.pathname === RECORD);
+    expect(await tabsOf(page)).toEqual([`${first}<`, boxNext]);
+    // Ctrl+Tab: the second tab's place, and Back through its own history.
     await page.keyboard.press('Control+Tab');
-    await page.waitForURL((u) => u.pathname === `/${second}`);
-    expect(await tabsOf(page)).toEqual([first, `${second}*<`]);
+    await page.waitForURL((u) => u.pathname === `/${boxNext}`);
+    await page.goBack();
+    await page.waitForURL((u) => u.pathname === `/${box}`);
+    expect(await tabsOf(page)).toEqual([first, `${box}<`]);
   });
 });

@@ -13,6 +13,7 @@ import { boxColors, GAP_KIND, paint, type Bar, type Camera, type Line, type Pain
 import { plateName, plateOf, plateTip, type Plate, type PlainBox } from '../graph/plate';
 import { setTextMeasure, type TextMeasure } from '../graph/text';
 import { TapCard, useTapToOpen } from '../graph/touch';
+import { keepCamera, keptCamera } from '../views/cameras';
 import { useCameraGestures } from '../graph/gestures';
 import { useCommand } from '../shell/commands';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
@@ -78,6 +79,10 @@ export interface TraceCanvasProps {
   space?: OpenSpaceStore;
   /** The node the keyboard is on (the table's focused link, or the walk's node that is no record), drawn with the focus ring and brought into view; null for none. */
   ring: string | null;
+  /** The place shown (views/cameras.ts), whose camera is kept and taken back. */
+  cameraKey?: string;
+  /** Opens a record in a new place, when the host has places. */
+  onOpenNew?: (id: string, background: boolean) => void;
 }
 
 /** The canvas, once the label's faces have loaded and the text measure is ready (graph/fonts.ts). */
@@ -98,7 +103,7 @@ export function TraceCanvas(props: TraceCanvasProps) {
 /** What one frame draws: the nodes in view as plates, bars for the runs too small to see, and the lines between the plates. */
 interface TraceFrame { plates: Plate[]; bars: Bar[]; lines: Line[] }
 
-function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek, space, ring: ringAt, fonts, theme }: TraceCanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
+function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: TraceCanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
   const wrapper = useRef<TraceHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -157,14 +162,41 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
   const framed = useRef<{ w: number; h: number; at: string; focus: string; map: TraceMap } | null>(null);
   /** How long the glide to a new focus takes, for the fade to follow it. */
   const glideMs = useRef<number | null>(null);
+
+  // Each place keeps its camera (views/cameras.ts): as the place shown changes (another tab), the one left keeps where
+  // its camera was, and the one shown takes its own back, at once, when it still frames the same node.
+  const framedNow = `${focus} ${at}`;
+  const cameraPlace = useRef<{ key: string | undefined; framed: string }>({ key: cameraKey, framed: framedNow });
+  /** A kept camera waiting for the stage's first measure; and the framing a camera taken back stands in for. */
+  const keptView = useRef<Viewport | null>(cameraKey ? keptCamera<Viewport>(cameraKey, 'trace', framedNow) : null);
+  const skipFraming = useRef<unknown>(null);
   useLayoutEffect(() => {
-    const target = framing();
-    if (!target || !size) return;
+    const was = cameraPlace.current;
+    if (was.key === cameraKey) { cameraPlace.current = { key: cameraKey, framed: framedNow }; return; }
+    if (was.key && sizeRef.current) keepCamera(was.key, 'trace', { framed: was.framed, view: view.current });
+    cameraPlace.current = { key: cameraKey, framed: framedNow };
+    const back = cameraKey ? keptCamera<Viewport>(cameraKey, 'trace', framedNow) : null;
+    if (back && size) {
+      moveTo(back, false);
+      framed.current = { w: size.w, h: size.h, at, focus, map };
+      skipFraming.current = framing;
+    } else keptView.current = back;
+  });
+  useEffect(() => () => {
+    const { key, framed: what } = cameraPlace.current;
+    if (key && sizeRef.current) keepCamera(key, 'trace', { framed: what, view: view.current });
+  }, []);
+  useLayoutEffect(() => {
+    if (skipFraming.current === framing) { skipFraming.current = null; return; }
+    const kept = keptView.current;
+    const target = kept ?? framing();
+    if (!target || !size || (kept && !framing())) return;
+    keptView.current = null;
     const was = framed.current;
     framed.current = { w: size.w, h: size.h, at, focus, map };
     const resized = was !== null && (was.w !== size.w || was.h !== size.h);
     if (was && !resized && was.focus === focus && was.map !== map) return;
-    const ms = moveTo(target, was !== null && !resized);
+    const ms = moveTo(target, !kept && was !== null && !resized);
     if (!was || was.at !== at) glideMs.current = ms;
   }, [framing]);
   const frameFocus = useCallback(() => { const t = framing(); if (t) moveTo(t, true); }, [framing, moveTo]);
@@ -320,7 +352,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     const own = !n ? undefined : n.id === id ? n.key : n.chain ? map.copies.get(id)?.find((k) => map.nodes.get(k)!.chain === n.chain) : undefined;
     onNavigate(id, own);
   }, [map, onNavigate]);
-  const tapToOpen = useTapToOpen(openFrom, canOpen, wrapper, focus);
+  const tapToOpen = useTapToOpen(openFrom, canOpen, wrapper, focus, onOpenNew);
   tap.current = tapToOpen;
   useEffect(() => { onPeek?.('selected', tapToOpen.armed); requestPaint(); }, [tapToOpen.armed, onPeek]);
 
@@ -418,6 +450,12 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
         className="graph-canvas-draw"
         aria-hidden="true"
         {...gestures.handlers}
+        onAuxClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          const hit = hitAt(e.clientX - r.left, e.clientY - r.top);
+          const opens = hit ? map.nodes.get(hit.place)?.opens : null;
+          if (opens) tapToOpen.onNodeAuxClick(e, opens);
+        }}
         onPointerLeave={(e) => { if (!gestures.pressed(e.pointerId)) setHover(null); }}
       />
       <StageCamera onZoomIn={zoomButton(ZOOM_STEP)} onZoomOut={zoomButton(1 / ZOOM_STEP)} onFit={fitMap} />
