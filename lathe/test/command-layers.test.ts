@@ -132,6 +132,10 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
   // and the checks then hold for every slice that has a queries.ts.
   const READ_MODEL_SLICES: string[] = [
     'lathe/src/authoring/use-case',
+    'lathe/src/authoring/domain',
+    'lathe/src/authoring/test-data-set',
+    'lathe/src/authoring/pattern',
+    'lathe/src/authoring/standard',
     'lathe/src/authoring/view',
     'lathe/src/authoring/endpoint',
     'lathe/src/authoring/integration',

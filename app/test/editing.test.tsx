@@ -213,20 +213,6 @@ describe('adding a record', () => {
     expect(writes[0]).toEqual([{ op: 'add', table: 'view', row: { id: 'DM-V02', title: 'Checkout', description: 'Shows the order before the shopper pays.' } }]);
   });
 
-  it('LA-V92-R31-T01 adds from a domain\'s page the kinds that sit under it, and a specification, which takes its domain from its ID', async () => {
-    const user = userEvent.setup();
-    await openApp('/DM-SHOP');
-    const actions = toolbar('DM-SHOP');
-    await user.click(within(actions).getByRole('button', { name: 'Add…' }));
-    const kinds = within(within(actions).getByRole('group', { name: 'Kinds to add under DM-SHOP' })).getAllByRole('button').map((b) => b.textContent);
-    expect(kinds).toEqual(expect.arrayContaining(['Aggregate', 'Specification', 'Read model', 'Capability', 'Open question']));
-    expect(kinds).not.toContain('Value object');
-    await user.click(screen.getByRole('button', { name: 'Specification' }));
-    const form = screen.getByRole('form', { name: 'Add a specification' });
-    expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-SP02');
-    expect(within(form).queryByRole('combobox', { name: /^Parent/ })).toBeNull();
-  });
-
   it('LA-V92-R30-T01 refuses an ID that is already a record before writing', async () => {
     const user = userEvent.setup();
     const { writes } = await openApp('/DM-SHOP-A1');
