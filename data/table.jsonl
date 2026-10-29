@@ -79,9 +79,9 @@
 {"id":"LA-AUT-RM23-TB","title":"StandardTable","read_model_id":"LA-AUT-RM23","name":"StandardTable","storage":"in memory","file":"lathe/src/authoring/standard/read-model.ts"}
 {"id":"LA-AUT-RM24-TB","title":"DomainTable","read_model_id":"LA-AUT-RM24","name":"DomainTable","storage":"in memory","file":"lathe/src/authoring/domain/read-model.ts"}
 {"id":"LA-AUT-RM25-TB","title":"SpecificationPage","read_model_id":"LA-AUT-RM25","name":"SpecificationPage","storage":"in memory","file":"lathe/src/authoring/specification/read-model.ts"}
-{"id":"LA-AUT-RM26-TB","title":"Aggregate","read_model_id":"LA-AUT-RM26","name":"Aggregate","storage":"in memory","file":"lathe/src/authoring/aggregate/model.ts"}
-{"id":"LA-AUT-RM27-TB","title":"DomainEvent","read_model_id":"LA-AUT-RM27","name":"DomainEvent","storage":"in memory","file":"lathe/src/authoring/domain-event/model.ts"}
-{"id":"LA-AUT-RM28-TB","title":"CommandInstance","read_model_id":"LA-AUT-RM28","name":"CommandInstance","storage":"in memory","file":"lathe/src/authoring/command/model.ts"}
+{"id":"LA-AUT-RM26-TB","title":"AggregateTable","read_model_id":"LA-AUT-RM26","name":"AggregateTable","storage":"in memory","file":"lathe/src/authoring/aggregate/read-model.ts"}
+{"id":"LA-AUT-RM27-TB","title":"DomainEventTable","read_model_id":"LA-AUT-RM27","name":"DomainEventTable","storage":"in memory","file":"lathe/src/authoring/domain-event/read-model.ts"}
+{"id":"LA-AUT-RM28-TB","title":"CommandTable","read_model_id":"LA-AUT-RM28","name":"CommandTable","storage":"in memory","file":"lathe/src/authoring/command/read-model.ts"}
 {"id":"LA-AUT-RM29-TB","title":"ValueObjectPage","read_model_id":"LA-AUT-RM29","name":"ValueObjectPage","storage":"in memory","file":"lathe/src/authoring/value-object/read-model.ts"}
 {"id":"LA-AUT-RM30-TB","title":"ReadModelPage","read_model_id":"LA-AUT-RM30","name":"ReadModelPage","storage":"in memory","file":"lathe/src/authoring/read-model/read-model.ts"}
 {"id":"LA-AUT-RM32-TB","title":"ViewTable","read_model_id":"LA-AUT-RM32","name":"ViewTable","storage":"in memory","file":"lathe/src/authoring/view/read-model.ts"}
