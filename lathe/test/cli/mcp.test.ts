@@ -182,11 +182,17 @@ describe('LA-AUT-UC01-R05-T10 each tool', () => {
       errors: expect.any(Number),
       warnings: expect.any(Number),
       problems: expect.any(Array),
-      exceptions: [{ command: 'TL-LEND-CMD01', aggregate: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' }],
+      exceptions: [
+        { command: 'TL-LEND-CMD01', aggregate: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' },
+        { repository: 'TL-LEND-REPO01', aggregate: 'TL-LEND-A2', reason: 'Loans and tools are kept in one store.' },
+      ],
       products: [{ root: '.', coverage: workspace.coverage }],
     });
     expect(workspace.coverage.flatMap((c) => c.gaps).length).toBeGreaterThan(0);
-    expect(checked.content[0].text).toContain('Recorded exceptions (1):\n  TL-LEND-CMD01 also changes aggregate TL-LEND-A2 in the same transaction: The tool must never show as lent without its loan.');
+    expect(checked.content[0].text).toContain(
+      'Recorded exceptions (2):\n  TL-LEND-CMD01 also changes aggregate TL-LEND-A2 in the same transaction: The tool must never show as lent without its loan.\n' +
+        '  TL-LEND-REPO01 also persists aggregate TL-LEND-A2: Loans and tools are kept in one store.',
+    );
     expect(checked.content[0].text).toMatch(/\n\nCoverage:\n {2}TL-LEND [^\n]+: \d+\/\d+ designed/);
     expect(checked.content[0].text).toMatch(/\d+ errors?, \d+ warnings?\.$/);
     expect(checked.isError).toBe((checked.structuredContent!.errors as number) > 0);
