@@ -280,6 +280,8 @@ export function fitRects(rects: Iterable<Rect>, width: number, height: number, m
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 2;
+/** Cmd or Ctrl held turns scroll into zoom (a pinch zooms either way). */
+const ZOOM_KEYS = ['Meta', 'Control'];
 
 /**
  * What the camera frames for a focus: its picked-out box (a domain's region, an aggregate's
@@ -386,7 +388,8 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut
   }, [placed, strength, at.pick, focus, relations, marks.version]);
 
   // The camera: the shared glide (graph/gestures.ts), driving React Flow's viewport; React Flow keeps
-  // the pointer's drag, pinch and wheel, and any of them takes over from a glide.
+  // the pointer's drag, pinch and scroll, set to the shared convention (scroll pans, Cmd/Ctrl+scroll
+  // or a pinch zooms, graph/gestures.ts's wheelMove), and any of them takes over from a glide.
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const noCanvas = useRef<HTMLCanvasElement>(null);
   const camera = useCameraGestures({
@@ -513,6 +516,9 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut
         onNodeMouseEnter={(_, n) => onPeek?.('hover', n.id)}
         onNodeMouseLeave={() => onPeek?.('hover', null)}
         onPaneClick={tap.clear}
+        panOnScroll
+        panOnScrollSpeed={1}
+        zoomActivationKeyCode={ZOOM_KEYS}
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
         proOptions={{ hideAttribution: true }}
