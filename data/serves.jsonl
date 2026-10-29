@@ -4,9 +4,11 @@
 {"source_id":"LA-AUT-CAP03","target_id":"LA-BO01"}
 {"source_id":"LA-AUT-CAP03","target_id":"LA-BO05"}
 {"source_id":"LA-AUT-CAP04","target_id":"LA-BO01"}
+{"source_id":"LA-AUT-CAP05","target_id":"LA-BO01"}
+{"source_id":"LA-AUT-CAP06","target_id":"LA-BO01"}
+{"source_id":"LA-AUT-CAP07","target_id":"LA-BO01"}
 {"source_id":"LA-CHK-CAP01","target_id":"LA-BO02"}
 {"source_id":"LA-CHK-CAP01","target_id":"LA-BO03"}
-{"source_id":"LA-CHK-CAP02","target_id":"LA-BO02"}
 {"source_id":"LA-EXP-CAP01","target_id":"LA-BO04"}
 {"source_id":"LA-EXP-CAP02","target_id":"LA-BO04"}
 {"source_id":"LA-EXP-CAP03","target_id":"LA-BO01"}
@@ -15,9 +17,9 @@
 {"source_id":"LA-PLT-CAP02","target_id":"LA-BO04"}
 {"source_id":"LA-PLT-CAP03","target_id":"LA-BO02"}
 {"source_id":"LA-PLT-CAP03","target_id":"LA-BO03"}
-{"source_id":"LA-PLT-CAP03","target_id":"LA-BO05"}
 {"source_id":"LA-PLT-CAP04","target_id":"LA-BO04"}
 {"source_id":"LA-PLT-CAP04","target_id":"LA-BO05"}
+{"source_id":"LA-PLT-CAP05","target_id":"LA-BO05"}
 {"source_id":"LA-TRC-CAP01","target_id":"LA-BO01"}
 {"source_id":"LA-TRC-CAP02","target_id":"LA-BO01"}
 {"source_id":"LA-TRC-CAP03","target_id":"LA-BO01"}
