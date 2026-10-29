@@ -117,14 +117,14 @@ describe('LA-AUT-UC02-R06-T02 each Domain command (LA-AUT-A4) changes one domain
     const root = writeData(everyKind());
     const out: string[] = [];
     const io = { out: (t: string) => out.push(t), err: (t: string) => out.push(t), stdin: async () => '' };
-    expect(await runAggregateCommand(['domain', 'add-term', '--id', 'TL-LEND-TM02', '--title', 'Member', '--domain_id', 'TL-LEND', '--meaning', 'Someone who borrows tools.', '--root', root], io)).toBe(0);
-    expect(out.pop()).toContain('Added term TL-LEND-TM02');
-    expect((await callTool(root, 'domain_change_term', { id: 'TL-LEND-TM02', group_name: 'People' })).isError).toBeUndefined();
+    expect(await runAggregateCommand(['domain', 'add-term', '--id', 'TL-LEND-TM03', '--title', 'Member', '--domain_id', 'TL-LEND', '--meaning', 'Someone who borrows tools.', '--root', root], io)).toBe(0);
+    expect(out.pop()).toContain('Added term TL-LEND-TM03');
+    expect((await callTool(root, 'domain_change_term', { id: 'TL-LEND-TM03', group_name: 'People' })).isError).toBeUndefined();
     const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     try {
       const post = (route: string, body: unknown) => fetch(`http://127.0.0.1:${(server.address() as AddressInfo).port}${route}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
-      expect((await post('/api/domain/remove-term', { id: 'TL-LEND-TM02' })).status).toBe(200);
+      expect((await post('/api/domain/remove-term', { id: 'TL-LEND-TM03' })).status).toBe(200);
       expect((await post('/api/domain/remove-capability', { id: 'TL-LEND-CAP01' })).status).toBe(422);
     } finally {
       await closeStores(root);
@@ -168,12 +168,9 @@ describe('LA-AUT-INV60-T a term never builds on itself: a loop of builds_on link
   });
 
   it('refuses data holding a loop on load, naming it once', async () => {
-    const data = withTable(
-      { ...everyKind(), term: [...everyKind().term, { id: 'TL-LEND-TM02', title: 'Tool', domain_id: 'TL-LEND', meaning: 'A tool on loan.' }] },
-      'builds_on',
-      [{ source_id: 'TL-LEND-TM01', target_id: 'TL-LEND-TM02' }, { source_id: 'TL-LEND-TM02', target_id: 'TL-LEND-TM01' }],
-    );
-    expect(await refusals(data)).toEqual([expect.objectContaining({ rule: 'term-builds-on-itself', message: expect.stringMatching(/^TL-LEND-TM01 builds on itself: Loan → Tool → Loan;/) })]);
+    // The fixture's Overdue loan builds on Loan; Loan building on Overdue loan closes the loop.
+    const data = withTable(everyKind(), 'builds_on', [{ source_id: 'TL-LEND-TM01', target_id: 'TL-LEND-TM02' }, { source_id: 'TL-LEND-TM02', target_id: 'TL-LEND-TM01' }]);
+    expect(await refusals(data)).toEqual([expect.objectContaining({ rule: 'term-builds-on-itself', message: expect.stringMatching(/^TL-LEND-TM01 builds on itself: Loan → Overdue loan → Loan;/) })]);
   });
 });
 
