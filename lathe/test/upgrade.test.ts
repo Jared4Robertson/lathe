@@ -217,9 +217,9 @@ describe('the schema version', () => {
         { id: 'TL-CAT-A1', title: 'Listing', domain_id: 'TL-CAT' },
       ],
       repository: [
-        { id: 'TL-LEND-A10-REPO', title: 'Fines', aggregate_id: 'TL-LEND-A10', file: 'src/platform/data.ts' },
-        { id: 'TL-LEND-A1-REPO', title: 'Members', aggregate_id: 'TL-LEND-A1', file: 'src/platform/data.ts', description: 'Unlike TL-LEND-A10-REPO, it keeps no history.' },
-        { id: 'TL-LEND-A2-REPO', title: 'Tools', aggregate_id: 'TL-LEND-A2', file: 'src/platform/data.ts' },
+        { id: 'TL-LEND-A10-REPO', title: 'Fines', aggregate_id: 'TL-LEND-A10', file: 'src/store.ts' },
+        { id: 'TL-LEND-A1-REPO', title: 'Members', aggregate_id: 'TL-LEND-A1', file: 'src/store.ts', description: 'Unlike TL-LEND-A10-REPO, it keeps no history.' },
+        { id: 'TL-LEND-A2-REPO', title: 'Tools', aggregate_id: 'TL-LEND-A2', file: 'src/store.ts' },
         { id: 'TL-CAT-A1-REPO', title: 'Listings', aggregate_id: 'TL-CAT-A1', file: 'src/catalog.ts' },
       ],
       meets: [{ source_id: 'TL-LEND-A1-REPO', target_id: 'TL-STD-CODE-R01' }],
@@ -233,9 +233,9 @@ describe('the schema version', () => {
     );
     expect(tables.repository).toEqual([
       { id: 'TL-CAT-REPO01', title: 'Listings', domain_id: 'TL-CAT', file: 'src/catalog.ts', description: 'To write: how it keeps its aggregate.' },
-      { id: 'TL-LEND-REPO01', title: 'Members', domain_id: 'TL-LEND', file: 'src/platform/data.ts', description: 'Unlike TL-LEND-REPO03, it keeps no history.' },
-      { id: 'TL-LEND-REPO02', title: 'Tools', domain_id: 'TL-LEND', file: 'src/platform/data.ts', description: 'To write: how it keeps its aggregate.' },
-      { id: 'TL-LEND-REPO03', title: 'Fines', domain_id: 'TL-LEND', file: 'src/platform/data.ts', description: 'To write: how it keeps its aggregate.' },
+      { id: 'TL-LEND-REPO01', title: 'Members', domain_id: 'TL-LEND', file: 'src/store.ts', description: 'Unlike TL-LEND-REPO03, it keeps no history.' },
+      { id: 'TL-LEND-REPO02', title: 'Tools', domain_id: 'TL-LEND', file: 'src/store.ts', description: 'To write: how it keeps its aggregate.' },
+      { id: 'TL-LEND-REPO03', title: 'Fines', domain_id: 'TL-LEND', file: 'src/store.ts', description: 'To write: how it keeps its aggregate.' },
     ]);
     expect(tables.persists).toEqual([
       { source_id: 'TL-CAT-REPO01', target_id: 'TL-CAT-A1' },
