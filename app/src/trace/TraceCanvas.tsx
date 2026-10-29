@@ -19,7 +19,7 @@ import { useCommand } from '../shell/commands';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
-import { lineKey, linesAt, traceFade, type TraceMap, type TraceNode } from './tree';
+import { copyInChain, lineKey, linesAt, traceFade, type TraceMap, type TraceNode } from './tree';
 import { useChanges } from '../changes/changes';
 import { lensFade, marksMoving, useStageMarks } from '../changes/marks';
 
@@ -39,7 +39,7 @@ import { lensFade, marksMoving, useStageMarks } from '../changes/marks';
 const PLAIN: Record<Exclude<TraceNode['role'], 'record'>, { kind: string; label: string; dashed: boolean }> = {
   file: { kind: 'file', label: 'File', dashed: false },
   gap: { kind: GAP_KIND, label: 'Gap', dashed: true },
-  link: { kind: 'link', label: 'Link', dashed: false },
+  outside: { kind: 'outside', label: 'Branch', dashed: false },
   untraced: { kind: GAP_KIND, label: 'Untraced', dashed: true },
 };
 
@@ -345,11 +345,11 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
   useEffect(() => () => spot(null), [focus, map]);
 
   const canOpen = useCallback((id: string) => id !== focus && index.byId.has(id), [focus, index]);
-  /** The plate a tap was on, so opening its record keeps its place: a record's own node, a file's naming record in its chain, a link's capability. */
+  /** The plate a tap was on, so opening its record keeps its place: a record's own node, a file's naming record in its chain. */
   const tapped = useRef<Plate | null>(null);
   const openFrom = useCallback((id: string) => {
     const n = tapped.current ? map.nodes.get(tapped.current.place) : undefined;
-    const own = !n ? undefined : n.id === id ? n.key : n.chain ? map.copies.get(id)?.find((k) => map.nodes.get(k)!.chain === n.chain) : undefined;
+    const own = !n ? undefined : n.id === id ? n.key : copyInChain(map, id, n.chain);
     onNavigate(id, own);
   }, [map, onNavigate]);
   const tapToOpen = useTapToOpen(openFrom, canOpen, wrapper, focus, onOpenNew);
@@ -392,7 +392,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     const opens = hit ? map.nodes.get(hit.place)?.opens : null;
     if (c) {
       c.style.cursor = opens && canOpen(opens) ? 'pointer' : '';
-      c.title = hit ? (hit.kind === 'file' || hit.kind === 'link' || hit.kind === GAP_KIND ? `${hit.title} (${hit.meta})` : plateTip(hit)) : '';
+      c.title = hit ? (hit.kind === 'file' || hit.kind === 'outside' || hit.kind === GAP_KIND ? `${hit.title} (${hit.meta})` : plateTip(hit)) : '';
     }
     spot(id);
     requestPaint();

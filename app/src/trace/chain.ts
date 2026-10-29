@@ -191,7 +191,8 @@ export function traceMatrix(index: SpecIndex, focus: string): TraceGroup[] {
 //
 // Every stage works on every focus (LA-PAT-APP-UX-R17), so the Trace stage has a shape for each:
 // - an obligation: its chain;
-// - a record or group with obligations under it: their matrix;
+// - a record or group with obligations under it: their matrix; a business outcome the obligations under the
+//   capabilities serving it, as the stage's tree draws them under it;
 // - a record some chain holds: the rows it belongs to, each obligation whose chain holds it, with
 //   the record marked in its cell;
 // - a record coverage reports untraced: the untraced state, with the matrix of the nearest
@@ -208,6 +209,12 @@ export type TraceShape =
 /** The obligations whose chains hold a record, in ID order; empty when none does. */
 export const holdersOf = (index: SpecIndex, id: string): string[] => [...(holders(index).get(id) ?? [])].sort((a, b) => byIdOrder({ id: a }, { id: b }));
 
+/** A business outcome's obligations, as the Trace stage's tree draws them under it: those under each capability serving it, in ID order. */
+function obligationsServing(index: SpecIndex, outcome: string): string[] {
+  const capabilities = (index.incoming.get(outcome) ?? []).filter((l) => l.relation === 'serves' && index.byId.get(l.source)?.kind === 'capability').map((l) => l.source);
+  return capabilities.sort((a, b) => byIdOrder({ id: a }, { id: b })).flatMap((c) => obligationsUnder(index, c));
+}
+
 /** The nearest container above a focus in the tree with an obligation under it, or null. */
 function nearestWithObligations(index: SpecIndex, focus: string): string | null {
   for (let at = treeParent(index, focus); at !== null; at = treeParent(index, at)) {
@@ -219,7 +226,7 @@ function nearestWithObligations(index: SpecIndex, focus: string): string | null 
 /** What the Trace stage shows for a focus. */
 export function traceShape(index: SpecIndex, focus: string): TraceShape {
   if (isObligation(index, focus)) return { shape: 'chain' };
-  const own = obligationsUnder(index, focus);
+  const own = index.byId.get(focus)?.kind === 'business_outcome' ? obligationsServing(index, focus) : obligationsUnder(index, focus);
   if (own.length > 0) return { shape: 'matrix', groups: groupRows(index, own) };
   const held = holdersOf(index, focus);
   if (held.length > 0) return { shape: 'rows', groups: groupRows(index, held) };

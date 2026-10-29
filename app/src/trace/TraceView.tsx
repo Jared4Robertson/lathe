@@ -14,7 +14,7 @@ import { Tooltip } from '../shell/Tooltip';
 import { graphWalkLabels } from '../graph/steps';
 import type { Move } from '../views/levels';
 import { StageKey, StageToolbar } from '../views/StageChrome';
-import { focusKey, keptFor, traceMap, type TraceMap } from './tree';
+import { copyInChain, focusKey, keptFor, traceMap, type TraceMap } from './tree';
 import { traceColumnKeyEntries, traceKeyEntries } from './TraceKey';
 import { traceColumns } from './columns';
 import { ColumnList } from './ColumnList';
@@ -82,7 +82,7 @@ const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? on
 const itemsOf = (row: TraceRow, column: TraceColumn): number => (column === 'files' ? row.files.length : row[column].length);
 
 /** What a matrix shows, from the focus's shape: its groups, its label, its Untraced section's owner, its caption and its note. */
-interface MatrixSpec { groups: TraceGroup[]; label: string; untracedOf?: string; caption?: string; lead?: ReactNode }
+interface MatrixSpec { groups: TraceGroup[]; label: string; untracedOf?: string; caption?: string; lead?: ReactNode; /** What the obligations are counted as, after their count: " under this outcome". */ under?: string }
 
 function matrixSpec(index: SpecIndex, focus: string): MatrixSpec | null {
   const shape = traceShape(index, focus);
@@ -90,7 +90,11 @@ function matrixSpec(index: SpecIndex, focus: string): MatrixSpec | null {
   const name = nameOf(focus);
   switch (shape.shape) {
     case 'chain': return null;
-    case 'matrix': return { groups: shape.groups, untracedOf: focus, label: `Traceability matrix of ${name}` };
+    case 'matrix': {
+      // An outcome's obligations sit under the capabilities serving it, not under it in the record tree: nothing is untraced under it.
+      const outcome = index.byId.get(focus)?.kind === 'business_outcome';
+      return { groups: shape.groups, untracedOf: outcome ? undefined : focus, label: `Traceability matrix of ${name}`, under: outcome ? ' under this outcome' : undefined };
+    }
     case 'rows': {
       const n = shape.groups.reduce((s, g) => s + g.rows.length, 0);
       return {
@@ -196,7 +200,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   const map = useMemo(() => (narrow && !columnsOn ? null : traceMap(index, product)), [narrow, columnsOn, index, product]);
   const [ringAt, setRing] = useState<{ focus: string; at: { id: string; chain: string | null } | null }>({ focus, at: null });
   // Where the walk or a click is on the tree (walk.ts), for the focus it left there: a node's key, so a record in several
-  // chains keeps the copy arrived on, and a node that is no record (a gap, a file, a link) holds the ring.
+  // chains keeps the copy arrived on, and a node that is no record (a gap, a file, the branch, the mark) holds the ring.
   const [walked, setWalked] = useState<{ focus: string; node: string } | null>(null);
   const walkedNode = walked?.focus === focus ? walked.node : null;
   const mapNow = useCallback((): TraceMap => map ?? traceMap(index, product), [map, index, product]);
@@ -207,7 +211,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   // The keyboard's ring: the table's focused link (its copy in its row's chain), else the walk's node when it is no record.
   const linkRing = ringAt.focus === focus ? ringAt.at : null;
   const ring = linkRing && map
-    ? (linkRing.chain ? map.copies.get(linkRing.id)?.find((k) => map.nodes.get(k)!.chain === linkRing.chain) : undefined) ?? map.copies.get(linkRing.id)?.[0] ?? null
+    ? copyInChain(map, linkRing.id, linkRing.chain ? map.copies.get(linkRing.chain)?.[0] ?? null : null) ?? map.copies.get(linkRing.id)?.[0] ?? null
     : map && map.nodes.get(walkNode)?.role !== 'record' ? walkNode : null;
   // The stage walk moves over the tree from anywhere (walk.ts, LA-V61-R49), by the Graph's Tree keys. On a record the
   // focus moves there, as a click does, and the camera follows; on a node that is no record the ring does. Each step is
@@ -219,17 +223,16 @@ function TraceStage(props: TraceViewProps & { product: string }) {
     const next = node.role === 'record' ? node.id : focus;
     setWalked({ focus: next, node: to });
     if (next !== focus) props.onNavigate(next);
-    return nodeWords(index, node);
+    return nodeWords(index, mapNow(), node);
   }, [mapNow, focus, index, props.onNavigate]);
   const walkMap = useCallback((move: Move) => { const to = targetOf(move); return to ? go(to) : null; }, [targetOf, go]);
-  // Enter on a link or a file the walk is on opens its record (a link's capability, in its own place; a file's first naming
-  // record, in the file's chain); the commands layer offers it a plain Enter outside a control that works Enter itself,
-  // before the wiki card's toggle.
+  // Enter on a file the walk is on opens its first naming record, in the file's chain; the commands layer offers it a
+  // plain Enter outside a control that works Enter itself, before the wiki card's toggle.
   const enter = useCallback(() => {
     const m = mapNow();
     const node = m.nodes.get(walkNode);
-    if (!node || (node.role !== 'link' && node.role !== 'file') || !node.opens) return false;
-    const own = node.chain ? m.copies.get(node.opens)?.find((k) => m.nodes.get(k)!.chain === node.chain) : undefined;
+    if (!node || node.role !== 'file' || !node.opens) return false;
+    const own = copyInChain(m, node.opens, node.chain);
     setWalked(own ? { focus: node.opens, node: own } : null);
     props.onNavigate(node.opens);
     return true;
@@ -251,7 +254,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
       const gaps = row.gaps;
       return `${kindLabel(index, index.byId.get(focus)!.kind)} · ${TRACE_COLUMNS.map((c) => `${itemsOf(row, c)} ${TRACE_COLUMN_LABELS[c].toLowerCase()}`).join(' · ')}${gaps.length > 0 ? ` · ${count(gaps.length, 'gap')}` : ''}`;
     }
-    return spec.caption ?? `${count(total, 'obligation')} · ${page!.withGaps} with gaps · ${untracedCount} untraced`;
+    return spec.caption ?? `${count(total, 'obligation')}${spec.under ?? ''} · ${page!.withGaps} with gaps${spec.untracedOf ? ` · ${untracedCount} untraced` : ''}`;
   }, [spec, index, focus, total, page, untracedCount]);
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 
