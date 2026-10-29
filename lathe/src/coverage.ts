@@ -4,10 +4,14 @@
 // services, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own
 // obligation kinds) is counted as:
 // - designed: its implementation is specified. A UC requirement is designed once a step of each of its use case's
-//   flows (one per interface) fulfills it, a standard
-//   rule once a technical record meets it, a product's own obligation once a design link targets it; the others by
-//   construction (DESIGNED_BY_CONSTRUCTION);
-// - built: a technical record that implements it names a file that exists;
+//   flows (one per interface) fulfills it, a standard rule once a technical record meets it, a product's own
+//   obligation once a design or build link targets it; the others by construction (DESIGNED_BY_CONSTRUCTION);
+// - built: the specific technical record that implements it names a file that exists, never any code near it: an
+//   invariant's rule, a constraint's
+//   value type, a specification's predicate, a policy's event handler, a domain service's service, an API requirement's
+//   endpoint handler, the UI components that build a view requirement, a standard rule's meeting records, a product's
+//   own obligation's design and build link sources, and for a UC requirement the handler of what a fulfilling step
+//   invokes or the adapter of an integration it exchanges with;
 // - proved: a test of it exists, automated or manual, at a level its test kind allows (ALLOWED_LEVELS), and an
 //   automated test's file exists and names the test's ID.
 // A pattern rule asks for proof only: it is owed by each domain that follows its pattern (pattern_rule_standing) and
@@ -49,7 +53,7 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
   constraint: { designed: 'By construction, under its value object.', built: "Its value object's value type names a file that exists.", proved: 'Its constraint test.' },
   invariant: {
     designed: 'By construction, under its aggregate.',
-    built: "A data model of one of its aggregate's entities, or the table whose unique key names it, names a file that exists.",
+    built: 'Its rule names a file that exists.',
     proved: 'Its invariant test.',
   },
   specification: { designed: 'By construction.', built: 'Its predicate names a file that exists.', proved: 'Its specification test.' },
@@ -57,11 +61,10 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
   domain_service: { designed: 'By construction, under its domain.', built: 'Its service names a file that exists.', proved: 'One of its domain service tests.' },
   uc_requirement: {
     designed: 'A step of each of its use case\'s flows fulfills it: one flow per interface the use case happens through, and at least one.',
-    built:
-      "A fulfilling step's command or query handler, a UI component of the view it happens in, or the adapter of an integration it exchanges with or a record of a product's own kind under that integration, names a file that exists.",
+    built: "The handler of the command or query a fulfilling step invokes, or the adapter of an integration that step exchanges with, names a file that exists.",
     proved: 'One of its use case tests.',
   },
-  view_requirement: { designed: 'By construction, under its view.', built: 'A UI component that renders its view names a file that exists.', proved: 'One of its view tests.' },
+  view_requirement: { designed: 'By construction, under its view.', built: 'A UI component that builds it names a file that exists.', proved: 'One of its view tests.' },
   api_requirement: { designed: 'By construction, under its endpoint.', built: "Its endpoint's handler names a file that exists.", proved: 'One of its endpoint tests.' },
   pattern_rule: {
     designed: 'Wherever it is owed: by each domain that follows its pattern, itself or through a use case, unless waived there by a setting.',
@@ -71,7 +74,7 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
   standard_rule: { designed: 'A technical record meets it.', built: 'A technical record that meets it names a file that exists.', proved: 'One of its standard rule tests.' },
 };
 
-/** The obligation kinds Lathe defines what designs, builds and proves; a product's own obligation kinds go by its design and proof links. */
+/** The obligation kinds Lathe defines what designs, builds and proves; a product's own obligation kinds go by its design, build and proof links. */
 const LATHE_OBLIGATIONS = Object.keys(OBLIGATION_COVERAGE);
 
 /** The obligation kinds that ask for proof only: designed and built count as their total. */
@@ -236,7 +239,7 @@ FROM source_file f WHERE NOT f.traced AND EXISTS (SELECT 1 FROM product)`),
   // A design or build record a trace relation links that no obligation's chain reaches (trace_link): it serves no
   // requirement or rule. The kinds are those a chain reaches through a trace relation: a step fulfills, a command or
   // query is invoked by a fulfilling step, is a policy's command, calls a domain service, checks a specification or
-  // selects by one, a UI component renders a view a chain holds. A
+  // selects by one, a UI component builds a view requirement. A
   // command or query handler is left out: it serves what its operation serves, so its operation's gap stands for it
   // (reporting both would double each gap). So is a test: one of an obligation sits in its chain by construction, and a flow or integration test
   // proves its flow or integration, never an obligation.
@@ -245,7 +248,7 @@ FROM source_file f WHERE NOT f.traced AND EXISTS (SELECT 1 FROM product)`),
     WHEN 'flow_step' THEN ', as it fulfills no UC requirement.'
     WHEN 'command' THEN ', as no step that fulfills a UC requirement invokes it, no policy does, and it calls no domain service and checks no specification.'
     WHEN 'query' THEN ', as no step that fulfills a UC requirement invokes it, and it calls no domain service and selects by no specification.'
-    ELSE ', as it renders no view a chain holds.' END AS message
+    ELSE ', as it builds no view requirement.' END AS message
 FROM record_id r JOIN meta_kind k ON k.name = r.kind
 WHERE r.kind IN (${list(UNTRACED_KINDS)}) AND NOT EXISTS (SELECT 1 FROM trace_link t WHERE t.target_id = r.id)`),
   // Test plan; an obligation's own test is its proof, counted above.
@@ -265,7 +268,8 @@ WHERE r.kind IN (${list(UNTRACED_KINDS)}) AND NOT EXISTS (SELECT 1 FROM trace_li
  *   ('not-applicable'), and a rule with an applies-when setting no follower there meets ('waived'). The one answer to
  *   "does this rule apply here", which coverage and the app read.
  * - owed_pattern_rules (domain, id): the rules a domain owes.
- * - obligation_impl (obligation_id, impl_id): the technical records that implement each obligation.
+ * - obligation_impl (obligation_id, impl_id, via_id): the technical records that implement each obligation, each the
+ *   one specific record that builds it (OBLIGATION_COVERAGE says which), never any code near it.
  * - uc_requirement_flow (id, flow_id, fulfilled): each UC requirement with each flow of its use case, and whether a
  *   step of that flow fulfills it; designed means every one does.
  * - obligation_proof (obligation_id, test_id, domain_id, state, counts): the tests of each obligation; counts when it
@@ -290,12 +294,6 @@ export function coverageViewsSql(schema: SchemaDescription): string {
     })
     .join('\nUNION ALL ');
   const lathe = list(LATHE_OBLIGATIONS);
-  // A product's own kinds that sit under an integration, each with the column naming it.
-  const integrationParts = Object.values(schema.kinds)
-    .filter((k) => k.productId !== null)
-    .flatMap((k) => k.parents.filter((p) => p.kind === 'integration').map((p) => ({ kind: k.name, column: p.column })))
-    .map(({ kind, column }) => `\nUNION ALL SELECT f.target_id, p.id, x.target_id FROM fulfills f JOIN exchanges_with x ON x.source_id = f.source_id JOIN ${sqlName(kind)} p ON p.${sqlName(column)} = x.target_id`)
-    .join('');
   return `
 CREATE OR REPLACE TABLE test_run AS
 SELECT t.*, EXISTS (SELECT 1 FROM test_level_allowed a WHERE a.kind = t.kind AND a.level = t.level) AS level_allowed,
@@ -332,26 +330,22 @@ CREATE OR REPLACE TABLE obligation_impl AS
 -- Each row also names via_id, the design record its chain reaches the technical record through (null: the obligation itself).
 -- A constraint: its value object's value type.
 SELECT c.id AS obligation_id, v.id AS impl_id, c.value_object_id AS via_id FROM "constraint" c JOIN value_type v ON v.value_object_id = c.value_object_id
--- An invariant: the data models of its aggregate's entities, and a table whose unique key names it.
-UNION ALL SELECT i.id, d.id, i.aggregate_id FROM invariant i JOIN entity e ON e.aggregate_id = i.aggregate_id JOIN data_model d ON d.entity_id = e.id
-UNION ALL SELECT k.invariant_id, k.table_id, NULL FROM table_key k WHERE k.invariant_id IS NOT NULL
+-- An invariant: its rule.
+UNION ALL SELECT invariant_id, id, NULL FROM rule
 UNION ALL SELECT specification_id, id, NULL FROM predicate
 UNION ALL SELECT policy_id, id, NULL FROM event_handler
 UNION ALL SELECT domain_service_id, id, NULL FROM service
--- A UC requirement: the handlers of what its steps invoke, and the UI components of the views they happen in.
+-- A UC requirement: the handler of what a fulfilling step invokes, and the adapter of an integration it exchanges with.
 UNION ALL SELECT f.target_id, h.id, i.target_id FROM fulfills f JOIN invokes i ON i.source_id = f.source_id JOIN command_handler h ON h.command_id = i.target_id
 UNION ALL SELECT f.target_id, h.id, i.target_id FROM fulfills f JOIN invokes i ON i.source_id = f.source_id JOIN query_handler h ON h.query_id = i.target_id
-UNION ALL SELECT f.target_id, r.source_id, h.target_id FROM fulfills f JOIN happens_in h ON h.source_id = f.source_id JOIN renders r ON r.target_id = h.target_id
--- ... and what carries out the integrations they exchange with: each one's adapter, and the records of a product's
--- own kinds under it (such as a plugin hook).
-UNION ALL SELECT f.target_id, a.id, x.target_id FROM fulfills f JOIN exchanges_with x ON x.source_id = f.source_id JOIN adapter a ON a.integration_id = x.target_id${integrationParts}
--- A view requirement: the UI components of its view; an API requirement: its endpoint's handler.
-UNION ALL SELECT q.id, r.source_id, NULL FROM view_requirement q JOIN renders r ON r.target_id = q.view_id
+UNION ALL SELECT f.target_id, a.id, x.target_id FROM fulfills f JOIN exchanges_with x ON x.source_id = f.source_id JOIN adapter a ON a.integration_id = x.target_id
+-- A view requirement: the UI components that build it; an API requirement: its endpoint's handler.
+UNION ALL SELECT target_id, source_id, NULL FROM builds
 UNION ALL SELECT q.id, h.id, NULL FROM api_requirement q JOIN endpoint_handler h ON h.endpoint_id = q.endpoint_id
 -- A standard rule: the technical records that meet it.
 UNION ALL SELECT target_id, source_id, NULL FROM meets
--- A product's own obligation kind: the sources of its design links.
-UNION ALL SELECT l.target_id, l.source_id, NULL FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role = 'design'
+-- A product's own obligation kind: the sources of its design and build links.
+UNION ALL SELECT l.target_id, l.source_id, NULL FROM link l JOIN meta_relation r ON r.name = l.relation AND r.role IN ('design', 'build')
   JOIN obligation o ON o.id = l.target_id WHERE o.kind NOT IN (${lathe});
 
 CREATE OR REPLACE TABLE obligation_proof AS

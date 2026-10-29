@@ -4,7 +4,7 @@
 {"id":"LA-AUT-A12","title":"View","domain_id":"LA-AUT","description":"A place in the app where flow steps happen: its requirements with their tests.","identity":"View ID"}
 {"id":"LA-AUT-A13","title":"Endpoint","domain_id":"LA-AUT","description":"An operation exposed over HTTP: its requirements with their tests, and its handler.","identity":"Endpoint ID"}
 {"id":"LA-AUT-A14","title":"Integration","domain_id":"LA-AUT","description":"Another system a product exchanges with: its adapter and its tests.","identity":"Integration ID"}
-{"id":"LA-AUT-A15","title":"UI component","domain_id":"LA-AUT","description":"A piece of the interface that renders views.","identity":"UI component ID"}
+{"id":"LA-AUT-A15","title":"UI component","domain_id":"LA-AUT","description":"A piece of the interface that renders views and builds the view requirements its code does.","identity":"UI component ID"}
 {"id":"LA-AUT-A16","title":"Business outcome","domain_id":"LA-AUT","description":"A measurable change a product exists to bring about, with the tests and records that measure it.","identity":"Business outcome ID"}
 {"id":"LA-AUT-A17","title":"Test data set","domain_id":"LA-AUT","description":"What some tests start from, in one domain: its environment, accounts and records, how to prepare and reset it, and the file that builds it.","identity":"Test data set ID"}
 {"id":"LA-AUT-A18","title":"Table","domain_id":"LA-AUT","description":"Where an entity's or read model's rows, or a domain's own infrastructure such as a link table, are stored: its storage and name, and its keys in order.","identity":"Table ID"}
@@ -15,7 +15,7 @@
 {"id":"LA-AUT-A3","title":"Standard","domain_id":"LA-AUT","description":"Engineering rules the product's code follows, with the rules themselves.","identity":"Standard ID"}
 {"id":"LA-AUT-A4","title":"Domain","domain_id":"LA-AUT","description":"A business capability of a product: its terms, its capabilities in order, its domain services with what implements and proves them, and its repositories.","identity":"Domain ID"}
 {"id":"LA-AUT-A5","title":"Specification","domain_id":"LA-AUT","description":"A rule that decides whether a record satisfies it, with its predicate and its test.","identity":"Specification ID"}
-{"id":"LA-AUT-A6","title":"Aggregate","domain_id":"LA-AUT","description":"A consistency boundary of a domain: its entities and their fields and data models, and its invariants with their tests.","identity":"Aggregate ID"}
+{"id":"LA-AUT-A6","title":"Aggregate","domain_id":"LA-AUT","description":"A consistency boundary of a domain: its entities and their fields and data models, and its invariants with the rules that enforce them and their tests.","identity":"Aggregate ID"}
 {"id":"LA-AUT-A7","title":"Domain event","domain_id":"LA-AUT","description":"Something that happened to an aggregate: its fields and the event type that delivers it.","identity":"Domain event ID"}
 {"id":"LA-AUT-A8","title":"Command","domain_id":"LA-AUT","description":"An intent to change an aggregate: its handler, the other aggregates it records as changing in its transaction, and the policies it runs, with their handlers and tests.","identity":"Command ID"}
 {"id":"LA-AUT-A9","title":"Value object","domain_id":"LA-AUT","description":"A value with no identity of its own: its fields, its constraints with their tests, and the value type that implements it.","identity":"Value object ID"}

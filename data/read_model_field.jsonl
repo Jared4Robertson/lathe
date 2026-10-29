@@ -36,7 +36,7 @@
 {"read_model_id":"LA-AUT-RM25","position":4,"name":"Test","meaning":"Its test, if written, with the test data sets it starts from.","type":"text","required":false}
 {"read_model_id":"LA-AUT-RM26","position":1,"name":"Aggregate","meaning":"The aggregate's row: its ID, title, domain, description, identity and notes.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM26","position":2,"name":"Entities","meaning":"Its entities, each with its fields in order, the entities it holds by has_one and has_many, and its data model with the standard rules it meets and the packages it uses.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM26","position":3,"name":"Invariants","meaning":"Its invariants, each with its test and the test data sets the test starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM26","position":3,"name":"Invariants","meaning":"Its invariants, each with its rule (with the standard rules it meets and the packages it uses) and its test and the test data sets the test starts from.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM27","position":1,"name":"Domain event","meaning":"The event's row: its ID, title, aggregate, whether it is published, and description.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM27","position":2,"name":"Fields","meaning":"The fields it carries, in order.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM27","position":3,"name":"Event type","meaning":"Its shape in code, with the standard rules it meets and the packages it uses.","type":"text","required":true}
@@ -62,7 +62,7 @@
 {"read_model_id":"LA-AUT-RM34","position":2,"name":"Adapter","meaning":"Its adapter, with the standard rules it meets and the packages it uses.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM34","position":3,"name":"Tests","meaning":"Its integration tests, with the test data sets each starts from.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM35","position":1,"name":"UI component","meaning":"The UI component's ID, title, file and description.","type_value_object_id":"LA-VO01","required":true}
-{"read_model_id":"LA-AUT-RM35","position":2,"name":"Renders","meaning":"The views it renders, the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM35","position":2,"name":"Renders","meaning":"The views it renders, the view requirements it builds, the standard rules it meets and the packages it uses.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM36","position":1,"name":"Outcome","meaning":"The outcome's row.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM36","position":2,"name":"Measured by","meaning":"The tests and records that measure it.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM37","position":1,"name":"Test data set","meaning":"The test data set's row: its ID, title, domain, environment, accounts, records, prepare, reset, file and description.","type_value_object_id":"LA-VO01","required":true}

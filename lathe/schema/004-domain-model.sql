@@ -84,7 +84,7 @@ CREATE TABLE invariant (
   aggregate_id VARCHAR NOT NULL REFERENCES aggregate (id),
   statement VARCHAR NOT NULL CHECK (trim(statement) <> '')
 );
-COMMENT ON TABLE invariant IS 'A rule that holds for one aggregate on every change. Uniqueness across records (no two members share an email) is an invariant, enforced by a unique key of the table.';
+COMMENT ON TABLE invariant IS 'A rule that holds for one aggregate on every change, enforced by its rule (rule) in the aggregate''s code. Uniqueness across records (no two members share an email) is an invariant too, which a unique key of the table may back up.';
 COMMENT ON COLUMN invariant.id IS 'The invariant''s ID, such as TL-LEND-INV01.';
 COMMENT ON COLUMN invariant.title IS 'The rule in a few words.';
 COMMENT ON COLUMN invariant.aggregate_id IS 'The aggregate it holds for.';
