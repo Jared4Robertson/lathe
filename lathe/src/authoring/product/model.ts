@@ -60,9 +60,6 @@ export interface Product {
 /** The tables the Product aggregate keeps its rows in: its kinds, declarations, parts, and the relation its questions start. */
 export const PRODUCT_TABLES = ['product', 'role', 'product_kind', 'product_kind_field', 'product_relation', 'question', 'about', 'interface'] as const;
 
-/** The kinds of the aggregate's records that have an ID; product kinds and relations are declarations, keyed by name. */
-export type ProductKindName = 'product' | 'question' | 'interface';
-
 /** A new product, with nothing under it yet but its roles. */
 export function newProduct(product: ProductRow, roles: RoleInput[]): Product {
   return { root: product.id, product, roles: rolesOf(product.id, roles), kinds: [], relations: [], questions: [], interfaces: [] };
