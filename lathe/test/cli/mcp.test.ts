@@ -6,6 +6,8 @@ import { PassThrough } from 'node:stream';
 import { afterAll, describe, expect, it } from 'vitest';
 import { loadProducts, openStore, SCHEMA_VERSION } from '../../src/index.ts';
 import { callTool, serveMcp, tools, type Tool } from '../../src/cli/mcp.ts';
+import { ALL_COMMANDS, ALL_QUERIES } from '../../src/commands.ts';
+import { toolName } from '../../src/platform/commands/definition.ts';
 import { everyKind, removeData, writeData } from '../store/fixture.ts';
 
 afterAll(removeData);
@@ -24,7 +26,8 @@ describe('the tools', () => {
   it('LA-AUT-UC01-R05-T08 are add, set, move, link, unlink, remove, show, list, next_id and check', async () => {
     const all = tools(await schemaOf(writeData(everyKind())));
     // The aggregates' own tools (use_case_add_flow_step, ...) follow them, until the cutover removes the generic ones.
-    expect(all.map((t) => t.name).filter((name) => !name.startsWith('use_case_'))).toEqual(['add', 'set', 'move', 'link', 'unlink', 'remove', 'show', 'list', 'next_id', 'check']);
+    const own = new Set([...ALL_COMMANDS, ...ALL_QUERIES].map(toolName));
+    expect(all.map((t) => t.name).filter((name) => !own.has(name))).toEqual(['add', 'set', 'move', 'link', 'unlink', 'remove', 'show', 'list', 'next_id', 'check']);
     for (const t of all) {
       expect(t.description.length).toBeGreaterThan(20);
       expect(t.inputSchema.type).toBe('object');
