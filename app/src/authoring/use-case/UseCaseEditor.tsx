@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
-import type { FlowStep, Tested, UseCase, UseCaseKind } from '../../../../lathe/src/authoring/use-case/model';
+import type { UseCaseKind } from '../../../../lathe/src/authoring/use-case/model';
+import { stepsOf, type StepOnPage, type TestOnPage, type UseCasePage } from '../../../../lathe/src/authoring/use-case/read-model';
 import type { ColumnDescription } from '../../../../lathe/src/platform/data/schema';
 import type { StoreProblem, Value, WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
@@ -49,8 +50,11 @@ const MOVE: Partial<Record<UseCaseKind, '/api/use-case/move-use-case'>> = { use_
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: UseCaseKind } | { mode: 'move' } | { mode: 'remove' };
 
+/** Every step of the use case, flow by flow. */
+const stepsOfUseCase = (useCase: UseCasePage): StepOnPage[] => useCase.flows.flatMap(stepsOf);
+
 /** A record of the use case with its actions; a form or the remove question shows in place of its page. */
-export function UseCaseEditor({ index, useCase, id, kind, children }: { index: SpecIndex; useCase: UseCase; id: string; kind: UseCaseKind; children: ReactNode }) {
+export function UseCaseEditor({ index, useCase, id, kind, children }: { index: SpecIndex; useCase: UseCasePage; id: string; kind: UseCaseKind; children: ReactNode }) {
   const writer = useWriter();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
   const toolbar = useRef<HTMLDivElement>(null);
@@ -65,7 +69,7 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: S
   if (mode.mode === 'add') return <div className="spec-body"><AddForm context={context} parent={id} kind={mode.kind} /></div>;
   if (mode.mode === 'move') return <div className="spec-body"><MoveForm context={context} /></div>;
   // A flow has one flow test: once it has it, there is nothing more to add of that kind.
-  const addable = ADDED_UNDER[kind].filter((k) => k !== 'flow_test' || !useCase.flowTests.some((t) => t.row.flow_id === id));
+  const addable = ADDED_UNDER[kind].filter((k) => k !== 'flow_test' || !useCase.flows.some((f) => f.flow.id === id && f.test));
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
@@ -84,7 +88,7 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: S
 
 interface FormContext {
   index: SpecIndex;
-  useCase: UseCase;
+  useCase: UseCasePage;
   writer: Writer;
   onDone: () => void;
 }
@@ -102,8 +106,8 @@ function columnOf(index: SpecIndex, table: string, name: string): ColumnDescript
 }
 
 /** The records of the use case's product of one kind, as choices: what a field of the use case may name. */
-function productChoices(index: SpecIndex, useCase: UseCase, kinds: readonly string[]): Choice[] {
-  const product = index.byId.get(useCase.root)?.product;
+function productChoices(index: SpecIndex, useCase: UseCasePage, kinds: readonly string[]): Choice[] {
+  const product = index.byId.get(useCase.useCase.id)?.product;
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
@@ -225,7 +229,7 @@ function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean, pare
         { field: 'group_name', column: 'group_name', table: 'uc_requirement' },
       ];
     case 'flow': {
-      const through = new Set(useCase.flows.map((f) => f.interface_id));
+      const through = new Set(useCase.flows.map((f) => f.flow.interface_id));
       return [
         ...id('flow'),
         { field: 'title', column: 'title', table: 'flow' },
@@ -233,15 +237,15 @@ function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean, pare
       ];
     }
     case 'flow_step': {
-      const flowId = adding ? parent : useCase.steps.find((s) => s.row.id === parent)!.row.flow_id;
+      const flowId = adding ? parent : stepsOfUseCase(useCase).find((s) => s.step.id === parent)!.step.flow_id;
       return [
         ...id('flow_step'),
         { field: 'title', column: 'title', table: 'flow_step' },
         { field: 'path', column: 'path', table: 'flow_step' },
         { field: 'position', column: 'position', table: 'flow_step' },
-        { field: 'fulfills', label: 'Fulfills', description: `The UC requirements of ${useCase.root} it fulfills.`, many: useCase.requirements.map((r) => ({ id: r.id, title: r.title })) },
+        { field: 'fulfills', label: 'Fulfills', description: `The UC requirements of ${useCase.useCase.id} it fulfills.`, many: useCase.requirements.map(({ requirement: r }) => ({ id: r.id, title: r.title })) },
         { field: 'invokes', label: 'Invokes', description: 'The command or query it invokes, if any.', one: productChoices(index, useCase, ['command', 'query']) },
-        { field: 'happens_in', label: 'Happens in', description: `The view it happens in, if any: only on a web app, desktop or other interface (${flowId} goes through ${useCase.flows.find((f) => f.id === flowId)?.interface_id ?? 'its interface'}).`, one: productChoices(index, useCase, ['view']) },
+        { field: 'happens_in', label: 'Happens in', description: `The view it happens in, if any: only on a web app, desktop or other interface (${flowId} goes through ${useCase.flows.find((f) => f.flow.id === flowId)?.flow.interface_id ?? 'its interface'}).`, one: productChoices(index, useCase, ['view']) },
         { field: 'exchanges_with', label: 'Exchanges with', description: 'The integrations it exchanges with.', many: productChoices(index, useCase, ['integration']) },
       ];
     }
@@ -269,24 +273,24 @@ function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean, pare
 }
 
 /** The record's current values, by its input's field names, as a draft: its row's columns and the links it starts. */
-function currentOf(useCase: UseCase, kind: UseCaseKind, id: string): { values: Record<string, Value | undefined>; ids: Record<string, string[]> } {
+function currentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): { values: Record<string, Value | undefined>; ids: Record<string, string[]> } {
   const row = <T extends object>(r: T) => r as unknown as Record<string, Value | undefined>;
-  const tested = (t: Tested<object>) => ({ values: row(t.row), ids: { starts_from: t.startsFrom } });
+  const tested = (t: TestOnPage<object>) => ({ values: row(t.test), ids: { starts_from: t.startsFrom } });
   switch (kind) {
     case 'use_case':
       return { values: { ...row(useCase.useCase), actors: useCase.actors }, ids: {} };
     case 'uc_requirement':
-      return { values: row(useCase.requirements.find((r) => r.id === id)!), ids: {} };
+      return { values: row(useCase.requirements.find((r) => r.requirement.id === id)!.requirement), ids: {} };
     case 'flow':
-      return { values: row(useCase.flows.find((f) => f.id === id)!), ids: {} };
+      return { values: row(useCase.flows.find((f) => f.flow.id === id)!.flow), ids: {} };
     case 'flow_step': {
-      const step: FlowStep = useCase.steps.find((s) => s.row.id === id)!;
-      return { values: { ...row(step.row), invokes: step.invokes ?? undefined, happens_in: step.happensIn ?? undefined }, ids: { fulfills: step.fulfills, exchanges_with: step.exchangesWith } };
+      const step: StepOnPage = stepsOfUseCase(useCase).find((s) => s.step.id === id)!;
+      return { values: { ...row(step.step), invokes: step.invokes ?? undefined, happens_in: step.happensIn ?? undefined }, ids: { fulfills: step.fulfills, exchanges_with: step.exchangesWith } };
     }
     case 'use_case_test':
-      return tested(useCase.useCaseTests.find((t) => t.row.id === id)!);
+      return tested(useCase.requirements.flatMap((r) => r.tests).find((t) => t.test.id === id)!);
     case 'flow_test':
-      return tested(useCase.flowTests.find((t) => t.row.id === id)!);
+      return tested(useCase.flows.find((f) => f.test?.test.id === id)!.test!);
   }
 }
 
@@ -367,7 +371,7 @@ function AddForm({ context, parent, kind }: { context: FormContext; parent: stri
   const specs = fieldsOf(context, kind, true, parent);
   const next = useNextId(kind, parent, index);
   const [draft, setDraft] = useState<Draft>(() => ({
-    text: { path: kind === 'flow_step' ? 'main' : '', ...(kind === 'flow_step' ? { position: String(nextPosition(useCase.steps.filter((s) => s.row.flow_id === parent))) } : {}) },
+    text: { path: kind === 'flow_step' ? 'main' : '', ...(kind === 'flow_step' ? { position: String(nextPosition(stepsOfUseCase(useCase).filter((s) => s.step.flow_id === parent))) } : {}) },
     ids: {},
   }));
   // The suggested ID fills the field once it is read, unless something was typed there first.
@@ -379,7 +383,7 @@ function AddForm({ context, parent, kind }: { context: FormContext; parent: stri
     const after = change(d);
     if (kind === 'flow' && after.text.interface_id !== d.text.interface_id) {
       const number = /-IF(\d+)$/.exec(after.text.interface_id ?? '')?.[1];
-      if (number) after.text = { ...after.text, id: `${useCase.root}-FL${number}` };
+      if (number) after.text = { ...after.text, id: `${useCase.useCase.id}-FL${number}` };
     }
     return after;
   });
@@ -408,7 +412,7 @@ function AddForm({ context, parent, kind }: { context: FormContext; parent: stri
 }
 
 /** One past the highest position on the main path, for a new step. */
-const nextPosition = (steps: readonly FlowStep[]) => Math.max(0, ...steps.filter((s) => (s.row.path || 'main') === 'main').map((s) => s.row.position)) + 1;
+const nextPosition = (steps: readonly StepOnPage[]) => Math.max(0, ...steps.filter((s) => (s.step.path || 'main') === 'main').map((s) => s.step.position)) + 1;
 
 /** Move: the use case to another capability of its product, as its own command. */
 function MoveForm({ context }: { context: FormContext }) {
@@ -419,12 +423,12 @@ function MoveForm({ context }: { context: FormContext }) {
   const choices = productChoices(index, useCase, ['capability']);
   const submit = async () => {
     if (capability === useCase.useCase.capability_id) { announce('Nothing changed'); onDone(); return null; }
-    const answer = await sendUseCase(writer, MOVE.use_case!, { id: useCase.root, capability_id: capability });
-    if (answer.ok) { announce(`Moved ${useCase.root}`); onDone(); }
+    const answer = await sendUseCase(writer, MOVE.use_case!, { id: useCase.useCase.id, capability_id: capability });
+    if (answer.ok) { announce(`Moved ${useCase.useCase.id}`); onDone(); }
     return answer;
   };
   return (
-    <CommandForm eyebrow="Use case" title={`Move ${useCase.root}`} submit={submit} saveLabel="Move" onCancel={onDone}>
+    <CommandForm eyebrow="Use case" title={`Move ${useCase.useCase.id}`} submit={submit} saveLabel="Move" onCancel={onDone}>
       {(first) => (
         <IdField id={`${formId}-capability`} label="Capability" required inputRef={first} choices={choices} value={capability} onChange={setCapability}
           description="The capability of its product it moves to; everything in the use case moves with it." />
@@ -434,12 +438,15 @@ function MoveForm({ context }: { context: FormContext }) {
 }
 
 /** What goes with a record when it is removed, inside the use case: what sits under it. */
-function goesWith(useCase: UseCase, kind: UseCaseKind, id: string): string[] {
-  const testsOf = (requirement: string) => useCase.useCaseTests.filter((t) => t.row.uc_requirement_id === requirement).map((t) => t.row.id);
-  const ofFlow = (flow: string) => [...useCase.steps.filter((s) => s.row.flow_id === flow).map((s) => s.row.id), ...useCase.flowTests.filter((t) => t.row.flow_id === flow).map((t) => t.row.id)];
+function goesWith(useCase: UseCasePage, kind: UseCaseKind, id: string): string[] {
+  const testsOf = (requirement: string) => (useCase.requirements.find((r) => r.requirement.id === requirement)?.tests ?? []).map((t) => t.test.id);
+  const ofFlow = (flow: string) => {
+    const found = useCase.flows.find((f) => f.flow.id === flow);
+    return found ? [...stepsOf(found).map((s) => s.step.id), ...(found.test ? [found.test.test.id] : [])] : [];
+  };
   switch (kind) {
     case 'use_case':
-      return [...useCase.requirements.flatMap((r) => [r.id, ...testsOf(r.id)]), ...useCase.flows.flatMap((f) => [f.id, ...ofFlow(f.id)])];
+      return [...useCase.requirements.flatMap((r) => [r.requirement.id, ...testsOf(r.requirement.id)]), ...useCase.flows.flatMap((f) => [f.flow.id, ...ofFlow(f.flow.id)])];
     case 'uc_requirement':
       return testsOf(id);
     case 'flow':
@@ -460,14 +467,14 @@ const REMOVE: Record<UseCaseKind, UseCaseRoute> = {
 };
 
 /** The record a removed one's page gives way to: what it sits under. */
-function parentOf(useCase: UseCase, kind: UseCaseKind, id: string): string {
+function parentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): string {
   switch (kind) {
     case 'use_case': return useCase.useCase.capability_id;
     case 'uc_requirement':
-    case 'flow': return useCase.root;
-    case 'flow_step': return useCase.steps.find((s) => s.row.id === id)!.row.flow_id;
-    case 'use_case_test': return useCase.useCaseTests.find((t) => t.row.id === id)!.row.uc_requirement_id;
-    case 'flow_test': return useCase.flowTests.find((t) => t.row.id === id)!.row.flow_id;
+    case 'flow': return useCase.useCase.id;
+    case 'flow_step': return stepsOfUseCase(useCase).find((s) => s.step.id === id)!.step.flow_id;
+    case 'use_case_test': return useCase.requirements.find((r) => r.tests.some((t) => t.test.id === id))!.requirement.id;
+    case 'flow_test': return useCase.flows.find((f) => f.test?.test.id === id)!.flow.id;
   }
 }
 

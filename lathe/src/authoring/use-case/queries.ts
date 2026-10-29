@@ -1,32 +1,28 @@
-// The Use case aggregate's own reads (read model LA-AUT-RM11): a use case whole, the use cases of a capability, and
-// the next free ID for a record of one of its kinds. Each reads the current data and changes nothing.
+// The Use case aggregate's own reads, each answered from its read model (LA-AUT-RM11, read-model.ts): a use case whole
+// as its page reads it, the use cases of a capability, and the next free ID for a record of one of its kinds. Each reads
+// the current data and changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
-import { USE_CASE_KINDS, USE_CASE_SLICE, useCasesFrom, type UseCase, type UseCaseKind } from './model.ts';
+import { USE_CASE_SLICE, type UseCaseKind } from './model.ts';
+import { stepsOf, useCasePageFrom, useCaseSummariesFrom, type UseCasePage, type UseCaseSummary } from './read-model.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
-/** The use case that holds the record: the use case itself, or one of its requirements, flows, steps or tests. */
-export function getUseCase(view: ReadView, input: { id: string }): UseCase {
+/** The use case that holds the record, as its page reads it: the use case itself, or one of its requirements, flows, steps or tests. */
+export function getUseCase(view: ReadView, input: { id: string }): UseCasePage {
   const record = view.record(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
-  if (!(record.kind in USE_CASE_KINDS)) refuse('kind', `${input.id} is ${record.kind === 'interface' ? 'an' : 'a'} ${record.kind}, not a use case or a record in one`);
-  let at = record;
-  while (at.kind !== 'use_case') {
-    const column = USE_CASE_KINDS[at.kind as Exclude<UseCaseKind, 'use_case'>];
-    at = view.record(String(at.row[column]))!;
-  }
-  return useCasesFrom((table) => view.rows(table), String(at.row.id))[0];
+  return useCasePageFrom(view, input.id) ?? refuse('kind', `${input.id} is ${record.kind === 'interface' ? 'an' : 'a'} ${record.kind}, not a use case or a record in one`);
 }
 
 /** GET a use case whole (LA-AUT-QRY100). */
-export const GET_USE_CASE: QueryDefinition<{ id: string }, UseCase> = {
+export const GET_USE_CASE: QueryDefinition<{ id: string }, UseCasePage> = {
   id: 'LA-AUT-QRY100',
   slice: USE_CASE_SLICE,
   name: 'get-use-case',
-  description: 'Reads a use case whole, by its ID or the ID of any record in it: its row, actors, UC requirements and their tests, and its flows with their steps, the links each step starts, and their tests.',
+  description: 'Reads a use case whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the use case\'s row and actors, its UC requirements each with its tests and the steps that fulfill it, and its flows by interface, each with its steps path by path in order (with the links each starts) and its flow test.',
   method: 'GET',
   route: '/api/use-case/get-use-case',
   input: { id: id('The use case, or a requirement, flow, step or test in it.', 'required') },
@@ -35,17 +31,13 @@ export const GET_USE_CASE: QueryDefinition<{ id: string }, UseCase> = {
 };
 
 /** The use cases of a capability, by ID. */
-export function listUseCases(view: ReadView, input: { capability_id: string }): { id: string; title: string }[] {
+export function listUseCases(view: ReadView, input: { capability_id: string }): UseCaseSummary[] {
   if (view.record(input.capability_id)?.kind !== 'capability') refuse('missing', `there is no capability ${input.capability_id}`);
-  return view
-    .rows('use_case')
-    .filter((u) => u.capability_id === input.capability_id)
-    .map((u) => ({ id: String(u.id), title: String(u.title) }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+  return useCaseSummariesFrom(view, input.capability_id);
 }
 
 /** List the use cases of a capability (LA-AUT-QRY101). */
-export const LIST_USE_CASES: QueryDefinition<{ capability_id: string }, { id: string; title: string }[]> = {
+export const LIST_USE_CASES: QueryDefinition<{ capability_id: string }, UseCaseSummary[]> = {
   id: 'LA-AUT-QRY101',
   slice: USE_CASE_SLICE,
   name: 'list-use-cases',
@@ -108,7 +100,7 @@ export function nextUseCaseId(view: ReadView, input: { kind: string; parent: str
       const useCase = getUseCase(view, { id: input.parent });
       const capability = view.record(useCase.useCase.capability_id)!;
       const product = String(view.record(String(capability.row.domain_id))!.row.product_id);
-      const through = new Set(useCase.flows.map((f) => f.interface_id));
+      const through = new Set(useCase.flows.map((f) => f.flow.interface_id));
       const free = view.rows('interface').filter((i) => i.product_id === product && !through.has(String(i.id))).map((i) => String(i.id)).sort()[0];
       if (!free) refuse('exists', `${input.parent} has a flow through every interface of ${product}; a flow's ID ends in its interface's number, so declare the interface first`);
       return `${input.parent}-FL${/-IF(\d+)$/.exec(free!)![1]}`;
@@ -133,22 +125,22 @@ export const NEXT_USE_CASE_ID: QueryDefinition<{ kind: string; parent: string },
 };
 
 /** A use case as text: its row, its actors, then each requirement and flow with what is under it. */
-function useCaseText(useCase: UseCase): string {
-  const { useCase: row } = useCase;
+function useCaseText(page: UseCasePage): string {
+  const { useCase: row } = page;
   const lines = [`Use case ${row.id}: ${row.title}`, `  capability: ${row.capability_id}`, `  goal: ${row.goal}`];
   if (row.notes) lines.push(`  notes: ${row.notes}`);
-  if (useCase.actors.length) lines.push(`  actors: ${useCase.actors.join(', ')}`);
-  for (const r of useCase.requirements) {
-    lines.push(`UC requirement ${r.id}: ${r.title}`);
-    for (const t of useCase.useCaseTests.filter((x) => x.row.uc_requirement_id === r.id)) lines.push(`  use case test ${t.row.id}: ${t.row.title} (${t.row.state})`);
+  if (page.actors.length) lines.push(`  actors: ${page.actors.join(', ')}`);
+  for (const r of page.requirements) {
+    lines.push(`UC requirement ${r.requirement.id}: ${r.requirement.title}`);
+    for (const t of r.tests) lines.push(`  use case test ${t.test.id}: ${t.test.title} (${t.test.state})`);
   }
-  for (const f of useCase.flows) {
-    lines.push(`Flow ${f.id}: ${f.title} (through ${f.interface_id})`);
-    for (const s of useCase.steps.filter((x) => x.row.flow_id === f.id)) {
+  for (const f of page.flows) {
+    lines.push(`Flow ${f.flow.id}: ${f.flow.title} (through ${f.flow.interface_id})`);
+    for (const s of stepsOf(f)) {
       const links = [...s.fulfills.map((x) => `fulfills ${x}`), ...(s.invokes ? [`invokes ${s.invokes}`] : []), ...(s.happensIn ? [`happens in ${s.happensIn}`] : []), ...s.exchangesWith.map((x) => `exchanges with ${x}`)];
-      lines.push(`  ${s.row.path} ${s.row.position}. ${s.row.id}: ${s.row.title}${links.length ? ` [${links.join('; ')}]` : ''}`);
+      lines.push(`  ${s.step.path} ${s.step.position}. ${s.step.id}: ${s.step.title}${links.length ? ` [${links.join('; ')}]` : ''}`);
     }
-    for (const t of useCase.flowTests.filter((x) => x.row.flow_id === f.id)) lines.push(`  flow test ${t.row.id}: ${t.row.title} (${t.row.state})`);
+    if (f.test) lines.push(`  flow test ${f.test.test.id}: ${f.test.test.title} (${f.test.test.state})`);
   }
   return lines.join('\n');
 }

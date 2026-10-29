@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
-import { kindInside, type UseCase, type UseCaseKind } from '../../../../lathe/src/authoring/use-case/model';
+import type { UseCaseKind } from '../../../../lathe/src/authoring/use-case/model';
+import { stepsOf, type UseCasePage as UseCaseRead } from '../../../../lathe/src/authoring/use-case/read-model';
 import { Refusal, problemText } from '../../edit/fields';
 import { LongList } from '../../components/LongList';
 import { TreeList } from '../../components/TreeList';
@@ -35,10 +36,10 @@ function Rows({ index, ids, label }: { index: SpecIndex; ids: readonly string[];
 }
 
 /** The use case's UC requirements under their groups, each with its tests folded under it. */
-function Requirements({ index, useCase }: { index: SpecIndex; useCase: UseCase }) {
+function Requirements({ index, useCase }: { index: SpecIndex; useCase: UseCaseRead }) {
   if (useCase.requirements.length === 0) return null;
-  const testsOf = (requirement: SpecRecord) => recordsOf(index, useCase.useCaseTests.filter((t) => t.row.uc_requirement_id === requirement.id).map((t) => t.row.id));
-  const groups = groupRecords(recordsOf(index, useCase.requirements.map((r) => r.id)));
+  const testsOf = (requirement: SpecRecord) => recordsOf(index, (useCase.requirements.find((r) => r.requirement.id === requirement.id)?.tests ?? []).map((t) => t.test.id));
+  const groups = groupRecords(recordsOf(index, useCase.requirements.map((r) => r.requirement.id)));
   const tree = (records: SpecRecord[], label: string) => (
     <TreeList label={label} items={records} itemKey={(r) => r.id} nestedOf={testsOf} renderRow={(r) => <RecordRowBody index={index} record={r} />}
       searchText={recordText} countLabel={(_, tests) => nestedCount(index, tests)} nestedLabel={(r) => `Use case tests of ${r.id}`} />
@@ -46,8 +47,8 @@ function Requirements({ index, useCase }: { index: SpecIndex; useCase: UseCase }
   return (
     <Section title="UC requirements" count={useCase.requirements.length} className="use-case-requirements">
       {groups.map((g) => (g.heading === null
-        ? <div key="">{tree(g.records, `UC requirements of ${useCase.root}`)}</div>
-        : <Section key={g.key} title={g.heading} count={g.records.length} level={3} className="record-group">{tree(g.records, `${g.heading}: UC requirements of ${useCase.root}`)}</Section>))}
+        ? <div key="">{tree(g.records, `UC requirements of ${useCase.useCase.id}`)}</div>
+        : <Section key={g.key} title={g.heading} count={g.records.length} level={3} className="record-group">{tree(g.records, `${g.heading}: UC requirements of ${useCase.useCase.id}`)}</Section>))}
     </Section>
   );
 }
@@ -60,12 +61,12 @@ function InterfaceTag({ index, id }: { index: SpecIndex; id: string }) {
 }
 
 /** The use case's flows, one row per flow named by the interface it goes through. */
-function FlowsByInterface({ index, useCase }: { index: SpecIndex; useCase: UseCase }) {
+function FlowsByInterface({ index, useCase }: { index: SpecIndex; useCase: UseCaseRead }) {
   if (useCase.flows.length === 0) return null;
-  const flows = [...useCase.flows].sort((a, b) => a.interface_id.localeCompare(b.interface_id));
+  const flows = useCase.flows.map((f) => f.flow);
   return (
     <Section title="Flows by interface" count={flows.length} className="use-case-flows">
-      <LongList label={`Flows of ${useCase.root}`} className="record-list flow-list" items={flows} itemKey={(f) => f.id}
+      <LongList label={`Flows of ${useCase.useCase.id}`} className="record-list flow-list" items={flows} itemKey={(f) => f.id}
         searchText={(f) => `${f.id} ${f.title} ${index.byId.get(f.interface_id)?.title ?? ''}`}
         render={(f) => (
           <div className="record-row">
@@ -94,7 +95,7 @@ function Facts({ facts }: { facts: { label: string; value: ReactNode }[] }) {
 }
 
 /** What one record of the use case shows on its page, by the kind it is in the use case. */
-function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseCase; id: string; kind: UseCaseKind }) {
+function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseCaseRead; id: string; kind: UseCaseKind }) {
   switch (kind) {
     case 'use_case':
       return (
@@ -107,9 +108,8 @@ function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseC
         </>
       );
     case 'uc_requirement': {
-      const requirement = useCase.requirements.find((r) => r.id === id)!;
-      const fulfilledBy = useCase.steps.filter((s) => s.fulfills.includes(id)).map((s) => s.row.id);
-      const tests = useCase.useCaseTests.filter((t) => t.row.uc_requirement_id === id).map((t) => t.row.id);
+      const { requirement, tests: tested, fulfilledBy } = useCase.requirements.find((r) => r.requirement.id === id)!;
+      const tests = tested.map((t) => t.test.id);
       return (
         <>
           <Text index={index} id={id} source={requirement.statement} field="statement" />
@@ -122,22 +122,21 @@ function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseC
       );
     }
     case 'flow': {
-      const flow = useCase.flows.find((f) => f.id === id)!;
+      const { flow, paths, test } = useCase.flows.find((f) => f.flow.id === id)!;
       const iface = index.byId.get(flow.interface_id);
-      const test = useCase.flowTests.find((t) => t.row.flow_id === id);
       return (
         <>
           <p className="flow-interface">
             Through <RecordLink index={index} id={flow.interface_id} />
             {iface && !saysKind(iface) && <> <small className="meta">{String(iface.row.kind)}</small></>}
           </p>
-          <FlowSteps index={index} flow={id} steps={useCase.steps.filter((s) => s.row.flow_id === id)} />
-          {test && <Section title="Flow test" count={1}><Rows index={index} ids={[test.row.id]} label={`Flow test of ${id}`} /></Section>}
+          <FlowSteps index={index} flow={id} paths={paths} />
+          {test && <Section title="Flow test" count={1}><Rows index={index} ids={[test.test.id]} label={`Flow test of ${id}`} /></Section>}
         </>
       );
     }
     case 'flow_step': {
-      const step = useCase.steps.find((s) => s.row.id === id)!;
+      const step = useCase.flows.flatMap(stepsOf).find((s) => s.step.id === id)!;
       const links: { label: string; words: string; ids: string[] }[] = [
         { label: 'Invokes', words: 'invokes', ids: step.invokes ? [step.invokes] : [] },
         { label: 'Happens in', words: 'happens in', ids: step.happensIn ? [step.happensIn] : [] },
@@ -146,7 +145,7 @@ function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseC
       ];
       return (
         <>
-          <Facts facts={[{ label: 'Flow', value: <RecordLink index={index} id={step.row.flow_id} /> }, { label: 'Path', value: step.row.path }, { label: 'Position', value: step.row.position }]} />
+          <Facts facts={[{ label: 'Flow', value: <RecordLink index={index} id={step.step.flow_id} /> }, { label: 'Path', value: step.step.path }, { label: 'Position', value: step.step.position }]} />
           {links.filter((l) => l.ids.length > 0).map((l) => (
             <Section key={l.label} title={l.label} count={l.ids.length} level={3}><Rows index={index} ids={l.ids} label={`${id} ${l.words}`} /></Section>
           ))}
@@ -155,33 +154,33 @@ function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseC
       );
     }
     case 'use_case_test': {
-      const test = useCase.useCaseTests.find((t) => t.row.id === id)!;
+      const { test: row, startsFrom } = useCase.requirements.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
       return (
         <>
           {/* A scenario's parts as the data holds them: a test loaded from a file may still lack one. */}
-          {(test.row.when || test.row.then) && (
+          {(row.when || row.then) && (
             <dl className="scenario" aria-label="Scenario">
-              {test.row.when && <div data-field="when"><dt>When</dt><dd><Prose index={index} source={test.row.when} self={id} /></dd></div>}
-              {test.row.then && <div data-field="then"><dt>Then</dt><dd><Prose index={index} source={test.row.then} self={id} /></dd></div>}
+              {row.when && <div data-field="when"><dt>When</dt><dd><Prose index={index} source={row.when} self={id} /></dd></div>}
+              {row.then && <div data-field="then"><dt>Then</dt><dd><Prose index={index} source={row.then} self={id} /></dd></div>}
             </dl>
           )}
-          <Text index={index} id={id} source={test.row.notes} title="Notes" field="notes" />
-          <StartsFrom index={index} id={id} sets={test.startsFrom} />
+          <Text index={index} id={id} source={row.notes} title="Notes" field="notes" />
+          <StartsFrom index={index} id={id} sets={startsFrom} />
         </>
       );
     }
     case 'flow_test': {
-      const test = useCase.flowTests.find((t) => t.row.id === id)!;
+      const { test: row, startsFrom } = useCase.flows.find((f) => f.test?.test.id === id)!.test!;
       return (
         <>
-          {(test.row.steps ?? []).length > 0 && (
-            <Section title="Steps" count={test.row.steps.length}>
-              <ol className="test-steps">{test.row.steps.map((s, i) => <li key={i}><Prose index={index} source={s} self={id} /></li>)}</ol>
+          {(row.steps ?? []).length > 0 && (
+            <Section title="Steps" count={row.steps.length}>
+              <ol className="test-steps">{row.steps.map((s, i) => <li key={i}><Prose index={index} source={s} self={id} /></li>)}</ol>
             </Section>
           )}
-          <Text index={index} id={id} source={test.row.expected_result} title="Expected result" field="expected_result" />
-          <Text index={index} id={id} source={test.row.notes} title="Notes" field="notes" />
-          <StartsFrom index={index} id={id} sets={test.startsFrom} />
+          <Text index={index} id={id} source={row.expected_result} title="Expected result" field="expected_result" />
+          <Text index={index} id={id} source={row.notes} title="Notes" field="notes" />
+          <StartsFrom index={index} id={id} sets={startsFrom} />
         </>
       );
     }
@@ -194,7 +193,7 @@ function StartsFrom({ index, id, sets }: { index: SpecIndex; id: string; sets: s
 }
 
 /** The record's summary in the wiki card: its lead text and a few key facts. */
-function Summary({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseCase; id: string; kind: UseCaseKind }) {
+function Summary({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseCaseRead; id: string; kind: UseCaseKind }) {
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const { lead, facts } = ((): { lead?: string; facts: { label: string; value: ReactNode }[] } => {
     switch (kind) {
@@ -208,24 +207,24 @@ function Summary({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseC
           ],
         };
       case 'uc_requirement': {
-        const requirement = useCase.requirements.find((r) => r.id === id)!;
-        return { lead: requirement.statement, facts: [{ label: 'Use case', value: <RecordLink index={index} id={useCase.root} /> }, ...(requirement.group_name ? [{ label: 'Group', value: requirement.group_name }] : [])] };
+        const { requirement } = useCase.requirements.find((r) => r.requirement.id === id)!;
+        return { lead: requirement.statement, facts: [{ label: 'Use case', value: <RecordLink index={index} id={useCase.useCase.id} /> }, ...(requirement.group_name ? [{ label: 'Group', value: requirement.group_name }] : [])] };
       }
       case 'flow': {
-        const flow = useCase.flows.find((f) => f.id === id)!;
-        return { facts: [{ label: 'Use case', value: <RecordLink index={index} id={useCase.root} /> }, { label: 'Through', value: <RecordLink index={index} id={flow.interface_id} /> }, { label: 'Steps', value: useCase.steps.filter((s) => s.row.flow_id === id).length }] };
+        const flow = useCase.flows.find((f) => f.flow.id === id)!;
+        return { facts: [{ label: 'Use case', value: <RecordLink index={index} id={useCase.useCase.id} /> }, { label: 'Through', value: <RecordLink index={index} id={flow.flow.interface_id} /> }, { label: 'Steps', value: stepsOf(flow).length }] };
       }
       case 'flow_step': {
-        const step = useCase.steps.find((s) => s.row.id === id)!;
-        return { facts: [{ label: 'Flow', value: <RecordLink index={index} id={step.row.flow_id} /> }, { label: 'Path', value: `${step.row.path}, step ${step.row.position}` }, ...(step.invokes ? [{ label: 'Invokes', value: <RecordLink index={index} id={step.invokes} /> }] : [])] };
+        const step = useCase.flows.flatMap(stepsOf).find((s) => s.step.id === id)!;
+        return { facts: [{ label: 'Flow', value: <RecordLink index={index} id={step.step.flow_id} /> }, { label: 'Path', value: `${step.step.path}, step ${step.step.position}` }, ...(step.invokes ? [{ label: 'Invokes', value: <RecordLink index={index} id={step.invokes} /> }] : [])] };
       }
       case 'use_case_test': {
-        const test = useCase.useCaseTests.find((t) => t.row.id === id)!;
-        return { lead: test.row.when, facts: [{ label: 'Proves', value: <RecordLink index={index} id={test.row.uc_requirement_id} /> }, { label: 'Level', value: test.row.level }, { label: 'State', value: test.row.state }] };
+        const { test } = useCase.requirements.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
+        return { lead: test.when, facts: [{ label: 'Proves', value: <RecordLink index={index} id={test.uc_requirement_id} /> }, { label: 'Level', value: test.level }, { label: 'State', value: test.state }] };
       }
       case 'flow_test': {
-        const test = useCase.flowTests.find((t) => t.row.id === id)!;
-        return { facts: [{ label: 'Proves', value: <RecordLink index={index} id={test.row.flow_id} /> }, { label: 'Level', value: test.row.level }, { label: 'State', value: test.row.state }] };
+        const { test } = useCase.flows.find((f) => f.test?.test.id === id)!.test!;
+        return { facts: [{ label: 'Proves', value: <RecordLink index={index} id={test.flow_id} /> }, { label: 'Level', value: test.level }, { label: 'State', value: test.state }] };
       }
     }
   })();
@@ -246,9 +245,9 @@ export function UseCasePage({ index, id, summary = false, after }: AggregatePage
   if (read.state === 'refused') {
     return <div className={body}><Refusal title={`${id} could not be read.`} reasons={read.problems.length ? read.problems.map(problemText) : [read.error]} focusKey={0} /></div>;
   }
-  // Until the use case is read (or while the read is of data before the record was added), the page says so.
-  const useCase = read.state === 'read' ? read.answer : null;
-  const kind = useCase ? kindInside(useCase, id) : undefined;
+  // Until the record's use case is read (the last answer on screen may still be another record's), the page says so.
+  const useCase = read.state === 'read' && read.answer.record.id === id ? read.answer : null;
+  const kind = useCase?.record.kind;
   if (!useCase || !kind) return <div className={body}><p className="hint" role="status">Reading {id}…</p></div>;
   return (
     <UseCaseEditor index={index} useCase={useCase} id={id} kind={kind}>
