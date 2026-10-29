@@ -374,7 +374,7 @@ describe('a write given as JSON', () => {
   }
   const LONG = 'He said "stop" and left.\nThen:\n\n```ts\nconst x = `a ${b}`;\n```\n\tTabbed, \\ back-slashed, and é accented — all of it.';
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 LA-PAT-AGGREGATE-COMMANDS-R03-T03 LA-PAT-AGGREGATE-COMMANDS-R03-T02 keeps text with quotes, newlines and backticks exactly, from stdin or a file', async () => {
+  it('LA-PLT-UC18-R03-T01 keeps text with quotes, newlines and backticks exactly, from stdin or a file', async () => {
     const root = writeData(everyKind());
     const added = await piped(root, JSON.stringify({ uc_requirement: { id: 'TL-LEND-UC01-R02', title: 'Kept "as is"', use_case_id: 'TL-LEND-UC01', statement: LONG } }), 'add', '--json', '-');
     expect(added.status).toBe(0);
@@ -392,7 +392,7 @@ describe('a write given as JSON', () => {
     expect(line(flagged, 'uc_requirement', 'TL-LEND-UC01-R02')).toBe(line(root, 'uc_requirement', 'TL-LEND-UC01-R02'));
   });
 
-  it("LA-PAT-AGGREGATE-COMMANDS-R03-T01 LA-PAT-AGGREGATE-COMMANDS-R03-T03 LA-PAT-AGGREGATE-COMMANDS-R03-T02 takes every write in the MCP tools' shape", async () => {
+  it("LA-PLT-UC18-R03-T01 takes every write in the MCP tools' shape", async () => {
     const root = writeData(everyKind());
     expect((await piped(root, '{"source": "TL-LEND-QRY01", "relation": "calls", "target": "TL-LEND-DS01"}', 'link', '--json', '-')).status).toBe(0);
     expect((await piped(root, '{"source": "TL-LEND-QRY01", "relation": "calls", "target": "TL-LEND-DS01"}', 'unlink', '--json', '-')).status).toBe(0);
@@ -406,7 +406,7 @@ describe('a write given as JSON', () => {
     await store.close();
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 LA-PAT-AGGREGATE-COMMANDS-R03-T03 LA-PAT-AGGREGATE-COMMANDS-R03-T02 refuses as the flags do, with every reason, and changes nothing', async () => {
+  it('LA-PLT-UC18-R03-T01 refuses as the flags do, with every reason, and changes nothing', async () => {
     const root = writeData(everyKind());
     const before = files(root);
     const viaFlags = await lathe(root, 'add', 'aggregate', '--id', 'TL-OTHER-A3', '--title', 'Member', '--domain_id', 'TL-NOPE', '--identity', 'Member ID', '--description', 'A member of the library.', '--json');
@@ -424,7 +424,7 @@ describe('a write given as JSON', () => {
     expect(files(root)).toEqual(before);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 LA-PAT-AGGREGATE-COMMANDS-R03-T03 LA-PAT-AGGREGATE-COMMANDS-R03-T02 refuses --json with field flags, a table or ID, or a read, as bad usage', async () => {
+  it('LA-PLT-UC18-R03-T01 refuses --json with field flags, a table or ID, or a read, as bad usage', async () => {
     const root = writeData(everyKind());
     const before = files(root);
     const both = await piped(root, '{"view": {"id": "TL-V02", "title": "Desk"}}', 'add', '--json', '-', '--title', 'Other');
@@ -439,7 +439,7 @@ describe('a write given as JSON', () => {
     expect(files(root)).toEqual(before);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R03-T01 LA-PAT-AGGREGATE-COMMANDS-R03-T03 LA-PAT-AGGREGATE-COMMANDS-R03-T02 writes an array as one write, all or nothing', async () => {
+  it('LA-PLT-UC18-R03-T01 writes an array as one write, all or nothing', async () => {
     const root = writeData(everyKind());
     const both = await piped(root, JSON.stringify([{ view: { id: 'TL-V02', title: 'Desk', description: 'The desk where tools go out.' } }, { view: { id: 'TL-V03', title: 'Shelf', description: 'The shelf of free tools.' } }]), 'add', '--json', '-');
     expect(JSON.parse(both.out).changes.map((c: { key: string }) => c.key)).toEqual(['TL-V02', 'TL-V03']);

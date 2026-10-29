@@ -30,7 +30,7 @@ describe("Lathe's checks", () => {
 });
 
 check('test-level-not-allowed', () => {
-  it('LA-PAT-AGGREGATE-TESTS-R02-T01 LA-PAT-AGGREGATE-TESTS-R02-T03 LA-PAT-AGGREGATE-TESTS-R02-T02 a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
+  it('LA-CHK-UC01-R09-T01 a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
     let data = changing(complete(), 'constraint_test', () => true, { level: 'service' });
     data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL01-T', { level: 'service' });
     const ws = await loadData(data);
@@ -42,7 +42,7 @@ check('test-level-not-allowed', () => {
     expect(ofCheck(await loadData(changing(complete(), 'constraint_test', () => true, { level: 'integration' })), 'test-level-not-allowed')).toEqual([]);
   });
 
-  it('LA-PAT-AGGREGATE-TESTS-R02-T01 LA-PAT-AGGREGATE-TESTS-R02-T03 LA-PAT-AGGREGATE-TESTS-R02-T02 a pattern rule test may run at any level', async () => {
+  it('LA-CHK-UC01-R09-T01 a pattern rule test may run at any level', async () => {
     for (const level of ['unit', 'integration', 'service', 'system', 'browser']) {
       const ws = await loadData(changing(complete(), 'pattern_rule_test', () => true, { level }));
       expect(ofCheck(ws, 'test-level-not-allowed'), level).toEqual([]);

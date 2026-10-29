@@ -27,40 +27,40 @@ afterAll(removeData);
 const text = (id: string) => Object.values(ws.records.find((r) => r.id === id)!.fields).filter((v): v is string => typeof v === 'string').join('\n');
 
 describe('IDs in text', () => {
-  it('LA-PAT-RECORD-IDENTITY-R04-T01 LA-PAT-RECORD-IDENTITY-R04-T04 LA-PAT-RECORD-IDENTITY-R04-T03 LA-PAT-RECORD-IDENTITY-R04-T02 An ID a record names in its text is kept as written, and makes no link', () => {
+  it('LA-PLT-UC01-R15-T01 An ID a record names in its text is kept as written, and makes no link', () => {
     expect(text('EX-LEND-UC01')).toContain('It follows EX-LEND-UC02, then\nEX-LEND-UC01-R01');
     expect(ws.links).toEqual(clean.links);
     // A record carries its typed fields and parts, and no list of the IDs its text names.
     expect(Object.keys(ws.records.find((r) => r.id === 'EX-LEND-UC01')!).sort()).toEqual(['aggregate', 'domain', 'fields', 'id', 'kind', 'parent', 'parts', 'product', 'title']);
   });
 
-  it('LA-PAT-RECORD-IDENTITY-R04-T01 LA-PAT-RECORD-IDENTITY-R04-T04 LA-PAT-RECORD-IDENTITY-R04-T03 LA-PAT-RECORD-IDENTITY-R04-T02 IDs in code spans and fenced code blocks are kept with the text as written', () => {
+  it('LA-PLT-UC01-R15-T01 IDs in code spans and fenced code blocks are kept with the text as written', () => {
     expect(text('EX-LEND-UC01')).toContain('`EX-LEND-UC02` in a code span');
     expect(text('EX-LEND-UC01')).toContain('```\nEX-LEND-UC94\n```');
   });
 
-  it('LA-PAT-RECORD-IDENTITY-R04-T01 LA-PAT-RECORD-IDENTITY-R04-T04 LA-PAT-RECORD-IDENTITY-R04-T03 LA-PAT-RECORD-IDENTITY-R04-T02 Text keeps every repeat as written, its own ID included', () => {
+  it('LA-PLT-UC01-R15-T01 Text keeps every repeat as written, its own ID included', () => {
     expect(text('EX-LEND-UC01')).toContain('then EX-LEND-UC02 again. EX-LEND-UC01 is this record.');
   });
 
-  it("LA-PAT-RECORD-IDENTITY-R04-T01 LA-PAT-RECORD-IDENTITY-R04-T04 LA-PAT-RECORD-IDENTITY-R04-T03 LA-PAT-RECORD-IDENTITY-R04-T02 A record's text naming another product's record is plain text", () => {
+  it("LA-PLT-UC01-R15-T01 A record's text naming another product's record is plain text", () => {
     expect(text('EX-LEND-UC01')).toContain('NX-E-UC01');
     expect(ws.links.filter((l) => l.source === 'EX-LEND-UC01' || l.target === 'NX-E-UC01')).toEqual([]);
     expect(ws.problems).toEqual([]);
   });
 
-  it('LA-PAT-RECORD-IDENTITY-R05-T01 LA-PAT-RECORD-IDENTITY-R05-T04 LA-PAT-RECORD-IDENTITY-R05-T03 LA-PAT-RECORD-IDENTITY-R05-T02 A token that is not an ID of this workspace is plain text and no problem', () => {
+  it('LA-PLT-UC01-R16-T01 A token that is not an ID of this workspace is plain text and no problem', () => {
     expect(text('EX-LEND-UC01')).toContain('STD-CODE-R01 and SYS-AUTH');
     expect(ws.problems).toEqual([]);
   });
 
-  it('LA-PAT-RECORD-IDENTITY-R05-T01 LA-PAT-RECORD-IDENTITY-R05-T04 LA-PAT-RECORD-IDENTITY-R05-T03 LA-PAT-RECORD-IDENTITY-R05-T02 An ID in text that no record has is no warning: no check reads text for IDs', () => {
+  it('LA-PLT-UC01-R16-T01 An ID in text that no record has is no warning: no check reads text for IDs', () => {
     expect(text('EX-LEND-UC01')).toContain('EX-LEND-INV99');
     expect(ws.problems).toEqual([]);
     expect(ENGINE_CHECKS.map((c) => c.check)).toEqual(['data-refused']);
   });
 
-  it('LA-PAT-RECORD-IDENTITY-R04-T01 LA-PAT-RECORD-IDENTITY-R04-T04 LA-PAT-RECORD-IDENTITY-R04-T03 LA-PAT-RECORD-IDENTITY-R04-T02 Only link tables link records: a link to a record that does not exist is refused, while text naming it is not', async () => {
+  it('LA-PLT-UC01-R15-T01 Only link tables link records: a link to a record that does not exist is refused, while text naming it is not', async () => {
     const base = { product: [{ id: 'MX', title: 'Mentions', description: 'A product whose text names IDs.' }], domain: [{ id: 'MX-D', title: 'Domain', product_id: 'MX', subdomain_type: 'core', description: 'It reads MX-D-SP99.' }] };
     expect(await refusals(base)).toEqual([]);
     const command = { aggregate: [{ id: 'MX-D-A1', title: 'Loan', domain_id: 'MX-D', identity: 'Loan ID', description: 'One loan.' }], entity: [{ id: 'MX-D-EN01', title: 'Loan', aggregate_id: 'MX-D-A1', role: 'root', description: 'The loan itself.' }], command: [{ id: 'MX-D-CMD01', title: 'Open', entity_id: 'MX-D-EN01', description: 'Opens a loan.' }] };
@@ -78,7 +78,7 @@ describe('IDs in text', () => {
     return both;
   };
 
-  it('LA-PAT-RECORD-IDENTITY-R03-T01 LA-PAT-RECORD-IDENTITY-R03-T04 LA-PAT-RECORD-IDENTITY-R03-T03 LA-PAT-RECORD-IDENTITY-R03-T02 A link from a record of one product to a record of another is refused, whatever the relation', async () => {
+  it('LA-PLT-UC01-R14-T01 A link from a record of one product to a record of another is refused, whatever the relation', async () => {
     expect(await refusals(crossing())).toEqual([
       expect.objectContaining({ rule: 'link-crosses-product', table: 'happens_in', message: expect.stringContaining('EX-LEND-UC02-FL01-S01 is in product EX') }),
     ]);
