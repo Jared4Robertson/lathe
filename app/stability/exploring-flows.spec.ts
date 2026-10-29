@@ -416,7 +416,7 @@ test.describe('Exploring flows', () => {
     await expect(page.locator('.focus-stage .erd-tools').getByRole('group', { name: 'Key' })).toBeVisible();
   });
 
-  test('LA-EXP-UC12-FL01-T use the side bar: Details following the pointer, Outline, History with its uncommitted change, a commit\'s diff and Load more', async ({ page }) => {
+  test('LA-EXP-UC12-FL01-T LA-EXP-UC12-R07-T01 read a record\'s history in the wiki card: its uncommitted change, a commit\'s diff and Load more', async ({ page }) => {
     const root = process.env.STABILITY_ROOT!;
     const restore = keepData();
     const git = (...args: string[]) => execFileSync('git', args, { cwd: root, stdio: 'pipe' });
@@ -435,25 +435,12 @@ test.describe('Exploring flows', () => {
       writeFileSync(file, original);
       await openPage(page, '/LA-EXP?stage=graph');
       await graphReady(page);
-      const side = page.getByRole('complementary', { name: 'Side bar' });
-      // On the Graph stage Details is open and follows the pointer.
-      await expect(sideBarViews(page).getByRole('button', { name: 'Details' })).toHaveAttribute('aria-pressed', 'true');
-      await page.locator(`${FLOW} .graph-box[data-id="LA-EXP/domain-model"]`).focus();
-      await expect(side.getByRole('region', { name: 'Details' })).toContainText('Domain model');
-      // On the ERD stage: Outline, and a jump to a box.
-      await page.keyboard.press('Control+2');
-      await expect(page.locator(STAGE_BOX)).toHaveAttribute('data-stage', 'erd');
-      await sideBarViews(page).getByRole('button', { name: 'Outline' }).click();
-      const boxes = side.getByRole('region', { name: 'Outline' }).getByRole('link');
-      await expect(boxes.first()).toBeVisible();
-      const to = await boxes.first().getAttribute('href');
-      await boxes.first().click();
-      await page.waitForURL((u) => u.pathname === new URL(to!, u).pathname);
-      await page.goBack();
-      await page.waitForURL((u) => u.pathname === '/LA-EXP');
-      // History: the uncommitted change first, then the commits; an older one's diff; Load more.
-      await sideBarViews(page).getByRole('button', { name: 'History' }).click();
-      const history = side.getByRole('region', { name: 'History' });
+      // History, at the end of the wiki card's whole page (More), read from the repository only once asked.
+      const card = page.locator(WIKI);
+      const more = card.getByRole('button', { name: 'More' });
+      if (await more.count()) await more.click();
+      await card.getByRole('button', { name: 'Show the history' }).click();
+      const history = card.locator('.record-history');
       await expect(history).toContainText(/not committed|uncommitted/i, { timeout: 20_000 });
       await expect(history).toContainText('Retitle 21');
       await history.getByText('Retitle 20', { exact: true }).click();
