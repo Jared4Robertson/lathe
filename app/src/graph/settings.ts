@@ -5,7 +5,7 @@ import { NO_FILTERS } from './model';
 
 // The one reader setting for the browser session, shared by every tab and every page (LA-V93-R72):
 // how the graph is drawn (its layout, depth, filters, Links switch and minimap), and whether the
-// wiki card is open and how wide it is, and whether the desktop app's chat panel is open and how
+// wiki card is open, how wide it is and whether it shows its summary or its whole page, and whether the desktop app's chat panel is open and how
 // wide (LA-PLT-UC19). Moving through the stage (an arrow step, a click or Enter on a box, a link, a
 // tab, Back or Forward) never changes it; only the person changing a setting does: the graph's
 // toolbar, the v, +/- and w keys, the card's and the chat's buttons and resize handles. Every part
@@ -15,9 +15,9 @@ import { NO_FILTERS } from './model';
 export const SETTINGS_KEY = 'lathe:session-settings';
 export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, filters: NO_FILTERS, links: false, minimap: false };
 
-/** The wiki card: open or collapsed, and its width in px (null: a third of the open space). */
-export interface CardSettings { open: boolean; width: number | null }
-export const DEFAULT_CARD: CardSettings = { open: true, width: null };
+/** The wiki card: open or collapsed, its width in px (null: a third of the open space), and whether it shows the whole page (More) or its summary (Less). */
+export interface CardSettings { open: boolean; width: number | null; expanded: boolean }
+export const DEFAULT_CARD: CardSettings = { open: true, width: null, expanded: false };
 /** The card's narrowest, the width it stays readable at (a long title on whole words, a table with room for its columns), and its widest, in px. */
 export const CARD_MIN = 360;
 export const CARD_MAX = 900;
@@ -34,14 +34,14 @@ export interface SessionSettings { graph: GraphSettings; card: CardSettings; cha
 
 interface Stored {
   layout: GraphLayout; depth: number; hiddenKinds: string[]; hiddenRelations: string[]; links: boolean; minimap: boolean;
-  card: boolean; cardWidth: number | null; chat: boolean; chatWidth: number | null;
+  card: boolean; cardWidth: number | null; cardExpanded: boolean; chat: boolean; chatWidth: number | null;
 }
 /** Stored settings in today's form; anything else (an older form included) is dropped for the defaults. */
 const isStored = (v: unknown): v is Stored => {
   if (!v || typeof v !== 'object') return false;
   const s = v as Stored;
   return (s.layout === 'tree' || s.layout === 'nested' || s.layout === 'voronoi') && isNumber(s.depth) && Array.isArray(s.hiddenKinds) && Array.isArray(s.hiddenRelations)
-    && typeof s.links === 'boolean' && typeof s.minimap === 'boolean' && typeof s.card === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth))
+    && typeof s.links === 'boolean' && typeof s.minimap === 'boolean' && typeof s.card === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth)) && typeof s.cardExpanded === 'boolean'
     && typeof s.chat === 'boolean' && (s.chatWidth === null || isNumber(s.chatWidth));
 };
 const isAny = (_v: unknown): _v is unknown => true;
@@ -61,7 +61,7 @@ export function sessionSettings(): SessionSettings {
       links: s.links,
       minimap: s.minimap,
     },
-    card: { open: s.card, width: clampWidth(s.cardWidth) },
+    card: { open: s.card, width: clampWidth(s.cardWidth), expanded: s.cardExpanded },
     chat: { open: s.chat, width: clampChat(s.chatWidth) },
   };
 }
@@ -70,7 +70,7 @@ export function sessionSettings(): SessionSettings {
 export function saveSessionSettings({ graph: g, card, chat }: SessionSettings) {
   const stored: Stored = {
     layout: g.layout, depth: g.depth, hiddenKinds: [...g.filters.hiddenKinds], hiddenRelations: [...g.filters.hiddenRelations], links: g.links, minimap: g.minimap,
-    card: card.open, cardWidth: clampWidth(card.width), chat: chat.open, chatWidth: clampChat(chat.width),
+    card: card.open, cardWidth: clampWidth(card.width), cardExpanded: card.expanded, chat: chat.open, chatWidth: clampChat(chat.width),
   };
   writePref(SETTINGS_KEY, stored, 'session');
   for (const listener of listeners) listener();
@@ -95,7 +95,7 @@ export function useSessionSettings() {
     const was = current();
     const card = { ...was.card, ...patch };
     card.width = clampWidth(card.width);
-    if (card.open !== was.card.open || card.width !== was.card.width) saveSessionSettings({ ...was, card });
+    if (card.open !== was.card.open || card.width !== was.card.width || card.expanded !== was.card.expanded) saveSessionSettings({ ...was, card });
   }, []);
   const setChat = useCallback((patch: Partial<ChatSettings>) => {
     const was = current();
