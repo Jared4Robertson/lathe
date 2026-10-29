@@ -44,8 +44,6 @@ const PLAIN: Record<Exclude<TraceNode['role'], 'record'>, { kind: string; label:
 
 /** The depth the camera frames below the focus: its children, as the Graph's Tree by default. */
 const FRAME_DEPTH = 1;
-/** A ringed box shorter than this on screen, in CSS pixels, is too small to read: the camera brings it in. */
-const RING_READ_PX = 24;
 /** How tall the map's smallest box may be drawn on screen at the most zoom, in CSS pixels: the zoom's ceiling. */
 const DEEPEST_PX = 400;
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
@@ -326,8 +324,8 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
   tap.current = tapToOpen;
   useEffect(() => { onPeek?.('selected', tapToOpen.armed); requestPaint(); }, [tapToOpen.armed, onPeek]);
 
-  // The keyboard's ring: the node the table's focused link or the walk stands for, brought into view, and framed when it
-  // is too small there to read.
+  // The keyboard's ring: the node the table's focused link or the walk stands for, framed when it is not wholly in view (a
+  // focus's frame keeps its children reading, camera.ts frameOnMap).
   useEffect(() => {
     const id = ringAt ? map.nodes.get(ringAt)?.id ?? null : null;
     ring.current = id;
@@ -341,7 +339,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     const left = n.x * v.zoom + v.x;
     const top = n.y * v.zoom + v.y;
     const inside = left >= frame.x && left + n.w * v.zoom <= frame.x + frame.w && top >= frame.y && top + n.h * v.zoom <= frame.y + frame.h;
-    if (inside && n.h * v.zoom >= RING_READ_PX) return;
+    if (inside) return;
     const t = frameOnMap(map.map, ringAt!, 0, frame.w, frame.h, maxZoom);
     moveTo({ x: t.x + frame.x, y: t.y + frame.y, zoom: t.zoom }, true);
   }, [ringAt]);

@@ -2,7 +2,7 @@
 import { indexOf } from '../fixtures/load';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { repoData } from '../fixtures/repo';
-import { drawnFor, drawnNested, FRAME_PADDING, frameNested, frameOnMap, MAX_ZOOM, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
+import { drawnFor, drawnNested, FRAME_PADDING, frameFocus, frameNested, frameOnMap, MAX_ZOOM, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
 import { graphMap, treeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
 import { nestedMap } from '../../src/graph/nested';
 import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
@@ -141,8 +141,10 @@ describe('every drawn box shows its name', () => {
           const v = layout.frame(map, n.id, 1, 770, 640);
           expect(v.zoom, `${layout.name} ${n.id}`).toBeLessThanOrEqual(MAX_ZOOM);
           expect(v.zoom, `${layout.name} ${n.id}`).toBeGreaterThanOrEqual(MIN_ZOOM);
-          if (layout.name === 'Tree' && (n.parent === null || n.children.length === 0 || n.text < treeText(n.w) * (1 - 1e-9) || v.zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9))) continue;
-          (sizes.get(n.level) ?? sizes.set(n.level, []).get(n.level)!).push(n.text * v.zoom * TITLE_FONT);
+          if (layout.name === 'Tree' && (n.parent === null || n.children.length === 0 || n.text < treeText(n.w) * (1 - 1e-9) || frameFocus(map as GraphMap, n, 1, 770, 640).zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9))) continue;
+          // In the Tree, in its own frame: one whose children it would draw too small to read frames their column instead, larger (LA-EXP-DS09).
+          const own = layout.name === 'Tree' ? frameFocus(map as GraphMap, n, 1, 770, 640) : v;
+          (sizes.get(n.level) ?? sizes.set(n.level, []).get(n.level)!).push(n.text * own.zoom * TITLE_FONT);
         }
         const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
         const medians = [...sizes.values()].map(median);
