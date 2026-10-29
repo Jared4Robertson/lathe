@@ -157,8 +157,8 @@
 {"id":"LA-TRC-UC12-FL02","title":"See a domain's owed pattern rules in the desktop app","use_case_id":"LA-TRC-UC12","interface_id":"LA-IF02"}
 {"id":"LA-TRC-UC13-FL01","title":"See tests by state with each domain's coverage in the web app","use_case_id":"LA-TRC-UC13","interface_id":"LA-IF01"}
 {"id":"LA-TRC-UC13-FL02","title":"See tests by state with each domain's coverage in the desktop app","use_case_id":"LA-TRC-UC13","interface_id":"LA-IF02"}
-{"id":"LA-TRC-UC14-FL01","title":"Trace a record in the web app","use_case_id":"LA-TRC-UC14","interface_id":"LA-IF01"}
-{"id":"LA-TRC-UC14-FL02","title":"Trace a record in the desktop app","use_case_id":"LA-TRC-UC14","interface_id":"LA-IF02"}
+{"id":"LA-TRC-UC14-FL01","title":"Trace an obligation to its proof in the web app","use_case_id":"LA-TRC-UC14","interface_id":"LA-IF01"}
+{"id":"LA-TRC-UC14-FL02","title":"Trace an obligation to its proof in the desktop app","use_case_id":"LA-TRC-UC14","interface_id":"LA-IF02"}
 {"id":"LA-TRC-UC15-FL03","title":"Check that routes match the code both ways through the CLI","use_case_id":"LA-TRC-UC15","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC16-FL03","title":"Check each table against the file that creates it through the CLI","use_case_id":"LA-TRC-UC16","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC19-FL03","title":"Account for every package the product depends on through the CLI","use_case_id":"LA-TRC-UC19","interface_id":"LA-IF03"}
