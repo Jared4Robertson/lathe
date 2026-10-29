@@ -1,32 +1,25 @@
-// The View aggregate's own reads (read model LA-AUT-RM32): a view whole, the views of a product, and the next free ID
-// for a record of one of its kinds. Each reads the current data and changes nothing.
+// The View aggregate's own reads, each answered from its read model (LA-AUT-RM32) through its reader (reader.ts), which
+// the query runner gives each handler: a view whole, the views of a product, and the next free ID for a record of one
+// of its kinds. A handler never sees the data, a repository or the aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import type { ReadView } from '../../platform/data/rules.ts';
-import { VIEW_SLICE } from './model.ts';
-import { viewPageFrom, viewSummariesFrom, type ViewPage, type ViewSummary } from './read-model.ts';
-
-/** The kinds of the View aggregate, each with the column that names its parent. */
-const PARENT_COLUMN = { view_requirement: 'view_id', view_test: 'view_requirement_id' } as const;
-type ViewKind = 'view' | keyof typeof PARENT_COLUMN;
+import { VIEW_SLICE, type ViewKind } from './model.ts';
+import type { ViewPage, ViewSummary } from './read-model.ts';
+import { viewReader, type ViewReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
+const a = (word: string) => (/^[aeiou]/.test(word) ? 'an' : 'a');
 
 /** The view that holds the record: the view itself, or one of its requirements or tests. */
-export function getView(view: ReadView, input: { id: string }): ViewPage {
-  const record = view.record(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
-  if (record.kind !== 'view' && !(record.kind in PARENT_COLUMN)) refuse('kind', `${input.id} is ${/^[aeiou]/.test(record.kind) ? 'an' : 'a'} ${record.kind}, not a view or a record in one`);
-  let at = record;
-  while (at.kind !== 'view') {
-    at = view.record(String(at.row[PARENT_COLUMN[at.kind as keyof typeof PARENT_COLUMN]]))!;
-  }
-  return viewPageFrom((table) => view.rows(table), String(at.row.id))!;
+export function getView(reader: ViewReader, input: { id: string }): ViewPage {
+  const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
+  return reader.page(input.id) ?? refuse('kind', `${input.id} is ${a(kind)} ${kind}, not a view or a record in one`);
 }
 
 /** GET a view whole (LA-AUT-QRY190). */
-export const GET_VIEW: QueryDefinition<{ id: string }, ViewPage> = {
+export const GET_VIEW: QueryDefinition<{ id: string }, ViewPage, ViewReader> = {
   id: 'LA-AUT-QRY190',
   slice: VIEW_SLICE,
   name: 'get-view',
@@ -34,18 +27,19 @@ export const GET_VIEW: QueryDefinition<{ id: string }, ViewPage> = {
   route: '/api/view/get-view',
   description: 'Reads a view whole, by its ID or the ID of any record in it: its row, and its view requirements with their tests.',
   input: { id: id('The view, or a view requirement or view test in it.', 'required') },
+  reader: viewReader,
   run: getView,
   text: viewText,
 };
 
 /** The views of a product, by ID: those whose ID starts with the product's. */
-export function listViews(view: ReadView, input: { product_id: string }): ViewSummary[] {
-  if (view.record(input.product_id)?.kind !== 'product') refuse('missing', `there is no product ${input.product_id}`);
-  return viewSummariesFrom((table) => view.rows(table), input.product_id);
+export function listViews(reader: ViewReader, input: { product_id: string }): ViewSummary[] {
+  if (reader.kindOf(input.product_id) !== 'product') refuse('missing', `there is no product ${input.product_id}`);
+  return reader.viewsOf(input.product_id);
 }
 
 /** List the views of a product (LA-AUT-QRY191). */
-export const LIST_VIEWS: QueryDefinition<{ product_id: string }, ViewSummary[]> = {
+export const LIST_VIEWS: QueryDefinition<{ product_id: string }, ViewSummary[], ViewReader> = {
   id: 'LA-AUT-QRY191',
   slice: VIEW_SLICE,
   name: 'list-views',
@@ -53,42 +47,29 @@ export const LIST_VIEWS: QueryDefinition<{ product_id: string }, ViewSummary[]> 
   route: '/api/view/list-views',
   description: 'Lists the views of a product, by ID, with their titles.',
   input: { product_id: id('The product.', 'required') },
+  reader: viewReader,
   run: listViews,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No views.'),
 };
 
-// One past the highest number in use after the prefix among the kind's records, padded to two digits.
-function onePast(view: ReadView, kind: string, prefix: string): string {
-  const shape = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
-  let highest = 0;
-  for (const row of view.rows(kind)) {
-    const m = shape.exec(String(row.id));
-    if (m) highest = Math.max(highest, Number(m[1]));
-  }
-  return `${prefix}${String(highest + 1).padStart(2, '0')}`;
-}
+// One past the highest number in use after the prefix, padded to two digits.
+const onePast = (reader: ViewReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
 
 /** The kinds of the aggregate, each with the kind of record it sits under. */
 const UNDER: Record<ViewKind, string> = { view: 'product', view_requirement: 'view', view_test: 'view_requirement' };
 
 /** The next free ID for a record of one of the aggregate's kinds under its parent: one past the highest in use. */
-export function nextViewId(view: ReadView, input: { kind: string; parent: string }): string {
+export function nextViewId(reader: ViewReader, input: { kind: string; parent: string }): string {
   if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the View aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
   const kind = input.kind as ViewKind;
-  const parent = view.record(input.parent);
-  if (parent?.kind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parent ? `a ${parent.kind}` : 'no record'}`);
-  switch (kind) {
-    case 'view':
-      return onePast(view, 'view', `${input.parent}-V`);
-    case 'view_requirement':
-      return onePast(view, 'view_requirement', `${input.parent}-R`);
-    case 'view_test':
-      return onePast(view, 'view_test', `${input.parent}-T`);
-  }
+  const parent = reader.kindOf(input.parent);
+  if (parent !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
+  const suffix = { view: 'V', view_requirement: 'R', view_test: 'T' }[kind];
+  return onePast(reader, `${input.parent}-${suffix}`);
 }
 
 /** Get the next ID in a view (LA-AUT-QRY192). */
-export const NEXT_VIEW_ID: QueryDefinition<{ kind: string; parent: string }, string> = {
+export const NEXT_VIEW_ID: QueryDefinition<{ kind: string; parent: string }, string, ViewReader> = {
   id: 'LA-AUT-QRY192',
   slice: VIEW_SLICE,
   name: 'next-id',
@@ -99,6 +80,7 @@ export const NEXT_VIEW_ID: QueryDefinition<{ kind: string; parent: string }, str
     kind: id('The kind: view, view_requirement or view_test.', 'required'),
     parent: id('The record it will sit under: for a view, its product.', 'required'),
   },
+  reader: viewReader,
   run: nextViewId,
   text: (next) => next,
 };
