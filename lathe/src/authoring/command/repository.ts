@@ -3,21 +3,21 @@
 // holds it.
 import { AggregateRepository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
-import { COMMAND_KINDS, COMMAND_TABLES, commandRows, commandsFrom, kindInside, type Command, type CommandKind } from './model.ts';
+import { COMMAND_KINDS, COMMAND_TABLES, commandRows, commandsFrom, kindInside, type CommandInstance, type CommandKind } from './model.ts';
 
 /** The kind each parent column of the aggregate's kinds names. */
 const PARENT_KIND = { command_id: 'command', policy_id: 'policy' } as const;
 
-export class CommandRepository extends AggregateRepository<Command> {
+export class CommandRepository extends AggregateRepository<CommandInstance> {
   constructor(tx: Transaction) {
     super(tx, 'CommandRepository', COMMAND_TABLES);
   }
 
-  protected read(rootId: string): Command | undefined {
+  protected read(rootId: string): CommandInstance | undefined {
     return commandsFrom((table) => this.files.rows(table), rootId)[0];
   }
 
-  protected rowsOf(command: Command): InstanceRows {
+  protected rowsOf(command: CommandInstance): InstanceRows {
     return commandRows(command);
   }
 
@@ -26,7 +26,7 @@ export class CommandRepository extends AggregateRepository<Command> {
    * handler, policy, event handler or policy test, found up its parents inside the aggregate. Undefined when there is
    * no such record.
    */
-  loadHolding(kind: CommandKind, id: string): Command | undefined {
+  loadHolding(kind: CommandKind, id: string): CommandInstance | undefined {
     let at: { kind: CommandKind; id: string } = { kind, id };
     for (;;) {
       const row = this.files.find(at.kind, { id: at.id });

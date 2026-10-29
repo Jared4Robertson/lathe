@@ -3,7 +3,7 @@
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
-import { COMMAND_KINDS, COMMAND_SLICE, commandsFrom, type Command, type CommandKind } from './model.ts';
+import { COMMAND_KINDS, COMMAND_SLICE, commandsFrom, type CommandInstance, type CommandKind } from './model.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
@@ -12,7 +12,7 @@ const refuse = (rule: string, message: string): never => {
 const article = (word: string) => (/^[aeiou]/.test(word) ? 'an' : 'a');
 
 /** The command that holds the record: the command itself, or its handler, a policy, or a policy's handler or test. */
-export function getCommand(view: ReadView, input: { id: string }): Command {
+export function getCommand(view: ReadView, input: { id: string }): CommandInstance {
   const record = view.record(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
   if (!(record.kind in COMMAND_KINDS)) refuse('kind', `${input.id} is ${article(record.kind)} ${record.kind}, not a command or a record in one`);
   let at = record;
@@ -24,7 +24,7 @@ export function getCommand(view: ReadView, input: { id: string }): Command {
 }
 
 /** GET a command whole (LA-AUT-QRY159). */
-export const GET_COMMAND: QueryDefinition<{ id: string }, Command> = {
+export const GET_COMMAND: QueryDefinition<{ id: string }, CommandInstance> = {
   id: 'LA-AUT-QRY159',
   slice: COMMAND_SLICE,
   name: 'get-command',
@@ -123,7 +123,7 @@ export const NEXT_COMMAND_ID: QueryDefinition<{ kind: string; parent: string }, 
 };
 
 /** A command as text: its row and links, its handler, then each policy with what is under it. */
-function commandText(command: Command): string {
+function commandText(command: CommandInstance): string {
   const { command: row } = command;
   const lines = [`Command ${row.id}: ${row.title}`, `  entity: ${row.entity_id}`, `  description: ${row.description}`];
   const links = [...command.raises.map((x) => `raises ${x}`), ...command.checks.map((x) => `checks ${x}`), ...command.calls.map((x) => `calls ${x}`)];
