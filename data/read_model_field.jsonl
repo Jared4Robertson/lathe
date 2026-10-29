@@ -22,14 +22,17 @@
 {"read_model_id":"LA-AUT-RM21","position":5,"name":"Interfaces","meaning":"Its interfaces.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM22","position":1,"name":"Pattern","meaning":"The pattern's row: its ID, title, product, description and notes.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM22","position":2,"name":"Settings","meaning":"Its settings in order, each a name and what a follower decides in it.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM22","position":3,"name":"Rules","meaning":"Its rules, each with its tests and the test data sets they start from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM22","position":3,"name":"Rules","meaning":"Its rules by ID, each with its tests and the test data sets they start from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM22","position":4,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the pattern: the pattern, a pattern rule or a pattern rule test.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM23","position":1,"name":"Standard","meaning":"The standard's row: its ID, title, product and description.","type_value_object_id":"LA-VO01","required":true}
-{"read_model_id":"LA-AUT-RM23","position":2,"name":"Rules","meaning":"Its rules, each with its tests and the test data sets they start from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM23","position":2,"name":"Rules","meaning":"Its rules by ID, each with the records that meet it and its tests (with the test data sets they start from).","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM23","position":3,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the standard: the standard, a standard rule or a standard rule test.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM24","position":1,"name":"Domain","meaning":"The domain's row: its ID, title, product, subdomain type, description and notes.","type_value_object_id":"LA-VO01","required":true}
-{"read_model_id":"LA-AUT-RM24","position":2,"name":"Capabilities","meaning":"Its capabilities in order, each with the business outcomes it serves.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM24","position":3,"name":"Terms","meaning":"Its glossary: each term and what it means.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM24","position":4,"name":"Domain services","meaning":"Its domain services, each with its service (the standard rules it meets and packages it uses) and its tests.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM24","position":5,"name":"Repositories","meaning":"Its repositories, each with the aggregate it persists, the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":2,"name":"Capabilities","meaning":"Its capabilities by position, each with the business outcomes it serves and its use cases by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":3,"name":"Terms","meaning":"Its glossary by ID: each term and what it means.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":4,"name":"Domain services","meaning":"Its domain services by ID, each with its service (the standard rules it meets and packages it uses) and its tests (with the test data sets they start from).","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":5,"name":"Repositories","meaning":"Its repositories by ID, each with the aggregate it persists, the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":6,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the domain: the domain, a capability, a term, a domain service, a service, a domain service test or a repository.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM25","position":1,"name":"Specification","meaning":"The specification's row: its ID, title and statement.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM25","position":2,"name":"Reads","meaning":"The aggregates it reads.","type":"text","required":false}
 {"read_model_id":"LA-AUT-RM25","position":3,"name":"Predicate","meaning":"Its predicate, if written, with the standard rules it meets and the packages it uses.","type":"text","required":false}
@@ -56,6 +59,8 @@
 {"read_model_id":"LA-AUT-RM36","position":1,"name":"Outcome","meaning":"The outcome's row.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM36","position":2,"name":"Measured by","meaning":"The tests and records that measure it.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM37","position":1,"name":"Test data set","meaning":"The test data set's row: its ID, title, domain, environment, accounts, records, prepare, reset, file and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM37","position":2,"name":"Started from by","meaning":"The tests that start from it, by ID.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM37","position":3,"name":"Record","meaning":"The record the page is about: the test data set, by ID.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM38","position":1,"name":"Table","meaning":"The table's row: its ID, title, parent, name, storage and file.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM38","position":2,"name":"Keys","meaning":"Its keys in order: their type, columns, name, invariant, target table and condition.","type":"text","required":false}
 {"read_model_id":"LA-AUT-RM38","position":3,"name":"Meets","meaning":"The standard rules it meets.","type":"text","required":false}
