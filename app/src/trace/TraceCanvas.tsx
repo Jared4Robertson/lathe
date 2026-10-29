@@ -277,7 +277,7 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
     }
     const seen = visibleIn(map, r);
     if (!whole && (seen.boxes.length > TRACE_MAX_DRAWN || BOX_H * v.zoom < BAR_BELOW_PX)) return { ...none, bars: seen.boxes.map(barOf) };
-    const lines: Line[] = seen.lines.map((l) => ({ id: l.key, source: l.from, target: l.to, style: l.tree ? 'structure' : 'trace', link: !l.tree, points: l.points, scale: 1, label: '' }));
+    const lines: Line[] = seen.lines.map((l) => ({ id: l.key, source: l.from, target: l.to, style: l.tree ? 'structure' : 'trace', link: !l.tree, points: l.points, scale: 1 }));
     return { boxes: seen.boxes, plates: seen.boxes.map(plateFor), bars: [], lines, traceLines: seen.lines };
   }, [map, plateFor]);
 

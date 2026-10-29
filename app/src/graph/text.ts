@@ -23,8 +23,8 @@ export const LABEL_PAD = 14;
 export const BADGE_ROOM = 30;
 /** The room a small mark takes before the kind and ID line (a shape's in the Nested and Voronoi views, a gear or a ruler), its gap included (LA-V93-R06). */
 export const MARK_ROOM = 18;
-/** The faces the graph draws text in: a title (the body face at 600), a kind and ID line (the mono face), a problem badge (mono at 700), a link's words (mono). */
-export type Face = 'title' | 'meta' | 'badge' | 'edge';
+/** The faces the graph draws text in: a title (the body face at 600), a kind and ID line (the mono face), a problem badge (mono at 700). */
+export type Face = 'title' | 'meta' | 'badge';
 
 /**
  * How wide a text is in one of the graph's faces, in em (its width at a 1 px font), and each face's
