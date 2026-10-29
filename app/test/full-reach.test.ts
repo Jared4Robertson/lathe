@@ -9,14 +9,14 @@ import { graphTarget } from '../src/graph/steps';
 import { erdMap } from '../src/erd/erd';
 import { erdLayout } from '../src/erd/layout';
 import { erdLevels } from '../src/erd/walk';
-import { traceMap } from '../src/trace/lanes';
-import { traceLevels, traceNode } from '../src/trace/walk';
-import { levelMove, MOVES, reachable } from '../src/views/levels';
+import { traceMap } from '../src/trace/tree';
+import { traceTarget } from '../src/trace/walk';
+import { MOVES, reachable } from '../src/views/levels';
 
 // Every node is reachable by keyboard (LA-PAT-APP-UX-R21): on Lathe's own spec, a breadth-first search over every move
 // of the stage walk (the arrows, which W, A, S and D take too, and Out and In) from the product reaches every node each
 // stage draws: every box of the Graph's map in each layout, every region, area and entity of the ERD, and every box of
-// the Trace, the boxes a "+N more" hides among them (In, as Enter, opens it). A node it misses is named.
+// the Trace's tree. A node it misses is named.
 
 const PRODUCT = 'LA';
 let index: SpecIndex;
@@ -50,26 +50,17 @@ describe('every node is reachable by keyboard', () => {
     expect(missed(map.boxes.map((b) => b.id), seen), 'unreachable').toEqual([]);
   }, 60_000);
 
-  it('LA-PAT-APP-UX-R21-T02 On the Trace, every box is reached from the product, those a "+N more" hides among them', () => {
+  it('LA-PAT-APP-UX-R21-T02 On the Trace, every box of the tree is reached from the product', () => {
     const map = traceMap(index, PRODUCT);
-    expect(map.lanes.some((l) => l.open)).toBe(true);
-    // The lane drawn open where the walk stands: a box's own lane, when it has an open form, as focusing it opens it.
-    const openAt = (node: string) => {
-      const n = traceNode(map, node);
-      const lane = n?.level === 'box' ? map.byKey.get(n.at.key)!.lane : n?.level === 'lane' ? n.lane : -1;
-      return lane >= 0 && map.lanes[lane].open ? lane : null;
-    };
+    expect(map.map.nodes.size).toBeGreaterThan(1000);
     const seen = new Set([map.product]);
     const queue = [map.product];
     for (let i = 0; i < queue.length; i++) {
       for (const move of MOVES) {
-        const to = levelMove(traceLevels(map, openAt(queue[i])), queue[i], move);
+        const to = traceTarget(map, queue[i], move);
         if (to !== null && !seen.has(to)) { seen.add(to); queue.push(to); }
       }
     }
-    const keys = new Set([...seen].flatMap((node) => { const n = traceNode(map, node); return n?.level === 'box' ? [n.at.key] : []; }));
-    const hidden = map.lanes.flatMap((l) => (l.open ? l.open.boxes.filter((b) => !l.boxes.includes(b)) : []));
-    expect(hidden.length).toBeGreaterThan(0);
-    expect(missed(map.byKey.keys(), keys), 'unreachable').toEqual([]);
+    expect(missed(map.map.nodes.keys(), seen), 'unreachable').toEqual([]);
   }, 120_000);
 });

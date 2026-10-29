@@ -63,9 +63,9 @@ describe('the stage walk', () => {
     window.history.go(-2);
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
 
-    // The Trace stage walks its map: Left and Right across the why tree's columns as well, then on along a lane, Right
-    // from the requirement to its flow (where the Tree view's Right would go to its first child); a link of its table,
-    // the accessible layer under the canvas, keeps its own arrows.
+    // The Trace stage walks its tree by the Graph's Tree keys: Left out to the capability and Right back in, then Right in
+    // to the requirement and on into its chain, to its flow; a link of its table, the accessible layer under the canvas,
+    // keeps its own arrows.
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-page')).not.toBeNull());
     await walksOutAndIn(() => document.body);
@@ -174,19 +174,21 @@ describe('out and in', () => {
     window.history.go(-3);
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
 
-    // The Trace: from the use case's box out to the lane beneath it (its obligation focused), out to the domain's band,
-    // then in to its first lane and in again to that lane's first box.
+    // The Trace: from the use case's box out to its capability and out to the domain, then in to the domain's first parent
+    // (the capability) and in again to its use case.
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-page')).not.toBeNull());
     shift('ArrowUp');
-    await waitFor(() => expect(announcer()).toHaveTextContent(/^The lane of /));
+    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
+    await waitFor(() => expect(announcer()).toHaveTextContent('Capability Lending'));
     shift('ArrowUp');
     await waitFor(() => expect(at()).toBe('/P-D'));
-    await waitFor(() => expect(announcer()).toHaveTextContent(/lanes?$/));
+    await waitFor(() => expect(announcer()).toHaveTextContent('Domain Domain'));
     shift('ArrowDown');
-    await waitFor(() => expect(announcer()).toHaveTextContent(/^The lane of /));
-    fireEvent.click(toolbarButton('In to the first node inside'));
-    await waitFor(() => expect(announcer()).toHaveTextContent(/^UC requirement /));
+    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
+    fireEvent.click(toolbarButton('In to the first child'));
+    await waitFor(() => expect(at()).toBe('/P-D-UC01'));
+    await waitFor(() => expect(announcer()).toHaveTextContent(/^Use case /));
   });
 });
 

@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react';
 import { ChangesKey } from '../changes/ChangesKey';
 
-// The Trace stage's key (LA-V98), in the stage toolbar's Key popover (views/StageChrome.tsx): what the map's boxes,
+// The Trace stage's key (LA-V98), in the stage toolbar's Key popover (views/StageChrome.tsx): what the tree's boxes,
 // arrows and fades mean, why it shows what it shows for the focus (`lead`, the matrix's note), and how to move around.
 
 export function TraceKey({ lead }: { lead?: ReactNode }) {
@@ -9,15 +9,14 @@ export function TraceKey({ lead }: { lead?: ReactNode }) {
     <div className="trace-key">
       {lead}
       <ul className="plain">
-        <li><span className="graph-swatch stage-use-cases" /> A record, in its stage's color: on the left the why tree (an outcome, the capabilities serving it, their use cases or an obligation's own parent), then one lane per obligation, its chain left to right</li>
-        <li><span className="graph-swatch is-gap" /> A gap coverage reports, dashed: not designed, not built or not proved</li>
-        <li><span className="graph-line" /> An arrow for each actual link along the chain; the why tree's plain lines join each parent to what hangs from it</li>
-        <li><span className="graph-swatch" /> &ldquo;+N more&rdquo;: a column holding more than it shows; it opens the lane in place</li>
-        <li><span className="graph-swatch stage-group" /> The Untraced lane at the bottom: records no requirement or rule reaches</li>
-        <li><span className="graph-swatch is-focus" /> The focus, ringed on every lane that holds it; what lies outside it is faded, and Gaps only fades the complete lanes</li>
+        <li><span className="graph-swatch stage-use-cases" /> A record, in its stage&rsquo;s color: one tree from the product, its outcomes first, then each domain with the capabilities, aggregates, views and other parents of its obligations side by side; each obligation&rsquo;s chain runs on to the right</li>
+        <li><span className="graph-swatch" /> A link under an outcome to a capability serving it; it focuses the capability in its domain</li>
+        <li><span className="graph-swatch is-gap" /> A gap coverage reports, dashed: not designed, not built or not proved; Untraced, last under the product, dashed, holds the records no requirement or rule reaches</li>
+        <li><span className="graph-line" /> An arrow for each actual link along a chain; plain lines join each parent to what hangs from it. A record several chains hold is drawn in each, noting in how many places</li>
+        <li><span className="graph-swatch is-focus" /> The focus, ringed on every copy; what lies outside it is faded, and Gaps only fades the complete branches</li>
       </ul>
       <ChangesKey />
-      <p className="hint">Click a box, or press Enter on it, to focus it. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys (or W, A, S and D) walk the map: Right along the lane, Left back and into the why tree, Up and Down in the column; Shift+Up (Shift+W) goes out to the lane and its band, Shift+Down (Shift+S) in to the first box inside, a &ldquo;+N more&rdquo; opening at the first box it hides.</p>
+      <p className="hint">Click a box, or press Enter on it, to focus it. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys (or W, A, S and D) walk the tree as on the Graph: Left out to the parent, Right in to the first child, Up and Down across; Enter on a link focuses its capability.</p>
     </div>
   );
 }

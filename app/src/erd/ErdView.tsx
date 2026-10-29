@@ -275,7 +275,7 @@ export function fitRects(rects: Iterable<Rect>, width: number, height: number, m
   const y = Math.min(...all.map((r) => r.y));
   const around = { x, y, w: Math.max(...all.map((r) => r.x + r.width)) - x, h: Math.max(...all.map((r) => r.y + r.height)) - y };
   const frame = { x: margin.left, y: margin.top, w: Math.max(1, width - margin.left - margin.right), h: Math.max(1, height - margin.top - margin.bottom) };
-  return frameRect(around, null, frame, { pad: 0, read: MIN_ZOOM, max: 1, min: MIN_ZOOM });
+  return frameRect(around, frame, { pad: 0, read: MIN_ZOOM, max: 1, min: MIN_ZOOM });
 }
 
 const MIN_ZOOM = 0.05;

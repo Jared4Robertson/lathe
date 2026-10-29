@@ -561,12 +561,12 @@
 {"id":"LA-TRC-UC09-FL02-S04","title":"The Reader opens a domain card to its domain page","flow_id":"LA-TRC-UC09-FL02","path":"main","position":4}
 {"id":"LA-TRC-UC10-FL01-S01","title":"The Reader opens the Trace stage on an obligation","flow_id":"LA-TRC-UC10-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC10-FL01-S02","title":"They read its chain left to right, to its tests and the files they name","flow_id":"LA-TRC-UC10-FL01","path":"main","position":2}
-{"id":"LA-TRC-UC10-FL01-S03","title":"On a use case or a domain they read a lane for every obligation under it","flow_id":"LA-TRC-UC10-FL01","path":"main","position":3}
-{"id":"LA-TRC-UC10-FL01-S04","title":"They keep only the lanes with a gap","flow_id":"LA-TRC-UC10-FL01","path":"main","position":4}
+{"id":"LA-TRC-UC10-FL01-S03","title":"On a use case or a domain they read the tree down to every obligation under it","flow_id":"LA-TRC-UC10-FL01","path":"main","position":3}
+{"id":"LA-TRC-UC10-FL01-S04","title":"They keep only the branches with a gap","flow_id":"LA-TRC-UC10-FL01","path":"main","position":4}
 {"id":"LA-TRC-UC10-FL02-S01","title":"In the desktop app, the Reader opens the Trace stage on an obligation","flow_id":"LA-TRC-UC10-FL02","path":"main","position":1}
 {"id":"LA-TRC-UC10-FL02-S02","title":"The Reader reads its chain left to right, to its tests and the files they name","flow_id":"LA-TRC-UC10-FL02","path":"main","position":2}
-{"id":"LA-TRC-UC10-FL02-S03","title":"The Reader reads a lane for every obligation under a use case or a domain","flow_id":"LA-TRC-UC10-FL02","path":"main","position":3}
-{"id":"LA-TRC-UC10-FL02-S04","title":"The Reader keeps only the lanes with a gap","flow_id":"LA-TRC-UC10-FL02","path":"main","position":4}
+{"id":"LA-TRC-UC10-FL02-S03","title":"The Reader reads the tree down to every obligation under a use case or a domain","flow_id":"LA-TRC-UC10-FL02","path":"main","position":3}
+{"id":"LA-TRC-UC10-FL02-S04","title":"The Reader keeps only the branches with a gap","flow_id":"LA-TRC-UC10-FL02","path":"main","position":4}
 {"id":"LA-TRC-UC11-FL01-S01","title":"The Reader opens a product, then a domain, and reads one coverage group per obligation kind","flow_id":"LA-TRC-UC11-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC11-FL01-S02","title":"They open a gap, such as an API requirement no test proves yet, on its record page","flow_id":"LA-TRC-UC11-FL01","path":"main","position":2}
 {"id":"LA-TRC-UC11-FL01-S03","title":"On the record page each test shows its state","flow_id":"LA-TRC-UC11-FL01","path":"main","position":3}
