@@ -3,8 +3,9 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { endPath, erdFocus, erdMap, erdStrength, lineGeometry, lineOffsets, scopeContents } from '../src/erd/erd';
-import { erdLayout, groupGraph, layoutErd, readyErdLayout } from '../src/erd/layout';
+import { endPath, erdFocus, type ErdMap, erdMap, erdStrength, lineGeometry, lineOffsets, scopeContents } from '../src/erd/erd';
+import { erdLayout, groupGraph, layoutErd, layoutRegion, readyErdLayout } from '../src/erd/layout';
+import { elkLayout } from '../src/elk';
 import { DRAW_IN_VIEW_PAST, ErdKey, FIT_MARGIN, fitRects, framedRects, lineWords } from '../src/erd/ErdView';
 import { openApp } from './helpers';
 import { modelIndex, modelWorkspace } from './fixtures/model';
@@ -180,6 +181,29 @@ describe('the ERD stage', () => {
     expect(modelPane().querySelector('[data-line="P-D-EN03|has_many|P-D-EN05"]')).not.toHaveClass('is-faded');
   };
   it('LA-V94-R03-T01 An aggregate\'s focus keeps its boundary, entities, fields and lines at full strength, its domain a trail, and fades the rest', proveLaV94R03T01);
+  it('LA-V94-R01-T03 A large region is laid out to about the map\'s shape, its layers wrapped or its parts packed, whichever comes nearer', async () => {
+    // A large domain's aggregates at their laid-out sizes and the references between them (Lathe's own Authoring),
+    // whose layers, wrapped, stand taller than wide.
+    const SIZES: [string, number, number][] = [
+      ['A1', 1142, 724], ['A2', 738, 461], ['A3', 738, 276], ['A4', 916, 674], ['A5', 488, 441], ['A6', 738, 706], ['A7', 488, 501], ['A8', 738, 548],
+      ['A9', 738, 656], ['A10', 916, 734], ['A11', 916, 654], ['A12', 738, 276], ['A13', 738, 411], ['A14', 488, 441], ['A15', 238, 196],
+    ];
+    const REFS = [['A1', 'A4'], ['A2', 'A1'], ['A2', 'A4'], ['A3', 'A1'], ['A4', 'A1'], ['A6', 'A4'], ['A7', 'A6'], ['A8', 'A6'], ['A10', 'A4'], ['A10', 'A6'], ['A11', 'A4'], ['A13', 'A8'], ['A13', 'A10']];
+    const box = (id: string, kind: 'domain' | 'aggregate', parent?: string) => ({ id, kind, title: id, root: false, fields: [], parent, empty: false });
+    const map: ErdMap = {
+      product: 'P',
+      boxes: [box('D', 'domain'), ...SIZES.map(([id]) => box(id, 'aggregate', 'D'))],
+      lines: REFS.map(([s, t]) => ({ id: s + t, source: s, target: t, relation: 'references' as const, sourceEnd: 'none' as const, targetEnd: 'arrow' as const, dashed: true, via: [] })),
+    };
+    const sizes = new Map(SIZES.map(([id, width, height]) => [id, { width, height }]));
+    const shape = (n: { width?: number; height?: number }) => (n.width ?? 0) / (n.height ?? 1);
+    const wrapped = await elkLayout(groupGraph(map, 'D', sizes, 'MULTI_EDGE'));
+    expect(shape(wrapped)).toBeLessThan(1);
+    // The region keeps the nearer layout: about 1.6:1, never taller than wide.
+    const laid = await layoutRegion(map, 'D', sizes);
+    expect(shape(laid)).toBeGreaterThan(1.3);
+    expect(shape(laid)).toBeLessThan(2.1);
+  });
   it('LA-V94-R01-T02 An aggregate\'s focus fades the aggregates it references, and its lines to them', proveLaV94R03T01);
 
   it('LA-V94-R04-T01 An entity\'s focus keeps its aggregate at full strength, picks the entity out and frames it', async () => {

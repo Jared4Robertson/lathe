@@ -47,10 +47,21 @@ describe('the stage walk', () => {
     navLink.focus();
     await walksOutAndIn(() => navLink);
 
-    // The ERD stage walks by the Tree view's keys.
+    // The ERD stage walks by the picture: from the use case, which picks out no box, its domain's region; Right to the
+    // region beside it, Left back. Back in history to the use case for the next stage.
     fireEvent.click(stageButton('ERD'));
-    await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="erd"] .erd-page')).not.toBeNull());
-    await walksOutAndIn(() => document.body);
+    await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="erd"] .react-flow__node')).not.toBeNull());
+    press(document.body, 'ArrowLeft');
+    await new Promise((r) => setTimeout(r, 50));
+    expect(at()).toBe('/P-D-UC01');
+    press(document.body, 'ArrowRight');
+    await waitFor(() => expect(at()).toBe('/P-E'));
+    await waitFor(() => expect(announcer()).toHaveTextContent('Domain Accounts'));
+    press(document.body, 'ArrowLeft');
+    await waitFor(() => expect(at()).toBe('/P-D'));
+    await waitFor(() => expect(announcer()).toHaveTextContent('Domain Domain'));
+    window.history.go(-2);
+    await waitFor(() => expect(at()).toBe('/P-D-UC01'));
 
     // So does the Trace stage; a link of its table, the accessible layer under the canvas, keeps its own arrows.
     fireEvent.click(stageButton('Trace'));
