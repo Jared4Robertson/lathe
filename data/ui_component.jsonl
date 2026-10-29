@@ -2,6 +2,39 @@
 {"id":"LA-UI02","title":"Format reference","file":"app/src/format/reference.ts"}
 {"id":"LA-UI04","title":"Desktop record actions","file":"app/src/shell/desktopRecord.tsx"}
 {"id":"LA-UI05","title":"Standard parts","file":"app/src/specs/StandardParts.tsx"}
+{"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
+{"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
+{"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
+{"id":"LA-UI56","title":"linkLabel","file":"app/src/specs/labels.ts","description":"linkLabel, relationLabelOf, groupByLabel"}
+{"id":"LA-UI61","title":"App shell","file":"app/src/App.tsx"}
+{"id":"LA-UI62","title":"Commands and shortcuts sheet","file":"app/src/shell/commands.tsx","description":"The command dispatcher, the dialog and keys every overlay shares, and the shortcuts sheet."}
+{"id":"LA-UI63","title":"Tooltip","file":"app/src/shell/Tooltip.tsx"}
+{"id":"LA-UI64","title":"Resize handle","file":"app/src/components/ResizeHandle.tsx"}
+{"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx","description":"The top of the tab panel: the tabs, the stage switch, and the wiki card toggle."}
+{"id":"LA-UI66","title":"Bottom sheet","file":"app/src/shell/BottomSheet.tsx"}
+{"id":"LA-UI67","title":"Phone top bar","file":"app/src/shell/MobileBar.tsx","description":"The phone top bar and the quick find sheet."}
+{"id":"LA-UI68","title":"Shared styles","file":"app/src/styles.css"}
+{"id":"LA-UI69","title":"Button","file":"app/src/components/Button.tsx"}
+{"id":"LA-UI70","title":"Theme stylesheet","file":"app/src/theme/css.ts"}
+{"id":"LA-UI71","title":"Early theme script","file":"app/index.html"}
+{"id":"LA-UI72","title":"Theme color","file":"app/src/shell/themeColor.ts"}
+{"id":"LA-UI73","title":"Theme quick pick","file":"app/src/theme/ThemeCommands.tsx","description":"The theme commands and their quick pick."}
+{"id":"LA-UI74","title":"Theme editor","file":"app/src/theme/Appearance.tsx","description":"The Appearance popover and the theme editor panel."}
+{"id":"LA-UI75","title":"Desktop title bar","file":"app/src/shell/DesktopTitleBar.tsx"}
+{"id":"LA-UI76","title":"Theme to window chrome","file":"app/src/shell/desktopChrome.ts"}
+{"id":"LA-UI77","title":"Window title bar options","file":"desktop/src/chrome.ts"}
+{"id":"LA-UI78","title":"Native menus","file":"desktop/src/menu.ts"}
+{"id":"LA-UI79","title":"Shell pages","file":"desktop/src/launch.ts","description":"The launch view, the error page and the About window."}
+{"id":"LA-UI80","title":"Dock icon and menu","file":"desktop/src/dock.ts"}
+{"id":"LA-UI90","title":"ProductWiki","file":"app/src/specs/SpecPages.tsx","description":"ProductWiki"}
+{"id":"LA-UI91","title":"Markdown","file":"app/src/specs/Markdown.tsx"}
+{"id":"LA-UI92","title":"Graph page","file":"app/src/graph/GraphPage.tsx"}
+{"id":"LA-UI93","title":"Record content","file":"app/src/specs/RecordContent.tsx"}
+{"id":"LA-UI94","title":"Long list","file":"app/src/components/LongList.tsx"}
+{"id":"LA-UI95","title":"Focus page","file":"app/src/views/FocusPage.tsx","description":"The stage and the panels floating over it, for one focus."}
+{"id":"LA-UI97","title":"Nav","file":"app/src/shell/Nav.tsx"}
+{"id":"LA-UI98","title":"Quick open","file":"app/src/shell/QuickOpen.tsx","description":"Quick find and the command palette in one overlay, with the stage's preview of the highlighted record."}
+{"id":"LA-UI99","title":"Tree list","file":"app/src/components/TreeList.tsx"}
 {"id":"LA-UI100","title":"Shared spec parts","file":"app/src/specs/parts.tsx","description":"The shared spec parts and TestStateTag."}
 {"id":"LA-UI102","title":"Mentions","file":"app/src/specs/mentions.tsx"}
 {"id":"LA-UI103","title":"Flow steps","file":"app/src/specs/FlowSteps.tsx"}
@@ -41,40 +74,10 @@
 {"id":"LA-UI143","title":"Chat panel","file":"app/src/chat/ChatPanel.tsx","description":"The chat panel: its head, the session picker, the log with its tool rows, permission prompts and record diffs, and the composer."}
 {"id":"LA-UI144","title":"diffIndexes","file":"app/src/chat/diff.ts","description":"The records a chat turn changed, for the chat panel's record diffs: the spec before the turn against the spec after it, each record added, removed or changed, with its fields before and after."}
 {"id":"LA-UI145","title":"useChat","file":"app/src/chat/useChat.ts","description":"The chat as the panel keeps it: the items and status the shell sends as patches, and each turn with the spec as it was when the turn began, which the record diffs compare."}
-{"id":"LA-UI147","title":"ChecksPanel","file":"app/src/views/ChecksPanel.tsx","description":"The Checks panel over the stage: the space's problems by check, the workspace's and the recorded exceptions."}
-{"id":"LA-UI148","title":"ProductsPicker","file":"app/src/views/ProductsPicker.tsx","description":"The products picker: a card of every product, centered over the last product's dimmed stage."}
+{"id":"LA-UI146","title":"ErdLeader","file":"app/src/erd/leader.tsx","description":"The ERD's canvas over React Flow's boxes that draws the leader line to the wiki card from the focused box."}
+{"id":"LA-UI147","title":"erdStep","file":"app/src/erd/walk.ts","description":"The ERD stage's arrow walk: the nearest box in the arrow's direction on the map, within the focus's own area first."}
+{"id":"LA-UI148","title":"traceStep","file":"app/src/trace/walk.ts","description":"The Trace stage's arrow walk over the map as drawn: along the lane, up the why tree and across a column's boxes."}
 {"id":"LA-UI149","title":"ToolPanelFrame","file":"app/src/views/ToolPanel.tsx","description":"The one frame of a tool over the stage: a frosted panel at the left of the open space, a bottom sheet on a phone."}
 {"id":"LA-UI150","title":"RecordHistory","file":"app/src/views/RecordHistory.tsx","description":"The History section at the end of the expanded wiki card: the \"Show the history\" button, then the record's commits, the uncommitted change first, each with its diff, and Load more."}
-{"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
-{"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
-{"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
-{"id":"LA-UI56","title":"linkLabel","file":"app/src/specs/labels.ts","description":"linkLabel, relationLabelOf, groupByLabel"}
-{"id":"LA-UI61","title":"App shell","file":"app/src/App.tsx"}
-{"id":"LA-UI62","title":"Commands and shortcuts sheet","file":"app/src/shell/commands.tsx","description":"The command dispatcher, the dialog and keys every overlay shares, and the shortcuts sheet."}
-{"id":"LA-UI63","title":"Tooltip","file":"app/src/shell/Tooltip.tsx"}
-{"id":"LA-UI64","title":"Resize handle","file":"app/src/components/ResizeHandle.tsx"}
-{"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx","description":"The top of the tab panel: the tabs, the stage switch, and the wiki card toggle."}
-{"id":"LA-UI66","title":"Bottom sheet","file":"app/src/shell/BottomSheet.tsx"}
-{"id":"LA-UI67","title":"Phone top bar","file":"app/src/shell/MobileBar.tsx","description":"The phone top bar and the quick find sheet."}
-{"id":"LA-UI68","title":"Shared styles","file":"app/src/styles.css"}
-{"id":"LA-UI69","title":"Button","file":"app/src/components/Button.tsx"}
-{"id":"LA-UI70","title":"Theme stylesheet","file":"app/src/theme/css.ts"}
-{"id":"LA-UI71","title":"Early theme script","file":"app/index.html"}
-{"id":"LA-UI72","title":"Theme color","file":"app/src/shell/themeColor.ts"}
-{"id":"LA-UI73","title":"Theme quick pick","file":"app/src/theme/ThemeCommands.tsx","description":"The theme commands and their quick pick."}
-{"id":"LA-UI74","title":"Theme editor","file":"app/src/theme/Appearance.tsx","description":"The Appearance popover and the theme editor panel."}
-{"id":"LA-UI75","title":"Desktop title bar","file":"app/src/shell/DesktopTitleBar.tsx"}
-{"id":"LA-UI76","title":"Theme to window chrome","file":"app/src/shell/desktopChrome.ts"}
-{"id":"LA-UI77","title":"Window title bar options","file":"desktop/src/chrome.ts"}
-{"id":"LA-UI78","title":"Native menus","file":"desktop/src/menu.ts"}
-{"id":"LA-UI79","title":"Shell pages","file":"desktop/src/launch.ts","description":"The launch view, the error page and the About window."}
-{"id":"LA-UI80","title":"Dock icon and menu","file":"desktop/src/dock.ts"}
-{"id":"LA-UI90","title":"ProductWiki","file":"app/src/specs/SpecPages.tsx","description":"ProductWiki"}
-{"id":"LA-UI91","title":"Markdown","file":"app/src/specs/Markdown.tsx"}
-{"id":"LA-UI92","title":"Graph page","file":"app/src/graph/GraphPage.tsx"}
-{"id":"LA-UI93","title":"Record content","file":"app/src/specs/RecordContent.tsx"}
-{"id":"LA-UI94","title":"Long list","file":"app/src/components/LongList.tsx"}
-{"id":"LA-UI95","title":"Focus page","file":"app/src/views/FocusPage.tsx","description":"The stage and the panels floating over it, for one focus."}
-{"id":"LA-UI97","title":"Nav","file":"app/src/shell/Nav.tsx"}
-{"id":"LA-UI98","title":"Quick open","file":"app/src/shell/QuickOpen.tsx","description":"Quick find and the command palette in one overlay, with the stage's preview of the highlighted record."}
-{"id":"LA-UI99","title":"Tree list","file":"app/src/components/TreeList.tsx"}
+{"id":"LA-UI151","title":"ChecksPanel","file":"app/src/views/ChecksPanel.tsx","description":"The Checks panel over the stage: the space's problems by check, the workspace's and the recorded exceptions."}
+{"id":"LA-UI152","title":"ProductsPicker","file":"app/src/views/ProductsPicker.tsx","description":"The products picker: a card of every product, centered over the last product's dimmed stage."}

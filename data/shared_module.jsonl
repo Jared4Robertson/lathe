@@ -2,6 +2,10 @@
 {"id":"LA-EXP-MOD01","title":"elk.ts","domain_id":"LA-EXP","file":"app/src/elk.ts"}
 {"id":"LA-EXP-MOD02","title":"model/events.ts","domain_id":"LA-EXP","file":"app/src/specs/events.ts"}
 {"id":"LA-EXP-MOD03","title":"plural.ts","domain_id":"LA-EXP","file":"app/src/plural.ts"}
+{"id":"LA-EXP-MOD05","title":"one-map.ts","domain_id":"LA-EXP","file":"app/src/graph/one-map.ts"}
+{"id":"LA-EXP-MOD06","title":"steps.ts","domain_id":"LA-EXP","file":"app/src/graph/steps.ts"}
+{"id":"LA-EXP-MOD07","title":"leaderLine.ts","domain_id":"LA-EXP","file":"app/src/views/leaderLine.ts"}
+{"id":"LA-EXP-MOD08","title":"preview.ts","domain_id":"LA-EXP","file":"app/src/views/preview.ts"}
 {"id":"LA-PLT-MOD01","title":"useNarrow.ts","domain_id":"LA-PLT","file":"app/src/shell/useNarrow.ts"}
 {"id":"LA-PLT-MOD02","title":"apply.ts","domain_id":"LA-PLT","file":"app/src/theme/apply.ts"}
 {"id":"LA-PLT-MOD03","title":"contrast.ts","domain_id":"LA-PLT","file":"app/src/theme/contrast.ts"}
