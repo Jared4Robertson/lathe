@@ -66,7 +66,7 @@ export function normalizeRow(table: TableDescription, input: unknown): { row: Ro
 }
 
 /** The columns that identify a row: its primary key. */
-const keyColumns = (table: TableDescription): string[] => table.primaryKey;
+export const keyColumns = (table: TableDescription): string[] => table.primaryKey;
 
 /** A row's key as one string, for maps: its primary key's values joined. */
 export const rowKey = (table: TableDescription, row: Row): string => keyColumns(table).map((c) => String(row[c] ?? '')).join('\u0000');
