@@ -50,14 +50,14 @@ check('test-file-missing', () => {
     expect(later.problems.filter((p) => p.severity === 'error')).toEqual([]);
   });
 
-  it('LA-AUT-INV21-T a folder is not a test file', async () => {
+  it('LA-TRC-UC05-R01-T04 a folder is not a test file', async () => {
     const ws = await loadData(changing(complete(), 'policy_test', () => true, { file: 'src' }), { missing: ['src'] });
     expect(records(ofCheck(ws, 'test-file-missing'))).toEqual(['EX-LEND-PO01-T']);
   });
 });
 
 check('test-file-missing-id', () => {
-  it('LA-AUT-INV21-T an automated test whose file does not name it is an error', async () => {
+  it('LA-TRC-UC05-R01-T04 an automated test whose file does not name it is an error', async () => {
     const ws = await loadData(complete(), { silent: ['EX-LEND-INV01-T'] });
     expect(ofCheck(ws, 'test-file-missing-id')).toEqual([
       expect.objectContaining({ severity: 'error', record: 'EX-LEND-INV01-T', message: expect.stringContaining('does not mention EX-LEND-INV01-T') }),
