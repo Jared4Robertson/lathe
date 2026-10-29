@@ -5,10 +5,11 @@ import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
 import { CONFIG_FILE, exceptionsText, loadProducts, mergeDataFiles, openStore, SCHEMA_VERSION, SchemaVersionError, StoreError, upgradeProduct, type Problem, type Workspace } from '../src/index.ts';
-import { forOneCommand } from '../src/store/store.ts';
+import { forOneCommand } from '../src/platform/data/store.ts';
 import { coverageLines, productFolder } from '../src/cli/operations.ts';
 import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
 import { APP_USAGE, runAppCommand } from '../src/cli/app-tools.ts';
+import { AGGREGATE_COMMANDS, AGGREGATE_USAGE, runAggregateCommand } from '../src/cli/aggregates.ts';
 
 const USAGE = `Usage: lathe <command> [options]
 
@@ -32,6 +33,7 @@ Commands:
            writes the result over <ours>, and exits 1 on a real clash or a row that breaks its table's rules.
   mcp      Serve the data commands as MCP tools over stdio (the Claude Code plugin starts it).
 
+${AGGREGATE_USAGE}
 ${DATA_USAGE}
 ${APP_USAGE}
 Options for every command:
@@ -41,9 +43,10 @@ Options for every command:
 // The data commands read their own flags, one per column of the schema, and the app commands theirs.
 const dataCommand = (DATA_COMMANDS as readonly string[]).includes(process.argv[2] ?? '');
 const appCommand = process.argv[2] === 'app';
+const aggregateCommand = AGGREGATE_COMMANDS.includes(process.argv[2] ?? '');
 const { positionals, values } = parseArgs({
   allowPositionals: true,
-  args: dataCommand || appCommand ? [] : process.argv.slice(2),
+  args: dataCommand || appCommand || aggregateCommand ? [] : process.argv.slice(2),
   options: {
     root: { type: 'string' },
     json: { type: 'boolean' },
@@ -184,7 +187,9 @@ async function mergeData() {
 // Every command but serve and mcp ends when it is done.
 if (command !== 'serve' && command !== 'mcp') forOneCommand();
 try {
-  if (dataCommand) {
+  if (aggregateCommand) {
+    process.exitCode = await runAggregateCommand(process.argv.slice(2));
+  } else if (dataCommand) {
     process.exitCode = await runDataCommand(process.argv.slice(2));
   } else if (appCommand) {
     process.exitCode = await runAppCommand(process.argv.slice(2));

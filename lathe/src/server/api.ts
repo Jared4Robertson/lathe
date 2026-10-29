@@ -2,6 +2,7 @@
 // contract.ts:
 //   GET  /api/spec                SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
 //   POST /api/write               { commands } -> WriteAnswer: one transaction through the command layer of the product the commands name
+//   POST /api/<aggregate>/<command>   the command's input -> WriteAnswer: one aggregate command, such as /api/use-case/add-flow-step
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 //   GET  /api/baseline?product=<ID>&since=<commit|branch|hash>   BaselineAnswer: the product's rows at a commit, for the record diff (../changes.ts)
 //   GET  /api/reference           the workspace's own product's Reference (reference.ts): kinds, tables, relations, folders, checks
@@ -15,11 +16,16 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { loadConfig, productClash, workspaceProducts, type LatheConfig } from '../config.ts';
 import { buildReference, loadWorkspace } from '../index.ts';
-import { describeKey, rowKey, type Row } from '../store/rows.ts';
-import type { SchemaDescription } from '../store/schema.ts';
-import { formatProblem, LATHE_DATA_DIR, openStore, StoreError, type Command, type Store } from '../store/store.ts';
+import { describeKey, rowKey, type Row } from '../platform/data/rows.ts';
+import type { SchemaDescription } from '../platform/data/schema.ts';
+import type { Command } from '../platform/data/generic-write.ts';
+import { formatProblem, StoreError } from '../platform/data/problems.ts';
+import { LATHE_DATA_DIR, openStore, type Store } from '../platform/data/store.ts';
 import type { RowChange, SpecData, WriteAnswer, WriteRequest } from './contract.ts';
 import { baseline, parseSince } from './baseline.ts';
+import { ALL_COMMANDS } from '../commands.ts';
+import { InputError, type AnyCommand } from '../platform/commands/definition.ts';
+import { runCommand } from '../platform/commands/run.ts';
 import { recordHistory } from './history.ts';
 
 /** The most a write's body may hold. */
@@ -312,7 +318,7 @@ function namedIds(command: Command): string[] {
  * commands name. A write naming none of them, such as a new product's, goes to the workspace's own folder; one naming
  * records of two products is refused.
  */
-async function writeRoot(products: LatheConfig[], commands: Command[]): Promise<{ root: string } | { refused: string }> {
+async function writeRoot(products: LatheConfig[], named: string[][]): Promise<{ root: string } | { refused: string }> {
   const known = await Promise.all(products.map((config) => withStore(config.root, async (opened) => ({
     root: config.root,
     has: (id: string) => opened.store.record(id) !== undefined,
@@ -321,20 +327,20 @@ async function writeRoot(products: LatheConfig[], commands: Command[]): Promise<
   const ownerOf = (id: string) =>
     known.find((k) => k.has(id))?.root ?? known.find((k) => k.products.some((p) => id === p || id.startsWith(`${p}-`)))?.root;
   const roots = new Set<string>();
-  for (const command of commands) {
-    const root = namedIds(command).map(ownerOf).find((r) => r !== undefined);
+  for (const ids of named) {
+    const root = ids.map(ownerOf).find((r) => r !== undefined);
     if (root) roots.add(root);
   }
   if (roots.size > 1) {
     const folders = [...roots].map((r) => (r === products[0].root ? "the workspace's own folder" : fromWorkspace(products[0].root, r))).join(' and ');
-    return { refused: `A write changes one product: these commands name records in ${folders}. Send each product's commands as a write of its own.` };
+    return { refused: `A write changes one product: it names records in ${folders}. Send each product's changes as a write of its own.` };
   }
   return { root: [...roots][0] ?? products[0].root };
 }
 
 async function write(workspace: string, commands: Command[]): Promise<{ status: number; answer: WriteAnswer }> {
   const products = workspaceProducts(workspace);
-  const routed = products.length === 1 ? { root: products[0].root } : await writeRoot(products, commands);
+  const routed = products.length === 1 ? { root: products[0].root } : await writeRoot(products, commands.map(namedIds));
   if ('refused' in routed) return { status: 422, answer: { ok: false, error: routed.refused, problems: [] } };
   const config = products.find((p) => p.root === routed.root)!;
   return withStore(config.root, async (opened) => {
@@ -351,6 +357,37 @@ async function write(workspace: string, commands: Command[]): Promise<{ status: 
     }
   });
 }
+
+/** The IDs a command's input names, its own record's first: what tells whose product it is. */
+function inputIds(input: Record<string, unknown>): string[] {
+  const values = Object.entries(input)
+    .filter(([name]) => name === 'id' || name.endsWith('_id'))
+    .map(([, value]) => value);
+  return values.filter((v): v is string => typeof v === 'string');
+}
+
+/** Runs one aggregate command on the product its input names: 200 with what it changed, 400 or 422 on refusal. */
+async function runRoute(workspace: string, definition: AnyCommand, input: Record<string, unknown>): Promise<{ status: number; answer: WriteAnswer | { error: string } }> {
+  const products = workspaceProducts(workspace);
+  const routed = products.length === 1 ? { root: products[0].root } : await writeRoot(products, [inputIds(input)]);
+  if ('refused' in routed) return { status: 422, answer: { ok: false, error: routed.refused, problems: [] } };
+  const config = products.find((p) => p.root === routed.root)!;
+  return withStore(config.root, async (opened) => {
+    try {
+      const committed = await runCommand(opened.store, definition, input);
+      opened.signature = storeSignature(config.dataDir);
+      opened.checks = null;
+      return { status: 200, answer: { ok: true, tables: committed.tables, files: committed.files, changes: committed.changes } };
+    } catch (error) {
+      if (error instanceof InputError) return { status: 400, answer: { error: error.message } };
+      if (error instanceof StoreError) return { status: 422, answer: { ok: false, error: error.message, problems: error.problems } };
+      throw error;
+    }
+  });
+}
+
+/** Each aggregate command's route, POST /api/<aggregate>/<command>, with the one command it runs. */
+const COMMAND_ROUTES = new Map(ALL_COMMANDS.map((definition) => [definition.route, definition]));
 
 // ---------- Routing ----------
 
@@ -385,6 +422,29 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
     if (problem) return (send(res, 400, { error: problem }), true);
     try {
       const { status, answer } = await write(root, (body as WriteRequest).commands);
+      send(res, status, answer, { 'cache-control': 'no-store' });
+    } catch (error) {
+      send(res, 500, { error: storeMessage(error) });
+    }
+    return true;
+  }
+  const routed = COMMAND_ROUTES.get(pathname);
+  if (routed) {
+    if (req.method !== routed.method) return (send(res, 405, { error: 'Method not allowed' }), true);
+    if (crossSite(req)) return (send(res, 403, { error: 'Writes come only from this server\'s own pages.' }), true);
+    if (!(req.headers['content-type'] ?? '').toLowerCase().startsWith('application/json')) {
+      return (send(res, 415, { error: 'A command is sent as application/json.' }), true);
+    }
+    let body: unknown;
+    try {
+      body = JSON.parse(await readBody(req, WRITE_BODY_LIMIT));
+    } catch (error) {
+      if (error instanceof BodyTooLarge) return (send(res, 413, { error: `A command holds at most ${WRITE_BODY_LIMIT} bytes.` }), true);
+      return (send(res, 400, { error: 'The body is not JSON.' }), true);
+    }
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) return (send(res, 400, { error: `${routed.name} takes a JSON object.` }), true);
+    try {
+      const { status, answer } = await runRoute(root, routed, body as Record<string, unknown>);
       send(res, status, answer, { 'cache-control': 'no-store' });
     } catch (error) {
       send(res, 500, { error: storeMessage(error) });

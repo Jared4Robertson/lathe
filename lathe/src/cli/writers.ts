@@ -3,8 +3,8 @@
 // it is required, and what it means. Every write goes through the command layer; a refusal prints each reason.
 import { readFile } from 'node:fs/promises';
 import path from 'node:path';
-import type { ColumnDescription, SchemaDescription, TableDescription } from '../store/schema.ts';
-import type { Value } from '../store/rows.ts';
+import type { ColumnDescription, SchemaDescription, TableDescription } from '../platform/data/schema.ts';
+import type { Value } from '../platform/data/rows.ts';
 import type { WriteTool } from './mcp.ts';
 import {
   list,

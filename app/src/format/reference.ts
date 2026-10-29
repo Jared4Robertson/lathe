@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import type { ColumnDescription } from '../../../lathe/src/store/schema';
+import type { ColumnDescription } from '../../../lathe/src/platform/data/schema';
 import { kindOrder, partTablesOf, textOf, type SpecIndex, type Stage, type StageRule, type Workspace } from '../specs/data';
 import { pageHref } from '../views/overlays';
 

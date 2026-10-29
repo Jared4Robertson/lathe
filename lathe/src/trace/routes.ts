@@ -30,7 +30,7 @@ import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { otherProductHolds, type LatheConfig } from '../config.ts';
 import type { GapRule } from '../coverage.ts';
-import type { Store } from '../store/store.ts';
+import type { Store } from '../platform/data/store.ts';
 
 /** The HTTP methods an endpoint may have, in capitals. */
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;

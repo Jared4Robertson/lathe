@@ -2,7 +2,7 @@ import { readdirSync } from 'node:fs';
 import path from 'node:path';
 import type { TestProject } from 'vitest/node';
 import { readWorkspace } from '../../../lathe/src/index';
-import { openStore } from '../../../lathe/src/store/index';
+import { openStore } from '../../../lathe/src/platform/data/index';
 import type { FixtureRows } from './load';
 
 // Loads every fixture data folder (app/test/fixtures/data/<name>/, one <table>.jsonl per table) through

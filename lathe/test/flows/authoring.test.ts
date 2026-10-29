@@ -69,7 +69,7 @@ describe('Authoring flows', () => {
     // S01: the Owner writes the change as the next numbered migration.
     writeFileSync(path.join(copy, 'schema', '013-term-example.sql'), "ALTER TABLE term ADD COLUMN example VARCHAR;\nCOMMENT ON COLUMN term.example IS 'A sentence that uses the term.';\n");
     // S02: they regenerate the row types and the reference; until then both are stale.
-    const tables = () => readFileSync(path.join(copy, 'src', 'store', 'tables.ts'), 'utf8');
+    const tables = () => readFileSync(path.join(copy, 'src', 'platform', 'data', 'tables.ts'), 'utf8');
     const before = tables();
     expect(node(path.join(copy, 'scripts', 'schema-types.ts'), [], copy).status).toBe(0);
     expect(tables()).not.toBe(before);

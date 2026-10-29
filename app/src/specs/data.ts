@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { Coverage, Kind, Problem, RecordedException, RelationRule, StageRule, TraceChain } from '../../../lathe/src/types';
 import type { Row, SpecData, SpecSource, Value } from '../../../lathe/src/server/contract';
-import type { SchemaDescription, Stage } from '../../../lathe/src/store/schema';
+import type { SchemaDescription, Stage } from '../../../lathe/src/platform/data/schema';
 import { onLatheEvent } from '../events';
 import { isRecordId } from '../views/address';
 

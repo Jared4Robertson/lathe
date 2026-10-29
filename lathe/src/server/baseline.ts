@@ -9,8 +9,8 @@
 // time limit. A commit's rows never change, so each is read once and kept. A product folder that is not a git repo,
 // or a repo with no commits yet, is an answer, not an error.
 import path from 'node:path';
-import type { Row } from '../store/rows.ts';
-import type { SchemaDescription } from '../store/schema.ts';
+import type { Row } from '../platform/data/rows.ts';
+import type { SchemaDescription } from '../platform/data/schema.ts';
 import type { BaselineAnswer, BaselineSince } from './contract.ts';
 import { runGit } from './history.ts';
 

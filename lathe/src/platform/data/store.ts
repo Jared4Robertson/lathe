@@ -1,82 +1,35 @@
-// The store: loads data/*.jsonl into the typed tables and writes through one command layer. Every write builds the
-// new state in a fresh database (every row inside one transaction, judged by the keys and checks, then the validation
-// queries), and only then replaces the current state and rewrites the files of the tables it changed.
+// The store: loads data/*.jsonl into the typed tables, and runs each write as a transaction (transaction.ts). A load
+// and a write build their state the same way: in a fresh database, every row inside one transaction, judged by the
+// keys and checks, the integrity queries (integrity.ts) and every aggregate's rules (AGGREGATE_RULES); only then does it
+// become the current state.
 //
 // Why a fresh database: DuckDB checks a foreign key as each statement runs, even inside a transaction, so it refuses
 // to delete or re-key a row that another row references, even when the same transaction removes that reference
 // first. Building the new state afresh, parents before children, keeps every key real and every write atomic.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
-import { loadConfig, PACKAGE_DIR } from '../config.ts';
+import { AGGREGATE_RULES } from '../../aggregate-rules.ts';
+import { loadConfig, PACKAGE_DIR } from '../../config.ts';
 import { attachCached, baseKey, copyDatabase, productKey, writeCached } from './cache.ts';
+import { applyCommands, type Command } from './generic-write.ts';
 import { appendRows, insertRows } from './insert.ts';
+import { integrityQueries, recordScopeSql, storeViewsSql } from './integrity.ts';
+import { problemAt, StoreError, type Origin, type StoreProblem } from './problems.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
-import { describeKey, normalizeRow, rowKey, sortRows, tableText, type Row, type Value } from './rows.ts';
-import { applyMigrations, describeSchema, readMigrations, sqlName, type SchemaDescription, type TableDescription } from './schema.ts';
-import { recordScopeSql, storeViewsSql, validationQueries } from './validation.ts';
+import type { Located } from './references.ts';
+import type { ReadView } from './rules.ts';
+import { describeKey, normalizeRow, rowKey, sortRows, type Row, type Value } from './rows.ts';
+import { applyMigrations, describeSchema, readMigrations, sqlName, type SchemaDescription } from './schema.ts';
+import { commit, DECLARATION_TABLES, Transaction, type Committed, type Tables, type TransactionHost } from './transaction.ts';
 
-/** Where a row came from: a line of a data file, or a command of the write that made or changed it. */
-export type Origin = { file: string; line: number } | { command: number };
-
-/** One reason the store refused data or a write. */
-export interface StoreProblem {
-  /** The rule broken, such as foreign-key, unique, check, required or relation-pair. */
-  rule: string;
-  message: string;
-  table?: string;
-  /** The row's key, such as TL-LEND-UC01. */
-  key?: string;
-  /** The data file and line, for a row loaded from a file. */
-  file?: string;
-  line?: number;
-  /** The command's place in the write, from 0, for a row a write made or changed. */
-  command?: number;
-}
-
-/** The store refused to load or to write; nothing changed. */
-export class StoreError extends Error {
-  readonly problems: StoreProblem[];
-  constructor(problems: StoreProblem[]) {
-    super(problems.map(formatProblem).join('\n'));
-    this.name = 'StoreError';
-    this.problems = problems;
-  }
-}
-
-/** A problem as one line: where, then what. */
-export function formatProblem(p: StoreProblem): string {
-  const where = p.file ? `${p.file}:${p.line}` : p.command !== undefined ? `command ${p.command + 1}` : p.table ? p.table : 'data';
-  return `${where}: ${p.message} [${p.rule}]`;
-}
-
-/** One write operation. A write is a list of them, applied together in one transaction. */
-export type Command =
-  /** Adds a row to a kind, part, declaration or checking table. A record's row carries its id and title. */
-  | { op: 'add'; table: string; row: Row }
-  /** Changes columns of a row; a value of null clears the column. Keys and a record's parent columns stay (see move). */
-  | { op: 'set'; table: string; key: KeyInput; changes: Record<string, Value | null> }
-  /** Moves a record under another parent, setting its parent column (and clearing the other, for a kind with two). */
-  | { op: 'move'; id: string; parent: string }
-  /** Links two records with a relation. */
-  | { op: 'link'; relation: string; source: string; target: string }
-  /** Removes a link. */
-  | { op: 'unlink'; relation: string; source: string; target: string }
-  /** Removes a row. A record goes with its parts and its own links; anything else that references it refuses it. */
-  | { op: 'remove'; table: string; key: KeyInput };
-
-/** A row's key: a record's ID, or the primary key columns of a part, declaration or checking row. */
-export type KeyInput = string | Record<string, Value>;
-
-/** What a write changed. */
+/** What a write through the generic layer changed. */
 export interface WriteResult {
   /** The tables whose rows changed. */
   tables: string[];
   /** The data files written or removed, relative to the data folder. */
   files: string[];
 }
-
 export interface StoreOptions {
   /** The data folder, in place of the one lathe.config.json names (default data/ at the root). */
   dataDir?: string;
@@ -88,28 +41,13 @@ export interface StoreOptions {
   latheDataDir?: string | null;
   /**
    * Filled with how long each step of the load took, in milliseconds: reading the files, the schema, copying it, each
-   * table's insert, record_scope, each validation query and the commit (`perf/engine.ts --profile` prints them).
+   * table's insert, record_scope, each integrity query, each aggregate's rules and the commit (`perf/engine.ts --profile` prints them).
    */
   steps?: Record<string, number>;
 }
 
 /** The package's own data folder: Lathe's built-in checks, as data/check.jsonl. */
 export const LATHE_DATA_DIR = path.join(PACKAGE_DIR, 'data');
-
-const DECLARATION_TABLES = ['product_kind', 'product_kind_field', 'product_relation'] as const;
-
-type Tables = Map<string, Map<string, Row>>;
-
-interface Located {
-  table: string;
-  row: Row;
-}
-
-const problemAt = (origins: WeakMap<Row, Origin>, row: Row | undefined, p: StoreProblem): StoreProblem => {
-  const origin = row ? origins.get(row) : undefined;
-  if (!origin) return p;
-  return 'file' in origin ? { ...p, file: origin.file, line: origin.line } : { ...p, command: origin.command };
-};
 
 // One DuckDB instance serves every store in the process. Its lathe_base database holds Lathe's migrations: the schema
 // cache's file, attached read only, or else applied once and then cached (cache.ts). Each store copies it into
@@ -122,7 +60,7 @@ interface Engine {
 }
 let engine: Promise<Engine> | undefined;
 const BASE_DB = 'lathe_base';
-/** How many validation queries run at once, each on its own connection to the new data. */
+/** How many integrity queries run at once, each on its own connection to the new data. */
 const VALIDATION_CONNECTIONS = 4;
 // The schema databases built for products' own kinds and relations, by the SQL that adds them.
 const schemaDatabases = new Map<string, Promise<{ schemaDb: string; schema: SchemaDescription }>>();
@@ -309,7 +247,9 @@ export class Store {
 
   /** A table's rows, sorted by key. */
   rows(table: string): Row[] {
-    return sortRows(this.tableOf(table), [...(this.tables.get(table)?.values() ?? [])]);
+    const description = this.currentSchema.tables[table];
+    if (!description) throw new StoreError([{ rule: 'unknown-table', message: `there is no table ${table}` }]);
+    return sortRows(description, [...(this.tables.get(table)?.values() ?? [])]);
   }
 
   /** The record with this ID, with its kind, or undefined. */
@@ -489,7 +429,7 @@ export class Store {
   }
 
   // Builds the data in a fresh database copied from the schema database: the registry and every table in dependency
-  // order inside one transaction, then record_scope and the validation queries. Returns the database's name, or
+  // order inside one transaction, then record_scope, the integrity queries and every aggregate's rules. Returns the database's name, or
   // throws a StoreError and drops the database.
   private async buildData(schemaDb: string, schema: SchemaDescription, tables: Tables, origins: WeakMap<Row, Origin>): Promise<string> {
     const { rows: derived, problems } = await this.step('registry', () => this.registry(schema, tables, origins));
@@ -525,13 +465,13 @@ export class Store {
         }
       }
       // The database is the store's own until switchTo makes it current, so the rows are committed before the
-      // validation queries run, and a refusal drops the database whole. DuckDB reads committed tables far faster
+      // integrity queries run, and a refusal drops the database whole. DuckDB reads committed tables far faster
       // than a transaction's own uncommitted rows (a join over them can take a hundred times as long).
       await this.step('commit', () => builder.run('COMMIT'));
       await this.step('record_scope', () => builder.run(recordScopeSql(schema)));
-      // The validation queries only read, so they run side by side on a few connections; their problems keep the
+      // The integrity queries only read, so they run side by side on a few connections; their problems keep the
       // queries' order.
-      const queries = validationQueries(schema);
+      const queries = integrityQueries(schema);
       const found: { table_name: string; row_key: string; message: string }[][] = new Array(queries.length);
       const extra = await Promise.all(
         Array.from({ length: Math.min(VALIDATION_CONNECTIONS, queries.length) - 1 }, async () => {
@@ -542,12 +482,12 @@ export class Store {
       );
       let next = 0;
       try {
-        await this.step('validation queries, side by side', () =>
+        await this.step('integrity queries, side by side', () =>
           Promise.all(
             [builder, ...extra].map(async (on) => {
               while (next < queries.length) {
                 const at = next++;
-                found[at] = await this.step(`validate ${queries[at].name}`, async () => (await on.runAndReadAll(queries[at].sql)).getRowObjectsJson() as unknown as (typeof found)[number]);
+                found[at] = await this.step(`integrity ${queries[at].name}`, async () => (await on.runAndReadAll(queries[at].sql)).getRowObjectsJson() as unknown as (typeof found)[number]);
               }
             }),
           ),
@@ -561,6 +501,15 @@ export class Store {
           const row = tables.get(r.table_name)?.get(r.row_key);
           const key = row ? describeKey(schema.tables[r.table_name], row) : r.row_key;
           broken.push(problemAt(origins, row, { rule: query.name, table: r.table_name, key, message: r.message }));
+        }
+      }
+      // Every aggregate's rules, over all data.
+      const view = readView(schema, tables);
+      for (const rules of AGGREGATE_RULES) {
+        for (const p of await this.step(`rules of ${rules.aggregate}`, () => rules.check(view))) {
+          // The row as the data holds it, so the problem names its file and line, or its command.
+          const row = tables.get(p.table)?.get(rowKey(schema.tables[p.table], p.row)) ?? p.row;
+          broken.push(problemAt(origins, row, { rule: p.rule, table: p.table, key: describeKey(schema.tables[p.table], row), message: p.message }));
         }
       }
       if (broken.length) {
@@ -690,11 +639,47 @@ export class Store {
 
   // Writing.
 
-  /** Applies the commands together, in one transaction: all of them, or none. */
-  apply(commands: Command[]): Promise<WriteResult> {
-    const run = this.queue.then(() => this.write(commands));
+  /**
+   * Runs the work as one transaction, after every write before it: the work changes the transaction's draft through
+   * its aggregate's repository, and the commit then builds the new state whole and rewrites the changed files. A
+   * refusal, from the work or the commit, changes nothing.
+   */
+  transact<T>(work: (tx: Transaction) => T | Promise<T>): Promise<{ value: T; committed: Committed }> {
+    const run = this.queue.then(async () => {
+      const tx = new Transaction(this.host());
+      const value = await work(tx);
+      return { value, committed: await commit(tx) };
+    });
     this.queue = run.catch(() => undefined);
     return run;
+  }
+
+  // What the store lends a transaction: its state as it is now, and how to build and adopt the next.
+  private host(): TransactionHost {
+    return {
+      dataDir: this.dataDir,
+      schema: this.currentSchema,
+      schemaDb: this.schemaDb,
+      tables: this.tables,
+      origins: this.origins,
+      builtIn: this.builtIn,
+      buildSchema: (tables, origins) => this.buildSchema(tables, origins),
+      buildData: (schemaDb, schema, tables, origins) => this.buildData(schemaDb, schema, tables, origins),
+      adopt: async (state) => {
+        this.tables = state.tables;
+        this.currentSchema = state.schema;
+        this.schemaDb = state.schemaDb;
+        await this.switchTo(state.dataDb);
+      },
+    };
+  }
+
+  // The generic write API, replaced by each aggregate's own commands and deleted at the cutover.
+
+  /** Applies the commands together, in one transaction: all of them, or none. */
+  async apply(commands: Command[]): Promise<WriteResult> {
+    const { committed } = await this.transact((tx) => applyCommands(tx, commands));
+    return { tables: committed.tables, files: committed.files };
   }
 
   /** Adds a row: a record to its kind's table, or a part, declaration or checking row. */
@@ -703,7 +688,7 @@ export class Store {
   }
 
   /** Changes columns of a row; null clears one. */
-  set(table: string, key: KeyInput, changes: Record<string, Value | null>): Promise<WriteResult> {
+  set(table: string, key: string | Record<string, Value>, changes: Record<string, Value | null>): Promise<WriteResult> {
     return this.apply([{ op: 'set', table, key, changes }]);
   }
 
@@ -723,225 +708,25 @@ export class Store {
   }
 
   /** Removes a row; a record goes with its parts and its own links, and is refused while anything else references it. */
-  remove(table: string, key: KeyInput): Promise<WriteResult> {
+  remove(table: string, key: string | Record<string, Value>): Promise<WriteResult> {
     return this.apply([{ op: 'remove', table, key }]);
-  }
-
-  private tableOf(name: string, schema = this.currentSchema): TableDescription {
-    const table = schema.tables[name];
-    if (!table) throw new StoreError([{ rule: 'unknown-table', message: `there is no table ${name}` }]);
-    return table;
-  }
-
-  private async write(commands: Command[]): Promise<WriteResult> {
-    const draft: Tables = new Map(this.tables);
-    const origins = this.origins;
-    const changed = new Set<string>();
-    const editable = (name: string) => {
-      if (!changed.has(name)) {
-        draft.set(name, new Map(draft.get(name) ?? []));
-        changed.add(name);
-      }
-      return draft.get(name)!;
-    };
-    let schema = this.currentSchema;
-    for (const [index, command] of commands.entries()) {
-      const fail = (rule: string, message: string): never => {
-        throw new StoreError([{ rule, message, command: index }]);
-      };
-      const place = (table: string, row: Row) => {
-        editable(table).set(rowKey(schema.tables[table], row), row);
-        origins.set(row, { command: index });
-      };
-      if (command.op === 'add') {
-        const table = this.tableOf(command.table, schema);
-        if (!table.stored || table.role === 'link') fail('command', `add puts rows in kind, part, declaration and checking tables; ${table.name} is a ${table.role} table${table.role === 'link' ? ', so use link' : ''}`);
-        const result = normalizeRow(table, command.row);
-        if ('problem' in result) fail(result.problem.includes('is required') ? 'required' : 'column', result.problem);
-        const row = (result as { row: Row }).row;
-        const twin = draft.get(table.name)?.get(rowKey(table, row));
-        if (twin) fail('primary-key', `${table.name} ${describeKey(table, row)} already exists${this.builtIn.has(twin) ? ` as one of Lathe's own (lathe/data/${table.name}.jsonl)` : ''}`);
-        place(table.name, row);
-      } else if (command.op === 'set') {
-        const table = this.tableOf(command.table, schema);
-        const current = this.find(draft, table, command.key) ?? fail('missing', `there is no ${table.name} ${keyText(command.key)}`);
-        if (this.builtIn.has(current)) fail('built-in', `${table.name} ${describeKey(table, current)} is Lathe's own (lathe/data/${table.name}.jsonl), so it cannot change`);
-        const parentColumns = new Set(schema.kinds[table.name]?.parents.map((p) => p.column) ?? []);
-        const next: Record<string, unknown> = { ...current };
-        for (const [column, value] of Object.entries(command.changes)) {
-          if (table.primaryKey.includes(column)) fail('command', `${column} is part of the key of ${table.name}, which never changes; remove the row and add another`);
-          if (parentColumns.has(column)) fail('command', `${column} places the record under its parent; use move`);
-          next[column] = value;
-        }
-        const result = normalizeRow(table, next);
-        if ('problem' in result) fail(result.problem.includes('is required') ? 'required' : 'column', result.problem);
-        editable(table.name).delete(rowKey(table, current));
-        place(table.name, (result as { row: Row }).row);
-      } else if (command.op === 'move') {
-        this.moveRecord(schema, draft, command.id, command.parent, fail, place);
-      } else if (command.op === 'link' || command.op === 'unlink') {
-        const relation = schema.relations[command.relation] ?? fail('unknown-relation', `there is no relation ${command.relation}; the relations are ${Object.keys(schema.relations).join(', ')}`);
-        const table = schema.tables[relation.name];
-        const row: Row = { source_id: command.source, target_id: command.target };
-        const exists = draft.get(table.name)?.has(rowKey(table, row));
-        if (command.op === 'link') {
-          if (exists) fail('primary-key', `${command.source} already ${relation.forwardLabel.toLowerCase()} ${command.target}`);
-          place(table.name, row);
-        } else {
-          if (!exists) fail('missing', `${command.source} does not ${relation.name} ${command.target}`);
-          editable(table.name).delete(rowKey(table, row));
-        }
-      } else if (command.op === 'remove') {
-        const table = this.tableOf(command.table, schema);
-        const row = this.find(draft, table, command.key) ?? fail('missing', `there is no ${table.name} ${keyText(command.key)}`);
-        if (this.builtIn.has(row)) fail('built-in', `${table.name} ${describeKey(table, row)} is Lathe's own (lathe/data/${table.name}.jsonl), so it cannot be removed`);
-        const removed = this.removalSet(schema, draft, table, row);
-        const referrers = this.referrers(schema, draft, removed);
-        if (referrers.length) {
-          const shown = referrers.slice(0, 20).join('; ');
-          fail('referenced', `${table.name} ${describeKey(table, row)} is referenced, so it stays: ${shown}${referrers.length > 20 ? `; and ${referrers.length - 20} more` : ''}`);
-        }
-        for (const r of removed) editable(r.table).delete(rowKey(schema.tables[r.table], r.row));
-      }
-      // A change to the product's own kinds or relations changes the schema the later commands see.
-      if ((DECLARATION_TABLES as readonly string[]).includes('table' in command ? command.table : '') && index < commands.length - 1) {
-        schema = (await this.buildSchema(draft, origins)).schema;
-      }
-    }
-
-    let schemaDb = this.schemaDb;
-    if (DECLARATION_TABLES.some((t) => changed.has(t))) {
-      const built = await this.buildSchema(draft, origins);
-      schemaDb = built.schemaDb;
-      schema = built.schema;
-      // Rows of product kinds are checked again against their (possibly changed) columns.
-      const problems: StoreProblem[] = [];
-      for (const name of Object.keys(schema.kinds).filter((k) => schema.kinds[k].productId !== null)) {
-        for (const row of draft.get(name)?.values() ?? []) {
-          const result = normalizeRow(schema.tables[name], row);
-          if ('problem' in result) problems.push(problemAt(origins, row, { rule: 'column', table: name, key: String(row.id), message: result.problem }));
-        }
-      }
-      for (const name of draft.keys()) {
-        if (!schema.tables[name] && draft.get(name)!.size) problems.push({ rule: 'unknown-table', table: name, message: `${name} has rows but is no longer a kind or relation` });
-      }
-      if (problems.length) throw new StoreError(problems);
-    }
-    const dataDb = await this.buildData(schemaDb, schema, draft, origins);
-    this.tables = draft;
-    this.currentSchema = schema;
-    this.schemaDb = schemaDb;
-    await this.switchTo(dataDb);
-    const files = await this.writeFiles([...changed].sort());
-    return { tables: [...changed].sort(), files };
-  }
-
-  private find(tables: Tables, table: TableDescription, key: KeyInput): Row | undefined {
-    const values: Row = typeof key === 'string' ? { [table.primaryKey[0]]: key } : key;
-    if (typeof key === 'string' && table.primaryKey.length !== 1) return undefined;
-    return tables.get(table.name)?.get(rowKey(table, values));
-  }
-
-  private kindOf(schema: SchemaDescription, tables: Tables, id: string): string | undefined {
-    return Object.keys(schema.kinds).find((k) => tables.get(k)?.has(id));
-  }
-
-  // Moves a record under another parent: the column for the new parent's kind takes its ID, and the record's other
-  // parent column, if its kind has two, is cleared. What sits inside the record moves with it unchanged.
-  private moveRecord(
-    schema: SchemaDescription,
-    tables: Tables,
-    id: string,
-    parent: string,
-    fail: (rule: string, message: string) => never,
-    place: (table: string, row: Row) => void,
-  ) {
-    const kind = this.kindOf(schema, tables, id) ?? fail('missing', `there is no record ${id}`);
-    const options = schema.kinds[kind].parents;
-    if (!options.length) fail('command', `a ${kind} has no parent, so it cannot move`);
-    const parentKind = this.kindOf(schema, tables, parent) ?? fail('parent', `there is no record ${parent}`);
-    const chosen = options.find((p) => p.kind === parentKind) ?? fail('parent', `a ${kind} sits under ${options.map((p) => p.kind).join(' or ')}, not under ${parentKind} ${parent}`);
-    const row = tables.get(kind)!.get(id)!;
-    const next: Row = { ...row };
-    for (const option of options) delete next[option.column];
-    next[chosen.column] = parent;
-    if (options.some((o) => next[o.column] !== row[o.column])) place(kind, next);
-  }
-
-  // What removing a row takes with it: a record's parts (and theirs), and the links it starts.
-  private removalSet(schema: SchemaDescription, tables: Tables, table: TableDescription, row: Row): Located[] {
-    const removed: Located[] = [{ table: table.name, row }];
-    if (table.role !== 'kind') return removed;
-    const id = String(row.id);
-    for (const t of Object.values(schema.tables)) {
-      const rows = [...(tables.get(t.name)?.values() ?? [])];
-      if (t.role === 'part' && t.ownerColumn) removed.push(...rows.filter((r) => r[t.ownerColumn!] === id).map((r) => ({ table: t.name, row: r })));
-      if (t.role === 'link') removed.push(...rows.filter((r) => r.source_id === id).map((r) => ({ table: t.name, row: r })));
-    }
-    return removed;
-  }
-
-  // What still references the rows being removed, as readable lines.
-  private referrers(schema: SchemaDescription, tables: Tables, removed: Located[]): string[] {
-    const gone = new Set(removed.map((r) => r.row));
-    const found: string[] = [];
-    const recordTables = new Set<string>();
-    for (const r of removed) {
-      if (schema.tables[r.table].role === 'kind') {
-        recordTables.add('record_id');
-        for (const s of schema.kinds[r.table].supertypes) recordTables.add(s);
-      }
-    }
-    for (const t of Object.values(schema.tables)) {
-      if (!t.stored) continue;
-      for (const fk of t.foreignKeys) {
-        const targets = removed.filter((r) => r.table === fk.table || (recordTables.has(fk.table) && schema.tables[r.table].role === 'kind'));
-        if (!targets.length) continue;
-        for (const row of tables.get(t.name)?.values() ?? []) {
-          if (gone.has(row)) continue;
-          const hit = targets.find((target) => fk.columns.every((c, i) => row[c] !== undefined && row[c] === target.row[fk.references[i]]));
-          if (!hit) continue;
-          found.push(
-            t.role === 'link'
-              ? `${row.source_id} ${schema.relations[t.name].forwardLabel.toLowerCase()} ${row.target_id}`
-              : `${t.name} ${describeKey(t, row)} (${fk.columns.join(', ')})`,
-          );
-        }
-      }
-    }
-    return [...new Set(found)];
-  }
-
-  // Rewrites the files of the changed tables, each through a temporary file so a reader never sees half of one. An
-  // empty table has no file.
-  private async writeFiles(changed: string[]): Promise<string[]> {
-    await mkdir(this.dataDir, { recursive: true });
-    const written: string[] = [];
-    for (const name of changed) {
-      const file = path.join(this.dataDir, `${name}.jsonl`);
-      const rows = [...(this.tables.get(name)?.values() ?? [])].filter((row) => !this.builtIn.has(row));
-      const table = this.currentSchema.tables[name];
-      if (!rows.length || !table) {
-        if (existsSync(file)) {
-          await rm(file);
-          written.push(`${name}.jsonl`);
-        }
-        continue;
-      }
-      const text = tableText(table, rows);
-      const display = path.join(path.basename(this.dataDir), `${name}.jsonl`);
-      sortRows(table, rows).forEach((row, index) => this.origins.set(row, { file: display, line: index + 1 }));
-      if (existsSync(file) && readFileSync(file, 'utf8') === text) continue;
-      const temporary = `${file}.${process.pid}.tmp`;
-      await writeFile(temporary, text);
-      await rename(temporary, file);
-      written.push(`${name}.jsonl`);
-    }
-    return written;
   }
 }
 
-const keyText = (key: KeyInput) => (typeof key === 'string' ? key : Object.entries(key).map(([c, v]) => `${c} ${v}`).join(', '));
+/** The tables as the aggregates' rules read them. */
+function readView(schema: SchemaDescription, tables: Tables): ReadView {
+  return {
+    schema,
+    rows: (table) => [...(tables.get(table)?.values() ?? [])],
+    record: (id) => {
+      for (const kind of Object.keys(schema.kinds)) {
+        const row = tables.get(kind)?.get(id);
+        if (row) return { kind, row };
+      }
+      return undefined;
+    },
+  };
+}
 
 // A foreign key's failure in words: the value that names nothing, or the parent that sits elsewhere.
 function foreignKeyMessage(

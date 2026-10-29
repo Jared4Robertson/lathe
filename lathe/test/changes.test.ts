@@ -4,7 +4,7 @@ import { rmSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configuredRoot } from './store/fixture.ts';
 import { applyDelta, recordChanges, rowDelta, type Tables } from '../src/changes.ts';
-import { openStore, type Store } from '../src/store/index.ts';
+import { openStore, type Store } from '../src/platform/data/index.ts';
 
 let root = '';
 let store: Store;

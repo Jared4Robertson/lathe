@@ -10,10 +10,11 @@ import { readPackageFacts } from './trace/packages.ts';
 import { readTestCases } from './trace/test-cases.ts';
 import { isTraced, normalizePath, sourceFiles } from './trace/source-files.ts';
 import { orderChecks, referenceOf, type Reference } from './reference.ts';
-import { formatProblem, openStore, Store, StoreError, LATHE_DATA_DIR, type StoreOptions } from './store/store.ts';
-import { SCHEMA_DIR } from './store/schema.ts';
+import { formatProblem, StoreError } from './platform/data/problems.ts';
+import { openStore, Store, LATHE_DATA_DIR, type StoreOptions } from './platform/data/store.ts';
+import { SCHEMA_DIR } from './platform/data/schema.ts';
 import { gatherTableFacts, TABLE_FACTS_SQL } from './trace/tables.ts';
-import type { Row } from './store/rows.ts';
+import type { Row } from './platform/data/rows.ts';
 import { gatherRouteFacts, writeRouteFacts } from './trace/routes.ts';
 import type { Coverage, CoverageGap, Kind, ObligationCoverage, PatternRuleStanding, Problem, RecordedException, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, TraceChain, Workspace } from './types.ts';
 
@@ -24,7 +25,7 @@ export { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE, type GapRule } from './
 export { loadConfig, readConfig, workspaceProducts, productClash, PACKAGE_DIR, CONFIG_FILE, DEFAULT_MAX_CHILDREN, DEFAULT_SOURCE, DEFAULT_TESTS, SCHEMA_VERSION, SchemaVersionError, schemaVersionMessage, type LatheConfig } from './config.ts';
 export { upgradeProduct, readConverters, UPGRADES_DIR, type Converter, type ConverterStep, type RawData, type UpgradeNotes, type UpgradeResult } from './upgrade.ts';
 // The database-first store: the schema, loading data/*.jsonl, the command layer and the merge driver.
-export * from './store/index.ts';
+export * from './platform/data/index.ts';
 
 export interface LoadOptions {
   /** The data folder, in place of the one lathe.config.json names. */
@@ -49,7 +50,7 @@ export interface LoadTimings {
   total: number;
   /**
    * The steps inside the phases, by name: the store's (reading the files, the schema, each table's insert,
-   * record_scope, each validation query, the commit), then the file facts, the coverage tables, each check (checks
+   * record_scope, each integrity query, each aggregate's rules, the commit), then the file facts, the coverage tables, each check (checks
    * run side by side, so theirs overlap) and the records read back. `perf/engine.ts --profile` prints them.
    */
   steps: Record<string, number>;

@@ -6,9 +6,10 @@
 // rows it changed, or the refusal with its reasons. Writes never commit: the Agent commits per task.
 import { createInterface } from 'node:readline';
 import { SchemaVersionError } from '../config.ts';
+import { aggregateTool, aggregateTools, runDefinition } from './aggregates.ts';
 import { APP_TOOLS, appBridgeFromEnv, callAppTool, isAppTool, type AppBridge } from './app-tools.ts';
-import type { ColumnDescription, SchemaDescription, TableDescription } from '../store/schema.ts';
-import type { Row, Value } from '../store/rows.ts';
+import type { ColumnDescription, SchemaDescription, TableDescription } from '../platform/data/schema.ts';
+import type { Row, Value } from '../platform/data/rows.ts';
 import {
   check,
   checkText,
@@ -231,6 +232,7 @@ export function tools(schema: SchemaDescription): Tool[] {
       },
     },
     CHECK_TOOL,
+    ...aggregateTools(schema),
   ];
 }
 
@@ -295,6 +297,8 @@ export function writeRequests(name: WriteTool, args: Record<string, unknown>): W
 export async function callTool(root: string, name: string, args: Record<string, unknown> = {}, app: AppBridge | null = null): Promise<ToolResult> {
   if (isAppTool(name)) return callAppTool(app, name, args);
   try {
+    const own = aggregateTool(name);
+    if (own) return result(await runDefinition(root, own, args), (v) => v.text, (v) => (typeof v.json === 'object' && v.json !== null && !Array.isArray(v.json) ? { ...v.json } : { answer: v.json }));
     if (isWriteTool(name)) return result(await write(root, [writeRequests(name, args)]), writtenText, (w) => ({ ...w }));
     switch (name) {
       case 'show':

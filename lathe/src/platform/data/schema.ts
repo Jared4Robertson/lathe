@@ -3,7 +3,7 @@
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
-import { PACKAGE_DIR } from '../config.ts';
+import { PACKAGE_DIR } from '../../config.ts';
 
 /** The folder of numbered SQL migrations, such as 001-meta.sql. */
 export const SCHEMA_DIR = path.join(PACKAGE_DIR, 'schema');

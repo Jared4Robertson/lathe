@@ -9,8 +9,8 @@
 // - A product folder that is not a git repo, or a machine without git, is an answer, not an error.
 import { spawn } from 'node:child_process';
 import path from 'node:path';
-import type { Row, Value } from '../store/rows.ts';
-import type { SchemaDescription, TableDescription } from '../store/schema.ts';
+import type { Row, Value } from '../platform/data/rows.ts';
+import type { SchemaDescription, TableDescription } from '../platform/data/schema.ts';
 import type { FieldChange, HistoryAnswer, HistoryChange, HistoryCommit } from './contract.ts';
 
 /** How long one git command may run. */

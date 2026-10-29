@@ -1,6 +1,6 @@
 import { createContext, useContext } from 'react';
 import type { WriteAnswer } from '../../../lathe/src/server/contract';
-import type { Command } from '../../../lathe/src/store/store';
+import type { Command } from '../../../lathe/src/platform/data/generic-write';
 
 // Writes through the server's command layer: POST /api/write with the commands of one write. The
 // answer is the changed rows, or the store's refusal with every reason; either way nothing is

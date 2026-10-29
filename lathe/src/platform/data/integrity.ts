@@ -1,13 +1,14 @@
 // What DuckDB cannot hold as a constraint, because it spans tables: the views the store adds over the tables, and
-// the validation queries every write runs in its transaction. A query returns one row per broken rule:
+// the integrity queries every load and write runs on the state it builds: what the schema says of every table. An
+// aggregate's own rules are its own, in its rules.ts. A query returns one row per broken rule:
 // (table_name, row_key, message), where row_key is the row's key as the store keys it (columns joined by chr(0)).
 //
 // These are refusals only: broken data. What is merely missing ("at least one", "nothing uses it") is the checks'
 // to report, because records are written stage by stage.
-import { isLeadColumn } from '../lead.ts';
+import { isLeadColumn } from '../../lead.ts';
 import { sqlName, sqlString, type SchemaDescription } from './schema.ts';
 
-export interface ValidationQuery {
+export interface IntegrityQuery {
   /** The rule's name, reported with each problem. */
   name: string;
   /** What the rule refuses. */
@@ -58,7 +59,7 @@ ${groups.join('\nUNION ALL ')};
  * models whose fields it types, and a UI component the domains that use the views it renders. Exactly one using
  * domain is its domain; two or more, or none, leave it in no domain (shared). What sits under such a record follows
  * it. A data database never changes after its load (a write builds a new one), so this is worked out once and shared
- * by the validation queries, the checks, coverage and the app.
+ * by the integrity queries, the aggregates' rules, the checks, coverage and the app.
  */
 export function recordScopeSql(schema: SchemaDescription): string {
   const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
@@ -142,9 +143,9 @@ function references(schema: SchemaDescription): { table: string; own: string; co
 const keyOf = (schema: SchemaDescription, table: string, alias: string) =>
   schema.tables[table].primaryKey.map((c) => `${alias}.${sqlName(c)}::VARCHAR`).join(` || chr(0) || `);
 
-/** The validation queries, for the schema's kinds and relations. */
-export function validationQueries(schema: SchemaDescription): ValidationQuery[] {
-  const queries: ValidationQuery[] = [
+/** The integrity queries, for the schema's kinds and relations. */
+export function integrityQueries(schema: SchemaDescription): IntegrityQuery[] {
+  const queries: IntegrityQuery[] = [
     {
       name: 'relation-pair',
       description: 'A link joins two kinds its relation allows (meta_relation_pair), where its link table accepts several kinds at an end.',
@@ -170,41 +171,6 @@ FROM link l
 JOIN record_scope a ON a.id = l.source_id
 JOIN record_scope b ON b.id = l.target_id
 WHERE a.product_id IS DISTINCT FROM b.product_id`,
-    },
-    {
-      name: 'step-fulfills-own-use-case',
-      description: "A flow step fulfills only UC requirements of its own flow's use case.",
-      sql: `
-SELECT 'fulfills' AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
-       l.source_id || ' is a step of the flow of ' || f.use_case_id || ', so it cannot fulfill ' || l.target_id
-       || ', a requirement of ' || q.use_case_id AS message
-FROM fulfills l
-JOIN flow_step s ON s.id = l.source_id
-JOIN flow f ON f.id = s.flow_id
-JOIN uc_requirement q ON q.id = l.target_id
-WHERE q.use_case_id <> f.use_case_id`,
-    },
-    {
-      name: 'flow-id-interface',
-      description: "A flow's ID is its use case's ID, FL and its interface's number: TL-LEND-UC01-FL01 is the flow of TL-LEND-UC01 through TL-IF01.",
-      sql: `
-SELECT 'flow' AS table_name, f.id AS row_key,
-       f.id || ' goes through ' || f.interface_id || ', so its ID is ' || f.use_case_id || '-FL' || n.number AS message
-FROM flow f
-CROSS JOIN LATERAL (SELECT regexp_extract(f.interface_id, '-IF([0-9]+)$', 1) AS number) n
-WHERE f.id <> f.use_case_id || '-FL' || n.number`,
-    },
-    {
-      name: 'step-fits-interface',
-      description: "A step of a flow through an API, a CLI or agent tools happens in no view: only a web app's, a desktop app's or another interface's steps happen in views.",
-      sql: `
-SELECT 'happens_in' AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
-       l.source_id || ' is a step of ' || f.id || ', which goes through ' || i.id || ', an interface of kind ' || i.kind || ', so it cannot happen in view ' || l.target_id AS message
-FROM happens_in l
-JOIN flow_step s ON s.id = l.source_id
-JOIN flow f ON f.id = s.flow_id
-JOIN interface i ON i.id = f.interface_id
-WHERE i.kind IN ('API', 'CLI', 'agent tools')`,
     },
     {
       name: 'command-change-in-domain',
@@ -414,7 +380,7 @@ const TITLE_FORMS = {
  * The title refusals, over every kind, Lathe's and a product's own: a title unique within its kind and product
  * (compared trimmed, and in any letter case unless the kind is code-bound), with no trailing period, and, for a code-bound kind, in its form.
  */
-function titleQueries(schema: SchemaDescription): ValidationQuery[] {
+function titleQueries(schema: SchemaDescription): IntegrityQuery[] {
   const kinds = Object.values(schema.kinds).sort((a, b) => a.name.localeCompare(b.name));
   if (!kinds.length) return [];
   const titled = kinds
@@ -423,7 +389,7 @@ function titleQueries(schema: SchemaDescription): ValidationQuery[] {
         `SELECT ${sqlString(k.name)} AS kind, ${sqlString(k.label)} AS label, id, title, ${k.titleForm ? 'trim(title)' : 'lower(trim(title))'} AS same FROM ${sqlName(k.name)}`,
     )
     .join('\nUNION ALL ');
-  const queries: ValidationQuery[] = [
+  const queries: IntegrityQuery[] = [
     {
       name: 'title-unique',
       description:

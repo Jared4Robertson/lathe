@@ -5,7 +5,7 @@ import path from 'node:path';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { describe, expect, it } from 'vitest';
 import { applyMigrations, describeSchema, PACKAGE_DIR, readMigrations } from '../../src/index.ts';
-import { renderTableTypes } from '../../src/store/types-file.ts';
+import { renderTableTypes } from '../../src/platform/data/types-file.ts';
 
 const instance = await DuckDBInstance.create(':memory:');
 const connection = await instance.connect();
@@ -111,8 +111,8 @@ describe('the schema description', () => {
     }
   });
 
-  it('LA-AUT-UC03-R03-T01 matches the generated row types in src/store/tables.ts (npm run schema)', () => {
-    const file = readFileSync(path.join(PACKAGE_DIR, 'src', 'store', 'tables.ts'), 'utf8');
+  it('LA-AUT-UC03-R03-T01 matches the generated row types in src/platform/data/tables.ts (npm run schema)', () => {
+    const file = readFileSync(path.join(PACKAGE_DIR, 'src', 'platform', 'data', 'tables.ts'), 'utf8');
     expect(file).toBe(renderTableTypes(schema));
   });
 });

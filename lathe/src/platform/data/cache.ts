@@ -14,7 +14,7 @@ import { mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { version as duckdbVersion, type DuckDBConnection } from '@duckdb/node-api';
-import { PACKAGE_DIR } from '../config.ts';
+import { PACKAGE_DIR } from '../../config.ts';
 import { sqlName, sqlString, type Migration, type SchemaDescription } from './schema.ts';
 
 /** Changed when the layout of a cache file changes, so files of the old layout are never read. */

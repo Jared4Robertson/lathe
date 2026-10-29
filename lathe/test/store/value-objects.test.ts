@@ -1,6 +1,6 @@
 // The constraints of Authoring's value objects (LA-VO01 ... LA-VO17): each loads the fixture through the store with a
 // bad value, which is refused, and with the good values, which load. Lathe's checks on column values live in two
-// places: the row checks of src/store/rows.ts, made before the database sees a row, and the CHECKs and ENUM types of
+// places: the row checks of src/platform/data/rows.ts, made before the database sees a row, and the CHECKs and ENUM types of
 // schema/*.sql, which the database enforces.
 import { afterAll, describe, expect, it } from 'vitest';
 import type { Row, StoreProblem } from '../../src/index.ts';

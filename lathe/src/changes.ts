@@ -9,8 +9,8 @@
 // default branch, since the Reader last looked), the live marks against the data before a reload, and the chat
 // against the data before a turn.
 import type { FieldChange, HistoryChange } from './server/contract.ts';
-import { describeKey, rowKey, type Row, type Value } from './store/rows.ts';
-import type { SchemaDescription, TableDescription } from './store/schema.ts';
+import { describeKey, rowKey, type Row, type Value } from './platform/data/rows.ts';
+import type { SchemaDescription, TableDescription } from './platform/data/schema.ts';
 
 export type { FieldChange, HistoryChange };
 

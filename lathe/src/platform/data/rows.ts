@@ -17,7 +17,7 @@ function validDate(text: string): boolean {
 }
 
 /** Why a value does not fit its column, or null when it fits. */
-function valueProblem(column: ColumnDescription, value: unknown): string | null {
+export function valueProblem(column: ColumnDescription, value: unknown): string | null {
   switch (column.kind) {
     case 'text':
       if (typeof value !== 'string') return 'is not text';

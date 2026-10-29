@@ -15,7 +15,7 @@ import {
   parseNote,
 } from '../src/model.ts';
 import { RETURNED_NEEDING_REPAIR } from '../src/event-handlers.ts';
-import type { Store } from '../src/store.ts';
+import type { Store } from '../src/platform/data.ts';
 import { LAST_MINUTE_OF_DUE_DATE, START_DUE_DATE, START_OF_NEXT_DAY, services } from './helpers.ts';
 
 function rejectsWith(fn: () => unknown, code: string): void {

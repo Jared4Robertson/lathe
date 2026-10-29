@@ -3,7 +3,7 @@ import { expect, vi } from 'vitest';
 import App from '../src/App';
 import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
 import type { BaselineAnswer } from '../../lathe/src/server/contract';
-import type { Command } from '../../lathe/src/store/store';
+import type { Command } from '../../lathe/src/platform/data/generic-write';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
 import { SETTINGS_KEY } from '../src/graph/settings';
 

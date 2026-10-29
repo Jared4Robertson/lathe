@@ -2,7 +2,7 @@ import './graph/setup';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import type { KindDescription } from '../../lathe/src/store/schema';
+import type { KindDescription } from '../../lathe/src/platform/data/schema';
 import { branchOf, domainFolders, folderPath, ownerFolders, productFolders } from '../src/specs/folders';
 import { treeChildren } from '../src/graph/tree';
 import { isGraphNode } from '../src/graph/model';

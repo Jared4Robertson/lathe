@@ -10,8 +10,9 @@ import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'no
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { CONFIG_FILE, readConfig, SCHEMA_VERSION, schemaVersionMessage } from './config.ts';
-import { formatProblem, openStore, StoreError, type Store } from './store/store.ts';
-import { tableText } from './store/rows.ts';
+import { formatProblem, StoreError } from './platform/data/problems.ts';
+import { openStore, type Store } from './platform/data/store.ts';
+import { tableText } from './platform/data/rows.ts';
 
 /** Where a converter says what it did, and what it could not do. */
 export interface UpgradeNotes {

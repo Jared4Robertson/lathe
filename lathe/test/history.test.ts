@@ -10,7 +10,7 @@ import { configuredRoot } from './store/fixture.ts';
 import type { HistoryAnswer } from '../src/server/contract.ts';
 import { closeStores, handleApi } from '../src/server/api.ts';
 import { HISTORY_PAGE, changesInDiff, firstColumnPattern, parseLog, recordTables, runGit } from '../src/server/history.ts';
-import { openStore, type Store } from '../src/store/index.ts';
+import { openStore, type Store } from '../src/platform/data/index.ts';
 
 const temps: string[] = [];
 let repo = '';
