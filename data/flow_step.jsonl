@@ -163,12 +163,15 @@
 {"id":"LA-AUT-UC21-FL01-S01","title":"On its page, the Owner adds a read model with its fields, reading the aggregates it spans","flow_id":"LA-AUT-UC21-FL01","path":"main","position":1}
 {"id":"LA-AUT-UC21-FL01-S02","title":"On its page, the Owner adds each query under the read model it reads, with its handler","flow_id":"LA-AUT-UC21-FL01","path":"main","position":2}
 {"id":"LA-AUT-UC21-FL01-S03","title":"On its page, the Owner adds the projection that builds the read model","flow_id":"LA-AUT-UC21-FL01","path":"main","position":3}
+{"id":"LA-AUT-UC21-FL01-S04","title":"On its page, the Owner adds the reader the query handlers read the read model through","flow_id":"LA-AUT-UC21-FL01","path":"main","position":4}
 {"id":"LA-AUT-UC21-FL03-S01","title":"They add a read model with its fields, reading the aggregates it spans","flow_id":"LA-AUT-UC21-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC21-FL03-S02","title":"They add each query under the read model it reads, with its handler","flow_id":"LA-AUT-UC21-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC21-FL03-S03","title":"They add the projection that builds the read model","flow_id":"LA-AUT-UC21-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC21-FL03-S04","title":"They add the reader the query handlers read the read model through","flow_id":"LA-AUT-UC21-FL03","path":"main","position":4}
 {"id":"LA-AUT-UC21-FL04-S01","title":"Through its tool, the Agent adds a read model with its fields, reading the aggregates it spans","flow_id":"LA-AUT-UC21-FL04","path":"main","position":1}
 {"id":"LA-AUT-UC21-FL04-S02","title":"Through its tool, the Agent adds each query under the read model it reads, with its handler","flow_id":"LA-AUT-UC21-FL04","path":"main","position":2}
 {"id":"LA-AUT-UC21-FL04-S03","title":"Through its tool, the Agent adds the projection that builds the read model","flow_id":"LA-AUT-UC21-FL04","path":"main","position":3}
+{"id":"LA-AUT-UC21-FL04-S04","title":"Through its tool, the Agent adds the reader the query handlers read the read model through","flow_id":"LA-AUT-UC21-FL04","path":"main","position":4}
 {"id":"LA-AUT-UC22-FL01-S01","title":"On its page, the Owner adds each business outcome under the product, with its statement, measure and target","flow_id":"LA-AUT-UC22-FL01","path":"main","position":1}
 {"id":"LA-AUT-UC22-FL01-S02","title":"On its page, the Owner links each capability to the outcomes it serves","flow_id":"LA-AUT-UC22-FL01","path":"main","position":2}
 {"id":"LA-AUT-UC22-FL01-S03","title":"On its page, the Owner links each outcome to the tests or records that measure it, or says how it is measured outside the code","flow_id":"LA-AUT-UC22-FL01","path":"main","position":3}

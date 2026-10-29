@@ -1,6 +1,6 @@
 ---
 name: write-the-technical-spec
-description: Write or change a Lathe product's technical specification - the one technical record that implements each design record (repository, data model, table and its keys, value type, predicate, event type and its delivery, projection, command, query and event handlers, service, endpoint handler, adapter, UI component), the files that hold them, and the product's standards. Use when recording where code lives and how it is stored, when adding a table, key or index, when deciding how an event is delivered, or when writing an engineering rule the code follows, in a repo with lathe.config.json.
+description: Write or change a Lathe product's technical specification - the one technical record that implements each design record (repository, data model, table and its keys, value type, predicate, event type and its delivery, projection, reader, command, query and event handlers, service, endpoint handler, adapter, UI component), the files that hold them, and the product's standards. Use when recording where code lives and how it is stored, when adding a table, key or index, when deciding how an event is delivered, or when writing an engineering rule the code follows, in a repo with lathe.config.json.
 ---
 
 # Write the technical specification
@@ -32,6 +32,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `predicate` | a specification | `<specification>-PR` | `specification_add_predicate` |
 | `event_type` | a domain event: its shape, a contract when published | `<domain event>-ET` | `domain_event_add_event_type` |
 | `projection` | a read model: fills its table and keeps it current | `<read model>-PJ` | `read_model_add_projection` |
+| `reader` | a read model: the one way its query handlers read its table | `<read model>-RD` | `read_model_add_reader` |
 | `command_handler` | a command | `<command>-H` | `command_add_command_handler` |
 | `query_handler` | a query | `<query>-H` | `read_model_add_query_handler` |
 | `event_handler` | a policy | `<policy>-H` | `command_add_event_handler` |

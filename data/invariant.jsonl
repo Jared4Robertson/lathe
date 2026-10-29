@@ -6,7 +6,7 @@
 {"id":"LA-AUT-INV104","title":"A command has one handler; a policy hears one event","aggregate_id":"LA-AUT-A8","statement":"A command MUST have at most one command handler; a policy MUST hear exactly one event and have at most one event handler and one policy test."}
 {"id":"LA-AUT-INV105","title":"A pattern rule has one test per domain","aggregate_id":"LA-AUT-A2","statement":"A pattern rule MUST have at most one pattern rule test per domain."}
 {"id":"LA-AUT-INV106","title":"An entity or read model has one table","aggregate_id":"LA-AUT-A18","statement":"An entity or a read model MUST have at most one table."}
-{"id":"LA-AUT-INV107","title":"A read model has one projection, a query one handler","aggregate_id":"LA-AUT-A10","statement":"A read model MUST have at most one projection, and a query at most one query handler."}
+{"id":"LA-AUT-INV107","title":"A read model has one projection and one reader, a query one handler","aggregate_id":"LA-AUT-A10","statement":"A read model MUST have at most one projection and at most one reader, and a query at most one query handler."}
 {"id":"LA-AUT-INV108","title":"A domain event has one event type","aggregate_id":"LA-AUT-A7","statement":"A domain event MUST have at most one event type."}
 {"id":"LA-AUT-INV11","title":"A command's recorded exception is another aggregate of its domain","aggregate_id":"LA-AUT-A8","statement":"A command change MUST name an aggregate of the command's domain other than the command's own, with its reason."}
 {"id":"LA-AUT-INV110","title":"An endpoint has one handler","aggregate_id":"LA-AUT-A13","statement":"An endpoint MUST have at most one endpoint handler."}
