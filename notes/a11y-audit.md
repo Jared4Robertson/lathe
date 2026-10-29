@@ -44,7 +44,7 @@ Before: 156 findings in 5 rules; 94 of the 100 audit tests failed (on a phone, t
 
 `LA-BRW-DR322`. Boxes that scroll on their own and hold nothing that takes focus could not be scrolled by keyboard. Each now takes focus (`tabindex="0"`) and has a name:
 
-- Markdown code blocks (`<pre>`, `app/src/specs/Markdown.tsx`) and the Format page's example header (`app/src/format/FormatPages.tsx`), seen on a phone;
+- Markdown code blocks (`<pre>`, `app/src/specs/Markdown.tsx`) and a kind page's example row in the wiki card (`app/src/format/FormatPages.tsx`), seen on a phone;
 - the shortcuts sheet's groups (`app/src/shell/commands.tsx`), a region named "Shortcuts";
 - the ERD's key in the ERD view (`app/src/erd/ErdView.tsx`, a one-line attribute);
 - the graph's trail on a phone (`app/src/graph/GraphPage.tsx`, a one-line attribute).
