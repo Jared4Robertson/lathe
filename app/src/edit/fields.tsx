@@ -210,3 +210,36 @@ export function IdsField({ id, label, description, ids, choices, onChange, rende
     </div>
   );
 }
+
+/**
+ * A field holding a list of a part table's rows, such as a product's roles: one group per row, each column its own
+ * input of its type, with Remove; and Add for another row. The list as it stands replaces the record's parts.
+ */
+export function PartsField({ id, label, description, columns, rows, onChange }: {
+  id: string;
+  label: string;
+  description: string;
+  columns: readonly ColumnDescription[];
+  rows: readonly Record<string, string>[];
+  onChange: (rows: Record<string, string>[]) => void;
+}) {
+  // A new row: a required true-or-false column starts false, every other column empty.
+  const blank = () => Object.fromEntries(columns.map((c) => [c.name, c.kind === 'boolean' && c.required ? 'false' : '']));
+  const set = (at: number, name: string, text: string) => onChange(rows.map((r, i) => (i === at ? { ...r, [name]: text } : { ...r })));
+  return (
+    <fieldset className="form-parts" aria-describedby={description ? `${id}-help` : undefined}>
+      <legend><strong>{label}</strong> <span className="section-count">{rows.length}</span></legend>
+      {description && <p className="form-help" id={`${id}-help`}>{description}</p>}
+      {rows.map((row, at) => (
+        <div key={at} className="form-part" role="group" aria-label={`${label}: row ${at + 1}`}>
+          {columns.map((column) => (
+            <ColumnField key={column.name} id={`${id}-${at}-${column.name}`} column={column} label={`${column.name.replaceAll('_', ' ')} ${at + 1}`}
+              value={row[column.name] ?? ''} onChange={(text) => set(at, column.name, text)} />
+          ))}
+          <Button danger onClick={() => onChange(rows.filter((_, i) => i !== at))} aria-label={`Remove ${label}: row ${at + 1}`}>Remove</Button>
+        </div>
+      ))}
+      <Button icon="plus" onClick={() => onChange([...rows, blank()])} aria-label={`Add to ${label}`}>Add</Button>
+    </fieldset>
+  );
+}
