@@ -69,7 +69,7 @@ export interface Workspace {
   /** The rows of the check table: each check's name, severity, summary and explanation. */
   checks: Row[];
   problems: Problem[];
-  /** The recorded exceptions: each command that also changes another aggregate, with its reason. Never problems. */
+  /** The recorded exceptions: each command that also changes another aggregate, and each repository that also persists one, with its reason. Never problems. */
   exceptions: RecordedException[];
   coverage: Coverage[];
   /** Every obligation's traceability chain, as the engine works it out. */
@@ -294,7 +294,10 @@ export const provedByOf = (index: SpecIndex, id: string, scope: string): string[
 export const partsOf = (index: SpecIndex, id: string, table: string): Row[] => index.parts.get(id)?.get(table) ?? [];
 
 /** True when a problem belongs to no product: it names no record, or a record no product holds. */
-export const isWorkspaceProblem = (index: SpecIndex, p: Problem) => !p.record || !index.byId.get(p.record)?.product;
+/** The record a recorded exception belongs to: its command, or its repository. */
+export const exceptionOwner = (e: RecordedException): string => ('command' in e ? e.command : e.repository);
+
+export const isWorkspaceProblem =(index: SpecIndex, p: Problem) => !p.record || !index.byId.get(p.record)?.product;
 
 const spaceCache = new WeakMap<SpecIndex, Map<string, SpecIndex>>();
 
@@ -322,7 +325,7 @@ export function spaceIndex(index: SpecIndex, product: string): SpecIndex {
     parts: workspace.parts.filter((p) => !elsewhere(p.owner)),
     checks: workspace.checks.filter((c) => c.product_id === undefined || c.product_id === product),
     problems: workspace.problems.filter((p) => !p.record || !elsewhere(p.record)),
-    exceptions: workspace.exceptions.filter((e) => inSpace(index.byId.get(e.command))),
+    exceptions: workspace.exceptions.filter((e) => inSpace(index.byId.get(exceptionOwner(e)))),
     coverage: workspace.coverage.filter((c) => c.product === product),
     chains: workspace.chains.filter((c) => inSpace(index.byId.get(c.obligation))),
   });

@@ -919,13 +919,13 @@ export interface PatternRuleTestRow {
   notes?: string;
 }
 
-/** Loads and saves aggregates, each whole: the way command handlers reach their storage. It persists one aggregate or several, each linked with persists, and sits under the domain of the aggregates it persists, or, shared by several domains, under the domain that holds what they share. */
+/** Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage. It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason. */
 export interface RepositoryRow {
   /** The repository's ID: its domain's ID and REPO<nn>, such as TL-LEND-REPO01. */
   id: string;
   /** Its name in code, such as LoanRepository. */
   title: string;
-  /** The domain it sits under: that of the aggregates it persists, or, for one several domains share, the domain that holds what they share. */
+  /** The domain it sits under: that of the aggregate it persists, or, for one several domains share, the domain that holds what they share. */
   domain_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
@@ -933,7 +933,7 @@ export interface RepositoryRow {
   description?: string;
 }
 
-/** The repository loads and saves the aggregate, whole: one repository per aggregate, and one repository may persist several aggregates, of its domain or, when it is shared, of several. */
+/** The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository. Another aggregate a repository also persists is a recorded exception, a repository_share row. */
 export interface PersistsRow {
   source_id: string;
   target_id: string;
@@ -1135,6 +1135,16 @@ export interface UiComponentRow {
 export interface RendersRow {
   source_id: string;
   target_id: string;
+}
+
+/** A recorded exception to one repository per aggregate: another aggregate the repository also persists, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning. */
+export interface RepositoryShareRow {
+  /** The repository that also persists the aggregate. */
+  repository_id: string;
+  /** The other aggregate it persists: never its own, and one no other repository persists. */
+  aggregate_id: string;
+  /** Why the aggregate has no repository of its own. */
+  reason: string;
 }
 
 /** A role the product's records name, such as Owner, Reader or Agent: a use case's actors and a question's owner. Specs name roles, never people. */
@@ -1543,6 +1553,7 @@ export interface TableRows {
   reads: ReadsRow;
   ui_component: UiComponentRow;
   renders: RendersRow;
+  repository_share: RepositoryShareRow;
   role: RoleRow;
   selects_by: SelectsByRow;
   serves: ServesRow;
