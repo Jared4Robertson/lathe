@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { editorLaunch, editorName, parseSettings } from '../src/editor.ts';
 
-describe('LA-AUT-UC15-R02-T01 Open in editor uses VS Code by default, another known editor, the default app or a command of one\'s own', () => {
+describe('LA-PAT-RECORD-DATA-FILE-R02-T01 Open in editor uses VS Code by default, another known editor, the default app or a command of one\'s own', () => {
   it('reads settings, with VS Code when nothing valid is saved', () => {
     expect(parseSettings(undefined)).toEqual({ editor: 'vscode' });
     expect(parseSettings({ editor: 'emacs' })).toEqual({ editor: 'vscode' });

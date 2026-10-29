@@ -91,7 +91,7 @@ describe('the plugin', () => {
     for (const script of scripts) expect(existsSync(path.join(pluginDir, script))).toBe(true);
   });
 
-  it('LA-AUT-UC01-R08-T01 no skill tells the Agent to write spec files by hand', () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R06-T01 no skill tells the Agent to write spec files by hand', () => {
     for (const skill of SKILLS) {
       const text = readFileSync(path.join(pluginDir, 'skills', skill, 'SKILL.md'), 'utf8');
       expect(text, skill).not.toMatch(/specs\/|```markdown|^---\nid:|YAML|header|FORMAT\.md|metaExtensions|kinds\.csv|relations\.csv|lathe format|\b(?!REFERENCE\.md\b)[\w-]+\.md\b/m);
@@ -99,7 +99,7 @@ describe('the plugin', () => {
     }
   });
 
-  it("LA-AUT-UC01-R08-T02 every example in the skills runs an aggregate's own tool, with the fields it takes", async () => {
+  it("LA-PAT-AGGREGATE-COMMANDS-R06-T01 every example in the skills runs an aggregate's own tool, with the fields it takes", async () => {
     // An aggregate whose commands have landed is not pending any more.
     expect(AGGREGATE_COMMANDS.filter((a) => PENDING.has(a)), 'landed: remove from PENDING').toEqual([]);
     for (const skill of SKILLS) {

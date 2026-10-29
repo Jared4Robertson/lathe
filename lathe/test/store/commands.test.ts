@@ -28,7 +28,7 @@ const files = (root: string) =>
 const mtimes = (root: string) => Object.fromEntries(readdirSync(path.join(root, 'data')).map((f) => [f, statSync(path.join(root, 'data', f)).mtimeMs]));
 
 describe('add', () => {
-  it('LA-AUT-INV35-T adds a record, registers its ID and supertypes, and rewrites only its table file', async () => {
+  it('LA-PLT-INV17-T adds a record, registers its ID and supertypes, and rewrites only its table file', async () => {
     const { store, root } = await fresh();
     const before = mtimes(root);
     const result = await store.add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
@@ -44,7 +44,7 @@ describe('add', () => {
     await store.close();
   });
 
-  it('LA-AUT-INV35-T adds a record of each new kind: one with no owner, one under either of two parents, and a test', async () => {
+  it('LA-PLT-INV17-T adds a record of each new kind: one with no owner, one under either of two parents, and a test', async () => {
     const { store } = await fresh();
     await store.apply([
       { op: 'add', table: 'specification', row: { id: 'TL-LEND-SP02', title: 'Member in good standing', statement: 'A member owes nothing.' } },
@@ -61,7 +61,7 @@ describe('add', () => {
     await store.close();
   });
 
-  it('LA-AUT-INV37-T refuses a row whose key exists, a bad parent, and a link table', async () => {
+  it('LA-PLT-INV19-T refuses a row whose key exists, a bad parent, and a link table', async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'add', table: 'view', row: { id: 'TL-V01', title: 'Again', description: 'The catalog again.' } }])).toEqual([expect.objectContaining({ rule: 'primary-key', command: 0 })]);
     expect(await refused(store, [{ op: 'add', table: 'view_requirement', row: { id: 'TL-V09-R01', title: 'Lost', view_id: 'TL-V09', statement: 'x' } }])).toEqual([
@@ -173,7 +173,7 @@ describe('move', () => {
     await store.close();
   });
 
-  it("LA-AUT-INV37-T refuses a parent its kind cannot sit under, and a move that leaves an ID outside its domain", async () => {
+  it("LA-PLT-INV19-T refuses a parent its kind cannot sit under, and a move that leaves an ID outside its domain", async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'move', id: 'TL-LEND-UC01', parent: 'TL-LEND-A1' }])).toEqual([
       expect.objectContaining({ rule: 'parent', message: 'a use_case sits under capability, not under aggregate TL-LEND-A1' }),
@@ -189,7 +189,7 @@ describe('move', () => {
 });
 
 describe('link and unlink', () => {
-  it('LA-AUT-INV35-T links and unlinks, keeping the file sorted by its key columns', async () => {
+  it('LA-PLT-INV17-T links and unlinks, keeping the file sorted by its key columns', async () => {
     const { store, root } = await fresh();
     await store.link('calls', 'TL-LEND-QRY01', 'TL-LEND-DS01');
     expect(readFileSync(path.join(root, 'data', 'calls.jsonl'), 'utf8')).toBe(
@@ -219,7 +219,7 @@ describe('link and unlink', () => {
     await store.close();
   });
 
-  it('LA-AUT-INV37-T refuses a link to another product', async () => {
+  it('LA-PLT-INV19-T refuses a link to another product', async () => {
     const { store } = await fresh();
     const problems = await refused(store, [
       { op: 'add', table: 'product', row: { id: 'LA', title: 'Lathe', description: 'A tool for writing specs.' } },
@@ -249,7 +249,7 @@ describe('remove', () => {
     await store.close();
   });
 
-  it('LA-AUT-INV39-T removes a record with its parts and the links it starts', async () => {
+  it('LA-STD-CODE-R07-T02 removes a record with its parts and the links it starts', async () => {
     const { store, root } = await fresh();
     // The step's links are its own, so they go with it.
     await store.remove('flow_step', 'TL-LEND-UC01-FL01-S01');
@@ -276,7 +276,7 @@ describe('remove', () => {
 
 describe('a write', () => {
   describe('LA-STD-PRINCIPLES-R01-T02 a refused write changes nothing', () => {
-    it('LA-AUT-INV33-T is all or nothing: a refused command leaves the data and the files as they were', async () => {
+    it('LA-PLT-INV15-T is all or nothing: a refused command leaves the data and the files as they were', async () => {
       const { store, root } = await fresh();
       const before = files(root);
       const problems = await refused(store, [
@@ -331,7 +331,7 @@ describe('a write', () => {
     await store.close();
   });
 
-  it('LA-AUT-INV34-T refuses an aggregate with two roots by its integrity query, before any file changes', async () => {
+  it('LA-PLT-INV16-T refuses an aggregate with two roots by its integrity query, before any file changes', async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'set', table: 'entity', key: 'TL-LEND-EN02', changes: { role: 'root', in_root_table: null } }])).toEqual([
       expect.objectContaining({ rule: 'aggregate-root', table: 'aggregate', key: 'TL-LEND-A1' }),
@@ -339,7 +339,7 @@ describe('a write', () => {
     await store.close();
   });
 
-  it('LA-AUT-INV36-T runs writes one after another, each on the state the one before left', async () => {
+  it('LA-PLT-INV18-T runs writes one after another, each on the state the one before left', async () => {
     const { store } = await fresh();
     await Promise.all([2, 3, 4].map((n) => store.add('view', { id: `TL-V0${n}`, title: `View ${n}`, description: 'A page of the desk app.' })));
     expect(store.rows('view').map((v) => v.id)).toEqual(['TL-V01', 'TL-V02', 'TL-V03', 'TL-V04']);
