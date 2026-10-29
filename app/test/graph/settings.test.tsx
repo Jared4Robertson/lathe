@@ -2,7 +2,6 @@ import './setup';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { GRAPH_LAYOUTS } from '../../src/graph/GraphPage';
-import { stepKey } from '../../src/graph/steps';
 import { DEFAULT_CARD, DEFAULT_CHAT, DEFAULT_GRAPH_SETTINGS, saveSessionSettings, sessionSettings } from '../../src/graph/settings';
 import { activateTab, closeTab, cycleTab, emptyTabs, keepTab } from '../../src/views/tabs';
 import { arrive, type PageTabs } from '../../src/views/useTabs';
@@ -10,6 +9,9 @@ import type { GraphSettings } from '../../src/graph/GraphPage';
 import { openApp, startAtDepth } from '../helpers';
 import { boxElement, graphHost } from './scene';
 import { testWorkspace } from './workspace';
+
+/** The arrow that takes each step in a layout (LA-V93-R19): Tree Left out and Right in, Nested and Voronoi Up out and Down in. */
+const stepKey = (layout: string, step: 'out' | 'in' | 'previous' | 'next') => (layout === 'tree' ? { out: 'ArrowLeft', in: 'ArrowRight', previous: 'ArrowUp', next: 'ArrowDown' } : { out: 'ArrowUp', in: 'ArrowDown', previous: 'ArrowLeft', next: 'ArrowRight' })[step];
 
 // Moving through the graph never changes how it is drawn (LA-V93-R72): the arrow steps, a click
 // or Enter on a box, a tab and Back keep the layout, depth and minimap, whichever tab the page lands

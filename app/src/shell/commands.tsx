@@ -25,9 +25,10 @@ import {
   resolveCommands,
   usesArrows,
   usesEnter,
-  walkArrow,
+  walkMove,
   type Command,
 } from './keymap';
+import type { Move } from '../views/levels';
 import { Link } from '../router';
 import { Button } from '../components/Button';
 import { formatPath } from '../format/reference';
@@ -38,14 +39,15 @@ import { useOverlayFocus } from '../views/overlays';
 // commands (QuickOpen.tsx) are drawn from the same table. A command only runs (and only shows as
 // available in quick find) while something has registered a handler for it, so "when it applies"
 // follows what is on screen: the graph's commands exist while a graph is shown. The same listener sends the plain arrow keys,
-// and W, A, S and D as Up, Left, Down and Right, to the stage's walk (useStageWalk) from anywhere on the page, except a
-// control that uses arrows itself (keymap usesArrows). A plain Enter runs its command (the wiki card) only outside a control
+// W, A, S and D as Up, Left, Down and Right, and Shift+Up and Shift+Down (Shift+W and Shift+S) as Out and In, to the
+// stage's walk (useStageWalk, keymap walkMove) from anywhere on the page, except a control that uses arrows itself
+// (keymap usesArrows); the stage toolbar's buttons run the same walk (useRunWalk). A plain Enter runs its command (the wiki card) only outside a control
 // that handles Enter (keymap usesEnter); Escape runs its command only when nothing took it first: an overlay that closes on
 // Escape (a dialog, a menu, a tooltip, a tool panel) calls preventDefault, so the topmost thing closes first.
 
 type Handler = () => void;
-/** A stage's walk: takes a plain arrow's key ("ArrowLeft", for W, A, S and D too), moves the focus, and returns what to announce, or null. */
-type Walk = (key: string) => string | null;
+/** A stage's walk: takes a move (an arrow, for W, A, S and D too, or Out and In), moves the focus, and returns what to announce, or null. */
+type Walk = (move: Move) => string | null;
 /** A stage's own meaning for a plain Enter where the walk stands (the Trace stage's "+N more" opens): true when it took it. */
 type StageEnter = () => boolean;
 type WalkRef = { current: Walk; enter?: StageEnter };
@@ -58,6 +60,8 @@ interface CommandsApi {
   register: (id: string, handler: HandlerRef) => () => void;
   registerWalk: (walk: WalkRef) => () => void;
   run: (id: string) => boolean;
+  /** Runs a move of the shown stage's walk and announces it; false when no stage walks. */
+  walk: (move: Move) => boolean;
   available: (id: string) => boolean;
   /** The command's title: the one its current handler gives, or the keymap's. */
   titleOf: (c: Command) => string;
@@ -83,11 +87,11 @@ export interface ShortcutHint {
   aria: string | undefined;
 }
 
-/** How a command's shortcut is shown and announced, read from the keymap with its overrides; `nested` reads a graph step's Nested and Voronoi keys. */
-export function useShortcutHint(id: string | undefined, nested = false): ShortcutHint {
+/** How a command's shortcut is shown and announced, read from the keymap with its overrides. */
+export function useShortcutHint(id: string | undefined): ShortcutHint {
   const { commands, mac } = useKeymap();
   const command = id ? commands.find((c) => c.id === id) : undefined;
-  const keys = (nested ? command?.nestedKeys : undefined) ?? command?.keys ?? [];
+  const keys = command?.keys ?? [];
   const binding = keys[0] ?? '';
   return { text: binding ? formatBinding(binding, mac) : '', binding, aria: ariaKeyShortcuts(keys, mac) || undefined };
 }
@@ -147,6 +151,12 @@ export function useRunCommand() {
   return useCallback((id: string) => api?.run(id) ?? false, [api]);
 }
 
+/** Runs a move of the shown stage's walk, as its keys do, and announces it: the stage toolbar's step, Out and In buttons. */
+export function useRunWalk() {
+  const api = useContext(CommandsContext);
+  return useCallback((move: Move) => api?.walk(move) ?? false, [api]);
+}
+
 const SEQUENCE_WAIT = 1500;
 
 export function CommandsProvider({ children }: { children: ReactNode }) {
@@ -193,7 +203,14 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
     setTimeout(() => setMessage(text), 30);
   }, []);
   const titleOf = useCallback((c: Command) => handlers.current.get(c.id)?.at(-1)?.title ?? c.title, []);
-  const api = useMemo(() => ({ commands, mac, register, registerWalk, run, available, titleOf, announce }), [commands, mac, register, registerWalk, run, available, titleOf, announce]);
+  const walk = useCallback((move: Move) => {
+    const shown = walks.current.at(-1);
+    if (!shown) return false;
+    const said = shown.current(move);
+    if (said) announce(said);
+    return true;
+  }, [announce]);
+  const api = useMemo(() => ({ commands, mac, register, registerWalk, run, walk, available, titleOf, announce }), [commands, mac, register, registerWalk, run, walk, available, titleOf, announce]);
 
   // In the desktop app, a native menu choice arrives as a command ID and runs like its keys would (LA-V66-R02).
   useEffect(() => window.latheDesktop?.onCommand((id: string) => { run(id); }), [run]);
@@ -205,15 +222,15 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
       const chord = eventChord(e);
       const typing = isTyping(e.target);
       const before = pendingRef.current;
-      // A plain arrow, or W, A, S or D, walks the stage, wherever keyboard focus is, unless it is in a control that uses
-      // arrows itself or the key goes on a sequence already begun.
+      // A plain arrow, W, A, S or D, or Shift with Up, Down, W or S, walks the stage, wherever keyboard focus is, unless it
+      // is in a control that uses arrows itself or the key goes on a sequence already begun.
       const walk = walks.current.at(-1);
-      const arrow = walkArrow(chord);
-      const continues = before.length > 0 && arrow !== chord && match([...before, chord], commands, mac, available).command !== undefined;
-      if (arrow && walk && !usesArrows(e.target) && !continues) {
+      const move = walkMove(chord);
+      const continues = before.length > 0 && !chord.includes('Arrow') && match([...before, chord], commands, mac, available).command !== undefined;
+      if (move && walk && !usesArrows(e.target) && !continues) {
         e.preventDefault();
         if (before.length) setPendingKeys([]);
-        const said = walk.current(arrow);
+        const said = walk.current(move);
         if (said) announce(said);
         return;
       }
@@ -301,7 +318,7 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
   const [query, setQuery] = useState('');
   const q = query.trim().toLowerCase();
   const id = useId();
-  const shown = commands.filter((c) => c.keys.length > 0 && (!c.dynamic || available(c.id)) && (!q || titleOf(c).toLowerCase().includes(q) || [...c.keys, ...(c.nestedKeys ?? [])].some((k) => formatBinding(k, mac).toLowerCase().includes(q))));
+  const shown = commands.filter((c) => c.keys.length > 0 && (!c.dynamic || available(c.id)) && (!q || titleOf(c).toLowerCase().includes(q) || c.keys.some((k) => formatBinding(k, mac).toLowerCase().includes(q))));
   return (
     <Dialog label="Keyboard shortcuts" onClose={onClose} className="shortcut-sheet">
       <div className="dialog-head">
@@ -323,12 +340,6 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
                       <th scope="row">{titleOf(c)}</th>
                       <td>
                         {c.keys.map((k, i) => <span key={k}>{i > 0 && <span className="kbd-or"> or </span>}<Keys binding={k} mac={mac} /></span>)}
-                        {/* A graph step's keys differ by view: the Tree view's, then the Nested and Voronoi views'. */}
-                        {c.nestedKeys && <>
-                          <span className="kbd-or"> in Tree, </span>
-                          {c.nestedKeys.map((k, i) => <span key={k}>{i > 0 && <span className="kbd-or"> or </span>}<Keys binding={k} mac={mac} /></span>)}
-                          <span className="kbd-or"> in Nested and Voronoi</span>
-                        </>}
                       </td>
                       <td className="cmd-id"><code>{c.id}</code></td>
                     </tr>

@@ -94,9 +94,9 @@ test.describe('Exploring flows', () => {
     // Nodes carry stage and kind; the toolbar's Key names the stages' colors and the kinds' shapes.
     expect(focus.stage).toBe('use-cases');
     expect(focus.kind).toBe('use_case');
-    await page.locator(`${STAGE_BOX} .graph-key > summary`).click();
-    await expect(page.locator(`${STAGE_BOX} .graph-key-body`).getByRole('region', { name: 'Key' })).toContainText('capability, use case');
-    await page.locator(`${STAGE_BOX} .graph-key > summary`).click();
+    await page.locator(`${STAGE_BOX} .stage-key > summary`).click();
+    await expect(page.locator(`${STAGE_BOX} .stage-key-body`).getByRole('region', { name: 'Key' })).toContainText('capability, use case');
+    await page.locator(`${STAGE_BOX} .stage-key > summary`).click();
     // Hovering spotlights; clicking focuses, and the address and the header strip follow (the wiki card, shown again below, too).
     await clickBox(page, 'LA-EXP-UC03-R18');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-R18');
@@ -407,8 +407,10 @@ test.describe('Exploring flows', () => {
     await page.locator('.focus-stage .erd-flow .react-flow__node:not([aria-hidden]):not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
     await page.waitForURL((u) => /^\/LA-EXP-EN\d+$/.test(u.pathname));
     await expect(page.locator('.focus-stage .react-flow__node .is-focus').first()).toBeVisible();
-    // The key at the foot of the open space.
-    await expect(page.locator('.focus-stage .erd-tools').getByRole('group', { name: 'Key' })).toBeVisible();
+    // The key, in the toolbar's Key popover.
+    await page.locator('.focus-stage .stage-key > summary').click();
+    await expect(page.locator('.focus-stage .stage-key-body').getByRole('region', { name: 'Key' })).toBeVisible();
+    await page.locator('.focus-stage .stage-key > summary').click();
   });
 
   test('LA-EXP-UC12-FL01-T LA-EXP-UC12-R07-T01 read a record\'s history in the wiki card: its uncommitted change, a commit\'s diff and Load more', async ({ page }) => {

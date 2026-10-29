@@ -2,8 +2,6 @@
 // (camera.ts) and pointer, over the product's one map lanes.ts lays out.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { SpecIndex } from '../specs/data';
-import { Icon } from '../components/icons';
-import { Button } from '../components/Button';
 import { frameRect, MAX_ZOOM, viewRect, type Viewport } from '../graph/camera';
 import { fadeTween, type FadeLook } from '../graph/fade';
 import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
@@ -17,7 +15,7 @@ import { BORDER, labelLines, LABEL_PAD, LABEL_PAD_BLOCK, LINE_HEIGHT, META_FONT,
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { useCameraGestures } from '../graph/gestures';
 import { useCommand } from '../shell/commands';
-import { Tooltip } from '../shell/Tooltip';
+import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { BOX_H, BOX_W, LANE_COLUMN_LABELS, lanesIn, traceFade, visibleIn, type TraceBox, type TraceFocus, type TraceLine, type TraceMap } from './lanes';
@@ -63,7 +61,6 @@ const CONTINUED_LABEL_PX = 120;
 const LABEL_RUN_PX = 220;
 /** The space kept around the framed rectangle, in screen pixels. */
 const PAD = 24;
-const ZOOM_STEP = 1.2;
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 const MIN_FRAME = 120;
 
@@ -438,6 +435,11 @@ function TraceScene({ index, focus, map, focused, gapsOnly, onNavigate, onPeek, 
     const box = frameBox(size);
     gestures.zoomBy(box.x + box.w / 2, box.y + box.h / 2, factor);
   };
+  /** The camera's Fit: the whole map in the frame. */
+  const fitMap = () => {
+    if (!size) return;
+    moveTo(frameRect({ x: 0, y: 0, w: map.width, h: map.height }, null, frameBox(size), { pad: PAD, read: MIN_ZOOM, max: FRAME_MAX, min: MIN_ZOOM }), true);
+  };
 
   // The column names over the frame's top edge, over each column of lanes in view, following the camera across; each
   // band's label over its head in each column of lanes it runs in.
@@ -520,13 +522,7 @@ function TraceScene({ index, focus, map, focused, gapsOnly, onNavigate, onPeek, 
           <li key={h.key} className={h.continued ? 'is-continued' : undefined} style={{ left: h.left, top: h.top, maxWidth: h.width, font: fontFor(fonts, h.continued ? 'meta' : 'title', h.px) }}><span>{h.label}</span></li>
         ))}
       </ol>
-      <div className="graph-controls" role="group" aria-label="Camera">
-        <Button variant="icon" className="graph-zoom-in" label="Zoom in" title="Zoom in" onClick={zoomButton(ZOOM_STEP)}><Icon name="plus" size={14} /></Button>
-        <Button variant="icon" className="graph-zoom-out" label="Zoom out" title="Zoom out" onClick={zoomButton(1 / ZOOM_STEP)}><Icon name="minus" size={14} /></Button>
-        <Tooltip label="Frame the focus" command="graphFit">
-          <Button variant="icon" className="graph-frame-focus" label="Frame the focus" onClick={frameFocus}><Icon name="maximize" size={14} /></Button>
-        </Tooltip>
-      </div>
+      <StageCamera onZoomIn={zoomButton(ZOOM_STEP)} onZoomOut={zoomButton(1 / ZOOM_STEP)} onFit={fitMap} />
       {armedPlate && <TapCard kind={armedPlate.kindLabel} name={armedPlate.title} onOpen={tapToOpen.openArmed} onDismiss={tapToOpen.clear} />}
     </div>
   );

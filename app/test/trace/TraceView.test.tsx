@@ -354,14 +354,16 @@ describe('the Trace stage', () => {
     expect((await drawn(true)).boxes.filter((b) => b.lane === lane && b.role === 'file')).toHaveLength(4);
     // Right along the lane to its file, then Up onto the "+N more": the ring moves, the focus stays, and it is announced.
     const announcer = () => screen.getByTestId('announcer');
+    // One step at a time: past the lane's end Right goes on to the next lane.
     for (let n = 0; n < 8 && !/^File /.test(announcer().textContent ?? ''); n++) {
+      const said = announcer().textContent;
       fireEvent.keyDown(document.body, { key: 'ArrowRight', code: 'ArrowRight' });
-      await new Promise((r) => setTimeout(r, 0));
+      await waitFor(() => { const now = announcer().textContent; expect(now).not.toBe(''); expect(now).not.toBe(said); });
     }
     await waitFor(() => expect(announcer()).toHaveTextContent('File test/return.test.ts'));
     const before = window.location.pathname;
     fireEvent.keyDown(document.body, { key: 'ArrowUp', code: 'ArrowUp' });
-    await waitFor(() => expect(announcer()).toHaveTextContent(/^\+\d+ more in Files: Right or Enter shows them$/));
+    await waitFor(() => expect(announcer()).toHaveTextContent(/^\+\d+ more in Files: Right, In or Enter shows them$/));
     expect(window.location.pathname).toBe(before);
     await waitFor(async () => expect((await drawn(true)).boxes.filter((b) => b.ring).map((b) => b.id)).toEqual([more.id]));
     // Enter opens it: the focus moves to the record naming its first hidden file, and the lane is drawn open, every file in it.

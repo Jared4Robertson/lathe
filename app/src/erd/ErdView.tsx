@@ -1,13 +1,12 @@
 // The ERD stage of any address, /<id>?stage=erd (LA-V94).
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
-import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { Background, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
 import { useCameraGestures } from '../graph/gestures';
 import { frameRect, type Viewport } from '../graph/camera';
 import { PLAIN_LOOK, useThemeVersion } from '../graph/look';
 import type { FadeLook } from '../graph/fade';
-import { Button } from '../components/Button';
 import { lowerLabel } from '../plural';
 import { ERD_EMPTY, erdFocus, erdMap, erdStrength, LINE_WORDS, lineGeometry, lineOffsets, RELATION_ENDS, scopeContents, type ErdBox, type ErdFocus, type ErdKind, type ErdLine, type ErdMap, type ErdRelation, type Rect } from './erd';
 import { erdLayout, readyErdLayout } from './layout';
@@ -16,15 +15,18 @@ import { EdgeHints } from './hints';
 import { ErdLeader } from './leader';
 import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
 import { useWalk } from '../graph/steps';
-import { ARROW_DIRECTION, erdStep } from './walk';
+import { useCommand } from '../shell/commands';
+import { StageCamera, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
+import type { Move } from '../views/levels';
+import { erdTarget } from './walk';
 
 // The ERD stage: one map of the whole product (LA-V94-R08), each domain a region, its aggregates
 // boundaries around their entities, drawn with React Flow and laid out once by ELK (layout.ts).
 // A focus never moves a box: it fades what lies outside its scope (the graph's focus fade), picks
 // out its box, and the camera glides to frame it with the shared camera (graph/gestures.ts). Clicking
-// a box goes to it, as a graph node does. A key floating at the foot of the open space explains the
-// boxes and the lines. Like the graph it never reads the address, and frames itself in the open space
-// it is given.
+// a box goes to it, as a graph node does. Its toolbar and camera are every stage's (views/StageChrome.tsx),
+// the toolbar's Key explaining the boxes and the lines. Like the graph it never reads the address, and
+// frames itself in the open space it is given.
 
 /** What a box is called, in its accessible name, the key and the touch card. */
 export const BOX_KIND: Record<ErdKind, string> = { domain: 'Domain', aggregate: 'Aggregate', entity: 'Entity' };
@@ -176,12 +178,13 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: E
   const at = useMemo(() => erdFocus(index, focus), [index, focus]);
   const map = useMemo(() => (at ? erdMap(index, at.product) : null), [index, at]);
   useLayoutEffect(() => { onCounts?.(map && at ? erdCounts(map, at.scope) : ''); }, [map, at, onCounts]);
-  // The plain arrows walk the map from anywhere (LA-V61-R49): each moves the focus to the nearest box that way on the
-  // map, as the picture shows it (walk.ts), read from the map's one layout once it has arrived; each step only moves the camera.
-  const target = useCallback((key: string) => {
-    const direction = ARROW_DIRECTION[key];
-    const rects = at && direction ? readyErdLayout(index, at.product) : undefined;
-    return map && at && rects ? erdStep(map, rects, at, direction) : null;
+  // The stage walk moves over the map from anywhere (LA-V61-R49): Out and In between the product, the regions, the areas
+  // and the entities, each arrow to the nearest box that way among its siblings, as the picture shows them (walk.ts),
+  // read from the map's one layout once it has arrived; each step only moves the camera.
+  const [, setLaidOut] = useState(0);
+  const target = useCallback((move: Move) => {
+    const rects = at ? readyErdLayout(index, at.product) : undefined;
+    return map && at && rects ? erdTarget(map, rects, at, move) : null;
   }, [index, map, at]);
   useWalk(index, focus, target, onNavigate);
   if (!at || !map) return <p className="hint erd-missing">There's no record or group <code>{focus}</code>.</p>;
@@ -193,21 +196,17 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: E
       ) : (
         <div className="erd-canvas">
           <ReactFlowProvider>
-            <ErdCanvas index={index} map={map} at={at} focus={focus} onNavigate={onNavigate} onPeek={onPeek} space={space} />
+            <ErdCanvas index={index} map={map} at={at} focus={focus} onNavigate={onNavigate} onPeek={onPeek} space={space} onLaidOut={() => setLaidOut((n) => n + 1)} />
           </ReactFlowProvider>
         </div>
       )}
-      <div className="erd-tools stage-tools" data-stage-tools="bottom">
-        <ErdKey map={map} at={at} relations={index.workspace.relations} />
-      </div>
+      <StageToolbar can={(move) => target(move) !== null} stageKey={<ErdKey map={map} at={at} relations={index.workspace.relations} />} />
     </section>
   );
 }
 
-/** The key under the map: each kind of box, badge and line the map draws, and nothing it does not. */
+/** The ERD's key, in the toolbar's Key popover: each kind of box, badge and line the map draws, and nothing it does not. */
 export function ErdKey({ map, at, relations = [] }: { map: ErdMap; at: ErdFocus; relations?: readonly RelationRule[] }) {
-  const [open, setOpen] = useState(false);
-  const gridId = useId();
   const sample = (relation: ErdRelation, dashed: boolean) => {
     const g = lineGeometry({ x: 0, y: 0, width: 2, height: 2 }, { x: 34, y: 0, width: 2, height: 2 }, RELATION_ENDS[relation]);
     return (
@@ -221,10 +220,8 @@ export function ErdKey({ map, at, relations = [] }: { map: ErdMap; at: ErdFocus;
   const has = (kind: ErdKind) => map.boxes.some((b) => b.kind === kind);
   const lines = [...new Map(map.lines.map((l) => [l.relation, l])).values()].sort((a, b) => LINE_ORDER.indexOf(a.relation) - LINE_ORDER.indexOf(b.relation));
   const faded = at.scope !== map.product && map.boxes.length > scopeContents(map, at.scope).boxes.length;
-  // Every entry is a cell of one grid of fixed cells, the boxes' first and then the lines', so a map with other
-  // entries never moves the key itself, only what is written in its cells (LA-PAT-APP-UX-R08): each cell is keyed by
-  // its place, so it stays where it is and only its words change, and the lines start on a row of their own. A
-  // cell's whole meaning is its tooltip.
+  // Every entry is a cell of one grid, the boxes' first and then the lines' on a row of their own; each cell is keyed by
+  // its place, so it stays where it is and only its words change. A cell's whole meaning is its tooltip.
   const text = (words: string) => <span className="erd-key-text">{words}</span>;
   type Entry = { title: string; mark: ReactNode; words: string };
   const boxes: Entry[] = [
@@ -241,23 +238,13 @@ export function ErdKey({ map, at, relations = [] }: { map: ErdMap; at: ErdFocus;
   });
   const cells = (entries: Entry[]) => entries.map((e, i) => <li key={i} title={e.title}>{e.mark} {text(e.words)}</li>);
   return (
-    <div
-      className={`erd-key${open ? ' is-open' : ''}`}
-      role="group"
-      aria-label="Key"
-      tabIndex={0}
-      data-arrows="own"
-      onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); } }}
-    >
-      {/* In a narrow pane the key is one bar: this button opens the whole key over the canvas, moving nothing. */}
-      <Button className="erd-key-toggle" aria-expanded={open} aria-controls={gridId} onClick={() => setOpen((o) => !o)}>
-        {open ? 'Hide the key' : 'Key'}
-      </Button>
-      <div className="erd-key-grid" id={gridId}>
+    <section className="erd-key" aria-label="Key">
+      <div className="erd-key-grid">
         <ul className="erd-key-ends" aria-label="Boxes">{cells(boxes)}</ul>
         <ul className="erd-key-ends" aria-label="Lines">{cells(lineEntries)}</ul>
       </div>
-    </div>
+      <p className="hint">Click a box, or press Enter on it, to focus it. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys (or W, A, S and D) move to the nearest box that way in the same area, going on to the next area at the edge; Shift+Up (Shift+W) goes out to the box around, Shift+Down (Shift+S) in to the first box inside.</p>
+    </section>
   );
 }
 
@@ -302,9 +289,9 @@ function fadeLook(at: HTMLElement | null): Pick<FadeLook, 'focusFade'> {
 /** A box's accessible name: its kind, title and root mark, and whether the focus picks it out. */
 const boxName = (box: ErdBox, pick: boolean) => `${BOX_KIND[box.kind]} ${box.title}${box.root ? ', root' : ''}${box.empty ? `, ${kindLine(box).split(' · ')[1]}` : ''}${pick ? ' (picked out)' : ''}`;
 
-interface CanvasProps { index: SpecIndex; map: ErdMap; at: ErdFocus; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek']; space?: OpenSpaceStore }
+interface CanvasProps { index: SpecIndex; map: ErdMap; at: ErdFocus; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek']; space?: OpenSpaceStore; onLaidOut: () => void }
 
-function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasProps) {
+function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut }: CanvasProps) {
   const relations = index.workspace.relations;
   // The map's layout: ready at once when this product was laid out before on the same data.
   const [placed, setPlaced] = useState<{ map: ErdMap; rects: Map<string, Rect> } | null>(() => {
@@ -319,7 +306,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasP
     if (placed?.map === map) return;
     let live = true;
     erdLayout(index, at.product).then(
-      (rects) => { if (live) { setPlaced({ map, rects }); setError(null); } },
+      (rects) => { if (live) { setPlaced({ map, rects }); setError(null); onLaidOut(); } },
       (e) => { if (live) setError(e instanceof Error ? e.message : String(e)); },
     );
     return () => { live = false; };
@@ -420,6 +407,20 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasP
     if (framedFor.current === key) return;
     if (frameFocus(fitted.current)) { fitted.current = true; framedFor.current = key; }
   }, [at, margin, placed, frameFocus]);
+  // `.` and the toolbar's Frame frame the focus again, as on every stage; the camera's buttons zoom about the frame's
+  // middle and fit the whole map.
+  useCommand('graphFit', () => { frameFocus(true); }, !!placed);
+  const frameMiddle = () => {
+    const box = wrapper.current?.getBoundingClientRect();
+    if (!box) return { x: 0, y: 0 };
+    return { x: margin.left + (box.width - margin.left - margin.right) / 2, y: margin.top + (box.height - margin.top - margin.bottom) / 2 };
+  };
+  const zoomButton = (factor: number) => () => { const m = frameMiddle(); camera.zoomBy(m.x, m.y, factor); };
+  const fitMap = () => {
+    const box = wrapper.current?.getBoundingClientRect();
+    if (!placed || placed.rects.size === 0 || !box) return;
+    camera.moveTo(fitRects(placed.rects.values(), box.width, box.height, margin), true);
+  };
   // Frame again, at once, whenever the canvas changes size. It observes once, for the canvas's
   // life, and only acts on a real change, so a glide is not cut short by a size reported again.
   const latestFrame = useRef(frameFocus);
@@ -498,9 +499,9 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasP
         proOptions={{ hideAttribution: true }}
       >
         <Background gap={24} size={1} />
-        <Controls showInteractive={false} />
         <RegionLabels regions={regions} />
       </ReactFlow>
+      <StageCamera onZoomIn={zoomButton(ZOOM_STEP)} onZoomOut={zoomButton(1 / ZOOM_STEP)} onFit={fitMap} />
       <EdgeHints centers={centers} wrapper={wrapper} moveTo={(v) => camera.moveTo(v, true)} />
       <ErdLeader host={wrapper} rects={placed?.rects ?? null} focus={focus} space={space} />
       {armedBox && <TapCard kind={BOX_KIND[armedBox.kind]} name={armedBox.title} onOpen={tap.openArmed} onDismiss={tap.clear} />}
