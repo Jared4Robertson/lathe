@@ -3,9 +3,8 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, use
 import { type SpecIndex } from '../specs/data';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
-import { COMMANDS, formatBinding, isMac } from '../shell/keymap';
 import { Icon } from '../components/icons';
-import { KeyControl } from './key';
+import { GraphKey } from './key';
 import { TapCard, useTapToOpen } from './touch';
 import {
   NO_FILTERS,
@@ -18,13 +17,14 @@ import {
   type Filters,
   type Neighborhood,
 } from './model';
-import { STEPS, STEP_COMMANDS, nestsChildren, stepKey, stepTarget, useStepWalk, type Step } from './steps';
+import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
+import { StageCamera, StageToolbar, ZOOM_STEP, type ToolbarTier } from '../views/StageChrome';
 import { DEFAULT_GRAPH_SETTINGS } from './settings';
 import { graphMap, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
 import { setTextMeasure, type TextMeasure } from './text';
-import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, MAX_ZOOM, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
+import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, frameRect, MAX_ZOOM, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
 import { nodeShape } from './shapes';
@@ -77,8 +77,6 @@ const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`
 
 export const MAX_DEPTH = 3;
 const DEPTHS = [1, 2, 3];
-/** The toolbar's forms, widest first: names hidden behind icons, then one-letter layouts, then depth and the steps in a More menu. */
-const TOOLBAR_TIERS = ['full', 'compact', 'narrow', 'menu'] as const;
 /** Depth is how many levels below the focus the camera frames, folders and stages included. The Nested and Voronoi cameras frame the focus's box or cell, whatever the depth, so they have none. */
 const DEPTH_LABELS = ['Frame the focus and its children', 'Frame two levels below the focus', 'Frame three levels below the focus'];
 /** The view after this one, for the switch's command. */
@@ -136,38 +134,6 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   useCommand('graphDepthUp', () => update({ depth: Math.min(MAX_DEPTH, latest.current.depth + 1) }), valid && layout === 'tree');
   useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && layout === 'tree');
   useCommand('graphLayout', () => update({ layout: nextLayout(latest.current.layout) }), valid);
-  // Stepping through the tree moves the focus, as a click does (the arrow keys do it from anywhere, GraphStage's walk).
-  const stepTo = (step: Step) => () => {
-    const to = stepTarget(index, focus, step);
-    if (to) onNavigate(to);
-  };
-
-  // The toolbar is one row at every pane width (LA-PAT-APP-UX-R08). While it does not fit, it steps down a tier before paint
-  // (TOOLBAR_TIERS); the width each tier needed is kept, so a wider pane steps back up without trying each tier on screen.
-  const toolbar = useRef<HTMLDivElement>(null);
-  const [tier, setTier] = useState(0);
-  const [, setRoom] = useState(0);
-  const needs = useRef<number[]>([]);
-  const hiddenCount = filters.hiddenKinds.size;
-  useLayoutEffect(() => { needs.current = []; setTier(0); }, [hiddenCount]);
-  useLayoutEffect(() => {
-    const el = toolbar.current;
-    if (!el || tier >= TOOLBAR_TIERS.length - 1 || el.scrollWidth <= el.clientWidth + 1) return;
-    needs.current[tier] = el.scrollWidth;
-    setTier(tier + 1);
-  });
-  useEffect(() => {
-    const el = toolbar.current;
-    if (!el || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => {
-      const room = el.clientWidth;
-      setTier((t) => { const fits = needs.current.findIndex((n, i) => i < t && n <= room + 1); return fits < 0 ? t : fits; });
-      setRoom(room);
-    });
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [valid]);
-
   if (!valid) {
     return (
       <div className="placeholder graph-missing">
@@ -175,11 +141,27 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
       </div>
     );
   }
-  // The step buttons keep their places in every view; each shows the arrow that takes its step in this one.
-  const steps = STEPS.map((step) => ({ step, command: STEP_COMMANDS[step], label: COMMANDS.find((c) => c.id === STEP_COMMANDS[step])!.title, mark: formatBinding(stepKey(layout, step), isMac()) }));
-  const moreControls = (
-    <>
-      {/* Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21). */}
+  // The shared stage toolbar (views/StageChrome.tsx): the steps, Out, In and Frame, then the layout switch, the filters and
+  // depth, then the key. In the narrow tiers the layouts show one letter each, and in the narrowest depth folds into the
+  // More menu.
+  const tools = (tier: ToolbarTier) => ({
+    controls: (
+      <>
+        <div className="graph-depth graph-layout" role="group" aria-label="Layout">
+          {GRAPH_LAYOUTS.map((l) => {
+            const letter = tier === 'narrow' || tier === 'menu';
+            return (
+              <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
+                <button type="button" aria-pressed={layout === l.layout} aria-label={letter ? l.label : undefined} onClick={() => update({ layout: l.layout })}>{letter ? l.label[0] : l.label}</button>
+              </Tooltip>
+            );
+          })}
+        </div>
+        <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
+      </>
+    ),
+    // Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21).
+    fold: (
       <div className={`graph-depth${layout === 'tree' ? '' : ' is-idle'}`} role="group" aria-label="Depth" aria-hidden={layout !== 'tree' || undefined} inert={layout !== 'tree' || undefined}>
         <span className="graph-depth-name">Depth</span>
         {DEPTHS.map((d) => (
@@ -188,44 +170,19 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
           </Tooltip>
         ))}
       </div>
-      <div className="graph-steps" role="group" aria-label="Step through the tree">
-        {steps.map((s) => (
-          <Tooltip key={s.step} label={s.label} command={s.command} nested={nestsChildren(layout)}>
-            <Button className="graph-step" aria-label={s.label} disabled={!stepTarget(index, focus, s.step)} onClick={stepTo(s.step)}>{s.mark}</Button>
-          </Tooltip>
-        ))}
-      </div>
-    </>
-  );
+    ),
+  });
 
   return (
     <section className="graph-page" aria-label="Graph" onKeyDown={onPageKey}>
-      {/* The toolbar floats at the top of the open space, one row at every width (LA-PAT-APP-UX-R08): when the row does not fit, it steps down a tier at a time
-          (toolbarTier), never wrapping and never cutting anything off. */}
-      <div className="graph-tools stage-tools" data-stage-tools="top">
-        <div className="graph-toolbar" ref={toolbar} data-tier={TOOLBAR_TIERS[tier]}>
-          <div className="graph-depth graph-layout" role="group" aria-label="Layout">
-            {GRAPH_LAYOUTS.map((l) => (
-              <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
-                <button type="button" aria-pressed={layout === l.layout} aria-label={tier >= 2 ? l.label : undefined} onClick={() => update({ layout: l.layout })}>{tier >= 2 ? l.label[0] : l.label}</button>
-              </Tooltip>
-            ))}
-          </div>
-          {tier >= 3 ? (
-            <details className="graph-more">
-              <Tooltip label="Depth and the steps through the tree">
-                <summary aria-label="More: depth and steps"><Icon name="dots" size={16} /></summary>
-              </Tooltip>
-              <div className="graph-more-body">{moreControls}</div>
-            </details>
-          ) : moreControls}
-          {/* The filters and the key sit at the end. */}
-          <div className="graph-toolbar-end">
-            <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
-            <KeyControl stages={index.workspace.stages} />
-          </div>
-        </div>
-      </div>
+      {/* The toolbar floats at the top of the open space, one row at every width (LA-PAT-APP-UX-R08). */}
+      <StageToolbar
+        can={(move) => graphTarget(index, focus, layout, move) !== null}
+        walkLabels={graphWalkLabels(layout)}
+        own={tools}
+        measureKey={filters.hiddenKinds.size}
+        stageKey={<GraphKey stages={index.workspace.stages} />}
+      />
       <div className="graph-workspace">
         <div className="graph-canvas">
           <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} space={space} />
@@ -359,8 +316,6 @@ function MapOverview({ map, focus, hidden, view }: { map: PlacedMap; focus: stri
 const EMPTY_VORONOI: VoronoiMap = { view: 'voronoi', nodes: new Map(), roots: [], byLevel: [], width: 0, height: 0 };
 
 
-/** How much one step of the zoom buttons zooms. */
-const ZOOM_STEP = 1.2;
 /** No floating panels: the frame is the whole stage. */
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 /** The least open space, in px, the camera frames the focus in; less frames on the whole stage. */
@@ -638,6 +593,12 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
 
   const frameFocus = useCallback(() => { const t = framing(); if (t) moveTo(t, true); }, [framing, moveTo]);
   useCommand('graphFit', frameFocus, !!size);
+  /** The camera's Fit: the whole map in the frame. */
+  const fitMap = () => {
+    if (!size || map.nodes.size === 0) return;
+    moveTo(frameRect({ x: 0, y: 0, w: map.width, h: map.height }, null, frameBox(size), { pad: 24, read: MIN_ZOOM, max: MAX_ZOOM, min: MIN_ZOOM }), true);
+    follow();
+  };
 
   // ---- The plates and lines (plate.ts, paint.ts) ----
   const look = useRef<Look>(PLAIN_LOOK);
@@ -830,17 +791,18 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (fromKeyboard) refocus.current = id;
     onNavigate(id);
   };
-  // The plain arrows step through the tree from anywhere on the page but a control that uses arrows itself (the commands
-  // layer's walk, steps.ts), each step moving the graph's focus by the view's keys (stepKey: in the Tree view Left to the
-  // parent, Right to the first child, Up and Down across the siblings; in the Nested and Voronoi views Up to the parent,
-  // Down to the first child, Left and Right across). From a box with keyboard focus, keyboard focus follows to the new
-  // focus's box (and is read out there); from anywhere else it stays, and the step is announced.
+  // The stage walk moves through the tree from anywhere on the page but a control that uses arrows itself (the commands
+  // layer's walk, steps.ts), each move moving the graph's focus: Out and In to the parent and the first child, the arrows
+  // by the view's keys (in the Tree view Left to the parent, Right to the first child, Up and Down across the siblings; in
+  // the Nested and Voronoi views Up to the parent, Down to the first child, Left and Right across). From a box with
+  // keyboard focus, keyboard focus follows to the new focus's box (and is read out there); from anywhere else it stays,
+  // and the step is announced.
   const followFromBox = useCallback((to: string) => {
     if (!layer.current?.contains(document.activeElement) || !document.activeElement?.closest('.graph-box')) return false;
     refocus.current = to;
     return true;
   }, []);
-  useStepWalk(index, focus, layout, onNavigate, followFromBox);
+  useGraphWalk(index, focus, layout, onNavigate, followFromBox);
   // Enter focuses the box with keyboard focus; on the focus's own box it is left to the commands layer, where it shows or
   // collapses the wiki card (LA-V96-R19). Tab and Shift+Tab step through the boxes, as the page's own focus order.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -981,13 +943,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
           );
         })}
       </div>
-      <div className="graph-controls" role="group" aria-label="Camera">
-        <Button variant="icon" className="graph-zoom-in" label="Zoom in" title="Zoom in" onClick={zoomButton(ZOOM_STEP)}><Icon name="plus" size={14} /></Button>
-        <Button variant="icon" className="graph-zoom-out" label="Zoom out" title="Zoom out" onClick={zoomButton(1 / ZOOM_STEP)}><Icon name="minus" size={14} /></Button>
-        <Tooltip label="Frame the focus" command="graphFit">
-          <Button variant="icon" className="graph-frame-focus" label="Frame the focus" onClick={frameFocus}><Icon name="maximize" size={14} /></Button>
-        </Tooltip>
-      </div>
+      <StageCamera onZoomIn={zoomButton(ZOOM_STEP)} onZoomOut={zoomButton(1 / ZOOM_STEP)} onFit={fitMap} />
       {minimap && <MapOverview map={map} focus={focus} hidden={hidden} view={minimapView} />}
       {armedPlate && (
         <TapCard

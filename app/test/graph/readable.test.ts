@@ -1,10 +1,7 @@
 // @vitest-environment node
-import path from 'node:path';
-import type { SpecData } from '../../../lathe/src/server/contract';
 import { indexOf } from '../fixtures/load';
 import { beforeAll, describe, expect, it } from 'vitest';
-import { openStore } from '../../../lathe/src/store/index';
-import { joinSchemas } from '../../../lathe/src/server/api';
+import { repoData } from '../fixtures/repo';
 import { drawnFor, drawnNested, FRAME_PADDING, frameNested, frameOnMap, MAX_ZOOM, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
 import { graphMap, treeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
 import { nestedMap } from '../../src/graph/nested';
@@ -12,24 +9,6 @@ import { holds, polygonArea, readyVoronoiMap, type VoronoiMap } from '../../src/
 import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
 import { treeOf } from '../../src/graph/tree';
 import { spaceIndex, type SpecIndex } from '../../src/specs/data';
-
-/** This repo's products, Lathe's (data/) and the Tool Library's (examples/tool-library/), each read through its own store, as the workspace serves them. */
-async function repoData(): Promise<SpecData> {
-  const repo = path.resolve(import.meta.dirname, '../../..');
-  const data: SpecData = { schema: undefined as unknown as SpecData['schema'], sources: [], placements: {}, problems: [], exceptions: [], coverage: [], chains: [] };
-  const schemas: SpecData['schema'][] = [];
-  for (const root of [repo, path.join(repo, 'examples/tool-library')]) {
-    const store = await openStore(root);
-    schemas.push(store.schema);
-    const tables: SpecData['sources'][number]['tables'] = {};
-    for (const table of store.schema.loadOrder) if (store.rows(table).length) tables[table] = store.rows(table);
-    data.sources.push({ dataDir: path.relative(repo, store.dataDir), tables });
-    Object.assign(data.placements, await store.placements());
-    await store.close();
-  }
-  data.schema = joinSchemas(schemas);
-  return data;
-}
 import { siblingGroups } from './workspace';
 import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
 import { inPolygon } from '../../src/graph/hit';
