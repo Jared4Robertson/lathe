@@ -1,6 +1,6 @@
 // Routes traced both ways between the records and the code (lathe/src/trace/routes.ts): the route normal form, the
 // route-without-record gap, and the flow that keeps routes and records in step from the command line. The
-// endpoint-route-not-in-file and view-route-not-in-file checks are tested with the other checks, in checks.test.ts.
+// endpoint-route-not-in-file and view-route-not-in-file checks are tested with the other Traceability checks, in traceability/checks.test.ts.
 import { afterAll, describe, expect, it } from 'vitest';
 import { normalRoute, regexRoute, servedRoutes } from '../../src/trace/routes.ts';
 import { writeFileSync } from 'node:fs';
