@@ -186,7 +186,7 @@ describe('the MCP launcher', () => {
     expect((await results(`${major}.9.1`)).calls).toEqual([['Product TL: Tool Library\n  kind: product'], ['Product TL: Tool Library\n  kind: product']]);
   });
 
-  it('LA-INT01-T03 says why it cannot start outside a Lathe repo', () => {
+  it('LA-INT01-T03 LA-PLT-UC18-R02-T01 says why it cannot start outside a Lathe repo', () => {
     const empty = realpathSync(mkdtempSync(path.join(tmpdir(), 'lathe-plugin-none-')));
     roots.push(empty);
     const result = spawnSync(process.execPath, [path.join(pluginDir, 'scripts', 'mcp-server.mjs')], { env: { ...process.env, CLAUDE_PROJECT_DIR: empty }, encoding: 'utf8', input: '' });

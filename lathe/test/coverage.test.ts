@@ -131,7 +131,7 @@ describe('designed and built', () => {
 describe('chains', () => {
   const chain = (ws: Workspace, id: string) => ws.chains.find((c) => c.obligation === id)!;
 
-  it("LA-TRC-UC01-R06-T01 each obligation's chain holds what designs it, what builds it as built counts, its tests and their files, link by link", () => {
+  it("LA-TRC-UC10-R05-T01 each obligation's chain holds what designs it, what builds it as built counts, its tests and their files, link by link", () => {
     // A UC requirement: its fulfilling steps, their flow, the view they happen in, what they invoke and the integration
     // they exchange with; the handlers, the UI component and the adapter that build it; its test.
     const req = chain(clean, 'EX-LEND-UC01-R01');
@@ -150,7 +150,7 @@ describe('chains', () => {
     expect(clean.chains.map((c) => c.obligation).sort()).toEqual(clean.records.filter((r) => clean.kinds.find((k) => k.kind === r.kind)?.obligation).map((r) => r.id).sort());
   });
 
-  it("LA-TRC-UC01-R07-T01 a flow step, command, query or UI component no obligation's chain reaches is a record-untraced gap", async () => {
+  it("LA-TRC-UC10-R05-T02 a flow step, command, query or UI component no obligation's chain reaches is a record-untraced gap", async () => {
     // The complete product: everything is reached, a policy's command through the policy.
     expect(gaps(clean).filter((g) => g.startsWith('record-untraced'))).toEqual([]);
     let data = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC01-FL01-S02');
