@@ -199,11 +199,10 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             </Button>
           </Tooltip>
         </div>
-        <button type="button" className="quick-find-button" aria-haspopup="dialog" aria-keyshortcuts={findKeys.aria} onClick={() => run('quickOpen')}>
-          <Icon name="search" size={16} />
+        <Button className="quick-find-button" icon="search" aria-haspopup="dialog" aria-keyshortcuts={findKeys.aria} onClick={() => run('quickOpen')}>
           <span className="quick-find-label">Go to…</span>
           {findKeys.text && <kbd className="kbd kbd-hint" aria-hidden="true">{findKeys.text}</kbd>}
-        </button>
+        </Button>
         <div className="nav-scroll" ref={scroller} aria-busy={!loaded || undefined}>
           {loaded && <>
           {/* The current space needs no heading of its own: its first row, its name and icon, is its overview. */}

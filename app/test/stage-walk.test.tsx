@@ -30,10 +30,14 @@ describe('the stage walk', () => {
 
     // A modifier keeps the arrow's own meaning: nothing steps.
     press(document.body, 'ArrowLeft', { altKey: true });
-    // Quick find (a combobox) and the nav tree keep their arrows.
-    const find = document.querySelector<HTMLInputElement>('#nav input')!;
-    find.focus();
+    // Quick find (a combobox in a modal dialog) and the nav tree keep their arrows.
+    fireEvent.keyDown(document.body, { key: 'p', code: 'KeyP', ctrlKey: true });
+    const find = document.querySelector<HTMLInputElement>('.quick-open input')!;
+    expect(find).toHaveFocus();
     press(find, 'ArrowLeft');
+    press(find, 'ArrowDown');
+    fireEvent.keyDown(find, { key: 'Escape' });
+    expect(document.querySelector('.quick-open')).toBeNull();
     const navLink = document.querySelector<HTMLElement>('#nav .space-items a')!;
     navLink.focus();
     press(navLink, 'ArrowLeft');
