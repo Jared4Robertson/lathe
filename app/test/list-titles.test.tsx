@@ -5,7 +5,7 @@ import { modelWorkspace } from './fixtures/model';
 import { workspace } from './fixtures/workspace';
 import { facts, openApp } from './helpers';
 
-// A list of one kind is titled by that kind ("Constraints"); one of several kinds stays "Children"
+// A list of one kind is titled by that kind ("Invariant tests"); one of several kinds stays "Children"
 // or "Members". The title, the list's accessible name and its search box all follow.
 
 const wiki = () => screen.getByRole('region', { name: 'Wiki card' });
@@ -14,14 +14,14 @@ const noListInFacts = (name: RegExp) => { expect(within(facts()).queryByRole('li
 
 describe('list titles', () => {
   it('LA-V92-R09-T02 A list of children or members of one kind is titled by that kind, in the wiki card', async () => {
-    // A value object's constraints: the record page says "Constraints"; its facts do not repeat them.
-    await openApp('/DM-VO01');
-    await screen.findByRole('heading', { level: 1, name: 'Quantity' });
-    const rules = within(wiki()).getByRole('heading', { level: 2, name: /^Constraints/ });
-    expect(rules).toHaveTextContent('Constraints1');
+    // An invariant's tests: the record page says "Invariant tests"; its facts do not repeat them.
+    await openApp('/DM-SHOP-INV01');
+    await screen.findByRole('heading', { level: 1 });
+    const tests = within(wiki()).getByRole('heading', { level: 2, name: /^Invariant tests/ });
+    expect(tests).toHaveTextContent('Invariant tests1');
     expect(within(wiki()).queryByRole('heading', { name: /^Children/ })).toBeNull();
-    expect(within(wiki()).getByRole('list', { name: 'Constraints of DM-VO01' })).toBeInTheDocument();
-    noListInFacts(/^Constraints/);
+    expect(within(wiki()).getByRole('list', { name: 'Invariant tests of DM-SHOP-INV01' })).toBeInTheDocument();
+    noListInFacts(/^Invariant tests/);
 
     // A use case's UC requirements, and the nested list under a row, are named by their kind too.
     await openApp('/DM-SHOP-UC01');
@@ -51,9 +51,9 @@ describe('list titles', () => {
 
     // The title reads the workspace's kind label, so a renamed kind shows its own name.
     const w = workspace();
-    w.schema.kinds.constraint.label = 'Rule';
-    await openApp('/DM-VO01', { data: w });
-    await screen.findByRole('heading', { level: 1, name: 'Quantity' });
-    expect(within(wiki()).getByRole('heading', { level: 2, name: /^Rules/ })).toBeInTheDocument();
+    w.schema.kinds.invariant_test.label = 'Proof';
+    await openApp('/DM-SHOP-INV01', { data: w });
+    await screen.findByRole('heading', { level: 1 });
+    expect(within(wiki()).getByRole('heading', { level: 2, name: /^Proofs/ })).toBeInTheDocument();
   });
 });
