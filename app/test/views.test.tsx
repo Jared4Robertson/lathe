@@ -142,8 +142,8 @@ describe('one address, one stage', () => {
     await waitFor(() => expect(el.querySelector('[data-stage-tools="top"]')).not.toBeNull());
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{ top: var\(--open-top/);
-    // Centered across the open space, over the focus the camera frames there.
-    expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{[^}]*left: calc\(var\(--open-left, 0px\) \+ \(100% - var\(--open-left, 0px\) - var\(--open-right, 0px\)\) \/ 2\); transform: translateX\(-50%\)/);
+    // Centered on the whole stage, in one spot whatever panels are open, narrowing evenly to stay clear of them.
+    expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{[^}]*left: 50%; transform: translateX\(-50%\); max-width: calc\(100% - 2 \* max\(var\(--open-left, 0px\), var\(--side-space, 0px\)\)\)/);
     expect(css).toMatch(/\.trace-scroll \{[^}]*padding: calc\(var\(--frame-top/);
   });
 
