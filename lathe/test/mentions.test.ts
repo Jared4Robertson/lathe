@@ -78,7 +78,7 @@ describe('IDs in text', () => {
     return both;
   };
 
-  it('LA-AUT-SP08-T A link from a record of one product to a record of another is refused, whatever the relation', async () => {
+  it('LA-PAT-RECORD-IDENTITY-R03-T01 A link from a record of one product to a record of another is refused, whatever the relation', async () => {
     expect(await refusals(crossing())).toEqual([
       expect.objectContaining({ rule: 'link-crosses-product', table: 'happens_in', message: expect.stringContaining('EX-LEND-UC02-FL01-S01 is in product EX') }),
     ]);
