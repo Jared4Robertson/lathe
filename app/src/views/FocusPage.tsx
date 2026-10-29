@@ -230,22 +230,17 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const cardScroll = useRef<HTMLDivElement>(null);
   const tabRef = useRef(tab);
   tabRef.current = tab;
-  const focusRef = useRef(focus);
-  focusRef.current = focus;
-  // `catching`: the tab was just activated and the card still shows the page it settled on before,
-  // so its own page arriving is the tab coming back, not a new page opened in it.
-  const shown = useRef<{ key: string; page: string; catching: boolean } | null>(null);
+  const shown = useRef<{ key: string; page: string } | null>(null);
   useLayoutEffect(() => {
     // Until the card settles on the focus (a page just opened, or a tab just switched to), it still
     // shows the page before, at that page's scroll; the scroll is the new page's once it is drawn.
     if (settledFocus !== focus) return;
     const before = shown.current;
-    const switched = !before || before.key !== tab.key || before.catching;
-    shown.current = { key: tab.key, page: settledFocus, catching: switched && settledFocus !== focusRef.current };
+    shown.current = { key: tab.key, page: settledFocus };
     const el = cardScroll.current;
     if (!el) return;
     let top = tabs.scrollOf(tabRef.current);
-    if (!switched && before.page !== settledFocus) {
+    if (before && before.key === tab.key && before.page !== settledFocus) {
       const noted = entryState<number>(CARD_SCROLL);
       top = lastAddressMove() === 'pop' && typeof noted === 'number' ? noted : 0;
       tabs.setScroll(tabRef.current, top);
