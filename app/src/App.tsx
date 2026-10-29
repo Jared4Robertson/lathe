@@ -296,9 +296,9 @@ function SpaceCommand({ n, spaces }: { n: number; spaces: SpacesApi }) {
   return null;
 }
 
-/** F8 and Shift+F8: move focus to the next or previous problem on the page, and say what it is. */
+/** F8 and Shift+F8: move focus to the next or previous problem on the page or in the Checks panel, and say what it is. */
 function stepProblem(step: 1 | -1, announce: (text: string) => void) {
-  const items = [...document.querySelectorAll<HTMLElement>('#main li.problem')];
+  const items = [...document.querySelectorAll<HTMLElement>('#main li.problem, .tool-panel li.problem')];
   if (items.length === 0) { announce('No problems on this page.'); return; }
   const at = items.findIndex((el) => el === document.activeElement || el.contains(document.activeElement));
   const next = at < 0 ? (step === 1 ? 0 : items.length - 1) : (at + step + items.length) % items.length;

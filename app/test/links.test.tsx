@@ -5,7 +5,7 @@ import { recordIds } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/DM-PAY', '/DM/checks',
+const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/DM-PAY', '/DM?panel=checks',
   ...recordIds(workspace()).map((id) => addressOf(id))];
 
 describe('record IDs are links', () => {
@@ -15,7 +15,8 @@ describe('record IDs are links', () => {
     for (const page of PAGES) {
       await openApp(page);
       await screen.findByRole('heading', { level: 1 });
-      for (const code of main().querySelectorAll('code')) {
+      // The page, and the Checks panel over its stage.
+      for (const code of [...main().querySelectorAll('code'), ...document.querySelectorAll('.tool-panel code')]) {
         const id = code.textContent ?? '';
         if (!ids.has(id)) continue;
         // That record's own page, at its ID: a product's and a domain's is their overview.

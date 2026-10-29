@@ -32,7 +32,7 @@ export function noteInEntry(key: string, value: unknown) {
   } catch { /* too many history calls: the note is skipped */ }
 }
 
-// An address that starts with `?` is a patch of the current one (LA-PAT-APP-UX-R19): each of its
+// An address that starts with `?` is a patch of the current one (LA-PAT-APP-UX-R20): each of its
 // parameters replaces that parameter of the current address, moved to the end (so the order of the
 // parameters is the order things were opened in), and an empty one removes it; the path stays, and
 // a hash in the patch is kept. A tool over the stage is opened this way (`?panel=checks`), so the

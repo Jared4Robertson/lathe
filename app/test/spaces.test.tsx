@@ -9,7 +9,7 @@ import { spaceIndex } from '../src/specs/data';
 import { addRows, indexOf, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { modelWorkspace } from './fixtures/model';
-import { main, openApp } from './helpers';
+import { checksPanel, openApp } from './helpers';
 
 // Product spaces: the rail at the far left of the nav, one icon per product; the nav, quick find
 // and Checks are the current space's alone; Alt+1 to Alt+9 switch spaces.
@@ -70,7 +70,8 @@ describe('product spaces', () => {
     expect(productOfPath(index, '/NF-NOTE')).toBe('NF');
     expect(productOfPath(index, '/DM-SHOP-UC01-R01')).toBe('DM');
     expect(productOfPath(index, '/DM-SHOP/use_case')).toBe('DM');
-    expect(productOfPath(index, '/NF/checks')).toBe('NF');
+    // Checks opens over the page's stage (`?panel=checks`), so the page's product is the space.
+    expect(productOfPath(index, '/NF')).toBe('NF');
     expect(productOfPath(index, '/format')).toBeNull();
     expect(productOfPath(index, '/')).toBeNull();
   });
@@ -106,9 +107,10 @@ describe('product spaces', () => {
   it('LA-V41-R03-T01 The space\'s Checks page is inside it, at its product\'s ID, opened from the nav', async () => {
     await openApp('/NF-NOTE', { data: spacesWorkspace() });
     await waitFor(() => expect(spaceLink('Notebook')).toHaveAttribute('aria-current', 'true'));
-    // Checks is the space's own page: the space stays Notebook.
+    // Checks opens over the space's stage: the page and the space stay Notebook's.
     await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
-    expect(window.location.pathname).toBe('/NF/checks');
+    expect(window.location.pathname + window.location.search).toBe('/NF-NOTE?panel=checks');
+    expect(checksPanel()).toBeInTheDocument();
     expect(spaceLink('Notebook')).toHaveAttribute('aria-current', 'true');
     expect(within(panel()).getByRole('link', { name: 'Notes' })).toBeInTheDocument();
   });
@@ -191,7 +193,7 @@ describe('product spaces', () => {
     await screen.findByRole('heading', { level: 1, name: 'Alpha beta' });
     // Every other shortcut still works: Ctrl+Shift+M opens the space's Checks.
     fireEvent.keyDown(document.body, { key: 'M', code: 'KeyM', ctrlKey: true, shiftKey: true });
-    expect(window.location.pathname).toBe('/AB/checks');
+    expect(window.location.pathname + window.location.search).toBe('/AB?panel=checks');
 
     fireEvent.keyDown(document.body, { key: 'P', code: 'KeyP', ctrlKey: true, shiftKey: true });
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
@@ -238,28 +240,27 @@ describe('product spaces', () => {
     await openApp('/NF', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Notebook' });
     await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
-    expect(window.location.pathname).toBe('/NF/checks');
-    expect(within(main()).getByText('Notebook · checks')).toBeInTheDocument();
+    expect(window.location.pathname + window.location.search).toBe('/NF?panel=checks');
     // Notebook's one error and the workspace's one; none of Demo shop's.
-    expect(within(main()).getByText('2 errors · 0 warnings')).toBeInTheDocument();
-    expect(within(main()).queryByRole('group', { name: 'Show checks for' })).toBeNull();
-    // The workspace's problem names no record, so its row opens its check (LA-PAT-APP-UX-R14).
-    expect([...main().querySelectorAll('section li a')].map((a) => a.getAttribute('href'))).toEqual(['/NF-NOTE', '/format/checks/engine']);
-    expect(within(main()).getByRole('heading', { level: 2, name: /^Workspace/ })).toBeInTheDocument();
-    expect(within(main()).getByText('The checks could not read a file.')).toBeInTheDocument();
-    expect(main().textContent).not.toMatch(/DM-/);
+    expect(within(checksPanel()).getByText('2 errors · 0 warnings')).toBeInTheDocument();
+    expect(within(checksPanel()).queryByRole('group', { name: 'Show checks for' })).toBeNull();
+    // The workspace's problem names no record, so its row opens its check's page in the wiki card (LA-PAT-APP-UX-R14).
+    expect([...checksPanel().querySelectorAll('section li a')].map((a) => a.getAttribute('href'))).toEqual(['/NF-NOTE', '/NF?panel=checks&page=format/checks/engine']);
+    expect(within(checksPanel()).getByRole('heading', { level: 3, name: /^Workspace/ })).toBeInTheDocument();
+    expect(within(checksPanel()).getByText('The checks could not read a file.')).toBeInTheDocument();
+    expect(checksPanel().textContent).not.toMatch(/DM-/);
   });
 
   it("LA-V41-R03-T02 Each space has its own Checks page, and none lists every product's", async () => {
-    await openApp('/NF/checks', { data: spacesWorkspace() });
-    await screen.findByText('Notebook · checks');
-    expect(within(main()).queryByRole('group', { name: 'Show checks for' })).toBeNull();
+    await openApp('/NF?panel=checks', { data: spacesWorkspace() });
+    await waitFor(() => expect(within(checksPanel()).getByText('2 errors · 0 warnings')).toBeInTheDocument());
+    expect(within(checksPanel()).queryByRole('group', { name: 'Show checks for' })).toBeNull();
+    // Switching space keeps Checks open over the new space's stage, listing that space's problems.
     await userEvent.setup().click(spaceLink('Demo shop'));
-    await userEvent.setup().click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
-    expect(window.location.pathname).toBe('/DM/checks');
-    expect(within(main()).getByText('2 errors · 3 warnings')).toBeInTheDocument();
-    expect(main().textContent).not.toMatch(/NF-/);
-    expect(within(main()).getByText('The checks could not read a file.')).toBeInTheDocument();
+    expect(window.location.pathname + window.location.search).toBe('/DM?panel=checks');
+    expect(within(checksPanel()).getByText('2 errors · 3 warnings')).toBeInTheDocument();
+    expect(checksPanel().textContent).not.toMatch(/NF-/);
+    expect(within(checksPanel()).getByText('The checks could not read a file.')).toBeInTheDocument();
   });
 
   it('LA-V90-R14-T01 On a narrow screen the rail stays visible inside the nav drawer', async () => {

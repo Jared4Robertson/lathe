@@ -20,9 +20,9 @@ describe('routing', () => {
     expect(parseSpecRoute('/DM-SHOP-CMD01-H', index)).toEqual({ page: 'record', id: 'DM-SHOP-CMD01-H' });
     expect(parseSpecRoute('/DM-SHOP/domain-model/aggregate')).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'domain-model/aggregate' });
     expect(parseSpecRoute('/')).toEqual({ page: 'specs' });
-    expect(parseSpecRoute('/DM/checks')).toEqual({ page: 'checks', product: 'DM' });
-    expect(parseSpecRoute('/format')).toEqual({ page: 'format' });
-    expect(parseSpecRoute('/settings/appearance')).toBeNull();
+    // The tools are no pages of their own: they open over the stage, in the query (`?panel=checks`).
+    expect(parseSpecRoute('/format')).toEqual({ page: 'missing' });
+    expect(parseSpecRoute('/settings/appearance')).toEqual({ page: 'missing' });
     expect(parseSpecRoute('/nothing-here')).toEqual({ page: 'missing' });
 
     // Opening an address directly (a bookmark or a reload) shows that page.
@@ -35,8 +35,9 @@ describe('routing', () => {
     expect(window.location.pathname).toBe('/DM-SHOP');
     expect(heading()).toHaveTextContent('Shopping');
     await user.click(within(menu()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
-    expect(window.location.pathname).toBe('/DM/checks');
-    expect(heading()).toHaveTextContent('Checks');
+    expect(window.location.pathname + window.location.search).toBe('/DM-SHOP?panel=checks');
+    expect(heading()).toHaveTextContent('Shopping');
+    expect(screen.getByRole('region', { name: 'Checks' })).toBeInTheDocument()
 
     // Back and forward move between the pages.
     await act(async () => { window.history.back(); await new Promise((r) => window.addEventListener('popstate', r, { once: true })); });

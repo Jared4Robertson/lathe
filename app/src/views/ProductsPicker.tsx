@@ -7,7 +7,7 @@ import { addressOf } from './address';
 
 // The products picker (LA-V97) at `/`, the app's one page of its own: a centered card over the stage
 // of the last product the Reader was in, dimmed behind it, or over an empty map on a first launch
-// (LA-PAT-APP-UX-R19). Every product is a card that opens its space where the Reader left it. It is a dialog
+// (LA-PAT-APP-UX-R20). Every product is a card that opens its space where the Reader left it. It is a dialog
 // like quick find (shell/commands.tsx): Escape or a click on the dimmed stage goes back to the
 // product behind it, when there is one.
 

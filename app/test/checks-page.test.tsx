@@ -1,17 +1,22 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { main, openApp } from './helpers';
+import { checksPanel, openApp } from './helpers';
 import { modelWorkspace } from './fixtures/model';
 
-describe('checks page', () => {
-  it("LA-V41-R01-T01 A space's Checks page lists its product's problems, errors first, grouped by check, each linking to its record, then the workspace's", async () => {
-    await openApp('/DM/checks');
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
-    // Demo shop's one error and three warnings, and the workspace's one error; not Notebook's.
-    expect(within(main()).getByText('2 errors · 3 warnings')).toBeInTheDocument();
+// The Checks panel (LA-V41): a tool over the stage at `?panel=checks` (LA-PAT-APP-UX-R20).
 
-    const groups = [...main().querySelectorAll('section')].map((s) => ({
-      check: s.querySelector('h2, h3')?.firstChild?.textContent,
+const card = () => screen.getByRole('region', { name: 'Wiki card' });
+
+describe('checks panel', () => {
+  it("LA-V41-R01-T01 A space's Checks page lists its product's problems, errors first, grouped by check, each linking to its record, then the workspace's", async () => {
+    await openApp('/DM?panel=checks');
+    await waitFor(() => expect(checksPanel()).toBeInTheDocument());
+    // Demo shop's one error and three warnings, and the workspace's one error; not Notebook's.
+    expect(within(checksPanel()).getByText('2 errors · 3 warnings')).toBeInTheDocument();
+
+    const groups = [...checksPanel().querySelectorAll('section')].map((s) => ({
+      check: s.querySelector('h3, h4')?.firstChild?.textContent,
       severities: [...s.querySelectorAll('.severity')].map((e) => e.textContent),
       records: [...s.querySelectorAll('li')].map((li) => li.querySelector('a')?.getAttribute('href') ?? li.querySelector('code')?.textContent),
     }));
@@ -19,21 +24,41 @@ describe('checks page', () => {
       { check: 'test-file-missing', severities: ['error'], records: ['/DM-SHOP-UC01-R01-T01'] },
       { check: 'not-designed', severities: ['warning'], records: ['/DM-PAY-UC01-R01'] },
       { check: 'not-proved', severities: ['warning', 'warning'], records: ['/DM-SHOP-INV01', '/DM-SHOP-UC01-R02'] },
-      { check: 'Workspace', severities: ['error'], records: ['/format/checks/engine'] },
-      // A workspace problem names no record, so its row opens its check (LA-PAT-APP-UX-R14).
-      { check: 'engine', severities: ['error'], records: ['/format/checks/engine'] },
+      { check: 'Workspace', severities: ['error'], records: ['/DM?panel=checks&page=format/checks/engine'] },
+      // A workspace problem names no record, so its row opens its check in the wiki card (LA-PAT-APP-UX-R14).
+      { check: 'engine', severities: ['error'], records: ['/DM?panel=checks&page=format/checks/engine'] },
     ]);
-    expect(main().textContent).not.toContain('NF-NOTE');
+    expect(checksPanel().textContent).not.toContain('NF-NOTE');
     // Demo shop records no exception, so it has no such section.
-    expect(within(main()).queryByRole('heading', { name: /^Recorded exceptions/ })).toBeNull();
+    expect(within(checksPanel()).queryByRole('heading', { name: /^Recorded exceptions/ })).toBeNull();
+  });
+
+  it('LA-V41-R01-T03 Selecting a problem focuses its record on the stage and in the wiki card, and the panel stays open with its row marked', async () => {
+    await openApp('/DM?panel=checks');
+    await waitFor(() => expect(checksPanel()).toBeInTheDocument());
+    const user = userEvent.setup();
+    await user.click(within(checksPanel()).getByRole('link', { name: 'DM-SHOP-INV01' }));
+    expect(window.location.pathname + window.location.search).toBe('/DM-SHOP-INV01?panel=checks');
+    await waitFor(() => expect(card()).toHaveAttribute('data-page', 'DM-SHOP-INV01'));
+    expect(checksPanel().querySelector('li.problem.is-current')).toHaveTextContent('DM-SHOP-INV01');
+    // A workspace problem opens its check's page in the card, the stage keeping its focus.
+    await user.click(within(checksPanel()).getAllByRole('link', { name: 'engine' })[0]);
+    expect(window.location.pathname + window.location.search).toBe('/DM-SHOP-INV01?panel=checks&page=format/checks/engine');
+    await waitFor(() => expect(within(card()).getByRole('heading', { level: 2, name: 'engine' })).toBeInTheDocument());
+    // Escape closes the topmost overlay first (the card's page), then the panel, and focus comes back.
+    await user.keyboard('{Escape}');
+    expect(window.location.search).toBe('?panel=checks');
+    await user.keyboard('{Escape}');
+    expect(window.location.search).toBe('');
+    expect(screen.queryByRole('region', { name: 'Checks' })).toBeNull();
   });
 
   it("LA-V41-R04-T01 A space's Checks page lists its recorded exceptions in their own section, never as problems", async () => {
-    await openApp('/P/checks', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
+    await openApp('/P?panel=checks', { data: modelWorkspace() });
+    await waitFor(() => expect(checksPanel()).toBeInTheDocument());
     // The model's one error and one warning; Return thing's and LoanRepository's recorded exceptions are not counted.
-    expect(within(main()).getByText('1 error · 1 warning')).toBeInTheDocument();
-    const section = within(main()).getByRole('heading', { level: 2, name: /^Recorded exceptions/ }).closest('section')!;
+    expect(within(checksPanel()).getByText('1 error · 1 warning')).toBeInTheDocument();
+    const section = within(checksPanel()).getByRole('heading', { level: 3, name: /^Recorded exceptions/ }).closest('section')!;
     const rows = within(within(section).getByRole('list', { name: 'Recorded exceptions' })).getAllByRole('listitem');
     expect(rows).toHaveLength(2);
     expect(within(rows[0]).getByRole('link', { name: /P-D-CMD02/ })).toHaveAttribute('href', '/P-D-CMD02');

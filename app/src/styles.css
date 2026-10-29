@@ -31,8 +31,8 @@
   --g-technical-specification: #B5512A; --g-technical-specification-bg: #F8E8DF;
   --g-test-plan: #A3365F; --g-test-plan-bg: #F7E4EC;
   --g-structural: var(--ink); --g-structural-bg: var(--sheet);
-  /* The page bar above the panes and each pane's slim header: one fixed height each, so nothing below them moves (UX-R03, UX-R08). */
-  --page-bar-height: 40px; --pane-bar-height: 32px;
+  /* The page bar above the stage: one fixed height, so nothing below it moves (UX-R03, UX-R08). */
+  --page-bar-height: 40px;
   /* One width for every page tab, so a new page in the preview tab moves nothing (UX-R08). */
   --tab-width: 14rem;
   /* Touch (LA-PAT-APP-UX-R07): the least size of a target under a finger, and the radius of a sheet's top corners. */
@@ -90,7 +90,7 @@ html, body, #root { height: 100%; height: 100dvh; margin: 0; }
 html { font-size: calc(var(--text-size) * 16 / 15); }
 body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(--line-height) var(--body); }
 /* The app (LA-V96): the stage behind everything, the nav and the page's panels floating over it, inset from the window
-   and each other by --float-inset. Nothing replaces the stage (LA-PAT-APP-UX-R19): a tool (Checks, Appearance, the theme
+   and each other by --float-inset. Nothing replaces the stage (LA-PAT-APP-UX-R20): a tool (Checks, Appearance, the theme
    editor) floats over it right of the nav, keeping --tool-space clear, and the products picker is a card over it. In the desktop app the chat panel floats at the right edge, the full height, and the
    page's panels keep --chat-space clear of it, as they keep --nav-space clear of the nav. On a phone the shell is a top
    bar above the page, with drawers. */
@@ -540,14 +540,6 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .menu.is-drawer { position: fixed; z-index: 80; inset: 0 auto 0 0; width: min(356px, 92vw); box-shadow: 4px 0 24px var(--shadow-strong); }
 
 /* The format pages' workbench (app/src/format): one pane and the side bar beside it. */
-.focus-page { display: flex; flex-direction: column; gap: var(--panel-gap); min-width: 0; min-height: 0; height: 100%; overflow: hidden; }
-.focus-page > .placeholder { flex: 1; }
-.focus-layout { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
-.focus-layout.with-side-bar { grid-template-columns: minmax(min(var(--panes-min, 0px), calc(100% - var(--panel-gap) - var(--side-bar-min))), 1fr) var(--panel-gap) minmax(var(--side-bar-min), var(--side-bar-width, 340px)); column-gap: 0; }
-.focus-layout { --side-bar-min: 200px; }
-.focus-main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
-.pane { position: relative; min-width: 0; min-height: 0; display: flex; flex-direction: column; background: var(--paper); }
-.pane-scroll { flex: 1; min-height: 0; overflow-y: auto; }
 .group-intro { margin: 16px 0 0; }
 .record-layout.single { grid-template-columns: minmax(0, 1fr); }
 .side-bar-column { min-height: 0; overflow: hidden; background: var(--sheet); container-type: inline-size; }
@@ -617,9 +609,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .quick-open-trail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem; color: var(--muted); }
 .palette-list li.active :is(.quick-open-id, .quick-open-trail) { color: inherit; }
 .key-pending { position: fixed; right: 16px; bottom: 16px; z-index: 130; padding: 4px 10px; font: 500 0.85rem var(--mono); background: var(--ink); color: var(--paper); border-radius: 6px; }
-@media (max-width: 900px) {
-    .focus-layout, .focus-layout.with-side-bar { grid-template-columns: minmax(0, 1fr); }
-}
 /* ---------- End of the app shell ---------- */
 
 /* Patterns we follow, pattern pages and prose mentions. */
@@ -759,17 +748,12 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* A pane's title bar (LA-PAT-APP-UX-R03), as an editor group's in VS Code: a quiet label naming the pane's
    view at the left; at the right, icon buttons in one style: the view toggles, a divider, then the layout
    actions (open beside, full screen, the side bar); then the pane's content. */
-.pane { background: var(--paper); }
-.pane-bar { display: flex; align-items: center; justify-content: space-between; gap: 8px; height: var(--pane-bar-height); box-sizing: border-box; padding: 0 4px 0 6px; border-bottom: 1px solid var(--rule); background: var(--sheet); }
-.pane-head, .pane-actions { display: flex; align-items: center; gap: 2px; min-width: 0; }
-.pane-name { display: inline-flex; align-items: center; gap: 6px; min-height: 28px; padding: 0 6px; color: var(--muted); font-size: 0.84rem; font-weight: 600; white-space: nowrap; }
 .pane-divider { flex: none; width: 1px; height: 18px; margin: 0 4px; background: var(--rule); }
 /* The tab strip (app/src/views/TabStrip.tsx), at the left of the leftmost pane's bar: one tab per open page, as VS Code's
    editor tabs. The active tab is the sheet's ink with a steel underline, the preview tab's title italic; tabs that do
    not fit scroll sideways. A tab's close button shows on hover, on focus and on the active tab. Every tab has one width
    (--tab-width), its title cut with an ellipsis, so a new page in the preview tab never moves its close button or the
    tabs after it (LA-PAT-APP-UX-R08). */
-.pane-actions { flex: none; }
 .tab-strip { display: flex; align-items: stretch; gap: 2px; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
 .tab-strip::-webkit-scrollbar { display: none; }
 .tab { flex: none; display: inline-flex; align-items: center; gap: 6px; width: var(--tab-width); min-height: 28px; padding: 0 2px 0 8px; box-sizing: border-box; border-radius: 6px; color: var(--muted); font-size: 0.84rem; cursor: pointer; white-space: nowrap; user-select: none;
@@ -787,7 +771,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 .tab:hover .tab-close, .tab.is-active .tab-close, .tab:focus-within .tab-close { opacity: 1; }
 .tab-close:hover { background: var(--hover-bg); color: var(--ink); }
 @media (prefers-reduced-motion: reduce) { .tab, .tab-close { transition: none; } }
-.pane-title .spec-header { padding: 16px 24px 0; flex-wrap: wrap; }
 
 /* ---------- The ERD stage: a domain's ERD and an aggregate's (app/src/erd) ---------- */
 /* Entities and aggregates in the domain model stage's colors: an aggregate a boundary tinted with its fill around its
@@ -989,7 +972,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* ---------- The page bar (LA-PAT-APP-UX-R03) ----------
    The top of the tab panel: the page's tabs at its left; the stage switch, a divider, the wiki card and side bar
    toggles at its right. One line high whatever it holds; the tabs scroll sideways (UX-R08). */
-.focus-main { gap: var(--panel-gap); }
 .page-bar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: var(--page-bar-height); box-sizing: border-box; padding: 0 4px 0 4px; background: var(--sheet); }
 .page-bar-start { flex: 1 1 auto; display: flex; align-items: center; min-width: 0; height: 100%; }
 .page-bar-actions { flex: none; display: flex; align-items: center; gap: 2px; }
@@ -1085,16 +1067,20 @@ a.row-link.row-link:focus-visible { outline: none; }
 .wiki-panel-back:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; border-radius: 3px; }
 .wiki-panel.is-format .wiki-panel-title h2 { overflow-wrap: break-word; }
 
-/* ---------- Tools over the stage (app/src/views/ToolPanel.tsx, LA-PAT-APP-UX-R19) ----------
+/* ---------- Tools over the stage (app/src/views/ToolPanel.tsx, LA-PAT-APP-UX-R20) ----------
    Frosted panels right of the nav, below the tab panel, which the open space leaves room for (data-floating="left"):
    Checks and the theme editor the full height, Appearance a popover at the foot, level with its button in the nav. */
 .tool-panel { position: absolute; z-index: 15; left: var(--nav-space); box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--float-border); border-radius: var(--panel-radius); background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); }
 .tool-panel:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
 .tool-panel:focus { outline: none; }
 .tool-panel.checks-panel, .tool-panel.theme-panel { top: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); bottom: var(--float-inset); }
-.tool-panel.checks-panel { width: 380px; }
-.tool-panel.theme-panel { width: 600px; max-width: calc(100% - var(--nav-space) - var(--chat-space)); }
-.tool-panel.appearance-popover { bottom: var(--float-inset); width: 360px; max-height: calc(100% - 3 * var(--float-inset) - var(--page-bar-height) - var(--strip-height)); }
+.tool-panel.appearance-popover { bottom: var(--float-inset); max-height: calc(100% - 3 * var(--float-inset) - var(--page-bar-height) - var(--strip-height)); }
+/* The tools' widths (App.tsx's TOOL_WIDTHS, which the crowding rule counts); on a phone each is a sheet. */
+@media (min-width: 901px) {
+  .tool-panel.checks-panel { width: 380px; }
+  .tool-panel.theme-panel { width: 600px; max-width: calc(100% - var(--nav-space) - var(--chat-space)); }
+  .tool-panel.appearance-popover { width: 360px; }
+}
 .tool-panel-head { flex: none; display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 4px 4px 14px; border-bottom: 1px solid var(--float-border); }
 .tool-panel-title { flex: 1 1 auto; min-width: 0; margin: 0; font: 700 0.98rem var(--display); }
 .tool-panel-head .checks { margin: 0; font-size: 0.78rem; white-space: nowrap; }
@@ -1109,9 +1095,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .theme-rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .theme-row { display: flex; align-items: center; gap: 6px; padding: 2px; border-radius: 6px; }
 .theme-row.is-on { background: var(--steel-bg); }
-.theme-pick { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 0; min-height: 32px; padding: 2px 6px; border: 0; border-radius: 6px; background: none; color: var(--ink); font: inherit; font-size: 0.86rem; text-align: left; cursor: pointer; }
-.theme-pick:hover { background: var(--hover-bg); }
-.theme-pick:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
+.theme-row .theme-pick { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 0; min-height: 32px; padding: 2px 6px; border: 0; border-radius: 6px; background: none; color: var(--ink); font: inherit; font-size: 0.86rem; text-align: left; }
+.theme-row .theme-pick:hover { background: var(--hover-bg); }
+.theme-row .theme-pick:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
 .theme-row-text { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 .theme-row-name { overflow-wrap: break-word; }
 .theme-row-state { color: var(--muted); font-size: 0.72rem; }
@@ -1123,7 +1109,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .stage-layout.is-backdrop { pointer-events: none; opacity: 0.5; filter: saturate(0.6); }
 .app.is-narrow > main.home-page { position: relative; overflow: hidden; }
 .products-picker-backdrop { place-items: center; padding-top: 0; }
-.dialog.products-picker { width: min(720px, calc(100vw - 32px)); padding: 20px; gap: 14px; overflow-y: auto; }
+.dialog.products-picker { width: min(720px, calc(100vw - 32px)); padding: 20px; gap: 14px; overflow-y: auto; scrollbar-gutter: stable; }
 .products-picker-head h1 { margin: 0; font: 700 1.5rem var(--display); }
 .products-picker-head .hint { margin: 2px 0 0; }
 
@@ -1157,8 +1143,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 .topbar-title { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 1.02rem/1.3 var(--display); color: var(--ink); }
 
 /* The page bar, compact: the open pages, the View switch and the side bar, under the top bar. */
-.focus-layout.is-phone { display: flex; flex-direction: column; }
-.focus-layout.is-phone > .pane { flex: 1; min-height: 0; }
 .page-bar.is-compact { height: 54px; padding: 0 4px; border-bottom: 1px solid var(--rule); }
 .page-bar-pages { display: inline-flex; align-items: center; gap: 6px; min-width: var(--touch-target); min-height: var(--touch-target); padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 0.85rem; cursor: pointer; }
 .page-bar-pages:hover, .page-bar-pages.is-on { color: var(--steel); background: var(--steel-bg); }
@@ -1172,7 +1156,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 :is(.page-bar-pages, .view-segment, .sheet-handle, .pages-open):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 
 /* On a phone the page's own header keeps its padding small, and graph and model headers wrap their tools. */
-.app.is-narrow .pane-title .spec-header { padding: 14px 16px 0; }
 .app.is-narrow .graph-toolbar { flex-wrap: wrap; row-gap: 4px; }
 .app.is-narrow .erd-key { max-height: 30dvh; overflow-y: auto; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
 .app.is-narrow .placeholder { padding: 16px; }
@@ -1189,7 +1172,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 .sheet-handle:hover .sheet-handle-bar { background: var(--steel); }
 .sheet-handle-bar { width: 40px; height: 5px; border-radius: 3px; background: var(--rule); }
 .sheet-body { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
-.sheet-body > .side-bar.record-side { flex: 1; height: auto; min-height: 0; }
 .sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 8px 4px 16px; }
 .sheet-title { margin: 0; display: flex; gap: 6px; align-items: baseline; font: 700 1rem var(--display); }
 @media (prefers-reduced-motion: no-preference) {
@@ -1253,7 +1235,7 @@ a.row-link.row-link:focus-visible { outline: none; }
    On a coarse pointer every control's target is at least --touch-target square: the control itself, or for a control
    drawn small inside a row or a node, its ::before stretched around it. Nothing shows only on hover. */
 @media (pointer: coarse) {
-  :root { --page-bar-height: 52px; --pane-bar-height: var(--touch-target); }
+  :root { --page-bar-height: 52px; }
   .menu { --nav-row-height: var(--touch-target); --nav-indent: 24px; --nav-twistie: var(--touch-target); }
   /* A gap between panels keeps its look, and its target reaches over the panels' edges. */
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
@@ -1275,7 +1257,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* Scroll boxes keep room for their scrollbar (LA-PAT-APP-UX-R08), so a classic scrollbar (Windows, a Mac with a
    mouse) that comes and goes with the content never narrows what is inside. The space rail hides its scrollbar
    instead: it is too narrow to give one room, and it still scrolls by wheel, touch and keyboard. */
-.nav-scroll, .pane-scroll, .side-bar.record-side, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
+.nav-scroll, .side-bar.record-side, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
 .space-rail { scrollbar-width: none; }
 .space-rail::-webkit-scrollbar { display: none; }
 

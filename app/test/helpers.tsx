@@ -58,6 +58,9 @@ export async function openApp(path: string, served: Served = {}) {
 
 export const main = () => screen.getByRole('main');
 
+/** The Checks panel over the stage (`?panel=checks`). */
+export const checksPanel = () => screen.getByRole('region', { name: 'Checks' });
+
 /** The page's section with this heading. */
 /** A stage on a domain or product page, by its name in the schema ("use-cases"): its heading and what it lists. */
 export function stageOf(stage: string, scope: HTMLElement = main()) {

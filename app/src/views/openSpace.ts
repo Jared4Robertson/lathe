@@ -174,7 +174,7 @@ const noValue = () => null;
 // the window can't hold every open panel at its readable width, panels collapse for space, in a set
 // order: the side bar first, then the wiki card, then the nav. The chat is the Reader's task at hand
 // and never collapses for space, nor does a tool open over the stage (Checks, Appearance, the theme
-// editor, LA-PAT-APP-UX-R19), which floats right of the nav. They reopen in reverse order as the window grows. A collapse for
+// editor, LA-PAT-APP-UX-R20), which floats right of the nav. They reopen in reverse order as the window grows. A collapse for
 // space is never the Reader's choice: their open or closed setting stays as they set it, and the
 // panel's toggle shows it is collapsed for space. A panel the Reader opens while it is collapsed for
 // space is held open (the next panel in the order gives way instead) until it would fit anyway, or

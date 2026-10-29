@@ -5,7 +5,7 @@ import { exceptionOwner, isWorkspaceProblem, problemOrder, type Problem, type Re
 import { idText, ProblemList, RecordLink, Section } from '../specs/parts';
 import { ToolPanelFrame } from './ToolPanel';
 
-// The Checks panel (LA-V41), Tools › Checks: a tool over the stage (LA-PAT-APP-UX-R19), floating at the
+// The Checks panel (LA-V41), Tools › Checks: a tool over the stage (LA-PAT-APP-UX-R20), floating at the
 // left of the open space, at `?panel=checks` on whatever focus the stage shows. It lists the space's
 // problems by check, errors first, then the workspace's, then the recorded exceptions. A problem's
 // row focuses its record on the stage, which the wiki card then shows, and the panel stays open to

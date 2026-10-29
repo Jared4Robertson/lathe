@@ -68,12 +68,12 @@ describe('traceability', () => {
     // Coverage reports DM-SHOP-UC01-R02 not-proved; its step invokes nothing, so nothing builds it.
     let trace = show(index, 'DM-SHOP-UC01-R02');
     expect(gapKinds(trace)).toEqual(['not-built', 'not-proved']);
-    expect(within(trace).getByRole('link', { name: 'not-proved' })).toHaveAttribute('href', '/format/checks/not-proved');
+    expect(within(trace).getByRole('link', { name: 'not-proved' })).toHaveAttribute('href', expect.stringMatching(/\?page=format\/checks\/not-proved$/));
     cleanup();
     // DM-PAY-UC01-R01: neither designed nor proved.
     trace = show(index, 'DM-PAY-UC01-R01');
     expect(gapKinds(trace)).toEqual(['not-designed', 'not-proved']);
-    expect(within(trace).getByRole('link', { name: 'not-designed' })).toHaveAttribute('href', '/format/checks/not-designed');
+    expect(within(trace).getByRole('link', { name: 'not-designed' })).toHaveAttribute('href', expect.stringMatching(/\?page=format\/checks\/not-designed$/));
     cleanup();
     // An invariant whose only test is not automated yet.
     trace = show(index, 'DM-SHOP-INV01');
@@ -135,7 +135,7 @@ describe('traceability', () => {
     expect(runBy).toHaveTextContent(/Level\s*service/);
     expect(runBy.querySelector('.test-state')).toHaveTextContent('automated');
     expect(runBy).toHaveTextContent(/File\s*test\/basket\.test\.ts\s*file missing/);
-    expect(within(runBy).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', '/format/checks/test-file-missing');
+    expect(within(runBy).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', expect.stringMatching(/\?page=format\/checks\/test-file-missing$/));
     cleanup();
 
     // A manual flow test: no file, its reason.
