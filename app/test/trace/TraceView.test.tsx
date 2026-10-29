@@ -262,6 +262,8 @@ describe('the Trace stage', () => {
     fireEvent.wheel(canvas, { deltaY: 40, clientX: 200, clientY: 200 });
     await waitFor(async () => expect((await drawn()).camera.y).toBeCloseTo(framed.y - 40, 0));
     expect((await drawn()).camera.zoom).toBe(framed.zoom);
+    // A new scroll after a pause: within one scroll, pressing Ctrl would drop the rest of it (wheelLatch).
+    await new Promise((r) => setTimeout(r, 200));
     fireEvent.wheel(canvas, { deltaY: -200, ctrlKey: true, clientX: 200, clientY: 200 });
     await waitFor(async () => expect((await drawn()).camera.zoom).toBeGreaterThan(framed.zoom));
     fireEvent.pointerDown(canvas, { clientX: 300, clientY: 300, pointerType: 'mouse', pointerId: 1, button: 0 });
