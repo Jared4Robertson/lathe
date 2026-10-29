@@ -29,7 +29,8 @@ export function KeyControl({ children }: { children: ReactNode }) {
       <Tooltip label="Key">
         <summary><Icon name="info" size={14} /><span className="stage-key-name">Key</span></summary>
       </Tooltip>
-      <div className="stage-key-body">{children}</div>
+      {/* The popover scrolls when long: a region that takes focus to scroll by the arrows (LA-V61-R46). */}
+      <div className="stage-key-body" role="region" aria-label="Key" tabIndex={0}>{children}</div>
     </details>
   );
 }
@@ -38,7 +39,7 @@ export function KeyControl({ children }: { children: ReactNode }) {
 export function GraphKey({ stages = [] }: { stages?: readonly StageRule[] }) {
   const label = (stage: Stage) => stages.find((s) => s.stage === stage)?.label ?? `${stage.charAt(0).toUpperCase()}${stage.slice(1).replaceAll('-', ' ')}`;
   return (
-    <section className="graph-legend" aria-label="Key">
+    <div className="graph-legend">
       <ul className="plain">
         {STAGE_NAMES.map((stage) => (
           <li key={stage}><span className={`graph-swatch stage-${stage}`} /> {label(stage)} ({STAGE_KINDS[stage]})</li>
@@ -69,6 +70,6 @@ export function GraphKey({ stages = [] }: { stages?: readonly StageRule[] }) {
       <p className="hint">The Nested layout (v) draws the same tree as boxes inside boxes: the product made of its stages and domains, each domain of its stages, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
       <p className="hint">The Voronoi layout draws the same tree as polygon cells inside cells: the product a hexagon split into its stages and domains, each domain split into its stages, and so on down, each cell as big as the records under it and never too small for its name. It frames and labels as the Nested layout does.</p>
       <p className="hint">Click a record or a group, or press Enter on it, to focus it; Enter on the focus, or anywhere but a button, link or field, shows or collapses the wiki card, and Escape collapses it. Scroll, pinch or drag to look around. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys, or W, A, S and D as Up, Left, Down and Right, step through the tree, each step moving the focus. In the Tree view, Left goes to the parent, Right to the first child, and Up and Down to the previous and next sibling; in the Nested and Voronoi views, which draw children inside their parent, Up goes to the parent, Down to the first child, and Left and Right to the previous and next sibling. Past the last sibling a step goes on to the first child of the next parent at that level, so repeated steps visit the whole level. In every view Shift+Up (or Shift+W) goes out to the parent and Shift+Down (or Shift+S) in to the first child, as the toolbar's Out and In do. Tab and Shift+Tab move between the boxes; + and - change the depth, and . frames the focus again.</p>
-    </section>
+    </div>
   );
 }

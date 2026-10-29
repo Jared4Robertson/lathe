@@ -5,7 +5,7 @@ import type { ReactNode } from 'react';
 
 export function TraceKey({ lead }: { lead?: ReactNode }) {
   return (
-    <section className="trace-key" aria-label="Key">
+    <div className="trace-key">
       {lead}
       <ul className="plain">
         <li><span className="graph-swatch stage-use-cases" /> A record, in its stage's color: on the left the why tree (an outcome, the capabilities serving it, their use cases or an obligation's own parent), then one lane per obligation, its chain left to right</li>
@@ -16,6 +16,6 @@ export function TraceKey({ lead }: { lead?: ReactNode }) {
         <li><span className="graph-swatch is-focus" /> The focus, ringed on every lane that holds it; what lies outside it is faded, and Gaps only fades the complete lanes</li>
       </ul>
       <p className="hint">Click a box, or press Enter on it, to focus it. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys (or W, A, S and D) walk the map: Right along the lane, Left back and into the why tree, Up and Down in the column; Shift+Up (Shift+W) goes out to the lane and its band, Shift+Down (Shift+S) in to the first box inside, a &ldquo;+N more&rdquo; opening at the first box it hides.</p>
-    </section>
+    </div>
   );
 }

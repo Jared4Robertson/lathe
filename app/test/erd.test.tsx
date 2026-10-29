@@ -335,6 +335,6 @@ describe('the ERD stage', () => {
     const titles = new Map(map.boxes.map((b) => [b.id, b.title]));
     expect(lineWords(ref, 'References by ID', titles)).toEqual({ label: 'references by ID', title: 'Reminder references by ID Member (Reminder.Member)', hover: 'Reminder.Member' });
     render(<ErdKey map={map} at={erdFocus(i, 'P')!} relations={i.workspace.relations} />);
-    expect(within(screen.getByRole('region', { name: 'Key' })).getByText('Reference by ID').closest('li')).toHaveAttribute('title', "A field holds the other aggregate's ID; the line points at its root.");
+    expect(screen.getByText('Reference by ID').closest('li')).toHaveAttribute('title', "A field holds the other aggregate's ID; the line points at its root.");
   });
 });
