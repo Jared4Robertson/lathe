@@ -6,9 +6,9 @@ import { groupRecords } from './groups';
 import { RecordLink, RecordRowBody, Section, SpecLink, TestStateTag, idText } from './parts';
 import { isBuilt, traceEmpty, traceOf, type GapKind, type Judgment, type Trace, type TraceGap, type TraceGroup } from './trace';
 
-// A record's Traceability section (LA-TRC-UC14): for an obligation, what designs it (the steps that
-// fulfill a UC requirement, the technical records that implement anything else) and the tests that
-// prove it, then its other links, each list titled by its label; a callout names each gap coverage
+// A record's Traceability section (LA-TRC-UC14): for an obligation, its chain as the engine works it
+// out (what designs it, the technical records that build it, each marked built or not, and the tests
+// that prove it), then its other links, each list titled by its label; a callout names each gap coverage
 // finds, linked to the check that reports it, and a pattern rule has one line per domain owing it. A
 // use case shows its UC requirements in a table; a test shows what it proves and how it is run. The
 // logic is in trace.ts.
@@ -76,7 +76,7 @@ function TraceList({ index, group }: { index: SpecIndex; group: TraceGroup }) {
           return (
             <div className="trace-row">
               <RecordRowBody index={index} record={record} showKind={mixed} />
-              {group.role === 'design' && index.kinds.get(record.kind)?.stage === 'technical-specification' && (
+              {group.role === 'build' && index.kinds.get(record.kind)?.stage === 'technical-specification' && (
                 <span className={`rule-mark ${isBuilt(index, id) ? 'ok' : 'missing'}`} data-mark="built">{isBuilt(index, id) ? 'built' : 'not built'}</span>
               )}
             </div>
