@@ -15,6 +15,8 @@ import { erdFocus, erdMap, erdStrength } from '../src/erd/erd';
 import { ErdKey } from '../src/erd/ErdView';
 import { modelWorkspace } from './fixtures/model';
 
+/** The live marks every stage draws, and the Changes lens's dimming: each in every stage's key (changes/ChangesKey.tsx). */
+const CHANGE_MARKS = ['is-added', 'is-changed', 'is-removed', 'is-lens'];
 const CSS = readFileSync(path.resolve(import.meta.dirname, '../src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
 /** The modifier classes a stylesheet gives an element class, as in `.erd-box.erd-aggregate`. */
 const modifiers = (base: string) =>
@@ -43,6 +45,8 @@ describe('LA-V93-R12-T06 the Graph view key', () => {
     for (const badge of BADGE_TONES) needs(`badge ${badge}`, `.graph-mark.${badge}`);
     // The one line the graph draws: parent to child.
     needs('the parent line', '.graph-line');
+    // The live marks (changes/marks.ts) and the Changes lens's dimming.
+    for (const mark of CHANGE_MARKS) needs(`live mark ${mark}`, `.change-swatch.${mark}`);
     expect(missing).toEqual([]);
   });
 });
@@ -52,7 +56,7 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
   const INTERACTION = new Set(['is-focus', 'has-hover-label']);
   // Every class the stylesheet gives a box or a line, and what in the ERD draws it, checked below: each box kind
   // (erd-<kind>, explained by its swatch), the pick, dashes and fading.
-  const EXPLAINED = new Set(['erd-domain', 'erd-aggregate', 'erd-entity', 'is-highlight', 'is-dashed', 'is-faded']);
+  const EXPLAINED = new Set(['erd-domain', 'erd-aggregate', 'erd-entity', 'is-highlight', 'is-dashed', 'is-faded', 'has-change', 'is-added', 'is-changed']);
 
   it('Every mark a styled ERD box or line can carry is one the key test explains', () => {
     const styled = [...modifiers('erd-box'), ...modifiers('erd-line')].filter((c) => !INTERACTION.has(c));
@@ -86,6 +90,8 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
         if (box.root) needs('root badge', '.erd-root');
         if (strength(box.id) < 1) needs('faded box', '.erd-key-faded');
       }
+      // A box the data's reload added or changed (has-change is-added, is-changed), a removed one's ghost, the lens.
+      for (const mark of CHANGE_MARKS) needs(`live mark ${mark}`, `.change-swatch.${mark}`);
       unmount();
     }
     expect(drawn).toBeGreaterThan(20);

@@ -11,7 +11,11 @@
 .changes-tools .changes-since-name { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .changes-since select { font: inherit; color: inherit; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; padding: 2px 4px; }
 .changes-since.is-panel { margin: 8px 0 4px; }
+/* On the ERD they sit just above its key, which spans the foot of the open space. */
+.focus-stage[data-stage="erd"] > .changes-tools { bottom: calc(var(--open-bottom, 0px) + var(--erd-key-height) + 6px); }
 @media (max-width: 900px) { .changes-tools[data-stage-tools="bottom"] { font-size: 0.78rem; } }
+/* On a phone the baseline picker is the panel's alone, so the row fits the screen. */
+.app.is-narrow .changes-tools > .changes-since { display: none; }
 
 /* A change's dot: green for new, the spark for changed. */
 .change-dot { display: inline-block; flex: none; width: 8px; height: 8px; border-radius: 50%; background: var(--change-changed); vertical-align: middle; margin-right: 6px; }
@@ -19,7 +23,6 @@
 
 /* The panel's cards and the card's section. */
 .changes-count { font-size: 0.78rem; color: var(--muted); white-space: nowrap; }
-.changes-list { margin-top: 8px; }
 .changes-kind { color: var(--muted); font-size: 0.78rem; }
 .changes-what { margin: 2px 0 0; font-size: 0.8rem; color: var(--muted); }
 .changes-when { white-space: nowrap; }

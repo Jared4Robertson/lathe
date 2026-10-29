@@ -1,3 +1,4 @@
+import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -6,7 +7,7 @@ import { BUDGETS } from './budgets';
 import { installProbes, quiet, record, work } from './measure';
 import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 
-// LA-PAT-APP-UX-R11-T01, LA-V61-R37-T01 to T04, LA-V96-R21-T01 and LA-V96-R24-T03: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
+// LA-PAT-APP-UX-R11-T01, LA-V61-R37-T01 to T04, LA-V96-R21-T01, LA-V96-R24-T03 and LA-V96-R29-T02: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-PLT-UC05';
@@ -245,5 +246,26 @@ test.describe('performance', () => {
     });
     expect(await drawn(), 'the line is still drawn after the pan').toBe(true);
     await record({ name: 'a pan with the leader line drawn every frame', value: pan.workMs, unit: 'ms', budget: BUDGETS.cameraMoveMs, detail: `longest frame ${Math.round(pan.worstFrameMs)} ms, ${pan.slowFrames} of ${pan.frames} frames over 20 ms` });
+  });
+
+  test('LA-V96-R29-T02 marking 50 changes at once takes under 500 ms of main-thread work', async ({ page }) => {
+    await open(page, `${DOMAIN}?stage=graph`);
+    await boxesDrawn(page);
+    await quiet(page, 900);
+    // 50 records the graph draws, retitled in one write through the CLI, as an Agent writes; then put back.
+    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus).slice(0, 50);
+    expect(drawn.length, '50 records drawn').toBe(50);
+    const root = process.env.PERF_ROOT!;
+    const titleOf = (kind: string, id: string) => readFileSync(path.join(root, 'data', `${kind}.jsonl`), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as { id: string; title: string }).find((r) => r.id === id)!.title;
+    const titles = drawn.map((b) => ({ kind: b.kind, id: b.id, title: titleOf(b.kind, b.id) }));
+    const write = (title: (was: string) => string) => execFileSync('node', [path.resolve(here, '../../lathe/bin/lathe.ts'), 'set', '--json', '-', '--root', root], {
+      input: JSON.stringify(titles.map((t) => ({ [t.kind]: { id: t.id, title: title(t.title) } }))), stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    const r = await work(page, async () => {
+      write((was) => `${was} (changed)`);
+      await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => b.change === 'changed').length, { timeout: 20_000 }).toBeGreaterThanOrEqual(drawn.length);
+    }, 900);
+    await record({ name: 'marking 50 changes at once', value: r.workMs, unit: 'ms', budget: BUDGETS.markChangesMs, detail: `longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms` });
+    write((was) => was);
   });
 });

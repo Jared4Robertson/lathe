@@ -254,3 +254,21 @@ for (const look of LOOKS) {
     }
   });
 }
+
+// LA-V96-R28-T02: the Changes controls every stage shows, with the lens on, and the Changes panel over the stage, at
+// desktop and phone widths in every look. The stability suite's data has nothing changed since its last commit, so the
+// panel shows its empty answer and the controls their count of none.
+for (const look of LOOKS) {
+  for (const phone of [false, true]) {
+    test.describe(`the Changes controls and panel, ${phone ? 'phone at 375 px' : 'desktop at 1440 px'} in ${look.name}`, () => {
+      if (phone) test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
+      test.beforeEach(({ page }) => useLook(page, look));
+      test('LA-V96-R28-T02 the Changes controls, the lens on and the Changes panel pass axe', async ({ page }) => {
+        await open(page, `${RECORD}?stage=graph&panel=changes`, '.changes-panel .tool-panel-title, .tool-sheet.changes-panel');
+        await page.getByRole('group', { name: 'Changes' }).getByRole('button', { name: 'Changes lens' }).click();
+        await page.waitForTimeout(300);
+        await auditAll(page, `${look.name}, ${phone ? 'phone' : 'desktop'}: the Changes controls and panel`);
+      });
+    });
+  }
+}

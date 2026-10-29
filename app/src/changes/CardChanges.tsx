@@ -20,7 +20,7 @@ export function CardChanges({ index, id, summary = false }: { index: SpecIndex; 
   if (change.change === 'added') return <p className="changes-line is-added" data-change="added"><span className="change-dot" aria-hidden="true" /> New {since}</p>;
   if (summary) return <p className="changes-line is-changed" data-change="changed"><span className="change-dot" aria-hidden="true" /> Changed {since}: {changeSummary(change)}</p>;
   return (
-    <Section title="Changes" className="card-changes">
+    <Section title="Changes" className="record-changes">
       <p className="hint">Changed {since}.</p>
       <ChangeDetails index={index} change={change} />
     </Section>

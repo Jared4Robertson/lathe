@@ -14,7 +14,7 @@ const card = () => screen.getByRole('region', { name: 'Wiki card' });
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 const press = (target: Element, key: string, code: string, mods: Partial<Record<'ctrlKey' | 'shiftKey', boolean>> = {}) =>
   fireEvent.keyDown(target, { key, code, ...mods });
-const box = () => screen.getByRole('combobox');
+const box = () => screen.getByRole('combobox', { name: /^(Quick find|Type a command)$/ });
 
 describe('quick open', () => {
   it('LA-V64-R06-T01 A highlighted record previews on the stage and in the wiki card; Escape puts the camera, the card and focus back, Enter commits', async () => {
