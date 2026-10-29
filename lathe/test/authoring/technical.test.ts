@@ -113,7 +113,8 @@ describe('the technical specification', () => {
     // A file that does not exist yet is a warning, and what it implements is not built.
     const ws = await loadData(complete(), { missing: ['src/dates.ts'] });
     expect(ofCheck(ws, 'technical-file-missing')).toEqual([{ severity: 'warning', check: 'technical-file-missing', record: 'EX-LEND-DS01-SV', message: 'Service EX-LEND-DS01-SV names src/dates.ts, which does not exist yet.' }]);
-    expect(gaps(ws)).toEqual(['built EX-LEND-DS01']);
+    // The UC requirement whose command calls the service rests on it, so it is not built either.
+    expect(gaps(ws)).toEqual(['built EX-LEND-DS01', 'built EX-LEND-UC01-R01']);
   });
 
   it('LA-AUT-UC17-R09-T01 A repository that also persists another aggregate records it with its reason, listed as a recorded exception', async () => {
