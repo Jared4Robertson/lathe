@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { rankItems, findItems } from '../src/shell/QuickFind';
+import { rankItems, findItems } from '../src/shell/QuickOpen';
 import { indexOf } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
@@ -50,8 +50,8 @@ describe('side navigation', () => {
     const menu = screen.getByRole('button', { name: 'Open the navigation' });
     fireEvent.click(menu);
     expect(nav().className).toContain('is-drawer');
-    await waitFor(() => expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
-    fireEvent.keyDown(within(nav()).getByRole('combobox', { name: 'Quick find' }), { key: 'Escape' });
+    await waitFor(() => expect(within(nav()).getByRole('button', { name: 'Go to…' })).toHaveFocus());
+    fireEvent.keyDown(within(nav()).getByRole('button', { name: 'Go to…' }), { key: 'Escape' });
     expect(screen.queryByRole('navigation', { name: 'Main' })).toBeNull();
     await waitFor(() => expect(menu).toHaveFocus());
 
@@ -100,7 +100,7 @@ describe('side navigation', () => {
     expect(foot).toHaveTextContent('Data from data/');
   });
 
-  it('LA-V90-R07-T01 Quick find jumps to any record, domain or product by ID or title, with arrow keys and Enter', async () => {
+  it('LA-V64-R03-T01 Quick find jumps to any record, domain or product by ID or title, with arrow keys and Enter', async () => {
     const index = indexOf(workspace());
     const items = findItems(index);
     expect(rankItems(items, 'dm-shop')[0].id).toBe('DM-SHOP');
@@ -109,18 +109,26 @@ describe('side navigation', () => {
 
     await openApp('/DM/checks');
     const user = userEvent.setup();
-    const find = within(nav()).getByRole('combobox', { name: 'Quick find' });
-    await user.click(find);
+    // The nav's Go to button opens quick find over the page.
+    const opener = within(nav()).getByRole('button', { name: 'Go to…' });
+    await user.click(opener);
+    const dialog = screen.getByRole('dialog', { name: 'Quick find' });
+    const find = within(dialog).getByRole('combobox', { name: 'Quick find' });
+    expect(find).toHaveFocus();
     await user.type(find, 'basket');
-    const options = within(nav()).getAllByRole('option');
+    const options = within(dialog).getAllByRole('option');
     expect(options.length).toBeGreaterThan(1);
     expect(options[0]).toHaveAttribute('aria-selected', 'true');
+    // Each result names its kind, ID and title, and its trail.
+    expect(options[0].querySelector('.kind-badge')).not.toBeNull();
+    expect(options.some((o) => o.querySelector('.quick-open-trail')?.textContent?.startsWith('Demo shop'))).toBe(true);
     await user.keyboard('{ArrowDown}');
-    expect(within(nav()).getAllByRole('option')[1]).toHaveAttribute('aria-selected', 'true');
-    const second = within(nav()).getAllByRole('option')[1].querySelector('code')!.textContent!;
+    expect(within(dialog).getAllByRole('option')[1]).toHaveAttribute('aria-selected', 'true');
+    expect(find).toHaveAttribute('aria-activedescendant', within(dialog).getAllByRole('option')[1].id);
+    const second = within(dialog).getAllByRole('option')[1].querySelector('code')!.textContent!;
     await user.keyboard('{Enter}');
     expect(window.location.pathname).toContain(second);
-    expect(find).toHaveValue('');
+    expect(screen.queryByRole('dialog')).toBeNull();
   });
 
   const proveLaV96R01T02 = async () => {

@@ -7,7 +7,7 @@
 {"id":"LA-CHK-QRY02-H","title":"byCheck","query_id":"LA-CHK-QRY02","file":"app/src/specs/SpecPages.tsx","description":"`byCheck`, and the Checks page's choice of its product's problems and the workspace's."}
 {"id":"LA-CHK-QRY03-H","title":"badgeFor","query_id":"LA-CHK-QRY03","file":"desktop/src/dock.ts","description":"`badgeFor`, `badgeText`."}
 {"id":"LA-EXP-QRY01-H","title":"RecordContent","query_id":"LA-EXP-QRY01","file":"app/src/specs/RecordContent.tsx","description":"RecordContent"}
-{"id":"LA-EXP-QRY02-H","title":"findItems","query_id":"LA-EXP-QRY02","file":"app/src/shell/QuickFind.tsx","description":"findItems, rankItems"}
+{"id":"LA-EXP-QRY02-H","title":"findItems","query_id":"LA-EXP-QRY02","file":"app/src/shell/QuickOpen.tsx","description":"findItems, rankItems"}
 {"id":"LA-EXP-QRY03-H","title":"ChecksPage","query_id":"LA-EXP-QRY03","file":"app/src/specs/SpecPages.tsx","description":"the Checks page"}
 {"id":"LA-EXP-QRY04-H","title":"RecordForm","query_id":"LA-EXP-QRY04","file":"app/src/edit/Editing.tsx","description":"`Editable` opening a form: `RecordForm`, generated from the schema."}
 {"id":"LA-EXP-QRY05-H","title":"SpaceItems","query_id":"LA-EXP-QRY05","file":"app/src/shell/Nav.tsx","description":"The space's folders, drawn by `SpaceItems` from `productFolders` and `domainFolders`."}
