@@ -120,8 +120,13 @@ export interface CommandDefinition<T = never> {
   handler: (tx: Transaction, input: T) => void | Promise<void>;
 }
 
-/** One query: how each interface names it, its input, and what it reads. */
-export interface QueryDefinition<T = never, R = unknown> {
+/**
+ * One query: how each interface names it, its input, and what it reads. A query whose read model has a reader (`D`)
+ * names how the reader is made (`reader`), and the query runner injects it: its handler is given only that reader,
+ * never the data. Until every read model has its reader, a query without one is given the read view; the cutover makes
+ * `reader` required and drops the read view here.
+ */
+export interface QueryDefinition<T = never, R = unknown, D = ReadView> {
   /** The query's record ID, such as LA-AUT-QRY100. */
   id: string;
   slice: Slice;
@@ -131,8 +136,10 @@ export interface QueryDefinition<T = never, R = unknown> {
   method: 'GET';
   route: string;
   input: InputSpec<T>;
-  /** Reads the answer, or refuses with a reason. */
-  run: (view: ReadView, input: T) => R;
+  /** Makes its read model's reader over the current data: what the runner gives the handler. */
+  reader?: (view: ReadView) => D;
+  /** Reads the answer from its reader, or refuses with a reason. */
+  run: (reader: D, input: T) => R;
   /** The answer as text, as the CLI prints it and the tool returns it. */
   text: (answer: R) => string;
 }
@@ -141,7 +148,12 @@ export interface QueryDefinition<T = never, R = unknown> {
 export type AnyCommand = Omit<CommandDefinition, 'input' | 'handler'> & { input: Record<string, Field>; handler: (tx: Transaction, input: never) => void | Promise<void> };
 
 /** Any query, as the interfaces register it. */
-export type AnyQuery = Omit<QueryDefinition, 'input' | 'run' | 'text'> & { input: Record<string, Field>; run: (view: ReadView, input: never) => unknown; text: (answer: never) => string };
+export type AnyQuery = Omit<QueryDefinition, 'input' | 'reader' | 'run' | 'text'> & {
+  input: Record<string, Field>;
+  reader?: (view: ReadView) => unknown;
+  run: (reader: never, input: never) => unknown;
+  text: (answer: never) => string;
+};
 
 /** A definition's MCP tool name: its slice and name in snake case, such as use_case_add_flow_step. */
 export const toolName = (definition: { slice: Slice; name: string }): string => `${definition.slice.name}_${definition.name}`.replaceAll('-', '_');

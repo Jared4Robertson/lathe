@@ -1105,6 +1105,20 @@ export interface ReadModelFieldRow {
   example?: string;
 }
 
+/** Reads its read model's table for its query handlers: the way query handlers reach a read model's storage. It reads exactly one read model, its parent, and nothing else; a query handler reads only through its own read model's reader, and the projection alone fills the table it reads. */
+export interface ReaderRow {
+  /** The reader's ID: its read model's ID and RD, such as TL-LEND-RM01-RD. */
+  id: string;
+  /** Its name in code, such as OverdueLoansReader. */
+  title: string;
+  /** The read model it reads; one reader each. */
+  read_model_id: string;
+  /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
+  file?: string;
+  /** How it reads its read model's table: where the table is kept and how a query handler is given the reader, in a sentence or two. */
+  description: string;
+}
+
 /** The specification or read model reads the aggregate, of its own domain. */
 export interface ReadsRow {
   source_id: string;
@@ -1541,6 +1555,7 @@ export interface TableRows {
   query_handler: QueryHandlerRow;
   raises: RaisesRow;
   read_model_field: ReadModelFieldRow;
+  reader: ReaderRow;
   reads: ReadsRow;
   ui_component: UiComponentRow;
   renders: RendersRow;

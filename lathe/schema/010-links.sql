@@ -97,6 +97,7 @@ INSERT INTO meta_relation_pair VALUES
   ('meets', 'predicate', 'standard_rule', 'The predicate follows the standard rule.'),
   ('meets', 'event_type', 'standard_rule', 'The event type follows the standard rule.'),
   ('meets', 'projection', 'standard_rule', 'The projection follows the standard rule.'),
+  ('meets', 'reader', 'standard_rule', 'The reader follows the standard rule.'),
   ('meets', 'command_handler', 'standard_rule', 'The command handler follows the standard rule.'),
   ('meets', 'query_handler', 'standard_rule', 'The query handler follows the standard rule.'),
   ('meets', 'event_handler', 'standard_rule', 'The event handler follows the standard rule.'),

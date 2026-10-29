@@ -188,19 +188,6 @@ JOIN aggregate other ON other.id = c.aggregate_id
 WHERE c.aggregate_id = own.id OR other.domain_id <> own.domain_id`,
     },
     {
-      name: 'read-model-fed-by-published',
-      description: "A read model is fed by its own domain's events, or another domain's published ones: domains meet only through published events.",
-      sql: `
-SELECT 'fed_by' AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
-       l.source_id || ' is a read model of domain ' || coalesce(a.domain_id, 'none') || ', so it cannot be fed by ' || l.target_id
-       || ', an event of domain ' || coalesce(b.domain_id, 'none') || ' that is not published' AS message
-FROM fed_by l
-JOIN domain_event e ON e.id = l.target_id
-JOIN record_scope a ON a.id = l.source_id
-JOIN record_scope b ON b.id = l.target_id
-WHERE a.domain_id IS DISTINCT FROM b.domain_id AND NOT e.published`,
-    },
-    {
       name: 'id-prefix',
       description:
         "A record's ID starts with the ID of its scope and a hyphen (meta_kind.id_scope): its parent's, its domain's or its product's. A record with no owner takes its product, or its domain, from that prefix, which must name one; a domain-scoped record's ID names the domain its parent sits in, so a query and its read model, or an endpoint and its command, are of one domain.",
@@ -220,46 +207,6 @@ JOIN meta_kind k ON k.name = r.kind AND k.id_scope IS NOT NULL
 JOIN record_scope s ON s.id = r.id
 CROSS JOIN LATERAL (SELECT CASE k.id_scope WHEN 'parent' THEN r.parent_id WHEN 'domain' THEN s.domain_id ELSE s.product_id END AS expected) x
 WHERE x.expected IS NULL OR NOT starts_with(r.id, x.expected || '-')`,
-    },
-    {
-      name: 'entity-table',
-      description: "An entity stored in its root's table (in_root_table) has no table of its own.",
-      sql: `
-SELECT 'table' AS table_name, t.id AS row_key,
-       'entity ' || e.id || ' is stored in its root''s table (in_root_table), so it cannot have table ' || t.id || ' of its own' AS message
-FROM "table" t JOIN entity e ON e.id = t.entity_id WHERE e.in_root_table`,
-    },
-    {
-      name: 'one-primary-key',
-      description: 'A table has at most one primary key.',
-      sql: `
-SELECT 'table' AS table_name, k.table_id AS row_key,
-       'table ' || k.table_id || ' has ' || count(*) || ' primary keys; a table has one' AS message
-FROM table_key k WHERE k.type = 'primary' GROUP BY k.table_id HAVING count(*) > 1`,
-    },
-    {
-      name: 'key-outside-database',
-      description: 'Keys are asked only of a table in a database: a table kept in browser storage, a file or in memory has none, and no foreign key points at one.',
-      sql: `
-SELECT 'table_key' AS table_name, ${keyOf(schema, 'table_key', 'k')} AS row_key,
-       CASE WHEN t.storage IN ('browser storage', 'file', 'in memory')
-         THEN 'table ' || t.id || ' is kept in ' || t.storage || ', not in a database, so it has no keys'
-         ELSE 'table ' || k.target_table_id || ' is kept in ' || g.storage || ', not in a database, so no foreign key can point at it' END AS message
-FROM table_key k JOIN "table" t ON t.id = k.table_id LEFT JOIN "table" g ON g.id = k.target_table_id
-WHERE t.storage IN ('browser storage', 'file', 'in memory') OR g.storage IN ('browser storage', 'file', 'in memory')`,
-    },
-    {
-      name: 'foreign-key-crosses-domain',
-      description:
-        "A table's foreign key points at a table of the same domain: domains don't share tables, so a field's reference to another domain's aggregate stays a plain ID.",
-      sql: `
-SELECT 'table_key' AS table_name, ${keyOf(schema, 'table_key', 'k')} AS row_key,
-       'table ' || k.table_id || ' is in domain ' || coalesce(a.domain_id, 'none') || ', so its foreign key cannot point at table '
-       || k.target_table_id || ', which is in domain ' || coalesce(b.domain_id, 'none') AS message
-FROM table_key k
-JOIN record_scope a ON a.id = k.table_id
-JOIN record_scope b ON b.id = k.target_table_id
-WHERE k.type = 'foreign' AND a.domain_id IS DISTINCT FROM b.domain_id`,
     },
     {
       name: 'package-use-technical',

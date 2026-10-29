@@ -17,6 +17,6 @@ COMMENT ON COLUMN question.domain_id IS 'The domain it sits under; exactly one o
 COMMENT ON COLUMN question.owner IS 'The role that decides it, one of the product''s roles, such as Owner.';
 COMMENT ON COLUMN question.description IS 'What is open and the options, in a paragraph.';
 
-INSERT INTO meta_kind VALUES ('question', 'Open question', NULL, 61, false, '<P>-Q<nn> or <P>-<D>-Q<nn>', 'TL-LEND-Q01', 'parent', NULL);
+INSERT INTO meta_kind VALUES ('question', 'Open question', NULL, 62, false, '<P>-Q<nn> or <P>-<D>-Q<nn>', 'TL-LEND-Q01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES ('question', 'product', 1, 'product_id'), ('question', 'domain', 2, 'domain_id');
 INSERT INTO meta_table VALUES ('question', 'kind', NULL);

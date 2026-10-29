@@ -1,6 +1,8 @@
 // The command runner: the one place a command's transaction starts. It checks the input against the command's
 // fields, runs its handler in a transaction of its own, and commits; a refusal, of the input, the handler or the
-// commit, changes nothing.
+// commit, changes nothing. A query runs the same way without a transaction: its handler is given its read model's
+// reader, made over the current data.
+import type { ReadView } from '../data/rules.ts';
 import type { Store } from '../data/store.ts';
 import type { Committed } from '../data/transaction.ts';
 import { parseInput, type AnyCommand, type AnyQuery } from './definition.ts';
@@ -14,7 +16,12 @@ export async function runCommand(store: Store, definition: AnyCommand, args: unk
 
 /** Runs the query on the store's current data with the given arguments. */
 export function runQuery(store: Store, definition: AnyQuery, args: unknown): unknown {
-  return definition.run(store, parseInput(store.schema, definition, args));
+  return answerQuery(store, definition, parseInput(store.schema, definition, args));
+}
+
+/** The query's answer over the data: its handler is given its read model's reader, made over the data (injected). */
+export function answerQuery(view: ReadView, definition: AnyQuery, input: unknown): unknown {
+  return definition.run((definition.reader ? definition.reader(view) : view) as never, input as never);
 }
 
 /** What a command changed, one line per row, then the files it wrote. */

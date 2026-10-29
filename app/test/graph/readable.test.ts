@@ -2,7 +2,7 @@
 import { indexOf } from '../fixtures/load';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { repoData } from '../fixtures/repo';
-import { drawnFor, drawnNested, FRAME_PADDING, frameFocus, frameNested, frameOnMap, MAX_ZOOM, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
+import { drawnFor, drawnNested, FRAME_PADDING, frameFocus, frameNested, frameOnMap, maxZoomFor, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
 import { graphMap, treeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
 import { nestedMap } from '../../src/graph/nested';
 import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
@@ -50,7 +50,7 @@ const LAYOUTS: Layout[] = [
   {
     name: 'Tree',
     map: graphMap,
-    frame: (map, focus, depth, w, h) => frameOnMap(map as GraphMap, focus, depth, w, h),
+    frame: (map, focus, depth, w, h) => frameOnMap(map as GraphMap, focus, depth, w, h, maxZoomFor(map)),
     drawn: (map, v, focus, w, h) => drawnFor(map as GraphMap, v, w, h, [focus]),
     height: (map, id) => { const n = map.nodes.get(id)!; return n.text * (labelHeight(n.lines) + 2 * BORDER); },
     size: (map, id) => map.nodes.get(id)!.h,
@@ -58,7 +58,7 @@ const LAYOUTS: Layout[] = [
   {
     name: 'Nested',
     map: nestedMap,
-    frame: (map, focus, _depth, w, h) => frameNested(map, focus, w, h),
+    frame: (map, focus, _depth, w, h) => frameNested(map, focus, w, h, maxZoomFor(map)),
     drawn: (map, v, focus, w, h) => drawnNested(map, v, w, h, [focus]),
     height: (map, id) => { const n = map.nodes.get(id)!; return n.text * labelHeight(n.lines); },
     size: (map, id) => map.nodes.get(id)!.w,
@@ -139,7 +139,7 @@ describe('every drawn box shows its name', () => {
         const sizes = new Map<number, number[]>();
         for (const n of map.nodes.values()) {
           const v = layout.frame(map, n.id, 1, 770, 640);
-          expect(v.zoom, `${layout.name} ${n.id}`).toBeLessThanOrEqual(MAX_ZOOM);
+          expect(v.zoom, `${layout.name} ${n.id}`).toBeLessThanOrEqual(maxZoomFor(map));
           expect(v.zoom, `${layout.name} ${n.id}`).toBeGreaterThanOrEqual(MIN_ZOOM);
           if (layout.name === 'Tree' && (n.parent === null || n.children.length === 0 || n.text < treeText(n.w) * (1 - 1e-9) || frameFocus(map as GraphMap, n, 1, 770, 640).zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9))) continue;
           // In the Tree, in its own frame: one whose children it would draw too small to read frames their column instead, larger (LA-EXP-DS09).
@@ -162,7 +162,7 @@ describe('every drawn box shows its name', () => {
         for (const m of medians) { expect(m).toBeGreaterThanOrEqual(9); expect(m).toBeLessThanOrEqual(20); }
         // The camera frames even the deepest, smallest leaf without reaching its zoom limit.
         const smallest = [...map.nodes.values()].reduce((a, b) => (Math.min(b.w, b.h) < Math.min(a.w, a.h) ? b : a));
-        expect(layout.frame(map, smallest.id, 1, 770, 640).zoom, `${layout.name} ${smallest.id}`).toBeLessThan(MAX_ZOOM);
+        expect(layout.frame(map, smallest.id, 1, 770, 640).zoom, `${layout.name} ${smallest.id}`).toBeLessThan(maxZoomFor(map));
       }
     }
   }, 120_000);
