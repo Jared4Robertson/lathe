@@ -165,8 +165,9 @@ function leaderFor(host: HTMLElement, space: OpenSpaceStore | undefined, box: Bo
 
 /**
  * Draws a stage again, at once, when the card moves without the camera: a panel opening, closing or
- * resizing, the card among them (the open space changes), or the card's page scrolling its title
- * along. `paint` is the stage's paint, run in the same frame as the change.
+ * resizing, the card among them (the open space changes), the card's page scrolling its title along,
+ * or the card arriving where a transition of its own took it. `paint` is the stage's paint, run in the
+ * same frame as the change.
  */
 export function useLeaderFollow(host: { current: HTMLElement | null }, space: OpenSpaceStore | undefined, paint: () => void) {
   const latest = useRef(paint);
@@ -178,10 +179,14 @@ export function useLeaderFollow(host: { current: HTMLElement | null }, space: Op
     const off = space.subscribe(now);
     const layout = el.closest('.stage-layout');
     const onScroll = (e: Event) => { if (e.target instanceof Element && e.target.matches('.wiki-panel-scroll')) now(); };
+    // The card moved by a transition of its own: drawn again where it ends up.
+    const onMoved = (e: Event) => { if (e.target instanceof Element && e.target.matches('.wiki-panel')) now(); };
     layout?.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    for (const type of ['transitionend', 'transitioncancel']) layout?.addEventListener(type, onMoved);
     return () => {
       off();
       layout?.removeEventListener('scroll', onScroll, { capture: true });
+      for (const type of ['transitionend', 'transitioncancel']) layout?.removeEventListener(type, onMoved);
     };
   }, [host, space]);
 }
