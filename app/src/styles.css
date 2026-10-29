@@ -794,6 +794,10 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* A domain: the region its aggregates sit in, and an aggregate the boundary its entities sit in (their places leave room
    for its head, BOUNDARY_PAD in erd.ts); either is a closed box when it holds nothing. */
 .erd-box.erd-domain { --box-edge: var(--muted); --box-fill: color-mix(in srgb, var(--g-domain-model-bg) 35%, var(--paper)); border-width: 2px; padding: 8px 14px; }
+/* Zoomed out, each region's name shows over its head at one size on screen, above everything drawn (ErdView's RegionLabels). */
+.erd-region-labels { position: absolute; inset: 0; z-index: 4; pointer-events: none; overflow: hidden; }
+.erd-region-label { position: absolute; padding: 1px 6px; border-radius: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 0.8125rem/1.3 var(--display); color: var(--ink); background: var(--paper); box-shadow: 0 0 0 1px var(--rule); transition: opacity var(--motion-speed) var(--motion-ease); }
+@media (prefers-reduced-motion: reduce) { .erd-region-label { transition: none; } }
 .erd-box.erd-aggregate { --box-fill: var(--g-domain-model-bg); padding: 8px 14px; }
 .erd-box.is-highlight, .erd-box.is-highlight:hover { box-shadow: 0 0 0 3px var(--ink); }
 /* A faded box reads whole under the pointer, and by touch once armed. */
