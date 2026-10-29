@@ -104,7 +104,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphDepthUp', title: 'More depth', group: 'Graph', keys: ['+', '='], when: 'graph' },
   { id: 'graphDepthDown', title: 'Less depth', group: 'Graph', keys: ['-'], when: 'graph' },
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
-  { id: 'graphLayout', title: 'Tree, Nested or Voronoi layout: parents beside their children, or made of them as boxes or cells', group: 'Graph', keys: ['v'], when: 'graph' },
+  { id: 'graphLayout', title: 'Tree or Nested layout: parents beside their children, or made of them as boxes', group: 'Graph', keys: ['v'], when: 'graph' },
   // The stage walk (WALK_KEYS), from anywhere but a control that uses arrows itself (usesArrows), by the commands layer's
   // one handler (LA-V61-R49). Each move moves the stage's focus: the arrows among the siblings (on the Graph by its
   // layout's keys, graph/steps.ts), Out and In between the levels. Tab steps through the boxes.

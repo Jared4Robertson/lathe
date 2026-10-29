@@ -1,34 +1,41 @@
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
+import { createPortal } from 'react-dom';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type UIEvent } from 'react';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { useRunCommand, useRunWalk } from '../shell/commands';
 import { COMMANDS, WALK_COMMANDS } from '../shell/keymap';
 import { Tooltip } from '../shell/Tooltip';
-import { KeyControl } from '../graph/key';
+import { BottomSheet } from '../shell/BottomSheet';
+import { useNarrow } from '../shell/useNarrow';
 import { MOVES, type Move } from './levels';
 import { ChangesTools } from '../changes/ChangesTools';
 
 // One stage chrome (LA-PAT-APP-UX-R21): every stage (Graph, ERD, Trace) has the same controls in the same places, built
-// from these two components, so no stage can drift.
+// from these three components, so no stage can drift.
 // - StageToolbar floats at the top of the open space, centered on the stage while it fits there: first the shared
 //   controls in a fixed order (the step buttons Left, Right, Up and Down, each showing its letter, then Out and In
 //   between the levels, then Frame), then the Changes controls every stage shares (changes/ChangesTools.tsx), then the
-//   stage's own, then its Key popover. Each step runs the stage's walk (views/levels.ts) through the commands layer, as
+//   stage's own. Each step runs the stage's walk (views/levels.ts) through the commands layer, as
 //   its keys do. It is one row at every width (LA-PAT-APP-UX-R08): while it does not fit it steps down a tier before
 //   paint (TOOLBAR_FORMS), and the walk, Frame and the stage's primary controls are the last to give way.
 // - StageCamera sits in the bottom left corner of the frame: zoom in, zoom out and fit the whole map, the same buttons,
 //   look and tooltips on every stage. A minimap (the Graph's) sits in the bottom right corner and the edge hints (the
 //   ERD's) at the frame's edges, in their shared styles.
+// - StageKey is the stage's key, a bar along the bottom of the open space on the camera's row, between the camera and
+//   the minimap: each thing the stage draws now (a color, a shape, a line, a mark) as a small sample and a word or two,
+//   its whole meaning in its tooltip. Each stage gives its own entries (graph/key.tsx, erd/erdKey.tsx,
+//   trace/TraceKey.tsx, and changes/ChangesKey.tsx's live marks on every stage). On a phone it is a Key chip that opens
+//   it as a sheet.
 
-/** The toolbar's groups: the walk's steps (with Out and In), Frame, the Changes controls, the stage's primary and secondary controls, and its Key. */
-type ToolbarGroup = 'steps' | 'frame' | 'changes' | 'primary' | 'secondary' | 'key';
+/** The toolbar's groups: the walk's steps (with Out and In), Frame, the Changes controls, and the stage's primary and secondary controls. */
+type ToolbarGroup = 'steps' | 'frame' | 'changes' | 'primary' | 'secondary';
 
 /** The toolbar's forms, widest first. */
 export const TOOLBAR_TIERS = ['full', 'compact', 'changes', 'secondary', 'narrow', 'menu'] as const;
 type ToolbarTier = (typeof TOOLBAR_TIERS)[number];
 
 interface ToolbarForm {
-  /** Names beside the icons (Frame, Key, the Graph's Filters and Depth); without them the icons stand alone. */
+  /** Names beside the icons (Frame, the Graph's Filters and Depth); without them the icons stand alone. */
   names: boolean;
   /** The Changes baseline picker in the row (it is always in the More menu and the Changes panel). */
   picker: boolean;
@@ -42,7 +49,7 @@ interface ToolbarForm {
 
 /**
  * What each tier changes, in the fold order: the names and the baseline picker give way first, then the Changes group
- * folds into More, then the stage's secondary controls and the Key, then the step letters drop and the stage's own
+ * folds into More, then the stage's secondary controls, then the step letters drop and the stage's own
  * controls narrow. The walk (the steps, Out and In), Frame and the stage's primary controls stay in the row on every
  * desktop width; only the last tier, for a phone, folds the steps too.
  */
@@ -50,9 +57,9 @@ export const TOOLBAR_FORMS: Readonly<Record<ToolbarTier, ToolbarForm>> = {
   full: { names: true, picker: true, letters: true, narrow: false, folded: [] },
   compact: { names: false, picker: false, letters: true, narrow: false, folded: [] },
   changes: { names: false, picker: false, letters: true, narrow: false, folded: ['changes'] },
-  secondary: { names: false, picker: false, letters: true, narrow: false, folded: ['changes', 'secondary', 'key'] },
-  narrow: { names: false, picker: false, letters: false, narrow: true, folded: ['changes', 'secondary', 'key'] },
-  menu: { names: false, picker: false, letters: false, narrow: true, folded: ['steps', 'changes', 'secondary', 'key'] },
+  secondary: { names: false, picker: false, letters: true, narrow: false, folded: ['changes', 'secondary'] },
+  narrow: { names: false, picker: false, letters: false, narrow: true, folded: ['changes', 'secondary'] },
+  menu: { names: false, picker: false, letters: false, narrow: true, folded: ['steps', 'changes', 'secondary'] },
 };
 
 /** The arrow each step button shows, and the letter that takes the same step. */
@@ -68,13 +75,11 @@ export interface StageToolbarProps {
   walkLabels?: Partial<Record<Move, string>>;
   /** The stage's own controls, in their narrow form or not: the primary ones always in the row, the secondary ones folding into More. */
   own?: (narrow: boolean) => { primary?: ReactNode; secondary?: ReactNode };
-  /** The stage's key, in the Key popover. */
-  stageKey: ReactNode;
   /** Changes when the stage's own controls change width (a filter count shown), so the toolbar finds its tier again. */
   measureKey?: string | number;
 }
 
-export function StageToolbar({ can, walkLabels = {}, own, stageKey, measureKey }: StageToolbarProps) {
+export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToolbarProps) {
   const runWalk = useRunWalk();
   const runCommand = useRunCommand();
   const room = useRef<HTMLDivElement>(null);
@@ -126,8 +131,7 @@ export function StageToolbar({ can, walkLabels = {}, own, stageKey, measureKey }
       })}
     </div>
   );
-  const key = <KeyControl>{stageKey}</KeyControl>;
-  const groups: Partial<Record<ToolbarGroup, ReactNode>> = { steps, changes: <ChangesTools picker />, secondary: mine.secondary, key };
+  const groups: Partial<Record<ToolbarGroup, ReactNode>> = { steps, changes: <ChangesTools picker />, secondary: mine.secondary };
   // A group with nothing in it (the ERD and the Trace have no secondary controls) takes no place in More.
   const inMore = form.folded.filter((g) => groups[g]);
   return (
@@ -144,7 +148,6 @@ export function StageToolbar({ can, walkLabels = {}, own, stageKey, measureKey }
           {mine.primary}
           {!folds('secondary') && mine.secondary}
           <div className="stage-toolbar-end">
-            {!folds('key') && key}
             {inMore.length > 0 && (
               <details className="stage-more">
                 <Tooltip label="More controls">
@@ -175,6 +178,132 @@ export function StageCamera({ onZoomIn, onZoomOut, onFit }: StageCameraProps) {
       <Tooltip label="Zoom out"><Button variant="icon" className="stage-zoom-out" label="Zoom out" onClick={onZoomOut}><Icon name="minus" size={14} /></Button></Tooltip>
       <Tooltip label="Fit the whole map"><Button variant="icon" className="stage-fit" label="Fit the whole map" onClick={onFit}><Icon name="maximize" size={14} /></Button></Tooltip>
     </div>
+  );
+}
+
+/** One entry of a stage's key: a small sample of something the stage draws, a word or two for it, and its whole meaning. */
+export interface KeyEntry {
+  /** Unique in the key: what it stands for ("stage-domain-model", "shape-hexagon"). */
+  id: string;
+  /** The entries of one group sit together, a thin rule before each new group: colors, shapes, lines, marks, changes. */
+  group: string;
+  /** A tiny sample, as the stage draws it (a swatch, a shape, a line). */
+  sample: ReactNode;
+  /** One or two words: "Aggregate", "Raises", "Gap". */
+  words: string;
+  /** What it means in a sentence: the entry's tooltip, and its line in the phone's sheet. */
+  meaning: string;
+}
+
+/** How the bar holds its entries: one or two rows that fit, or two rows scrolling sideways inside it. */
+type KeyForm = { scroll: false } | { scroll: true; width: number };
+/** The most rows the bar wraps to before it scrolls sideways. */
+const KEY_ROWS = 2;
+
+/**
+ * The stage's key (LA-V96-R33): a frosted bar along the bottom of the open space, centered between the camera and the
+ * minimap, holding only what the stage draws now. It counts as a floating panel at the bottom (`data-floating`), so the
+ * camera frames above it. Too long for one row it wraps to two, then scrolls sideways inside itself with faded edges;
+ * it takes focus as one named region, so the arrow keys scroll it and never walk the stage. On a phone it is a Key chip
+ * that opens the entries, with their meanings, as a sheet.
+ */
+export function StageKey({ entries, beside }: { entries: readonly KeyEntry[]; beside?: 'minimap' }) {
+  const phone = useNarrow();
+  if (entries.length === 0) return null;
+  return phone ? <KeyChip entries={entries} /> : <KeyBar entries={entries} beside={beside} />;
+}
+
+/** `beside`: a minimap in the bottom right corner, which the bar keeps clear of. */
+function KeyBar({ entries, beside }: { entries: readonly KeyEntry[]; beside?: 'minimap' }) {
+  const room = useRef<HTMLDivElement>(null);
+  const bar = useRef<HTMLElement>(null);
+  const list = useRef<HTMLUListElement>(null);
+  const [form, setForm] = useState<KeyForm>({ scroll: false });
+  const [edges, setEdges] = useState({ start: false, end: false });
+  const shape = entries.map((e) => `${e.id}:${e.words}`).join('|');
+  // Each new set of entries, or a new width of the room, starts from the wrapping form again; before paint, more rows
+  // than KEY_ROWS step to the scrolling form, its list as wide as two rows of its entries.
+  const [roomWidth, setRoomWidth] = useState(0);
+  useLayoutEffect(() => { setForm((f) => (f.scroll ? { scroll: false } : f)); }, [shape, roomWidth]);
+  useLayoutEffect(() => {
+    const ul = list.current;
+    if (form.scroll || !ul) return;
+    const items = [...ul.children] as HTMLElement[];
+    if (new Set(items.map((li) => li.offsetTop)).size <= KEY_ROWS) return;
+    const gap = parseFloat(getComputedStyle(ul).columnGap) || 0;
+    const widths = items.map((li) => li.offsetWidth + gap);
+    const sum = widths.reduce((a, b) => a + b, 0);
+    setForm({ scroll: true, width: Math.ceil(sum / KEY_ROWS + Math.max(...widths)) });
+  }, [form, shape, roomWidth]);
+  const onScroll = (e: UIEvent<HTMLElement>) => {
+    const el = e.currentTarget;
+    setEdges({ start: el.scrollLeft > 1, end: el.scrollLeft + el.clientWidth < el.scrollWidth - 1 });
+  };
+  useLayoutEffect(() => {
+    const el = bar.current;
+    if (!el) return;
+    setEdges({ start: form.scroll && el.scrollLeft > 1, end: form.scroll && el.scrollLeft + el.clientWidth < el.scrollWidth - 1 });
+  }, [form]);
+  useEffect(() => {
+    const box = room.current;
+    if (!box || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => setRoomWidth(Math.round(box.clientWidth)));
+    observer.observe(box);
+    return () => observer.disconnect();
+  }, []);
+  return (
+    <div className="stage-key-room" ref={room} data-beside={beside}>
+      <section
+        ref={bar}
+        className={`stage-key${edges.start ? ' fade-start' : ''}${edges.end ? ' fade-end' : ''}`}
+        role="region"
+        aria-label="Key"
+        tabIndex={0}
+        data-floating="bottom"
+        data-form={form.scroll ? 'scroll' : 'wrap'}
+        onScroll={form.scroll ? onScroll : undefined}
+      >
+        <ul ref={list} className="stage-key-list" style={form.scroll ? { width: form.width } : undefined}>
+          <KeyItems entries={entries} />
+        </ul>
+      </section>
+    </div>
+  );
+}
+
+function KeyItems({ entries, meanings = false }: { entries: readonly KeyEntry[]; meanings?: boolean }) {
+  return entries.map((e, i) => (
+    <li key={e.id} className="stage-key-entry" data-key-entry={e.id} data-group-start={i > 0 && entries[i - 1].group !== e.group ? '' : undefined} title={meanings ? undefined : e.meaning}>
+      <span className="stage-key-sample" aria-hidden="true">{e.sample}</span>
+      <span className="stage-key-words">{e.words}</span>
+      {meanings && <span className="stage-key-meaning">{e.meaning}</span>}
+    </li>
+  ));
+}
+
+/** The phone's key: a chip at the foot of the stage that opens the entries as a sheet, each with its meaning. */
+function KeyChip({ entries }: { entries: readonly KeyEntry[] }) {
+  const [open, setOpen] = useState(false);
+  const chip = useRef<HTMLButtonElement>(null);
+  const close = () => { setOpen(false); setTimeout(() => chip.current?.focus(), 0); };
+  // The sheet takes focus as it opens, on its close button; closing it gives focus back to the chip.
+  useEffect(() => { if (open) document.querySelector<HTMLElement>('.stage-key-sheet .sheet-head button')?.focus(); }, [open]);
+  return (
+    <>
+      <Button ref={chip} className="stage-key-chip" icon="info" data-floating="bottom" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>Key</Button>
+      {open && createPortal(
+        <BottomSheet label="Key" className="stage-key-sheet" onClose={close}>
+          <div className="sheet-head">
+            <h2 className="sheet-title">Key</h2>
+            <Button variant="icon" label="Close the key" onClick={close}><Icon name="x" /></Button>
+          </div>
+          <ul className="stage-key-sheet-list" aria-label="Key">
+            <KeyItems entries={entries} meanings />
+          </ul>
+        </BottomSheet>,
+        document.body,
+      )}
+    </>
   );
 }
 

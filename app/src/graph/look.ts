@@ -18,7 +18,7 @@ export interface Look {
   changeNew: string; changeChanged: string; changeGone: string;
   /** How much the hover spotlight dims the rest, and how faint an unlit line then is. */
   spotlightDim: number; contextOpacity: number;
-  /** The focus fade (fade.ts): how strongly a box outside the focus's subtree is drawn, and an ancestor kept as a trail in Nested and Voronoi. */
+  /** The focus fade (fade.ts): how strongly a box outside the focus's subtree is drawn, and an ancestor kept as a trail in Nested. */
   focusFade: number; focusTrail: number;
   /** How long the spotlight's fade takes, in ms: 0 under reduced motion. */
   fade: number;

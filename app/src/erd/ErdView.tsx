@@ -1,9 +1,9 @@
 // The ERD stage of any address, /<id>?stage=erd (LA-V94).
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { Background, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore, ViewportPortal, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
-import { useCameraGestures } from '../graph/gestures';
+import { useCameraGestures, wheelLatch } from '../graph/gestures';
 import { frameRect, type Viewport } from '../graph/camera';
 import { PLAIN_LOOK, useThemeVersion } from '../graph/look';
 import type { FadeLook } from '../graph/fade';
@@ -16,19 +16,19 @@ import { ErdLeader } from './leader';
 import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
 import { useWalk } from '../graph/steps';
 import { useCommand } from '../shell/commands';
-import { StageCamera, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
+import { StageCamera, StageKey, StageToolbar, ZOOM_STEP, type KeyEntry } from '../views/StageChrome';
 import type { Move } from '../views/levels';
 import { erdTarget } from './walk';
 import { useChanges, type LiveMark } from '../changes/changes';
 import { GHOST_MS, lensFade, markPhase, useStageMarks } from '../changes/marks';
-import { ChangesKey } from '../changes/ChangesKey';
+import { useChangesKey } from '../changes/ChangesKey';
 
 // The ERD stage: one map of the whole product (LA-V94-R08), each domain a region, its aggregates
 // boundaries around their entities, drawn with React Flow and laid out once by ELK (layout.ts).
 // A focus never moves a box: it fades what lies outside its scope (the graph's focus fade), picks
 // out its box, and the camera glides to frame it with the shared camera (graph/gestures.ts). Clicking
-// a box goes to it, as a graph node does. Its toolbar and camera are every stage's (views/StageChrome.tsx),
-// the toolbar's Key explaining the boxes and the lines. Like the graph it never reads the address, and
+// a box goes to it, as a graph node does. Its toolbar, camera and key bar are every stage's (views/StageChrome.tsx),
+// the key explaining the boxes and the lines it draws. Like the graph it never reads the address, and
 // frames itself in the open space it is given.
 
 /** What a box is called, in its accessible name, the key and the touch card. */
@@ -197,6 +197,8 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: E
     return map && at && rects ? erdTarget(map, rects, at, move) : null;
   }, [index, map, at]);
   useWalk(index, focus, target, onNavigate);
+  const changesKey = useChangesKey();
+  const keyEntries = useMemo(() => (map && at ? [...erdKeyEntries(map, at, index.workspace.relations), ...changesKey] : []), [map, at, index, changesKey]);
   if (!at || !map) return <p className="hint erd-missing">There's no record or group <code>{focus}</code>.</p>;
   const product = index.byId.get(at.product);
   return (
@@ -210,17 +212,18 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: E
           </ReactFlowProvider>
         </div>
       )}
-      <StageToolbar can={(move) => target(move) !== null} stageKey={<ErdKey map={map} at={at} relations={index.workspace.relations} />} />
+      <StageToolbar can={(move) => target(move) !== null} />
+      <StageKey entries={keyEntries} />
     </section>
   );
 }
 
-/** The ERD's key, in the toolbar's Key popover: each kind of box, badge and line the map draws, and nothing it does not. */
-export function ErdKey({ map, at, relations = [] }: { map: ErdMap; at: ErdFocus; relations?: readonly RelationRule[] }) {
+/** The ERD's key entries (LA-V94-R05), for the stage's key bar: each kind of box, badge and line the map draws, and nothing it does not. */
+export function erdKeyEntries(map: ErdMap, at: ErdFocus, relations: readonly RelationRule[] = []): KeyEntry[] {
   const sample = (relation: ErdRelation, dashed: boolean) => {
     const g = lineGeometry({ x: 0, y: 0, width: 2, height: 2 }, { x: 34, y: 0, width: 2, height: 2 }, RELATION_ENDS[relation]);
     return (
-      <svg className={`erd-key-line rel-${relation}${dashed ? ' is-dashed' : ''}`} viewBox="-2 -9 40 18" width="36" height="18" aria-hidden="true">
+      <svg className={`erd-key-line rel-${relation}${dashed ? ' is-dashed' : ''}`} viewBox="-2 -9 40 18" width="28" height="14" aria-hidden="true">
         <path className="erd-line-path" d={g.line} />
         {g.sourceEnd && <path className="erd-end" d={g.sourceEnd} />}
         {g.targetEnd && <path className="erd-end" d={g.targetEnd} />}
@@ -230,33 +233,19 @@ export function ErdKey({ map, at, relations = [] }: { map: ErdMap; at: ErdFocus;
   const has = (kind: ErdKind) => map.boxes.some((b) => b.kind === kind);
   const lines = [...new Map(map.lines.map((l) => [l.relation, l])).values()].sort((a, b) => LINE_ORDER.indexOf(a.relation) - LINE_ORDER.indexOf(b.relation));
   const faded = at.scope !== map.product && map.boxes.length > scopeContents(map, at.scope).boxes.length;
-  // Every entry is a cell of one grid, the boxes' first and then the lines' on a row of their own; each cell is keyed by
-  // its place, so it stays where it is and only its words change. A cell's whole meaning is its tooltip.
-  const text = (words: string) => <span className="erd-key-text">{words}</span>;
-  type Entry = { title: string; mark: ReactNode; words: string };
-  const boxes: Entry[] = [
-    ...(has('domain') ? [{ title: 'A domain: the region around its aggregates', mark: <span className="erd-key-swatch erd-key-domain" aria-hidden="true" />, words: 'Domain' }] : []),
-    ...(has('aggregate') ? [{ title: 'An aggregate: the boundary around its entities, or a closed box', mark: <span className="erd-key-swatch erd-key-aggregate" aria-hidden="true" />, words: 'Aggregate boundary' }] : []),
-    ...(has('entity') ? [{ title: 'An entity, with its fields and their types', mark: <span className="erd-key-swatch erd-key-entity" aria-hidden="true" />, words: 'Entity' }] : []),
-    ...(map.boxes.some((b) => b.root) ? [{ title: "The aggregate's root entity, the one references point at", mark: <span className="erd-root">root</span>, words: 'Root entity' }] : []),
-    ...(at.pick ? [{ title: 'The record in focus, or the nearest entity or aggregate above it', mark: <span className="erd-key-highlight" aria-hidden="true" />, words: 'Picked out' }] : []),
-    ...(faded ? [{ title: 'Faded: outside the domain or aggregate in focus', mark: <span className="erd-key-faded" aria-hidden="true" />, words: 'Faded: out of focus' }] : []),
+  const boxes: KeyEntry[] = [
+    ...(has('domain') ? [{ id: 'domain', group: 'boxes', meaning: 'A domain: the region around its aggregates', sample: <span className="erd-key-swatch erd-key-domain" />, words: 'Domain' }] : []),
+    ...(has('aggregate') ? [{ id: 'aggregate', group: 'boxes', meaning: 'An aggregate: the boundary around its entities, or a closed box', sample: <span className="erd-key-swatch erd-key-aggregate" />, words: 'Aggregate' }] : []),
+    ...(has('entity') ? [{ id: 'entity', group: 'boxes', meaning: 'An entity, with its fields and their types', sample: <span className="erd-key-swatch erd-key-entity" />, words: 'Entity' }] : []),
+    ...(map.boxes.some((b) => b.root) ? [{ id: 'root', group: 'boxes', meaning: "The aggregate's root entity, the one references point at", sample: <span className="erd-root">root</span>, words: 'Root entity' }] : []),
+    ...(at.pick ? [{ id: 'pick', group: 'focus', meaning: 'The record in focus, or the nearest entity or aggregate above it', sample: <span className="erd-key-highlight" />, words: 'Picked out' }] : []),
+    ...(faded ? [{ id: 'faded', group: 'focus', meaning: 'Faded: outside the domain or aggregate in focus', sample: <span className="erd-key-faded" />, words: 'Faded' }] : []),
   ];
-  const lineEntries: Entry[] = lines.map((l) => {
+  const lineEntries: KeyEntry[] = lines.map((l) => {
     const { note, meaning } = LINE_KEY[l.relation];
-    return { title: meaning, mark: sample(l.relation, l.dashed), words: `${l.relation === 'references' ? 'Reference by ID' : lineLabel(relations, l.relation)}${note && ` (${note})`}` };
+    return { id: `line-${l.relation}`, group: 'lines', meaning, sample: sample(l.relation, l.dashed), words: `${l.relation === 'references' ? 'Reference by ID' : lineLabel(relations, l.relation)}${note && ` (${note})`}` };
   });
-  const cells = (entries: Entry[]) => entries.map((e, i) => <li key={i} title={e.title}>{e.mark} {text(e.words)}</li>);
-  return (
-    <div className="erd-key">
-      <div className="erd-key-grid">
-        <ul className="erd-key-ends" aria-label="Boxes">{cells(boxes)}</ul>
-        <ul className="erd-key-ends" aria-label="Lines">{cells(lineEntries)}</ul>
-        <ChangesKey cells />
-      </div>
-      <p className="hint">Click a box, or press Enter on it, to focus it. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys (or W, A, S and D) move to the nearest box that way in the same area, going on to the next area at the edge; Shift+Up (Shift+W) goes out to the box around, Shift+Down (Shift+S) in to the first box inside.</p>
-    </div>
-  );
+  return [...boxes, ...lineEntries];
 }
 
 /** The margin a frame keeps around what it frames: wider at the left, clear of the zoom controls in the bottom left corner. */
@@ -280,6 +269,8 @@ export function fitRects(rects: Iterable<Rect>, width: number, height: number, m
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 2;
+/** Cmd or Ctrl held turns scroll into zoom (a pinch zooms either way). */
+const ZOOM_KEYS = ['Meta', 'Control'];
 
 /**
  * What the camera frames for a focus: its picked-out box (a domain's region, an aggregate's
@@ -386,7 +377,8 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut
   }, [placed, strength, at.pick, focus, relations, marks.version]);
 
   // The camera: the shared glide (graph/gestures.ts), driving React Flow's viewport; React Flow keeps
-  // the pointer's drag, pinch and wheel, and any of them takes over from a glide.
+  // the pointer's drag, pinch and scroll, set to the shared convention (scroll pans, Cmd/Ctrl+scroll
+  // or a pinch zooms, graph/gestures.ts's wheelMove), and any of them takes over from a glide.
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const noCanvas = useRef<HTMLCanvasElement>(null);
   const camera = useCameraGestures({
@@ -460,6 +452,20 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut
     return () => observer.disconnect();
   }, []);
 
+  // A scroll keeps its move (graph/gestures.ts's wheelLatch): the rest of a stream whose Cmd or Ctrl changed never reaches React Flow.
+  useEffect(() => {
+    const el = wrapper.current;
+    if (!el) return;
+    const latch = wheelLatch();
+    const onWheel = (e: WheelEvent) => {
+      if (latch(e, e.timeStamp) === 'move') return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    el.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    return () => el.removeEventListener('wheel', onWheel, { capture: true });
+  }, []);
+
   // The edge hints count the boxes in focus past each edge: the innermost ones, each entity and each closed box.
   const centers = useMemo(() => {
     if (!placed) return [];
@@ -513,6 +519,9 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut
         onNodeMouseEnter={(_, n) => onPeek?.('hover', n.id)}
         onNodeMouseLeave={() => onPeek?.('hover', null)}
         onPaneClick={tap.clear}
+        panOnScroll
+        panOnScrollSpeed={1}
+        zoomActivationKeyCode={ZOOM_KEYS}
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
         proOptions={{ hideAttribution: true }}
