@@ -7,7 +7,7 @@ import { groupKindLabel, groupLabel, groupMembers, groupName, groupOwner, stageF
 import { treeGroup } from '../graph/tree';
 import { Link } from '../router';
 import { FormatPageView } from '../format/FormatPages';
-import type { FormatRoute } from '../format/reference';
+import { kindPagePath, type FormatRoute } from '../format/reference';
 import { pageHref } from './overlays';
 import { HistorySection } from './RecordHistory';
 import { Tooltip } from '../shell/Tooltip';
@@ -15,7 +15,7 @@ import { gapsOf, kindLabel, type Problem, type SpecIndex, type SpecRecord } from
 import { foldedChildren } from '../specs/folders';
 import { Markdown } from '../specs/Markdown';
 import { gapText, ProblemBadge, RecordLink, RecordTree, Section, listTitle } from '../specs/parts';
-import { RecordContent } from '../specs/RecordContent';
+import { RecordContent, RecordFacts } from '../specs/RecordContent';
 import { factsOf, leadOf } from '../specs/RecordText';
 import { DomainWiki, ProductWiki, problemsUnder } from '../specs/SpecPages';
 import { addressOf, focusOf, type FocusRoute } from './address';
@@ -219,10 +219,17 @@ function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) 
 
 function WikiPage({ index, route }: { index: SpecIndex; route: Exclude<FocusRoute, { page: 'group' }> }) {
   switch (route.page) {
-    case 'product': return <Editable key={route.product} index={index} id={route.product}><ProductWiki index={index} id={route.product} /></Editable>;
-    case 'domain': return <Editable key={route.domain} index={index} id={route.domain}><DomainWiki index={index} id={route.domain} /></Editable>;
+    case 'product': return <Editable key={route.product} index={index} id={route.product}><ProductWiki index={index} id={route.product} /><OwnFacts index={index} id={route.product} /></Editable>;
+    case 'domain': return <Editable key={route.domain} index={index} id={route.domain}><DomainWiki index={index} id={route.domain} /><OwnFacts index={index} id={route.domain} /></Editable>;
     case 'record': return <Editable key={route.id} index={index} id={route.id}><div className="spec-body"><RecordContent index={index} id={route.id} header={false} /></div></Editable>;
   }
+}
+
+/** A product's or a domain's facts after its page, as a record's follow its body (RecordContent): its kind, data file and links both ways. */
+function OwnFacts({ index, id }: { index: SpecIndex; id: string }) {
+  const record = index.byId.get(id);
+  if (!record) return null;
+  return <div className="spec-body"><aside className="record-side" aria-label="Facts"><RecordFacts index={index} record={record} /></aside></div>;
 }
 
 /** A group's wiki page: its parent, its kind, and its members, each with its coverage marks and its own children folded. */
@@ -244,6 +251,11 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
       <p className="group-intro">
         {groupName(index, gid)} of <Link to={addressOf(parent)} className="record-link"><code>{parent}</code> <span>{parentRecord.title}</span></Link>
       </p>
+      {kind && (
+        <dl className="fields">
+          <div><dt>Kind</dt><dd title={index.kinds.get(kind)?.description}><Link to={kindPagePath(kind)}>{kindLabel(index, kind)}</Link></dd></div>
+        </dl>
+      )}
       {description && <Markdown source={description} />}
       {/* A stage lists its folders, one section per kind. */}
       {kinds.length > 1 ? kinds.map((k) => {

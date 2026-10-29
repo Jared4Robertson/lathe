@@ -174,7 +174,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   // bar's toggle (LA-V61-R42); collapsed by a key from the stage, it stays where it was. Collapsing it closes a format
   // page in it too.
   const setCardShown = useCallback((show: boolean, fromInside = false) => {
-    const inside = fromInside || document.activeElement?.closest('.wiki-panel') != null;
+    const inside = fromInside || document.activeElement?.closest('.wiki-panel, .wiki-panel-sheet') != null;
     if (!show && format) navigate(pageHref(null));
     if (narrow) setSheet(show); else { setCard({ open: show }); hold('card', show); }
     announce(show ? 'Wiki card shown' : 'Wiki card collapsed');
@@ -464,6 +464,11 @@ function PhoneLayout(props: PhoneLayoutProps) {
   const count = tabs.set.tabs.length;
   const closePages = useCallback(() => { setPagesOpen(false); setTimeout(() => pagesButton.current?.focus(), 0); }, []);
   useEffect(() => { if (pagesOpen) pagesSheet.current?.querySelector<HTMLElement>('[aria-current], button')?.focus(); }, [pagesOpen]);
+  // The wiki card's sheet takes focus as it opens; closing it gives focus back to its toggle (setCardShown).
+  const cardOpen = card !== null;
+  useEffect(() => {
+    if (cardOpen) setTimeout(() => document.querySelector<HTMLElement>('.wiki-panel-sheet .wiki-panel-head button, .wiki-panel-sheet button')?.focus(), 0);
+  }, [cardOpen]);
   const page = tabs.active.page;
   useEffect(() => { setPagesOpen(false); }, [page]);
 

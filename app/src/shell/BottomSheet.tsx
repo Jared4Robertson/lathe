@@ -29,7 +29,7 @@ export function settle(size: SheetSize, dy: number, speed: number): SheetSize | 
 }
 
 export interface BottomSheetProps {
-  /** The sheet's name, for screen readers: "Side bar", "Open pages". */
+  /** The sheet's name, for screen readers: "Wiki card", "Open pages". */
   label: string;
   onClose: () => void;
   className?: string;

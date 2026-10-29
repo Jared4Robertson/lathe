@@ -179,6 +179,8 @@ export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecR
             <dd>{f.value}</dd>
           </div>
         ))}
+        {/* Why a record has no parent; one that has one is named by the card's breadcrumb. */}
+        {!record.parent && <div><dt>Parent</dt><dd>{parentlessText(index, record)}</dd></div>}
         <div><dt>Data file</dt><dd><code>{rowPlace(record)}</code><DesktopRecordActions id={id} /></dd></div>
       </dl>
       <h3>Links out</h3>
