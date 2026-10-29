@@ -50,7 +50,7 @@ describe('domains', () => {
 });
 
 describe('entities and value objects', () => {
-  it('LA-AUT-UC10-R01-T01 An entity sits under an aggregate and needs a role, a value object has no owner, and entities link to entities by has_one and has_many', () => {
+  it('LA-AUT-UC10-R01-T01 LA-AUT-UC24-R01-T01 An entity sits under an aggregate and needs a role, a value object has no owner, and entities link to entities by has_one and has_many', () => {
     expect(parentsOf(schema, 'entity')).toEqual(['aggregate.aggregate_id']);
     expect(requiredOf(schema, 'entity')).toEqual(['aggregate_id', 'role', 'description']);
     expect(schema.tables.entity.columns.find((c) => c.name === 'role')!.values).toEqual(['root', 'child']);
@@ -152,7 +152,7 @@ describe('entities and value objects', () => {
 });
 
 describe('commands, events and policies', () => {
-  it('LA-AUT-UC12-R01-T01 A domain event sits under an aggregate, a command under an aggregate raises and checks, and a policy under a command hears one event', () => {
+  it('LA-AUT-UC12-R01-T01 LA-AUT-UC25-R01-T01 A domain event sits under an aggregate, a command under an aggregate raises and checks, and a policy under a command hears one event', () => {
     expect(parentsOf(schema, 'domain_event')).toEqual(['aggregate.aggregate_id']);
     expect(requiredOf(schema, 'domain_event')).toEqual(['aggregate_id', 'published', 'description']);
     expect(parentsOf(schema, 'command')).toEqual(['aggregate.aggregate_id']);
@@ -169,7 +169,7 @@ describe('commands, events and policies', () => {
     expect(reference.relations.find((r) => r.relation === 'hears')).toMatchObject({ forward_label: 'Hears', reverse_label: 'Heard by' });
   });
 
-  it("LA-AUT-UC12-R02-T01 A domain event's fields are its event_field rows in position order, as an entity's are", async () => {
+  it("LA-AUT-UC25-R02-T01 A domain event's fields are its event_field rows in position order, as an entity's are", async () => {
     const data = adding(complete(), {
       event_field: [{ domain_event_id: 'EX-LEND-EV01', position: 2, name: 'Due', meaning: 'When the tool is due.', type: 'date', required: true, example: '2026-11-01' }],
     });
@@ -183,7 +183,7 @@ describe('commands, events and policies', () => {
     expect(shape('event_field')).toEqual(shape('entity_field'));
   });
 
-  it('LA-AUT-UC12-R02-T02 A domain event with no fields is a gap, and a field without a name, or named twice, is refused', async () => {
+  it('LA-AUT-UC25-R02-T02 A domain event with no fields is a gap, and a field without a name, or named twice, is refused', async () => {
     const ws = await loadData(without(complete(), 'event_field', (f) => f.domain_event_id === 'EX-LEND-EV02'));
     expect(gaps(ws)).toEqual(['event-without-fields EX-LEND-EV02']);
     const field = everyKind().event_field[0];
@@ -248,7 +248,7 @@ describe('rules', () => {
     expect((await refusals(withTable(everyKind(), 'invariant', [bare]))).map((p) => p.message)).toEqual(['invariant.statement is required']);
   });
 
-  it('LA-AUT-UC20-R02-T01 Uniqueness is an invariant that the unique key enforcing it names, and only a unique key may name one', async () => {
+  it('LA-AUT-UC10-R09-T01 Uniqueness is an invariant that the unique key enforcing it names, and only a unique key may name one', async () => {
     // A table built only through the unique key that names the invariant: the data model's file does not exist.
     const keyed = adding(complete(), { table_key: [{ table_id: 'EX-LEND-EN01-TB', position: 2, type: 'unique', columns: ['tool_id'], invariant_id: 'EX-LEND-INV01' }] });
     const [withKey, withoutKey] = await Promise.all([
@@ -267,7 +267,7 @@ describe('rules', () => {
 });
 
 describe('read models, queries, domain services and terms', () => {
-  it('LA-AUT-UC21-R01-T01 Read models with their fields and reads, queries of one read model, domain services that commands and queries call, and terms are in the schema', () => {
+  it('LA-AUT-UC21-R01-T01 LA-AUT-UC02-R07-T01 Read models with their fields and reads, queries of one read model, domain services that commands and queries call, and terms are in the schema', () => {
     expect(parentsOf(schema, 'read_model')).toEqual(['domain.domain_id']);
     expect(schema.tables.read_model_field).toMatchObject({ role: 'part', ownerColumn: 'read_model_id' });
     expect(pairsOf(schema, 'reads')).toContain('read_model>aggregate');

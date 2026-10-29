@@ -214,7 +214,7 @@ check('manual-test-file-silent', () => {
 });
 
 check('test-level-not-allowed', () => {
-  it('LA-CHK-UC04-R04-T01 a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
+  it('LA-PAT-AGGREGATE-TESTS-R02-T01 a test at a level its kind does not allow is a warning naming the allowed levels', async () => {
     let data = changing(complete(), 'constraint_test', () => true, { level: 'service' });
     data = changing(data, 'flow_test', (r) => r.id === 'EX-LEND-UC01-FL01-T', { level: 'service' });
     const ws = await loadData(data);
@@ -226,7 +226,7 @@ check('test-level-not-allowed', () => {
     expect(ofCheck(await loadData(changing(complete(), 'constraint_test', () => true, { level: 'integration' })), 'test-level-not-allowed')).toEqual([]);
   });
 
-  it('LA-CHK-UC04-R04-T02 a pattern rule test may run at any level', async () => {
+  it('LA-PAT-AGGREGATE-TESTS-R02-T01 a pattern rule test may run at any level', async () => {
     for (const level of ['unit', 'integration', 'service', 'system', 'browser']) {
       const ws = await loadData(changing(complete(), 'pattern_rule_test', () => true, { level }));
       expect(ofCheck(ws, 'test-level-not-allowed'), level).toEqual([]);
@@ -296,13 +296,13 @@ describe('nothing uses it', () => {
   ];
   for (const [name, record, message] of unused) {
     check(name, () => {
-      it(`LA-CHK-UC04-R09-T01 a record that nothing uses is a ${name} error`, () => {
+      it(`LA-AUT-UC24-R02-T01 LA-AUT-UC20-R03-T01 LA-AUT-UC28-R01-T01 a record that nothing uses is a ${name} error`, () => {
         expect(ofCheck(ws, name)).toEqual([{ severity: 'error', check: name, record, message }]);
       });
     });
   }
 
-  it('LA-CHK-UC04-R09-T02 a value object used by a read model is used; a query selecting by a specification uses it', async () => {
+  it('LA-AUT-UC24-R02-T02 a value object used by a read model is used; a query selecting by a specification uses it', async () => {
     let data = changing(complete(), 'entity_field', (r) => r.type_value_object_id === 'EX-VO01', { type_value_object_id: undefined, type: 'text' });
     data = adding(data, { read_model_field: [{ read_model_id: 'EX-LEND-RM01', position: 2, name: 'Email', meaning: 'Whom to tell.', type_value_object_id: 'EX-VO01', required: false }] });
     data = without(data, 'checks', () => true);
@@ -379,8 +379,8 @@ check('pattern-not-followed', () => {
 
 // A recorded exception is no check's problem: the workspace lists it apart, and the check's text prints it.
 describe('recorded exceptions', () => {
-  describe('LA-STD-PRINCIPLES-R03-T01 deviations are deliberate and visible', () => {
-    it("LA-CHK-UC04-R12-T01 a command's recorded exceptions are listed with their command, aggregate and reason, never as warnings", async () => {
+  describe('recorded exceptions are listed apart', () => {
+    it("LA-CHK-UC01-R07-T01 a command's recorded exceptions are listed with their command, aggregate and reason, never as warnings", async () => {
       const reason = 'The tool must never show as free while lent.';
       const ws = await loadData(adding(complete(), { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason }] }));
       expect(ws.exceptions).toEqual([{ command: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A2', reason }]);
@@ -391,7 +391,7 @@ describe('recorded exceptions', () => {
       expect(checkText({ errors: 0, warnings: 0, problems: [], exceptions: [], products: [] })).not.toContain('Recorded exceptions');
     });
 
-    it("LA-CHK-UC04-R14-T01 a repository's recorded exceptions are listed with their repository, aggregate and reason, never as warnings", async () => {
+    it("LA-CHK-UC01-R08-T01 a repository's recorded exceptions are listed with their repository, aggregate and reason, never as warnings", async () => {
       const reason = 'One generic store persists every table.';
       const one = without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
       const ws = await loadData(adding(one, {
@@ -415,7 +415,7 @@ describe('recorded exceptions', () => {
 });
 
 check('event-not-by-outbox', () => {
-  it('LA-CHK-UC04-R13-T01 an event a policy hears not delivered by outbox is a warning; one that only feeds read models, published or not, may go in process', async () => {
+  it('LA-AUT-UC25-R03-T01 an event a policy hears not delivered by outbox is a warning; one that only feeds read models, published or not, may go in process', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = changing(data, 'domain_event', (r) => r.id === 'EX-LEND-EV02', { published: true });
     data = adding(data, { fed_by: [{ source_id: 'EX-LEND-RM01', target_id: 'EX-LEND-EV02' }] });
@@ -425,7 +425,7 @@ check('event-not-by-outbox', () => {
     ]);
   });
 
-  it('LA-CHK-UC04-R13-T01 an event a policy hears with no event type, or whose event type gives no delivery, is reported too', async () => {
+  it('LA-AUT-UC25-R03-T01 an event a policy hears with no event type, or whose event type gives no delivery, is reported too', async () => {
     const untyped = without(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET');
     expect(ofCheck(await loadData(untyped), 'event-not-by-outbox').map((p) => p.message)).toEqual([
       'Domain event EX-LEND-EV01 is heard by policy EX-LEND-PO01, but has no event type; give it one delivered by outbox.',
@@ -436,7 +436,7 @@ check('event-not-by-outbox', () => {
     ]);
   });
 
-  it('LA-CHK-UC04-R13-T01 an event a policy hears whose aggregate is in no database table, such as one kept in browser storage, a file or in memory, is exempt', async () => {
+  it('LA-AUT-UC25-R03-T01 an event a policy hears whose aggregate is in no database table, such as one kept in browser storage, a file or in memory, is exempt', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = without(data, 'table_key', (r) => r.table_id === 'EX-LEND-EN01-TB' || r.target_table_id === 'EX-LEND-EN01-TB');
     expect(ofCheck(await loadData(without(data, 'table', (r) => r.id === 'EX-LEND-EN01-TB')), 'event-not-by-outbox')).toEqual([]);

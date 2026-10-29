@@ -243,22 +243,6 @@ describe('Authoring flows through the MCP tools', () => {
     });
   });
 
-  it('LA-AUT-UC07-FL04-T name records in text without linking them through the MCP tools', async () => {
-    await walk(LENDING, async (a) => {
-      // S01: a record whose text names records of this product and another, one in a code span.
-      const text = 'Came from TL-LEND-UC01, as `XX-SHOP-UC09` did in the other product, and from TL-LEND-UC99.';
-      await a.ok('set', { uc_requirement: { id: 'TL-LEND-UC01-R01', statement: text } });
-      // S02: show returns the text as written; only its links relate it.
-      const shown = await a.ok('show', { id: 'TL-LEND-UC01-R01' });
-      expect(shown).toContain(`  statement: ${text}`);
-      expect(shown).not.toContain('Links:');
-      // S03: the check reports nothing about the IDs in text.
-      const checked = await a.check();
-      expect(checked.problems.filter((p) => /XX-SHOP|UC99/.test(p.message))).toEqual([]);
-      expect(checked.errors).toBe(0);
-    });
-  });
-
   it('LA-AUT-UC10-FL04-T model each aggregate\'s entities and value objects through the MCP tools', async () => {
     await walk([
       add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
@@ -480,7 +464,7 @@ describe('Checking flows through the MCP tools', () => {
     });
   });
 
-  it('LA-CHK-UC04-FL04-T find structural problems through the MCP tools', async () => {
+  it('LA-CHK-UC01-FL04-T find structural problems through the MCP tools', async () => {
     // Stages written at different times: a view nothing uses yet, a use case with no flow, a test at a level its kind
     // does not allow, and a policy hearing an event of a stored aggregate that is delivered in process.
     await walk([

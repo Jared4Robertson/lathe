@@ -1,6 +1,6 @@
 {"source_id":"LA-BO01","target_id":"LA-CHK-QRY01-CLI"}
 {"source_id":"LA-BO02","target_id":"LA-CHK-QRY01-CLI"}
-{"source_id":"LA-BO03","target_id":"LA-AUT-UC01-R09-T01"}
+{"source_id":"LA-BO03","target_id":"LA-PAT-AGGREGATE-COMMANDS-R04-T01"}
 {"source_id":"LA-BO03","target_id":"LA-PLT-UC01-R03-T01"}
 {"source_id":"LA-BO04","target_id":"LA-PAT-APP-UX-R08-T02"}
 {"source_id":"LA-BO04","target_id":"LA-PAT-APP-UX-R10-T01"}
