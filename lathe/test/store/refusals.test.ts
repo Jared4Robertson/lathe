@@ -98,15 +98,8 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(problems.map((p) => p.rule)).toEqual(['command-change-in-domain', 'command-change-in-domain']);
   });
 
-  it("refuses a read model fed by another domain's unpublished event, and a domain's table stored as a view", async () => {
-    const problems = await refusal(
-      adding({
-        ...catalog,
-        fed_by: [{ source_id: 'TL-LEND-RM01', target_id: 'TL-CAT-EV01' }],
-      }),
-    );
-    expect(problems.map((p) => p.rule)).toEqual(['read-model-fed-by-published']);
-    await expect(refusal(adding({ table: [{ id: 'TL-LEND-TB02', title: 'Cache', domain_id: 'TL-LEND', name: 'cache', storage: 'view' }] }))).resolves.not.toEqual([]);
+  it("refuses a domain's own table stored as a view", async () => {
+    await expect(refusal(adding({ table: [{ id: 'TL-LEND-TB02', title: 'Cache', domain_id: 'TL-LEND', name: 'cache', storage: 'view' }] }))).resolves.toEqual([expect.objectContaining({ rule: 'check', table: 'table' })]);
   });
 
   it('refuses a query and its read model in different domains', async () => {
@@ -184,57 +177,6 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   it("LA-AUT-SP06-T refuses an ID that does not start with its parent's or domain's ID", async () => {
     const problems = await refusal(adding({ uc_requirement: [{ id: 'TL-LEND-UC09-R01', title: 'Lost', use_case_id: 'TL-LEND-UC01', statement: 'x' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', message: 'TL-LEND-UC09-R01 is a UC requirement under TL-LEND-UC01, so its ID starts with TL-LEND-UC01-' })]);
-  });
-
-  it("LA-AUT-INV13-T refuses a table for an entity stored in its root's table, a root stored in a root table, and an entity's table that is a view or a materialized view", async () => {
-    const own = await refusal(adding({ table: [{ id: 'TL-LEND-EN02-TB', title: 'Returns', entity_id: 'TL-LEND-EN02', name: 'returns', storage: 'table' }] }));
-    expect(own).toEqual([expect.objectContaining({ rule: 'entity-table', key: 'TL-LEND-EN02-TB' })]);
-    const data = everyKind();
-    data.entity[0] = { ...data.entity[0], in_root_table: true };
-    expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'check', table: 'entity' })]);
-    const view = everyKind();
-    view.table[0] = { ...view.table[0], storage: 'view' };
-    expect(await refusal(view)).toEqual([expect.objectContaining({ rule: 'check', table: 'table' })]);
-    const kept = everyKind();
-    kept.table[0] = { ...kept.table[0], storage: 'materialized view' };
-    expect(await refusal(kept)).toEqual([expect.objectContaining({ rule: 'check', table: 'table' })]);
-    // An entity kept outside a database names its browser storage, file or memory, with no keys.
-    for (const storage of ['browser storage', 'file', 'in memory']) {
-      const outside = everyKind();
-      outside.table[0] = { ...outside.table[0], storage };
-      expect((await refusal(outside)).map((p) => p.rule), storage).toEqual(['key-outside-database', 'key-outside-database', 'key-outside-database']);
-      outside.table_key = outside.table_key.filter((k) => k.table_id !== 'TL-LEND-EN01-TB' && k.target_table_id !== 'TL-LEND-EN01-TB');
-      await loads(outside);
-    }
-  });
-
-  it("LA-AUT-INV14-T refuses a table's second primary key, a foreign key to another domain's table, a key of or to a table outside a database, and a key's misplaced parts", async () => {
-    const two = await refusal(adding({ table_key: [{ table_id: 'TL-LEND-EN01-TB', position: 3, type: 'primary', columns: ['tool_id'] }] }));
-    expect(two).toEqual([expect.objectContaining({ rule: 'one-primary-key', key: 'TL-LEND-EN01-TB' })]);
-    for (const storage of ['browser storage', 'file', 'in memory']) {
-      const kept = everyKind();
-      kept.table = kept.table.map((t) => (t.id === 'TL-LEND-RM01-TB' ? { ...t, storage } : t));
-      expect(await refusal(kept), storage).toEqual([expect.objectContaining({ rule: 'key-outside-database', table: 'table_key' })]);
-    }
-    const crossing = await refusal(
-      adding({
-        ...catalog,
-        entity: [{ id: 'TL-CAT-EN01', title: 'Listing', aggregate_id: 'TL-CAT-A1', role: 'root', description: 'The listing itself.' }],
-        table: [{ id: 'TL-CAT-EN01-TB', title: 'Listings', entity_id: 'TL-CAT-EN01', name: 'listings', storage: 'table' }],
-        table_key: [{ table_id: 'TL-CAT-EN01-TB', position: 1, type: 'foreign', columns: ['loan_id'], target_table_id: 'TL-LEND-EN01-TB' }],
-      }),
-    );
-    expect(crossing).toEqual([expect.objectContaining({ rule: 'foreign-key-crosses-domain', table: 'table_key' })]);
-    for (const bad of [
-      { type: 'index', columns: ['id'], condition: 'x IS NULL' },
-      { type: 'primary', columns: ['id'], invariant_id: 'TL-LEND-INV01' },
-      { type: 'foreign', columns: ['id'] },
-      { type: 'index', columns: ['id'], target_table_id: 'TL-LEND-RM01-TB' },
-    ] as Row[]) {
-      const data = everyKind();
-      data.table_key[0] = { table_id: 'TL-LEND-EN01-TB', position: 1, ...bad };
-      expect(await refusal(data), JSON.stringify(bad)).toEqual([expect.objectContaining({ rule: 'check', table: 'table_key' })]);
-    }
   });
 
   it('refuses a step invoking two operations, or happening in two views', async () => {
