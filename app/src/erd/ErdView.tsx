@@ -14,7 +14,8 @@ import { erdLayout, readyErdLayout } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
 import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
-import { useStepWalk } from '../graph/steps';
+import { useWalk } from '../graph/steps';
+import { ARROW_DIRECTION, erdStep } from './walk';
 
 // The ERD stage: one map of the whole product (LA-V94-R08), each domain a region, its aggregates
 // boundaries around their entities, drawn with React Flow and laid out once by ELK (layout.ts).
@@ -174,9 +175,14 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: E
   const at = useMemo(() => erdFocus(index, focus), [index, focus]);
   const map = useMemo(() => (at ? erdMap(index, at.product) : null), [index, at]);
   useLayoutEffect(() => { onCounts?.(map && at ? erdCounts(map, at.scope) : ''); }, [map, at, onCounts]);
-  // The plain arrows step the focus through the tree from anywhere, by the Tree view's keys (LA-V93-R19): the map,
-  // like the Tree, draws what a record holds inside it; each step only moves the camera.
-  useStepWalk(index, focus, 'tree', onNavigate);
+  // The plain arrows walk the map from anywhere (LA-V61-R49): each moves the focus to the nearest box that way on the
+  // map, as the picture shows it (walk.ts), read from the map's one layout once it has arrived; each step only moves the camera.
+  const target = useCallback((key: string) => {
+    const direction = ARROW_DIRECTION[key];
+    const rects = at && direction ? readyErdLayout(index, at.product) : undefined;
+    return map && at && rects ? erdStep(map, rects, at, direction) : null;
+  }, [index, map, at]);
+  useWalk(index, focus, target, onNavigate);
   if (!at || !map) return <p className="hint erd-missing">There's no record or group <code>{focus}</code>.</p>;
   const product = index.byId.get(at.product);
   return (

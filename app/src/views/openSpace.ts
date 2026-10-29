@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type RefObject } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { CARD_MIN } from '../graph/settings';
 
 // The open space over the stage (LA-V96): the part of the stage no floating panel covers, where
@@ -111,54 +111,67 @@ const panelsIn = (root: ParentNode, attr: 'floating' | 'stageTools'): Panel[] =>
 
 /**
  * Measures the open space over `stage` among the floating panels in `root` (the app), writes it on
- * the stage as CSS variables and into `store`.
+ * the stage as CSS variables and into `store`. It follows the elements, not the refs: the page makes
+ * its stage anew when it changes shape (between the phone layout and the wide one), and the measure
+ * moves to the new stage at once, so the stage's tools never lose their place (the ERD's key under
+ * the nav's rail).
  */
 export function useOpenSpaceMeasure(stage: RefObject<HTMLElement | null>, store: OpenSpaceStore, root: RefObject<HTMLElement | null>) {
+  const attached = useRef<{ el: HTMLElement; scope: Element; store: OpenSpaceStore; stop: () => void } | null>(null);
+  // After every render, cheaply: it attaches again only when the stage, the app or the store is another one.
   useLayoutEffect(() => {
     const el = stage.current;
     const scope = root.current?.closest('.app') ?? root.current;
-    if (!el || !scope) return;
-    const measure = () => {
-      const open = openInsets(el.getBoundingClientRect(), panelsIn(scope, 'floating'));
-      const frame = frameInsets(open, panelsIn(el, 'stageTools'));
-      for (const s of SIDES) {
-        el.style.setProperty(`--open-${s}`, `${Math.round(open[s])}px`);
-        el.style.setProperty(`--frame-${s}`, `${Math.round(frame[s])}px`);
-      }
-      store.set({ open, frame });
-    };
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const sizes = new ResizeObserver(measure);
-    const watched = new Set<Element>();
-    const watch = () => {
-      const now = new Set<Element>([el, ...scope.querySelectorAll('[data-floating]'), ...el.querySelectorAll('[data-stage-tools]')]);
-      for (const w of watched) if (!now.has(w)) { sizes.unobserve(w); watched.delete(w); }
-      for (const w of now) if (!watched.has(w)) { sizes.observe(w); watched.add(w); }
-    };
-    watch();
-    // A panel or a stage's tools coming or going: a burst of changes is measured once, after it.
-    let queued = false;
-    let live = true;
-    const later = () => {
-      if (queued) return;
-      queued = true;
-      queueMicrotask(() => { queued = false; if (live) { watch(); measure(); } });
-    };
-    // The panels' parents (the app, the page's layout), their children only; and the stage, whose
-    // tools come with its content (a lazily loaded stage, an ERD laid out).
-    const comings = new MutationObserver(later);
-    const parents = new Set<Element>([scope, ...[...scope.querySelectorAll('[data-floating]')].map((p) => p.parentElement).filter((p): p is HTMLElement => !!p)]);
-    for (const p of parents) comings.observe(p, { childList: true });
-    comings.observe(el, { childList: true, subtree: true });
-    window.addEventListener('resize', measure);
-    return () => {
-      live = false;
-      sizes.disconnect();
-      comings.disconnect();
-      window.removeEventListener('resize', measure);
-    };
-  }, [stage, store, root]);
+    const now = attached.current;
+    if (now && now.el === el && now.scope === scope && now.store === store) return;
+    now?.stop();
+    attached.current = el && scope ? { el, scope, store, stop: measureOpenSpace(el, scope, store) } : null;
+  });
+  useLayoutEffect(() => () => { attached.current?.stop(); attached.current = null; }, []);
+}
+
+/** Measures the open space over `el` among the floating panels in `scope`, now and on every change; returns how to stop. */
+function measureOpenSpace(el: HTMLElement, scope: Element, store: OpenSpaceStore): () => void {
+  const measure = () => {
+    const open = openInsets(el.getBoundingClientRect(), panelsIn(scope, 'floating'));
+    const frame = frameInsets(open, panelsIn(el, 'stageTools'));
+    for (const s of SIDES) {
+      el.style.setProperty(`--open-${s}`, `${Math.round(open[s])}px`);
+      el.style.setProperty(`--frame-${s}`, `${Math.round(frame[s])}px`);
+    }
+    store.set({ open, frame });
+  };
+  measure();
+  if (typeof ResizeObserver === 'undefined') return () => {};
+  const sizes = new ResizeObserver(measure);
+  const watched = new Set<Element>();
+  const watch = () => {
+    const now = new Set<Element>([el, ...scope.querySelectorAll('[data-floating]'), ...el.querySelectorAll('[data-stage-tools]')]);
+    for (const w of watched) if (!now.has(w)) { sizes.unobserve(w); watched.delete(w); }
+    for (const w of now) if (!watched.has(w)) { sizes.observe(w); watched.add(w); }
+  };
+  watch();
+  // A panel or a stage's tools coming or going: a burst of changes is measured once, after it.
+  let queued = false;
+  let live = true;
+  const later = () => {
+    if (queued) return;
+    queued = true;
+    queueMicrotask(() => { queued = false; if (live) { watch(); measure(); } });
+  };
+  // The panels' parents (the app, the page's layout), their children only; and the stage, whose
+  // tools come with its content (a lazily loaded stage, an ERD laid out).
+  const comings = new MutationObserver(later);
+  const parents = new Set<Element>([scope, ...[...scope.querySelectorAll('[data-floating]')].map((p) => p.parentElement).filter((p): p is HTMLElement => !!p)]);
+  for (const p of parents) comings.observe(p, { childList: true });
+  comings.observe(el, { childList: true, subtree: true });
+  window.addEventListener('resize', measure);
+  return () => {
+    live = false;
+    sizes.disconnect();
+    comings.disconnect();
+    window.removeEventListener('resize', measure);
+  };
 }
 
 /** The open space and frame, for a stage that frames its focus in them; null outside a stage. */

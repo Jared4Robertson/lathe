@@ -324,6 +324,16 @@ test.describe('graph', () => {
       await expect(page).toHaveURL(/\/LA-EXP(\?|$)/);
     });
     expectStable(back);
+    // The arrows walk the map by the picture (LA-V61-R49): Right from the Checking region's rightmost entity crosses
+    // the region's edge into the entity beside it in the Authoring region.
+    await openPage(page, '/LA-CHK-EN01?stage=erd');
+    await page.locator('.erd-flow[data-framed]').waitFor();
+    const across = await step(page, 'graph', 'ERD: Right across a region edge', { keys, allow: ['.side-bar'] }, async () => {
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+      await page.keyboard.press('ArrowRight');
+      await page.waitForURL((u) => u.pathname.startsWith('/LA-AUT-EN'));
+    });
+    expectStable(across);
   });
 });
 
