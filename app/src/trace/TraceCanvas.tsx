@@ -263,7 +263,7 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
       const bars: Bar[] = seen.boxes.map((b) => ({ parent: b.id, x: b.x, y: b.y, w: b.w, h: b.h }));
       return { boxes: [] as TraceBox[], plates: [] as Plate[], bars, lines: [] as Line[] };
     }
-    const lines: Line[] = seen.lines.map((l) => ({ id: l.key, source: l.source, target: l.target, style: l.tree ? 'structure' : 'trace', link: !l.tree, points: l.points, scale: 1, label: '' }));
+    const lines: Line[] = seen.lines.map((l) => ({ id: l.key, source: l.source, target: l.target, style: l.tree ? 'structure' : 'trace', link: !l.tree, points: l.points, scale: 1 }));
     return { boxes: seen.boxes, plates: seen.boxes.map(plateFor), bars: [] as Bar[], lines };
   }, [picture, plateFor]);
 

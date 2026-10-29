@@ -1,10 +1,7 @@
 import './setup';
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { relationStyle } from '../../src/graph/GraphPage';
-import { edgesOf, graphEdgeLabel, groupLabel, neighborhood, NO_FILTERS } from '../../src/graph/model';
-import { PLAIN_LOOK as DEFAULT_LOOK } from '../../src/graph/look';
-import { lineStroke } from '../../src/graph/paint';
+import { groupLabel, neighborhood } from '../../src/graph/model';
 import { shapeOf } from '../../src/graph/shapes';
 import { treeChildren, treeParent } from '../../src/graph/tree';
 import { SETTINGS_KEY, sessionSettings } from '../../src/graph/settings';
@@ -12,39 +9,23 @@ import { openApp } from '../helpers';
 import { indexOf } from '../fixtures/load';
 import { manyOfOneKindWorkspace, testIndex } from './workspace';
 
-// The graph's tree and links for domain events, technical records and tests, and the
+// The graph's tree for domain events, technical records and tests, and the
 // rules its settings and its kind groups keep (LA-V93, LA-EXP-SP03, LA-VO92).
 
 describe('domain events in the graph', () => {
   const index = testIndex();
 
-  it('LA-V93-R04-T02 A domain event is a flag in its stage\'s colors, and its raises and hears lines are dashed in the spark color, with a dash of their own', () => {
+  it('LA-V93-R04-T02 A domain event is a flag in its stage\'s colors', () => {
     expect(shapeOf('domain_event').shape).toBe('flag');
     expect(index.kinds.get('domain_event')?.stage).toBe('domain-model');
-    const event = edgesOf(index, 'P-D-EV01');
-    const raises = event.find((e) => e.relation === 'raises')!;
-    const hears = event.find((e) => e.relation === 'hears')!;
-    expect([raises.source, hears.source]).toEqual(['P-D-CMD01', 'P-D-PO02']);
-    for (const e of [raises, hears]) {
-      expect(relationStyle(e.relation)).toBe('event');
-      const stroke = lineStroke(DEFAULT_LOOK, { link: true, style: 'event' });
-      expect(stroke.color).toBe(DEFAULT_LOOK.spark);
-      expect(stroke.dash.length).toBeGreaterThan(0);
-    }
-    // A dash of their own, apart from the other links'.
-    expect(lineStroke(DEFAULT_LOOK, { link: true, style: 'event' }).dash).not.toEqual(lineStroke(DEFAULT_LOOK, { link: true, style: relationStyle('invokes') }).dash);
   });
 
-  it('LA-V93-R28-T01 An aggregate\'s events sit under it in a "Domain events" group, and with Links on their raises and hears links are drawn, labeled from the meta-model', () => {
+  it('LA-V93-R28-T01 An aggregate\'s events sit under it in a "Domain events" group, and the graph draws no raises or hears link', () => {
     expect(treeChildren(index, 'P-D-A3')).toContain('P-D-A3/domain_event');
     expect(groupLabel(index, 'P-D-A3/domain_event')).toBe('Domain events (2)');
     expect(treeParent(index, 'P-D-EV01')).toBe('P-D-A3/domain_event');
-    const relations = (links: boolean) => neighborhood(index, 'P-D-EV01', 1, NO_FILTERS, { links }).edges.map((e) => e.relation).filter((r) => r === 'raises' || r === 'hears').sort();
-    expect(relations(false)).toEqual([]);
-    expect(relations(true)).toEqual(['hears', 'raises']);
-    const at = (relation: string) => edgesOf(index, 'P-D-EV01').find((e) => e.relation === relation)!;
-    expect(graphEdgeLabel(index, at('raises'), 'target')).toBe('Raised by');
-    expect(graphEdgeLabel(index, at('hears'), 'target')).toBe('Heard by');
+    // Only the tree: the command that raises it and the policy that hears it are the Trace stage's and the wiki card's.
+    expect(neighborhood(index, 'P-D-EV01', 1).edges.every((e) => e.relation === 'parent')).toBe(true);
   });
 });
 
@@ -81,7 +62,7 @@ describe('the rules the graph keeps', () => {
     expect(kids.length).toBe(7);
     for (const id of kids) expect(seven.byId.get(id)?.kind).toBe('uc_requirement');
     // The answer is the children's alone: the focus, depth and filters frame it, never change it.
-    neighborhood(index, 'P-D-A3', 3, { hiddenKinds: new Set(['command']), hiddenRelations: new Set() });
+    neighborhood(index, 'P-D-A3', 3, { hiddenKinds: new Set(['command']) });
     expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event', 'P-D-A3/command']);
     // The record page titles a list of one kind by that kind, and a mixed one "Children".
     await openApp('/DM-SHOP-EP01');
@@ -91,7 +72,7 @@ describe('the rules the graph keeps', () => {
   });
 
   it('LA-VO92-C01-T A graph\'s depth is a whole number from 1 to 3, and its layout one of tree, nested and voronoi', () => {
-    const stored = (layout: string, depth: number) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null, chat: false, chatWidth: null }));
+    const stored = (layout: string, depth: number) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], minimap: false, card: true, cardWidth: null, chat: false, chatWidth: null }));
     for (const layout of ['tree', 'nested', 'voronoi'] as const) {
       for (const depth of [1, 2, 3]) {
         stored(layout, depth);
