@@ -5,6 +5,7 @@
 // A binding is a chord such as "Mod+Shift+P" ("Mod" is Cmd on macOS and Ctrl elsewhere), or a
 // sequence of chords separated by a space, such as "g c" (GitHub-style). Nothing here touches
 // React; the dispatcher in commands.tsx uses it.
+import { MOVES, type Move } from '../views/levels';
 
 export type CommandGroup = 'Navigate' | 'View' | 'Graph' | 'Lists';
 
@@ -19,11 +20,6 @@ export interface Command {
   keys: string[];
   /** The bindings off a Mac, when they differ (Ctrl+W closes the tab there, so Alt+W instead). */
   otherKeys?: string[];
-  /**
-   * The graph's step keys in the Nested and Voronoi views, when they differ from `keys` (the Tree view's). Those
-   * views draw children inside their parent, so Up and Down step out and in and Left and Right step across.
-   */
-  nestedKeys?: string[];
   when: CommandContext;
   /** Never matched from this table: handled by the component it belongs to, or by the stage walk (the plain arrows), and listed here so the sheet shows it. */
   local?: boolean;
@@ -37,17 +33,20 @@ export interface Command {
 export const SPACE_KEYS = 9;
 export const spaceCommandId = (n: number) => `switchSpace${n}`;
 
-/** The plain arrow keys, which walk the stage from anywhere (LA-V61-R49). */
-const ARROW_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'] as const;
-/** The plain letters that walk the stage as the arrows do, as a game's keys: W Up, A Left, S Down, D Right (LA-V61-R49). */
-const WALK_LETTERS: Readonly<Record<string, string>> = { W: 'ArrowUp', A: 'ArrowLeft', S: 'ArrowDown', D: 'ArrowRight' };
-/** An arrow's walking keys: the arrow, then its letter. */
-const walkKeys = (arrow: string) => [arrow, Object.keys(WALK_LETTERS).find((l) => WALK_LETTERS[l] === arrow)!];
 /**
- * The arrow a chord walks the stage by: a plain arrow itself, or a plain W, A, S or D as Up, Left, Down or Right. With
- * Cmd, Ctrl, Alt or Shift held, nothing: those keep their own meanings.
+ * The keys of each move of the stage walk (LA-V61-R49, views/levels.ts), from anywhere on the page: the plain arrows and,
+ * as a game's keys, W Up, A Left, S Down and D Right; Shift+Up (Shift+W) out to the container and Shift+Down (Shift+S)
+ * in to the first node inside it. The arrow comes first: it is the key a move is shown by.
  */
-export const walkArrow = (chord: string): string | undefined => ((ARROW_KEYS as readonly string[]).includes(chord) ? chord : WALK_LETTERS[chord]);
+const WALK_KEYS: Readonly<Record<Move, readonly string[]>> = {
+  left: ['ArrowLeft', 'A'], right: ['ArrowRight', 'D'], up: ['ArrowUp', 'W'], down: ['ArrowDown', 'S'],
+  out: ['Shift+ArrowUp', 'Shift+W'], in: ['Shift+ArrowDown', 'Shift+S'],
+};
+/** The move a chord walks the stage by, or none. With Cmd, Ctrl or Alt held, or Shift with any other key, nothing: those keep their own meanings. */
+export const walkMove = (chord: string): Move | undefined => MOVES.find((m) => WALK_KEYS[m].includes(chord));
+/** Each move's keymap command, in the toolbar's order. */
+export const WALK_COMMANDS: Readonly<Record<Move, string>> = { left: 'walkLeft', right: 'walkRight', up: 'walkUp', down: 'walkDown', out: 'walkOut', in: 'walkIn' };
+const walk = (move: Move, title: string): Command => ({ id: WALK_COMMANDS[move], title, group: 'Graph', keys: [...WALK_KEYS[move]], when: 'graph', local: true });
 
 export const COMMANDS: readonly Command[] = [
   // Navigate
@@ -101,15 +100,15 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphDepthDown', title: 'Less depth', group: 'Graph', keys: ['-'], when: 'graph' },
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
   { id: 'graphLayout', title: 'Tree, Nested or Voronoi layout: parents beside their children, or made of them as boxes or cells', group: 'Graph', keys: ['v'], when: 'graph' },
-  // Stepping through the tree with the plain arrows, or W, A, S and D as Up, Left, Down and Right (WALK_LETTERS), from
-  // anywhere but a control that uses arrows itself (usesArrows), by the commands layer's stage walk (LA-V61-R49). Each step
-  // moves the stage's focus. Tab steps through the boxes. The Tree view steps as a file explorer does (Left out, Right in,
-  // Up and Down across); the Nested and Voronoi views, which draw children inside their parent, step Up out, Down in, and
-  // Left and Right across (`nestedKeys`). The arrow comes first: it is the key a step is known by (graph/steps.ts stepKey).
-  { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: walkKeys('ArrowLeft'), nestedKeys: walkKeys('ArrowUp'), when: 'graph', local: true },
-  { id: 'graphStepIn', title: 'Step in to the first child', group: 'Graph', keys: walkKeys('ArrowRight'), nestedKeys: walkKeys('ArrowDown'), when: 'graph', local: true },
-  { id: 'graphStepPrevious', title: 'Step to the previous sibling', group: 'Graph', keys: walkKeys('ArrowUp'), nestedKeys: walkKeys('ArrowLeft'), when: 'graph', local: true },
-  { id: 'graphStepNext', title: 'Step to the next sibling', group: 'Graph', keys: walkKeys('ArrowDown'), nestedKeys: walkKeys('ArrowRight'), when: 'graph', local: true },
+  // The stage walk (WALK_KEYS), from anywhere but a control that uses arrows itself (usesArrows), by the commands layer's
+  // one handler (LA-V61-R49). Each move moves the stage's focus: the arrows among the siblings (on the Graph by its
+  // layout's keys, graph/steps.ts), Out and In between the levels. Tab steps through the boxes.
+  walk('left', 'Step left'),
+  walk('right', 'Step right'),
+  walk('up', 'Step up'),
+  walk('down', 'Step down'),
+  walk('out', 'Out to the container'),
+  walk('in', 'In to the first node inside'),
   // Lists
   { id: 'focusSearch', title: 'Focus the nearest search box', group: 'Lists', keys: ['/'], when: 'global' },
   { id: 'treeExpand', title: 'Expand the row (or move into it)', group: 'Lists', keys: ['ArrowRight'], when: 'list', local: true },

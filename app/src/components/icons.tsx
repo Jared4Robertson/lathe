@@ -16,9 +16,11 @@ const PATHS: Record<string, string[]> = {
   // The Trace view: a chain of three columns, left to right.
   trace: ['M3 9h4v6H3z', 'M10 9h4v6h-4z', 'M17 9h4v6h-4z', 'M7 12h3', 'M14 12h3'],
   wiki: ['M3 19a9 9 0 0 1 9 0a9 9 0 0 1 9 0','M3 6a9 9 0 0 1 9 0a9 9 0 0 1 9 0', 'M3 6v13', 'M12 6v13', 'M21 6v13'],
+  // A stage's Frame (the focus) and its camera's Fit (the whole map).
+  focus: ['M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M12 3v3', 'M12 18v3', 'M3 12h3', 'M18 12h3'],
   maximize: ['M4 8V6a2 2 0 0 1 2-2h2', 'M4 16v2a2 2 0 0 0 2 2h2', 'M16 4h2a2 2 0 0 1 2 2v2', 'M16 20h2a2 2 0 0 0 2-2v-2'],
   x: ['M18 6L6 18', 'M6 6l12 12'],
-  // The graph's zoom buttons, and a record's Add.
+  // Every stage's zoom buttons, and a record's Add.
   plus: ['M12 5v14', 'M5 12h14'],
   minus: ['M5 12h14'],
   // The chat's sessions.

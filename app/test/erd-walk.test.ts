@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { ErdBox, ErdFocus, ErdMap, Rect } from '../src/erd/erd';
-import { erdStep, nearestBox, type Direction } from '../src/erd/walk';
+import { erdTarget } from '../src/erd/walk';
+import { nearestBox, readingOrder, type Move } from '../src/views/levels';
 
-// The ERD stage's walk by the picture (LA-V61-R49): each arrow moves to the nearest box that way on
-// the map, staying inside an aggregate before leaving it and crossing a region's edge into the next.
+// The ERD stage's walk by the picture (LA-V61-R49): the levels product › region › aggregate area › entity, each arrow
+// to the nearest sibling that way, going on to the next area's first box at an area's edge; Out and In between levels.
 //
 //   D1 (0,0 600x400)                         D2 (700,0 400x300)
 //   ┌─────────────────────────────────┐      ┌───────────────────┐
@@ -35,37 +36,49 @@ const RECTS = new Map<string, Rect>([
 ]);
 const scopeOf = (id: string) => (id.startsWith('E') ? MAP.boxes.find((b) => b.id === id)!.parent! : id);
 const from = (pick: string): ErdFocus => ({ product: 'P', scope: scopeOf(pick), pick });
-const step = (pick: string, direction: Direction) => erdStep(MAP, RECTS, from(pick), direction);
+const step = (pick: string, move: Move) => erdTarget(MAP, RECTS, from(pick), move);
 
 describe('the ERD walk', () => {
-  it('LA-V61-R49-T04 The ERD arrows move to the nearest box that way on the map, inside an aggregate first, across a region edge into the next', () => {
-    // Inside an aggregate's area it stays inside: E1 Down is E2, and nothing lies above E1 inside it, nor anywhere.
+  it('LA-V61-R49-T04 The ERD arrows move among a box\'s siblings by the picture, going on to the next area at its edge; Out and In move between the levels', () => {
+    // Inside an aggregate's area: E1 Down is E2, Up back.
     expect(step('E1', 'down')).toBe('E2');
     expect(step('E2', 'up')).toBe('E1');
-    expect(step('E1', 'up')).toBeNull();
-    // Leaving the aggregate, it stays in the region: E1 Right is E3, in its row in the next aggregate.
+    // At the area's edge it goes on to the next area's first entity in reading order (Right and Down), or the previous
+    // area's last (Left and Up): E1 Right is E3 in A2, E3 Right is E4 in the next region's area, E4 Left back to E3.
     expect(step('E1', 'right')).toBe('E3');
-    // With nothing in its row, the nearest center that way: from E2, the closed aggregate A3 is nearer than E3.
-    expect(step('E2', 'right')).toBe('A3');
-    // At a region's edge it continues into the neighboring region, both ways.
+    expect(step('E2', 'right')).toBe('E3');
     expect(step('E3', 'right')).toBe('E4');
     expect(step('E4', 'left')).toBe('E3');
+    expect(step('E3', 'left')).toBe('E2');
+    expect(step('E1', 'up')).toBeNull();
     expect(step('E4', 'right')).toBeNull();
-    // Down across the region's edge: from the closed aggregate into the closed region below.
-    expect(step('A3', 'down')).toBe('D3');
-    // An aggregate walks among aggregates, a region among regions.
+    // An aggregate walks among the aggregates of its region, then on to the next region's.
     expect(step('A1', 'right')).toBe('A2');
+    expect(step('A2', 'down')).toBe('A3');
     expect(step('A2', 'right')).toBe('A4');
+    expect(step('A4', 'left')).toBe('A3');
+    // A region among regions.
     expect(step('D1', 'right')).toBe('D2');
     expect(step('D1', 'down')).toBe('D3');
     expect(step('D3', 'up')).toBe('D1');
-    // A focus that picks out no box walks from its scope's region; the product enters at the corner the arrow comes from.
-    expect(erdStep(MAP, RECTS, { product: 'P', scope: 'D2', pick: null }, 'left')).toBe('D1');
-    expect(erdStep(MAP, RECTS, { product: 'P', scope: 'P', pick: null }, 'right')).toBe('D1');
-    expect(erdStep(MAP, RECTS, { product: 'P', scope: 'P', pick: null }, 'up')).toBe('D2');
+    // Out to the box around, In to the first box inside in reading order; a closed box holds nothing.
+    expect(step('E2', 'out')).toBe('A1');
+    expect(step('A1', 'out')).toBe('D1');
+    expect(step('D1', 'out')).toBe('P');
+    expect(step('D1', 'in')).toBe('A1');
+    expect(step('A1', 'in')).toBe('E1');
+    expect(step('A3', 'in')).toBeNull();
+    expect(step('E1', 'in')).toBeNull();
+    // A focus that picks out no box walks from its scope's region; from the product an arrow goes in: Right and Down to
+    // the first region, Left and Up to the last, and In to the first.
+    expect(erdTarget(MAP, RECTS, { product: 'P', scope: 'D2', pick: null }, 'left')).toBe('D1');
+    expect(erdTarget(MAP, RECTS, { product: 'P', scope: 'P', pick: null }, 'right')).toBe('D1');
+    expect(erdTarget(MAP, RECTS, { product: 'P', scope: 'P', pick: null }, 'up')).toBe('D3');
+    expect(erdTarget(MAP, RECTS, { product: 'P', scope: 'P', pick: null }, 'in')).toBe('D1');
+    expect(erdTarget(MAP, RECTS, { product: 'P', scope: 'P', pick: null }, 'out')).toBeNull();
   });
 
-  it('LA-V61-R49-T04 The nearest box prefers one in the row or column, then the shortest distance between centers', () => {
+  it('LA-V61-R49-T04 The nearest box prefers one in the row or column, then the shortest distance between centers; reading order runs in rows', () => {
     const at = r(0, 0, 100, 40);
     // Far but in the row beats near but off it; among those in the row, the nearer.
     const row = [{ id: 'off', rect: r(120, 60, 100, 40) }, { id: 'far', rect: r(400, 10, 100, 40) }, { id: 'near', rect: r(200, 20, 100, 40) }];
@@ -76,5 +89,8 @@ describe('the ERD walk', () => {
     // Up and Down by the column.
     const column = [{ id: 'diagonal', rect: r(150, 60, 100, 40) }, { id: 'below', rect: r(50, 300, 100, 40) }];
     expect(nearestBox(at, column, 'down')).toBe('below');
+    // Reading order: rows top to bottom, a box a little lower still in the row, each row left to right.
+    const boxes = [{ id: 'c', rect: r(0, 200, 50, 50) }, { id: 'b', rect: r(300, 10, 50, 50) }, { id: 'a', rect: r(0, 0, 50, 50) }];
+    expect(readingOrder(boxes).map((b) => b.id)).toEqual(['a', 'b', 'c']);
   });
 });

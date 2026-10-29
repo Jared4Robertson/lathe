@@ -137,6 +137,59 @@ describe('the walking letters', () => {
   });
 });
 
+const shift = (key: string) => fireEvent.keyDown(document.body, { key, code: key.length === 1 ? `Key${key.toUpperCase()}` : key, shiftKey: true });
+const toolbarButton = (name: string) => within(document.querySelector<HTMLElement>('.focus-stage .stage-toolbar')!).getByRole('button', { name });
+
+describe('out and in', () => {
+  it('LA-V61-R49-T09 Shift+Up and Shift+Down (Shift+W and Shift+S) and the toolbar\'s Out and In go out to the container and in to the first node inside on the Graph, ERD and Trace stages', async () => {
+    await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });
+    await waitFor(() => expect(document.querySelector('.focus-stage .graph-box')).not.toBeNull());
+    // The Graph, in every view: out to the parent, in to its first child.
+    shift('ArrowUp');
+    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
+    await waitFor(() => expect(announcer()).toHaveTextContent('Capability Lending'));
+    shift('S');
+    await waitFor(() => expect(at()).toBe('/P-D-UC01'));
+    fireEvent.click(toolbarButton('Out to the parent'));
+    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
+    fireEvent.click(toolbarButton('In to the first child'));
+    await waitFor(() => expect(at()).toBe('/P-D-UC01'));
+    // Shift with Left or Right, or with A or D, does nothing.
+    fireEvent.keyDown(document.body, { key: 'ArrowLeft', code: 'ArrowLeft', shiftKey: true });
+    fireEvent.keyDown(document.body, { key: 'A', code: 'KeyA', shiftKey: true });
+    await new Promise((r) => setTimeout(r, 50));
+    expect(at()).toBe('/P-D-UC01');
+
+    // The ERD: from the use case, which picks out no box, its domain's region; In to its first aggregate area, Out back,
+    // and Out again to the product.
+    fireEvent.click(stageButton('ERD'));
+    await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="erd"] .react-flow__node')).not.toBeNull());
+    shift('ArrowDown');
+    await waitFor(() => expect(announcer()).toHaveTextContent(/^Aggregate /));
+    expect(at()).not.toBe('/P-D-UC01');
+    shift('W');
+    await waitFor(() => expect(at()).toBe('/P-D'));
+    fireEvent.click(toolbarButton('Out to the container'));
+    await waitFor(() => expect(at()).toBe('/P'));
+    window.history.go(-3);
+    await waitFor(() => expect(at()).toBe('/P-D-UC01'));
+
+    // The Trace: from the use case's box out to the lane beneath it (its obligation focused), out to the domain's band,
+    // then in to its first lane and in again to that lane's first box.
+    fireEvent.click(stageButton('Trace'));
+    await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-page')).not.toBeNull());
+    shift('ArrowUp');
+    await waitFor(() => expect(announcer()).toHaveTextContent(/^The lane of /));
+    shift('ArrowUp');
+    await waitFor(() => expect(at()).toBe('/P-D'));
+    await waitFor(() => expect(announcer()).toHaveTextContent(/lanes?$/));
+    shift('ArrowDown');
+    await waitFor(() => expect(announcer()).toHaveTextContent(/^The lane of /));
+    fireEvent.click(toolbarButton('In to the first node inside'));
+    await waitFor(() => expect(announcer()).toHaveTextContent(/^UC requirement /));
+  });
+});
+
 describe('Enter and Escape on the stage', () => {
   it('LA-V96-R19-T06 Enter toggles the wiki card from the page and the focused box, focuses another box, stays with a button; Escape collapses it after what is above it', async () => {
     await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });

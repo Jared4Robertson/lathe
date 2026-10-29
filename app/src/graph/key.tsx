@@ -1,12 +1,14 @@
+import type { ReactNode } from 'react';
 import { Icon } from '../components/icons';
 import { Tooltip } from '../shell/Tooltip';
 import type { Stage, StageRule } from '../specs/data';
 import { MARKS, SHAPES, type Mark, type Shape } from './shapes';
 import { MarkIcon, ShapeIcon } from './shape-icons';
 
-// The Graph stage's key (LA-V93-R12): what each color, shape, mark and line means, and how to move
-// around. It opens from a small Key button at the end of the stage's toolbar, as a popover over the
-// stage, as the Filters do; the ERD's key is its own (erd/ErdView.tsx).
+// Every stage's Key (LA-PAT-APP-UX-R21): a small Key button at the end of the stage toolbar
+// (views/StageChrome.tsx) that opens the stage's key as a popover over the stage, as the Filters do.
+// The Graph's key is here (LA-V93-R12): what each color, shape, mark and line means, and how to move
+// around; the ERD's is erd/ErdView.tsx's ErdKey, the Trace's trace/TraceKey.tsx.
 
 /** What each stage's swatch holds, in the key. */
 const STAGE_KINDS: Readonly<Record<Stage, string>> = {
@@ -19,17 +21,15 @@ const STAGE_KINDS: Readonly<Record<Stage, string>> = {
 };
 const STAGE_NAMES = Object.keys(STAGE_KINDS) as Stage[];
 
-/** The Key button and its popover, at the end of the Graph stage's toolbar. */
-export function KeyControl({ stages }: { stages: readonly StageRule[] }) {
+/** The Key button and its popover, holding a stage's key, at the end of the stage toolbar. */
+export function KeyControl({ children }: { children: ReactNode }) {
   return (
-    <details className="graph-key">
+    <details className="stage-key">
       {/* In a narrow toolbar only the icon shows; the name stays the summary's text (LA-PAT-APP-UX-R08). */}
       <Tooltip label="Key">
-        <summary><Icon name="info" size={14} /><span className="graph-key-name">Key</span></summary>
+        <summary><Icon name="info" size={14} /><span className="stage-key-name">Key</span></summary>
       </Tooltip>
-      <div className="graph-key-body">
-        <GraphKey stages={stages} />
-      </div>
+      <div className="stage-key-body">{children}</div>
     </details>
   );
 }
@@ -68,7 +68,7 @@ export function GraphKey({ stages = [] }: { stages?: readonly StageRule[] }) {
       <p className="hint">The graph is one map of the nav's tree: a product holds its own stages and its domains, a domain its five stages, each stage a folder per kind, each folder the records that start a branch of the stage, and each record what sits under it in the same stage. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A record's links to records in other branches are the Trace view's, which draws an obligation's chain from what designs it to the tests that prove it, and the wiki card's, which lists every link.</p>
       <p className="hint">The Nested layout (v) draws the same tree as boxes inside boxes: the product made of its stages and domains, each domain of its stages, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
       <p className="hint">The Voronoi layout draws the same tree as polygon cells inside cells: the product a hexagon split into its stages and domains, each domain split into its stages, and so on down, each cell as big as the records under it and never too small for its name. It frames and labels as the Nested layout does.</p>
-      <p className="hint">Click a record or a group, or press Enter on it, to focus it; Enter on the focus, or anywhere but a button, link or field, shows or collapses the wiki card, and Escape collapses it. Scroll, pinch or drag to look around. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys, or W, A, S and D as Up, Left, Down and Right, step through the tree, each step moving the focus. In the Tree view, Left goes to the parent, Right to the first child, and Up and Down to the previous and next sibling; in the Nested and Voronoi views, which draw children inside their parent, Up goes to the parent, Down to the first child, and Left and Right to the previous and next sibling. Tab and Shift+Tab move between the boxes; + and - change the depth, and . frames the focus again.</p>
+      <p className="hint">Click a record or a group, or press Enter on it, to focus it; Enter on the focus, or anywhere but a button, link or field, shows or collapses the wiki card, and Escape collapses it. Scroll, pinch or drag to look around. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys, or W, A, S and D as Up, Left, Down and Right, step through the tree, each step moving the focus. In the Tree view, Left goes to the parent, Right to the first child, and Up and Down to the previous and next sibling; in the Nested and Voronoi views, which draw children inside their parent, Up goes to the parent, Down to the first child, and Left and Right to the previous and next sibling. Past the last sibling a step goes on to the first child of the next parent at that level, so repeated steps visit the whole level. In every view Shift+Up (or Shift+W) goes out to the parent and Shift+Down (or Shift+S) in to the first child, as the toolbar's Out and In do. Tab and Shift+Tab move between the boxes; + and - change the depth, and . frames the focus again.</p>
     </section>
   );
 }

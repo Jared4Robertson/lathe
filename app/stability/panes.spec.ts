@@ -15,7 +15,7 @@ const STRIP = '.header-strip';
 const CARD = '.wiki-panel';
 const BOXES = `${STAGE} .graph-flow .graph-box`;
 /** What floats in the open space (the stage's tools, the camera's buttons, the minimap, the edge hints): it moves with the open space on purpose. */
-const MOVES_WITH_OPEN_SPACE = [`${STAGE} .stage-tools`, `${STAGE} .graph-controls`, `${STAGE} .graph-minimap`, `${STAGE} .graph-edge-hints`, `${STAGE} .react-flow__controls`];
+const MOVES_WITH_OPEN_SPACE = [`${STAGE} .stage-tools`, `${STAGE} .stage-camera`, `${STAGE} .graph-minimap`, `${STAGE} .graph-edge-hints`];
 
 /** The open space the panels leave over the stage, in the page's pixels, as the stage measured it. */
 async function openSpace(page: Page) {

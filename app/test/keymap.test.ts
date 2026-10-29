@@ -17,7 +17,7 @@ import {
   resolveCommands,
   usesArrows,
   usesEnter,
-  walkArrow,
+  walkMove,
 } from '../src/shell/keymap';
 
 const key = (k: string, code: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey', boolean>> = {}) =>
@@ -116,7 +116,7 @@ describe('the keymap', () => {
   });
 
   it('LA-V61-R10-T01 A person can override bindings in local storage; a binding that takes a browser essential is dropped', () => {
-    window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', quickOpen: ['Mod+W', 'Mod+O'], nope: 'Mod+Y', graphStepOut: 'X' }));
+    window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', quickOpen: ['Mod+W', 'Mod+O'], nope: 'Mod+Y', walkOut: 'X' }));
     const overrides = readOverrides();
     expect(overrides).toEqual({ toggleNav: ['Mod+J'], quickOpen: ['Mod+W', 'Mod+O'] });
     const commands = resolveCommands(overrides, false);
@@ -137,7 +137,7 @@ describe('the keymap', () => {
     expect(keysOn('toggleWikiCard', false)).toEqual(['Enter', 'Alt+W']);
     // No single letter but the walk's own is left on W, A, S or D.
     for (const mac of [true, false]) for (const c of resolveCommands({}, mac)) for (const k of c.keys) {
-      if (['W', 'A', 'S', 'D'].includes(normalizeBinding(k, mac))) expect(c.id, k).toMatch(/^graphStep/);
+      if (['W', 'A', 'S', 'D', 'Shift+W', 'Shift+S'].includes(normalizeBinding(k, mac))) expect(c.id, k).toMatch(/^walk/);
     }
     expect(keysOn('stageGraph', false)).toEqual(['Alt+G', 'Ctrl+1']);
     expect(keysOn('stageErd', false)).toEqual(['Alt+E', 'Ctrl+2']);
@@ -196,25 +196,33 @@ describe('the keymap', () => {
     document.body.innerHTML = '';
   });
 
-  it('LA-V61-R49-T06 W, A, S and D walk as Up, Left, Down and Right, plain only, and the guard keeps them with every element that takes text', () => {
-    expect(walkArrow(eventChord(key('w', 'KeyW')))).toBe('ArrowUp');
-    expect(walkArrow(eventChord(key('a', 'KeyA')))).toBe('ArrowLeft');
-    expect(walkArrow(eventChord(key('s', 'KeyS')))).toBe('ArrowDown');
-    expect(walkArrow(eventChord(key('d', 'KeyD')))).toBe('ArrowRight');
+  it('LA-V61-R49-T06 W, A, S and D walk as Up, Left, Down and Right, Shift+Up and Shift+Down (Shift+W and Shift+S) as Out and In, and the guard keeps them with every element that takes text', () => {
+    expect(walkMove(eventChord(key('w', 'KeyW')))).toBe('up');
+    expect(walkMove(eventChord(key('a', 'KeyA')))).toBe('left');
+    expect(walkMove(eventChord(key('s', 'KeyS')))).toBe('down');
+    expect(walkMove(eventChord(key('d', 'KeyD')))).toBe('right');
     // Caps Lock types a capital and still walks.
-    expect(walkArrow(eventChord(key('W', 'KeyW')))).toBe('ArrowUp');
-    expect(walkArrow(eventChord(key('ArrowLeft', 'ArrowLeft')))).toBe('ArrowLeft');
-    // With a modifier the letter keeps its own meaning, and Shift adds nothing.
-    for (const mods of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }, { shiftKey: true }]) {
-      expect(walkArrow(eventChord(key('w', 'KeyW', mods))), JSON.stringify(mods)).toBeUndefined();
+    expect(walkMove(eventChord(key('W', 'KeyW')))).toBe('up');
+    expect(walkMove(eventChord(key('ArrowLeft', 'ArrowLeft')))).toBe('left');
+    // Shift with Up or Down, or with W or S, goes out and in.
+    expect(walkMove(eventChord(key('ArrowUp', 'ArrowUp', { shiftKey: true })))).toBe('out');
+    expect(walkMove(eventChord(key('ArrowDown', 'ArrowDown', { shiftKey: true })))).toBe('in');
+    expect(walkMove(eventChord(key('W', 'KeyW', { shiftKey: true })))).toBe('out');
+    expect(walkMove(eventChord(key('S', 'KeyS', { shiftKey: true })))).toBe('in');
+    // With Ctrl, Cmd or Alt the key keeps its own meaning, and Shift with Left, Right, A or D adds nothing.
+    for (const mods of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
+      expect(walkMove(eventChord(key('w', 'KeyW', mods))), JSON.stringify(mods)).toBeUndefined();
+      expect(walkMove(eventChord(key('ArrowUp', 'ArrowUp', { ...mods, shiftKey: true }))), JSON.stringify(mods)).toBeUndefined();
     }
-    expect(walkArrow(eventChord(key('q', 'KeyQ')))).toBeUndefined();
-    // The graph's step rows list each step's letter after its arrow, in every view.
+    expect(walkMove(eventChord(key('A', 'KeyA', { shiftKey: true })))).toBeUndefined();
+    expect(walkMove(eventChord(key('ArrowLeft', 'ArrowLeft', { shiftKey: true })))).toBeUndefined();
+    expect(walkMove(eventChord(key('q', 'KeyQ')))).toBeUndefined();
+    // The walk's rows list each move's arrow, then its letter.
     const step = (id: string) => COMMANDS.find((c) => c.id === id)!;
-    expect(step('graphStepOut').keys).toEqual(['ArrowLeft', 'A']);
-    expect(step('graphStepOut').nestedKeys).toEqual(['ArrowUp', 'W']);
-    expect(step('graphStepNext').keys).toEqual(['ArrowDown', 'S']);
-    expect(step('graphStepNext').nestedKeys).toEqual(['ArrowRight', 'D']);
+    expect(step('walkLeft').keys).toEqual(['ArrowLeft', 'A']);
+    expect(step('walkDown').keys).toEqual(['ArrowDown', 'S']);
+    expect(step('walkOut').keys).toEqual(['Shift+ArrowUp', 'Shift+W']);
+    expect(step('walkIn').keys).toEqual(['Shift+ArrowDown', 'Shift+S']);
     // Every element that takes text keeps a letter; a button, a link and the page give it to the stage.
     const make = (html: string) => {
       const host = document.createElement('div');

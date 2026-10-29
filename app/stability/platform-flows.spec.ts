@@ -364,7 +364,7 @@ test.describe('Platform flows in the app', () => {
     expectStable(await step(page, 'flow', 'graph depth', { keys: graphKeys, allow: ['.focus-stage .graph-flow'] }, async () => {
       await page.locator('.focus-stage .graph-flow').focus();
       const camera = await cameraOf(page);
-      await page.locator('.focus-stage .graph-zoom-out').click({ trial: false }).catch(() => page.keyboard.press('-'));
+      await page.locator('.focus-stage .stage-zoom-out').click({ trial: false }).catch(() => page.keyboard.press('-'));
       await expect.poll(() => cameraOf(page)).not.toBe(camera);
     }));
     // Resize the wiki card: it follows the pointer, the stage and the other panels hold still.
