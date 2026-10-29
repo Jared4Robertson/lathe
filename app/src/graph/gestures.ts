@@ -87,6 +87,36 @@ export function wheelMove(
   };
 }
 
+/** The longest pause between two wheel events of one scroll, momentum included, in milliseconds. */
+const WHEEL_STREAM_GAP_MS = 150;
+/** How far a dropped stream's delta must grow past its faded least, in pixels, to count as a new scroll. */
+const WHEEL_REGROW_PX = 4;
+
+/**
+ * One scroll keeps the move it began with: a stream of wheel events (each within WHEEL_STREAM_GAP_MS
+ * of the one before, a trackpad's momentum included) zooms when it began with Cmd or Ctrl held and pans
+ * otherwise. Pressing or letting go of Cmd or Ctrl during a stream ends its move: the rest of that
+ * stream is dropped, so a zoom's momentum never turns into a pan (or a pan's into a zoom). A new
+ * scroll starts afresh: after a pause, or as soon as a dropped stream's deltas grow again (momentum
+ * only ever fades, so growing deltas are the fingers scrolling anew while momentum still arrives).
+ */
+export function wheelLatch(): (e: Pick<WheelEvent, 'ctrlKey' | 'metaKey' | 'deltaX' | 'deltaY'>, now: number) => 'move' | 'drop' {
+  let last = -Infinity;
+  let zooming = false;
+  let dropping = false;
+  /** The smallest delta of the stream since it began dropping: momentum's fade. */
+  let faded = Infinity;
+  return (e, now) => {
+    const zoom = e.ctrlKey || e.metaKey;
+    const size = Math.max(Math.abs(e.deltaX), Math.abs(e.deltaY));
+    if (now - last > WHEEL_STREAM_GAP_MS || (dropping && size > faded + WHEEL_REGROW_PX)) { zooming = zoom; dropping = false; }
+    last = now;
+    if (!dropping && zoom !== zooming) { dropping = true; faded = size; }
+    if (dropping) faded = Math.min(faded, size);
+    return dropping ? 'drop' : 'move';
+  };
+}
+
 /** The camera's glide, zoom and pointer gestures on a canvas; the wheel is listened to on the canvas itself (not passive). */
 export function useCameraGestures(options: CameraGestureOptions): CameraGestures {
   const o = useRef(options);
@@ -191,12 +221,14 @@ export function useCameraGestures(options: CameraGestureOptions): CameraGestures
     o.current.onTap(p.x, p.y, e.nativeEvent);
   };
 
-  // Scroll pans and Cmd/Ctrl+scroll or a pinch zooms about the pointer (wheelMove).
+  // Scroll pans and Cmd/Ctrl+scroll or a pinch zooms about the pointer (wheelMove); a scroll keeps its move (wheelLatch).
   useEffect(() => {
     const c = o.current.canvas.current;
     if (!c) return;
+    const latch = wheelLatch();
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      if (latch(e, e.timeStamp) === 'drop') return;
       stopGlide();
       const move = wheelMove(e, o.current.size);
       if ('zoom' in move) {
