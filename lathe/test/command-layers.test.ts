@@ -137,6 +137,13 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
     'lathe/src/authoring/extension-record',
     'lathe/src/authoring/entry-point',
     'lathe/src/authoring/tooling',
+    'lathe/src/authoring/view',
+    'lathe/src/authoring/endpoint',
+    'lathe/src/authoring/integration',
+    'lathe/src/authoring/ui-component',
+    'lathe/src/checking/check',
+    'lathe/src/checking/product-setting',
+    'lathe/src/traceability/pattern-following',
   ];
   const files = sources();
   const file = (name: string) => files.find((f) => f.file === name);
