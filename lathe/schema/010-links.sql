@@ -104,6 +104,8 @@ INSERT INTO meta_relation_pair VALUES
   ('meets', 'ui_component', 'standard_rule', 'The UI component follows the standard rule.'),
   ('meets', 'endpoint_handler', 'standard_rule', 'The endpoint handler follows the standard rule.'),
   ('meets', 'adapter', 'standard_rule', 'The adapter follows the standard rule.'),
+  ('meets', 'entry_point', 'standard_rule', 'The entry point follows the standard rule.'),
+  ('meets', 'tooling', 'standard_rule', 'The tooling record follows the standard rule.'),
   ('persists', 'repository', 'aggregate', 'The repository loads and saves the aggregate, whole.'),
   ('serves', 'capability', 'business_outcome', 'The capability serves the business outcome.'),
   ('measured_by', 'business_outcome', 'constraint_test', 'The business outcome is measured by the constraint test.'),

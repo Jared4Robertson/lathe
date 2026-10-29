@@ -36,8 +36,17 @@ interface PartsField {
   description: string;
 }
 
+/**
+ * A field whose shape a product's own declaration gives, not Lathe's schema: an object of a declared kind's column
+ * values (values), or of the IDs a record links to by relation (links). The handler checks it against the declaration.
+ */
+interface DeclaredField {
+  kind: 'values' | 'links';
+  description: string;
+}
+
 /** One field of a command's or query's input. */
-export type Field = (ColumnField | IdField | PartsField) & { required: boolean; clearable: boolean };
+export type Field = (ColumnField | IdField | PartsField | DeclaredField) & { required: boolean; clearable: boolean };
 
 /** The field for a value of type V: required unless V may be undefined, and clearable only when V may be null. */
 type FieldFor<V> = Field & { required: undefined extends V ? false : true; clearable: null extends V ? true : false };
@@ -69,6 +78,18 @@ export function texts<M extends Exclude<Mode, 'clearable'>>(description: string,
 export function parts<M extends Exclude<Mode, 'clearable'>>(table: TableName, columns: readonly string[], description: string, mode: M): PartsField & Flags<M> {
   return { kind: 'parts', table, columns, description, ...flags(mode) };
 }
+
+/** An object of a declared kind's column values: a value sets its column, null clears an optional one. */
+export function values<M extends Exclude<Mode, 'clearable'>>(description: string, mode: M): DeclaredField & Flags<M> {
+  return { kind: 'values', description, ...flags(mode) };
+}
+
+/** An object of the IDs a record links to, by relation: each list replaces the record's links of that relation. */
+export function links<M extends Exclude<Mode, 'clearable'>>(description: string, mode: M): DeclaredField & Flags<M> {
+  return { kind: 'links', description, ...flags(mode) };
+}
+
+const isObject = (value: unknown): value is Record<string, unknown> => typeof value === 'object' && value !== null && !Array.isArray(value);
 
 function flags<M extends Mode>(mode: M): Flags<M> {
   return { required: mode === 'required', clearable: mode === 'clearable' } as Flags<M>;
@@ -185,6 +206,12 @@ function fieldProblem(schema: SchemaDescription, field: Field, value: unknown): 
       return Array.isArray(value) && value.every((v) => typeof v === 'string' && v.trim() !== '') ? null : `is not a list of ${field.kind === 'ids' ? 'record IDs' : 'texts'}`;
     case 'parts':
       return Array.isArray(value) ? (value.map((item) => partProblem(schema, field, item)).find((p) => p !== null) ?? null) : `is not a list of ${field.columns.join(', ')} objects`;
+    case 'values':
+      return isObject(value) && Object.values(value).every((v) => v === null || ['string', 'number', 'boolean'].includes(typeof v) || (Array.isArray(v) && v.every((x) => typeof x === 'string')))
+        ? null
+        : 'is not an object of column values';
+    case 'links':
+      return isObject(value) && Object.values(value).every((v) => Array.isArray(v) && v.every((x) => typeof x === 'string' && x.trim() !== '')) ? null : 'is not an object of record ID lists by relation';
   }
 }
 
@@ -205,6 +232,8 @@ function fieldSchema(schema: SchemaDescription, field: Field): JsonSchema {
     };
     return { type: 'array', items: item, description: field.description };
   }
+  if (field.kind === 'values') return { type: 'object', additionalProperties: { type: ['string', 'number', 'boolean', 'array', 'null'] }, description: field.description };
+  if (field.kind === 'links') return { type: 'object', additionalProperties: { type: 'array', items: { type: 'string', minLength: 1 } }, description: field.description };
   if (field.kind !== 'column') return { type: 'array', items: { type: 'string', minLength: 1 }, description: field.description };
   const c = columnOf(schema, field);
   const typed: JsonSchema = (() => {
@@ -241,13 +270,21 @@ export function inputSchema(schema: SchemaDescription, input: Record<string, Fie
 export function fieldHelp(schema: SchemaDescription, name: string, field: Field): string {
   const s = fieldSchema(schema, field);
   const column = field.kind === 'column' ? columnOf(schema, field) : null;
-  const type = field.kind === 'parts' ? `list, the flag once per item, each a JSON object of ${field.columns.join(', ')}` : field.kind === 'ids' || field.kind === 'texts' ? 'list, the flag once per item' : !column ? 'record ID' : column.kind === 'enum' ? `one of ${column.values!.join(', ')}` : column.kind;
+  const type = field.kind === 'values' || field.kind === 'links' ? 'a JSON object' : field.kind === 'parts' ? `list, the flag once per item, each a JSON object of ${field.columns.join(', ')}` : field.kind === 'ids' || field.kind === 'texts' ? 'list, the flag once per item' : !column ? 'record ID' : column.kind === 'enum' ? `one of ${column.values!.join(', ')}` : column.kind;
   const notes = [type, ...(field.required ? ['required'] : []), ...(field.clearable ? ['"" clears it'] : [])];
   return `  --${name.padEnd(24)} ${notes.join(', ')}. ${String(s.description ?? '')}`.trimEnd();
 }
 
 /** A CLI flag's texts as the field's value: a number, true or false, a list, or text; "" clears a clearable field. */
-export function flagValue(schema: SchemaDescription, name: string, field: Field, raw: string[]): Value | null {
+export function flagValue(schema: SchemaDescription, name: string, field: Field, raw: string[]): Value | null | Record<string, unknown> {
+  if (field.kind === 'values' || field.kind === 'links') {
+    if (raw.length > 1) throw new InputError(`--${name} is given ${raw.length} times; it takes one JSON object`);
+    try {
+      return JSON.parse(raw[0]) as Record<string, unknown>;
+    } catch {
+      throw new InputError(`--${name} ${JSON.stringify(raw[0])} is not a JSON object`);
+    }
+  }
   if (field.kind === 'parts') {
     if (raw.length === 1 && raw[0] === '') return [];
     return raw.map((text) => {

@@ -100,6 +100,11 @@ describe('the technical specification', () => {
         expect(schema.tables.persists.unique).toEqual(expect.arrayContaining([['source_id'], ['target_id']]));
         continue;
       }
+      // An entry point and a tooling record implement no design record: each sits under the domain it starts or serves.
+      if (kind === 'entry_point' || kind === 'tooling') {
+        expect(parentsOf(schema, kind)).toEqual(['domain.domain_id']);
+        continue;
+      }
       for (const p of parents) expect(designStages.includes(schema.kinds[p.kind].stage!), `${kind} under ${p.kind}`).toBe(true);
       if (kind !== 'table') {
         expect(parents, kind).toHaveLength(1);

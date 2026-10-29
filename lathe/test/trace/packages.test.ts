@@ -44,20 +44,16 @@ describe('packages', () => {
     expect(ofCheck(await loadData(naming('nodemailer')), 'package-not-in-manifest').map((p) => p.record)).toEqual(['EX-INT01-AD']);
   });
 
-  it("LA-TRC-UC19-R03-T01 only a technical record names a package: the store refuses it on any other, and takes a product's own technical kind", async () => {
+  it("LA-TRC-UC19-R03-T01 only a technical record names a package: the store refuses it on any other, and takes a tooling record", async () => {
     const refused = await refusals(adding(complete(), { package_use: [{ record_id: 'EX-LEND-UC01', package: 'nodemailer' }] }));
     expect(refused).toEqual([expect.objectContaining({ rule: 'package-use-technical', table: 'package_use', message: expect.stringContaining('EX-LEND-UC01 is a use case, not a technical record') })]);
     // A name that is not a package name is refused by the table's own CHECK.
     expect(await refusals(naming('Not A Package'))).toEqual([expect.objectContaining({ table: 'package_use' })]);
-    const tooling = adding(complete(), {
-      product_kind: [{ name: 'tooling', product_id: 'EX', label: 'Tooling', description: 'A dev script or config file.', parent_kind: 'domain', stage: 'technical-specification', obligation: false }],
-      product_kind_field: [{ kind: 'tooling', position: 1, name: 'file', type: 'text', required: true, description: 'The config file.' }],
-    });
-    const withRecord = adding(tooling, {
-      tooling: [{ id: 'EX-LEND-TOOL01', title: 'Test runner', domain_id: 'EX-LEND', file: 'vitest.config.ts' }],
+    const withRecord = adding(complete(), {
+      tooling: [{ id: 'EX-LEND-TOOL01', title: 'vitest.config.ts', domain_id: 'EX-LEND', file: 'vitest.config.ts' }],
       package_use: [{ record_id: 'EX-LEND-TOOL01', package: 'vitest' }],
     });
-    // Written as data files and loaded, as a product's repo is: the tooling record's own table comes from its declaration.
+    // Written as data files and loaded, as a product's repo is.
     const root = writeData(withRecord);
     writeFileSync(path.join(root, 'package.json'), manifest({ devDependencies: { vitest: '^4.0.0' } }));
     const ws = await loadWorkspace(root);

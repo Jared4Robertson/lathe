@@ -35,7 +35,7 @@ const section = (markdown: string, heading: string) => {
 };
 
 /** The second domain several flows add beside lending: its use case follows a pattern. */
-const HOUSE_KIND = { name: 'entry_point', product_id: 'TL', label: 'Entry point', description: 'A file the product starts from.', parent_kind: 'domain', stage: 'technical-specification', obligation: false };
+const HOUSE_KIND = { name: 'launcher', product_id: 'TL', label: 'Launcher', description: 'A file the product starts from.', parent_kind: 'domain', stage: 'technical-specification', obligation: false };
 
 describe('Authoring flows', () => {
   it('LA-AUT-UC02-FL03-T split a product into domains by capability', () => {
@@ -89,16 +89,16 @@ describe('Authoring flows', () => {
     const tl = product();
     await tl.seed(LENDING);
     // S01: a product kind with its fields, in a stage; until then lathe add has no such table.
-    expect(tl.run('add', 'entry_point', '--help')).not.toContain('--file');
+    expect(tl.run('add', 'launcher', '--help')).not.toContain('--file');
     tl.run('add', 'product_kind', ...flags(HOUSE_KIND));
-    tl.run('add', 'product_kind_field', ...flags({ kind: 'entry_point', position: 1, name: 'file', type: 'text', required: true, description: 'The file it starts from.' }));
+    tl.run('add', 'product_kind_field', ...flags({ kind: 'launcher', position: 1, name: 'file', type: 'text', required: true, description: 'The file it starts from.' }));
     // S02: a new relation, and a pair added to one of Lathe's.
-    tl.run('add', 'product_relation', ...flags({ name: 'starts', source_kind: 'entry_point', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: 'The entry point starts the command.' }));
+    tl.run('add', 'product_relation', ...flags({ name: 'starts', source_kind: 'launcher', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: 'The launcher starts the command.' }));
     // S04: the next load generates the tables, and lathe add takes the new kind with its columns.
-    expect(tl.run('add', 'entry_point', '--help')).toContain('--file');
-    tl.run('add', 'entry_point', '--id', 'TL-LEND-EP1', '--title', 'Start the lending service', '--domain_id', 'TL-LEND', '--file', 'src/main.ts');
+    expect(tl.run('add', 'launcher', '--help')).toContain('--file');
+    tl.run('add', 'launcher', '--id', 'TL-LEND-EP1', '--title', 'Start the lending service', '--domain_id', 'TL-LEND', '--file', 'src/main.ts');
     tl.run('link', 'TL-LEND-EP1', 'starts', 'TL-LEND-CMD01');
-    expect(tl.read('data/entry_point.jsonl')).toContain('"id":"TL-LEND-EP1"');
+    expect(tl.read('data/launcher.jsonl')).toContain('"id":"TL-LEND-EP1"');
     expect(tl.run('show', 'TL-LEND-EP1')).toContain('Starts TL-LEND-CMD01: Open a loan [starts]');
     // S03: a kind declared twice is refused; in the data files, naming the file and line of each.
     tl.refused('add', 'product_kind', ...flags({ ...HOUSE_KIND, label: 'Start file' }));
@@ -228,15 +228,15 @@ describe('Authoring flows', () => {
     expect(lathe).toContain('### `view-unused`');
     // S02: a product's reference shows its own kinds and checks after Lathe's.
     tl.run('add', 'product_kind', ...flags(HOUSE_KIND));
-    tl.run('add', 'check', ...flags({ name: 'entry-point-unnamed', product_id: 'TL', position: 1, severity: 'warning', summary: 'An entry point with no description.', explanation: 'Each entry point says what it starts.', query: "SELECT id AS record, 'Entry point ' || id || ' says nothing.' AS message FROM entry_point WHERE false" }));
+    tl.run('add', 'check', ...flags({ name: 'launcher-unnamed', product_id: 'TL', position: 1, severity: 'warning', summary: 'A launcher with no description.', explanation: 'Each launcher says what it starts.', query: "SELECT id AS record, 'Launcher ' || id || ' says nothing.' AS message FROM launcher WHERE false" }));
     const own = reference(tl);
     const technical = section(own, '## Technical specification');
-    expect([...technical.matchAll(/^### (.+) \(`(\w+)`\)$/gm)].map((m) => m[2]).at(-1)).toBe('entry_point');
+    expect([...technical.matchAll(/^### (.+) \(`(\w+)`\)$/gm)].map((m) => m[2]).at(-1)).toBe('launcher');
     expect(technical).toContain('A file the product starts from.');
-    expect(own.indexOf('### `entry-point-unnamed`')).toBeGreaterThan(own.indexOf('### `view-unused`'));
+    expect(own.indexOf('### `launcher-unnamed`')).toBeGreaterThan(own.indexOf('### `view-unused`'));
     // S03: a product kind, relation or check that would leave the reference blank is refused.
-    tl.refused('add', 'product_kind', ...flags({ ...HOUSE_KIND, name: 'start_script', description: ' ' }));
-    tl.refused('add', 'product_relation', ...flags({ name: 'starts', source_kind: 'entry_point', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: '' }));
+    tl.refused('add', 'product_kind', ...flags({ ...HOUSE_KIND, name: 'boot_script', description: ' ' }));
+    tl.refused('add', 'product_relation', ...flags({ name: 'starts', source_kind: 'launcher', target_kind: 'command', product_id: 'TL', forward_label: 'Starts', reverse_label: 'Started by', description: '' }));
     tl.refused('add', 'check', '--name', 'blank', '--product_id', 'TL', '--position', '2', '--severity', 'warning', '--summary', 'Blank.', '--query', 'SELECT 1');
   });
 
