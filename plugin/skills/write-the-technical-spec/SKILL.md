@@ -5,7 +5,7 @@ description: Write or change a Lathe product's technical specification - the one
 
 # Write the technical specification
 
-The technical specification says which code implements each design record, and how the domain's data is stored. One concrete kind implements each design kind, and each technical record names the file that holds it. An obligation is **built** once the technical record that implements it names a file that exists. Write it after the domain model and the interaction design it implements.
+The technical specification says which code implements each design record, and how the domain's data is stored. One concrete kind implements each design kind, and each technical record names the file that holds it. An obligation is **built** only through the specific technical record that implements it, once that record names a file that exists: an invariant through its rule, a view requirement through the UI components that build it, a UC requirement through the handler of what a fulfilling step invokes or the adapter of an integration it exchanges with. No other code near it counts: not a data model, a unique key, or a UI component that only renders the view. Write it after the domain model and the interaction design it implements.
 
 ## How you write
 
@@ -29,6 +29,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `data_model` | an entity: its code, behavior and mapping to its table | `<entity>-DM` | `aggregate_add_data_model` |
 | `table` | an entity or a read model: its storage | `<entity or read model>-TB` | `table_add_table`, `table_move_table` |
 | `value_type` | a value object, and so its constraints | `<value object>-VT` | `value_object_add_value_type` |
+| `rule` | an invariant: the code that enforces it, titled by the name its refusal carries | `<invariant>-RL` | `aggregate_add_rule` |
 | `predicate` | a specification | `<specification>-PR` | `specification_add_predicate` |
 | `event_type` | a domain event: its shape, a contract when published | `<domain event>-ET` | `domain_event_add_event_type` |
 | `projection` | a read model: fills its table and keeps it current | `<read model>-PJ` | `read_model_add_projection` |
@@ -38,7 +39,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `service` | a domain service | `<domain service>-SV` | `domain_add_service` |
 | `endpoint_handler` | an endpoint | `<endpoint>-H` | `endpoint_add_endpoint_handler` |
 | `adapter` | an integration | `<integration>-AD` | `integration_add_adapter` |
-| `ui_component` | none: it `renders` the views it is used in | `<P>-UI<nn>` | `ui_component_add_ui_component` |
+| `ui_component` | none: it `renders` the views it is used in, and `builds` the view requirements its code does | `<P>-UI<nn>` | `ui_component_add_ui_component` |
 | `entry_point` | a domain: a file that starts the product | `<domain>-ENTRY<nn>` | `entry_point_add_entry_point` |
 | `tooling` | a domain: a tool's configuration, such as the type checker's or the test runner's | `<domain>-TOOL<nn>` | `tooling_add_tooling` |
 
@@ -107,6 +108,7 @@ domain_add_repository { "id": "TL-LEND-REPO03", "title": "LoanRepository", "doma
        "description": "Keeps each loan as a row of the loans table: add, get, activeForMember, activeForTool and save, each inside its command handler's transaction.",
        "persists": "TL-LEND-A3" }
 aggregate_add_data_model { "id": "TL-LEND-EN04-DM", "title": "Loan", "entity_id": "TL-LEND-EN04", "file": "src/loan.ts" }
+aggregate_add_rule { "id": "TL-LEND-INV03-RL", "title": "tool_on_loan", "invariant_id": "TL-LEND-INV03", "file": "src/loan.ts" }
 domain_event_add_event_type { "id": "TL-LEND-EV06-ET", "title": "ToolReturned", "domain_event_id": "TL-LEND-EV06", "delivery": "outbox",
        "file": "src/events.ts" }
 command_add_event_handler { "id": "TL-LEND-PO01-H", "title": "reportDamageOnReturn", "policy_id": "TL-LEND-PO01",
@@ -114,7 +116,7 @@ command_add_event_handler { "id": "TL-LEND-PO01-H", "title": "reportDamageOnRetu
        "description": "Subscribed to ToolReturned on the outbox; for a return needing repair it invokes Report damage's handler, in its own transaction." }
 ```
 
-The loans table, with its primary key, a foreign key to the members table, and the partial unique key that enforces one active loan per tool:
+The loans table, with its primary key, a foreign key to the members table, and the partial unique key that backs up one active loan per tool (the invariant is built by its rule, `tool_on_loan`, not by the key):
 
 ```
 table_add_table { "id": "TL-LEND-EN04-TB", "title": "loans", "entity_id": "TL-LEND-EN04", "name": "loans", "storage": "table", "file": "src/database.ts",

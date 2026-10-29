@@ -4,6 +4,8 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EventTypeRow } from '../../../platform/data/tables.ts';
 import { DOMAIN_EVENT_SLICE } from '../model.ts';
 import { DomainEventRepository } from '../repository.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
+import { oneEventType } from '../rules.ts';
 
 /** A new event type, with the standard rules it meets and the packages it uses. */
 export type AddEventType = Pick<EventTypeRow, 'id' | 'title' | 'domain_event_id' | 'delivery' | 'file'> & { meets?: string[]; packages?: string[] };
@@ -32,8 +34,8 @@ export const ADD_EVENT_TYPE: CommandDefinition<AddEventType> = {
 export function addEventType(tx: Transaction, input: AddEventType): void {
   const events = new DomainEventRepository(tx);
   const event = events.loadHolding('domain_event', input.domain_event_id) ?? tx.refuse('missing', `there is no domain event ${input.domain_event_id}`);
-  if (event.eventType) tx.refuse('exists', `${input.domain_event_id} already has its event type, ${event.eventType.row.id}`);
   const { meets = [], packages = [], ...row } = input;
+  refuseBroken(oneEventType([...(event.eventType ? [event.eventType.row] : []), row]));
   event.eventType = { row, meets, packages };
   events.save(event);
 }

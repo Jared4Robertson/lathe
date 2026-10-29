@@ -4,7 +4,8 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CommandHandlerRow } from '../../../platform/data/tables.ts';
 import { COMMAND_SLICE } from '../model.ts';
 import { CommandRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import { commandOneEach, holdToRules } from '../rules.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
 
 /** A new command handler, with the standard rules it meets and the packages it uses. */
 export type AddCommandHandler = Pick<CommandHandlerRow, 'id' | 'title' | 'command_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
@@ -33,8 +34,8 @@ export const ADD_COMMAND_HANDLER: CommandDefinition<AddCommandHandler> = {
 export function addCommandHandler(tx: Transaction, input: AddCommandHandler): void {
   const commands = new CommandRepository(tx);
   const command = commands.loadHolding('command', input.command_id) ?? tx.refuse('missing', `there is no command ${input.command_id}`);
-  if (command.handler) tx.refuse('exists', `${input.command_id} already has its command handler, ${command.handler.row.id}`);
   const { meets = [], packages = [], ...row } = input;
+  refuseBroken(commandOneEach([...(command.handler ? [command.handler.row] : []), row], [], [], []));
   command.handler = { row, meets, packages };
   holdToRules(tx, command);
   commands.save(command);

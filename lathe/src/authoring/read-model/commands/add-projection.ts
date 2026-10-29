@@ -4,7 +4,8 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProjectionRow } from '../../../platform/data/tables.ts';
 import { READ_MODEL_SLICE } from '../model.ts';
 import { ReadModelRepository } from '../repository.ts';
-import { holdToRules } from '../rules.ts';
+import { readModelOneEach, holdToRules } from '../rules.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
 
 /** A new projection, with the standard rules it meets and the packages it uses. */
 export type AddProjection = Pick<ProjectionRow, 'id' | 'title' | 'read_model_id' | 'file' | 'description'> & { meets?: string[]; packages?: string[] };
@@ -33,8 +34,8 @@ export const ADD_PROJECTION: CommandDefinition<AddProjection> = {
 export function addProjection(tx: Transaction, input: AddProjection): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.load(input.read_model_id) ?? tx.refuse('missing', `there is no read model ${input.read_model_id}`);
-  if (readModel.projection) tx.refuse('exists', `${readModel.root} already has its projection, ${readModel.projection.row.id}`);
   const { meets = [], packages = [], ...row } = input;
+  refuseBroken(readModelOneEach([...(readModel.projection ? [readModel.projection.row] : []), row], []));
   readModel.projection = { row, meets, packages };
   holdToRules(tx, readModel);
   readModels.save(readModel);

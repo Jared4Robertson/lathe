@@ -1,13 +1,13 @@
 // The Domain aggregate's rules, written once: each command's handler runs them on the instance before it saves, and
 // every load and commit runs them over all data (domainRules, listed in AGGREGATE_RULES).
-import type { AggregateRules, ReadView, RuleProblem } from '../../platform/data/rules.ts';
+import { beyondFirst, type AggregateRules, type ReadView, type RuleProblem } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { DOMAIN_AGGREGATE, domainsFrom, type Domain } from './model.ts';
 
 /**
- * Every rule the domain breaks (LA-AUT-INV41 an aggregate has one repository: a repository share names an aggregate
+ * Every rule the domain breaks (LA-AUT-INV112 a domain service has at most one service; LA-AUT-INV41 an aggregate has one repository: a repository share names an aggregate
  * no repository persists). The view gives the persists links of the other domains' repositories.
  */
 export function domainProblems(domain: Domain, view: ReadView): RuleProblem[] {
@@ -27,6 +27,14 @@ export function domainProblems(domain: Domain, view: ReadView): RuleProblem[] {
         message: `${share.repository_id} cannot also record ${share.aggregate_id}, ${persister === share.repository_id ? 'the aggregate it persists' : `which ${persister} persists: an aggregate has one repository`}`,
       });
     }
+  }
+  for (const service of beyondFirst(domain.services.map((x) => x.row), (r) => r.domain_service_id)) {
+    problems.push({
+      rule: 'one-service',
+      table: 'service',
+      row: service as unknown as Row,
+      message: `domain service ${service.domain_service_id} already has its service, so ${service.id} cannot be a second: a domain service has one`,
+    });
   }
   return problems;
 }
