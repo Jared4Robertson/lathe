@@ -45,7 +45,11 @@ export function everyKind(): Data {
     query: [{ id: 'TL-LEND-QRY01', title: 'List free tools', read_model_id: 'TL-LEND-RM01', description: 'The tools no active loan names.' }],
     policy: [{ id: 'TL-LEND-PO01', title: 'Remind on loan', command_id: 'TL-LEND-CMD01', statement: 'Whenever a loan is opened, the library MUST open its reminder.' }],
     domain_service: [{ id: 'TL-LEND-DS01', title: 'Late fee', domain_id: 'TL-LEND', statement: 'The fee MUST be a day rate times the days late.' }],
-    term: [{ id: 'TL-LEND-TM01', title: 'Loan', domain_id: 'TL-LEND', meaning: 'One tool lent to one member until it is returned.' }],
+    term: [
+      { id: 'TL-LEND-TM01', title: 'Loan', domain_id: 'TL-LEND', meaning: 'One tool lent to one member until it is returned.' },
+      { id: 'TL-LEND-TM02', title: 'Overdue loan', domain_id: 'TL-LEND', meaning: 'A loan past its due date.' },
+    ],
+    builds_on: [{ source_id: 'TL-LEND-TM02', target_id: 'TL-LEND-TM01' }],
 
     // Use cases.
     business_outcome: [{ id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow more of the tools the library holds.', measure: 'Loans opened per tool per month.', target: 'Two loans per tool per month within a year.' }],

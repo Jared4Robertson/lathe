@@ -47,6 +47,8 @@ CREATE TABLE starts_from (source_id VARCHAR NOT NULL REFERENCES test (id), targe
 COMMENT ON TABLE starts_from IS 'The test starts from the test data set: it is prepared before the test and reset after.';
 CREATE TABLE about (source_id VARCHAR NOT NULL REFERENCES question (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE about IS 'The open question concerns the record.';
+CREATE TABLE builds_on (source_id VARCHAR NOT NULL REFERENCES term (id), target_id VARCHAR NOT NULL REFERENCES term (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
+COMMENT ON TABLE builds_on IS 'The term is defined with the other term: its meaning uses it, so the other term is defined first and never builds on it in turn, through any chain.';
 
 INSERT INTO meta_relation VALUES
   ('has_one', NULL, 'product', 'Has one', 'Part of', NULL),
@@ -70,7 +72,8 @@ INSERT INTO meta_relation VALUES
   ('serves', NULL, 'product', 'Serves', 'Served by', NULL),
   ('measured_by', NULL, 'product', 'Measured by', 'Measures', NULL),
   ('starts_from', NULL, 'product', 'Starts from', 'Starting point of', NULL),
-  ('about', NULL, 'product', 'About', 'Questions about this', NULL);
+  ('about', NULL, 'product', 'About', 'Questions about this', NULL),
+  ('builds_on', NULL, 'product', 'Builds on', 'Built on by', NULL);
 
 INSERT INTO meta_relation_pair VALUES
   ('has_one', 'entity', 'entity', 'The entity holds exactly one of the other entity, as a part of it (one to one).'),
@@ -138,7 +141,8 @@ INSERT INTO meta_relation_pair VALUES
   ('starts_from', 'integration_test', 'test_data_set', 'The integration test starts from the test data set.'),
   ('starts_from', 'pattern_rule_test', 'test_data_set', 'The pattern rule test starts from the test data set.'),
   ('starts_from', 'standard_rule_test', 'test_data_set', 'The standard rule test starts from the test data set.'),
-  ('about', 'question', '*', 'The open question concerns that record.');
+  ('about', 'question', '*', 'The open question concerns that record.'),
+  ('builds_on', 'term', 'term', 'The term''s meaning uses the other term, which is defined before it.');
 
 INSERT INTO meta_table SELECT name, 'link', NULL FROM meta_relation;
 
