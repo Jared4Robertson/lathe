@@ -79,8 +79,8 @@ export function serve(served: Served = {}): { requests: Requests; writes: Writes
     }
     // An aggregate's query, read by the query itself over the served data, as the server reads it.
     const [route, query = ''] = url.split('?');
-    const read = ALL_QUERIES.find((q) => `/api/${q.slice.name}/${q.name}` === route);
-    if (read && (init?.method ?? 'GET') === 'GET') {
+    const read = ALL_QUERIES.find((q) => q.route === route);
+    if (read && (init?.method ?? 'GET') === read.method) {
       try {
         return json(read.run(readViewOf(data), Object.fromEntries(new URLSearchParams(query)) as never));
       } catch (error) {
