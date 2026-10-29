@@ -62,10 +62,10 @@ export function RecordText({ index, record }: { index: SpecIndex; record: SpecRe
   const shares = partsOf(index, id, 'repository_share');
   const steps = Array.isArray(row.steps) ? row.steps : [];
   const roles = partsOf(index, id, 'role');
-  const empty = lead.length + titled.length + scenario.length + fields.length + keys.length + changes.length + shares.length + steps.length + roles.length === 0 && !notes;
+  // A kind with no lead, scenario or parts, such as a flow, has no text of its own (LA-STD-MODELING-R10): nothing to show.
+  if (lead.length + titled.length + scenario.length + fields.length + keys.length + changes.length + shares.length + steps.length + roles.length === 0 && !notes) return null;
   return (
     <div className="record-text">
-      {empty && <p className="hint">No text yet.</p>}
       {lead.map((c) => <div key={c} className="record-lead" data-field={c}><Prose index={index} source={textOf(row, c)} self={id} /></div>)}
       {scenario.length > 0 && (
         <dl className="scenario" aria-label="Scenario">
