@@ -177,14 +177,15 @@ WHERE a.product_id IS DISTINCT FROM b.product_id`,
       description: "A command's recorded extra aggregate is another aggregate of its own domain.",
       sql: `
 SELECT 'command_change' AS table_name, c.command_id || chr(0) || c.aggregate_id AS row_key,
-       c.command_id || ' changes ' || cmd.aggregate_id || ', so it cannot also record '
-       || CASE WHEN c.aggregate_id = cmd.aggregate_id THEN 'that same aggregate' ELSE c.aggregate_id || ', an aggregate of another domain' END
+       c.command_id || ' changes ' || own.id || ', so it cannot also record '
+       || CASE WHEN c.aggregate_id = own.id THEN 'that same aggregate' ELSE c.aggregate_id || ', an aggregate of another domain' END
        AS message
 FROM command_change c
 JOIN command cmd ON cmd.id = c.command_id
-JOIN aggregate own ON own.id = cmd.aggregate_id
+JOIN entity e ON e.id = cmd.entity_id
+JOIN aggregate own ON own.id = e.aggregate_id
 JOIN aggregate other ON other.id = c.aggregate_id
-WHERE c.aggregate_id = cmd.aggregate_id OR other.domain_id <> own.domain_id`,
+WHERE c.aggregate_id = own.id OR other.domain_id <> own.domain_id`,
     },
     {
       name: 'repository-share-unpersisted',

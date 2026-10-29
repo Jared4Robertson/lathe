@@ -161,10 +161,10 @@ add  { "entity_field": { "entity_id": "TL-LEND-EN05", "position": 2, "name": "Co
 link { "source": "TL-LEND-EN04", "relation": "has_one", "target": "TL-LEND-EN05" }
 ```
 
-A command on the Loan, the event it raises, the specifications it checks and the domain service it calls:
+A command on the Loan's Return (a command sits under the entity it changes), the event it raises, the specifications it checks and the domain service it calls:
 
 ```
-add  { "command": { "id": "TL-LEND-CMD06", "title": "Return a tool", "aggregate_id": "TL-LEND-A3",
+add  { "command": { "id": "TL-LEND-CMD06", "title": "Return a tool", "entity_id": "TL-LEND-EN05",
        "description": "Closes a loan, recording the time, the tool's condition and an optional note, and whether the return was late." } }
 add  { "domain_event": { "id": "TL-LEND-EV06", "title": "Tool returned", "aggregate_id": "TL-LEND-A3", "published": false,
        "description": "A librarian recorded a tool's return, which closes its loan and says what condition the tool came back in." } }
@@ -222,7 +222,7 @@ add  { "domain_service": { "id": "TL-LEND-DS01", "title": "Library calendar", "d
 add  { "term": { "id": "TL-LEND-TM06", "title": "Active loan", "domain_id": "TL-LEND", "meaning": "A loan that has not been returned." } }
 ```
 
-In a shell the same writes are `lathe add command --id TL-LEND-CMD06 --title "Return a tool" --aggregate_id TL-LEND-A3 ...` and `lathe link TL-LEND-CMD06 raises TL-LEND-EV06`. For the Owner's scripts, and text with quotes, newlines or backticks, a write also takes the tool's own JSON on stdin or from a file: `lathe add --json -` with the object above piped in, or `lathe link --json links.json` with an array of links as one write.
+In a shell the same writes are `lathe add command --id TL-LEND-CMD06 --title "Return a tool" --entity_id TL-LEND-EN05 ...` and `lathe link TL-LEND-CMD06 raises TL-LEND-EV06`. For the Owner's scripts, and text with quotes, newlines or backticks, a write also takes the tool's own JSON on stdin or from a file: `lathe add --json -` with the object above piped in, or `lathe link --json links.json` with an array of links as one write.
 
 ## Rules
 

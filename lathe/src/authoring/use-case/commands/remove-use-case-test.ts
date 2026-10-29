@@ -1,7 +1,7 @@
 // Remove a use case test (LA-AUT-CMD115): Removes a use case test with the links it starts. Refused while anything else references it, such as a business outcome it measures.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { USE_CASE_SLICE, useCaseChanged } from '../model.ts';
+import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 
 /** The test to remove. */
@@ -27,5 +27,4 @@ export function removeUseCaseTest(tx: Transaction, input: RemoveUseCaseTest): vo
   const useCase = useCases.loadHolding('use_case_test', input.id) ?? tx.refuse('missing', `there is no use case test ${input.id}`);
   useCase.useCaseTests = useCase.useCaseTests.filter((t) => t.row.id !== input.id);
   useCases.save(useCase);
-  useCaseChanged(tx, useCase);
 }

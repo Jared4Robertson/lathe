@@ -37,7 +37,7 @@ function baselines(asked: string[] = []): NonNullable<Served['baseline']> {
 /** The fixture with the command renamed and a new one beside it: what an Agent writes. */
 function agentEdits(data: SpecData = workspace()): SpecData {
   const next = setRow(data, 'command', 'DM-SHOP-CMD01', { title: 'Put item in basket' });
-  next.sources[0].tables.command.push({ id: 'DM-SHOP-CMD09', title: 'Empty basket', aggregate_id: 'DM-SHOP-A1' });
+  next.sources[0].tables.command.push({ id: 'DM-SHOP-CMD09', title: 'Empty basket', entity_id: 'DM-SHOP-EN01' });
   return next;
 }
 

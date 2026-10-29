@@ -2,7 +2,7 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { FlowRow } from '../../../platform/data/tables.ts';
-import { USE_CASE_SLICE, useCaseChanged } from '../model.ts';
+import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
@@ -31,5 +31,4 @@ export function changeFlow(tx: Transaction, input: ChangeFlow): void {
   useCase.flows = useCase.flows.map((f) => (f.id === input.id ? { ...f, title: input.title } : f));
   holdToRules(tx, useCase);
   useCases.save(useCase);
-  useCaseChanged(tx, useCase);
 }

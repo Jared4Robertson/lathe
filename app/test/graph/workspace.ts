@@ -18,12 +18,16 @@ function withReturns(count: number): SpecData {
 }
 
 /**
- * The test workspace with a second use case that has six UC requirements, and a command under Shelf
- * (P-D-A4), which then holds an entity and a command: more than one kind of child, so it reaches them
- * through groups.
+ * The test workspace with a second use case that has six UC requirements, and under Shelf (P-D-A4) a
+ * command on its entity that raises an event of its own: Shelf then holds an entity and a domain event,
+ * more than one kind of child, so it reaches them through groups, and its entity holds the command.
  */
-export const groupedWorkspace = (): SpecData =>
-  addRows(withReturns(6), 'command', { id: 'P-D-CMD06', title: 'Restock shelf', aggregate_id: 'P-D-A4' });
+export const groupedWorkspace = (): SpecData => {
+  const w = withReturns(6);
+  addRows(w, 'command', { id: 'P-D-CMD06', title: 'Restock shelf', entity_id: 'P-D-EN06' });
+  addRows(w, 'domain_event', { id: 'P-D-EV04', title: 'Shelf restocked', aggregate_id: 'P-D-A4', published: false });
+  return addRows(w, 'raises', { source_id: 'P-D-CMD06', target_id: 'P-D-EV04' });
+};
 
 /** The test workspace with a second use case that has seven UC requirements and nothing else: one kind, so no groups. */
 export const manyOfOneKindWorkspace = (): SpecData => withReturns(7);
