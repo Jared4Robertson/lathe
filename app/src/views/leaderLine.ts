@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import type { OpenSpaceStore } from './openSpace';
+import type { Insets, OpenSpaceStore } from './openSpace';
 
 // The leader line (LA-V96-R24): like a digital map's callout, a thin line joins the focused box on
 // the stage to the wiki card that shows it, from the box's nearest edge to the card's inner edge,
@@ -24,8 +24,9 @@ export type CardEnd = Point;
  */
 export interface LeaderLine { from: Point; to: Point; stub: boolean }
 
-/** The stub's length, in px. */
+/** The stub's length, and how far inside the open space's edge it ends, in px. */
 export const STUB_PX = 28;
+export const STUB_EDGE = 12;
 /** The line's width and its dots' radius, in px: it reads, and stays fainter than a link (1.2 to 1.5 px, dashed). */
 export const LEADER_WIDTH = 1.5;
 export const LEADER_DOT = 3;
@@ -37,9 +38,10 @@ const clamp = (v: number, lo: number, hi: number) => Math.min(hi, Math.max(lo, v
 /**
  * The leader line for a focused box (null when none is drawn) and the card's end (null when the card
  * does not float), in the open space: from the nearest point of the box's part in the open space to
- * the card's end, or, when no part of it shows there, a stub at the open space's edge toward it.
+ * the card's end, or, when no part of it shows there, a stub at the edge of the frame (the open space
+ * less the stage's own tools) toward it.
  */
-export function leaderLine(box: Box | null, card: CardEnd | null, open: Box): LeaderLine | null {
+export function leaderLine(box: Box | null, card: CardEnd | null, open: Box, frame: Box = open): LeaderLine | null {
   if (!box || !card || open.right - open.left < 1 || open.bottom - open.top < 1) return null;
   const seen = {
     left: Math.max(box.left, open.left), top: Math.max(box.top, open.top),
@@ -51,14 +53,17 @@ export function leaderLine(box: Box | null, card: CardEnd | null, open: Box): Le
     if (Math.hypot(card.x - from.x, card.y - from.y) < 1) return null;
     return { from, to: card, stub: false };
   }
-  // Off-screen or behind a panel: at the open space's edge nearest the box's center, pointing toward it.
+  // Off-screen or behind a panel: at the open space's edge nearest the box's center (kept a little inside it, so it
+  // shows whole), pointing toward it.
   const center = { x: (box.left + box.right) / 2, y: (box.top + box.bottom) / 2 };
-  const edge = { x: clamp(center.x, open.left, open.right), y: clamp(center.y, open.top, open.bottom) };
+  const room = frame.right - frame.left >= 2 * (STUB_EDGE + STUB_PX) && frame.bottom - frame.top >= 2 * (STUB_EDGE + STUB_PX) ? frame : open;
+  const inset = Math.min(STUB_EDGE, (room.right - room.left) / 2, (room.bottom - room.top) / 2);
+  const edge = { x: clamp(center.x, room.left + inset, room.right - inset), y: clamp(center.y, room.top + inset, room.bottom - inset) };
   const dx = center.x - edge.x;
   const dy = center.y - edge.y;
   const length = Math.hypot(dx, dy);
   if (length < 1e-6) return null;
-  const reach = Math.min(STUB_PX, Math.max(0, Math.min(open.right - open.left, open.bottom - open.top) / 2));
+  const reach = Math.min(STUB_PX, Math.max(0, Math.min(room.right - room.left, room.bottom - room.top) / 2 - inset));
   return { from: { x: edge.x - (dx / length) * reach, y: edge.y - (dy / length) * reach }, to: edge, stub: true };
 }
 
@@ -154,11 +159,8 @@ function leaderFor(host: HTMLElement, space: OpenSpaceStore | undefined, box: Bo
   // Level with the title's first line; kept on the card's scrolling part when the title has scrolled out of it.
   const scroller = card.querySelector('.wiki-panel-scroll')?.getBoundingClientRect() ?? c;
   const y = clamp(title ? titleRow(title) : c.top + c.height / 2, scroller.top + LEADER_DOT, scroller.bottom - LEADER_DOT);
-  const open = measure.open;
-  return leaderLine(box, { x: c.left - at.left, y: y - at.top }, {
-    left: s.left + open.left - at.left, top: s.top + open.top - at.top,
-    right: s.right - open.right - at.left, bottom: s.bottom - open.bottom - at.top,
-  });
+  const inHost = (i: Insets): Box => ({ left: s.left + i.left - at.left, top: s.top + i.top - at.top, right: s.right - i.right - at.left, bottom: s.bottom - i.bottom - at.top });
+  return leaderLine(box, { x: c.left - at.left, y: y - at.top }, inHost(measure.open), inHost(measure.frame));
 }
 
 /**
