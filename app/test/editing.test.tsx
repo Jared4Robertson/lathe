@@ -263,15 +263,15 @@ describe('removing a record', () => {
 
   it('LA-V92-R32-T01 removes a record nothing references, and goes to its parent', async () => {
     const user = userEvent.setup();
-    // An entity nothing references, on a kind whose aggregate has no page of its own yet.
-    const withNote = (): SpecData => addRows(workspace(), 'entity', { id: 'DM-SHOP-EN09', title: 'Gift note', aggregate_id: 'DM-SHOP-A1', role: 'child', description: 'A note sent with a gift.' });
-    const removed = (): SpecData => removeRows(withNote(), 'entity', (r) => r.id === 'DM-SHOP-EN09');
-    const { writes } = await openApp('/DM-SHOP-EN09', { data: withNote(), write: () => ({ answer: ok, data: removed() }) });
-    await user.click(within(toolbar('DM-SHOP-EN09')).getByRole('button', { name: 'Remove' }));
-    const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-EN09?' });
+    // A value object's constraint nothing references, on a kind whose aggregate has no page of its own yet.
+    const withRule = (): SpecData => addRows(workspace(), 'constraint', { id: 'DM-VO01-C09', title: 'A quantity is a whole number', value_object_id: 'DM-VO01', statement: 'A quantity MUST be a whole number.' });
+    const removed = (): SpecData => removeRows(withRule(), 'constraint', (r) => r.id === 'DM-VO01-C09');
+    const { writes } = await openApp('/DM-VO01-C09', { data: withRule(), write: () => ({ answer: ok, data: removed() }) });
+    await user.click(within(toolbar('DM-VO01-C09')).getByRole('button', { name: 'Remove' }));
+    const panel = screen.getByRole('region', { name: 'Remove DM-VO01-C09?' });
     expect(panel).toHaveTextContent('Nothing else references it.');
-    await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-EN09' }));
-    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP-A1'));
-    expect(writes).toEqual([[{ op: 'remove', table: 'entity', key: 'DM-SHOP-EN09' }]]);
+    await user.click(within(panel).getByRole('button', { name: 'Remove DM-VO01-C09' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-VO01'));
+    expect(writes).toEqual([[{ op: 'remove', table: 'constraint', key: 'DM-VO01-C09' }]]);
   });
 });
