@@ -39,9 +39,10 @@ import { measureSpec, pageMeasure, readGraphFonts, readyMeasure, fontFor, type G
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
 import { focusStrength } from './fade';
-import { paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type PaintState } from './paint';
+import { boxColors, paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
+import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
 // Clicking a record or a group focuses it (through onNavigate, so the host changes the address and
@@ -789,11 +790,21 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     const fade = strengthNow();
     const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at };
     paint(ctx.current, dpr, camOf(view.current, s), frame, look.current, fonts, state);
+    // The leader line to the wiki card (LA-V96-R24), under this camera, from the focus's box in its outline's color.
+    const v = view.current;
+    const node = map.nodes.get(focus);
+    const focusPlate = node ? plateFor(focus) : null;
+    if (wrapper.current) drawLeaderLine(ctx.current, {
+      host: wrapper.current, space, dpr, color: focusPlate ? boxColors(look.current, focusPlate).edge : look.current.ink,
+      box: node ? { left: node.x * v.zoom + v.x, top: node.y * v.zoom + v.y, right: (node.x + node.w) * v.zoom + v.x, bottom: (node.y + node.h) * v.zoom + v.y } : null,
+    });
     if (!spot.done || !fade.done) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
   };
   // Every render may change what is drawn: the focus, the filters, the plates, the theme.
   useEffect(() => { requestPaint(); });
+  // The wiki card moving without the camera draws its leader line again in the same frame.
+  useLeaderFollow(wrapper, space, () => paintRef.current());
 
   /**
    * The hover spotlight: hovering or keyboard-focusing a labeled box brightens it, its lines and the
