@@ -6,6 +6,8 @@ import { aggregateRules } from './authoring/aggregate/rules.ts';
 import { commandRules } from './authoring/command/rules.ts';
 import { useCaseRules } from './authoring/use-case/rules.ts';
 import { domainRules } from './authoring/domain/rules.ts';
+import { readModelRules } from './authoring/read-model/rules.ts';
+import { tableRules } from './authoring/table/rules.ts';
 import type { AggregateRules } from './platform/data/rules.ts';
 
-export const AGGREGATE_RULES: readonly AggregateRules[] = [useCaseRules, domainRules, aggregateRules, commandRules, productRules, extensionRecordRules];
+export const AGGREGATE_RULES: readonly AggregateRules[] = [useCaseRules, domainRules, aggregateRules, commandRules, productRules, extensionRecordRules, readModelRules, tableRules];
