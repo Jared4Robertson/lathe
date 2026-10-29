@@ -1,4 +1,4 @@
-// The schema cache (LA-AUT-UC01-R10): a process attaches the migrated schema from a cache file instead of running the
+// The schema cache (LA-PAT-AGGREGATE-COMMANDS-R05): a process attaches the migrated schema from a cache file instead of running the
 // migrations, and the result is the same as a schema built afresh. A stale or corrupt file is never used: it is
 // replaced by a schema built afresh. Two processes that start at once with no cache both load, and leave whole files.
 import { execFile } from 'node:child_process';
