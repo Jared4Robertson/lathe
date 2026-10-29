@@ -36,7 +36,7 @@ INSERT INTO meta_supertype_member
   UNION ALL SELECT 'calls_source', kind FROM (VALUES ('command'), ('query'), ('read_model')) AS t (kind)
   UNION ALL SELECT 'follows_source', kind FROM (VALUES ('domain'), ('use_case')) AS t (kind)
   UNION ALL SELECT 'meets_source', kind FROM (VALUES ('repository'), ('data_model'), ('table'), ('value_type'), ('predicate'),
-    ('event_type'), ('projection'), ('command_handler'), ('query_handler'), ('event_handler'), ('service'), ('ui_component'),
+    ('event_type'), ('projection'), ('reader'), ('command_handler'), ('query_handler'), ('event_handler'), ('service'), ('ui_component'),
     ('endpoint_handler'), ('adapter'), ('entry_point'), ('tooling')) AS t (kind)
   UNION ALL SELECT 'test', kind FROM (VALUES ('constraint_test'), ('invariant_test'), ('specification_test'), ('policy_test'),
     ('domain_service_test'), ('use_case_test'), ('view_test'), ('endpoint_test'), ('flow_test'), ('integration_test'),

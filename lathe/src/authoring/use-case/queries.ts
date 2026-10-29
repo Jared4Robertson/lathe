@@ -1,24 +1,25 @@
-// The Use case aggregate's own reads, each answered from its read model (LA-AUT-RM11, read-model.ts): a use case whole
-// as its page reads it, the use cases of a capability, and the next free ID for a record of one of its kinds. Each reads
-// the current data and changes nothing.
+// The Use case aggregate's own reads, each answered from its read model (LA-AUT-RM11) through its reader (reader.ts),
+// which the query runner gives each handler: a use case whole as its page reads it, the use cases of a capability, and
+// the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the aggregate's
+// model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import type { ReadView } from '../../platform/data/rules.ts';
 import { USE_CASE_SLICE, type UseCaseKind } from './model.ts';
-import { stepsOf, useCasePageFrom, useCaseSummariesFrom, type UseCasePage, type UseCaseSummary } from './read-model.ts';
+import type { UseCasePage, UseCaseSummary } from './read-model.ts';
+import { useCaseReader, type UseCaseReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
 /** The use case that holds the record, as its page reads it: the use case itself, or one of its requirements, flows, steps or tests. */
-export function getUseCase(view: ReadView, input: { id: string }): UseCasePage {
-  const record = view.record(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
-  return useCasePageFrom(view, input.id) ?? refuse('kind', `${input.id} is ${record.kind === 'interface' ? 'an' : 'a'} ${record.kind}, not a use case or a record in one`);
+export function getUseCase(reader: UseCaseReader, input: { id: string }): UseCasePage {
+  const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
+  return reader.page(input.id) ?? refuse('kind', `${input.id} is ${kind === 'interface' ? 'an' : 'a'} ${kind}, not a use case or a record in one`);
 }
 
 /** GET a use case whole (LA-AUT-QRY100). */
-export const GET_USE_CASE: QueryDefinition<{ id: string }, UseCasePage> = {
+export const GET_USE_CASE: QueryDefinition<{ id: string }, UseCasePage, UseCaseReader> = {
   id: 'LA-AUT-QRY100',
   slice: USE_CASE_SLICE,
   name: 'get-use-case',
@@ -26,18 +27,18 @@ export const GET_USE_CASE: QueryDefinition<{ id: string }, UseCasePage> = {
   method: 'GET',
   route: '/api/use-case/get-use-case',
   input: { id: id('The use case, or a requirement, flow, step or test in it.', 'required') },
+  reader: useCaseReader,
   run: getUseCase,
   text: useCaseText,
 };
 
 /** The use cases of a capability, by ID. */
-export function listUseCases(view: ReadView, input: { capability_id: string }): UseCaseSummary[] {
-  if (view.record(input.capability_id)?.kind !== 'capability') refuse('missing', `there is no capability ${input.capability_id}`);
-  return useCaseSummariesFrom(view, input.capability_id);
+export function listUseCases(reader: UseCaseReader, input: { capability_id: string }): UseCaseSummary[] {
+  return reader.useCasesOf(input.capability_id) ?? refuse('missing', `there is no capability ${input.capability_id}`);
 }
 
 /** List the use cases of a capability (LA-AUT-QRY101). */
-export const LIST_USE_CASES: QueryDefinition<{ capability_id: string }, UseCaseSummary[]> = {
+export const LIST_USE_CASES: QueryDefinition<{ capability_id: string }, UseCaseSummary[], UseCaseReader> = {
   id: 'LA-AUT-QRY101',
   slice: USE_CASE_SLICE,
   name: 'list-use-cases',
@@ -45,22 +46,13 @@ export const LIST_USE_CASES: QueryDefinition<{ capability_id: string }, UseCaseS
   method: 'GET',
   route: '/api/use-case/list-use-cases',
   input: { capability_id: id('The capability.', 'required') },
+  reader: useCaseReader,
   run: listUseCases,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No use cases.'),
 };
 
 // One past the highest number in use after the prefix, padded to two digits.
-function onePast(view: ReadView, prefix: string): string {
-  const shape = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
-  let highest = 0;
-  for (const kind of Object.keys(view.schema.kinds)) {
-    for (const row of view.rows(kind)) {
-      const m = shape.exec(String(row.id));
-      if (m) highest = Math.max(highest, Number(m[1]));
-    }
-  }
-  return `${prefix}${String(highest + 1).padStart(2, '0')}`;
-}
+const onePast = (reader: UseCaseReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
 
 /** The kinds of the aggregate, each with the kind of record it sits under. */
 const UNDER: Record<UseCaseKind, string> = {
@@ -77,31 +69,30 @@ const UNDER: Record<UseCaseKind, string> = {
  * case's starts with its capability's domain; a flow's ends in the number of the first interface of its product it has
  * no flow through yet; a flow has one flow test, whose ID is the flow's and T.
  */
-export function nextUseCaseId(view: ReadView, input: { kind: string; parent: string }): string {
+export function nextUseCaseId(reader: UseCaseReader, input: { kind: string; parent: string }): string {
   if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Use case aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
   const kind = input.kind as UseCaseKind;
-  const parent = view.record(input.parent);
-  if (parent?.kind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parent ? `a ${parent.kind}` : 'no record'}`);
+  const parentKind = reader.kindOf(input.parent);
+  if (parentKind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `a ${parentKind}` : 'no record'}`);
   switch (kind) {
     case 'use_case':
-      return onePast(view, `${parent!.row.domain_id}-UC`);
+      return onePast(reader, `${reader.capability(input.parent)!.domain}-UC`);
     case 'uc_requirement':
-      return onePast(view, `${input.parent}-R`);
+      return onePast(reader, `${input.parent}-R`);
     case 'use_case_test':
-      return onePast(view, `${input.parent}-T`);
+      return onePast(reader, `${input.parent}-T`);
     case 'flow_step':
-      return onePast(view, `${input.parent}-S`);
+      return onePast(reader, `${input.parent}-S`);
     case 'flow_test': {
       const testId = `${input.parent}-T`;
-      if (view.record(testId)) refuse('exists', `${input.parent} already has its flow test, ${testId}`);
+      if (reader.kindOf(testId)) refuse('exists', `${input.parent} already has its flow test, ${testId}`);
       return testId;
     }
     case 'flow': {
-      const useCase = getUseCase(view, { id: input.parent });
-      const capability = view.record(useCase.useCase.capability_id)!;
-      const product = String(view.record(String(capability.row.domain_id))!.row.product_id);
+      const useCase = getUseCase(reader, { id: input.parent });
+      const product = reader.capability(useCase.useCase.capability_id)!.product;
       const through = new Set(useCase.flows.map((f) => f.flow.interface_id));
-      const free = view.rows('interface').filter((i) => i.product_id === product && !through.has(String(i.id))).map((i) => String(i.id)).sort()[0];
+      const free = reader.interfacesOf(product).filter((i) => !through.has(i))[0];
       if (!free) refuse('exists', `${input.parent} has a flow through every interface of ${product}; a flow's ID ends in its interface's number, so declare the interface first`);
       return `${input.parent}-FL${/-IF(\d+)$/.exec(free!)![1]}`;
     }
@@ -109,7 +100,7 @@ export function nextUseCaseId(view: ReadView, input: { kind: string; parent: str
 }
 
 /** Get the next ID for a record of the Use case aggregate (LA-AUT-QRY102). */
-export const NEXT_USE_CASE_ID: QueryDefinition<{ kind: string; parent: string }, string> = {
+export const NEXT_USE_CASE_ID: QueryDefinition<{ kind: string; parent: string }, string, UseCaseReader> = {
   id: 'LA-AUT-QRY102',
   slice: USE_CASE_SLICE,
   name: 'next-id',
@@ -120,6 +111,7 @@ export const NEXT_USE_CASE_ID: QueryDefinition<{ kind: string; parent: string },
     kind: id('The kind: use_case, uc_requirement, use_case_test, flow, flow_step or flow_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
   },
+  reader: useCaseReader,
   run: nextUseCaseId,
   text: (next) => next,
 };
@@ -136,7 +128,7 @@ function useCaseText(page: UseCasePage): string {
   }
   for (const f of page.flows) {
     lines.push(`Flow ${f.flow.id}: ${f.flow.title} (through ${f.flow.interface_id})`);
-    for (const s of stepsOf(f)) {
+    for (const s of f.paths.flatMap((p) => p.steps)) {
       const links = [...s.fulfills.map((x) => `fulfills ${x}`), ...(s.invokes ? [`invokes ${s.invokes}`] : []), ...(s.happensIn ? [`happens in ${s.happensIn}`] : []), ...s.exchangesWith.map((x) => `exchanges with ${x}`)];
       lines.push(`  ${s.step.path} ${s.step.position}. ${s.step.id}: ${s.step.title}${links.length ? ` [${links.join('; ')}]` : ''}`);
     }

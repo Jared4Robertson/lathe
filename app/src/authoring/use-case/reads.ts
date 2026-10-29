@@ -1,5 +1,5 @@
 import type { UseCaseKind } from '../../../../lathe/src/authoring/use-case/model';
-import type { UseCasePage } from '../../../../lathe/src/authoring/use-case/read-model';
+import type { FlowOnPage, StepOnPage, UseCasePage } from '../../../../lathe/src/authoring/use-case/read-model';
 import { useRead, type Read } from '../../record/read';
 
 // The Use case aggregate's reads as its page makes them, each answered from its read model (LA-AUT-RM11): a use case
@@ -11,3 +11,6 @@ export const useUseCase = (id: string, version: unknown): Read<UseCasePage> => u
 
 /** The next free ID for a record of the kind under its parent, as the editor suggests it. */
 export const useNextId = (kind: UseCaseKind, parent: string, version: unknown): Read<string> => useRead<string>('/api/use-case/next-id', { kind, parent }, version);
+
+/** Every step of a flow as the read model holds it, path by path. */
+export const stepsOf = (flow: FlowOnPage): StepOnPage[] => flow.paths.flatMap((p) => p.steps);
