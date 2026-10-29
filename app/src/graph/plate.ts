@@ -1,5 +1,5 @@
-import { kindLabel, type SpecIndex, type Stage as SchemaStage } from '../specs/data';
-import { groupKindLabel, stageOf } from './model';
+import { kindLabel, type SpecIndex } from '../specs/data';
+import { groupKindLabel, stageFor, type BoxStage } from './model';
 import type { MapNode } from './map';
 import type { NestedNode } from './nested';
 import type { VoronoiNode } from './voronoi';
@@ -18,8 +18,6 @@ import {
 
 /** How a box is drawn: a Tree box in its kind's shape, a Nested box, a Voronoi cell, or a Trace stage's box in its kind's shape. */
 export type PlateView = 'tree' | 'nested' | 'voronoi' | 'trace';
-/** Which colors a box takes: its stage's (a group's too, drawn as a folder), or the structural records'. */
-export type Stage = SchemaStage | 'structural';
 
 /** One line of a label, at its place in the map: its text as the map broke it (a space it ends with is not drawn), its left end and baseline, its font size, and its width in map units. */
 export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
@@ -38,7 +36,7 @@ export interface Plate {
   title: string;
   /** The line above the title: "Use case · LA-EXP-UC03", "Group · LA-EXP". */
   meta: string;
-  stage: Stage;
+  stage: BoxStage;
   group: boolean;
   shape: Shape;
   view: PlateView;
@@ -65,20 +63,6 @@ export interface Plate {
   errors: number;
   warnings: number;
   gaps: string[];
-}
-
-/**
- * A node's colors: its kind's stage; for a group, the stage it is (a stage group) or its kind's stage (a folder or a
- * record's kind group); the structural colors for what has no stage.
- */
-function stageFor(index: SpecIndex, id: string, kind: string): Stage {
-  const group = index.byId.has(id) ? undefined : treeGroup(index, id);
-  if (group?.role === 'stage') {
-    const named = index.workspace.stages.find((s) => s.stage === id.split('/')[1]);
-    return named ? named.stage : 'structural';
-  }
-  const stage = stageOf(index, group ? group.kind ?? '' : kind);
-  return stage === '' || stage === 'group' ? 'structural' : stage;
 }
 
 /** The size of an icon before the kind and ID line, at text scale 1: a shape's 14 by 10, a mark's 10 by 10, and the gap after each. */
@@ -156,7 +140,7 @@ function badgesAt(marks: { errors: number; warnings: number; gaps: string[] }, r
  * What a Trace stage box is when it is no record (a file, a gap, the Untraced lane's head): its kind, its words and its
  * colors' role. It is drawn as a plain box, dashed when it is a gap.
  */
-export interface PlainBox { kind: string; kindLabel: string; title: string; meta: string; stage: Stage; dashed: boolean }
+export interface PlainBox { kind: string; kindLabel: string; title: string; meta: string; stage: BoxStage; dashed: boolean }
 
 /** Where a box's map node, a Nested one or a Voronoi one, or a Trace stage's box comes from. */
 export type PlateSource =
