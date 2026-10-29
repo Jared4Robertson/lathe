@@ -26,6 +26,11 @@
 // And a command sits under the entity it changes, not its aggregate: each command moves to its aggregate's root entity
 // (entity_id in place of aggregate_id). Which commands change a child entity only the Owner knows: moving those under
 // their entity is the to-do.
+//
+// And an entry point and a tooling record are Lathe's own kinds, under their domain: a product that declared either as
+// its own kind loses the declaration (its product_kind and product_kind_field rows), and its records keep their ID,
+// title, domain and file, and an entry point its description. A field Lathe's kind has no column for goes, as a to-do;
+// an entry point without a description gets a stand-in that starts "To write:".
 import { ALLOWED_LEVELS } from '../src/coverage.ts';
 import type { Converter, RawData, UpgradeNotes } from '../src/upgrade.ts';
 
@@ -262,8 +267,41 @@ export function commandEntities(data: RawData, notes: UpgradeNotes): void {
   notes.todo('A command that changes a child entity (a flow step, a loan\'s return) moves under that entity: lathe move <command> --parent <entity>.');
 }
 
+/** The columns of Lathe's own entry point and tooling kinds, which a product declared as its own before schema 2. */
+const BUILT_IN_KINDS: Readonly<Record<string, readonly string[]>> = {
+  entry_point: ['id', 'title', 'domain_id', 'file', 'description'],
+  tooling: ['id', 'title', 'domain_id', 'file'],
+};
+
+/** Drops a product's own declarations of entry_point and tooling, and fits their records to Lathe's kinds. */
+export function builtInKinds(data: RawData, notes: UpgradeNotes): void {
+  const declared = data.read('product_kind').filter((k) => String(k.name) in BUILT_IN_KINDS);
+  if (!declared.length) return;
+  const names = new Set(declared.map((k) => String(k.name)));
+  data.write('product_kind', data.read('product_kind').filter((k) => !names.has(String(k.name))));
+  data.write('product_kind_field', data.read('product_kind_field').filter((f) => !names.has(String(f.kind))));
+  for (const kind of [...names].sort()) {
+    const columns = BUILT_IN_KINDS[kind];
+    const dropped = new Set<string>();
+    const written: string[] = [];
+    data.write(kind, data.read(kind).map((row): Raw => {
+      for (const column of Object.keys(row)) if (!columns.includes(column)) dropped.add(column);
+      const out = Object.fromEntries(columns.filter((c) => !blank(row[c])).map((c) => [c, row[c]]));
+      if (kind === 'entry_point' && blank(out.description)) {
+        out.description = 'To write: what it does at start-up.';
+        written.push(String(row.id));
+      }
+      return out;
+    }));
+    if (dropped.size) notes.todo(`${kind} records lost the fields Lathe's ${kind} has no column for (${[...dropped].sort().join(', ')}): write what they said into the record's ${kind === 'entry_point' ? 'description' : 'title or file'}, or into the code.`);
+    if (written.length) notes.todo(`Write each entry point's description, what it does at start-up, from its file (${written.join(', ')}).`);
+  }
+  notes.changed(`Entry points and tooling records are Lathe's own kinds now: the product's declarations of ${[...names].sort().join(' and ')} are gone.`);
+}
+
 const converter: Converter = {
   files(data, notes) {
+    builtInKinds(data, notes);
     testLevels(data, notes);
     domainRepositories(data, notes);
     flowInterfaces(data, notes);
