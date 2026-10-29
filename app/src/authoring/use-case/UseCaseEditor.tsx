@@ -165,7 +165,7 @@ function Fields({ index, specs, draft, setDraft, first }: {
   return (
     <>
       {specs.map((spec, at) => {
-        const id = `${formId}-${spec.field}`;
+        const id = `${formId}-field-${spec.field}`;
         const ref = at === 0 ? first : undefined;
         if ('column' in spec) {
           const column = columnOf(index, spec.table, spec.column);

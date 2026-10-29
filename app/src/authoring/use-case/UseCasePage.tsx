@@ -15,7 +15,7 @@ import { FlowSteps } from './FlowSteps';
 import { UseCaseEditor } from './UseCaseEditor';
 import { useUseCase } from './reads';
 
-// The Use case page (LA-AUT-A11's page): any record of a use case, drawn from the use case read whole
+// The Use case page (LA-AUT-A11's page): any record of a use case, at its address (/<id>), drawn from the use case read whole
 // (GET /api/use-case/get-use-case) and changed only through its own commands (UseCaseEditor). A use case shows its
 // goal, actors and notes, its flows by interface and its UC requirements with their tests; a UC requirement its
 // statement, its tests and the steps that fulfill it; a flow the interface it goes through and its steps, path by path

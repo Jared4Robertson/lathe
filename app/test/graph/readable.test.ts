@@ -146,7 +146,12 @@ describe('every drawn box shows its name', () => {
           const own = layout.name === 'Tree' ? frameFocus(map as GraphMap, n, 1, 770, 640) : v;
           (sizes.get(n.level) ?? sizes.set(n.level, []).get(n.level)!).push(n.text * own.zoom * TITLE_FONT);
         }
-        const median = (xs: number[]) => [...xs].sort((a, b) => a - b)[Math.floor(xs.length / 2)];
+        // The middle size, or the mean of the two middle ones when there is an even number (not the larger of them).
+        const median = (xs: number[]) => {
+          const sorted = [...xs].sort((a, b) => a - b);
+          const mid = Math.floor(sorted.length / 2);
+          return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+        };
         const medians = [...sizes.values()].map(median);
         // Nested: exactly the same at every depth; Tree (whose columns narrow with how many children share them) within a
         // tenth or so.

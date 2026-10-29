@@ -55,9 +55,9 @@ describe('one level deep', () => {
     expect(row(section(/^Aggregates/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
     expect(row(stageOf('use-cases'), 'DM-SHOP-CAP01').querySelector('ul.nested')).not.toBeNull();
   };
-  it('LA-V92-R21-T01 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
-  it('LA-V92-R02-T01 Folded rows keep counts and marks and open by button, Expand all or arrow keys', proveLaV92R21T01);
-  it('LA-V92-R03-T01 Folded rows open by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
+  it('LA-PAT-RECORD-PAGE-R16-T01 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
+  it('LA-PAT-RECORD-PAGE-R02-T01 Folded rows keep counts and marks and open by button, Expand all or arrow keys', proveLaV92R21T01);
+  it('LA-PAT-RECORD-PAGE-R03-T01 Folded rows open by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
 
   const proveLaV92R21T02 = async () => {
     await openApp('/DM-SHOP');
@@ -81,6 +81,6 @@ describe('one level deep', () => {
     expect(within(domains).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toBeInTheDocument();
     expect(within(main()).queryByRole('link', { name: /^DM-SHOP-UC01(?!-)/ })).toBeNull();
   };
-  it('LA-V92-R21-T02 A product page lists its domains but none of their records', proveLaV92R21T02);
-  it('LA-V92-R02-T02 A record page\'s wiki lists its children one level deep', proveLaV92R21T02);
+  it('LA-PAT-RECORD-PAGE-R16-T01 A product page lists its domains but none of their records', proveLaV92R21T02);
+  it('LA-PAT-RECORD-PAGE-R02-T01 A record page\'s wiki lists its children one level deep', proveLaV92R21T02);
 });
