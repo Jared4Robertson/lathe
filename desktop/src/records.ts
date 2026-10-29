@@ -1,6 +1,6 @@
 // The desktop-only record actions (LA-AUT-UC15-R01): reveal a record's data file in Finder, open it in
 // the editor, copy its ID, or a native menu of the three. The page names only a record ID; the main
-// process checks the request (LA-PLT-UC15-R16) and finds the file itself, among the folder's data files,
+// process checks the request (LA-PAT-SHELL-ACTIONS-R01) and finds the file itself, among the folder's data files,
 // so a page can never name a file of its own.
 import type { MenuItemConstructorOptions } from 'electron';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
