@@ -17,7 +17,7 @@ const served = () => {
 };
 
 describe('flows by interface', () => {
-  it('LA-V92-R77-T01 A use case lists its flows by interface, and a flow names its interface', async () => {
+  it('LA-V101-R11-T01 A use case lists its flows by interface, and a flow names its interface', async () => {
     await openApp(`${addressOf('DM-SHOP-UC01')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const rows = within(within(section(/^Flows by interface/)).getByRole('list', { name: 'Flows of DM-SHOP-UC01' })).getAllByRole('listitem');

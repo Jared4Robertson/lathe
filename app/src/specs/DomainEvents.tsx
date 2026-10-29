@@ -7,7 +7,7 @@ import { ProblemBadge, RecordLink, Section, listTitle, recordText } from './part
 // An aggregate's domain events on its wiki page (LA-V92-R60): one list titled by its kind,
 // "Domain events" (LA-V92-R09), each row a whole-row link to the event (LA-PAT-APP-UX-R05) that
 // says which commands raise it and how many policies hear it, in the relations' own words from the
-// schema (LA-V92-R07), and whether it is published. The event's page shows its Fields table in
+// schema (LA-PAT-RECORD-PAGE-R07), and whether it is published. The event's page shows its Fields table in
 // its body, and its Traceability says "Raised by" and "Heard by".
 
 function EventRow({ index, event }: { index: SpecIndex; event: SpecRecord }) {

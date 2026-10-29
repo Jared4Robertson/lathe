@@ -13,7 +13,7 @@ import { indexOf } from './fixtures/load';
 // A record's Traceability section (LA-TRC-UC14), on the new model's tree: an obligation is designed,
 // built and proved by what its chain holds, as the engine works it out (Workspace.chains), each build
 // record marked built when it names a file that exists; gap callouts agree with coverage; a use case shows its UC requirements in a table;
-// a test shows what it proves and how it is run; other links are titled by their labels (LA-V92-R07).
+// a test shows what it proves and how it is run; other links are titled by their labels (LA-PAT-RECORD-PAGE-R07).
 
 afterEach(() => cleanup());
 
@@ -109,7 +109,7 @@ describe('traceability', () => {
     }
   });
 
-  it('LA-V92-R58-T01 A use case shows a UC requirement table (Designed, Built, Proved) under its groups, then its links', () => {
+  it('LA-V101-R10-T01 A use case shows a UC requirement table (Designed, Built, Proved) under its groups, then its links', () => {
     const trace = show(indexOf(patternWorkspace()), 'DM-SHOP-UC01');
     const table = within(trace).getByRole('table');
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['UC requirement', 'Designed', 'Built', 'Proved']);
@@ -149,7 +149,7 @@ describe('traceability', () => {
     expect(traceOf(model, model.byId.get('P-D-UC01-FL01-T')!).runBy).toMatchObject({ level: 'browser', state: 'manual', file: null });
   });
 
-  it('LA-V92-R07-T01 No page shows a relation code as a heading or label: wiki, record facts, graph and ERD view read the labels', async () => {
+  it('LA-PAT-RECORD-PAGE-R07-T01 No page shows a relation code as a heading or label: wiki, record facts, graph and ERD view read the labels', async () => {
     const w = modelWorkspace();
     const index = indexOf(w);
     const codes = new Set(Object.keys(w.schema.relations));
@@ -175,7 +175,7 @@ describe('traceability', () => {
     expect(linkLabel(index, { source: 'P-D-CMD01', relation: 'checks', target: 'P-D-SP01' }, 'target')).toBe('Checked by');
   }, 120_000);
 
-  it('LA-V92-R07-T01 A record\'s links out show under their forward label and its links in under their reverse label; what its chain holds is not repeated beside it', () => {
+  it('LA-PAT-RECORD-PAGE-R07-T01 A record\'s links out show under their forward label and its links in under their reverse label; what its chain holds is not repeated beside it', () => {
     const index = indexOf(modelWorkspace());
     // A policy: its command, what proves it, then the event it hears.
     let trace = show(index, 'P-D-PO02');

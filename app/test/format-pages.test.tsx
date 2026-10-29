@@ -159,7 +159,7 @@ describe('format reference pages', () => {
     await screen.findByRole('heading', { level: 1, name: /^Flows/ });
     expect(within(card()).getByRole('link', { name: 'Flow' })).toHaveAttribute('href', over('format/kinds/flow', '/DM-SHOP/interaction-design/flow'));
   };
-  it('LA-V92-R71-T01 The wiki card\'s kind, each problem code and each column label link to their format pages', proveLaV92R71T01);
+  it('LA-PAT-RECORD-PAGE-R18-T01 The wiki card\'s kind, each problem code and each column label link to their format pages', proveLaV92R71T01);
   it('LA-V41-R02-T01 Each problem code links to its check\'s page', proveLaV92R71T01);
 
   it('LA-V65-R71-T01 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {

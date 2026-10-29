@@ -28,7 +28,7 @@ describe('form generation from the schema', () => {
   const index = indexOf(workspace());
   const { schema } = index.workspace;
 
-  it('LA-EXP-DS12-T02 gives every column but the ID and the parent columns an input, in the table\'s order', () => {
+  it('LA-V92-R30-T02 gives every column but the ID and the parent columns an input, in the table\'s order', () => {
     expect(formFields(schema, 'uc_requirement').map((f) => [f.name, f.input, f.required])).toEqual([
       ['title', 'line', true],
       ['statement', 'text', true],
@@ -60,7 +60,7 @@ describe('form generation from the schema', () => {
     expect(fieldValue(fields.title, '  Spaced  ')).toBe('Spaced');
   });
 
-  it('LA-EXP-DS12-T02 lists the part tables a kind owns, without the owner or the position the form keeps, their references as record choices', () => {
+  it('LA-V92-R30-T02 lists the part tables a kind owns, without the owner or the position the form keeps, their references as record choices', () => {
     expect(partForms(schema, 'use_case').map((p) => p.table)).toEqual(['setting_value', 'use_case_actor']);
     const fields = partForms(schema, 'entity').find((p) => p.table === 'entity_field')!;
     expect(fields.position).toBe('position');
@@ -75,14 +75,14 @@ describe('form generation from the schema', () => {
     expect(partForms(schema, 'command').map((p) => [p.table, p.fields.map((f) => f.name)])).toEqual([['command_change', ['aggregate_id', 'reason']]]);
   });
 
-  it('LA-EXP-DS12-T03 offers a field naming a record the records of its kind in the same product', () => {
+  it('LA-V92-R30-T03 offers a field naming a record the records of its kind in the same product', () => {
     const model = indexOf(modelWorkspace());
     const field = partForms(model.workspace.schema, 'entity').find((p) => p.table === 'entity_field')!.fields.find((f) => f.name === 'type_aggregate_id')!;
     expect(recordChoices(model, field, 'P').map((r) => r.id)).toEqual(['P-D-A1', 'P-D-A2', 'P-D-A3', 'P-D-A4', 'P-E-A1']);
     expect(recordChoices(index, field, 'NF').map((r) => r.id)).toEqual(['NF-NOTE-A1']);
   });
 
-  it('LA-EXP-DS12-T03 offers as parents only records of the allowed parent kinds in the same product, and never the record\'s own subtree', () => {
+  it('LA-V92-R30-T03 offers as parents only records of the allowed parent kinds in the same product, and never the record\'s own subtree', () => {
     const groups = parentChoices(index, 'use_case', 'DM');
     expect(groups.map((g) => g.kind)).toEqual(['capability']);
     expect(groups[0].records.map((r) => r.id)).toEqual(['DM-PAY-CAP01', 'DM-SHOP-CAP01']);
