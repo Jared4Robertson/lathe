@@ -61,7 +61,7 @@ Stop it with Ctrl-C.
 DB=library.db npm run outcomes -- 2026-03   # one month, counted in TIME_ZONE
 ```
 
-The report (`TL-LEND-RP01`) prints, as JSON, each business outcome's measure for the month from the library's own records: loans opened per tool in the catalog (`TL-BO01`), the share of loans due that month returned late or still out and overdue (`TL-BO02`), loans opened on a tool that needed repair, from the damage and repair events the outbox keeps (`TL-BO03`), and the members who opened a loan in the 90 days to the month's end (`TL-BO04`). Each outcome links to it with `measured_by`.
+The report (`TL-LEND-RP01`) prints, as JSON, each business outcome's measure for the month from the library's own records: loans opened per tool in the catalog (`TL-BO01`), the share of loans due that month returned late or still out and overdue (`TL-BO02`), the repairs made that month and the median days from each tool's damage report to its repair, from the damage and repair events the outbox keeps (`TL-BO05`), and the members who opened a loan in the 90 days to the month's end (`TL-BO04`). Each outcome links to it with `measured_by`.
 
 ## API
 

@@ -109,7 +109,7 @@ describe("Authoring's invariants", () => {
 });
 
 describe("Authoring's specifications", () => {
-  it('LA-AUT-SP05-T A missing, unknown or disallowed parent is refused, as is a second parent or a parent column on a kind with no owner', async () => {
+  it('LA-PLT-UC01-R08-T03 A missing, unknown or disallowed parent is refused, as is a second parent or a parent column on a kind with no owner', async () => {
     // Missing: the parent column is required.
     expect(await refusals(changingRow('aggregate', 1, { domain_id: undefined }))).toEqual(one('required', { table: 'aggregate', file: 'data/aggregate.jsonl', line: 2, message: 'aggregate.domain_id is required' }));
     // Unknown, or a record of a kind the aggregate may not sit under: the foreign key names no domain.
