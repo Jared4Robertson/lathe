@@ -235,6 +235,27 @@ describe('the Trace stage', () => {
     expect(window.location.search).toBe('?stage=trace');
   });
 
+  it('LA-V98-R11-T01 Wheel and drag move the trace\'s camera, and . frames the trace again with a glide, as on the graph', async () => {
+    await openApp('/P-D-UC01?stage=trace', served());
+    const host = await canvasHost();
+    const framed = (await drawn()).camera;
+    const canvas = host.querySelector('canvas')!;
+    fireEvent.wheel(canvas, { deltaY: -200, clientX: 200, clientY: 200 });
+    await waitFor(async () => expect((await drawn()).camera.zoom).toBeGreaterThan(framed.zoom));
+    fireEvent.pointerDown(canvas, { clientX: 300, clientY: 300, pointerType: 'mouse', pointerId: 1, button: 0 });
+    fireEvent.pointerMove(canvas, { clientX: 340, clientY: 320, pointerType: 'mouse', pointerId: 1 });
+    fireEvent.pointerUp(canvas, { clientX: 340, clientY: 320, pointerType: 'mouse', pointerId: 1 });
+    expect((await drawn()).camera).not.toEqual(framed);
+    expect(screen.getByRole('button', { name: 'Frame the trace' })).toHaveAttribute('aria-keyshortcuts', '.');
+    fireEvent.keyDown(document.body, { key: '.', code: 'Period' });
+    await waitFor(async () => {
+      const now = (await drawn()).camera;
+      expect(now.x).toBeCloseTo(framed.x, 0);
+      expect(now.y).toBeCloseTo(framed.y, 0);
+      expect(now.zoom).toBeCloseTo(framed.zoom, 4);
+    });
+  });
+
   it('LA-V98-R09-T01 A record two lanes hold is drawn in both, marked In 2 lanes, and hovering one lights both', async () => {
     const data = modelWorkspace();
     addRows(data, 'happens_in', { source_id: 'P-D-UC01-FL01-S03', target_id: 'P-V01' });

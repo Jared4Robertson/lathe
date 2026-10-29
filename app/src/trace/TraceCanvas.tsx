@@ -1,19 +1,21 @@
 // The Trace stage drawn on the canvas (LA-V98): the graph's renderer (paint.ts, plate.ts), camera
 // (camera.ts) and pointer, over the picture lanes.ts lays out.
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type PointerEvent as ReactPointerEvent } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import type { SpecIndex } from '../specs/data';
 import { Icon } from '../components/icons';
 import { Button } from '../components/Button';
-import { glideDuration, MAX_ZOOM, viewRect, zoomPath, type Viewport } from '../graph/camera';
+import { MAX_ZOOM, viewRect, type Viewport } from '../graph/camera';
 import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
 import { hitPlate } from '../graph/hit';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from '../graph/look';
-import { readMotion } from '../graph/motion';
 import { GAP_KIND, paint, type Bar, type Camera, type Line, type PaintState } from '../graph/paint';
 import { plateName, plateOf, plateTip, type Plate } from '../graph/plate';
 import { nodeShape, SHAPES } from '../graph/shapes';
 import { BORDER, labelLines, LABEL_PAD, LABEL_PAD_BLOCK, LINE_HEIGHT, META_FONT, setTextMeasure, TITLE_FONT, hasMarks, metaWidth, titleWidth, wrapLabel, wrapText, type TextMeasure, type WrappedLabel } from '../graph/text';
 import { TapCard, useTapToOpen } from '../graph/touch';
+import { useCameraGestures } from '../graph/gestures';
+import { useCommand } from '../shell/commands';
+import { Tooltip } from '../shell/Tooltip';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { allBoxes, BOX_H, BOX_W, LANE_COLUMN_LABELS, visibleIn, type TraceBox, type TraceLine, type TracePicture } from './lanes';
 
@@ -39,7 +41,6 @@ const READ_ZOOM = 0.8;
 /** The space kept around the framed picture, in screen pixels. */
 const PAD = 24;
 const ZOOM_STEP = 1.2;
-const DRAG_PX = 3;
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 const MIN_FRAME = 120;
 
@@ -147,24 +148,18 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
   }, []);
   useEffect(() => () => { if (frameRequest.current !== null) cancelAnimationFrame(frameRequest.current); frameRequest.current = null; }, []);
   const setViewport = useCallback((v: Viewport) => { view.current = v; requestPaint(); store.notify(); }, [requestPaint, store]);
-  const glide = useRef<number | null>(null);
-  const stopGlide = () => { if (glide.current !== null) { cancelAnimationFrame(glide.current); glide.current = null; } };
-  useEffect(() => stopGlide, []);
-  const moveTo = useCallback((target: Viewport, animate: boolean) => {
-    stopGlide();
-    const from = view.current;
-    const motion = readMotion();
-    if (!size || !animate || motion.duration === 0) { setViewport(target); return; }
-    const path = zoomPath(from, target, size.w, size.h);
-    const duration = glideDuration(motion.duration, path.S);
-    const start = performance.now();
-    const step = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      setViewport(path.at(motion.ease(t)));
-      glide.current = t < 1 ? requestAnimationFrame(step) : null;
-    };
-    glide.current = requestAnimationFrame(step);
-  }, [size, setViewport]);
+  const getViewport = useCallback(() => view.current, []);
+  // The camera's glide, zoom and pointer, as the graph's (graph/gestures.ts).
+  const gestures = useCameraGestures({
+    canvas,
+    size,
+    getViewport,
+    setViewport,
+    zoom: { min: MIN_ZOOM, max: MAX_ZOOM },
+    onHover: (x, y) => setHover(hitAt(x, y)),
+    onTap: (x, y, e) => { const hit = hitAt(x, y); if (hit?.box.opens) tapToOpen.onNodeClick(e, hit.box.opens); else tapToOpen.clear(); },
+  });
+  const { moveTo } = gestures;
 
   // The frame: the open space less the stage's tools (openSpace.ts).
   const open = useOpenSpace(space);
@@ -216,6 +211,8 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
     framed.current = size;
   }, [framing]);
   const frameAll = useCallback(() => { const t = framing(); if (t) moveTo(t, true); }, [framing, moveTo]);
+  // `.` frames the trace again, as it frames the graph's focus: one command, whichever stage is drawn.
+  useCommand('graphFit', frameAll, !!size);
 
   // The pane's size, observed once for the canvas's life; the backing store at the screen's pixel ratio.
   useLayoutEffect(() => {
@@ -360,11 +357,7 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
     moveTo({ x: frame.x + frame.w / 2 - (box.x + box.w / 2) * zoom, y: frame.y + frame.h / 2 - (box.y + Math.min(box.h, BOX_H) / 2) * zoom, zoom }, true);
   }, [ringAt?.id, ringAt?.lane]);
 
-  // ---- The pointer: hover, click, drag, wheel and pinch ----
-  const local = (e: { clientX: number; clientY: number }) => {
-    const r = canvas.current!.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
-  };
+  // ---- The pointer: hover and click (drag, wheel and pinch are graph/gestures.ts's) ----
   const hitAt = useCallback((x: number, y: number): { box: TraceBox; plate: Plate } | null => {
     const v = view.current;
     const s = sizeRef.current;
@@ -386,84 +379,11 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
     spot(id);
     requestPaint();
   };
-  const zoomAt = useCallback((sx: number, sy: number, factor: number) => {
-    const v = view.current;
-    const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v.zoom * factor));
-    const k = zoom / v.zoom;
-    setViewport({ x: sx - (sx - v.x) * k, y: sy - (sy - v.y) * k, zoom });
-  }, [setViewport]);
   const zoomButton = (factor: number) => () => {
     if (!size) return;
     const box = frameBox(size);
-    const v = view.current;
-    const zoom = Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, v.zoom * factor));
-    const k = zoom / v.zoom;
-    const cx = box.x + box.w / 2;
-    const cy = box.y + box.h / 2;
-    moveTo({ x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k, zoom }, true);
+    gestures.zoomBy(box.x + box.w / 2, box.y + box.h / 2, factor);
   };
-  const pointers = useRef(new Map<number, { x: number; y: number }>());
-  const press = useRef<{ x: number; y: number; moved: boolean } | null>(null);
-  const pinch = useRef<{ dist: number; mid: { x: number; y: number } } | null>(null);
-  const twoPointers = () => {
-    const [a, b] = [...pointers.current.values()];
-    return { dist: Math.hypot(a.x - b.x, a.y - b.y), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
-  };
-  const onPointerDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    canvas.current?.setPointerCapture?.(e.pointerId);
-    const at = local(e);
-    pointers.current.set(e.pointerId, at);
-    if (pointers.current.size === 1) press.current = { ...at, moved: false };
-    else if (pointers.current.size === 2) { pinch.current = twoPointers(); if (press.current) press.current.moved = true; stopGlide(); }
-  };
-  const onPointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    const at = local(e);
-    const before = pointers.current.get(e.pointerId);
-    if (!before) {
-      if (e.pointerType !== 'touch' && e.pointerType !== 'pen') setHover(hitAt(at.x, at.y));
-      return;
-    }
-    pointers.current.set(e.pointerId, at);
-    if (pointers.current.size >= 2 && pinch.current) {
-      const now = twoPointers();
-      const v = view.current;
-      setViewport({ ...v, x: v.x + now.mid.x - pinch.current.mid.x, y: v.y + now.mid.y - pinch.current.mid.y });
-      zoomAt(now.mid.x, now.mid.y, now.dist / Math.max(1, pinch.current.dist));
-      pinch.current = now;
-      return;
-    }
-    const p = press.current;
-    if (!p) return;
-    if (!p.moved && Math.hypot(at.x - p.x, at.y - p.y) < DRAG_PX) return;
-    if (!p.moved) { p.moved = true; stopGlide(); }
-    const v = view.current;
-    setViewport({ ...v, x: v.x + at.x - before.x, y: v.y + at.y - before.y });
-  };
-  const onPointerUp = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (!pointers.current.has(e.pointerId)) return;
-    pointers.current.delete(e.pointerId);
-    if (pointers.current.size < 2) pinch.current = null;
-    const p = press.current;
-    if (pointers.current.size > 0) return;
-    press.current = null;
-    if (!p || p.moved || e.type === 'pointercancel') return;
-    const hit = hitAt(p.x, p.y);
-    if (hit?.box.opens) tapToOpen.onNodeClick(e.nativeEvent, hit.box.opens); else tapToOpen.clear();
-  };
-  useEffect(() => {
-    const c = canvas.current;
-    if (!c) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      stopGlide();
-      const at = local(e);
-      const delta = -e.deltaY * (e.deltaMode === 1 ? 0.05 : e.deltaMode ? 1 : 0.002) * (e.ctrlKey ? 10 : 1);
-      zoomAt(at.x, at.y, 2 ** delta);
-    };
-    c.addEventListener('wheel', onWheel, { passive: false });
-    return () => c.removeEventListener('wheel', onWheel);
-  }, [zoomAt]);
 
   // The column names over the frame's top edge, following the camera across.
   const columnsKey = useSyncExternalStore(store.subscribe, () => `${view.current.x.toFixed(1)} ${view.current.zoom.toFixed(4)}`);
@@ -510,11 +430,8 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
         ref={canvas}
         className="graph-canvas-draw"
         aria-hidden="true"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onPointerLeave={(e) => { if (!pointers.current.has(e.pointerId)) setHover(null); }}
+        {...gestures.handlers}
+        onPointerLeave={(e) => { if (!gestures.pressed(e.pointerId)) setHover(null); }}
       />
       {cz * BOX_H >= BAR_BELOW_PX && (
         <ol className="trace-column-names" aria-hidden="true" style={{ top: headTop }}>
@@ -526,7 +443,9 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
       <div className="graph-controls" role="group" aria-label="Camera">
         <Button variant="icon" className="graph-zoom-in" label="Zoom in" title="Zoom in" onClick={zoomButton(ZOOM_STEP)}><Icon name="plus" size={14} /></Button>
         <Button variant="icon" className="graph-zoom-out" label="Zoom out" title="Zoom out" onClick={zoomButton(1 / ZOOM_STEP)}><Icon name="minus" size={14} /></Button>
-        <Button variant="icon" className="graph-frame-focus" label="Frame the trace" title="Frame the trace" onClick={frameAll}><Icon name="maximize" size={14} /></Button>
+        <Tooltip label="Frame the trace" command="graphFit">
+          <Button variant="icon" className="graph-frame-focus" label="Frame the trace" onClick={frameAll}><Icon name="maximize" size={14} /></Button>
+        </Tooltip>
       </div>
       {armedPlate && <TapCard kind={armedPlate.kindLabel} name={armedPlate.title} onOpen={tapToOpen.openArmed} onDismiss={tapToOpen.clear} />}
     </div>
