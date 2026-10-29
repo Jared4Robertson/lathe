@@ -10,6 +10,7 @@ import { ERD_EMPTY, erdEmpty, erdFor, LINE_WORDS, lineGeometry, lineOffsets, REL
 import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
+import { ErdLeader } from './leader';
 import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
 import { useStepWalk } from '../graph/steps';
 
@@ -398,6 +399,7 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek, space }: { relat
         <Controls showInteractive={false} />
       </ReactFlow>
       <EdgeHints centers={centers} wrapper={wrapper} />
+      <ErdLeader host={wrapper} rects={placed?.rects ?? null} focus={focus} space={space} />
       {armedBox && (
         <TapCard
           kind={BOX_KIND[armedBox.kind]}

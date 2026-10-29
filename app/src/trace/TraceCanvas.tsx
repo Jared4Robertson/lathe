@@ -8,7 +8,7 @@ import { MAX_ZOOM, viewRect, type Viewport } from '../graph/camera';
 import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
 import { hitPlate } from '../graph/hit';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from '../graph/look';
-import { GAP_KIND, paint, type Bar, type Camera, type Line, type PaintState } from '../graph/paint';
+import { boxColors, GAP_KIND, paint, type Bar, type Camera, type Line, type PaintState } from '../graph/paint';
 import { plateName, plateOf, plateTip, type Plate } from '../graph/plate';
 import { nodeShape, SHAPES } from '../graph/shapes';
 import { BORDER, labelLines, LABEL_PAD, LABEL_PAD_BLOCK, LINE_HEIGHT, META_FONT, setTextMeasure, TITLE_FONT, hasMarks, metaWidth, titleWidth, wrapLabel, wrapText, type TextMeasure, type WrappedLabel } from '../graph/text';
@@ -17,6 +17,7 @@ import { useCameraGestures } from '../graph/gestures';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
+import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { allBoxes, BOX_H, BOX_W, LANE_COLUMN_LABELS, visibleIn, type TraceBox, type TraceLine, type TracePicture } from './lanes';
 
 // Every frame draws what the camera shows of the picture: the boxes in view, each in its kind's
@@ -286,6 +287,11 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
   const lastFrame = useRef<ReturnType<typeof frameAt> | null>(null);
   lastFrame.current = null;
   const full = () => 1;
+  /** The focus's box the leader line starts on: the chain's obligation, or the focus's first copy in the lanes. */
+  const focusBox = useMemo(() => {
+    const boxes = picture.lanes.flatMap((l) => l.boxes);
+    return (picture.shape === 'chain' ? boxes.find((b) => b.column === 'obligation') : boxes.find((b) => b.id === focus)) ?? null;
+  }, [picture, focus]);
 
   paintRef.current = () => {
     const s = sizeRef.current;
@@ -300,10 +306,18 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
     const v = view.current;
     const cam: Camera = { cx: (s.w / 2 - v.x) / v.zoom, cy: (s.h / 2 - v.y) / v.zoom, zoom: v.zoom, w: s.w, h: s.h };
     paint(ctx.current, dpr, cam, frame, look.current, fonts, state);
+    // The leader line to the wiki card (LA-V96-R24), under this camera, in the focus's outline color.
+    const b = focusBox;
+    if (wrapper.current) drawLeaderLine(ctx.current, {
+      host: wrapper.current, space, dpr, color: b ? boxColors(look.current, plateFor(b)).edge : look.current.ink,
+      box: b ? { left: b.x * v.zoom + v.x, top: b.y * v.zoom + v.y, right: (b.x + b.w) * v.zoom + v.x, bottom: (b.y + b.h) * v.zoom + v.y } : null,
+    });
     if (!spot.done) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
   };
   useEffect(() => { requestPaint(); });
+  // The wiki card moving without the camera draws its leader line again in the same frame.
+  useLeaderFollow(wrapper, space, () => paintRef.current());
 
   /** Each record's arrows, every copy's, worked out once per picture for the spotlight. */
   const linesOf = useMemo(() => {
