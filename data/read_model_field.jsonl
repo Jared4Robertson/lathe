@@ -24,6 +24,16 @@
 {"read_model_id":"LA-AUT-RM24","position":3,"name":"Terms","meaning":"Its glossary: each term and what it means.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM24","position":4,"name":"Domain services","meaning":"Its domain services, each with its service (the standard rules it meets and packages it uses) and its tests.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM24","position":5,"name":"Repositories","meaning":"Its repositories, each with the aggregate it persists, the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM26","position":1,"name":"Aggregate","meaning":"The aggregate's row: its ID, title, domain, description, identity and notes.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM26","position":2,"name":"Entities","meaning":"Its entities, each with its fields in order, the entities it holds by has_one and has_many, and its data model with the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM26","position":3,"name":"Invariants","meaning":"Its invariants, each with its test and the test data sets the test starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM27","position":1,"name":"Domain event","meaning":"The event's row: its ID, title, aggregate, whether it is published, and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM27","position":2,"name":"Fields","meaning":"The fields it carries, in order.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM27","position":3,"name":"Event type","meaning":"Its shape in code, with the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":1,"name":"Command","meaning":"The command's row: its ID, title, entity and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM28","position":2,"name":"Links","meaning":"The events it raises, the specifications it checks and the domain services it calls.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":3,"name":"Handler","meaning":"Its command handler, with the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":4,"name":"Policies","meaning":"Its policies, each with the event it hears, its event handler and its test.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM37","position":1,"name":"Test data set","meaning":"The test data set's row: its ID, title, domain, environment, accounts, records, prepare, reset, file and description.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-CHK-RM01","position":1,"name":"Check","meaning":"The check that found it, or the engine's own `data-refused`.","type_aggregate_id":"LA-CHK-A1","required":true,"column_name":"check_name","example":"value-object-unused"}
 {"read_model_id":"LA-CHK-RM01","position":2,"name":"Severity","meaning":"`error` or `warning`: whether the data is broken or has work still to do.","type":"text","required":true,"example":"error"}

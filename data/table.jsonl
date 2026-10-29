@@ -74,6 +74,9 @@
 {"id":"LA-AUT-RM22-TB","title":"Pattern","read_model_id":"LA-AUT-RM22","name":"Pattern","storage":"in memory","file":"lathe/src/authoring/pattern/model.ts"}
 {"id":"LA-AUT-RM23-TB","title":"Standard","read_model_id":"LA-AUT-RM23","name":"Standard","storage":"in memory","file":"lathe/src/authoring/standard/model.ts"}
 {"id":"LA-AUT-RM24-TB","title":"Domain","read_model_id":"LA-AUT-RM24","name":"Domain","storage":"in memory","file":"lathe/src/authoring/domain/model.ts"}
+{"id":"LA-AUT-RM26-TB","title":"Aggregate","read_model_id":"LA-AUT-RM26","name":"Aggregate","storage":"in memory","file":"lathe/src/authoring/aggregate/model.ts"}
+{"id":"LA-AUT-RM27-TB","title":"DomainEvent","read_model_id":"LA-AUT-RM27","name":"DomainEvent","storage":"in memory","file":"lathe/src/authoring/domain-event/model.ts"}
+{"id":"LA-AUT-RM28-TB","title":"CommandInstance","read_model_id":"LA-AUT-RM28","name":"CommandInstance","storage":"in memory","file":"lathe/src/authoring/command/model.ts"}
 {"id":"LA-AUT-RM37-TB","title":"TestDataSet","read_model_id":"LA-AUT-RM37","name":"TestDataSet","storage":"in memory","file":"lathe/src/authoring/test-data-set/model.ts"}
 {"id":"LA-AUT-TB30","title":"serves","domain_id":"LA-AUT","name":"serves","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-AUT-TB31","title":"persists","domain_id":"LA-AUT","name":"persists","storage":"table","file":"lathe/schema/010-links.sql"}
