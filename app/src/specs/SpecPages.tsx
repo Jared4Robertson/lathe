@@ -1,7 +1,6 @@
 // The wiki pages of a product at its ID, /<product-id> (LA-V51), and of a domain, which the wiki card shows.
 import { useState, type ReactNode } from 'react';
 import { Link } from '../router';
-import { checkPagePath } from '../format/reference';
 import { RecordText } from './RecordText';
 import { Prose } from './mentions';
 import { DomainPatterns } from './PatternParts';
@@ -9,22 +8,15 @@ import { patternsFollowedBy } from './patterns';
 import { CoverageBars, ProductSummary } from './ProductHealth';
 import { LongList } from '../components/LongList';
 import { Card, CardGrid } from '../shell/Card';
-import { countOf } from '../plural';
-import { PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, StageMark, gapText, idText, levelBelow, recordText, type SectionLevel } from './parts';
+import { ProblemBadge, ProblemList, RecordLink, RecordTree, Section, StageMark, gapText, idText, levelBelow, recordText, type SectionLevel } from './parts';
 import { allFolders, domainFolders, foldedChildren, productFolders, type Folder, type OwnerFolders, type StageFolders } from './folders';
 import { ActionsSlotContext } from '../components/ActionsSlot';
 import {
   byIdOrder,
-  exceptionOwner,
   kindLabel,
-  isWorkspaceProblem,
-  problemOrder,
   textOf,
-  type Problem,
-  type RecordedException,
   type SpecIndex,
   type SpecRecord,
-  type SpecRoute,
   type SpecState,
 } from './data';
 import { addressOf, HOME_PATH } from '../views/address';

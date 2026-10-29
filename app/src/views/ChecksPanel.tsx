@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { LongList } from '../components/LongList';
 import { checkPagePath } from '../format/reference';
 import { exceptionOwner, isWorkspaceProblem, problemOrder, type Problem, type RecordedException, type SpecIndex, type SpecRecord } from '../specs/data';
@@ -33,6 +34,8 @@ export function ChecksPanel({ index, product, focus, sheet, onClose }: ChecksPan
   const workspace = all.filter((p) => isWorkspaceProblem(index, p));
   const own = all.filter((p) => !isWorkspaceProblem(index, p));
   const errors = all.filter((p) => p.severity === 'error').length;
+  // The row of the record in focus scrolls into view, so working down the list never loses the place.
+  useEffect(() => { document.querySelector('.checks-panel li.problem.is-current')?.scrollIntoView?.({ block: 'nearest' }); }, [focus]);
   const counts = (
     <p className={`checks ${errors ? 'failed' : 'ok'}`}>
       {errors} error{errors === 1 ? '' : 's'} · {all.length - errors} warning{all.length - errors === 1 ? '' : 's'}

@@ -141,8 +141,10 @@ function ThemeList() {
               onBlur={() => preview(null)}
             >
               <ThemeChip theme={t} mode={shows} />
-              <span className="theme-row-name">{t.name}</span>
-              <small className="theme-row-state">{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small>
+              <span className="theme-row-text">
+                <span className="theme-row-name">{t.name}</span>
+                <small className="theme-row-state">{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small>
+              </span>
             </button>
             <span className="theme-actions">
               {t.builtIn

@@ -173,7 +173,8 @@ const noValue = () => null;
 // side bar keep the width they were given, and the stage's open space keeps at least STAGE_MIN. When
 // the window can't hold every open panel at its readable width, panels collapse for space, in a set
 // order: the side bar first, then the wiki card, then the nav. The chat is the Reader's task at hand
-// and never collapses for space. They reopen in reverse order as the window grows. A collapse for
+// and never collapses for space, nor does a tool open over the stage (Checks, Appearance, the theme
+// editor, LA-PAT-APP-UX-R19), which floats right of the nav. They reopen in reverse order as the window grows. A collapse for
 // space is never the Reader's choice: their open or closed setting stays as they set it, and the
 // panel's toggle shows it is collapsed for space. A panel the Reader opens while it is collapsed for
 // space is held open (the next panel in the order gives way instead) until it would fit anyway, or
@@ -212,6 +213,8 @@ export interface Room {
   sideBar: number | null;
   /** The chat's width while it shows; null when hidden. */
   chat: number | null;
+  /** The width of the tool open over the stage, right of the nav; null when none is. */
+  tool: number | null;
   /** The panels the Reader opened while they were collapsed for space. */
   held: ReadonlySet<CrowdPanel>;
 }
@@ -225,7 +228,7 @@ export function openWidth(room: Room, collapsed: ReadonlySet<CrowdPanel>): numbe
   const navRight = inset + (navShown ? room.nav.width : room.nav.rail);
   const card = room.card && !collapsed.has('card');
   const sideBar = room.sideBar !== null && !collapsed.has('sideBar') ? room.sideBar : null;
-  const left = navRight + OPEN_GAP;
+  const left = navRight + (room.tool !== null ? inset + room.tool : 0) + OPEN_GAP;
   // On the right, from the window's edge inward: the chat, the side bar, then the wiki card.
   const chatSpace = room.chat !== null ? room.chat + 2 * inset : inset;
   const sideSpace = sideBar !== null ? sideBar + inset + chatSpace : chatSpace;
@@ -278,7 +281,7 @@ const sameSet = (a: ReadonlySet<CrowdPanel>, b: ReadonlySet<CrowdPanel>) => a.si
  * The shell's side of the rule: follows the window's width, takes the page's panels, and works out
  * which panels collapse for space. Off (nothing collapses) on a phone, where panels are sheets.
  */
-export function useRoomState(shell: Pick<Room, 'nav' | 'chat'>, off: boolean): RoomApi {
+export function useRoomState(shell: Pick<Room, 'nav' | 'chat' | 'tool'>, off: boolean): RoomApi {
   const [width, setWidth] = useState(() => window.innerWidth);
   useEffect(() => {
     const update = () => setWidth(window.innerWidth);

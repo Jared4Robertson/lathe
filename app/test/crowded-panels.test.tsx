@@ -17,7 +17,7 @@ const SRC = join(__dirname, '..', 'src');
 const NONE = new Set<CrowdPanel>();
 /** Every panel open at its default width: the nav 336, the side bar 340 and the chat 400 px. */
 const room = (width: number, patch: Partial<Room> = {}): Room => ({
-  width, inset: 8, nav: { open: true, width: 336, rail: 56 }, card: true, sideBar: 340, chat: 400, held: NONE, ...patch,
+  width, inset: 8, nav: { open: true, width: 336, rail: 56 }, card: true, sideBar: 340, chat: 400, tool: null, held: NONE, ...patch,
 });
 const sorted = (set: ReadonlySet<CrowdPanel>) => [...set].sort();
 

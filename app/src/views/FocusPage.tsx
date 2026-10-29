@@ -20,7 +20,7 @@ import { PageBar, STAGE_COMMANDS } from './PageBar';
 import { SideBar } from './SideBar';
 import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, type SideModeState, type SideView } from './sideBarState';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
-import { rememberStage, usePageTabs, type PageTabsApi } from './useTabs';
+import { firstTabView, rememberStage, usePageTabs, type PageTabsApi } from './useTabs';
 import { usePreview } from './preview';
 import { WikiCard } from './WikiCard';
 import { useCardPlace } from './cardPlace';
@@ -441,6 +441,39 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
           {sideBar(false)}
         </div>
       )}
+    </div>
+  );
+}
+
+const ignore = () => {};
+
+/**
+ * The stage behind the products picker (LA-V97): the last product's stage, on the stage last used, dimmed and out of
+ * reach under the picker; or, with no product to show (a first launch), an empty map.
+ */
+export function StageBackdrop({ index, focus }: { index: SpecIndex | null; focus: string | null }) {
+  const [space] = useState(createOpenSpaceStore);
+  const stageEl = useRef<HTMLDivElement>(null);
+  const layout = useRef<HTMLDivElement>(null);
+  useOpenSpaceMeasure(stageEl, space, layout);
+  const { graph: settings } = useSessionSettings();
+  const [peek] = useState(createPeekStore);
+  const stage = firstTabView().stage;
+  const shown = index && focus && index.byId.has(focus) ? focus : null;
+  let content: ReactNode = null;
+  if (index && shown) {
+    const fallback = <p className="hint graph-loading">Loading the stage…</p>;
+    content = (
+      <Suspense fallback={fallback}>
+        {stage === 'graph' && <GraphView index={index} focus={shown} onNavigate={ignore} settings={settings} onSettingsChange={ignore} onGraph={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
+        {stage === 'erd' && <ErdView index={index} focus={shown} onNavigate={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
+        {stage === 'trace' && <TraceView index={index} focus={shown} onNavigate={ignore} hrefFor={addressOf} onPeek={peek.set} onCounts={ignore} space={space} />}
+      </Suspense>
+    );
+  }
+  return (
+    <div ref={layout} className="stage-layout is-backdrop" inert aria-hidden="true">
+      <div ref={stageEl} className="focus-stage" data-stage={stage}>{content}</div>
     </div>
   );
 }
