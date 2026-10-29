@@ -9,10 +9,18 @@ Discovery is the first stage: before the domain model, write down what the produ
 
 ## How you write
 
-The spec is typed data in the repo's `data/` folder, one table per kind. Change it only with Lathe's MCP tools, never by editing files: `add`, `set`, `move`, `link`, `unlink` and `remove` write; `show`, `list` and `next_id` read; `check` runs the checks. Each write is checked against the schema and refused, with its reasons, when it breaks the model; a refusal changes nothing, so fix the input and try again. Writes never commit: commit per task.
+The spec is typed data in the repo's `data/` folder, one table per kind. Change it only with Lathe's MCP tools, never by editing files. Every kind belongs to one aggregate of Lathe's own model, and each aggregate has its own tools, named for the aggregate and the command. `check` runs the checks. Each command checks its aggregate's rules and is refused, with every reason, when it breaks them; a refusal changes nothing, so fix the input and try again. Writes never commit: commit per task.
 
-- The `add` tool's input schema lists `business_outcome`'s columns. In a shell, `lathe add business_outcome --help` prints the same (`npx lathe` in a product repo; `npm --prefix lathe run lathe -- <command> --root ..` in the Lathe repo).
-- Take each outcome's ID from `next_id`, with the product as `parent`: `TL-BO01`, `TL-BO02`.
+- A record's links are fields of its own add and change: an outcome's `measured_by`, a capability's `serves`. On a change a list replaces the list. There are no tools that link or unlink.
+- Each tool's input schema lists its fields, with each column's type and meaning. In a shell the same commands are `lathe <aggregate> <command> --<field> <value>` (`lathe business-outcome add-business-outcome --help` prints its fields; `npx lathe` in a product repo, `npm --prefix lathe run lathe -- <aggregate> <command> --root ..` in the Lathe repo), or the tool's own JSON with `--json -` (stdin) or `--json <file>`.
+- Take each outcome's ID from `business_outcome_next_id`, with the product as `parent`: `TL-BO01`, `TL-BO02`.
+
+The tools of this stage, by aggregate:
+
+| Aggregate | Its tools |
+| --- | --- |
+| Business outcome | `business_outcome_add_business_outcome` (with what it is `measured_by`), `business_outcome_change_business_outcome`, `business_outcome_remove_business_outcome`; `business_outcome_get_business_outcome`, `business_outcome_list_business_outcomes`, `business_outcome_next_id` |
+| Domain | `domain_change_capability` (with the outcomes it `serves`); `domain_get_domain` |
 
 ## A business outcome
 
@@ -26,54 +34,58 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `measured_outside` | Only for an outcome nothing in the code can measure (adoption by other repos, sales): who counts what, and from where. Leave it out when a test or record can measure it. |
 | `notes` | Anything longer, such as where the measure's numbers come from. |
 
-Every title, here and in every kind, is in sentence case with no trailing period, and unique within its kind and product: the store refuses a duplicate or a trailing period. The product's own title is its proper name, such as Tool Library. Each skill names its own kinds.
+Every title, here and in every kind, is in sentence case with no trailing period, and unique within its kind and product: a duplicate or a trailing period is refused. The product's own title is its proper name, such as Tool Library. Each skill names its own kinds.
 
 Write a handful, not dozens: three to six outcomes cover most products. Two outcomes with the same measure are one outcome. An outcome that no capability could move is a wish; leave it out or say what would serve it.
 
 ## Capabilities serve outcomes
 
-Link each capability to every outcome it serves, with `serves` (capability to business outcome). It is many to many: a capability may serve several outcomes, and an outcome is usually served by several capabilities.
+Name every outcome each capability serves in its `serves` (capability to business outcome), with `domain_change_capability`. It is many to many: a capability may serve several outcomes, and an outcome is usually served by several capabilities.
 
 Coverage reports two gaps until the links are in:
 
-- `outcome-not-served`: an outcome no capability serves. Link the capabilities that move it, or, if none could, ask the Owner whether the outcome belongs to this product.
-- `capability-serves-no-outcome`: a capability that serves no outcome. Link the outcomes it serves, or ask the Owner what the capability is for; a capability that serves nothing is a candidate to drop.
+- `outcome-not-served`: an outcome no capability serves. Name it in the `serves` of the capabilities that move it, or, if none could, ask the Owner whether the outcome belongs to this product.
+- `capability-serves-no-outcome`: a capability that serves no outcome. Name the outcomes it serves, or ask the Owner what the capability is for; a capability that serves nothing is a candidate to drop.
 
-When you add a capability later (the `write-use-cases` skill), link the outcomes it serves in the same task.
+When you add a capability later (the `write-use-cases` skill), give the outcomes it serves in its `serves`.
 
 ## What measures an outcome
 
-Link each outcome to what measures it, with `measured_by` (business outcome to test or record). What can measure one:
+Name what measures each outcome in its `measured_by` (business outcome to test or record). What can measure one:
 
 - **A test of any kind** that counts or holds the measure: a performance test for a time budget, an accessibility audit for violations, a specification test for a rule that keeps a count at zero. A test counts only when it runs: manual, or automated with its file naming its ID.
-- **A record of the product's own kind** that computes the measure, such as a report script or a command whose output is the measure. Lathe allows it once the product declares the pair: a `product_relation` named `measured_by` from `business_outcome` to that kind.
+- **A record of the product's own kind** that computes the measure, such as a report script or a command whose output is the measure. Lathe allows it once the product declares the pair: a product relation named `measured_by` from `business_outcome` to that kind (`product_add_product_relation`, see `extend-the-meta-model`).
 - **Nothing in the code**, for an outcome only the world shows (adoption by other repos, sales): say so in `measured_outside`, with who counts it and from where. Prefer building the report when the product's own data holds the measure.
 
 Coverage reports `outcome-not-measured` until one of these is in.
 
 ## Examples: the Tool Library
 
-Two outcomes, and the capabilities that serve them:
+Two outcomes, and a capability that serves them:
 
 ```
-add  { "business_outcome": { "id": "TL-BO01", "title": "More tools in use", "product_id": "TL",
+business_outcome_add_business_outcome { "id": "TL-BO01", "title": "More tools in use", "product_id": "TL",
        "statement": "Members borrow the library's tools more often.",
        "measure": "Loans opened per catalog tool per month.",
-       "target": "Two per tool per month within a year of opening." } }
-add  { "business_outcome": { "id": "TL-BO02", "title": "Tools back on time", "product_id": "TL",
+       "target": "Two per tool per month within a year of opening." }
+business_outcome_add_business_outcome { "id": "TL-BO02", "title": "Tools back on time", "product_id": "TL",
        "statement": "Members bring borrowed tools back by their due date.",
        "measure": "Share of loans returned late, or still out and overdue, each month.",
-       "target": "Under 5% each month by the end of the first year." } }
-link { "source": "TL-LEND-CAP03", "relation": "serves", "target": "TL-BO01" }
-link { "source": "TL-LEND-CAP03", "relation": "serves", "target": "TL-BO02" }
-add  { "product_kind": { "name": "report", "product_id": "TL", "label": "Report", "parent_kind": "domain",
+       "target": "Under 5% each month by the end of the first year." }
+domain_change_capability { "id": "TL-LEND-CAP03", "serves": ["TL-BO01", "TL-BO02"] }
+```
+
+A report of the product's own kind that measures them: the kind and the relation are declared first (`extend-the-meta-model`), then the report is added, then each outcome names it.
+
+```
+product_add_product_kind { "name": "report", "product_id": "TL", "label": "Report", "parent_kind": "domain",
        "description": "A script that measures the library's business outcomes from its own records.",
-       "stage": "technical-specification", "obligation": false, "id_pattern": "<domain>-RP<nn>" } }
-add  { "product_relation": { "name": "measured_by", "source_kind": "business_outcome", "target_kind": "report", "product_id": "TL",
+       "stage": "technical-specification", "obligation": false, "id_pattern": "<domain>-RP<nn>" }
+product_add_product_relation { "name": "measured_by", "source_kind": "business_outcome", "target_kind": "report", "product_id": "TL",
        "forward_label": "Measured by", "reverse_label": "Measures",
-       "description": "The report measures the business outcome: it counts the measure from the library's records." } }
-link { "source": "TL-BO01", "relation": "measured_by", "target": "TL-LEND-RP01" }
-link { "source": "TL-BO02", "relation": "measured_by", "target": "TL-LEND-RP01" }
+       "description": "The report measures the business outcome: it counts the measure from the library's records." }
+business_outcome_change_business_outcome { "id": "TL-BO01", "measured_by": ["TL-LEND-RP01"] }
+business_outcome_change_business_outcome { "id": "TL-BO02", "measured_by": ["TL-LEND-RP01"] }
 ```
 
 ## Rules
