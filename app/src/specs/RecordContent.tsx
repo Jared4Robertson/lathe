@@ -6,8 +6,6 @@ import { groupByLabel } from './labels';
 import { Traceability } from './Traceability';
 import { RecordText, factsOf, rowPlace } from './RecordText';
 import { kindFieldPath, kindPagePath } from '../format/reference';
-import { PatternRuleSections, PatternSections } from './PatternParts';
-import { StandardSections } from './StandardParts';
 import { DomainEvents } from './DomainEvents';
 import { InterfaceFlows } from './InterfaceParts';
 import { LongList } from '../components/LongList';
@@ -43,9 +41,6 @@ function LinkGroups({ index, links, direction }: { index: SpecIndex; links: Link
     </dl>
   );
 }
-
-/** A pattern's followers have their own section. */
-const PATTERN_SKIP: ReadonlySet<string> = new Set(['in:follows']);
 
 export interface RecordContentProps {
   index: SpecIndex;
@@ -103,11 +98,10 @@ function RecordBody({ index, record, actions, header }: { index: SpecIndex; reco
       <RecordFrame
         index={index}
         record={record}
-        skip={record.kind === 'pattern' ? PATTERN_SKIP : undefined}
-        after={children.length > 0 && record.kind !== 'pattern' && record.kind !== 'standard' && (
-          // The direct children (a pattern's and a standard's rules have their own sections).
+        after={children.length > 0 && (
+          // The direct children.
           <Section title={childrenTitle} count={children.length}>
-            {/* View and API requirements and pattern and standard rules read under their groups. */}
+            {/* View and API requirements read under their groups. */}
             <Grouped records={children} level={3} render={(records, heading) => (
               <RecordTree index={index} records={records} label={heading ? `${heading}: ${childrenTitle} of ${id}` : `${childrenTitle} of ${id}`} showKind />
             )} />
@@ -116,9 +110,6 @@ function RecordBody({ index, record, actions, header }: { index: SpecIndex; reco
       >
         <RecordText index={index} record={record} />
         {record.kind === 'interface' && <InterfaceFlows index={index} iface={record} />}
-        {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
-        {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
-        {record.kind === 'standard' && <StandardSections index={index} standard={record} />}
         {record.kind === 'aggregate' && <DomainEvents index={index} aggregate={record} />}
       </RecordFrame>
     </>

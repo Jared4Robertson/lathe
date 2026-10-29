@@ -646,6 +646,9 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Four columns keep room for their words: in a narrow wiki card the table scrolls sideways in its .table-scroll rather than squeezing to a word per line (LA-PAT-APP-UX-R18). */
 .data-table.trace-requirements { width: 100%; min-width: 42rem; }
 .data-table.trace-requirements > tbody > tr > th[scope="row"] { width: 17rem; }
+/* So do a standard's rules (rule, met by, proved by) and a pattern's settings (setting, meaning, rules that depend on it). */
+.data-table.standard-rules, .data-table.pattern-settings { width: 100%; min-width: 36rem; }
+.data-table.standard-rules > tbody > tr > th[scope="row"] { width: 16rem; }
 .flow-path > h3 { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 4px; font-size: 0.9rem; }
 .rule-na-reasons { font-size: 0.8rem; color: var(--muted); }
 .data-table { border-collapse: collapse; font-size: 0.86rem; margin: 0 0 12px; }

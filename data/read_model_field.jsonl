@@ -31,7 +31,7 @@
 {"read_model_id":"LA-AUT-RM24","position":2,"name":"Capabilities","meaning":"Its capabilities by position, each with the business outcomes it serves and its use cases by ID.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM24","position":3,"name":"Terms","meaning":"Its glossary by ID: each term and what it means.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM24","position":4,"name":"Domain services","meaning":"Its domain services by ID, each with its service (the standard rules it meets and packages it uses) and its tests (with the test data sets they start from).","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM24","position":5,"name":"Repositories","meaning":"Its repositories by ID, each with the aggregate it persists, the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM24","position":5,"name":"Repositories","meaning":"Its repositories by ID, each with the aggregate it persists (and any other it also persists, with its reason), the standard rules it meets and the packages it uses.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM24","position":6,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the domain: the domain, a capability, a term, a domain service, a service, a domain service test or a repository.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM25","position":1,"name":"Specification","meaning":"The specification's row: its ID, title and statement.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM25","position":2,"name":"Reads","meaning":"The aggregates it reads.","type":"text","required":false}

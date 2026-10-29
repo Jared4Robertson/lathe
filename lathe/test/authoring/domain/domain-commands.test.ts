@@ -60,7 +60,7 @@ describe('LA-AUT-UC02-R06-T02 each Domain command (LA-AUT-A4) changes one domain
     expect(whole.capabilities.map((c) => c.capability.id)).toEqual(['TL-LEND-CAP01']);
     expect(whole.domainServices.map((s) => s.service)).toEqual([{ service: { id: 'TL-LEND-DS01-SV', title: 'lateFee', domain_service_id: 'TL-LEND-DS01', file: 'src/fees.ts' }, meets: [], packages: [] }]);
     expect(whole.domainServices[0].tests.map((t) => t.test.id)).toEqual(['TL-LEND-DS01-T01']);
-    expect(whole.repositories).toEqual([expect.objectContaining({ persists: null, meets: [], packages: [] })]);
+    expect(whole.repositories).toEqual([expect.objectContaining({ persists: null, alsoPersists: [], meets: [], packages: [] })]);
     expect(runQuery(store, LIST_DOMAINS, { product_id: 'TL' })).toEqual([{ id: 'TL-LEND', title: 'Lending' }]);
     expect(runQuery(store, NEXT_DOMAIN_ID, { kind: 'capability', parent: 'TL-LEND' })).toBe('TL-LEND-CAP02');
     expect(runQuery(store, NEXT_DOMAIN_ID, { kind: 'domain_service_test', parent: 'TL-LEND-DS01' })).toBe('TL-LEND-DS01-T02');
