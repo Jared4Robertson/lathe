@@ -73,8 +73,8 @@
 {"id":"LA-EXP-EN02-DM","title":"SpacesApi","entity_id":"LA-EXP-EN02","file":"app/src/shell/spaces.tsx","description":"SpacesApi"}
 {"id":"LA-EXP-EN03-DM","title":"SpaceItems.opened","entity_id":"LA-EXP-EN03","file":"app/src/shell/Nav.tsx","description":"The folded rows' set: `opened` in `SpaceItems`, each nav row's key with whether it is open, kept under `lathe:nav-folders`."}
 {"id":"LA-EXP-EN09-DM","title":"TabSet","entity_id":"LA-EXP-EN09","file":"app/src/views/tabs.ts","description":"TabSet"}
-{"id":"LA-EXP-EN10-DM","title":"Tab","entity_id":"LA-EXP-EN10","file":"app/src/views/tabs.ts","description":"Tab, with TabView in useTabs.ts"}
-{"id":"LA-EXP-EN11-DM","title":"SessionSettings","entity_id":"LA-EXP-EN11","file":"app/src/graph/settings.ts","description":"SessionSettings, read by sessionSettings and written by saveSessionSettings and useSessionSettings"}
+{"id":"LA-EXP-EN10-DM","title":"Tab","entity_id":"LA-EXP-EN10","file":"app/src/views/tabs.ts","description":"Tab, holding its Place (app/src/views/place.ts) and its PlaceView"}
+{"id":"LA-EXP-EN11-DM","title":"SessionSettings","entity_id":"LA-EXP-EN11","file":"app/src/graph/settings.ts","description":"SessionSettings (layout, minimap, wiki card width), read by sessionSettings and written by saveSessionSettings and useSessionSettings"}
 {"id":"LA-PLT-EN02-DM","title":"usePanelSize","entity_id":"LA-PLT-EN02","file":"app/src/shell/prefs.ts","description":"usePanelSize and usePref: a panel's size within its limits and whether it shows, remembered, with a reset; each panel's key, default and limits sit beside it (NAV_WIDTH in App.tsx)."}
 {"id":"LA-PLT-EN03-DM","title":"Command","entity_id":"LA-PLT-EN03","file":"app/src/shell/keymap.ts","description":"Command"}
 {"id":"LA-PLT-EN04-DM","title":"Command.keys","entity_id":"LA-PLT-EN04","file":"app/src/shell/keymap.ts","description":"Command.keys, otherKeys (a child on its root's type)"}

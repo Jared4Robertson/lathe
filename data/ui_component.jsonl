@@ -6,7 +6,7 @@
 {"id":"LA-UI102","title":"Mentions","file":"app/src/specs/mentions.tsx"}
 {"id":"LA-UI103","title":"Flow steps","file":"app/src/specs/FlowSteps.tsx"}
 {"id":"LA-UI105","title":"Graph motion","file":"app/src/graph/motion.ts"}
-{"id":"LA-UI106","title":"Tab strip","file":"app/src/views/TabStrip.tsx","description":"The page's tabs, at the left of the page bar."}
+{"id":"LA-UI106","title":"Tab strip","file":"app/src/views/TabStrip.tsx","description":"The desktop app's tabs, at the left of the page bar; the web app has no tab strip (LA-V96-R32)."}
 {"id":"LA-UI107","title":"ERD layout","file":"app/src/erd/layout.ts"}
 {"id":"LA-UI108","title":"ERD stage","file":"app/src/erd/ErdView.tsx","description":"The ERD stage: the product's, the domain's or the aggregate's diagram fitted in the open space, the focus's nearest box highlighted, with its key floating at its foot."}
 {"id":"LA-UI109","title":"Tap to open","file":"app/src/graph/touch.tsx"}
@@ -32,7 +32,7 @@
 {"id":"LA-UI134","title":"Flows by interface sections","file":"app/src/specs/InterfaceParts.tsx"}
 {"id":"LA-UI135","title":"Trace stage","file":"app/src/trace/TraceView.tsx","description":"The Trace stage: the canvas over the table, its Gaps only switch, its note and the keyboard's Show more floating at the top of the open space; on a phone, the table alone."}
 {"id":"LA-UI136","title":"Card","file":"app/src/shell/Card.tsx","description":"The one card: a title that is its link or button, stretched over the whole card, and what else the card holds; and the grid that lists cards."}
-{"id":"LA-UI137","title":"Header strip","file":"app/src/views/HeaderStrip.tsx","description":"The one line under the active tab: the focus's breadcrumb, kind, ID and title, and what the stage draws of it."}
+{"id":"LA-UI137","title":"Header strip","file":"app/src/views/HeaderStrip.tsx","description":"The one line under the page bar: the focus's breadcrumb, kind, ID and title, and what the stage draws of it."}
 {"id":"LA-UI138","title":"Breadcrumb","file":"app/src/shell/Breadcrumb.tsx","description":"The one trail of places above a page, collapsed past three places with a menu of the hidden levels."}
 {"id":"LA-UI139","title":"Open space","file":"app/src/views/openSpace.ts","description":"The stage's measure of what the floating panels leave of it, as CSS variables and a store the stages frame their focus in and report where they framed it, for the wiki card."}
 {"id":"LA-UI140","title":"Wiki card","file":"app/src/views/WikiCard.tsx","description":"The focus's wiki page as a callout in the map, floating over the right of the open space, in one spot just under the stage's toolbar row and a steady share of the stage high: its breadcrumb, kind line, title, summary or whole page (More and Less), its collapse button and resize handle."}
@@ -65,7 +65,7 @@
 {"id":"LA-UI62","title":"Commands and shortcuts sheet","file":"app/src/shell/commands.tsx","description":"The command dispatcher, the dialog and keys every overlay shares, and the shortcuts sheet."}
 {"id":"LA-UI63","title":"Tooltip","file":"app/src/shell/Tooltip.tsx"}
 {"id":"LA-UI64","title":"Resize handle","file":"app/src/components/ResizeHandle.tsx"}
-{"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx","description":"The top of the tab panel: the tabs, the stage switch, and the wiki card toggle."}
+{"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx","description":"The top of the tab panel: in the desktop app the tabs, then the stage switch and the wiki card toggle; on the web its start holds no tabs."}
 {"id":"LA-UI66","title":"Bottom sheet","file":"app/src/shell/BottomSheet.tsx"}
 {"id":"LA-UI67","title":"Phone top bar","file":"app/src/shell/MobileBar.tsx","description":"The phone top bar and the quick find sheet."}
 {"id":"LA-UI68","title":"Shared styles","file":"app/src/styles.css"}
