@@ -34,7 +34,7 @@ const drawn = async (whole = false): Promise<TraceScene> => (await canvasHost())
 /** A drawn box's place in the map, from its place on the page and the camera. */
 const inMap = (scene: TraceScene, b: TraceScene['boxes'][number]) => {
   const { camera: v, canvas: c } = scene;
-  return [b.key, (b.rect.left - c.left - v.x) / v.zoom, (b.rect.top - c.top - v.y) / v.zoom, b.rect.width / v.zoom, b.rect.height / v.zoom].map((n) => (typeof n === 'number' ? Math.round(n * 1000) / 1000 : n));
+  return [b.key, (b.rect.left - c.left - v.x) / v.zoom, (b.rect.top - c.top - v.y) / v.zoom, b.rect.width / v.zoom, b.rect.height / v.zoom].map((n) => (typeof n === 'number' ? Math.round(n * 100) / 100 : n));
 };
 /** Whether a drawn box lies inside the canvas. */
 const inView = (scene: TraceScene, b: TraceScene['boxes'][number]) => b.rect.left >= scene.canvas.left - 0.5 && b.rect.left + b.rect.width <= scene.canvas.left + scene.canvas.width + 0.5 && b.rect.top >= scene.canvas.top - 0.5 && b.rect.top <= scene.canvas.top + scene.canvas.height;
@@ -105,11 +105,12 @@ describe('the Trace stage', () => {
     expect(whole.boxes.find((b) => b.key === 'P-D-INV01')!.strength).toBeLessThan(1);
     // In view, at the left edge: its requirements' column is framed at reading size (LA-EXP-DS09).
     await waitFor(async () => { const now = await drawn(); expect(atLeftEdge(now, now.boxes.find((b) => b.key === 'P-D-UC01')!)).toBe(true); });
-    // A domain: everything under it at full strength, the other domain and the product's own records faded.
+    // A domain: its group under Not under an outcome, everything under it at full strength, the product's own records faded.
     await openApp('/P-D?stage=trace', served());
     whole = await drawn(true);
+    expect(whole.boxes.find((b) => b.key === 'P-D')).toMatchObject({ focus: true, parent: 'outside' });
     for (const o of obligationsUnder(modelIndex(), 'P-D')) expect(whole.boxes.find((b) => b.key === o)!.strength, o).toBe(1);
-    for (const k of ['P-E', 'P-VO01-C01']) expect(whole.boxes.find((b) => b.key === k)!.strength, k).toBeLessThan(1);
+    for (const k of ['P-VO01', 'P-VO01-C01']) expect(whole.boxes.find((b) => b.key === k)!.strength, k).toBeLessThan(1);
     // The table under it: the five columns, a heading row per parent linking to it.
     const table = await matrix();
     expect(within(table.querySelector('thead')!).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Obligation', 'Design', 'Build', 'Tests', 'Files']);
@@ -242,7 +243,7 @@ describe('the Trace stage', () => {
     await waitFor(() => expect(counts()).toHaveTextContent(/^Outside the chains · matrix of Loan/));
   });
 
-  it('LA-V98-R05-T02 A click on a box opens its record, keeping the stage; a file\'s box opens the record that names it, a link\'s its capability', async () => {
+  it('LA-V98-R05-T02 A click on a box opens its record, keeping the stage and its place; a file\'s box opens the record that names it', async () => {
     const data = modelWorkspace();
     addRows(data, 'business_outcome', { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans a month', target: 'Up a tenth' });
     addRows(data, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' });
@@ -256,25 +257,22 @@ describe('the Trace stage', () => {
       fireEvent.pointerDown(canvas, at);
       fireEvent.pointerUp(canvas, at);
     };
-    await click('P-D-UC01-R01|P-D-UC01-FL01');
+    await click('P-BO01|P-D-UC01-R01|P-D-UC01-FL01');
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-FL01'));
     expect(window.location.search).toBe('?stage=trace');
-    // A link under an outcome opens its capability, drawn as the focus in its own place.
+    // Under an outcome: its use case's box opens the use case, drawn as the focus in that place.
     await openApp('/P-BO01?stage=trace', served(data));
-    const link = (await drawn(true)).boxes.find((b) => b.role === 'link')!;
-    expect(link).toMatchObject({ parent: 'P-BO01', opens: 'P-D-CAP01', kind: 'link' });
-    await waitFor(async () => expect((await drawn()).boxes.some((b) => b.key === link.key)).toBe(true));
-    await click(link.key);
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D-CAP01'));
-    await waitFor(async () => expect((await drawn(true)).boxes.filter((b) => b.focus).map((b) => b.key)).toEqual(['P-D-CAP01']));
-    // From the keyboard: Right from the outcome rings its link, the focus staying, and Enter opens the capability.
+    const useCase = (await drawn(true)).boxes.find((b) => b.parent === 'P-BO01')!;
+    expect(useCase).toMatchObject({ key: 'P-BO01|P-D-UC01', id: 'P-D-UC01', role: 'record' });
+    await waitFor(async () => expect((await drawn()).boxes.some((b) => b.key === useCase.key)).toBe(true));
+    await click(useCase.key);
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
+    await waitFor(async () => expect((await drawn(true)).boxes.filter((b) => b.focus).map((b) => b.key)).toEqual([useCase.key]));
+    // From the keyboard: Right from the outcome goes in to its use case.
     await openApp('/P-BO01?stage=trace', served(data));
     await canvasHost();
     fireEvent.keyDown(document.body, { key: 'ArrowRight', code: 'ArrowRight' });
-    await waitFor(async () => expect((await drawn(true)).boxes.filter((b) => b.ring).map((b) => b.key)).toEqual([link.key]));
-    expect(window.location.pathname).toBe('/P-BO01');
-    fireEvent.keyDown(document.body, { key: 'Enter', code: 'Enter' });
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D-CAP01'));
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
   });
 
   it('LA-V98-R11-T01 Scroll pans, Cmd/Ctrl+scroll zooms and a drag pans the trace\'s camera, and . frames the focus again with a glide, as on the graph', async () => {

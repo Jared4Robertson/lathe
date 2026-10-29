@@ -13,7 +13,7 @@ import { useStageWalk } from '../shell/commands';
 import { graphWalkLabels } from '../graph/steps';
 import type { Move } from '../views/levels';
 import { StageKey, StageToolbar } from '../views/StageChrome';
-import { focusKey, keptFor, traceMap, type TraceMap } from './tree';
+import { copyInChain, focusKey, keptFor, traceMap, type TraceMap } from './tree';
 import { traceKeyEntries } from './TraceKey';
 import { useChangesKey } from '../changes/ChangesKey';
 import { nodeWords, traceTarget } from './walk';
@@ -186,7 +186,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   const map = useMemo(() => (narrow ? null : traceMap(index, product)), [narrow, index, product]);
   const [ringAt, setRing] = useState<{ focus: string; at: { id: string; chain: string | null } | null }>({ focus, at: null });
   // Where the walk or a click is on the tree (walk.ts), for the focus it left there: a node's key, so a record in several
-  // chains keeps the copy arrived on, and a node that is no record (a gap, a file, a link) holds the ring.
+  // chains keeps the copy arrived on, and a node that is no record (a gap, a file, the branch, the mark) holds the ring.
   const [walked, setWalked] = useState<{ focus: string; node: string } | null>(null);
   const walkedNode = walked?.focus === focus ? walked.node : null;
   const mapNow = useCallback((): TraceMap => map ?? traceMap(index, product), [map, index, product]);
@@ -197,7 +197,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   // The keyboard's ring: the table's focused link (its copy in its row's chain), else the walk's node when it is no record.
   const linkRing = ringAt.focus === focus ? ringAt.at : null;
   const ring = linkRing && map
-    ? (linkRing.chain ? map.copies.get(linkRing.id)?.find((k) => map.nodes.get(k)!.chain === linkRing.chain) : undefined) ?? map.copies.get(linkRing.id)?.[0] ?? null
+    ? copyInChain(map, linkRing.id, linkRing.chain ? map.copies.get(linkRing.chain)?.[0] ?? null : null) ?? map.copies.get(linkRing.id)?.[0] ?? null
     : map && map.nodes.get(walkNode)?.role !== 'record' ? walkNode : null;
   // The stage walk moves over the tree from anywhere (walk.ts, LA-V61-R49), by the Graph's Tree keys. On a record the
   // focus moves there, as a click does, and the camera follows; on a node that is no record the ring does. Each step is
@@ -209,17 +209,16 @@ function TraceStage(props: TraceViewProps & { product: string }) {
     const next = node.role === 'record' ? node.id : focus;
     setWalked({ focus: next, node: to });
     if (next !== focus) props.onNavigate(next);
-    return nodeWords(index, node);
+    return nodeWords(index, mapNow(), node);
   }, [mapNow, focus, index, props.onNavigate]);
   const walkMap = useCallback((move: Move) => { const to = targetOf(move); return to ? go(to) : null; }, [targetOf, go]);
-  // Enter on a link or a file the walk is on opens its record (a link's capability, in its own place; a file's first naming
-  // record, in the file's chain); the commands layer offers it a plain Enter outside a control that works Enter itself,
-  // before the wiki card's toggle.
+  // Enter on a file the walk is on opens its first naming record, in the file's chain; the commands layer offers it a
+  // plain Enter outside a control that works Enter itself, before the wiki card's toggle.
   const enter = useCallback(() => {
     const m = mapNow();
     const node = m.nodes.get(walkNode);
-    if (!node || (node.role !== 'link' && node.role !== 'file') || !node.opens) return false;
-    const own = node.chain ? m.copies.get(node.opens)?.find((k) => m.nodes.get(k)!.chain === node.chain) : undefined;
+    if (!node || node.role !== 'file' || !node.opens) return false;
+    const own = copyInChain(m, node.opens, node.chain);
     setWalked(own ? { focus: node.opens, node: own } : null);
     props.onNavigate(node.opens);
     return true;

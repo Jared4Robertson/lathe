@@ -224,7 +224,8 @@ test.describe('Exploring flows', () => {
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
     await traceDrawn(page);
     const chain = await traceSceneOf(page, true);
-    const inChain = (id: string) => chain.boxes.find((b) => b.key === `LA-EXP-UC03-R18|${id}`);
+    const requirementKey = chain.boxes.find((b) => b.id === 'LA-EXP-UC03-R18')!.key;
+    const inChain = (id: string) => chain.boxes.find((b) => b.key === `${requirementKey}|${id}`);
     for (const id of ['LA-EXP-UC03-FL01', 'LA-EXP-UC03-FL01-S01', 'LA-EXP-CMD01']) expect(inChain(id)?.strength, id).toBe(1);
     expect((await traceSceneOf(page)).boxes.some((b) => b.id === 'LA-EXP-UC03-R18' && b.focus), 'the requirement is in view').toBe(true);
     const idOf = new Map(chain.boxes.map((b) => [b.key, b.id]));
