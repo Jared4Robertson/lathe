@@ -268,6 +268,8 @@ describe('the Trace stage', () => {
     expect(window.location.search).toBe('?stage=trace');
     // Under an outcome: its use case's box opens the use case, drawn as the focus in that place.
     await openApp('/P-BO01?stage=trace', served(data));
+    // The header strip counts what the outcome reaches.
+    await waitFor(() => expect(counts()).toHaveTextContent(/^2 obligations under this outcome · 1 with gaps$/));
     const useCase = (await drawn(true)).boxes.find((b) => b.parent === 'P-BO01')!;
     expect(useCase).toMatchObject({ key: 'P-BO01|P-D-UC01', id: 'P-D-UC01', role: 'record' });
     await waitFor(async () => expect((await drawn()).boxes.some((b) => b.key === useCase.key)).toBe(true));

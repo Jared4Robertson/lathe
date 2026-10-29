@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openPage } from './measure';
 import { rowsOf, served, testsText } from './flows';
 import { PRODUCT } from './scenarios';
-import { traceDrawn, traceLayout, traceSceneOf } from './scene';
+import { expectKeyWhole, traceDrawn, traceLayout, traceSceneOf } from './scene';
 import type { ColumnScene, ColumnsHost } from '../src/trace/TraceColumns';
 import { TITLE_FONT } from '../src/graph/text';
 
@@ -111,6 +111,7 @@ test.describe('Traceability flows', () => {
     await openPage(page, `/${outcome}?stage=trace`);
     await traceDrawn(page);
     const outcomeScene = await traceSceneOf(page, true);
+    await expectKeyWhole(page);
     const servedUseCases = rowsOf(spec, 'use_case').filter((u) => serving.includes(String(u.capability_id))).map((u) => String(u.id));
     const underOutcome = outcomeScene.boxes.filter((b) => b.parent === outcome);
     expect(underOutcome.map((b) => b.id)).toContain(useCase);

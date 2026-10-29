@@ -1,5 +1,5 @@
 import { createPortal } from 'react-dom';
-import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode, type UIEvent } from 'react';
+import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { useRunCommand, useRunWalk } from '../shell/commands';
@@ -195,16 +195,11 @@ export interface KeyEntry {
   meaning: string;
 }
 
-/** How the bar holds its entries: one or two rows that fit, or two rows scrolling sideways inside it. */
-type KeyForm = { scroll: false } | { scroll: true; width: number };
-/** The most rows the bar wraps to before it scrolls sideways. */
-const KEY_ROWS = 2;
-
 /**
- * The stage's key (LA-V96-R33): a frosted bar along the bottom of the open space, centered between the camera and the
+ * The stage's key (LA-V96-R30): a frosted bar along the bottom of the open space, centered between the camera and the
  * minimap, holding only what the stage draws now. It counts as a floating panel at the bottom (`data-floating`), so the
- * camera frames above it. Too long for one row it wraps to two, then scrolls sideways inside itself with faded edges;
- * it takes focus as one named region, so the arrow keys scroll it and never walk the stage. On a phone it is a Key chip
+ * camera frames above it. Too long for one row it wraps to as many rows as it needs, every entry whole, never cut or
+ * scrolled out of sight; it takes focus as one named region, which never walks the stage. On a phone it is a Key chip
  * that opens the entries, with their meanings, as a sheet.
  */
 export function StageKey({ entries, beside }: { entries: readonly KeyEntry[]; beside?: 'minimap' }) {
@@ -215,55 +210,10 @@ export function StageKey({ entries, beside }: { entries: readonly KeyEntry[]; be
 
 /** `beside`: a minimap in the bottom right corner, which the bar keeps clear of. */
 function KeyBar({ entries, beside }: { entries: readonly KeyEntry[]; beside?: 'minimap' }) {
-  const room = useRef<HTMLDivElement>(null);
-  const bar = useRef<HTMLElement>(null);
-  const list = useRef<HTMLUListElement>(null);
-  const [form, setForm] = useState<KeyForm>({ scroll: false });
-  const [edges, setEdges] = useState({ start: false, end: false });
-  const shape = entries.map((e) => `${e.id}:${e.words}`).join('|');
-  // Each new set of entries, or a new width of the room, starts from the wrapping form again; before paint, more rows
-  // than KEY_ROWS step to the scrolling form, its list as wide as two rows of its entries.
-  const [roomWidth, setRoomWidth] = useState(0);
-  useLayoutEffect(() => { setForm((f) => (f.scroll ? { scroll: false } : f)); }, [shape, roomWidth]);
-  useLayoutEffect(() => {
-    const ul = list.current;
-    if (form.scroll || !ul) return;
-    const items = [...ul.children] as HTMLElement[];
-    if (new Set(items.map((li) => li.offsetTop)).size <= KEY_ROWS) return;
-    const gap = parseFloat(getComputedStyle(ul).columnGap) || 0;
-    const widths = items.map((li) => li.offsetWidth + gap);
-    const sum = widths.reduce((a, b) => a + b, 0);
-    setForm({ scroll: true, width: Math.ceil(sum / KEY_ROWS + Math.max(...widths)) });
-  }, [form, shape, roomWidth]);
-  const onScroll = (e: UIEvent<HTMLElement>) => {
-    const el = e.currentTarget;
-    setEdges({ start: el.scrollLeft > 1, end: el.scrollLeft + el.clientWidth < el.scrollWidth - 1 });
-  };
-  useLayoutEffect(() => {
-    const el = bar.current;
-    if (!el) return;
-    setEdges({ start: form.scroll && el.scrollLeft > 1, end: form.scroll && el.scrollLeft + el.clientWidth < el.scrollWidth - 1 });
-  }, [form]);
-  useEffect(() => {
-    const box = room.current;
-    if (!box || typeof ResizeObserver === 'undefined') return;
-    const observer = new ResizeObserver(() => setRoomWidth(Math.round(box.clientWidth)));
-    observer.observe(box);
-    return () => observer.disconnect();
-  }, []);
   return (
-    <div className="stage-key-room" ref={room} data-beside={beside}>
-      <section
-        ref={bar}
-        className={`stage-key${edges.start ? ' fade-start' : ''}${edges.end ? ' fade-end' : ''}`}
-        role="region"
-        aria-label="Key"
-        tabIndex={0}
-        data-floating="bottom"
-        data-form={form.scroll ? 'scroll' : 'wrap'}
-        onScroll={form.scroll ? onScroll : undefined}
-      >
-        <ul ref={list} className="stage-key-list" style={form.scroll ? { width: form.width } : undefined}>
+    <div className="stage-key-room" data-beside={beside}>
+      <section className="stage-key" role="region" aria-label="Key" tabIndex={0} data-floating="bottom">
+        <ul className="stage-key-list">
           <KeyItems entries={entries} />
         </ul>
       </section>

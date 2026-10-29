@@ -82,7 +82,7 @@ const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? on
 const itemsOf = (row: TraceRow, column: TraceColumn): number => (column === 'files' ? row.files.length : row[column].length);
 
 /** What a matrix shows, from the focus's shape: its groups, its label, its Untraced section's owner, its caption and its note. */
-interface MatrixSpec { groups: TraceGroup[]; label: string; untracedOf?: string; caption?: string; lead?: ReactNode }
+interface MatrixSpec { groups: TraceGroup[]; label: string; untracedOf?: string; caption?: string; lead?: ReactNode; /** What the obligations are counted as, after their count: " under this outcome". */ under?: string }
 
 function matrixSpec(index: SpecIndex, focus: string): MatrixSpec | null {
   const shape = traceShape(index, focus);
@@ -90,7 +90,11 @@ function matrixSpec(index: SpecIndex, focus: string): MatrixSpec | null {
   const name = nameOf(focus);
   switch (shape.shape) {
     case 'chain': return null;
-    case 'matrix': return { groups: shape.groups, untracedOf: focus, label: `Traceability matrix of ${name}` };
+    case 'matrix': {
+      // An outcome's obligations sit under the capabilities serving it, not under it in the record tree: nothing is untraced under it.
+      const outcome = index.byId.get(focus)?.kind === 'business_outcome';
+      return { groups: shape.groups, untracedOf: outcome ? undefined : focus, label: `Traceability matrix of ${name}`, under: outcome ? ' under this outcome' : undefined };
+    }
     case 'rows': {
       const n = shape.groups.reduce((s, g) => s + g.rows.length, 0);
       return {
@@ -250,7 +254,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
       const gaps = row.gaps;
       return `${kindLabel(index, index.byId.get(focus)!.kind)} · ${TRACE_COLUMNS.map((c) => `${itemsOf(row, c)} ${TRACE_COLUMN_LABELS[c].toLowerCase()}`).join(' · ')}${gaps.length > 0 ? ` · ${count(gaps.length, 'gap')}` : ''}`;
     }
-    return spec.caption ?? `${count(total, 'obligation')} · ${page!.withGaps} with gaps · ${untracedCount} untraced`;
+    return spec.caption ?? `${count(total, 'obligation')}${spec.under ?? ''} · ${page!.withGaps} with gaps${spec.untracedOf ? ` · ${untracedCount} untraced` : ''}`;
   }, [spec, index, focus, total, page, untracedCount]);
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 
