@@ -112,7 +112,7 @@ describe('LA-AUT-UC26-R50-T01 each Endpoint command (LA-AUT-A13) changes one end
   });
 });
 
-describe('LA-STD-CODE-R07-T51 an endpoint, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
+describe('LA-STD-CODE-R07-T57 an endpoint, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
   it('removes a test, a handler with its links, a requirement with its tests, and an endpoint whole', async () => {
     const store = await endpointDataSet();
     expect((await runCommand(store, REMOVE_ENDPOINT_TEST, { id: 'TL-LEND-EP01-R01-T01' })).changes.map((c) => c.table).sort()).toEqual(['endpoint_test', 'starts_from']);

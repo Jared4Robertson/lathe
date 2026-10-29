@@ -105,7 +105,7 @@ describe('LA-AUT-UC18-R50-T01 each View command (LA-AUT-A12) changes one view th
   });
 });
 
-describe('LA-STD-CODE-R07-T50 a view, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
+describe('LA-STD-CODE-R07-T56 a view, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
   it('removes a test alone, a requirement with its tests, and a view whole', async () => {
     const store = await viewDataSet();
     expect((await runCommand(store, REMOVE_VIEW_TEST, { id: 'TL-V01-R01-T01' })).changes.map((c) => c.table).sort()).toEqual(['starts_from', 'view_test']);
