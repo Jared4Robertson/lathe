@@ -16,7 +16,7 @@ import { spaceIndex, type SpecIndex } from '../../src/specs/data';
 /** This repo's products, Lathe's (data/) and the Tool Library's (examples/tool-library/), each read through its own store, as the workspace serves them. */
 async function repoData(): Promise<SpecData> {
   const repo = path.resolve(import.meta.dirname, '../../..');
-  const data: SpecData = { schema: undefined as unknown as SpecData['schema'], sources: [], placements: {}, problems: [], exceptions: [], coverage: [] };
+  const data: SpecData = { schema: undefined as unknown as SpecData['schema'], sources: [], placements: {}, problems: [], exceptions: [], coverage: [], chains: [] };
   const schemas: SpecData['schema'][] = [];
   for (const root of [repo, path.join(repo, 'examples/tool-library')]) {
     const store = await openStore(root);

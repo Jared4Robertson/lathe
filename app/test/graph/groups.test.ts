@@ -147,8 +147,9 @@ describe('graph groups', () => {
   });
 
   it('LA-V93-R26-T01 A group carries a summary mark when its members or anything beneath them has problems or coverage gaps', () => {
-    // An invariant beneath an aggregate is not proved; a command's recorded exception is no problem, so it adds no mark.
-    expect(groupMarks(index, 'P-D/domain-model/aggregate')).toEqual({ errors: 0, warnings: 1, gaps: ['proved'] });
+    // An invariant beneath an aggregate is not proved, and commands beneath them are untraced; a command's recorded
+    // exception is no problem, so it adds no mark.
+    expect(groupMarks(index, 'P-D/domain-model/aggregate')).toEqual({ errors: 0, warnings: 1, gaps: ['proved', 'record-untraced'] });
     // A use case test has an error.
     expect(groupMarks(index, 'P-D/test-plan/use_case_test')).toEqual({ errors: 1, warnings: 0, gaps: [] });
     expect(groupMarks(grouped, 'P-D-A4/command')).toEqual({ errors: 0, warnings: 0, gaps: [] });

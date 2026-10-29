@@ -276,8 +276,10 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const motion = readFileSync(join(SRC, 'graph', 'motion.ts'), 'utf8');
     expect(motion).toContain("'(prefers-reduced-motion: reduce)'");
     expect(motion).toMatch(/--motion-speed[\s\S]*--motion-ease/);
-    // Code that animates frame by frame takes its timing from the shared motion, not numbers of its own.
-    const ownTiming = animators.filter((f) => !/readMotion\(\)/.test(readFileSync(f, 'utf8'))).map((f) => relative(ROOT, f));
+    // Code that animates frame by frame takes its timing from the shared motion, not numbers of its own: directly, or
+    // through the canvas look, whose fade is the motion's duration.
+    expect(readFileSync(join(SRC, 'graph', 'look.ts'), 'utf8')).toMatch(/fade = readMotion\(\)\.duration/);
+    const ownTiming = animators.filter((f) => !/readMotion\(\)|readLook\(/.test(readFileSync(f, 'utf8'))).map((f) => relative(ROOT, f));
     expect(ownTiming).toEqual([]);
   });
 

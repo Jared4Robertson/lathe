@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { withEngineChains } from '../fixtures/engine';
 import { addRows } from '../fixtures/load';
 import { modelIndex, modelWorkspace } from '../fixtures/model';
 import { TRACE_PAGE } from '../../src/trace/TraceView';
@@ -190,15 +191,16 @@ describe('the Trace stage', () => {
   });
 
   it.each(['LA-PAT-APP-UX-R17-T02', 'LA-V98-R08-T01'])('%s A design, build or test record shows the rows that hold it, marked; one nothing traces to says so above the matrix around it; any other record shows the matrix around it', async () => {
-    // A command a chain holds: the rows of each obligation whose chain holds it, the command marked in its cell.
+    // A command three chains hold: the requirement a step invokes it for, the domain service it calls and the
+    // specification it checks; a row for each, the command marked in its cell.
     await openApp('/P-D-CMD01?stage=trace', served());
     let table = await matrix();
-    expect(within(table).getAllByRole('rowheader').map((h) => h.querySelector('.trace-id')!.textContent)).toEqual(['P-D-UC01-R01']);
+    expect(within(table).getAllByRole('rowheader').map((h) => h.querySelector('.trace-id')!.textContent).sort()).toEqual(['P-D-DS01', 'P-D-SP01', 'P-D-UC01-R01']);
     const marked = table.querySelector('a[aria-current="page"]')!;
     expect(marked).toHaveClass('is-focus');
     expect(marked.querySelector('.trace-id')).toHaveTextContent('P-D-CMD01');
     expect(traceStage()).toHaveTextContent('Each requirement or rule whose chain holds this record');
-    await waitFor(() => expect(counts()).toHaveTextContent('1 obligation holds this record'));
+    await waitFor(() => expect(counts()).toHaveTextContent('3 obligations hold this record'));
     // A test is held by the obligation it proves.
     await openApp('/P-D-UC01-R01-T01?stage=trace', served());
     table = await matrix();
@@ -234,10 +236,31 @@ describe('the Trace stage', () => {
     expect(window.location.search).toBe('?stage=trace');
   });
 
+  it('LA-V98-R11-T01 Wheel and drag move the trace\'s camera, and . frames the trace again with a glide, as on the graph', async () => {
+    await openApp('/P-D-UC01?stage=trace', served());
+    const host = await canvasHost();
+    const framed = (await drawn()).camera;
+    const canvas = host.querySelector('canvas')!;
+    fireEvent.wheel(canvas, { deltaY: -200, clientX: 200, clientY: 200 });
+    await waitFor(async () => expect((await drawn()).camera.zoom).toBeGreaterThan(framed.zoom));
+    fireEvent.pointerDown(canvas, { clientX: 300, clientY: 300, pointerType: 'mouse', pointerId: 1, button: 0 });
+    fireEvent.pointerMove(canvas, { clientX: 340, clientY: 320, pointerType: 'mouse', pointerId: 1 });
+    fireEvent.pointerUp(canvas, { clientX: 340, clientY: 320, pointerType: 'mouse', pointerId: 1 });
+    expect((await drawn()).camera).not.toEqual(framed);
+    expect(screen.getByRole('button', { name: 'Frame the trace' })).toHaveAttribute('aria-keyshortcuts', '.');
+    fireEvent.keyDown(document.body, { key: '.', code: 'Period' });
+    await waitFor(async () => {
+      const now = (await drawn()).camera;
+      expect(now.x).toBeCloseTo(framed.x, 0);
+      expect(now.y).toBeCloseTo(framed.y, 0);
+      expect(now.zoom).toBeCloseTo(framed.zoom, 4);
+    });
+  });
+
   it('LA-V98-R09-T01 A record two lanes hold is drawn in both, marked In 2 lanes, and hovering one lights both', async () => {
     const data = modelWorkspace();
     addRows(data, 'happens_in', { source_id: 'P-D-UC01-FL01-S03', target_id: 'P-V01' });
-    await openApp('/P-D-UC01?stage=trace', served(data));
+    await openApp('/P-D-UC01?stage=trace', served(await withEngineChains(data)));
     const copies = (await drawn(true)).boxes.filter((b) => b.id === 'P-V01');
     expect(copies.map((b) => b.lane)).toEqual([0, 1]);
     for (const c of copies) expect(c.notes).toEqual(['In 2 lanes']);

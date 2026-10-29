@@ -1066,6 +1066,7 @@ One step of a flow, in order on its path. It fulfills UC requirements of its own
 - **Links out:** Exchanges with ([`exchanges_with`](#relation-exchanges_with)), Fulfills ([`fulfills`](#relation-fulfills)), Happens in ([`happens_in`](#relation-happens_in)), Invokes ([`invokes`](#relation-invokes))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`step-order`](#check-step-order), [`step-without-endpoint`](#check-step-without-endpoint)
+- **Gaps:** [`record-untraced`](#gap-record-untraced)
 
 <a id="table-flow_step"></a>
 
@@ -1318,6 +1319,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-flow-without-main-path"></a>`flow-without-main-path` | [`flow`](#kind-flow), [`flow_step`](#kind-flow_step) | A flow with no step on its main path. |
 | <a id="gap-endpoint-without-requirement"></a>`endpoint-without-requirement` | [`endpoint`](#kind-endpoint), [`api_requirement`](#kind-api_requirement) | An endpoint with no API requirement. |
 | <a id="gap-route-without-record"></a>`route-without-record` | [`product`](#kind-product), [`endpoint`](#kind-endpoint), [`view`](#kind-view) | A route the code serves that no endpoint or view has. |
+| <a id="gap-record-untraced"></a>`record-untraced` | [`flow_step`](#kind-flow_step), [`command`](#kind-command), [`query`](#kind-query), [`ui_component`](#kind-ui_component) | A flow step, command, query or UI component no obligation's chain reaches. |
 
 <a id="stage-technical-specification"></a>
 

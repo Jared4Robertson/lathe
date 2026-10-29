@@ -156,6 +156,35 @@ export interface Coverage {
   gaps: CoverageGap[];
 }
 
+/** A file a record of a chain names, as the record gives it, with the records that name it. */
+export interface TraceFile {
+  path: string;
+  named_by: string[];
+}
+
+/**
+ * One obligation's traceability chain, by the relations coverage counts, as the engine works it out (trace_link): the
+ * one answer to "what traces to what", which the app's Trace stage reads and never works out.
+ * - design: a UC requirement's fulfilling steps, their flows, the views they happen in, the commands and queries they
+ *   invoke and the integrations they exchange with; a constraint's value object; an invariant's aggregate; a policy's
+ *   command; the commands and queries that call a domain service; the commands that check a specification and the
+ *   queries that select by it; empty for the other kinds, designed by their technical records;
+ * - build: the technical records that implement it, as built counts them;
+ * - tests: its tests, whether or not they count as proof yet (Coverage.proved_by says which do);
+ * - files: the files its build and test records name.
+ * Each list is in kind order, then by ID. Whether it is designed, built and proved is coverage's (Coverage.gaps); a
+ * design or build record no chain reaches is a record-untraced gap.
+ */
+export interface TraceChain {
+  obligation: string;
+  design: string[];
+  build: string[];
+  tests: string[];
+  files: TraceFile[];
+  /** The chain's links, each from the record nearer the obligation to the one it leads to: [source, target]. */
+  links: [string, string][];
+}
+
 export interface Workspace {
   kinds: Kind[];
   /** The stages, in order. */
@@ -167,4 +196,6 @@ export interface Workspace {
   /** Every recorded exception, by command and aggregate. */
   exceptions: RecordedException[];
   coverage: Coverage[];
+  /** Every obligation's traceability chain, by obligation ID. */
+  chains: TraceChain[];
 }
