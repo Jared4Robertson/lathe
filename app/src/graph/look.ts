@@ -14,6 +14,8 @@ export interface Look {
   interactionDesignEdge: string; interactionDesignFill: string; technicalSpecificationEdge: string; technicalSpecificationFill: string;
   testPlanEdge: string; testPlanFill: string;
   structuralEdge: string; structuralFill: string;
+  /** The live marks' colors (changes/marks.ts): a new record's glow and dot, a changed record's dot, a removed record's ghost. */
+  changeNew: string; changeChanged: string; changeGone: string;
   /** How much the hover spotlight dims the rest, and how faint an unlit line then is. */
   spotlightDim: number; contextOpacity: number;
   /** The focus fade (fade.ts): how strongly a box outside the focus's subtree is drawn, and an ancestor kept as a trail in Nested and Voronoi. */
@@ -34,6 +36,7 @@ const COLORS: Record<Exclude<keyof Look, 'spotlightDim' | 'contextOpacity' | 'fo
   technicalSpecificationEdge: '--g-technical-specification', technicalSpecificationFill: '--g-technical-specification-bg',
   testPlanEdge: '--g-test-plan', testPlanFill: '--g-test-plan-bg',
   structuralEdge: '--g-structural', structuralFill: '--g-structural-bg',
+  changeNew: '--change-new', changeChanged: '--change-changed', changeGone: '--change-gone',
 };
 
 /** The look a page without a stylesheet draws in (the unit tests). */
@@ -46,6 +49,7 @@ export const PLAIN_LOOK: Look = {
   interactionDesignEdge: '#6A4C9C', interactionDesignFill: '#EEE8F6', technicalSpecificationEdge: '#B5512A', technicalSpecificationFill: '#F8E8DF',
   testPlanEdge: '#A3365F', testPlanFill: '#F7E4EC',
   structuralEdge: '#1D2830', structuralFill: '#FFFFFF',
+  changeNew: '#2F7148', changeChanged: '#B5512A', changeGone: '#5A6870',
   spotlightDim: 0.5, contextOpacity: 0.35, focusFade: 0.25, focusTrail: 0.45, fade: 0, vignette: 56,
 };
 

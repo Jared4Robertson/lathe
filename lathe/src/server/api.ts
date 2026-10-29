@@ -3,6 +3,7 @@
 //   GET  /api/spec                SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
 //   POST /api/write               { commands } -> WriteAnswer: one transaction through the command layer of the product the commands name
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
+//   GET  /api/baseline?product=<ID>&since=<commit|branch|hash>   BaselineAnswer (baseline.ts): the product's rows at a commit, for the record diff (../changes.ts)
 //   GET  /api/reference           the workspace's own product's Reference (reference.ts): kinds, tables, relations, folders, checks
 //
 // The root is a workspace: its own product, and each other product its lathe.config.json lists under products, each
@@ -18,6 +19,7 @@ import { describeKey, rowKey, type Row } from '../store/rows.ts';
 import type { SchemaDescription } from '../store/schema.ts';
 import { formatProblem, LATHE_DATA_DIR, openStore, StoreError, type Command, type Store } from '../store/store.ts';
 import type { RowChange, SpecData, WriteAnswer, WriteRequest } from './contract.ts';
+import { baseline, parseSince } from './baseline.ts';
 import { recordHistory } from './history.ts';
 
 /** The most a write's body may hold. */
@@ -393,6 +395,27 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
     if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
     try {
       send(res, 200, await buildReference(loadConfig(root).root));
+    } catch (error) {
+      send(res, 500, { error: storeMessage(error) });
+    }
+    return true;
+  }
+  if (pathname === '/api/baseline') {
+    if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
+    const query = new URL(req.url ?? '/', 'http://localhost').searchParams;
+    const product = (query.get('product') ?? '').trim();
+    const since = parseSince(query.get('since'));
+    if (!product) return (send(res, 400, { error: 'Give a product: /api/baseline?product=<ID>&since=commit.' }), true);
+    if (!since) return (send(res, 400, { error: 'since is commit, branch or a commit hash.' }), true);
+    try {
+      // The product's own folder: the first product root whose store holds the product.
+      let found: { config: LatheConfig; schema: SchemaDescription } | undefined;
+      for (const config of workspaceProducts(root)) {
+        found = await withStore(config.root, async (opened) => (opened.store.record(product)?.kind === 'product' ? { config, schema: opened.store.schema } : undefined));
+        if (found) break;
+      }
+      if (!found) return (send(res, 404, { error: `There's no product ${product}.` }), true);
+      send(res, 200, await baseline(found.config.root, found.config.dataDir, found.schema, since), { 'cache-control': 'no-store' });
     } catch (error) {
       send(res, 500, { error: storeMessage(error) });
     }

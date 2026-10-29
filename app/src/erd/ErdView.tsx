@@ -1,6 +1,6 @@
 // The ERD stage of any address, /<id>?stage=erd (LA-V94).
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
-import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
+import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore, ViewportPortal, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
 import { useCameraGestures } from '../graph/gestures';
@@ -17,6 +17,9 @@ import { ErdLeader } from './leader';
 import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
 import { useWalk } from '../graph/steps';
 import { ARROW_DIRECTION, erdStep } from './walk';
+import { useChanges, type LiveMark } from '../changes/changes';
+import { GHOST_MS, lensFade, markPhase, useStageMarks } from '../changes/marks';
+import { ChangesKey } from '../changes/ChangesKey';
 
 // The ERD stage: one map of the whole product (LA-V94-R08), each domain a region, its aggregates
 // boundaries around their entities, drawn with React Flow and laid out once by ELK (layout.ts).
@@ -52,8 +55,11 @@ export interface ErdViewProps {
   space?: OpenSpaceStore;
 }
 
-/** `strength`: how strongly the box is drawn, 1 in the focus's scope (the focus fade). `pick`: the box the focus picks out. */
-interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean; pick: boolean; strength: number }
+/**
+ * `strength`: how strongly the box is drawn, 1 in the focus's scope (the focus fade). `pick`: the box the focus picks out.
+ * `mark`: its live change (changes/marks.ts), drawn by the stylesheet: a new box's glow, a changed box's pulse, and a dot.
+ */
+interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean; pick: boolean; strength: number; mark: { change: 'added' | 'changed'; t: number; moving: boolean } | null }
 /**
  * `label`: the line's words, read from its source, from the schema's relations (LA-V92-R07) or the
  * ERD view's own for a reference. `title`: the whole sentence, for its tooltip. `hover`: the fields
@@ -107,9 +113,13 @@ function RegionLabels({ regions }: { regions: readonly Region[] }) {
 function BoxView({ data }: NodeProps<BoxNode>) {
   const { box } = data;
   const faded = data.strength < 1;
-  const classes = ['erd-box', `erd-${box.kind}`, data.pick && 'is-highlight', data.focus && 'is-focus', faded && 'is-faded'].filter(Boolean).join(' ');
+  const { mark } = data;
+  const classes = ['erd-box', `erd-${box.kind}`, data.pick && 'is-highlight', data.focus && 'is-focus', faded && 'is-faded', mark && `has-change is-${mark.change}`].filter(Boolean).join(' ');
   return (
-    <div className={classes} title={`${box.title} (${box.id})`} style={faded ? strengthStyle(data.strength) : undefined}>
+    <div className={classes} title={`${box.title} (${box.id})`} style={faded ? strengthStyle(data.strength) : undefined} data-change={mark?.change}>
+      {/* A new box's glow or a changed box's pulse, once as it lands (keyed by when, so a second change plays it again); the dot lasts. */}
+      {mark?.moving && <span key={mark.t} className="erd-change-flash" aria-hidden="true" />}
+      {mark && <span className="erd-change-dot" aria-hidden="true" />}
       <Handle type="target" position={Position.Left} className="erd-handle" isConnectable={false} />
       <Handle type="source" position={Position.Right} className="erd-handle" isConnectable={false} />
       <div className="erd-box-head">
@@ -256,6 +266,7 @@ export function ErdKey({ map, at, relations = [] }: { map: ErdMap; at: ErdFocus;
       <div className="erd-key-grid" id={gridId}>
         <ul className="erd-key-ends" aria-label="Boxes">{cells(boxes)}</ul>
         <ul className="erd-key-ends" aria-label="Lines">{cells(lineEntries)}</ul>
+        <ChangesKey />
       </div>
     </div>
   );
@@ -328,7 +339,15 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasP
   const theme = useThemeVersion();
   // The fade strengths, read again when the theme changes, and once the canvas is there to read them at.
   const look = useMemo(() => fadeLook(wrapper.current), [theme, placed]);
-  const strength = useMemo(() => erdStrength(map, at.scope, look), [map, at.scope, look]);
+  // With the Changes lens on, what changed from its baseline is kept in place of the focus's scope (changes/marks.ts).
+  const changes = useChanges();
+  const strength = useMemo(() => (changes.lens ? lensFade(changes.byId, look) : erdStrength(map, at.scope, look)), [map, at.scope, look, changes.lens, changes.byId]);
+  // The live marks, and the removed boxes' ghosts where the layout drawn before had them.
+  const rectsRef = placed?.rects;
+  const placeOf = useCallback((id: string) => { const r = rectsRef?.get(id); return r ? { x: r.x, y: r.y, w: r.width, h: r.height } : null; }, [rectsRef]);
+  const marks = useStageMarks(placeOf);
+  const liveNow = marks.at(performance.now());
+  const markOf = (m: LiveMark | undefined): BoxData['mark'] => (m && m.change !== 'removed' ? { change: m.change, t: m.t, moving: markPhase(liveNow, m) !== null } : null);
 
   // The boxes' places come from the layout alone; the focus changes only their strength, their
   // pick and their keyboard stop, never where they are or their size.
@@ -358,7 +377,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasP
         ],
         // A faded box is out of focus: no keyboard stop, hidden from assistive technology.
         ...(s < 1 ? { focusable: false, domAttributes: { 'aria-hidden': true } } : { ariaLabel: boxName(box, pick) }),
-        data: { box, focus: box.id === focus, pick, strength: s },
+        data: { box, focus: box.id === focus, pick, strength: s, mark: markOf(changes.live.get(box.id)) },
       };
     };
     // The map's boxes come each parent before its children, as React Flow wants.
@@ -377,7 +396,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasP
       },
     }));
     return { nodes, edges };
-  }, [placed, strength, at.pick, focus, relations]);
+  }, [placed, strength, at.pick, focus, relations, marks.version]);
 
   // The camera: the shared glide (graph/gestures.ts), driving React Flow's viewport; React Flow keeps
   // the pointer's drag, pinch and wheel, and any of them takes over from a glide.
@@ -500,6 +519,13 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasP
         <Background gap={24} size={1} />
         <Controls showInteractive={false} />
         <RegionLabels regions={regions} />
+        {!liveNow.reduced && liveNow.ghosts.some((g) => liveNow.now - g.t < GHOST_MS) && (
+          <ViewportPortal>
+            {liveNow.ghosts.filter((g) => liveNow.now - g.t < GHOST_MS).map((g) => (
+              <div key={`${g.id} ${g.t}`} className="erd-ghost" data-ghost={g.id} aria-hidden="true" style={{ transform: `translate(${g.x}px, ${g.y}px)`, width: g.w, height: g.h }} />
+            ))}
+          </ViewportPortal>
+        )}
       </ReactFlow>
       <EdgeHints centers={centers} wrapper={wrapper} moveTo={(v) => camera.moveTo(v, true)} />
       <ErdLeader host={wrapper} rects={placed?.rects ?? null} focus={focus} space={space} />

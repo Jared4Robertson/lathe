@@ -5,7 +5,7 @@ import type { SpecIndex } from '../specs/data';
 import { Icon } from '../components/icons';
 import { Button } from '../components/Button';
 import { frameRect, MAX_ZOOM, viewRect, type Viewport } from '../graph/camera';
-import { fadeTween, type FadeLook } from '../graph/fade';
+import { fadeTween, faintest, type FadeLook } from '../graph/fade';
 import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
 import { hitPlate } from '../graph/hit';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from '../graph/look';
@@ -22,6 +22,8 @@ import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpa
 import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { BOX_H, BOX_W, LANE_COLUMN_LABELS, lanesIn, traceFade, visibleIn, type TraceBox, type TraceFocus, type TraceLine, type TraceMap } from './lanes';
 import type { TraceAt } from './walk';
+import { useChanges } from '../changes/changes';
+import { lensFade, marksMoving, useStageMarks } from '../changes/marks';
 
 // The product's one map, laid out once (LA-PAT-APP-UX-R19): focusing a record glides the camera to
 // frame it (lanes.ts traceFocus) and fades what is not under it; Gaps only fades the complete lanes.
@@ -68,7 +70,7 @@ const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 const MIN_FRAME = 120;
 
 /** One drawn box as the test hook reports it, in the page's pixels. */
-export interface TraceSceneBox { key: string; id: string; role: TraceBox['role']; column: string; lane: number; opens: string | null; focus: boolean; hover: boolean; ring: boolean; lit: boolean | null; strength: number; dashed: boolean; kind: string; stage: string; notes: string[]; name: string; rect: { left: number; top: number; width: number; height: number } }
+export interface TraceSceneBox { key: string; id: string; role: TraceBox['role']; column: string; lane: number; opens: string | null; focus: boolean; hover: boolean; ring: boolean; lit: boolean | null; strength: number; change: 'added' | 'changed' | null; dashed: boolean; kind: string; stage: string; notes: string[]; name: string; rect: { left: number; top: number; width: number; height: number } }
 /** What the canvas draws now (LA-PAT-APP-UX-R12): its camera, boxes, bars and arrows; or, `whole`, every box and arrow of the map as the camera would draw it. */
 export interface TraceScene {
   camera: Viewport;
@@ -258,7 +260,14 @@ function TraceScene({ index, focus, map, focused, gapsOnly, onNavigate, onPeek, 
   /** The look's fade strength, read when drawn, so a theme change takes effect without a new fade. */
   const fadeLook = useMemo<Pick<FadeLook, 'focusFade'>>(() => ({ get focusFade() { return look.current.focusFade; } }), []);
   /** What the focus and Gaps only keep at full strength, the rest faded (fade.ts): eased in over the glide to a new focus, or the spotlight's fade for the filter. */
-  const fade = useMemo(() => traceFade(map, focused.lanes, gapsOnly, fadeLook), [map, focused, gapsOnly, fadeLook]);
+  // With the Changes lens on, what changed from its baseline is kept in place of the focus's lanes (changes/marks.ts).
+  const changes = useChanges();
+  const fade = useMemo(() => (changes.lens
+    ? faintest(traceFade(map, null, gapsOnly, fadeLook), lensFade(changes.byId, fadeLook, (place) => map.byKey.get(place)?.id ?? place))
+    : traceFade(map, focused.lanes, gapsOnly, fadeLook)), [map, focused, gapsOnly, fadeLook, changes.lens, changes.byId]);
+  // The live marks: each record's on every copy; a removed record's ghost on its first copy in the map drawn before.
+  const placeOf = useCallback((id: string) => { const b = map.copies.get(id)?.[0]; return b ? { x: b.x, y: b.y, w: b.w, h: Math.min(b.h, BOX_H) } : null; }, [map]);
+  const marks = useStageMarks(placeOf);
   const tween = useMemo(() => fadeTween((t) => readMotion().ease(t)), []);
   useLayoutEffect(() => {
     tween.send(fade, glideMs.current ?? look.current.fade);
@@ -330,7 +339,8 @@ function TraceScene({ index, focus, map, focused, gapsOnly, onNavigate, onPeek, 
     const spot = spotNow();
     const sp = spotlight.current;
     const faded = tween.now();
-    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: faded.at };
+    const live = marks.at(performance.now());
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: faded.at, marks: live };
     const v = view.current;
     const cam: Camera = { cx: (s.w / 2 - v.x) / v.zoom, cy: (s.h / 2 - v.y) / v.zoom, zoom: v.zoom, w: s.w, h: s.h };
     paint(ctx.current, dpr, cam, frame, look.current, fonts, state);
@@ -340,7 +350,7 @@ function TraceScene({ index, focus, map, focused, gapsOnly, onNavigate, onPeek, 
       host: wrapper.current, space, dpr, color: b ? boxColors(look.current, plateFor(b)).edge : look.current.ink,
       box: b ? { left: b.x * v.zoom + v.x, top: b.y * v.zoom + v.y, right: (b.x + b.w) * v.zoom + v.x, bottom: (b.y + Math.min(b.h, BOX_H)) * v.zoom + v.y } : null,
     });
-    if (!spot.done || !faded.done) requestPaint();
+    if (!spot.done || !faded.done || marksMoving(live, frame.plates.map((p) => p.id))) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
   };
   useEffect(() => { requestPaint(); });
@@ -487,7 +497,7 @@ function TraceScene({ index, focus, map, focused, gapsOnly, onNavigate, onPeek, 
           const p = frame.plates[i];
           return {
             key: b.key, id: b.id, role: b.role, column: b.column, lane: b.lane, opens: b.opens, focus: b.id === focus, hover: hover.current === b.id, ring: ring.current === b.id,
-            lit: sp.id !== null && sp.lit ? sp.lit.has(b.key) : null, strength: strength(b.key), dashed: p.dashed, kind: p.kind, stage: p.stage, notes: b.notes, name: plateName(p, b.id === focus),
+            lit: sp.id !== null && sp.lit ? sp.lit.has(b.key) : null, strength: strength(b.key), change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(b.id)), dashed: p.dashed, kind: p.kind, stage: p.stage, notes: b.notes, name: plateName(p, b.id === focus),
             rect: { left: r.left + b.x * v.zoom + v.x, top: r.top + b.y * v.zoom + v.y, width: b.w * v.zoom, height: b.h * v.zoom },
           };
         }),

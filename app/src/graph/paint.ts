@@ -4,6 +4,7 @@ import { notchOf, type Mark, type Outline, type Shape } from './shapes';
 import { MARK_PATHS, SHAPE_PATHS } from './shape-icons';
 import { fontFor, type GraphFonts } from './fonts';
 import { onScreen } from './hit';
+import { GHOST_MS, markPhase, type StageMarks } from '../changes/marks';
 
 // The graph's canvas painter (LA-EXP-DS09, LA-EXP-DS10): each frame it draws what the camera
 // shows, in screen pixels, from the map's plates (plate.ts). Every point is placed by the camera in
@@ -58,6 +59,8 @@ export interface PaintState {
   strength: (place: string) => number;
   litLines: ReadonlySet<string> | null;
   spot: number;
+  /** The live changes' marks (changes/marks.ts): a glow, a pulse, a dot by each changed record, the removed ones' ghosts. */
+  marks: StageMarks | null;
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -175,7 +178,9 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     const lit = !!state.lit?.has(p.place);
     ctx.globalAlpha = dim(lit) * strength(p.place, lit);
     paintBox(ctx, p, cam, look, fonts, state, X, Y);
+    if (state.marks) paintMark(ctx, p, cam, look, state.marks, X, Y);
   }
+  if (state.marks) paintGhosts(ctx, cam, look, state.marks, X, Y);
 
   ctx.globalAlpha = 1;
   paintVignette(ctx, dpr, cam, look);
@@ -391,6 +396,72 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     ctx.fillText(b.label, x + w / 2, y + h / 2);
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
+  }
+}
+
+/** The least size on screen, in CSS pixels, a box keeps its live mark's dot at. */
+const DOT_MIN_BOX_PX = 10;
+
+/**
+ * A record's live mark (changes/marks.ts): a new one's soft glow, fading; a changed one's pulse in its own edge color,
+ * a ring spreading out and fading; then each one's dot at its top right corner, which lasts.
+ */
+function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Look, marks: StageMarks, X: (x: number) => number, Y: (y: number) => number) {
+  const m = marks.mark(p.id);
+  if (!m || m.change === 'removed') return;
+  const { zoom } = cam;
+  const alpha = ctx.globalAlpha;
+  const phase = markPhase(marks, m);
+  if (phase !== null) {
+    ctx.save();
+    if (m.change === 'added') {
+      ctx.globalAlpha = alpha * 0.7 * (1 - phase);
+      ctx.shadowColor = look.changeNew;
+      ctx.shadowBlur = 18;
+      ctx.strokeStyle = look.changeNew;
+      ctx.lineWidth = 3;
+      outlinePath(ctx, p, p.outline, X, Y, zoom, 2);
+      ctx.stroke();
+    } else {
+      ctx.globalAlpha = alpha * (1 - phase);
+      ctx.strokeStyle = boxColors(look, p).edge;
+      ctx.lineWidth = 3;
+      outlinePath(ctx, p, p.outline, X, Y, zoom, 2 + 14 * phase);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+  const w = p.w * zoom;
+  const h = p.h * zoom;
+  if (Math.min(w, h) < DOT_MIN_BOX_PX) return;
+  const r = Math.max(3, Math.min(5, Math.min(w, h) / 8));
+  const cx = X(p.x + p.w) - r - 3;
+  const cy = Y(p.y) + r + 3;
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = look.sheet;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 1.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = m.change === 'added' ? look.changeNew : look.changeChanged;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+/** Each removed record's ghost: its outline, dashed, where it was before the reload, fading out (none under reduced motion). */
+function paintGhosts(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, marks: StageMarks, X: (x: number) => number, Y: (y: number) => number) {
+  if (marks.reduced) return;
+  for (const g of marks.ghosts) {
+    const t = (marks.now - g.t) / GHOST_MS;
+    if (t < 0 || t >= 1) continue;
+    ctx.globalAlpha = 0.8 * (1 - t);
+    ctx.strokeStyle = look.changeGone;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([5, 4]);
+    ctx.beginPath();
+    ctx.roundRect(X(g.x), Y(g.y), g.w * cam.zoom, g.h * cam.zoom, 4 * cam.zoom);
+    ctx.stroke();
+    ctx.setLineDash([]);
   }
 }
 
