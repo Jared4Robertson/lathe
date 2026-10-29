@@ -38,8 +38,8 @@ describe('the ERD stage', () => {
     expect(erdFocus(i, 'P-D-EN03')).toEqual({ product: 'P', scope: 'P-D-A3', pick: 'P-D-EN03' });
     // Any other record: its domain in scope, its nearest entity or aggregate picked out when it has one; a table its entity.
     expect(erdFocus(i, 'P-D-UC01')).toEqual({ product: 'P', scope: 'P-D', pick: null });
-    expect(erdFocus(i, 'P-D-CMD01')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-A3' });
-    expect(erdFocus(i, 'P-D-CMD01-H')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-A3' });
+    expect(erdFocus(i, 'P-D-CMD01')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-EN03' });
+    expect(erdFocus(i, 'P-D-CMD01-H')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-EN03' });
     expect(erdFocus(i, 'P-D-EV02')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-A3' });
     expect(erdFocus(i, 'P-D-EN03-TB')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-EN03' });
     // A group: its owner's. A Shared record and a product: the whole product.
@@ -54,10 +54,10 @@ describe('the ERD stage', () => {
     for (const id of ['P', 'P-D-UC01', 'P-VO01', 'P-D-UC01-FL01', 'P-D-CMD01', 'P-D-EV01', 'P-D-PO01', 'P-D-RM01', 'P-D-QRY01', 'P-D-SP01']) {
       expect(framedRects(rects, map, erdFocus(i, id)!).length, id).toBeGreaterThan(0);
     }
-    // The product frames the whole map; a use case its domain's region; a command its aggregate.
+    // The product frames the whole map; a use case its domain's region; a command the entity it changes.
     expect(framedRects(rects, map, erdFocus(i, 'P')!)).toHaveLength(rects.size);
     expect(framedRects(rects, map, erdFocus(i, 'P-D-UC01')!)).toEqual([rects.get('P-D')]);
-    expect(framedRects(rects, map, erdFocus(i, 'P-D-CMD01')!)).toEqual([rects.get('P-D-A3')]);
+    expect(framedRects(rects, map, erdFocus(i, 'P-D-CMD01')!)).toEqual([rects.get('P-D-EN03')]);
 
     // The switch always offers the ERD: on a use case it draws the map, its domain in focus.
     await openApp('/P-D-UC01?stage=erd', served());

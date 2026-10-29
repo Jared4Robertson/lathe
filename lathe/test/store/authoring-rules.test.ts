@@ -98,7 +98,8 @@ describe("Authoring's invariants", () => {
       product: [{ id: 'OT', title: 'Other', description: 'Another product.' }],
       domain: [{ id: 'OT-D', title: 'Other', product_id: 'OT', subdomain_type: 'generic', description: 'The other product\'s one domain.' }],
       aggregate: [{ id: 'OT-D-A1', title: 'Thing', domain_id: 'OT-D', identity: 'Thing ID', description: 'A thing the other product keeps.' }],
-      command: [{ id: 'OT-D-CMD01', title: 'Make a thing', aggregate_id: 'OT-D-A1', description: 'Makes a new thing.' }],
+      entity: [{ id: 'OT-D-EN01', title: 'Thing', aggregate_id: 'OT-D-A1', role: 'root', description: 'The thing itself.' }],
+      command: [{ id: 'OT-D-CMD01', title: 'Make a thing', entity_id: 'OT-D-EN01', description: 'Makes a new thing.' }],
       cli_command: [{ id: 'OT-D-CMD01-CLI', title: 'ot make', command_id: 'OT-D-CMD01', usage: 'ot make' }],
     };
     expect(await refusals(adding(other))).toEqual(
@@ -164,7 +165,7 @@ describe("Authoring's domain services", () => {
     expect(await next('constraint', 'TL-VO01')).toBe('TL-VO01-C02');
     // The domain's ID, from the domain or from the parent inside it.
     expect(await next('aggregate', 'TL-LEND')).toBe('TL-LEND-A5');
-    expect(await next('command', 'TL-LEND-A1')).toBe('TL-LEND-CMD02');
+    expect(await next('command', 'TL-LEND-EN01')).toBe('TL-LEND-CMD02');
     expect(await next('policy', 'TL-LEND-CMD01')).toBe('TL-LEND-PO02');
     // The product's ID, for a kind with no owner.
     expect(await next('view', 'TL')).toBe('TL-V08');

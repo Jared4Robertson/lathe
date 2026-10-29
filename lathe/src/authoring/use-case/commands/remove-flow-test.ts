@@ -1,7 +1,7 @@
 // Remove a flow test (LA-AUT-CMD118): Removes a flow test with the links it starts. Refused while anything else references it, such as a business outcome it measures.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { USE_CASE_SLICE, useCaseChanged } from '../model.ts';
+import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 
 /** The test to remove. */
@@ -27,5 +27,4 @@ export function removeFlowTest(tx: Transaction, input: RemoveFlowTest): void {
   const useCase = useCases.loadHolding('flow_test', input.id) ?? tx.refuse('missing', `there is no flow test ${input.id}`);
   useCase.flowTests = useCase.flowTests.filter((t) => t.row.id !== input.id);
   useCases.save(useCase);
-  useCaseChanged(tx, useCase);
 }

@@ -260,8 +260,8 @@ describe('lathe show, list and next-id', () => {
       [
         'Command TL-LEND-CMD01: Open a loan',
         '  kind: command',
-        '  parent: TL-LEND-A1',
-        '  aggregate_id: TL-LEND-A1',
+        '  parent: TL-LEND-EN01',
+        '  entity_id: TL-LEND-EN01',
         '  description: Lends a free tool to a member.',
         'command_change:',
         '  {"command_id":"TL-LEND-CMD01","aggregate_id":"TL-LEND-A2","reason":"The tool must never show as lent without its loan."}',
@@ -309,7 +309,7 @@ describe('lathe show, list and next-id', () => {
     // Domain-scoped: the domain follows from the parent.
     expect(await next(root, 'aggregate', '--parent', 'TL-LEND')).toBe('TL-LEND-A3');
     expect(await next(root, 'entity', '--parent', 'TL-LEND-A2')).toBe('TL-LEND-EN03');
-    expect(await next(root, 'command', '--parent', 'TL-LEND-A1')).toBe('TL-LEND-CMD02');
+    expect(await next(root, 'command', '--parent', 'TL-LEND-EN01')).toBe('TL-LEND-CMD02');
     expect(await next(root, 'query', '--parent', 'TL-LEND-RM01')).toBe('TL-LEND-QRY02');
     expect(await next(root, 'policy', '--parent', 'TL-LEND-CMD01')).toBe('TL-LEND-PO02');
     expect(await next(root, 'use_case', '--parent', 'TL-LEND-CAP01')).toBe('TL-LEND-UC02');

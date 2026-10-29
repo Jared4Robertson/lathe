@@ -34,14 +34,6 @@ export interface TransactionHost {
   adopt(state: { tables: Tables; schema: SchemaDescription; schemaDb: string; dataDb: string }): Promise<void>;
 }
 
-/** An event a command raised: what happened, to which aggregate instance. */
-export interface RaisedEvent {
-  /** The domain event's record ID, such as LA-AUT-EV04. */
-  event: string;
-  /** The ID of the aggregate's root the event happened to. */
-  root: string;
-}
-
 /** What a committed transaction changed. */
 export interface Committed {
   /** The tables whose rows changed. */
@@ -50,8 +42,6 @@ export interface Committed {
   files: string[];
   /** Each row added, changed or removed, before and after. */
   changes: RowChange[];
-  /** The events the command raised. */
-  events: RaisedEvent[];
 }
 
 interface Draft {
@@ -59,7 +49,6 @@ interface Draft {
   tables: Tables;
   changed: Set<string>;
   schema: SchemaDescription;
-  events: RaisedEvent[];
 }
 
 const drafts = new WeakMap<Transaction, Draft>();
@@ -67,7 +56,7 @@ const drafts = new WeakMap<Transaction, Draft>();
 /** One write in progress: the tables as the command leaves them, read-only to everything but data-files.ts. */
 export class Transaction implements ReadView {
   constructor(host: TransactionHost) {
-    drafts.set(this, { host, tables: new Map(host.tables), changed: new Set(), schema: host.schema, events: [] });
+    drafts.set(this, { host, tables: new Map(host.tables), changed: new Set(), schema: host.schema });
   }
 
   /** The schema, Lathe's and the product's own kinds and relations. */
@@ -100,11 +89,6 @@ export class Transaction implements ReadView {
   /** Refuses the command: nothing changes, and the reason is reported under the rule's name. */
   refuse(rule: string, message: string): never {
     throw new StoreError([{ rule, message, command: 0 }]);
-  }
-
-  /** Records an event the command raised; it is reported with what the write changed. */
-  raise(event: RaisedEvent): void {
-    drafts.get(this)!.events.push(event);
   }
 }
 
@@ -162,7 +146,7 @@ export async function commit(tx: Transaction): Promise<Committed> {
   await host.adopt({ tables, schema, schemaDb, dataDb });
   const names = [...changed].sort();
   const files = await writeFiles(host.dataDir, schema, tables, host.builtIn, origins, names);
-  return { tables: names, files, changes: rowChanges(schema, before, tables, names), events: draft.events };
+  return { tables: names, files, changes: rowChanges(schema, before, tables, names) };
 }
 
 // The rows of the tables a write changed, before and after, paired by key.

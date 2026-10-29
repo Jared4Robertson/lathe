@@ -27,7 +27,7 @@ export const ROWS_KEEP = 0.8;
  * The most the camera zooms in (LA-EXP-DS09): enough to frame the deepest leaf of a large product's
  * map and read its label, which is very small against the product's box (map.ts).
  */
-export const MAX_ZOOM = 64;
+export const MAX_ZOOM = 256;
 /** The least the camera zooms out: the whole of any product's map in a phone's pane. */
 export const MIN_ZOOM = 1e-4;
 

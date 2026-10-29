@@ -1,7 +1,7 @@
 // Remove a flow (LA-AUT-CMD109): Removes a flow with its steps, its flow test and the links they start. Refused while anything else references them.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { USE_CASE_SLICE, useCaseChanged } from '../model.ts';
+import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 
 /** The flow to remove. */
@@ -29,5 +29,4 @@ export function removeFlow(tx: Transaction, input: RemoveFlow): void {
   useCase.steps = useCase.steps.filter((s) => s.row.flow_id !== input.id);
   useCase.flowTests = useCase.flowTests.filter((t) => t.row.flow_id !== input.id);
   useCases.save(useCase);
-  useCaseChanged(tx, useCase);
 }

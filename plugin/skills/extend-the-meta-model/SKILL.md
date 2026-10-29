@@ -44,7 +44,7 @@ A product kind sits in any of the six stages, or in none, and the app shows it t
 - `discovery`: something about why the product exists that a business outcome leaves out, such as a persona or a market, under the product.
 - `domain-model`: a domain concept Lathe's DDD kinds leave out, such as a saga, under the domain.
 - `use-cases`: something a use case owns, such as an acceptance criterion's example, under the use case.
-- `interaction-design`: a design record of a channel Lathe has no kind for, such as an email template or a CLI command's usage, under the command it exposes or the domain.
+- `interaction-design`: a design record of a channel Lathe has no kind for, such as an email template, under the command it serves or the domain.
 - `technical-specification`: code that implements no design record, such as a report script, a migration or a graph layout, under the domain or the design record it serves.
 - `test-plan`: a test kind of the product's own, under what it proves, or what tests need besides a test data set.
 

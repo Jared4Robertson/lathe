@@ -141,9 +141,11 @@ describe('the Trace stage\'s tree', () => {
     expect(arrived.fade('P-BO01|P-D-UC01-R01')).toBe(FADE.focusFade);
     // An untraced command: its box under the Untraced mark.
     expect(fadeOf('P-D-CMD02').key).toBe(`${UNTRACED}|P-D-CMD02`);
-    // An entity: its aggregate. A domain: its group under Not under an outcome; a stage: its domain; a domain with
-    // nothing there: the product. A record of another product's: the product.
-    expect(fadeOf('P-D-EN03').key).toBe('P-D-A3');
+    // An entity its commands sit under: its own box on the way down to them; an entity with no command: its aggregate.
+    // A domain: its group under Not under an outcome; a stage: its domain; a domain with nothing there: the product.
+    // A record of another product's: the product.
+    expect(fadeOf('P-D-EN03').key).toBe('P-D-EN03');
+    expect(fadeOf('P-D-EN04').key).toBe('P-D-A3');
     expect(fadeOf('P-D').key).toBe('P-D');
     expect(fadeOf('P-D/domain-model').key).toBe('P-D');
     expect(fadeOf('P-E').key).toBe('P');

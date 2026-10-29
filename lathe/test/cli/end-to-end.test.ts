@@ -44,7 +44,7 @@ const FIELDS: Record<string, string | number | boolean>[] = [
   { entity_id: 'TL-LEND-EN01', position: 1, name: 'Loan ID', meaning: 'The library\'s number for the loan.', type: 'whole number', required: true, column_name: 'id' },
   { entity_id: 'TL-LEND-EN01', position: 2, name: 'Due date', meaning: 'The last day of the loan.', type: 'date', required: true },
 ];
-const COMMAND = { id: 'TL-LEND-CMD01', title: 'Borrow a tool', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' };
+const COMMAND = { id: 'TL-LEND-CMD01', title: 'Borrow a tool', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' };
 const EVENT = { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool went out on loan.' };
 const CAPABILITY = { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' };
 const USE_CASE = { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home for the loan period.' };
@@ -191,7 +191,7 @@ describe('writing a spec end to end', () => {
       await call('add', { aggregate: AGGREGATE });
       await call('add', { entity: ENTITY });
       for (const field of FIELDS) await call('add', { entity_field: field });
-      expect(await call('next_id', { kind: 'command', parent: 'TL-LEND-A1' })).toBe('TL-LEND-CMD01');
+      expect(await call('next_id', { kind: 'command', parent: 'TL-LEND-EN01' })).toBe('TL-LEND-CMD01');
       await call('add', { command: COMMAND });
       await call('add', { domain_event: EVENT });
       await call('add', { capability: CAPABILITY });
