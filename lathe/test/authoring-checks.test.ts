@@ -59,7 +59,7 @@ describe("Authoring's invariants kept by checks", () => {
     ]);
   });
 
-  it('LA-AUT-INV32-T A test run at a level its kind does not allow is a warning; one its kind allows is not', async () => {
+  it('LA-CHK-UC01-R09-T02 A test run at a level its kind does not allow is a warning; one its kind allows is not', async () => {
     expect(ofCheck(clean, 'test-level-not-allowed')).toEqual([]);
     const ws = await loadData(changing(complete(), 'constraint_test', () => true, { level: 'browser' }));
     expect(ofCheck(ws, 'test-level-not-allowed')).toEqual([

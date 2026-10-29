@@ -24,7 +24,7 @@ describe('one problem per mistake', () => {
     ]);
   });
 
-  it('LA-PAT-RECORD-IDENTITY-R01-T01 LA-PAT-RECORD-IDENTITY-R01-T04 LA-PAT-RECORD-IDENTITY-R01-T03 A row taking another record\'s ID is refused once, as unique-id naming that record\'s file and line, and the links to the ID are not', async () => {
+  it('LA-PLT-UC01-R12-T01 A row taking another record\'s ID is refused once, as unique-id naming that record\'s file and line, and the links to the ID are not', async () => {
     // EX-LEND-SP01 is the target of a checks link and the source of a reads link.
     const twin = { id: 'EX-LEND-SP01', title: 'Twin', uc_requirement_id: 'EX-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'A member asks for a tool on loan.', then: 'The library refuses.' };
     expect(await refusals(adding(complete(), { use_case_test: [twin] }))).toEqual([

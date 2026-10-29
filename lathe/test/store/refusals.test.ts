@@ -57,7 +57,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(problems[0].message).toContain('cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02');
   });
 
-  it('LA-AUT-INV10-T refuses a policy hearing two events', async () => {
+  it('LA-AUT-INV104-T refuses a policy hearing two events', async () => {
     const problems = await refusal(adding({ domain_event: [{ id: 'TL-LEND-EV02', title: 'Loan closed', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool came back.' }], hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV02' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/hears.jsonl' })]);
   });
@@ -174,7 +174,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     // A link from it would cross products too, so the prefix rule is the one reported for a lone record.
   });
 
-  it("LA-PAT-RECORD-IDENTITY-R02-T01 LA-PAT-RECORD-IDENTITY-R02-T04 LA-PAT-RECORD-IDENTITY-R02-T03 LA-PAT-RECORD-IDENTITY-R02-T02 refuses an ID that does not start with its parent's or domain's ID", async () => {
+  it("LA-PLT-UC01-R13-T01 refuses an ID that does not start with its parent's or domain's ID", async () => {
     const problems = await refusal(adding({ uc_requirement: [{ id: 'TL-LEND-UC09-R01', title: 'Lost', use_case_id: 'TL-LEND-UC01', statement: 'x' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', message: 'TL-LEND-UC09-R01 is a UC requirement under TL-LEND-UC01, so its ID starts with TL-LEND-UC01-' })]);
   });
