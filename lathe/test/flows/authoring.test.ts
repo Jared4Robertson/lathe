@@ -386,9 +386,10 @@ describe('Authoring flows', () => {
     ]);
     // S01: the technical record under the design record it implements, naming its file.
     tl.run('add', 'command_handler', '--id', 'TL-LEND-CMD01-H', '--title', 'openLoan', '--command_id', 'TL-LEND-CMD01', '--file', 'src/loans.ts');
-    tl.run('add', 'repository', '--id', 'TL-LEND-A1-REPO', '--title', 'Loans', '--aggregate_id', 'TL-LEND-A1', '--file', 'src/loans.ts');
-    expect(problemsOf(tl.workspace(), 'technical-file-missing').sort()).toEqual([expect.stringMatching(/^TL-LEND-A1-REPO: /), expect.stringMatching(/^TL-LEND-CMD01-H: /)]);
-    tl.write('src/loans.ts', '// TL-LEND-CMD01-H TL-LEND-A1-REPO\n');
+    tl.run('add', 'repository', '--id', 'TL-LEND-REPO01', '--title', 'Loans', '--domain_id', 'TL-LEND', '--file', 'src/loans.ts');
+    tl.run('link', 'TL-LEND-REPO01', 'persists', 'TL-LEND-A1');
+    expect(problemsOf(tl.workspace(), 'technical-file-missing').sort()).toEqual([expect.stringMatching(/^TL-LEND-CMD01-H: /), expect.stringMatching(/^TL-LEND-REPO01: /)]);
+    tl.write('src/loans.ts', '// TL-LEND-CMD01-H TL-LEND-REPO01\n');
     // S02: the entity's table with its keys, the unique key naming the invariant it enforces.
     tl.run('add', 'table', '--id', 'TL-LEND-EN01-TB', '--title', 'Loans', '--entity_id', 'TL-LEND-EN01', '--name', 'loan', '--storage', 'table', '--file', 'src/loans.ts');
     tl.run('add', 'table_key', '--table_id', 'TL-LEND-EN01-TB', '--position', '1', '--type', 'primary', '--columns', 'id');

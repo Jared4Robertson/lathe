@@ -301,6 +301,24 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/pattern_rule.jsonl', line: 1 })]);
   });
 
+  it('LA-AUT-INV41-T refuses a second repository for one aggregate, and a second repository of one identifier; one repository may persist several aggregates', async () => {
+    const second = adding({
+      repository: [{ id: 'TL-LEND-REPO02', title: 'LoanStore', domain_id: 'TL-LEND', file: 'src/lending/loans.ts' }],
+      persists: [{ source_id: 'TL-LEND-REPO02', target_id: 'TL-LEND-A1' }],
+    });
+    expect(await refusal(second)).toEqual([
+      expect.objectContaining({ rule: 'unique', file: 'data/persists.jsonl', line: 2, message: expect.stringContaining('has the same target_id as persists') }),
+    ]);
+    // The same identifier in the same file is a second record of one piece of code.
+    const same = adding({ repository: [{ id: 'TL-LEND-REPO02', title: 'LoanRepository', domain_id: 'TL-LEND', file: 'src/lending/loans.ts' }] });
+    expect((await refusal(same)).map((p) => [p.rule, p.key]).sort()).toEqual([
+      ['title-unique', 'TL-LEND-REPO01'],
+      ['title-unique', 'TL-LEND-REPO02'],
+    ]);
+    // A repository shared by two domains persists an aggregate of each.
+    await loads(adding({ ...catalog, persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-CAT-A1' }] }));
+  });
+
   it('LA-STD-MODELING-R04-T01 refuses a title another record of its kind and product has, or one ending with a period', async () => {
     await loads(everyKind());
     const twice = adding({ aggregate: [{ id: 'TL-LEND-A9', title: ' loan ', domain_id: 'TL-LEND' }] });

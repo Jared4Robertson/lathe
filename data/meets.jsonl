@@ -1,6 +1,3 @@
-{"source_id":"LA-AUT-A1-REPO","target_id":"LA-STD-MODELING-R04"}
-{"source_id":"LA-AUT-A1-REPO","target_id":"LA-STD-MODELING-R09"}
-{"source_id":"LA-AUT-A1-REPO","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-EN37-TB","target_id":"LA-STD-PRINCIPLES-R03"}
 {"source_id":"LA-AUT-QRY01-H","target_id":"LA-STD-PRINCIPLES-R04"}
 {"source_id":"LA-AUT-QRY05-H","target_id":"LA-STD-CODE-R03"}
@@ -20,6 +17,9 @@
 {"source_id":"LA-INT04-AD","target_id":"LA-STD-CODE-R02"}
 {"source_id":"LA-INT04-AD","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-PLT-EN03-DM","target_id":"LA-STD-PRINCIPLES-R02"}
+{"source_id":"LA-PLT-REPO08","target_id":"LA-STD-MODELING-R04"}
+{"source_id":"LA-PLT-REPO08","target_id":"LA-STD-MODELING-R09"}
+{"source_id":"LA-PLT-REPO08","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-PLT-RM01-PJ","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-PLT-SP02-PR","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-PLT-SP02-PR","target_id":"LA-STD-CODE-R04"}

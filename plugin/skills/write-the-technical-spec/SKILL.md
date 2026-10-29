@@ -24,7 +24,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 | Technical kind | Implements (its parent) | ID |
 | --- | --- | --- |
-| `repository` | an aggregate: loads and saves it whole | `<aggregate>-REPO` |
+| `repository` | a domain: loads and saves the aggregates it `persists`, each whole | `<domain>-REPO<nn>` |
 | `data_model` | an entity: its code, behavior and mapping to its table | `<entity>-DM` |
 | `table` | an entity or a read model: its storage | `<entity or read model>-TB` |
 | `value_type` | a value object, and so its constraints | `<value object>-VT` |
@@ -38,6 +38,8 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `endpoint_handler` | an endpoint | `<endpoint>-H` |
 | `adapter` | an integration | `<integration>-AD` |
 | `ui_component` | none: it `renders` the views it is used in | `<P>-UI<nn>` |
+
+A repository sits under its domain rather than under what it implements, since one piece of code often persists several aggregates: link each aggregate it persists with `persists`. Every aggregate is persisted by exactly one repository (a second is refused), and a repository that persists none is an error (`repository-persists-nothing`). Write one record per piece of code: a generic store that loads and saves every aggregate is one repository linked to each of them, never a record per aggregate or per data file; separate methods per aggregate, such as `Store.findLoan` and `Store.findTool`, are separate repositories. A repository shared by several domains' aggregates sits under the domain that holds what they share, such as a Platform domain.
 
 Each has `file` (from the product root; it may not exist yet, and several records may share one file) and `description` (what in the file, such as the function names). Name the unit in its `title`, such as `LendingService.borrow`.
 
@@ -54,7 +56,7 @@ A technical record is bound to code, so its `title` is the identifier exactly as
 
 The store refuses a check row title not in kebab case.
 
-What follows from the tree is not stored: a command is carried out by its handler and its aggregate root's data model, and a handler loads its aggregate through the aggregate's repository. Link nothing for these.
+What follows from the tree is not stored: a command is carried out by its handler and its aggregate root's data model, and a handler loads its aggregate through the repository that persists it. Link nothing for these; only a repository links the aggregates it persists.
 
 ## Domain layer and application layer
 
@@ -94,8 +96,9 @@ The handler of Borrow a tool, the repository and data model of the Loan, and the
 add  { "command_handler": { "id": "TL-LEND-CMD05-H", "title": "LendingService.borrow", "command_id": "TL-LEND-CMD05",
        "file": "src/lending-service.ts",
        "description": "Runs the checks in order in one transaction and inserts the loan with its due date. It saves LoanOpened to the outbox in that transaction and runs the relay once it commits." } }
-add  { "repository": { "id": "TL-LEND-A3-REPO", "title": "Store.findLoan", "aggregate_id": "TL-LEND-A3", "file": "src/store.ts",
+add  { "repository": { "id": "TL-LEND-REPO03", "title": "Store.findLoan", "domain_id": "TL-LEND", "file": "src/store.ts",
        "description": "The Store class's loan methods: insertLoan, findLoan, activeLoansForMember, activeLoanForTool and markReturned on the SQLite store." } }
+link { "source": "TL-LEND-REPO03", "relation": "persists", "target": "TL-LEND-A3" }
 add  { "data_model": { "id": "TL-LEND-EN04-DM", "title": "Loan", "entity_id": "TL-LEND-EN04", "file": "src/model.ts",
        "description": "The Loan interface; mapped from its row by toLoan in src/store.ts." } }
 add  { "event_type": { "id": "TL-LEND-EV06-ET", "title": "ToolReturned", "domain_event_id": "TL-LEND-EV06", "delivery": "outbox",

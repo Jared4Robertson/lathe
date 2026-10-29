@@ -61,7 +61,8 @@ describe('source file tracing', () => {
       product: [{ id: 'EX', title: 'Example' }],
       domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', subdomain_type: 'core' }],
       aggregate: [{ id: 'EX-LEND-A1', title: 'Loan', domain_id: 'EX-LEND' }],
-      repository: [{ id: 'EX-LEND-A1-REPO', title: 'Loans', aggregate_id: 'EX-LEND-A1', file: 'src/lending' }],
+      repository: [{ id: 'EX-LEND-REPO01', title: 'Loans', domain_id: 'EX-LEND', file: 'src/lending' }],
+      persists: [{ source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A1' }],
       command: [{ id: 'EX-LEND-CMD01', title: 'Open a loan', aggregate_id: 'EX-LEND-A1' }],
       command_handler: [{ id: 'EX-LEND-CMD01-H', title: 'openLoan', command_id: 'EX-LEND-CMD01', file: './src/open.ts' }],
     };

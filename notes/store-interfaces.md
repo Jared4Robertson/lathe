@@ -49,7 +49,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | interaction-design | `endpoint` | command (command_id) or query (query_id) | method (GET/POST/PUT/PATCH/DELETE/HEAD/OPTIONS), route, description?, notes? | `<P>-<D>-EP<nn>` |
 | interaction-design | `api_requirement` | endpoint (endpoint_id) | statement, group_name? | `<endpoint>-R<nn>` |
 | interaction-design | `integration` | none | system?, description? | `<P>-INT<nn>` |
-| technical-specification | `repository` | aggregate (aggregate_id) | file?, description? | `<aggregate>-REPO` |
+| technical-specification | `repository` | domain (domain_id) | file?, description? | `<domain>-REPO<nn>` |
 | technical-specification | `data_model` | entity (entity_id) | file?, description? | `<entity>-DM` |
 | technical-specification | `table` | entity (entity_id) or read_model (read_model_id) | name, storage (table/view/materialized view/browser storage/file/in memory), file?, description? | `<entity or read model>-TB` |
 | technical-specification | `value_type` | value_object (value_object_id) | file?, description? | `<value object>-VT` |
@@ -112,6 +112,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `invokes` (one per source) | product | flow_step | operation | flow_step→command, flow_step→query |
 | `measured_by` | product | business_outcome | record_id | 12 pairs: business_outcome→every test kind; a product adds its own kinds with a product_relation named measured_by |
 | `meets` | product | meets_source | standard_rule | 14 pairs: every member of meets_source (the technical kinds; a standard rule is proved by its standard rule tests) |
+| `persists` (one per target) | product | repository | aggregate | repository→aggregate |
 | `raises` | aggregate | command | domain_event | command→domain_event |
 | `reads` | domain | reads_source | aggregate | read_model→aggregate, specification→aggregate |
 | `renders` | product | ui_component | view | ui_component→view |

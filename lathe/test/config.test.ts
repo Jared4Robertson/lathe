@@ -1,4 +1,4 @@
-// lathe.config.json (LA-PLT-A10-REPO): it names the schema version and the data folder, and a setting Lathe does not
+// lathe.config.json (LA-PLT-REPO07): it names the schema version and the data folder, and a setting Lathe does not
 // know is an error, never silently ignored.
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';

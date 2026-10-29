@@ -6,14 +6,14 @@
 CREATE TABLE repository (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
-  aggregate_id VARCHAR NOT NULL UNIQUE REFERENCES aggregate (id),
+  domain_id VARCHAR NOT NULL REFERENCES domain (id),
   file VARCHAR,
   description VARCHAR
 );
-COMMENT ON TABLE repository IS 'Loads and saves its aggregate, whole: the way command handlers reach the aggregate''s storage.';
-COMMENT ON COLUMN repository.id IS 'The repository''s ID: its aggregate''s ID and REPO, such as TL-LEND-A1-REPO.';
+COMMENT ON TABLE repository IS 'Loads and saves aggregates, each whole: the way command handlers reach their storage. It persists one aggregate or several, each linked with persists, and sits under the domain of the aggregates it persists, or, shared by several domains, under the domain that holds what they share.';
+COMMENT ON COLUMN repository.id IS 'The repository''s ID: its domain''s ID and REPO<nn>, such as TL-LEND-REPO01.';
 COMMENT ON COLUMN repository.title IS 'Its name in code, such as LoanRepository.';
-COMMENT ON COLUMN repository.aggregate_id IS 'The aggregate it loads and saves; one repository each.';
+COMMENT ON COLUMN repository.domain_id IS 'The domain it sits under: that of the aggregates it persists, or, for one several domains share, the domain that holds what they share.';
 COMMENT ON COLUMN repository.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
 COMMENT ON COLUMN repository.description IS 'How it works, in a sentence or two.';
 
@@ -266,7 +266,7 @@ COMMENT ON COLUMN standard_rule.statement IS 'The rule, stated with MUST, MUST N
 COMMENT ON COLUMN standard_rule.group_name IS 'A short heading it is shown under among its siblings.';
 
 INSERT INTO meta_kind VALUES
-  ('repository', 'Repository', 'technical-specification', 30, false, '<aggregate>-REPO', 'TL-LEND-A1-REPO', 'parent', NULL),
+  ('repository', 'Repository', 'technical-specification', 30, false, '<domain>-REPO<nn>', 'TL-LEND-REPO01', 'parent', NULL),
   ('data_model', 'Data model', 'technical-specification', 31, false, '<entity>-DM', 'TL-LEND-EN01-DM', 'parent', NULL),
   ('value_type', 'Value type', 'technical-specification', 33, false, '<value object>-VT', 'TL-VO01-VT', 'parent', NULL),
   ('predicate', 'Predicate', 'technical-specification', 34, false, '<specification>-PR', 'TL-LEND-SP01-PR', 'parent', NULL),
@@ -283,7 +283,7 @@ INSERT INTO meta_kind VALUES
   ('standard', 'Standard', 'technical-specification', 44, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
   ('standard_rule', 'Standard rule', 'technical-specification', 45, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES
-  ('repository', 'aggregate', 1, 'aggregate_id'),
+  ('repository', 'domain', 1, 'domain_id'),
   ('data_model', 'entity', 1, 'entity_id'),
   ('value_type', 'value_object', 1, 'value_object_id'),
   ('predicate', 'specification', 1, 'specification_id'),

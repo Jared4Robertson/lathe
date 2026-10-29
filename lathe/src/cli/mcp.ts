@@ -218,7 +218,7 @@ export function tools(schema: SchemaDescription): Tool[] {
       name: 'next_id',
       description:
         'The next free ID for a record of a kind under a parent, by the kind\'s ID pattern. IDs are never reused or renumbered. ' +
-        'A kind with one record per parent (a flow, a repository, a constraint test) gives its one ID while it is free.',
+        'A kind with one record per parent (a flow, a data model, a constraint test) gives its one ID while it is free.',
       inputSchema: {
         type: 'object',
         properties: {

@@ -202,4 +202,45 @@ describe('the schema version', () => {
     ]);
     expect(todos).toEqual([expect.stringMatching(/^Each manual test now names the level a person exercises/)]);
   });
+  it("LA-AUT-UC03-R08-T04 1-to-2 puts every repository under its aggregate's domain, persisting that aggregate, renamed wherever it is named", async () => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
+    const tables: Record<string, Record<string, unknown>[]> = {
+      aggregate: [
+        { id: 'TL-LEND-A1', title: 'Member', domain_id: 'TL-LEND' },
+        { id: 'TL-LEND-A10', title: 'Fine', domain_id: 'TL-LEND' },
+        { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' },
+        { id: 'TL-CAT-A1', title: 'Listing', domain_id: 'TL-CAT' },
+      ],
+      repository: [
+        { id: 'TL-LEND-A10-REPO', title: 'Fines', aggregate_id: 'TL-LEND-A10', file: 'src/store.ts' },
+        { id: 'TL-LEND-A1-REPO', title: 'Members', aggregate_id: 'TL-LEND-A1', file: 'src/store.ts', description: 'Unlike TL-LEND-A10-REPO, it keeps no history.' },
+        { id: 'TL-LEND-A2-REPO', title: 'Tools', aggregate_id: 'TL-LEND-A2', file: 'src/store.ts' },
+        { id: 'TL-CAT-A1-REPO', title: 'Listings', aggregate_id: 'TL-CAT-A1', file: 'src/catalog.ts' },
+      ],
+      meets: [{ source_id: 'TL-LEND-A1-REPO', target_id: 'TL-STD-CODE-R01' }],
+      package_use: [{ record_id: 'TL-CAT-A1-REPO', package: 'better-sqlite3' }],
+    };
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    expect(tables.repository).toEqual([
+      { id: 'TL-CAT-REPO01', title: 'Listings', domain_id: 'TL-CAT', file: 'src/catalog.ts' },
+      { id: 'TL-LEND-REPO01', title: 'Members', domain_id: 'TL-LEND', file: 'src/store.ts', description: 'Unlike TL-LEND-REPO03, it keeps no history.' },
+      { id: 'TL-LEND-REPO02', title: 'Tools', domain_id: 'TL-LEND', file: 'src/store.ts' },
+      { id: 'TL-LEND-REPO03', title: 'Fines', domain_id: 'TL-LEND', file: 'src/store.ts' },
+    ]);
+    expect(tables.persists).toEqual([
+      { source_id: 'TL-CAT-REPO01', target_id: 'TL-CAT-A1' },
+      { source_id: 'TL-LEND-REPO01', target_id: 'TL-LEND-A1' },
+      { source_id: 'TL-LEND-REPO02', target_id: 'TL-LEND-A2' },
+      { source_id: 'TL-LEND-REPO03', target_id: 'TL-LEND-A10' },
+    ]);
+    expect(tables.meets).toEqual([{ source_id: 'TL-LEND-REPO01', target_id: 'TL-STD-CODE-R01' }]);
+    expect(tables.package_use).toEqual([{ record_id: 'TL-CAT-REPO01', package: 'better-sqlite3' }]);
+    expect(changes).toEqual(["Every repository sits under its aggregate's domain and persists its aggregate: 4 renamed from <aggregate>-REPO to <domain>-REPO<nn>."]);
+    expect(todos).toEqual([expect.stringMatching(/^A repository is one record per piece of code/), 'Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.']);
+  });
 });

@@ -1,7 +1,7 @@
 -- A link table per relation, (source_id, target_id), with real foreign keys. An end that accepts several kinds points
 -- at a supertype table; the pairs of kinds each relation allows are in meta_relation_pair, and what the two ends must
--- share in meta_relation.scope. A relation with at most one link per source has a unique source_id. Then the setting
--- values a follower gives the pattern it follows.
+-- share in meta_relation.scope. A relation with at most one link per source has a unique source_id, and one with at most
+-- one per target a unique target_id. Then the setting values a follower gives the pattern it follows.
 
 CREATE TABLE has_one (source_id VARCHAR NOT NULL REFERENCES entity (id), target_id VARCHAR NOT NULL REFERENCES entity (id), PRIMARY KEY (source_id, target_id), CHECK (source_id <> target_id));
 COMMENT ON TABLE has_one IS 'The entity holds exactly one of the other entity, as a part of it (one to one).';
@@ -35,6 +35,8 @@ CREATE TABLE follows (source_id VARCHAR NOT NULL REFERENCES follows_source (id),
 COMMENT ON TABLE follows IS 'The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows.';
 CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES meets_source (id), target_id VARCHAR NOT NULL REFERENCES standard_rule (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE meets IS 'The technical record follows the standard rule: it shows where the rule is applied, and designs it.';
+CREATE TABLE persists (source_id VARCHAR NOT NULL REFERENCES repository (id), target_id VARCHAR NOT NULL UNIQUE REFERENCES aggregate (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE persists IS 'The repository loads and saves the aggregate, whole: one repository per aggregate, and one repository may persist several aggregates, of its domain or, when it is shared, of several.';
 CREATE TABLE serves (source_id VARCHAR NOT NULL REFERENCES capability (id), target_id VARCHAR NOT NULL REFERENCES business_outcome (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE serves IS 'The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities.';
 CREATE TABLE measured_by (source_id VARCHAR NOT NULL REFERENCES business_outcome (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
@@ -61,6 +63,7 @@ INSERT INTO meta_relation VALUES
   ('renders', NULL, 'product', 'Renders', 'Rendered by', NULL),
   ('follows', NULL, 'product', 'Follows', 'Followed by', NULL),
   ('meets', NULL, 'product', 'Meets', 'Met by', NULL),
+  ('persists', NULL, 'product', 'Persists', 'Persisted by', NULL),
   ('serves', NULL, 'product', 'Serves', 'Served by', NULL),
   ('measured_by', NULL, 'product', 'Measured by', 'Measures', NULL),
   ('starts_from', NULL, 'product', 'Starts from', 'Starting point of', NULL),
@@ -101,6 +104,7 @@ INSERT INTO meta_relation_pair VALUES
   ('meets', 'ui_component', 'standard_rule', 'The UI component follows the standard rule.'),
   ('meets', 'endpoint_handler', 'standard_rule', 'The endpoint handler follows the standard rule.'),
   ('meets', 'adapter', 'standard_rule', 'The adapter follows the standard rule.'),
+  ('persists', 'repository', 'aggregate', 'The repository loads and saves the aggregate, whole.'),
   ('serves', 'capability', 'business_outcome', 'The capability serves the business outcome.'),
   ('measured_by', 'business_outcome', 'constraint_test', 'The business outcome is measured by the constraint test.'),
   ('measured_by', 'business_outcome', 'invariant_test', 'The business outcome is measured by the invariant test.'),

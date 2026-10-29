@@ -1,9 +1,9 @@
-{"record_id":"LA-AUT-A1-REPO","package":"@duckdb/node-api"}
 {"record_id":"LA-EXP-DS08-SV","package":"d3-voronoi-map"}
 {"record_id":"LA-EXP-DS08-SV","package":"polylabel"}
 {"record_id":"LA-INT62-AD","package":"electron"}
 {"record_id":"LA-INT63-AD","package":"electron-builder"}
 {"record_id":"LA-PLT-ENTRY01","package":"electron"}
+{"record_id":"LA-PLT-REPO08","package":"@duckdb/node-api"}
 {"record_id":"LA-PLT-TOOL10","package":"@types/node"}
 {"record_id":"LA-PLT-TOOL10","package":"typescript"}
 {"record_id":"LA-PLT-TOOL11","package":"@types/react"}
