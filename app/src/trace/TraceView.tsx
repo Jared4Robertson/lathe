@@ -1,5 +1,5 @@
 // The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10, LA-V98).
-import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useLayoutEffect, useMemo, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { mapRootOf } from '../graph/map';
 import { groupName, isGroup } from '../graph/model';
@@ -10,7 +10,6 @@ import { Card, CardGrid } from '../shell/Card';
 import { useNarrow } from '../shell/useNarrow';
 import type { OpenSpaceStore } from '../views/openSpace';
 import { useStageWalk } from '../shell/commands';
-import { usesArrows } from '../shell/keymap';
 import { traceFocus, traceMap } from './lanes';
 import { boxWords, focusOf, startOf, traceStep, type TraceAt } from './walk';
 
@@ -203,20 +202,15 @@ function TraceStage(props: TraceViewProps & { product: string }) {
     const to = from ? traceStep(m, from, key, here.open) : startOf(m, here.lanes);
     return to ? go(to, here.open) : null;
   }, [map, index, product, focus, focused, walkedHere, go]);
-  useStageWalk(walkMap);
-  // Enter on a "+N more" the arrows are on opens it, as Right does, unless keyboard focus is on a control Enter works itself.
-  const enter = useRef<() => void>(() => {});
-  enter.current = () => { if (walkBox?.role === 'more') { const to = traceStep(map!, walkedHere!, 'ArrowRight', focused?.open ?? null); if (to) go(to, focused?.open ?? null); } };
-  useEffect(() => {
-    const onKey = (e: globalThis.KeyboardEvent) => {
-      if (e.key !== 'Enter' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.defaultPrevented) return;
-      const t = e.target as HTMLElement | null;
-      if (usesArrows(t) || t?.closest?.('a[href], button, input, select, textarea, summary, [role="button"], [role="link"]')) return;
-      enter.current();
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  // Enter on a "+N more" the arrows are on opens it, as Right does; the commands layer offers it a plain Enter outside a
+  // control that works Enter itself, before the wiki card's toggle.
+  const enter = useCallback(() => {
+    if (walkBox?.role !== 'more' || !map || !walkedHere) return false;
+    const to = traceStep(map, walkedHere, 'ArrowRight', focused?.open ?? null);
+    if (to) go(to, focused?.open ?? null);
+    return true;
+  }, [walkBox, map, walkedHere, focused, go]);
+  useStageWalk(walkMap, true, enter);
   /** A click on the canvas opens a record keeping the lane of the box clicked. */
   const openFromCanvas = useCallback((id: string, at?: TraceAt) => {
     if (at) setWalked({ focus: id, at });

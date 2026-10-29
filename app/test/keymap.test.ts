@@ -196,7 +196,7 @@ describe('the keymap', () => {
     document.body.innerHTML = '';
   });
 
-  it('LA-V61-R49-T05 W, A, S and D walk as Up, Left, Down and Right, plain only, and the guard keeps them with every element that takes text', () => {
+  it('LA-V61-R49-T06 W, A, S and D walk as Up, Left, Down and Right, plain only, and the guard keeps them with every element that takes text', () => {
     expect(walkArrow(eventChord(key('w', 'KeyW')))).toBe('ArrowUp');
     expect(walkArrow(eventChord(key('a', 'KeyA')))).toBe('ArrowLeft');
     expect(walkArrow(eventChord(key('s', 'KeyS')))).toBe('ArrowDown');

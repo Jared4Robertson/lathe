@@ -95,7 +95,7 @@ const letter = (target: Element, l: string, mods: { ctrlKey?: boolean; altKey?: 
 const card = () => screen.queryByRole('region', { name: 'Wiki card' });
 
 describe('the walking letters', () => {
-  it('LA-V61-R49-T06 W, A, S and D walk the Graph, ERD and Trace stages as the arrows do, plain only, and stay with a text field', async () => {
+  it('LA-V61-R49-T07 W, A, S and D walk the Graph, ERD and Trace stages as the arrows do, plain only, and stay with a text field', async () => {
     await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });
     await waitFor(() => expect(document.querySelector('.focus-stage .graph-box')).not.toBeNull());
     // The Tree view: A out to the capability, D back in, each announced.
