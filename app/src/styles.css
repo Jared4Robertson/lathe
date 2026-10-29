@@ -13,7 +13,7 @@
   --node-radius: 4px; /* an ERD box's corners; the graph's canvas rounds a plain box the same (app/src/graph/shapes.ts) */
   /* The ERD view's context ring (LA-V94-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges (the graph's canvas draws its own, app/src/graph/paint.ts). */
   --context-opacity: 0.35; --spotlight-dim: 0.5; --vignette: 56px;
-  /* The graph's focus fade (LA-EXP-DS09, app/src/graph/fade.ts): what lies outside the focus's subtree, and the trail of its ancestors in Nested and Voronoi. */
+  /* The graph's focus fade (LA-EXP-DS09, app/src/graph/fade.ts): what lies outside the focus's subtree, and the trail of its ancestors in Nested. */
   --focus-fade: 0.25; --focus-trail: 0.45;
   /* The Trace stage's arrows, apart from the tree's ink lines, and the minimap's mask. */
   --link-edge: var(--spark); --minimap-mask: color-mix(in srgb, var(--ink) 8%, transparent);
@@ -341,7 +341,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-canvas-draw { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .graph-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .graph-box { position: absolute; top: 0; left: 0; width: 1px; height: 1px; }
-.graph-swatch.is-cell { border: 0; border-radius: 0; background: linear-gradient(115deg, var(--g-domain-model-bg) 46%, var(--g-domain-model) 46% 56%, var(--g-use-cases-bg) 56%); clip-path: polygon(30% 0, 100% 10%, 90% 85%, 35% 100%, 0 50%); }
 /* The key's marks: each kind's shape and each kind's own mark (a gear, a ruler, a port, a marker), ink on sheet, as the canvas
    draws them before a box's kind and ID line (app/src/graph/shape-icons.tsx), and the problem badges as the canvas draws them. */
 .graph-shape-icon, .graph-mark-icon { display: inline-block; overflow: visible; fill: color-mix(in srgb, var(--ink) 14%, var(--sheet)); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }

@@ -7,7 +7,6 @@
 {"id":"LA-EXP-DS05-SV","title":"layoutTree","domain_service_id":"LA-EXP-DS05","file":"app/src/graph/map.ts","description":"layoutTree, parentLine"}
 {"id":"LA-EXP-DS06-SV","title":"labelLines","domain_service_id":"LA-EXP-DS06","file":"app/src/graph/text.ts","description":"labelLines, titleWidth, metaWidth"}
 {"id":"LA-EXP-DS07-SV","title":"nestedMap","domain_service_id":"LA-EXP-DS07","file":"app/src/graph/nested.ts","description":"nestedMap, layoutNested"}
-{"id":"LA-EXP-DS08-SV","title":"voronoiTree","domain_service_id":"LA-EXP-DS08","file":"app/src/graph/voronoi.ts","description":"voronoiTree, layoutVoronoi; run in voronoi.worker.ts where there is a worker"}
 {"id":"LA-EXP-DS09-SV","title":"frameOnMap","domain_service_id":"LA-EXP-DS09","file":"app/src/graph/camera.ts","description":"frameOnMap, frameNested, fitBoxes, zoomPath, glideDuration"}
 {"id":"LA-EXP-DS10-SV","title":"drawnFor","domain_service_id":"LA-EXP-DS10","file":"app/src/graph/camera.ts","description":"drawnFor, drawnNested, MIN_DRAWN, MAX_DRAWN"}
 {"id":"LA-EXP-DS11-SV","title":"erdMap","domain_service_id":"LA-EXP-DS11","file":"app/src/erd/erd.ts","description":"erdMap: one line per relationship link and one per entity and aggregate it references, with the lookups of specs/data.ts"}

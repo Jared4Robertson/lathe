@@ -29,7 +29,7 @@
 {"read_model_id":"LA-EXP-RM02","position":7,"name":"Label","meaning":"The name shown: a stage's own name, a kind group's plural label (`plural()`), a record's title.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM02","position":8,"name":"Count","meaning":"How many records it holds; an empty stage or kind group is not a row.","type":"whole number","required":true}
 {"read_model_id":"LA-EXP-RM03","position":1,"name":"Product","meaning":"The product the map is of.","type_aggregate_id":"LA-AUT-A1","required":true}
-{"read_model_id":"LA-EXP-RM03","position":2,"name":"Layout","meaning":"`tree`, `nested` or `voronoi`.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM03","position":2,"name":"Layout","meaning":"`tree` or `nested`.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM03","position":3,"name":"Node","meaning":"A record's ID, or a stage's or kind group's address.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM03","position":4,"name":"Parent node","meaning":"Its parent in the tree; none for the product.","type":"text","required":false}
 {"read_model_id":"LA-EXP-RM03","position":5,"name":"Column","meaning":"Its depth in the tree, shared with its siblings.","type":"whole number","required":true}

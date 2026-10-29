@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { wheelMove } from '../../src/graph/gestures';
+import { wheelLatch, wheelMove } from '../../src/graph/gestures';
 
 // Scroll pans and Cmd/Ctrl+scroll or a pinch zooms about the pointer, Figma's convention (LA-V93-R07).
 
@@ -36,5 +36,40 @@ describe('LA-V93-R07-T05 Scroll pans the camera, Shift+scroll sideways, and Cmd/
     // One event zooms by a doubling at most.
     expect(wheelMove(wheel({ deltaY: -500, ctrlKey: true }), size)).toEqual({ zoom: 1 });
     expect(wheelMove(wheel({ deltaY: 1, deltaMode: 2, ctrlKey: true }), size)).toEqual({ zoom: -1 });
+  });
+});
+
+describe('LA-V93-R07-T06 A scroll keeps its move: changing Cmd or Ctrl mid-scroll drops the rest of it, until a new scroll', () => {
+  const ev = (keys: { metaKey?: boolean; ctrlKey?: boolean }, deltaY: number) => ({ metaKey: false, ctrlKey: false, deltaX: 0, ...keys, deltaY });
+
+  it('drops a zoom\'s momentum after Cmd is let go, until the scroll pauses', () => {
+    const latch = wheelLatch();
+    expect(latch(ev({ metaKey: true }, -30), 0)).toBe('move');
+    expect(latch(ev({ metaKey: true }, -20), 16)).toBe('move');
+    expect(latch(ev({}, -14), 32)).toBe('drop');
+    // Momentum keeps arriving, fading, and stays dropped even if Cmd is pressed again.
+    expect(latch(ev({}, -9), 48)).toBe('drop');
+    expect(latch(ev({ metaKey: true }, -6), 64)).toBe('drop');
+    // After a pause, a new scroll starts afresh.
+    expect(latch(ev({}, 3), 300)).toBe('move');
+  });
+
+  it('drops a pan\'s momentum after Ctrl is pressed', () => {
+    const latch = wheelLatch();
+    expect(latch(ev({}, 20), 0)).toBe('move');
+    expect(latch(ev({ ctrlKey: true }, 15), 20)).toBe('drop');
+    expect(latch(ev({ ctrlKey: true }, 10), 40)).toBe('drop');
+  });
+
+  it('moves again as soon as a new scroll grows while momentum still arrives, in the keys it starts with', () => {
+    const latch = wheelLatch();
+    expect(latch(ev({ metaKey: true }, -30), 0)).toBe('move');
+    expect(latch(ev({}, -12), 16)).toBe('drop');
+    expect(latch(ev({}, -5), 32)).toBe('drop');
+    expect(latch(ev({}, -2), 48)).toBe('drop');
+    // The fingers scroll again with no pause: the deltas grow past the fade, and it pans.
+    expect(latch(ev({}, 4), 64)).toBe('drop');
+    expect(latch(ev({}, 9), 80)).toBe('move');
+    expect(latch(ev({}, 14), 96)).toBe('move');
   });
 });

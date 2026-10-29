@@ -302,7 +302,7 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
   const hovered = state.hover === p.id && !isFocus;
   const s = p.scale;
 
-  // The edge: a polygon's or a cell's in its state's color and width; every other box keeps its border and is ringed outside it.
+  // The edge: a polygon's in its state's color and width; every other box keeps its border and is ringed outside it.
   let edge = colors.edge;
   let edgeWidth = p.border * zoom;
   if (p.edged) {
@@ -327,21 +327,15 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
   ctx.fillStyle = colors.fill;
   ctx.fill();
   ctx.save();
-  if (p.view === 'voronoi') {
-    // A cell's outline is stroked on its line, as an SVG polygon's.
-    ctx.lineWidth = edgeWidth;
-    ctx.lineJoin = 'round';
-  } else {
-    // Every other edge lies inside its outline: clipped to it, at twice its width.
-    ctx.clip();
-    ctx.lineWidth = 2 * edgeWidth;
-  }
+  // An edge lies inside its outline: clipped to it, at twice its width.
+  ctx.clip();
+  ctx.lineWidth = 2 * edgeWidth;
   ctx.strokeStyle = edge;
-  if (p.dashed) ctx.setLineDash(p.view === 'voronoi' ? [6 * s * zoom, 4 * s * zoom] : [3 * edgeWidth, 2 * edgeWidth]);
+  if (p.dashed) ctx.setLineDash([3 * edgeWidth, 2 * edgeWidth]);
   outlinePath(ctx, p, p.outline, X, Y, zoom);
   ctx.stroke();
   ctx.setLineDash([]);
-  if (p.decoration && p.view !== 'voronoi') paintDecoration(ctx, p, p.decoration, edge, colors.fill, p.edged ? edgeWidth / zoom : p.border, X, Y, zoom);
+  if (p.decoration) paintDecoration(ctx, p, p.decoration, edge, colors.fill, p.edged ? edgeWidth / zoom : p.border, X, Y, zoom);
   ctx.restore();
 
   // The keyboard's focus ring on a box that keeps its border: an outline a little way outside it.
