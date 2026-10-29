@@ -24,7 +24,7 @@ import { keepCamera, keptCamera } from '../views/cameras';
 import { graphMap, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { setTextMeasure, type TextMeasure } from './text';
-import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, frameRect, MAX_ZOOM, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
+import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
 import { nodeShape } from './shapes';
@@ -437,6 +437,8 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   sizeRef.current = size;
 
   const hidden = useMemo(() => hiddenNodes(index, map, filters, focus), [index, map, filters, focus]);
+  /** The most the camera zooms in on this map: enough to read its smallest box (maxZoomFor). */
+  const maxZoom = useMemo(() => maxZoomFor(map), [map]);
   /** The focus: drawn whatever its size. */
   const always = useMemo(() => [focus], [focus]);
 
@@ -481,7 +483,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     size,
     getViewport,
     setViewport,
-    zoom: { min: MIN_ZOOM, max: MAX_ZOOM },
+    zoom: { min: MIN_ZOOM, max: maxZoom },
     onGlide: (path) => { show(mergeDrawn([0, 0.25, 0.5, 0.75, 1].map((t) => drawnAt(path.at(t))))); moves.current.glides++; },
     onArrive: (target) => show(latestDrawnAt.current(target)),
     onGesture: () => follow(),
@@ -509,7 +511,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     // With a host that floats panels, never before their first measure: the first picture is framed once, in place.
     if (!size || (space && !open)) return null;
     const box = frameBox(size);
-    const v = map.view !== 'tree' ? frameNested(map, focus, box.w, box.h) : frameOnMap(map, focus, depth, box.w, box.h);
+    const v = map.view !== 'tree' ? frameNested(map, focus, box.w, box.h, maxZoom) : frameOnMap(map, focus, depth, box.w, box.h, maxZoom);
     return { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
   }, [size, map, focus, depth, frameBox, space, open]);
 
@@ -616,7 +618,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   /** The camera's Fit: the whole map in the frame. */
   const fitMap = () => {
     if (!size || map.nodes.size === 0) return;
-    moveTo(frameRect({ x: 0, y: 0, w: map.width, h: map.height }, frameBox(size), { pad: 24, read: MIN_ZOOM, max: MAX_ZOOM, min: MIN_ZOOM }), true);
+    moveTo(frameRect({ x: 0, y: 0, w: map.width, h: map.height }, frameBox(size), { pad: 24, read: MIN_ZOOM, max: maxZoom, min: MIN_ZOOM }), true);
     follow();
   };
 
