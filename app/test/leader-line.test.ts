@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { leaderLine, STUB_EDGE, STUB_PX, type Box } from '../src/views/leaderLine';
+import { crosses, leaderLine, STUB_EDGE, STUB_PX, type Box, type LeaderLine, type Point } from '../src/views/leaderLine';
 
 // LA-V96-R24-T01: the leader line's ends for a camera, a focused box and the card (views/leaderLine.ts).
 
@@ -67,5 +67,46 @@ describe('LA-V96-R24-T01 the leader line runs from the focused box\'s nearest ed
     expect(leaderLine(null, CARD, OPEN)).toBeNull();
     expect(leaderLine(under({ x: 0, y: 0, zoom: 1 }), null, OPEN)).toBeNull();
     expect(leaderLine(under({ x: 0, y: 0, zoom: 1 }), CARD, { left: 300, top: 60, right: 300, bottom: 790 })).toBeNull();
+  });
+});
+
+describe('LA-V96-R24-T04 the leader line never crosses a drawn box: it runs along a gap between rows into the focus, or onto its edge', () => {
+  /** The line's points, from its start to the card. */
+  const pointsOf = (l: LeaderLine): Point[] => [l.from, ...l.via, l.to];
+  const crossesAny = (l: LeaderLine, avoid: readonly Box[]) => pointsOf(l).some((p, i, all) => i > 0 && avoid.some((r) => crosses(all[i - 1], p, r)));
+  // A focus at the left edge (300..420 x 100..400), its children's column to its right, four rows 50 tall a 20 px gap apart.
+  const focus: Box = { left: 200, top: 100, right: 420, bottom: 400 };
+  const rows: Box[] = [0, 1, 2, 3].map((i) => ({ left: 460, top: 100 + 70 * i, right: 700, bottom: 150 + 70 * i }));
+
+  it('stays straight when nothing is in its way', () => {
+    const line = leaderLine(focus, CARD, OPEN, OPEN, [{ left: 460, top: 300, right: 700, bottom: 350 }])!;
+    expect(line.via).toEqual([]);
+    expect(line.from).toEqual({ x: 420, y: 120 });
+  });
+
+  it('runs level along the gap between the rows nearest the title, then turns to the card, crossing no box', () => {
+    const line = leaderLine(focus, CARD, OPEN, OPEN, rows)!;
+    expect(line.stub).toBe(false);
+    expect(line.to).toEqual(CARD);
+    expect(crossesAny(line, rows)).toBe(false);
+    // It leaves the focus's right edge in the first gap (150..170) and runs level past the column.
+    expect(line.from).toEqual({ x: 420, y: 160 });
+    expect(line.via[0].y).toBe(160);
+    expect(line.via[0].x).toBeGreaterThan(700);
+  });
+
+  it('ends on the focus\'s nearest edge from a gap above it when no gap lies beside it', () => {
+    // A column that fills the focus's height: the only way in is from the gap above it, onto its top edge.
+    const column: Box[] = [{ left: 460, top: 95, right: 700, bottom: 405 }];
+    const line = leaderLine(focus, CARD, OPEN, OPEN, column)!;
+    expect(crossesAny(line, column)).toBe(false);
+    expect(line.from.y).toBe(focus.top);
+    expect(line.from.x).toBeGreaterThan(focus.left);
+    expect(line.from.x).toBeLessThanOrEqual(focus.right);
+  });
+
+  it('is not drawn when no path keeps clear of the boxes', () => {
+    const wall: Box[] = [{ left: 440, top: OPEN.top - 10, right: 700, bottom: OPEN.bottom + 10 }];
+    expect(leaderLine(focus, CARD, OPEN, OPEN, wall)).toBeNull();
   });
 });

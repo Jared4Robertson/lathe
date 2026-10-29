@@ -18,7 +18,7 @@ import { useCameraGestures } from '../graph/gestures';
 import { useCommand } from '../shell/commands';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
-import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
+import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
 import { lineKey, linesAt, traceFade, type TraceMap, type TraceNode } from './tree';
 import { useChanges } from '../changes/changes';
 import { lensFade, marksMoving, useStageMarks } from '../changes/marks';
@@ -45,8 +45,6 @@ const PLAIN: Record<Exclude<TraceNode['role'], 'record'>, { kind: string; label:
 
 /** The depth the camera frames below the focus: its children, as the Graph's Tree by default. */
 const FRAME_DEPTH = 1;
-/** A ringed box shorter than this on screen, in CSS pixels, is too small to read: the camera brings it in. */
-const RING_READ_PX = 24;
 /** How tall the map's smallest box may be drawn on screen at the most zoom, in CSS pixels: the zoom's ceiling. */
 const DEEPEST_PX = 400;
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
@@ -309,7 +307,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     const sp = spotlight.current;
     const faded = tween.now();
     const live = marks.at(performance.now());
-    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: faded.at, marks: live };
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: faded.at, marks: live, open: openIn(wrapper.current, space, s.w, s.h) };
     const v = view.current;
     const cam: Camera = { cx: (s.w / 2 - v.x) / v.zoom, cy: (s.h / 2 - v.y) / v.zoom, zoom: v.zoom, w: s.w, h: s.h };
     paint(ctx.current, dpr, cam, frame, look.current, fonts, state);
@@ -319,6 +317,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     if (wrapper.current) drawLeaderLine(ctx.current, {
       host: wrapper.current, space, dpr, color: p ? boxColors(look.current, p).edge : look.current.ink,
       box: n ? { left: n.x * v.zoom + v.x, top: n.y * v.zoom + v.y, right: (n.x + n.w) * v.zoom + v.x, bottom: (n.y + n.h) * v.zoom + v.y } : null,
+      avoid: frame.plates.filter((x) => x.place !== at).map((x) => ({ left: x.x * v.zoom + v.x, top: x.y * v.zoom + v.y, right: (x.x + x.w) * v.zoom + v.x, bottom: (x.y + x.h) * v.zoom + v.y })),
     });
     if (!spot.done || !faded.done || marksMoving(live, frame.plates.map((x) => x.id))) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
@@ -358,8 +357,8 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
   tap.current = tapToOpen;
   useEffect(() => { onPeek?.('selected', tapToOpen.armed); requestPaint(); }, [tapToOpen.armed, onPeek]);
 
-  // The keyboard's ring: the node the table's focused link or the walk stands for, brought into view, and framed when it
-  // is too small there to read.
+  // The keyboard's ring: the node the table's focused link or the walk stands for, framed when it is not wholly in view (a
+  // focus's frame keeps its children reading, camera.ts frameOnMap).
   useEffect(() => {
     const id = ringAt ? map.nodes.get(ringAt)?.id ?? null : null;
     ring.current = id;
@@ -373,7 +372,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     const left = n.x * v.zoom + v.x;
     const top = n.y * v.zoom + v.y;
     const inside = left >= frame.x && left + n.w * v.zoom <= frame.x + frame.w && top >= frame.y && top + n.h * v.zoom <= frame.y + frame.h;
-    if (inside && n.h * v.zoom >= RING_READ_PX) return;
+    if (inside) return;
     const t = frameOnMap(map.map, ringAt!, 0, frame.w, frame.h, maxZoom);
     moveTo({ x: t.x + frame.x, y: t.y + frame.y, zoom: t.zoom }, true);
   }, [ringAt]);
