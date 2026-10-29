@@ -47,7 +47,7 @@ export interface TraceViewProps {
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   /** Called with what the trace holds, for the header strip: "12 obligations · 3 with gaps · 4 untraced". */
   onCounts?: (counts: string) => void;
-  /** The open space the host's floating panels leave over the stage, where the canvas frames the trace. */
+  /** The open space the host's floating panels leave over the stage, where the canvas frames the focus. */
   space?: OpenSpaceStore;
 }
 
