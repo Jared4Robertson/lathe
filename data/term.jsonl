@@ -15,7 +15,7 @@
 {"id":"LA-AUT-TM24","title":"Command","domain_id":"LA-AUT","meaning":"One intent on one aggregate: its handler loads the aggregate through its repository, holds it to its rules and saves it, or refuses with every reason.","group_name":"Modeling"}
 {"id":"LA-AUT-TM25","title":"Value object","domain_id":"LA-AUT","meaning":"A value with no identity, such as an email address, defined by its fields and checked by its constraints.","group_name":"Modeling"}
 {"id":"LA-AUT-TM26","title":"Specification","domain_id":"LA-AUT","meaning":"A named yes-or-no rule over aggregates of one domain, which commands check and queries select by.","group_name":"Modeling"}
-{"id":"LA-AUT-TM27","title":"Read model","domain_id":"LA-AUT","meaning":"A shape of data built for reading, from the aggregates it reads or the events it hears, asked by its queries.","group_name":"Modeling"}
+{"id":"LA-AUT-TM27","title":"Read model","domain_id":"LA-AUT","meaning":"A shape of data built for reading, from the aggregates it reads or the events it hears: its projection fills its table, and its queries read that table only through its reader.","group_name":"Modeling"}
 {"id":"LA-AUT-TM28","title":"Use case","domain_id":"LA-AUT","meaning":"One goal of an actor, with its requirements, its flows through the interfaces it happens in, and its tests.","group_name":"Modeling"}
 {"id":"LA-AUT-TM29","title":"View","domain_id":"LA-AUT","meaning":"A page or panel a flow's steps happen in, with its route and its view requirements.","group_name":"Modeling"}
 {"id":"LA-AUT-TM30","title":"Endpoint","domain_id":"LA-AUT","meaning":"The route that exposes one command or query, with its API requirements and handler.","group_name":"Modeling"}
@@ -37,6 +37,7 @@
 {"id":"LA-AUT-TM46","title":"Flow","domain_id":"LA-AUT","meaning":"How a use case happens through one interface, as ordered steps on their paths, each invoking at most one command or query.","group_name":"Modeling"}
 {"id":"LA-AUT-TM47","title":"Interface","domain_id":"LA-AUT","meaning":"A way the product is used, such as the web app, the CLI or the MCP tools, that flows go through.","group_name":"Modeling"}
 {"id":"LA-AUT-TM48","title":"Role","domain_id":"LA-AUT","meaning":"Who acts in the product's use cases, such as the Owner, the Reader or an Agent.","group_name":"Modeling"}
+{"id":"LA-AUT-TM49","title":"Reader","domain_id":"LA-AUT","meaning":"The one way a query handler reaches its read model's storage, one per read model: an interface the handlers depend on, given to them by the query runner, reading only its read model's table, which its projection alone fills.","group_name":"Modeling"}
 {"id":"LA-CHK-TM01","title":"Check","domain_id":"LA-CHK","meaning":"One rule the engine applies on every load: a row of the `check` table whose query returns a row for each problem."}
 {"id":"LA-CHK-TM02","title":"Problem","domain_id":"LA-CHK","meaning":"One thing a check found wrong or still to do in the loaded data. Problems are the result of a run, never stored."}
 {"id":"LA-CHK-TM03","title":"Error","domain_id":"LA-CHK","meaning":"A problem that means the data is broken. `lathe check` exits 1 on any error."}
