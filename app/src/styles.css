@@ -90,8 +90,8 @@ html, body, #root { height: 100%; height: 100dvh; margin: 0; }
 html { font-size: calc(var(--text-size) * 16 / 15); }
 body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(--line-height) var(--body); }
 /* The app (LA-V96): the stage behind everything, the nav and the page's panels floating over it, inset from the window
-   and each other by --float-inset. A page with no stage (the product list, Checks, the format, Appearance) floats as one
-   panel right of the nav. In the desktop app the chat panel floats at the right edge, the full height, and the
+   and each other by --float-inset. Nothing replaces the stage (LA-PAT-APP-UX-R19): a tool (Checks, Appearance, the theme
+   editor) floats over it right of the nav, keeping --tool-space clear, and the products picker is a card over it. In the desktop app the chat panel floats at the right edge, the full height, and the
    page's panels keep --chat-space clear of it, as they keep --nav-space clear of the nav. On a phone the shell is a top
    bar above the page, with drawers. */
 .app { position: relative; height: 100%; box-sizing: border-box; overflow: hidden; background: var(--shell); --nav-space: calc(var(--nav-width, 336px) + 2 * var(--float-inset)); --chat-space: var(--float-inset); }
@@ -247,7 +247,7 @@ code { font: 0.86em var(--mono); }
 .record-row > .record-link > span { min-width: 0; overflow-wrap: break-word; }
 
 .problems { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
-.problems > li { padding: var(--row-pad-y) 10px; border: 1px solid var(--rule); border-left-width: 3px; border-radius: 6px; background: var(--sheet); font-size: 0.9rem; }
+.problems > li { margin: 0; padding: var(--row-pad-y) 10px; border: 1px solid var(--rule); border-left-width: 3px; border-radius: 6px; background: var(--sheet); color: var(--ink); font: 0.9rem/var(--line-height) var(--body); }
 .problem.error { border-left-color: var(--error); }
 .problem.warning { border-left-color: var(--warn); }
 .severity { font: 500 0.7rem var(--mono); text-transform: uppercase; letter-spacing: 0.05em; }
@@ -276,7 +276,7 @@ code { font: 0.86em var(--mono); }
 .record-side { border: 1px solid var(--rule); border-radius: 10px; padding: 16px; gap: 8px; }
 .record-side h3 { display: flex; gap: 6px; align-items: baseline; }
 .fields, .link-groups { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
-.fields > div { display: grid; grid-template-columns: 90px 1fr; gap: 8px; font-size: 0.86rem; }
+.fields > div { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 8px; font-size: 0.86rem; }
 /* Field labels read in sentence case: only the first letter is a capital ("Served by", not "Served By"). */
 .fields dt { color: var(--muted); }
 .fields dt::first-letter { text-transform: uppercase; }
@@ -1027,7 +1027,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .wiki-panel {
   position: absolute; z-index: 2; top: calc(var(--below-strip) - var(--float-inset) + var(--card-gap-y)); right: calc(var(--side-space) - var(--float-inset) + var(--card-gap));
   box-sizing: border-box; width: var(--card-width, clamp(var(--card-min), calc((100% - var(--nav-space)) / 3), 640px)); min-width: var(--card-min);
-  max-width: calc(100% - var(--nav-space) - var(--side-space) - var(--stage-min) - var(--float-inset) - var(--card-gap));
+  max-width: calc(100% - var(--nav-space) - var(--tool-space, 0px) - var(--side-space) - var(--stage-min) - var(--float-inset) - var(--card-gap));
   max-height: var(--card-room, calc(100% - var(--below-strip) - 2 * var(--card-gap-y))); display: flex; flex-direction: column; border-radius: var(--node-radius);
 }
 .wiki-panel.is-expanded { max-height: min(70%, var(--card-room, 70%)); }
@@ -1071,6 +1071,61 @@ a.row-link.row-link:focus-visible { outline: none; }
 .stage-layout.is-phone > .focus-stage { position: relative; flex: 1; min-height: 0; }
 .side-bar-drawer { position: fixed; z-index: 80; inset: 0 0 0 auto; width: min(380px, 92vw); display: flex; flex-direction: column; background: var(--sheet); box-shadow: -4px 0 24px var(--shadow-strong); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) 0; }
 .side-bar-drawer > .side-bar { flex: 1; min-height: 0; }
+
+/* The summary's facts: the label column as wide as its longest label, the value taking the rest of the card, and a
+   record link's title wrapping at the card's width, not in a column beside its ID. */
+.wiki-panel-summary .fields > div { grid-template-columns: max-content minmax(0, 1fr); column-gap: 12px; }
+.wiki-panel-summary .fields dd { overflow-wrap: break-word; }
+.wiki-panel-summary .fields dd > a.record-link { display: inline; }
+.wiki-panel-summary .fields dd > a.record-link > span { margin-left: 6px; }
+/* A format page in the card (WikiCard.tsx): a link back to the focus heads it. */
+.wiki-panel-back { flex: 1 1 auto; min-width: 0; display: inline-flex; align-items: center; gap: 4px; overflow: hidden; color: var(--steel); text-decoration: none; white-space: nowrap; text-overflow: ellipsis; }
+.wiki-panel-back:hover { text-decoration: underline; }
+.wiki-panel-back .icon { flex: none; transform: rotate(180deg); }
+.wiki-panel-back:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; border-radius: 3px; }
+.wiki-panel.is-format .wiki-panel-title h2 { overflow-wrap: break-word; }
+
+/* ---------- Tools over the stage (app/src/views/ToolPanel.tsx, LA-PAT-APP-UX-R19) ----------
+   Frosted panels right of the nav, below the tab panel, which the open space leaves room for (data-floating="left"):
+   Checks and the theme editor the full height, Appearance a popover at the foot, level with its button in the nav. */
+.tool-panel { position: absolute; z-index: 15; left: var(--nav-space); box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--float-border); border-radius: var(--panel-radius); background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); }
+.tool-panel:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
+.tool-panel:focus { outline: none; }
+.tool-panel.checks-panel, .tool-panel.theme-panel { top: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); bottom: var(--float-inset); }
+.tool-panel.checks-panel { width: 380px; }
+.tool-panel.theme-panel { width: 600px; max-width: calc(100% - var(--nav-space) - var(--chat-space)); }
+.tool-panel.appearance-popover { bottom: var(--float-inset); width: 360px; max-height: calc(100% - 3 * var(--float-inset) - var(--page-bar-height) - var(--strip-height)); }
+.tool-panel-head { flex: none; display: flex; align-items: center; gap: 8px; min-height: 40px; padding: 4px 4px 4px 14px; border-bottom: 1px solid var(--float-border); }
+.tool-panel-title { flex: 1 1 auto; min-width: 0; margin: 0; font: 700 0.98rem var(--display); }
+.tool-panel-head .checks { margin: 0; font-size: 0.78rem; white-space: nowrap; }
+.tool-panel-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
+.tool-panel .spec-body { padding: 4px 14px 16px; }
+.tool-panel .spec-section-head h3, .tool-panel .spec-section-head h4 { font-size: 0.92rem; }
+.tool-panel .problem-text { min-width: 0; flex-basis: 100%; overflow-wrap: break-word; }
+.tool-panel li.problem.is-current { box-shadow: inset 3px 0 0 var(--steel); background: var(--steel-bg); }
+.tool-panel.is-sheet { position: static; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.tool-sheet .sheet-body { display: flex; flex-direction: column; min-height: 0; }
+/* Appearance's themes: one row each, previewed on the stage while pointed at, kept with a click. */
+.theme-rows { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; }
+.theme-row { display: flex; align-items: center; gap: 6px; padding: 2px; border-radius: 6px; }
+.theme-row.is-on { background: var(--steel-bg); }
+.theme-pick { flex: 1 1 auto; min-width: 0; display: flex; align-items: center; gap: 0; min-height: 32px; padding: 2px 6px; border: 0; border-radius: 6px; background: none; color: var(--ink); font: inherit; font-size: 0.86rem; text-align: left; cursor: pointer; }
+.theme-pick:hover { background: var(--hover-bg); }
+.theme-pick:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
+.theme-row-text { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
+.theme-row-name { overflow-wrap: break-word; }
+.theme-row-state { color: var(--muted); font-size: 0.72rem; }
+.theme-row .theme-actions { flex: none; flex-wrap: nowrap; gap: 4px; }
+.theme-row .theme-actions > * { padding-block: 2px; font-size: 0.76rem; }
+
+/* ---------- The products picker (app/src/views/ProductsPicker.tsx, LA-V97) ----------
+   A card centered over the last product's stage, dimmed behind it, or over an empty map. */
+.stage-layout.is-backdrop { pointer-events: none; opacity: 0.5; filter: saturate(0.6); }
+.app.is-narrow > main.home-page { position: relative; overflow: hidden; }
+.products-picker-backdrop { place-items: center; padding-top: 0; }
+.dialog.products-picker { width: min(720px, calc(100vw - 32px)); padding: 20px; gap: 14px; overflow-y: auto; }
+.products-picker-head h1 { margin: 0; font: 700 1.5rem var(--display); }
+.products-picker-head .hint { margin: 2px 0 0; }
 
 /* ---------- The breadcrumb (app/src/shell/Breadcrumb.tsx, LA-PAT-APP-UX-R16) ----------
    One line: each place cut with an ellipsis (whole in its tooltip), a "›" between; the "…" button opens the hidden
@@ -1169,12 +1224,15 @@ a.row-link.row-link:focus-visible { outline: none; }
   /* Quick open is a full-width sheet at the top, the stage still showing under it. */
   .quick-open-backdrop { place-items: start stretch; }
   .dialog.quick-open { height: auto; max-height: 75dvh; border-bottom: 1px solid var(--rule); border-radius: 0 0 12px 12px; padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 8px calc(8px + env(safe-area-inset-left)); }
+  /* The products picker is a sheet at the foot, the dimmed stage showing above it. */
+  .products-picker-backdrop { place-items: end stretch; }
+  .dialog.products-picker { width: 100%; height: auto; max-height: 85dvh; border-top: 1px solid var(--rule); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; padding: 16px calc(16px + env(safe-area-inset-right)) calc(16px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
   /* A long title wraps under its chip and ID rather than being cut short. */
   .quick-open-line { flex-wrap: wrap; row-gap: 2px; }
   .quick-open-line .palette-title { flex-basis: 100%; white-space: normal; }
   /* Readable on a phone: body text a step up, and boxes at 16 px so iOS never zooms in on focus. */
   body { font-size: max(var(--text-size), 16px); }
-  :is(.dialog, .long-list-tools, .graph-filters, .appearance-page) :is(input, select, textarea), .dialog-search { font-size: 16px; }
+  :is(.dialog, .long-list-tools, .graph-filters, .tool-panel) :is(input, select, textarea), .dialog-search { font-size: 16px; }
 }
 
 /* A canvas by touch: the selected node is outlined, and a card at the bottom names it; a tap on the card opens it. */

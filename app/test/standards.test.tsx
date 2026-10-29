@@ -9,7 +9,7 @@ import { themeCss } from '../src/theme/css';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
 import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
 import { parseSpecRoute } from '../src/specs/data';
-import { APP_PAGES, isRecordId } from '../src/views/address';
+import { isRecordId } from '../src/views/address';
 import { workspace } from './fixtures/workspace';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
@@ -559,30 +559,25 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const handBuilt = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /[`'"]\/(records|specs|graph)\b|`\/\$\{/));
     expect(handBuilt).toEqual([]);
 
-    // The router: every app page is a lowercase word that no ID can match.
-    for (const word of APP_PAGES) {
-      expect(word, word).toMatch(/^[a-z][a-z-]*$/);
-      expect(isRecordId(word), word).toBe(false);
-    }
     const index = indexOf(workspace());
     expect(parseSpecRoute('/', index)).toEqual({ page: 'specs' });
     for (const id of ['DM', 'DM-SHOP', 'DM-SHOP-UC01']) expect(parseSpecRoute(`/${id}`, index)?.page, id).toMatch(/^(product|domain|record)$/);
     expect(parseSpecRoute('/DM-SHOP/interaction-design/flow', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'interaction-design/flow' });
 
-    // The pages: every in-app link is the home page, an app page or an ID, and none is an old address.
-    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/interaction-design/flow?stage=graph', '/DM/checks', '/format', '/settings/appearance']) {
+    // The pages: every in-app link is the home page or an ID, a tool over the stage in its query, and none is an old address.
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP/interaction-design/flow?stage=graph', '/DM?panel=checks', '/DM-SHOP-UC01?page=format', '/DM?panel=appearance']) {
       await openApp(path);
       await screen.findAllByRole('heading', { level: 1 });
       const wrong = [...document.querySelectorAll('a[href^="/"]')].map((a) => a.getAttribute('href')!).filter((href) => {
         const first = decodeURIComponent(href.split(/[?#]/)[0].split('/')[1] ?? '');
-        return !(first === '' || APP_PAGES.includes(first) || isRecordId(first));
+        return !(first === '' || isRecordId(first));
       });
       expect(wrong.map((href) => `${path}: ${href}`)).toEqual([]);
     }
   });
 
   it('LA-V96-R03-T02 An old address is no page: /records, /specs and /graph addresses say so, and the address stays as typed', async () => {
-    for (const path of ['/records/DM-SHOP-UC01', '/records/DM-SHOP/use_case', '/specs', '/specs/DM/DM-SHOP', '/graph', '/graph/DM-SHOP-UC01']) {
+    for (const path of ['/records/DM-SHOP-UC01', '/records/DM-SHOP/use_case', '/specs', '/specs/DM/DM-SHOP', '/graph', '/graph/DM-SHOP-UC01', '/format', '/format/kinds/use_case', '/settings/appearance']) {
       expect(parseSpecRoute(path, indexOf(workspace())), path).toEqual({ page: 'missing' });
       await openApp(path);
       expect(await screen.findByText(/There's no such page\./), path).toBeInTheDocument();

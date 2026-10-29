@@ -30,6 +30,7 @@ import {
 import { Link } from '../router';
 import { Button } from '../components/Button';
 import { formatPath } from '../format/reference';
+import { useOverlayFocus } from '../views/overlays';
 
 // The command dispatcher: components register handlers for command ids (useCommand), one key
 // listener matches key presses against the keymap, and the shortcuts sheet and quick find's
@@ -241,14 +242,10 @@ function ProviderCommands({ openSheet }: { openSheet: () => void }) {
 
 // ---------- Dialogs ----------
 
-/** A modal dialog: focus goes into it, Tab stays inside, Escape or a click outside closes it, and focus goes back. */
+/** A modal dialog: focus goes into it, Tab stays inside, Escape or a click outside closes it, and focus goes back (views/overlays.ts). */
 export function Dialog({ label, onClose, children, className, backdropClassName }: { label: string; onClose: () => void; children: ReactNode; className?: string; backdropClassName?: string }) {
   const box = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    const before = document.activeElement as HTMLElement | null;
-    box.current?.querySelector<HTMLElement>('input, button')?.focus();
-    return () => { if (before?.isConnected) before.focus(); };
-  }, []);
+  useOverlayFocus(box, 'input, button, [href]');
   const onKeyDown = (e: ReactKeyboardEvent) => {
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose(); return; }
     if (e.key === 'Tab' && box.current) {

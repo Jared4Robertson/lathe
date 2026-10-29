@@ -1,11 +1,11 @@
 import { forwardRef, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
-import { APPEARANCE_PATH, PaletteIcon } from '../theme/ThemeCommands';
+import { PaletteIcon } from '../theme/ThemeCommands';
 import { Icon } from '../components/icons';
 import { LongList } from '../components/LongList';
 import { treeParent } from '../graph/tree';
 import { LatheLogo } from '../LatheLogo';
-import { Link } from '../router';
+import { Link, useLocation } from '../router';
 import { parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState, type Stage } from '../specs/data';
 import { branchOf, domainFolders, productFolders, sharedKey, type Folder, type StageFolders } from '../specs/folders';
 import { recordText, StageMark } from '../specs/parts';
@@ -15,7 +15,8 @@ import { isBool, usePref } from './prefs';
 import { SpaceMark, useSpaces, type Space } from './spaces';
 import { Tooltip } from './Tooltip';
 import { trapTab } from './useNarrow';
-import { addressOf, checksPathOf, HOME_PATH } from '../views/address';
+import { addressOf, HOME_PATH } from '../views/address';
+import { overlaysOf, panelHref } from '../views/overlays';
 
 // The side navigation. At its far left, when the workspace shows two or more products, is the space
 // rail: one square icon per product (each product is its own space); with one product there is no
@@ -57,11 +58,8 @@ const isOpenMap = (v: unknown): v is Record<string, boolean> => !!v && typeof v 
 
 const here = (path: string, to: string) => (path === to ? 'page' : undefined);
 
-/** Which section holds the current page. */
-function sectionOf(path: string): SectionId | null {
-  if (parseSpecRoute(path)?.page === 'checks') return 'tools';
-  return null;
-}
+/** Which section holds the tool open over the stage. */
+const sectionOf = (panel: string | null): SectionId | null => (panel === 'checks' ? 'tools' : null);
 
 export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const { spec, path, collapsed, onToggleCollapsed, expandLabel, drawer, drawerOpen, onCloseDrawer } = props;
@@ -79,7 +77,12 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   const [keyboard, setKeyboard] = useState(false);
 
   // The section holding the current page opens itself.
-  const current = sectionOf(path);
+  // The tools open over the stage (views/overlays.ts): their nav rows open and close them, and say whether they are open.
+  const { search } = useLocation();
+  const { panel } = overlaysOf(search);
+  const checksOpen = panel === 'checks';
+  const appearanceOpen = panel === 'appearance' || panel === 'theme';
+  const current = sectionOf(panel);
   useEffect(() => {
     if (current) setSections((s) => (s[current] === false ? { ...s, [current]: true } : s));
   }, [current, setSections]);
@@ -215,8 +218,8 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             <NavSection id="tools" icon="checks" title="Tools" open={isOpen('tools')} onToggle={() => toggle('tools')}>
               <ul>
                 <li>
-                  <NavRow depth={0} selected={path === checksPathOf(space.id)}>
-                    <Link to={checksPathOf(space.id)} aria-current={here(path, checksPathOf(space.id))} aria-keyshortcuts={checksKeys.aria}>
+                  <NavRow depth={0} selected={checksOpen}>
+                    <Link to={panelHref(checksOpen ? null : 'checks')} aria-expanded={checksOpen} aria-keyshortcuts={checksKeys.aria}>
                       <Icon name="checks" size={16} /> <span className="nav-label">Checks</span> {checkBadges}
                     </Link>
                   </NavRow>
@@ -227,8 +230,8 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
           </>}
         </div>
         <footer className="nav-foot">
-          <NavRow depth={0} selected={path === APPEARANCE_PATH}>
-            <Link to={APPEARANCE_PATH} aria-current={here(path, APPEARANCE_PATH)}><PaletteIcon size={16} /> <span className="nav-label">Appearance</span></Link>
+          <NavRow depth={0} selected={appearanceOpen}>
+            <Link to={panelHref(appearanceOpen ? null : 'appearance')} className="appearance-button" aria-expanded={appearanceOpen}><PaletteIcon size={16} /> <span className="nav-label">Appearance</span></Link>
           </NavRow>
           <p className="nav-source">{sourceNote}</p>
         </footer>

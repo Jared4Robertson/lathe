@@ -113,14 +113,15 @@ export function useEscapeClosesTopmost(search: string, fallback: (() => void) | 
 }
 
 /**
- * An overlay takes focus as it opens, unless focus is already inside it, and gives it back to where
- * it was (the button that opened it, the stage) as it closes, when focus would otherwise be lost.
+ * The one way an overlay (a tool panel, a dialog) handles focus: it takes focus as it opens (its
+ * first element matching `first`, or itself), unless focus is already inside it, and gives it back
+ * to where it was (the button that opened it, the stage) as it closes, when focus would otherwise be lost.
  */
-export function useOverlayFocus(box: RefObject<HTMLElement | null>) {
+export function useOverlayFocus(box: RefObject<HTMLElement | null>, first?: string) {
   useLayoutEffect(() => {
     const before = document.activeElement as HTMLElement | null;
     const el = box.current;
-    if (el && !el.contains(document.activeElement)) el.focus({ preventScroll: true });
+    if (el && !el.contains(document.activeElement)) ((first && el.querySelector<HTMLElement>(first)) || el).focus({ preventScroll: true });
     return () => {
       const now = document.activeElement;
       const lost = !now || now === document.body || !now.isConnected || (el?.contains(now) ?? false);
@@ -131,5 +132,5 @@ export function useOverlayFocus(box: RefObject<HTMLElement | null>) {
         if (before.isConnected && (!after || after === document.body)) before.focus({ preventScroll: true });
       }, 0);
     };
-  }, [box]);
+  }, [box, first]);
 }

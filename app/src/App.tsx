@@ -1,9 +1,9 @@
 import { ResizeHandle } from './components/ResizeHandle';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { navigate, useLocation } from './router';
-import { formatPath, parseSpecRoute, useSpec, type SpecState } from './specs/data';
+import { navigate, setCarry, setPatchBase, useLocation } from './router';
+import { parseSpecRoute, useSpec, type SpecState } from './specs/data';
+import { formatPath } from './format/reference';
 import { SpecView } from './specs/SpecPages';
-import { FormatPages, isFormatRoute } from './format/FormatPages';
 import { postWrite, WriterProvider, type Writer } from './edit/write';
 import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
@@ -15,18 +15,28 @@ import { QuickOpen } from './shell/QuickOpen';
 import { useThemeColor } from './shell/themeColor';
 import { isBool, usePanelSize, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
-import { FocusPage } from './views/FocusPage';
+import { FocusPage, StageBackdrop } from './views/FocusPage';
+import { ChecksPanel } from './views/ChecksPanel';
+import { ProductsPicker } from './views/ProductsPicker';
+import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost, type ToolPanel } from './views/overlays';
 import { ChatPanel } from './chat/ChatPanel';
 import { useAppRequests } from './chat/appRequests';
 import { CARD_MIN, CHAT_DEFAULT, useSessionSettings } from './graph/settings';
 import { CARD_GAP, CARD_GAP_Y, crowdedLabel, RoomContext, STAGE_MIN, useRoomState } from './views/openSpace';
 import { desktopBridge } from './shell/desktopChrome';
-import { checksPathOf, HOME_PATH, isFocusRoute } from './views/address';
+import { addressOf, focusOf, HOME_PATH, isFocusRoute } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
-import { APPEARANCE_PATH, ThemeCommands } from './theme/ThemeCommands';
-// The first load ships only the wiki (LA-PAT-APP-UX-R11): the theme editor loads when first opened,
+import { ThemeCommands } from './theme/ThemeCommands';
+// The first load ships only the wiki (LA-PAT-APP-UX-R11): Appearance and the theme editor load when first opened,
 // as the graph and the ERD view do (views/FocusPage.tsx).
-const AppearancePage = lazy(() => import('./theme/AppearancePage').then((m) => ({ default: m.AppearancePage })));
+const AppearancePopover = lazy(() => import('./theme/Appearance').then((m) => ({ default: m.AppearancePopover })));
+const ThemeEditorPanel = lazy(() => import('./theme/Appearance').then((m) => ({ default: m.ThemeEditorPanel })));
+
+// A move to another focus keeps the tool open over the stage (views/overlays.ts).
+setCarry(carryOverlays);
+
+/** The width of each tool over the stage, right of the nav, in px: what the open space leaves room for (openSpace.ts). */
+const TOOL_WIDTHS: Record<ToolPanel, number> = { checks: 380, appearance: 360, theme: 600 };
 
 export default function App() {
   return (
@@ -59,7 +69,10 @@ function Shell() {
     },
   }), [reload]);
   const specRoute = parseSpecRoute(path, spec.index);
-  const isAppearance = path === APPEARANCE_PATH;
+  // The tools open over the stage (views/overlays.ts): a panel, and a format page in the wiki card. None on the picker.
+  const isHome = specRoute.page === 'specs';
+  const overlays = overlaysOf(search);
+  const tool = isHome ? null : overlays.panel;
   const announce = useAnnounce();
 
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
@@ -79,7 +92,7 @@ function Shell() {
   const chatShown = !!chatBridge && chat.open;
   // Panels never crowd the page (LA-PAT-APP-UX-R18): the nav collapses to its rail for space last,
   // after the page's side bar and wiki card; the Reader's own choice (`collapsed`) stays as set.
-  const room = useRoomState({ nav: { open: !collapsed, width: navWidth, rail: NAV_RAIL }, chat: chatShown ? chat.width ?? CHAT_DEFAULT : null }, narrow);
+  const room = useRoomState({ nav: { open: !collapsed, width: navWidth, rail: NAV_RAIL }, chat: chatShown ? chat.width ?? CHAT_DEFAULT : null, tool: tool ? TOOL_WIDTHS[tool] : null }, narrow);
   const { hold } = room;
   const navCrowded = room.crowded.has('nav');
   const navCollapsed = collapsed || navCrowded;
@@ -119,8 +132,8 @@ function Shell() {
   useCommand('goBack', () => window.history.back());
   useCommand('goForward', () => window.history.forward());
   const space = spaces.current?.id ?? null;
-  useCommand('openChecks', () => { if (space) navigate(checksPathOf(space)); }, !!space);
-  useCommand('goChecks', () => { if (space) navigate(checksPathOf(space)); }, !!space);
+  useCommand('openChecks', () => navigate(panelHref('checks')), !!space);
+  useCommand('goChecks', () => navigate(panelHref('checks')), !!space);
   useCommand('goFormat', () => navigate(formatPath));
   useCommand('goHome', () => navigate(HOME_PATH));
   useCommand('goToDefinition', () => {
@@ -153,19 +166,41 @@ function Shell() {
   });
 
   const focusRoute = isFocusRoute(specRoute) ? specRoute : null;
+  // The products picker's stage: the last product the Reader was in, where they left it, or an empty map on a first launch.
+  const backdrop = spaces.last ? (spaces.lastPage(spaces.last.id) ?? addressOf(spaces.last.id)) : null;
+  const backdropPath = backdrop?.split('?')[0] ?? null;
+  const backdropRoute = backdropPath ? parseSpecRoute(backdropPath, spec.index) : null;
+  // A tool opened from the picker opens over the stage behind it.
+  const backdropRef = useRef(backdropPath);
+  backdropRef.current = backdropPath;
+  useEffect(() => { setPatchBase(() => (window.location.pathname === HOME_PATH && backdropRef.current) || window.location.pathname); }, []);
+  const leaveHome = isHome && backdrop ? () => navigate(backdrop) : null;
+  useEscapeClosesTopmost(search, leaveHome);
+  const closeTool = useCallback(() => navigate(panelHref(null)), []);
 
   let page;
-  if (isAppearance) {
-    page = <Suspense fallback={<LoadingPage />}><AppearancePage /></Suspense>;
-  } else if (isFormatRoute(specRoute)) {
-    page = <FormatPages spec={spaceSpec} route={specRoute} />;
-  } else if (focusRoute) {
+  if (focusRoute) {
     page = <FocusPage spec={spaceSpec} route={focusRoute} search={search} />;
-  } else if (specRoute) {
-    page = <SpecView spec={spec} space={spaces.index} route={specRoute} />;
+  } else if (isHome) {
+    // While the specs load, the empty map shows where the stage will be.
+    page = (
+      <main className="stage-page home-page" id="main">
+        {spec.error && <p className="error">Couldn't load the specs: {spec.error}</p>}
+        <StageBackdrop index={spaces.index} focus={backdropRoute && isFocusRoute(backdropRoute) ? focusOf(backdropRoute) : null} />
+      </main>
+    );
   } else {
-    // A lowercase address that is no page (`/settings/…` other than Appearance).
-    page = <SpecView spec={spec} space={spaces.index} route={{ page: 'missing' }} />;
+    page = <SpecView spec={spec} />;
+  }
+
+  const product = spaces.current && spaces.index ? spaces.index.byId.get(spaces.current.id) : undefined;
+  let toolPanel = null;
+  if (tool === 'checks' && spaces.index && product) {
+    toolPanel = <ChecksPanel index={spaces.index} product={product} focus={focusRoute ? focusOf(focusRoute) : null} sheet={narrow} onClose={closeTool} />;
+  } else if (tool === 'appearance') {
+    toolPanel = <Suspense fallback={null}><AppearancePopover sheet={narrow} onClose={closeTool} /></Suspense>;
+  } else if (tool === 'theme') {
+    toolPanel = <Suspense fallback={null}><ThemeEditorPanel id={overlays.theme} sheet={narrow} onClose={closeTool} /></Suspense>;
   }
 
   return (
@@ -179,6 +214,7 @@ function Shell() {
       style={{
         '--nav-width': `${navWidth}px`, '--rail-width': `${NAV_RAIL}px`, '--card-min': `${CARD_MIN}px`, '--stage-min': `${STAGE_MIN}px`, '--card-gap': `${CARD_GAP}px`, '--card-gap-y': `${CARD_GAP_Y}px`,
         ...(chat.width !== null ? { '--chat-width': `${chat.width}px` } : {}),
+        ...(tool && !narrow ? { '--tool-space': `${TOOL_WIDTHS[tool] + 8}px` } : {}),
       } as CSSProperties}
       data-crowded={room.crowded.size > 0 ? [...room.crowded].join(' ') : undefined}
       data-specs={spec.index ? 'ready' : spec.error ? 'error' : 'loading'}
@@ -225,6 +261,8 @@ function Shell() {
         />
       )}
       {page}
+      {isHome && spec.index && <ProductsPicker index={spec.index} onClose={leaveHome} />}
+      {toolPanel}
       {chatShown && chatBridge && (
         <ChatPanel
           bridge={chatBridge}
@@ -240,11 +278,6 @@ function Shell() {
     </SpacesProvider>
     </WriterProvider>
   );
-}
-
-/** What shows in the page's place while its code loads. */
-function LoadingPage() {
-  return <main className="placeholder panel" id="main"><p>Loading…</p></main>;
 }
 
 /** Alt+1 to Alt+9 (⌥1 to ⌥9 on a Mac) switch to the spaces in rail order, each a "Switch to <product>" command. */
