@@ -409,7 +409,7 @@ test.describe('Platform flows in the app', () => {
         const el = document.activeElement;
         if (!el) return '';
         if (el.closest('nav#nav')) return 'nav';
-        if (el.closest('.page-bar')) return 'page bar';
+        if (el.closest('.page-bar-actions')) return 'page bar';
         if (el.closest('.wiki-panel')) return 'wiki card';
         if (el.closest('.focus-stage')) return 'stage';
         return '';

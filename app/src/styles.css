@@ -33,6 +33,9 @@
   --g-structural: var(--ink); --g-structural-bg: var(--sheet);
   /* The page bar above the stage: one fixed height, so nothing below it moves (UX-R03, UX-R08). */
   --page-bar-height: 40px;
+  /* The tab panel's height: on the web one row, the header strip holding the page's controls; in the desktop app
+     (.app.has-tabs) the page bar with the tabs, then the header strip. */
+  --tab-panel-height: var(--page-bar-height);
   /* One width for every tab of the desktop app's, so a move in a tab moves nothing (UX-R08). */
   --tab-width: 14rem;
   /* Touch (LA-PAT-APP-UX-R07): the least size of a target under a finger, and the radius of a sheet's top corners. */
@@ -109,6 +112,7 @@ body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(-
 .app.nav-collapsed { --nav-space: calc(var(--rail-width) + 2 * var(--float-inset)); }
 .app:not(.is-narrow) > .menu { position: absolute; z-index: 20; top: var(--float-inset); bottom: var(--float-inset); left: var(--float-inset); width: var(--nav-width, 336px); }
 .app.nav-collapsed:not(.is-narrow) > .menu { width: var(--rail-width); }
+.app.has-tabs { --tab-panel-height: calc(var(--page-bar-height) + var(--strip-height)); }
 .app:not(.is-narrow) > .app-nav-handle { position: absolute; z-index: 21; top: var(--float-inset); bottom: var(--float-inset); left: calc(var(--nav-space) - var(--float-inset)); width: var(--float-inset); }
 .app:not(.is-narrow) > main { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); }
 .app:not(.is-narrow) > main.stage-page { inset: 0; }
@@ -969,7 +973,7 @@ a.row-link.row-link:focus-visible { outline: none; }
    top from the nav to the right edge, so its controls never move. Below it, on the right, from the open space outward:
    the wiki card, a third of the space right of the nav wide until resized, then (in the desktop app) the chat; the nav stays alone on the left. The stage measures what they leave (openSpace.ts) and sets
    --open-* and --frame-* on itself, where its own tools float. */
-.stage-layout { position: absolute; inset: 0; --below-strip: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); }
+.stage-layout { position: absolute; inset: 0; --below-strip: calc(2 * var(--float-inset) + var(--tab-panel-height)); }
 .focus-stage { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: var(--paper); }
 .tab-body { position: absolute; inset: 0; pointer-events: none; }
 .tab-body > * { pointer-events: auto; }
@@ -977,6 +981,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* The header strip (HeaderStrip.tsx): directly under the active tab, one line: the trail, the kind, ID and title (cut
    with an ellipsis, whole in its tooltip), and the stage's counts at the right. */
 .header-strip { position: absolute; z-index: 3; top: calc(var(--float-inset) + var(--page-bar-height)); left: var(--nav-space); right: var(--chat-space); box-sizing: border-box; height: var(--strip-height); display: flex; align-items: center; gap: 6px; padding: 0 10px; border: 1px solid var(--float-border); border-radius: 0 0 var(--panel-radius) var(--panel-radius); font-size: 0.8rem; white-space: nowrap; }
+/* On the web the header strip is the tab panel's one row, as high as a page bar, its controls at the right after the counts. */
+.stage-layout.one-place:not(.is-phone) .header-strip { top: var(--float-inset); height: var(--page-bar-height); padding-right: 4px; border-radius: var(--panel-radius); }
+.header-strip .page-bar-actions { margin-left: 8px; }
 .stage-layout.is-phone > .header-strip { position: static; flex: none; border-width: 0 0 1px; border-radius: 0; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--sheet); }
 .header-strip-trail { flex: 0 1 auto; min-width: 0; max-width: 45%; }
 .header-strip-sep { flex: none; color: var(--muted); }
@@ -1051,8 +1058,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 .tool-panel { position: absolute; z-index: 15; left: var(--nav-space); box-sizing: border-box; display: flex; flex-direction: column; min-height: 0; border: 1px solid var(--float-border); border-radius: var(--panel-radius); background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); }
 .tool-panel:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
 .tool-panel:focus { outline: none; }
-.tool-panel.checks-panel, .tool-panel.changes-panel, .tool-panel.theme-panel { top: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); bottom: var(--float-inset); }
-.tool-panel.appearance-popover { bottom: var(--float-inset); max-height: calc(100% - 3 * var(--float-inset) - var(--page-bar-height) - var(--strip-height)); }
+.tool-panel.checks-panel, .tool-panel.changes-panel, .tool-panel.theme-panel { top: calc(2 * var(--float-inset) + var(--tab-panel-height)); bottom: var(--float-inset); }
+.tool-panel.appearance-popover { bottom: var(--float-inset); max-height: calc(100% - 3 * var(--float-inset) - var(--tab-panel-height)); }
 /* The tools' widths (App.tsx's TOOL_WIDTHS, which the crowding rule counts); on a phone each is a sheet. */
 @media (min-width: 901px) {
   .tool-panel.checks-panel, .tool-panel.changes-panel { width: 380px; }

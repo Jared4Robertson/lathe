@@ -49,12 +49,9 @@ export interface PageBarProps {
 export function PageBar(props: PageBarProps) {
   const { index, tabs, stage, onStage, compact, cardShown, cardCrowded = false, onCard, cardButton, pagesOpen = false, onPages, pagesButton } = props;
   const count = tabs?.set.tabs.length ?? 0;
-  // A panel collapsed for space says so on its toggle, which opens it anyway.
-  const cardLabel = cardCrowded ? crowdedLabel('card') : `${cardShown ? 'Collapse' : 'Show'} the wiki card`;
 
   let start: ReactNode = null;
-  if (!tabs) start = null;
-  else if (compact) {
+  if (tabs && compact) {
     start = (
       <button
         ref={pagesButton}
@@ -69,45 +66,59 @@ export function PageBar(props: PageBarProps) {
         <span className="page-bar-count">{count}</span>
       </button>
     );
-  } else {
+  } else if (tabs) {
     start = <TabStrip index={index} set={tabs.set} onActivate={tabs.activate} onClose={tabs.close} />;
   }
 
   return (
     <div className={`page-bar${compact ? ' is-compact' : ''}`} data-floating={compact ? undefined : 'top'}>
       <div className="page-bar-start">{start}</div>
-      <div className="page-bar-actions">
-        <div className={compact ? 'view-switch' : 'stage-switch'} role="group" aria-label="Stage">
-          {STAGE_NAMES.map((s) => (
-              <Tooltip key={s} label={`${STAGE_LABELS[s]} stage`} command={STAGE_COMMANDS[s]}>
-                <button
-                  type="button"
-                  className={compact ? `view-segment${stage === s ? ' is-on' : ''}` : `icon-button${stage === s ? ' is-on' : ''}`}
-                  aria-label={STAGE_LABELS[s]}
-                  aria-pressed={stage === s}
-                  data-command={STAGE_COMMANDS[s]}
-                  onClick={() => onStage(s)}
-                >
-                  <StageIcon stage={s} size={compact ? 18 : 16} />
-                  {compact && <span className="view-segment-label" aria-hidden="true">{STAGE_LABELS[s]}</span>}
-                </button>
-              </Tooltip>
-          ))}
-        </div>
-        <span className="pane-divider" aria-hidden="true" />
-        <Tooltip label={cardLabel} command="toggleWikiCard" placement="left">
-          <Button
-            variant="icon"
-            ref={cardButton}
-            className={`wiki-panel-toggle${cardShown ? ' is-on' : ''}${cardCrowded ? ' is-crowded' : ''}`}
-            label={cardLabel}
-            aria-expanded={cardShown}
-            onClick={() => onCard(!cardShown)}
-          >
-            <Icon name="wiki" size={compact ? 20 : 16} />
-          </Button>
-        </Tooltip>
+      <PageActions stage={stage} onStage={onStage} compact={compact} cardShown={cardShown} cardCrowded={cardCrowded} onCard={onCard} cardButton={cardButton} />
+    </div>
+  );
+}
+
+export type PageActionsProps = Pick<PageBarProps, 'stage' | 'onStage' | 'compact' | 'cardShown' | 'cardCrowded' | 'onCard' | 'cardButton'>;
+
+/**
+ * The page's controls: the stage switch, a divider and the wiki card toggle. In the page bar's right in the desktop app
+ * and on a phone; on the web, at the right of the header strip's row, as there is no tab row above it.
+ */
+export function PageActions({ stage, onStage, compact, cardShown, cardCrowded = false, onCard, cardButton }: PageActionsProps) {
+  // A panel collapsed for space says so on its toggle, which opens it anyway.
+  const cardLabel = cardCrowded ? crowdedLabel('card') : `${cardShown ? 'Collapse' : 'Show'} the wiki card`;
+  return (
+    <div className="page-bar-actions">
+      <div className={compact ? 'view-switch' : 'stage-switch'} role="group" aria-label="Stage">
+        {STAGE_NAMES.map((s) => (
+            <Tooltip key={s} label={`${STAGE_LABELS[s]} stage`} command={STAGE_COMMANDS[s]}>
+              <button
+                type="button"
+                className={compact ? `view-segment${stage === s ? ' is-on' : ''}` : `icon-button${stage === s ? ' is-on' : ''}`}
+                aria-label={STAGE_LABELS[s]}
+                aria-pressed={stage === s}
+                data-command={STAGE_COMMANDS[s]}
+                onClick={() => onStage(s)}
+              >
+                <StageIcon stage={s} size={compact ? 18 : 16} />
+                {compact && <span className="view-segment-label" aria-hidden="true">{STAGE_LABELS[s]}</span>}
+              </button>
+            </Tooltip>
+        ))}
       </div>
+      <span className="pane-divider" aria-hidden="true" />
+      <Tooltip label={cardLabel} command="toggleWikiCard" placement="left">
+        <Button
+          variant="icon"
+          ref={cardButton}
+          className={`wiki-panel-toggle${cardShown ? ' is-on' : ''}${cardCrowded ? ' is-crowded' : ''}`}
+          label={cardLabel}
+          aria-expanded={cardShown}
+          onClick={() => onCard(!cardShown)}
+        >
+          <Icon name="wiki" size={compact ? 20 : 16} />
+        </Button>
+      </Tooltip>
     </div>
   );
 }

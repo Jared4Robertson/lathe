@@ -7,7 +7,8 @@ import { COMMANDS } from '../src/shell/keymap';
 import { workspace } from './fixtures/workspace';
 import { desktopBridgeStub, openApp, serve } from './helpers';
 import { testWorkspace } from './graph/workspace';
-import { boxElement, boxElements } from './graph/scene';
+import { boxElement, boxElements, cameraOf } from './graph/scene';
+import type { TraceHost } from '../src/trace/TraceCanvas';
 
 // The desktop app's tabs, as a browser's (LA-EXP-UC10): each tab is its own place, a move never leaves it, a new tab
 // opens only when asked for, closing and cycling, and each tab's own history, which the window's follows, so a
@@ -277,6 +278,58 @@ describe('the desktop app\'s tabs', () => {
     expect(Object.keys(settings)).not.toContain('depth');
     expect(Object.keys(settings)).not.toContain('hiddenKinds');
     expect(Object.keys(settings)).not.toContain('cardExpanded');
+  });
+
+  it('LA-V96-R14-T02 Each tab keeps its own camera on the Graph and the Trace, taken back at once when it is active again', async () => {
+    const traceCamera = () => JSON.stringify((document.querySelector('.trace-flow') as TraceHost).traceScene!().camera);
+    /** The camera, once it has stopped moving. */
+    const still = async (read: () => string) => {
+      let before = read();
+      for (;;) {
+        await act(async () => { await new Promise((r) => setTimeout(r, 120)); });
+        const now = read();
+        if (now === before) return now;
+        before = now;
+      }
+    };
+    /** A scroll on the stage's canvas: the camera pans by it. */
+    const pan = (deltaY: number) => fireEvent.wheel(document.querySelector('.focus-stage canvas')!, { deltaY, clientX: 200, clientY: 200 });
+    await firstTab();
+    await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
+    const framedGraph = await still(cameraOf);
+    pan(40);
+    const graph = await still(cameraOf);
+    expect(graph).not.toBe(framedGraph);
+    // A second tab, elsewhere; back on the first, its camera as it was.
+    newTabKey();
+    await waitFor(() => expect(tabs()).toHaveLength(2));
+    await settled('/P?stage=graph');
+    await still(cameraOf);
+    await new Promise((r) => setTimeout(r, 200));
+    pan(-90);
+    expect(await still(cameraOf)).not.toBe(graph);
+    fireEvent.click(tab('Lend a thing'));
+    await waitFor(() => expect(title()).toBe('Lend a thing'));
+    expect(await still(cameraOf)).toBe(graph);
+    // The Trace: the first tab's camera there too.
+    fireEvent.click(stageButton('Trace'));
+    await waitFor(() => expect(document.querySelector('.trace-flow[data-ready]')).not.toBeNull());
+    const framedTrace = await still(traceCamera);
+    pan(40);
+    const trace = await still(traceCamera);
+    expect(trace).not.toBe(framedTrace);
+    // The second tab's Trace, zoomed out: its own camera.
+    fireEvent.click(tab('Product'));
+    await waitFor(() => expect(title()).toBe('Product'));
+    fireEvent.click(stageButton('Trace'));
+    await waitFor(() => expect(document.querySelector('.trace-flow[data-ready]')).not.toBeNull());
+    await still(traceCamera);
+    await new Promise((r) => setTimeout(r, 200));
+    pan(-90);
+    expect(await still(traceCamera)).not.toBe(trace);
+    fireEvent.click(tab('Lend a thing'));
+    await waitFor(() => expect(title()).toBe('Lend a thing'));
+    expect(await still(traceCamera)).toBe(trace);
   });
 
   it('LA-V96-R15-T04 Reloading brings back every tab with its place and history', async () => {

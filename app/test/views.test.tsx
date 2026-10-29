@@ -108,9 +108,9 @@ describe('one address, one stage', () => {
     await openApp('/P-V01', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
     expect(stageButton('ERD')).toHaveAttribute('aria-pressed', 'true');
-    // The stage switch appears once, in the page bar.
+    // The stage switch appears once, with the page's controls (on the web, at the right of the header strip's row).
     expect(screen.getAllByRole('group', { name: 'Stage' })).toHaveLength(1);
-    expect(within(document.querySelector<HTMLElement>('.page-bar')!).getByRole('group', { name: 'Stage' })).toBeInTheDocument();
+    expect(within(document.querySelector<HTMLElement>('.header-strip .page-bar-actions')!).getByRole('group', { name: 'Stage' })).toBeInTheDocument();
   });
 
   it('LA-V96-R05-T01 The stage frames the focus in the open space the floating panels leave, measured from their rectangles', async () => {
@@ -449,7 +449,7 @@ describe('one address, one stage', () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const sides = [...document.querySelectorAll<HTMLElement>('[data-floating]')].map((p) => `${p.className.split(' ')[0]}:${p.dataset.floating}`);
-    expect(sides).toEqual(expect.arrayContaining(['menu:left', 'page-bar:top', 'header-strip:top', 'wiki-panel:right']));
+    expect(sides).toEqual(expect.arrayContaining(['menu:left', 'header-strip:top', 'wiki-panel:right']));
 
     // Text on a panel keeps AA (4.5:1) in every built-in theme and mode, the panel laid over any fill the stage draws
     // (the paper, the sheet, the shell, every tint) and over dense content (about a quarter ink over the paper, once blurred).

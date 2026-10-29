@@ -22,6 +22,13 @@ describe('the web\'s place', () => {
     expect(screen.queryByRole('tab')).toBeNull();
     expect(screen.queryByRole('tabpanel')).toBeNull();
     expect(document.querySelector('.tab-strip')).toBeNull();
+    // No empty tab row: no page bar, the page's controls at the right of the header strip's row, after the counts.
+    expect(document.querySelector('.page-bar')).toBeNull();
+    const strip = document.querySelector<HTMLElement>('.header-strip')!;
+    expect(strip.lastElementChild).toHaveClass('page-bar-actions');
+    expect(strip.lastElementChild!.previousElementSibling).toHaveClass('header-strip-counts');
+    expect(within(strip).getByRole('group', { name: 'Stage' })).toBeInTheDocument();
+    expect(document.querySelector('.stage-layout')).toHaveClass('one-place');
     const length = window.history.length;
     // A box clicked: one new entry of the browser's, with the stage kept.
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(1));
@@ -68,7 +75,7 @@ describe('the web\'s place', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
-    fireEvent.click(document.querySelector<HTMLElement>('.page-bar .wiki-panel-toggle')!);
+    fireEvent.click(document.querySelector<HTMLElement>('.page-bar-actions .wiki-panel-toggle')!);
     expect(screen.queryByRole('region', { name: 'Wiki card' })).toBeNull();
     fireEvent.click(stageButton('ERD'));
     await waitFor(() => expect(address()).toBe('/P-D-UC01?stage=erd'));

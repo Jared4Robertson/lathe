@@ -532,7 +532,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   useLayoutEffect(() => {
     const was = cameraPlace.current;
     if (was.key === cameraKey) { cameraPlace.current = { key: cameraKey, framed: framedNow }; return; }
-    if (was.key && framedFor.current) keepCamera(was.key, 'graph', { framed: was.framed, view: view.current });
+    if (was.key && sizeRef.current) keepCamera(was.key, 'graph', { framed: was.framed, view: view.current });
     cameraPlace.current = { key: cameraKey, framed: framedNow };
     const back = cameraKey ? keptCamera<Viewport>(cameraKey, 'graph', framedNow) : null;
     if (back && size) {
@@ -544,7 +544,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   });
   useEffect(() => () => {
     const { key, framed } = cameraPlace.current;
-    if (key && framedFor.current) keepCamera(key, 'graph', { framed, view: view.current });
+    if (key && sizeRef.current) keepCamera(key, 'graph', { framed, view: view.current });
   }, []);
   useLayoutEffect(() => {
     if (skipFraming.current === framing) { skipFraming.current = null; return; }
