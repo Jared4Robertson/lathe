@@ -7,6 +7,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import { normalizeRow, openStore, SCHEMA_VERSION, type Row } from '../../src/index.ts';
+import { AGGREGATE_COMMANDS, aggregateTool } from '../../src/cli/aggregates.ts';
+import { parseInput } from '../../src/platform/commands/definition.ts';
 import { everyKind, removeData, writeData } from '../store/fixture.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -34,10 +36,26 @@ function productRepo(): string {
 
 const SKILLS = ['discover-outcomes', 'model-a-domain', 'write-use-cases', 'design-interactions', 'write-the-technical-spec', 'plan-tests', 'check-and-fix', 'extend-the-meta-model'];
 
-// The tool calls a skill shows, as \`add { ... }\`, \`set { ... }\` or \`link { ... }\`, in its examples or inline.
-function examples(text: string): { op: string; args: Record<string, unknown> }[] {
-  const found: { op: string; args: Record<string, unknown> }[] = [];
-  for (const match of text.matchAll(/(?:^|`)(add|set|link|unlink|remove|move) +\{/gm)) {
+// Every aggregate of Lathe's model, by the name its tools start with (use_case_add_flow_step is the use-case aggregate's).
+const AGGREGATES = [
+  'product', 'business-outcome', 'extension-record', 'entry-point', 'tooling', 'domain', 'test-data-set', 'pattern', 'standard',
+  'aggregate', 'domain-event', 'command', 'specification', 'value-object', 'read-model', 'table', 'use-case', 'view', 'endpoint',
+  'integration', 'ui-component', 'check', 'product-setting', 'pattern-following',
+];
+// The aggregates whose commands have not landed yet: the skills' examples of their tools are checked against the schema's
+// columns and relations only, not against the tools themselves. An aggregate leaves this list as soon as its commands land.
+const PENDING = new Set(AGGREGATES.filter((a) => a !== 'use-case'));
+// The fields of a record's add or change that hold its parts, as lists of rows.
+const PARTS = new Set(['fields', 'keys', 'settings', 'roles', 'setting_values', 'packages']);
+
+/** The aggregate a tool belongs to, by the longest aggregate name it starts with. */
+const aggregateOf = (tool: string) =>
+  AGGREGATES.filter((a) => tool.startsWith(`${a.replaceAll('-', '_')}_`)).sort((a, b) => b.length - a.length)[0];
+
+// The tool calls a skill shows, as \`use_case_add_flow { ... }\`, in its examples or inline.
+function examples(text: string): { tool: string; args: Record<string, unknown> }[] {
+  const found: { tool: string; args: Record<string, unknown> }[] = [];
+  for (const match of text.matchAll(/(?:^|`)([a-z]+(?:_[a-z]+)+) +\{/gm)) {
     const start = match.index! + match[0].length - 1;
     let depth = 0;
     let inString = false;
@@ -49,13 +67,16 @@ function examples(text: string): { op: string; args: Record<string, unknown> }[]
       } else if (c === '"') inString = true;
       else if (c === '{') depth++;
       else if (c === '}' && --depth === 0) {
-        found.push({ op: match[1], args: JSON.parse(text.slice(start, i + 1)) });
+        found.push({ tool: match[1], args: JSON.parse(text.slice(start, i + 1)) });
         break;
       }
     }
   }
   return found;
 }
+
+// Every tool a skill names in backticks, such as `domain_add_capability`.
+const TOOL_NAME = /`([a-z]+(?:_[a-z]+)*_(?:add|change|remove|move|get|list|next_id|follow|stop)(?:_[a-z]+)*)`/g;
 
 const guard = (input: object) => spawnSync(process.execPath, [path.join(pluginDir, 'scripts', 'guard-data-files.mjs')], { input: JSON.stringify(input), encoding: 'utf8' });
 
@@ -78,38 +99,55 @@ describe('the plugin', () => {
     }
   });
 
-  it("LA-AUT-UC01-R08-T02 every example in the skills names real tables, columns and relations, with values of the columns' types", async () => {
+  it("LA-AUT-UC01-R08-T02 every example in the skills runs an aggregate's own tool, with the fields it takes", async () => {
+    // An aggregate whose commands have landed is not pending any more.
+    expect(AGGREGATE_COMMANDS.filter((a) => PENDING.has(a)), 'landed: remove from PENDING').toEqual([]);
     for (const skill of SKILLS) {
-      const writes = examples(readFileSync(path.join(pluginDir, 'skills', skill, 'SKILL.md'), 'utf8'));
+      const text = readFileSync(path.join(pluginDir, 'skills', skill, 'SKILL.md'), 'utf8');
+      const calls = examples(text);
       // The product's own kinds and relations an example declares are part of the schema its other examples use.
-      const declared = (table: string) => writes.filter((w) => w.op === 'add' && Object.keys(w.args)[0] === table).map((w) => Object.values(w.args)[0] as Row);
+      const declared = calls.filter((c) => c.tool === 'product_add_product_kind').map((c) => c.args as Row & { fields?: Row[] });
       const data = everyKind();
       const store = await openStore(
         writeData({
           ...data,
-          product_kind: [...data.product_kind, ...declared('product_kind')],
-          product_kind_field: [...data.product_kind_field, ...declared('product_kind_field')],
-          product_relation: [...data.product_relation, ...declared('product_relation')],
+          product_kind: [...data.product_kind, ...declared.map(({ fields, ...kind }) => kind)],
+          product_kind_field: [...data.product_kind_field, ...declared.flatMap((k) => (k.fields ?? []).map((f, at) => ({ kind: k.name, position: at + 1, ...f })))],
+          product_relation: [...data.product_relation, ...calls.filter((c) => c.tool === 'product_add_product_relation').map((c) => c.args as Row)],
         }),
       );
       const schema = store.schema;
       await store.close();
-      for (const { op, args } of writes) {
-        const where = `${skill}: ${op} ${JSON.stringify(args)}`;
-        if (op === 'link' || op === 'unlink') {
-          expect(Object.keys(schema.relations), where).toContain(args.relation);
+      // Every tool the skill names belongs to an aggregate, and exists once its aggregate has landed.
+      for (const [, tool] of text.matchAll(TOOL_NAME)) {
+        const aggregate = aggregateOf(tool);
+        expect(aggregate, `${skill}: ${tool} names no aggregate`).toBeDefined();
+        if (!PENDING.has(aggregate!)) expect(aggregateTool(tool), `${skill}: there is no tool ${tool}`).toBeDefined();
+      }
+      for (const { tool, args } of calls) {
+        const where = `${skill}: ${tool} ${JSON.stringify(args)}`;
+        const aggregate = aggregateOf(tool);
+        expect(aggregate, where).toBeDefined();
+        if (!PENDING.has(aggregate!)) {
+          const found = aggregateTool(tool);
+          expect(found, where).toBeDefined();
+          expect(() => parseInput(schema, found!.definition, args), where).not.toThrow();
           continue;
         }
-        const [table, row] = Object.entries(args)[0] as [string, Row];
-        expect(schema.tables[table]?.stored, where).toBe(true);
-        if (op === 'add') expect(normalizeRow(schema.tables[table], row), where).toEqual({ row: expect.any(Object) });
-        if (op === 'set') {
-          const columns = schema.tables[table].columns.map((c) => c.name);
-          for (const column of Object.keys(row)) expect(columns, where).toContain(column);
-          for (const key of schema.tables[table].primaryKey) expect(Object.keys(row), where).toContain(key);
-        }
+        // A pending aggregate's tool: its fields are its kind's columns, the relations it starts, and its parts.
+        const command = /^(add|change|remove|move)_(.+)$/.exec(tool.slice(aggregate!.length + 1));
+        if (!command) continue;
+        const kind = tool === 'extension_record_add_extension_record' || tool === 'extension_record_change_extension_record' ? String(args.kind) : command[2];
+        const table = schema.tables[kind];
+        expect(table?.stored, `${where}: no table ${kind}`).toBe(true);
+        const fields = Object.keys(args).filter((f) => !(kind !== command[2] && f === 'kind'));
+        const columns = new Set(table.columns.map((c) => c.name));
+        for (const field of fields) expect(columns.has(field) || field in schema.relations || PARTS.has(field), `${where}: ${field}`).toBe(true);
+        const row = Object.fromEntries(fields.filter((f) => columns.has(f)).map((f) => [f, args[f]])) as Row;
+        if (command[1] === 'add') expect(normalizeRow(table, row), where).toEqual({ row: expect.any(Object) });
+        else expect(Object.keys(row), where).toEqual(expect.arrayContaining(table.primaryKey));
       }
-      expect(writes.length, skill).toBeGreaterThan(skill === 'check-and-fix' ? -1 : 0);
+      expect(calls.length, skill).toBeGreaterThan(skill === 'check-and-fix' ? -1 : 0);
     }
   }, 60_000);
 });

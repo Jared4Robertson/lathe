@@ -1,6 +1,6 @@
 // `lathe upgrade` (LA-PLT-UC17, upgradeProduct in src/upgrade.ts): converters run in order from the product's schema
-// version to the target, their files phases on the raw rows and then their records phases through the command layer,
-// and only then is the config's schema raised. What they cannot convert is a to-do; a dirty working tree is refused.
+// version to the target on the raw rows, the converted data must load under the new schema, and only then is the
+// config's schema raised. What they cannot convert is a to-do; a working tree with changes is refused.
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -40,18 +40,17 @@ function committedProduct(product: Record<string, unknown>): string {
 const productFile = (root: string) => readFileSync(path.join(root, 'data', 'product.jsonl'), 'utf8');
 
 describe('lathe upgrade', () => {
-  it('LA-PLT-UC17-R02-T01 runs the converters in order, files phases then records phases through the command layer, and raises the schema', async () => {
-    // "blurb" is a column the current schema does not have: only the files phase can move it.
+  it('LA-PLT-UC17-R02-T01 runs the converters in order on the raw rows, checks the data loads, and raises the schema', async () => {
+    // "blurb" is a column the current schema does not have: only a converter can move it.
     const root = committedProduct({ title: 'Tool Library', id: 'TL', blurb: 'Lends tools to members.' });
     const ran: string[] = [];
     const converters: ConverterStep[] = [
       {
         from: 2, to: 3, name: '2-to-3',
         converter: {
-          files: () => void ran.push('2-to-3 files'),
-          records: async (store, notes) => {
-            ran.push('2-to-3 records');
-            await store.set('product', 'TL', { color: '#2E6A88' });
+          files: (data, notes) => {
+            ran.push('2-to-3');
+            data.write('product', data.read('product').map((row) => ({ color: '#2E6A88', ...row })));
             notes.changed('TL takes the color #2E6A88');
           },
         },
@@ -60,7 +59,7 @@ describe('lathe upgrade', () => {
         from: 1, to: 2, name: '1-to-2',
         converter: {
           files: (data, notes) => {
-            ran.push('1-to-2 files');
+            ran.push('1-to-2');
             data.write('product', data.read('product').map(({ blurb, ...row }) => ({ ...row, description: blurb })));
             notes.changed('product.blurb is now product.description');
           },
@@ -68,7 +67,7 @@ describe('lathe upgrade', () => {
       },
     ];
     const result = await upgradeProduct(root, { converters, target: 3 });
-    expect(ran).toEqual(['1-to-2 files', '2-to-3 files', '2-to-3 records']);
+    expect(ran).toEqual(['1-to-2', '2-to-3']);
     expect(result).toEqual({
       from: 1,
       to: 3,
@@ -79,7 +78,7 @@ describe('lathe upgrade', () => {
         { name: '2-to-3', changes: ['TL takes the color #2E6A88'] },
       ],
     });
-    // The raw rewrite takes the store's order and line format; the records phase wrote through the store.
+    // The raw rewrite takes the store's order and line format.
     expect(productFile(root)).toBe('{"id":"TL","title":"Tool Library","description":"Lends tools to members.","color":"#2E6A88"}\n');
     expect(readConfig(root).schema).toBe(3);
     expect(JSON.parse(readFileSync(path.join(root, 'lathe.config.json'), 'utf8'))).toEqual({ schema: 3, data: 'data' });
@@ -92,14 +91,14 @@ describe('lathe upgrade', () => {
     const root = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.', notes: 'Delivered weekly.' });
     const todo: ConverterStep = {
       from: 1, to: 2, name: '1-to-2',
-      converter: { records: (store, notes) => { for (const row of store.rows('product')) if (row.notes) notes.todo(`${row.id}: move its notes into a flow by hand`); } },
+      converter: { files: (data, notes) => { for (const row of data.read('product')) if (row.notes) notes.todo(`${String(row.id)}: move its notes into a flow by hand`); } },
     };
-    const kept = await upgradeProduct(root, { converters: [todo], target: 2, allowDirty: true });
+    const kept = await upgradeProduct(root, { converters: [todo], target: 2 });
     expect(kept.done).toBe(true);
     expect(kept.todos).toEqual(['1-to-2: TL: move its notes into a flow by hand']);
     expect(readConfig(root).schema).toBe(2);
 
-    // A files phase that leaves data the schema refuses: the refusals are the to-dos, and the schema stays.
+    // A converter that leaves data the schema refuses: the refusals are the to-dos, and the schema stays.
     const again = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.' });
     const breaks: ConverterStep = { from: 1, to: 2, name: '1-to-2', converter: { files: (data) => data.write('product', [{ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.', tagline: 'Lend' }]) } };
     const stopped = await upgradeProduct(again, { converters: [breaks], target: 2 });
@@ -114,17 +113,19 @@ describe('lathe upgrade', () => {
     expect(git(gap, 'status', '--porcelain')).toBe('');
   });
 
-  it('LA-PLT-UC17-R04-T01 refuses a working tree with changes, or no git, unless allowed', async () => {
-    const converters: ConverterStep[] = [{ from: 1, to: 2, name: '1-to-2', converter: {} }];
+  it('LA-PLT-UC17-R04-T01 refuses a working tree with changes, or no git', async () => {
+    const converters: ConverterStep[] = [{ from: 1, to: 2, name: '1-to-2', converter: { files: () => {} } }];
     const root = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.' });
     writeFileSync(path.join(root, 'notes.md'), 'Unsaved work\n');
-    await expect(upgradeProduct(root, { converters, target: 2 })).rejects.toThrow(/The git working tree has changes, so the upgrade would not be one reviewable commit\. Commit or stash them first, or pass --allow-dirty:\n\?\? notes\.md/);
+    await expect(upgradeProduct(root, { converters, target: 2 })).rejects.toThrow(/The git working tree has changes, so the upgrade would not be one reviewable commit\. Commit or stash them first:\n\?\? notes\.md/);
     expect(readConfig(root).schema).toBe(1);
-    expect((await upgradeProduct(root, { converters, target: 2, allowDirty: true })).to).toBe(2);
+    git(root, 'add', '.');
+    git(root, 'commit', '-q', '-m', 'Commit the notes');
+    expect((await upgradeProduct(root, { converters, target: 2 })).to).toBe(2);
 
     const outside = temp('lathe-no-git-');
     writeFileSync(path.join(outside, 'lathe.config.json'), '{ "schema": 1 }\n');
-    await expect(upgradeProduct(outside, { converters, target: 2 })).rejects.toThrow(/is not in a git repository/);
+    await expect(upgradeProduct(outside, { converters, target: 2 })).rejects.toThrow(/is not in a git repository, so the upgrade could not be reviewed as one commit\. Put it under git first\./);
   });
 });
 
@@ -139,7 +140,7 @@ describe('the schema version', () => {
     writeFileSync(path.join(dir, '1-to-2.ts'), 'export default { files: () => {} };\n');
     writeFileSync(path.join(dir, 'notes.txt'), 'Not a converter.\n');
     expect((await readConverters(dir)).map((c) => c.name)).toEqual(['1-to-2']);
-    writeFileSync(path.join(dir, '2-to-4.ts'), 'export default {};\n');
+    writeFileSync(path.join(dir, '2-to-4.ts'), 'export default { files: () => {} };\n');
     await expect(readConverters(dir)).rejects.toThrow('a converter moves the data forward one version, such as 1-to-2.ts.');
   });
   it("LA-AUT-UC03-R08-T02 1-to-2 puts every flow through its product's one new interface, renaming its flows, steps and tests wherever they are named", async () => {
@@ -250,7 +251,7 @@ describe('the schema version', () => {
       'Each required text a record lacked stands in as "To write: …": 11 written.',
     ]);
     expect(todos).toEqual([
-      expect.stringMatching(/^A repository persists one aggregate: .* add a repository_share row with its reason/),
+      expect.stringMatching(/^A repository persists one aggregate: .* split the class into one repository per aggregate/),
       'Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.',
       expect.stringMatching(/^Write each text that starts "To write:"/),
     ]);
