@@ -94,9 +94,9 @@ test.describe('keyboard', () => {
     // From quick find.
     await expect(page.locator('.header-strip h1').first()).toBeVisible();
     await page.keyboard.press('Control+k');
-    await expect(page.locator('.quick-find input')).toBeFocused();
+    await expect(page.locator('.quick-open input')).toBeFocused();
     await page.keyboard.type('LA-PLT-UC05');
-    await page.locator('.quick-find-results li').first().waitFor();
+    await page.locator('.quick-open .palette-list li').first().waitFor();
     await page.keyboard.press('Enter');
     await expect(page).toHaveURL(/LA-PLT-UC05/);
     await expect(page.locator('.header-strip h1').first()).toBeVisible();
@@ -201,11 +201,13 @@ test.describe('keyboard', () => {
     await expect.poll(path).not.toBe(before);
     // Quick find keeps its arrows: Down moves through its results, the focus stays.
     const here = path();
-    await page.locator('#nav input').first().focus();
+    await page.keyboard.press('Control+k');
+    await expect(page.locator('.quick-open input')).toBeFocused();
     await page.keyboard.type('a');
     await page.keyboard.press('ArrowDown');
     await page.waitForTimeout(300);
     expect(path()).toBe(here);
+    await page.keyboard.press('Escape');
   });
 
   test('LA-V61-R41-T02 fold and unfold a row with the keyboard', async ({ page }) => {
@@ -314,9 +316,9 @@ test.describe('keyboard', () => {
   test('LA-V61-R42-T01 the palette and the shortcuts sheet give focus back when they close', async ({ page }) => {
     await open(page, RECORD);
     await tabUntil(page, (el) => el.classList.contains('side-bar-toggle'), 'the side bar toggle');
-    for (const keys of ['Control+Shift+p', 'Control+/']) {
+    for (const [keys, box] of [['Control+Shift+p', '.quick-open input'], ['Control+/', '.dialog-search']]) {
       await page.keyboard.press(keys);
-      await page.locator('.dialog-search').waitFor();
+      await page.locator(box).waitFor();
       expect((await focused(page)).inDialog, `${keys} moves focus into its dialog`).toBe(true);
       // Tab stays inside the open dialog.
       for (let i = 0; i < 6; i++) {
@@ -324,7 +326,7 @@ test.describe('keyboard', () => {
         expect((await focused(page)).inDialog, `${keys}: Tab left the open dialog`).toBe(true);
       }
       await page.keyboard.press('Escape');
-      await expect(page.locator('.dialog-search')).toHaveCount(0);
+      await expect(page.locator(box)).toHaveCount(0);
       expect((await focused(page)).classes, `${keys}: focus back on the opener`).toContain('side-bar-toggle');
     }
   });
