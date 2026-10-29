@@ -55,16 +55,16 @@ describe('the rules the graph keeps', () => {
 
   it('LA-EXP-SP03-T A list splits by kind only when it holds more than one kind, whatever the focus, depth or filters', async () => {
     const index = testIndex();
-    // An aggregate's children of four kinds: a group per kind.
-    expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event', 'P-D-A3/command']);
+    // An aggregate's children of three kinds: a group per kind.
+    expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event']);
     // A use case with seven UC requirements and nothing else: they hang straight under it, no group.
     const seven = indexOf(manyOfOneKindWorkspace());
     const kids = treeChildren(seven, 'P-D-UC02');
     expect(kids.length).toBe(7);
     for (const id of kids) expect(seven.byId.get(id)?.kind).toBe('uc_requirement');
     // The answer is the children's alone: the focus, depth and filters frame it, never change it.
-    neighborhood(index, 'P-D-A3', 3, { hiddenKinds: new Set(['command']) });
-    expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event', 'P-D-A3/command']);
+    neighborhood(index, 'P-D-A3', 3, { hiddenKinds: new Set(['domain_event']) });
+    expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event']);
     // The record page titles a list of one kind by that kind, and a mixed one "Children".
     await openApp('/DM-SHOP-EP01');
     expect(await screen.findByRole('heading', { name: /^API requirements/ })).toBeInTheDocument();

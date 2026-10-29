@@ -81,7 +81,7 @@ const NO_COMMAND = {
   severity: 'warning',
   summary: 'An aggregate with no command.',
   explanation: 'Each aggregate of this product is changed by at least one command of its own.',
-  query: "SELECT a.id AS record, 'Aggregate ' || a.id || ' has no command.' AS message FROM aggregate a WHERE NOT EXISTS (SELECT 1 FROM command c WHERE c.aggregate_id = a.id) ORDER BY record",
+  query: "SELECT a.id AS record, 'Aggregate ' || a.id || ' has no command.' AS message FROM aggregate a WHERE NOT EXISTS (SELECT 1 FROM command c JOIN entity e ON e.id = c.entity_id WHERE e.aggregate_id = a.id) ORDER BY record",
 };
 
 describe('Authoring flows through the MCP tools', () => {
@@ -292,14 +292,15 @@ describe('Authoring flows through the MCP tools', () => {
     await walk([
       add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
       add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
+      add('entity', { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' }),
       add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
       add('specification', { id: 'TL-LEND-SP01', title: 'Tool is free', statement: 'A tool is free when no active loan names it.' }),
       link('TL-LEND-SP01', 'reads', 'TL-LEND-A1'),
       add('domain_event', { id: 'TL-LEND-EV02', title: 'Tool lent', aggregate_id: 'TL-LEND-A2', published: false, description: 'A tool left the shelf.' }),
     ], async (a) => {
       // S01: the commands, and the event with its field.
-      await a.ok('add', { command: { id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' } });
-      await a.ok('add', { command: { id: 'TL-LEND-CMD02', title: 'Open a reminder', aggregate_id: 'TL-LEND-A1', description: 'Sets a reminder for the loan\'s due date.' } });
+      await a.ok('add', { command: { id: 'TL-LEND-CMD01', title: 'Open a loan', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' } });
+      await a.ok('add', { command: { id: 'TL-LEND-CMD02', title: 'Open a reminder', entity_id: 'TL-LEND-EN01', description: 'Sets a reminder for the loan\'s due date.' } });
       await a.ok('add', { domain_event: { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool went out on loan.' } });
       await a.ok('add', { event_field: { domain_event_id: 'TL-LEND-EV01', position: 1, name: 'Loan ID', meaning: 'Which loan.', type_aggregate_id: 'TL-LEND-A1', required: true } });
       // S02: what the command raises and checks; the event other domains hear is published.
@@ -487,7 +488,7 @@ describe('Checking flows through the MCP tools', () => {
       ...LENDING,
       add('table', { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loan', storage: 'table' }),
       add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
-      add('command', { id: 'TL-LEND-CMD02', title: 'Open a reminder', aggregate_id: 'TL-LEND-A1', description: 'Sets a reminder for the loan\'s due date.' }),
+      add('command', { id: 'TL-LEND-CMD02', title: 'Open a reminder', entity_id: 'TL-LEND-EN01', description: 'Sets a reminder for the loan\'s due date.' }),
       { op: 'add', table: 'command_change', row: { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' } },
       add('policy', { id: 'TL-LEND-PO01', title: 'Remind on loan', command_id: 'TL-LEND-CMD02', statement: 'Whenever a loan is opened, the library MUST open its reminder.' }),
       link('TL-LEND-PO01', 'hears', 'TL-LEND-EV01'),
@@ -532,7 +533,8 @@ describe('Checking flows through the MCP tools', () => {
       expect(found(checked, 'aggregate-without-command')).toEqual(['TL-LEND-A2: Aggregate TL-LEND-A2 has no command.']);
       expect(names.lastIndexOf('aggregate-without-command')).toBe(names.length - 1);
       // S04: the Agent fixes what it finds and checks again.
-      await a.ok('add', { command: { id: 'TL-LEND-CMD02', title: 'Add a tool', aggregate_id: 'TL-LEND-A2', description: 'Puts a named tool in the catalog.' } });
+      await a.ok('add', { entity: { id: 'TL-LEND-EN09', title: 'Tool', aggregate_id: 'TL-LEND-A2', role: 'root', description: 'A tool on the shelf or out.' } });
+      await a.ok('add', { command: { id: 'TL-LEND-CMD02', title: 'Add a tool', entity_id: 'TL-LEND-EN09', description: 'Puts a named tool in the catalog.' } });
       expect(found(await a.check(), 'aggregate-without-command')).toEqual([]);
       // S05: a check named like one of Lathe's is refused, naming lathe/data/check.jsonl.
       expect(await a.refused('add', { check: { ...NO_COMMAND, name: 'view-unused' } })).toContain('lathe/data/check.jsonl');

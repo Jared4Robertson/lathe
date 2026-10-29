@@ -1,7 +1,7 @@
 // Remove a UC requirement (LA-AUT-CMD106): Removes a UC requirement with its use case tests and the links they start. Refused while a step fulfills it, or anything else references it or its tests.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { USE_CASE_SLICE, useCaseChanged } from '../model.ts';
+import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 
 /** The requirement to remove. */
@@ -28,5 +28,4 @@ export function removeUcRequirement(tx: Transaction, input: RemoveUcRequirement)
   useCase.requirements = useCase.requirements.filter((r) => r.id !== input.id);
   useCase.useCaseTests = useCase.useCaseTests.filter((t) => t.row.uc_requirement_id !== input.id);
   useCases.save(useCase);
-  useCaseChanged(tx, useCase);
 }

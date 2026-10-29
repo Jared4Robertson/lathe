@@ -2,7 +2,7 @@
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { UcRequirementRow } from '../../../platform/data/tables.ts';
-import { changed, USE_CASE_SLICE, useCaseChanged } from '../model.ts';
+import { changed, USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
@@ -33,5 +33,4 @@ export function changeUcRequirement(tx: Transaction, input: ChangeUcRequirement)
   useCase.requirements = useCase.requirements.map((r) => (r.id === input.id ? changed(r, input, ['title', 'statement', 'group_name']) : r));
   holdToRules(tx, useCase);
   useCases.save(useCase);
-  useCaseChanged(tx, useCase);
 }

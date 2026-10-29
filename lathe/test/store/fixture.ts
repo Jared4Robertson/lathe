@@ -38,7 +38,7 @@ export function everyKind(): Data {
     specification: [{ id: 'TL-LEND-SP01', title: 'Tool is free', statement: 'A tool is free when no active loan names it.' }],
     domain_event: [{ id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: true, description: 'A tool went out on loan.' }],
     event_field: [{ domain_event_id: 'TL-LEND-EV01', position: 1, name: 'Loan ID', meaning: 'Which loan.', type_aggregate_id: 'TL-LEND-A1', required: true }],
-    command: [{ id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' }],
+    command: [{ id: 'TL-LEND-CMD01', title: 'Open a loan', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' }],
     command_change: [{ command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' }],
     read_model: [{ id: 'TL-LEND-RM01', title: 'Loans by member', domain_id: 'TL-LEND', description: 'Each member with their loans.' }],
     read_model_field: [{ read_model_id: 'TL-LEND-RM01', position: 1, name: 'Days overdue', meaning: 'How late the loan is.', type: 'whole number', required: false }],

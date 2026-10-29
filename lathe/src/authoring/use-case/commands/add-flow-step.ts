@@ -2,7 +2,7 @@
 import { column, id, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { FlowStepRow } from '../../../platform/data/tables.ts';
-import { USE_CASE_SLICE, useCaseChanged } from '../model.ts';
+import { USE_CASE_SLICE } from '../model.ts';
 import { UseCaseRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
@@ -44,5 +44,4 @@ export function addFlowStep(tx: Transaction, input: AddFlowStep): void {
   useCase.steps.push({ row, fulfills, invokes: invokes ?? null, happensIn: happens_in ?? null, exchangesWith: exchanges_with });
   holdToRules(tx, useCase);
   useCases.save(useCase);
-  useCaseChanged(tx, useCase);
 }

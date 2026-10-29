@@ -58,7 +58,7 @@ A technical record is bound to code, so its `title` is the identifier exactly as
 | --- | --- | --- |
 | data model, projection, handlers, service, repository, adapter, predicate, value type, table, event type | the identifier in code | `Loan`, `ToolReturned`, `loans` |
 | standard, standard rule | a singular noun phrase; a sentence that is true when the rule holds | Code; Errors carry a code and a sentence |
-| a product's CLI command | the invocation | lathe use-case add-flow |
+| a CLI command or CLI query | the invocation | lathe use-case add-flow |
 | a check row | the kebab-case name of the mistake it finds | event-tense |
 
 A check row title not in kebab case is refused.

@@ -97,14 +97,30 @@ export interface AggregateRow {
   notes?: string;
 }
 
-/** A request to change exactly one aggregate, its parent. It checks specifications, raises events and may call domain services, all of its own domain. */
+/** A record the domain keeps, with an identity: its aggregate's root or one of its children. Its fields are entity_field rows; the value objects it has are the ones its fields are typed with. */
+export interface EntityRow {
+  /** The entity's ID, such as TL-LEND-EN01. */
+  id: string;
+  /** The entity's name, such as Return. */
+  title: string;
+  /** The aggregate it belongs to. */
+  aggregate_id: string;
+  /** root: the record the aggregate is named for, at most one per aggregate; child: one of its parts. */
+  role: "root" | "child";
+  /** true: a child entity with no table of its own, stored in its aggregate root's table (which then holds its fields as columns); left out otherwise. An entity has at most one table. */
+  in_root_table?: boolean;
+  /** What the entity is, in a sentence or two. */
+  description: string;
+}
+
+/** A request to change exactly one aggregate: the one its entity belongs to. It sits under the entity it changes, and checks specifications, raises events and may call domain services, all of its own domain. */
 export interface CommandRow {
   /** The command's ID, such as TL-LEND-CMD01. */
   id: string;
   /** What it asks for, in the imperative, such as Open a loan. */
   title: string;
-  /** The aggregate it changes. */
-  aggregate_id: string;
+  /** The entity it changes, the root or a child; its aggregate is the one the command changes. */
+  entity_id: string;
   /** What it changes and when it is refused, in a sentence or two; how its handler does it belongs to the handler. */
   description: string;
 }
@@ -329,22 +345,6 @@ export interface ConstraintTestRow {
   refuses: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
-}
-
-/** A record the domain keeps, with an identity: its aggregate's root or one of its children. Its fields are entity_field rows; the value objects it has are the ones its fields are typed with. */
-export interface EntityRow {
-  /** The entity's ID, such as TL-LEND-EN01. */
-  id: string;
-  /** The entity's name, such as Return. */
-  title: string;
-  /** The aggregate it belongs to. */
-  aggregate_id: string;
-  /** root: the record the aggregate is named for, at most one per aggregate; child: one of its parts. */
-  role: "root" | "child";
-  /** true: a child entity with no table of its own, stored in its aggregate root's table (which then holds its fields as columns); left out otherwise. An entity has at most one table. */
-  in_root_table?: boolean;
-  /** What the entity is, in a sentence or two. */
-  description: string;
 }
 
 /** Its entity in code: the entity's data, behavior and mapping to its table. A command is carried out by its handler and its aggregate root's data model. */
@@ -1446,6 +1446,7 @@ export interface TableRows {
   integration: IntegrationRow;
   adapter: AdapterRow;
   aggregate: AggregateRow;
+  entity: EntityRow;
   command: CommandRow;
   read_model: ReadModelRow;
   query: QueryRow;
@@ -1463,7 +1464,6 @@ export interface TableRows {
   value_object: ValueObjectRow;
   constraint: ConstraintRow;
   constraint_test: ConstraintTestRow;
-  entity: EntityRow;
   data_model: DataModelRow;
   domain_event: DomainEventRow;
   domain_service_test: DomainServiceTestRow;

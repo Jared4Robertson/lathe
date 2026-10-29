@@ -22,6 +22,10 @@
 // value types, predicates, event types, services and tables go, and a test's Given opens its When. A lead or scenario
 // the schema now requires and a record lacks gets a stand-in that starts "To write:" and says what belongs there; writing
 // each from the code is a to-do.
+//
+// And a command sits under the entity it changes, not its aggregate: each command moves to its aggregate's root entity
+// (entity_id in place of aggregate_id). Which commands change a child entity only the Owner knows: moving those under
+// their entity is the to-do.
 import { ALLOWED_LEVELS } from '../src/coverage.ts';
 import type { Converter, RawData, UpgradeNotes } from '../src/upgrade.ts';
 
@@ -237,12 +241,34 @@ function flowInterfaces(data: RawData, notes: UpgradeNotes): void {
   notes.todo('Rename the flow, step and flow test IDs your code names, such as a test file naming its flow test: <use case>-FL-T is now <use case>-FL01-T.');
 }
 
+/** Moves every command from under its aggregate to under that aggregate's root entity. */
+export function commandEntities(data: RawData, notes: UpgradeNotes): void {
+  const commands = data.read('command');
+  if (!commands.some((c) => c.aggregate_id !== undefined)) return;
+  const roots = new Map(data.read('entity').filter((e) => e.role === 'root').map((e) => [String(e.aggregate_id), String(e.id)]));
+  let moved = 0;
+  data.write('command', commands.map((command): Raw => {
+    if (command.aggregate_id === undefined) return command;
+    const { id, title, aggregate_id: aggregate, ...rest } = command;
+    const root = roots.get(String(aggregate));
+    if (!root) {
+      notes.todo(`Command ${String(id)} changes aggregate ${String(aggregate)}, which has no root entity: give the aggregate its root and put the command under the entity it changes (entity_id).`);
+      return command;
+    }
+    moved++;
+    return { id, title, entity_id: root, ...rest };
+  }));
+  notes.changed(`Every command sits under the entity it changes: ${moved} moved from their aggregate to its root entity.`);
+  notes.todo('A command that changes a child entity (a flow step, a loan\'s return) moves under that entity: lathe move <command> --parent <entity>.');
+}
+
 const converter: Converter = {
   files(data, notes) {
     testLevels(data, notes);
     domainRepositories(data, notes);
     flowInterfaces(data, notes);
     kindText(data, notes);
+    commandEntities(data, notes);
   },
 };
 

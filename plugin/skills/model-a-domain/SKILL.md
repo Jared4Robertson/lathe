@@ -60,7 +60,7 @@ The tools of this stage, by aggregate:
 | Domain | `domain_add_domain`, `domain_add_term`, `domain_add_domain_service`; each with its change and remove tools; `domain_get_domain`, `domain_list_domains`, `domain_next_id` |
 | Aggregate | `aggregate_add_aggregate`, `aggregate_add_entity` (with its fields, and its `has_one` and `has_many` children), `aggregate_add_invariant`; each with its change and remove tools; `aggregate_get_aggregate`, `aggregate_list_aggregates`, `aggregate_next_id` |
 | Domain event | `domain_event_add_domain_event` (with its fields); its change and remove tools; `domain_event_get_domain_event`, `domain_event_list_domain_events`, `domain_event_next_id` |
-| Command | `command_add_command` (with what it `raises`, `checks` and `calls`), `command_add_policy` (with the event it `hears`); each with its change and remove tools; `command_get_command`, `command_list_commands`, `command_next_id` |
+| Command | `command_add_command` (under the entity it changes, with what it `raises`, `checks` and `calls`), `command_add_policy` (with the event it `hears`); each with its change and remove tools; `command_get_command`, `command_list_commands`, `command_next_id` |
 | Value object | `value_object_add_value_object` (with its fields), `value_object_add_constraint`; each with its change and remove tools; `value_object_get_value_object`, `value_object_list_value_objects`, `value_object_next_id` |
 | Specification | `specification_add_specification` (with the aggregates it `reads`); its change and remove tools; `specification_get_specification`, `specification_list_specifications`, `specification_next_id` |
 | Read model | `read_model_add_read_model` (with its fields and what it `reads`), `read_model_add_query` (with what it `selects_by` and `calls`); each with its change and remove tools; `read_model_get_read_model`, `read_model_list_read_models`, `read_model_next_id` |
@@ -78,7 +78,7 @@ The tools of this stage, by aggregate:
 | `domain` | the product | `<P>-<D>` | `subdomain_type`; `description`: what it covers, in a paragraph. |
 | `aggregate` | the domain | `<P>-<D>-A<n>` | The consistency boundary, named for its root. `identity`: what tells two apart in the business; `description`: what it keeps and why its entities change together, in a paragraph. |
 | `entity` | an aggregate | `<P>-<D>-EN<nn>` | A record with an identity. `role`: `root` (exactly one per aggregate) or `child`; `in_root_table: true` for a child stored in its root's table; `description`: what it is, in a sentence or two. `fields`: its fields, in order. |
-| `command` | an aggregate | `<P>-<D>-CMD<nn>` | A request to change that one aggregate, named as an imperative (Borrow a tool); `description`: what it changes and when it is refused, in a sentence or two, never how its handler does it. Links: `raises` events, `checks` specifications, `calls` domain services. |
+| `command` | the entity it changes | `<P>-<D>-CMD<nn>` | A request to change that entity, and so its one aggregate, named as an imperative (Borrow a tool); `description`: what it changes and when it is refused, in a sentence or two, never how its handler does it. Links: `raises` events, `checks` specifications, `calls` domain services. |
 | `domain_event` | an aggregate | `<P>-<D>-EV<nn>` | Something that happened, in the past tense (Loan opened); `description`: what happened and what brings it about, in a sentence. `published`: whether other domains may hear it. `fields`: its fields, in order. |
 | `invariant` | an aggregate | `<P>-<D>-INV<nn>` | `statement`: what holds for that aggregate on every change. |
 | `value_object` | none | `<P>-VO<nn>` | A value with no identity, such as an email address; `description`: what the value is, in a sentence or two. `fields` when it has more than one part. |
@@ -124,7 +124,7 @@ A command names the domain's own verb: Borrow, Approve, Refund, never Create, Up
 
 ## 2. Commands and events
 
-- **One aggregate per command.** A command changes exactly one aggregate, its parent. When something must follow in another aggregate, raise an event and let a policy send that aggregate's command: the change follows through the event.
+- **One aggregate per command.** A command sits under the entity it changes, and so changes exactly one aggregate: the one that holds that entity. When something must follow in another aggregate, raise an event and let a policy send that aggregate's command: the change follows through the event.
 - **Small aggregates.** An aggregate is the smallest cluster that must stay consistent after one command: most need a root and a few children. The check warns of an aggregate with more entities than the product's `max_entities_per_aggregate` setting (7 by default): split it into smaller aggregates that each change together, and keep a rule that spans two as a specification the command checks, or follow it through an event and a policy. Do not raise the setting to silence the warning unless the user asks.
 - **When two aggregates seem to need one change,** the model is wrong, not the rule: split the aggregate so each command changes one, or follow the second change through an event and a policy. Two records that must never be seen apart belong to one aggregate.
 - A command `raises` each event it may raise, of its own aggregate. An event no command raises is a gap.
@@ -171,14 +171,14 @@ aggregate_add_entity { "id": "TL-LEND-EN04", "title": "Loan", "aggregate_id": "T
        "has_one": ["TL-LEND-EN05"] }
 ```
 
-A command on the Loan, the event it raises, the specifications it checks and the domain service it calls. The event is added first, so the command can name it:
+A command on the Loan's Return (a command sits under the entity it changes), the event it raises, the specifications it checks and the domain service it calls. The event is added first, so the command can name it:
 
 ```
 domain_event_add_domain_event { "id": "TL-LEND-EV06", "title": "Tool returned", "aggregate_id": "TL-LEND-A3", "published": false,
        "description": "A librarian recorded a tool's return, which closes its loan and says what condition the tool came back in.",
        "fields": [ { "name": "Loan ID", "meaning": "The loan returned.", "type_aggregate_id": "TL-LEND-A3", "required": true },
                    { "name": "Late", "meaning": "Whether the loan was overdue at the moment of return.", "type": "yes/no", "required": true } ] }
-command_add_command { "id": "TL-LEND-CMD06", "title": "Return a tool", "aggregate_id": "TL-LEND-A3",
+command_add_command { "id": "TL-LEND-CMD06", "title": "Return a tool", "entity_id": "TL-LEND-EN05",
        "description": "Closes a loan, recording the time, the tool's condition and an optional note, and whether the return was late.",
        "raises": ["TL-LEND-EV06"], "checks": ["TL-LEND-SP01"], "calls": ["TL-LEND-DS01"] }
 ```
@@ -223,7 +223,7 @@ domain_add_domain_service { "id": "TL-LEND-DS01", "title": "Library calendar", "
 domain_add_term { "id": "TL-LEND-TM06", "title": "Active loan", "domain_id": "TL-LEND", "meaning": "A loan that has not been returned." }
 ```
 
-In a shell the same commands are `lathe command add-command --id TL-LEND-CMD06 --title "Return a tool" --aggregate_id TL-LEND-A3 --raises TL-LEND-EV06 ...` (a list's flag once per item), or `lathe command add-command --json -` with the object above piped in.
+In a shell the same commands are `lathe command add-command --id TL-LEND-CMD06 --title "Return a tool" --entity_id TL-LEND-EN05 --raises TL-LEND-EV06 ...` (a list's flag once per item), or `lathe command add-command --json -` with the object above piped in.
 
 ## Rules
 

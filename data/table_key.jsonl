@@ -71,7 +71,7 @@
 {"table_id":"LA-AUT-EN35-TB","position":4,"type":"foreign","columns":["type_value_object_id"],"target_table_id":"LA-AUT-EN31-TB"}
 {"table_id":"LA-AUT-EN35-TB","position":5,"type":"foreign","columns":["type_aggregate_id"],"target_table_id":"LA-AUT-EN06-TB"}
 {"table_id":"LA-AUT-EN36-TB","position":1,"type":"primary","columns":["id"]}
-{"table_id":"LA-AUT-EN36-TB","position":2,"type":"foreign","columns":["aggregate_id"],"target_table_id":"LA-AUT-EN06-TB"}
+{"table_id":"LA-AUT-EN36-TB","position":2,"type":"foreign","columns":["entity_id"],"target_table_id":"LA-AUT-EN08-TB"}
 {"table_id":"LA-AUT-EN37-TB","position":1,"type":"primary","columns":["command_id","aggregate_id"]}
 {"table_id":"LA-AUT-EN37-TB","position":2,"type":"foreign","columns":["command_id"],"target_table_id":"LA-AUT-EN36-TB"}
 {"table_id":"LA-AUT-EN37-TB","position":3,"type":"foreign","columns":["aggregate_id"],"target_table_id":"LA-AUT-EN06-TB"}

@@ -260,8 +260,8 @@ describe('the schema version', () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
     const tables: Record<string, Record<string, unknown>[]> = {
       command: [
-        { id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' },
-        { id: 'TL-LEND-CMD02', title: 'Close a loan', aggregate_id: 'TL-LEND-A1' },
+        { id: 'TL-LEND-CMD01', title: 'Open a loan', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' },
+        { id: 'TL-LEND-CMD02', title: 'Close a loan', entity_id: 'TL-LEND-EN01' },
       ],
       data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', description: 'The Loan interface.' }],
       flow_step: [{ id: 'TL-LEND-UC01-FL01-S01', title: 'Borrow', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }],
@@ -290,5 +290,33 @@ describe('the schema version', () => {
       'Each required text a record lacked stands in as "To write: …": 1 written.',
     ]);
     expect(todos).toEqual(['Write each text that starts "To write:" from the code, saying what the title, parent and links cannot (1: TL-LEND-CMD02 description).']);
+  });
+  it('LA-AUT-UC03-R08-T06 1-to-2 puts each command under its aggregate\'s root entity, and leaves a to-do for an aggregate with none', async () => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
+    const tables: Record<string, Record<string, unknown>[]> = {
+      entity: [
+        { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' },
+        { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'child', description: 'The tool coming back.' },
+      ],
+      command: [
+        { id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' },
+        { id: 'TL-LEND-CMD02', title: 'Add a tool', aggregate_id: 'TL-LEND-A2', description: 'Puts a tool in the catalog.' },
+      ],
+    };
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    expect(tables.command).toEqual([
+      { id: 'TL-LEND-CMD01', title: 'Open a loan', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' },
+      { id: 'TL-LEND-CMD02', title: 'Add a tool', aggregate_id: 'TL-LEND-A2', description: 'Puts a tool in the catalog.' },
+    ]);
+    expect(changes).toContain('Every command sits under the entity it changes: 1 moved from their aggregate to its root entity.');
+    expect(todos).toEqual([
+      'Command TL-LEND-CMD02 changes aggregate TL-LEND-A2, which has no root entity: give the aggregate its root and put the command under the entity it changes (entity_id).',
+      expect.stringMatching(/^A command that changes a child entity/),
+    ]);
   });
 });
