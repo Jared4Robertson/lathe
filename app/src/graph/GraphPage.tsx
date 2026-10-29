@@ -4,7 +4,7 @@ import { type SpecIndex } from '../specs/data';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { Icon } from '../components/icons';
-import { GraphKey } from './key';
+import { graphDrawn, graphKeyEntries } from './key';
 import { TapCard, useTapToOpen } from './touch';
 import {
   NO_FILTERS,
@@ -18,18 +18,17 @@ import {
   type Neighborhood,
 } from './model';
 import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
-import { StageCamera, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
+import { StageCamera, StageKey, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
 import { DEFAULT_GRAPH_SETTINGS } from './settings';
 import { graphMap, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
-import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
 import { setTextMeasure, type TextMeasure } from './text';
 import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, frameRect, MAX_ZOOM, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
 import { nodeShape } from './shapes';
 import { Button } from '../components/Button';
-import { measureSpec, pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
+import { pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
 import { focusStrength } from './fade';
@@ -38,6 +37,7 @@ import { hitPlate } from './hit';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { useChanges } from '../changes/changes';
+import { useChangesKey } from '../changes/ChangesKey';
 import { GHOST_MS, lensFade, marksMoving, useStageMarks } from '../changes/marks';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
@@ -55,17 +55,16 @@ import { GHOST_MS, lensFade, marksMoving, useStageMarks } from '../changes/marks
 // the address, so it can sit in any pane. The focus page (app/src/views/FocusPage.tsx) hosts it in
 // the Graph stage and keeps its settings across pages.
 
-/** How the graph draws the tree (LA-V93-R21): Tree, parents beside their children; Nested, parents made of them as boxes; Voronoi, as polygon cells. */
-export type GraphLayout = 'tree' | 'nested' | 'voronoi';
+/** How the graph draws the tree (LA-V93-R21): Tree, parents beside their children; Nested, parents made of them as boxes. */
+export type GraphLayout = 'tree' | 'nested';
 export const GRAPH_LAYOUTS: readonly { layout: GraphLayout; label: string; tip: string }[] = [
   { layout: 'tree', label: 'Tree', tip: 'Tree: each parent beside its children' },
   { layout: 'nested', label: 'Nested', tip: 'Nested: each parent a box made of its children' },
-  { layout: 'voronoi', label: 'Voronoi', tip: 'Voronoi: each parent a cell made of its children' },
 ];
 
 /** What the person set on the graph: the view, depth, kind filters and the minimap. */
 export interface GraphSettings {
-  /** Tree, Nested or Voronoi (LA-V93-R21). Tree by default. */
+  /** Tree or Nested (LA-V93-R21). Tree by default. */
   layout: GraphLayout;
   depth: number;
   filters: Filters;
@@ -77,7 +76,7 @@ const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`
 
 export const MAX_DEPTH = 3;
 const DEPTHS = [1, 2, 3];
-/** Depth is how many levels below the focus the camera frames, folders and stages included. The Nested and Voronoi cameras frame the focus's box or cell, whatever the depth, so they have none. */
+/** Depth is how many levels below the focus the camera frames, folders and stages included. The Nested camera frames the focus's box, whatever the depth, so it has none. */
 const DEPTH_LABELS = ['Frame the focus and its children', 'Frame two levels below the focus', 'Frame three levels below the focus'];
 /** The view after this one, for the switch's command. */
 export const nextLayout = (layout: GraphLayout): GraphLayout => GRAPH_LAYOUTS[(GRAPH_LAYOUTS.findIndex((l) => l.layout === layout) + 1) % GRAPH_LAYOUTS.length].layout;
@@ -123,6 +122,11 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const setFilters = (f: Filters) => update({ filters: f });
 
   const graph = useMemo(() => neighborhood(index, focus, depth, filters), [index, focus, depth, filters]);
+  // The key bar: what the graph draws now, then the live marks.
+  const valid = isGraphNode(index, focus);
+  const drawn = useMemo(() => (valid ? graphDrawn(index, graph, layout) : null), [valid, index, graph, layout]);
+  const changesKey = useChangesKey();
+  const keyEntries = useMemo(() => (drawn ? [...graphKeyEntries(drawn, index.workspace.stages), ...changesKey] : []), [drawn, index, changesKey]);
   // Before paint, so the header strip's counts change in the same frame as the graph (LA-PAT-APP-UX-R08).
   useLayoutEffect(() => { onCounts?.(graphSummary(graph)); }, [graph, onCounts]);
 
@@ -130,7 +134,6 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const onPageKey = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key === 'Escape' && isFiltered(filters)) { e.preventDefault(); clearFilters(); }
   };
-  const valid = isGraphNode(index, focus);
   useCommand('graphDepthUp', () => update({ depth: Math.min(MAX_DEPTH, latest.current.depth + 1) }), valid && layout === 'tree');
   useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && layout === 'tree');
   useCommand('graphLayout', () => update({ layout: nextLayout(latest.current.layout) }), valid);
@@ -142,8 +145,8 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
     );
   }
   // The shared stage toolbar (views/StageChrome.tsx): the steps, Out, In and Frame, the Changes controls, then the layout
-  // switch and the filters (primary, always in the row), and depth (secondary, folding into More), then the key. In the
-  // toolbar's narrow form the layouts show one letter each.
+  // switch and the filters (primary, always in the row), and depth (secondary, folding into More). In the toolbar's
+  // narrow form the layouts show one letter each. The key is a bar along the bottom (StageKey).
   const tools = (narrow: boolean) => ({
     primary: (
       <>
@@ -178,8 +181,8 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
         walkLabels={graphWalkLabels(layout)}
         own={tools}
         measureKey={filters.hiddenKinds.size}
-        stageKey={<GraphKey stages={index.workspace.stages} />}
       />
+      <StageKey entries={keyEntries} beside={minimap ? 'minimap' : undefined} />
       <div className="graph-workspace">
         <div className="graph-canvas">
           <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} space={space} />
@@ -281,10 +284,7 @@ export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, 
  * moves.
  */
 function MapOverview({ map, focus, hidden, view }: { map: PlacedMap; focus: string; hidden: ReadonlySet<string>; view: string }) {
-  // A Voronoi cell is drawn as its outline (LA-EXP-DS08), every other node as its box.
-  const shapeOf = (n: PlacedMap['byLevel'][number][number], className: string) => ('polygon' in n
-    ? <polygon key={n.id} className={className} points={(n as VoronoiNode).polygon.map((p) => p.join(',')).join(' ')} />
-    : <rect key={n.id} className={className} x={n.x} y={n.y} width={n.w} height={n.h} />);
+  const shapeOf = (n: PlacedMap['byLevel'][number][number], className: string) => <rect key={n.id} className={className} x={n.x} y={n.y} width={n.w} height={n.h} />;
   const boxes = useMemo(() => {
     const out = [];
     for (const level of map.byLevel) {
@@ -308,9 +308,6 @@ function MapOverview({ map, focus, hidden, view }: { map: PlacedMap; focus: stri
     </div>
   );
 }
-
-/** The Voronoi map while it is being laid out: nothing to draw. */
-const EMPTY_VORONOI: VoronoiMap = { view: 'voronoi', nodes: new Map(), roots: [], byLevel: [], width: 0, height: 0 };
 
 
 /** No floating panels: the frame is the whole stage. */
@@ -342,7 +339,7 @@ export interface SceneBox {
   textScale: number;
   boxScale: number;
   rect: Rect;
-  /** Its outline's corners on screen, for a polygon or a cell. */
+  /** Its outline's corners on screen, for a polygon. */
   polygon: [number, number][] | null;
   label: Rect;
   /** Each line of its label: its text, face, font size in the map and on screen, the font it is drawn in, its place, whether it is drawn as a bar, and its width as the canvas measures it at its drawn font. */
@@ -416,20 +413,11 @@ interface CanvasProps {
 
 function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek, space, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
   const focus = graph.focus;
-  // The focus's own product's map (no other product's nodes are in it), in any layout (LA-V93-R21): the Tree map (map.ts), the Nested map (nested.ts) or the Voronoi map (voronoi.ts), under one camera.
-  // The Voronoi map is laid out in a worker the first time; until it is ready the canvas is empty.
+  // The focus's own product's map (no other product's nodes are in it), in any layout (LA-V93-R21): the Tree map (map.ts), or the Nested map (nested.ts), under one camera.
   const root = useMemo(() => mapRootOf(index, focus), [index, focus]);
-  const [laidOut, setLaidOut] = useState<{ index: SpecIndex; root: string; key: string; map: VoronoiMap } | null>(null);
-  const voronoi = layout === 'voronoi' ? (laidOut && laidOut.index === index && laidOut.root === root && laidOut.key === measure.key ? laidOut.map : readyVoronoiMap(index, root)) : undefined;
-  useEffect(() => {
-    if (layout !== 'voronoi' || voronoi) return;
-    let live = true;
-    void voronoiMap(index, root, measureSpec(measure, fonts)).then((m) => { if (live) setLaidOut({ index, root, key: measure.key, map: m }); }, () => {});
-    return () => { live = false; };
-  }, [layout, voronoi, index, root, measure, fonts]);
-  const map: GraphMap | NestedMap | VoronoiMap = useMemo(
-    () => (layout === 'voronoi' ? voronoi ?? EMPTY_VORONOI : layout === 'nested' ? nestedMap(index, root) : graphMap(index, root)),
-    [index, root, layout, voronoi, measure],
+  const map: GraphMap | NestedMap = useMemo(
+    () => (layout === 'nested' ? nestedMap(index, root) : graphMap(index, root)),
+    [index, root, layout, measure],
   );
   const wrapper = useRef<SceneHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -607,13 +595,13 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (known) return known;
     const n = map.nodes.get(id);
     if (!n) return null;
-    const source: PlateSource = map.view === 'tree' ? { view: 'tree', node: n } : map.view === 'nested' ? { view: 'nested', node: n as NestedNode } : { view: 'voronoi', node: n as VoronoiNode };
+    const source: PlateSource = map.view === 'tree' ? { view: 'tree', node: n } : { view: 'nested', node: n as NestedNode };
     const plate = plateOf(index, id, source);
     plates.set(id, plate);
     return plate;
   }, [plates, map, index]);
 
-  /** The boxes, bars and lines a camera shows, in draw order: in the Nested and Voronoi views a parent before its children, so each child lies over its parent (LA-EXP-DS09). */
+  /** The boxes, bars and lines a camera shows, in draw order: in the Nested view a parent before its children, so each child lies over its parent (LA-EXP-DS09). */
   const frameAt = useCallback((v: Viewport): { plates: Plate[]; bars: Bar[]; lines: Line[] } => {
     const ids = drawnAt(v).boxes.map((b) => b.id);
     const shown = ids.map(plateFor).filter((p): p is Plate => p !== null);
@@ -624,7 +612,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     }
     const byId = new Map(shown.map((p) => [p.id, p]));
     const lines: Line[] = [];
-    // The tree's parent lines: level, from the parent's outline to the child's, at the child's middle. Nested and Voronoi have none: holding is the parent link (LA-EXP-DS07).
+    // The tree's parent lines: level, from the parent's outline to the child's, at the child's middle. Nested has none: holding is the parent link (LA-EXP-DS07).
     if (map.view === 'tree') {
       for (const b of shown) {
         const up = map.nodes.get(b.id)?.parent;
@@ -736,7 +724,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       lit.add(line.target);
       litLines.add(line.id);
     }
-    // Nested and Voronoi, holding is the parent link: the box lights its parent and everything inside it, as the Tree view's parent lines light theirs.
+    // Nested, holding is the parent link: the box lights its parent and everything inside it, as the Tree view's parent lines light theirs.
     const held = map.view !== 'tree' ? map.nodes.get(id!) : undefined;
     if (held) {
       if (held.parent) lit.add(held.parent);
@@ -761,7 +749,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   // ---- The keyboard's layer ----
   const boxIds = useMemo((): string[] => {
     if (!drawn) return [];
-    // What was drawn for the map before this one (the Voronoi map's empty stand-in, say) may name nodes this one lacks.
+    // What was drawn for the map before this one (the other layout's, say) may name nodes this one lacks.
     return drawn.boxes.filter((b) => map.nodes.has(b.id)).map((b) => b.id);
   }, [drawn, map]);
   const order = useMemo(() => {
@@ -791,7 +779,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   // The stage walk moves through the tree from anywhere on the page but a control that uses arrows itself (the commands
   // layer's walk, steps.ts), each move moving the graph's focus: Out and In to the parent and the first child, the arrows
   // by the view's keys (in the Tree view Left to the parent, Right to the first child, Up and Down across the siblings; in
-  // the Nested and Voronoi views Up to the parent, Down to the first child, Left and Right across). From a box with
+  // the Nested view Up to the parent, Down to the first child, Left and Right across). From a box with
   // keyboard focus, keyboard focus follows to the new focus's box (and is read out there); from anywhere else it stays,
   // and the step is announced.
   const followFromBox = useCallback((to: string) => {
@@ -895,9 +883,9 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   return (
     <div
       ref={wrapper}
-      className={`graph-flow${nested ? ' is-nested' : ''}${layout === 'voronoi' ? ' is-voronoi' : ''}`}
+      className={`graph-flow${nested ? ' is-nested' : ''}`}
       data-layout={layout}
-      data-ready={size && (layout !== 'voronoi' || voronoi) ? 'true' : undefined}
+      data-ready={size ? 'true' : undefined}
       tabIndex={-1}
       role="group"
       aria-label="Graph canvas: the arrow keys step through the tree"

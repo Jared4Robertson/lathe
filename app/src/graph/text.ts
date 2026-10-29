@@ -21,7 +21,7 @@ export const BORDER = 1.5;
 /** The padding on each side of a label, and the room kept beside the kind and ID line for the problem badge. */
 export const LABEL_PAD = 14;
 export const BADGE_ROOM = 30;
-/** The room a small mark takes before the kind and ID line (a shape's in the Nested and Voronoi views, a gear or a ruler), its gap included (LA-V93-R06). */
+/** The room a small mark takes before the kind and ID line (a shape's in the Nested view, a gear or a ruler), its gap included (LA-V93-R06). */
 export const MARK_ROOM = 18;
 /** The faces the graph draws text in: a title (the body face at 600), a kind and ID line (the mono face), a problem badge (mono at 700). */
 export type Face = 'title' | 'meta' | 'badge';
@@ -177,7 +177,7 @@ export function treeLabel(index: SpecIndex, id: string): MapLabel {
   return { ...labelLines(index, id), shape, marks: mark ? 1 : 0, marked: hasMarks(index, id) };
 }
 
-/** A node's label in the Nested and Voronoi maps: its lines, its marks (its shape's and its kind's, LA-V93-R06) and whether it has the badge. */
+/** A node's label in the Nested map: its lines, its marks (its shape's and its kind's, LA-V93-R06) and whether it has the badge. */
 export function mapLabel(index: SpecIndex, id: string): MapLabel {
   const marks = nodeShape(index, id).mark ? 2 : 1;
   return { ...labelLines(index, id), marks, marked: hasMarks(index, id) };

@@ -2,13 +2,18 @@ import './graph/setup';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { TOOLBAR_FORMS, TOOLBAR_TIERS } from '../src/views/StageChrome';
+import { graphDrawn, graphKeyEntries } from '../src/graph/key';
+import { NO_FILTERS, neighborhood } from '../src/graph/model';
+import { changesKeyEntries } from '../src/changes/ChangesKey';
+import { indexOf } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { openApp } from './helpers';
 
 // One stage chrome (LA-PAT-APP-UX-R21): every stage has the same controls in the same places, from one component each
 // (views/StageChrome.tsx): the toolbar at the top of the open space, the shared controls first in a fixed order (the
 // Changes controls, changes/ChangesTools.tsx, among them), then the
-// stage's own, then the Key; the camera's zoom in, zoom out and fit at the bottom left corner of the frame.
+// stage's own; the camera's zoom in, zoom out and fit at the bottom left corner of the frame; and the stage's key as a
+// bar along the bottom (LA-V96-R30).
 
 const stage = () => document.querySelector<HTMLElement>('.focus-stage')!;
 const stageButton = (name: string) => within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
@@ -23,7 +28,7 @@ function chrome() {
     if (el.matches('.stage-steps')) return `steps: ${[...el.querySelectorAll('button')].map((b) => b.className.match(/is-(\w+)/)![1]).join(' ')}`;
     if (el.matches('.stage-frame')) return 'frame';
     if (el.matches('.changes-tools')) return `changes: ${[...el.querySelectorAll('button')].map((b) => b.className.match(/changes-(\w+)/)![1]).join(' ')}`;
-    if (el.matches('.stage-toolbar-end')) return `end: ${[...el.children].map((c) => c.className).join(' ')}`;
+    if (el.matches('.stage-toolbar-end')) return `end: ${[...el.children].map((c) => c.className).join(' ') || '-'}`;
     return 'own';
   };
   const order = [...toolbar.children].map(shared).filter((c, i, all) => c !== 'own' || all[i - 1] !== 'own');
@@ -39,18 +44,18 @@ const SHARED = ['steps: left right up down out in', 'frame', 'changes: lens foll
 const CAMERA = [['Zoom in', 'Zoom out', 'Fit the whole map']];
 
 describe('one stage chrome', () => {
-  it('LA-PAT-APP-UX-R21-T01 The Graph, ERD and Trace stages show the same controls in the same order and places: steps, Out, In and Frame, the stage\'s own, the Key; zoom in, zoom out and fit in the corner', async () => {
+  it('LA-PAT-APP-UX-R21-T01 The Graph, ERD and Trace stages show the same controls in the same order and places: steps, Out, In and Frame, then the stage\'s own; zoom in, zoom out and fit in the corner', async () => {
     await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });
     await waitFor(() => expect(stage().querySelector('.graph-box')).not.toBeNull());
     const graph = chrome();
-    expect(graph.order).toEqual([...SHARED, 'own', 'end: stage-key']);
+    expect(graph.order).toEqual([...SHARED, 'own', 'end: -']);
     expect(graph.camera).toEqual(CAMERA);
 
     fireEvent.click(stageButton('ERD'));
     await waitFor(() => expect(stage().querySelector('.react-flow__node')).not.toBeNull());
     const erd = chrome();
     // The ERD has no controls of its own; React Flow's own buttons give way to the shared ones.
-    expect(erd.order).toEqual([...SHARED, 'end: stage-key']);
+    expect(erd.order).toEqual([...SHARED, 'end: -']);
     expect(erd.camera).toEqual(CAMERA);
     expect(erd.reactFlowControls).toBe(0);
 
@@ -58,7 +63,7 @@ describe('one stage chrome', () => {
     await waitFor(() => expect(stage().querySelector('.trace-flow[data-ready]')).not.toBeNull());
     const trace = chrome();
     // The Trace's own: Gaps only.
-    expect(trace.order).toEqual([...SHARED, 'own', 'end: stage-key']);
+    expect(trace.order).toEqual([...SHARED, 'own', 'end: -']);
     expect(within(stage().querySelector<HTMLElement>('.stage-toolbar')!).getByRole('checkbox', { name: 'Gaps only' })).toBeInTheDocument();
     expect(trace.camera).toEqual(CAMERA);
 
@@ -69,16 +74,16 @@ describe('one stage chrome', () => {
 });
 
 describe('the toolbar\'s fold order', () => {
-  it('LA-PAT-APP-UX-R21-T01 The toolbar folds the Changes controls first, then the secondary controls and Key, then drops the step letters; the walk, Frame and the stage\'s primary controls stay in the row until the phone\'s form', () => {
+  it('LA-PAT-APP-UX-R21-T01 The toolbar folds the Changes controls first, then the secondary controls, then drops the step letters; the walk, Frame and the stage\'s primary controls stay in the row until the phone\'s form', () => {
     expect(Object.keys(TOOLBAR_FORMS)).toEqual([...TOOLBAR_TIERS]);
     const folded = TOOLBAR_TIERS.map((t) => `${t}: ${TOOLBAR_FORMS[t].folded.join(' ') || '-'}`);
     expect(folded).toEqual([
       'full: -',
       'compact: -',
       'changes: changes',
-      'secondary: changes secondary key',
-      'narrow: changes secondary key',
-      'menu: steps changes secondary key',
+      'secondary: changes secondary',
+      'narrow: changes secondary',
+      'menu: steps changes secondary',
     ]);
     // Each tier only gives way more: what one folds or hides stays folded or hidden in every narrower one.
     TOOLBAR_TIERS.slice(1).forEach((t, i) => {
@@ -97,8 +102,8 @@ describe('the toolbar\'s fold order', () => {
     for (const t of TOOLBAR_TIERS) expect(TOOLBAR_FORMS[t].folded).not.toContain('primary');
   });
 
-  it('LA-PAT-APP-UX-R21-T01 Too narrow for the Changes controls, the secondary controls and Key, the Graph\'s toolbar keeps its walk, Frame, layouts and filters in the row and the rest in More', async () => {
-    // The row overflows until the Key and depth have folded (jsdom lays nothing out).
+  it('LA-PAT-APP-UX-R21-T01 Too narrow for the Changes controls and the secondary controls, the Graph\'s toolbar keeps its walk, Frame, layouts and filters in the row and the rest in More', async () => {
+    // The row overflows until depth has folded (jsdom lays nothing out).
     const fits = TOOLBAR_TIERS.indexOf('secondary');
     const scroll = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
       return this.classList.contains('stage-toolbar') && TOOLBAR_TIERS.indexOf(this.dataset.tier as (typeof TOOLBAR_TIERS)[number]) < fits ? 900 : 0;
@@ -115,12 +120,61 @@ describe('the toolbar\'s fold order', () => {
       expect([...toolbar.querySelectorAll('.stage-steps button')].map((b) => b.textContent)).toEqual(['←A', '→D', '↑W', '↓S', 'Out', 'In']);
       for (const el of [toolbar.querySelector('.stage-steps')!, toolbar.querySelector('.stage-frame')!, toolbar.querySelector('.graph-layout')!, toolbar.querySelector('.graph-filters')!]) expect(row(el)).toBe(true);
       expect(toolbar.querySelector('.stage-toolbar-end > .stage-more')).not.toBeNull();
-      // In More, in order: the Changes controls with the baseline picker, depth, then the Key.
-      expect([...more.children].map((c) => c.className.split(' ')[0])).toEqual(['changes-tools', 'graph-depth', 'stage-key']);
+      // In More, in order: the Changes controls with the baseline picker, then depth.
+      expect([...more.children].map((c) => c.className.split(' ')[0])).toEqual(['changes-tools', 'graph-depth']);
       expect(within(more).getByRole('combobox')).toBeInTheDocument();
     } finally {
       scroll.mockRestore();
       client.mockRestore();
     }
+  });
+});
+
+describe('the stage key bar', () => {
+  /** The stage's key: one named region, its entries by what they stand for. */
+  const key = () => {
+    const regions = stage().querySelectorAll('[role="region"][aria-label="Key"]');
+    expect(regions).toHaveLength(1);
+    return regions[0] as HTMLElement;
+  };
+  const entries = () => [...key().querySelectorAll<HTMLElement>('[data-key-entry]')].map((li) => li.dataset.keyEntry);
+
+  it('LA-V96-R30-T01 Every stage shows its key as one bar along the bottom, a floating panel in the tab order, with what the stage draws and no Key button in the toolbar', async () => {
+    await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });
+    await waitFor(() => expect(stage().querySelector('.graph-box')).not.toBeNull());
+    // A floating panel at the bottom, so the camera frames above it; one tab stop, outside the toolbar.
+    expect(key()).toHaveAttribute('data-floating', 'bottom');
+    expect(key()).toHaveAttribute('tabindex', '0');
+    expect(key().closest('.stage-tools')).toBeNull();
+    expect(stage().querySelector('.stage-tools details.stage-key, .stage-tools [aria-label="Key"]')).toBeNull();
+    // Each entry a sample and a word or two, its whole meaning in its tooltip.
+    // Only what the graph draws around the focus: a capability, the use case and its requirements, in the use cases' color.
+    expect(entries()).toEqual(['stage-use-cases', 'focus', 'shape-slice', 'shape-stadium', 'shape-page', 'line', 'bar', 'badge-gap']);
+    const useCase = key().querySelector('[data-key-entry="shape-stadium"]')!;
+    expect(useCase).toHaveTextContent('Use case');
+    expect(useCase).toHaveAttribute('title', expect.stringMatching(/^Use case: a stadium$/));
+
+    fireEvent.click(stageButton('ERD'));
+    await waitFor(() => expect(stage().querySelector('.react-flow__node')).not.toBeNull());
+    expect(key()).toHaveAttribute('data-floating', 'bottom');
+    expect(entries()).toEqual(expect.arrayContaining(['domain', 'aggregate', 'entity', 'line-has_many']));
+
+    fireEvent.click(stageButton('Trace'));
+    await waitFor(() => expect(stage().querySelector('.trace-flow[data-ready]')).not.toBeNull());
+    expect(key()).toHaveAttribute('data-floating', 'bottom');
+    expect(entries()).toEqual(expect.arrayContaining(['link', 'focus']));
+    // The Gaps only fade only while Gaps only is on.
+    expect(entries()).not.toContain('complete');
+  });
+
+  it('LA-V96-R30-T01 A kind the filters hide leaves the Graph\'s key, and the live marks show only while there are any', () => {
+    const index = indexOf(modelWorkspace());
+    const ids = (focus: string, hidden: string[]) => graphKeyEntries(graphDrawn(index, neighborhood(index, focus, 3, hidden.length ? { hiddenKinds: new Set(hidden) } : NO_FILTERS), 'tree')).map((e) => e.id);
+    expect(ids('P-D-CAP01', [])).toContain('shape-stadium');
+    expect(ids('P-D-CAP01', ['use_case'])).not.toContain('shape-stadium');
+    // The focus is never hidden, so its entries stay.
+    expect(ids('P-D-UC01', ['use_case'])).toContain('shape-stadium');
+    expect(changesKeyEntries(new Set())).toEqual([]);
+    expect(changesKeyEntries(new Set(['is-changed', 'is-lens'])).map((e) => e.words)).toEqual(['Changed', 'Unchanged']);
   });
 });

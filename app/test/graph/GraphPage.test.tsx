@@ -55,11 +55,11 @@ describe('graph page', () => {
     await waitFor(() => expect(isCenter(STEP)).toBe(true));
   });
 
-  it('LA-V93-R21-T02 Depth shows only in the Tree layout: in Nested and Voronoi its slot stays but is neither shown nor reachable', async () => {
+  it('LA-V93-R21-T02 Depth shows only in the Tree layout: in Nested its slot stays but is neither shown nor reachable', async () => {
     await showGraph('/P-D/use-cases');
     const group = () => document.querySelector<HTMLElement>('[aria-label="Depth"]')!;
     expect(screen.getByRole('group', { name: 'Depth' })).toBeVisible();
-    for (const layout of ['Nested', 'Voronoi']) {
+    for (const layout of ['Nested']) {
       fireEvent.click(within(screen.getByRole('group', { name: 'Layout' })).getByRole('button', { name: layout }));
       await waitFor(() => expect(group()).toHaveClass('is-idle'));
       // The slot keeps its place, so nothing beside it moves (LA-PAT-APP-UX-R08), but it has no purpose here (LA-PAT-APP-CODE-R21).
@@ -280,7 +280,7 @@ describe('graph groups on the page', () => {
     expect(groupNode('P-D/test-plan')!.stage).toBe('test-plan');
     expect(groupNode('P-D/domain-model')!.stage).toBe('domain-model');
     const key = within(screen.getByRole('region', { name: 'Key' }));
-    expect(key.getByText(/Stage, folder or group/)).toBeTruthy();
+    expect(key.getByText('Folder').closest('li')).toHaveAttribute('title', expect.stringMatching(/Stage, folder or group/));
     // A labeled group is named for assistive technology by its name, count and owner; one with nothing wrong beneath it carries no mark.
     expect(node('P-D/test-plan')!.getAttribute('aria-label')).toMatch(/^Stage Test plan \(\d+\) in P-D$/);
     expect(marksOf(testIndex(), 'P-D/question')).toEqual({ errors: 0, warnings: 0, gaps: [] });

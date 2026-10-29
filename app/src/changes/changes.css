@@ -51,7 +51,6 @@
 @media (prefers-reduced-motion: reduce) { .erd-change-flash, .erd-ghost { display: none; } }
 
 /* The marks in a stage's key. */
-.changes-key { margin-top: 8px; }
 .change-swatch { display: inline-block; width: 18px; height: 11px; box-sizing: border-box; border: 1.5px solid var(--g-structural); border-radius: 2px; background: var(--sheet); position: relative; vertical-align: middle; }
 .change-swatch:is(.is-added, .is-changed)::after { content: ''; position: absolute; top: -4px; right: -4px; width: 7px; height: 7px; border-radius: 50%; background: var(--change-changed); box-shadow: 0 0 0 1.5px var(--sheet); }
 .change-swatch.is-added { box-shadow: 0 0 6px var(--change-new); }

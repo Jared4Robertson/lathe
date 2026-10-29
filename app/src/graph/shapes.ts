@@ -2,7 +2,7 @@ import type { SpecIndex } from '../specs/data';
 
 // A shape for each kind (LA-V93-R06): a secondary cue, after the label, that keeps a box's
 // rectangular footprint so boxes still stack. In the Tree view a box's outline is its
-// kind's shape; in the Nested and Voronoi views a box keeps its rectangle or cell and shows its
+// kind's shape; in the Nested view a box keeps its rectangle and shows its
 // shape as a small mark before its kind and ID line (shape-icons.tsx).
 //
 // Every outline here is drawn by the canvas (paint.ts) in one of three ways:
@@ -15,7 +15,7 @@ import type { SpecIndex } from '../specs/data';
 // the map keeps when it wraps and sizes the label (text.ts) and the canvas pads by, so no line
 // or badge meets a notch or a corner.
 //
-// Pure data and geometry, with no React, so the Voronoi worker can read it.
+// Pure data and geometry, with no React, so the maps and the canvas share it.
 
 /** A leaf's box at text scale 1: the width a Tree box's label wraps at (text.ts), and the size a shape is drawn at. */
 export const NODE_WIDTH = 190;

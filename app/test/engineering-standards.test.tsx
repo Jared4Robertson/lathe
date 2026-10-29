@@ -3,7 +3,8 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { neighborhood } from '../src/graph/model';
-import { GraphKey } from '../src/graph/key';
+import { graphDrawn, graphKeyEntries } from '../src/graph/key';
+import { StageKey } from '../src/views/StageChrome';
 import { shapeOf } from '../src/graph/shapes';
 import { standardWorkspace } from './fixtures/standards';
 import { main, openApp, section as pageSection } from './helpers';
@@ -96,11 +97,12 @@ describe('standards in the graph', () => {
     ]));
     expect(n.nodes.find((x) => x.id === 'DM-STD-CODE')?.stage).toBe('technical-specification');
     cleanup();
-    const { container } = render(<GraphKey />);
-    expect(container.querySelector('.graph-swatch.stage-technical-specification')?.closest('li')).toHaveTextContent(/a standard and its rules/);
+    // The key bar of a graph that draws a standard: its stage's color, its shape and its mark, each with what it means.
+    const { container } = render(<StageKey entries={graphKeyEntries(graphDrawn(ix, n, 'tree'), ix.workspace.stages)} />);
+    expect(container.querySelector('.graph-swatch.stage-technical-specification')?.closest('li')).toHaveAttribute('title', expect.stringMatching(/a standard and its rules/));
     expect(shapeOf('standard')).toEqual({ shape: 'stack', mark: 'ruler' });
     expect(shapeOf('standard_rule')).toEqual({ shape: 'octagon', mark: 'ruler' });
-    expect(container.querySelector('.graph-swatch.shape-stack')?.closest('li')).toHaveTextContent(/a standard with a ruler/);
-    expect(container.querySelector('.graph-swatch.mark-ruler')?.closest('li')).toHaveTextContent(/a standard or a standard rule/);
+    expect(container.querySelector('.graph-swatch.shape-stack')?.closest('li')).toHaveAttribute('title', expect.stringMatching(/a standard with a ruler/));
+    expect(container.querySelector('.graph-swatch.mark-ruler')?.closest('li')).toHaveAttribute('title', expect.stringMatching(/a standard or a standard rule/));
   });
 });
