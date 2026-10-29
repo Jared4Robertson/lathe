@@ -230,7 +230,7 @@ test.describe('graph', () => {
         await graphDrawn(page, layout.toLowerCase(), 1300);
         // Framed, then zoomed in twice: every drawn box shows its title, and its whole label lies inside it (LA-PAT-APP-UX-R12).
         for (const z of [0, 1, 2]) {
-          if (z > 0) { await page.locator('.focus-stage .graph-zoom-in').click(); await page.waitForTimeout(600); }
+          if (z > 0) { await page.locator('.focus-stage .stage-zoom-in').click(); await page.waitForTimeout(600); }
           const s = await sceneOf(page);
           const c = s.canvas;
           expect(s.boxes.length, `${layout} at ${domain}: boxes drawn`).toBeGreaterThan(0);
@@ -259,7 +259,7 @@ test.describe('graph', () => {
         }
         // Zoomed in on the framed picture, twice.
         for (const z of [1, 2]) {
-          await page.locator('.focus-stage .graph-zoom-in').click();
+          await page.locator('.focus-stage .stage-zoom-in').click();
           await page.waitForTimeout(600);
           expect(await clippedLabels(page), `${scheme} ${focus} zoomed in ${z}`).toEqual([]);
         }
@@ -287,7 +287,7 @@ test.describe('graph', () => {
     expect(focused.lines).toEqual(before.lines);
     expect(focused.screen / before.screen).toBeCloseTo(focused.zoom / before.zoom, 1);
     // Zooming in by the camera's control: the same.
-    await page.locator('.focus-stage .graph-zoom-in').click();
+    await page.locator('.focus-stage .stage-zoom-in').click();
     await page.waitForTimeout(600);
     const zoomed = await size();
     await test.step('LA-V93-R07-T04 zooming the camera draws the label at its map size times the zoom', () => {
@@ -302,7 +302,7 @@ test.describe('graph', () => {
     await openPage(page, `${DOMAIN}?stage=erd`);
     await page.locator('.erd-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
-    const keys = ['.stage-layout > .page-bar', '.header-strip', '.focus-stage .erd-tools', ERD_CANVAS, '.focus-stage .erd-key'];
+    const keys = ['.stage-layout > .page-bar', '.header-strip', '.focus-stage .stage-tools', ERD_CANVAS];
     // On the product's one map, the boxes in the domain's scope: an aggregate's boundary holds its entities, so its head is where the boundary itself takes a click.
     const box = page.locator('.erd-flow .react-flow__node:not([aria-hidden]) .erd-aggregate .erd-box-head').first();
     const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.wiki-panel-scroll'] }, async () => {
@@ -439,7 +439,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     feature: 'the . command frames the focus again after a free zoom',
     run: async (page) => {
       const framed = await cameraOf(page);
-      await page.locator('.focus-stage .graph-zoom-out').click();
+      await page.locator('.focus-stage .stage-zoom-out').click();
       await page.waitForTimeout(600);
       expect(await cameraOf(page)).not.toBe(framed);
       // The graph takes focus, as a click on its canvas gives it (the count may be squeezed out of view by the toolbar).

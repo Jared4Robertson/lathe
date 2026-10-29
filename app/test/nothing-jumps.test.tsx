@@ -97,11 +97,8 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(valueFor('.header-strip', 'white-space')).toBe('nowrap');
     expect(valueFor('.header-strip-title', 'text-overflow')).toBe('ellipsis');
     expect(valueFor('.header-strip-counts', 'text-overflow')).toBe('ellipsis');
-    // The graph's toolbar: one line.
-    expect(valueFor('.graph-toolbar', 'flex-wrap')).toBe('nowrap');
-    // The ERD's key has one height for every ERD at a given width: a narrow key is a fixed multiple of it, never sized by its content.
-    expect(valueFor('.erd-key', 'block-size')).toMatch(/^(?:var\(--erd-key-height\)|calc\(var\(--erd-key-height\) \* [0-9.]+\))$/);
-    expect(CSS).toMatch(/--erd-key-height:\s*[0-9.]+rem/);
+    // Every stage's toolbar: one line.
+    expect(valueFor('.stage-toolbar', 'flex-wrap')).toBe('nowrap');
   });
 
   it('LA-V61-R38-T02 a count or caption that changes is one text, so a new number never moves the text after it', async () => {
@@ -113,7 +110,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     // It ends the header strip, so a new count moves nothing before it; the stage's toolbar holds none.
     expect(count.parentElement?.classList.contains('header-strip')).toBe(true);
     expect(count.nextElementSibling).toBeNull();
-    expect(document.querySelector('.graph-toolbar .header-strip-counts')).toBeNull();
+    expect(document.querySelector('.stage-toolbar .header-strip-counts')).toBeNull();
   });
 
   it('LA-V61-R38-T02 the graph canvas stays mounted when the graph re-centers', async () => {

@@ -222,17 +222,28 @@ test.describe('keyboard', () => {
     const parent = path();
     await page.keyboard.press('d');
     await expect.poll(path).not.toBe(parent);
-    // With Shift or Ctrl held, a letter keeps its own meaning: nothing steps.
+    // Shift with A or D, or with Ctrl, a letter keeps its own meaning: nothing steps.
     const here = path();
     await page.keyboard.press('Shift+A');
     await page.waitForTimeout(300);
     expect(path()).toBe(here);
+    // Shift+W goes out to the parent and Shift+S in to its first child, as Shift+Up and Shift+Down do, on every stage.
+    await page.keyboard.press('Shift+W');
+    await expect.poll(path).not.toBe(here);
+    const container = path();
+    await page.keyboard.press('Shift+S');
+    await expect.poll(path).not.toBe(container);
+    await page.keyboard.press('Shift+ArrowUp');
+    await expect.poll(path).toBe(container);
+    await page.keyboard.press('Shift+ArrowDown');
+    await expect.poll(path).not.toBe(container);
     // In quick find the letters are typed.
+    const typedAt = path();
     await page.keyboard.press('Control+k');
     await expect(page.locator('.quick-open input')).toBeFocused();
     await page.keyboard.type('wasd');
     await expect(page.locator('.quick-open input')).toHaveValue('wasd');
-    expect(path()).toBe(here);
+    expect(path()).toBe(typedAt);
     await page.keyboard.press('Escape');
   });
 

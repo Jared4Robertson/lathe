@@ -37,8 +37,6 @@
   --tab-width: 14rem;
   /* Touch (LA-PAT-APP-UX-R07): the least size of a target under a finger, and the radius of a sheet's top corners. */
   --touch-target: 44px; --sheet-radius: 14px;
-  /* The ERD's key under the ERD view: one height for every ERD, so the canvas never resizes (LA-PAT-APP-UX-R08). */
-  --erd-key-height: 9rem;
   /* The floating panels over the stage (LA-V96): their inset from the window and each other, their surfaces (the dense
      ones, the nav, the tab panel and the chat, nearer opaque than the wiki card), their blur and shadow,
      and the header strip's height. The surfaces are the sheet's color, so every theme sets them in light and dark. The
@@ -151,7 +149,6 @@ h3 { font-size: 0.95rem; margin-top: 8px; }
 .react-flow__node { font-family: var(--body); transition: opacity var(--hover-speed); }
 @media (prefers-reduced-motion: reduce) { .react-flow__node { transition: none; } }
 .react-flow__edge-path { stroke: var(--ink); stroke-width: 1.3; }
-.react-flow__controls button { background: var(--sheet); border-color: var(--rule); fill: var(--ink); }
 
 /* Specs */
 .menu .count { margin-left: 4px; font: 500 0.72rem var(--mono); color: var(--muted); }
@@ -310,58 +307,41 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-page {
   display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100%;
 }
-/* One line whatever the center (LA-PAT-APP-UX-R08), so the canvas below never moves; trace and filters sit at the right end. */
-.graph-toolbar { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; font-size: 0.88rem; white-space: nowrap; }
 .graph-depth.is-idle { visibility: hidden; }
 .graph-depth { display: inline-flex; align-items: center; gap: 4px; flex: none; }
 .graph-depth span { margin-right: 4px; color: var(--muted); }
 .graph-depth button { font: inherit; font-size: 0.82rem; padding: 3px 8px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; }
 .graph-depth button[aria-pressed="true"] { background: var(--steel); border-color: var(--steel); color: var(--sheet); font-weight: 600; }
 .graph-depth button:disabled { opacity: 0.5; cursor: default; }
-.graph-filters, .graph-key { flex: none; }
-.graph-filters > summary, .graph-key > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
+.graph-filters { flex: none; }
+.graph-filters > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
 .graph-filter-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 12px; width: min(560px, calc(100% - 24px)); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; padding: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
 .graph-filter-body fieldset { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; align-content: start; }
 .graph-filter-body legend { font-weight: 600; font-size: 0.78rem; margin-bottom: 2px; }
 .graph-filter-body label { display: flex; gap: 6px; align-items: center; font-size: 0.82rem; }
-.graph-filters > summary .icon, .graph-key > summary .icon { align-self: center; }
-/* The key: a popover under its button at the end of the toolbar, as the filters', scrolling inside when long. */
-.graph-key-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 0; width: min(460px, calc(100vw - 32px)); white-space: normal; max-height: min(70vh, 560px); overflow-y: auto; scrollbar-gutter: stable; padding: 4px 12px 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
-/* The toolbar's narrower forms (TOOLBAR_TIERS): compact hides the names beside the icons and tightens the steps, narrow
-   shows each layout by its first letter, menu moves depth and the steps into More. The names stay the accessible ones. */
-.graph-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-filters-name, .graph-key-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.graph-toolbar:not([data-tier="full"]) { gap: 6px; }
-.graph-toolbar:not([data-tier="full"]) .graph-step { padding-inline: 4px; }
-.graph-toolbar:is([data-tier="narrow"], [data-tier="menu"]) .graph-depth button { padding-inline: 6px; }
-.graph-more { flex: none; }
-.graph-more > summary { cursor: pointer; display: inline-flex; align-items: center; padding: 3px 4px; border-radius: 5px; list-style: none; }
-.graph-more > summary::-webkit-details-marker { display: none; }
-.graph-more > summary:hover { color: var(--steel); }
-.graph-more-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); left: 12px; max-width: calc(100% - 24px); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
-.graph-more-body .graph-depth.is-idle { display: none; }
-.graph-more-body .graph-depth { flex-wrap: wrap; }
-.graph-toolbar .graph-more-body .graph-depth-name { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+.graph-filters > summary .icon { align-self: center; }
+.stage-toolbar:is([data-tier="narrow"], [data-tier="menu"]) .graph-depth button { padding-inline: 6px; }
+.stage-more-body .graph-depth.is-idle { display: none; }
+.stage-more-body .graph-depth { flex-wrap: wrap; }
+.stage-more-body .graph-depth-name { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
 .graph-filter-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
 .graph-filter-body .hint { grid-column: 1 / -1; margin: 0; font-size: 0.78rem; }
-.graph-toolbar-end { display: inline-flex; flex-wrap: nowrap; gap: 8px; align-items: center; margin-left: auto; flex: none; }
 .graph-page :is(button, input, summary, a):focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
 
 .graph-workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 .graph-canvas { position: relative; min-height: 420px; }
 .graph-flow { position: absolute; inset: 0; background: var(--paper); }
 .graph-loading { position: absolute; top: 12px; left: 16px; z-index: 5; margin: 0; }
-.graph-legend { font-size: 0.8rem; }
-.graph-legend li { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.graph-legend, .trace-key { font-size: 0.8rem; }
+.graph-legend li, .trace-key li { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .graph-legend-heading { margin: 10px 0 0; font-size: 0.8rem; font-weight: 600; color: var(--ink); }
 
 /* The map is drawn on a canvas, every frame (app/src/graph/paint.ts): boxes, shapes, labels, lines, badges, marks and every
    state in the stylesheet's colors, read from these tokens. The canvas fills the pane; the boxes' accessibility layer is
-   visually hidden (it carries focus, the keyboard, roles and names), and the camera's buttons sit at the bottom left. */
+   visually hidden (it carries focus, the keyboard, roles and names). */
 .graph-canvas-draw { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .graph-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .graph-box { position: absolute; top: 0; left: 0; width: 1px; height: 1px; }
-.graph-controls { position: absolute; left: 12px; bottom: 12px; z-index: 5; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 2px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; box-shadow: 0 2px 6px var(--shadow-soft); }
-.graph-controls .icon-button { color: var(--ink); }
 .graph-swatch.is-cell { border: 0; border-radius: 0; background: linear-gradient(115deg, var(--g-domain-model-bg) 46%, var(--g-domain-model) 46% 56%, var(--g-use-cases-bg) 56%); clip-path: polygon(30% 0, 100% 10%, 90% 85%, 35% 100%, 0 50%); }
 /* The key's marks: each kind's shape and each kind's own mark (a gear, a ruler, a port, a marker), ink on sheet, as the canvas
    draws them before a box's kind and ID line (app/src/graph/shape-icons.tsx), and the problem badges as the canvas draws them. */
@@ -384,9 +364,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-swatch.stage-bar { background: var(--rule); border-color: var(--rule); opacity: 0.6; }
 /* The key's parent line: the tree's solid ink line. */
 .graph-line { display: inline-block; width: 22px; height: 0; border-top: 2.5px solid var(--ink); vertical-align: middle; }
-/* The steps through the tree, beside the depth. */
-.graph-steps { display: inline-flex; gap: 2px; flex: none; }
 .graph-swatch.kind-question { border-style: dashed; border-color: var(--warn); }
+.graph-swatch.is-gap { border-style: dashed; border-color: var(--muted); background: none; }
 .graph-swatch.is-focus { box-shadow: 0 0 0 2px var(--ink); }
 /* The edge hints take the hover tint on the hover speed; under reduced motion at once. */
 @media (prefers-reduced-motion: no-preference) {
@@ -407,11 +386,47 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-minimap-node { fill: var(--muted); opacity: 0.35; }
 .graph-minimap-node.is-focus { fill: var(--steel); opacity: 1; }
 .graph-minimap-view { fill: var(--minimap-mask); stroke: var(--steel); stroke-width: 2; }
-/* By touch: the toolbar's toggles and the edge hints are touch-sized. */
+/* By touch: the edge hints are touch-sized. */
 @media (pointer: coarse) {
-  :is(.graph-step, .graph-more > summary, .graph-edge-hint, .graph-controls .icon-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
+  .graph-edge-hint { min-width: var(--touch-target); min-height: var(--touch-target); }
 }
 /* ---------- End of graph view ---------- */
+
+/* ---------- Every stage's chrome, owned by app/src/views/StageChrome.tsx (LA-PAT-APP-UX-R21) ---------- */
+/* The toolbar: one line whatever the focus (LA-PAT-APP-UX-R08), so the canvas below never moves: the steps, Out, In and
+   Frame, the stage's own controls, then the Key at the right end. */
+.stage-toolbar { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; font-size: 0.88rem; white-space: nowrap; }
+.stage-steps { display: inline-flex; gap: 2px; flex: none; }
+.stage-step { gap: 3px; }
+.stage-step-letter { font: 600 0.68rem var(--mono); color: var(--muted); }
+.stage-frame { flex: none; }
+.stage-key { flex: none; }
+.stage-key > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
+.stage-key > summary .icon { align-self: center; }
+/* The key: a popover under its button at the end of the toolbar, as the Graph's filters, scrolling inside when long. */
+.stage-key-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 0; width: min(460px, calc(100vw - 32px)); white-space: normal; max-height: min(70vh, 560px); overflow-y: auto; scrollbar-gutter: stable; padding: 4px 12px 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
+/* The toolbar's narrower forms (TOOLBAR_TIERS): compact hides the names and letters beside the icons and tightens the
+   steps, narrow lets a stage show its own controls narrower (the Graph's layouts by their first letter), menu moves the
+   steps and a stage's foldable controls into More. The names stay the accessible ones. */
+.stage-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-filters-name, .stage-key-name, .stage-frame-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.stage-toolbar:not([data-tier="full"]) { gap: 6px; }
+.stage-toolbar:is([data-tier="narrow"], [data-tier="menu"]) .stage-step-letter { display: none; }
+.stage-toolbar:not([data-tier="full"]) .stage-step { padding-inline: 4px; }
+.stage-more { flex: none; }
+.stage-more > summary { cursor: pointer; display: inline-flex; align-items: center; padding: 3px 4px; border-radius: 5px; list-style: none; }
+.stage-more > summary::-webkit-details-marker { display: none; }
+.stage-more > summary:hover { color: var(--steel); }
+.stage-more-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); left: 12px; max-width: calc(100% - 24px); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
+.stage-tools :is(button, input, summary, a):focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
+.stage-toolbar-end { display: inline-flex; flex-wrap: nowrap; gap: 8px; align-items: center; margin-left: auto; flex: none; }
+/* The camera's buttons at the bottom left of the frame: zoom in, zoom out and fit, on every stage. */
+.stage-camera { position: absolute; left: 12px; bottom: 12px; z-index: 5; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 2px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; box-shadow: 0 2px 6px var(--shadow-soft); }
+.stage-camera .icon-button { color: var(--ink); }
+/* By touch: the toolbar's toggles and the camera's buttons are touch-sized. */
+@media (pointer: coarse) {
+  :is(.stage-step, .stage-frame, .stage-more > summary, .stage-camera .icon-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
+}
+/* ---------- End of the stage chrome ---------- */
 
 /* The product summary */
 .summary-list > div { grid-template-columns: 130px 1fr; }
@@ -688,7 +703,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-UX-R01).
    Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
    The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
-.button, .graph-depth button, .palette-list li, .graph-filters > summary, .graph-key > summary {
+.button, .graph-depth button, .palette-list li, .graph-filters > summary, .stage-key > summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
 /* A row that leads to one record is one link (LA-PAT-APP-UX-R05): its record link, marked row-link, stretches over
@@ -704,9 +719,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 @media (prefers-reduced-motion: reduce) { .row-link::after { transition: none; } }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
 .palette-list li:not(.active):hover { background: var(--hover-bg); }
-.graph-filters > summary:hover, .graph-key > summary:hover { color: var(--steel); }
+.graph-filters > summary:hover, .stage-key > summary:hover { color: var(--steel); }
 @media (prefers-reduced-motion: reduce) {
-  .button, .graph-depth button, .palette-list li, .graph-filters > summary, .graph-key > summary { transition: none; }
+  .button, .graph-depth button, .palette-list li, .graph-filters > summary, .stage-key > summary { transition: none; }
 }
 
 /* The workbench (LA-PAT-APP-UX-R02): each panel is a rounded box on the shell; the gap between two
@@ -754,8 +769,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* In the domain model stage's colors: each domain a region, an aggregate a boundary tinted with the stage's fill around its
    entities, each entity a sheet edged in its color. What lies outside the focus's scope fades (LA-V94-R08). */
 .erd-page { min-height: 0; }
-.erd-tools { container: erd-page / inline-size; }
-/* The canvas takes what the title and the key leave, so the key always shows whole below it. */
 .erd-canvas { position: relative; flex: 1; min-height: 160px; }
 .erd-flow { position: absolute; inset: 0; }
 /* The leader line to the wiki card (LA-V96-R24): a canvas of its own over the diagram's boxes, under the vignette. */
@@ -794,34 +807,18 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-line { opacity: var(--erd-strength, 1); transition: opacity var(--motion-speed) var(--motion-ease); }
 .erd-line-path, .erd-end { fill: none; stroke: var(--ink); stroke-width: 1.4; }
 .erd-line.is-dashed .erd-line-path, .erd-key-line.is-dashed .erd-line-path { stroke-dasharray: 6 4; }
-/* The key keeps one height whichever focus it explains, scrolling what does not fit, so moving between a domain, an
-   aggregate and an entity never resizes the canvas above it (LA-PAT-APP-UX-R08). */
-.erd-key { flex: none; box-sizing: border-box; block-size: var(--erd-key-height); overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-direction: column; gap: 6px; padding: 10px 20px 12px; border-top: 1px solid var(--rule); font-size: 0.8rem; line-height: 1.4; color: var(--muted); }
+/* The key, in the toolbar's Key popover: one grid of cells, the boxes' and then the lines'. */
+.erd-key { display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; line-height: 1.4; color: var(--muted); }
+.erd-key .hint { margin: 0; }
 .erd-key-swatch { flex: none; display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); border-radius: 2px; }
 .erd-key-swatch.erd-key-domain { border: 2px solid var(--muted); background: color-mix(in srgb, var(--g-domain-model-bg) 35%, var(--paper)); }
 .erd-key-swatch.erd-key-aggregate { background: var(--g-domain-model-bg); }
-/* One grid of fixed cells, their width set by the pane's width only: the lists add no box of their own, so a model
-   with other entries changes what the cells say, never where the key's parts sit (LA-PAT-APP-UX-R08). */
 .erd-key-grid { display: grid; grid-template-columns: repeat(auto-fill, 9.5rem); gap: 2px 12px; }
 /* Each list is a row group of the key's grid, sharing its columns (subgrid), so every cell has a fixed place. */
 .erd-key-ends { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; grid-auto-rows: 20px; row-gap: 2px; margin: 0; padding: 0; list-style: none; }
 .erd-key-ends li { display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; }
 .erd-key-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .erd-key-line { flex: none; overflow: visible; }
-/* The key's button shows only in a narrow pane. */
-.erd-key-toggle { display: none; }
-/* In a narrow ERD pane the key is one bar of one height, so the canvas keeps the room: its button opens the whole
-   key over the bottom of the canvas, and nothing below or beside it moves (LA-PAT-APP-UX-R08). */
-@container erd-page (max-width: 640px) {
-  .erd-key { position: relative; block-size: calc(var(--erd-key-height) * 0.28); overflow: visible; justify-content: center; padding: 0 14px; font-size: 0.75rem; line-height: 1.3; }
-  .erd-key-toggle { display: inline-flex; align-self: flex-start; padding: 2px 12px; border-color: var(--rule); border-radius: 10px; background: var(--sheet); color: var(--ink); font: 600 0.75rem var(--body); }
-  .erd-key-grid { display: none; grid-template-columns: repeat(auto-fill, 9.5rem); gap: 1px 10px; }
-  .erd-key-ends { grid-auto-rows: 18px; row-gap: 1px; }
-  .erd-key.is-open .erd-key-grid {
-    display: grid; grid-template-columns: repeat(auto-fill, 9.5rem); position: absolute; z-index: 7; inset-inline: 8px; bottom: calc(100% + 4px); max-block-size: 60vh; overflow-y: auto; scrollbar-gutter: stable;
-    padding: 10px 12px; border: 1px solid var(--rule); border-radius: var(--panel-radius); background: var(--sheet); box-shadow: 0 6px 20px var(--shadow);
-  }
-}
 .erd-key-highlight { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
 /* Faded: outside the focus's scope (LA-V94-R08). */
 .erd-key-faded { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); border-radius: 2px; opacity: var(--focus-fade); }
@@ -877,13 +874,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 .trace-note { margin: 0 0 12px; max-width: 48rem; font-size: 0.9rem; }
 .trace-note.is-untraced { padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; }
 /* On a wide screen the trace is drawn on the canvas (TraceCanvas.tsx) and the table is its accessible layer, visually hidden
-   (its links carry focus and the arrow keys; the canvas rings the box a focused link stands for). Its tools, note and paging
-   float in one row at the top of the open space; the column names ride the frame's top edge, following the camera across. */
-.trace-page.is-drawn > .trace-tools { display: flex; flex-wrap: wrap; gap: 6px 16px; align-items: center; }
-.trace-tools > :is(.trace-note, .trace-more) { margin: 0; }
-.trace-tools > .trace-note.is-untraced { padding: 2px 8px; }
-/* Show more pages the accessible table only (the canvas draws every lane): visually hidden until the keyboard reaches it. */
-.trace-more.is-keys:not(:focus-within) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+   (its links carry focus and the arrow keys; the canvas rings the box a focused link stands for), its paging with it; the
+   column names ride the frame's top edge, following the camera across. */
 .trace-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .trace-column-names { position: absolute; left: 0; right: 0; z-index: 1; height: 0; margin: 0; padding: 0; list-style: none; pointer-events: none; }
 .trace-column-names > li { position: absolute; top: 2px; box-sizing: border-box; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
@@ -1018,16 +1010,14 @@ a.row-link.row-link:focus-visible { outline: none; }
 .wiki-panel-handle { position: absolute; z-index: 3; top: var(--sheet-radius); bottom: var(--sheet-radius); left: calc(-1 * var(--float-inset)); width: var(--float-inset); display: grid; grid-template-columns: minmax(0, 1fr); }
 .wiki-panel.is-sheet { position: static; width: auto; max-width: none; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .wiki-panel.is-sheet::before { content: none; }
-/* A stage's own tools float inside the open space: at its top (the graph's toolbar, the trace's filter) or its foot (the ERD's key). */
-.stage-tools { position: absolute; z-index: 1; box-sizing: border-box; left: var(--open-left, 0px); max-width: calc(100% - var(--open-left, 0px) - var(--open-right, 0px)); border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
+/* A stage's toolbar floats inside the open space, at its top (views/StageChrome.tsx), above everything the stage draws (its column names, camera and edge hints), so its popovers open over them. */
+.stage-tools { position: absolute; z-index: 8; box-sizing: border-box; left: var(--open-left, 0px); max-width: calc(100% - var(--open-left, 0px) - var(--open-right, 0px)); border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
 /* A stage's own toolbar stays in one spot, centered on the whole stage whatever panels are open; on a narrow window it
    narrows (its tiers fold its controls) rather than move, keeping clear of the nav and the chat on both sides. */
 .stage-tools[data-stage-tools="top"] { top: var(--open-top, 0px); padding: 6px 10px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 2 * max(var(--open-left, 0px), var(--chat-space, 0px))); }
-.stage-tools[data-stage-tools="bottom"] { bottom: var(--open-bottom, 0px); right: var(--open-right, 0px); }
 /* The stages fill the stage; what they draw sits in the frame, the open space less their tools. */
 .focus-stage > :is(.graph-page, .erd-page, .trace-page), .focus-stage > .graph-page > .graph-workspace, .focus-stage .graph-workspace > .graph-canvas, .focus-stage .erd-page > :is(.erd-canvas, .erd-empty) { position: absolute; inset: 0; min-height: 0; }
-.focus-stage .react-flow__controls { left: var(--frame-left, 0px); bottom: var(--frame-bottom, 0px); }
-.focus-stage .graph-controls { left: calc(var(--frame-left, 0px) + 4px); bottom: calc(var(--frame-bottom, 0px) + 4px); }
+.focus-stage .stage-camera { left: calc(var(--frame-left, 0px) + 4px); bottom: calc(var(--frame-bottom, 0px) + 4px); }
 .focus-stage .graph-minimap { right: calc(var(--frame-right, 0px) + 4px); bottom: calc(var(--frame-bottom, 0px) + 4px); }
 .focus-stage .graph-edge-hints { inset: var(--frame-top, 0px) var(--frame-right, 0px) var(--frame-bottom, 0px) var(--frame-left, 0px); }
 .stage-page > .focus-missing { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); background: var(--paper); }
@@ -1136,9 +1126,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 @media (max-width: 380px) { .view-segment-label { display: none; } }
 :is(.page-bar-pages, .view-segment, .sheet-handle, .pages-open):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 
-/* On a phone the page's own header keeps its padding small, and graph and model headers wrap their tools. */
-.app.is-narrow .graph-toolbar { flex-wrap: wrap; row-gap: 4px; }
-.app.is-narrow .erd-key { max-height: 30dvh; overflow-y: auto; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+/* On a phone the page's own header keeps its padding small; a stage's toolbar folds by its tiers, as everywhere. */
 .app.is-narrow .placeholder { padding: 16px; }
 
 /* The nav sheet: the whole screen, the rail (with two or more products) kept at its left, sliding in from the left edge. */
@@ -1221,7 +1209,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   /* A gap between panels keeps its look, and its target reaches over the panels' edges. */
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
-    .graph-depth button, .graph-filters > summary, .graph-key > summary, .trace-filter, .quick-find-button,
+    .graph-depth button, .graph-filters > summary, .stage-key > summary, .trace-filter, .quick-find-button,
     .palette-list li, .tab, .long-list-tools input, .quick-open-box input, .dialog-search, .segment, .file-button, .crumb-more-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }
