@@ -180,7 +180,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const stage = screen.getByRole('region', { name: 'Graph stage' });
     expect(stage).toHaveClass('focus-stage');
     expect(stage.closest('[data-floating]')).toBeNull();
-    for (const [panel, side] of [[document.querySelector('#nav'), 'left'], [document.querySelector('.wiki-panel'), 'left'], [document.querySelector('.page-bar'), 'top'], [document.querySelector('.header-strip'), 'top'], [document.querySelector('.side-bar-column'), 'right']] as const) {
+    for (const [panel, side] of [[document.querySelector('#nav'), 'left'], [document.querySelector('.wiki-panel'), 'right'], [document.querySelector('.page-bar'), 'top'], [document.querySelector('.header-strip'), 'top'], [document.querySelector('.side-bar-column'), 'right']] as const) {
       expect(panel).toHaveAttribute('data-floating', side);
     }
     expect(CSS).toMatch(/\.focus-stage \{ position: absolute; inset: 0; z-index: 0;/);

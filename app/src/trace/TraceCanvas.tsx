@@ -207,8 +207,12 @@ function TraceScene({ index, focus, picture, onNavigate, onPeek, space, ring: ri
     const target = framing();
     if (!target || !size) return;
     const resized = framed.current !== null && (framed.current.w !== size.w || framed.current.h !== size.h);
-    moveTo(target, framed.current !== null && !resized);
+    const duration = moveTo(target, framed.current !== null && !resized);
     framed.current = size;
+    // Where the focus's box will sit once the camera arrives (the chain's obligation, or the focus where the lanes hold it), for the wiki card.
+    const boxes = picture.lanes.flatMap((l) => l.boxes);
+    const mark = picture.shape === 'chain' ? boxes.find((b) => b.column === 'obligation') : boxes.find((b) => b.id === focus);
+    space?.setAnchor({ focus, y: mark ? target.y + (mark.y + mark.h / 2) * target.zoom : null, at: performance.now() + duration });
   }, [framing]);
   const frameAll = useCallback(() => { const t = framing(); if (t) moveTo(t, true); }, [framing, moveTo]);
   // `.` frames the trace again, as it frames the graph's focus: one command, whichever stage is drawn.
