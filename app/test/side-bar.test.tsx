@@ -68,7 +68,7 @@ describe('the side bar', () => {
   it('LA-V95-R05-T03 The side bar\'s switcher, its headings, and its state per stage and per tab across a reload', proveLaV95R04T01);
 
   it('LA-V95-R06-T01 On the Graph stage Details shows the node under the pointer or keyboard focus, else the selected one, else the page\'s record, with Open and a compact Traceability; the graph adds what it connects', async () => {
-    window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, chat: false, chatWidth: null }));
+    window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
     await openApp('/P-D-UC01-R01?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(node('P-D-UC01-R02')).not.toBeNull());
     expect(name()).toBe('The loan is recorded');

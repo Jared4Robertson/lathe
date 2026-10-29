@@ -53,8 +53,8 @@ describe('separate spaces', () => {
     expect(mapRootOf(dm, 'ZZ-LOOSE')).toBe('ZZ-LOOSE');
     expect(graphMap(dm, 'ZZ-LOOSE').roots).toEqual(['ZZ-LOOSE']);
 
-    // The link into Notebook is not drawn, nor its record.
-    window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 2, hiddenKinds: [], minimap: true, card: true, cardWidth: null, chat: false, chatWidth: null }));
+    // The Links switch on: the link into Notebook is not drawn.
+    window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 2, hiddenKinds: [], minimap: true, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
     await openApp('/DM-SHOP-UC01?stage=graph', { data: crossingWorkspace() });
     await waitFor(() => expect(boxElement('DM-SHOP-UC01')).not.toBeNull());
     const drawn = drawnIds();

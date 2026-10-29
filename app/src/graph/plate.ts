@@ -1,5 +1,5 @@
-import { kindLabel, type SpecIndex, type Stage as SchemaStage } from '../specs/data';
-import { groupKindLabel, stageOf } from './model';
+import { kindLabel, type SpecIndex } from '../specs/data';
+import { groupKindLabel, stageFor, type BoxStage } from './model';
 import type { MapNode } from './map';
 import type { NestedNode } from './nested';
 import type { VoronoiNode } from './voronoi';
@@ -18,8 +18,6 @@ import {
 
 /** How a box is drawn: a Tree box in its kind's shape, a Nested box, a Voronoi cell, or a Trace stage's box in its kind's shape. */
 export type PlateView = 'tree' | 'nested' | 'voronoi' | 'trace';
-/** Which colors a box takes: its stage's (a group's too, drawn as a folder), or the structural records'. */
-export type Stage = SchemaStage | 'structural';
 
 /** One line of a label, at its place in the map: its text as the map broke it (a space it ends with is not drawn), its left end and baseline, its font size, and its width in map units. */
 export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
@@ -32,13 +30,18 @@ export interface PlateBadge { label: string; tone: (typeof BADGE_TONES)[number];
 
 export interface Plate {
   id: string;
+  /**
+   * Its place in the map, unique among the frame's plates: what the fade and the spotlight light (fade.ts). Its ID on
+   * the graph, where each record has one place; a Trace stage's box's key, a record there having a box in each lane.
+   */
+  place: string;
   kind: string;
   /** The kind's name ("Use case"), or "Group". */
   kindLabel: string;
   title: string;
   /** The line above the title: "Use case · LA-EXP-UC03", "Group · LA-EXP". */
   meta: string;
-  stage: Stage;
+  stage: BoxStage;
   group: boolean;
   shape: Shape;
   view: PlateView;
@@ -65,20 +68,6 @@ export interface Plate {
   errors: number;
   warnings: number;
   gaps: string[];
-}
-
-/**
- * A node's colors: its kind's stage; for a group, the stage it is (a stage group) or its kind's stage (a folder or a
- * record's kind group); the structural colors for what has no stage.
- */
-function stageFor(index: SpecIndex, id: string, kind: string): Stage {
-  const group = index.byId.has(id) ? undefined : treeGroup(index, id);
-  if (group?.role === 'stage') {
-    const named = index.workspace.stages.find((s) => s.stage === id.split('/')[1]);
-    return named ? named.stage : 'structural';
-  }
-  const stage = stageOf(index, group ? group.kind ?? '' : kind);
-  return stage === '' || stage === 'group' ? 'structural' : stage;
 }
 
 /** The size of an icon before the kind and ID line, at text scale 1: a shape's 14 by 10, a mark's 10 by 10, and the gap after each. */
@@ -156,7 +145,7 @@ function badgesAt(marks: { errors: number; warnings: number; gaps: string[] }, r
  * What a Trace stage box is when it is no record (a file, a gap, the Untraced lane's head): its kind, its words and its
  * colors' role. It is drawn as a plain box, dashed when it is a gap.
  */
-export interface PlainBox { kind: string; kindLabel: string; title: string; meta: string; stage: Stage; dashed: boolean }
+export interface PlainBox { kind: string; kindLabel: string; title: string; meta: string; stage: BoxStage; dashed: boolean }
 
 /** Where a box's map node, a Nested one or a Voronoi one, or a Trace stage's box comes from. */
 export type PlateSource =
@@ -167,7 +156,7 @@ export type PlateSource =
    * A Trace stage's box (LA-V98), at text scale 1: its lines, already wrapped and cut to its box, at its top when it
    * spans several lanes; its notes after them; `plain` for a box that is no record.
    */
-  | { view: 'trace'; node: { x: number; y: number; w: number; h: number }; lines: WrappedLabel; notes: readonly string[]; top: boolean; plain?: PlainBox };
+  | { view: 'trace'; place: string; node: { x: number; y: number; w: number; h: number }; lines: WrappedLabel; notes: readonly string[]; top: boolean; plain?: PlainBox };
 
 /** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DS06, LA-EXP-DS07, LA-EXP-DS08, LA-V93-R06). */
 export function plateOf(index: SpecIndex, id: string, source: PlateSource): Plate {
@@ -181,7 +170,7 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource): Plat
   const marks = marksOf(index, id);
   const marked = marks.errors + marks.warnings + marks.gaps.length > 0;
   const base = {
-    id, kind, kindLabel: record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
+    id, place: id, kind, kindLabel: record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
     stage, group: !record, shape, view: source.view, x, y, w, h, text: t, ...marks,
     dashed: kind === 'question',
   };
@@ -244,7 +233,7 @@ function tracePlate(index: SpecIndex, id: string, source: Extract<PlateSource, {
   const placed = placeLines({ lines: source.lines, box, centered: false, top: source.top, t: 1, icons: mark ? [{ draw: 'mark', name: mark }] : [], notes: source.notes });
   const badges = marked ? badgesAt(marks, x + w - inset - BADGE.right - room.r, y + inset + BADGE.top + room.t, 1) : [];
   return {
-    id, kind, kindLabel: plain ? plain.kindLabel : record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
+    id, place: source.place, kind, kindLabel: plain ? plain.kindLabel : record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
     stage: plain ? plain.stage : stageFor(index, id, kind), group: !plain && !record, shape, view: 'trace', x, y, w, h, text: 1, scale: 1, ...marks,
     dashed: plain ? plain.dashed : kind === 'question', outline, edged, border: BORDER, decoration: shape,
     label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges,

@@ -65,6 +65,24 @@ function stageRank(index: SpecIndex, stage: GraphNode['stage']): number {
 /** A kind's stage as the graph colors it: its stage, or '' for one outside the stages (structural). */
 export const stageOf = (index: SpecIndex, kind: string): GraphNode['stage'] => index.kinds.get(kind)?.stage ?? '';
 
+/** The stage whose colors a box is drawn in: a schema stage, or the structural colors for what has none. */
+export type BoxStage = Stage | 'structural';
+
+/**
+ * A node's colors: its kind's stage; for a group, the stage it is (a stage group) or its kind's stage (a folder or a
+ * record's kind group); the structural colors for what has no stage.
+ */
+export function stageFor(index: SpecIndex, id: string, kind: string): BoxStage {
+  const group = index.byId.has(id) ? undefined : treeGroup(index, id);
+  if (group?.role === 'stage') {
+    const named = index.workspace.stages.find((s) => s.stage === id.split('/')[1]);
+    return named ? named.stage : 'structural';
+  }
+  const stage = stageOf(index, group ? group.kind ?? '' : kind);
+  return stage === '' || stage === 'group' ? 'structural' : stage;
+}
+
+
 function kindOrder(index: SpecIndex) {
   const order = new Map(index.workspace.kinds.map((k, i) => [k.kind, i]));
   return (kind: string) => order.get(kind) ?? order.size;

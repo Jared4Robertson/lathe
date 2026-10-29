@@ -53,6 +53,7 @@ test.describe('the stage and its panels', () => {
     const [nav, card, side, bar, stage] = await Promise.all([box(NAV), box(CARD), box(SIDE_BAR), box(PAGE_BAR), box(STAGE)]);
     expect(card!.x, 'the card starts after the nav ends').toBeGreaterThanOrEqual(nav!.x + nav!.width);
     expect(side!.x, 'the side bar starts after the card ends').toBeGreaterThanOrEqual(card!.x + card!.width);
+    expect(side!.x - (card!.x + card!.width), 'the card sits beside the side bar, a gap away').toBeLessThanOrEqual(16);
     expect(bar!.x, 'the page bar starts after the nav').toBeGreaterThanOrEqual(nav!.x + nav!.width);
     expect(bar!.x + bar!.width, 'the page bar ends before the side bar').toBeLessThanOrEqual(side!.x);
     expect(side!.x + side!.width).toBeLessThanOrEqual(1440);
@@ -161,8 +162,8 @@ test.describe('the stage and its panels', () => {
     const handle = page.getByRole('separator', { name: 'Resize the wiki card' });
     const r = await step(page, 'stage', 'widen the wiki card', { keys: [NAV, PAGE_BAR, STRIP, SIDE_BAR, STAGE], allow: [...MOVES_WITH_OPEN_SPACE, CARD], resizes: [CARD] }, async () => {
       await handle.focus();
-      await page.keyboard.press('Shift+ArrowRight');
-      await page.keyboard.press('Shift+ArrowRight');
+      await page.keyboard.press('Shift+ArrowLeft');
+      await page.keyboard.press('Shift+ArrowLeft');
     });
     expectStable(r);
     await expectFocusInOpenSpace(page, 'with a wider card');
@@ -184,5 +185,31 @@ test.describe('the stage and its panels', () => {
       expect(l.filter, `${l.sel} draws no blur`).toMatch(/none|blur\(0px\)/);
       expect(l.background, `${l.sel} is opaque`).not.toMatch(/\/ 0\.\d|, 0\.\d+\)/);
     }
+  });
+
+  // The card settles level with the focused box (LA-V96-R23), below the stage's tools; a pan never moves it.
+  test('LA-V96-R23-T02 the wiki card settles level with the focused box, below the toolbar, and stays put while the Reader pans', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openPage(page, `${AGGREGATE}?stage=graph`, STRIP);
+    await stageReady(page);
+    const level = () => page.evaluate((stage) => {
+      const card = document.querySelector('.wiki-panel')!.getBoundingClientRect();
+      const title = document.querySelector('.wiki-panel-title h2')!.getBoundingClientRect();
+      const tools = document.querySelector(`${stage} [data-stage-tools="top"]`)?.getBoundingClientRect();
+      const host = document.querySelector(`${stage} .graph-flow`) as HTMLElement & { graphScene?: () => { boxes: { focus: boolean; rect: { top: number; height: number } }[] } };
+      const focus = host.graphScene!().boxes.find((b) => b.focus)!;
+      return { cardTop: card.top, toolsBottom: tools?.bottom ?? 0, title: title.top + title.height / 2, focus: focus.rect.top + focus.rect.height / 2 };
+    }, STAGE);
+    await expect.poll(async () => { const l = await level(); return Math.abs(l.title - l.focus); }, { message: 'the title row is level with the focused box', timeout: 5000 }).toBeLessThan(3);
+    const placed = await level();
+    expect(placed.cardTop, 'the card starts below the stage\'s toolbar').toBeGreaterThan(placed.toolsBottom);
+    // A pan by the Reader moves the stage, never the card.
+    const canvas = (await page.locator(`${STAGE} .graph-flow canvas`).boundingBox())!;
+    await page.mouse.move(canvas.x + 120, canvas.y + 300);
+    await page.mouse.down();
+    await page.mouse.move(canvas.x + 120, canvas.y + 200, { steps: 8 });
+    await page.mouse.up();
+    await page.waitForTimeout(600);
+    expect((await level()).cardTop, 'the card holds still while the Reader pans').toBeCloseTo(placed.cardTop, 0);
   });
 });

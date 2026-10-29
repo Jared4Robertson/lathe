@@ -26,6 +26,7 @@ type P = { x: number; y: number };
 /** A line between two boxes: a parent line (level, solid) or a Trace stage's arrow (a curve with an arrow at its end). */
 export interface Line {
   id: string;
+  /** The places (Plate.place) it joins: the fade and the spotlight read them. */
   source: string;
   target: string;
   /** Its line style's family: 'structure' for a parent line, 'trace' for a Trace stage's arrow. */
@@ -36,7 +37,7 @@ export interface Line {
   scale: number;
 }
 
-/** A bar standing for children too small to draw (LA-EXP-DS10), in map units, under its parent. */
+/** A bar standing for children too small to draw (LA-EXP-DS10), in map units, under its parent: the place it fades with. */
 export interface Bar { parent: string; x: number; y: number; w: number; h: number }
 
 /** What a frame draws, in draw order. */
@@ -48,10 +49,13 @@ export interface PaintState {
   hover: string | null;
   ring: string | null;
   armed: string | null;
-  /** The hover spotlight: the boxes and lines it keeps bright, and how far its dimming has faded in (0 to 1). */
+  /** The hover spotlight: the places (Plate.place) and lines it keeps bright, and how far its dimming has faded in (0 to 1). */
   lit: ReadonlySet<string> | null;
-  /** The focus fade (fade.ts): how strongly each box is drawn, 1 in the focus's subtree; a line takes the fainter of its ends, a bar its parent's. */
-  strength: (id: string) => number;
+  /**
+   * The fade (fade.ts): how strongly each place is drawn, 1 in the focus's subtree on the graph; a line takes the fainter
+   * of its ends (its source and target places), a bar its parent's.
+   */
+  strength: (place: string) => number;
   litLines: ReadonlySet<string> | null;
   spot: number;
 }
@@ -168,8 +172,8 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
 
   for (const p of frame.plates) {
     if (!onScreen(p, cam)) continue;
-    const lit = !!state.lit?.has(p.id);
-    ctx.globalAlpha = dim(lit) * strength(p.id, lit);
+    const lit = !!state.lit?.has(p.place);
+    ctx.globalAlpha = dim(lit) * strength(p.place, lit);
     paintBox(ctx, p, cam, look, fonts, state, X, Y);
   }
 
