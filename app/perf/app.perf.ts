@@ -185,7 +185,8 @@ test.describe('performance', () => {
   });
 
   test("LA-V98-R06-T02 the Trace stage's first frame lays the product's map out within its budget; every switch and focus after it within the stage switch budget", async ({ page }) => {
-    // The canvas laid out and drawn, with the table under it.
+    // The tree's map (LA-V98-R13 pins its layout), laid out and drawn, with the table under it.
+    await page.addInitScript(() => window.sessionStorage.setItem('lathe:trace-layout', JSON.stringify('tree')));
     const drawnTrace = '.focus-stage .trace-flow[data-ready]';
     const rows = '.focus-stage .trace-matrix tbody tr';
     // A use case's page, as the other stage switches are measured: the Trace stage switched to once, which loads its code and lays the

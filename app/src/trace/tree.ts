@@ -135,6 +135,13 @@ function capabilityNote(index: SpecIndex, id: string): string | undefined {
   return capability?.kind === 'capability' ? capability.title : undefined;
 }
 
+/** A node's label on its box: its words when it is no record, else the record's as the Graph's Tree labels it, with its note. */
+export function nodeLabel(index: SpecIndex, n: TraceNode): MapLabel {
+  if (n.words) return { ...n.words, shape: 'box' };
+  const label = treeLabel(index, n.id);
+  return n.note ? { ...label, meta: `${label.meta} · ${n.note}` } : label;
+}
+
 /** A product's Trace map, laid out once per product and data change (one-map.ts) by the Graph's Tree layout. */
 export const traceMap = onePerData((index: SpecIndex, product: string): TraceMap => {
   const built = build(index, product);
@@ -154,13 +161,7 @@ export const traceMap = onePerData((index: SpecIndex, product: string): TraceMap
     const note = [capabilityNote(index, n.id), count > 1 ? `in ${count} places` : undefined].filter(Boolean).join(' · ');
     if (note) n.note = note;
   }
-  const labelOf = (key: string): MapLabel => {
-    const n = nodes.get(key)!;
-    if (n.words) return { ...n.words, shape: 'box' };
-    const label = treeLabel(index, n.id);
-    return n.note ? { ...label, meta: `${label.meta} · ${n.note}` } : label;
-  };
-  const map = layoutTree([product], (key) => children.get(key) ?? [], labelOf);
+  const map = layoutTree([product], (key) => children.get(key) ?? [], (key) => nodeLabel(index, nodes.get(key)!));
   // The keys above an obligation with a gap.
   const above = new Set<string>();
   for (const o of built.gapped) for (let up = map.nodes.get(o)?.parent ?? null; up !== null && !above.has(up); up = map.nodes.get(up)?.parent ?? null) above.add(up);
