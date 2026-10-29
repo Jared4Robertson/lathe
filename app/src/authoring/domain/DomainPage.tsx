@@ -1,3 +1,4 @@
+import { Fragment } from 'react';
 import type { DomainPage as Domain } from '../../../../lathe/src/authoring/domain/read-model';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
@@ -18,7 +19,7 @@ import { useDomain } from './reads';
 // record's page holds around that (traceability, problems, facts and links) is the Record page's (RecordFrame).
 
 const capabilityOf = (page: Domain, id: string) => page.capabilities.find((c) => c.capability.id === id)!;
-const termOf = (page: Domain, id: string) => page.terms.find((t) => t.id === id)!;
+const termOf = (page: Domain, id: string) => page.terms.find((t) => t.term.id === id)!;
 const domainServiceOf = (page: Domain, id: string) => page.domainServices.find((s) => s.domainService.id === id)!;
 const serviceOf = (page: Domain, id: string) => page.domainServices.find((s) => s.service?.service.id === id)!;
 const testOf = (page: Domain, id: string) => page.domainServices.flatMap((s) => s.tests).find((t) => t.test.id === id)!;
@@ -46,8 +47,8 @@ function Content({ index, page }: { index: SpecIndex; page: Domain }) {
       );
     }
     case 'term': {
-      const t = termOf(page, id);
-      return <Text index={index} id={id} source={t.meaning} field="meaning" />;
+      const { term } = termOf(page, id);
+      return <Text index={index} id={id} source={term.meaning} field="meaning" />;
     }
     case 'domain_service': {
       const s = domainServiceOf(page, id);
@@ -101,8 +102,9 @@ function summaryOf(index: SpecIndex, page: Domain): { lead?: string; facts: Fact
       return { lead: c.capability.description, facts: [inDomain, { label: 'Use cases', value: c.useCases.length }, { label: 'Serves', value: count(c.serves.length, 'outcome', 'outcomes') }] };
     }
     case 'term': {
-      const t = termOf(page, id);
-      return { lead: t.meaning, facts: [inDomain, ...(t.group_name ? [{ label: 'Group', value: t.group_name }] : [])] };
+      const { term, buildsOn } = termOf(page, id);
+      const builds: Fact[] = buildsOn.length ? [{ label: 'Builds on', value: buildsOn.map((on, i) => <Fragment key={on}>{i > 0 && ', '}<RecordLink index={index} id={on} /></Fragment>) }] : [];
+      return { lead: term.meaning, facts: [inDomain, ...(term.group_name ? [{ label: 'Group', value: term.group_name }] : []), ...builds] };
     }
     case 'domain_service': {
       const s = domainServiceOf(page, id);
