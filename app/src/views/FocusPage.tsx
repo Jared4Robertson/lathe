@@ -25,6 +25,8 @@ import { WikiCard } from './WikiCard';
 import { useCardPlace } from './cardPlace';
 import { Button } from '../components/Button';
 import { useViewState } from '../chat/appRequests';
+import { parseFormatPage } from '../format/reference';
+import { overlaysOf, pageHref } from './overlays';
 
 // One page for one thing (a record, a group, a product or a domain), at one address. One stage
 // fills the window behind everything: the Graph, the ERD (of a domain, an aggregate or an entity's
@@ -191,14 +193,21 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const { graph: settings, setGraph, card, setCard } = useSessionSettings();
   const [sheet, setSheet] = useState(false);
   const cardButton = useRef<HTMLButtonElement>(null);
-  const cardCrowded = !narrow && card.open && crowded.has('card');
-  const cardShown = narrow ? sheet : card.open && !cardCrowded;
-  usePageRoom(card.open, side.open ? sideBarWidth : null);
+  // A format page opened over the focus (`?page=format/…`) shows in the card, open whatever the card's setting.
+  const formatPage = overlaysOf(search).page;
+  const format = useMemo(() => parseFormatPage(formatPage), [formatPage]);
+  const cardOpen = card.open || format !== null;
+  useEffect(() => { if (format && !narrow) hold('card', true); }, [format, narrow, hold]);
+  const cardCrowded = !narrow && cardOpen && crowded.has('card');
+  const cardShown = narrow ? sheet || format !== null : cardOpen && !cardCrowded;
+  usePageRoom(cardOpen, side.open ? sideBarWidth : null);
   const setCardShown = useCallback((show: boolean) => {
+    // Collapsing the card closes a format page in it too.
+    if (!show && format) navigate(pageHref(null));
     if (narrow) setSheet(show); else { setCard({ open: show }); hold('card', show); }
     announce(show ? 'Wiki card shown' : 'Wiki card collapsed');
     if (!show) setTimeout(() => cardButton.current?.focus(), 0);
-  }, [narrow, setCard, hold, announce]);
+  }, [narrow, setCard, hold, announce, format]);
   const collapseCard = useCallback(() => setCardShown(false), [setCardShown]);
   const expandCard = useCallback((expanded: boolean) => setCard({ expanded }), [setCard]);
   // Made once per width, so the memoized card draws again only for a new page.
@@ -234,6 +243,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   tabRef.current = tab;
   const shown = useRef<{ key: string; page: string } | null>(null);
   useLayoutEffect(() => {
+    // A format page in the card sets its own scroll; closing it brings back the focus's page where it was.
+    if (format) return;
     // Until the card settles on the focus (a page just opened, or a tab just switched to), it still
     // shows the page before, at that page's scroll; the scroll is the new page's once it is drawn.
     if (settledFocus !== focus) return;
@@ -255,7 +266,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     const observer = new ResizeObserver(() => { el.scrollTop = top; observer.disconnect(); });
     for (const child of el.children) observer.observe(child);
     return () => observer.disconnect();
-  }, [tab.key, focus, settledFocus, cardShown, tabs.scrollOf, tabs.setScroll]);
+  }, [tab.key, focus, settledFocus, cardShown, format, tabs.scrollOf, tabs.setScroll]);
   // The entry notes the card's scroll as it changes (after a pause) and as a new page is opened from it.
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const noteScroll = useCallback(() => {
@@ -265,11 +276,11 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useEffect(() => onLeaveEntry(noteScroll), [noteScroll]);
   useEffect(() => () => { if (noteTimer.current) clearTimeout(noteTimer.current); }, []);
   const onCardScroll = useCallback(() => {
-    if (!cardScroll.current) return;
+    if (!cardScroll.current || format) return;
     tabs.setScroll(tabRef.current, cardScroll.current.scrollTop);
     if (noteTimer.current) clearTimeout(noteTimer.current);
     noteTimer.current = setTimeout(noteScroll, 200);
-  }, [tabs.setScroll, noteScroll]);
+  }, [tabs.setScroll, noteScroll, format]);
 
   // The open space the floating panels leave over the stage, where it frames the focus.
   const [space] = useState(createOpenSpaceStore);
@@ -345,7 +356,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         onStage={setStage}
         stageBox={stageBox}
         strip={<HeaderStrip index={index} focus={focus} counts={counts} />}
-        card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} expanded={card.expanded} onExpanded={expandCard} sheet /> : null}
+        card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} expanded={card.expanded} onExpanded={expandCard} format={format} sheet /> : null}
         onCard={setCardShown}
         cardButton={cardButton}
         sideBarShown={showing}
@@ -391,6 +402,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
             expanded={card.expanded}
             onExpanded={expandCard}
             handle={cardHandle}
+            format={format}
           />
         )}
         {stageBox}

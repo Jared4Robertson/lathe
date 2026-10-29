@@ -6,6 +6,9 @@ import { Editable } from '../edit/Editing';
 import { groupKindLabel, groupLabel, groupMembers, groupName, groupOwner, stageFor } from '../graph/model';
 import { treeGroup } from '../graph/tree';
 import { Link } from '../router';
+import { FormatPageView } from '../format/FormatPages';
+import type { FormatRoute } from '../format/reference';
+import { pageHref } from './overlays';
 import { Tooltip } from '../shell/Tooltip';
 import { gapsOf, kindLabel, type Problem, type SpecIndex, type SpecRecord } from '../specs/data';
 import { foldedChildren } from '../specs/folders';
@@ -28,6 +31,10 @@ import { focusTrail } from './HeaderStrip';
 // step, and it is memoized, so nothing but a new page or a new index draws it again. A link in it
 // moves the focus, as a click on the stage does. It is resizable and collapsible by its button and
 // the w key. On a phone it is a bottom sheet.
+//
+// A format page (the record format, a kind's or a check's page) opens in it too, over the focus
+// (`?page=format/kinds/use_case`, overlays.ts): the whole page, with a link back to the focus, the
+// stage keeping its focus behind it (LA-PAT-APP-UX-R19).
 
 export interface WikiCardProps {
   index: SpecIndex;
@@ -42,10 +49,13 @@ export interface WikiCardProps {
   sheet?: boolean;
   /** The resize handle at its left edge, on a wide screen. */
   handle?: ReactNode;
+  /** A format page shown over the focus's page, or null. */
+  format?: FormatRoute | null;
 }
 
-export const WikiCard = memo(forwardRef<HTMLDivElement, WikiCardProps>(function WikiCard({ index, route, onScroll, onCollapse, expanded, onExpanded, sheet = false, handle }, scroller) {
+export const WikiCard = memo(forwardRef<HTMLDivElement, WikiCardProps>(function WikiCard({ index, route, onScroll, onCollapse, expanded, onExpanded, sheet = false, handle, format = null }, scroller) {
   const focus = focusOf(route);
+  if (format) return <FormatCard ref={scroller} index={index} focus={focus} format={format} onScroll={onScroll} onCollapse={onCollapse} sheet={sheet} handle={handle} />;
   const trail = focusTrail(index, focus);
   const record = index.byId.get(focus);
   // The stripe takes the focused box's own color: its stage's edge, as the graph draws it.
@@ -81,6 +91,47 @@ export const WikiCard = memo(forwardRef<HTMLDivElement, WikiCardProps>(function 
     </section>
   );
 }));
+
+interface FormatCardProps {
+  index: SpecIndex;
+  focus: string;
+  format: FormatRoute;
+  onScroll: (e: UIEvent<HTMLDivElement>) => void;
+  onCollapse: () => void;
+  sheet: boolean;
+  handle?: ReactNode;
+}
+
+/** The card showing a format page over the focus: the whole page, and a link back to the focus's. */
+const FormatCard = forwardRef<HTMLDivElement, FormatCardProps>(function FormatCard({ index, focus, format, onScroll, onCollapse, sheet, handle }, scroller) {
+  const record = index.byId.get(focus);
+  const name = record ? `${focus} ${record.title}` : groupLabel(index, focus);
+  return (
+    <section
+      aria-label="Wiki card"
+      className={`wiki-panel is-expanded is-format${sheet ? ' is-sheet' : ''}`}
+      data-floating={sheet ? undefined : 'right'}
+      data-page={`format ${JSON.stringify(format)}`}
+    >
+      <div className="wiki-panel-head">
+        <Link to={pageHref(null)} className="wiki-panel-back" title={`Back to ${name}`}>
+          <Icon name="chevron-right" size={14} /> <span>Back to {record ? <code>{focus}</code> : name}</span>
+        </Link>
+        <Tooltip label="Collapse the wiki card" command="toggleWikiCard" placement="left">
+          <Button variant="icon" label="Collapse the wiki card" className="wiki-panel-collapse" onClick={onCollapse}>
+            <Icon name={sheet ? 'x' : 'sidebar-right'} size={16} />
+          </Button>
+        </Tooltip>
+      </div>
+      <div className="wiki-panel-scroll" ref={scroller} onScroll={onScroll}>
+        <div key={JSON.stringify(format)} className="wiki-panel-page">
+          <FormatPageView index={index} route={format} />
+        </div>
+      </div>
+      {handle}
+    </section>
+  );
+});
 
 /** The card's title: the box's kind line (the kind and the ID), the title and the problems. The page's h1 is the header strip's. */
 function CardTitle({ index, route }: { index: SpecIndex; route: FocusRoute }) {

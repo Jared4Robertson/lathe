@@ -1,21 +1,13 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
-import { Button } from '../components/Button';
-import { Icon } from '../components/icons';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import { LongList } from '../components/LongList';
-import { ResizeHandle } from '../components/ResizeHandle';
 import { lowerLabel, plural } from '../plural';
 import { Link, useLocation } from '../router';
-import { BottomSheet } from '../shell/BottomSheet';
-import { useAnnounce, useCommand } from '../shell/commands';
-import { isBool, usePanelSize, usePref } from '../shell/prefs';
 import { useSpaces } from '../shell/spaces';
-import { Tooltip } from '../shell/Tooltip';
-import { useNarrow } from '../shell/useNarrow';
 import { addressOf } from '../views/address';
 import { treeGroup } from '../graph/tree';
-import { byIdOrder, type Problem, type SpecIndex, type SpecRecord, type SpecState, type Stage } from '../specs/data';
+import { byIdOrder, type Problem, type SpecIndex, type SpecRecord, type Stage } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
-import { PageHeader, ProblemList, RecordLink, Section } from '../specs/parts';
+import { ProblemList, RecordLink, Section } from '../specs/parts';
 import {
   FIELDS_ANCHOR,
   ID_SCOPE_TEXT,
@@ -28,180 +20,72 @@ import {
   findKind,
   formatPath,
   kindPagePath,
-  obligationShort,
   obligationText,
+  obligationShort,
   relationWords,
   relationsOf,
   stageName,
   useFormat,
   type CheckReference,
   type FormatReference,
+  type FormatRoute,
   type KindReference,
   type RelationReference,
 } from './reference';
 import './format.css';
 
-// The format reference's pages (LA-AUT-UC14): /format (the concepts, then an index of the kinds by
-// stage, the relations, and the checks by severity), /format/kinds/<kind> and
-// /format/checks/<check>. Each opens in the workbench as a record does: one pane with the page's
-// title in it, and the side bar beside it showing the kind's or the check's facts (a bottom sheet
-// on a phone). The pages read the schema and the check rows served with the data, so a product's
-// own kinds and checks show.
-
-export type FormatRoute = { page: 'format' } | { page: 'format-kind'; kind: string } | { page: 'format-check'; check: string };
-export const isFormatRoute = (r: { page: string } | null): r is FormatRoute => !!r && ['format', 'format-kind', 'format-check'].includes(r.page);
-
-// The side bar's open state and width are the workbench's, shared with record pages.
-const SIDE_BAR_KEY = 'lathe:side-bar-open';
-const SIDE_BAR_WIDTH_KEY = 'lathe:side-bar-width';
-
-export function FormatPages({ spec, route }: { spec: SpecState; route: FormatRoute }) {
-  const { index } = spec;
-  const reference = useFormat(index);
-  let body: ReactNode;
-  if (!index || !reference) {
-    body = <div className="placeholder"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading the format…'}</p></div>;
-  } else {
-    body = <Workbench index={index} reference={reference} route={route} />;
-  }
-  return (
-    <main className="focus-page format-page" id="main">
-      {spec.error && index && <p className="error">Couldn't reload the specs: {spec.error}</p>}
-      {body}
-    </main>
-  );
-}
+// The format reference's pages (LA-AUT-UC14): the record format (the concepts, then an index of the
+// kinds by stage, the relations, and the checks by severity), a kind's page and a check's page. Each
+// opens in the wiki card over the stage, the whole page, the stage keeping its focus (views/overlays.ts):
+// a link to one is `?page=format/kinds/<kind>` on the current address. The pages read the schema and
+// the check rows served with the data, so a product's own kinds and checks show.
 
 interface PageProps {
   index: SpecIndex;
   reference: FormatReference;
 }
 
-/** One pane holding the page, and the side bar: the workbench as a record page lays it out. */
-function Workbench({ index, reference, route }: PageProps & { route: FormatRoute }) {
-  const narrow = useNarrow();
-  const announce = useAnnounce();
-  const [open, setOpen] = usePref<boolean>(SIDE_BAR_KEY, true, isBool);
-  const [width, setWidth, resetWidth] = usePanelSize(SIDE_BAR_WIDTH_KEY, 340, 260, 640);
-  const [sheet, setSheet] = useState(false);
-  const layout = useRef<HTMLDivElement>(null);
-  const sideBarEl = useRef<HTMLElement>(null);
-  const toggle = useRef<HTMLButtonElement>(null);
-  const scroller = useRef<HTMLDivElement>(null);
-  const { path } = useLocation();
-  const showing = narrow ? sheet : open;
-  const setShowing = useCallback((show: boolean) => {
-    if (narrow) setSheet(show); else setOpen(show);
-    announce(show ? 'Side bar shown' : 'Side bar hidden');
-    if (!show) setTimeout(() => toggle.current?.focus(), 0);
-  }, [narrow, setOpen, announce]);
-  useEffect(() => { setSheet(false); }, [path, narrow]);
-  useEffect(() => { if (narrow && sheet) sideBarEl.current?.focus(); }, [narrow, sheet]);
-  useCommand('toggleSideBar', () => setShowing(!showing));
-  useCommand('focusSideBar', () => {
-    if (!showing) setShowing(true);
-    setTimeout(() => sideBarEl.current?.focus(), 0);
-  });
+/** A format page as the wiki card shows it: its kind line, its title, any tags beside the title, and its body. */
+interface FormatPage {
+  eyebrow: ReactNode;
+  title: string;
+  tags?: ReactNode;
+  body: ReactNode;
+}
 
-  // A new page starts at the top, or at the part its address names (#fields, #7-what-records-do-not-carry).
-  useEffect(() => {
-    const scrollToHash = () => {
-      const id = decodeURIComponent(window.location.hash.slice(1));
-      const target = id ? document.getElementById(id) : null;
-      if (target) target.scrollIntoView?.({ block: 'start' });
-      else if (scroller.current) scroller.current.scrollTop = 0;
-    };
-    scrollToHash();
-    window.addEventListener('hashchange', scrollToHash);
-    return () => window.removeEventListener('hashchange', scrollToHash);
-  }, [path]);
-
-  const page = pageFor({ index, reference }, route);
-  const sideBarLabel = `${showing ? 'Hide' : 'Show'} the side bar`;
-  const facts = (
-    <aside ref={sideBarEl} id="side-bar" className="side bar record-side" aria-label="Side bar" tabIndex={-1}>
-      <div className="side-bar-head">
-        <h2 className="side-bar-title">Side bar</h2>
-        <Tooltip label="Hide the side bar" command="toggleSideBar" placement="left">
-          <Button variant="icon" label="Hide the side bar" onClick={() => setShowing(false)}>
-            <Icon name={narrow ? 'x' : 'sidebar-right'} />
-          </Button>
-        </Tooltip>
-      </div>
-      {page.facts}
-    </aside>
-  );
-
-  const pane = (
-    <section className="pane panel pane-wiki" data-view="wiki" aria-label="Reference pane">
-      <div className="pane-bar">
-        <div className="pane-head">
-          <span className="pane-name"><Icon name="format" size={15} /> Reference</span>
-        </div>
-        <div className="pane-actions">
-          <Tooltip label={sideBarLabel} command="toggleSideBar" placement="left">
-            <Button
-              variant="icon"
-              ref={toggle}
-              className={`side-bar-toggle${showing ? ' is-on' : ''}`}
-              label={sideBarLabel}
-              aria-expanded={showing}
-              aria-controls="side-bar"
-              onClick={() => setShowing(!showing)}
-            >
-              <Icon name={narrow ? 'info' : 'sidebar-right'} size={16} />
-            </Button>
-          </Tooltip>
-        </div>
-      </div>
-      <div className="pane-scroll" ref={scroller}>
-        <div className="pane-title">{page.title}</div>
-        <div className="spec-body">{page.body}</div>
-      </div>
-    </section>
-  );
-
-  if (narrow) {
-    return (
-      <div className="focus-layout is-phone">
-        {pane}
-        {sheet && <BottomSheet label="Side bar" className="side-bar-sheet" onClose={() => setShowing(false)}>{facts}</BottomSheet>}
-      </div>
-    );
-  }
+/**
+ * A format page in the wiki card: its kind line and title as the card heads a record's page, then its
+ * body. It starts at the top, or at the part the address names (`#fields`, `#field-title`).
+ */
+export function FormatPageView({ index, route }: { index: SpecIndex; route: FormatRoute }) {
+  const reference = useFormat(index);
+  const { hash } = useLocation();
+  const box = useRef<HTMLDivElement>(null);
+  const key = JSON.stringify(route);
+  useLayoutEffect(() => {
+    const scroller = box.current?.closest<HTMLElement>('.wiki-panel-scroll');
+    const id = (() => { try { return decodeURIComponent(hash.slice(1)); } catch { return ''; } })();
+    const target = id ? document.getElementById(id) : null;
+    if (target && box.current?.contains(target)) target.scrollIntoView?.({ block: 'start' });
+    else if (scroller) scroller.scrollTop = 0;
+  }, [key, hash]);
+  if (!reference) return null;
+  const page = formatPageFor({ index, reference }, route);
   return (
-    <div ref={layout} className={`focus-layout${showing ? ' with-side-bar' : ''}`} style={{ '--side-bar-width': `${width}px` } as CSSProperties}>
-      <div className="focus-main">{pane}</div>
-      {showing && (
-        <>
-          <ResizeHandle
-            label="Resize the side bar"
-            side="after"
-            value={width}
-            min={260}
-            max={640}
-            step={16}
-            bigStep={64}
-            valueAt={(x) => (layout.current?.getBoundingClientRect().right ?? x) - x}
-            onChange={setWidth}
-            onReset={resetWidth}
-            collapseBelow={160}
-            onCollapse={() => setShowing(false)}
-          />
-          <div className="side-bar-column panel">{facts}</div>
-        </>
-      )}
+    <div ref={box} className="format-page">
+      <header className="wiki-panel-title spec-header">
+        <div>
+          <p className="wiki-panel-kind">{page.eyebrow}</p>
+          <h2>{page.title}</h2>
+        </div>
+        {page.tags}
+      </header>
+      <div className="spec-body">{page.body}</div>
     </div>
   );
 }
 
-interface Page {
-  title: ReactNode;
-  body: ReactNode;
-  facts: ReactNode;
-}
-
-function pageFor(props: PageProps, route: FormatRoute): Page {
+function formatPageFor(props: PageProps, route: FormatRoute): FormatPage {
   if (route.page === 'format-kind') {
     const kind = findKind(props.reference, route.kind);
     return kind ? kindPage(props, kind) : missingPage('kind', route.kind);
@@ -214,11 +98,11 @@ function pageFor(props: PageProps, route: FormatRoute): Page {
   return homePage(props);
 }
 
-function missingPage(what: 'kind' | 'check', name: string): Page {
+function missingPage(what: 'kind' | 'check', name: string): FormatPage {
   return {
-    title: <PageHeader eyebrow={<><Link to={formatPath}>Record format</Link> · {what === 'kind' ? 'Kind' : 'Check'}</>} title={name} />,
+    eyebrow: <><Link to={formatPath}>Record format</Link> · {what === 'kind' ? 'Kind' : 'Check'}</>,
+    title: name,
     body: <div className="placeholder"><p>The format has no {what} called <code>{name}</code>. <Link to={formatPath}>See every kind and check</Link>.</p></div>,
-    facts: <p className="hint">Nothing to show.</p>,
   };
 }
 
@@ -316,13 +200,14 @@ function RelationRows({ reference, relations, from, label }: { reference: Format
   );
 }
 
-// ---------- /format ----------
+// ---------- The record format ----------
 
-function homePage({ index, reference }: PageProps): Page {
+function homePage({ index, reference }: PageProps): FormatPage {
   const errors = reference.checks.filter((c) => c.severity === 'error');
   const warnings = reference.checks.filter((c) => c.severity === 'warning');
   return {
-    title: <PageHeader eyebrow="Reference · read from the schema" title="Record format" />,
+    eyebrow: 'Reference · read from the schema',
+    title: 'Record format',
     body: (
       <>
         <Section title="How records are kept">
@@ -341,27 +226,6 @@ function homePage({ index, reference }: PageProps): Page {
           <Section level={3} title="Errors" count={errors.length}><CheckRows index={index} checks={errors} label="Error checks" /></Section>
           <Section level={3} title="Warnings" count={warnings.length}><CheckRows index={index} checks={warnings} label="Warning checks" /></Section>
         </section>
-      </>
-    ),
-    facts: (
-      <>
-        <div className="side-bar-identity">
-          <p className="eyebrow">Reference</p>
-          <p className="side-bar-name">Record format</p>
-        </div>
-        <dl className="fields">
-          <div><dt>Kinds</dt><dd>{reference.kinds.length}</dd></div>
-          <div><dt>Relations</dt><dd>{reference.relations.length}</dd></div>
-          <div><dt>Stages</dt><dd>{reference.stages.length}</dd></div>
-          <div><dt>Checks</dt><dd>{reference.checks.length} ({errors.length} error, {warnings.length} warning)</dd></div>
-          <div><dt>From</dt><dd>The schema, with this product's own kinds, and the check table</dd></div>
-        </dl>
-        <h3>On this page</h3>
-        <ul className="plain">
-          <li><a href="#kinds">Kinds</a></li>
-          <li><a href="#relations">Relations</a></li>
-          <li><a href="#checks">Checks</a></li>
-        </ul>
       </>
     ),
   };
@@ -416,41 +280,16 @@ function AllRelations({ reference }: { reference: FormatReference }) {
   );
 }
 
-// ---------- /format/kinds/<kind> ----------
+// ---------- A kind's page ----------
 
 /** A record's row as its data file holds it: one JSON object on one line. */
 export const rowLineOf = (record: SpecRecord) => JSON.stringify(record.row);
 
-function kindPage({ index, reference }: PageProps, kind: KindReference): Page {
-  const relations = relationsOf(reference, kind.kind);
-  const checks = checksOf(reference, kind.kind);
-  const where = stageName(reference, kind.stage);
-  const required = kind.columns.filter((c) => c.required);
+function kindPage({ index, reference }: PageProps, kind: KindReference): FormatPage {
   return {
-    title: <PageHeader eyebrow={<><Link to={formatPath}>Record format</Link> · Kind · {where}</>} title={kind.label} />,
+    eyebrow: <><Link to={formatPath}>Record format</Link> · Kind · {stageName(reference, kind.stage)}</>,
+    title: kind.label,
     body: <KindBody index={index} reference={reference} kind={kind} />,
-    facts: (
-      <>
-        <div className="side-bar-identity">
-          <p className="eyebrow">Kind</p>
-          <p className="side-bar-name">{kind.label}</p>
-          <p className="record-id"><code>{kind.kind}</code></p>
-        </div>
-        <dl className="fields">
-          <div><dt>Stage</dt><dd>{stageName(reference, kind.stage)}</dd></div>
-          <div><dt>Obligation</dt><dd>{obligationShort(kind.obligation)}</dd></div>
-          <div><dt>ID</dt><dd>{kind.id ? <code>{kind.id.pattern}</code> : 'No convention given'}</dd></div>
-          <div><dt>Required</dt><dd>{required.map((c, i) => <span key={c.name}>{i > 0 && ', '}<a href={`#${fieldAnchor(c.name)}`}>{c.name}</a></span>)}</dd></div>
-          <div><dt>Records</dt><dd>{index.workspace.records.filter((r) => r.kind === kind.kind).length}</dd></div>
-          <div><dt>Links</dt><dd>{relations.out.length} out, {relations.in.length} in</dd></div>
-          <div><dt>Checks</dt><dd>{checks.length}</dd></div>
-        </dl>
-        <h3>Parents <span className="section-count">{kind.parent_kinds.length}</span></h3>
-        <KindRows reference={reference} kinds={kind.parent_kinds} label={`Parents of ${kind.label}`} />
-        <h3>Children <span className="section-count">{kind.child_kinds.length}</span></h3>
-        <KindRows reference={reference} kinds={kind.child_kinds} label={`Children of ${kind.label}`} />
-      </>
-    ),
   };
 }
 
@@ -563,15 +402,13 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
   );
 }
 
-// ---------- /format/checks/<check> ----------
+// ---------- A check's page ----------
 
-function checkPage({ index, reference }: PageProps, check: CheckReference, problems: Problem[]): Page {
+function checkPage({ index, reference }: PageProps, check: CheckReference, problems: Problem[]): FormatPage {
   return {
-    title: (
-      <PageHeader eyebrow={<><Link to={formatPath}>Record format</Link> · Check · {check.severities.join(' or ')}</>} title={check.check}>
-        <span className="row-tags"><SeverityTags check={check} /></span>
-      </PageHeader>
-    ),
+    eyebrow: <><Link to={formatPath}>Record format</Link> · Check · {check.severities.join(' or ')}</>,
+    title: check.check,
+    tags: <span className="row-tags"><SeverityTags check={check} /></span>,
     body: (
       <>
         {check.summary ? <Markdown source={check.summary} /> : <p className="hint">The engine reports this itself: it has no row in the check table.</p>}
@@ -593,22 +430,6 @@ function checkPage({ index, reference }: PageProps, check: CheckReference, probl
         <Section title="Problems now" count={problems.length}>
           {problems.length === 0 ? <p className="hint">This check reports nothing now.</p> : <ProblemList index={index} problems={problems} showCheck={false} />}
         </Section>
-      </>
-    ),
-    facts: (
-      <>
-        <div className="side-bar-identity">
-          <p className="eyebrow">Check</p>
-          <p className="side-bar-name">{check.check}</p>
-        </div>
-        <dl className="fields">
-          <div><dt>Severity</dt><dd><SeverityTags check={check} /></dd></div>
-          <div><dt>From</dt><dd>{ORIGIN_TEXT[check.origin]}</dd></div>
-          <div><dt>Problems</dt><dd>{problems.length}</dd></div>
-          <div><dt>Records</dt><dd>{new Set(problems.map((p) => p.record ?? 'workspace')).size}</dd></div>
-        </dl>
-        <h3>Kinds <span className="section-count">{check.kinds.length}</span></h3>
-        {check.kinds.length === 0 ? <p className="hint">Records of any kind.</p> : <KindRows reference={reference} kinds={check.kinds} label={`Kinds ${check.check} concerns`} />}
       </>
     ),
   };

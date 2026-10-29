@@ -1,16 +1,18 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
 import { navigate } from '../router';
 import { textOf, parseSpecRoute, spaceIndex, type SpecIndex, type SpecRecord } from '../specs/data';
-import { addressOf, isSpacePath } from '../views/address';
+import { addressOf, isFocusPath } from '../views/address';
+import { withoutOverlays } from '../views/overlays';
 import { usePref } from './prefs';
 
 // Spaces: each product is its own space, as a workspace is in Slack, Discord, Linear or Notion, and
 // the spaces are kept hard apart. The rail at the far left of the nav has one icon per product; the
 // current space is the product of the page you are on (or the last one you chose, on a page that
-// belongs to no product). Everything inside a space reads the space's own index (spaceIndex): the
-// nav, quick find, the space's Checks page, the graph, the ERD view, the side bar and the format
-// reference's records, so nothing of another product shows in it. Choosing a space opens the last
-// page you visited in it this session, or its product page.
+// belongs to no product, kept from one launch to the next). Everything inside a space reads the
+// space's own index (spaceIndex): the nav, quick find, the Checks panel, the graph, the ERD view, the
+// side bar and the format reference's records, so nothing of another product shows in it. Choosing a
+// space opens the last page you visited in it this session, or its product page; the tools open over
+// it are not part of that page.
 
 export interface Space {
   id: string;
@@ -63,7 +65,7 @@ export function spaceOf(product: SpecRecord): Space {
   };
 }
 
-/** The product a page belongs to, or null for a page outside every space (the products, the format, Settings). */
+/** The product a page belongs to, or null for a page outside every space (the products picker). */
 export function productOfPath(index: SpecIndex | null, path: string): string | null {
   const route = parseSpecRoute(path, index);
   if (!route || !index) return null;
@@ -74,7 +76,6 @@ export function productOfPath(index: SpecIndex | null, path: string): string | n
     case 'domain': return known(route.product) ?? productOfRecord(route.domain);
     case 'record': return productOfRecord(route.id);
     case 'group': return productOfRecord(route.parent);
-    case 'checks': return known(route.product);
     default: return null;
   }
 }
@@ -93,6 +94,8 @@ export interface SpacesApi {
   index: SpecIndex | null;
   /** True when the page on screen belongs to the current space. */
   onPage: boolean;
+  /** The space the Reader was last in (kept from one launch to the next), or null on a first launch. */
+  last: Space | null;
   /** Opens a space: the last page visited in it this session, or its product page. */
   go: (id: string) => void;
   /** The last page visited in a space, if any. */
@@ -107,10 +110,10 @@ export const useSpaces = () => useContext(SpacesContext);
 /** Works out the current space and remembers each space's last page (for the session). */
 export function useSpaceState(index: SpecIndex | null, path: string, search: string): SpacesApi {
   const spaces = useMemo(() => (index?.products ?? []).map(spaceOf), [index]);
-  const [chosen, setChosen] = usePref<string>(SPACE_KEY, '', isString, 'session');
+  const [chosen, setChosen] = usePref<string>(SPACE_KEY, '', isString);
   const [stored, setPages] = usePref<Record<string, string>>(PAGES_KEY, {}, isPages, 'session');
   // A saved page that is not a page of a space is dropped.
-  const pages = useMemo(() => Object.fromEntries(Object.entries(stored).filter(([, page]) => isSpacePath(page.split('?')[0]))), [stored]);
+  const pages = useMemo(() => Object.fromEntries(Object.entries(stored).filter(([, page]) => isFocusPath(page.split('?')[0]))), [stored]);
   const pagesRef = useRef(pages);
   pagesRef.current = pages;
   const pageProduct = productOfPath(index, path);
@@ -118,7 +121,7 @@ export function useSpaceState(index: SpecIndex | null, path: string, search: str
   useEffect(() => {
     if (!pageProduct) return;
     setChosen((c) => (c === pageProduct ? c : pageProduct));
-    const here = path + search;
+    const here = path + withoutOverlays(search);
     setPages((p) => (p[pageProduct] === here ? p : { ...p, [pageProduct]: here }));
   }, [pageProduct, path, search, setChosen, setPages]);
 
@@ -130,7 +133,8 @@ export function useSpaceState(index: SpecIndex | null, path: string, search: str
     navigate(pagesRef.current[id] ?? addressOf(id));
   }, [setChosen]);
   const lastPage = useCallback((id: string) => pages[id], [pages]);
-  return useMemo(() => ({ spaces, current, index: scoped, onPage: !!pageProduct && pageProduct === current?.id, go, lastPage }), [spaces, current, scoped, pageProduct, go, lastPage]);
+  const last = spaces.find((s) => s.id === (pageProduct ?? chosen)) ?? null;
+  return useMemo(() => ({ spaces, current, index: scoped, onPage: !!pageProduct && pageProduct === current?.id, last, go, lastPage }), [spaces, current, scoped, pageProduct, last, go, lastPage]);
 }
 
 export function SpacesProvider({ value, children }: { value: SpacesApi; children: ReactNode }) {

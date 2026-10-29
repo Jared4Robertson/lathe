@@ -55,7 +55,8 @@ export function RecordLink({ index, id, showTitle = true, row = false }: { index
   );
 }
 
-export function ProblemList({ index, problems, showRecord = true, showCheck = true }: { index: SpecIndex; problems: Problem[]; showRecord?: boolean; showCheck?: boolean }) {
+/** A list of problems; with `current`, the rows of that record's problems are marked as the one in focus. */
+export function ProblemList({ index, problems, showRecord = true, showCheck = true, current = null }: { index: SpecIndex; problems: Problem[]; showRecord?: boolean; showCheck?: boolean; current?: string | null }) {
   if (problems.length === 0) return <p className="hint">No problems.</p>;
   const items = [...problems].sort(problemOrder).map((p, i) => ({ p, key: String(i) }));
   return (
@@ -64,7 +65,7 @@ export function ProblemList({ index, problems, showRecord = true, showCheck = tr
       className="problems"
       items={items}
       itemKey={(item) => item.key}
-      itemClassName={({ p }) => `problem ${p.severity}`}
+      itemClassName={({ p }) => `problem ${p.severity}${current && p.record === current ? ' is-current' : ''}`}
       searchText={({ p }) => `${p.record ?? 'workspace'} ${index.byId.get(p.record ?? '')?.title ?? ''} ${p.message} ${p.check}`}
       render={({ p }) => {
         // A problem row is never a dead box (LA-PAT-APP-UX-R14): it opens its record, or its check when it shows no record.
