@@ -17,7 +17,6 @@ import {
   ariaKeyShortcuts,
   eventChord,
   formatBinding,
-  isArrowChord,
   isMac,
   isSingleKey,
   isTyping,
@@ -25,6 +24,8 @@ import {
   readOverrides,
   resolveCommands,
   usesArrows,
+  usesEnter,
+  walkArrow,
   type Command,
 } from './keymap';
 import { Link } from '../router';
@@ -36,13 +37,18 @@ import { useOverlayFocus } from '../views/overlays';
 // listener matches key presses against the keymap, and the shortcuts sheet and quick find's
 // commands (QuickOpen.tsx) are drawn from the same table. A command only runs (and only shows as
 // available in quick find) while something has registered a handler for it, so "when it applies"
-// follows what is on screen: the graph's commands exist while a graph is shown. The same listener sends the plain arrow keys to the
-// stage's walk (useStageWalk) from anywhere on the page, except a control that uses arrows itself (keymap usesArrows).
+// follows what is on screen: the graph's commands exist while a graph is shown. The same listener sends the plain arrow keys,
+// and W, A, S and D as Up, Left, Down and Right, to the stage's walk (useStageWalk) from anywhere on the page, except a
+// control that uses arrows itself (keymap usesArrows). A plain Enter runs its command (the wiki card) only outside a control
+// that handles Enter (keymap usesEnter); Escape runs its command only when nothing took it first: an overlay that closes on
+// Escape (a dialog, a menu, a tooltip, a tool panel) calls preventDefault, so the topmost thing closes first.
 
 type Handler = () => void;
-/** A stage's walk: takes a plain arrow's key ("ArrowLeft"), moves the focus, and returns what to announce, or null. */
+/** A stage's walk: takes a plain arrow's key ("ArrowLeft", for W, A, S and D too), moves the focus, and returns what to announce, or null. */
 type Walk = (key: string) => string | null;
-type WalkRef = { current: Walk };
+/** A stage's own meaning for a plain Enter where the walk stands (the Trace stage's "+N more" opens): true when it took it. */
+type StageEnter = () => boolean;
+type WalkRef = { current: Walk; enter?: StageEnter };
 /** A registered handler, and the title it gives its command while mounted ("Switch to Lathe"). */
 type HandlerRef = { current: Handler; title?: string };
 
@@ -102,12 +108,14 @@ export function useCommand(id: string, handler: Handler, enabled = true, title?:
 
 /**
  * Registers the shown stage's walk while mounted (and `enabled`): the plain arrow keys go to it from anywhere on the
- * page but a control that uses arrows itself, and what it returns is announced. The last one registered walks.
+ * page but a control that uses arrows itself, and what it returns is announced. The last one registered walks. `enter`
+ * is offered a plain Enter from the same places as the wiki card's toggle, first; when it takes it, the card is left.
  */
-export function useStageWalk(walk: Walk, enabled = true) {
+export function useStageWalk(walk: Walk, enabled = true, enter?: StageEnter) {
   const api = useContext(CommandsContext);
-  const ref = useRef<WalkRef>({ current: walk });
+  const ref = useRef<WalkRef>({ current: walk, enter });
   ref.current.current = walk;
+  ref.current.enter = enter;
   // A layout effect, so a stage Suspense hides while the next one loads stops walking at once: React keeps the hidden
   // stage's passive effects, and only its layout effects go.
   useLayoutEffect(() => {
@@ -197,16 +205,24 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
       const chord = eventChord(e);
       const typing = isTyping(e.target);
       const before = pendingRef.current;
-      // A plain arrow walks the stage, wherever keyboard focus is, unless it is in a control that uses arrows itself.
+      // A plain arrow, or W, A, S or D, walks the stage, wherever keyboard focus is, unless it is in a control that uses
+      // arrows itself or the key goes on a sequence already begun.
       const walk = walks.current.at(-1);
-      if (isArrowChord(chord) && walk && !usesArrows(e.target)) {
+      const arrow = walkArrow(chord);
+      const continues = before.length > 0 && arrow !== chord && match([...before, chord], commands, mac, available).command !== undefined;
+      if (arrow && walk && !usesArrows(e.target) && !continues) {
         e.preventDefault();
         if (before.length) setPendingKeys([]);
-        const said = walk.current(chord);
+        const said = walk.current(arrow);
         if (said) announce(said);
         return;
       }
       if (typing && isSingleKey(chord) && before.length === 0) return;
+      // Enter is a control's own where it handles Enter; Escape is a field's own while typing.
+      if (chord === 'Enter' && before.length === 0 && usesEnter(e.target)) return;
+      // The stage's own Enter where its walk stands comes before the wiki card's.
+      if (chord === 'Enter' && before.length === 0 && walk?.enter?.()) { e.preventDefault(); return; }
+      if (chord === 'Escape' && typing) return;
       let result = match([...before, chord], commands, mac, available);
       // A key that does not continue the sequence starts afresh.
       if (!result.command && !result.pending && before.length) result = match([chord], commands, mac, available);

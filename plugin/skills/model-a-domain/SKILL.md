@@ -220,7 +220,7 @@ add  { "domain_service": { "id": "TL-LEND-DS01", "title": "Library calendar", "d
 add  { "term": { "id": "TL-LEND-TM06", "title": "Active loan", "domain_id": "TL-LEND", "meaning": "A loan that has not been returned." } }
 ```
 
-In a shell the same writes are `lathe add command --id TL-LEND-CMD06 --title "Return a tool" --aggregate_id TL-LEND-A3 ...` and `lathe link TL-LEND-CMD06 raises TL-LEND-EV06`.
+In a shell the same writes are `lathe add command --id TL-LEND-CMD06 --title "Return a tool" --aggregate_id TL-LEND-A3 ...` and `lathe link TL-LEND-CMD06 raises TL-LEND-EV06`. For the Owner's scripts, and text with quotes, newlines or backticks, a write also takes the tool's own JSON on stdin or from a file: `lathe add --json -` with the object above piped in, or `lathe link --json links.json` with an array of links as one write.
 
 ## Rules
 

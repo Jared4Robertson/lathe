@@ -8,6 +8,7 @@ import { CONFIG_FILE, exceptionsText, loadProducts, mergeDataFiles, openStore, S
 import { forOneCommand } from '../src/store/store.ts';
 import { coverageLines, productFolder } from '../src/cli/operations.ts';
 import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
+import { APP_USAGE, runAppCommand } from '../src/cli/app-tools.ts';
 
 const USAGE = `Usage: lathe <command> [options]
 
@@ -32,15 +33,17 @@ Commands:
   mcp      Serve the data commands as MCP tools over stdio (the Claude Code plugin starts it).
 
 ${DATA_USAGE}
+${APP_USAGE}
 Options for every command:
   --root <dir>   The product repo (default: the current folder).
 `;
 
-// The data commands read their own flags, one per column of the schema.
+// The data commands read their own flags, one per column of the schema, and the app commands theirs.
 const dataCommand = (DATA_COMMANDS as readonly string[]).includes(process.argv[2] ?? '');
+const appCommand = process.argv[2] === 'app';
 const { positionals, values } = parseArgs({
   allowPositionals: true,
-  args: dataCommand ? [] : process.argv.slice(2),
+  args: dataCommand || appCommand ? [] : process.argv.slice(2),
   options: {
     root: { type: 'string' },
     json: { type: 'boolean' },
@@ -183,6 +186,8 @@ if (command !== 'serve' && command !== 'mcp') forOneCommand();
 try {
   if (dataCommand) {
     process.exitCode = await runDataCommand(process.argv.slice(2));
+  } else if (appCommand) {
+    process.exitCode = await runAppCommand(process.argv.slice(2));
   } else if (values.help || command === 'help') {
     console.log(USAGE);
   } else if (command === 'check') {

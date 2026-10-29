@@ -97,7 +97,7 @@ export function Tooltip({ label, command, nested = false, placement = 'bottom', 
     onFocus: (e) => { props.onFocus?.(e); if (lastKeyDown > lastPointerDown) show(e.currentTarget, 0); },
     onBlur: (e) => { props.onBlur?.(e); hide(); },
     onClick: (e) => { props.onClick?.(e); hide(); },
-    onKeyDown: (e) => { if (e.key === 'Escape' && at) hide(); props.onKeyDown?.(e); },
+    onKeyDown: (e) => { if (e.key === 'Escape' && at) { e.preventDefault(); hide(); } props.onKeyDown?.(e); },
   });
 
   return (

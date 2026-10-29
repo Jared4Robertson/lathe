@@ -53,9 +53,9 @@ test.describe('the leader line', () => {
       // Panned far out of view: a stub at the open space's edge.
       await drag(page, 1400, 900);
       await expect.poll(async () => (await lineNow(page)).line?.stub, { message: 'a stub for a box out of view', timeout: 3000 }).toBe(true);
-      // The card collapsed (w): no line.
+      // The card collapsed (Enter): no line.
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-      await page.keyboard.press('w');
+      await page.keyboard.press('Enter');
       await expect(page.locator('.wiki-panel')).toHaveCount(0);
       await expect.poll(async () => (await lineNow(page)).line, { message: 'no line without the card', timeout: 3000 }).toBeNull();
     });

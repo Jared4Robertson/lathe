@@ -72,7 +72,7 @@ describe('keyboard shortcuts', () => {
     await waitFor(() => expect(announcer()).toHaveTextContent('Side bar shown'));
   });
 
-  it('LA-V61-R08-T03 Alt+G, Alt+E and Alt+T (or Ctrl+1, 2 and 3) switch the stage off a Mac, on every focus; w and Alt+W collapse and show the wiki card', async () => {
+  it('LA-V61-R08-T03 Alt+G, Alt+E and Alt+T (or Ctrl+1, 2 and 3) switch the stage off a Mac, on every focus; Enter and Alt+W collapse and show the wiki card', async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     // A use case has every stage too (LA-PAT-APP-UX-R17).
@@ -89,9 +89,9 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'g', 'KeyG', { altKey: true });
     expect(window.location.search).toBe('?stage=graph');
 
-    // w, and Alt+W off a Mac, collapse and show the wiki card.
+    // Enter, and Alt+W off a Mac, collapse and show the wiki card.
     expect(screen.getByRole('region', { name: 'Wiki card' })).toBeInTheDocument();
-    press(document.body, 'w', 'KeyW');
+    press(document.body, 'Enter', 'Enter');
     expect(screen.queryByRole('region', { name: 'Wiki card' })).toBeNull();
     press(document.body, 'w', 'KeyW', { altKey: true });
     expect(screen.getByRole('region', { name: 'Wiki card' })).toBeInTheDocument();
@@ -105,9 +105,9 @@ describe('keyboard shortcuts', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '2', 'Digit2', { ctrlKey: true });
     await waitFor(() => expect(announcer()).toHaveTextContent('ERD stage'));
-    press(document.body, 'w', 'KeyW');
+    press(document.body, 'Enter', 'Enter');
     await waitFor(() => expect(announcer()).toHaveTextContent('Wiki card collapsed'));
-    press(document.body, 'w', 'KeyW');
+    press(document.body, 'Enter', 'Enter');
     await waitFor(() => expect(announcer()).toHaveTextContent('Wiki card shown'));
   });
 
