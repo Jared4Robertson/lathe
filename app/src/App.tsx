@@ -4,7 +4,7 @@ import { navigate, setCarry, setPatchBase, useLocation } from './router';
 import { parseSpecRoute, useSpec, type SpecState } from './specs/data';
 import { formatPath } from './format/reference';
 import { SpecView } from './specs/SpecPages';
-import { postWrite, WriterProvider, type Writer } from './edit/write';
+import { postCommand, postWrite, WriterProvider, type Writer } from './edit/write';
 import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
@@ -64,6 +64,11 @@ function Shell() {
   const { reload } = spec;
   // Writes go through the server's command layer; the data is read again after one goes through.
   const writer = useMemo<Writer>(() => ({
+    command: async (route, input) => {
+      const answer = await postCommand(route, input);
+      if (answer.ok) await reload();
+      return answer;
+    },
     write: async (commands) => {
       const answer = await postWrite(commands);
       if (answer.ok) await reload();

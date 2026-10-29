@@ -3,6 +3,7 @@
 //   GET  /api/spec                SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
 //   POST /api/write               { commands } -> WriteAnswer: one transaction through the command layer of the product the commands name
 //   POST /api/<aggregate>/<command>   the command's input -> WriteAnswer: one aggregate command, such as /api/use-case/add-flow-step
+//   GET  /api/<aggregate>/<query>?<field>=<value>   the query's answer: one aggregate read, such as /api/use-case/get-use-case?id=<ID>
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 //   GET  /api/baseline?product=<ID>&since=<commit|branch|hash>   BaselineAnswer: the product's rows at a commit, for the record diff (../changes.ts)
 //   GET  /api/reference           the workspace's own product's Reference (reference.ts): kinds, tables, relations, folders, checks
@@ -21,11 +22,11 @@ import type { SchemaDescription } from '../platform/data/schema.ts';
 import type { Command } from '../platform/data/generic-write.ts';
 import { formatProblem, StoreError } from '../platform/data/problems.ts';
 import { LATHE_DATA_DIR, openStore, type Store } from '../platform/data/store.ts';
-import type { RowChange, SpecData, WriteAnswer, WriteRequest } from './contract.ts';
+import type { ReadRefusal, RowChange, SpecData, WriteAnswer, WriteRequest } from './contract.ts';
 import { baseline, parseSince } from './baseline.ts';
-import { ALL_COMMANDS } from '../commands.ts';
-import { InputError, type AnyCommand } from '../platform/commands/definition.ts';
-import { runCommand } from '../platform/commands/run.ts';
+import { ALL_COMMANDS, ALL_QUERIES } from '../commands.ts';
+import { flagValue, InputError, type AnyCommand, type AnyQuery } from '../platform/commands/definition.ts';
+import { runCommand, runQuery } from '../platform/commands/run.ts';
 import { recordHistory } from './history.ts';
 
 /** The most a write's body may hold. */
@@ -389,6 +390,42 @@ async function runRoute(workspace: string, definition: AnyCommand, input: Record
 /** Each aggregate command's route, POST /api/<aggregate>/<command>, with the one command it runs. */
 const COMMAND_ROUTES = new Map(ALL_COMMANDS.map((definition) => [definition.route, definition]));
 
+/** A query's route: its aggregate's and its own name, as its MCP tool and CLI name them, such as /api/use-case/get-use-case. */
+export const queryRoute = (definition: Pick<AnyQuery, 'slice' | 'name'>): string => `/api/${definition.slice.name}/${definition.name}`;
+
+/** Each aggregate query's route, GET /api/<aggregate>/<query>, with the one query it reads. A route is a command's or a query's, never both. */
+const QUERY_ROUTES = new Map(ALL_QUERIES.map((definition) => {
+  const route = queryRoute(definition);
+  if (COMMAND_ROUTES.has(route)) throw new Error(`${route} is both a command's route and a query's`);
+  return [route, definition];
+}));
+
+/**
+ * Reads one aggregate query on the product its input names: 200 with its answer, 400 when the input is not of its
+ * shape, 422 when it refuses (a record that is missing or of another kind). The input is the query string, each field
+ * read as the CLI reads its flag: a list from the field given once per item, a number or true or false by its column.
+ */
+async function runRead(workspace: string, definition: AnyQuery, params: URLSearchParams): Promise<{ status: number; answer: unknown }> {
+  const products = workspaceProducts(workspace);
+  const values = [...new Set(params.keys())].flatMap((name) => params.getAll(name));
+  const routed = products.length === 1 ? { root: products[0].root } : await writeRoot(products, [values]);
+  if ('refused' in routed) return { status: 422, answer: { error: 'A read is of one product, and this one names records of several.' } satisfies ReadRefusal };
+  return withStore(routed.root, async (opened) => {
+    try {
+      const args: Record<string, unknown> = {};
+      for (const name of new Set(params.keys())) {
+        const field = definition.input[name];
+        args[name] = field ? flagValue(opened.store.schema, name, field, params.getAll(name)) : params.get(name);
+      }
+      return { status: 200, answer: runQuery(opened.store, definition, args) };
+    } catch (error) {
+      if (error instanceof InputError) return { status: 400, answer: { error: error.message } satisfies ReadRefusal };
+      if (error instanceof StoreError) return { status: 422, answer: { error: error.message, problems: error.problems } satisfies ReadRefusal };
+      throw error;
+    }
+  });
+}
+
 // ---------- Routing ----------
 
 /**
@@ -445,6 +482,17 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
     if (typeof body !== 'object' || body === null || Array.isArray(body)) return (send(res, 400, { error: `${routed.name} takes a JSON object.` }), true);
     try {
       const { status, answer } = await runRoute(root, routed, body as Record<string, unknown>);
+      send(res, status, answer, { 'cache-control': 'no-store' });
+    } catch (error) {
+      send(res, 500, { error: storeMessage(error) });
+    }
+    return true;
+  }
+  const read = QUERY_ROUTES.get(pathname);
+  if (read) {
+    if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
+    try {
+      const { status, answer } = await runRead(root, read, new URL(req.url ?? '/', 'http://localhost').searchParams);
       send(res, status, answer, { 'cache-control': 'no-store' });
     } catch (error) {
       send(res, 500, { error: storeMessage(error) });
