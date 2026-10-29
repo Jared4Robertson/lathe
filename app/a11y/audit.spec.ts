@@ -198,6 +198,11 @@ const PHONE: State[] = [
     await page.getByRole('button', { name: 'Show the wiki card' }).click();
     await page.locator('.wiki-panel-sheet .wiki-panel').waitFor();
   } },
+  { name: 'the stage key sheet', run: async (page) => {
+    await open(page, `${RECORD}?stage=graph`, '.stage-key-chip');
+    await page.locator('.stage-key-chip').click();
+    await page.locator('.stage-key-sheet .stage-key-sheet-list').waitFor();
+  } },
 ];
 
 /** The records one axe run proves besides LA-V61-R40, each by the axe rules that check it. */

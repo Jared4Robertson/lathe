@@ -38,7 +38,7 @@ afterEach(cleanup);
 describe('LA-V93-R12-T06 the Graph view key', () => {
   it('Every box look, badge and line style the Graph view can draw is in its key, with what it means', () => {
     // Each layout's key, together: every look, shape, mark and badge drawn, each layout's lines or boxes.
-    const { container } = bar([...graphKeyEntries(everything('tree')), ...graphKeyEntries(everything('nested')), ...graphKeyEntries(everything('voronoi')), ...CHANGES]);
+    const { container } = bar([...graphKeyEntries(everything('tree')), ...graphKeyEntries(everything('nested')), ...CHANGES]);
     const entry = (selector: string) => container.querySelector(selector);
     const missing: string[] = [];
     const needs = (what: string, selector: string) => {
@@ -50,7 +50,6 @@ describe('LA-V93-R12-T06 the Graph view key', () => {
     needs('the focus', '.graph-swatch.is-focus');
     for (const shape of Object.keys(SHAPES)) needs(`shape ${shape}`, `.graph-swatch.shape-${shape}`);
     needs('a Nested box', '.graph-swatch.stage-nested');
-    needs('a Voronoi cell', '.graph-swatch.is-cell');
     needs('bar', '.graph-swatch.stage-bar');
     for (const badge of BADGE_TONES) needs(`badge ${badge}`, `.graph-mark.${badge}`);
     // The one line the graph draws: parent to child.

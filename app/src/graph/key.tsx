@@ -80,7 +80,6 @@ export function graphKeyEntries(drawn: GraphDrawn, stages: readonly StageRule[] 
   }
   if (drawn.layout === 'tree') out.push({ id: 'line', group: 'lines', sample: <span className="graph-line" />, words: 'Parent line', meaning: 'Parent to child: the tree, through stages, folders and groups' });
   if (drawn.layout === 'nested') out.push({ id: 'nested', group: 'lines', sample: <span className="graph-swatch stage-nested" />, words: 'Box in box', meaning: 'Nested view: a box holding its children below its name, as big as the records under it' });
-  if (drawn.layout === 'voronoi') out.push({ id: 'cell', group: 'lines', sample: <span className="graph-swatch is-cell" />, words: 'Cell', meaning: 'Voronoi view: a cell made of its children\'s cells, its name at its top' });
   out.push({ id: 'bar', group: 'lines', sample: <span className="graph-swatch stage-bar" />, words: 'Too small', meaning: 'A bar: children too small to draw at this zoom' });
   for (const badge of BADGE_TONES) {
     if (!drawn.badges.has(badge)) continue;
