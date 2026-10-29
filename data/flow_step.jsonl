@@ -179,11 +179,11 @@
 {"id":"LA-CHK-UC06-FL04-S02","title":"The check tool warns of each record with more children of one kind than the limit, counting a flow's steps per path and requirements and rules per group, and of each aggregate with more entities than its limit","flow_id":"LA-CHK-UC06-FL04","path":"main","position":2}
 {"id":"LA-CHK-UC06-FL04-S03","title":"The check tool warns of each capability or group with one child","flow_id":"LA-CHK-UC06-FL04","path":"main","position":3}
 {"id":"LA-CHK-UC06-FL04-S04","title":"The Agent adds a level or merges one, and calls the check tool again","flow_id":"LA-CHK-UC06-FL04","path":"main","position":4}
-{"id":"LA-CHK-UC07-FL01-S01","title":"While an Agent writes records, the Owner keeps the product's Checks page open: its problems, errors first, grouped by check, and the workspace's below","flow_id":"LA-CHK-UC07-FL01","path":"main","position":1}
+{"id":"LA-CHK-UC07-FL01-S01","title":"While an Agent writes records, the Owner keeps the Checks panel open: its problems, errors first, grouped by check, and the workspace's below","flow_id":"LA-CHK-UC07-FL01","path":"main","position":1}
 {"id":"LA-CHK-UC07-FL01-S02","title":"Each time a data file changes, the page reloads and shows the problems as they are now","flow_id":"LA-CHK-UC07-FL01","path":"main","position":2}
 {"id":"LA-CHK-UC07-FL01-S03","title":"They open a problem's record to see it and its problems, and go back","flow_id":"LA-CHK-UC07-FL01","path":"main","position":3}
 {"id":"LA-CHK-UC07-FL01-S04","title":"They follow a check's code to the check's page in the reference","flow_id":"LA-CHK-UC07-FL01","path":"main","position":4}
-{"id":"LA-CHK-UC07-FL02-S01","title":"The Owner keeps the product's Checks page open in the desktop app while an Agent writes records: its problems, errors first, grouped by check, and the workspace's below","flow_id":"LA-CHK-UC07-FL02","path":"main","position":1}
+{"id":"LA-CHK-UC07-FL02-S01","title":"The Owner keeps the Checks panel open in the desktop app while an Agent writes records: its problems, errors first, grouped by check, and the workspace's below","flow_id":"LA-CHK-UC07-FL02","path":"main","position":1}
 {"id":"LA-CHK-UC07-FL02-S02","title":"The page reloads each time a data file changes and shows the problems as they are now","flow_id":"LA-CHK-UC07-FL02","path":"main","position":2}
 {"id":"LA-CHK-UC07-FL02-S03","title":"The Owner opens a problem's record to see it and its problems, and goes back","flow_id":"LA-CHK-UC07-FL02","path":"main","position":3}
 {"id":"LA-CHK-UC07-FL02-S04","title":"The Owner follows a check's code to the check's page in the reference","flow_id":"LA-CHK-UC07-FL02","path":"main","position":4}
@@ -262,14 +262,14 @@
 {"id":"LA-EXP-UC07-FL01-S04","title":"They find a record in their space","flow_id":"LA-EXP-UC07-FL01","path":"main","position":4}
 {"id":"LA-EXP-UC07-FL01-S05","title":"They open the space's Checks","flow_id":"LA-EXP-UC07-FL01","path":"main","position":5}
 {"id":"LA-EXP-UC07-FL01-S06","title":"On a phone the rail stays in the nav sheet","flow_id":"LA-EXP-UC07-FL01","path":"main","position":6}
-{"id":"LA-EXP-UC07-FL01-S07","title":"From the products page they choose a space","flow_id":"LA-EXP-UC07-FL01","path":"main","position":7}
+{"id":"LA-EXP-UC07-FL01-S07","title":"From the products picker they choose a space","flow_id":"LA-EXP-UC07-FL01","path":"main","position":7}
 {"id":"LA-EXP-UC07-FL01-S08","title":"With one product there is no rail: the nav takes its width, the product's name and icon at its top","flow_id":"LA-EXP-UC07-FL01","path":"one product","position":1}
 {"id":"LA-EXP-UC07-FL02-S01","title":"In the desktop app, the Reader sees each product as a space in the rail, the current one marked","flow_id":"LA-EXP-UC07-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC07-FL02-S02","title":"The Reader chooses a space: it opens on its last page, and the nav and every view follow it","flow_id":"LA-EXP-UC07-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC07-FL02-S03","title":"The Reader presses Alt and a number, or picks Switch to in the palette, to switch back","flow_id":"LA-EXP-UC07-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC07-FL02-S04","title":"The Reader finds a record in their space","flow_id":"LA-EXP-UC07-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC07-FL02-S05","title":"The Reader opens the space's Checks","flow_id":"LA-EXP-UC07-FL02","path":"main","position":5}
-{"id":"LA-EXP-UC07-FL02-S06","title":"The Reader chooses a space from the products page","flow_id":"LA-EXP-UC07-FL02","path":"main","position":6}
+{"id":"LA-EXP-UC07-FL02-S06","title":"The Reader chooses a space from the products picker","flow_id":"LA-EXP-UC07-FL02","path":"main","position":6}
 {"id":"LA-EXP-UC07-FL02-S07","title":"The nav shows no rail with one product: it takes the rail's width, the product's name and icon at its top","flow_id":"LA-EXP-UC07-FL02","path":"one product","position":1}
 {"id":"LA-EXP-UC08-FL01-S01","title":"Under the current space the nav lists the product page, Shared and each domain, which unfolds into its five stages with counts","flow_id":"LA-EXP-UC08-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC08-FL01-S02","title":"Opening a page opens the nav rows that hold it","flow_id":"LA-EXP-UC08-FL01","path":"main","position":2}
