@@ -238,7 +238,7 @@ describe('one address, one stage', () => {
     }
   });
 
-  it('LA-V92-R20-T01 Lists on group pages stay at ten rows', async () => {
+  it('LA-PAT-RECORD-PAGE-R15-T01 Lists on group pages stay at ten rows', async () => {
     const w = testWorkspace();
     for (let i = 3; i <= 13; i++) {
       const id = `P-D-INV${String(i).padStart(2, '0')}`;

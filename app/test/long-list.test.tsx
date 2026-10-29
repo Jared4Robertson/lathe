@@ -41,7 +41,7 @@ function bigWorkspace(): SpecData {
 }
 
 describe('long lists', () => {
-  it('LA-V92-R53-T01 A list of up to 10 items is plain; a longer one scrolls inside, with a search box, a count and a message when nothing matches', async () => {
+  it('LA-PAT-RECORD-PAGE-R17-T01 A list of up to 10 items is plain; a longer one scrolls inside, with a search box, a count and a message when nothing matches', async () => {
     const { unmount } = render(list(make(10)));
     expect(screen.getAllByRole('listitem')).toHaveLength(10);
     expect(screen.queryByRole('searchbox')).toBeNull();
@@ -82,7 +82,7 @@ describe('long lists', () => {
     expect(region).toHaveFocus();
   });
 
-  it('LA-V92-R53-T02 Every list in the spec pages stays at 10 rows and can be searched', async () => {
+  it('LA-PAT-RECORD-PAGE-R17-T01 Every list in the spec pages stays at 10 rows and can be searched', async () => {
     const served = { data: bigWorkspace() };
     const user = userEvent.setup();
 

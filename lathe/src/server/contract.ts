@@ -3,6 +3,8 @@
 //
 //   GET  /api/spec               SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions, coverage and each obligation's chain
 //   POST /api/write              { commands: Command[] } -> WriteAnswer: one transaction through the command layer of the product the commands name
+//   POST /api/<aggregate>/<command>   the command's input -> WriteAnswer: one aggregate command, such as /api/use-case/add-flow-step
+//   GET  /api/<aggregate>/<query>?<field>=<value>   the query's answer, such as a UseCase for /api/use-case/get-use-case?id=<ID>; ReadRefusal otherwise
 //   GET  /api/history?id=<ID>    HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 //   GET  /api/baseline?product=<ID>&since=<commit|branch|hash>   BaselineAnswer: the product's rows at a commit, for the record diff (../changes.ts)
 import type { Command } from '../platform/data/generic-write.ts';
@@ -58,10 +60,21 @@ export interface RowChange {
   after: Row | null;
 }
 
-/** What POST /api/write answers: the changed rows (200), or the store's refusal with every reason (422). */
+/** What POST /api/write and each POST /api/<aggregate>/<command> answer: the changed rows (200), or the refusal with every reason (422). */
 export type WriteAnswer =
   | { ok: true; tables: string[]; files: string[]; changes: RowChange[] }
   | { ok: false; error: string; problems: StoreProblem[] };
+
+/**
+ * What GET /api/<aggregate>/<query> answers when it does not read: 400 when the input is not of the query's shape
+ * (an unknown field, a missing one, a value not of its type), 422 with the reasons when the query refuses (no record
+ * has the ID, or it is of another aggregate). Answered 200, the body is the query's own answer, typed by its
+ * definition (QueryDefinition's R), such as the UseCase of get-use-case.
+ */
+export interface ReadRefusal {
+  error: string;
+  problems?: StoreProblem[];
+}
 
 /** One column a commit changed in a row. */
 export interface FieldChange {

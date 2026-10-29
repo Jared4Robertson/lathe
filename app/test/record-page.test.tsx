@@ -40,7 +40,7 @@ const factLinks = () => [...facts().querySelectorAll('a')].map((a) => a.getAttri
 const rows = (table: Element) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent?.replace(/\s+/g, ' ').trim()));
 
 describe('record page', () => {
-  it('LA-V92-R13-T01 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
     expanded();
     await openApp('/DM-SHOP-UC01');
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
@@ -68,7 +68,7 @@ describe('record page', () => {
     expect((await screen.findByText('component tests')).tagName).toBe('STRONG');
   });
 
-  it('LA-V92-R14-T01 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
+  it('LA-PAT-RECORD-PAGE-R09-T01 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
     expanded();
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
@@ -95,7 +95,7 @@ describe('record page', () => {
     expect(factLinks()).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-CMD01', '/DM-V01']));
   });
 
-  it('LA-V92-R15-T01 A record body is sanitized before it is shown', async () => {
+  it('LA-PAT-RECORD-PAGE-R10-T01 A record body is sanitized before it is shown', async () => {
     await openApp('/DM-SHOP-CMD01-H');
     await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
     const body = main().querySelector('.markdown') as HTMLElement;
@@ -111,7 +111,7 @@ describe('record page', () => {
     expect(html).toContain('<p>hi</p>');
   });
 
-  it('LA-V92-R16-T01 The record page lists every problem about the record', async () => {
+  it('LA-PAT-RECORD-PAGE-R11-T01 The record page lists every problem about the record', async () => {
     await openApp('/DM-SHOP-UC01-R01-T01');
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     const problems = within(section(/^Problems/)).getAllByRole('listitem');
@@ -124,7 +124,7 @@ describe('record page', () => {
     expect(within(section(/^Problems/)).getByText('No problems.')).toBeInTheDocument();
   });
 
-  it('LA-V92-R13-T01 A record\'s fields show their types: a basic type, a value object as a link, a reference to an aggregate with an arrow', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 A record\'s fields show their types: a basic type, a value object as a link, a reference to an aggregate with an arrow', async () => {
     await openApp('/P-D-EN03', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const table = section(/^Fields/).querySelector('table')!;
@@ -144,7 +144,7 @@ describe('record page', () => {
     expect(rows(member)[2]).toEqual(['Account', 'The member\'s account.', '→ P-E-A1Account', 'no', '']);
   });
 
-  it('LA-V92-R13-T01 A table shows its keys: the primary key, a unique key with the invariant it enforces and its condition, a foreign key with its target', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 A table shows its keys: the primary key, a unique key with the invariant it enforces and its condition, a foreign key with its target', async () => {
     await openApp('/P-D-EN03-TB', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'loans' });
     const keys = section(/^Keys/);
@@ -156,13 +156,13 @@ describe('record page', () => {
     ]);
   });
 
-  it('LA-V92-R13-T01 A technical record shows the packages it uses as one fact', () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 A technical record shows the packages it uses as one fact', () => {
     const index = indexOf(addRows(modelWorkspace(), 'package_use', { record_id: 'P-INT01-AD', package: 'nodemailer' }, { record_id: 'P-INT01-AD', package: '@scope/mjml' }));
     const facts = factsOf(index, index.byId.get('P-INT01-AD')!);
     expect(facts.filter((f) => f.column === null)).toEqual([{ column: null, label: 'packages', value: 'nodemailer, @scope/mjml' }]);
   });
 
-  it('LA-V92-R13-T01 A command shows the other aggregates it also changes, each with its reason', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 A command shows the other aggregates it also changes, each with its reason', async () => {
     await openApp('/P-D-CMD02', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Return thing' });
     const also = section(/^Also changes/);
@@ -171,7 +171,7 @@ describe('record page', () => {
     expect(also).toHaveTextContent(/recorded exception/);
   });
 
-  it('LA-V92-R13-T01 A repository shows the other aggregates it also persists, each with its reason', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 A repository shows the other aggregates it also persists, each with its reason', async () => {
     await openApp('/P-D-REPO01', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'LoanRepository' });
     const also = section(/^Also persists/);
@@ -180,7 +180,7 @@ describe('record page', () => {
     expect(also).toHaveTextContent(/one repository per aggregate/);
   });
 
-  it('LA-V92-R13-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner sits in its product, in no domain', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner sits in its product, in no domain', async () => {
     await openApp('/DM-V01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Basket page' });
     expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-interaction-design)');

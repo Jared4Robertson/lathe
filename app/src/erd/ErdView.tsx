@@ -68,7 +68,7 @@ export interface ErdViewProps {
  */
 interface BoxData extends Record<string, unknown> { box: ErdBox; focus: boolean; pick: boolean; strength: number; mark: { change: 'added' | 'changed'; t: number; moving: boolean } | null }
 /**
- * `label`: the line's words, read from its source, from the schema's relations (LA-V92-R07) or the
+ * `label`: the line's words, read from its source, from the schema's relations (LA-PAT-RECORD-PAGE-R07) or the
  * ERD view's own for a reference. `title`: the whole sentence, for its tooltip. `hover`: the fields
  * shown on a dashed reference line while it is hovered, or null.
  */
