@@ -1,2 +1,2 @@
-{"id":"DM-PAY-UC01","title":"Pay by card","capability_id":"DM-PAY-CAP01"}
+{"id":"DM-PAY-UC01","title":"Pay by card","capability_id":"DM-PAY-CAP01","goal":"A shopper pays for the basket by card."}
 {"id":"DM-SHOP-UC01","title":"Add an item to the basket","capability_id":"DM-SHOP-CAP01","goal":"A shopper adds an item."}

@@ -1,7 +1,7 @@
-{"id":"P-D-EN01","title":"Thing","aggregate_id":"P-D-A1","role":"root"}
-{"id":"P-D-EN02","title":"Member","aggregate_id":"P-D-A2","role":"root"}
-{"id":"P-D-EN03","title":"Loan","aggregate_id":"P-D-A3","role":"root"}
-{"id":"P-D-EN04","title":"Return","aggregate_id":"P-D-A3","role":"child","in_root_table":true}
-{"id":"P-D-EN05","title":"Reminder","aggregate_id":"P-D-A3","role":"child"}
-{"id":"P-D-EN06","title":"Shelf","aggregate_id":"P-D-A4","role":"root"}
-{"id":"P-E-EN01","title":"Account","aggregate_id":"P-E-A1","role":"root"}
+{"id":"P-D-EN01","title":"Thing","aggregate_id":"P-D-A1","role":"root","description":"The fixture's entity Thing."}
+{"id":"P-D-EN02","title":"Member","aggregate_id":"P-D-A2","role":"root","description":"The fixture's entity Member."}
+{"id":"P-D-EN03","title":"Loan","aggregate_id":"P-D-A3","role":"root","description":"The fixture's entity Loan."}
+{"id":"P-D-EN04","title":"Return","aggregate_id":"P-D-A3","role":"child","in_root_table":true,"description":"The fixture's entity Return."}
+{"id":"P-D-EN05","title":"Reminder","aggregate_id":"P-D-A3","role":"child","description":"The fixture's entity Reminder."}
+{"id":"P-D-EN06","title":"Shelf","aggregate_id":"P-D-A4","role":"root","description":"The fixture's entity Shelf."}
+{"id":"P-E-EN01","title":"Account","aggregate_id":"P-E-A1","role":"root","description":"The fixture's entity Account."}

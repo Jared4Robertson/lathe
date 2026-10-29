@@ -68,10 +68,10 @@ beforeAll(async () => {
   await writeFile(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   const store = await openStore(root);
   await store.apply([
-    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core' } },
-    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1 } },
-    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01' } },
+    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example', description: 'A small product for keeping notes.' } },
+    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Notes a writer keeps.' } },
+    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing and keeping notes.' } },
+    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer writes a note.' } },
   ]);
   await store.close();
 });
@@ -89,7 +89,7 @@ describe('dev API plugin', () => {
     expect(decodeURIComponent(spec.headers['x-lathe-root'])).toBe(root);
     const data = spec.json() as SpecData;
     expect(data.sources.map((s) => s.dataDir)).toEqual(['data']);
-    expect(data.sources[0].tables.product).toEqual([{ id: 'EX', title: 'Example' }]);
+    expect(data.sources[0].tables.product).toEqual([{ id: 'EX', title: 'Example', description: 'A small product for keeping notes.' }]);
     expect(data.sources[0].tables.use_case.map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
     expect(data.sources[0].tables.uc_requirement).toBeUndefined();
     expect(data.schema.kinds.use_case.parents.map((p) => p.kind)).toEqual(['capability']);
@@ -127,7 +127,7 @@ describe('dev API plugin', () => {
     expect(answer.changes).toContainEqual({
       table: 'use_case',
       key: 'EX-NOTE-UC01',
-      before: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01' },
+      before: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer writes a note.' },
       after: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.' },
     });
     expect(answer.changes).toContainEqual(expect.objectContaining({ table: 'uc_requirement', key: 'EX-NOTE-UC01-R01', before: null }));

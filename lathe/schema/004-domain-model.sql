@@ -12,7 +12,7 @@ CREATE TABLE domain (
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   product_id VARCHAR NOT NULL REFERENCES product (id),
   subdomain_type subdomain_type NOT NULL,
-  description VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
   notes VARCHAR
 );
 COMMENT ON TABLE domain IS 'A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.';
@@ -27,15 +27,15 @@ CREATE TABLE aggregate (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_id VARCHAR NOT NULL REFERENCES domain (id),
-  description VARCHAR,
-  identity VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
+  identity VARCHAR NOT NULL CHECK (trim(identity) <> ''),
   notes VARCHAR
 );
 COMMENT ON TABLE aggregate IS 'The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only.';
 COMMENT ON COLUMN aggregate.id IS 'The aggregate''s ID, such as TL-LEND-A1.';
 COMMENT ON COLUMN aggregate.title IS 'The aggregate''s name, such as Loan.';
 COMMENT ON COLUMN aggregate.domain_id IS 'The domain it belongs to.';
-COMMENT ON COLUMN aggregate.description IS 'What the aggregate keeps, in a paragraph.';
+COMMENT ON COLUMN aggregate.description IS 'What the aggregate keeps and why its entities change together, in a paragraph.';
 COMMENT ON COLUMN aggregate.identity IS 'What identifies one of its records in the business, such as Loan ID.';
 COMMENT ON COLUMN aggregate.notes IS 'Longer notes on the aggregate.';
 
@@ -45,7 +45,7 @@ CREATE TABLE entity (
   aggregate_id VARCHAR NOT NULL REFERENCES aggregate (id),
   role entity_role NOT NULL,
   in_root_table BOOLEAN CHECK (in_root_table),
-  description VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
   CHECK (in_root_table IS NULL OR role = 'child')
 );
 COMMENT ON TABLE entity IS 'A record the domain keeps, with an identity: its aggregate''s root or one of its children. Its fields are entity_field rows; the value objects it has are the ones its fields are typed with.';
@@ -59,7 +59,7 @@ COMMENT ON COLUMN entity.description IS 'What the entity is, in a sentence or tw
 CREATE TABLE value_object (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE value_object IS 'A value with no identity of its own, such as an email address or a money amount, defined by its fields and checked by its constraints when it is created. It has no owner: it exists because entities, events or read models use it as a field''s type, and its product follows from its ID.';
 COMMENT ON COLUMN value_object.id IS 'The value object''s ID: the product prefix and VO<nn>, such as TL-VO01.';
@@ -105,26 +105,26 @@ CREATE TABLE domain_event (
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   aggregate_id VARCHAR NOT NULL REFERENCES aggregate (id),
   published BOOLEAN NOT NULL,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE domain_event IS 'An unchangeable record that something happened to an aggregate, named in the past tense (Loan opened), raised by its commands. What it carries are event_field rows.';
 COMMENT ON COLUMN domain_event.id IS 'The event''s ID, such as TL-LEND-EV01.';
 COMMENT ON COLUMN domain_event.title IS 'The event''s name, in the past tense, such as Tool repaired.';
 COMMENT ON COLUMN domain_event.aggregate_id IS 'The aggregate it happens to.';
 COMMENT ON COLUMN domain_event.published IS 'true: its shape is a promise to other domains, whose policies may hear it; false: only its own domain hears it.';
-COMMENT ON COLUMN domain_event.description IS 'What happened, in a sentence.';
+COMMENT ON COLUMN domain_event.description IS 'What happened and what brings it about, in a sentence.';
 
 CREATE TABLE command (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   aggregate_id VARCHAR NOT NULL REFERENCES aggregate (id),
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE command IS 'A request to change exactly one aggregate, its parent. It checks specifications, raises events and may call domain services, all of its own domain.';
 COMMENT ON COLUMN command.id IS 'The command''s ID, such as TL-LEND-CMD01.';
 COMMENT ON COLUMN command.title IS 'What it asks for, in the imperative, such as Open a loan.';
 COMMENT ON COLUMN command.aggregate_id IS 'The aggregate it changes.';
-COMMENT ON COLUMN command.description IS 'What it does, in a sentence or two.';
+COMMENT ON COLUMN command.description IS 'What it changes and when it is refused, in a sentence or two; how its handler does it belongs to the handler.';
 
 CREATE TABLE command_change (
   command_id VARCHAR NOT NULL REFERENCES command (id),
@@ -141,7 +141,7 @@ CREATE TABLE read_model (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_id VARCHAR NOT NULL REFERENCES domain (id),
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE read_model IS 'A view of its domain''s data shaped for reading, which reads one or more of the domain''s aggregates. Its fields are read_model_field rows, and it is stored in a table of its own.';
 COMMENT ON COLUMN read_model.id IS 'The read model''s ID, such as TL-LEND-RM01.';
@@ -153,13 +153,13 @@ CREATE TABLE query (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   read_model_id VARCHAR NOT NULL REFERENCES read_model (id),
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE query IS 'A question asked of one read model, its parent. It changes nothing, and may select by specifications and call domain services of its own domain.';
 COMMENT ON COLUMN query.id IS 'The query''s ID: its read model''s domain''s ID and QRY<nn>, such as TL-LEND-QRY01.';
 COMMENT ON COLUMN query.title IS 'What it asks, such as List a member''s loans.';
 COMMENT ON COLUMN query.read_model_id IS 'The read model it reads.';
-COMMENT ON COLUMN query.description IS 'What it returns, in a sentence or two.';
+COMMENT ON COLUMN query.description IS 'What it returns, in a sentence or two; the code that answers it belongs to its handler.';
 
 CREATE TABLE policy (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),

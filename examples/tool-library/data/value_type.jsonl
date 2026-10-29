@@ -1,4 +1,4 @@
-{"id":"TL-VO01-VT","title":"parseName","value_object_id":"TL-VO01","file":"src/model.ts","description":"Trims a name and returns null when it is blank."}
-{"id":"TL-VO02-VT","title":"parseEmail","value_object_id":"TL-VO02","file":"src/model.ts","description":"Trims an email address, checks its shape and returns it in lower case, or null."}
-{"id":"TL-VO03-VT","title":"Condition","value_object_id":"TL-VO03","file":"src/model.ts","description":"The `Condition` type, `CONDITIONS` and `isCondition`."}
-{"id":"TL-VO04-VT","title":"parseNote","value_object_id":"TL-VO04","file":"src/model.ts","description":"Trims a note and returns null when it is blank."}
+{"id":"TL-VO01-VT","title":"parseName","value_object_id":"TL-VO01","file":"src/model.ts"}
+{"id":"TL-VO02-VT","title":"parseEmail","value_object_id":"TL-VO02","file":"src/model.ts"}
+{"id":"TL-VO03-VT","title":"Condition","value_object_id":"TL-VO03","file":"src/model.ts"}
+{"id":"TL-VO04-VT","title":"parseNote","value_object_id":"TL-VO04","file":"src/model.ts"}

@@ -18,8 +18,8 @@ import { removeData, writeData, type Data } from './helpers.ts';
 afterAll(removeData);
 
 const SHOP = 'examples/shop';
-const own: Data = { product: [{ id: 'WS', title: 'Workspace' }], domain: [{ id: 'WS-CORE', title: 'Core', product_id: 'WS', subdomain_type: 'core' }] };
-const shop: Data = { product: [{ id: 'SH', title: 'Shop' }], domain: [{ id: 'SH-SELL', title: 'Selling', product_id: 'SH', subdomain_type: 'core' }] };
+const own: Data = { product: [{ id: 'WS', title: 'Workspace', description: 'The product the workspace holds itself.' }], domain: [{ id: 'WS-CORE', title: 'Core', product_id: 'WS', subdomain_type: 'core', description: 'The heart of the workspace product.' }] };
+const shop: Data = { product: [{ id: 'SH', title: 'Shop', description: 'A shop that sells spare parts.' }], domain: [{ id: 'SH-SELL', title: 'Selling', product_id: 'SH', subdomain_type: 'core', description: 'Selling parts to customers.' }] };
 
 function write(root: string, files: Record<string, string>) {
   for (const [file, text] of Object.entries(files)) {
@@ -86,13 +86,13 @@ describe('a workspace of several products', () => {
     const nested = workspace(shop, prefixed(SHOP, { 'lathe.config.json': config({ products: ['more'] }), 'more/lathe.config.json': config({}) }));
     expect(() => workspaceProducts(nested)).toThrow(/examples\/shop\/lathe\.config\.json: products is for the workspace only/);
     // One product ID in two products' folders stops the load.
-    const twice = workspace({ product: [{ id: 'WS', title: 'Workspace again' }] });
+    const twice = workspace({ product: [{ id: 'WS', title: 'Workspace again', description: 'The same product in a second folder.' }] });
     await expect(loadProducts(twice, { latheDataDir: null })).rejects.toThrow('The product WS is in two folders, . and examples/shop');
   });
 
   it('LA-PLT-UC02-R09-T01 lathe check reports each product of the workspace, then them all', () => {
     // A domain with no product is refused by the shop's store: an error in the shop alone.
-    const root = workspace({ ...shop, domain: [{ id: 'SH-SELL', title: 'Selling', subdomain_type: 'core' }] });
+    const root = workspace({ ...shop, domain: [{ id: 'SH-SELL', title: 'Selling', subdomain_type: 'core', description: 'Selling parts to customers.' }] });
     const broken = lathe('check', '--root', root);
     expect(broken.status).toBe(1);
     expect(broken.stdout).toContain(`Checked 2 records in ${root}\n`);
@@ -143,11 +143,11 @@ describe('a workspace of several products', () => {
     expect(spec.sources.map((s) => s.tables.product.map((p) => p.id))).toEqual([['WS'], ['SH']]);
 
     // A new record under the shop's domain goes to the shop's folder, a new product to the workspace's.
-    const added = await request(root, '/api/write', { commands: [{ op: 'add', table: 'capability', row: { id: 'SH-SELL-CAP01', title: 'Checkout', domain_id: 'SH-SELL', position: 1 } }] });
+    const added = await request(root, '/api/write', { commands: [{ op: 'add', table: 'capability', row: { id: 'SH-SELL-CAP01', title: 'Checkout', domain_id: 'SH-SELL', position: 1, description: 'Paying for a basket.' } }] });
     expect(added.status).toBe(200);
     expect(existsSync(path.join(root, SHOP, 'data/capability.jsonl'))).toBe(true);
     expect(existsSync(path.join(root, 'data/capability.jsonl'))).toBe(false);
-    expect((await request(root, '/api/write', { commands: [{ op: 'add', table: 'product', row: { id: 'NP', title: 'New product' } }] })).status).toBe(200);
+    expect((await request(root, '/api/write', { commands: [{ op: 'add', table: 'product', row: { id: 'NP', title: 'New product', description: 'A product added through the API.' } }] })).status).toBe(200);
     expect(readFileSync(path.join(root, 'data/product.jsonl'), 'utf8')).toContain('"NP"');
 
     expect(watchTargets(root).map((t) => t.dir)).toEqual(expect.arrayContaining([path.join(root, 'data'), path.join(root, SHOP, 'data')]));
@@ -168,7 +168,7 @@ describe('a workspace of several products', () => {
     expect(spec.schema.loadOrder).toContain('shelf');
     expect([...new Set(spec.coverage.map((c) => c.product))].sort()).toEqual(['SH', 'WS']);
 
-    const twice = workspace({ product: [{ id: 'WS', title: 'Workspace again' }] });
+    const twice = workspace({ product: [{ id: 'WS', title: 'Workspace again', description: 'The same product in a second folder.' }] });
     opened.push(twice);
     const clash = await request(twice, '/api/spec');
     expect(clash.status).toBe(500);

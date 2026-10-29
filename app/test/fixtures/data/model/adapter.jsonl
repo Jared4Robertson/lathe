@@ -1,1 +1,1 @@
-{"id":"P-INT01-AD","title":"mailer","integration_id":"P-INT01","file":"src/mail.ts"}
+{"id":"P-INT01-AD","title":"mailer","integration_id":"P-INT01","file":"src/mail.ts","description":"The fixture's adapter mailer."}

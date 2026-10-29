@@ -23,7 +23,7 @@ function productRepo(): string {
   roots.push(root);
   writeFileSync(path.join(root, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
   mkdirSync(path.join(root, 'data'));
-  writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library"}\n');
+  writeFileSync(path.join(root, 'data', 'product.jsonl'), '{"id":"TL","title":"Tool Library","description":"A neighborhood tool library."}\n');
   return root;
 }
 
@@ -37,22 +37,22 @@ const piped = (root: string, input: string, ...args: string[]) => {
 const data = (root: string) => Object.fromEntries(readdirSync(path.join(root, 'data')).sort().map((f) => [f, readFileSync(path.join(root, 'data', f), 'utf8')]));
 
 // The records and rows both writers make, in the order they are written, as each writer takes them.
-const DOMAIN = { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' };
-const AGGREGATE = { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID' };
-const ENTITY = { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root' };
+const DOMAIN = { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' };
+const AGGREGATE = { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', description: 'One tool lent to one member, with its due date.', identity: 'Loan ID' };
+const ENTITY = { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' };
 const FIELDS: Record<string, string | number | boolean>[] = [
   { entity_id: 'TL-LEND-EN01', position: 1, name: 'Loan ID', meaning: 'The library\'s number for the loan.', type: 'whole number', required: true, column_name: 'id' },
   { entity_id: 'TL-LEND-EN01', position: 2, name: 'Due date', meaning: 'The last day of the loan.', type: 'date', required: true },
 ];
-const COMMAND = { id: 'TL-LEND-CMD01', title: 'Borrow a tool', aggregate_id: 'TL-LEND-A1' };
-const EVENT = { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false };
-const CAPABILITY = { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1 };
+const COMMAND = { id: 'TL-LEND-CMD01', title: 'Borrow a tool', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' };
+const EVENT = { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool went out on loan.' };
+const CAPABILITY = { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' };
 const USE_CASE = { id: 'TL-LEND-UC01', title: 'Borrow a tool', capability_id: 'TL-LEND-CAP01', goal: 'Take a tool home for the loan period.' };
 const REQUIREMENT = { id: 'TL-LEND-UC01-R01', title: 'A tool on loan is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse to lend a tool that is on loan.' };
-const INTERFACE = { id: 'TL-IF01', title: 'HTTP API', product_id: 'TL', kind: 'API' };
+const INTERFACE = { id: 'TL-IF01', title: 'HTTP API', product_id: 'TL', kind: 'API', description: 'The API the desk app calls.' };
 const FLOW = { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' };
 const STEP = { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 };
-const TEST = { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', given: 'A tool on loan', when: 'A member borrows it', then: 'It is refused' };
+const TEST = { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'With a tool on loan, a member borrows it', then: 'It is refused' };
 const LINKS: [string, string, string][] = [
   ['TL-LEND-CMD01', 'raises', 'TL-LEND-EV01'],
   ['TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-CMD01'],
@@ -73,7 +73,7 @@ const EXPECTED = {
   'flow_step.jsonl': line(STEP),
   'fulfills.jsonl': line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC01-R01' }),
   'invokes.jsonl': line({ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-CMD01' }),
-  'product.jsonl': line({ id: 'TL', title: 'Tool Library' }),
+  'product.jsonl': line({ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }),
   'raises.jsonl': line({ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-EV01' }),
   'uc_requirement.jsonl': line(REQUIREMENT),
   'use_case.jsonl': line(USE_CASE),

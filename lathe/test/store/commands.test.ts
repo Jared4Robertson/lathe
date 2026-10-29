@@ -49,8 +49,8 @@ describe('add', () => {
     await store.apply([
       { op: 'add', table: 'specification', row: { id: 'TL-LEND-SP02', title: 'Member in good standing', statement: 'A member owes nothing.' } },
       { op: 'link', relation: 'reads', source: 'TL-LEND-SP02', target: 'TL-LEND-A1' },
-      { op: 'add', table: 'endpoint', row: { id: 'TL-LEND-EP02', title: 'GET /tools/free', query_id: 'TL-LEND-QRY01', method: 'GET', route: '/tools/free' } },
-      { op: 'add', table: 'specification_test', row: { id: 'TL-LEND-SP02-T', title: 'Good standing', specification_id: 'TL-LEND-SP02', level: 'unit', state: 'manual', manual_reason: 'Not yet coded.' } },
+      { op: 'add', table: 'endpoint', row: { id: 'TL-LEND-EP02', title: 'GET /tools/free', query_id: 'TL-LEND-QRY01', method: 'GET', route: '/tools/free', description: 'Answers 200 with the free tools.' } },
+      { op: 'add', table: 'specification_test', row: { id: 'TL-LEND-SP02-T', title: 'Good standing', specification_id: 'TL-LEND-SP02', level: 'unit', state: 'manual', manual_reason: 'Not yet coded.', when: 'Checks a member who owes nothing', then: 'They are in good standing' } },
     ]);
     expect(await store.query("SELECT * FROM record_scope WHERE id IN ('TL-LEND-SP02', 'TL-LEND-EP02', 'TL-LEND-SP02-T') ORDER BY id")).toEqual([
       { id: 'TL-LEND-EP02', product_id: 'TL', domain_id: 'TL-LEND', aggregate_id: null },
@@ -63,7 +63,7 @@ describe('add', () => {
 
   it('LA-AUT-INV37-T refuses a row whose key exists, a bad parent, and a link table', async () => {
     const { store } = await fresh();
-    expect(await refused(store, [{ op: 'add', table: 'view', row: { id: 'TL-V01', title: 'Again' } }])).toEqual([expect.objectContaining({ rule: 'primary-key', command: 0 })]);
+    expect(await refused(store, [{ op: 'add', table: 'view', row: { id: 'TL-V01', title: 'Again', description: 'The catalog again.' } }])).toEqual([expect.objectContaining({ rule: 'primary-key', command: 0 })]);
     expect(await refused(store, [{ op: 'add', table: 'view_requirement', row: { id: 'TL-V09-R01', title: 'Lost', view_id: 'TL-V09', statement: 'x' } }])).toEqual([
       expect.objectContaining({ rule: 'foreign-key', command: 0, message: 'view_requirement TL-V09-R01: view_id "TL-V09" names no view' }),
     ]);
@@ -88,15 +88,15 @@ describe('record_scope', () => {
     // A second domain's flow step happens in the same view, and its read model has a field typed by a new value
     // object; a third value object is used by no one.
     await store.apply([
-      { op: 'add', table: 'domain', row: { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting' } },
-      { op: 'add', table: 'capability', row: { id: 'TL-CAT-CAP01', title: 'Browsing', domain_id: 'TL-CAT', position: 1 } },
-      { op: 'add', table: 'use_case', row: { id: 'TL-CAT-UC01', title: 'Browse the tools', capability_id: 'TL-CAT-CAP01' } },
+      { op: 'add', table: 'domain', row: { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' } },
+      { op: 'add', table: 'capability', row: { id: 'TL-CAT-CAP01', title: 'Browsing', domain_id: 'TL-CAT', position: 1, description: 'Browsing the tools on the shelf.' } },
+      { op: 'add', table: 'use_case', row: { id: 'TL-CAT-UC01', title: 'Browse the tools', capability_id: 'TL-CAT-CAP01', goal: 'A member finds a tool to borrow.' } },
       { op: 'add', table: 'flow', row: { id: 'TL-CAT-UC01-FL01', title: 'Browse', use_case_id: 'TL-CAT-UC01', interface_id: 'TL-IF01' } },
       { op: 'add', table: 'flow_step', row: { id: 'TL-CAT-UC01-FL01-S01', title: 'Open the catalog', flow_id: 'TL-CAT-UC01-FL01', path: 'main', position: 1 } },
       { op: 'link', relation: 'happens_in', source: 'TL-CAT-UC01-FL01-S01', target: 'TL-V01' },
-      { op: 'add', table: 'value_object', row: { id: 'TL-VO02', title: 'Tool size' } },
-      { op: 'add', table: 'value_object', row: { id: 'TL-VO03', title: 'Postcode' } },
-      { op: 'add', table: 'read_model', row: { id: 'TL-CAT-RM01', title: 'Tools by size', domain_id: 'TL-CAT' } },
+      { op: 'add', table: 'value_object', row: { id: 'TL-VO02', title: 'Tool size', description: 'How big a tool is.' } },
+      { op: 'add', table: 'value_object', row: { id: 'TL-VO03', title: 'Postcode', description: 'Where a member lives.' } },
+      { op: 'add', table: 'read_model', row: { id: 'TL-CAT-RM01', title: 'Tools by size', domain_id: 'TL-CAT', description: 'The tools, grouped by size.' } },
       { op: 'add', table: 'read_model_field', row: { read_model_id: 'TL-CAT-RM01', position: 1, name: 'Size', meaning: 'How big the tool is.', type_value_object_id: 'TL-VO02', required: true } },
     ]);
     expect(await domains([...lending, 'TL-VO02', 'TL-VO03'])).toEqual({
@@ -160,7 +160,7 @@ describe('move', () => {
 
   it('LA-AUT-INV38-T moves a record to another parent of its kind, keeping what sits inside it', async () => {
     const { store } = await fresh();
-    await store.add('capability', { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2 });
+    await store.add('capability', { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back.' });
     const result = await store.move('TL-LEND-UC01', 'TL-LEND-CAP02');
     expect(result.tables).toEqual(['use_case']);
     expect(await store.query("SELECT parent_id FROM record_parent WHERE id = 'TL-LEND-UC01-FL01'")).toEqual([{ parent_id: 'TL-LEND-UC01' }]);
@@ -179,8 +179,8 @@ describe('move', () => {
       expect.objectContaining({ rule: 'parent', message: 'a use_case sits under capability, not under aggregate TL-LEND-A1' }),
     ]);
     const problems = await refused(store, [
-      { op: 'add', table: 'domain', row: { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'generic' } },
-      { op: 'add', table: 'capability', row: { id: 'TL-CAT-CAP01', title: 'Listing', domain_id: 'TL-CAT', position: 1 } },
+      { op: 'add', table: 'domain', row: { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'generic', description: 'The tools the library holds.' } },
+      { op: 'add', table: 'capability', row: { id: 'TL-CAT-CAP01', title: 'Listing', domain_id: 'TL-CAT', position: 1, description: 'Listing the tools on the shelf.' } },
       { op: 'move', id: 'TL-LEND-UC01', parent: 'TL-CAT-CAP01' },
     ]);
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', command: 2, key: 'TL-LEND-UC01', message: 'TL-LEND-UC01 is a Use case in domain TL-CAT, so its ID starts with TL-CAT-' })]);
@@ -222,9 +222,9 @@ describe('link and unlink', () => {
   it('LA-AUT-INV37-T refuses a link to another product', async () => {
     const { store } = await fresh();
     const problems = await refused(store, [
-      { op: 'add', table: 'product', row: { id: 'LA', title: 'Lathe' } },
-      { op: 'add', table: 'domain', row: { id: 'LA-AUT', title: 'Authoring', product_id: 'LA', subdomain_type: 'core' } },
-      { op: 'add', table: 'aggregate', row: { id: 'LA-AUT-A1', title: 'Record', domain_id: 'LA-AUT' } },
+      { op: 'add', table: 'product', row: { id: 'LA', title: 'Lathe', description: 'A tool for writing specs.' } },
+      { op: 'add', table: 'domain', row: { id: 'LA-AUT', title: 'Authoring', product_id: 'LA', subdomain_type: 'core', description: 'Writing the records of a spec.' } },
+      { op: 'add', table: 'aggregate', row: { id: 'LA-AUT-A1', title: 'Record', domain_id: 'LA-AUT', identity: 'Record ID', description: 'One record of a spec.' } },
       { op: 'link', relation: 'reads', source: 'TL-LEND-RM01', target: 'LA-AUT-A1' },
     ]);
     expect(problems).toEqual([expect.objectContaining({ rule: 'link-crosses-product', command: 3 })]);
@@ -280,9 +280,9 @@ describe('a write', () => {
       const { store, root } = await fresh();
       const before = files(root);
       const problems = await refused(store, [
-        { op: 'add', table: 'view', row: { id: 'TL-V02', title: 'Desk' } },
+        { op: 'add', table: 'view', row: { id: 'TL-V02', title: 'Desk', description: 'The desk where tools go out.' } },
         { op: 'link', relation: 'renders', source: 'TL-UI01', target: 'TL-V02' },
-        { op: 'add', table: 'domain_service_test', row: { id: 'TL-LEND-DS01-T02', title: 'Broken', domain_service_id: 'TL-LEND-DS01', level: 'unit', state: 'automated' } },
+        { op: 'add', table: 'domain_service_test', row: { id: 'TL-LEND-DS01-T02', title: 'Broken', domain_service_id: 'TL-LEND-DS01', level: 'unit', state: 'automated', when: 'Works out a due date', then: 'It is 14 days on' } },
       ]);
       expect(problems).toEqual([expect.objectContaining({ rule: 'check', command: 2 })]);
       expect(store.record('TL-V02')).toBeUndefined();
@@ -341,7 +341,7 @@ describe('a write', () => {
 
   it('LA-AUT-INV36-T runs writes one after another, each on the state the one before left', async () => {
     const { store } = await fresh();
-    await Promise.all([2, 3, 4].map((n) => store.add('view', { id: `TL-V0${n}`, title: `View ${n}` })));
+    await Promise.all([2, 3, 4].map((n) => store.add('view', { id: `TL-V0${n}`, title: `View ${n}`, description: 'A page of the desk app.' })));
     expect(store.rows('view').map((v) => v.id)).toEqual(['TL-V01', 'TL-V02', 'TL-V03', 'TL-V04']);
     const reader = await store.connect();
     expect((await reader.runAndReadAll('SELECT count(*)::INTEGER AS n FROM view')).getRowObjectsJson()).toEqual([{ n: 4 }]);

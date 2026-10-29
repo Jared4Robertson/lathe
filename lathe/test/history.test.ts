@@ -39,13 +39,13 @@ const EXTRA = HISTORY_PAGE - 2;
 async function seed(root: string) {
   const s = await openStore(root);
   await s.apply([
-    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example' } },
-    { op: 'add', table: 'role', row: { product_id: 'EX', name: 'Writer' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core' } },
-    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1 } },
-    { op: 'add', table: 'pattern', row: { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX' } },
-    { op: 'add', table: 'pattern_setting', row: { pattern_id: 'EX-PAT-NOTE', position: 1, name: 'record' } },
-    { op: 'add', table: 'use_case', row: { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01' } },
+    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example', description: 'A small product for writing notes.' } },
+    { op: 'add', table: 'role', row: { product_id: 'EX', name: 'Writer', description: 'Someone who writes notes.' } },
+    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' } },
+    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' } },
+    { op: 'add', table: 'pattern', row: { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX', description: 'An action on one note.' } },
+    { op: 'add', table: 'pattern_setting', row: { pattern_id: 'EX-PAT-NOTE', position: 1, name: 'record', meaning: 'The record the action changes.' } },
+    { op: 'add', table: 'use_case', row: { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' } },
   ]);
   return s;
 }
@@ -115,7 +115,7 @@ describe.skipIf(!hasGit)('record history', () => {
     expect(older.more).toBe(false);
     expect(older.commits.map((c) => c.subject)).toEqual(['Add the example product']);
     expect(older.commits[0].changes).toEqual([
-      { table: 'use_case', key: UC, change: 'added', fields: [{ name: 'id', after: UC }, { name: 'title', after: 'Write a note' }, { name: 'capability_id', after: 'EX-NOTE-CAP01' }] },
+      { table: 'use_case', key: UC, change: 'added', fields: [{ name: 'id', after: UC }, { name: 'title', after: 'Write a note' }, { name: 'capability_id', after: 'EX-NOTE-CAP01' }, { name: 'goal', after: 'A writer keeps a note.' }] },
     ]);
     const parts = answer.commits.find((c) => c.subject === 'Give UC01 its pattern')!;
     expect(parts.changes).toEqual([
@@ -124,7 +124,7 @@ describe.skipIf(!hasGit)('record history', () => {
     const titled = answer.commits.find((c) => c.subject === 'Say more about UC01')!;
     expect(titled.changes[0].fields).toEqual([
       { name: 'title', before: 'Write a note', after: 'Write a short note' },
-      { name: 'goal', after: 'A writer keeps a thought.' },
+      { name: 'goal', before: 'A writer keeps a note.', after: 'A writer keeps a thought.' },
     ]);
 
     expect(answer.uncommitted).toEqual([

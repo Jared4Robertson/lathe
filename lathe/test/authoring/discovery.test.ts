@@ -36,14 +36,14 @@ describe('business outcomes', () => {
     expect(schema.relations.serves.pairs.map((p) => `${p.source}>${p.target}`)).toEqual(['capability>business_outcome']);
     const two = adding(everyKind(), {
       business_outcome: [{ id: 'TL-BO02', title: 'Tools back on time', product_id: 'TL', statement: 'Members return tools by their due date.', measure: 'Late returns per month.', target: 'Under one in twenty.' }],
-      capability: [{ id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2 }],
+      capability: [{ id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back.' }],
       serves: [{ source_id: 'TL-LEND-CAP01', target_id: 'TL-BO02' }, { source_id: 'TL-LEND-CAP02', target_id: 'TL-BO01' }, { source_id: 'TL-LEND-CAP02', target_id: 'TL-BO02' }],
     });
     expect(await refusals(two)).toEqual([]);
     // Only a capability serves, only an outcome is served, and never one of another product.
     expect(await rules(adding(everyKind(), { serves: [{ source_id: 'TL-LEND-UC01', target_id: 'TL-BO01' }] }))).toEqual(['foreign-key']);
     const other = adding(everyKind(), {
-      product: [{ id: 'XX', title: 'Other' }],
+      product: [{ id: 'XX', title: 'Other', description: 'Another product beside the library.' }],
       business_outcome: [{ id: 'XX-BO01', title: 'Other', product_id: 'XX', statement: 'Something else happens.', measure: 'How often.', target: 'Often.' }],
       serves: [{ source_id: 'TL-LEND-CAP01', target_id: 'XX-BO01' }],
     });
@@ -72,7 +72,7 @@ describe('business outcomes', () => {
     // Only an outcome is measured; never by a test of another product.
     expect(await rules(adding(data, { measured_by: [{ source_id: 'TL-LEND-UC01', target_id: 'TL-LEND-INV01-T' }] }))).toEqual(['foreign-key']);
     const other = adding(data, {
-      product: [{ id: 'XX', title: 'Other' }],
+      product: [{ id: 'XX', title: 'Other', description: 'Another product beside the library.' }],
       business_outcome: [{ id: 'XX-BO01', title: 'Other', product_id: 'XX', statement: 'Something else happens.', measure: 'How often.', target: 'Often.' }],
       measured_by: [{ source_id: 'XX-BO01', target_id: 'TL-LEND-INV01-T' }],
     });
@@ -132,7 +132,7 @@ describe('measuring outcomes', () => {
 describe('test data sets', () => {
   it('LA-AUT-UC13-R08-T01 A test data set sits under a domain, and any kind of test starts from any number of them', async () => {
     expect(parentsOf(schema, 'test_data_set')).toEqual(['domain.domain_id']);
-    expect(requiredOf(schema, 'test_data_set')).toEqual(['domain_id']);
+    expect(requiredOf(schema, 'test_data_set')).toEqual(['domain_id', 'environment', 'records', 'prepare', 'reset', 'description']);
     expect(schema.tables.test_data_set.columns.map((c) => c.name)).toEqual(['id', 'title', 'domain_id', 'environment', 'accounts', 'records', 'prepare', 'reset', 'file', 'description']);
     expect(schema.kinds.test_data_set).toMatchObject({ stage: 'test-plan', idPattern: '<P>-<D>-TD<nn>', idScope: 'domain', obligation: false });
     // Every test kind, and only a test, starts from a data set.
@@ -141,7 +141,7 @@ describe('test data sets', () => {
     expect(new Set(schema.relations.starts_from.pairs.map((p) => p.target))).toEqual(new Set(['test_data_set']));
     const data = everyKind();
     const second = adding(data, {
-      test_data_set: [{ id: 'TL-LEND-TD02', title: 'An overdue loan', domain_id: 'TL-LEND', records: 'One loan a week overdue.' }],
+      test_data_set: [{ id: 'TL-LEND-TD02', title: 'An overdue loan', domain_id: 'TL-LEND', environment: 'A fresh test database.', records: 'One loan a week overdue.', prepare: 'Load the overdue loan before the test.', reset: 'Drop the database after the test.', description: 'A library with one loan past its due date.' }],
       starts_from: [{ source_id: 'TL-INT01-T01', target_id: 'TL-LEND-TD02' }, { source_id: 'TL-LEND-INV01-T', target_id: 'TL-LEND-TD01' }],
     });
     expect(await refusals(second)).toEqual([]);
