@@ -217,7 +217,7 @@ export function keptFor(map: TraceMap, focus: string, key: string): ReadonlySet<
   return new Set(node.id === focus ? map.copies.get(focus) ?? [key] : [key]);
 }
 
-/** Every key of a parent's line to a child: `<parent>>child`. */
+/** The key of a parent's line to a child: `<parent>><child>`. */
 export const lineKey = (parent: string, child: string) => `${parent}>${child}`;
 
 /** The lines touching some keys: each one's line from its parent and to each child. */
