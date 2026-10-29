@@ -1,4 +1,4 @@
-{"id":"TL-LEND-SP01-PR","title":"isOverdue","specification_id":"TL-LEND-SP01","file":"src/model.ts"}
-{"id":"TL-LEND-SP02-PR","title":"hasOverdueLoan","specification_id":"TL-LEND-SP02","file":"src/model.ts"}
-{"id":"TL-LEND-SP03-PR","title":"atLoanLimit","specification_id":"TL-LEND-SP03","file":"src/model.ts"}
-{"id":"TL-LEND-SP04-PR","title":"needsRepair","specification_id":"TL-LEND-SP04","file":"src/model.ts"}
+{"id":"TL-LEND-SP01-PR","title":"isOverdue","specification_id":"TL-LEND-SP01","file":"src/loan.ts"}
+{"id":"TL-LEND-SP02-PR","title":"hasOverdueLoan","specification_id":"TL-LEND-SP02","file":"src/loan.ts"}
+{"id":"TL-LEND-SP03-PR","title":"atLoanLimit","specification_id":"TL-LEND-SP03","file":"src/loan.ts"}
+{"id":"TL-LEND-SP04-PR","title":"needsRepair","specification_id":"TL-LEND-SP04","file":"src/tool.ts"}
