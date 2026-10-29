@@ -1,5 +1,5 @@
 // The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10, LA-V98).
-import { lazy, Suspense, useLayoutEffect, useMemo, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
+import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { mapRootOf } from '../graph/map';
 import { groupName, isGroup } from '../graph/model';
@@ -9,8 +9,10 @@ import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
 import { useNarrow } from '../shell/useNarrow';
 import type { OpenSpaceStore } from '../views/openSpace';
-import { traceMap } from './lanes';
-import { useStepWalk } from '../graph/steps';
+import { useStageWalk } from '../shell/commands';
+import { usesArrows } from '../shell/keymap';
+import { traceFocus, traceMap } from './lanes';
+import { boxWords, focusOf, startOf, traceStep, type TraceAt } from './walk';
 
 // What the product owes and how far it has come, drawn on the canvas with the graph's renderer
 // (TraceCanvas.tsx) as one map per product (lanes.ts, LA-PAT-APP-UX-R19): a "why" tree on the left
@@ -22,7 +24,8 @@ import { useStepWalk } from '../graph/steps';
 // The table is its accessible layer and its phone form, listing what is under the focus, the way the
 // graph keeps a layer of its boxes for the keyboard and assistive technology: on a wide screen it is
 // visually hidden under the canvas, its links carrying keyboard focus (the canvas rings the box a focused link stands for and
-// brings it into view) and the arrow keys walking it; on a phone it is the stage. By the shape
+// brings it into view) and the arrow keys walking it; on a phone it is the stage. From anywhere else on the page the
+// arrow keys walk the map itself (walk.ts), the camera following. By the shape
 // chain.ts's traceShape gives the focus:
 // - an obligation: its chain, each column a list of cards;
 // - a record or group with obligations under it: a traceability matrix, one row per obligation
@@ -174,11 +177,51 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   // The product's one map: laid out once per product and data change, whatever the focus or the filter.
   const map = useMemo(() => (narrow ? null : traceMap(index, product)), [narrow, index, product]);
   const [ringAt, setRing] = useState<{ focus: string; at: { id: string; lane: string | null } | null }>({ focus, at: null });
-  const ring = ringAt.focus === focus ? ringAt.at : null;
-  // The plain arrows step the focus through the tree from anywhere, by the Tree view's keys (LA-V93-R19): the lanes, like
-  // the Tree, run from a record to what serves it, left to right; the camera follows the focus on the one map. The table
-  // under the canvas keeps its own arrows (walk).
-  useStepWalk(index, focus, 'tree', props.onNavigate);
+  // Where the arrow keys are on the map, for the focus they left it on: the box, and the lane they arrived on.
+  const [walked, setWalked] = useState<{ focus: string; at: TraceAt } | null>(null);
+  const walkedHere = walked?.focus === focus ? walked.at : null;
+  const focused = useMemo(() => (map ? traceFocus(map, index, focus, walkedHere?.lane ?? null) : null), [map, index, focus, walkedHere?.lane]);
+  const walkBox = walkedHere && map ? map.byKey.get(walkedHere.key) : undefined;
+  // The keyboard's ring: the table's focused link, else the arrow keys' box when it is no record (a gap, a file, a "+N more").
+  const linkRing = ringAt.focus === focus ? ringAt.at : null;
+  const ring = linkRing && map ? { id: linkRing.id, lane: linkRing.lane === null ? null : map.lanesOf.get(linkRing.lane)?.[0] ?? null }
+    : walkBox && walkBox.role !== 'record' ? { id: walkBox.id, lane: walkBox.lane >= 0 ? walkBox.lane : null } : null;
+  // The plain arrows walk the map from anywhere (walk.ts, LA-V61-R49): on a record the focus moves there, as a click does,
+  // and the camera follows; on a box that is no record the ring does. Each step is announced. The table under the canvas
+  // keeps its own arrows (walk). On a phone, where no map is drawn, they walk the same map.
+  const go = useCallback((at: TraceAt, open: number | null) => {
+    const m = map ?? traceMap(index, product);
+    const to = focusOf(m, at, open) ?? focus;
+    setWalked({ focus: to, at });
+    if (to !== focus) props.onNavigate(to);
+    return boxWords(index, m.byKey.get(at.key)!);
+  }, [map, index, product, focus, props.onNavigate]);
+  const walkMap = useCallback((key: string) => {
+    const m = map ?? traceMap(index, product);
+    const here = focused ?? traceFocus(m, index, focus, walkedHere?.lane ?? null);
+    const from = walkedHere ?? (here.box ? { key: here.box.key, lane: here.box.lane >= 0 ? here.box.lane : null } : null);
+    const to = from ? traceStep(m, from, key, here.open) : startOf(m, here.lanes);
+    return to ? go(to, here.open) : null;
+  }, [map, index, product, focus, focused, walkedHere, go]);
+  useStageWalk(walkMap);
+  // Enter on a "+N more" the arrows are on opens it, as Right does, unless keyboard focus is on a control Enter works itself.
+  const enter = useRef<() => void>(() => {});
+  enter.current = () => { if (walkBox?.role === 'more') { const to = traceStep(map!, walkedHere!, 'ArrowRight', focused?.open ?? null); if (to) go(to, focused?.open ?? null); } };
+  useEffect(() => {
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.altKey || e.ctrlKey || e.metaKey || e.shiftKey || e.defaultPrevented) return;
+      const t = e.target as HTMLElement | null;
+      if (usesArrows(t) || t?.closest?.('a[href], button, input, select, textarea, summary, [role="button"], [role="link"]')) return;
+      enter.current();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
+  /** A click on the canvas opens a record keeping the lane of the box clicked. */
+  const openFromCanvas = useCallback((id: string, at?: TraceAt) => {
+    if (at) setWalked({ focus: id, at });
+    props.onNavigate(id);
+  }, [props.onNavigate]);
 
   // What the header strip says.
   const untraced = useMemo(() => (spec?.untracedOf ? untracedUnder(index, spec.untracedOf) : []), [index, spec]);
@@ -194,7 +237,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   }, [spec, index, focus, total, page, untracedCount]);
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 
-  const drawn = !narrow && map !== null;
+  const drawn = !narrow && map !== null && focused !== null;
   // Show more pages the table. Under the canvas, which draws every lane, it is for the keyboard alone: hidden until focused.
   const more = page && page.drawn < page.matching ? (
     <p className={`trace-more${drawn ? ' is-keys' : ''}`}>
@@ -232,7 +275,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
         </div>
       )}
       <Suspense fallback={<div className="graph-flow trace-flow" aria-busy="true" />}>
-        <TraceCanvas index={index} focus={focus} map={map} gapsOnly={gapsOnly} onNavigate={props.onNavigate} onPeek={props.onPeek} space={props.space} ring={ring} />
+        <TraceCanvas index={index} focus={focus} map={map} focused={focused} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} />
       </Suspense>
       <div className="trace-access" data-arrows="own" onFocus={onFocus} onBlur={onBlur} onKeyDown={walk}>
         {table}

@@ -67,6 +67,7 @@ const PAGES: State[] = [
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
   { name: 'Trace stage, framed on the lanes a flow step belongs to', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
   { name: 'Trace stage, an entity in its aggregate\'s lanes', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
+  { name: 'Trace stage, the product\'s overview in labeled bands', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-band-names li' },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'Checks', url: `${PRODUCT}/checks`, ready: '#main h1' },
