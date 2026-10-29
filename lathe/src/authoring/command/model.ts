@@ -45,7 +45,7 @@ export interface Policy {
 }
 
 /** One command, whole. */
-export interface Command {
+export interface CommandInstance {
   /** The command's ID: the instance's root. */
   readonly root: string;
   command: CommandRow;
@@ -90,7 +90,7 @@ export const COMMAND_KINDS = {
 export type CommandKind = keyof typeof COMMAND_KINDS;
 
 /** A new command with its links, with nothing under it yet. */
-export function newCommand(command: CommandRow, links: { raises: string[]; checks: string[]; calls: string[] }): Command {
+export function newCommand(command: CommandRow, links: { raises: string[]; checks: string[]; calls: string[] }): CommandInstance {
   return { root: command.id, command, ...links, handler: null, policies: [], eventHandlers: [], policyTests: [] };
 }
 
@@ -103,7 +103,7 @@ function bySource(links: Row[], source = 'source_id', target = 'target_id'): Map
 }
 
 /** The commands in the data, each whole, built from the aggregate's tables; only the one given, when given. */
-export function commandsFrom(rows: (table: string) => Row[], only?: string): Command[] {
+export function commandsFrom(rows: (table: string) => Row[], only?: string): CommandInstance[] {
   const commands = rows('command').filter((r) => only === undefined || r.id === only) as unknown as CommandRow[];
   if (!commands.length) return [];
   const ids = new Set(commands.map((c) => c.id));
@@ -137,7 +137,7 @@ export function commandsFrom(rows: (table: string) => Row[], only?: string): Com
 const links = (source: string, ids: (string | null)[]): Row[] => ids.filter((id): id is string => id !== null).map((target) => ({ source_id: source, target_id: target }));
 
 /** The instance's rows, by table. */
-export function commandRows(command: Command): Map<string, Row[]> {
+export function commandRows(command: CommandInstance): Map<string, Row[]> {
   const asRow = <T extends object>(row: T) => row as unknown as Row;
   const built = [...(command.handler ? [command.handler] : []), ...command.eventHandlers];
   return new Map<string, Row[]>([
@@ -157,7 +157,7 @@ export function commandRows(command: Command): Map<string, Row[]> {
 }
 
 /** The kind of the record with this ID inside the command, or undefined. */
-export function kindInside(command: Command, id: string): CommandKind | undefined {
+export function kindInside(command: CommandInstance, id: string): CommandKind | undefined {
   if (command.root === id) return 'command';
   if (command.handler?.row.id === id) return 'command_handler';
   if (command.policies.some((p) => p.row.id === id)) return 'policy';

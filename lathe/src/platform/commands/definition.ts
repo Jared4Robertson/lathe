@@ -148,7 +148,7 @@ export function parseInput(schema: SchemaDescription, definition: { name: string
     }
     if (value !== null) {
       const problem = fieldProblem(schema, field, value);
-      if (problem) throw new InputError(`${name} ${JSON.stringify(value)} ${problem}`);
+      if (problem) throw new InputError(field.kind === 'parts' ? `${name} ${problem}` : `${name} ${JSON.stringify(value)} ${problem}`);
     }
     input[name] = value;
   }
