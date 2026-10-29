@@ -183,6 +183,26 @@ export interface ApiRequirementRow {
   group_name?: string;
 }
 
+/** A word of the domain's glossary and what it means there, so specs, code and conversation use one language. */
+export interface TermRow {
+  /** The term's ID, such as TL-LEND-TM01. */
+  id: string;
+  /** The term, such as Loan. */
+  title: string;
+  /** The domain whose language it belongs to. */
+  domain_id: string;
+  /** What it means in that domain. */
+  meaning: string;
+  /** A short heading it is shown under among its domain's terms, such as Records or Writing. */
+  group_name?: string;
+}
+
+/** The term is defined with the other term: its meaning uses it, so the other term is defined first and never builds on it in turn, through any chain. */
+export interface BuildsOnRow {
+  source_id: string;
+  target_id: string;
+}
+
 /** A business outcome: a measurable change the product exists to bring about, which its capabilities serve and its tests or records measure (measured_by). The trace runs from it to a capability, a use case, the code and the tests. */
 export interface BusinessOutcomeRow {
   /** The outcome's ID: its product's ID and BO<nn>, such as TL-BO01. */
@@ -1331,20 +1351,6 @@ export interface TableKeyRow {
   condition?: string;
 }
 
-/** A word of the domain's glossary and what it means there, so specs, code and conversation use one language. */
-export interface TermRow {
-  /** The term's ID, such as TL-LEND-TM01. */
-  id: string;
-  /** The term, such as Loan. */
-  title: string;
-  /** The domain whose language it belongs to. */
-  domain_id: string;
-  /** What it means in that domain. */
-  meaning: string;
-  /** A short heading it is shown under among its domain's terms, such as Records or Writing. */
-  group_name?: string;
-}
-
 /** A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker's or a test runner's. Its title and file say what it is. */
 export interface ToolingRow {
   /** The tooling record's ID: its domain's ID and TOOL<nn>, such as TL-LEND-TOOL01. */
@@ -1492,6 +1498,8 @@ export interface TableRows {
   query: QueryRow;
   endpoint: EndpointRow;
   api_requirement: ApiRequirementRow;
+  term: TermRow;
+  builds_on: BuildsOnRow;
   business_outcome: BusinessOutcomeRow;
   domain_service: DomainServiceRow;
   calls: CallsRow;
@@ -1571,7 +1579,6 @@ export interface TableRows {
   starts_from: StartsFromRow;
   table: TableRow;
   table_key: TableKeyRow;
-  term: TermRow;
   tooling: ToolingRow;
   use_case_actor: UseCaseActorRow;
   use_case_test: UseCaseTestRow;
