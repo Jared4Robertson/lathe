@@ -12,7 +12,7 @@
   --motion-speed: 320ms; --motion-ease: cubic-bezier(0.25, 0.1, 0.25, 1);
   --node-radius: 4px; /* an ERD box's corners; the graph's canvas rounds a plain box the same (app/src/graph/shapes.ts) */
   /* The ERD view's context ring (LA-V94-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges (the graph's canvas draws its own, app/src/graph/paint.ts). */
-  --context-opacity: 0.35; --context-scale: 0.9; --spotlight-dim: 0.5; --vignette: 56px;
+  --context-opacity: 0.35; --spotlight-dim: 0.5; --vignette: 56px;
   /* The graph's focus fade (LA-EXP-DS09, app/src/graph/fade.ts): what lies outside the focus's subtree, and the trail of its ancestors in Nested and Voronoi. */
   --focus-fade: 0.25; --focus-trail: 0.45;
   /* The graph's cross-links (the Links switch), dashed apart from the tree's solid lines, and the minimap's mask. */
@@ -773,44 +773,50 @@ a.row-link.row-link:focus-visible { outline: none; }
 @media (prefers-reduced-motion: reduce) { .tab, .tab-close { transition: none; } }
 .pane-title .spec-header { padding: 16px 24px 0; flex-wrap: wrap; }
 
-/* ---------- The ERD stage: a domain's ERD and an aggregate's (app/src/erd) ---------- */
-/* Entities and aggregates in the domain model stage's colors: an aggregate a boundary tinted with its fill around its
-   entities, each entity a sheet edged in its color. Another domain's box is gray (--muted on --paper, dashed) and faded. */
+/* ---------- The ERD stage: one map of the product's domains, aggregates and entities (app/src/erd) ---------- */
+/* In the domain model stage's colors: each domain a region, an aggregate a boundary tinted with the stage's fill around its
+   entities, each entity a sheet edged in its color. What lies outside the focus's scope fades (LA-V94-R08). */
 .erd-page { min-height: 0; }
 .erd-tools { container: erd-page / inline-size; }
-/* The canvas takes what the title and the key leave, so the key always shows whole below it; the fit scales the model to it. */
+/* The canvas takes what the title and the key leave, so the key always shows whole below it. */
 .erd-canvas { position: relative; flex: 1; min-height: 160px; }
 .erd-flow { position: absolute; inset: 0; }
 .erd-empty, .erd-missing { flex: 1; margin: 0; padding: 24px; }
 .erd-flow .react-flow__node:focus { outline: none; }
 .erd-flow .react-flow__node:focus-visible .erd-box { outline: 3px solid var(--steel); outline-offset: 3px; }
 .erd-handle { opacity: 0; pointer-events: none; }
-.erd-box { --box-edge: var(--g-domain-model); --box-fill: var(--sheet); width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; overflow: hidden; border: 1.5px solid var(--box-edge); border-radius: var(--node-radius); background: var(--box-fill); color: var(--ink); cursor: pointer; transition: box-shadow var(--hover-speed); }
+/* A box's strength (--erd-strength, the graph's focus fade) eases with the camera's glide; its place and size never change. */
+.erd-box { --box-edge: var(--g-domain-model); --box-fill: var(--sheet); width: 100%; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; overflow: hidden; border: 1.5px solid var(--box-edge); border-radius: var(--node-radius); background: var(--box-fill); color: var(--ink); cursor: pointer; opacity: var(--erd-strength, 1); transition: box-shadow var(--hover-speed), opacity var(--motion-speed) var(--motion-ease); }
 .erd-box:not(.is-focus):hover { box-shadow: 0 0 0 3px var(--hover-ring); }
 .erd-box.is-focus { cursor: default; }
-/* An aggregate: the boundary its entities sit in (their places leave room for its head, BOUNDARY_PAD in erd.ts), or a closed box. */
+/* A domain: the region its aggregates sit in, and an aggregate the boundary its entities sit in (their places leave room
+   for its head, BOUNDARY_PAD in erd.ts); either is a closed box when it holds nothing. */
+.erd-box.erd-domain { --box-edge: var(--muted); --box-fill: color-mix(in srgb, var(--g-domain-model-bg) 35%, var(--paper)); border-width: 2px; padding: 8px 14px; }
 .erd-box.erd-aggregate { --box-fill: var(--g-domain-model-bg); padding: 8px 14px; }
-.erd-box.tone-other { border-style: dashed; --box-edge: var(--muted); --box-fill: var(--paper); }
 .erd-box.is-highlight, .erd-box.is-highlight:hover { box-shadow: 0 0 0 3px var(--ink); }
-@media (prefers-reduced-motion: reduce) { .erd-box { transition: none; } }
-/* Heights match boxSize in app/src/erd/erd.ts: an entity's title of up to two lines, then 20px rows; an aggregate's title on one line, then its kind line. */
+/* A faded box reads whole under the pointer, and by touch once armed. */
+.erd-box.is-faded:not(.erd-domain):hover { opacity: 1; }
+@media (pointer: coarse) { .erd-flow .react-flow__node.is-armed .erd-box.is-faded { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .erd-box, .erd-line { transition: none; } }
+/* Heights match boxSize in app/src/erd/erd.ts: an entity's title of up to two lines, then 20px rows; a domain's and an aggregate's title on one line, then its kind line. */
 .erd-box-head { flex: none; display: flex; align-items: flex-start; justify-content: space-between; gap: 6px; min-width: 0; }
 .erd-box-head strong { font: 700 0.8125rem/1.25 var(--display); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow-wrap: break-word; }
-.erd-aggregate .erd-box-head strong { -webkit-line-clamp: 1; }
+.erd-box:is(.erd-domain, .erd-aggregate) .erd-box-head strong { -webkit-line-clamp: 1; }
 .erd-summary { flex: none; font: 0.65625rem/1.3 var(--mono); color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .erd-root { flex: none; font: 600 0.59375rem/1.4 var(--mono); text-transform: uppercase; letter-spacing: 0.06em; padding: 0 5px; border: 1px solid var(--g-domain-model); border-radius: 3px; color: var(--ink); background: var(--g-domain-model-bg); }
 .erd-fields { list-style: none; margin: 4px 0 0; padding: 4px 0 0; border-top: 1px solid var(--rule); display: grid; grid-template-columns: minmax(0, 1fr); }
 .erd-fields li { display: flex; justify-content: space-between; gap: 8px; height: 20px; align-items: center; font-size: 0.71875rem; }
 .erd-field { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .erd-field-kind { flex: 0 1 auto; min-width: 0; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 0.65625rem var(--mono); color: var(--muted); }
+.erd-line { opacity: var(--erd-strength, 1); transition: opacity var(--motion-speed) var(--motion-ease); }
 .erd-line-path, .erd-end { fill: none; stroke: var(--ink); stroke-width: 1.4; }
 .erd-line.is-dashed .erd-line-path, .erd-key-line.is-dashed .erd-line-path { stroke-dasharray: 6 4; }
-/* The key keeps one height whichever model it explains, scrolling what does not fit, so moving between a domain, an
+/* The key keeps one height whichever focus it explains, scrolling what does not fit, so moving between a domain, an
    aggregate and an entity never resizes the canvas above it (LA-PAT-APP-UX-R08). */
 .erd-key { flex: none; box-sizing: border-box; block-size: var(--erd-key-height); overflow-y: auto; scrollbar-gutter: stable; display: flex; flex-direction: column; gap: 6px; padding: 10px 20px 12px; border-top: 1px solid var(--rule); font-size: 0.8rem; line-height: 1.4; color: var(--muted); }
 .erd-key-swatch { flex: none; display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); border-radius: 2px; }
+.erd-key-swatch.erd-key-domain { border: 2px solid var(--muted); background: color-mix(in srgb, var(--g-domain-model-bg) 35%, var(--paper)); }
 .erd-key-swatch.erd-key-aggregate { background: var(--g-domain-model-bg); }
-.erd-key-swatch.erd-key-other { border-style: dashed; border-color: var(--muted); background: var(--paper); opacity: var(--context-opacity); }
 /* One grid of fixed cells, their width set by the pane's width only: the lists add no box of their own, so a model
    with other entries changes what the cells say, never where the key's parts sit (LA-PAT-APP-UX-R08). */
 .erd-key-grid { display: grid; grid-template-columns: repeat(auto-fill, 9.5rem); gap: 2px 12px; }
@@ -834,13 +840,9 @@ a.row-link.row-link:focus-visible { outline: none; }
   }
 }
 .erd-key-highlight { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
-/* The ERD's context (LA-V94-R06): faded and a little smaller, readable on hover, its lines faded with it. */
-.erd-flow .react-flow__node.is-context .erd-box { opacity: var(--context-opacity); scale: var(--context-scale); }
-.erd-flow .react-flow__node.is-context:hover .erd-box { opacity: 1; }
-.erd-flow .erd-line.is-context { opacity: var(--context-opacity); }
-.erd-key-context { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px dashed var(--muted); background: var(--paper); border-radius: 2px; opacity: var(--context-opacity); }
+/* Faded: outside the focus's scope (LA-V94-R08). */
+.erd-key-faded { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); border-radius: 2px; opacity: var(--focus-fade); }
 .erd-flow::after { content: ""; position: absolute; inset: 0; z-index: 4; pointer-events: none; box-shadow: inset 0 0 var(--vignette) calc(var(--vignette) / 3) var(--paper); }
-@media (pointer: coarse) { .erd-flow .react-flow__node.is-context.is-armed .erd-box { opacity: 1; } }
 /* A dashed reference line shows its fields on hover, over a wider unseen stroke that is easy to point at, fading in on
    the shared hover speed. */
 .erd-line-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; }
