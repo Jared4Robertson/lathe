@@ -115,6 +115,40 @@ export function frameMap(map: GraphMap, width: number, height: number): Viewport
   return { x: width / 2 - (map.width / 2) * zoom, y: height / 2 - (map.height / 2) * zoom, zoom };
 }
 
+/** A rectangle of a map, in map units. */
+export interface MapRect { x: number; y: number; w: number; h: number }
+
+/**
+ * The camera that frames a rectangle of a stage's one map in a frame of the pane (LA-PAT-APP-UX-R19): the Trace
+ * stage's lane, a tree box with what hangs from it, a domain's region. Zoomed in no further than `max` nor out past
+ * `min`, `pad` pixels kept around it:
+ * - with an `anchor` (the focus's own box in it), the whole rectangle when it fits at `read`, the zoom its labels read
+ *   at, or more; else at `read`, centered on the anchor along each side it overflows;
+ * - with none, its whole width, and its whole height unless that would zoom out past the width's zoom or `read`,
+ *   whichever is less: then from its top, so a tall region (a product's or a domain's lanes) starts readable at its top
+ *   edge and its overview is a zoom out away.
+ * A rectangle narrower or shorter than the frame is centered in it.
+ */
+export function frameRect(rect: MapRect, anchor: MapRect | null, frame: MapRect, { pad, read, max, min }: { pad: number; read: number; max: number; min: number }): Viewport {
+  const w = Math.max(1, frame.w - 2 * pad);
+  const h = Math.max(1, frame.h - 2 * pad);
+  const tall = h / Math.max(1e-9, rect.h);
+  const wide = w / Math.max(1e-9, rect.w);
+  const fit = anchor ? Math.max(read, Math.min(tall, wide)) : Math.max(Math.min(tall, wide), Math.min(wide, read));
+  const zoom = Math.max(min, Math.min(max, fit));
+  /** Along one side: centered when it fits; else around the anchor, or from its start with none. */
+  const along = (start: number, extent: number, room: number, from: number, at: { start: number; extent: number } | null) => {
+    if (extent * zoom <= room - 2 * pad) return from + room / 2 - (start + extent / 2) * zoom;
+    if (!at) return from + pad - start * zoom;
+    return from + room / 2 - (at.start + at.extent / 2) * zoom;
+  };
+  return {
+    x: along(rect.x, rect.w, frame.w, frame.x, anchor && { start: anchor.x, extent: anchor.w }),
+    y: along(rect.y, rect.h, frame.h, frame.y, anchor && { start: anchor.y, extent: anchor.h }),
+    zoom,
+  };
+}
+
 // ---------- The glide ----------
 
 /** A view as its center in the world and its size in world units: what the zoom path moves. */
