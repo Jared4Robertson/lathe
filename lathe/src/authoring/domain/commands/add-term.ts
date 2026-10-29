@@ -1,20 +1,20 @@
-// Add a term (LA-AUT-CMD166): Adds a term to its domain's glossary, with what it means there.
-import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
+// Add a term (LA-AUT-CMD166): Adds a term to its domain's glossary, with what it means there and the terms it builds on.
+import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TermRow } from '../../../platform/data/tables.ts';
 import { DOMAIN_SLICE } from '../model.ts';
 import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
-/** A new term. */
-export type AddTerm = Pick<TermRow, 'id' | 'title' | 'domain_id' | 'meaning' | 'group_name'>;
+/** A new term, with the terms its meaning builds on. */
+export type AddTerm = Pick<TermRow, 'id' | 'title' | 'domain_id' | 'meaning' | 'group_name'> & { builds_on?: string[] };
 
 /** Add a term (LA-AUT-CMD166). */
 export const ADD_TERM: CommandDefinition<AddTerm> = {
   id: 'LA-AUT-CMD166',
   slice: DOMAIN_SLICE,
   name: 'add-term',
-  description: "Adds a term to its domain's glossary, with what it means there.",
+  description: "Adds a term to its domain's glossary, with what it means there and the terms it builds on.",
   method: 'POST',
   route: '/api/domain/add-term',
   input: {
@@ -23,15 +23,17 @@ export const ADD_TERM: CommandDefinition<AddTerm> = {
     domain_id: column('term', 'domain_id', 'required'),
     meaning: column('term', 'meaning', 'required'),
     group_name: column('term', 'group_name', 'optional'),
+    builds_on: ids('The terms its meaning uses, of any domain of the product, each defined without it.', 'optional'),
   },
   handler: addTerm,
 };
 
-/** Adds the term to its domain's glossary. */
+/** Adds the term to its domain's glossary, with its links; refused when they lead back to it. */
 export function addTerm(tx: Transaction, input: AddTerm): void {
   const domains = new DomainRepository(tx);
   const domain = domains.load(input.domain_id) ?? tx.refuse('missing', `there is no domain ${input.domain_id}`);
-  domain.terms.push(input);
+  const { builds_on: buildsOn = [], ...row } = input;
+  domain.terms.push({ row, buildsOn });
   holdToRules(tx, domain);
   domains.save(domain);
 }

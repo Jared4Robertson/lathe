@@ -609,8 +609,9 @@ A word of the domain's glossary and what it means there, so specs, code and conv
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<P>-<D>-TM<nn>`, such as `TL-LEND-TM01`; it starts with its domain's ID
-- **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links out:** Builds on ([`builds_on`](#relation-builds_on))
+- **Links in:** Questions about this ([`about`](#relation-about)), Built on by ([`builds_on`](#relation-builds_on))
+- **Checks:** [`term-used-unlinked`](#check-term-used-unlinked)
 
 <a id="table-term"></a>
 
@@ -727,6 +728,16 @@ A specification is a yes/no condition a record meets or not, and its title names
 A query whose title does not start with Get, List or Find.
 
 A query asks for data and changes nothing, so its title starts with the verb that says what comes back: Get for one thing, List for several, Find for a search, such as "Get a member's loans", "List overdue loans" or "Find a tool by name". A query titled like a command ("Check the workspace", "Export a theme") reads as a change. Retitle the query with Get, List or Find.
+
+<a id="check-term-used-unlinked"></a>
+
+### `term-used-unlinked`
+
+**Warning** · Lathe's · Kinds: [`term`](#kind-term)
+
+A term's meaning uses another term of its product by title without a builds_on link to it.
+
+Definitions build up, never in a circle (LA-STD-MODELING-R12): a term is defined only by plain words and terms below it, and names each one it uses with builds_on, so the store can refuse a loop. The check reads each meaning in lower case, with text in backticks left out as code, and looks for every other term of the product by title as a whole word, singular or plural (a title ending in a consonant and y also as -ies); a shorter title found only inside a longer term's title (Domain inside Domain event) does not count. It cannot tell a word used in another sense, so it is a warning. Link the term with builds_on to the term it uses, or say it in plain words.
 
 ### Coverage gaps: domain model
 
@@ -2966,6 +2977,19 @@ The UI component builds the view requirement: its code does what the requirement
 | From | To | Meaning |
 | --- | --- | --- |
 | [`ui_component`](#kind-ui_component) | [`view_requirement`](#kind-view_requirement) | The UI component's code does what the view requirement says. |
+
+<a id="relation-builds_on"></a>
+
+### `builds_on`
+
+The term is defined with the other term: its meaning uses it, so the other term is defined first and never builds on it in turn, through any chain.
+
+- **Reads:** Builds on / Built on by
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`term`](#kind-term) | [`term`](#kind-term) | The term's meaning uses the other term, which is defined before it. |
 
 <a id="relation-calls"></a>
 
