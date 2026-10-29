@@ -18,7 +18,7 @@ import { useCameraGestures } from '../graph/gestures';
 import { useCommand } from '../shell/commands';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
-import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
+import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
 import { lineKey, linesAt, traceFade, type TraceMap, type TraceNode } from './tree';
 import { useChanges } from '../changes/changes';
 import { lensFade, marksMoving, useStageMarks } from '../changes/marks';
@@ -307,7 +307,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     const sp = spotlight.current;
     const faded = tween.now();
     const live = marks.at(performance.now());
-    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: faded.at, marks: live };
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: faded.at, marks: live, open: openIn(wrapper.current, space, s.w, s.h) };
     const v = view.current;
     const cam: Camera = { cx: (s.w / 2 - v.x) / v.zoom, cy: (s.h / 2 - v.y) / v.zoom, zoom: v.zoom, w: s.w, h: s.h };
     paint(ctx.current, dpr, cam, frame, look.current, fonts, state);
@@ -317,6 +317,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     if (wrapper.current) drawLeaderLine(ctx.current, {
       host: wrapper.current, space, dpr, color: p ? boxColors(look.current, p).edge : look.current.ink,
       box: n ? { left: n.x * v.zoom + v.x, top: n.y * v.zoom + v.y, right: (n.x + n.w) * v.zoom + v.x, bottom: (n.y + n.h) * v.zoom + v.y } : null,
+      avoid: frame.plates.filter((x) => x.place !== at).map((x) => ({ left: x.x * v.zoom + v.x, top: x.y * v.zoom + v.y, right: (x.x + x.w) * v.zoom + v.x, bottom: (x.y + x.h) * v.zoom + v.y })),
     });
     if (!spot.done || !faded.done || marksMoving(live, frame.plates.map((x) => x.id))) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }

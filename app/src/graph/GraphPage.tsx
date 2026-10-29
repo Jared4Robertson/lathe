@@ -36,7 +36,7 @@ import { focusStrength } from './fade';
 import { boxColors, paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
-import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
+import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
 import { useChanges } from '../changes/changes';
 import { useChangesKey } from '../changes/ChangesKey';
 import { GHOST_MS, lensFade, marksMoving, useStageMarks } from '../changes/marks';
@@ -715,7 +715,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     const sp = spotlight.current;
     const fade = strengthNow();
     const live = marks.at(performance.now());
-    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at, marks: live };
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: sp.lit, litLines: sp.litLines, spot: spot.value, strength: fade.at, marks: live, open: openIn(wrapper.current, space, s.w, s.h) };
     paint(ctx.current, dpr, camOf(view.current, s), frame, look.current, fonts, state);
     // The leader line to the wiki card (LA-V96-R24), under this camera, from the focus's box in its outline's color.
     const v = view.current;
@@ -724,6 +724,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (wrapper.current) drawLeaderLine(ctx.current, {
       host: wrapper.current, space, dpr, color: focusPlate ? boxColors(look.current, focusPlate).edge : look.current.ink,
       box: node ? { left: node.x * v.zoom + v.x, top: node.y * v.zoom + v.y, right: (node.x + node.w) * v.zoom + v.x, bottom: (node.y + node.h) * v.zoom + v.y } : null,
+      avoid: frame.plates.filter((p) => p.id !== focus).map((p) => ({ left: p.x * v.zoom + v.x, top: p.y * v.zoom + v.y, right: (p.x + p.w) * v.zoom + v.x, bottom: (p.y + p.h) * v.zoom + v.y })),
     });
     if (!spot.done || !fade.done || marksMoving(live, frame.plates.map((p) => p.id))) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
