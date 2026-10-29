@@ -17,7 +17,8 @@ import { addressOf, focusOf, type FocusRoute } from './address';
 import { focusTrail } from './HeaderStrip';
 
 // The wiki card (LA-V96): the one card, the focused record's or group's whole wiki page, with its
-// editing, floating over the left of the open space above whichever stage shows. It follows the
+// editing, floating over the right of the open space above whichever stage shows, between the open
+// space and the side bar. It follows the
 // focus once the focus settles (FocusPage.tsx), so arrowing through the stage never draws a page
 // per step, and it is memoized, so nothing but a new page or a new index draws it again. A link in
 // it moves the focus, as a click on the stage does. It is resizable, collapsible by its button and
@@ -32,7 +33,7 @@ export interface WikiCardProps {
   onCollapse: () => void;
   /** In a bottom sheet on a phone. */
   sheet?: boolean;
-  /** The resize handle at its right edge, on a wide screen. */
+  /** The resize handle at its left edge, on a wide screen. */
   handle?: ReactNode;
 }
 
@@ -40,12 +41,12 @@ export const WikiCard = memo(forwardRef<HTMLDivElement, WikiCardProps>(function 
   const focus = focusOf(route);
   const trail = focusTrail(index, focus);
   return (
-    <section aria-label="Wiki card" className={`wiki-panel${sheet ? ' is-sheet' : ''}`} data-floating={sheet ? undefined : 'left'} data-page={focus}>
+    <section aria-label="Wiki card" className={`wiki-panel${sheet ? ' is-sheet' : ''}`} data-floating={sheet ? undefined : 'right'} data-page={focus}>
       <div className="wiki-panel-head">
         {trail.length > 0 ? <Breadcrumb items={trail} label="Wiki card breadcrumb" className="wiki-panel-trail" /> : <span className="wiki-panel-trail" />}
         <Tooltip label="Collapse the wiki card" command="toggleWikiCard" placement="left">
           <Button variant="icon" label="Collapse the wiki card" className="wiki-panel-collapse" onClick={onCollapse}>
-            <Icon name={sheet ? 'x' : 'sidebar-left'} size={16} />
+            <Icon name={sheet ? 'x' : 'sidebar-right'} size={16} />
           </Button>
         </Tooltip>
       </div>

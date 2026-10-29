@@ -425,21 +425,22 @@ function useCardRoute(index: SpecIndex, settled: string, route: FocusRoute): Foc
   return isFocusRoute(parsed) ? parsed : route;
 }
 
-/** The handle at the wiki card's right edge: drag or arrow keys for its width, double-click to reset, drag small to collapse. */
+/** The handle at the wiki card's left edge: drag or arrow keys for its width (Left grows it, as the card sits after it), double-click to reset, drag small to collapse. */
 function CardHandle({ width, onWidth, onReset, onCollapse }: { width: number | null; onWidth: (w: number) => void; onReset: () => void; onCollapse: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  const cardLeft = () => ref.current?.closest('.wiki-panel')?.getBoundingClientRect().left ?? 0;
+  const cardRight = () => ref.current?.closest('.wiki-panel')?.getBoundingClientRect().right ?? 0;
   const value = width ?? Math.max(CARD_MIN, Math.round(ref.current?.closest('.wiki-panel')?.getBoundingClientRect().width ?? CARD_MIN));
   return (
     <div ref={ref} className="wiki-panel-handle">
       <ResizeHandle
         label="Resize the wiki card"
+        side="after"
         value={value}
         min={CARD_MIN}
         max={CARD_MAX}
         step={16}
         bigStep={64}
-        valueAt={(x) => x - cardLeft()}
+        valueAt={(x) => cardRight() - x}
         onChange={onWidth}
         onReset={onReset}
         collapseBelow={200}

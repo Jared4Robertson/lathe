@@ -8,6 +8,10 @@ import { parseSpecRoute } from '../src/specs/data';
 import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/address';
 import { frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
 import { SETTINGS_KEY } from '../src/graph/settings';
+import { colorOf } from '../src/theme/audit';
+import { contrast, over } from '../src/theme/contrast';
+import { BUILT_IN_THEMES } from '../src/theme/theme';
+import { COLOR_TOKENS } from '../src/theme/tokens';
 import { openApp } from './helpers';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
@@ -116,15 +120,15 @@ describe('one address, one stage', () => {
     const rect = (left: number, top: number, right: number, bottom: number) => ({ left, top, right, bottom, width: right - left, height: bottom - top });
     const panels = [
       { side: 'left', rect: rect(8, 8, 344, 892) }, // the nav
-      { side: 'left', rect: rect(352, 84, 652, 892) }, // the wiki card
-      { side: 'top', rect: rect(352, 8, 1084, 76) }, // the tab panel
-      { side: 'right', rect: rect(1092, 8, 1432, 892) }, // the side bar
+      { side: 'top', rect: rect(352, 8, 1432, 76) }, // the tab panel
+      { side: 'right', rect: rect(732, 84, 1084, 892) }, // the wiki card, inside the side bar
+      { side: 'right', rect: rect(1092, 84, 1432, 892) }, // the side bar
       { side: 'left', rect: rect(0, 0, 0, 0) }, // a collapsed panel leaves nothing
     ];
     const open = openInsets(stage, panels);
-    expect(open).toEqual({ left: 652 + OPEN_GAP, top: 76 + OPEN_GAP, right: 1440 - 1092 + OPEN_GAP, bottom: 0 });
+    expect(open).toEqual({ left: 344 + OPEN_GAP, top: 76 + OPEN_GAP, right: 1440 - 732 + OPEN_GAP, bottom: 0 });
     // The stage's own tools take room from the frame only, never from the open space.
-    expect(frameInsets(open, [{ side: 'top', rect: rect(660, 84, 1000, 120) }])).toEqual({ ...open, top: open.top + 36 + OPEN_GAP });
+    expect(frameInsets(open, [{ side: 'top', rect: rect(360, 84, 700, 120) }])).toEqual({ ...open, top: open.top + 36 + OPEN_GAP });
 
     // On the page the measure is written on the stage as CSS variables, which the stage's tools follow.
     await openApp('/P-D-UC01?stage=graph', served());
@@ -325,8 +329,9 @@ describe('one address, one stage', () => {
   it('LA-V96-R20-T01 Panels float over the stage, frosted, and opaque under reduced transparency', async () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     const root = css.match(/^:root \{([\s\S]*?)\n\}/m)![1];
-    expect(root).toMatch(/--float-dense: color-mix\(in srgb, var\(--sheet\) 9\d%, transparent\)/);
-    expect(root).toMatch(/--float-light: color-mix\(in srgb, var\(--sheet\) 85%, transparent\)/);
+    expect(root).toMatch(/--float-dense: color-mix\(in srgb, var\(--sheet\) 82%, transparent\)/);
+    expect(root).toMatch(/--float-light: color-mix\(in srgb, var\(--sheet\) 72%, transparent\)/);
+    expect(root).toMatch(/--float-blur: 22px/);
     const reduced = css.match(/@media \(prefers-reduced-transparency: reduce\) \{([\s\S]*?)\n\}/)![1];
     expect(reduced).toMatch(/--float-dense: var\(--sheet\)/);
     expect(reduced).toMatch(/--float-light: var\(--sheet\)/);
@@ -337,7 +342,23 @@ describe('one address, one stage', () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const sides = [...document.querySelectorAll<HTMLElement>('[data-floating]')].map((p) => `${p.className.split(' ')[0]}:${p.dataset.floating}`);
-    expect(sides).toEqual(expect.arrayContaining(['menu:left', 'page-bar:top', 'header-strip:top', 'wiki-panel:left', 'side-bar-column:right']));
+    expect(sides).toEqual(expect.arrayContaining(['menu:left', 'page-bar:top', 'header-strip:top', 'wiki-panel:right', 'side-bar-column:right']));
+
+    // Text on a panel keeps AA (4.5:1) in every built-in theme and mode, the panel laid over any fill the stage draws
+    // (the paper, the sheet, the shell, every tint) and over dense content (about a quarter ink over the paper, once blurred).
+    const share = (token: string) => Number(root.match(new RegExp(`${token}: color-mix\\(in srgb, var\\(--sheet\\) (\\d+)%`))![1]) / 100;
+    const fills = ['--paper', '--sheet', '--shell', ...COLOR_TOKENS.map((t) => t.name).filter((n) => n.endsWith('-bg'))];
+    const failing = BUILT_IN_THEMES.flatMap((theme) => (['light', 'dark'] as const).flatMap((mode) => {
+      const color = (token: string) => colorOf(theme, mode, token);
+      const sheet = color('--sheet')!;
+      const ink = color('--ink')!;
+      const behind = [...fills.map(color).filter((c) => c !== null), over([ink[0], ink[1], ink[2], 0.25], color('--paper')!)];
+      return [share('--float-dense'), share('--float-light')].flatMap((alpha) => behind.flatMap((under) => ['--ink', '--muted', '--steel', '--warn'].flatMap((fg) => {
+        const ratio = contrast(color(fg)!, over([sheet[0], sheet[1], sheet[2], alpha], under));
+        return ratio >= 4.5 ? [] : [`${theme.id} ${mode} ${fg} at ${alpha}: ${ratio.toFixed(2)}`];
+      })));
+    }));
+    expect(failing).toEqual([]);
   });
 });
 
@@ -426,7 +447,8 @@ describe('the panels\' handles', () => {
     const cardHandle = screen.getByRole('separator', { name: 'Resize the wiki card' });
     fireEvent.keyDown(cardHandle, { key: 'Home' });
     expect(cardHandle).toHaveAttribute('aria-valuenow', '360');
-    fireEvent.keyDown(cardHandle, { key: 'ArrowRight' });
+    // The wiki card sits after its handle too: Left grows it.
+    fireEvent.keyDown(cardHandle, { key: 'ArrowLeft' });
     expect(cardHandle).toHaveAttribute('aria-valuenow', '376');
     fireEvent.keyDown(cardHandle, { key: 'End' });
     expect(cardHandle).toHaveAttribute('aria-valuenow', '900');
