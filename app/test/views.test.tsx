@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { parseSpecRoute } from '../src/specs/data';
 import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/address';
 import { CARD_GAP, CARD_GAP_Y, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
+import { NARROW_QUERY } from '../src/shell/useNarrow';
 import { SETTINGS_KEY } from '../src/graph/settings';
 import { colorOf } from '../src/theme/audit';
 import { contrast, over } from '../src/theme/contrast';
@@ -141,7 +142,32 @@ describe('one address, one stage', () => {
     await waitFor(() => expect(el.querySelector('[data-stage-tools="top"]')).not.toBeNull());
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{ top: var\(--open-top/);
+    // Centered across the open space, over the focus the camera frames there.
+    expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{[^}]*left: calc\(var\(--open-left, 0px\) \+ \(100% - var\(--open-left, 0px\) - var\(--open-right, 0px\)\) \/ 2\); transform: translateX\(-50%\)/);
     expect(css).toMatch(/\.trace-scroll \{[^}]*padding: calc\(var\(--frame-top/);
+  });
+
+  it('LA-V96-R05-T03 The measure follows the stage the page makes anew when it changes between the phone and the wide layout', async () => {
+    // A screen that narrows and widens again: the page makes its stage anew each way.
+    let narrow = false;
+    const listeners = new Set<() => void>();
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      get matches() { return query === NARROW_QUERY && narrow; },
+      media: query,
+      addEventListener: (_: string, l: () => void) => { if (query === NARROW_QUERY) listeners.add(l); },
+      removeEventListener: (_: string, l: () => void) => { listeners.delete(l); },
+    }));
+    const flip = (to: boolean) => act(() => { narrow = to; for (const l of [...listeners]) l(); });
+    await openApp('/P-D-UC01?stage=erd', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    const before = stageRegion('ERD');
+    await waitFor(() => expect(before.style.getPropertyValue('--open-left')).toMatch(/^\d+px$/));
+    flip(true);
+    flip(false);
+    const after = stageRegion('ERD');
+    expect(after).not.toBe(before);
+    // The new stage is measured at once, so its tools (the ERD's key) sit inside the open space, clear of the nav.
+    await waitFor(() => expect(after.style.getPropertyValue('--open-left')).toMatch(/^\d+px$/));
   });
 
   it('LA-EXP-INV02-T Every part shows one focus: a node click moves the card, a card link moves the graph, Back moves them all, and graph settings survive', async () => {
@@ -355,7 +381,7 @@ describe('one address, one stage', () => {
     expect(settings()).toMatchObject({ cardExpanded: false });
   });
 
-  it('LA-V96-R19-T03 The wiki card sits in one spot under the tools, inset, its height a steady share of the stage, round, with a hairline, a stripe in the box\'s color, a lifting shadow and a quiet cross-fade', () => {
+  it('LA-V96-R19-T03 The wiki card sits in one spot under the tools, inset, its height a steady share of the stage, round, its whole border in the box\'s color, a lifting shadow and a quiet cross-fade', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     // Every rule of exactly this selector, joined.
     const rule = (selector: string) => [...css.matchAll(new RegExp(`(?:^|\\n)${selector.replace(/[.[\]()]/g, '\\$&')} \\{([^}]*)\\}`, 'g'))].map((m) => m[1]).join(';');
@@ -369,11 +395,11 @@ describe('one address, one stage', () => {
     expect(panel).toMatch(/(?:^|;)\s*height: min\(60%, 100% - var\(--card-top\) - var\(--card-gap-y\)\)/);
     expect(panel).not.toMatch(/max-height/);
     expect(rule('.wiki-panel.is-expanded')).toMatch(/height: min\(85%, 100% - var\(--card-top\) - var\(--card-gap-y\)\)/);
-    // Rounder than a box (the sheet's radius, not the boxes' 4 px), a hairline in the theme's line color.
-    expect(panel).toMatch(/border: 1px solid var\(--rule\); border-radius: var\(--sheet-radius\)/);
+    // Rounder than a box (the sheet's radius, not the boxes' 4 px), its whole border in the focused box's own color.
+    expect(panel).toMatch(/border: 2px solid var\(--card-accent, var\(--rule\)\); border-radius: var\(--sheet-radius\)/);
     const radius = (token: string) => Number(css.match(new RegExp(`${token}: (\\d+)px`))![1]);
     expect(radius('--sheet-radius')).toBeGreaterThanOrEqual(3 * radius('--node-radius'));
-    expect(rule('.wiki-panel::before')).toMatch(/background: var\(--card-accent/);
+    expect(css).not.toMatch(/\.wiki-panel::before/);
     expect(css).toMatch(/\.wiki-panel \{ background: var\(--float-light\);[^}]*box-shadow: var\(--card-shadow\)/);
     expect(css).toMatch(/--card-shadow: 0 1px 3px rgb\(0 0 0 \/ 0\.07\), 0 10px 28px rgb\(0 0 0 \/ 0\.13\)/);
     expect(css).toMatch(/@media \(forced-colors: active\) \{ \.wiki-panel \{ border-color: CanvasText; \} \}/);
