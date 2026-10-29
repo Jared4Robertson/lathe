@@ -759,7 +759,8 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   }, [boxIds, plateFor, map]);
   const domNode = (id: string) => [...(layer.current?.querySelectorAll<HTMLElement>('.graph-box') ?? [])].find((el) => el.dataset.id === id) ?? null;
 
-  // After a keyboard action, put focus back on the right box once it is in the layer.
+  // After a keyboard action, put focus back on the right box once it is in the layer: when the boxes drawn change, or
+  // when the focus does (a child framed with its parent's children's column draws the same boxes, LA-EXP-DS09).
   useEffect(() => {
     if (!refocus.current) return;
     const id = refocus.current;
@@ -768,7 +769,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     refocus.current = null;
     el.focus({ preventScroll: true });
     active.current = id;
-  }, [order]);
+  }, [order, focus]);
 
   /** A click or Enter on a box: it becomes the focus, at its own address. */
   const activate = (id: string, fromKeyboard: boolean) => {

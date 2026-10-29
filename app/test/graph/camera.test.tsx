@@ -34,7 +34,8 @@ describe('graph camera', () => {
     const h = 800;
     const strip = Math.min(PARENT_STRIP_MAX, w * PARENT_STRIP);
     for (const [focus, depth] of [['P-D', 1], ['P-D', 2], ['P-D/use-cases', 3], ['P-D-UC01', 1], ['P-D/question', 1]] as const) {
-      const v = frameOnMap(map, focus, depth, w, h);
+      // The focus's own frame (a focus whose children it draws too small to read frames their column: LA-EXP-DS09-T14).
+      const v = frameFocus(map, map.nodes.get(focus)!, depth, w, h);
       const f = map.nodes.get(focus)!;
       const screen = (x: number, y: number) => ({ x: x * v.zoom + v.x, y: y * v.zoom + v.y });
       // The focus is whole in the pane; never past the camera's limit.
@@ -65,7 +66,7 @@ describe('graph camera', () => {
       expect(top.x).toBeGreaterThan(screen(p.x + p.w, 0).x);
     }
     // Deeper frames take more levels in: never a larger zoom.
-    expect(frameOnMap(map, 'P-D', 3, w, h).zoom).toBeLessThanOrEqual(frameOnMap(map, 'P-D', 1, w, h).zoom);
+    expect(frameFocus(map, map.nodes.get('P-D')!, 3, w, h).zoom).toBeLessThanOrEqual(frameFocus(map, map.nodes.get('P-D')!, 1, w, h).zoom);
     // A leaf framed short of the limit: a deep leaf is small against the product's box, and the camera reaches it.
     expect(frameOnMap(map, 'P-D-UC01-R01', 1, w, h).zoom).toBeLessThan(MAX_ZOOM);
     // The whole map fits the overview.
@@ -118,11 +119,12 @@ describe('graph camera', () => {
       expect(screen(0, many.y).y).toBeLessThan(h);
       expect(screen(first.x, 0).x).toBeGreaterThan(right);
     }
-    // A focus whose children read keeps its own frame, at every depth.
+    // A focus whose children read keeps its own frame, at every depth (in a wider pane, where its two children and its one read).
+    const [wide, tall] = [1400, 1000];
     for (const id of ['few', 'one']) for (const depth of [1, 2, 3]) {
-      const own = frameFocus(tree, tree.nodes.get(id)!, depth, w, h);
-      expect(titlePx(tree, tree.nodes.get(id)!.children[0], own.zoom)).toBeGreaterThanOrEqual(CHILD_READ_PX);
-      expect(frameOnMap(tree, id, depth, w, h)).toEqual(own);
+      const own = frameFocus(tree, tree.nodes.get(id)!, depth, wide, tall);
+      expect(titlePx(tree, tree.nodes.get(id)!.children[0], own.zoom), `${id} depth ${depth}`).toBeGreaterThanOrEqual(CHILD_READ_PX);
+      expect(frameOnMap(tree, id, depth, wide, tall)).toEqual(own);
     }
   });
 
@@ -153,38 +155,39 @@ describe('graph camera on the page', () => {
   });
   afterEach(() => vi.unstubAllGlobals());
 
-  async function open() {
+  async function open(at = 'P-D-UC01') {
     startAtDepth(1);
-    await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
-    await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
+    await openApp(`/${at}?stage=graph`, { data: testWorkspace() });
+    await waitFor(() => expect(isCenter(at)).toBe(true));
     await waitFor(() => expect(moves()).toBeGreaterThan(0));
   }
 
   it('LA-EXP-DS05-T10 LA-EXP-DS09-T04 LA-V93-R16-T01 Focusing a child glides the camera on the shared motion, and no box moves or changes size', async () => {
-    await open();
+    // From a domain to its use cases stage: a use case and its requirements share one frame, their column at reading size.
+    await open('P-D');
     // The first picture appears at once, framed.
     expect(glides()).toBe(0);
-    expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01', 1, 1000, 800)));
+    expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D', 1, 1000, 800)));
     const before = boxes();
     const first = moves();
 
-    fireEvent.click(node('P-D-UC01-R01')!);
-    await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
+    fireEvent.click(node('P-D/use-cases')!);
+    await waitFor(() => expect(isCenter('P-D/use-cases')).toBe(true));
     // The camera glides there, frame by frame, and ends framing the new focus.
-    const target = frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01-R01', 1, 1000, 800);
+    const target = frameOnMap(graphMap(testIndex(), 'P'), 'P-D/use-cases', 1, 1000, 800);
     await waitFor(() => expect(camera()).toEqual(roundCamera(target)), { timeout: 3000 });
     expect(glides()).toBe(1);
     expect(moves() - first).toBeGreaterThan(2);
     // Every box drawn before and after is where it was, at the size it was.
     const after = boxes();
     const both = [...before.keys()].filter((id) => after.has(id));
-    expect(both).toContain('P-D-UC01');
-    expect(both).toContain('P-D-UC01-R01');
+    expect(both).toContain('P-D');
+    expect(both).toContain('P-D/use-cases');
     for (const id of both) expect(after.get(id), id).toBe(before.get(id));
     // Back glides back.
     window.history.back();
-    await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-    await waitFor(() => expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D-UC01', 1, 1000, 800))), { timeout: 3000 });
+    await waitFor(() => expect(isCenter('P-D')).toBe(true));
+    await waitFor(() => expect(camera()).toEqual(roundCamera(frameOnMap(graphMap(testIndex(), 'P'), 'P-D', 1, 1000, 800))), { timeout: 3000 });
   });
 
   it('LA-EXP-DS09-T05 LA-V93-R01-T01 LA-V93-R16-T02 Under reduced motion focusing frames the new focus at once', async () => {

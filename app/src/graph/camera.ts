@@ -33,11 +33,11 @@ export const MIN_ZOOM = 1e-4;
 
 /**
  * The least size a framed focus's children's titles are drawn at on screen, in CSS pixels (LA-EXP-DS06, LA-EXP-DS09):
- * the Tree's readable floor, the size a framed box's header reads at least. A Tree box's title is about a fifth of its
- * height (its text is at most its width over 250 and it is at most 6 times as wide as tall), so a child reads from about
- * 45 pixels tall.
+ * about the app's small UI text, so a child's title reads comfortably. A Tree box's title is about a fifth of its height
+ * (its text is at most its width over 250 and it is at most 6 times as wide as tall), so a 6:1 child reads from about
+ * 55 pixels tall.
  */
-export const CHILD_READ_PX = 8;
+export const CHILD_READ_PX = 11;
 
 /** A box and everything under it. */
 const subtree = (map: GraphMap, n: MapNode): MapNode[] => [n, ...n.children.flatMap((c) => subtree(map, map.nodes.get(c)!))];

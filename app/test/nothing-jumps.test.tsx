@@ -121,7 +121,7 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     const drawing = document.querySelector('.graph-flow canvas');
     fireEvent.click(boxElement('P-D-UC01')!);
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
-    await waitFor(() => expect(boxElement('P-D-CAP01')).not.toBeNull());
+    await waitFor(() => expect(boxElement('P-D-UC01-R01')).not.toBeNull());
     expect(document.querySelector('.graph-flow')).toBe(canvas);
     expect(document.querySelector('.graph-flow canvas')).toBe(drawing);
   });

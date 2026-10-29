@@ -44,8 +44,8 @@ describe('graph page', () => {
     expect(window.location.search).toBe('?stage=graph');
     await waitFor(() => expect(title()).toBe('Lend a thing in the web app'));
     await waitFor(() => expect(isCenter('P-D-UC01-FL01')).toBe(true));
-    // The flow's own parent, its use case, is now drawn.
-    await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
+    // The flow's frame draws its steps, their column at reading size.
+    await waitFor(() => expect(node(STEP)).not.toBeNull());
     // The graph keeps no trail of its own: the header strip's breadcrumb names where the focus sits, Back walks the path.
     expect(screen.queryByRole('navigation', { name: 'Records visited' })).toBeNull();
 
@@ -123,8 +123,8 @@ describe('graph page', () => {
     await waitFor(() => expect(node('P-D-INV02')).not.toBeNull());
     expect(drawnBox('P-D-INV02')!.badges.map((b) => b.label)).toContain('gap');
     // The product is a structural record.
-    await showGraph('/P-D');
-    await waitFor(() => expect(node('P')).not.toBeNull());
+    await showGraph('/P');
+    await waitFor(() => expect(node('P-D')).not.toBeNull());
     expect(drawnBox('P')!.stage).toBe('structural');
     expect(drawnBox('P-D')!.stage).toBe('domain-model');
   });

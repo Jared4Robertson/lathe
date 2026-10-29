@@ -38,6 +38,8 @@ const inMap = (scene: TraceScene, b: TraceScene['boxes'][number]) => {
 };
 /** Whether a drawn box lies inside the canvas. */
 const inView = (scene: TraceScene, b: TraceScene['boxes'][number]) => b.rect.left >= scene.canvas.left - 0.5 && b.rect.left + b.rect.width <= scene.canvas.left + scene.canvas.width + 0.5 && b.rect.top >= scene.canvas.top - 0.5 && b.rect.top <= scene.canvas.top + scene.canvas.height;
+/** Whether a box shows on the canvas, at least a strip of it at its left edge. */
+const atLeftEdge = (scene: TraceScene, b: TraceScene['boxes'][number]) => b.rect.left + b.rect.width > scene.canvas.left + 0.5 && b.rect.left < scene.canvas.left + scene.canvas.width && b.rect.top < scene.canvas.top + scene.canvas.height && b.rect.top + b.rect.height > scene.canvas.top;
 /** The record IDs at the ends of the drawn lines, `source > target`, the arrows (a chain's links) or the plain lines. */
 const lineIds = (scene: TraceScene, link: boolean) => {
   const id = new Map(scene.boxes.map((b) => [b.key, b.id]));
@@ -101,7 +103,8 @@ describe('the Trace stage', () => {
     expect(whole.boxes.find((b) => b.key === 'P-D-UC01-R01|P-D-UC01-FL01')!.strength).toBe(1);
     // The product's other branches are drawn, faded back.
     expect(whole.boxes.find((b) => b.key === 'P-D-INV01')!.strength).toBeLessThan(1);
-    await waitFor(async () => { const now = await drawn(); expect(inView(now, now.boxes.find((b) => b.key === 'P-D-UC01')!)).toBe(true); });
+    // In view, at the left edge: its requirements' column is framed at reading size (LA-EXP-DS09).
+    await waitFor(async () => { const now = await drawn(); expect(atLeftEdge(now, now.boxes.find((b) => b.key === 'P-D-UC01')!)).toBe(true); });
     // A domain: everything under it at full strength, the other domain and the product's own records faded.
     await openApp('/P-D?stage=trace', served());
     whole = await drawn(true);
