@@ -197,10 +197,13 @@ export function openWidth(room: Room, collapsed: ReadonlySet<CrowdPanel>): numbe
   const navRight = inset + (navShown ? room.nav.width : room.nav.rail);
   const card = room.card && !collapsed.has('card');
   const sideBar = room.sideBar !== null && !collapsed.has('sideBar') ? room.sideBar : null;
-  const left = (card ? navRight + inset + CARD_MIN : navRight) + OPEN_GAP;
+  const left = navRight + OPEN_GAP;
+  // On the right, from the window's edge inward: the chat, the side bar, then the wiki card.
   const chatSpace = room.chat !== null ? room.chat + 2 * inset : inset;
+  const sideSpace = sideBar !== null ? sideBar + inset + chatSpace : chatSpace;
   let right = 0;
-  if (sideBar !== null) right = sideBar + inset + chatSpace + OPEN_GAP;
+  if (card) right = sideSpace + CARD_MIN + OPEN_GAP;
+  else if (sideBar !== null) right = sideSpace + OPEN_GAP;
   else if (room.chat !== null) right = chatSpace - inset + OPEN_GAP;
   return room.width - left - right;
 }

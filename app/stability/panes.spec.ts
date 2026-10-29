@@ -53,6 +53,7 @@ test.describe('the stage and its panels', () => {
     const [nav, card, side, bar, stage] = await Promise.all([box(NAV), box(CARD), box(SIDE_BAR), box(PAGE_BAR), box(STAGE)]);
     expect(card!.x, 'the card starts after the nav ends').toBeGreaterThanOrEqual(nav!.x + nav!.width);
     expect(side!.x, 'the side bar starts after the card ends').toBeGreaterThanOrEqual(card!.x + card!.width);
+    expect(side!.x - (card!.x + card!.width), 'the card sits beside the side bar, a gap away').toBeLessThanOrEqual(16);
     expect(bar!.x, 'the page bar starts after the nav').toBeGreaterThanOrEqual(nav!.x + nav!.width);
     expect(bar!.x + bar!.width, 'the page bar ends before the side bar').toBeLessThanOrEqual(side!.x);
     expect(side!.x + side!.width).toBeLessThanOrEqual(1440);
@@ -161,8 +162,8 @@ test.describe('the stage and its panels', () => {
     const handle = page.getByRole('separator', { name: 'Resize the wiki card' });
     const r = await step(page, 'stage', 'widen the wiki card', { keys: [NAV, PAGE_BAR, STRIP, SIDE_BAR, STAGE], allow: [...MOVES_WITH_OPEN_SPACE, CARD], resizes: [CARD] }, async () => {
       await handle.focus();
-      await page.keyboard.press('Shift+ArrowRight');
-      await page.keyboard.press('Shift+ArrowRight');
+      await page.keyboard.press('Shift+ArrowLeft');
+      await page.keyboard.press('Shift+ArrowLeft');
     });
     expectStable(r);
     await expectFocusInOpenSpace(page, 'with a wider card');
