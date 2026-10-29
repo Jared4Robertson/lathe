@@ -36,6 +36,12 @@ describe('mergeData', () => {
     expect((await mergeData(v(1), v(1) + v(2), v(1) + v(2), view)).clashes).toEqual([]);
   });
 
+  it("LA-AUT-UC19-R01-T04 keeps a field this side's schema does not know, added on the other side, and leaves its check to the next load", async () => {
+    const withNew = (n: number) => line({ id: `TL-V0${n}`, title: `View ${n}`, description: 'A page of the desk app.', added_column: 'kept' });
+    const result = await mergeData(v(1), v(1) + v(2), withNew(1), view);
+    expect(result).toEqual({ text: withNew(1) + v(2), clashes: [], problems: [] });
+  });
+
   it('LA-AUT-SP03-T fails when one ID is added on both sides with different content', async () => {
     const result = await mergeData(v(1), v(1) + v(2, 'Desk'), v(1) + v(2, 'Return desk'), view);
     expect(result.clashes).toEqual(['TL-V02 was added on both sides with different content']);
