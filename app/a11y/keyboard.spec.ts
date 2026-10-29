@@ -201,11 +201,13 @@ test.describe('keyboard', () => {
     await expect.poll(path).not.toBe(before);
     // Quick find keeps its arrows: Down moves through its results, the focus stays.
     const here = path();
-    await page.locator('#nav input').first().focus();
+    await page.keyboard.press('Control+k');
+    await expect(page.locator('.quick-open input')).toBeFocused();
     await page.keyboard.type('a');
     await page.keyboard.press('ArrowDown');
     await page.waitForTimeout(300);
     expect(path()).toBe(here);
+    await page.keyboard.press('Escape');
   });
 
   test('LA-V61-R41-T02 fold and unfold a row with the keyboard', async ({ page }) => {
