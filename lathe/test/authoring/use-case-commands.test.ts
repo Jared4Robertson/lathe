@@ -80,8 +80,11 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
     const committed = await runCommand(store, ADD_FLOW_STEP, step);
     expect(committed.tables).toEqual(['flow_step', 'fulfills', 'happens_in']);
     const whole = runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC02-FL01-S01' }) as ReturnType<typeof GET_USE_CASE.run>;
-    expect(whole.root).toBe('TL-LEND-UC02');
-    expect(whole.steps).toEqual([{ row: { id: step.id, title: step.title, flow_id: step.flow_id, path: 'main', position: 1 }, fulfills: ['TL-LEND-UC02-R01'], invokes: null, happensIn: 'TL-V01', exchangesWith: [] }]);
+    expect(whole.record).toEqual({ id: 'TL-LEND-UC02-FL01-S01', kind: 'flow_step' });
+    expect(whole.useCase.id).toBe('TL-LEND-UC02');
+    const added = { step: { id: step.id, title: step.title, flow_id: step.flow_id, path: 'main', position: 1 }, fulfills: ['TL-LEND-UC02-R01'], invokes: null, happensIn: 'TL-V01', exchangesWith: [] };
+    expect(whole.flows).toEqual([{ flow: expect.objectContaining({ id: 'TL-LEND-UC02-FL01' }), paths: [{ name: 'main', steps: [added] }], test: null }]);
+    expect(whole.requirements).toEqual([{ requirement: expect.objectContaining({ id: 'TL-LEND-UC02-R01' }), tests: [], fulfilledBy: [step.id] }]);
     expect(runQuery(store, LIST_USE_CASES, { capability_id: 'TL-LEND-CAP01' })).toEqual([
       { id: 'TL-LEND-UC01', title: 'Borrow a tool' },
       { id: 'TL-LEND-UC02', title: 'Return a tool' },
@@ -105,7 +108,7 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
   it('changes a step\'s links: a list replaces the list, null clears a single link', async () => {
     const store = await storeOf();
     await runCommand(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL01-S01', happens_in: null, exchanges_with: [], position: 1 });
-    const step = (runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC01' }) as ReturnType<typeof GET_USE_CASE.run>).steps[0];
+    const step = (runQuery(store, GET_USE_CASE, { id: 'TL-LEND-UC01' }) as ReturnType<typeof GET_USE_CASE.run>).flows[0].paths[0].steps[0];
     expect(step).toMatchObject({ happensIn: null, exchangesWith: [], invokes: 'TL-LEND-CMD01', fulfills: ['TL-LEND-UC01-R01'] });
   });
 

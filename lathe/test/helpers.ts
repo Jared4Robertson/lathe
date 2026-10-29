@@ -251,6 +251,7 @@ export function complete(): Data {
       { id: 'EX-LEND-EV02-ET', title: 'ToolAdded', domain_event_id: 'EX-LEND-EV02', delivery: 'in process', file: 'src/events.ts' },
     ],
     projection: [{ id: 'EX-LEND-RM01-PJ', title: 'freeTools', read_model_id: 'EX-LEND-RM01', file: 'src/schema.sql', description: 'A view over the loans and tools tables.' }],
+    reader: [{ id: 'EX-LEND-RM01-RD', title: 'FreeToolsReader', read_model_id: 'EX-LEND-RM01', file: 'src/schema.sql', description: 'Reads the free tools view for the query handler.' }],
     command_handler: [
       { id: 'EX-LEND-CMD01-H', title: 'openLoan', command_id: 'EX-LEND-CMD01', file: 'src/loans.ts', description: 'Saves the loan and its event in one transaction.' },
       { id: 'EX-LEND-CMD02-H', title: 'addTool', command_id: 'EX-LEND-CMD02', file: 'src/tools.ts', description: 'Inserts the tool and its event in one transaction.' },

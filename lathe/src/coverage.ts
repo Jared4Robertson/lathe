@@ -213,6 +213,7 @@ WHERE NOT EXISTS (SELECT 1 FROM persists p WHERE p.target_id = a.id) AND NOT EXI
   missingImpl('value-object-without-value-type', 'value_object', 'Value object', 'value_type', 'value_object_id', 'value type'),
   missingImpl('event-without-event-type', 'domain_event', 'Domain event', 'event_type', 'domain_event_id', 'event type'),
   missingImpl('read-model-without-projection', 'read_model', 'Read model', 'projection', 'read_model_id', 'projection'),
+  missingImpl('read-model-without-reader', 'read_model', 'Read model', 'reader', 'read_model_id', 'reader'),
   missingImpl('read-model-without-table', 'read_model', 'Read model', 'table', 'read_model_id', 'table'),
   missingImpl('command-without-handler', 'command', 'Command', 'command_handler', 'command_id', 'command handler'),
   missingImpl('query-without-handler', 'query', 'Query', 'query_handler', 'query_id', 'query handler'),
