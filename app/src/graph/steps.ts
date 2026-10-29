@@ -1,8 +1,8 @@
 // The stage's walk: the plain arrow keys step the focus through the tree, out to the parent, in to the first child and
 // across the siblings, from anywhere on the page (LA-V93-R19). The commands layer's one arrow handler
 // (useStageWalk, app/src/shell/commands.tsx) sends each arrow to the stage shown; each stage maps it to a step here. The
-// Graph steps by its layout's keys; the ERD and Trace stages, which draw parents beside their children as the Tree does,
-// by the Tree's.
+// Graph steps by its layout's keys; the Trace stage, which draws parents beside their children as the Tree does, by the
+// Tree's; the ERD stage by where its boxes sit on the map (erd/walk.ts `erdStep`), through `useWalk`.
 import { useCallback } from 'react';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { useStageWalk } from '../shell/commands';
@@ -59,13 +59,24 @@ export function stepName(index: SpecIndex, id: string): string {
  * follows to the new focus's box (and so is read out there); otherwise the walk is announced.
  */
 export function useStepWalk(index: SpecIndex, focus: string, layout: GraphLayout, onNavigate: (id: string) => void, follow?: (to: string) => boolean) {
-  const walk = useCallback((key: string) => {
+  const target = useCallback((key: string) => {
     const step = arrowStep(layout, key);
-    const to = step ? stepTarget(index, focus, step) : null;
+    return step ? stepTarget(index, focus, step) : null;
+  }, [index, focus, layout]);
+  useWalk(index, focus, target, onNavigate, follow);
+}
+
+/**
+ * Registers a stage's walk by its own step: `target` says where a plain arrow's key goes from the focus, or null. The
+ * walk moves the focus there, as a click does, and announces it unless `follow` takes keyboard focus there.
+ */
+export function useWalk(index: SpecIndex, focus: string, target: (key: string) => string | null, onNavigate: (id: string) => void, follow?: (to: string) => boolean) {
+  const walk = useCallback((key: string) => {
+    const to = target(key);
     if (!to) return null;
     const followed = follow?.(to) ?? false;
     onNavigate(to);
     return followed ? null : stepName(index, to);
-  }, [index, focus, layout, onNavigate, follow]);
+  }, [index, target, onNavigate, follow]);
   useStageWalk(walk, isGraphNode(index, focus));
 }
