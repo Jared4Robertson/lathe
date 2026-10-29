@@ -165,8 +165,8 @@ function leaderFor(host: HTMLElement, space: OpenSpaceStore | undefined, box: Bo
 
 /**
  * Draws a stage again, at once, when the card moves without the camera: a panel opening, closing or
- * resizing (the open space changes), the card's own size, or its page scrolling the title along.
- * `paint` is the stage's paint, run in the same frame as the change.
+ * resizing, the card among them (the open space changes), or the card's page scrolling its title
+ * along. `paint` is the stage's paint, run in the same frame as the change.
  */
 export function useLeaderFollow(host: { current: HTMLElement | null }, space: OpenSpaceStore | undefined, paint: () => void) {
   const latest = useRef(paint);
@@ -178,24 +178,10 @@ export function useLeaderFollow(host: { current: HTMLElement | null }, space: Op
     const off = space.subscribe(now);
     const layout = el.closest('.stage-layout');
     const onScroll = (e: Event) => { if (e.target instanceof Element && e.target.matches('.wiki-panel-scroll')) now(); };
-    // While the card itself glides (a transition on it), the line is drawn each frame, the card read where that frame has it.
-    let moving = 0;
-    let frame: number | null = null;
-    const tick = () => { frame = moving > 0 ? requestAnimationFrame(tick) : null; now(); };
-    const isCard = (e: Event) => e.target instanceof Element && e.target.matches('.wiki-panel');
-    const onRun = (e: Event) => { if (!isCard(e)) return; moving++; if (frame === null) frame = requestAnimationFrame(tick); };
-    const onEnd = (e: Event) => { if (isCard(e)) moving = Math.max(0, moving - 1); };
     layout?.addEventListener('scroll', onScroll, { capture: true, passive: true });
-    layout?.addEventListener('transitionrun', onRun);
-    layout?.addEventListener('transitionend', onEnd);
-    layout?.addEventListener('transitioncancel', onEnd);
     return () => {
       off();
-      if (frame !== null) cancelAnimationFrame(frame);
       layout?.removeEventListener('scroll', onScroll, { capture: true });
-      layout?.removeEventListener('transitionrun', onRun);
-      layout?.removeEventListener('transitionend', onEnd);
-      layout?.removeEventListener('transitioncancel', onEnd);
     };
   }, [host, space]);
 }
