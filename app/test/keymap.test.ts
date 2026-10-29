@@ -15,6 +15,7 @@ import {
   platformKeys,
   readOverrides,
   resolveCommands,
+  usesArrows,
 } from '../src/shell/keymap';
 
 const key = (k: string, code: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey', boolean>> = {}) =>
@@ -148,5 +149,43 @@ describe('the keymap', () => {
       const reserved = new Set(RESERVED.map((r) => normalizeBinding(r, mac)));
       for (const c of resolveCommands({}, mac)) for (const k of c.keys) expect(reserved.has(normalizeBinding(k, mac)), `${c.id} ${k}`).toBe(false);
     }
+  });
+
+  it('LA-V61-R49-T01 The arrow guard leaves a plain arrow with each control that uses arrows, and with nothing else', () => {
+    const make = (html: string) => {
+      const host = document.createElement('div');
+      host.innerHTML = html;
+      document.body.append(host);
+      return host.firstElementChild as HTMLElement;
+    };
+    // Each control that uses arrows keeps them, and so does what is inside it.
+    const own = [
+      '<input type="text">', '<input type="search">', '<input type="number">', '<input>', '<input type="radio">', '<input type="range">',
+      '<textarea></textarea>', '<select><option>a</option></select>', '<div contenteditable="true"><b>x</b></div>', '<div contenteditable=""><b>x</b></div>',
+      ...['tree', 'treegrid', 'grid', 'menu', 'menubar', 'listbox', 'combobox', 'tablist', 'radiogroup', 'slider', 'spinbutton'].map((r) => `<div role="${r}"><button>x</button></div>`),
+      '<div role="separator" tabindex="0"></div>', '<button aria-haspopup="menu">x</button>', '<button aria-haspopup="true">x</button>', '<button aria-haspopup="listbox">x</button>',
+      '<div role="dialog" aria-modal="true"><button>x</button></div>', '<ul data-arrows="own"><li><a href="/x">x</a></li></ul>',
+      '<pre tabindex="0">code</pre>', '<div role="region" tabindex="0" aria-label="Scrolls">text</div>',
+    ];
+    for (const html of own) {
+      const el = make(html);
+      expect(usesArrows(el), html).toBe(true);
+      const inner = el.querySelector('button, a, b, option');
+      if (inner) expect(usesArrows(inner), `inside ${html}`).toBe(true);
+    }
+    // Anything else gives a plain arrow to the stage: the body, a button, a link, a checkbox, a link in a scrolling
+    // region (the region only keeps them when it has focus itself), a splitter that takes no focus, a dialog that is not modal.
+    const stage = [
+      '<button>x</button>', '<a href="/x">x</a>', '<input type="checkbox">', '<input type="button" value="x">', '<p>text</p>',
+      '<div role="separator"></div>', '<button aria-haspopup="dialog">x</button>', '<div role="dialog"><button>x</button></div>',
+    ];
+    for (const html of stage) expect(usesArrows(make(html)), html).toBe(false);
+    const region = make('<div role="region" tabindex="0" aria-label="Scrolls"><a href="/x">x</a></div>');
+    expect(usesArrows(region.querySelector('a'))).toBe(false);
+    const dialog = make('<div role="dialog"><button>x</button></div>');
+    expect(usesArrows(dialog.querySelector('button'))).toBe(false);
+    expect(usesArrows(document.body)).toBe(false);
+    expect(usesArrows(null)).toBe(false);
+    document.body.innerHTML = '';
   });
 });
