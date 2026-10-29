@@ -1,6 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { desktopBridgeStub, openApp, openSideBar } from './helpers';
+import { desktopBridgeStub, openApp } from './helpers';
 import { crowdedLabel } from '../src/views/openSpace';
 import type { Chrome } from '../src/shell/desktopChrome';
 
@@ -86,33 +86,24 @@ describe('desktop title bar', () => {
     await waitFor(() => expect(screen.getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
   });
 
-  it('LA-V67-R04-T01 The layout toggles run the navigation and side bar commands and show whether each panel shows', async () => {
-    // The test reads the side bar open on every stage.
-    openSideBar('details');
+  it('LA-V67-R04-T01 The layout toggle runs the navigation command and shows whether the nav shows', async () => {
     desktop();
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const nav = bar().getByRole('button', { name: 'Show or hide the navigation' });
-    const sideBar = bar().getByRole('button', { name: 'Show or hide the side bar' });
-    await waitFor(() => expect(sideBar).toHaveAttribute('aria-pressed', 'true'));
-    expect(nav).toHaveAttribute('aria-pressed', 'true');
+    await waitFor(() => expect(nav).toHaveAttribute('aria-pressed', 'true'));
 
     fireEvent.click(nav);
     await waitFor(() => expect(nav).toHaveAttribute('aria-pressed', 'false'));
     expect(document.querySelector('.app')).toHaveClass('nav-collapsed');
     fireEvent.click(nav);
     await waitFor(() => expect(nav).toHaveAttribute('aria-pressed', 'true'));
+    expect(document.querySelector('.app')).not.toHaveClass('nav-collapsed');
 
-    fireEvent.click(sideBar);
-    await waitFor(() => expect(sideBar).toHaveAttribute('aria-pressed', 'false'));
-    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
-    fireEvent.click(sideBar);
-    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument());
-
-    // A window too narrow for the side bar collapses it for space (LA-PAT-APP-UX-R18): the toggle says so.
-    act(() => { window.innerWidth = 1100; window.dispatchEvent(new Event('resize')); });
-    await waitFor(() => expect(bar().getByRole('button', { name: crowdedLabel('sideBar') })).toHaveAttribute('aria-pressed', 'false'));
-    expect(bar().getByRole('button', { name: crowdedLabel('sideBar') })).toHaveClass('is-crowded');
+    // A window too narrow for the nav collapses it for space (LA-PAT-APP-UX-R18): the toggle says so.
+    act(() => { window.innerWidth = 600; window.dispatchEvent(new Event('resize')); });
+    await waitFor(() => expect(bar().getByRole('button', { name: crowdedLabel('nav') })).toHaveAttribute('aria-pressed', 'false'));
+    expect(bar().getByRole('button', { name: crowdedLabel('nav') })).toHaveClass('is-crowded');
   });
 
   it('LA-V67-R06-T03 The window\'s chrome follows the theme: setChrome gets its shell and ink as hex colors', async () => {

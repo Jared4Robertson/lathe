@@ -4,12 +4,12 @@ import { describe, expect, it, vi } from 'vitest';
 import type { SpecData } from '../../lathe/src/server/contract';
 import { RecordContent } from '../src/specs/RecordContent';
 import { productKindWorkspace } from './fixtures/product-kinds';
-import { main, openApp, section as pageSection } from './helpers';
-// The Graph stage, where the side bar is open, needs a ResizeObserver in jsdom.
+import { facts, main, openApp, section as pageSection } from './helpers';
+// The Graph stage needs a ResizeObserver in jsdom.
 import './graph/setup';
 import { addRows, indexOf } from './fixtures/load';
 
-/** A section of the page: in the wiki card on a focus page, which the side bar beside it may echo. */
+/** A section of the page: in the wiki card on a focus page. */
 const section = (name: string | RegExp) => {
   const card = document.querySelector<HTMLElement>('.wiki-panel');
   if (!card) return pageSection(name);
@@ -38,8 +38,7 @@ const groups = (element: HTMLElement) =>
     return `${heading}: ${bars.join(', ')}`;
   });
 const ids = (element: Element) => [...element.querySelectorAll('a.record-link code')].map((c) => c.textContent);
-const side = () => main().querySelector('aside.record-side') as HTMLElement;
-const field = (name: string) => within(side()).getByText(name, { selector: 'dt' }).nextElementSibling as HTMLElement;
+const field = (name: string) => within(facts()).getByText(name, { selector: 'dt' }).nextElementSibling as HTMLElement;
 const stage = (name: string) => main().querySelector(`.stage-${name}`) as HTMLElement;
 
 describe('obligation kinds and test states', () => {
@@ -115,11 +114,11 @@ describe('obligation kinds and test states', () => {
   });
 
   it('LA-V92-R51-T01 The record page shows a test state and how the test is run, and says one not automated yet is not proof', async () => {
-    // The state is a fact in the side bar's Details, open in the Graph view.
+    // The state is among the record's facts, in the wiki card's whole page on the Graph stage.
     await openApp('/DM-SHOP-INV01-T?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A 51st line is refused' });
     expect(field('State')).toHaveTextContent('not automated yet');
-    expect(within(side()).queryByText('state', { selector: 'dt' })).toBeNull();
+    expect(within(facts()).queryByText('state', { selector: 'dt' })).toBeNull();
     expect(screen.getByRole('note')).toHaveTextContent('Not automated yet. No file runs it, so it does not count as proof');
 
     await openApp('/DM-SHOP-UC01-R02-T01?stage=graph', served());
@@ -171,9 +170,10 @@ describe('obligation kinds and test states', () => {
     expect(onNavigate).toHaveBeenCalledWith('/DM-SHOP-UC01-FL01-S01');
     expect(window.location.pathname).toBe('/graph/DM-SHOP-UC01-R01');
 
-    // Links in the header and side panel go through the host too.
-    await user.click(within(container.querySelector('aside') as HTMLElement).getByRole('link', { name: /DM-SHOP-UC01-R01-T01/ }));
-    expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP-UC01-R01-T01');
+    // Links in its facts (after the body) and in the header go through the host too.
+    onNavigate.mockClear();
+    await user.click(within(screen.getByRole('complementary', { name: 'Facts' })).getByRole('link', { name: /DM-SHOP-UC01-FL01-S01/ }));
+    expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP-UC01-FL01-S01');
     await user.click(within(container.querySelector('.eyebrow') as HTMLElement).getByRole('link', { name: 'Shopping' }));
     expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP');
     expect(window.location.pathname).toBe('/graph/DM-SHOP-UC01-R01');

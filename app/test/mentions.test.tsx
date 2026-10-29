@@ -4,7 +4,7 @@ import { neighborhood } from '../src/graph/model';
 import { linkMentions, renderMarkdown } from '../src/specs/Markdown';
 import { proseLinks } from '../src/specs/mentions';
 import { patternWorkspace } from './fixtures/patterns';
-import { openApp, openSideBar } from './helpers';
+import { facts, openApp } from './helpers';
 import { indexOf, setRow } from './fixtures/load';
 
 // Record IDs named in a text field become links: every ID-shaped token that is a record of the
@@ -92,15 +92,15 @@ describe('record IDs in text fields', () => {
   it('LA-V92-R19-T02 On a record page a text field links the records it names, and a link moves within the app', proveLaV92R18T04);
 
   const proveLaV92R18T05 = async () => {
-    openSideBar();
     await openApp('/DM-PAY-UC01', { data: withText() });
     await screen.findByRole('heading', { level: 1, name: 'Pay by card' });
     expect(within(body()).getAllByRole('link').map((a) => [a.textContent, a.getAttribute('title')])).toEqual([
       ['DM-SHOP-UC01', 'Add an item to the basket'],
       ['DM-SHOP-UC01-R01', 'The basket shows the new item'],
     ]);
-    // A mention is not a link between records: not in the links out, not in the graph.
-    expect(within(screen.getByRole('complementary', { name: 'Side bar' })).queryByRole('link', { name: /^DM-SHOP-UC01/ })).toBeNull();
+    // A mention is not a link between records: not in the links out among its facts, not in the graph.
+    expect(within(facts()).getByRole('heading', { name: 'Links out' })).toBeInTheDocument();
+    expect(within(facts()).queryByRole('link', { name: /^DM-SHOP-UC01/ })).toBeNull();
     const ix = indexOf(withText());
     expect(neighborhood(ix, 'DM-PAY-UC01', 2).nodes.map((n) => n.id)).not.toContain('DM-SHOP-UC01');
 

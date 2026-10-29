@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { domainFolders } from '../src/specs/folders';
 import { treeChildren, treeParent } from '../src/graph/tree';
 import { modelIndex, modelWorkspace } from './fixtures/model';
-import { main, openApp, openSideBar, section, stageOf } from './helpers';
+import { facts, main, openApp, section, stageOf } from './helpers';
 
 // How the nav, the domain, product and group pages and the record page read a domain by stage and
 // kind (LA-V90, LA-V91, LA-V92): a group that is a record links and one the app computes only
@@ -176,12 +176,12 @@ describe('groups by stage and kind', () => {
   });
 
   it("LA-V92-R28-T01 An integration's page lists the flow steps that exchange with it, with their count, and names its outside system", async () => {
-    openSideBar('details');
     await openApp('/P-INT01', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Mail' });
     const exchanges = section(/^Exchanged with by/);
     expect(within(main()).getByRole('heading', { name: /^Exchanged with by/ })).toHaveTextContent('Exchanged with by1');
     expect(within(exchanges).getByRole('link', { name: /P-D-UC01-FL01-S02/ })).toHaveAttribute('href', '/P-D-UC01-FL01-S02');
-    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toHaveTextContent('The mail service'));
+    // The outside system, among its facts in the wiki card.
+    await waitFor(() => expect(facts()).toHaveTextContent('The mail service'));
   });
 });
