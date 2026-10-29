@@ -162,6 +162,8 @@ export function traceLevels(map: TraceMap, open: number | null): StageLevels {
         return [...map.lanes[lane].boxes].sort((a, b) => column(a) - column(b) || a.y - b.y).map((b) => boxNode({ key: b.key, lane }));
       }
       const box = map.byKey.get(node.at.key)!;
+      // A tree box holds what hangs from it, toward the lane the walk came from: In goes where Right does.
+      if (box.lane < 0) { const to = traceStep(map, node.at, 'right', open); return to ? [boxNode(to)] : []; }
       return box.role === 'more' ? hiddenBy(map, box).map((b) => boxNode({ key: b.key, lane: box.lane })) : [];
     },
     across: (id, direction) => {
