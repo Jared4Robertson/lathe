@@ -5,7 +5,6 @@ import { describe, expect, it } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { graphSummary, keyboardOrder, type Box } from '../../src/graph/GraphPage';
 import { stepTarget } from '../../src/graph/steps';
-import { panToward, pastEdges } from '../../src/graph/hints';
 import { groupLabel, groupMembers, isGraphNode, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { treeChildren, treeParent } from '../../src/graph/tree';
 import { labelLines } from '../../src/graph/text';
@@ -19,9 +18,6 @@ import { boxElement, boxElements, drawnBox, graphHost, isCenter, scene } from '.
 
 const ids = (n: Neighborhood) => n.nodes.map((x) => x.id).sort();
 const node = (id: string) => boxElement(id);
-/** The links drawn now (the Links switch), and the tree's parent lines. */
-const drawnLinks = () => scene().lines.filter((l) => l.link);
-const parentLines = () => scene().lines.filter((l) => !l.link);
 const STAGES = ['P-D/domain-model', 'P-D/use-cases', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan'];
 
 async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1) {
@@ -94,24 +90,6 @@ describe('the graph tree, its depth and its camera', () => {
     }
   });
 
-  it('LA-V93-R10-T07 LA-V93-R08-T02 The Links switch beside Depth is off by default, has a tooltip and the shortcut l, draws the center\'s links dashed, and is kept while walking', async () => {
-    await showGraph('/P-D-UC01-FL01-S01');
-    const links = screen.getByRole('button', { name: 'Links' });
-    expect(links).toHaveAttribute('aria-pressed', 'false');
-    expect(links).toHaveAttribute('aria-keyshortcuts', 'L');
-    expect(drawnLinks()).toEqual([]);
-    fireEvent.keyDown(document.body, { key: 'l', code: 'KeyL' });
-    await waitFor(() => expect(drawnLinks()).toHaveLength(3));
-    expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
-    // The tree's own lines are not links.
-    expect(drawnLinks().filter((l) => l.style === 'structure')).toEqual([]);
-    // Walking on keeps it on: the view's own link from the UI component that renders it is drawn.
-    fireEvent.click(node('P-V01')!);
-    await waitFor(() => expect(isCenter('P-V01')).toBe(true));
-    await waitFor(() => expect(drawnLinks().some((l) => l.source === 'P-UI01' && l.target === 'P-V01')).toBe(true));
-    expect(screen.getByRole('button', { name: 'Links' })).toHaveAttribute('aria-pressed', 'true');
-  });
-
   it('LA-EXP-DS09-T09 LA-EXP-DS10-T03 Every drawn box shows its label, however small on screen, and is a keyboard stop; the summary counts the framed picture', async () => {
     // A use case with sixty requirements: framed from its domain, they are a few pixels tall each.
     const w = testWorkspace();
@@ -148,8 +126,9 @@ describe('the graph tree, its depth and its camera', () => {
     const minimap = screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement;
     expect(minimap.checked).toBe(false);
     expect(screen.queryByRole('switch', { name: /context ring/i })).toBeNull();
-    // The trace preset is worded with the relations' labels, never their codes (LA-V92-R07).
-    expect(screen.getByRole('button', { name: 'Only fulfills, invokes and happens in links' })).toBeInTheDocument();
+    // The filters are the kinds' alone: no relation and no preset.
+    expect(screen.queryByRole('group', { name: 'Relations' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Only / })).toBeNull();
     expect(document.querySelector('.graph-minimap')).toBeNull();
     fireEvent.click(minimap);
     await waitFor(() => expect(screen.getByRole('img', { name: 'Minimap' })).toBeInTheDocument());
@@ -259,36 +238,18 @@ describe('the graph tree, its depth and its camera', () => {
     }, 30_000);
   }
 
-  it('LA-V93-R18-T01 LA-V93-R08-T03 With Links on, links draw as curves between their boxes, and the edge hints count the linked records past each edge', async () => {
-    // The hints' arithmetic: a box's center past an edge counts for that edge; the plain pan moves half the canvas.
-    const view = { x: 0, y: 0, zoom: 1 };
-    expect(pastEdges([{ x: -10, y: 50 }, { x: 1200, y: -5 }, { x: 500, y: 900 }, { x: 500, y: 400 }], view, 1000, 800)).toEqual({ up: 1, down: 1, left: 1, right: 1 });
-    expect(panToward(view, 'right', 1000, 800)).toEqual({ x: -500, y: 0, zoom: 1 });
-    expect(panToward(view, 'up', 1000, 800)).toEqual({ x: 0, y: 400, zoom: 1 });
-
-    await showGraph('/P-D-UC01-FL01-S01');
-    fireEvent.click(screen.getByRole('button', { name: 'Links' }));
-    // Every linked record is drawn, wherever it is in the map, and each link is a curve to it.
-    await waitFor(() => expect(drawnLinks()).toHaveLength(3));
-    for (const id of ['P-V01', 'P-D-CMD01', 'P-D-UC01-R01']) expect(node(id)).not.toBeNull();
-    // Each link joins the focus's box to a linked record's, drawn as a curve (paint.ts); the tree's parent lines stay straight and level.
-    for (const l of drawnLinks()) expect([l.source, l.target]).toContain('P-D-UC01-FL01-S01');
-    expect(parentLines().length).toBeGreaterThan(0);
-    for (const l of parentLines()) expect(l.points[0][1]).toBe(l.points[1][1]);
-  });
-
   it('LA-V93-R17-T01 Hovering or focusing a box spotlights it, its lines and the boxes it joins, and leaving restores the picture', async () => {
-    await showGraph('/P-D-UC01-FL01-S01');
-    fireEvent.click(screen.getByRole('button', { name: 'Links' }));
-    await waitFor(() => expect(node('P-V01')).not.toBeNull());
+    await showGraph('/P-D-UC01-FL01');
+    await waitFor(() => expect(node('P-D-UC01-FL01-S02')).not.toBeNull());
     const flow = graphHost()!;
-    node('P-V01')!.focus();
+    node('P-D-UC01-FL01-S01')!.focus();
     await waitFor(() => expect(flow.className).toContain('has-spotlight'));
-    expect(drawnBox('P-V01')!.lit).toBe(true);
     expect(drawnBox('P-D-UC01-FL01-S01')!.lit).toBe(true);
-    expect(drawnBox('P-D-UC01-FL01')!.lit).toBe(false);
-    expect(scene().lines.find((l) => l.source === 'P-D-UC01-FL01-S01' && l.target === 'P-V01')!.lit).toBe(true);
-    fireEvent.blur(node('P-V01')!);
+    expect(drawnBox('P-D-UC01-FL01')!.lit).toBe(true);
+    expect(drawnBox('P-D-UC01-FL01-S02')!.lit).toBe(false);
+    expect(scene().lines.find((l) => l.source === 'P-D-UC01-FL01' && l.target === 'P-D-UC01-FL01-S01')!.lit).toBe(true);
+    expect(scene().lines.find((l) => l.source === 'P-D-UC01-FL01' && l.target === 'P-D-UC01-FL01-S02')!.lit).toBe(false);
+    fireEvent.blur(node('P-D-UC01-FL01-S01')!);
     expect(flow.className).not.toContain('has-spotlight');
     expect(scene().spotlight).toBe(false);
     expect(scene().boxes.every((b) => b.lit === null)).toBe(true);

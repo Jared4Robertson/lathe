@@ -173,7 +173,7 @@ test.describe('Traceability flows', () => {
     await expect(wiki.getByRole('heading', { name: `Settings ${settings}`, level: 2 })).toBeVisible();
     await expect(wiki.getByRole('heading', { name: `Rules ${rules.length}`, level: 2 })).toBeVisible();
     await expect(wiki.getByRole('region', { name: `Followed in ${EXP}` })).toBeVisible();
-    // S03: in the graph, the rules sit under the pattern and its followers are linked to it.
+    // S03: in the graph, the rules sit under the pattern; its followers are in the side bar's Traceability.
     await openPage(page, `/${pattern}?stage=graph`, '.focus-stage .graph-flow .graph-box');
     const ids = await page.locator('.focus-stage .graph-flow .graph-box').evaluateAll((els) => els.map((e) => e.getAttribute('data-id')));
     for (const r of rules) expect(ids).toContain(r.id);

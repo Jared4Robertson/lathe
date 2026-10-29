@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useState, useSyncExternalStore, type RefObject } from 'react';
+import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
 import { CARD_MIN } from '../graph/settings';
 
 // The open space over the stage (LA-V96): the part of the stage no floating panel covers, where
@@ -13,8 +13,9 @@ import { CARD_MIN } from '../graph/settings';
 // The measure runs when the stage or a panel changes size (a ResizeObserver on each), when a
 // panel comes or goes (a MutationObserver on the panels' parents, children only), and on a window
 // resize. It writes the insets as CSS variables on the stage (`--open-left` … and `--frame-left`
-// …), with no React render, and tells the stages through a small store, so a camera moves only when
-// the open space really changed.
+// …), and the foot of the stage's tools at its top on the stage's parent (`--tools-foot`), where the
+// wiki card reads it to sit just under that row (LA-V96-R19), all with no React render, and tells
+// the stages through a small store, so a camera moves only when the open space really changed.
 
 export interface Insets { left: number; top: number; right: number; bottom: number }
 export interface OpenSpace {
@@ -30,32 +31,17 @@ const SIDES = ['left', 'top', 'right', 'bottom'] as const;
 const NONE: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 const same = (a: Insets, b: Insets) => SIDES.every((s) => Math.abs(a[s] - b[s]) < 0.5);
 
-/**
- * Where the stage frames its focus (LA-V96-R19): the focused box's vertical center, in px from the
- * stage's top, once the camera that frames it arrives (`at`, on `performance.now()`'s clock). Null
- * when the stage draws no box for the focus. A stage reports it only when it frames the focus, never
- * as the Reader pans or zooms, so the wiki card that settles level with it never chases the camera.
- */
-export interface FocusAnchor { focus: string; y: number | null; at: number }
-
 export interface OpenSpaceStore {
   /** The measure, or null before the first one, so a stage never frames on a guess. */
   get: () => OpenSpace | null;
   subscribe: (listener: () => void) => () => void;
   /** Sets the measure; tells the listeners only when it changed. */
   set: (next: OpenSpace) => void;
-  /** Where the stage last framed its focus, or null before it has. */
-  anchor: () => FocusAnchor | null;
-  subscribeAnchor: (listener: () => void) => () => void;
-  /** A stage reports where it frames its focus. */
-  setAnchor: (next: FocusAnchor) => void;
 }
 
 export function createOpenSpaceStore(): OpenSpaceStore {
   let value: OpenSpace | null = null;
-  let anchor: FocusAnchor | null = null;
   const listeners = new Set<() => void>();
-  const anchorListeners = new Set<() => void>();
   return {
     get: () => value,
     subscribe: (l) => { listeners.add(l); return () => { listeners.delete(l); }; },
@@ -63,12 +49,6 @@ export function createOpenSpaceStore(): OpenSpaceStore {
       if (value && same(next.open, value.open) && same(next.frame, value.frame)) return;
       value = next;
       for (const l of listeners) l();
-    },
-    anchor: () => anchor,
-    subscribeAnchor: (l) => { anchorListeners.add(l); return () => { anchorListeners.delete(l); }; },
-    setAnchor: (next) => {
-      anchor = next;
-      for (const l of anchorListeners) l();
     },
   };
 }
@@ -111,54 +91,69 @@ const panelsIn = (root: ParentNode, attr: 'floating' | 'stageTools'): Panel[] =>
 
 /**
  * Measures the open space over `stage` among the floating panels in `root` (the app), writes it on
- * the stage as CSS variables and into `store`.
+ * the stage as CSS variables and into `store`. It follows the elements, not the refs: the page makes
+ * its stage anew when it changes shape (between the phone layout and the wide one), and the measure
+ * moves to the new stage at once, so the stage's tools never lose their place (the ERD's key under
+ * the nav's rail).
  */
 export function useOpenSpaceMeasure(stage: RefObject<HTMLElement | null>, store: OpenSpaceStore, root: RefObject<HTMLElement | null>) {
+  const attached = useRef<{ el: HTMLElement; scope: Element; store: OpenSpaceStore; stop: () => void } | null>(null);
+  // After every render, cheaply: it attaches again only when the stage, the app or the store is another one.
   useLayoutEffect(() => {
     const el = stage.current;
     const scope = root.current?.closest('.app') ?? root.current;
-    if (!el || !scope) return;
-    const measure = () => {
-      const open = openInsets(el.getBoundingClientRect(), panelsIn(scope, 'floating'));
-      const frame = frameInsets(open, panelsIn(el, 'stageTools'));
-      for (const s of SIDES) {
-        el.style.setProperty(`--open-${s}`, `${Math.round(open[s])}px`);
-        el.style.setProperty(`--frame-${s}`, `${Math.round(frame[s])}px`);
-      }
-      store.set({ open, frame });
-    };
-    measure();
-    if (typeof ResizeObserver === 'undefined') return;
-    const sizes = new ResizeObserver(measure);
-    const watched = new Set<Element>();
-    const watch = () => {
-      const now = new Set<Element>([el, ...scope.querySelectorAll('[data-floating]'), ...el.querySelectorAll('[data-stage-tools]')]);
-      for (const w of watched) if (!now.has(w)) { sizes.unobserve(w); watched.delete(w); }
-      for (const w of now) if (!watched.has(w)) { sizes.observe(w); watched.add(w); }
-    };
-    watch();
-    // A panel or a stage's tools coming or going: a burst of changes is measured once, after it.
-    let queued = false;
-    let live = true;
-    const later = () => {
-      if (queued) return;
-      queued = true;
-      queueMicrotask(() => { queued = false; if (live) { watch(); measure(); } });
-    };
-    // The panels' parents (the app, the page's layout), their children only; and the stage, whose
-    // tools come with its content (a lazily loaded stage, an ERD laid out).
-    const comings = new MutationObserver(later);
-    const parents = new Set<Element>([scope, ...[...scope.querySelectorAll('[data-floating]')].map((p) => p.parentElement).filter((p): p is HTMLElement => !!p)]);
-    for (const p of parents) comings.observe(p, { childList: true });
-    comings.observe(el, { childList: true, subtree: true });
-    window.addEventListener('resize', measure);
-    return () => {
-      live = false;
-      sizes.disconnect();
-      comings.disconnect();
-      window.removeEventListener('resize', measure);
-    };
-  }, [stage, store, root]);
+    const now = attached.current;
+    if (now && now.el === el && now.scope === scope && now.store === store) return;
+    now?.stop();
+    attached.current = el && scope ? { el, scope, store, stop: measureOpenSpace(el, scope, store) } : null;
+  });
+  useLayoutEffect(() => () => { attached.current?.stop(); attached.current = null; }, []);
+}
+
+/** Measures the open space over `el` among the floating panels in `scope`, now and on every change; returns how to stop. */
+function measureOpenSpace(el: HTMLElement, scope: Element, store: OpenSpaceStore): () => void {
+  const measure = () => {
+    const open = openInsets(el.getBoundingClientRect(), panelsIn(scope, 'floating'));
+    const frame = frameInsets(open, panelsIn(el, 'stageTools'));
+    for (const s of SIDES) {
+      el.style.setProperty(`--open-${s}`, `${Math.round(open[s])}px`);
+      el.style.setProperty(`--frame-${s}`, `${Math.round(frame[s])}px`);
+    }
+    // The card is the stage's sibling; it floats on the right, so where it sits never moves this top.
+    el.parentElement?.style.setProperty('--tools-foot', `${Math.round(frame.top - OPEN_GAP)}px`);
+    store.set({ open, frame });
+  };
+  measure();
+  if (typeof ResizeObserver === 'undefined') return () => {};
+  const sizes = new ResizeObserver(measure);
+  const watched = new Set<Element>();
+  const watch = () => {
+    const now = new Set<Element>([el, ...scope.querySelectorAll('[data-floating]'), ...el.querySelectorAll('[data-stage-tools]')]);
+    for (const w of watched) if (!now.has(w)) { sizes.unobserve(w); watched.delete(w); }
+    for (const w of now) if (!watched.has(w)) { sizes.observe(w); watched.add(w); }
+  };
+  watch();
+  // A panel or a stage's tools coming or going: a burst of changes is measured once, after it.
+  let queued = false;
+  let live = true;
+  const later = () => {
+    if (queued) return;
+    queued = true;
+    queueMicrotask(() => { queued = false; if (live) { watch(); measure(); } });
+  };
+  // The panels' parents (the app, the page's layout), their children only; and the stage, whose
+  // tools come with its content (a lazily loaded stage, an ERD laid out).
+  const comings = new MutationObserver(later);
+  const parents = new Set<Element>([scope, ...[...scope.querySelectorAll('[data-floating]')].map((p) => p.parentElement).filter((p): p is HTMLElement => !!p)]);
+  for (const p of parents) comings.observe(p, { childList: true });
+  comings.observe(el, { childList: true, subtree: true });
+  window.addEventListener('resize', measure);
+  return () => {
+    live = false;
+    sizes.disconnect();
+    comings.disconnect();
+    window.removeEventListener('resize', measure);
+  };
 }
 
 /** The open space and frame, for a stage that frames its focus in them; null outside a stage. */
@@ -181,17 +176,18 @@ const noValue = () => null;
 
 /**
  * The narrowest the stage's open space may get before panels collapse for space, in px, between the
- * gaps at its edges: room for a column of the graph or a box of the ERD. At 1440 px it keeps the
- * nav, the wiki card and the chat open, only the side bar giving way.
+ * gaps at its edges: room for a column of the graph or a box of the ERD. With the chat open, 1456 px
+ * keeps the nav, the wiki card and the chat open, only the side bar giving way; at 1440 px the card
+ * gives way too.
  */
 export const STAGE_MIN = 300;
 /**
- * The wiki card's gap from what is at its right (the side bar, the chat or the window), in px: wider than the
- * panels' own gap (`--float-inset`), so the card floats in the map; no wider, so 1440 px still holds it beside the chat.
+ * The wiki card's gap from what is at its right (the side bar, the chat or the window), in px: well wider than the
+ * panels' own gap (`--float-inset`), so the card floats in the map with room to its right.
  */
-export const CARD_GAP = 12;
-/** The card's gap from the stage's tools above it and the window's foot below it, in px. */
-export const CARD_GAP_Y = 20;
+export const CARD_GAP = 28;
+/** The card's gap from the stage's tools above it and the window's foot below it, in px: the same as at its right. */
+export const CARD_GAP_Y = 28;
 /** A panel that collapses when the window is too narrow for every open panel. */
 export type CrowdPanel = 'sideBar' | 'card' | 'nav';
 /** The order panels collapse in as the window narrows; they reopen in reverse. */

@@ -187,29 +187,38 @@ test.describe('the stage and its panels', () => {
     }
   });
 
-  // The card settles level with the focused box (LA-V96-R23), below the stage's tools; a pan never moves it.
-  test('LA-V96-R23-T02 the wiki card settles level with the focused box, below the toolbar, and stays put while the Reader pans', async ({ page }) => {
+  // The card sits in one spot under the stage's toolbar row (LA-V96-R19), a steady share of the stage high: a new focus or a pan never moves it.
+  test('LA-V96-R19-T04 the wiki card holds one spot under the toolbar, about 60% of the stage high as a summary and 85% expanded, whatever the focus', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPage(page, `${AGGREGATE}?stage=graph`, STRIP);
     await stageReady(page);
-    const level = () => page.evaluate((stage) => {
+    const where = () => page.evaluate((stage) => {
       const card = document.querySelector('.wiki-panel')!.getBoundingClientRect();
-      const title = document.querySelector('.wiki-panel-title h2')!.getBoundingClientRect();
       const tools = document.querySelector(`${stage} [data-stage-tools="top"]`)?.getBoundingClientRect();
-      const host = document.querySelector(`${stage} .graph-flow`) as HTMLElement & { graphScene?: () => { boxes: { focus: boolean; rect: { top: number; height: number } }[] } };
-      const focus = host.graphScene!().boxes.find((b) => b.focus)!;
-      return { cardTop: card.top, toolsBottom: tools?.bottom ?? 0, title: title.top + title.height / 2, focus: focus.rect.top + focus.rect.height / 2 };
+      const host = document.querySelector(stage)!.getBoundingClientRect();
+      return { top: Math.round(card.top), height: Math.round(card.height), right: Math.round(card.right), toolsBottom: tools?.bottom ?? 0, stage: host.height, foot: host.bottom };
     }, STAGE);
-    await expect.poll(async () => { const l = await level(); return Math.abs(l.title - l.focus); }, { message: 'the title row is level with the focused box', timeout: 5000 }).toBeLessThan(3);
-    const placed = await level();
-    expect(placed.cardTop, 'the card starts below the stage\'s toolbar').toBeGreaterThan(placed.toolsBottom);
-    // A pan by the Reader moves the stage, never the card.
+    const first = await where();
+    expect(first.top, 'the card starts just under the stage\'s toolbar').toBeGreaterThan(first.toolsBottom);
+    expect(first.top - first.toolsBottom, 'by the card\'s own gap').toBeLessThan(40);
+    expect(first.height / first.stage, 'a summary is about 60% of the stage high').toBeCloseTo(0.6, 1);
+    // A new focus (the arrow keys walk the stage) and a pan leave it where it is.
+    await page.locator(`${STAGE} .graph-flow`).focus();
+    await page.keyboard.press('ArrowRight');
+    await page.waitForTimeout(800);
     const canvas = (await page.locator(`${STAGE} .graph-flow canvas`).boundingBox())!;
     await page.mouse.move(canvas.x + 120, canvas.y + 300);
     await page.mouse.down();
     await page.mouse.move(canvas.x + 120, canvas.y + 200, { steps: 8 });
     await page.mouse.up();
     await page.waitForTimeout(600);
-    expect((await level()).cardTop, 'the card holds still while the Reader pans').toBeCloseTo(placed.cardTop, 0);
+    expect(await where(), 'the card holds its spot and height across a new focus and a pan').toEqual(first);
+    // Expanded: about 85% of the stage, kept above the foot by the card's gap.
+    await page.locator(CARD).getByRole('button', { name: 'More' }).click();
+    await expect.poll(async () => (await where()).height, { message: 'expanded, the card grows' }).toBeGreaterThan(first.height);
+    const expanded = await where();
+    expect(expanded.top, 'expanded, its top stays').toBe(first.top);
+    expect(expanded.height / expanded.stage, 'up to about 85% of the stage').toBeLessThanOrEqual(0.86);
+    expect(expanded.top + expanded.height, 'above the foot').toBeLessThanOrEqual(expanded.foot - 20);
   });
 });

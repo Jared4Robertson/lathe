@@ -119,14 +119,12 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
   it('LA-V61-R38-T02 the graph canvas stays mounted when the graph re-centers', async () => {
     startAtDepth(1);
     await openApp('/P-D-UC01-R01?stage=graph', { data: testWorkspace() });
-    await waitFor(() => expect(document.querySelector('.graph-links button')).not.toBeNull());
-    fireEvent.click(document.querySelector<HTMLElement>('.graph-links button')!);
-    await waitFor(() => expect(boxElement('P-D-UC01-FL01-S01')).not.toBeNull());
+    await waitFor(() => expect(boxElement('P-D-UC01')).not.toBeNull());
     const canvas = document.querySelector('.graph-flow');
     const drawing = document.querySelector('.graph-flow canvas');
-    fireEvent.click(boxElement('P-D-UC01-FL01-S01')!);
-    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-FL01-S01'));
-    await waitFor(() => expect(boxElement('P-D-UC01-FL01')).not.toBeNull());
+    fireEvent.click(boxElement('P-D-UC01')!);
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
+    await waitFor(() => expect(boxElement('P-D-CAP01')).not.toBeNull());
     expect(document.querySelector('.graph-flow')).toBe(canvas);
     expect(document.querySelector('.graph-flow canvas')).toBe(drawing);
   });
@@ -135,8 +133,8 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     const source = readFileSync(join(__dirname, '..', 'src', 'graph', 'GraphPage.tsx'), 'utf8');
     expect(source).toMatch(/useLayoutEffect\(\(\) => \{ onGraph\?\.\(/);
     const model = readFileSync(join(__dirname, '..', 'src', 'erd', 'ErdView.tsx'), 'utf8');
-    // The ERD is fitted before its first paint, and observes its size once (each new observer reported the size again and cut the glide short).
-    expect(model).toMatch(/useLayoutEffect\(\(\) => \{\n\s*if \(!placed\) return;\n\s*if \(fit\(fitted\.current\)\) fitted\.current = true;/);
+    // The ERD map is framed before its first paint, and observes its size once (each new observer reported the size again and cut the glide short).
+    expect(model).toMatch(/useLayoutEffect\(\(\) => \{\n[^;]*;\n[^;]*;\n\s*if \(frameFocus\(fitted\.current\)\) \{ fitted\.current = true;/);
     expect(model).toMatch(/observer\.observe\(el\);\n\s*return \(\) => observer\.disconnect\(\);\n\s*\}, \[\]\);/);
   });
 

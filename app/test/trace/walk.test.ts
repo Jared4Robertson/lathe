@@ -27,7 +27,7 @@ function walk(map: TraceMap, from: TraceAt, keys: string[], open: number | null)
 }
 
 describe('the Trace stage\'s walk', () => {
-  it('LA-V61-R49-T04 On the Trace stage the arrows move over the map: Right along the lane, Left back into the why tree, Up and Down in the column, Right opening a "+N more", a shared record keeping its lane', () => {
+  it('LA-V61-R49-T05 On the Trace stage the arrows move over the map: Right along the lane, Left back into the why tree, Up and Down in the column, Right opening a "+N more", a shared record keeping its lane', () => {
     const index = withFiles();
     const map = traceMap(index, 'P');
     const lane = map.lanesOf.get('P-D-UC01-R01')![0];
