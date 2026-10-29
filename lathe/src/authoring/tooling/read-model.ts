@@ -19,10 +19,9 @@ export interface ToolingSummary {
   title: string;
 }
 
-/** The projection: each tooling record's page, from the rows; only the one given, when given. */
-export function toolingPagesFrom(view: ReadView, only?: string): ToolingPage[] {
-  const found = (view.rows('tooling') as unknown as ToolingRow[]).filter((r) => only === undefined || r.id === only);
-  if (!found.length) return [];
+// Each record's page, from the rows.
+function toolingPagesFrom(view: ReadView): ToolingPage[] {
+  const found = (view.rows('tooling') as unknown as ToolingRow[]);
   const packages = view.rows('package_use');
   const meets = view.rows('meets');
   return found.map((tooling) => ({
@@ -32,11 +31,29 @@ export function toolingPagesFrom(view: ReadView, only?: string): ToolingPage[] {
   }));
 }
 
-/** The projection's list: a domain's tooling records, by ID. */
-export function toolingSummariesFrom(view: ReadView, domain: string): ToolingSummary[] {
-  return view
-    .rows('tooling')
-    .filter((r) => r.domain_id === domain)
-    .map((r) => ({ id: String(r.id), title: String(r.title) }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+/** The read model's table: each record's page, each domain's list, and every record's kind. */
+export interface ToolingTable {
+  pages: Map<string, ToolingPage>;
+  /** Each domain's records, by ID. */
+  lists: Map<string, ToolingSummary[]>;
+  /** Every record ID in use, with its kind: what a next ID is one past, and what a refusal names. */
+  kinds: Map<string, string>;
+}
+
+/**
+ * The projection: the read model's table, built from the rows on each read. It is the only code that reads the source
+ * rows for the queries.
+ */
+export function toolingTableFrom(view: ReadView): ToolingTable {
+  const pages = new Map<string, ToolingPage>();
+  const lists = new Map<string, ToolingSummary[]>();
+  for (const page of toolingPagesFrom(view)) {
+    const row = page.tooling;
+    pages.set(row.id, page);
+    lists.set(row.domain_id, [...(lists.get(row.domain_id) ?? []), { id: row.id, title: row.title }]);
+  }
+  for (const list of lists.values()) list.sort((a, b) => a.id.localeCompare(b.id));
+  const kinds = new Map<string, string>();
+  for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
+  return { pages, lists, kinds };
 }

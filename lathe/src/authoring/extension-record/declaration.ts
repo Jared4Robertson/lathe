@@ -30,36 +30,48 @@ export function valueColumns(schema: SchemaDescription, kind: KindDescription): 
   return schema.tables[kind.name].columns.map((c) => c.name).filter((c) => c !== 'id' && c !== parentColumn(kind));
 }
 
+/** Where a record sits: its kind and the record it sits under, if any. */
+export interface Place {
+  kind: string;
+  parent: string | undefined;
+}
+
+/** Where each record sits, read from its row: its kind and the first parent column it gives. */
+export function placeIn(view: ReadView): (id: string) => Place | undefined {
+  return (id) => {
+    const at = view.record(id);
+    if (!at) return undefined;
+    const parent = view.schema.kinds[at.kind]?.parents.find((p) => at.row[p.column] !== undefined && at.row[p.column] !== null);
+    return { kind: at.kind, parent: parent ? String(at.row[parent.column]) : undefined };
+  };
+}
+
 // Walks up the record's parents to the first record of the kind, or undefined.
-function ancestor(view: ReadView, id: string, kind: string): string | undefined {
+function ancestor(place: (id: string) => Place | undefined, id: string, kind: string): string | undefined {
   const seen = new Set<string>();
-  let at = view.record(id);
-  while (at && !seen.has(String(at.row.id))) {
-    if (at.kind === kind) return String(at.row.id);
-    seen.add(String(at.row.id));
-    const parent = view.schema.kinds[at.kind]?.parents.find((p) => at!.row[p.column] !== undefined && at!.row[p.column] !== null);
-    if (!parent) return undefined;
-    at = view.record(String(at.row[parent.column]));
+  let at: string | undefined = id;
+  while (at !== undefined && !seen.has(at)) {
+    const here = place(at);
+    if (!here) return undefined;
+    if (here.kind === kind) return at;
+    seen.add(at);
+    at = here.parent;
   }
   return undefined;
 }
 
 /**
  * The product the record sits in: up its parents to a product, or, for a record of a kind with no owner on the way,
- * the longest product ID its ID starts with (and a hyphen). Null when there is none.
+ * the longest of the products' IDs its ID starts with (and a hyphen). Null when there is none.
  */
-export function productOf(view: ReadView, id: string): string | null {
-  const up = ancestor(view, id, 'product');
+export function productOf(place: (id: string) => Place | undefined, products: readonly string[], id: string): string | null {
+  const up = ancestor(place, id, 'product');
   if (up) return up;
-  const prefixes = view
-    .rows('product')
-    .map((p) => String(p.id))
-    .filter((p) => id.startsWith(`${p}-`))
-    .sort((a, b) => b.length - a.length);
+  const prefixes = products.filter((p) => id.startsWith(`${p}-`)).sort((a, b) => b.length - a.length);
   return prefixes[0] ?? null;
 }
 
 /** The domain the record sits in, up its parents, or undefined. */
-export function domainOf(view: ReadView, id: string): string | undefined {
-  return ancestor(view, id, 'domain');
+export function domainOf(place: (id: string) => Place | undefined, id: string): string | undefined {
+  return ancestor(place, id, 'domain');
 }

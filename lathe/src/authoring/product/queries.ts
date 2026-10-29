@@ -3,29 +3,27 @@
 // through its reader (reader.ts), and changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import type { ReadView } from '../../platform/data/rules.ts';
 import { PRODUCT_SLICE } from './model.ts';
 import type { ProductPage, ProductSummary } from './read-model.ts';
-import { productReader } from './reader.ts';
+import { productReader, type ProductReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
 /** The page of the product that holds the record: the product itself, an open question or interface in it, or a kind it declares. */
-export function getProduct(view: ReadView, input: { id: string }): ProductPage {
-  const reader = productReader(view);
+export function getProduct(reader: ProductReader, input: { id: string }): ProductPage {
   const product = reader.productHolding(input.id);
   if (product === undefined) {
     const kind = reader.kindOf(input.id);
     if (!kind) refuse('missing', `no record or product kind has the ID ${input.id}`);
     refuse('kind', `${input.id} is a ${kind}, not a product, an open question, an interface or a product kind`);
   }
-  return reader.page(product!);
+  return reader.page(product!)!;
 }
 
 /** GET a product whole (LA-AUT-QRY110). */
-export const GET_PRODUCT: QueryDefinition<{ id: string }, ProductPage> = {
+export const GET_PRODUCT: QueryDefinition<{ id: string }, ProductPage, ProductReader> = {
   id: 'LA-AUT-QRY110',
   slice: PRODUCT_SLICE,
   name: 'get-product',
@@ -33,17 +31,18 @@ export const GET_PRODUCT: QueryDefinition<{ id: string }, ProductPage> = {
   method: 'GET',
   route: '/api/product/get-product',
   input: { id: id('The product, an open question or interface in it, or a product kind it declares.', 'required') },
+  reader: productReader,
   run: getProduct,
   text: productText,
 };
 
 /** Every product, as the nav's space rail lists it: its ID, title, icon and color, by ID. */
-export function listProducts(view: ReadView): ProductSummary[] {
-  return productReader(view).products();
+export function listProducts(reader: ProductReader): ProductSummary[] {
+  return reader.products();
 }
 
 /** List the products (LA-AUT-QRY113). */
-export const LIST_PRODUCTS: QueryDefinition<Record<string, never>, ProductSummary[]> = {
+export const LIST_PRODUCTS: QueryDefinition<Record<string, never>, ProductSummary[], ProductReader> = {
   id: 'LA-AUT-QRY113',
   slice: PRODUCT_SLICE,
   name: 'list-products',
@@ -51,19 +50,19 @@ export const LIST_PRODUCTS: QueryDefinition<Record<string, never>, ProductSummar
   method: 'GET',
   route: '/api/product/list-products',
   input: {},
+  reader: productReader,
   run: listProducts,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No products.'),
 };
 
 /** The interfaces of a product, by ID. */
-export function listInterfaces(view: ReadView, input: { product_id: string }): { id: string; title: string; kind: string }[] {
-  const reader = productReader(view);
+export function listInterfaces(reader: ProductReader, input: { product_id: string }): { id: string; title: string; kind: string }[] {
   if (reader.kindOf(input.product_id) !== 'product') refuse('missing', `there is no product ${input.product_id}`);
-  return reader.page(input.product_id).interfaces.map((i) => ({ id: i.id, title: i.title, kind: i.kind }));
+  return reader.page(input.product_id)!.interfaces.map((i) => ({ id: i.id, title: i.title, kind: i.kind }));
 }
 
 /** List the interfaces of a product (LA-AUT-QRY111). */
-export const LIST_INTERFACES: QueryDefinition<{ product_id: string }, { id: string; title: string; kind: string }[]> = {
+export const LIST_INTERFACES: QueryDefinition<{ product_id: string }, { id: string; title: string; kind: string }[], ProductReader> = {
   id: 'LA-AUT-QRY111',
   slice: PRODUCT_SLICE,
   name: 'list-interfaces',
@@ -71,41 +70,33 @@ export const LIST_INTERFACES: QueryDefinition<{ product_id: string }, { id: stri
   method: 'GET',
   route: '/api/product/list-interfaces',
   input: { product_id: id('The product.', 'required') },
+  reader: productReader,
   run: listInterfaces,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title} (${r.kind})`).join('\n') : 'No interfaces.'),
 };
 
-// One past the highest number in the IDs after the prefix, padded to two digits.
-function onePast(ids: string[], prefix: string): string {
-  const shape = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
-  let highest = 0;
-  for (const id of ids) {
-    const m = shape.exec(id);
-    if (m) highest = Math.max(highest, Number(m[1]));
-  }
-  return `${prefix}${String(highest + 1).padStart(2, '0')}`;
-}
+// One past the highest number in use after the prefix, padded to two digits.
+const onePast = (reader: ProductReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
 
 /**
  * The next free ID for an open question (under a product or a domain: its ID and Q) or an interface (under a product:
  * its ID and IF): one past the highest in use.
  */
-export function nextProductId(view: ReadView, input: { kind: string; parent: string }): string {
-  const reader = productReader(view);
+export function nextProductId(reader: ProductReader, input: { kind: string; parent: string }): string {
   const parent = reader.kindOf(input.parent);
   if (input.kind === 'question') {
     if (parent !== 'product' && parent !== 'domain') refuse('parent', `an open question sits under a product or a domain, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
-    return onePast(reader.ids('question'), `${input.parent}-Q`);
+    return onePast(reader, `${input.parent}-Q`);
   }
   if (input.kind === 'interface') {
     if (parent !== 'product') refuse('parent', `an interface sits under a product, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
-    return onePast(reader.ids('interface'), `${input.parent}-IF`);
+    return onePast(reader, `${input.parent}-IF`);
   }
   return refuse('kind', `${input.kind} is not a kind of the Product aggregate with an ID under a parent; its kinds are question and interface`);
 }
 
 /** Get the next ID for a record of the Product aggregate (LA-AUT-QRY112). */
-export const NEXT_PRODUCT_ID: QueryDefinition<{ kind: string; parent: string }, string> = {
+export const NEXT_PRODUCT_ID: QueryDefinition<{ kind: string; parent: string }, string, ProductReader> = {
   id: 'LA-AUT-QRY112',
   slice: PRODUCT_SLICE,
   name: 'next-id',
@@ -116,6 +107,7 @@ export const NEXT_PRODUCT_ID: QueryDefinition<{ kind: string; parent: string }, 
     kind: id('The kind: question or interface.', 'required'),
     parent: id('The record it will sit under.', 'required'),
   },
+  reader: productReader,
   run: nextProductId,
   text: (next) => next,
 };
