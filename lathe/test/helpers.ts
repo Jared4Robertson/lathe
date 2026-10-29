@@ -223,8 +223,8 @@ export function complete(): Data {
     integration: [{ id: 'EX-INT01', title: 'Mail', system: 'Mail service', description: 'Reminders sent to members.' }],
 
     repository: [
-      { id: 'EX-LEND-REPO01', title: 'Loans', domain_id: 'EX-LEND', file: 'src/platform/data.ts', description: 'Keeps loans in the loans table.' },
-      { id: 'EX-LEND-REPO02', title: 'Tools', domain_id: 'EX-LEND', file: 'src/platform/data.ts', description: 'Keeps tools in the tools table.' },
+      { id: 'EX-LEND-REPO01', title: 'Loans', domain_id: 'EX-LEND', file: 'src/store.ts', description: 'Keeps loans in the loans table.' },
+      { id: 'EX-LEND-REPO02', title: 'Tools', domain_id: 'EX-LEND', file: 'src/store.ts', description: 'Keeps tools in the tools table.' },
     ],
     persists: [
       { source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A1' },
