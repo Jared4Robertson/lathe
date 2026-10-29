@@ -7,10 +7,9 @@ import { Traceability } from './Traceability';
 import { RecordText, factsOf, rowPlace } from './RecordText';
 import { kindFieldPath, kindPagePath } from '../format/reference';
 import { PatternRuleSections, PatternSections } from './PatternParts';
-import { FlowSteps } from './FlowSteps';
 import { StandardSections } from './StandardParts';
 import { DomainEvents } from './DomainEvents';
-import { FlowInterface, InterfaceFlows, UseCaseFlows } from './InterfaceParts';
+import { InterfaceFlows } from './InterfaceParts';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { Grouped, KindBadge, NavigateContext, StageFact, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, isTestKind, listTitle, notAutomatedYet } from './parts';
@@ -89,56 +88,69 @@ export function RecordEyebrow({ index, record }: { index: SpecIndex; record: Spe
 
 function RecordBody({ index, record, actions, header }: { index: SpecIndex; record: SpecRecord; actions?: ReactNode; header: boolean }) {
   const { id } = record;
-  // An aggregate's domain events and a flow's steps have their own sections, so its children list leaves them out.
-  // So do a use case's flows, listed by interface.
-  const children = (index.children.get(id) ?? []).filter((c) => !(record.kind === 'aggregate' && c.kind === 'domain_event') && !(record.kind === 'flow' && c.kind === 'flow_step') && !(record.kind === 'use_case' && c.kind === 'flow'));
-  const problems = index.problemsFor.get(id) ?? [];
-  const isTest = isTestKind(index, record.kind);
+  // An aggregate's domain events have their own section, so its children list leaves them out.
+  const children = (index.children.get(id) ?? []).filter((c) => !(record.kind === 'aggregate' && c.kind === 'domain_event'));
   // A list of one kind is titled by that kind ("Commands"); a mixed one stays "Children".
   const childrenTitle = listTitle(index, children, 'Children');
   return (
     <>
       {header && (
         <PageHeader eyebrow={<RecordEyebrow index={index} record={record} />} title={record.title} id={id}>
-          <ProblemBadge problems={problems} />
+          <ProblemBadge problems={index.problemsFor.get(id) ?? []} />
           {actions}
         </PageHeader>
       )}
-      <div className="record-layout">
-        <div className="record-main">
-          {isTest && notAutomatedYet(record) && (
-            <p className="not-automated-note" role="note">
-              <strong>Not automated yet.</strong> No file runs it, so it does not count as proof of what it proves.
-            </p>
-          )}
-          {record.kind === 'flow' && <FlowInterface index={index} flow={record} />}
-          <RecordText index={index} record={record} />
-          {record.kind === 'use_case' && <UseCaseFlows index={index} useCase={record} />}
-          {record.kind === 'interface' && <InterfaceFlows index={index} iface={record} />}
-          {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
-          {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
-          {record.kind === 'standard' && <StandardSections index={index} standard={record} />}
-          {record.kind === 'flow' && <FlowSteps index={index} flow={record} />}
-          {record.kind === 'aggregate' && <DomainEvents index={index} aggregate={record} />}
-          {/* After the body and its kind's own sections, before the children. A pattern's followers have their own section. */}
-          <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : undefined} />
-          {/* The direct children (a pattern's and a standard's rules have their own sections). */}
-          {children.length > 0 && record.kind !== 'pattern' && record.kind !== 'standard' && (
-            <Section title={childrenTitle} count={children.length}>
-              {/* UC, view and API requirements and pattern and standard rules read under their groups. */}
-              <Grouped records={children} level={3} render={(records, heading) => (
-                <RecordTree index={index} records={records} label={heading ? `${heading}: ${childrenTitle} of ${id}` : `${childrenTitle} of ${id}`} showKind />
-              )} />
-            </Section>
-          )}
-          <Section title="Problems" count={problems.length}>
-            <ProblemList index={index} problems={problems} showRecord={false} />
+      <RecordFrame
+        index={index}
+        record={record}
+        skip={record.kind === 'pattern' ? PATTERN_SKIP : undefined}
+        after={children.length > 0 && record.kind !== 'pattern' && record.kind !== 'standard' && (
+          // The direct children (a pattern's and a standard's rules have their own sections).
+          <Section title={childrenTitle} count={children.length}>
+            {/* View and API requirements and pattern and standard rules read under their groups. */}
+            <Grouped records={children} level={3} render={(records, heading) => (
+              <RecordTree index={index} records={records} label={heading ? `${heading}: ${childrenTitle} of ${id}` : `${childrenTitle} of ${id}`} showKind />
+            )} />
           </Section>
-        </div>
-        {/* The record's facts after the body: its kind, fields, data file and links both ways. */}
-        <aside className="record-side" aria-label="Facts"><RecordFacts index={index} record={record} /></aside>
-      </div>
+        )}
+      >
+        <RecordText index={index} record={record} />
+        {record.kind === 'interface' && <InterfaceFlows index={index} iface={record} />}
+        {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
+        {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
+        {record.kind === 'standard' && <StandardSections index={index} standard={record} />}
+        {record.kind === 'aggregate' && <DomainEvents index={index} aggregate={record} />}
+      </RecordFrame>
     </>
+  );
+}
+
+/**
+ * What every record's page holds around its own content (the Record page pattern): a test's note when it is not
+ * automated yet, then the page's content, its Traceability, what comes `after` it (its children), and its problems;
+ * its facts and links both ways beside them. An aggregate's page draws its own content inside it.
+ */
+export function RecordFrame({ index, record, skip, after, children }: { index: SpecIndex; record: SpecRecord; skip?: ReadonlySet<string>; after?: ReactNode; children: ReactNode }) {
+  const problems = index.problemsFor.get(record.id) ?? [];
+  return (
+    <div className="record-layout">
+      <div className="record-main">
+        {isTestKind(index, record.kind) && notAutomatedYet(record) && (
+          <p className="not-automated-note" role="note">
+            <strong>Not automated yet.</strong> No file runs it, so it does not count as proof of what it proves.
+          </p>
+        )}
+        {children}
+        {/* After the body and its kind's own sections, before the children. */}
+        <Traceability index={index} record={record} skip={skip} />
+        {after}
+        <Section title="Problems" count={problems.length}>
+          <ProblemList index={index} problems={problems} showRecord={false} />
+        </Section>
+      </div>
+      {/* The record's facts after the body: its kind, fields, data file and links both ways. */}
+      <aside className="record-side" aria-label="Facts"><RecordFacts index={index} record={record} /></aside>
+    </div>
   );
 }
 
