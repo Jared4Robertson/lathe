@@ -1,6 +1,6 @@
 // The CLI's data commands, run in process: each write goes through the command layer, prints the rows it changed,
 // and on a refusal prints every reason and changes nothing; flags and help come from the schema.
-import { readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it, vi } from 'vitest';
 import { openStore } from '../../src/index.ts';
@@ -360,5 +360,92 @@ describe('the data after writes', () => {
     expect(store.record('TL-V02')?.kind).toBe('view');
     expect(store.rows('happens_in')).toContainEqual({ source_id: 'TL-LEND-UC01-FL01-S02', target_id: 'TL-V02' });
     await store.close();
+  });
+});
+
+describe('a write given as JSON', () => {
+  // Runs a data command with its JSON on stdin.
+  async function piped(root: string, input: string, ...args: string[]) {
+    let out = '';
+    let err = '';
+    const status = await runDataCommand([...args, '--root', root], { out: (t) => (out += `${t}\n`), err: (t) => (err += `${t}\n`), stdin: async () => input });
+    return { status, out, err };
+  }
+  const LONG = 'He said "stop" and left.\nThen:\n\n```ts\nconst x = `a ${b}`;\n```\n\tTabbed, \\ back-slashed, and é accented — all of it.';
+
+  it('LA-AUT-UC01-R11-T01 keeps text with quotes, newlines and backticks exactly, from stdin or a file', async () => {
+    const root = writeData(everyKind());
+    const added = await piped(root, JSON.stringify({ uc_requirement: { id: 'TL-LEND-UC01-R02', title: 'Kept "as is"', use_case_id: 'TL-LEND-UC01', statement: LONG } }), 'add', '--json', '-');
+    expect(added.status).toBe(0);
+    expect(JSON.parse(added.out)).toEqual({ changes: [expect.objectContaining({ change: 'added', key: 'TL-LEND-UC01-R02' })], files: ['data/uc_requirement.jsonl'] });
+    const file = path.join(root, 'set.json');
+    writeFileSync(file, JSON.stringify({ use_case: { id: 'TL-LEND-UC01', goal: LONG } }));
+    expect((await lathe(root, 'set', '--json', file)).status).toBe(0);
+    const store = await openStore(root);
+    expect(store.record('TL-LEND-UC01-R02')?.row.statement).toBe(LONG);
+    expect(store.record('TL-LEND-UC01')?.row.goal).toBe(LONG);
+    await store.close();
+    // The flag form writes the same line.
+    const flagged = writeData(everyKind());
+    await lathe(flagged, 'add', 'uc_requirement', '--id', 'TL-LEND-UC01-R02', '--title', 'Kept "as is"', '--use_case_id', 'TL-LEND-UC01', '--statement', LONG);
+    expect(line(flagged, 'uc_requirement', 'TL-LEND-UC01-R02')).toBe(line(root, 'uc_requirement', 'TL-LEND-UC01-R02'));
+  });
+
+  it("LA-AUT-UC01-R11-T01 takes every write in the MCP tools' shape", async () => {
+    const root = writeData(everyKind());
+    expect((await piped(root, '{"source": "TL-LEND-QRY01", "relation": "calls", "target": "TL-LEND-DS01"}', 'link', '--json', '-')).status).toBe(0);
+    expect((await piped(root, '{"source": "TL-LEND-QRY01", "relation": "calls", "target": "TL-LEND-DS01"}', 'unlink', '--json', '-')).status).toBe(0);
+    expect((await piped(root, '{"use_case": {"id": "TL-LEND-UC01", "notes": "N."}}', 'set', '--json', '-')).status).toBe(0);
+    expect((await piped(root, '{"use_case": {"id": "TL-LEND-UC01", "notes": null}}', 'set', '--json', '-')).status).toBe(0);
+    expect((await piped(root, '{"view": {"id": "TL-V02", "title": "Desk"}}', 'add', '--json', '-')).status).toBe(0);
+    expect((await piped(root, '{"id": "TL-V02"}', 'remove', '--json', '-')).status).toBe(0);
+    const store = await openStore(root);
+    expect(store.record('TL-LEND-UC01')?.row.notes).toBeUndefined();
+    expect(store.record('TL-V02')).toBeUndefined();
+    await store.close();
+  });
+
+  it('LA-AUT-UC01-R11-T02 refuses as the flags do, with every reason, and changes nothing', async () => {
+    const root = writeData(everyKind());
+    const before = files(root);
+    const viaFlags = await lathe(root, 'add', 'aggregate', '--id', 'TL-OTHER-A3', '--title', 'Member', '--domain_id', 'TL-NOPE', '--json');
+    const viaJson = await piped(root, '{"aggregate": {"id": "TL-OTHER-A3", "title": "Member", "domain_id": "TL-NOPE"}}', 'add', '--json', '-');
+    expect(viaJson.status).toBe(1);
+    expect(viaFlags.status).toBe(1);
+    expect(JSON.parse(viaJson.out)).toEqual(JSON.parse(viaFlags.out));
+    expect(JSON.parse(viaJson.out).problems).toEqual([expect.objectContaining({ rule: 'foreign-key' })]);
+    const shape = await piped(root, '[{"view": {"id": "TL-V02", "title": "Desk"}}, {"view": {}, "aggregate": {}}, 3]', 'add', '--json', '-');
+    expect(shape.status).toBe(1);
+    expect(JSON.parse(shape.out).problems.map((p: { message: string }) => p.message)).toEqual([
+      'item 2: add takes exactly one property: the table, with the row as its value',
+      'item 3: add takes an object',
+    ]);
+    expect(files(root)).toEqual(before);
+  });
+
+  it('LA-AUT-UC01-R11-T03 refuses --json with field flags, a table or ID, or a read, as bad usage', async () => {
+    const root = writeData(everyKind());
+    const before = files(root);
+    const both = await piped(root, '{"view": {"id": "TL-V02", "title": "Desk"}}', 'add', '--json', '-', '--title', 'Other');
+    expect(both.status).toBe(2);
+    expect(both.err).toContain('lathe add takes its fields from --json - or from flags, not both; drop --title.');
+    expect((await piped(root, '{"id": "TL-LEND-UC01", "parent": "TL-LEND-CAP01"}', 'move', '--json', '-', '--parent', 'TL-LEND-CAP01')).status).toBe(2);
+    expect((await piped(root, '{"view": {"id": "TL-V02", "title": "Desk"}}', 'add', 'view', '--json', '-')).err).toContain('lathe add --json - takes no view');
+    expect((await piped(root, '{"id": "TL-V01"}', 'show', '--json', '-')).err).toContain('lathe show takes no fields as JSON');
+    expect((await piped(root, '{"view": ', 'add', '--json', '-')).err).toContain('--json - is not JSON');
+    expect((await piped(root, '[]', 'add', '--json', '-')).err).toContain('--json - is an empty array');
+    expect((await lathe(root, 'add', '--json', path.join(root, 'missing.json'))).err).toContain('could not read it');
+    expect(files(root)).toEqual(before);
+  });
+
+  it('LA-AUT-UC01-R11-T04 writes an array as one write, all or nothing', async () => {
+    const root = writeData(everyKind());
+    const both = await piped(root, JSON.stringify([{ view: { id: 'TL-V02', title: 'Desk' } }, { view: { id: 'TL-V03', title: 'Shelf' } }]), 'add', '--json', '-');
+    expect(JSON.parse(both.out).changes.map((c: { key: string }) => c.key)).toEqual(['TL-V02', 'TL-V03']);
+    const before = files(root);
+    const half = await piped(root, JSON.stringify([{ view: { id: 'TL-V04', title: 'Bench' } }, { view: { id: 'TL-V02', title: 'Again' } }]), 'add', '--json', '-');
+    expect(half.status).toBe(1);
+    expect(JSON.parse(half.out).problems).toEqual([expect.objectContaining({ rule: 'primary-key' })]);
+    expect(files(root)).toEqual(before);
   });
 });

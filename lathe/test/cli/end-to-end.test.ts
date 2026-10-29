@@ -27,8 +27,10 @@ function productRepo(): string {
   return root;
 }
 
-const lathe = (root: string, ...args: string[]) => {
-  const result = spawnSync(process.execPath, [bin, ...args, '--root', root], { encoding: 'utf8' });
+const lathe = (root: string, ...args: string[]) => piped(root, '', ...args);
+// The command with its stdin, as a shell pipes JSON into `--json -`.
+const piped = (root: string, input: string, ...args: string[]) => {
+  const result = spawnSync(process.execPath, [bin, ...args, '--root', root], { encoding: 'utf8', input });
   return { status: result.status, stdout: result.stdout, stderr: result.stderr };
 };
 
@@ -126,7 +128,10 @@ describe('writing a spec end to end', () => {
     run('add', 'capability', ...flags(CAPABILITY));
     expect(run('next-id', 'use_case', '--parent', 'TL-LEND-CAP01')).toBe('TL-LEND-UC01');
     run('add', 'use_case', ...flags(USE_CASE));
-    run('add', 'uc_requirement', ...flags(REQUIREMENT));
+    // A write's fields as JSON on stdin, in the add tool's shape: the result comes back as JSON.
+    const fromStdin = piped(root, JSON.stringify({ uc_requirement: REQUIREMENT }), 'add', '--json', '-');
+    expect(fromStdin.status).toBe(0);
+    expect(JSON.parse(fromStdin.stdout).changes).toEqual([expect.objectContaining({ change: 'added', key: 'TL-LEND-UC01-R01', row: REQUIREMENT })]);
     expect(run('next-id', 'interface', '--parent', 'TL')).toBe('TL-IF01');
     run('add', 'interface', ...flags(INTERFACE));
     expect(run('next-id', 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL01');
@@ -135,7 +140,11 @@ describe('writing a spec end to end', () => {
     run('add', 'flow_step', ...flags(STEP));
     expect(run('next-id', 'use_case_test', '--parent', 'TL-LEND-UC01-R01')).toBe('TL-LEND-UC01-R01-T01');
     run('add', 'use_case_test', ...flags(TEST));
-    for (const [source, relation, target] of LINKS) run('link', source, relation, target);
+    // Several links from a file, as one write.
+    const links = path.join(root, 'links.json');
+    writeFileSync(links, JSON.stringify(LINKS.map(([source, relation, target]) => ({ source, relation, target }))));
+    expect(JSON.parse(run('link', '--json', links)).changes).toHaveLength(LINKS.length);
+    rmSync(links);
 
     // A refused write leaves every file as it was: a step invokes a command or query, not an event.
     const before = data(root);

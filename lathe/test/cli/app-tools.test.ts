@@ -3,7 +3,7 @@ import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { PassThrough } from 'node:stream';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { appBridgeFromEnv, focusText, type AppBridge } from '../../src/cli/app-tools.ts';
+import { appBridgeFromEnv, focusText, runAppCommand, type AppBridge } from '../../src/cli/app-tools.ts';
 import { callTool, serveMcp, type Tool } from '../../src/cli/mcp.ts';
 import { everyKind, removeData, writeData } from '../store/fixture.ts';
 
@@ -81,10 +81,50 @@ describe('LA-PLT-UC19-R06-T01 Claude asks what the Reader is looking at and open
   });
 
   it('refuses when no app window is connected, or it has closed', async () => {
+    expect((await callTool('/unused', 'app_open', { id: 'TL-LEND-UC01' }, null)).isError).toBe(true);
     for (const bridge of [null, app('closed-window'), { url: 'http://127.0.0.1:9/windows/x', token: TOKEN }, { ...app('open-window'), token: 'wrong' }]) {
       const result = await callTool('/unused', 'app_focus', {}, bridge);
       expect(result.isError).toBe(true);
       expect(result.content[0].text).toContain('No Lathe app window is connected');
+    }
+  });
+});
+
+describe('LA-PLT-UC19-R07-T01 lathe app focus and lathe app open reach the window as the app tools do, and refuse with none', () => {
+  async function lathe(bridge: AppBridge | null, ...args: string[]) {
+    let out = '';
+    let err = '';
+    const status = await runAppCommand(['app', ...args], { out: (t) => (out += `${t}\n`), err: (t) => (err += `${t}\n`) }, bridge);
+    return { status, out, err };
+  }
+
+  it('prints what the Reader is looking at, as app_focus says it', async () => {
+    const focus = await lathe(app('open-window'), 'focus');
+    expect(focus).toEqual({ status: 0, out: `${(await callTool('/unused', 'app_focus', {}, app('open-window'))).content[0].text}\n`, err: '' });
+    expect(JSON.parse((await lathe(app('open-window'), 'focus', '--json')).out)).toEqual({ connected: true, page });
+  });
+
+  it('opens a record on the stage given, and passes on a refusal', async () => {
+    expect(await lathe(app('open-window'), 'open', 'TL-LEND-UC01', '--stage', 'graph')).toEqual({ status: 0, out: 'Opened TL-LEND-UC01 on the graph stage.\n', err: '' });
+    expect(opened.at(-1)).toEqual({ id: 'TL-LEND-UC01', stage: 'graph' });
+    await lathe(app('open-window'), 'open', 'TL-LEND-UC01');
+    expect(opened.at(-1)).toEqual({ id: 'TL-LEND-UC01', stage: null });
+    expect(await lathe(app('open-window'), 'open', 'TL-NOPE')).toEqual({ status: 1, out: '', err: 'There is no record TL-NOPE in this window.\n' });
+    expect((await lathe(app('open-window'), 'open', 'TL-LEND-UC01', '--stage', 'map')).status).toBe(1);
+  });
+
+  it('refuses with no window connected, or one closed, and exits 1', async () => {
+    for (const bridge of [null, app('closed-window')]) {
+      const focus = await lathe(bridge, 'focus');
+      expect(focus.status).toBe(1);
+      expect(focus.err).toContain('No Lathe app window is connected');
+      expect(JSON.parse((await lathe(bridge, 'open', 'TL-LEND-UC01', '--json')).out)).toMatchObject({ refused: true, problems: [{ rule: 'app' }] });
+    }
+  });
+
+  it('refuses bad usage with exit 2', async () => {
+    for (const args of [[], ['zoom'], ['open'], ['open', 'A', 'B'], ['focus', 'A'], ['focus', '--stage', 'graph'], ['open', 'A', '--colour', 'red']]) {
+      expect((await lathe(app('open-window'), ...args)).status).toBe(2);
     }
   });
 });

@@ -2,7 +2,9 @@
 // app_focus says what the Reader is looking at in the window (the focused record, the stage, the
 // selection), and app_open opens a record there. The desktop app gives the chat's CLI the window's
 // bridge address and its token (LATHE_APP_BRIDGE, LATHE_APP_TOKEN, desktop/src/bridge.ts), which the
-// CLI's MCP servers inherit; the tools are listed only then, and refuse once the window has closed.
+// CLI's MCP servers and shell commands inherit; the tools are listed only then, and refuse once the window
+// has closed. `lathe app focus` and `lathe app open` (LA-PLT-UC19-R07) run the same calls from the shell.
+import { parseArgs } from 'node:util';
 
 export interface AppBridge {
   /** The window's address on the app bridge, such as http://127.0.0.1:50123/windows/<key>. */
@@ -67,7 +69,8 @@ export function focusText(focus: AppFocus): string {
 
 type Result = { content: { type: 'text'; text: string }[]; structuredContent?: { [key: string]: unknown }; isError?: boolean };
 const refused = (text: string): Result => ({ content: [{ type: 'text', text }], structuredContent: { refused: true, problems: [{ rule: 'app', message: text }] }, isError: true });
-const NOT_CONNECTED = 'No Lathe app window is connected: app_focus and app_open work only in the chat of the Lathe desktop app, while its window is open.';
+const NOT_CONNECTED =
+  'No Lathe app window is connected: app_focus and app_open (lathe app focus and lathe app open) work only in the chat of the Lathe desktop app, while its window is open.';
 
 /** Runs app_focus or app_open against the window's bridge. */
 export async function callAppTool(app: AppBridge | null, name: string, args: Record<string, unknown>): Promise<Result> {
@@ -91,4 +94,56 @@ export async function callAppTool(app: AppBridge | null, name: string, args: Rec
   const ok = body.ok === true;
   const message = typeof body.message === 'string' ? body.message : ok ? 'Opened.' : 'Not opened.';
   return ok ? { content: [{ type: 'text', text: message }], structuredContent: { opened: args.id } } : refused(message);
+}
+
+/** What the app commands add to `lathe help`. */
+export const APP_USAGE = `App commands (the MCP tools app_focus and app_open from a shell; they work only in the chat of the Lathe
+desktop app, while its window is open):
+  app focus                             Print what the Reader is looking at: the page, the focused record, the
+                                        stage and the record selected.
+  app open <id> [--stage graph|erd|trace]
+                                        Open a record in the window, on the stage given or the one shown.
+  Add --json for the result as JSON. With no window connected, each is refused and exits 1.
+`;
+
+const parse = (args: string[]) =>
+  parseArgs({ args, allowPositionals: true, options: { json: { type: 'boolean' }, stage: { type: 'string' }, root: { type: 'string' }, help: { type: 'boolean' } } });
+
+/** Runs `lathe app focus` or `lathe app open` through callAppTool; returns the exit code: 0 done, 1 refused, 2 bad usage. */
+export async function runAppCommand(
+  args: string[],
+  io: { out: (text: string) => void; err: (text: string) => void } = { out: (t) => console.log(t), err: (t) => console.error(t) },
+  app: AppBridge | null = appBridgeFromEnv(),
+): Promise<number> {
+  const usage = (message: string) => {
+    io.err(`${message}\n\n${APP_USAGE}`);
+    return 2;
+  };
+  let parsed: ReturnType<typeof parse>;
+  try {
+    parsed = parse(args);
+  } catch (error) {
+    return usage(error instanceof Error ? error.message : String(error));
+  }
+  const { positionals, values } = parsed;
+  const [, action, ...rest] = positionals;
+  if (values.help) {
+    io.out(APP_USAGE);
+    return 0;
+  }
+  let called: Result;
+  if (action === 'focus') {
+    if (rest.length || values.stage !== undefined) return usage('lathe app focus takes no ID or --stage.');
+    called = await callAppTool(app, 'app_focus', {});
+  } else if (action === 'open') {
+    if (rest.length !== 1) return usage('lathe app open needs one record ID: lathe app open <id> [--stage graph|erd|trace].');
+    called = await callAppTool(app, 'app_open', { id: rest[0], ...(values.stage !== undefined ? { stage: values.stage } : {}) });
+  } else {
+    return usage(action ? `Unknown app command "${action}".` : 'lathe app needs focus or open.');
+  }
+  const text = called.content.map((c) => c.text).join('\n');
+  if (values.json) io.out(JSON.stringify(called.structuredContent ?? {}, null, 2));
+  else if (called.isError) io.err(text);
+  else io.out(text);
+  return called.isError ? 1 : 0;
 }
