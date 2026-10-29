@@ -333,7 +333,7 @@ async function writeRoot(products: LatheConfig[], named: string[][]): Promise<{ 
   }
   if (roots.size > 1) {
     const folders = [...roots].map((r) => (r === products[0].root ? "the workspace's own folder" : fromWorkspace(products[0].root, r))).join(' and ');
-    return { refused: `A write changes one product: it names records in ${folders}. Send each product's changes as a write of its own.` };
+    return { refused: `A write changes one product: these commands name records in ${folders}. Send each product's commands as a write of its own.` };
   }
   return { root: [...roots][0] ?? products[0].root };
 }
