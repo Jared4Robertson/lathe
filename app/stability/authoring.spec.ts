@@ -17,29 +17,31 @@ test.describe('Authoring flows', () => {
     await page.locator('.quick-open input').waitFor();
     await page.keyboard.type('Record format');
     await page.keyboard.press('Enter');
-    await page.waitForURL((u) => u.pathname === '/format');
-    await expect(page.locator('#main h1')).toHaveText('Record format');
-    await expect(page.locator('#main').getByRole('heading', { name: 'How records are kept', level: 2 })).toBeVisible();
+    // Format pages open in the wiki card over the stage, which keeps its focus (LA-PAT-APP-UX-R20).
+    await page.waitForURL((u) => u.pathname === RECORD && u.search.endsWith('page=format'));
+    const card = page.locator('.wiki-panel.is-format');
+    await expect(card.locator('h2').first()).toHaveText('Record format');
+    await expect(card.getByRole('heading', { name: 'How records are kept', level: 2 })).toBeVisible();
     // S02: a kind's page, from the side bar's Kind row.
     await openPage(page, `${WITH_PROBLEM}?stage=graph`, '.focus-stage .graph-flow .graph-box');
     await page.getByRole('complementary', { name: 'Side bar' }).getByRole('link', { name: 'UC requirement', exact: true }).click();
-    await page.waitForURL((u) => u.pathname === '/format/kinds/uc_requirement');
-    await expect(page.locator('#main h1')).toHaveText('UC requirement');
-    await expect(page.locator('#main').getByRole('table', { name: 'The columns of the uc_requirement table' })).toBeVisible();
+    await page.waitForURL((u) => u.search.endsWith('page=format/kinds/uc_requirement'));
+    await expect(card.locator('h2').first()).toHaveText('UC requirement');
+    await expect(card.getByRole('table', { name: 'The columns of the uc_requirement table' })).toBeVisible();
     // S03: a check's page, from a problem's code (on the page, or in the side bar while it is open).
     await openPage(page, WITH_PROBLEM);
     const code = page.getByRole('list', { name: 'Problems' }).first().getByRole('link').first();
     const check = (await code.textContent())!.trim();
     await code.click();
-    await page.waitForURL((u) => u.pathname === `/format/checks/${check}`);
-    await expect(page.locator('#main h1')).toHaveText(check);
-    await expect(page.locator('#main').getByRole('heading', { name: 'Query', level: 2 })).toBeVisible();
-    await expect(page.locator('#main').getByRole('heading', { name: /^Problems now [1-9]\d*$/, level: 2 })).toBeVisible();
+    await page.waitForURL((u) => u.search.endsWith(`page=format/checks/${check}`));
+    await expect(card.locator('h2').first()).toHaveText(check);
+    await expect(card.getByRole('heading', { name: 'Query', level: 2 })).toBeVisible();
+    await expect(card.getByRole('heading', { name: /^Problems now [1-9]\d*$/, level: 2 })).toBeVisible();
     // S04: a kind by quick find.
     await page.keyboard.press('Control+k');
     await page.locator('.quick-open input').fill('Kind: Flow step');
     await page.getByRole('option', { name: /Kind: Flow step/ }).first().click();
-    await page.waitForURL((u) => u.pathname === '/format/kinds/flow_step');
-    await expect(page.locator('#main h1')).toHaveText('Flow step');
+    await page.waitForURL((u) => u.search.endsWith('page=format/kinds/flow_step'));
+    await expect(card.locator('h2').first()).toHaveText('Flow step');
   });
 });

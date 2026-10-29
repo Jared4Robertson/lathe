@@ -69,9 +69,12 @@ const PAGES: State[] = [
   { name: 'Trace stage, an entity in its aggregate\'s lanes', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
-  { name: 'Checks', url: `${PRODUCT}/checks`, ready: '#main h1' },
-  { name: 'Format', url: '/format', ready: '#main h1' },
-  { name: 'Appearance', url: '/settings/appearance', ready: '#main h1' },
+  // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.
+  { name: 'Checks panel', url: `${PRODUCT}?panel=checks`, ready: '.tool-panel.checks-panel .problems' },
+  { name: 'Format page in the wiki card', url: `${PRODUCT}?page=format`, ready: '.wiki-panel.is-format h2' },
+  { name: 'Kind page in the wiki card', url: `${RECORD}?page=format/kinds/use_case`, ready: '.wiki-panel.is-format h2' },
+  { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.tool-panel.appearance-popover .theme-rows' },
+  { name: 'Products picker', url: '/', ready: '.dialog.products-picker h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));
 // A design record nothing traces to: the untraced state, reached from the domain's Untraced list by the keyboard.
 PAGES.push({ name: 'Trace stage, an untraced record', run: async (page: Page) => {

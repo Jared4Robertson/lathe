@@ -33,10 +33,10 @@ test.describe('Exploring policies', () => {
     // The rail's link to the space names its last page.
     const space = page.locator('.rail-spaces a.space-item[data-space="LA"]');
     await expect(space).toHaveAttribute('href', `/${last}`);
-    // From the products page, outside every space, choosing the space opens that page.
+    // From the products picker, outside every space, choosing the space opens that page.
     await page.locator('nav#nav a.brand').click();
     await page.waitForURL((u) => u.pathname === '/');
-    await page.locator('.rail-spaces a.space-item[data-space="LA"]').click();
+    await page.getByRole('dialog', { name: 'Products' }).getByRole('link', { name: /^LA Lathe/ }).click();
     await page.waitForURL((u) => u.pathname === `/${last}`);
   });
 

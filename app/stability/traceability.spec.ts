@@ -223,7 +223,8 @@ test.describe('Traceability flows', () => {
     const check = callouts.first().getByRole('link');
     const name = (await check.textContent())!.trim();
     await check.click();
-    await page.waitForURL((u) => u.pathname === `/format/checks/${name}`);
-    await expect(page.locator('#main h1')).toHaveText(name);
+    // It opens in the wiki card over the stage, which keeps its focus (LA-PAT-APP-UX-R20).
+    await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}` && u.search.endsWith(`page=format/checks/${name}`));
+    await expect(page.locator('.wiki-panel.is-format h2')).toHaveText(name);
   });
 });

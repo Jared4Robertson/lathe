@@ -211,11 +211,16 @@ test.describe('Platform flows in the app', () => {
     await page.locator('.dialog-search').fill('Dark');
     await page.keyboard.press('Enter');
     await expect(html).toHaveAttribute('data-mode', 'dark');
-    // Appearance, from the nav's footer: every theme with a preview.
+    // Appearance, a popover from the nav's footer over the stage: every theme with a preview, live on the stage when pointed at.
     await nav(page).getByRole('link', { name: 'Appearance' }).click();
-    await page.waitForURL((u) => u.pathname === '/settings/appearance');
+    await page.waitForURL((u) => u.search.endsWith('panel=appearance'));
+    await expect(page.locator('.focus-stage')).toBeVisible();
     await page.getByRole('radio', { name: 'System' }).check();
     const themes = page.getByRole('list', { name: 'Themes' });
+    await themes.getByRole('button', { name: 'Use Graphite' }).hover();
+    await expect(html).toHaveAttribute('data-theme', 'graphite');
+    await page.mouse.move(1, 1);
+    await expect(html).toHaveAttribute('data-theme', /midnight/);
     await expect(themes.getByRole('listitem')).toHaveCount(await themes.getByRole('listitem').count());
     expect(await themes.getByRole('listitem').count()).toBeGreaterThanOrEqual(5);
     // Duplicate the closest, change a color, its font and density; a warning where text gets hard to read.
@@ -240,12 +245,13 @@ test.describe('Platform flows in the app', () => {
     // Delete the copy, after being asked.
     await editor.getByRole('button', { name: 'Delete…' }).click();
     await editor.getByRole('group', { name: 'Confirm delete' }).getByRole('button', { name: 'Delete' }).click();
-    await expect(themes.getByText('Workshop copy')).toHaveCount(0);
+    await page.waitForURL((u) => u.search.endsWith('panel=appearance'));
+    await expect(page.getByRole('list', { name: 'Themes' }).getByText('Workshop copy')).toHaveCount(0);
     // Someone else, in their own browser, imports the file as a theme of their own.
     const other = await browser.newContext();
     try {
       const theirs = await other.newPage();
-      await theirs.goto('/settings/appearance');
+      await theirs.goto('/LA?panel=appearance');
       await theirs.locator('input[type="file"]').setInputFiles(file);
       await expect(theirs.getByRole('list', { name: 'Themes' }).getByText('Workshop copy')).toBeVisible();
     } finally {

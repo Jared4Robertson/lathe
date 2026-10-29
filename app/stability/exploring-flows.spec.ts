@@ -252,10 +252,13 @@ test.describe('Exploring flows', () => {
     const rail = page.locator('.rail-spaces');
     const space = rail.locator('a.space-item[data-space="LA"]');
     await expect(space).toHaveAttribute('aria-current', /.+/);
-    // Leave the space for the products page; choosing the space opens its last page.
+    // Leave the space for the products picker, over the space's dimmed stage; choosing the space opens its last page.
     await page.locator('nav#nav a.brand').click();
     await page.waitForURL((u) => u.pathname === '/');
-    await rail.locator('a.space-item[data-space="LA"]').click();
+    const picker = page.getByRole('dialog', { name: 'Products' });
+    await expect(picker).toBeVisible();
+    await expect(page.locator('.stage-layout.is-backdrop .focus-stage')).not.toBeEmpty();
+    await picker.getByRole('link', { name: /^LA Lathe/ }).click();
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03');
     // Alt and its number, and Switch to in the palette.
     await page.locator('nav#nav a.brand').click();
@@ -266,19 +269,22 @@ test.describe('Exploring flows', () => {
     await page.locator('.quick-open input').fill('>Switch to');
     await expect(page.locator('.palette-list')).toContainText('Lathe');
     await page.keyboard.press('Escape');
-    // Find a record in the space, and open its Checks.
+    // Find a record in the space, and open Checks over its stage.
     await quickFind(page, 'LA-EXP-A2');
     await nav(page).getByRole('link', { name: /^Checks/ }).click();
-    await page.waitForURL((u) => u.pathname === '/LA/checks');
+    await page.waitForURL((u) => u.pathname === '/LA-EXP-A2' && u.search === '?panel=checks');
+    await expect(page.locator('.tool-panel.checks-panel')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await page.waitForURL((u) => u.search === '');
     // On a phone the rail sits in the nav sheet.
     await page.setViewportSize({ width: 375, height: 812 });
     await page.getByRole('button', { name: 'Open the navigation' }).click();
     await expect(page.locator('nav#nav .rail-spaces a.space-item[data-space="LA"]')).toBeVisible();
     await page.keyboard.press('Escape');
     await page.setViewportSize({ width: 1440, height: 900 });
-    // From the products page, choose the space.
+    // From the products picker, choose the space.
     await page.goto('/');
-    await page.getByRole('main').getByRole('link', { name: /^LA Lathe/ }).click();
+    await page.getByRole('dialog', { name: 'Products' }).getByRole('link', { name: /^LA Lathe/ }).click();
     await page.waitForURL((u) => u.pathname.startsWith('/LA'));
   });
 
