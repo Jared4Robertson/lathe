@@ -1,26 +1,26 @@
-{"id":"LA-UI01","title":"Format pages","file":"app/src/format/FormatPages.tsx"}
-{"id":"LA-UI02","title":"Format reference","file":"app/src/format/reference.ts"}
-{"id":"LA-UI04","title":"Desktop record actions","file":"app/src/shell/desktopRecord.tsx"}
-{"id":"LA-UI05","title":"Standard parts","file":"app/src/specs/StandardParts.tsx"}
+{"id":"LA-UI01","title":"Format pages","file":"app/src/format/FormatPages.tsx","description":"The record format's pages in the wiki card over the stage: the format itself (the concepts, the kinds by stage, the relations and the checks by severity), a kind's page and a check's page, opened by `?page=format/...` on the current address while the stage keeps its focus."}
+{"id":"LA-UI02","title":"Format reference","file":"app/src/format/reference.ts","description":"The data and links behind the format pages: every kind, relation, stage and check of the current space, read from the schema served with the data and the check table's rows, and the `?page=format/...` links that open them in the wiki card."}
+{"id":"LA-UI04","title":"Desktop record actions","file":"app/src/shell/desktopRecord.tsx","description":"In the desktop app only, Reveal, Open in editor and Copy ID buttons beside a record's data file in its facts, and the same three in the shell's native menu on a right-click on a record row, a graph box or the page title; it also sends the product's error count to the Dock badge."}
+{"id":"LA-UI05","title":"Standard parts","file":"app/src/specs/StandardParts.tsx","description":"The body of a standard's page: its rules, one row each under their groups, with the records that meet each rule and the standard rule tests that prove it."}
 {"id":"LA-UI100","title":"Shared spec parts","file":"app/src/specs/parts.tsx","description":"The shared spec parts and TestStateTag."}
-{"id":"LA-UI102","title":"Mentions","file":"app/src/specs/mentions.tsx"}
-{"id":"LA-UI103","title":"Flow steps","file":"app/src/specs/FlowSteps.tsx"}
-{"id":"LA-UI105","title":"Graph motion","file":"app/src/graph/motion.ts"}
+{"id":"LA-UI102","title":"Mentions","file":"app/src/specs/mentions.tsx","description":"A record's text field rendered as Markdown, with each ID it names that is a record of the current space, other than the record itself, turned into a link to that record; every text field on a record's page uses it."}
+{"id":"LA-UI103","title":"Flow steps","file":"app/src/specs/FlowSteps.tsx","description":"A flow's steps on its page as one table per path, the main path first: each row the step, what happens, the command or query it invokes, its view, the UC requirements it fulfills and the integrations it exchanges with, with the step's description folded under the row's disclosure triangle."}
+{"id":"LA-UI105","title":"Graph motion","file":"app/src/graph/motion.ts","description":"The speed and easing every animation shares, read from the stylesheet's `--motion-speed` and `--motion-ease` tokens and turned off under reduced motion; the Graph and ERD stages' cameras glide on it."}
 {"id":"LA-UI106","title":"Tab strip","file":"app/src/views/TabStrip.tsx","description":"The page's tabs, at the left of the page bar."}
-{"id":"LA-UI107","title":"ERD layout","file":"app/src/erd/layout.ts"}
+{"id":"LA-UI107","title":"ERD layout","file":"app/src/erd/layout.ts","description":"Places the ERD stage's boxes with ELK's layered algorithm in three passes (each aggregate's entities, each domain's aggregates, then the domains), once per product and data change, so every focus and stage switch on the same data shows the same picture."}
 {"id":"LA-UI108","title":"ERD stage","file":"app/src/erd/ErdView.tsx","description":"The ERD stage: the product's, the domain's or the aggregate's diagram fitted in the open space, the focus's nearest box highlighted, with its key floating at its foot."}
-{"id":"LA-UI109","title":"Tap to open","file":"app/src/graph/touch.tsx"}
-{"id":"LA-UI110","title":"Edge hints","file":"app/src/graph/hints.tsx"}
-{"id":"LA-UI111","title":"Domain events section","file":"app/src/specs/DomainEvents.tsx"}
-{"id":"LA-UI116","title":"Requirement groups","file":"app/src/specs/groups.ts"}
-{"id":"LA-UI117","title":"Graph shapes","file":"app/src/graph/shapes.ts"}
-{"id":"LA-UI118","title":"Graph painter","file":"app/src/graph/paint.ts"}
-{"id":"LA-UI119","title":"Box plates","file":"app/src/graph/plate.ts"}
-{"id":"LA-UI120","title":"Graph text faces","file":"app/src/graph/fonts.ts"}
-{"id":"LA-UI121","title":"Graph look","file":"app/src/graph/look.ts"}
-{"id":"LA-UI122","title":"Hit testing","file":"app/src/graph/hit.ts"}
-{"id":"LA-UI123","title":"ERD edge hints","file":"app/src/erd/hints.tsx"}
-{"id":"LA-UI124","title":"Record actions and form","file":"app/src/edit/Editing.tsx"}
+{"id":"LA-UI109","title":"Tap to open","file":"app/src/graph/touch.tsx","description":"On the Graph and ERD stages' canvas under a finger, a first tap selects a box, outlining it and naming it in a card at the bottom of the canvas, and a second tap or a tap on the card opens it; a mouse click still opens at once."}
+{"id":"LA-UI110","title":"Edge hints","file":"app/src/graph/hints.tsx","description":"Small chips at each edge of a canvas counting the boxes of interest past it (\"3 ↑\"); a click pans the camera that way by about half the canvas, without changing the focus."}
+{"id":"LA-UI111","title":"Domain events section","file":"app/src/specs/DomainEvents.tsx","description":"The \"Domain events\" list on an aggregate's page: each event a whole-row link that says which commands raise it, how many policies hear it and whether it is published."}
+{"id":"LA-UI116","title":"Requirement groups","file":"app/src/specs/groups.ts","description":"Sorts a page's terms, requirements, interaction requirements, pattern rules and standard rules by their `group_name`: the ungrouped first with no heading, then each group under its heading in the order it first appears, compared trimmed and in any letter case."}
+{"id":"LA-UI117","title":"Graph shapes","file":"app/src/graph/shapes.ts","description":"A shape for each kind: a box's outline in the Graph stage's Tree view, and a small mark before the kind and ID line in the Nested and Voronoi views and the key; each keeps a rectangular footprint and a clear area for its label."}
+{"id":"LA-UI118","title":"Graph painter","file":"app/src/graph/paint.ts","description":"Draws the Graph and Trace stages' canvas each frame from the map's plates: lines under the boxes, each label at its map size times the zoom (a line too small on screen as a faint bar), the focus ring, the hover spotlight, the focus fade and the live changes' marks."}
+{"id":"LA-UI119","title":"Box plates","file":"app/src/graph/plate.ts","description":"A box as the Graph stage's canvas draws it, made once per map and node: its outline (its kind's shape in Tree, a box in Nested, a cell in Voronoi), its colors' roles, and its label's lines, marks and problem badges placed in map units."}
+{"id":"LA-UI120","title":"Graph text faces","file":"app/src/graph/fonts.ts","description":"Loads the theme's body and mono faces before the Graph stage's first layout and measures text with the canvas's own metrics, in the page and in the Voronoi worker alike, so every label line fits its box at any zoom."}
+{"id":"LA-UI121","title":"Graph look","file":"app/src/graph/look.ts","description":"The colors and opacities the Graph stage's canvas draws with, read from the stylesheet's tokens through a probe element and read again when the theme changes, so the canvas follows light and dark like the rest of the page."}
+{"id":"LA-UI122","title":"Hit testing","file":"app/src/graph/hit.ts","description":"Finds the box under the pointer on the Graph stage's canvas from the map's own outlines (a rectangle, a polygon, rounded corners or a Voronoi cell), testing the last drawn first so a child over its parent is found before it."}
+{"id":"LA-UI123","title":"ERD edge hints","file":"app/src/erd/hints.tsx","description":"The edge hint chips over the ERD stage's React Flow canvas, counting the boxes in focus past each edge through React Flow's camera and drawn again only when a count changes."}
+{"id":"LA-UI124","title":"Record actions and form","file":"app/src/edit/Editing.tsx","description":"Edit, Add and Remove on a record's page in the wiki card: Edit and Add put the form generated from the schema in place of the content, Remove asks first and names what still references the record, and a refusal from the server's command layer shows at the top of the form."}
 {"id":"LA-UI126","title":"Lathe logo","file":"app/src/LatheLogo.tsx","description":"Lathe's logo in the page's steel and spark colors."}
 {"id":"LA-UI127","title":"Actions slot","file":"app/src/components/ActionsSlot.tsx","description":"The place in a heading's row where a list's controls sit."}
 {"id":"LA-UI128","title":"Line icons","file":"app/src/components/icons.tsx","description":"The line icons drawn inline, with no icon font."}
@@ -29,7 +29,7 @@
 {"id":"LA-UI131","title":"Quick pick","file":"app/src/theme/QuickPick.tsx","description":"A filter box over a list, as the theme picker shows it."}
 {"id":"LA-UI132","title":"Record text","file":"app/src/specs/RecordText.tsx","description":"A record's own text: its fields, parts and settings, by kind."}
 {"id":"LA-UI133","title":"Focus fade","file":"app/src/graph/fade.ts","description":"How strongly the graph draws each box for its focus: the focus's subtree at full strength, the trail and the rest faded."}
-{"id":"LA-UI134","title":"Flows by interface sections","file":"app/src/specs/InterfaceParts.tsx"}
+{"id":"LA-UI134","title":"Flows by interface sections","file":"app/src/specs/InterfaceParts.tsx","description":"A use case's Flows section, one row per flow named by the interface it goes through; the line under a flow's title naming its interface; and on an interface's page, the flows through it by capability and use case, then the use cases with no flow through it yet."}
 {"id":"LA-UI135","title":"Trace stage","file":"app/src/trace/TraceView.tsx","description":"The Trace stage: the canvas over the table, its Gaps only switch, its note and the keyboard's Show more floating at the top of the open space; on a phone, the table alone."}
 {"id":"LA-UI136","title":"Card","file":"app/src/shell/Card.tsx","description":"The one card: a title that is its link or button, stretched over the whole card, and what else the card holds; and the grid that lists cards."}
 {"id":"LA-UI137","title":"Header strip","file":"app/src/views/HeaderStrip.tsx","description":"The one line under the active tab: the focus's breadcrumb, kind, ID and title, and what the stage draws of it."}
@@ -60,32 +60,32 @@
 {"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
 {"id":"LA-UI56","title":"linkLabel","file":"app/src/specs/labels.ts","description":"linkLabel, relationLabelOf, groupByLabel"}
-{"id":"LA-UI61","title":"App shell","file":"app/src/App.tsx"}
+{"id":"LA-UI61","title":"App shell","file":"app/src/App.tsx","description":"The whole window: the nav, the stage for the address with the wiki card, the tools and Appearance over it, the desktop title bar and chat panel, quick find and the command palette, and the commands that work everywhere."}
 {"id":"LA-UI62","title":"Commands and shortcuts sheet","file":"app/src/shell/commands.tsx","description":"The command dispatcher, the dialog and keys every overlay shares, and the shortcuts sheet."}
-{"id":"LA-UI63","title":"Tooltip","file":"app/src/shell/Tooltip.tsx"}
-{"id":"LA-UI64","title":"Resize handle","file":"app/src/components/ResizeHandle.tsx"}
+{"id":"LA-UI63","title":"Tooltip","file":"app/src/shell/Tooltip.tsx","description":"A control's short name and its shortcut keys from the keymap in a tooltip, shown after a short hover or at once on keyboard focus and closed on leaving, blur, a click or Escape; it also gives the control `aria-keyshortcuts`."}
+{"id":"LA-UI64","title":"Resize handle","file":"app/src/components/ResizeHandle.tsx","description":"The vertical handle between two panels that resizes the one beside it by a drag, the arrow keys (Shift for bigger steps), Home and End, and a double-click to reset; every resizable divider in the app uses it."}
 {"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx","description":"The top of the tab panel: the tabs, the stage switch, and the wiki card toggle."}
-{"id":"LA-UI66","title":"Bottom sheet","file":"app/src/shell/BottomSheet.tsx"}
+{"id":"LA-UI66","title":"Bottom sheet","file":"app/src/shell/BottomSheet.tsx","description":"On a phone, a sheet rising from the bottom edge to half the screen with a grab handle: a drag up or a tap takes it to full height, a drag down back to half or away, and Escape, a tap on the dimmed page or its close button dismisses it, focus staying inside while it is open."}
 {"id":"LA-UI67","title":"Phone top bar","file":"app/src/shell/MobileBar.tsx","description":"The phone top bar and the quick find sheet."}
-{"id":"LA-UI68","title":"Shared styles","file":"app/src/styles.css"}
-{"id":"LA-UI69","title":"Button","file":"app/src/components/Button.tsx"}
-{"id":"LA-UI70","title":"Theme stylesheet","file":"app/src/theme/css.ts"}
-{"id":"LA-UI71","title":"Early theme script","file":"app/index.html"}
-{"id":"LA-UI72","title":"Theme color","file":"app/src/shell/themeColor.ts"}
+{"id":"LA-UI68","title":"Shared styles","file":"app/src/styles.css","description":"The app's one stylesheet: the theme tokens on `:root` (colors, stage colors, motion, type, touch sizes and panel spacing) and the styles of the shell, nav, stages, panels, wiki card and shared components."}
+{"id":"LA-UI69","title":"Button","file":"app/src/components/Button.tsx","description":"Every standalone action as one button: ghost by default, primary (filled with the accent) for a form's or dialog's main action, or a square icon button that must be given a name; it renders a real link styled as a button when it navigates."}
+{"id":"LA-UI70","title":"Theme stylesheet","file":"app/src/theme/css.ts","description":"Writes a theme as the stylesheet it sets: its token values on `:root[data-theme]`, the light set always, and the dark set when the system is dark and Light is not chosen, or when Dark is chosen."}
+{"id":"LA-UI71","title":"Early theme script","file":"app/index.html","description":"An inline script in `index.html`'s head that puts the stored theme stylesheet and the chosen light or dark mode on the page before first paint, so the page never flashes another theme."}
+{"id":"LA-UI72","title":"Theme color","file":"app/src/shell/themeColor.ts","description":"Keeps the page's `<meta name=\"theme-color\">` on the theme's `--sheet` color, so the browser's own chrome (a phone's status bar, some desktop tab strips) takes the color of the page's top bar as the theme or mode changes."}
 {"id":"LA-UI73","title":"Theme quick pick","file":"app/src/theme/ThemeCommands.tsx","description":"The theme commands and their quick pick."}
 {"id":"LA-UI74","title":"Theme editor","file":"app/src/theme/Appearance.tsx","description":"The Appearance popover and the theme editor panel."}
-{"id":"LA-UI75","title":"Desktop title bar","file":"app/src/shell/DesktopTitleBar.tsx"}
-{"id":"LA-UI76","title":"Theme to window chrome","file":"app/src/shell/desktopChrome.ts"}
-{"id":"LA-UI77","title":"Window title bar options","file":"desktop/src/chrome.ts"}
-{"id":"LA-UI78","title":"Native menus","file":"desktop/src/menu.ts"}
+{"id":"LA-UI75","title":"Desktop title bar","file":"app/src/shell/DesktopTitleBar.tsx","description":"In the desktop app, the 38 px bar across the top of the window in the shell color, with room for the window's controls, back and forward, a command center naming the page that opens quick find, and the nav and chat toggles; it drags the window and is not drawn in a browser."}
+{"id":"LA-UI76","title":"Theme to window chrome","file":"app/src/shell/desktopChrome.ts","description":"In the desktop app, sends the shown theme's `--shell` and `--ink` colors to the window whenever the theme, the mode or the system's appearance changes, so the native window controls match the theme."}
+{"id":"LA-UI77","title":"Window title bar options","file":"desktop/src/chrome.ts","description":"In the desktop shell's main process, a window with no system title bar: the macOS traffic lights centered in the app's 38 px bar, or on Windows and Linux the native controls as an overlay in the theme's colors, which are checked before they reach the window."}
+{"id":"LA-UI78","title":"Native menus","file":"desktop/src/menu.ts","description":"The desktop app's native menus: the app menu on a Mac (About Lathe, Settings…), File, Edit, View with the record tabs, Window and Help; app commands carry no accelerator so their keys reach the app's keymap, except Settings (Cmd+,), Ctrl+Tab and Ctrl+Shift+Tab."}
 {"id":"LA-UI79","title":"Shell pages","file":"desktop/src/launch.ts","description":"The launch view, the error page and the About window."}
-{"id":"LA-UI80","title":"Dock icon and menu","file":"desktop/src/dock.ts"}
+{"id":"LA-UI80","title":"Dock icon and menu","file":"desktop/src/dock.ts","description":"On macOS, the Dock badge with the number of check errors in the focused window's product (none at 0, \"999+\" past 999), and the Dock menu's New Window above the recent folders."}
 {"id":"LA-UI90","title":"ProductWiki","file":"app/src/specs/SpecPages.tsx","description":"ProductWiki"}
-{"id":"LA-UI91","title":"Markdown","file":"app/src/specs/Markdown.tsx"}
-{"id":"LA-UI92","title":"Graph page","file":"app/src/graph/GraphPage.tsx"}
-{"id":"LA-UI93","title":"Record content","file":"app/src/specs/RecordContent.tsx"}
-{"id":"LA-UI94","title":"Long list","file":"app/src/components/LongList.tsx"}
+{"id":"LA-UI91","title":"Markdown","file":"app/src/specs/Markdown.tsx","description":"Renders Markdown to sanitized HTML, giving each heading an anchor and turning named record IDs into in-app links; a code block scrolls sideways in its own focusable box."}
+{"id":"LA-UI92","title":"Graph page","file":"app/src/graph/GraphPage.tsx","description":"The Graph stage: the product's tree as one fixed map drawn on a canvas in the Tree, Nested or Voronoi view, explored by a camera that glides to frame the focus, with a hidden keyboard layer of its boxes and its controls in the shared stage toolbar."}
+{"id":"LA-UI93","title":"Record content","file":"app/src/specs/RecordContent.tsx","description":"One record's content in the wiki card: its header, text fields, problems, facts, parent, children by kind and links both ways, with its kind's own sections; it lays itself out by its own width."}
+{"id":"LA-UI94","title":"Long list","file":"app/src/components/LongList.tsx","description":"A list that stays short: up to ten items a plain list; past that, the first ten rows' height scrolling inside, under a search box with a count (\"12 of 48\") and a message when nothing matches."}
 {"id":"LA-UI95","title":"Focus page","file":"app/src/views/FocusPage.tsx","description":"The stage and the panels floating over it, for one focus."}
-{"id":"LA-UI97","title":"Nav","file":"app/src/shell/Nav.tsx"}
+{"id":"LA-UI97","title":"Nav","file":"app/src/shell/Nav.tsx","description":"The side navigation: the space rail when there are two or more products, then the current space's panel (Go to, its overview and stages, its domains folded into stages and folders, its groups, and Tools with Checks) and a footer with Appearance and where the specs come from; it collapses to the rail, or is a drawer on a narrow screen."}
 {"id":"LA-UI98","title":"Quick open","file":"app/src/shell/QuickOpen.tsx","description":"Quick find and the command palette in one overlay, with the stage's preview of the highlighted record."}
-{"id":"LA-UI99","title":"Tree list","file":"app/src/components/TreeList.tsx"}
+{"id":"LA-UI99","title":"Tree list","file":"app/src/components/TreeList.tsx","description":"A list whose rows each fold one level of nested rows under a disclosure triangle, keeping the row's count and marks when folded; a search opens a row just for its match, the arrow keys walk it as a tree, and what is open is remembered for the session."}
