@@ -26,22 +26,19 @@ const git = (root: string, ...args: string[]) => {
   return result.stdout;
 };
 
-// The next schema's converter, as Lathe would ship it in upgrades/: the files phase moves the renamed column on the
-// raw rows; the records phase writes through the store and leaves what it cannot judge as a to-do.
+// The next schema's converter, as Lathe would ship it in upgrades/: it moves the renamed column on the raw rows, gives
+// each product its color, and leaves what it cannot judge as a to-do.
 const CONVERTER = `
 export default {
   files(data, notes) {
     data.write('product', data.read('product').map(({ notes: delivery, ...row }) => (delivery === undefined ? row : { ...row, delivery })));
     notes.changed('product.notes is now product.delivery');
-  },
-  async records(store, notes) {
-    for (const row of store.rows('product')) {
-      if (!row.color) {
-        await store.set('product', row.id, { color: '#2E6A88' });
-        notes.changed(row.id + ' takes the color #2E6A88');
-      }
-      if (row.delivery) notes.todo(row.id + ': check that its delivery note reads well on its own');
-    }
+    data.write('product', data.read('product').map((row) => {
+      if (row.color) return row;
+      notes.changed(row.id + ' takes the color #2E6A88');
+      return { ...row, color: '#2E6A88' };
+    }));
+    for (const row of data.read('product')) if (row.delivery) notes.todo(row.id + ': check that its delivery note reads well on its own');
   },
 };
 `;
