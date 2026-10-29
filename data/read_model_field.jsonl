@@ -12,8 +12,9 @@
 {"read_model_id":"LA-AUT-RM02","position":7,"name":"Data file","meaning":"The data file that holds its row.","type":"text","required":false}
 {"read_model_id":"LA-AUT-RM11","position":1,"name":"Use case","meaning":"The use case's row: its ID, title, capability, goal and notes.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM11","position":2,"name":"Actors","meaning":"Its actors' roles, in order: the first is the main actor.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM11","position":3,"name":"Requirements","meaning":"Its UC requirements, each with its use case tests and the test data sets they start from.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM11","position":4,"name":"Flows","meaning":"Its flows, each with its steps (with the requirements each fulfills, what it invokes, the view it happens in and the integrations it exchanges with) and its flow test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM11","position":3,"name":"Requirements","meaning":"Its UC requirements by ID, each with its use case tests (and the test data sets they start from) and the steps of its use case that fulfill it.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM11","position":4,"name":"Flows","meaning":"Its flows by the interface each goes through, each with its steps path by path, the main path first and each in position order (with the requirements each fulfills, what it invokes, the view it happens in and the integrations it exchanges with), and its flow test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM11","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the use case: the use case, a UC requirement, a use case test, a flow, a flow step or a flow test.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM21","position":1,"name":"Product","meaning":"The product's row.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM21","position":2,"name":"Roles","meaning":"Its roles, in order.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM21","position":3,"name":"Declarations","meaning":"Its product kinds with their fields, and its product relations.","type":"text","required":true}

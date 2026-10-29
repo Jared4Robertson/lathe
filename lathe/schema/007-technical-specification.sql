@@ -1,6 +1,6 @@
 -- The technical specification: one concrete kind implements each design kind, in place of generic components and
 -- layers. The domain layer (data models, value types, predicates, event types, services) stays apart from the
--- application layer (command, query and event handlers, and projections), which alone reads and writes storage. Then
+-- application layer (command, query and event handlers, projections and readers), which alone reads and writes storage. Then
 -- standards and their rules, which technical records meet.
 
 CREATE TABLE repository (
@@ -93,6 +93,20 @@ COMMENT ON COLUMN projection.title IS 'Its name in code, such as overdueLoans.';
 COMMENT ON COLUMN projection.read_model_id IS 'The read model it fills; one projection each.';
 COMMENT ON COLUMN projection.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
 COMMENT ON COLUMN projection.description IS 'How it fills its read model and when it is rebuilt, in a sentence or two.';
+
+CREATE TABLE reader (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  read_model_id VARCHAR NOT NULL UNIQUE REFERENCES read_model (id),
+  file VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
+);
+COMMENT ON TABLE reader IS 'Reads its read model''s table for its query handlers: the way query handlers reach a read model''s storage. It reads exactly one read model, its parent, and nothing else; a query handler reads only through its own read model''s reader, and the projection alone fills the table it reads.';
+COMMENT ON COLUMN reader.id IS 'The reader''s ID: its read model''s ID and RD, such as TL-LEND-RM01-RD.';
+COMMENT ON COLUMN reader.title IS 'Its name in code, such as OverdueLoansReader.';
+COMMENT ON COLUMN reader.read_model_id IS 'The read model it reads; one reader each.';
+COMMENT ON COLUMN reader.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
+COMMENT ON COLUMN reader.description IS 'How it reads its read model''s table: where the table is kept and how a query handler is given the reader, in a sentence or two.';
 
 CREATE TABLE command_handler (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -297,18 +311,19 @@ INSERT INTO meta_kind VALUES
   ('predicate', 'Predicate', 'technical-specification', 34, false, '<specification>-PR', 'TL-LEND-SP01-PR', 'parent', NULL),
   ('event_type', 'Event type', 'technical-specification', 35, false, '<domain event>-ET', 'TL-LEND-EV01-ET', 'parent', NULL),
   ('projection', 'Projection', 'technical-specification', 36, false, '<read model>-PJ', 'TL-LEND-RM01-PJ', 'parent', NULL),
-  ('command_handler', 'Command handler', 'technical-specification', 37, false, '<command>-H', 'TL-LEND-CMD01-H', 'parent', NULL),
-  ('query_handler', 'Query handler', 'technical-specification', 38, false, '<query>-H', 'TL-LEND-QRY01-H', 'parent', NULL),
-  ('event_handler', 'Event handler', 'technical-specification', 39, false, '<policy>-H', 'TL-LEND-PO01-H', 'parent', NULL),
-  ('service', 'Service', 'technical-specification', 40, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
-  ('endpoint_handler', 'Endpoint handler', 'technical-specification', 42, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
-  ('adapter', 'Adapter', 'technical-specification', 43, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
-  ('entry_point', 'Entry point', 'technical-specification', 44, false, '<domain>-ENTRY<nn>', 'TL-LEND-ENTRY01', 'parent', NULL),
-  ('tooling', 'Tooling', 'technical-specification', 45, false, '<domain>-TOOL<nn>', 'TL-LEND-TOOL01', 'parent', NULL),
+  ('reader', 'Reader', 'technical-specification', 37, false, '<read model>-RD', 'TL-LEND-RM01-RD', 'parent', NULL),
+  ('command_handler', 'Command handler', 'technical-specification', 38, false, '<command>-H', 'TL-LEND-CMD01-H', 'parent', NULL),
+  ('query_handler', 'Query handler', 'technical-specification', 39, false, '<query>-H', 'TL-LEND-QRY01-H', 'parent', NULL),
+  ('event_handler', 'Event handler', 'technical-specification', 40, false, '<policy>-H', 'TL-LEND-PO01-H', 'parent', NULL),
+  ('service', 'Service', 'technical-specification', 41, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
+  ('endpoint_handler', 'Endpoint handler', 'technical-specification', 43, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
+  ('adapter', 'Adapter', 'technical-specification', 44, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
+  ('entry_point', 'Entry point', 'technical-specification', 45, false, '<domain>-ENTRY<nn>', 'TL-LEND-ENTRY01', 'parent', NULL),
+  ('tooling', 'Tooling', 'technical-specification', 46, false, '<domain>-TOOL<nn>', 'TL-LEND-TOOL01', 'parent', NULL),
   ('table', 'Table', 'technical-specification', 32, false, '<entity or read model>-TB, or <domain>-TB<nn>', 'TL-LEND-EN01-TB', 'parent', NULL),
-  ('ui_component', 'UI component', 'technical-specification', 41, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
-  ('standard', 'Standard', 'technical-specification', 46, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
-  ('standard_rule', 'Standard rule', 'technical-specification', 47, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
+  ('ui_component', 'UI component', 'technical-specification', 42, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
+  ('standard', 'Standard', 'technical-specification', 47, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
+  ('standard_rule', 'Standard rule', 'technical-specification', 48, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('repository', 'domain', 1, 'domain_id'),
   ('data_model', 'entity', 1, 'entity_id'),
@@ -316,6 +331,7 @@ INSERT INTO meta_kind_parent VALUES
   ('predicate', 'specification', 1, 'specification_id'),
   ('event_type', 'domain_event', 1, 'domain_event_id'),
   ('projection', 'read_model', 1, 'read_model_id'),
+  ('reader', 'read_model', 1, 'read_model_id'),
   ('command_handler', 'command', 1, 'command_id'),
   ('query_handler', 'query', 1, 'query_id'),
   ('event_handler', 'policy', 1, 'policy_id'),
@@ -329,11 +345,11 @@ INSERT INTO meta_kind_parent VALUES
   ('standard_rule', 'standard', 1, 'standard_id');
 INSERT INTO meta_kind_title VALUES
   ('repository', 'identifier'), ('data_model', 'identifier'), ('value_type', 'identifier'), ('predicate', 'identifier'),
-  ('event_type', 'identifier'), ('projection', 'identifier'), ('command_handler', 'identifier'), ('query_handler', 'identifier'),
+  ('event_type', 'identifier'), ('projection', 'identifier'), ('reader', 'identifier'), ('command_handler', 'identifier'), ('query_handler', 'identifier'),
   ('event_handler', 'identifier'), ('service', 'identifier'), ('endpoint_handler', 'identifier'), ('adapter', 'identifier'),
   ('entry_point', 'identifier'), ('tooling', 'identifier'), ('table', 'identifier');
 INSERT INTO meta_table VALUES
-  ('repository', 'kind', NULL), ('repository_share', 'part', 'repository_id'), ('data_model', 'kind', NULL), ('value_type', 'kind', NULL), ('predicate', 'kind', NULL), ('event_type', 'kind', NULL), ('projection', 'kind', NULL), ('command_handler', 'kind', NULL), ('query_handler', 'kind', NULL), ('event_handler', 'kind', NULL), ('service', 'kind', NULL), ('endpoint_handler', 'kind', NULL), ('adapter', 'kind', NULL),
+  ('repository', 'kind', NULL), ('repository_share', 'part', 'repository_id'), ('data_model', 'kind', NULL), ('value_type', 'kind', NULL), ('predicate', 'kind', NULL), ('event_type', 'kind', NULL), ('projection', 'kind', NULL), ('reader', 'kind', NULL), ('command_handler', 'kind', NULL), ('query_handler', 'kind', NULL), ('event_handler', 'kind', NULL), ('service', 'kind', NULL), ('endpoint_handler', 'kind', NULL), ('adapter', 'kind', NULL),
   ('entry_point', 'kind', NULL), ('tooling', 'kind', NULL),
   ('table', 'kind', NULL), ('table_key', 'part', 'table_id'), ('ui_component', 'kind', NULL), ('standard', 'kind', NULL), ('standard_rule', 'kind', NULL);
 
