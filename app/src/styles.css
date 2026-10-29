@@ -520,8 +520,9 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .nav-badge.quiet { margin-left: auto; }
 .nav-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin: 0 -10px; padding-top: 8px; border-top: 1px solid var(--rule); }
 .nav-source { margin: 0; padding: 0 18px; font-size: 0.75rem; color: var(--muted); }
-.quick-find-button { display: flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--muted); font: inherit; font-size: 0.88rem; text-align: left; cursor: pointer; }
-.quick-find-button:hover { border-color: var(--steel); }
+/* The nav's Go to button: drawn as the search box it opens, with its shortcut at the right. */
+.button.quick-find-button { display: flex; justify-content: flex-start; gap: 6px; min-height: 34px; padding: 0 8px; border-color: var(--rule); background: var(--paper); color: var(--muted); font-size: 0.88rem; font-weight: 400; }
+.button.quick-find-button:not(:disabled):hover { border-color: var(--steel); background: var(--paper); }
 .quick-find-button:focus-visible { outline: 2px solid var(--steel); outline-offset: 0; }
 .quick-find-label { flex: 1; min-width: 0; }
 /* The rail: the nav collapsed to icons. */
