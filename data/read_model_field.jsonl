@@ -76,6 +76,15 @@
 {"read_model_id":"LA-PLT-RM03","position":5,"name":"Color mode","meaning":"The mode in use.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM04","position":1,"name":"Folder","meaning":"A recent folder, latest first.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM04","position":2,"name":"Shown as","meaning":"The folder with the home folder as `~`.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM05","position":1,"name":"Session ID","meaning":"The session's ID in the CLI's store, the name of its transcript file.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM05","position":2,"name":"Title","meaning":"The name it was given, else its summary, else its first prompt.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM05","position":3,"name":"Updated","meaning":"When its transcript was last written.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM05","position":4,"name":"Open elsewhere","meaning":"running when another Claude client's process has it open now, recent when it was written in the last minute, else empty.","type":"text","required":false}
+{"read_model_id":"LA-PLT-RM06","position":1,"name":"Page","meaning":"The window's address.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM06","position":2,"name":"Focus","meaning":"The focused record or group, by ID, kind and title.","type":"text","required":false}
+{"read_model_id":"LA-PLT-RM06","position":3,"name":"Stage","meaning":"The stage shown: graph, erd or trace.","type":"text","required":false}
+{"read_model_id":"LA-PLT-RM06","position":4,"name":"Selected","meaning":"The record selected on the stage or in the wiki card, by ID, kind and title.","type":"text","required":false}
+{"read_model_id":"LA-PLT-RM06","position":5,"name":"Product","meaning":"The space's product.","type":"text","required":false}
 {"read_model_id":"LA-TRC-RM01","position":1,"name":"Domain","meaning":"The domain counted.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
 {"read_model_id":"LA-TRC-RM01","position":2,"name":"Obligation kind","meaning":"The obligation kind counted.","type":"text","required":true,"column_name":"kind","example":"invariant"}
 {"read_model_id":"LA-TRC-RM01","position":3,"name":"Total","meaning":"How many the domain owes.","type":"whole number","required":true,"example":"6"}

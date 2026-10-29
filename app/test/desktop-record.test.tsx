@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recordIdAt } from '../src/shell/desktopRecord';
 import { indexOf } from './fixtures/load';
-import { openApp, openSideBar } from './helpers';
+import { desktopBridgeStub, openApp, openSideBar } from './helpers';
 import { workspace } from './fixtures/workspace';
 
 // The desktop app's page hooks (LA-PLT-UC15; the record actions, LA-V92-R74): the record actions in a record's facts and on a
@@ -28,6 +28,8 @@ function desktop() {
     openRecordInEditor: vi.fn<(id: string) => void>(),
     copyRecordId: vi.fn<(id: string) => void>(),
     showRecordMenu: vi.fn<(id: string) => void>(),
+    chat: desktopBridgeStub().chat,
+    onAppRequest: () => () => {},
   };
   host.latheDesktop = bridge;
   return { bridge, setFullScreen: (value: boolean) => fullScreen?.(value) };

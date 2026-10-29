@@ -25,6 +25,7 @@ export const VIEW_COMMANDS: readonly MenuCommand[] = [
   { id: 'toggleWikiCard', label: 'Show or Collapse Wiki Card', keys: 'w' },
   { id: 'toggleNav', label: 'Show or Hide Navigation', keys: 'Mod+B' },
   { id: 'toggleSideBar', label: 'Show or Hide Side Bar', keys: 'Mod+Alt+B' },
+  { id: 'toggleChat', label: 'Show or Hide Chat', keys: 'Ctrl+Meta+I', otherKeys: 'Ctrl+Alt+C' },
 ];
 
 /** The record tabs (app/src/views/useTabs.ts), in View › Tabs. */

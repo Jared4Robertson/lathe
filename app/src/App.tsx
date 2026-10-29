@@ -15,6 +15,10 @@ import { useThemeColor } from './shell/themeColor';
 import { isBool, usePanelSize, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage } from './views/FocusPage';
+import { ChatPanel } from './chat/ChatPanel';
+import { useAppRequests } from './chat/appRequests';
+import { useSessionSettings } from './graph/settings';
+import { desktopBridge } from './shell/desktopChrome';
 import { checksPathOf, HOME_PATH, isFocusRoute } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
 import { APPEARANCE_PATH, ThemeCommands } from './theme/ThemeCommands';
@@ -104,6 +108,19 @@ function Shell() {
     if (href && href.startsWith('/')) navigate(href);
     else announce('Focus a link first, then press F12 to open its record.');
   });
+  // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Its open state and width are the session's setting.
+  const chatBridge = narrow ? null : desktopBridge()?.chat ?? null;
+  const { chat, setChat } = useSessionSettings();
+  const chatShown = !!chatBridge && chat.open;
+  const chatInput = useRef<HTMLTextAreaElement>(null);
+  const chatPanel = () => document.getElementById('chat-panel');
+  useCommand('toggleChat', () => {
+    // Open: focus the message box; open with focus elsewhere: focus it; with focus in it: hide it.
+    if (chatShown && chatPanel()?.contains(document.activeElement)) { setChat({ open: false }); announce('Chat hidden'); return; }
+    if (!chatShown) { setChat({ open: true }); announce('Chat shown'); }
+    setTimeout(() => chatInput.current?.focus(), 0);
+  }, !!chatBridge);
+  useAppRequests(spec.index, spaces.current?.id ?? null);
   useCommand('nextProblem', () => stepProblem(1, announce));
   useCommand('previousProblem', () => stepProblem(-1, announce));
   useCommand('focusSearch', () => {
@@ -141,8 +158,8 @@ function Shell() {
     <SpaceCommands spaces={spaces} />
     <DesktopTitleBar index={spaces.index} />
     <div
-      className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}`}
-      style={{ '--nav-width': `${navWidth}px` } as CSSProperties}
+      className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}${chatShown ? ' with-chat' : ''}`}
+      style={{ '--nav-width': `${navWidth}px`, ...(chat.width !== null ? { '--chat-width': `${chat.width}px` } : {}) } as CSSProperties}
       data-specs={spec.index ? 'ready' : spec.error ? 'error' : 'loading'}
     >
       <a href="#main" className="skip-link">Skip to the page</a>
@@ -187,6 +204,16 @@ function Shell() {
         />
       )}
       {page}
+      {chatShown && chatBridge && (
+        <ChatPanel
+          bridge={chatBridge}
+          index={spec.index}
+          width={chat.width}
+          onWidth={(width) => setChat({ width })}
+          onClose={() => { setChat({ open: false }); announce('Chat hidden'); }}
+          input={chatInput}
+        />
+      )}
     </div>
     </SpacesProvider>
     </WriterProvider>
