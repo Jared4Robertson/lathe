@@ -37,7 +37,7 @@ const checkFile = (store: Store) => readFileSync(path.join(store.dataDir, 'check
 type Summaries = ReturnType<typeof LIST_CHECKS.run>;
 
 describe("LA-CHK-UC02-R50-T01 each Check command (LA-CHK-A1) changes one check row through CheckRepository, keeps Lathe's own read-only, and is reached by name from the CLI, the MCP tools and HTTP", () => {
-  it("builds the data set with its own Add command, reads a check whole, and lists Lathe's checks before the product's", async () => {
+  it("LA-PAT-AGGREGATE-TESTS-R03-T02 builds the data set with its own Add command, reads a check whole, and lists Lathe's checks before the product's", async () => {
     const store = await checkDataSet();
     expect(runQuery(store, GET_CHECK, { name: 'loan-without-due-date' })).toMatchObject({ name: 'loan-without-due-date', product: 'TL', position: 2, severity: 'error', kinds: [] });
     const listed = runQuery(store, LIST_CHECKS, { product_id: 'TL' }) as Summaries;
@@ -55,7 +55,7 @@ describe("LA-CHK-UC02-R50-T01 each Check command (LA-CHK-A1) changes one check r
     expect(checkFile(store)).not.toContain('tool-without-photo');
   });
 
-  it("refuses a check named like one of Lathe's (LA-CHK-INV01) and any change or removal of Lathe's own (LA-CHK-INV02), naming lathe/data/check.jsonl and changing nothing", async () => {
+  it("LA-PAT-AGGREGATE-COMMANDS-R02-T02 refuses a check named like one of Lathe's (LA-CHK-INV01) and any change or removal of Lathe's own (LA-CHK-INV02), naming lathe/data/check.jsonl and changing nothing", async () => {
     const store = await checkDataSet();
     const before = checkFile(store);
     const added = await refusal(store, ADD_CHECK, { name: 'view-unused', product_id: 'TL', position: 3, severity: 'warning', summary: 'x.', explanation: 'x.', query: 'SELECT 1' });
@@ -67,7 +67,7 @@ describe("LA-CHK-UC02-R50-T01 each Check command (LA-CHK-A1) changes one check r
     expect(checkFile(store)).toBe(before);
   });
 
-  it('runs `lathe check <command>`, the check_ tools and POST /api/check/<command>', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R01-T02 runs `lathe check <command>`, the check_ tools and POST /api/check/<command>', async () => {
     const store = await checkDataSet();
     const root = path.dirname(store.dataDir);
     await closeCheckingStores();
