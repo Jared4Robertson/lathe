@@ -65,8 +65,8 @@
 {"id":"LA-EXP-UC08-FL02","title":"Read a product laid out in stage folders in the desktop app","use_case_id":"LA-EXP-UC08","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC09-FL01","title":"Read the technical specification and test plan by kind in the web app","use_case_id":"LA-EXP-UC09","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC09-FL02","title":"Read the technical specification and test plan by kind in the desktop app","use_case_id":"LA-EXP-UC09","interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC10-FL01","title":"Keep several records open in tabs in the web app","use_case_id":"LA-EXP-UC10","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC10-FL02","title":"Keep several records open in tabs in the desktop app","use_case_id":"LA-EXP-UC10","interface_id":"LA-IF02"}
+{"id":"LA-EXP-UC10-FL01","title":"Explore several places at once in tabs in the web app","use_case_id":"LA-EXP-UC10","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC10-FL02","title":"Explore several places at once in tabs in the desktop app","use_case_id":"LA-EXP-UC10","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC11-FL01","title":"Read a domain and its aggregates as an ERD in the web app","use_case_id":"LA-EXP-UC11","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC11-FL02","title":"Read a domain and its aggregates as an ERD in the desktop app","use_case_id":"LA-EXP-UC11","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC12-FL01","title":"Look up a record's history in the web app","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF01"}

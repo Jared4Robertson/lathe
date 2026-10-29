@@ -4,20 +4,21 @@ import { groupLabel, isGroup } from '../graph/model';
 import { Tooltip } from '../shell/Tooltip';
 import { parseSpecRoute, type SpecIndex } from '../specs/data';
 import { focusOf, isFocusRoute } from './address';
-import type { PageTab, PageTabs } from './useTabs';
+import { hereOf } from './place';
+import type { Tab, TabSet } from './tabs';
 
-// The tab strip, at the left of the leftmost pane's title bar: one tab per open page, as VS Code's
-// editor tabs. A tab shows its record's ID in mono and its title, cut short, with both in full in
-// its tooltip; a group tab shows its label ("Use cases (7)"). The preview tab's title is italic.
-// A click activates a tab, a double-click keeps it, a middle-click or its close button closes it.
-// With the strip focused the arrow keys, Home and End move between tabs, Enter or Space activates
-// the focused one and Delete closes it. Tabs that do not fit scroll sideways.
+// The desktop app's tab strip, at the left of the page bar: one tab per place (tabs.ts), as a browser's tabs. A tab
+// shows the record its place is on, its ID in mono and its title, cut short, with both in full in its tooltip; a
+// group's tab shows its label ("Use cases (7)"). A click activates a tab, a middle-click or its close button closes it.
+// With the strip focused the arrow keys, Home and End move between tabs, Enter or Space activates the focused one and
+// Delete closes it. Tabs that do not fit scroll sideways. On the web there is no strip: the browser's tabs are the places.
 
 export const TAB_PANEL_ID = 'tab-panel';
 export const tabId = (key: string) => `tab-${key}`;
 
-/** What a tab shows for its page: the ID (none for a group) and the title. */
-export function tabLabel(index: SpecIndex, page: string): { id?: string; title: string } {
+/** What a tab shows for the address its place is at: the ID (none for a group) and the title. */
+export function tabLabel(index: SpecIndex, address: string): { id?: string; title: string } {
+  const page = address.split(/[?#]/)[0];
   const route = parseSpecRoute(page, index);
   if (!isFocusRoute(route)) return { title: page };
   const focus = focusOf(route);
@@ -27,13 +28,12 @@ export function tabLabel(index: SpecIndex, page: string): { id?: string; title: 
 
 export interface TabStripProps {
   index: SpecIndex;
-  set: PageTabs;
+  set: TabSet;
   onActivate: (key: string) => void;
   onClose: (key: string) => void;
-  onKeep: (key: string) => void;
 }
 
-export function TabStrip({ index, set, onActivate, onClose, onKeep }: TabStripProps) {
+export function TabStrip({ index, set, onActivate, onClose }: TabStripProps) {
   const strip = useRef<HTMLDivElement>(null);
   const tabEl = (key: string) => strip.current?.querySelector<HTMLElement>(`#${tabId(key)}`) ?? null;
 
@@ -44,7 +44,7 @@ export function TabStrip({ index, set, onActivate, onClose, onKeep }: TabStripPr
 
   const focusTab = (key: string | undefined) => { if (key) setTimeout(() => tabEl(key)?.focus(), 0); };
 
-  const onKeyDown = (e: KeyboardEvent<HTMLElement>, tab: PageTab, i: number) => {
+  const onKeyDown = (e: KeyboardEvent<HTMLElement>, tab: Tab, i: number) => {
     const tabs = set.tabs;
     let to: number | null = null;
     if (e.key === 'ArrowRight') to = (i + 1) % tabs.length;
@@ -70,7 +70,8 @@ export function TabStrip({ index, set, onActivate, onClose, onKeep }: TabStripPr
   return (
     <div ref={strip} className="tab-strip" role="tablist" aria-label="Open pages" onWheel={onWheel}>
       {set.tabs.map((tab, i) => {
-        const { id, title } = tabLabel(index, tab.page);
+        const address = hereOf(tab.place).address;
+        const { id, title } = tabLabel(index, address);
         const active = tab.key === set.active;
         const name = id ? `${id} ${title}` : title;
         return (
@@ -80,14 +81,13 @@ export function TabStrip({ index, set, onActivate, onClose, onKeep }: TabStripPr
           // the keyboard closes a tab with Delete or Alt+Shift+W.
           <div
             key={tab.key}
-            className={`tab${active ? ' is-active' : ''}${tab.preview ? ' is-preview' : ''}`}
-            data-page={tab.page}
+            className={`tab${active ? ' is-active' : ''}`}
+            data-page={address.split(/[?#]/)[0]}
             onClick={() => onActivate(tab.key)}
-            onDoubleClick={() => onKeep(tab.key)}
             onMouseDown={(e: MouseEvent) => { if (e.button === 1) e.preventDefault(); }}
             onAuxClick={(e: MouseEvent) => { if (e.button === 1) { e.preventDefault(); onClose(tab.key); } }}
           >
-            <Tooltip label={tab.preview ? `${name} (preview: double-click to keep open)` : name} command={tab.preview && active ? 'keepTab' : undefined}>
+            <Tooltip label={name}>
               <div
                 id={tabId(tab.key)}
                 role="tab"
@@ -98,11 +98,10 @@ export function TabStrip({ index, set, onActivate, onClose, onKeep }: TabStripPr
                 onKeyDown={(e) => onKeyDown(e, tab, i)}
               >
                 {/* Keyed by its page: a new page in the tab is new text, drawn in place, never the old text moved (UX-R08). */}
-                <span key={tab.page} className="tab-text">
+                <span key={address} className="tab-text">
                   {id && <span className="tab-id">{id}</span>}
                   {id && ' '}
                   <span className="tab-title">{title}</span>
-                  {tab.preview && <span className="sr-only">, preview</span>}
                 </span>
               </div>
             </Tooltip>
@@ -114,7 +113,6 @@ export function TabStrip({ index, set, onActivate, onClose, onKeep }: TabStripPr
                 aria-hidden="true"
                 aria-label={`Close ${name}`}
                 onClick={(e) => { e.stopPropagation(); onClose(tab.key); }}
-                onDoubleClick={(e) => e.stopPropagation()}
               >
                 <Icon name="x" size={13} />
               </button>

@@ -4,22 +4,27 @@ import type { GraphLayout, GraphSettings } from './GraphPage';
 import { NO_FILTERS } from './model';
 import type { LookMark, Since } from '../changes/changes';
 
-// The one reader setting for the browser session, shared by every tab and every page (LA-V93-R72):
-// how the graph is drawn (its layout, depth, kind filters and minimap), and whether the
-// wiki card is open, how wide it is and whether it shows its summary or its whole page, and whether the desktop app's chat panel is open and how
+// How the Reader likes to see things, for the window's session, shared by every tab and every page (LA-V93-R72):
+// the graph's layout and minimap, how wide the wiki card is, whether the desktop app's chat panel is open and how
 // wide (LA-PLT-UC19), and the Changes lens (LA-EXP-UC15): whether it is on, the baseline it compares with, whether
-// Follow is on, and the moment the Reader last looked at each product. Moving through the stage (an arrow step, a click or Enter on a box, a link, a
-// tab, Back or Forward) never changes it; only the person changing a setting does: the graph's
-// toolbar, the v, +/- and w keys, the card's and the chat's buttons and resize handles. Every part
-// of the page that reads it reads the one stored value, so a change in one is seen by all.
+// Follow is on, and the moment the Reader last looked at each product. Where the Reader is (the focus, the stage, the
+// depth, the kind filters, the wiki card's open and expanded state) is not here: it is the place's (views/place.ts).
+// Moving through the stage (an arrow step, a click or Enter on a box, a link, a tab, Back or Forward) never changes
+// it; only the person changing a setting does: the graph's toolbar, the v key, the card's and the chat's resize
+// handles. Every part of the page that reads it reads the one stored value, so a change in one is seen by all.
 // Kept apart from GraphPage.tsx, which is loaded with import() when the graph is first shown.
 
 export const SETTINGS_KEY = 'lathe:session-settings';
+/** The graph as a place starts it: the window's look with the least depth and no kind hidden (GraphView's own, with no host). */
 export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, filters: NO_FILTERS, minimap: false };
 
-/** The wiki card: open or collapsed, its width in px (null: a third of the open space), and whether it shows the whole page (More) or its summary (Less). */
-export interface CardSettings { open: boolean; width: number | null; expanded: boolean }
-export const DEFAULT_CARD: CardSettings = { open: true, width: null, expanded: false };
+/** How the graph is drawn, the window's: its layout and whether the minimap shows. */
+export type GraphLook = Pick<GraphSettings, 'layout' | 'minimap'>;
+export const DEFAULT_GRAPH_LOOK: GraphLook = { layout: 'tree', minimap: false };
+
+/** The wiki card's width in px (null: a third of the open space). Whether it is open or expanded is the place's. */
+export interface CardSettings { width: number | null }
+export const DEFAULT_CARD: CardSettings = { width: null };
 /** The card's narrowest, the width it stays readable at (a long title on whole words, a table with room for its columns), and its widest, in px. */
 export const CARD_MIN = 360;
 export const CARD_MAX = 900;
@@ -39,11 +44,11 @@ export const CHAT_MAX = 760;
 export interface ChangeSettings { lens: boolean; since: Since; follow: boolean; looked: Record<string, LookMark> }
 export const DEFAULT_CHANGES: ChangeSettings = { lens: false, since: 'commit', follow: false, looked: {} };
 
-export interface SessionSettings { graph: GraphSettings; card: CardSettings; chat: ChatSettings; changes: ChangeSettings }
+export interface SessionSettings { graph: GraphLook; card: CardSettings; chat: ChatSettings; changes: ChangeSettings }
 
 interface Stored {
-  layout: GraphLayout; depth: number; hiddenKinds: string[]; minimap: boolean;
-  card: boolean; cardWidth: number | null; cardExpanded: boolean; chat: boolean; chatWidth: number | null;
+  layout: GraphLayout; minimap: boolean;
+  cardWidth: number | null; chat: boolean; chatWidth: number | null;
   lens: boolean; since: Since; follow: boolean; looked: Record<string, LookMark>;
 }
 const isMark = (v: unknown): v is LookMark => {
@@ -54,8 +59,8 @@ const isMark = (v: unknown): v is LookMark => {
 const isStored = (v: unknown): v is Stored => {
   if (!v || typeof v !== 'object') return false;
   const s = v as Stored;
-  return typeof s.layout === 'string' && isNumber(s.depth) && Array.isArray(s.hiddenKinds)
-    && typeof s.minimap === 'boolean' && typeof s.card === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth)) && typeof s.cardExpanded === 'boolean'
+  return typeof s.layout === 'string'
+    && typeof s.minimap === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth))
     && typeof s.chat === 'boolean' && (s.chatWidth === null || isNumber(s.chatWidth))
     && typeof s.lens === 'boolean' && (s.since === 'commit' || s.since === 'branch' || s.since === 'looked') && typeof s.follow === 'boolean'
     && !!s.looked && typeof s.looked === 'object' && Object.values(s.looked).every(isMark);
@@ -68,16 +73,14 @@ const clampChat = clamp(CHAT_MIN, CHAT_MAX);
 /** The session's settings, or the defaults when none are stored. */
 export function sessionSettings(): SessionSettings {
   const s = readPref<unknown>(SETTINGS_KEY, null, isAny, 'session');
-  if (!isStored(s)) return { graph: DEFAULT_GRAPH_SETTINGS, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES };
+  if (!isStored(s)) return { graph: DEFAULT_GRAPH_LOOK, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES };
   return {
     graph: {
       // A layout the graph no longer has reads as the default.
-      layout: s.layout === 'nested' ? 'nested' : DEFAULT_GRAPH_SETTINGS.layout,
-      depth: [1, 2, 3].includes(s.depth) ? s.depth : 1,
-      filters: { hiddenKinds: new Set(s.hiddenKinds) },
+      layout: s.layout === 'nested' ? 'nested' : DEFAULT_GRAPH_LOOK.layout,
       minimap: s.minimap,
     },
-    card: { open: s.card, width: clampWidth(s.cardWidth), expanded: s.cardExpanded },
+    card: { width: clampWidth(s.cardWidth) },
     chat: { open: s.chat, width: clampChat(s.chatWidth) },
     changes: { lens: s.lens, since: s.since, follow: s.follow, looked: s.looked },
   };
@@ -86,8 +89,8 @@ export function sessionSettings(): SessionSettings {
 /** Sets the session's settings: only the person changing a setting calls this. */
 export function saveSessionSettings({ graph: g, card, chat, changes }: SessionSettings) {
   const stored: Stored = {
-    layout: g.layout, depth: g.depth, hiddenKinds: [...g.filters.hiddenKinds], minimap: g.minimap,
-    card: card.open, cardWidth: clampWidth(card.width), cardExpanded: card.expanded, chat: chat.open, chatWidth: clampChat(chat.width),
+    layout: g.layout, minimap: g.minimap,
+    cardWidth: clampWidth(card.width), chat: chat.open, chatWidth: clampChat(chat.width),
     lens: changes.lens, since: changes.since, follow: changes.follow, looked: changes.looked,
   };
   writePref(SETTINGS_KEY, stored, 'session');
@@ -108,12 +111,15 @@ const subscribe = (listener: () => void) => { listeners.add(listener); return ()
 /** The session's settings, and the setters for the person's own changes. */
 export function useSessionSettings() {
   const settings = useSyncExternalStore(subscribe, current, current);
-  const setGraph = useCallback((graph: GraphSettings) => saveSessionSettings({ ...current(), graph }), []);
+  const setGraph = useCallback((patch: Partial<GraphLook>) => {
+    const was = current();
+    const graph = { ...was.graph, ...patch };
+    if (graph.layout !== was.graph.layout || graph.minimap !== was.graph.minimap) saveSessionSettings({ ...was, graph });
+  }, []);
   const setCard = useCallback((patch: Partial<CardSettings>) => {
     const was = current();
-    const card = { ...was.card, ...patch };
-    card.width = clampWidth(card.width);
-    if (card.open !== was.card.open || card.width !== was.card.width || card.expanded !== was.card.expanded) saveSessionSettings({ ...was, card });
+    const card = { width: clampWidth(patch.width === undefined ? was.card.width : patch.width) };
+    if (card.width !== was.card.width) saveSessionSettings({ ...was, card });
   }, []);
   const setChat = useCallback((patch: Partial<ChatSettings>) => {
     const was = current();

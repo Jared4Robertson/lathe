@@ -596,7 +596,7 @@ function runRecordAction(entry: Entry, input: unknown) {
   if (request.action === 'reveal') reveal();
   else if (request.action === 'open-in-editor') edit();
   else if (request.action === 'copy-id') copy();
-  else Menu.buildFromTemplate(recordMenuTemplate(request.id, !!file, editorName(settings), { reveal, openInEditor: edit, copyId: copy }, process.platform)).popup({ window: entry.win });
+  else Menu.buildFromTemplate(recordMenuTemplate(request.id, !!file, editorName(settings), { openInNewTab: () => sendCommandId(entry.win, 'openRecordInNewTab', []), reveal, openInEditor: edit, copyId: copy }, process.platform)).popup({ window: entry.win });
 }
 
 function chooseEditor(editor: Editor) {

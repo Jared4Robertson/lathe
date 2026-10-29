@@ -2,7 +2,6 @@ import './graph/setup';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import { changeSummary } from '../src/views/history';
-import { SETTINGS_KEY } from '../src/graph/settings';
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
 
@@ -26,7 +25,7 @@ function serveHistory(answer: (query: URLSearchParams) => unknown) {
 }
 
 /** The wiki card open on the whole page, for the session. */
-const expanded = () => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
+const expanded = () => window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
 
 describe('a record\'s History in the wiki card', () => {
   it('LA-V96-R26-T01 History in the wiki card lists the commits that touched the record\'s rows, the uncommitted change first, shows a commit\'s diff inline, loads more, and says calmly when there is no git', async () => {

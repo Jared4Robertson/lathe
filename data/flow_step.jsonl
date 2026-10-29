@@ -286,18 +286,19 @@
 {"id":"LA-EXP-UC09-FL02-S02","title":"The domain page lists Test plan by test kind","flow_id":"LA-EXP-UC09-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC09-FL02-S03","title":"The nav folds the kind groups with their counts, and opens the current page's branch","flow_id":"LA-EXP-UC09-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC09-FL02-S04","title":"The Reader reaches the same records in the graph through the same groups, and the header strip's breadcrumb names where each sits","flow_id":"LA-EXP-UC09-FL02","path":"main","position":4}
-{"id":"LA-EXP-UC10-FL01-S01","title":"A plain open shows the page in the preview tab, or activates the tab it is open in","flow_id":"LA-EXP-UC10-FL01","path":"main","position":1}
-{"id":"LA-EXP-UC10-FL01-S02","title":"The reader keeps the tab by a double-click, Ctrl+K then Enter, or a change to its views","flow_id":"LA-EXP-UC10-FL01","path":"main","position":2}
-{"id":"LA-EXP-UC10-FL01-S03","title":"They flip between tabs with Ctrl+Tab","flow_id":"LA-EXP-UC10-FL01","path":"main","position":3}
-{"id":"LA-EXP-UC10-FL01-S04","title":"Each tab keeps its own stage and wiki card scroll; the graph is drawn the same in every tab","flow_id":"LA-EXP-UC10-FL01","path":"main","position":4}
-{"id":"LA-EXP-UC10-FL01-S05","title":"They close a tab by its button, a middle-click or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL01","path":"main","position":5}
-{"id":"LA-EXP-UC10-FL01-S06","title":"A reload brings back each space's tabs as they were","flow_id":"LA-EXP-UC10-FL01","path":"main","position":6}
-{"id":"LA-EXP-UC10-FL02-S01","title":"The Reader opens a page plainly, which shows in the preview tab, or activates the tab it is open in","flow_id":"LA-EXP-UC10-FL02","path":"main","position":1}
-{"id":"LA-EXP-UC10-FL02-S02","title":"In the desktop app, the Reader keeps the tab by a double-click, Ctrl+K then Enter, or a change to its views","flow_id":"LA-EXP-UC10-FL02","path":"main","position":2}
-{"id":"LA-EXP-UC10-FL02-S03","title":"The Reader flips between tabs with Ctrl+Tab, or from View › Tabs in the menu bar","flow_id":"LA-EXP-UC10-FL02","path":"main","position":3}
-{"id":"LA-EXP-UC10-FL02-S04","title":"The app keeps each tab's own stage and wiki card scroll, and draws the graph the same in every tab","flow_id":"LA-EXP-UC10-FL02","path":"main","position":4}
-{"id":"LA-EXP-UC10-FL02-S05","title":"The Reader closes a tab by its button, a middle-click or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL02","path":"main","position":5}
-{"id":"LA-EXP-UC10-FL02-S06","title":"The app brings back each space's tabs as they were after a reload","flow_id":"LA-EXP-UC10-FL02","path":"main","position":6}
+{"id":"LA-EXP-UC10-FL01-S01","title":"The Reader moves through the stage, the links and quick find, each move staying in the browser tab as one entry of its history","flow_id":"LA-EXP-UC10-FL01","path":"main","position":1}
+{"id":"LA-EXP-UC10-FL01-S02","title":"Cmd or Ctrl+click or a middle-click on a box or a link opens its address in a new browser tab","flow_id":"LA-EXP-UC10-FL01","path":"main","position":2}
+{"id":"LA-EXP-UC10-FL01-S03","title":"The Reader flips between browser tabs, each its own place","flow_id":"LA-EXP-UC10-FL01","path":"main","position":3}
+{"id":"LA-EXP-UC10-FL01-S04","title":"Each browser tab keeps its own stage, depth, filters and wiki card; the layout and the minimap are the session's","flow_id":"LA-EXP-UC10-FL01","path":"main","position":4}
+{"id":"LA-EXP-UC10-FL01-S05","title":"Back and Forward step through the browser tab's own history","flow_id":"LA-EXP-UC10-FL01","path":"main","position":5}
+{"id":"LA-EXP-UC10-FL01-S06","title":"A reload brings back the browser tab's place","flow_id":"LA-EXP-UC10-FL01","path":"main","position":6}
+{"id":"LA-EXP-UC10-FL02-S01","title":"The Reader moves through the stage, the links and quick find, and every move stays in the active tab, even onto a record another tab holds","flow_id":"LA-EXP-UC10-FL02","path":"main","position":1}
+{"id":"LA-EXP-UC10-FL02-S02","title":"The Reader opens a new tab by Cmd or Ctrl+click or a middle-click, Open in New Tab, Cmd+Enter in quick open, Cmd+T or Duplicate Tab","flow_id":"LA-EXP-UC10-FL02","path":"main","position":2}
+{"id":"LA-EXP-UC10-FL02-S03","title":"The Reader flips between tabs by a click, Ctrl+Tab or View › Tabs, and the address follows the active tab","flow_id":"LA-EXP-UC10-FL02","path":"main","position":3}
+{"id":"LA-EXP-UC10-FL02-S04","title":"The app keeps each tab's own stage, depth, filters and wiki card, and draws the graph in the session's layout","flow_id":"LA-EXP-UC10-FL02","path":"main","position":4}
+{"id":"LA-EXP-UC10-FL02-S05","title":"The Reader closes a tab by its button, a middle-click, Cmd+W or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL02","path":"main","position":5}
+{"id":"LA-EXP-UC10-FL02-S06","title":"The app brings back every tab with its place and history after a reload","flow_id":"LA-EXP-UC10-FL02","path":"main","position":6}
+{"id":"LA-EXP-UC10-FL02-S07","title":"The Reader goes Back and Forward within the active tab, by the title bar's buttons, Cmd+[ and Cmd+] or View › Tabs","flow_id":"LA-EXP-UC10-FL02","path":"main","position":7}
 {"id":"LA-EXP-UC11-FL01-S01","title":"On a domain, aggregate or entity page the reader opens the ERD stage","flow_id":"LA-EXP-UC11-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC11-FL01-S02","title":"A domain's ERD shows its aggregates as boundaries around their entities, and the relationship and reference lines between them","flow_id":"LA-EXP-UC11-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC11-FL01-S03","title":"They click an aggregate's box: its entities with their fields, and the aggregates around it faded","flow_id":"LA-EXP-UC11-FL01","path":"main","position":3}
@@ -405,7 +406,7 @@
 {"id":"LA-PLT-UC08-FL01-S04","title":"They pinch out, tap a node to see its name, and tap Open","flow_id":"LA-PLT-UC08-FL01","path":"main","position":4}
 {"id":"LA-PLT-UC08-FL01-S05","title":"They pull up the wiki card sheet, drag it to full height, then swipe it away","flow_id":"LA-PLT-UC08-FL01","path":"main","position":5}
 {"id":"LA-PLT-UC08-FL01-S06","title":"They open the nav sheet from the menu button and choose the domain","flow_id":"LA-PLT-UC08-FL01","path":"main","position":6}
-{"id":"LA-PLT-UC08-FL01-S07","title":"The Open pages sheet takes them back to the use case they started from","flow_id":"LA-PLT-UC08-FL01","path":"main","position":7}
+{"id":"LA-PLT-UC08-FL01-S07","title":"Back, twice, takes them back to the use case they started from","flow_id":"LA-PLT-UC08-FL01","path":"main","position":7}
 {"id":"LA-PLT-UC08-FL01-S08","title":"On a tablet in landscape they keep the workbench, with targets sized for a finger","flow_id":"LA-PLT-UC08-FL01","path":"tablet","position":1}
 {"id":"LA-PLT-UC09-FL01-S01","title":"The Reader opens a page; nothing drawn moves as the specs and fonts arrive","flow_id":"LA-PLT-UC09-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC09-FL01-S02","title":"They move between records by the nav, a link, a graph click, Back and quick find; the frame stays","flow_id":"LA-PLT-UC09-FL01","path":"main","position":2}
