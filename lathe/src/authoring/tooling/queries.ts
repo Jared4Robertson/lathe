@@ -1,23 +1,27 @@
-// The Tooling aggregate's own reads (read model LA-AUT-RM41): a tooling record whole, the tooling records of a domain, and the
-// next free ID for one. Each reads the current data and changes nothing.
+// The Tooling aggregate's own reads (read model LA-AUT-RM41): a tooling record's page, the tooling records of a domain,
+// and the next free ID for one. Each reads only the read model, through its reader (reader.ts), and changes
+// nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
-import { toolingsFrom, TOOLING_SLICE, type Tooling } from './model.ts';
+import { TOOLING_SLICE } from './model.ts';
+import type { ToolingPage, ToolingSummary } from './read-model.ts';
+import { toolingReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
 /** The tooling record with this ID, whole. */
-export function getTooling(view: ReadView, input: { id: string }): Tooling {
-  const record = view.record(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
-  if (record.kind !== 'tooling') refuse('kind', `${input.id} is ${/^[aeiou]/.test(record.kind) ? 'an' : 'a'} ${record.kind}, not a tooling record`);
-  return toolingsFrom((table) => view.rows(table), input.id)[0];
+export function getTooling(view: ReadView, input: { id: string }): ToolingPage {
+  const reader = toolingReader(view);
+  const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
+  if (kind !== 'tooling') refuse('kind', `${input.id} is ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind}, not a tooling record`);
+  return reader.page(input.id);
 }
 
 /** Get a tooling record whole (LA-AUT-QRY123). */
-export const GET_TOOLING: QueryDefinition<{ id: string }, Tooling> = {
+export const GET_TOOLING: QueryDefinition<{ id: string }, ToolingPage> = {
   id: 'LA-AUT-QRY123',
   slice: TOOLING_SLICE,
   name: 'get-tooling',
@@ -30,17 +34,14 @@ export const GET_TOOLING: QueryDefinition<{ id: string }, Tooling> = {
 };
 
 /** The tooling records of a domain, by ID. */
-export function listTooling(view: ReadView, input: { domain_id: string }): { id: string; title: string }[] {
-  if (view.record(input.domain_id)?.kind !== 'domain') refuse('missing', `there is no domain ${input.domain_id}`);
-  return view
-    .rows('tooling')
-    .filter((r) => r.domain_id === input.domain_id)
-    .map((r) => ({ id: String(r.id), title: String(r.title) }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+export function listTooling(view: ReadView, input: { domain_id: string }): ToolingSummary[] {
+  const reader = toolingReader(view);
+  if (reader.kindOf(input.domain_id) !== 'domain') refuse('missing', `there is no domain ${input.domain_id}`);
+  return reader.list(input.domain_id);
 }
 
 /** List the tooling records of a domain (LA-AUT-QRY124). */
-export const LIST_TOOLING: QueryDefinition<{ domain_id: string }, { id: string; title: string }[]> = {
+export const LIST_TOOLING: QueryDefinition<{ domain_id: string }, ToolingSummary[]> = {
   id: 'LA-AUT-QRY124',
   slice: TOOLING_SLICE,
   name: 'list-tooling',
@@ -54,11 +55,11 @@ export const LIST_TOOLING: QueryDefinition<{ domain_id: string }, { id: string; 
 
 /** The next free ID for a tooling record of the domain: its domain's ID and TOOL, one past the highest number in use. */
 export function nextToolingId(view: ReadView, input: { domain_id: string }): string {
-  if (view.record(input.domain_id)?.kind !== 'domain') refuse('parent', `a tooling record sits under a domain, and ${input.domain_id} is not one`);
+  const reader = toolingReader(view);
+  if (reader.kindOf(input.domain_id) !== 'domain') refuse('parent', `a tooling record sits under a domain, and ${input.domain_id} is not one`);
   const prefix = `${input.domain_id}-TOOL`;
   let highest = 0;
-  for (const row of view.rows('tooling')) {
-    const id = String(row.id);
+  for (const id of reader.ids()) {
     if (id.startsWith(prefix) && /^\d+$/.test(id.slice(prefix.length))) highest = Math.max(highest, Number(id.slice(prefix.length)));
   }
   return `${prefix}${String(highest + 1).padStart(2, '0')}`;
@@ -78,7 +79,7 @@ export const NEXT_TOOLING_ID: QueryDefinition<{ domain_id: string }, string> = {
 };
 
 /** A tooling record as text: its row, then what it uses and meets. */
-function toolingText(record: Tooling): string {
+function toolingText(record: ToolingPage): string {
   const row = record.tooling;
   const lines = [`Tooling ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, ...(row.file ? [`  file: ${row.file}`] : [])];
 

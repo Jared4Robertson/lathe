@@ -9,6 +9,7 @@
 {"id":"LA-AUT-QRY110","title":"Get a product whole","read_model_id":"LA-AUT-RM21","description":"Reads a product whole, by its ID, the ID of an open question or interface in it, or the name of a kind it declares: its row, roles, declared kinds with their fields, relations, open questions with what they are about, and interfaces."}
 {"id":"LA-AUT-QRY111","title":"List a product's interfaces","read_model_id":"LA-AUT-RM21","description":"Lists the interfaces of a product, by ID, with their titles and kinds."}
 {"id":"LA-AUT-QRY112","title":"Get the next ID in a product","read_model_id":"LA-AUT-RM21","description":"The next free ID for an open question (under a product or a domain) or an interface (under a product): one past the highest in use."}
+{"id":"LA-AUT-QRY113","title":"List the products","read_model_id":"LA-AUT-RM21","description":"Lists every product, by ID, with its title, and its icon and color when it gives them: the spaces the app's nav lists."}
 {"id":"LA-AUT-QRY115","title":"Get a business outcome","read_model_id":"LA-AUT-RM36","description":"Reads a business outcome whole, by its ID: its statement, measure and target, and the tests and records that measure it."}
 {"id":"LA-AUT-QRY116","title":"List a product's business outcomes","read_model_id":"LA-AUT-RM36","description":"Lists the business outcomes of a product, by ID, with their titles."}
 {"id":"LA-AUT-QRY117","title":"Get the next business outcome ID","read_model_id":"LA-AUT-RM36","description":"The next free ID for a business outcome of a product: one past the highest in use."}

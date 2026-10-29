@@ -60,7 +60,7 @@ describe('LA-AUT-UC22-R01-T51 each Business outcome command changes one outcome 
     expect(store.rows('measured_by')).toEqual([{ source_id: 'TL-BO01', target_id: 'TL-LEND-DS01-T01' }]);
     const committed = await runCommand(store, CHANGE_BUSINESS_OUTCOME, { id: 'TL-BO02', notes: 'From the desk log.', measured_outside: null, measured_by: ['TL-LEND-DS01-T01'] });
     expect(committed.tables).toEqual(['business_outcome', 'measured_by']);
-    expect(runQuery(store, GET_BUSINESS_OUTCOME, { id: 'TL-BO02' })).toMatchObject({ root: 'TL-BO02', measuredBy: ['TL-LEND-DS01-T01'], outcome: { notes: 'From the desk log.' } });
+    expect(runQuery(store, GET_BUSINESS_OUTCOME, { id: 'TL-BO02' })).toMatchObject({ outcome: { id: 'TL-BO02', notes: 'From the desk log.' }, measuredBy: ['TL-LEND-DS01-T01'], servedBy: [] });
     expect(store.record('TL-BO02')?.row.measured_outside).toBeUndefined();
     expect(runQuery(store, LIST_BUSINESS_OUTCOMES, { product_id: 'TL' })).toEqual([
       { id: 'TL-BO01', title: 'More tools in use' },
