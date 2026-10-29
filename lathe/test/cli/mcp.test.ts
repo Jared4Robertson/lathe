@@ -23,7 +23,8 @@ type Schema = { properties: Record<string, Schema>; required?: string[]; enum?: 
 describe('the tools', () => {
   it('LA-AUT-UC01-R05-T08 are add, set, move, link, unlink, remove, show, list, next_id and check', async () => {
     const all = tools(await schemaOf(writeData(everyKind())));
-    expect(all.map((t) => t.name)).toEqual(['add', 'set', 'move', 'link', 'unlink', 'remove', 'show', 'list', 'next_id', 'check']);
+    // The aggregates' own tools (use_case_add_flow_step, ...) follow them, until the cutover removes the generic ones.
+    expect(all.map((t) => t.name).filter((name) => !name.startsWith('use_case_'))).toEqual(['add', 'set', 'move', 'link', 'unlink', 'remove', 'show', 'list', 'next_id', 'check']);
     for (const t of all) {
       expect(t.description.length).toBeGreaterThan(20);
       expect(t.inputSchema.type).toBe('object');

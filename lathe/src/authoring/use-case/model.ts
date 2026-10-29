@@ -97,7 +97,13 @@ export function newUseCase(useCase: UseCaseRow, actors: string[]): UseCase {
   return { root: useCase.id, useCase, actors, requirements: [], useCaseTests: [], flows: [], steps: [], flowTests: [] };
 }
 
-const targets = (links: Row[], source: string) => links.filter((l) => l.source_id === source).map((l) => String(l.target_id)).sort();
+// A link table's targets by source, each list sorted.
+function bySource(links: Row[]): Map<string, string[]> {
+  const found = new Map<string, string[]>();
+  for (const l of links) found.set(String(l.source_id), [...(found.get(String(l.source_id)) ?? []), String(l.target_id)]);
+  for (const list of found.values()) list.sort();
+  return found;
+}
 
 /** The use cases in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function useCasesFrom(rows: (table: string) => Row[], only?: string): UseCase[] {
@@ -111,7 +117,8 @@ export function useCasesFrom(rows: (table: string) => Row[], only?: string): Use
   const steps = (rows('flow_step') as unknown as FlowStepRow[]).filter((s) => flowIds.has(s.flow_id));
   const useCaseTests = (rows('use_case_test') as unknown as UseCaseTestRow[]).filter((t) => requirementIds.has(t.uc_requirement_id));
   const flowTests = (rows('flow_test') as unknown as FlowTestRow[]).filter((t) => flowIds.has(t.flow_id));
-  const [fulfills, invokes, happensIn, exchangesWith, startsFrom] = ['fulfills', 'invokes', 'happens_in', 'exchanges_with', 'starts_from'].map(rows);
+  const [fulfills, invokes, happensIn, exchangesWith, startsFrom] = ['fulfills', 'invokes', 'happens_in', 'exchanges_with', 'starts_from'].map((table) => bySource(rows(table)));
+  const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
   const actors = rows('use_case_actor');
   return useCases.map((useCase) => {
     const own = (r: { use_case_id: string }) => r.use_case_id === useCase.id;
