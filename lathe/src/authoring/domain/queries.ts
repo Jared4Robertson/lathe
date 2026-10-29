@@ -1,51 +1,46 @@
-// The Domain aggregate's own reads (read model LA-AUT-RM24): a domain whole, the domains of a product, and the next
-// free ID for a record of one of its numbered kinds. Each reads the current data and changes nothing.
+// The Domain aggregate's own reads, each answered from its read model (LA-AUT-RM24) through its reader (reader.ts),
+// which the query runner gives each handler: a domain whole as its page reads it, the domains of a product, and the
+// next free ID for a record of one of its numbered kinds. A handler never sees the data, a repository or the
+// aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import type { ReadView } from '../../platform/data/rules.ts';
-import { DOMAIN_KINDS, DOMAIN_SLICE, domainsFrom, type Domain, type DomainKind } from './model.ts';
+import { DOMAIN_SLICE, type DomainKind } from './model.ts';
+import type { DomainPage, DomainSummary } from './read-model.ts';
+import { domainReader, type DomainReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
-/** The domain that holds the record: the domain itself, or a capability, term, domain service, service, test or repository in it. */
-export function getDomain(view: ReadView, input: { id: string }): Domain {
-  const record = view.record(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
-  if (!(record.kind in DOMAIN_KINDS)) refuse('kind', `${input.id} is a ${record.kind}, not a domain or a record in one`);
-  let at = record;
-  while (at.kind !== 'domain') {
-    const column = DOMAIN_KINDS[at.kind as Exclude<DomainKind, 'domain'>];
-    at = view.record(String(at.row[column]))!;
-  }
-  return domainsFrom((table) => view.rows(table), String(at.row.id))[0];
+const article = (kind: string) => (/^[aeiou]/.test(kind) ? 'an' : 'a');
+
+/** The domain that holds the record, as its page reads it: the domain itself, or a capability, term, domain service, service, test or repository in it. */
+export function getDomain(reader: DomainReader, input: { id: string }): DomainPage {
+  const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
+  return reader.page(input.id) ?? refuse('kind', `${input.id} is ${article(kind)} ${kind}, not a domain or a record in one`);
 }
 
 /** GET a domain whole (LA-AUT-QRY130). */
-export const GET_DOMAIN: QueryDefinition<{ id: string }, Domain> = {
+export const GET_DOMAIN: QueryDefinition<{ id: string }, DomainPage, DomainReader> = {
   id: 'LA-AUT-QRY130',
   slice: DOMAIN_SLICE,
   name: 'get-domain',
-  description: 'Reads a domain whole, by its ID or the ID of any record in it: its row, capabilities with the outcomes they serve, terms, domain services with their services and tests, and repositories with the aggregates they persist.',
+  description: 'Reads a domain whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the domain\'s row, its capabilities in order with the outcomes they serve and their use cases, its terms, its domain services with their services and tests, and its repositories with the aggregates they persist.',
   method: 'GET',
   route: '/api/domain/get-domain',
   input: { id: id('The domain, or a capability, term, domain service, service, test or repository in it.', 'required') },
+  reader: domainReader,
   run: getDomain,
   text: domainText,
 };
 
 /** The domains of a product, by ID. */
-export function listDomains(view: ReadView, input: { product_id: string }): { id: string; title: string }[] {
-  if (view.record(input.product_id)?.kind !== 'product') refuse('missing', `there is no product ${input.product_id}`);
-  return view
-    .rows('domain')
-    .filter((d) => d.product_id === input.product_id)
-    .map((d) => ({ id: String(d.id), title: String(d.title) }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+export function listDomains(reader: DomainReader, input: { product_id: string }): DomainSummary[] {
+  return reader.domainsOf(input.product_id) ?? refuse('missing', `there is no product ${input.product_id}`);
 }
 
 /** List the domains of a product (LA-AUT-QRY131). */
-export const LIST_DOMAINS: QueryDefinition<{ product_id: string }, { id: string; title: string }[]> = {
+export const LIST_DOMAINS: QueryDefinition<{ product_id: string }, DomainSummary[], DomainReader> = {
   id: 'LA-AUT-QRY131',
   slice: DOMAIN_SLICE,
   name: 'list-domains',
@@ -53,22 +48,13 @@ export const LIST_DOMAINS: QueryDefinition<{ product_id: string }, { id: string;
   method: 'GET',
   route: '/api/domain/list-domains',
   input: { product_id: id('The product.', 'required') },
+  reader: domainReader,
   run: listDomains,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No domains.'),
 };
 
 // One past the highest number in use after the prefix, padded to two digits.
-function onePast(view: ReadView, prefix: string): string {
-  const shape = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
-  let highest = 0;
-  for (const kind of Object.keys(view.schema.kinds)) {
-    for (const row of view.rows(kind)) {
-      const m = shape.exec(String(row.id));
-      if (m) highest = Math.max(highest, Number(m[1]));
-    }
-  }
-  return `${prefix}${String(highest + 1).padStart(2, '0')}`;
-}
+const onePast = (reader: DomainReader, prefix: string): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
 
 /** The numbered kinds of the aggregate, each with the kind of record it sits under. */
 const UNDER: Record<Exclude<DomainKind, 'domain'>, string> = {
@@ -85,33 +71,33 @@ const UNDER: Record<Exclude<DomainKind, 'domain'>, string> = {
  * use. A domain service has one service, whose ID is the domain service's and SV. A domain's own ID is its product's
  * and a code chosen for it, so it has no next ID.
  */
-export function nextDomainId(view: ReadView, input: { kind: string; parent: string }): string {
+export function nextDomainId(reader: DomainReader, input: { kind: string; parent: string }): string {
   if (input.kind === 'domain') refuse('kind', "a domain's ID is its product's ID and a code chosen for it, such as TL-LEND, so it has no next ID");
   if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Domain aggregate; its numbered kinds are ${Object.keys(UNDER).join(', ')}`);
   const kind = input.kind as keyof typeof UNDER;
-  const parent = view.record(input.parent);
-  if (parent?.kind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parent ? `a ${parent.kind}` : 'no record'}`);
+  const parentKind = reader.kindOf(input.parent);
+  if (parentKind !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
   switch (kind) {
     case 'capability':
-      return onePast(view, `${input.parent}-CAP`);
+      return onePast(reader, `${input.parent}-CAP`);
     case 'term':
-      return onePast(view, `${input.parent}-TM`);
+      return onePast(reader, `${input.parent}-TM`);
     case 'domain_service':
-      return onePast(view, `${input.parent}-DS`);
+      return onePast(reader, `${input.parent}-DS`);
     case 'repository':
-      return onePast(view, `${input.parent}-REPO`);
+      return onePast(reader, `${input.parent}-REPO`);
     case 'domain_service_test':
-      return onePast(view, `${input.parent}-T`);
+      return onePast(reader, `${input.parent}-T`);
     case 'service': {
       const serviceId = `${input.parent}-SV`;
-      if (view.record(serviceId)) refuse('exists', `${input.parent} already has its service, ${serviceId}`);
+      if (reader.kindOf(serviceId)) refuse('exists', `${input.parent} already has its service, ${serviceId}`);
       return serviceId;
     }
   }
 }
 
 /** Get the next ID for a record of the Domain aggregate (LA-AUT-QRY132). */
-export const NEXT_DOMAIN_ID: QueryDefinition<{ kind: string; parent: string }, string> = {
+export const NEXT_DOMAIN_ID: QueryDefinition<{ kind: string; parent: string }, string, DomainReader> = {
   id: 'LA-AUT-QRY132',
   slice: DOMAIN_SLICE,
   name: 'next-id',
@@ -122,25 +108,26 @@ export const NEXT_DOMAIN_ID: QueryDefinition<{ kind: string; parent: string }, s
     kind: id('The kind: capability, term, domain_service, repository, service or domain_service_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
   },
+  reader: domainReader,
   run: nextDomainId,
   text: (next) => next,
 };
 
 /** A domain as text: its row, then each of its records with what is under it and the links it starts. */
-function domainText(domain: Domain): string {
-  const { domain: row } = domain;
+function domainText(page: DomainPage): string {
+  const { domain: row } = page;
   const lines = [`Domain ${row.id}: ${row.title}`, `  product: ${row.product_id}`, `  subdomain type: ${row.subdomain_type}`, `  description: ${row.description}`];
   if (row.notes) lines.push(`  notes: ${row.notes}`);
   const technical = (t: { meets: string[]; packages: string[] }) => [...t.meets.map((x) => `meets ${x}`), ...t.packages.map((x) => `uses ${x}`)];
   const listed = (links: string[]) => (links.length ? ` [${links.join('; ')}]` : '');
-  for (const c of domain.capabilities) lines.push(`Capability ${c.row.id}: ${c.row.title} (position ${c.row.position})${listed(c.serves.map((x) => `serves ${x}`))}`);
-  for (const t of domain.terms) lines.push(`Term ${t.id}: ${t.title}`);
-  for (const s of domain.domainServices) {
-    lines.push(`Domain service ${s.id}: ${s.title}`);
-    for (const v of domain.services.filter((x) => x.row.domain_service_id === s.id)) lines.push(`  service ${v.row.id}: ${v.row.title}${listed(technical(v))}`);
-    for (const t of domain.domainServiceTests.filter((x) => x.row.domain_service_id === s.id)) lines.push(`  domain service test ${t.row.id}: ${t.row.title} (${t.row.state})`);
+  for (const c of page.capabilities) lines.push(`Capability ${c.capability.id}: ${c.capability.title} (position ${c.capability.position})${listed(c.serves.map((x) => `serves ${x}`))}`);
+  for (const t of page.terms) lines.push(`Term ${t.id}: ${t.title}`);
+  for (const s of page.domainServices) {
+    lines.push(`Domain service ${s.domainService.id}: ${s.domainService.title}`);
+    if (s.service) lines.push(`  service ${s.service.service.id}: ${s.service.service.title}${listed(technical(s.service))}`);
+    for (const t of s.tests) lines.push(`  domain service test ${t.test.id}: ${t.test.title} (${t.test.state})`);
   }
-  for (const r of domain.repositories) lines.push(`Repository ${r.row.id}: ${r.row.title}${listed([...(r.persists ? [`persists ${r.persists}`] : []), ...technical(r)])}`);
+  for (const r of page.repositories) lines.push(`Repository ${r.repository.id}: ${r.repository.title}${listed([...(r.persists ? [`persists ${r.persists}`] : []), ...technical(r)])}`);
   return lines.join('\n');
 }
 

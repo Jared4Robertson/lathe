@@ -18,8 +18,9 @@ import { Markdown } from '../specs/Markdown';
 import { gapText, ProblemBadge, RecordLink, RecordTree, Section, listTitle } from '../specs/parts';
 import { RecordContent, RecordFacts } from '../specs/RecordContent';
 import { factsOf, leadOf } from '../specs/RecordText';
-import { DomainWiki, problemsUnder } from '../specs/SpecPages';
+import { problemsUnder } from '../specs/SpecPages';
 import { ProductPage } from '../authoring/product/ProductPage';
+import { DomainPage } from '../authoring/domain/DomainPage';
 import { addressOf, focusOf, type FocusRoute } from './address';
 import { focusTrail } from './HeaderStrip';
 import { CardChanges } from '../changes/CardChanges';
@@ -239,7 +240,7 @@ function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) 
 function WikiPage({ index, route }: { index: SpecIndex; route: Exclude<FocusRoute, { page: 'group' }> }) {
   switch (route.page) {
     case 'product': return <ProductPage key={route.product} index={index} id={route.product} after={<OwnFacts index={index} id={route.product} />} />;
-    case 'domain': return <Editable key={route.domain} index={index} id={route.domain}><DomainWiki index={index} id={route.domain} /><OwnFacts index={index} id={route.domain} /></Editable>;
+    case 'domain': return <DomainPage key={route.domain} index={index} id={route.domain} after={<OwnFacts index={index} id={route.domain} />} />;
     case 'record': {
       // A kind whose aggregate has its own page draws it; any other still shows the record content read from the workspace.
       const Page = pageOf(index.workspace.schema, index.byId.get(route.id)?.kind ?? '');

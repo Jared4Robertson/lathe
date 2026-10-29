@@ -7,9 +7,21 @@ import { AddEntryPointForm } from '../authoring/entry-point/EntryPointEditor';
 import { EntryPointPage } from '../authoring/entry-point/EntryPointPage';
 import { AddExtensionRecordForm } from '../authoring/extension-record/ExtensionRecordEditor';
 import { ExtensionRecordPage } from '../authoring/extension-record/ExtensionRecordPage';
+import { AddQuestionForm } from '../authoring/product/ProductEditor';
 import { ProductPage } from '../authoring/product/ProductPage';
 import { AddToolingForm } from '../authoring/tooling/ToolingEditor';
 import { ToolingPage } from '../authoring/tooling/ToolingPage';
+import type { DomainKind } from '../../../lathe/src/authoring/domain/model';
+import type { PatternKind } from '../../../lathe/src/authoring/pattern/model';
+import type { StandardKind } from '../../../lathe/src/authoring/standard/model';
+import { AddDomainForm } from '../authoring/domain/DomainEditor';
+import { DomainPage } from '../authoring/domain/DomainPage';
+import { AddPatternForm } from '../authoring/pattern/PatternEditor';
+import { PatternPage } from '../authoring/pattern/PatternPage';
+import { AddStandardForm } from '../authoring/standard/StandardEditor';
+import { StandardPage } from '../authoring/standard/StandardPage';
+import { AddTestDataSetForm } from '../authoring/test-data-set/TestDataSetEditor';
+import { TestDataSetPage } from '../authoring/test-data-set/TestDataSetPage';
 import { AddUseCaseForm } from '../authoring/use-case/UseCaseEditor';
 import { UseCasePage } from '../authoring/use-case/UseCasePage';
 import type { SpecIndex } from '../specs/data';
@@ -34,7 +46,7 @@ export interface AggregatePageProps {
 }
 
 /** The kinds with an aggregate page. */
-type PagedKind = UseCaseKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling';
+type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling';
 
 /** Each kind with its aggregate's page. */
 const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = {
@@ -44,6 +56,20 @@ const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = 
   flow: UseCasePage,
   flow_step: UseCasePage,
   flow_test: UseCasePage,
+  domain: DomainPage,
+  capability: DomainPage,
+  term: DomainPage,
+  domain_service: DomainPage,
+  service: DomainPage,
+  domain_service_test: DomainPage,
+  repository: DomainPage,
+  test_data_set: TestDataSetPage,
+  pattern: PatternPage,
+  pattern_rule: PatternPage,
+  pattern_rule_test: PatternPage,
+  standard: StandardPage,
+  standard_rule: StandardPage,
+  standard_rule_test: StandardPage,
   product: ProductPage,
   question: ProductPage,
   interface: ProductPage,
@@ -69,9 +95,14 @@ export interface AggregateAdderProps {
 }
 
 /** Each aggregate root added from the page of what it sits under, with its aggregate's Add form. */
-const ADDERS: { readonly [K in 'use_case' | 'business_outcome' | 'entry_point' | 'tooling']: ComponentType<AggregateAdderProps> } = {
+const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'question' | 'entry_point' | 'tooling']: ComponentType<AggregateAdderProps> } = {
   use_case: AddUseCaseForm,
+  domain: AddDomainForm,
+  test_data_set: AddTestDataSetForm,
+  pattern: AddPatternForm,
+  standard: AddStandardForm,
   business_outcome: AddBusinessOutcomeForm,
+  question: AddQuestionForm,
   entry_point: AddEntryPointForm,
   tooling: AddToolingForm,
 };

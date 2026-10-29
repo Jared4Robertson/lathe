@@ -65,6 +65,11 @@ const PAGES: State[] = [
   { name: 'extension record page', url: '/LA-AUT-MOD10', ready: '[data-aggregate="extension-record"]' },
   { name: 'entry point page', url: '/LA-PLT-ENTRY01', ready: '[data-aggregate="entry-point"]' },
   { name: 'tooling page', url: '/LA-AUT-TOOL01', ready: '[data-aggregate="tooling"]' },
+  // The Domain, Test data set, Pattern and Standard aggregates' own pages.
+  { name: 'capability page', url: '/LA-AUT-CAP02', ready: '[data-aggregate="domain"] .capability-use-cases' },
+  { name: 'test data set page', url: '/LA-AUT-TD30', ready: '[data-aggregate="test-data-set"] .record-lead' },
+  { name: 'pattern page', url: '/LA-PAT-RECORD-PAGE', ready: '[data-aggregate="pattern"] .pattern-rules' },
+  { name: 'standard page', url: '/LA-STD-CODE', ready: '[data-aggregate="standard"] .standard-rules' },
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
@@ -110,6 +115,11 @@ PAGES.push(
     await actions.getByRole('group', { name: /Kinds to add/ }).getByRole('button', { name: 'UC requirement' }).click();
     await page.getByRole('form').getByRole('button', { name: 'Add UC requirement' }).click();
     await page.getByRole('form').getByRole('alert').waitFor();
+  } },
+  { name: 'the pattern form, its settings as rows', run: async (page: Page) => {
+    await open(page, '/LA-PAT-RECORD-PAGE', '[data-aggregate="pattern"] .pattern-rules');
+    await page.getByRole('toolbar', { name: 'Change LA-PAT-RECORD-PAGE' }).getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('form').locator('.form-parts').waitFor();
   } },
   { name: 'the remove question and its refusal', run: async (page: Page) => {
     await open(page, RECORD, '.header-strip h1');

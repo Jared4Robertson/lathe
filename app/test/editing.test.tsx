@@ -214,20 +214,6 @@ describe('adding a record', () => {
     expect(writes[0]).toEqual([{ op: 'add', table: 'view', row: { id: 'DM-V02', title: 'Checkout', description: 'Shows the order before the shopper pays.' } }]);
   });
 
-  it('LA-V92-R31-T01 adds from a domain\'s page the kinds that sit under it, and a specification, which takes its domain from its ID', async () => {
-    const user = userEvent.setup();
-    await openApp('/DM-SHOP');
-    const actions = toolbar('DM-SHOP');
-    await user.click(within(actions).getByRole('button', { name: 'Add…' }));
-    const kinds = within(within(actions).getByRole('group', { name: 'Kinds to add under DM-SHOP' })).getAllByRole('button').map((b) => b.textContent);
-    expect(kinds).toEqual(expect.arrayContaining(['Aggregate', 'Specification', 'Read model', 'Capability', 'Open question']));
-    expect(kinds).not.toContain('Value object');
-    await user.click(screen.getByRole('button', { name: 'Specification' }));
-    const form = screen.getByRole('form', { name: 'Add a specification' });
-    expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-SP02');
-    expect(within(form).queryByRole('combobox', { name: /^Parent/ })).toBeNull();
-  });
-
   it('LA-V92-R30-T01 refuses an ID that is already a record before writing', async () => {
     const user = userEvent.setup();
     const { writes } = await openApp('/DM-SHOP-A1');
@@ -278,13 +264,15 @@ describe('removing a record', () => {
 
   it('LA-V92-R32-T01 removes a record nothing references, and goes to its parent', async () => {
     const user = userEvent.setup();
-    const removed = (): SpecData => removeRows(workspace(), 'term', (r) => r.id === 'DM-SHOP-TM01');
-    const { writes } = await openApp('/DM-SHOP-TM01', { write: () => ({ answer: ok, data: removed() }) });
-    await user.click(within(toolbar('DM-SHOP-TM01')).getByRole('button', { name: 'Remove' }));
-    const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-TM01?' });
+    // An entity nothing references, on a kind whose aggregate has no page of its own yet.
+    const withNote = (): SpecData => addRows(workspace(), 'entity', { id: 'DM-SHOP-EN09', title: 'Gift note', aggregate_id: 'DM-SHOP-A1', role: 'child', description: 'A note sent with a gift.' });
+    const removed = (): SpecData => removeRows(withNote(), 'entity', (r) => r.id === 'DM-SHOP-EN09');
+    const { writes } = await openApp('/DM-SHOP-EN09', { data: withNote(), write: () => ({ answer: ok, data: removed() }) });
+    await user.click(within(toolbar('DM-SHOP-EN09')).getByRole('button', { name: 'Remove' }));
+    const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-EN09?' });
     expect(panel).toHaveTextContent('Nothing else references it.');
-    await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-TM01' }));
-    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP'));
-    expect(writes).toEqual([[{ op: 'remove', table: 'term', key: 'DM-SHOP-TM01' }]]);
+    await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-EN09' }));
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP-A1'));
+    expect(writes).toEqual([[{ op: 'remove', table: 'entity', key: 'DM-SHOP-EN09' }]]);
   });
 });

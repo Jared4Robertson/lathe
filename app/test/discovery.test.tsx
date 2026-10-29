@@ -6,9 +6,10 @@ import { addRows, indexOf, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
 
-// Discovery and test data: a product's business outcomes on its page (LA-V51-R05), a test data set's page and a
-// test's size and markers on the record page (LA-V92-R75), and the outcomes a test measures (LA-V92-R76). An outcome's
-// own page is the Business outcome aggregate's (business-outcome-page.test.tsx).
+// Discovery and test data: a product's business outcomes on its page (LA-V51-R05), a test's size and markers on the
+// record page (LA-V92-R75), and the outcomes a test measures (LA-V92-R76). An outcome's own page is the Business outcome
+// aggregate's (business-outcome-page.test.tsx); a capability's outcomes and a test data set's page are their
+// aggregates' pages' (domain-records-page.test.tsx, test-data-set-page.test.tsx).
 
 afterEach(() => cleanup());
 
@@ -54,34 +55,17 @@ describe('discovery', () => {
     expect(main().querySelector('.product-shared .stage-discovery')).toBeNull();
   });
 
-  it('LA-V92-R75-T01 A capability shows the outcomes it serves; a test data set shows its setup and the tests that start from it; a test shows its size and markers', () => {
+  it('LA-V92-R75-T01 A test shows its size and markers under Run by, and where it starts from', () => {
     const index = indexOf(withOutcomes());
     const trace = () => screen.getByRole('heading', { level: 2, name: 'Traceability' }).closest('section') as HTMLElement;
-    const show = (id: string) => render(<RecordContent index={index} id={id} onNavigate={vi.fn()} />);
-
-    show('DM-SHOP-CAP01');
-    expect(within(trace()).getByRole('heading', { level: 3, name: /^Serves/ })).toBeInTheDocument();
-    expect(within(trace()).getByRole('link', { name: /DM-BO01/ })).toBeInTheDocument();
-    cleanup();
-
-    show('DM-SHOP-TD01');
-    const page = within(document.body);
-    for (const [title, text] of [['Environment', 'A fresh in-memory store.'], ['Starting records', 'One shopper and a basket of two items.'], ['Prepare', 'Run the basket seed.'], ['Reset', 'Drop the store.']]) {
-      expect(page.getByRole('heading', { name: title }).closest('section')).toHaveTextContent(text);
-    }
-    expect(within(trace()).getByRole('heading', { level: 3, name: /^Starting point of/ })).toBeInTheDocument();
-    expect(within(trace()).getByRole('link', { name: /DM-SHOP-UC01-R01-T01/ })).toBeInTheDocument();
-    // A data set is not a test: it has no run by.
-    expect(traceOf(index, index.byId.get('DM-SHOP-TD01')!).runBy).toBeNull();
-    cleanup();
-
-    show('DM-SHOP-UC01-R01-T01');
+    render(<RecordContent index={index} id="DM-SHOP-UC01-R01-T01" onNavigate={vi.fn()} />);
     const runBy = within(trace()).getByRole('heading', { level: 3, name: 'Run by' }).closest('section') as HTMLElement;
     expect(runBy).toHaveTextContent(/Size\s*volume/);
     expect(runBy).toHaveTextContent(/Markers\s*smoke/);
     expect(within(trace()).getByRole('heading', { level: 3, name: /^Starts from/ })).toBeInTheDocument();
-    // A test that gives neither is small, with no markers.
+    // A test that gives neither is small, with no markers; a data set is not a test, so it has no run by.
     expect(traceOf(index, index.byId.get('DM-SHOP-INV01-T')!).runBy).toMatchObject({ size: 'small', markers: [] });
+    expect(traceOf(index, index.byId.get('DM-SHOP-TD01')!).runBy).toBeNull();
   });
 
   it('LA-V92-R76-T01 A test shows the outcomes it measures', () => {

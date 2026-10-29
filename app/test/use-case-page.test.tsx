@@ -106,7 +106,8 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
   it('adds a use case from its capability\'s page through the aggregate\'s own Add', async () => {
     const user = userEvent.setup();
     const { commands, writes } = await openApp('/DM-SHOP-CAP01', { command: () => ({ answer: ok }) });
-    const actions = toolbar('DM-SHOP-CAP01');
+    // The capability's page is the Domain aggregate's, read before its actions show.
+    const actions = await screen.findByRole('toolbar', { name: 'Change DM-SHOP-CAP01' });
     const add = within(actions).queryByRole('button', { name: 'Add use case' }) ?? within(actions).getByRole('button', { name: 'Add…' });
     await user.click(add);
     if (add.textContent === 'Add…') await user.click(screen.getByRole('button', { name: 'Use case' }));

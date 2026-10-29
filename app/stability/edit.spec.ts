@@ -1,10 +1,10 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { AGGREGATE, EDITED, keepData, RECORD } from './scenarios';
 
-// Changing records in place, with nothing jumping (LA-PAT-APP-UX-R08): on the Use case, Product, Business outcome,
-// Entry point and Tooling pages (each its own editor) and on the Use case page (its own editor, sending
-// the Use case aggregate's commands), opening a record's form, saving an edit, adding a child from its parent's page,
+// Changing records in place, with nothing jumping (LA-PAT-APP-UX-R08): on the Use case page (its own editor, sending
+// the Use case aggregate's commands) and on the Domain, Test data set, Pattern, Standard, Product, Business outcome,
+// Entry point and Tooling pages, opening a record's form, saving an edit, adding a child from its parent's page,
 // and asking to remove a record that is still referenced, which the command refuses inline; and on the page of a kind
 // whose aggregate has no editor yet, the record form generated from the schema. The form takes the place of the page's content,
 // so shifts inside the wiki card's scroll box are the change itself; the nav, the card's head and
@@ -102,35 +102,38 @@ test.describe('editing', () => {
       restore();
     }
   });
-
-  // The Product, Business outcome, Entry point and Tooling pages (their own editors, sending their aggregates' commands):
-  // opening a record's form and saving an edit holds the nav, the card's head and title and the header strip still.
-  for (const [name, address, field, value] of [
-    ['LA-V51-R07-T02 on the Product page, open an interface\'s form and save an edit', '/LA-IF03', /^description/, 'The command line, as the stability suite describes it.'],
-    ['LA-V110-R02-T02 on the Business outcome page, open the outcome\'s form and save an edit', '/LA-BO05', /^notes/, 'Noted by the stability suite.'],
-    ['LA-V112-R02-T02 on the Entry point page, open its form and save an edit', '/LA-PLT-ENTRY01', /^description/, 'Starts the server, as the stability suite describes it.'],
-    ['LA-V113-R02-T02 on the Tooling page, open its form and save an edit', '/LA-AUT-TOOL01', /^title/, 'schema-types.ts'],
-  ] as const) {
-    test(name, async ({ page }) => {
-      const restore = keepData();
-      try {
-        await openPage(page, address);
-        const id = address.slice(1);
-        const form = page.getByRole('form', { name: `Edit ${id}` });
-        const open = await step(page, 'edit', 'open the form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {
-          await page.getByRole('toolbar', { name: `Change ${id}` }).getByRole('button', { name: 'Edit' }).click();
-          await form.waitFor();
-        });
-        expectStable(open);
-        await form.getByRole('textbox', { name: field }).fill(value);
-        const save = await step(page, 'edit', 'save the edit', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT, settle: 1500 }, async () => {
-          await form.getByRole('button', { name: 'Save' }).click();
-          await expect(form).toHaveCount(0, { timeout: 20_000 });
-        });
-        expectStable(save);
-      } finally {
-        restore();
-      }
-    });
-  }
+  // The Domain, Test data set, Pattern and Standard pages: each saves one field as its kind's Change command, with
+  // nothing jumping. Each is its aggregate's web-app flow test.
+  test('LA-AUT-UC02-FL01-T on the Domain records page, open a term\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TM01', /^group name/, 'Stability'));
+  test('LA-AUT-UC13-FL01-T on the Test data set page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TD30', /^reset/, 'Throw the folder away.'));
+  test('LA-AUT-UC05-FL01-T on the Pattern page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PAT-RECORD-PAGE-R01', /^group name/, 'Stability'));
+  test('LA-AUT-UC16-FL01-T on the Standard page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STD-CODE-R01', /^group name/, 'Stability'));
+  // The Product, Business outcome, Entry point and Tooling pages: each saves one field as its kind's Change command, with
+  // nothing jumping. Each is its aggregate's web-app flow test.
+  test('LA-AUT-UC23-FL01-T on the Product page, open an interface\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-IF03', /^description/, 'The command line, as the stability suite describes it.'));
+  test('LA-AUT-UC22-FL01-T on the Business outcome page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-BO05', /^notes/, 'Noted by the stability suite.'));
+  test('LA-AUT-UC29-FL01-T on the Entry point page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PLT-ENTRY01', /^description/, 'Starts the server, as the stability suite describes it.'));
+  test('LA-AUT-UC30-FL01-T on the Tooling page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TOOL01', /^title/, 'schema-types.ts'));
 });
+
+/** Opens the record's page, opens its Edit form, fills one field and saves it, with nothing outside the card moving. */
+async function saveAnEdit(page: Page, address: string, field: RegExp, value: string) {
+  const restore = keepData();
+  try {
+    await openPage(page, address);
+    const form = page.getByRole('form', { name: `Edit ${address.slice(1)}` });
+    const open = await step(page, 'edit', 'open the form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {
+      await page.getByRole('toolbar', { name: `Change ${address.slice(1)}` }).getByRole('button', { name: 'Edit' }).click();
+      await form.waitFor();
+    });
+    expectStable(open);
+    await form.getByRole('textbox', { name: field }).fill(value);
+    const save = await step(page, 'edit', 'save the edit', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT, settle: 1500 }, async () => {
+      await form.getByRole('button', { name: 'Save' }).click();
+      await expect(form).toHaveCount(0, { timeout: 20_000 });
+    });
+    expectStable(save);
+  } finally {
+    restore();
+  }
+}
