@@ -1,11 +1,4 @@
-{"id":"LA-AUT-SP01-PR","title":"applyCommands","specification_id":"LA-AUT-SP01","file":"lathe/src/platform/data/generic-write.ts"}
-{"id":"LA-AUT-SP02-PR","title":"referrers","specification_id":"LA-AUT-SP02","file":"lathe/src/platform/data/references.ts"}
 {"id":"LA-AUT-SP03-PR","title":"MergeResult.clashes","specification_id":"LA-AUT-SP03","file":"lathe/src/platform/data/merge.ts"}
-{"id":"LA-AUT-SP04-PR","title":"unique-id","specification_id":"LA-AUT-SP04","file":"lathe/src/platform/data/store.ts"}
-{"id":"LA-AUT-SP05-PR","title":"foreign-key","specification_id":"LA-AUT-SP05","file":"lathe/src/platform/data/store.ts"}
-{"id":"LA-AUT-SP06-PR","title":"id-prefix","specification_id":"LA-AUT-SP06","file":"lathe/src/platform/data/integrity.ts"}
-{"id":"LA-AUT-SP07-PR","title":"relation-pair","specification_id":"LA-AUT-SP07","file":"lathe/src/platform/data/integrity.ts"}
-{"id":"LA-AUT-SP08-PR","title":"link-crosses-product","specification_id":"LA-AUT-SP08","file":"lathe/src/platform/data/integrity.ts"}
 {"id":"LA-AUT-SP09-PR","title":"link-scope","specification_id":"LA-AUT-SP09","file":"lathe/src/platform/data/integrity.ts"}
 {"id":"LA-EXP-SP01-PR","title":"spaceIndex","specification_id":"LA-EXP-SP01","file":"app/src/specs/data.ts"}
 {"id":"LA-EXP-SP03-PR","title":"kindsOf","specification_id":"LA-EXP-SP03","file":"app/src/graph/tree.ts"}
