@@ -1,2 +1,2 @@
-{"id":"DM-SHOP-EN01","title":"Basket","aggregate_id":"DM-SHOP-A1","role":"root"}
-{"id":"DM-SHOP-EN02","title":"Basket line","aggregate_id":"DM-SHOP-A1","role":"child"}
+{"id":"DM-SHOP-EN01","title":"Basket","aggregate_id":"DM-SHOP-A1","role":"root","description":"The fixture's entity Basket."}
+{"id":"DM-SHOP-EN02","title":"Basket line","aggregate_id":"DM-SHOP-A1","role":"child","description":"The fixture's entity Basket line."}

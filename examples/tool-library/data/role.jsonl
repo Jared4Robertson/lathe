@@ -1,2 +1,2 @@
-{"product_id":"TL","name":"Librarian"}
-{"product_id":"TL","name":"Member"}
+{"product_id":"TL","name":"Librarian","description":"A person at the library's desk who registers members, adds tools to the catalog, records each return with the tool's condition, and reports damage and repairs."}
+{"product_id":"TL","name":"Member","description":"A registered neighbor who borrows available tools from the catalog, up to 3 at a time, and brings each back by its due date."}

@@ -10,7 +10,7 @@ CREATE TABLE interface (
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   product_id VARCHAR NOT NULL REFERENCES product (id),
   kind interface_kind NOT NULL,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE interface IS 'A way people or programs use the product, such as its web app, its HTTP API or its command line. A use case happens through one or more interfaces, with one flow for each, and the kind says what that flow''s steps go through.';
 COMMENT ON COLUMN interface.id IS 'The interface''s ID: its product''s ID and IF<nn>, such as TL-IF01. Its number ends the ID of every flow through it.';
@@ -24,7 +24,6 @@ CREATE TABLE flow (
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   use_case_id VARCHAR NOT NULL REFERENCES use_case (id),
   interface_id VARCHAR NOT NULL REFERENCES interface (id),
-  description VARCHAR,
   UNIQUE (use_case_id, interface_id)
 );
 COMMENT ON TABLE flow IS 'How its use case is carried out through one interface: the steps on its main path and its alternate paths. A use case has one flow per interface it happens through, and each flow belongs only to it.';
@@ -32,7 +31,6 @@ COMMENT ON COLUMN flow.id IS 'The flow''s ID: its use case''s ID, FL and its int
 COMMENT ON COLUMN flow.title IS 'The flow''s name, such as Borrow a tool at the desk.';
 COMMENT ON COLUMN flow.use_case_id IS 'The use case it carries out.';
 COMMENT ON COLUMN flow.interface_id IS 'The interface it goes through, of the same product; at most one flow per use case and interface.';
-COMMENT ON COLUMN flow.description IS 'The path, in a paragraph.';
 
 CREATE TABLE flow_step (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -40,7 +38,6 @@ CREATE TABLE flow_step (
   flow_id VARCHAR NOT NULL REFERENCES flow (id),
   path VARCHAR NOT NULL CHECK (trim(path) <> ''),
   position INTEGER NOT NULL CHECK (position >= 1),
-  description VARCHAR,
   UNIQUE (flow_id, path, position)
 );
 COMMENT ON TABLE flow_step IS 'One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view (only on a web app, desktop or other interface) and may exchange with integrations.';
@@ -49,13 +46,12 @@ COMMENT ON COLUMN flow_step.title IS 'What happens, in a few words.';
 COMMENT ON COLUMN flow_step.flow_id IS 'The flow it belongs to.';
 COMMENT ON COLUMN flow_step.path IS 'The path through the flow the step is on, such as main or refused.';
 COMMENT ON COLUMN flow_step.position IS 'The step''s place on its path, from 1.';
-COMMENT ON COLUMN flow_step.description IS 'What happens in the step, in a sentence or two.';
 
 CREATE TABLE view (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   route VARCHAR,
-  description VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
   notes VARCHAR
 );
 COMMENT ON TABLE view IS 'A screen or page a person uses. It has no owner: it exists because flow steps happen in it, and its product follows from its ID.';
@@ -86,7 +82,7 @@ CREATE TABLE endpoint (
   query_id VARCHAR REFERENCES query (id),
   method http_method NOT NULL,
   route VARCHAR NOT NULL CHECK (trim(route) <> ''),
-  description VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> ''),
   notes VARCHAR,
   CHECK ((command_id IS NULL) <> (query_id IS NULL)),
   CHECK (title = method::VARCHAR || ' ' || route)
@@ -119,7 +115,7 @@ CREATE TABLE integration (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   system VARCHAR,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE integration IS 'An outside system the product exchanges with, such as a payment provider or a mail service. It has no owner: it exists because flow steps exchange with it, and its product follows from its ID.';
 COMMENT ON COLUMN integration.id IS 'The integration''s ID: the product prefix and INT<nn>, such as TL-INT01.';

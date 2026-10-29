@@ -23,5 +23,6 @@
 {"id":"LA-PLT-MOD11","title":"chat.ts","domain_id":"LA-PLT","file":"desktop/src/chat.ts"}
 {"id":"LA-PLT-MOD12","title":"bridge.ts","domain_id":"LA-PLT","file":"desktop/src/bridge.ts"}
 {"id":"LA-PLT-MOD13","title":"app-tools.ts","domain_id":"LA-PLT","file":"lathe/src/cli/app-tools.ts"}
+{"id":"LA-PLT-MOD14","title":"lead.ts","domain_id":"LA-PLT","file":"lathe/src/lead.ts"}
 {"id":"LA-TRC-MOD01","title":"measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
 {"id":"LA-TRC-MOD02","title":"offer.ts","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}

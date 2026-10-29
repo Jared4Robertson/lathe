@@ -67,7 +67,7 @@ describe('the interaction design', () => {
     expect(ofCheck(ws, 'view-unused')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-V01' })]);
     expect(ofCheck(ws, 'integration-unused')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-INT01' })]);
     // An ID that names no product is refused.
-    expect(await refusals(adding(everyKind(), { view: [{ id: 'XX-V09', title: 'Lost' }] }))).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'XX-V09' })]);
+    expect(await refusals(adding(everyKind(), { view: [{ id: 'XX-V09', title: 'Lost', description: 'A page of no product.' }] }))).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'XX-V09' })]);
   });
 
   it('LA-AUT-UC18-R06-T01 A rule of the interaction design is a view requirement under its view or an API requirement under its endpoint', () => {
@@ -139,14 +139,14 @@ describe('the technical specification', () => {
       expect.objectContaining({ rule: 'repository-share-unpersisted', message: 'EX-LEND-REPO01 cannot also record EX-LEND-A2, which EX-LEND-REPO02 persists: an aggregate has one repository' }),
     ]);
     const twice = adding(withTable(complete(), 'persists', [{ source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A1' }]), {
-      aggregate: [{ id: 'EX-LEND-A3', title: 'Shelf', domain_id: 'EX-LEND' }],
+      aggregate: [{ id: 'EX-LEND-A3', title: 'Shelf', domain_id: 'EX-LEND', identity: 'Shelf ID', description: 'A shelf the tools sit on.' }],
       repository_share: [{ ...share, aggregate_id: 'EX-LEND-A3' }, { repository_id: 'EX-LEND-REPO02', aggregate_id: 'EX-LEND-A3', reason }],
     });
     expect(await refusals(twice)).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/repository_share.jsonl', line: 2 })]);
   });
 
   it("LA-AUT-UC17-R08-T01 A table stores its name, its storage and its keys, its columns following from its record's fields", async () => {
-    expect(schema.tables.table.columns.map((c) => c.name)).toEqual(['id', 'title', 'entity_id', 'read_model_id', 'domain_id', 'name', 'storage', 'file', 'description']);
+    expect(schema.tables.table.columns.map((c) => c.name)).toEqual(['id', 'title', 'entity_id', 'read_model_id', 'domain_id', 'name', 'storage', 'file']);
     expect(requiredOf(schema, 'table')).toEqual(['name', 'storage']);
     expect(schema.tables.table.columns.find((c) => c.name === 'storage')!.values).toEqual(['table', 'view', 'materialized view', 'browser storage', 'file', 'in memory']);
     expect(schema.tables.table_key).toMatchObject({ role: 'part', ownerColumn: 'table_id' });

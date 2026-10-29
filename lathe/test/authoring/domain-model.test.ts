@@ -52,7 +52,7 @@ describe('domains', () => {
 describe('entities and value objects', () => {
   it('LA-AUT-UC10-R01-T01 An entity sits under an aggregate and needs a role, a value object has no owner, and entities link to entities by has_one and has_many', () => {
     expect(parentsOf(schema, 'entity')).toEqual(['aggregate.aggregate_id']);
-    expect(requiredOf(schema, 'entity')).toEqual(['aggregate_id', 'role']);
+    expect(requiredOf(schema, 'entity')).toEqual(['aggregate_id', 'role', 'description']);
     expect(schema.tables.entity.columns.find((c) => c.name === 'role')!.values).toEqual(['root', 'child']);
     expect(parentsOf(schema, 'value_object')).toEqual([]);
     expect(schema.kinds.value_object.idScope).toBe('product');
@@ -111,9 +111,9 @@ describe('entities and value objects', () => {
   it('LA-AUT-UC10-R02-T02 An entity, event or read model with no fields is a coverage gap', async () => {
     expect(gaps(good)).toEqual([]);
     const ws = await loadData(adding(complete(), {
-      entity: [{ id: 'EX-LEND-EN04', title: 'Note', aggregate_id: 'EX-LEND-A1', role: 'child', in_root_table: true }],
-      domain_event: [{ id: 'EX-LEND-EV03', title: 'Note added', aggregate_id: 'EX-LEND-A1', published: false }],
-      read_model: [{ id: 'EX-LEND-RM02', title: 'Notes', domain_id: 'EX-LEND' }],
+      entity: [{ id: 'EX-LEND-EN04', title: 'Note', aggregate_id: 'EX-LEND-A1', role: 'child', in_root_table: true, description: 'A note on the loan.' }],
+      domain_event: [{ id: 'EX-LEND-EV03', title: 'Note added', aggregate_id: 'EX-LEND-A1', published: false, description: 'A note was written on a loan.' }],
+      read_model: [{ id: 'EX-LEND-RM02', title: 'Notes', domain_id: 'EX-LEND', description: 'The notes on each loan.' }],
       has_one: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN04' }],
     }));
     const found = ws.coverage.flatMap((c) => c.gaps).filter((g) => g.missing.endsWith('-without-fields'));
@@ -128,9 +128,9 @@ describe('entities and value objects', () => {
     // A field typed by another aggregate of its domain, held by a foreign key to that aggregate's table.
     expect(fieldsOf(good, 'EX-LEND-EN01', 'entity_field').find((f) => f.name === 'Tool')).toMatchObject({ type_aggregate_id: 'EX-LEND-A2' });
     const data = adding(everyKind(), {
-      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting' }],
-      aggregate: [{ id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP' }],
-      entity: [{ id: 'TL-SHOP-EN01', title: 'Sale', aggregate_id: 'TL-SHOP-A1', role: 'root' }],
+      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+      aggregate: [{ id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP', identity: 'Sale ID', description: 'One sale of parts.' }],
+      entity: [{ id: 'TL-SHOP-EN01', title: 'Sale', aggregate_id: 'TL-SHOP-A1', role: 'root', description: 'The sale itself.' }],
       entity_field: [{ entity_id: 'TL-SHOP-EN01', position: 1, name: 'Loan', meaning: 'The loan the sale ends.', type_aggregate_id: 'TL-LEND-A1', required: true, column_name: 'loan_id' }],
       table: [{ id: 'TL-SHOP-EN01-TB', title: 'Sales', entity_id: 'TL-SHOP-EN01', name: 'sales', storage: 'table' }],
       table_key: [{ table_id: 'TL-SHOP-EN01-TB', position: 1, type: 'primary', columns: ['id'] }],
@@ -154,7 +154,7 @@ describe('entities and value objects', () => {
 describe('commands, events and policies', () => {
   it('LA-AUT-UC12-R01-T01 A domain event sits under an aggregate, a command under an aggregate raises and checks, and a policy under a command hears one event', () => {
     expect(parentsOf(schema, 'domain_event')).toEqual(['aggregate.aggregate_id']);
-    expect(requiredOf(schema, 'domain_event')).toEqual(['aggregate_id', 'published']);
+    expect(requiredOf(schema, 'domain_event')).toEqual(['aggregate_id', 'published', 'description']);
     expect(parentsOf(schema, 'command')).toEqual(['aggregate.aggregate_id']);
     expect(parentsOf(schema, 'policy')).toEqual(['command.command_id']);
     expect(pairsOf(schema, 'raises')).toEqual(['command>domain_event']);
@@ -214,8 +214,8 @@ describe('commands, events and policies', () => {
       expect.objectContaining({ rule: 'command-change-in-domain', message: expect.stringContaining('cannot also record that same aggregate') }),
     ]);
     const other = adding(withTable(everyKind(), 'command_change', [{ ...change, aggregate_id: 'TL-SHOP-A1' }]), {
-      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting' }],
-      aggregate: [{ id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP' }],
+      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+      aggregate: [{ id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP', identity: 'Sale ID', description: 'One sale of parts.' }],
     });
     expect(await refusals(other)).toEqual([
       expect.objectContaining({ rule: 'command-change-in-domain', message: expect.stringContaining('TL-SHOP-A1, an aggregate of another domain') }),
@@ -239,8 +239,8 @@ describe('rules', () => {
     expect(good.records.find((r) => r.id === 'EX-LEND-SP01')).toMatchObject({ parent: null, domain: 'EX-LEND' });
     // A specification reading another domain's aggregate is refused.
     const crossing = adding(everyKind(), {
-      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting' }],
-      aggregate: [{ id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP' }],
+      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+      aggregate: [{ id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP', identity: 'Sale ID', description: 'One sale of parts.' }],
       reads: [{ source_id: 'TL-LEND-SP01', target_id: 'TL-SHOP-A1' }],
     });
     expect(await refusals(crossing)).toEqual([expect.objectContaining({ rule: 'link-scope', table: 'reads' })]);

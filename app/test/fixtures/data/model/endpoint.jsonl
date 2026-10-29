@@ -1,2 +1,2 @@
-{"id":"P-D-EP01","title":"POST /loans","command_id":"P-D-CMD01","method":"POST","route":"/loans"}
-{"id":"P-D-EP02","title":"GET /things","query_id":"P-D-QRY01","method":"GET","route":"/things"}
+{"id":"P-D-EP01","title":"POST /loans","command_id":"P-D-CMD01","method":"POST","route":"/loans","description":"The fixture's endpoint POST /loans."}
+{"id":"P-D-EP02","title":"GET /things","query_id":"P-D-QRY01","method":"GET","route":"/things","description":"The fixture's endpoint GET /things."}

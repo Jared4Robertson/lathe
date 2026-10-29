@@ -35,7 +35,7 @@ const withReport = (): Data =>
       { name: 'prints', source_kind: 'report', target_kind: 'view', product_id: 'EX', forward_label: 'Prints', reverse_label: 'Printed by', description: 'The report prints the view.' },
     ],
     report: [{ id: 'EX-LEND-REP01', title: 'Loans this month', domain_id: 'EX-LEND', paper: 'A4' }],
-    question: [{ id: 'EX-LEND-Q01', title: 'Who reads the report?', domain_id: 'EX-LEND', owner: 'Librarian' }],
+    question: [{ id: 'EX-LEND-Q01', title: 'Who reads the report?', domain_id: 'EX-LEND', owner: 'Librarian', description: 'Nobody has said who reads the monthly report.' }],
     prints: [{ source_id: 'EX-LEND-REP01', target_id: 'EX-V01' }],
   });
 

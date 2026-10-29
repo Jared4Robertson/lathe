@@ -1,1 +1,1 @@
-{"id":"DM-PAT-AUDIT-R01-T01","title":"Adding an item is recorded","pattern_rule_id":"DM-PAT-AUDIT-R01","domain_id":"DM-SHOP","level":"service","state":"automated","file":"test/audit.test.ts"}
+{"id":"DM-PAT-AUDIT-R01-T01","title":"Adding an item is recorded","pattern_rule_id":"DM-PAT-AUDIT-R01","domain_id":"DM-SHOP","level":"service","state":"automated","file":"test/audit.test.ts","when":"Runs the scenario the title names.","then":"Expects what the title says."}

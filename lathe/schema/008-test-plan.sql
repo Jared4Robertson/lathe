@@ -27,8 +27,8 @@ CREATE TABLE constraint_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  accepts VARCHAR,
-  refuses VARCHAR,
+  accepts VARCHAR NOT NULL CHECK (trim(accepts) <> ''),
+  refuses VARCHAR NOT NULL CHECK (trim(refuses) <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -59,9 +59,8 @@ CREATE TABLE invariant_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  given VARCHAR,
-  "when" VARCHAR,
-  "then" VARCHAR,
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -77,8 +76,7 @@ COMMENT ON COLUMN invariant_test.manual_reason IS 'Why a person runs it rather t
 COMMENT ON COLUMN invariant_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
 COMMENT ON COLUMN invariant_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
 COMMENT ON COLUMN invariant_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
-COMMENT ON COLUMN invariant_test.given IS 'The state the test starts from.';
-COMMENT ON COLUMN invariant_test."when" IS 'What the test does.';
+COMMENT ON COLUMN invariant_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN invariant_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN invariant_test.notes IS 'Longer notes on the test, such as when to run it.';
 
@@ -93,9 +91,8 @@ CREATE TABLE specification_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  given VARCHAR,
-  "when" VARCHAR,
-  "then" VARCHAR,
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -111,8 +108,7 @@ COMMENT ON COLUMN specification_test.manual_reason IS 'Why a person runs it rath
 COMMENT ON COLUMN specification_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
 COMMENT ON COLUMN specification_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
 COMMENT ON COLUMN specification_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
-COMMENT ON COLUMN specification_test.given IS 'The state the test starts from.';
-COMMENT ON COLUMN specification_test."when" IS 'What the test does.';
+COMMENT ON COLUMN specification_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN specification_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN specification_test.notes IS 'Longer notes on the test, such as when to run it.';
 
@@ -127,9 +123,8 @@ CREATE TABLE policy_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  given VARCHAR,
-  "when" VARCHAR,
-  "then" VARCHAR,
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -145,8 +140,7 @@ COMMENT ON COLUMN policy_test.manual_reason IS 'Why a person runs it rather than
 COMMENT ON COLUMN policy_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
 COMMENT ON COLUMN policy_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
 COMMENT ON COLUMN policy_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
-COMMENT ON COLUMN policy_test.given IS 'The state the test starts from.';
-COMMENT ON COLUMN policy_test."when" IS 'What the test does.';
+COMMENT ON COLUMN policy_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN policy_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN policy_test.notes IS 'Longer notes on the test, such as when to run it.';
 
@@ -161,9 +155,8 @@ CREATE TABLE domain_service_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  given VARCHAR,
-  "when" VARCHAR,
-  "then" VARCHAR,
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -179,8 +172,7 @@ COMMENT ON COLUMN domain_service_test.manual_reason IS 'Why a person runs it rat
 COMMENT ON COLUMN domain_service_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
 COMMENT ON COLUMN domain_service_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
 COMMENT ON COLUMN domain_service_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
-COMMENT ON COLUMN domain_service_test.given IS 'The state the test starts from.';
-COMMENT ON COLUMN domain_service_test."when" IS 'What the test does.';
+COMMENT ON COLUMN domain_service_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN domain_service_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN domain_service_test.notes IS 'Longer notes on the test, such as when to run it.';
 
@@ -195,9 +187,8 @@ CREATE TABLE use_case_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  given VARCHAR,
-  "when" VARCHAR,
-  "then" VARCHAR,
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -213,8 +204,7 @@ COMMENT ON COLUMN use_case_test.manual_reason IS 'Why a person runs it rather th
 COMMENT ON COLUMN use_case_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
 COMMENT ON COLUMN use_case_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
 COMMENT ON COLUMN use_case_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
-COMMENT ON COLUMN use_case_test.given IS 'The state the test starts from.';
-COMMENT ON COLUMN use_case_test."when" IS 'What the test does.';
+COMMENT ON COLUMN use_case_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN use_case_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN use_case_test.notes IS 'Longer notes on the test, such as when to run it.';
 
@@ -229,9 +219,8 @@ CREATE TABLE view_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  given VARCHAR,
-  "when" VARCHAR,
-  "then" VARCHAR,
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -247,8 +236,7 @@ COMMENT ON COLUMN view_test.manual_reason IS 'Why a person runs it rather than a
 COMMENT ON COLUMN view_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
 COMMENT ON COLUMN view_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
 COMMENT ON COLUMN view_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
-COMMENT ON COLUMN view_test.given IS 'The state the test starts from.';
-COMMENT ON COLUMN view_test."when" IS 'What the test does.';
+COMMENT ON COLUMN view_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN view_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN view_test.notes IS 'Longer notes on the test, such as when to run it.';
 
@@ -263,9 +251,8 @@ CREATE TABLE endpoint_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  given VARCHAR,
-  "when" VARCHAR,
-  "then" VARCHAR,
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -281,8 +268,7 @@ COMMENT ON COLUMN endpoint_test.manual_reason IS 'Why a person runs it rather th
 COMMENT ON COLUMN endpoint_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
 COMMENT ON COLUMN endpoint_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
 COMMENT ON COLUMN endpoint_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
-COMMENT ON COLUMN endpoint_test.given IS 'The state the test starts from.';
-COMMENT ON COLUMN endpoint_test."when" IS 'What the test does.';
+COMMENT ON COLUMN endpoint_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN endpoint_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN endpoint_test.notes IS 'Longer notes on the test, such as when to run it.';
 
@@ -297,8 +283,8 @@ CREATE TABLE flow_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  steps VARCHAR[],
-  expected_result VARCHAR,
+  steps VARCHAR[] NOT NULL CHECK (len(steps) >= 1),
+  expected_result VARCHAR NOT NULL CHECK (trim(expected_result) <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -329,9 +315,8 @@ CREATE TABLE integration_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  given VARCHAR,
-  "when" VARCHAR,
-  "then" VARCHAR,
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -347,8 +332,7 @@ COMMENT ON COLUMN integration_test.manual_reason IS 'Why a person runs it rather
 COMMENT ON COLUMN integration_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
 COMMENT ON COLUMN integration_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
 COMMENT ON COLUMN integration_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
-COMMENT ON COLUMN integration_test.given IS 'The state the test starts from.';
-COMMENT ON COLUMN integration_test."when" IS 'What the test does.';
+COMMENT ON COLUMN integration_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN integration_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN integration_test.notes IS 'Longer notes on the test, such as when to run it.';
 
@@ -364,9 +348,8 @@ CREATE TABLE pattern_rule_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  given VARCHAR,
-  "when" VARCHAR,
-  "then" VARCHAR,
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
   notes VARCHAR,
   UNIQUE (pattern_rule_id, domain_id),
   CHECK (state <> 'automated' OR file IS NOT NULL),
@@ -384,8 +367,7 @@ COMMENT ON COLUMN pattern_rule_test.manual_reason IS 'Why a person runs it rathe
 COMMENT ON COLUMN pattern_rule_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
 COMMENT ON COLUMN pattern_rule_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
 COMMENT ON COLUMN pattern_rule_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
-COMMENT ON COLUMN pattern_rule_test.given IS 'The state the test starts from.';
-COMMENT ON COLUMN pattern_rule_test."when" IS 'What the test does.';
+COMMENT ON COLUMN pattern_rule_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN pattern_rule_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN pattern_rule_test.notes IS 'Longer notes on the test, such as when to run it.';
 
@@ -400,9 +382,8 @@ CREATE TABLE standard_rule_test (
   size test_size,
   smoke BOOLEAN CHECK (smoke),
   external BOOLEAN CHECK (external),
-  given VARCHAR,
-  "when" VARCHAR,
-  "then" VARCHAR,
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
   notes VARCHAR,
   CHECK (state <> 'automated' OR file IS NOT NULL),
   CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
@@ -418,8 +399,7 @@ COMMENT ON COLUMN standard_rule_test.manual_reason IS 'Why a person runs it rath
 COMMENT ON COLUMN standard_rule_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
 COMMENT ON COLUMN standard_rule_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
 COMMENT ON COLUMN standard_rule_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
-COMMENT ON COLUMN standard_rule_test.given IS 'The state the test starts from.';
-COMMENT ON COLUMN standard_rule_test."when" IS 'What the test does.';
+COMMENT ON COLUMN standard_rule_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN standard_rule_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN standard_rule_test.notes IS 'Longer notes on the test, such as when to run it.';
 
@@ -467,13 +447,13 @@ CREATE TABLE test_data_set (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_id VARCHAR NOT NULL REFERENCES domain (id),
-  environment VARCHAR,
+  environment VARCHAR NOT NULL CHECK (trim(environment) <> ''),
   accounts VARCHAR,
-  records VARCHAR,
-  prepare VARCHAR,
-  reset VARCHAR,
+  records VARCHAR NOT NULL CHECK (trim(records) <> ''),
+  prepare VARCHAR NOT NULL CHECK (trim(prepare) <> ''),
+  reset VARCHAR NOT NULL CHECK (trim(reset) <> ''),
   file VARCHAR,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE test_data_set IS 'What some tests start from: the environment, the accounts and the starting records, how to prepare and reset them, and the file that builds them. Tests link to it with starts_from.';
 COMMENT ON COLUMN test_data_set.id IS 'The data set''s ID: its domain''s ID and TD<nn>, such as TL-LEND-TD01.';

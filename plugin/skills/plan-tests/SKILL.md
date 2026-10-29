@@ -33,11 +33,11 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 Technical records have no tests of their own: each is proved by the tests of what it implements. A standard rule is proved by its standard rule tests, such as a scan of the code for what the rule forbids; the technical records that `meets` it show where it is applied, and prove nothing. A test at a level its kind does not allow is a warning, and so is a flow test at a level its flow's interface does not fit (`flow-test-level-for-interface`).
 
-Most kinds take `given`, `when` and `then`: the state it starts from, the action, and what it expects. A constraint test takes `accepts` and `refuses` (the values the value object takes and refuses); a flow test takes `steps` (a list, one item per step of the main path) and `expected_result`.
+Most kinds take `when` and `then`, both required: what the test does, and what it expects (start `then` with "Expects" and name what is asserted). A test's shared starting state is the test data set it `starts_from`; any setup of its own opens its `when`: "With one tool on loan and one needing repair, a member borrows each." There is no Given column. A constraint test takes `accepts` and `refuses`, both required (the values the value object takes and refuses); a flow test takes `steps` (a list, one item per step of the main path, at least one) and `expected_result`, both required. A test data set takes a required `description` (what it is for), `environment`, `records`, `prepare` and `reset`; `accounts` only when it signs in.
 
 ## Naming
 
-A test's `title` is the observable result, as one short sentence that is true when the test passes: "An overdue loan is refused a renewal". Never "Tests that…", "Test that…" or "Should…": `lathe check` warns of those. A test data set's title is a noun phrase for its contents, no article: "Complete example library". Every title is in sentence case, with no trailing period, and unique within its kind and product; the store refuses a duplicate or a trailing period. Detail goes in `given`, `when` and `then`.
+A test's `title` is the observable result, as one short sentence that is true when the test passes: "An overdue loan is refused a renewal". Never "Tests that…", "Test that…" or "Should…": `lathe check` warns of those. A test data set's title is a noun phrase for its contents, no article: "Complete example library". Every title is in sentence case, with no trailing period, and unique within its kind and product; the store refuses a duplicate or a trailing period. Detail goes in `when` and `then`.
 
 ## Run by
 
@@ -111,7 +111,7 @@ add  { "constraint_test": { "id": "TL-VO02-C02-T", "title": "An email address is
        "accepts": "' Ada@Example.org ' as ada@example.org", "refuses": "an address with a space inside" } }
 add  { "use_case_test": { "id": "TL-LEND-UC03-R04-T01", "title": "Borrowing a tool on loan or needing repair is refused with the reason",
        "uc_requirement_id": "TL-LEND-UC03-R04", "level": "service", "state": "automated", "file": "test/api.test.ts",
-       "given": "One tool on loan and one needing repair", "when": "A member borrows each", "then": "Each is refused, saying which" } }
+       "when": "With one tool on loan and one needing repair, a member borrows each.", "then": "Expects each refused, saying which." } }
 ```
 
 A test data set built by a fixture, and a test that starts from it:
@@ -120,7 +120,7 @@ A test data set built by a fixture, and a test that starts from it:
 add  { "test_data_set": { "id": "TL-LEND-TD01", "title": "Empty library with a test clock", "domain_id": "TL-LEND",
        "environment": "A fresh in-memory store.", "records": "No members, tools or loans; a clock the test sets.",
        "prepare": "Each test calls services() for a new store and clock.", "reset": "Nothing: each test has its own store.",
-       "file": "test/helpers.ts" } }
+       "file": "test/helpers.ts", "description": "What the domain-rule and API tests start from: a fresh store per test and a clock it moves." } }
 link { "source": "TL-LEND-INV01-T", "relation": "starts_from", "target": "TL-LEND-TD01" }
 ```
 
@@ -144,7 +144,9 @@ add  { "flow_test": { "id": "TL-LEND-UC04-FL01-T", "title": "The README returns 
        "steps": ["Start the server with npm start", "Borrow a tool with the README's command", "Return it with the README's command"],
        "expected_result": "The loan is returned, not late." } }
 add  { "pattern_rule_test": { "id": "TL-PAT-LIBRARIAN-ACTION-R01-T01", "title": "Each librarian action missing its required input is refused",
-       "pattern_rule_id": "TL-PAT-LIBRARIAN-ACTION-R01", "domain_id": "TL-LEND", "level": "service", "state": "automated", "file": "test/api.test.ts" } }
+       "pattern_rule_id": "TL-PAT-LIBRARIAN-ACTION-R01", "domain_id": "TL-LEND", "level": "service", "state": "automated", "file": "test/api.test.ts",
+       "when": "Registers a member with no name, adds a tool with no name and returns a loan with no condition.",
+       "then": "Expects each answered 400, naming what is missing, and nothing saved." } }
 add  { "standard_rule_test": { "id": "TL-STD-CODE-R01-T01", "title": "Every error the API answers with carries a code and a sentence",
        "standard_rule_id": "TL-STD-CODE-R01", "level": "service", "state": "automated", "file": "test/api.test.ts",
        "when": "Each request the API refuses is sent.", "then": "Each answer carries an error code and a sentence." } }
