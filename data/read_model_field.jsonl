@@ -40,12 +40,12 @@
 {"read_model_id":"LA-EXP-RM03","position":10,"name":"Text scale","meaning":"Its label's scale, shared with its siblings (DS06).","type":"decimal","required":true}
 {"read_model_id":"LA-EXP-RM03","position":11,"name":"Label","meaning":"Its kind and ID line and its title, broken into lines.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM03","position":12,"name":"Count","meaning":"A kind group's or stage's number of members.","type":"whole number","required":false}
-{"read_model_id":"LA-EXP-RM04","position":1,"name":"Focus","meaning":"The domain, aggregate or entity the ERD is of.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM04","position":2,"name":"Item","meaning":"A box (an aggregate, entity or domain event) or a line.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM04","position":1,"name":"Product","meaning":"The product the map is of.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM04","position":2,"name":"Item","meaning":"A box (a domain, an aggregate or an entity) or a line.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM04","position":3,"name":"From","meaning":"A line's start.","type":"text","required":false}
 {"read_model_id":"LA-EXP-RM04","position":4,"name":"To","meaning":"A line's end.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM04","position":5,"name":"Relation","meaning":"What a line stands for: `has_one`, `has_many`, a reference field, `raises` or a policy's `hears`.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM04","position":6,"name":"Tone","meaning":"`current` for the domain's own, `other` for another domain's.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM04","position":5,"name":"Relation","meaning":"What a line stands for: `has_one`, `has_many` or a reference field.","type":"text","required":false}
+{"read_model_id":"LA-EXP-RM04","position":6,"name":"Parent","meaning":"The box a box sits in: an aggregate's domain, an entity's aggregate; none for a domain.","type":"text","required":false}
 {"read_model_id":"LA-EXP-RM05","position":1,"name":"Record","meaning":"The record's ID.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM05","position":2,"name":"Commit","meaning":"The commit's hash, or `working` for changes not committed yet.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM05","position":3,"name":"Date","meaning":"When it was committed.","type":"date and time","required":true}

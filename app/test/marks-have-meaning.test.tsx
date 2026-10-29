@@ -13,7 +13,7 @@ import { Legend } from '../src/graph/panel';
 import { BOX_LOOKS } from '../src/graph/paint';
 import { BADGE_TONES } from '../src/graph/plate';
 import { SHAPES } from '../src/graph/shapes';
-import { erdFor } from '../src/erd/erd';
+import { erdFocus, erdMap, erdStrength } from '../src/erd/erd';
 import { ErdKey } from '../src/erd/ErdView';
 import { modelWorkspace } from './fixtures/model';
 import { testWorkspace } from './graph/workspace';
@@ -55,8 +55,8 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
   // Box and line classes that answer the pointer or the keyboard, not marks with a meaning.
   const INTERACTION = new Set(['is-focus', 'has-hover-label']);
   // Every class the stylesheet gives a box or a line, and what in the ERD draws it, checked below: each box kind
-  // (erd-<kind>, explained by its swatch), the other domain's tone, the highlight, dashes and fading.
-  const EXPLAINED = new Set(['erd-aggregate', 'erd-entity', 'tone-other', 'is-highlight', 'is-dashed', 'is-context']);
+  // (erd-<kind>, explained by its swatch), the pick, dashes and fading.
+  const EXPLAINED = new Set(['erd-domain', 'erd-aggregate', 'erd-entity', 'is-highlight', 'is-dashed', 'is-faded']);
 
   it('Every mark a styled ERD box or line can carry is one the key test explains', () => {
     const styled = [...modifiers('erd-box'), ...modifiers('erd-line')].filter((c) => !INTERACTION.has(c));
@@ -65,32 +65,30 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
 
   it('Every box, badge and line an ERD draws is in its key, with what it means', () => {
     const index = indexOf(modelWorkspace());
-    const scopes = index.workspace.records.filter((r) => ['domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
+    const focuses = index.workspace.records.filter((r) => ['product', 'domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
     const missing: string[] = [];
     let drawn = 0;
-    for (const scope of scopes) {
-      const erd = erdFor(index, scope);
-      if (!erd) continue;
-      const { container, unmount } = render(<ErdKey erd={erd} relations={index.workspace.relations} />);
+    for (const focus of focuses) {
+      const at = erdFocus(index, focus);
+      if (!at) continue;
+      const map = erdMap(index, at.product);
+      const strength = erdStrength(map, at.scope, { focusFade: 0.25 });
+      const { container, unmount } = render(<ErdKey map={map} at={at} relations={index.workspace.relations} />);
       const needs = (what: string, selector: string) => {
         const el = container.querySelector(selector);
-        if (!el || meaning(el) === '') missing.push(`${scope}: ${what} (${selector})`);
+        if (!el || meaning(el) === '') missing.push(`${focus}: ${what} (${selector})`);
       };
-      const boxes = new Map(erd.boxes.map((b) => [b.id, b]));
-      // A faded box is explained by the other domain's entry when it is another domain's, else by the faded entry.
-      const fadedMark = (id: string) => (boxes.get(id)?.tone === 'other' ? '.tone-other .erd-key-other' : '.erd-key-context');
-      for (const line of erd.lines) {
+      for (const line of map.lines) {
         drawn++;
         needs(`line ${line.relation}`, `.erd-key-line.rel-${line.relation}${line.dashed ? '.is-dashed' : ''}`);
-        if (line.context) for (const end of [line.source, line.target]) if (boxes.get(end)?.context) needs('faded line', fadedMark(end));
+        if (Math.min(strength(line.source), strength(line.target)) < 1) needs('faded line', '.erd-key-faded');
       }
-      for (const box of erd.boxes) {
+      for (const box of map.boxes) {
         drawn++;
-        if (box.tone === 'other') needs("another domain's box, labeled with its domain", '.tone-other .erd-key-other');
-        else needs(`${box.kind} box`, `.erd-key-swatch.erd-key-${box.kind}`);
-        if (box.highlight) needs('highlighted box', '.erd-key-highlight');
+        needs(`${box.kind} box`, `.erd-key-swatch.erd-key-${box.kind}`);
+        if (box.id === at.pick) needs('picked-out box', '.erd-key-highlight');
         if (box.root) needs('root badge', '.erd-root');
-        if (box.context) needs('faded box', fadedMark(box.id));
+        if (strength(box.id) < 1) needs('faded box', '.erd-key-faded');
       }
       unmount();
     }
