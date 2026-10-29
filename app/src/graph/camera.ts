@@ -24,10 +24,21 @@ export const PARENT_STRIP_MAX = 96;
 /** The least share of the zoom the width allows that taking in whole rows may leave the focus (frameOnMap). */
 export const ROWS_KEEP = 0.8;
 /**
- * The most the camera zooms in (LA-EXP-DS09): enough to frame the deepest leaf of a large product's
- * map and read its label, which is very small against the product's box (map.ts).
+ * The least the camera's zoom-in limit is (LA-EXP-DS09); a map whose smallest box needs more gets more (maxZoomFor).
  */
 export const MAX_ZOOM = 256;
+/** How tall, in CSS pixels, a map's smallest box may be drawn when zoomed in all the way. */
+export const DEEPEST_PX = 400;
+
+/**
+ * The most the camera zooms in on a map (LA-EXP-DS09): enough to draw its smallest box DEEPEST_PX on its shorter side,
+ * and never less than MAX_ZOOM, so however deep a product's map grows, its deepest leaf can be framed and read.
+ */
+export function maxZoomFor(map: { nodes: ReadonlyMap<string, { w: number; h: number }> }): number {
+  let smallest = Infinity;
+  for (const n of map.nodes.values()) smallest = Math.min(smallest, n.w, n.h);
+  return Number.isFinite(smallest) && smallest > 0 ? Math.max(MAX_ZOOM, DEEPEST_PX / smallest) : MAX_ZOOM;
+}
 /** The least the camera zooms out: the whole of any product's map in a phone's pane. */
 export const MIN_ZOOM = 1e-4;
 
@@ -93,7 +104,7 @@ function placeRows(row: readonly MapNode[], i: number, j: number, fit: { top: nu
 /**
  * The camera that frames a focus (LA-EXP-DS09): the focus and its descendants down to `depth` levels below it fill the
  * pane, the parent's level showing in a strip at the left edge (the frame starts at the parent's right edge, past the
- * strip). A node with fewer levels below it frames what it has. Zoomed in no further than `max` (MAX_ZOOM; the Trace
+ * strip). A node with fewer levels below it frames what it has. Zoomed in no further than `max` (maxZoomFor; the Trace
  * stage's deeper tree takes more).
  *
  * No box of the framed levels is cut at an edge. Top and bottom, the frame takes whole rows of the focus's level, the
@@ -372,10 +383,10 @@ export const drawnKey = (d: Drawn) => `${d.boxes.map((b) => b.id).join(' ')}|${d
 // ---------- The Nested view (LA-EXP-DS09) ----------
 
 /** The camera that frames a focus in the Nested map: its box fills the pane within the padding, centered, zoomed in no further than MAX_ZOOM. */
-export function frameNested(map: PlacedMap, focus: string, width: number, height: number): Viewport {
+export function frameNested(map: PlacedMap, focus: string, width: number, height: number, max = MAX_ZOOM): Viewport {
   const node = map.nodes.get(focus);
   if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: 1 };
-  const zoom = Math.min(MAX_ZOOM, (width - 2 * FRAME_PADDING) / Math.max(1, node.w), (height - 2 * FRAME_PADDING) / Math.max(1, node.h));
+  const zoom = Math.min(max, (width - 2 * FRAME_PADDING) / Math.max(1, node.w), (height - 2 * FRAME_PADDING) / Math.max(1, node.h));
   return { x: width / 2 - (node.x + node.w / 2) * zoom, y: height / 2 - (node.y + node.h / 2) * zoom, zoom };
 }
 
