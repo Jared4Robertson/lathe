@@ -32,9 +32,9 @@ function adding(rows: Data): Data {
 
 // A second domain of the same product, with an aggregate, an unpublished event and a specification.
 const catalog: Data = {
-  domain: [{ id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting' }],
-  aggregate: [{ id: 'TL-CAT-A1', title: 'Listing', domain_id: 'TL-CAT' }],
-  domain_event: [{ id: 'TL-CAT-EV01', title: 'Listing changed', aggregate_id: 'TL-CAT-A1', published: false }],
+  domain: [{ id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' }],
+  aggregate: [{ id: 'TL-CAT-A1', title: 'Listing', domain_id: 'TL-CAT', identity: 'Listing ID', description: 'How one tool is listed.' }],
+  domain_event: [{ id: 'TL-CAT-EV01', title: 'Listing changed', aggregate_id: 'TL-CAT-A1', published: false, description: 'A listing was changed.' }],
   specification: [{ id: 'TL-CAT-SP01', title: 'Listed', statement: 'A tool is listed when it has a listing.' }],
 };
 
@@ -48,7 +48,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   it('LA-AUT-INV08-T refuses a step fulfilling another use case\'s requirement', async () => {
     const problems = await refusal(
       adding({
-        use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01' }],
+        use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' }],
         uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'On time', use_case_id: 'TL-LEND-UC02', statement: 'A return MUST be dated.' }],
         fulfills: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-UC02-R01' }],
       }),
@@ -68,7 +68,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   });
 
   it('LA-AUT-INV10-T refuses a policy hearing two events', async () => {
-    const problems = await refusal(adding({ domain_event: [{ id: 'TL-LEND-EV02', title: 'Loan closed', aggregate_id: 'TL-LEND-A1', published: false }], hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV02' }] }));
+    const problems = await refusal(adding({ domain_event: [{ id: 'TL-LEND-EV02', title: 'Loan closed', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool came back.' }], hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV02' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/hears.jsonl' })]);
   });
 
@@ -83,7 +83,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
       adding({
         ...catalog,
         reads: [{ source_id: 'TL-LEND-SP01', target_id: 'TL-CAT-A1' }],
-        domain_event: [...catalog.domain_event, { id: 'TL-LEND-EV02', title: 'Tool retired', aggregate_id: 'TL-LEND-A2', published: false }],
+        domain_event: [...catalog.domain_event, { id: 'TL-LEND-EV02', title: 'Tool retired', aggregate_id: 'TL-LEND-A2', published: false, description: 'A tool left the catalog.' }],
         raises: [{ source_id: 'TL-LEND-CMD01', target_id: 'TL-LEND-EV02' }],
       }),
     );
@@ -120,7 +120,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   });
 
   it('refuses a query and its read model in different domains', async () => {
-    const problems = await refusal(adding({ ...catalog, query: [{ id: 'TL-CAT-QRY01', title: 'List listings', read_model_id: 'TL-LEND-RM01' }] }));
+    const problems = await refusal(adding({ ...catalog, query: [{ id: 'TL-CAT-QRY01', title: 'List listings', read_model_id: 'TL-LEND-RM01', description: 'The listings, by title.' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', file: 'data/query.jsonl', line: 2, key: 'TL-CAT-QRY01' })]);
     expect(problems[0].message).toBe('TL-CAT-QRY01 is a Query in domain TL-LEND, so its ID starts with TL-LEND-');
   });
@@ -146,14 +146,14 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   });
 
   it('refuses a second invariant test for one invariant, and a second test of each exactly-one kind', async () => {
-    const problems = await refusal(adding({ invariant_test: [{ id: 'TL-LEND-INV01-TB', title: 'Again', invariant_id: 'TL-LEND-INV01', level: 'unit', state: 'not automated yet' }] }));
+    const problems = await refusal(adding({ invariant_test: [{ id: 'TL-LEND-INV01-TB', title: 'Again', invariant_id: 'TL-LEND-INV01', level: 'unit', state: 'not automated yet', when: 'With a tool on loan, lends it again', then: 'It is refused' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/invariant_test.jsonl', line: 2 })]);
-    const flowTest = await refusal(adding({ flow_test: [{ id: 'TL-LEND-UC01-FL01-TB', title: 'Again', flow_id: 'TL-LEND-UC01-FL01', level: 'browser', state: 'not automated yet' }] }));
+    const flowTest = await refusal(adding({ flow_test: [{ id: 'TL-LEND-UC01-FL01-TB', title: 'Again', flow_id: 'TL-LEND-UC01-FL01', level: 'browser', state: 'not automated yet', steps: ['Open the catalog', 'Borrow a tool'], expected_result: 'The loan is listed.' }] }));
     expect(flowTest).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/flow_test.jsonl' })]);
   });
 
   it('refuses a second pattern rule test for one rule in one domain', async () => {
-    const problems = await refusal(adding({ pattern_rule_test: [{ id: 'TL-PAT-ACT-R01-T02', title: 'Again', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-LEND', level: 'unit', state: 'not automated yet' }] }));
+    const problems = await refusal(adding({ pattern_rule_test: [{ id: 'TL-PAT-ACT-R01-T02', title: 'Again', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-LEND', level: 'unit', state: 'not automated yet', when: 'Saves a record at the desk', then: 'It reads the same everywhere' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/pattern_rule_test.jsonl', line: 2 })]);
   });
 
@@ -170,10 +170,10 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
 
   it('refuses a link, or a field reference, across products', async () => {
     const other: Data = {
-      product: [{ id: 'LA', title: 'Lathe' }],
-      domain: [{ id: 'LA-AUT', title: 'Authoring', product_id: 'LA', subdomain_type: 'core' }],
-      aggregate: [{ id: 'LA-AUT-A1', title: 'Record', domain_id: 'LA-AUT' }],
-      value_object: [{ id: 'LA-VO01', title: 'Record ID' }],
+      product: [{ id: 'LA', title: 'Lathe', description: 'A tool for writing specs.' }],
+      domain: [{ id: 'LA-AUT', title: 'Authoring', product_id: 'LA', subdomain_type: 'core', description: 'Writing the records of a spec.' }],
+      aggregate: [{ id: 'LA-AUT-A1', title: 'Record', domain_id: 'LA-AUT', identity: 'Record ID', description: 'One record of a spec.' }],
+      value_object: [{ id: 'LA-VO01', title: 'Record ID', description: 'The ID a record is known by.' }],
     };
     const link = await refusal(adding(merge(other, { reads: [{ source_id: 'TL-LEND-SP01', target_id: 'LA-AUT-A1' }] })));
     expect(link).toEqual([expect.objectContaining({ rule: 'link-crosses-product', table: 'reads' })]);
@@ -183,7 +183,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   });
 
   it('refuses a record with no owner whose prefix names no product, or no domain', async () => {
-    const view = await refusal(adding({ view: [{ id: 'XX-V01', title: 'Lost' }] }));
+    const view = await refusal(adding({ view: [{ id: 'XX-V01', title: 'Lost', description: 'A view of no product.' }] }));
     expect(view).toEqual([expect.objectContaining({ rule: 'id-prefix', file: 'data/view.jsonl', line: 2 })]);
     expect(view[0].message).toBe("XX-V01 is a View, which has no owner: its ID starts with the ID of its product and a hyphen, but no product's ID starts it");
     const spec = await refusal(adding({ specification: [{ id: 'TL-NOPE-SP01', title: 'Lost', statement: 'Nothing.' }] }));
@@ -198,9 +198,9 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
 
   it('LA-AUT-INV12-T refuses an aggregate with two roots, but not one with none', async () => {
     const data = everyKind();
-    data.entity[1] = { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'root' };
+    data.entity[1] = { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The tool coming back.' };
     expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'aggregate-root', key: 'TL-LEND-A1' })]);
-    await loads(adding({ entity: [{ id: 'TL-LEND-EN03', title: 'Repair', aggregate_id: 'TL-LEND-A2', role: 'child' }] }));
+    await loads(adding({ entity: [{ id: 'TL-LEND-EN03', title: 'Repair', aggregate_id: 'TL-LEND-A2', role: 'child', description: 'A repair made to a tool.' }] }));
   });
 
   it("LA-AUT-INV13-T refuses a table for an entity stored in its root's table, a root stored in a root table, and an entity's table that is a view or a materialized view", async () => {
@@ -236,7 +236,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     const crossing = await refusal(
       adding({
         ...catalog,
-        entity: [{ id: 'TL-CAT-EN01', title: 'Listing', aggregate_id: 'TL-CAT-A1', role: 'root' }],
+        entity: [{ id: 'TL-CAT-EN01', title: 'Listing', aggregate_id: 'TL-CAT-A1', role: 'root', description: 'The listing itself.' }],
         table: [{ id: 'TL-CAT-EN01-TB', title: 'Listings', entity_id: 'TL-CAT-EN01', name: 'listings', storage: 'table' }],
         table_key: [{ table_id: 'TL-CAT-EN01-TB', position: 1, type: 'foreign', columns: ['loan_id'], target_table_id: 'TL-LEND-EN01-TB' }],
       }),
@@ -257,7 +257,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   it('refuses a step invoking two operations, or happening in two views', async () => {
     const invokes = await refusal(adding({ invokes: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-LEND-QRY01' }] }));
     expect(invokes).toEqual([expect.objectContaining({ rule: 'unique', table: 'invokes' })]);
-    const views = await refusal(adding({ view: [{ id: 'TL-V02', title: 'Desk' }], happens_in: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-V02' }] }));
+    const views = await refusal(adding({ view: [{ id: 'TL-V02', title: 'Desk', description: 'The desk where tools go out.' }], happens_in: [{ source_id: 'TL-LEND-UC01-FL01-S01', target_id: 'TL-V02' }] }));
     expect(views).toEqual([expect.objectContaining({ rule: 'unique', table: 'happens_in' })]);
   });
 
@@ -303,14 +303,14 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
 
   it('LA-AUT-INV41-T refuses a second repository for one aggregate, a second aggregate for one repository, and a second repository of one identifier', async () => {
     const second = adding({
-      repository: [{ id: 'TL-LEND-REPO02', title: 'LoanStore', domain_id: 'TL-LEND', file: 'src/lending/loans.ts' }],
+      repository: [{ id: 'TL-LEND-REPO02', title: 'LoanStore', domain_id: 'TL-LEND', file: 'src/lending/loans.ts', description: 'Keeps loans in a second table.' }],
       persists: [{ source_id: 'TL-LEND-REPO02', target_id: 'TL-LEND-A1' }],
     });
     expect(await refusal(second)).toEqual([
       expect.objectContaining({ rule: 'unique', file: 'data/persists.jsonl', line: 2, message: expect.stringContaining('has the same target_id as persists') }),
     ]);
     // The same identifier in the same file is a second record of one piece of code.
-    const same = adding({ repository: [{ id: 'TL-LEND-REPO02', title: 'LoanRepository', domain_id: 'TL-LEND', file: 'src/lending/loans.ts' }] });
+    const same = adding({ repository: [{ id: 'TL-LEND-REPO02', title: 'LoanRepository', domain_id: 'TL-LEND', file: 'src/lending/loans.ts', description: 'Keeps loans in the loans table.' }] });
     expect((await refusal(same)).map((p) => [p.rule, p.key]).sort()).toEqual([
       ['title-unique', 'TL-LEND-REPO01'],
       ['title-unique', 'TL-LEND-REPO02'],
@@ -324,7 +324,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
 
   it('LA-STD-MODELING-R04-T01 refuses a title another record of its kind and product has, or one ending with a period', async () => {
     await loads(everyKind());
-    const twice = adding({ aggregate: [{ id: 'TL-LEND-A9', title: ' loan ', domain_id: 'TL-LEND' }] });
+    const twice = adding({ aggregate: [{ id: 'TL-LEND-A9', title: ' loan ', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' }] });
     const found = await refusal(twice);
     expect(found.map((p) => [p.rule, p.key]).sort()).toEqual([
       ['title-unique', 'TL-LEND-A1'],
@@ -359,6 +359,26 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     const cased = everyKind();
     cased.data_model.push({ id: 'TL-LEND-EN02-DM', title: 'loan', entity_id: 'TL-LEND-EN02' });
     await loads(cased);
+  });
+
+  it("LA-STD-MODELING-R10-T02 refuses a product kind whose lead text is optional, or which has two", async () => {
+    const optional = everyKind();
+    optional.product_kind_field.push({ kind: 'cli_command', position: 2, name: 'description', type: 'text', required: false, description: 'What it does.' });
+    expect(await refusal(optional)).toEqual([
+      expect.objectContaining({ rule: 'product-kind', table: 'product_kind_field', message: expect.stringContaining('The field description of cli_command is its lead text, so it must be required') }),
+    ]);
+    const two = everyKind();
+    two.product_kind_field.push(
+      { kind: 'cli_command', position: 2, name: 'description', type: 'text', required: true, description: 'What it does.' },
+      { kind: 'cli_command', position: 3, name: 'statement', type: 'text', required: true, description: 'What it must do.' },
+    );
+    expect(await refusal(two)).toEqual([
+      expect.objectContaining({ rule: 'product-kind', table: 'product_kind_field', message: expect.stringContaining('The field statement of cli_command is a second lead text, after description') }),
+    ]);
+    const one = everyKind();
+    one.product_kind_field.push({ kind: 'cli_command', position: 2, name: 'description', type: 'text', required: true, description: 'What it does.' });
+    one.cli_command[0] = { ...one.cli_command[0], description: 'Borrows the tool named.' };
+    await loads(one);
   });
 
   it('LA-TRC-INV03-T refuses a setting value for a pattern its follower does not follow', async () => {

@@ -11,8 +11,8 @@ describe('Packages from the command line', () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
-      add('integration', { id: 'TL-INT01', title: 'Mail', system: 'The mail service' }),
-      add('adapter', { id: 'TL-INT01-AD', title: 'Mailer', integration_id: 'TL-INT01', file: 'src/mail.ts' }),
+      add('integration', { id: 'TL-INT01', title: 'Mail', system: 'The mail service', description: 'Sends the library\'s mail to members.' }),
+      add('adapter', { id: 'TL-INT01-AD', title: 'Mailer', integration_id: 'TL-INT01', file: 'src/mail.ts', description: 'Hands each message to the mail service and retries once.' }),
     ]);
     tl.write('src/mail.ts', '// TL-INT01-AD\n');
     // S01: the Agent adds a dependency, and a dev dependency, to the package.json the code runs from.

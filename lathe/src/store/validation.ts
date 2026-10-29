@@ -4,6 +4,7 @@
 //
 // These are refusals only: broken data. What is merely missing ("at least one", "nothing uses it") is the checks'
 // to report, because records are written stage by stage.
+import { isLeadColumn } from '../lead.ts';
 import { sqlName, sqlString, type SchemaDescription } from './schema.ts';
 
 export interface ValidationQuery {
@@ -458,9 +459,12 @@ FROM titled WHERE regexp_matches(title, '\\.\\s*$')`,
       sql: formed
         .map((k) => {
           const form = TITLE_FORMS[k.titleForm!];
+          // Where the explanation goes: its lead text, or, for a kind with none, the record it implements.
+          const lead = schema.tables[k.name].columns.find((c) => isLeadColumn(c.name));
+          const explain = lead ? `put the explanation in its ${lead.name}` : 'what it is belongs to the record it implements';
           return `
 SELECT ${sqlString(k.name)} AS table_name, id AS row_key,
-       ${sqlString(`${k.label} `)} || id || ' is titled "' || title || '"' || ${sqlString(`, but a ${k.label.toLowerCase()} is titled by ${form.says}; put the explanation in its description`)} AS message
+       ${sqlString(`${k.label} `)} || id || ' is titled "' || title || '"' || ${sqlString(`, but a ${k.label.toLowerCase()} is titled by ${form.says}; ${explain}`)} AS message
 FROM ${sqlName(k.name)} WHERE NOT regexp_full_match(title, ${sqlString(form.pattern)})`;
         })
         .join('\nUNION ALL'),

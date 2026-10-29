@@ -1,22 +1,22 @@
-{"id":"LA-AUT-DS01-SV","title":"idShapes","domain_service_id":"LA-AUT-DS01","file":"lathe/src/cli/operations.ts","description":"`idShapes` (the numbering inside `nextId` reads the store)"}
+{"id":"LA-AUT-DS01-SV","title":"idShapes","domain_service_id":"LA-AUT-DS01","file":"lathe/src/cli/operations.ts"}
 {"id":"LA-CHK-DS01-SV","title":"orderChecks","domain_service_id":"LA-CHK-DS01","file":"lathe/src/reference.ts"}
-{"id":"LA-EXP-DS01-SV","title":"spaceOf","domain_service_id":"LA-EXP-DS01","file":"app/src/shell/spaces.tsx","description":"spaceOf, iconField, colorField, colorOf, monogramOf"}
-{"id":"LA-EXP-DS02-SV","title":"productOfPath","domain_service_id":"LA-EXP-DS02","file":"app/src/shell/spaces.tsx","description":"productOfPath"}
-{"id":"LA-EXP-DS03-SV","title":"folderPath","domain_service_id":"LA-EXP-DS03","file":"app/src/specs/folders.ts","description":"folderPath, branchOf, domainRecords"}
-{"id":"LA-EXP-DS04-SV","title":"treeOf","domain_service_id":"LA-EXP-DS04","file":"app/src/graph/tree.ts","description":"treeOf"}
-{"id":"LA-EXP-DS05-SV","title":"layoutTree","domain_service_id":"LA-EXP-DS05","file":"app/src/graph/map.ts","description":"layoutTree, parentLine"}
-{"id":"LA-EXP-DS06-SV","title":"labelLines","domain_service_id":"LA-EXP-DS06","file":"app/src/graph/text.ts","description":"labelLines, titleWidth, metaWidth"}
-{"id":"LA-EXP-DS07-SV","title":"nestedMap","domain_service_id":"LA-EXP-DS07","file":"app/src/graph/nested.ts","description":"nestedMap, layoutNested"}
-{"id":"LA-EXP-DS09-SV","title":"frameOnMap","domain_service_id":"LA-EXP-DS09","file":"app/src/graph/camera.ts","description":"frameOnMap, frameNested, fitBoxes, zoomPath, glideDuration"}
-{"id":"LA-EXP-DS10-SV","title":"drawnFor","domain_service_id":"LA-EXP-DS10","file":"app/src/graph/camera.ts","description":"drawnFor, drawnNested, MIN_DRAWN, MAX_DRAWN"}
-{"id":"LA-EXP-DS11-SV","title":"erdMap","domain_service_id":"LA-EXP-DS11","file":"app/src/erd/erd.ts","description":"erdMap: one line per relationship link and one per entity and aggregate it references, with the lookups of specs/data.ts"}
-{"id":"LA-EXP-DS12-SV","title":"formFields","domain_service_id":"LA-EXP-DS12","file":"app/src/edit/form.ts","description":"formFields, partForms, parentChoices, linkTargets, suggestId, commandsFor, referrersOf"}
-{"id":"LA-PLT-DS01-SV","title":"formatBinding","domain_service_id":"LA-PLT-DS01","file":"app/src/shell/keymap.ts","description":"formatBinding, ariaKeyShortcuts"}
-{"id":"LA-PLT-DS02-SV","title":"auditContrast","domain_service_id":"LA-PLT-DS02","file":"app/src/theme/audit.ts","description":"auditContrast, REQUIRED_PAIRS, with contrast.ts"}
-{"id":"LA-PLT-DS03-SV","title":"windowFor","domain_service_id":"LA-PLT-DS03","file":"desktop/src/windowState.ts","description":"windowFor, DEFAULT_SIZE, MIN_SIZE"}
-{"id":"LA-PLT-DS04-SV","title":"openOnLaunch","domain_service_id":"LA-PLT-DS04","file":"desktop/src/main.ts","description":"openOnLaunch"}
-{"id":"LA-TRC-DS01-SV","title":"mentionsId","domain_service_id":"LA-TRC-DS01","file":"lathe/src/index.ts","description":"mentionsId"}
-{"id":"LA-TRC-DS02-SV","title":"ALLOWED_LEVELS","domain_service_id":"LA-TRC-DS02","file":"lathe/src/coverage.ts","description":"`ALLOWED_LEVELS`: the run by levels each test kind allows, which `test_level_allowed` holds for the checks and coverage."}
-{"id":"LA-TRC-DS03-SV","title":"sourceFiles","domain_service_id":"LA-TRC-DS03","file":"lathe/src/trace/source-files.ts","description":"sourceFiles, isTraced and normalizePath; the engine's gatherSourceFiles fills source_file from them."}
-{"id":"LA-TRC-DS04-SV","title":"normalRoute","domain_service_id":"LA-TRC-DS04","file":"lathe/src/trace/routes.ts","description":"`normalRoute`, and `regexRoute` for a regular expression literal that matches one path."}
+{"id":"LA-EXP-DS01-SV","title":"spaceOf","domain_service_id":"LA-EXP-DS01","file":"app/src/shell/spaces.tsx"}
+{"id":"LA-EXP-DS02-SV","title":"productOfPath","domain_service_id":"LA-EXP-DS02","file":"app/src/shell/spaces.tsx"}
+{"id":"LA-EXP-DS03-SV","title":"folderPath","domain_service_id":"LA-EXP-DS03","file":"app/src/specs/folders.ts"}
+{"id":"LA-EXP-DS04-SV","title":"treeOf","domain_service_id":"LA-EXP-DS04","file":"app/src/graph/tree.ts"}
+{"id":"LA-EXP-DS05-SV","title":"layoutTree","domain_service_id":"LA-EXP-DS05","file":"app/src/graph/map.ts"}
+{"id":"LA-EXP-DS06-SV","title":"labelLines","domain_service_id":"LA-EXP-DS06","file":"app/src/graph/text.ts"}
+{"id":"LA-EXP-DS07-SV","title":"nestedMap","domain_service_id":"LA-EXP-DS07","file":"app/src/graph/nested.ts"}
+{"id":"LA-EXP-DS09-SV","title":"frameOnMap","domain_service_id":"LA-EXP-DS09","file":"app/src/graph/camera.ts"}
+{"id":"LA-EXP-DS10-SV","title":"drawnFor","domain_service_id":"LA-EXP-DS10","file":"app/src/graph/camera.ts"}
+{"id":"LA-EXP-DS11-SV","title":"erdMap","domain_service_id":"LA-EXP-DS11","file":"app/src/erd/erd.ts"}
+{"id":"LA-EXP-DS12-SV","title":"formFields","domain_service_id":"LA-EXP-DS12","file":"app/src/edit/form.ts"}
+{"id":"LA-PLT-DS01-SV","title":"formatBinding","domain_service_id":"LA-PLT-DS01","file":"app/src/shell/keymap.ts"}
+{"id":"LA-PLT-DS02-SV","title":"auditContrast","domain_service_id":"LA-PLT-DS02","file":"app/src/theme/audit.ts"}
+{"id":"LA-PLT-DS03-SV","title":"windowFor","domain_service_id":"LA-PLT-DS03","file":"desktop/src/windowState.ts"}
+{"id":"LA-PLT-DS04-SV","title":"openOnLaunch","domain_service_id":"LA-PLT-DS04","file":"desktop/src/main.ts"}
+{"id":"LA-TRC-DS01-SV","title":"mentionsId","domain_service_id":"LA-TRC-DS01","file":"lathe/src/index.ts"}
+{"id":"LA-TRC-DS02-SV","title":"ALLOWED_LEVELS","domain_service_id":"LA-TRC-DS02","file":"lathe/src/coverage.ts"}
+{"id":"LA-TRC-DS03-SV","title":"sourceFiles","domain_service_id":"LA-TRC-DS03","file":"lathe/src/trace/source-files.ts"}
+{"id":"LA-TRC-DS04-SV","title":"normalRoute","domain_service_id":"LA-TRC-DS04","file":"lathe/src/trace/routes.ts"}
 {"id":"LA-TRC-DS05-SV","title":"readTestCases","domain_service_id":"LA-TRC-DS05","file":"lathe/src/trace/test-cases.ts"}

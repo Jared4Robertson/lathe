@@ -40,7 +40,7 @@ CREATE TABLE product_kind_field (
 COMMENT ON TABLE product_kind_field IS 'One typed field of a product kind, in order: a column of its table.';
 COMMENT ON COLUMN product_kind_field.kind IS 'The product kind.';
 COMMENT ON COLUMN product_kind_field.position IS 'The field''s place among the kind''s columns, from 1.';
-COMMENT ON COLUMN product_kind_field.name IS 'The column''s name, in lower case with underscores; not id, title or the parent column.';
+COMMENT ON COLUMN product_kind_field.name IS 'The column''s name, in lower case with underscores; not id, title or the parent column. A field named statement, goal, meaning or description is the kind''s lead text, shown first on its records'' pages: a kind has at most one, and it must be required.';
 COMMENT ON COLUMN product_kind_field.type IS 'text, integer, boolean or date (YYYY-MM-DD).';
 COMMENT ON COLUMN product_kind_field.required IS 'Whether every record of the kind must give it.';
 COMMENT ON COLUMN product_kind_field.description IS 'What the field holds.';

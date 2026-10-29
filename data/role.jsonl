@@ -1,3 +1,3 @@
-{"product_id":"LA","name":"Agent"}
-{"product_id":"LA","name":"Owner"}
-{"product_id":"LA","name":"Reader"}
+{"product_id":"LA","name":"Agent","description":"An AI agent, such as Claude Code with Lathe's plugin, that writes records and code on the Owner's behalf, only through the command layer (the `lathe` command or the MCP tools), never by editing data files by hand."}
+{"product_id":"LA","name":"Owner","description":"The person who decides what a product is for, writes and checks its spec alongside the Agents, reviews their work, and approves merges, standards and publishing."}
+{"product_id":"LA","name":"Reader","description":"Anyone who opens the web or desktop app to read and navigate a spec, such as a teammate or the Owner, changing no records."}

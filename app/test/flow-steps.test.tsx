@@ -45,17 +45,16 @@ describe('flow steps on a flow page', () => {
   it('LA-V92-R23-T01 A flow page shows its steps in order as a table: step, what happens, invokes, happens in, fulfills, exchanges with', proveLaV92R23T01);
   it('LA-V92-R11-T01 A flow page shows its steps in order as a table', proveLaV92R23T01);
 
-  it("LA-V92-R24-T01 Each step's description and the titles of what it links to are folded under its row", async () => {
+  it('LA-V92-R24-T01 The titles of what a step links to are folded under its row', async () => {
     await openApp('/DM-SHOP-UC01-FL01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket in the web app' });
     const user = userEvent.setup();
     const [mainPath] = tables();
-    expect(within(mainPath).queryByText('Add')).toBeNull();
+    expect(within(mainPath).queryByText(/The basket shows the new item/)).toBeNull();
     const toggle = within(mainPath).getByRole('button', { name: 'Expand DM-SHOP-UC01-FL01-S01' });
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     await user.click(toggle);
     const details = within(mainPath).getByRole('region', { name: 'Details of DM-SHOP-UC01-FL01-S01' });
-    expect(within(details).getByText('Add').tagName).toBe('STRONG');
     expect(within(details).getByRole('link', { name: /DM-SHOP-UC01-R01.*The basket shows the new item/ })).toBeInTheDocument();
     expect(details).toHaveTextContent('UC requirement');
     expect(within(details).getByRole('link', { name: /DM-SHOP-CMD01.*Add item/ })).toBeInTheDocument();

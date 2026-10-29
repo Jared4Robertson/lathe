@@ -117,11 +117,12 @@ A part of the product with its own model, language and owner, for one business c
 | `title` | VARCHAR | yes | The domain's name, such as Lending. |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
 | `subdomain_type` | ENUM('core', 'supporting', 'generic') | yes | core: the product's edge; supporting: needed for the core but not its edge; generic: solved the same way everywhere. It guides how much modeling the domain deserves. |
-| `description` | VARCHAR | no | What the domain covers, in a paragraph. |
+| `description` | VARCHAR | yes | What the domain covers, in a paragraph. |
 | `notes` | VARCHAR | no | Longer notes on the domain. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-aggregate"></a>
 
@@ -145,12 +146,14 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 | `id` | VARCHAR → `record_id` | yes | The aggregate's ID, such as TL-LEND-A1. |
 | `title` | VARCHAR | yes | The aggregate's name, such as Loan. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it belongs to. |
-| `description` | VARCHAR | no | What the aggregate keeps, in a paragraph. |
-| `identity` | VARCHAR | no | What identifies one of its records in the business, such as Loan ID. |
+| `description` | VARCHAR | yes | What the aggregate keeps and why its entities change together, in a paragraph. |
+| `identity` | VARCHAR | yes | What identifies one of its records in the business, such as Loan ID. |
 | `notes` | VARCHAR | no | Longer notes on the aggregate. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
+- **Rule:** `("trim"("identity") != '')`
 
 <a id="kind-entity"></a>
 
@@ -177,11 +180,12 @@ A record the domain keeps, with an identity: its aggregate's root or one of its 
 | `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The aggregate it belongs to. |
 | `role` | ENUM('root', 'child') | yes | root: the record the aggregate is named for, at most one per aggregate; child: one of its parts. |
 | `in_root_table` | BOOLEAN | no | true: a child entity with no table of its own, stored in its aggregate root's table (which then holds its fields as columns); left out otherwise. An entity has at most one table. |
-| `description` | VARCHAR | no | What the entity is, in a sentence or two. |
+| `description` | VARCHAR | yes | What the entity is, in a sentence or two. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `in_root_table`
+- **Rule:** `("trim"(description) != '')`
 - **Rule:** `((in_root_table IS NULL) OR ("role" = 'child'))`
 
 <a id="table-entity_field"></a>
@@ -232,10 +236,11 @@ A value with no identity of its own, such as an email address or a money amount,
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The value object's ID: the product prefix and VO<nn>, such as TL-VO01. |
 | `title` | VARCHAR | yes | The value object's name, such as Email address. |
-| `description` | VARCHAR | no | What the value is, in a sentence or two. |
+| `description` | VARCHAR | yes | What the value is, in a sentence or two. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="table-value_object_field"></a>
 
@@ -376,10 +381,11 @@ An unchangeable record that something happened to an aggregate, named in the pas
 | `title` | VARCHAR | yes | The event's name, in the past tense, such as Tool repaired. |
 | `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The aggregate it happens to. |
 | `published` | BOOLEAN | yes | true: its shape is a promise to other domains, whose policies may hear it; false: only its own domain hears it. |
-| `description` | VARCHAR | no | What happened, in a sentence. |
+| `description` | VARCHAR | yes | What happened and what brings it about, in a sentence. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="table-event_field"></a>
 
@@ -429,10 +435,11 @@ A request to change exactly one aggregate, its parent. It checks specifications,
 | `id` | VARCHAR → `record_id` | yes | The command's ID, such as TL-LEND-CMD01. |
 | `title` | VARCHAR | yes | What it asks for, in the imperative, such as Open a loan. |
 | `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The aggregate it changes. |
-| `description` | VARCHAR | no | What it does, in a sentence or two. |
+| `description` | VARCHAR | yes | What it changes and when it is refused, in a sentence or two; how its handler does it belongs to the handler. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="table-command_change"></a>
 
@@ -471,10 +478,11 @@ A view of its domain's data shaped for reading, which reads one or more of the d
 | `id` | VARCHAR → `record_id` | yes | The read model's ID, such as TL-LEND-RM01. |
 | `title` | VARCHAR | yes | The read model's name, such as Overdue loans. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it belongs to. |
-| `description` | VARCHAR | no | What it shows, in a sentence or two. |
+| `description` | VARCHAR | yes | What it shows, in a sentence or two. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="table-read_model_field"></a>
 
@@ -524,10 +532,11 @@ A question asked of one read model, its parent. It changes nothing, and may sele
 | `id` | VARCHAR → `record_id` | yes | The query's ID: its read model's domain's ID and QRY<nn>, such as TL-LEND-QRY01. |
 | `title` | VARCHAR | yes | What it asks, such as List a member's loans. |
 | `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | yes | The read model it reads. |
-| `description` | VARCHAR | no | What it returns, in a sentence or two. |
+| `description` | VARCHAR | yes | What it returns, in a sentence or two; the code that answers it belongs to its handler. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-policy"></a>
 
@@ -768,12 +777,13 @@ An ordered slice of a domain that groups its use cases, such as Catalog or Lendi
 | `title` | VARCHAR | yes | The capability's name, such as Catalog. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it belongs to. |
 | `position` | INTEGER | yes | Its place in the domain, from 1. |
-| `description` | VARCHAR | no | What the capability covers, in a sentence or two. |
+| `description` | VARCHAR | yes | What the capability covers, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `domain_id`, `position`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("position" >= 1)`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-use_case"></a>
 
@@ -798,11 +808,12 @@ An actor's goal: its actors (use_case_actor rows), its UC requirements and its f
 | `id` | VARCHAR → `record_id` | yes | The use case's ID, such as TL-LEND-UC01. |
 | `title` | VARCHAR | yes | What the actor does, such as Borrow a tool. |
 | `capability_id` | VARCHAR → [`capability`](#table-capability) | yes | The capability it sits in. |
-| `goal` | VARCHAR | no | What the actor wants to reach, in a sentence. |
+| `goal` | VARCHAR | yes | What the actor wants to reach and from where they start, in a sentence or a short paragraph. |
 | `notes` | VARCHAR | no | Longer notes, such as the order in which refusals are reported. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(goal) != '')`
 
 <a id="table-use_case_actor"></a>
 
@@ -874,11 +885,12 @@ Behavior several use cases share, stated once with the settings each use case th
 | `id` | VARCHAR → `record_id` | yes | The pattern's ID, such as TL-PAT-LIBRARIAN-ACTION. |
 | `title` | VARCHAR | yes | The pattern's name, such as Librarian action. |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
-| `description` | VARCHAR | no | The shared behavior, in a paragraph. |
+| `description` | VARCHAR | yes | The shared behavior, in a paragraph. |
 | `notes` | VARCHAR | no | Longer notes, such as how a domain or use case uses the pattern. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="table-pattern_setting"></a>
 
@@ -891,12 +903,13 @@ One setting of a pattern, in order: what each follower decides.
 | `pattern_id` | VARCHAR → [`pattern`](#table-pattern) | yes | The pattern. |
 | `position` | INTEGER | yes | The setting's place in the pattern, from 1. |
 | `name` | VARCHAR | yes | The setting's name, in lower case with underscores, such as required_input. |
-| `meaning` | VARCHAR | no | What a follower decides in it. |
+| `meaning` | VARCHAR | yes | What a follower decides in it. |
 
 - **Key:** `pattern_id`, `position`
 - **Unique:** `pattern_id`, `name`
 - **Rule:** `("position" >= 1)`
 - **Rule:** `regexp_full_match("name", '[a-z][a-z0-9_]*')`
+- **Rule:** `("trim"(meaning) != '')`
 
 <a id="kind-pattern_rule"></a>
 
@@ -1020,10 +1033,11 @@ A way people or programs use the product, such as its web app, its HTTP API or i
 | `title` | VARCHAR | yes | The interface's name, such as Web app, HTTP API, CLI, MCP tools or Desktop app. |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
 | `kind` | ENUM('web app', 'API', 'CLI', 'agent tools', 'desktop', 'other') | yes | What it is: web app or desktop (a flow's steps happen in views), API (they call endpoints, through the command or query each exposes), CLI or agent tools (they run commands and queries), or other. A step of an API, CLI or agent tools flow happens in no view. |
-| `description` | VARCHAR | no | Who uses it and how, in a sentence or two. |
+| `description` | VARCHAR | yes | Who uses it and how, in a sentence or two. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-flow"></a>
 
@@ -1048,7 +1062,6 @@ How its use case is carried out through one interface: the steps on its main pat
 | `title` | VARCHAR | yes | The flow's name, such as Borrow a tool at the desk. |
 | `use_case_id` | VARCHAR → [`use_case`](#table-use_case) | yes | The use case it carries out. |
 | `interface_id` | VARCHAR → [`interface`](#table-interface) | yes | The interface it goes through, of the same product; at most one flow per use case and interface. |
-| `description` | VARCHAR | no | The path, in a paragraph. |
 
 - **Key:** `id`
 - **Unique:** `use_case_id`, `interface_id`
@@ -1078,7 +1091,6 @@ One step of a flow, in order on its path. It fulfills UC requirements of its own
 | `flow_id` | VARCHAR → [`flow`](#table-flow) | yes | The flow it belongs to. |
 | `path` | VARCHAR | yes | The path through the flow the step is on, such as main or refused. |
 | `position` | INTEGER | yes | The step's place on its path, from 1. |
-| `description` | VARCHAR | no | What happens in the step, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `flow_id`, `path`, `position`
@@ -1108,11 +1120,12 @@ A screen or page a person uses. It has no owner: it exists because flow steps ha
 | `id` | VARCHAR → `record_id` | yes | The view's ID: the product prefix and V<nn>, such as TL-V01. |
 | `title` | VARCHAR | yes | The view's name, such as Catalog. |
 | `route` | VARCHAR | no | The address it is shown at, such as /catalog. |
-| `description` | VARCHAR | no | What the view shows and lets a person do, in a paragraph. |
+| `description` | VARCHAR | yes | What the view shows and lets a person do, in a paragraph. |
 | `notes` | VARCHAR | no | Longer notes on the view. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-view_requirement"></a>
 
@@ -1170,12 +1183,13 @@ An HTTP endpoint that exposes exactly one command or query, its parent. Flow ste
 | `query_id` | VARCHAR → [`query`](#table-query) | no | The query it exposes; exactly one of command and query is given. |
 | `method` | ENUM('GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS') | yes | The HTTP method. |
 | `route` | VARCHAR | yes | The route, such as /loans or /tools/{toolId}/damage. |
-| `description` | VARCHAR | no | Its request and responses, in a sentence or two. |
+| `description` | VARCHAR | yes | Its request and responses, in a sentence or two. |
 | `notes` | VARCHAR | no | Longer notes on the endpoint. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(route) != '')`
+- **Rule:** `("trim"(description) != '')`
 - **Rule:** `((command_id IS NULL) != (query_id IS NULL))`
 - **Rule:** `(title = ((CAST("method" AS VARCHAR) || ' ') || route))`
 
@@ -1232,10 +1246,11 @@ An outside system the product exchanges with, such as a payment provider or a ma
 | `id` | VARCHAR → `record_id` | yes | The integration's ID: the product prefix and INT<nn>, such as TL-INT01. |
 | `title` | VARCHAR | yes | The integration's name. |
 | `system` | VARCHAR | no | The outside system, such as Stripe. |
-| `description` | VARCHAR | no | What the product exchanges with it, in a sentence or two. |
+| `description` | VARCHAR | yes | What the product exchanges with it, in a sentence or two. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 ### Checks: interaction design
 
@@ -1352,10 +1367,11 @@ Loads and saves its aggregate, whole: the way command handlers reach the aggrega
 | `title` | VARCHAR | yes | Its name in code, such as LoanRepository. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it sits under: that of the aggregate it persists, or, for one several domains share, the domain that holds what they share. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
+| `description` | VARCHAR | yes | How it keeps its aggregate: where, in what form, and when it loads and saves, in a sentence or two. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="table-repository_share"></a>
 
@@ -1396,7 +1412,6 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 | `title` | VARCHAR | yes | Its name in code, such as Loan. |
 | `entity_id` | VARCHAR → [`entity`](#table-entity) | yes | The entity it implements; one data model each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `entity_id`
@@ -1431,7 +1446,6 @@ Where an entity or a read model, its parent, is stored, in a database or not; or
 | `name` | VARCHAR | yes | Its name where it is stored: in the database, such as loans, the key it is kept under in browser storage, such as lathe:tabs, or the file's name, such as window-state.json. |
 | `storage` | ENUM('table', 'view', 'materialized view', 'browser storage', 'file', 'in memory') | yes | table: rows of its own in a database; view: a query over other tables; materialized view: a query's result, kept; browser storage: kept by the browser (local or session storage, or its history), under the key its name gives; file: kept in a file of its own that the program reads and writes whole, such as a JSON file, named by its name; in memory: kept only while the program runs, or computed on each load. An entity's table holds rows of its own, so it is never a view or a materialized view. Keys are asked only of a table in a database: browser storage, a file and in memory have none. |
 | `file` | VARCHAR | no | The file that creates it, such as a migration, or that reads and writes it, from the product root; it may not exist yet. |
-| `description` | VARCHAR | no | Anything its keys do not say, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `entity_id`
@@ -1489,7 +1503,6 @@ Its value object in code, which checks the value object's constraints when a val
 | `title` | VARCHAR | yes | Its name in code, such as EmailAddress. |
 | `value_object_id` | VARCHAR → [`value_object`](#table-value_object) | yes | The value object it implements; one value type each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `value_object_id`
@@ -1518,7 +1531,6 @@ Its specification in code: a yes-or-no test over the records it is given.
 | `title` | VARCHAR | yes | Its name in code, such as isInGoodStanding. |
 | `specification_id` | VARCHAR → [`specification`](#table-specification) | yes | The specification it implements; one predicate each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `specification_id`
@@ -1548,7 +1560,6 @@ Its domain event's shape in code; a contract with other domains when the event i
 | `domain_event_id` | VARCHAR → [`domain_event`](#table-domain_event) | yes | The domain event it implements; one event type each. |
 | `delivery` | ENUM('in process', 'outbox') | no | How the event reaches what hears it: in process, after the transaction commits; or outbox, saved in the same transaction as its aggregate and delivered reliably afterwards. An event a policy hears is delivered by outbox, since a lost reaction is a lost change; one that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load, may be delivered in process. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `domain_event_id`
@@ -1577,11 +1588,12 @@ Fills its read model's table and keeps it current, from events or as a view's qu
 | `title` | VARCHAR | yes | Its name in code, such as overdueLoans. |
 | `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | yes | The read model it fills; one projection each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
+| `description` | VARCHAR | yes | How it fills its read model and when it is rebuilt, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `read_model_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-command_handler"></a>
 
@@ -1606,11 +1618,12 @@ Carries out its command: an application service that owns the transaction, loads
 | `title` | VARCHAR | yes | Its name in code, such as openLoan. |
 | `command_id` | VARCHAR → [`command`](#table-command) | yes | The command it handles; one command handler each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
+| `description` | VARCHAR | yes | How it carries out its command (transaction, checks, what it writes), in a sentence or two; never what the command already says. |
 
 - **Key:** `id`
 - **Unique:** `command_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-query_handler"></a>
 
@@ -1635,11 +1648,12 @@ Answers its query from its read model's table: an application service that chang
 | `title` | VARCHAR | yes | Its name in code, such as listLoans. |
 | `query_id` | VARCHAR → [`query`](#table-query) | yes | The query it answers; one query handler each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
+| `description` | VARCHAR | yes | How it answers its query (from what, kept or computed on each call), in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `query_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-event_handler"></a>
 
@@ -1664,11 +1678,12 @@ Carries out its policy: hears the policy's event and sends its command.
 | `title` | VARCHAR | yes | Its name in code, such as onToolRetired. |
 | `policy_id` | VARCHAR → [`policy`](#table-policy) | yes | The policy it carries out; one event handler each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
+| `description` | VARCHAR | yes | Where it hears its event and how it sends its command, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `policy_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-service"></a>
 
@@ -1693,7 +1708,6 @@ Its domain service in code. It never uses a repository or an outside system: its
 | `title` | VARCHAR | yes | Its name in code, such as lateFee. |
 | `domain_service_id` | VARCHAR → [`domain_service`](#table-domain_service) | yes | The domain service it implements; one service each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `domain_service_id`
@@ -1720,10 +1734,11 @@ A piece of the user interface that renders one or more views. It has no owner: i
 | `id` | VARCHAR → `record_id` | yes | The UI component's ID: the product prefix and UI<nn>, such as TL-UI01. |
 | `title` | VARCHAR | yes | Its name in code, such as CatalogPage. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet. |
-| `description` | VARCHAR | no | What it renders, in a sentence or two. |
+| `description` | VARCHAR | yes | What it renders, in a sentence or two. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-endpoint_handler"></a>
 
@@ -1748,11 +1763,12 @@ Serves its endpoint: reads the request, calls the command or query handler and w
 | `title` | VARCHAR | yes | Its name in code, such as postLoan. |
 | `endpoint_id` | VARCHAR → [`endpoint`](#table-endpoint) | yes | The endpoint it serves; one endpoint handler each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
+| `description` | VARCHAR | yes | How it reads the request, calls its handler and answers or refuses, in a sentence or two; the request and response shapes belong to the endpoint. |
 
 - **Key:** `id`
 - **Unique:** `endpoint_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-adapter"></a>
 
@@ -1777,11 +1793,12 @@ Talks to its integration's outside system, so the rest of the code does not.
 | `title` | VARCHAR | yes | Its name in code, such as mailer. |
 | `integration_id` | VARCHAR → [`integration`](#table-integration) | yes | The integration it talks to; one adapter each. |
 | `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
-| `description` | VARCHAR | no | How it works, in a sentence or two. |
+| `description` | VARCHAR | yes | How it talks to its outside system, in a sentence or two. |
 
 - **Key:** `id`
 - **Unique:** `integration_id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-standard"></a>
 
@@ -1803,10 +1820,11 @@ A library of engineering rules that holds for the product's code, such as loggin
 | `id` | VARCHAR → `record_id` | yes | The standard's ID, such as TL-STD-CODE. |
 | `title` | VARCHAR | yes | The standard's name. |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product it belongs to. |
-| `description` | VARCHAR | no | What the standard covers, in a paragraph. |
+| `description` | VARCHAR | yes | What the standard covers, in a paragraph. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-standard_rule"></a>
 
@@ -1940,16 +1958,21 @@ What some tests start from: the environment, the accounts and the starting recor
 | `id` | VARCHAR → `record_id` | yes | The data set's ID: its domain's ID and TD<nn>, such as TL-LEND-TD01. |
 | `title` | VARCHAR | yes | The data set in a few words, such as Two members, one tool on loan. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain whose tests it serves. |
-| `environment` | VARCHAR | no | Where it runs: the database, server or browser storage it is built in. |
+| `environment` | VARCHAR | yes | Where it runs: the database, server or browser storage it is built in. |
 | `accounts` | VARCHAR | no | The accounts and roles it signs in as. |
-| `records` | VARCHAR | no | The records it starts with. |
-| `prepare` | VARCHAR | no | How to prepare it before a test. |
-| `reset` | VARCHAR | no | How to reset it after a test, so the next starts clean. |
+| `records` | VARCHAR | yes | The records it starts with. |
+| `prepare` | VARCHAR | yes | How to prepare it before a test. |
+| `reset` | VARCHAR | yes | How to reset it after a test, so the next starts clean. |
 | `file` | VARCHAR | no | The seed or fixture that builds it, from the product root. |
-| `description` | VARCHAR | no | What it is for, in a sentence or two. |
+| `description` | VARCHAR | yes | What it is for, in a sentence or two. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(environment) != '')`
+- **Rule:** `("trim"(records) != '')`
+- **Rule:** `("trim"("prepare") != '')`
+- **Rule:** `("trim"("reset") != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-constraint_test"></a>
 
@@ -1980,8 +2003,8 @@ Proves its constraint: the values its value object accepts and refuses.
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `accepts` | VARCHAR | no | Values the value object accepts, such as a@b.org. |
-| `refuses` | VARCHAR | no | Values it refuses, and how. |
+| `accepts` | VARCHAR | yes | Values the value object accepts, such as a@b.org. |
+| `refuses` | VARCHAR | yes | Values it refuses, and how. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
@@ -1989,6 +2012,8 @@ Proves its constraint: the values its value object accepts and refuses.
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"(accepts) != '')`
+- **Rule:** `("trim"(refuses) != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2021,9 +2046,8 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `given` | VARCHAR | no | The state the test starts from. |
-| `when` | VARCHAR | no | What the test does. |
-| `then` | VARCHAR | no | What the test expects. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
@@ -2031,6 +2055,8 @@ Proves its invariant: a change that would break it is refused, and the aggregate
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2063,9 +2089,8 @@ Proves its specification: which records satisfy the predicate and which do not.
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `given` | VARCHAR | no | The state the test starts from. |
-| `when` | VARCHAR | no | What the test does. |
-| `then` | VARCHAR | no | What the test expects. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
@@ -2073,6 +2098,8 @@ Proves its specification: which records satisfy the predicate and which do not.
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2105,9 +2132,8 @@ Proves its policy: when its event happens, its command is sent.
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `given` | VARCHAR | no | The state the test starts from. |
-| `when` | VARCHAR | no | What the test does. |
-| `then` | VARCHAR | no | What the test expects. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
@@ -2115,6 +2141,8 @@ Proves its policy: when its event happens, its command is sent.
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2147,15 +2175,16 @@ Proves its domain service: from the inputs given, the value or decision it retur
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `given` | VARCHAR | no | The state the test starts from. |
-| `when` | VARCHAR | no | What the test does. |
-| `then` | VARCHAR | no | What the test expects. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2188,15 +2217,16 @@ Proves its UC requirement, at the level the use case is stated: what the actor d
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `given` | VARCHAR | no | The state the test starts from. |
-| `when` | VARCHAR | no | What the test does. |
-| `then` | VARCHAR | no | What the test expects. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2229,15 +2259,16 @@ Proves its view requirement in the view.
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `given` | VARCHAR | no | The state the test starts from. |
-| `when` | VARCHAR | no | What the test does. |
-| `then` | VARCHAR | no | What the test expects. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2270,15 +2301,16 @@ Proves its API requirement at the endpoint: the request and the response.
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `given` | VARCHAR | no | The state the test starts from. |
-| `when` | VARCHAR | no | What the test does. |
-| `then` | VARCHAR | no | What the test expects. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2311,8 +2343,8 @@ A smoke test of its flow's main path, end to end, at the level that fits its int
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `steps` | VARCHAR[] | no | What the test does along the main path, step by step. |
-| `expected_result` | VARCHAR | no | What it expects at the end. |
+| `steps` | VARCHAR[] | yes | What the test does along the main path, step by step. |
+| `expected_result` | VARCHAR | yes | What it expects at the end. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
@@ -2320,6 +2352,8 @@ A smoke test of its flow's main path, end to end, at the level that fits its int
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `(len(steps) >= 1)`
+- **Rule:** `("trim"(expected_result) != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2352,15 +2386,16 @@ Proves an exchange with its integration's outside system.
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `given` | VARCHAR | no | The state the test starts from. |
-| `when` | VARCHAR | no | What the test does. |
-| `then` | VARCHAR | no | What the test expects. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2394,9 +2429,8 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `given` | VARCHAR | no | The state the test starts from. |
-| `when` | VARCHAR | no | What the test does. |
-| `then` | VARCHAR | no | What the test expects. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
@@ -2404,6 +2438,8 @@ Proves its pattern rule in one domain that adopts the pattern: one test per patt
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2436,15 +2472,16 @@ Proves its standard rule in the product's code, such as a scan of the code for w
 | `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
 | `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
 | `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
-| `given` | VARCHAR | no | The state the test starts from. |
-| `when` | VARCHAR | no | What the test does. |
-| `then` | VARCHAR | no | What the test expects. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
 | `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `smoke`
 - **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
 - **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
 - **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
 
@@ -2583,13 +2620,14 @@ A product: the root of a set of specifications.
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The product's ID, its prefix, such as TL. |
 | `title` | VARCHAR | yes | The product's name, such as Tool Library. |
-| `description` | VARCHAR | no | What the product is, who it is for and what it must do, in a paragraph. |
+| `description` | VARCHAR | yes | What the product is, who it is for and what it must do, in a paragraph. |
 | `icon` | VARCHAR | no | An emoji or short text shown for the product in the app's space rail. |
 | `color` | VARCHAR | no | A CSS color for the product in the app's space rail. |
 | `notes` | VARCHAR | no | Longer notes on the product, such as how it is delivered. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="table-role"></a>
 
@@ -2601,10 +2639,11 @@ A role the product's records name, such as Owner, Reader or Agent: a use case's 
 | --- | --- | --- | --- |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product. |
 | `name` | VARCHAR | yes | The role's name, such as Librarian. |
-| `description` | VARCHAR | no | Who takes the role and what they do. |
+| `description` | VARCHAR | yes | Who takes the role and what they do in the product, in a sentence. |
 
 - **Key:** `product_id`, `name`
 - **Rule:** `("trim"("name") != '')`
+- **Rule:** `("trim"(description) != '')`
 
 <a id="kind-question"></a>
 
@@ -2628,11 +2667,12 @@ Something undecided, with the role that decides it. It sits under its product or
 | `product_id` | VARCHAR → [`product`](#table-product) | no | The product it sits under, for a question of the whole product; exactly one of product and domain is given. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | no | The domain it sits under; exactly one of product and domain is given. |
 | `owner` | VARCHAR | yes | The role that decides it, one of the product's roles, such as Owner. |
-| `description` | VARCHAR | no | What is open, and the options. |
+| `description` | VARCHAR | yes | What is open and the options, in a paragraph. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("owner") != '')`
+- **Rule:** `("trim"(description) != '')`
 - **Rule:** `((product_id IS NULL) != (domain_id IS NULL))`
 
 ## Other tables
@@ -2675,7 +2715,7 @@ One typed field of a product kind, in order: a column of its table.
 | --- | --- | --- | --- |
 | `kind` | VARCHAR → [`product_kind`](#table-product_kind) | yes | The product kind. |
 | `position` | INTEGER | yes | The field's place among the kind's columns, from 1. |
-| `name` | VARCHAR | yes | The column's name, in lower case with underscores; not id, title or the parent column. |
+| `name` | VARCHAR | yes | The column's name, in lower case with underscores; not id, title or the parent column. A field named statement, goal, meaning or description is the kind's lead text, shown first on its records' pages: a kind has at most one, and it must be required. |
 | `type` | ENUM('text', 'integer', 'boolean', 'date') | yes | text, integer, boolean or date (YYYY-MM-DD). |
 | `required` | BOOLEAN | yes | Whether every record of the kind must give it. |
 | `description` | VARCHAR | yes | What the field holds. |

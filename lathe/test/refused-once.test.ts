@@ -26,14 +26,14 @@ describe('one problem per mistake', () => {
 
   it('LA-CHK-UC04-R07-T01 A row taking another record\'s ID is refused once, as unique-id naming that record\'s file and line, and the links to the ID are not', async () => {
     // EX-LEND-SP01 is the target of a checks link and the source of a reads link.
-    const twin = { id: 'EX-LEND-SP01', title: 'Twin', uc_requirement_id: 'EX-LEND-UC01-R01', level: 'service', state: 'not automated yet' };
+    const twin = { id: 'EX-LEND-SP01', title: 'Twin', uc_requirement_id: 'EX-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'A member asks for a tool on loan.', then: 'The library refuses.' };
     expect(await refusals(adding(complete(), { use_case_test: [twin] }))).toEqual([
       expect.objectContaining({ rule: 'unique-id', file: 'data/use_case_test.jsonl', line: 3, message: expect.stringContaining('already a specification (data/specification.jsonl:1)') }),
     ]);
   });
 
   it('LA-CHK-UC04-R08-T01 A parent that names no record is refused once, as a foreign key naming the record and the kind it must be', async () => {
-    const lost = { id: 'EX-LEND-UC03', title: 'Lost', capability_id: 'EX-LEND-CAP09' };
+    const lost = { id: 'EX-LEND-UC03', title: 'Lost', capability_id: 'EX-LEND-CAP09', goal: 'A member finds a lost tool.' };
     const actor = { use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Member' };
     expect(await refusals(adding(complete(), { use_case: [lost], use_case_actor: [actor] }))).toEqual([
       expect.objectContaining({ rule: 'foreign-key', file: 'data/use_case.jsonl', line: 3, message: 'use_case EX-LEND-UC03: capability_id "EX-LEND-CAP09" names no capability' }),

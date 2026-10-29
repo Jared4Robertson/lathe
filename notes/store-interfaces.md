@@ -20,78 +20,78 @@ The full description, with every column's meaning, is `store.schema` at run time
 
 | Stage | Kind | Parent | Columns besides id and title (? = optional) | ID |
 | --- | --- | --- | --- | --- |
-| — | `product` | none | description?, icon?, color?, notes? | `<P>` |
+| — | `product` | none | description, icon?, color?, notes? | `<P>` |
 | discovery | `business_outcome` | product (product_id) | statement, measure, target, measured_outside?, notes? | `<P>-BO<nn>` |
-| domain-model | `domain` | product (product_id) | subdomain_type (core/supporting/generic), description?, notes? | `<P>-<D>` |
-| domain-model | `aggregate` | domain (domain_id) | description?, identity?, notes? | `<P>-<D>-A<n>` |
-| domain-model | `entity` | aggregate (aggregate_id) | role (root/child), in_root_table? (bool), description? | `<P>-<D>-EN<nn>` |
-| domain-model | `value_object` | none | description? | `<P>-VO<nn>` |
+| domain-model | `domain` | product (product_id) | subdomain_type (core/supporting/generic), description, notes? | `<P>-<D>` |
+| domain-model | `aggregate` | domain (domain_id) | description, identity, notes? | `<P>-<D>-A<n>` |
+| domain-model | `entity` | aggregate (aggregate_id) | role (root/child), in_root_table? (bool), description | `<P>-<D>-EN<nn>` |
+| domain-model | `value_object` | none | description | `<P>-VO<nn>` |
 | domain-model | `constraint` | value_object (value_object_id) | statement | `<value object>-C<nn>` |
 | domain-model | `invariant` | aggregate (aggregate_id) | statement | `<P>-<D>-INV<nn>` |
 | domain-model | `specification` | none | statement | `<P>-<D>-SP<nn>` |
-| domain-model | `domain_event` | aggregate (aggregate_id) | published (bool), description? | `<P>-<D>-EV<nn>` |
-| domain-model | `command` | aggregate (aggregate_id) | description?; part `command_change` (aggregate_id, reason): another aggregate of its domain it also changes in the same transaction, a recorded exception (`command-change-in-domain` refuses its own aggregate or another domain's), listed by the engine's `Workspace.exceptions`, never a problem | `<P>-<D>-CMD<nn>` |
-| domain-model | `read_model` | domain (domain_id) | description? | `<P>-<D>-RM<nn>` |
-| domain-model | `query` | read_model (read_model_id) | description? | `<P>-<D>-QRY<nn>` |
+| domain-model | `domain_event` | aggregate (aggregate_id) | published (bool), description | `<P>-<D>-EV<nn>` |
+| domain-model | `command` | aggregate (aggregate_id) | description; part `command_change` (aggregate_id, reason): another aggregate of its domain it also changes in the same transaction, a recorded exception (`command-change-in-domain` refuses its own aggregate or another domain's), listed by the engine's `Workspace.exceptions`, never a problem | `<P>-<D>-CMD<nn>` |
+| domain-model | `read_model` | domain (domain_id) | description | `<P>-<D>-RM<nn>` |
+| domain-model | `query` | read_model (read_model_id) | description | `<P>-<D>-QRY<nn>` |
 | domain-model | `policy` | command (command_id) | statement | `<P>-<D>-PO<nn>` |
 | domain-model | `domain_service` | domain (domain_id) | statement | `<P>-<D>-DS<nn>` |
 | domain-model | `term` | domain (domain_id) | meaning, group_name? | `<P>-<D>-TM<nn>` |
-| use-cases | `capability` | domain (domain_id) | position (int), description? | `<P>-<D>-CAP<nn>` |
-| use-cases | `use_case` | capability (capability_id) | goal?, notes? | `<P>-<D>-UC<nn>` |
+| use-cases | `capability` | domain (domain_id) | position (int), description | `<P>-<D>-CAP<nn>` |
+| use-cases | `use_case` | capability (capability_id) | goal, notes? | `<P>-<D>-UC<nn>` |
 | use-cases | `uc_requirement` | use_case (use_case_id) | statement, group_name? | `<use case>-R<nn>` |
-| use-cases | `pattern` | product (product_id) | description?, notes? | `<P>-PAT-<name>` |
+| use-cases | `pattern` | product (product_id) | description, notes? | `<P>-PAT-<name>` |
 | use-cases | `pattern_rule` | pattern (pattern_id) | statement, group_name?, setting?, applies_when_setting?, applies_when_negated? (bool), applies_when_value?, notes? | `<pattern>-R<nn>` |
-| interaction-design | `interface` | product (product_id) | kind (web app/API/CLI/agent tools/desktop/other), description? | `<P>-IF<nn>` |
-| interaction-design | `flow` | use_case (use_case_id) | interface_id (the interface it goes through), description? | `<use case>-FL<nn>`, `<nn>` its interface's number |
-| interaction-design | `flow_step` | flow (flow_id) | path, position (int), description? | `<flow>-S<nn>` |
-| interaction-design | `view` | none | route?, description?, notes? | `<P>-V<nn>` |
+| interaction-design | `interface` | product (product_id) | kind (web app/API/CLI/agent tools/desktop/other), description | `<P>-IF<nn>` |
+| interaction-design | `flow` | use_case (use_case_id) | interface_id (the interface it goes through) | `<use case>-FL<nn>`, `<nn>` its interface's number |
+| interaction-design | `flow_step` | flow (flow_id) | path, position (int) | `<flow>-S<nn>` |
+| interaction-design | `view` | none | route?, description, notes? | `<P>-V<nn>` |
 | interaction-design | `view_requirement` | view (view_id) | statement, group_name? | `<view>-R<nn>` |
-| interaction-design | `endpoint` | command (command_id) or query (query_id) | method (GET/POST/PUT/PATCH/DELETE/HEAD/OPTIONS), route, description?, notes? | `<P>-<D>-EP<nn>` |
+| interaction-design | `endpoint` | command (command_id) or query (query_id) | method (GET/POST/PUT/PATCH/DELETE/HEAD/OPTIONS), route, description, notes? | `<P>-<D>-EP<nn>` |
 | interaction-design | `api_requirement` | endpoint (endpoint_id) | statement, group_name? | `<endpoint>-R<nn>` |
-| interaction-design | `integration` | none | system?, description? | `<P>-INT<nn>` |
-| technical-specification | `repository` | domain (domain_id) | file?, description?; part `repository_share` (aggregate_id, reason): another aggregate it also persists, which has no repository of its own, a recorded exception (`repository-share-unpersisted` refuses one a repository persists) | `<domain>-REPO<nn>` |
-| technical-specification | `data_model` | entity (entity_id) | file?, description? | `<entity>-DM` |
-| technical-specification | `table` | entity (entity_id) or read_model (read_model_id) | name, storage (table/view/materialized view/browser storage/file/in memory), file?, description? | `<entity or read model>-TB` |
-| technical-specification | `value_type` | value_object (value_object_id) | file?, description? | `<value object>-VT` |
-| technical-specification | `predicate` | specification (specification_id) | file?, description? | `<specification>-PR` |
-| technical-specification | `event_type` | domain_event (domain_event_id) | delivery? (in process/outbox), file?, description? | `<domain event>-ET` |
-| technical-specification | `projection` | read_model (read_model_id) | file?, description? | `<read model>-PJ` |
-| technical-specification | `command_handler` | command (command_id) | file?, description? | `<command>-H` |
-| technical-specification | `query_handler` | query (query_id) | file?, description? | `<query>-H` |
-| technical-specification | `event_handler` | policy (policy_id) | file?, description? | `<policy>-H` |
-| technical-specification | `service` | domain_service (domain_service_id) | file?, description? | `<domain service>-SV` |
-| technical-specification | `ui_component` | none | file?, description? | `<P>-UI<nn>` |
-| technical-specification | `endpoint_handler` | endpoint (endpoint_id) | file?, description? | `<endpoint>-H` |
-| technical-specification | `adapter` | integration (integration_id) | file?, description? | `<integration>-AD` |
-| technical-specification | `standard` | product (product_id) | description? | `<P>-STD-<name>` |
+| interaction-design | `integration` | none | system?, description | `<P>-INT<nn>` |
+| technical-specification | `repository` | domain (domain_id) | file?, description; part `repository_share` (aggregate_id, reason): another aggregate it also persists, which has no repository of its own, a recorded exception (`repository-share-unpersisted` refuses one a repository persists) | `<domain>-REPO<nn>` |
+| technical-specification | `data_model` | entity (entity_id) | file? | `<entity>-DM` |
+| technical-specification | `table` | entity (entity_id) or read_model (read_model_id) | name, storage (table/view/materialized view/browser storage/file/in memory), file? | `<entity or read model>-TB` |
+| technical-specification | `value_type` | value_object (value_object_id) | file? | `<value object>-VT` |
+| technical-specification | `predicate` | specification (specification_id) | file? | `<specification>-PR` |
+| technical-specification | `event_type` | domain_event (domain_event_id) | delivery? (in process/outbox), file? | `<domain event>-ET` |
+| technical-specification | `projection` | read_model (read_model_id) | file?, description | `<read model>-PJ` |
+| technical-specification | `command_handler` | command (command_id) | file?, description | `<command>-H` |
+| technical-specification | `query_handler` | query (query_id) | file?, description | `<query>-H` |
+| technical-specification | `event_handler` | policy (policy_id) | file?, description | `<policy>-H` |
+| technical-specification | `service` | domain_service (domain_service_id) | file? | `<domain service>-SV` |
+| technical-specification | `ui_component` | none | file?, description | `<P>-UI<nn>` |
+| technical-specification | `endpoint_handler` | endpoint (endpoint_id) | file?, description | `<endpoint>-H` |
+| technical-specification | `adapter` | integration (integration_id) | file?, description | `<integration>-AD` |
+| technical-specification | `standard` | product (product_id) | description | `<P>-STD-<name>` |
 | technical-specification | `standard_rule` | standard (standard_id) | statement, group_name? | `<standard>-R<nn>` |
-| test-plan | `test_data_set` | domain (domain_id) | environment?, accounts?, records?, prepare?, reset?, file?, description? | `<P>-<D>-TD<nn>` |
-| test-plan | `constraint_test` | constraint (constraint_id) | run by, accepts?, refuses?, notes? | `<constraint>-T` |
-| test-plan | `invariant_test` | invariant (invariant_id) | run by, given?, when?, then?, notes? | `<invariant>-T` |
-| test-plan | `specification_test` | specification (specification_id) | run by, given?, when?, then?, notes? | `<specification>-T` |
-| test-plan | `policy_test` | policy (policy_id) | run by, given?, when?, then?, notes? | `<policy>-T` |
-| test-plan | `domain_service_test` | domain_service (domain_service_id) | run by, given?, when?, then?, notes? | `<domain service>-T<nn>` |
-| test-plan | `use_case_test` | uc_requirement (uc_requirement_id) | run by, given?, when?, then?, notes? | `<UC requirement>-T<nn>` |
-| test-plan | `view_test` | view_requirement (view_requirement_id) | run by, given?, when?, then?, notes? | `<view requirement>-T<nn>` |
-| test-plan | `endpoint_test` | api_requirement (api_requirement_id) | run by, given?, when?, then?, notes? | `<API requirement>-T<nn>` |
-| test-plan | `flow_test` | flow (flow_id) | run by, steps? (list), expected_result?, notes? | `<flow>-T` |
-| test-plan | `integration_test` | integration (integration_id) | run by, given?, when?, then?, notes? | `<integration>-T<nn>` |
-| test-plan | `pattern_rule_test` | pattern_rule (pattern_rule_id) | domain_id, run by, given?, when?, then?, notes? | `<pattern rule>-T<nn>` |
-| test-plan | `standard_rule_test` | standard_rule (standard_rule_id) | run by, given?, when?, then?, notes? | `<standard rule>-T<nn>` |
-| — | `question` | product (product_id) or domain (domain_id) | owner, description? | `<P>-Q<nn> or <P>-<D>-Q<nn>` |
+| test-plan | `test_data_set` | domain (domain_id) | environment, accounts?, records, prepare, reset, file?, description | `<P>-<D>-TD<nn>` |
+| test-plan | `constraint_test` | constraint (constraint_id) | run by, accepts, refuses, notes? | `<constraint>-T` |
+| test-plan | `invariant_test` | invariant (invariant_id) | run by, when, then, notes? | `<invariant>-T` |
+| test-plan | `specification_test` | specification (specification_id) | run by, when, then, notes? | `<specification>-T` |
+| test-plan | `policy_test` | policy (policy_id) | run by, when, then, notes? | `<policy>-T` |
+| test-plan | `domain_service_test` | domain_service (domain_service_id) | run by, when, then, notes? | `<domain service>-T<nn>` |
+| test-plan | `use_case_test` | uc_requirement (uc_requirement_id) | run by, when, then, notes? | `<UC requirement>-T<nn>` |
+| test-plan | `view_test` | view_requirement (view_requirement_id) | run by, when, then, notes? | `<view requirement>-T<nn>` |
+| test-plan | `endpoint_test` | api_requirement (api_requirement_id) | run by, when, then, notes? | `<API requirement>-T<nn>` |
+| test-plan | `flow_test` | flow (flow_id) | run by, steps (list), expected_result, notes? | `<flow>-T` |
+| test-plan | `integration_test` | integration (integration_id) | run by, when, then, notes? | `<integration>-T<nn>` |
+| test-plan | `pattern_rule_test` | pattern_rule (pattern_rule_id) | domain_id, run by, when, then, notes? | `<pattern rule>-T<nn>` |
+| test-plan | `standard_rule_test` | standard_rule (standard_rule_id) | run by, when, then, notes? | `<standard rule>-T<nn>` |
+| — | `question` | product (product_id) or domain (domain_id) | owner, description | `<P>-Q<nn> or <P>-<D>-Q<nn>` |
 
 | Part, checking or declaration table | Key | Columns |
 | --- | --- | --- |
 | `check` (checking) | name | name, product_id?, position (int), severity (error/warning/error_or_warning), summary, explanation, query, kinds? (list) |
 | `entity_field` (part) | entity_id, position | entity_id, position (int), name, meaning, type? (text/whole number/decimal/date/time/date and time/yes/no), type_value_object_id?, type_aggregate_id?, required (bool), column_name?, example? |
 | `event_field` (part) | domain_event_id, position | domain_event_id, position (int), name, meaning, type? (text/whole number/decimal/date/time/date and time/yes/no), type_value_object_id?, type_aggregate_id?, required (bool), column_name?, example? |
-| `pattern_setting` (part) | pattern_id, position | pattern_id, position (int), name, meaning? |
+| `pattern_setting` (part) | pattern_id, position | pattern_id, position (int), name, meaning |
 | `product_kind` (declaration) | name | name, product_id, label, description, parent_kind, stage? (domain-model/use-cases/interaction-design/technical-specification/test-plan), obligation (bool), id_pattern?, id_example? |
-| `product_kind_field` (declaration) | kind, position | kind, position (int), name, type (text/integer/boolean/date), required (bool), description |
+| `product_kind_field` (declaration) | kind, position | kind, position (int), name, type (text/integer/boolean/date), required (bool), description; a field named statement, goal, meaning or description is the kind's lead: at most one, and required |
 | `product_relation` (declaration) | name, source_kind, target_kind | name, source_kind, target_kind, product_id, role? (design/proof), forward_label, reverse_label, description |
 | `product_setting` (checking) | product_id | product_id, max_children (int), max_entities_per_aggregate (int) |
 | `read_model_field` (part) | read_model_id, position | read_model_id, position (int), name, meaning, type? (text/whole number/decimal/date/time/date and time/yes/no), type_value_object_id?, type_aggregate_id?, required (bool), column_name?, example? |
-| `role` (part) | product_id, name | product_id, name, description? |
+| `role` (part) | product_id, name | product_id, name, description |
 | `setting_value` (part) | follower_id, pattern_id, setting | follower_id, pattern_id, setting, value?, not_applicable? |
 | `table_key` (part) | table_id, position | table_id, position (int), type (primary/unique/foreign/index), columns (list), name?, invariant_id?, target_table_id?, condition? |
 | `use_case_actor` (part) | use_case_id, position | use_case_id, position (int), role_name |

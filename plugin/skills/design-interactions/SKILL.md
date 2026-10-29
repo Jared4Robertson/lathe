@@ -23,14 +23,14 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 | Kind | Parent | ID | Holds |
 | --- | --- | --- | --- |
-| `interface` | the product | `<P>-IF<nn>` | A way the product is used, such as Web app, HTTP API, CLI, MCP tools or Desktop app. `kind`: `web app`, `API`, `CLI`, `agent tools`, `desktop` or `other`; `description`. |
-| `flow` | its use case | `<use case>-FL<nn>`, `<nn>` its interface's number | `interface_id`: the interface it goes through, at most one flow per use case and interface; `description`: how the use case is carried out through it. |
-| `flow_step` | the flow | `<flow>-S<nn>` | `path` (such as `main` or `refused`), `position` on that path, from 1; `description`. Links: `invokes` at most one command or query, `happens_in` at most one view, `exchanges_with` integrations, `fulfills` UC requirements of its own use case. |
-| `view` | none | `<P>-V<nn>` | A screen or page. `route`, `description`, `notes`. |
+| `interface` | the product | `<P>-IF<nn>` | A way the product is used, such as Web app, HTTP API, CLI, MCP tools or Desktop app. `kind`: `web app`, `API`, `CLI`, `agent tools`, `desktop` or `other`; `description` (required): who uses it and how, in a sentence or two. |
+| `flow` | its use case | `<use case>-FL<nn>`, `<nn>` its interface's number | `interface_id`: the interface it goes through, at most one flow per use case and interface. No text of its own: its title names the path, its use case's goal says why, and its steps say how. |
+| `flow_step` | the flow | `<flow>-S<nn>` | `path` (such as `main` or `refused`), `position` on that path, from 1. No text beyond its title, which says what happens. Links: `invokes` at most one command or query, `happens_in` at most one view, `exchanges_with` integrations, `fulfills` UC requirements of its own use case. |
+| `view` | none | `<P>-V<nn>` | A screen or page. `route`; `description` (required): what it shows and lets a person do, in a paragraph; `notes`. |
 | `view_requirement` | the view | `<view>-R<nn>` | `statement`: one rule the view must follow. |
-| `endpoint` | the command or query it exposes (exactly one) | `<P>-<D>-EP<nn>` | `method`, `route`, `description` (request and responses in brief), `notes`. |
+| `endpoint` | the command or query it exposes (exactly one) | `<P>-<D>-EP<nn>` | `method`, `route`, `description` (required): its request and responses, in a sentence or two; `notes`. |
 | `api_requirement` | the endpoint | `<endpoint>-R<nn>` | `statement`: one rule the endpoint must follow. |
-| `integration` | none | `<P>-INT<nn>` | An outside system, such as a mail service. `system`: its name; `description`. |
+| `integration` | none | `<P>-INT<nn>` | An outside system, such as a mail service. `system`: its name; `description` (required): what the product exchanges with it. |
 
 ## Naming
 
@@ -90,8 +90,7 @@ add  { "interface": { "id": "TL-IF01", "title": "HTTP API", "product_id": "TL", 
 The Return a tool flow through it: the librarian records the return (which invokes the command an endpoint exposes), a refused return, and the result.
 
 ```
-add  { "flow": { "id": "TL-LEND-UC04-FL01", "title": "Return a tool through the HTTP API", "use_case_id": "TL-LEND-UC04", "interface_id": "TL-IF01",
-       "description": "How a librarian takes a tool back and closes its loan." } }
+add  { "flow": { "id": "TL-LEND-UC04-FL01", "title": "Return a tool through the HTTP API", "use_case_id": "TL-LEND-UC04", "interface_id": "TL-IF01" } }
 add  { "flow_step": { "id": "TL-LEND-UC04-FL01-S02", "title": "The librarian records the condition and, optionally, a note",
        "flow_id": "TL-LEND-UC04-FL01", "path": "main", "position": 2 } }
 link { "source": "TL-LEND-UC04-FL01-S02", "relation": "invokes", "target": "TL-LEND-CMD06" }
@@ -121,5 +120,6 @@ link { "source": "TL-LEND-UC03-FL01-S04", "relation": "exchanges_with", "target"
 ## Rules
 
 - A view or API requirement does not restate a UC requirement: it says how the rule shows here (a status code, a message, a disabled button). The UC requirement is fulfilled by the step; the view or API requirement is proved by its own test.
-- A step's description may name the route it calls, but the link is to the command or query: the endpoint follows from it.
+- A step links to the command or query it invokes, never to a route: the endpoint follows from it.
+- Every kind's text is required or absent (`LA-STD-MODELING-R10`): an interface, view, endpoint and integration must have their description, and a flow or step has none; put what a step's title cannot hold into a requirement it fulfills.
 - Next, write the technical records that implement the design with the `write-the-technical-spec` skill, then finish with `check-and-fix`.

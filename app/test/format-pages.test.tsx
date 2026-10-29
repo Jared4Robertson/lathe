@@ -69,7 +69,8 @@ describe('format reference pages', () => {
     // Each column of its table, with its type, whether it is required and its meaning.
     const goal = within(fields).getByText('goal').closest('tr')!;
     expect(goal).toHaveAttribute('id', 'field-goal');
-    expect(goal).toHaveTextContent(/goaltextno/);
+    expect(goal).toHaveTextContent(/goaltextyes/);
+    expect(within(fields).getByText('notes').closest('tr')).toHaveTextContent(/notestextno/);
     expect(within(fields).getByText('capability_id').closest('tr')).toHaveTextContent(/capability_idtextyes/);
     expect(fact(fields, 'ID')).toBe('<P>-<D>-UC<nn>, such as TL-LEND-UC01');
     expect(fact(fields, 'ID starts with')).toBe("Its domain's ID and a hyphen");
@@ -89,7 +90,7 @@ describe('format reference pages', () => {
     expect(within(example).getByRole('link', { name: /DM-PAY-UC01/ })).toHaveAttribute('href', '/DM-PAY-UC01');
     // Its row as its data file holds it.
     expect(example).toHaveTextContent('on line 1 of data/use_case.jsonl');
-    expect(example.querySelector('pre')).toHaveTextContent('{"id":"DM-PAY-UC01","title":"Pay by card","capability_id":"DM-PAY-CAP01"}');
+    expect(example.querySelector('pre')).toHaveTextContent('{"id":"DM-PAY-UC01","title":"Pay by card","capability_id":"DM-PAY-CAP01","goal":"A shopper pays for the basket by card."}');
 
     const records = section(/^Records/);
     expect(records).toHaveTextContent('2 use cases in Demo shop, under:');

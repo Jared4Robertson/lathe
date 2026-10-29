@@ -1,5 +1,5 @@
-{"id":"TL-LEND-EN01-DM","title":"Member","entity_id":"TL-LEND-EN01","file":"src/model.ts","description":"The `Member` interface; `toMember` in store.ts maps its row."}
-{"id":"TL-LEND-EN02-DM","title":"Tool","entity_id":"TL-LEND-EN02","file":"src/model.ts","description":"The `Tool` interface; `toTool` in store.ts maps its row."}
-{"id":"TL-LEND-EN03-DM","title":"Tool.damageNote","entity_id":"TL-LEND-EN03","file":"src/model.ts","description":"The damage report, stored on its tool: the `Tool` interface's `damageNote`."}
-{"id":"TL-LEND-EN04-DM","title":"Loan","entity_id":"TL-LEND-EN04","file":"src/model.ts","description":"The `Loan` interface; `toLoan` in store.ts maps its row."}
-{"id":"TL-LEND-EN05-DM","title":"Loan.returnedAt","entity_id":"TL-LEND-EN05","file":"src/model.ts","description":"The return, stored on its loan: the `Loan` interface's `returnedAt`, `returnCondition` and `returnNote`."}
+{"id":"TL-LEND-EN01-DM","title":"Member","entity_id":"TL-LEND-EN01","file":"src/model.ts"}
+{"id":"TL-LEND-EN02-DM","title":"Tool","entity_id":"TL-LEND-EN02","file":"src/model.ts"}
+{"id":"TL-LEND-EN03-DM","title":"Tool.damageNote","entity_id":"TL-LEND-EN03","file":"src/model.ts"}
+{"id":"TL-LEND-EN04-DM","title":"Loan","entity_id":"TL-LEND-EN04","file":"src/model.ts"}
+{"id":"TL-LEND-EN05-DM","title":"Loan.returnedAt","entity_id":"TL-LEND-EN05","file":"src/model.ts"}

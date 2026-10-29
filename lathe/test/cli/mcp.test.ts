@@ -46,11 +46,11 @@ describe('the tools', () => {
     expect(add.properties.check.properties.kinds).toMatchObject({ type: 'array', items: { type: 'string', minLength: 1 } });
     expect(add.properties.invariant.required).toEqual(['id', 'title', 'aggregate_id', 'statement']);
     // Two possible parents: exactly one of them; no owner: no parent column.
-    expect(add.properties.endpoint.required).toEqual(['id', 'title', 'method', 'route']);
+    expect(add.properties.endpoint.required).toEqual(['id', 'title', 'method', 'route', 'description']);
     expect(add.properties.endpoint.oneOf).toEqual([{ required: ['command_id'] }, { required: ['query_id'] }]);
     expect(add.properties.endpoint.description).toContain('Parent: exactly one of command (command_id) or query (query_id).');
     expect(add.properties.view.description).toContain('No owner: no parent column; its product is the one its ID starts with.');
-    expect(add.properties.view.required).toEqual(['id', 'title']);
+    expect(add.properties.view.required).toEqual(['id', 'title', 'description']);
     expect(add.properties.view.oneOf).toBeUndefined();
 
     // set: the key is required, other columns may be null (cleared), and parent columns are left to move.
@@ -216,7 +216,7 @@ describe('the server', () => {
     send({ id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1' } } });
     send({ method: 'notifications/initialized' });
     send({ id: 2, method: 'tools/list' });
-    send({ id: 3, method: 'tools/call', params: { name: 'add', arguments: { view: { id: 'TL-V02', title: 'Desk' } } } });
+    send({ id: 3, method: 'tools/call', params: { name: 'add', arguments: { view: { id: 'TL-V02', title: 'Desk', description: 'The desk where tools go out.' } } } });
     send({
       id: 4,
       method: 'tools/call',

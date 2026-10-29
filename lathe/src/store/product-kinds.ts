@@ -1,5 +1,6 @@
 // A product's own kinds and relations: from its product_kind, product_kind_field and product_relation rows, the SQL
 // that makes their tables, with the same registry, keys and checks as Lathe's own kinds, and their meta-model rows.
+import { isLeadColumn } from '../lead.ts';
 import type { Row } from './rows.ts';
 import { sqlName, sqlString, type SchemaDescription } from './schema.ts';
 
@@ -64,10 +65,19 @@ export function productKindSql(
       `COMMENT ON COLUMN ${sqlName(name)}.title IS 'The record''s title.';`,
       `COMMENT ON COLUMN ${sqlName(name)}.${sqlName(parentColumn)} IS ${literal(`The ${parent} it sits under.`)};`,
     ];
+    const leads = fields.filter((f) => isLeadColumn(String(f.name)));
     for (const field of fields) {
       const column = String(field.name);
       if (column === 'id' || column === 'title' || column === parentColumn) {
         problems.push({ table: 'product_kind_field', row: field, message: `The field ${column} of ${name} has the name of a column every ${name} already has.` });
+        continue;
+      }
+      if (isLeadColumn(column) && field !== leads[0]) {
+        problems.push({ table: 'product_kind_field', row: field, message: `The field ${column} of ${name} is a second lead text, after ${String(leads[0].name)}: a kind has at most one of statement, goal, meaning and description.` });
+        continue;
+      }
+      if (isLeadColumn(column) && field.required !== true) {
+        problems.push({ table: 'product_kind_field', row: field, message: `The field ${column} of ${name} is its lead text, so it must be required: a kind's text is required or absent.` });
         continue;
       }
       const type = FIELD_SQL_TYPES[field.type as keyof typeof FIELD_SQL_TYPES];

@@ -8,14 +8,14 @@ CREATE TABLE repository (
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_id VARCHAR NOT NULL REFERENCES domain (id),
   file VARCHAR,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE repository IS 'Loads and saves its aggregate, whole: the way command handlers reach the aggregate''s storage. It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason.';
 COMMENT ON COLUMN repository.id IS 'The repository''s ID: its domain''s ID and REPO<nn>, such as TL-LEND-REPO01.';
 COMMENT ON COLUMN repository.title IS 'Its name in code, such as LoanRepository.';
 COMMENT ON COLUMN repository.domain_id IS 'The domain it sits under: that of the aggregate it persists, or, for one several domains share, the domain that holds what they share.';
 COMMENT ON COLUMN repository.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN repository.description IS 'How it works, in a sentence or two.';
+COMMENT ON COLUMN repository.description IS 'How it keeps its aggregate: where, in what form, and when it loads and saves, in a sentence or two.';
 
 CREATE TABLE repository_share (
   repository_id VARCHAR NOT NULL REFERENCES repository (id),
@@ -32,43 +32,37 @@ CREATE TABLE data_model (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   entity_id VARCHAR NOT NULL UNIQUE REFERENCES entity (id),
-  file VARCHAR,
-  description VARCHAR
+  file VARCHAR
 );
 COMMENT ON TABLE data_model IS 'Its entity in code: the entity''s data, behavior and mapping to its table. A command is carried out by its handler and its aggregate root''s data model.';
 COMMENT ON COLUMN data_model.id IS 'The data model''s ID: its entity''s ID and DM, such as TL-LEND-EN01-DM.';
 COMMENT ON COLUMN data_model.title IS 'Its name in code, such as Loan.';
 COMMENT ON COLUMN data_model.entity_id IS 'The entity it implements; one data model each.';
 COMMENT ON COLUMN data_model.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN data_model.description IS 'How it works, in a sentence or two.';
 
 CREATE TABLE value_type (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   value_object_id VARCHAR NOT NULL UNIQUE REFERENCES value_object (id),
-  file VARCHAR,
-  description VARCHAR
+  file VARCHAR
 );
 COMMENT ON TABLE value_type IS 'Its value object in code, which checks the value object''s constraints when a value is created.';
 COMMENT ON COLUMN value_type.id IS 'The value type''s ID: its value object''s ID and VT, such as TL-VO01-VT.';
 COMMENT ON COLUMN value_type.title IS 'Its name in code, such as EmailAddress.';
 COMMENT ON COLUMN value_type.value_object_id IS 'The value object it implements; one value type each.';
 COMMENT ON COLUMN value_type.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN value_type.description IS 'How it works, in a sentence or two.';
 
 CREATE TABLE predicate (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   specification_id VARCHAR NOT NULL UNIQUE REFERENCES specification (id),
-  file VARCHAR,
-  description VARCHAR
+  file VARCHAR
 );
 COMMENT ON TABLE predicate IS 'Its specification in code: a yes-or-no test over the records it is given.';
 COMMENT ON COLUMN predicate.id IS 'The predicate''s ID: its specification''s ID and PR, such as TL-LEND-SP01-PR.';
 COMMENT ON COLUMN predicate.title IS 'Its name in code, such as isInGoodStanding.';
 COMMENT ON COLUMN predicate.specification_id IS 'The specification it implements; one predicate each.';
 COMMENT ON COLUMN predicate.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN predicate.description IS 'How it works, in a sentence or two.';
 
 CREATE TYPE event_delivery AS ENUM ('in process', 'outbox');
 
@@ -77,8 +71,7 @@ CREATE TABLE event_type (
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_event_id VARCHAR NOT NULL UNIQUE REFERENCES domain_event (id),
   delivery event_delivery,
-  file VARCHAR,
-  description VARCHAR
+  file VARCHAR
 );
 COMMENT ON TABLE event_type IS 'Its domain event''s shape in code; a contract with other domains when the event is published.';
 COMMENT ON COLUMN event_type.id IS 'The event type''s ID: its domain event''s ID and ET, such as TL-LEND-EV01-ET.';
@@ -86,105 +79,102 @@ COMMENT ON COLUMN event_type.title IS 'Its name in code, such as LoanOpened.';
 COMMENT ON COLUMN event_type.domain_event_id IS 'The domain event it implements; one event type each.';
 COMMENT ON COLUMN event_type.delivery IS 'How the event reaches what hears it: in process, after the transaction commits; or outbox, saved in the same transaction as its aggregate and delivered reliably afterwards. An event a policy hears is delivered by outbox, since a lost reaction is a lost change; one that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load, may be delivered in process.';
 COMMENT ON COLUMN event_type.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN event_type.description IS 'How it works, in a sentence or two.';
 
 CREATE TABLE projection (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   read_model_id VARCHAR NOT NULL UNIQUE REFERENCES read_model (id),
   file VARCHAR,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE projection IS 'Fills its read model''s table and keeps it current, from events or as a view''s query. It writes only its own read model''s table.';
 COMMENT ON COLUMN projection.id IS 'The projection''s ID: its read model''s ID and PJ, such as TL-LEND-RM01-PJ.';
 COMMENT ON COLUMN projection.title IS 'Its name in code, such as overdueLoans.';
 COMMENT ON COLUMN projection.read_model_id IS 'The read model it fills; one projection each.';
 COMMENT ON COLUMN projection.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN projection.description IS 'How it works, in a sentence or two.';
+COMMENT ON COLUMN projection.description IS 'How it fills its read model and when it is rebuilt, in a sentence or two.';
 
 CREATE TABLE command_handler (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   command_id VARCHAR NOT NULL UNIQUE REFERENCES command (id),
   file VARCHAR,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE command_handler IS 'Carries out its command: an application service that owns the transaction, loads the aggregate through its repository, checks specifications and raises events. What clean architecture calls a use case or interactor.';
 COMMENT ON COLUMN command_handler.id IS 'The command handler''s ID: its command''s ID and H, such as TL-LEND-CMD01-H.';
 COMMENT ON COLUMN command_handler.title IS 'Its name in code, such as openLoan.';
 COMMENT ON COLUMN command_handler.command_id IS 'The command it handles; one command handler each.';
 COMMENT ON COLUMN command_handler.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN command_handler.description IS 'How it works, in a sentence or two.';
+COMMENT ON COLUMN command_handler.description IS 'How it carries out its command (transaction, checks, what it writes), in a sentence or two; never what the command already says.';
 
 CREATE TABLE query_handler (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   query_id VARCHAR NOT NULL UNIQUE REFERENCES query (id),
   file VARCHAR,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE query_handler IS 'Answers its query from its read model''s table: an application service that changes nothing.';
 COMMENT ON COLUMN query_handler.id IS 'The query handler''s ID: its query''s ID and H, such as TL-LEND-QRY01-H.';
 COMMENT ON COLUMN query_handler.title IS 'Its name in code, such as listLoans.';
 COMMENT ON COLUMN query_handler.query_id IS 'The query it answers; one query handler each.';
 COMMENT ON COLUMN query_handler.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN query_handler.description IS 'How it works, in a sentence or two.';
+COMMENT ON COLUMN query_handler.description IS 'How it answers its query (from what, kept or computed on each call), in a sentence or two.';
 
 CREATE TABLE event_handler (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   policy_id VARCHAR NOT NULL UNIQUE REFERENCES policy (id),
   file VARCHAR,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE event_handler IS 'Carries out its policy: hears the policy''s event and sends its command.';
 COMMENT ON COLUMN event_handler.id IS 'The event handler''s ID: its policy''s ID and H, such as TL-LEND-PO01-H.';
 COMMENT ON COLUMN event_handler.title IS 'Its name in code, such as onToolRetired.';
 COMMENT ON COLUMN event_handler.policy_id IS 'The policy it carries out; one event handler each.';
 COMMENT ON COLUMN event_handler.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN event_handler.description IS 'How it works, in a sentence or two.';
+COMMENT ON COLUMN event_handler.description IS 'Where it hears its event and how it sends its command, in a sentence or two.';
 
 CREATE TABLE service (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   domain_service_id VARCHAR NOT NULL UNIQUE REFERENCES domain_service (id),
-  file VARCHAR,
-  description VARCHAR
+  file VARCHAR
 );
 COMMENT ON TABLE service IS 'Its domain service in code. It never uses a repository or an outside system: its inputs are passed in, and it returns a value or a decision.';
 COMMENT ON COLUMN service.id IS 'The service''s ID: its domain service''s ID and SV, such as TL-LEND-DS01-SV.';
 COMMENT ON COLUMN service.title IS 'Its name in code, such as lateFee.';
 COMMENT ON COLUMN service.domain_service_id IS 'The domain service it implements; one service each.';
 COMMENT ON COLUMN service.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN service.description IS 'How it works, in a sentence or two.';
 
 CREATE TABLE endpoint_handler (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   endpoint_id VARCHAR NOT NULL UNIQUE REFERENCES endpoint (id),
   file VARCHAR,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE endpoint_handler IS 'Serves its endpoint: reads the request, calls the command or query handler and writes the response.';
 COMMENT ON COLUMN endpoint_handler.id IS 'The endpoint handler''s ID: its endpoint''s ID and H, such as TL-LEND-EP01-H.';
 COMMENT ON COLUMN endpoint_handler.title IS 'Its name in code, such as postLoan.';
 COMMENT ON COLUMN endpoint_handler.endpoint_id IS 'The endpoint it serves; one endpoint handler each.';
 COMMENT ON COLUMN endpoint_handler.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN endpoint_handler.description IS 'How it works, in a sentence or two.';
+COMMENT ON COLUMN endpoint_handler.description IS 'How it reads the request, calls its handler and answers or refuses, in a sentence or two; the request and response shapes belong to the endpoint.';
 
 CREATE TABLE adapter (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   integration_id VARCHAR NOT NULL UNIQUE REFERENCES integration (id),
   file VARCHAR,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE adapter IS 'Talks to its integration''s outside system, so the rest of the code does not.';
 COMMENT ON COLUMN adapter.id IS 'The adapter''s ID: its integration''s ID and AD, such as TL-INT01-AD.';
 COMMENT ON COLUMN adapter.title IS 'Its name in code, such as mailer.';
 COMMENT ON COLUMN adapter.integration_id IS 'The integration it talks to; one adapter each.';
 COMMENT ON COLUMN adapter.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
-COMMENT ON COLUMN adapter.description IS 'How it works, in a sentence or two.';
+COMMENT ON COLUMN adapter.description IS 'How it talks to its outside system, in a sentence or two.';
 
 CREATE TYPE table_storage AS ENUM ('table', 'view', 'materialized view', 'browser storage', 'file', 'in memory');
 CREATE TYPE key_type AS ENUM ('primary', 'unique', 'foreign', 'index');
@@ -198,7 +188,6 @@ CREATE TABLE "table" (
   name VARCHAR NOT NULL CHECK (trim(name) <> ''),
   storage table_storage NOT NULL,
   file VARCHAR,
-  description VARCHAR,
   CHECK ((entity_id IS NOT NULL)::INTEGER + (read_model_id IS NOT NULL)::INTEGER + (domain_id IS NOT NULL)::INTEGER = 1),
   CHECK (domain_id IS NULL OR storage = 'table'),
   CHECK (entity_id IS NULL OR storage NOT IN ('view', 'materialized view'))
@@ -212,7 +201,6 @@ COMMENT ON COLUMN "table".domain_id IS 'The domain whose own infrastructure it s
 COMMENT ON COLUMN "table".name IS 'Its name where it is stored: in the database, such as loans, the key it is kept under in browser storage, such as lathe:tabs, or the file''s name, such as window-state.json.';
 COMMENT ON COLUMN "table".storage IS 'table: rows of its own in a database; view: a query over other tables; materialized view: a query''s result, kept; browser storage: kept by the browser (local or session storage, or its history), under the key its name gives; file: kept in a file of its own that the program reads and writes whole, such as a JSON file, named by its name; in memory: kept only while the program runs, or computed on each load. An entity''s table holds rows of its own, so it is never a view or a materialized view. Keys are asked only of a table in a database: browser storage, a file and in memory have none.';
 COMMENT ON COLUMN "table".file IS 'The file that creates it, such as a migration, or that reads and writes it, from the product root; it may not exist yet.';
-COMMENT ON COLUMN "table".description IS 'Anything its keys do not say, in a sentence or two.';
 
 CREATE TABLE table_key (
   table_id VARCHAR NOT NULL REFERENCES "table" (id),
@@ -242,7 +230,7 @@ CREATE TABLE ui_component (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   file VARCHAR,
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE ui_component IS 'A piece of the user interface that renders one or more views. It has no owner: it exists because views use it, and its product follows from its ID.';
 COMMENT ON COLUMN ui_component.id IS 'The UI component''s ID: the product prefix and UI<nn>, such as TL-UI01.';
@@ -254,7 +242,7 @@ CREATE TABLE standard (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
   product_id VARCHAR NOT NULL REFERENCES product (id),
-  description VARCHAR
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
 COMMENT ON TABLE standard IS 'A library of engineering rules that holds for the product''s code, such as logging, error handling or naming. What follows one of its rules meets it.';
 COMMENT ON COLUMN standard.id IS 'The standard''s ID, such as TL-STD-CODE.';
