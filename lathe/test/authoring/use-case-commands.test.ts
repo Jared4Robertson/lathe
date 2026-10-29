@@ -59,11 +59,10 @@ async function refusal(store: Store, definition: AnyCommand, input: unknown): Pr
 const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dataDir, `${table}.jsonl`), 'utf8');
 
 describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use case through UseCaseRepository, held to its rules', () => {
-  it('adds a use case whole with its actors, raises Use case changed, and writes only its own tables', async () => {
+  it('adds a use case whole with its actors, and writes only its own tables', async () => {
     const store = await storeOf();
     const committed = await runCommand(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', notes: 'Late returns are fined.', actors: ['Member', 'Librarian'] });
     expect(committed.tables).toEqual(['use_case', 'use_case_actor']);
-    expect(committed.events).toEqual([{ event: 'LA-AUT-EV31', root: 'TL-LEND-UC02' }]);
     expect(store.rows('use_case_actor').filter((a) => a.use_case_id === 'TL-LEND-UC02')).toEqual([
       { use_case_id: 'TL-LEND-UC02', position: 1, role_name: 'Member' },
       { use_case_id: 'TL-LEND-UC02', position: 2, role_name: 'Librarian' },
@@ -205,7 +204,7 @@ describe('LA-AUT-UC06-R14-T01 each Use case command and query is reached by name
     const err: string[] = [];
     const io = { out: (t: string) => out.push(t), err: (t: string) => err.push(t), stdin: async () => JSON.stringify({ id: 'TL-LEND-UC01-R02', title: 'Member known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' }) };
     expect(await runAggregateCommand(['use-case', 'add-uc-requirement', '--json', '-', '--root', root], io)).toBe(0);
-    expect(JSON.parse(out.pop()!)).toMatchObject({ tables: ['uc_requirement'], events: [{ event: 'LA-AUT-EV31', root: 'TL-LEND-UC01' }] });
+    expect(JSON.parse(out.pop()!)).toMatchObject({ tables: ['uc_requirement'] });
     expect(await runAggregateCommand(['use-case', 'change-flow-step', '--id', 'TL-LEND-UC01-FL01-S01', '--fulfills', 'TL-LEND-UC01-R01', '--fulfills', 'TL-LEND-UC01-R02', '--root', root], io)).toBe(0);
     expect(out.pop()).toContain('Added fulfills source_id TL-LEND-UC01-FL01-S01, target_id TL-LEND-UC01-R02');
     expect(await runAggregateCommand(['use-case', 'remove-uc-requirement', '--id', 'TL-LEND-UC01-R02', '--root', root], io)).toBe(1);

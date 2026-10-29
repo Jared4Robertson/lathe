@@ -3,6 +3,9 @@
 {"kind":"cli_command","position":1,"name":"usage","type":"text","required":true,"description":"How it is called."}
 {"kind":"cli_command","position":2,"name":"mcp_tool","type":"text","required":false,"description":"The MCP tool that does the same, if any."}
 {"kind":"cli_command","position":3,"name":"file","type":"text","required":false,"description":"The code that runs it, from the repo root."}
+{"kind":"cli_query","position":1,"name":"usage","type":"text","required":true,"description":"How it is called."}
+{"kind":"cli_query","position":2,"name":"mcp_tool","type":"text","required":false,"description":"The MCP tool that does the same, if any."}
+{"kind":"cli_query","position":3,"name":"file","type":"text","required":false,"description":"The code that runs it, from the repo root."}
 {"kind":"entry_point","position":1,"name":"file","type":"text","required":true,"description":"The start-up file, from the repo root."}
 {"kind":"ipc_channel","position":1,"name":"file","type":"text","required":true,"description":"The code that declares the channel, from the repo root."}
 {"kind":"plugin_hook","position":1,"name":"file","type":"text","required":true,"description":"The hook script, from the repo root."}

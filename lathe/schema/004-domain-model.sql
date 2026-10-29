@@ -117,13 +117,13 @@ COMMENT ON COLUMN domain_event.description IS 'What happened and what brings it 
 CREATE TABLE command (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
-  aggregate_id VARCHAR NOT NULL REFERENCES aggregate (id),
+  entity_id VARCHAR NOT NULL REFERENCES entity (id),
   description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
-COMMENT ON TABLE command IS 'A request to change exactly one aggregate, its parent. It checks specifications, raises events and may call domain services, all of its own domain.';
+COMMENT ON TABLE command IS 'A request to change exactly one aggregate: the one its entity belongs to. It sits under the entity it changes, and checks specifications, raises events and may call domain services, all of its own domain.';
 COMMENT ON COLUMN command.id IS 'The command''s ID, such as TL-LEND-CMD01.';
 COMMENT ON COLUMN command.title IS 'What it asks for, in the imperative, such as Open a loan.';
-COMMENT ON COLUMN command.aggregate_id IS 'The aggregate it changes.';
+COMMENT ON COLUMN command.entity_id IS 'The entity it changes, the root or a child; its aggregate is the one the command changes.';
 COMMENT ON COLUMN command.description IS 'What it changes and when it is refused, in a sentence or two; how its handler does it belongs to the handler.';
 
 CREATE TABLE command_change (
@@ -338,7 +338,7 @@ INSERT INTO meta_kind_parent VALUES
   ('constraint', 'value_object', 1, 'value_object_id'),
   ('invariant', 'aggregate', 1, 'aggregate_id'),
   ('domain_event', 'aggregate', 1, 'aggregate_id'),
-  ('command', 'aggregate', 1, 'aggregate_id'),
+  ('command', 'entity', 1, 'entity_id'),
   ('read_model', 'domain', 1, 'domain_id'),
   ('query', 'read_model', 1, 'read_model_id'),
   ('policy', 'command', 1, 'command_id'),

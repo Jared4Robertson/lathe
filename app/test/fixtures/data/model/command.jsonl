@@ -1,6 +1,6 @@
-{"id":"P-D-CMD01","title":"Open loan","aggregate_id":"P-D-A3","description":"Lends a thing to a member."}
-{"id":"P-D-CMD02","title":"Return thing","aggregate_id":"P-D-A3","description":"The fixture's command Return thing."}
-{"id":"P-D-CMD03","title":"Register member","aggregate_id":"P-D-A2","description":"The fixture's command Register member."}
-{"id":"P-D-CMD04","title":"Suspend member","aggregate_id":"P-D-A2","description":"The fixture's command Suspend member."}
-{"id":"P-D-CMD05","title":"Mark thing lent","aggregate_id":"P-D-A1","description":"The fixture's command Mark thing lent."}
-{"id":"P-E-CMD01","title":"Close account","aggregate_id":"P-E-A1","description":"The fixture's command Close account."}
+{"id":"P-D-CMD01","title":"Open loan","entity_id":"P-D-EN03","description":"Lends a thing to a member."}
+{"id":"P-D-CMD02","title":"Return thing","entity_id":"P-D-EN03","description":"The fixture's command Return thing."}
+{"id":"P-D-CMD03","title":"Register member","entity_id":"P-D-EN02","description":"The fixture's command Register member."}
+{"id":"P-D-CMD04","title":"Suspend member","entity_id":"P-D-EN02","description":"The fixture's command Suspend member."}
+{"id":"P-D-CMD05","title":"Mark thing lent","entity_id":"P-D-EN01","description":"The fixture's command Mark thing lent."}
+{"id":"P-E-CMD01","title":"Close account","entity_id":"P-E-EN01","description":"The fixture's command Close account."}

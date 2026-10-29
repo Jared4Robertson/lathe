@@ -156,7 +156,7 @@ export const GAP_RULES: GapRule[] = [
   // A command changes its own aggregate, and another of its domain through a recorded exception (command_change).
   gap('aggregate-without-command', 'domain-model', ['aggregate', 'command'], 'An aggregate no command changes, directly or through a recorded exception.',
     `SELECT a.id, 'Aggregate ' || a.id || ' has no command, so nothing changes it.' AS message FROM aggregate a
-WHERE NOT EXISTS (SELECT 1 FROM command c WHERE c.aggregate_id = a.id) AND NOT EXISTS (SELECT 1 FROM command_change x WHERE x.aggregate_id = a.id)`),
+WHERE NOT EXISTS (SELECT 1 FROM command c JOIN entity e ON e.id = c.entity_id WHERE e.aggregate_id = a.id) AND NOT EXISTS (SELECT 1 FROM command_change x WHERE x.aggregate_id = a.id)`),
   gap('entity-without-fields', 'domain-model', ['entity', 'entity_field'], 'An entity with no fields.',
     `SELECT e.id, 'Entity ' || e.id || ' lists no fields.' AS message FROM entity e WHERE NOT EXISTS (SELECT 1 FROM entity_field f WHERE f.entity_id = e.id)`),
   gap('value-object-without-fields', 'domain-model', ['value_object', 'value_object_field'], 'A value object with no fields.',

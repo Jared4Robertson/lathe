@@ -152,10 +152,10 @@ describe('entities and value objects', () => {
 });
 
 describe('commands, events and policies', () => {
-  it('LA-AUT-UC12-R01-T01 LA-AUT-UC25-R01-T01 A domain event sits under an aggregate, a command under an aggregate raises and checks, and a policy under a command hears one event', () => {
+  it('LA-AUT-UC12-R01-T01 LA-AUT-UC25-R01-T01 A domain event sits under an aggregate, a command under the entity it changes raises and checks, and a policy under a command hears one event', () => {
     expect(parentsOf(schema, 'domain_event')).toEqual(['aggregate.aggregate_id']);
     expect(requiredOf(schema, 'domain_event')).toEqual(['aggregate_id', 'published', 'description']);
-    expect(parentsOf(schema, 'command')).toEqual(['aggregate.aggregate_id']);
+    expect(parentsOf(schema, 'command')).toEqual(['entity.entity_id']);
     expect(parentsOf(schema, 'policy')).toEqual(['command.command_id']);
     expect(pairsOf(schema, 'raises')).toEqual(['command>domain_event']);
     expect(schema.relations.raises.scope).toBe('aggregate');
@@ -200,7 +200,7 @@ describe('commands, events and policies', () => {
   });
 
   it('LA-AUT-UC12-R06-T01 A command changes its own aggregate; another of its domain changed in the same transaction is recorded with its reason and listed as a recorded exception', async () => {
-    expect(schema.tables.command.columns.find((c) => c.name === 'aggregate_id')!.required).toBe(true);
+    expect(schema.tables.command.columns.find((c) => c.name === 'entity_id')!.required).toBe(true);
     const ws = await loadData(adding(complete(), {
       command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as lent without its loan.' }],
     }));

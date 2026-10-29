@@ -155,7 +155,7 @@ describe('chains', () => {
     expect(gaps(clean).filter((g) => g.startsWith('record-untraced'))).toEqual([]);
     let data = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC01-FL01-S02');
     data = adding(data, {
-      command: [{ id: 'EX-LEND-CMD09', title: 'Forget a tool', aggregate_id: 'EX-LEND-A1', description: 'Drops a tool from its loans.' }],
+      command: [{ id: 'EX-LEND-CMD09', title: 'Forget a tool', entity_id: 'EX-LEND-EN01', description: 'Drops a tool from its loans.' }],
       command_handler: [{ id: 'EX-LEND-CMD09-H', title: 'forgetTool', command_id: 'EX-LEND-CMD09', file: 'src/tools.ts', description: 'Deletes the rows in one transaction.' }],
       ui_component: [{ id: 'EX-UI02', title: 'Unused page', file: 'web/catalog.tsx', description: 'A page no view uses.' }],
     });

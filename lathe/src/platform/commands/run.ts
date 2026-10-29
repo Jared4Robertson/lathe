@@ -17,13 +17,12 @@ export function runQuery(store: Store, definition: AnyQuery, args: unknown): unk
   return definition.run(store, parseInput(store.schema, definition, args));
 }
 
-/** What a command changed, one line per row, then the files it wrote and the events it raised. */
+/** What a command changed, one line per row, then the files it wrote. */
 export function committedText(committed: Committed): string {
   if (!committed.changes.length) return 'Nothing changed.';
   const verb = (c: Committed['changes'][number]) => (c.before === null ? 'Added' : c.after === null ? 'Removed' : 'Changed');
   return [
     ...committed.changes.map((c) => `${verb(c)} ${c.table} ${c.key}${c.after ? `: ${JSON.stringify(c.after)}` : ''}`),
     ...committed.files.map((f) => `Wrote ${f}`),
-    ...committed.events.map((e) => `Raised ${e.event} for ${e.root}`),
   ].join('\n');
 }

@@ -59,11 +59,11 @@ describe('graph columns by tree depth', () => {
     const grouped = indexOf(groupedWorkspace());
     const n = neighborhood(grouped, 'P-D/domain-model/aggregate', 2);
     const row = rowOf(n);
-    // A1 before A4 (the nav's order); A1's groups before A4's, following their parents.
-    expect(row.get('P-D-A1')!).toBeLessThan(row.get('P-D-A4')!);
-    expect(row.get('P-D-A1/entity')!).toBeLessThan(row.get('P-D-A4/entity')!);
-    // A4's groups follow the schema's kind order: entities, then commands.
-    expect(row.get('P-D-A4/entity')!).toBeLessThan(row.get('P-D-A4/command')!);
+    // A2 before A4 (the nav's order); A2's groups before A4's, following their parents.
+    expect(row.get('P-D-A2')!).toBeLessThan(row.get('P-D-A4')!);
+    expect(row.get('P-D-A2/entity')!).toBeLessThan(row.get('P-D-A4/entity')!);
+    // A4's groups follow the schema's kind order: entities, then domain events.
+    expect(row.get('P-D-A4/entity')!).toBeLessThan(row.get('P-D-A4/domain_event')!);
     // The domain's stages and folders follow the nav: the five stages in order, each stage's folders in kind order.
     const domain = rowOf(neighborhood(grouped, 'P-D', 2));
     const stages = ['P-D/domain-model', 'P-D/use-cases', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan'];
