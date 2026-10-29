@@ -144,6 +144,19 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
   const nodes = new Map<string, MapNode>();
   const byLevelIds: string[][] = [];
   let right = 0;
+  // A label's largest fit in a box one unit wide and `aspect` tall, at most `most`, kept per label and aspect: a box k
+  // times as large fits it at k times the scale (its border grows with its text), and boxes narrowed to MAX_ASPECT share
+  // one aspect, so a record repeated in many places, or many alike, is fitted once. A fit cut at its `most` is kept as
+  // what it fits at least.
+  const fits = new Map<string, { at: number; exact: boolean }>();
+  const unitFit = (label: MapLabel, aspect: number, most: number) => {
+    const key = `${aspect}\u0000${label.shape ?? ''}\u0000${label.marks ?? 0}\u0000${label.marked ? 1 : 0}\u0000${label.meta}\u0000${label.title}`;
+    const known = fits.get(key);
+    if (known && (known.exact || known.at >= most)) return Math.min(known.at, most);
+    const at = largestFit(label, true, 1, aspect, most, (s) => BORDER * s);
+    fits.set(key, { at, exact: at < most });
+    return at;
+  };
   /** Places siblings `h` tall each, a gap apart, in a column of their own after `after` (their parent's right edge), under a parent `parentWidth` wide. */
   const place = (ids: readonly string[], l: number, after: number, parentWidth: number, y0: number, h: number, gap: number, up: string | null) => {
     const w = up === null ? parentWidth : groupWidth(parentWidth, h);
@@ -152,7 +165,9 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
     // Its border grows with its text (LA-EXP-DS06).
     const border = (s: number) => BORDER * s;
     const labels = ids.map((id) => labelOf(id));
-    const text = Math.min(...labels.map((label) => largestFit(label, true, w, h, treeText(w), border)));
+    // The smallest of the siblings' largest fits, at most their width's share.
+    // Each sibling's fit capped at the smallest so far, which a sibling that fits there answers at once, without halving.
+    const text = Math.min(treeText(w), w * labels.reduce((most, label) => unitFit(label, h / w, most), treeText(w) / w));
     ids.forEach((id, i) => {
       const y = y0 + i * (h + gap);
       const own = kids.get(id)!;

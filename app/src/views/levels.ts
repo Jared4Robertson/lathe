@@ -1,9 +1,8 @@
 // Every stage's walk as levels (LA-V61-R49, LA-PAT-APP-UX-R21): each stage is a hierarchy, the Graph its tree, the ERD
-// product › domain region › aggregate area › entity, the Trace product › domain band › lane › box (a "+N more" box
-// holding what it hides). One walk moves over any of them:
+// product › domain region › aggregate area › entity, the Trace its tree. One walk moves over any of them:
 // - Out goes to the container, In to the first node inside it (Shift+Up and Shift+Down, or Shift+W and Shift+S);
 // - an arrow moves among siblings, the same level in the same container, by the stage's own `across` (spatially on the
-//   ERD and the Trace, by the layout's keys on the Graph), and at the container's edge continues to the next container's
+//   ERD, by the layout's keys on the Graph and the Trace), and at the container's edge continues to the next container's
 //   first node at that level in reading order (Right and Down), or the previous container's last (Left and Up), so
 //   repeated presses visit every node at a level;
 // - from the root, an arrow goes in: Right and Down to its first node, Left and Up to its last.
@@ -25,7 +24,7 @@ export interface StageLevels {
   parent: (id: string) => string | null;
   /** The nodes inside a container, in reading order (left to right, top to bottom). */
   children: (id: string) => readonly string[];
-  /** Where an arrow goes from a node inside its container (or the stage's own neighbor, as the Trace's why tree), or null at the container's edge. */
+  /** Where an arrow goes from a node inside its container, or null at the container's edge. */
   across: (id: string, direction: Direction) => string | null;
 }
 

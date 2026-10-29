@@ -10,25 +10,25 @@ import { Card, CardGrid } from '../shell/Card';
 import { useNarrow } from '../shell/useNarrow';
 import type { OpenSpaceStore } from '../views/openSpace';
 import { useStageWalk } from '../shell/commands';
-import { isGraphNode } from '../graph/model';
-import { levelMove, type Move } from '../views/levels';
+import { graphWalkLabels } from '../graph/steps';
+import type { Move } from '../views/levels';
 import { StageToolbar } from '../views/StageChrome';
-import { traceFocus, traceMap, type TraceMap } from './lanes';
+import { focusKey, keptFor, traceMap, type TraceMap } from './tree';
 import { TraceKey } from './TraceKey';
-import { bandNode, boxNode, focusOf, levelWords, startOf, traceLevels, traceNode, type TraceAt } from './walk';
+import { nodeWords, traceTarget } from './walk';
 
-// What the product owes and how far it has come, drawn on the canvas with the graph's renderer
-// (TraceCanvas.tsx) as one map per product (lanes.ts, LA-PAT-APP-UX-R19): a "why" tree on the left
-// and one lane per obligation on the right, gaps as dashed empty boxes and the Untraced records in a
-// lane of their own. Focusing anything moves the camera to frame it and fades the rest; Gaps only
-// fades the complete lanes; the map never changes with either. It works on every focus
+// What the product owes and how far it has come, drawn on the canvas as the Graph's Tree is (TraceCanvas.tsx), one tree
+// per product (tree.ts, LA-PAT-APP-UX-R19): the product's outcomes with links to the capabilities serving them, its
+// domains with their obligations' parents side by side, each obligation's chain to the right, gaps as dashed boxes and
+// the Untraced records under a mark of their own. Focusing anything moves the camera to frame it and fades the rest;
+// Gaps only fades the complete branches; the map never changes with either. It works on every focus
 // (LA-PAT-APP-UX-R17), and the stage stays mounted while the focus moves within its product.
 //
 // The table is its accessible layer and its phone form, listing what is under the focus, the way the
 // graph keeps a layer of its boxes for the keyboard and assistive technology: on a wide screen it is
 // visually hidden under the canvas, its links carrying keyboard focus (the canvas rings the box a focused link stands for and
 // brings it into view) and the arrow keys walking it; on a phone it is the stage. From anywhere else on the page the
-// arrow keys walk the map itself (walk.ts), the camera following. By the shape
+// arrow keys walk the tree itself by the Graph's Tree keys (walk.ts), the camera following. By the shape
 // chain.ts's traceShape gives the focus:
 // - an obligation: its chain, each column a list of cards;
 // - a record or group with obligations under it: a traceability matrix, one row per obligation
@@ -130,12 +130,12 @@ function pageOf(groups: readonly TraceGroup[], gapsOnly: boolean, shown: number)
   return { visible, matching, drawn: visible.reduce((n, g) => n + g.rows.length, 0), withGaps };
 }
 
-/** The record and lane a link in the table stands for: its `data-trace-id`, and its row's `data-trace-lane` (the focus, in a chain). */
-function linkTarget(el: Element | null, focus: string): { id: string; lane: string | null } | null {
+/** The record a link in the table stands for, by its `data-trace-id`, and the chain its row traces (`data-trace-chain`; the focus's, in a chain). */
+function linkTarget(el: Element | null, focus: string): { id: string; chain: string | null } | null {
   const link = el?.closest<HTMLElement>('[data-trace-id]');
   if (!link) return null;
-  const lane = link.closest<HTMLElement>('[data-trace-lane]')?.dataset.traceLane ?? (link.closest('.trace-chain') ? focus : null);
-  return { id: link.dataset.traceId!, lane };
+  const chain = link.closest<HTMLElement>('[data-trace-chain]')?.dataset.traceChain ?? (link.closest('.trace-chain') ? focus : null);
+  return { id: link.dataset.traceId!, chain };
 }
 
 /**
@@ -179,68 +179,50 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   const page = useMemo(() => (spec ? pageOf(spec.groups, gapsOnly, shown) : null), [spec, gapsOnly, shown]);
   // The product's one map: laid out once per product and data change, whatever the focus or the filter.
   const map = useMemo(() => (narrow ? null : traceMap(index, product)), [narrow, index, product]);
-  const [ringAt, setRing] = useState<{ focus: string; at: { id: string; lane: string | null } | null }>({ focus, at: null });
-  // Where the walk is on the map's levels (walk.ts), for the focus it left there: the product, a band, a lane, or a box and
-  // the lane it arrived on.
+  const [ringAt, setRing] = useState<{ focus: string; at: { id: string; chain: string | null } | null }>({ focus, at: null });
+  // Where the walk or a click is on the tree (walk.ts), for the focus it left there: a node's key, so a record in several
+  // chains keeps the copy arrived on, and a node that is no record (a gap, a file, a link) holds the ring.
   const [walked, setWalked] = useState<{ focus: string; node: string } | null>(null);
   const walkedNode = walked?.focus === focus ? walked.node : null;
-  const walkedAt = useMemo(() => {
-    const node = walkedNode && map ? traceNode(map, walkedNode) : null;
-    return node?.level === 'box' ? node.at : null;
-  }, [walkedNode, map]);
-  const focused = useMemo(() => (map ? traceFocus(map, index, focus, walkedAt?.lane ?? null) : null), [map, index, focus, walkedAt?.lane]);
-  const walkBox = walkedAt && map ? map.byKey.get(walkedAt.key) : undefined;
-  // The keyboard's ring: the table's focused link, else the arrow keys' box when it is no record (a gap, a file, a "+N more").
-  const linkRing = ringAt.focus === focus ? ringAt.at : null;
-  const ring = linkRing && map ? { id: linkRing.id, lane: linkRing.lane === null ? null : map.lanesOf.get(linkRing.lane)?.[0] ?? null }
-    : walkBox && walkBox.role !== 'record' ? { id: walkBox.id, lane: walkBox.lane >= 0 ? walkBox.lane : null } : null;
-  // The stage walk moves over the map's levels from anywhere (walk.ts, LA-V61-R49): Out and In between the product, the
-  // bands, the lanes and their boxes, the arrows along and across them. On a record the focus moves there, as a click
-  // does, and the camera follows; on a band or a lane the focus moves to its domain or its obligation; on a box that is
-  // no record the ring does. Each step is announced. The table under the canvas keeps its own arrows (walk). On a phone,
-  // where no map is drawn, they walk the same map.
   const mapNow = useCallback((): TraceMap => map ?? traceMap(index, product), [map, index, product]);
-  const here = useCallback((m: TraceMap) => focused ?? traceFocus(m, index, focus, walkedAt?.lane ?? null), [focused, index, focus, walkedAt]);
-  /** The node the walk is on: where it left off, else the focus's box, band or product. */
-  const nodeNow = useCallback((m: TraceMap): string | null => {
-    if (walkedNode) return walkedNode;
-    if (focus === m.product) return m.product;
-    const at = here(m);
-    if (at.box) return boxNode({ key: at.box.key, lane: at.box.lane >= 0 ? at.box.lane : null });
-    const band = m.bands.findIndex((b) => b.id === focus);
-    return band >= 0 ? bandNode(band) : null;
-  }, [walkedNode, focus, here]);
-  const targetOf = useCallback((move: Move): string | null => {
-    const m = mapNow();
-    const from = nodeNow(m);
-    if (!from) { const start = startOf(m, here(m).lanes); return start ? boxNode(start) : null; }
-    return levelMove(traceLevels(m, here(m).open), from, move);
-  }, [mapNow, nodeNow, here]);
+  /** The node the focus stands on, and the node the walk is on (the same, unless the walk is on a node that is no record). */
+  const at = useMemo(() => focusKey(mapNow(), index, focus, walkedNode), [mapNow, index, focus, walkedNode]);
+  const kept = useMemo(() => keptFor(mapNow(), focus, at), [mapNow, focus, at]);
+  const walkNode = walkedNode && map?.nodes.has(walkedNode) ? walkedNode : at;
+  // The keyboard's ring: the table's focused link (its copy in its row's chain), else the walk's node when it is no record.
+  const linkRing = ringAt.focus === focus ? ringAt.at : null;
+  const ring = linkRing && map
+    ? (linkRing.chain ? map.copies.get(linkRing.id)?.find((k) => map.nodes.get(k)!.chain === linkRing.chain) : undefined) ?? map.copies.get(linkRing.id)?.[0] ?? null
+    : map && map.nodes.get(walkNode)?.role !== 'record' ? walkNode : null;
+  // The stage walk moves over the tree from anywhere (walk.ts, LA-V61-R49), by the Graph's Tree keys. On a record the
+  // focus moves there, as a click does, and the camera follows; on a node that is no record the ring does. Each step is
+  // announced. The table under the canvas keeps its own arrows (walk). On a phone, where no map is drawn, they walk the
+  // same tree.
+  const targetOf = useCallback((move: Move): string | null => traceTarget(mapNow(), walkNode, move), [mapNow, walkNode]);
   const go = useCallback((to: string) => {
-    const m = mapNow();
-    const node = traceNode(m, to)!;
-    let next = focus;
-    if (node.level === 'product') next = m.product;
-    else if (node.level === 'band') { const id = m.bands[node.band].id; if (isGraphNode(index, id)) next = id; }
-    else if (node.level === 'lane') next = m.lanes[node.lane].obligation ?? focus;
-    else next = focusOf(m, node.at, here(m).open) ?? focus;
+    const node = mapNow().nodes.get(to)!;
+    const next = node.role === 'record' ? node.id : focus;
     setWalked({ focus: next, node: to });
     if (next !== focus) props.onNavigate(next);
-    return levelWords(index, m, node);
-  }, [mapNow, focus, index, here, props.onNavigate]);
+    return nodeWords(index, node);
+  }, [mapNow, focus, index, props.onNavigate]);
   const walkMap = useCallback((move: Move) => { const to = targetOf(move); return to ? go(to) : null; }, [targetOf, go]);
-  // Enter on a "+N more" the walk is on opens it, as In does; the commands layer offers it a plain Enter outside a
-  // control that works Enter itself, before the wiki card's toggle.
+  // Enter on a link or a file the walk is on opens its record (a link's capability, in its own place; a file's first naming
+  // record, in the file's chain); the commands layer offers it a plain Enter outside a control that works Enter itself,
+  // before the wiki card's toggle.
   const enter = useCallback(() => {
-    if (walkBox?.role !== 'more') return false;
-    const to = targetOf('in');
-    if (to) go(to);
+    const m = mapNow();
+    const node = m.nodes.get(walkNode);
+    if (!node || (node.role !== 'link' && node.role !== 'file') || !node.opens) return false;
+    const own = node.chain ? m.copies.get(node.opens)?.find((k) => m.nodes.get(k)!.chain === node.chain) : undefined;
+    setWalked(own ? { focus: node.opens, node: own } : null);
+    props.onNavigate(node.opens);
     return true;
-  }, [walkBox, targetOf, go]);
+  }, [mapNow, walkNode, props.onNavigate]);
   useStageWalk(walkMap, true, enter);
-  /** A click on the canvas opens a record keeping the lane of the box clicked. */
-  const openFromCanvas = useCallback((id: string, at?: TraceAt) => {
-    if (at) setWalked({ focus: id, node: boxNode(at) });
+  /** A click on the canvas opens a record keeping the node it was opened from. */
+  const openFromCanvas = useCallback((id: string, from?: string) => {
+    setWalked(from ? { focus: id, node: from } : null);
     props.onNavigate(id);
   }, [props.onNavigate]);
 
@@ -258,8 +240,8 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   }, [spec, index, focus, total, page, untracedCount]);
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 
-  const drawn = !narrow && map !== null && focused !== null;
-  // Show more pages the table. Under the canvas, which draws every lane, it is for the keyboard alone, hidden with the table.
+  const drawn = !narrow && map !== null;
+  // Show more pages the table. Under the canvas, which draws every chain, it is for the keyboard alone, hidden with the table.
   const more = page && page.drawn < page.matching ? (
     <p className="trace-more">
       <Button onClick={() => setPaging({ focus, shown: shown + TRACE_PAGE })}>Show {Math.min(TRACE_PAGE, page.matching - page.drawn)} more</Button>
@@ -275,7 +257,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   const table = spec && page
     ? <TraceMatrix {...props} spec={spec} page={page} untraced={untraced} access={drawn} more={more} />
     : <TraceChainCards {...props} access={drawn} />;
-  const toolbar = <StageToolbar can={(move) => targetOf(move) !== null} own={() => ({ primary: filter })} stageKey={<TraceKey lead={spec?.lead} />} />;
+  const toolbar = <StageToolbar can={(move) => targetOf(move) !== null} walkLabels={graphWalkLabels('tree')} own={() => ({ primary: filter })} stageKey={<TraceKey lead={spec?.lead} />} />;
 
   if (!drawn) {
     return (
@@ -291,7 +273,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
     <section className="trace-page is-drawn" aria-label="Trace" {...peekHandlers(props)}>
       {toolbar}
       <Suspense fallback={<div className="graph-flow trace-flow" aria-busy="true" />}>
-        <TraceCanvas index={index} focus={focus} map={map} focused={focused} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} />
+        <TraceCanvas index={index} focus={focus} map={map} at={at} kept={kept} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} />
       </Suspense>
       <div className="trace-access" data-arrows="own" onFocus={onFocus} onBlur={onBlur} onKeyDown={walk}>
         {table}
@@ -469,7 +451,7 @@ function TraceMatrix(props: MatrixProps) {
                 </th>
               </tr>
               {g.rows.map((row) => (
-                <tr key={row.obligation} className={row.gaps.length > 0 ? 'has-gap' : undefined} data-trace-lane={row.obligation}>
+                <tr key={row.obligation} className={row.gaps.length > 0 ? 'has-gap' : undefined} data-trace-chain={row.obligation}>
                   <th scope="row"><Ref id={row.obligation} props={props} /></th>
                   {TRACE_COLUMNS.map((c) => (
                     <td key={c} className={isGap(row, c) ? 'is-gap' : undefined}>

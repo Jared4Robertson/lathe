@@ -4,7 +4,7 @@
 // keep each view's keys: in the Tree view Left out, Right in, Up and Down across the siblings; in the Nested and Voronoi
 // views, which draw children inside their parent, Up out, Down in, Left and Right across. Across goes on, past the last
 // sibling, to the next parent's first child at that level (levels.ts). The ERD stage walks its map through `useWalk`
-// (erd/walk.ts), the Trace stage its lanes (trace/walk.ts).
+// (erd/walk.ts), the Trace stage its tree by the Tree's keys (trace/walk.ts).
 import { useCallback } from 'react';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { useStageWalk } from '../shell/commands';
