@@ -3,7 +3,8 @@ import type { SpecData } from '../../../lathe/src/server/contract';
 import { addRows, indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { graphSummary, keyboardOrder, stepTarget, type Box } from '../../src/graph/GraphPage';
+import { graphSummary, keyboardOrder, type Box } from '../../src/graph/GraphPage';
+import { stepTarget } from '../../src/graph/steps';
 import { panToward, pastEdges } from '../../src/graph/hints';
 import { groupLabel, groupMembers, isGraphNode, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { treeChildren, treeParent } from '../../src/graph/tree';
@@ -163,7 +164,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(screen.getByRole('img', { name: 'Minimap' })).toBeInTheDocument();
   });
 
-  it('LA-V93-R19-T01 In the Tree view the plain arrows step through the tree on the canvas: Left out to the parent, Right in to the first child, Up and Down to a sibling, and buttons step too, naming their keys; no page-wide shortcut steps', async () => {
+  it('LA-V93-R19-T01 In the Tree view the plain arrow keys step through the tree from the page, and buttons step too, naming their keys', async () => {
     const index = testIndex();
     expect(stepTarget(index, 'P-D-UC01', 'out')).toBe('P-D-CAP01');
     expect(stepTarget(index, 'P-D-UC01', 'in')).toBe('P-D-UC01-R01');
@@ -178,13 +179,14 @@ describe('the graph tree, its depth and its camera', () => {
     expect(steps.getByRole('button', { name: 'Step out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'ArrowLeft');
     expect(steps.getByRole('button', { name: 'Step to the next sibling' })).toHaveAttribute('aria-keyshortcuts', 'ArrowDown');
     expect(steps.getByRole('button', { name: 'Step to the previous sibling' })).toBeDisabled();
-    // The page-wide Alt shortcuts are gone: from the page, nothing steps.
+    // With a modifier held, nothing steps.
     fireEvent.keyDown(document.body, { key: 'ArrowDown', code: 'ArrowDown', altKey: true });
     expect(window.location.pathname).toBe('/P-D-UC01');
     fireEvent.keyDown(graphHost()!, { key: 'ArrowRight', code: 'ArrowRight' });
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-R01'));
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    fireEvent.keyDown(graphHost()!, { key: 'ArrowLeft', code: 'ArrowLeft' });
+    // From the page, without the graph having keyboard focus (LA-V61-R49).
+    fireEvent.keyDown(document.body, { key: 'ArrowLeft', code: 'ArrowLeft' });
     await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01'));
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     for (const to of ['/P-D-CAP01', '/P-D/use-cases']) {

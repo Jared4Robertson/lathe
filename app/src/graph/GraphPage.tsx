@@ -19,12 +19,11 @@ import {
   isGraphNode,
   kindGroups,
   neighborhood,
-  nodeChildren,
-  nodeParent,
   relationsOf,
   type Filters,
   type Neighborhood,
 } from './model';
+import { STEPS, STEP_COMMANDS, nestsChildren, stepKey, stepTarget, useStepWalk, type Step } from './steps';
 import { DEFAULT_GRAPH_SETTINGS } from './settings';
 import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
@@ -103,42 +102,6 @@ const DEPTH_LABELS = ['Frame the focus and its children', 'Frame two levels belo
 /** The view after this one, for the switch's command. */
 export const nextLayout = (layout: GraphLayout): GraphLayout => GRAPH_LAYOUTS[(GRAPH_LAYOUTS.findIndex((l) => l.layout === layout) + 1) % GRAPH_LAYOUTS.length].layout;
 
-/** A step through the tree: out to the parent, in to the first child, to the previous or next sibling. */
-type Step = 'out' | 'in' | 'previous' | 'next';
-/** Each step's keymap command, in the toolbar's order, which is the same in every view. */
-const STEP_COMMANDS: Readonly<Record<Step, string>> = { out: 'graphStepOut', in: 'graphStepIn', previous: 'graphStepPrevious', next: 'graphStepNext' };
-const STEPS = Object.keys(STEP_COMMANDS) as Step[];
-/** Whether a view draws children inside their parent (Nested and Voronoi), and so steps by the keymap's `nestedKeys`. */
-const nestsChildren = (layout: GraphLayout) => layout !== 'tree';
-/**
- * The plain arrow key that takes a step in a view, from the keymap (LA-V93-R19): in the Tree view Left out, Right in, Up
- * and Down across; in the Nested and Voronoi views, which draw children inside their parent, Up out, Down in, Left and
- * Right across.
- */
-export function stepKey(layout: GraphLayout, step: Step): string {
-  const command = COMMANDS.find((c) => c.id === STEP_COMMANDS[step])!;
-  return ((nestsChildren(layout) ? command.nestedKeys : undefined) ?? command.keys)[0];
-}
-/** The step a plain arrow key takes in a view, or none. */
-export const arrowStep = (layout: GraphLayout, key: string): Step | undefined => STEPS.find((s) => stepKey(layout, s) === key);
-
-/**
- * Where a step goes from a node: its parent, its first child, or its previous or next sibling in the tree. The siblings
- * loop (LA-V93-R19): next from the last goes to the first, previous from the first to the last. Out of the root, in to a
- * node with no children, or across from an only child, there is no step.
- */
-export function stepTarget(index: SpecIndex, focus: string, step: Step): string | null {
-  const ok = (id: string | null | undefined) => (id && isGraphNode(index, id) ? id : null);
-  if (step === 'out') return ok(nodeParent(index, focus));
-  if (step === 'in') return ok(nodeChildren(index, focus).find((c) => isGraphNode(index, c)));
-  const up = nodeParent(index, focus);
-  if (up === null) return null;
-  const siblings = nodeChildren(index, up).filter((c) => isGraphNode(index, c));
-  const at = siblings.indexOf(focus);
-  if (at < 0 || siblings.length < 2) return null;
-  return ok(siblings[(at + (step === 'next' ? 1 : -1) + siblings.length) % siblings.length]);
-}
-
 /** The summary above the canvas, of the framed picture: "9 records · 2 groups · 8 links". */
 export function graphSummary(graph: Neighborhood): string {
   const groups = graph.nodes.filter((n) => n.group).length;
@@ -196,7 +159,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && layout === 'tree');
   useCommand('graphLinks', () => update({ links: !latest.current.links }), valid);
   useCommand('graphLayout', () => update({ layout: nextLayout(latest.current.layout) }), valid);
-  // Stepping through the tree moves the focus, as a click does (the arrow keys do it on the canvas, GraphStage).
+  // Stepping through the tree moves the focus, as a click does (the arrow keys do it from anywhere, GraphStage's walk).
   const stepTo = (step: Step) => () => {
     const to = stepTarget(index, focus, step);
     if (to) onNavigate(to);
@@ -624,7 +587,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     onGlide: (path) => { show(mergeDrawn([0, 0.25, 0.5, 0.75, 1].map((t) => drawnAt(path.at(t))))); moves.current.glides++; },
     onArrive: (target) => show(latestDrawnAt.current(target)),
     onGesture: () => follow(),
-    // A click on the canvas gives the graph focus, so the arrow keys step through the tree.
+    // A click on the canvas gives the graph keyboard focus, so Tab goes on from it into the boxes.
     onPress: () => { if (!wrapper.current?.contains(document.activeElement)) wrapper.current?.focus({ preventScroll: true }); },
     onHover: (x, y) => setHover(hitAt(x, y)?.id ?? null),
     onTap: (x, y, e) => { const hit = hitAt(x, y); if (hit) tapToOpen.onNodeClick(e, hit.id); else tapToOpen.clear(); },
@@ -665,6 +628,9 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (!target || !size) return;
     const resized = framedFor.current !== null && (framedFor.current.w !== size.w || framedFor.current.h !== size.h);
     const duration = moveTo(target, framedFor.current !== null && !resized && !framedEmpty.current);
+    // Where the focused box will sit once the camera arrives, for the wiki card that settles level with it.
+    const node = map.nodes.get(focus);
+    space?.setAnchor({ focus, y: node ? target.y + (node.y + node.h / 2) * target.zoom : null, at: performance.now() + duration });
     if (fadeShift.current.to !== focus) fadeShift.current = { from: fadeShift.current.to, to: focus, start: performance.now(), duration };
     framedFor.current = size;
     framedEmpty.current = map.nodes.size === 0;
@@ -907,25 +873,21 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (fromKeyboard) refocus.current = id;
     onNavigate(id);
   };
-  // The keys while the graph has focus (its canvas, after a click, or one of its boxes; never a text field): the plain
-  // arrows step through the tree, each step moving the graph's focus, by the view's keys (stepKey: in the Tree view Left
-  // to the parent, Right to the first child, Up and Down across the siblings; in the Nested and Voronoi views Up to the
-  // parent, Down to the first child, Left and Right across); Enter centers on the box with keyboard focus. Tab and
-  // Shift+Tab step through the boxes, as the page's own focus order.
+  // The plain arrows step through the tree from anywhere on the page but a control that uses arrows itself (the commands
+  // layer's walk, steps.ts), each step moving the graph's focus by the view's keys (stepKey: in the Tree view Left to the
+  // parent, Right to the first child, Up and Down across the siblings; in the Nested and Voronoi views Up to the parent,
+  // Down to the first child, Left and Right across). From a box with keyboard focus, keyboard focus follows to the new
+  // focus's box (and is read out there); from anywhere else it stays, and the step is announced.
+  const followFromBox = useCallback((to: string) => {
+    if (!layer.current?.contains(document.activeElement) || !document.activeElement?.closest('.graph-box')) return false;
+    refocus.current = to;
+    return true;
+  }, []);
+  useStepWalk(index, focus, layout, onNavigate, followFromBox);
+  // Enter centers on the box with keyboard focus. Tab and Shift+Tab step through the boxes, as the page's own focus order.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     const target = e.target as HTMLElement;
-    if (target.closest?.('input, textarea, select, [contenteditable="true"]')) return;
     if (e.altKey || e.ctrlKey || e.metaKey || e.shiftKey) return;
-    const step = arrowStep(layout, e.key);
-    if (step) {
-      e.preventDefault();
-      const to = stepTarget(index, focus, step);
-      if (!to) return;
-      // From a box with keyboard focus, the keyboard follows to the new focus's box; from the canvas it stays there.
-      if (target.closest?.('.graph-box')) refocus.current = to;
-      onNavigate(to);
-      return;
-    }
     if (e.key === 'Enter' && active.current && target.closest?.('.graph-box')) {
       e.preventDefault();
       activate(active.current, true);

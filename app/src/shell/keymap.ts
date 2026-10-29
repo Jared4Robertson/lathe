@@ -25,7 +25,7 @@ export interface Command {
    */
   nestedKeys?: string[];
   when: CommandContext;
-  /** Handled by the component it belongs to (arrow keys in the graph), listed here so the sheet shows it. */
+  /** Never matched from this table: handled by the component it belongs to, or by the stage walk (the plain arrows), and listed here so the sheet shows it. */
   local?: boolean;
   /** Left to the browser (Alt+Left): listed, never intercepted. */
   browser?: boolean;
@@ -88,8 +88,8 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
   { id: 'graphLinks', title: 'Links on or off: the center\'s own links, one step', group: 'Graph', keys: ['l'], when: 'graph' },
   { id: 'graphLayout', title: 'Tree, Nested or Voronoi layout: parents beside their children, or made of them as boxes or cells', group: 'Graph', keys: ['v'], when: 'graph' },
-  // Stepping through the tree with the plain arrows while the graph has focus (after a click on its canvas or a box); never
-  // while a text field has it. Each step moves the graph's focus. Tab steps through the boxes. The Tree view steps as a
+  // Stepping through the tree with the plain arrows from anywhere but a control that uses arrows itself (usesArrows), by
+  // the commands layer's stage walk (LA-V61-R49). Each step moves the stage's focus. Tab steps through the boxes. The Tree view steps as a
   // file explorer does (Left out, Right in, Up and Down across); the Nested and Voronoi views, which draw children inside
   // their parent, step Up out, Down in, and Left and Right across (`nestedKeys`).
   { id: 'graphStepOut', title: 'Step out to the parent', group: 'Graph', keys: ['ArrowLeft'], nestedKeys: ['ArrowUp'], when: 'graph', local: true },
@@ -170,6 +170,43 @@ export function isTyping(target: EventTarget | null): boolean {
   if (field.tagName !== 'INPUT') return true;
   const type = (field as HTMLInputElement).type;
   return !['checkbox', 'radio', 'button', 'submit', 'reset', 'range', 'color'].includes(type);
+}
+
+/** The plain arrow keys, which walk the stage from anywhere (LA-V61-R49). */
+export const ARROW_KEYS = ['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'] as const;
+export const isArrowChord = (chord: string) => (ARROW_KEYS as readonly string[]).includes(chord);
+
+/**
+ * Controls that use the arrow keys themselves, so a plain arrow inside one is theirs and never walks the stage: a field
+ * that takes text or picks by arrows (every input but a checkbox and the buttons, a textarea, a select, editable text
+ * such as the chat box), the composite widgets the ARIA practices give arrows to (a tree, grid, menu, menu bar, listbox,
+ * combobox, tab list, radio group, slider, spin button and a focusable window splitter), a menu button, a modal dialog
+ * (it holds the keyboard), and anything marked `data-arrows="own"` (a tree list, the chat log, the trace
+ * table, the breadcrumb's menu).
+ */
+const ARROW_CONTROLS = [
+  'input:not([type="checkbox"], [type="button"], [type="submit"], [type="reset"], [type="image"], [type="file"], [type="color"], [type="hidden"])',
+  'textarea', 'select', '[contenteditable=""]', '[contenteditable="true"]', '[contenteditable="plaintext-only"]',
+  ...['tree', 'treegrid', 'grid', 'menu', 'menubar', 'listbox', 'combobox', 'tablist', 'radiogroup', 'slider', 'spinbutton'].map((r) => `[role="${r}"]`),
+  '[role="separator"][tabindex]',
+  '[aria-haspopup="menu"]', '[aria-haspopup="true"]', '[aria-haspopup="listbox"]',
+  '[aria-modal="true"]',
+  // The one mark for an element whose own key handling uses the arrows.
+  '[data-arrows="own"]',
+].join(', ');
+
+/** A box that takes focus only so the arrow keys can scroll it (LA-V61-R46): a code block or a named scrolling region. */
+const SCROLL_BOX = 'pre[tabindex="0"], [role="region"][tabindex="0"]';
+
+/**
+ * True when a plain arrow pressed with keyboard focus on `target` belongs to it: the target is in a control that uses
+ * arrows (ARROW_CONTROLS), or is itself a box that took focus to scroll by them. Anywhere else the arrow walks the stage.
+ */
+export function usesArrows(target: EventTarget | null): boolean {
+  const el = target as HTMLElement | null;
+  if (!el || typeof el.closest !== 'function') return false;
+  if (el.isContentEditable) return true;
+  return el.closest(ARROW_CONTROLS) !== null || el.matches(SCROLL_BOX);
 }
 
 // ---------- Overrides ----------

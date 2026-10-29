@@ -11,6 +11,7 @@ import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
 import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
+import { useStepWalk } from '../graph/steps';
 
 // The ERD stage: the entity-relationship diagram of a domain (each aggregate a boundary around its
 // entities) or of an aggregate (with the aggregates it references, or that reference it, faded around
@@ -124,6 +125,9 @@ export const erdCounts = (erd: Erd) => {
 export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: ErdViewProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
   useLayoutEffect(() => { onCounts?.(erd ? erdCounts(erd) : ''); }, [erd, onCounts]);
+  // The plain arrows step the focus through the tree from anywhere, by the Tree view's keys (LA-V93-R19): the diagram,
+  // like the Tree, draws what a record holds beside it.
+  useStepWalk(index, focus, 'tree', onNavigate);
   if (!erd) return <p className="hint erd-missing">There's no record or group <code>{focus}</code>.</p>;
   const scope = index.byId.get(erd.scope);
   const caption = erd.level === 'aggregate'
@@ -188,6 +192,7 @@ export function ErdKey({ erd, relations = [] }: { erd: Erd; relations?: readonly
       role="group"
       aria-label="Key"
       tabIndex={0}
+      data-arrows="own"
       onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); } }}
     >
       {/* In a narrow pane the key is one bar: this button opens the whole key over the canvas, moving nothing. */}
@@ -305,9 +310,14 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek, space }: { relat
     const motion = readMotion();
     // An open space too small to fit anything in fits on the whole stage.
     const room = box.width - margin.left - margin.right >= MIN_FIT && box.height - margin.top - margin.bottom >= MIN_FIT;
-    setViewport(fitRects(placed.rects, box.width, box.height, room ? margin : FIT_MARGIN), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
+    const view = fitRects(placed.rects, box.width, box.height, room ? margin : FIT_MARGIN);
+    const duration = animate && motion.duration > 0 ? motion.duration : 0;
+    setViewport(view, duration > 0 ? { duration, ease: motion.ease } : { duration: 0 });
+    // Where the focus's box will sit once the diagram arrives, for the wiki card; none when the focus has no box (a domain's ERD).
+    const r = placed.rects.get(focus);
+    space?.setAnchor({ focus, y: r ? view.y + (r.y + r.height / 2) * view.zoom : null, at: performance.now() + duration });
     return true;
-  }, [placed, setViewport, margin, space, open]);
+  }, [placed, setViewport, margin, space, open, focus]);
   // A panel collapsed, opened or resized: the diagram glides to the new open space.
   const fittedMargin = useRef(margin);
   useEffect(() => {

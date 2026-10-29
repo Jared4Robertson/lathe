@@ -10,6 +10,7 @@ import { Card, CardGrid } from '../shell/Card';
 import { useNarrow } from '../shell/useNarrow';
 import type { OpenSpaceStore } from '../views/openSpace';
 import { traceMap } from './lanes';
+import { useStepWalk } from '../graph/steps';
 
 // What the product owes and how far it has come, drawn on the canvas with the graph's renderer
 // (TraceCanvas.tsx) as one map per product (lanes.ts, LA-PAT-APP-UX-R19): a "why" tree on the left
@@ -174,6 +175,10 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   const map = useMemo(() => (narrow ? null : traceMap(index, product)), [narrow, index, product]);
   const [ringAt, setRing] = useState<{ focus: string; at: { id: string; lane: string | null } | null }>({ focus, at: null });
   const ring = ringAt.focus === focus ? ringAt.at : null;
+  // The plain arrows step the focus through the tree from anywhere, by the Tree view's keys (LA-V93-R19): the lanes, like
+  // the Tree, run from a record to what serves it, left to right; the camera follows the focus on the one map. The table
+  // under the canvas keeps its own arrows (walk).
+  useStepWalk(index, focus, 'tree', props.onNavigate);
 
   // What the header strip says.
   const untraced = useMemo(() => (spec?.untracedOf ? untracedUnder(index, spec.untracedOf) : []), [index, spec]);
@@ -229,7 +234,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
       <Suspense fallback={<div className="graph-flow trace-flow" aria-busy="true" />}>
         <TraceCanvas index={index} focus={focus} map={map} gapsOnly={gapsOnly} onNavigate={props.onNavigate} onPeek={props.onPeek} space={props.space} ring={ring} />
       </Suspense>
-      <div className="trace-access" onFocus={onFocus} onBlur={onBlur} onKeyDown={walk}>
+      <div className="trace-access" data-arrows="own" onFocus={onFocus} onBlur={onBlur} onKeyDown={walk}>
         {table}
       </div>
     </section>
