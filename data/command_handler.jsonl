@@ -17,10 +17,10 @@
 {"id":"LA-EXP-CMD05-H","title":"keepTab","command_id":"LA-EXP-CMD05","file":"app/src/views/useTabs.ts","description":"`keepTab`, reached through `usePageTabs`' `keep`."}
 {"id":"LA-EXP-CMD06-H","title":"closeTab","command_id":"LA-EXP-CMD06","file":"app/src/views/useTabs.ts","description":"`closeTab`, reached through `usePageTabs`' `close`."}
 {"id":"LA-EXP-CMD07-H","title":"activateTab","command_id":"LA-EXP-CMD07","file":"app/src/views/useTabs.ts","description":"`activateTab` and `cycleTab`, reached through `usePageTabs`' `activate` and `cycle`."}
-{"id":"LA-EXP-CMD08-H","title":"updateTab","command_id":"LA-EXP-CMD08","file":"app/src/views/useTabs.ts","description":"`updateTab`, reached through `usePageTabs`' `update`: pane sizes, wiki scroll and the side bar's state."}
+{"id":"LA-EXP-CMD08-H","title":"updateTab","command_id":"LA-EXP-CMD08","file":"app/src/views/useTabs.ts","description":"`updateTab`, reached through `usePageTabs`' `update`: pane sizes and wiki scroll."}
 {"id":"LA-EXP-CMD09-H","title":"useSessionSettings","command_id":"LA-EXP-CMD09","file":"app/src/graph/settings.ts","description":"useSessionSettings: the session's settings, and the setters the graph and the wiki card call for the person's own change"}
 {"id":"LA-PLT-CMD01-H","title":"usePanelSize.set","command_id":"LA-PLT-CMD01","file":"app/src/shell/prefs.ts","description":"`usePanelSize`'s setter, `set`, which keeps the size within the panel's limits."}
-{"id":"LA-PLT-CMD02-H","title":"toggleNav","command_id":"LA-PLT-CMD02","file":"app/src/App.tsx","description":"toggleNav, and the side bar, wiki card and stage commands the shell registers"}
+{"id":"LA-PLT-CMD02-H","title":"toggleNav","command_id":"LA-PLT-CMD02","file":"app/src/App.tsx","description":"toggleNav, and the wiki card and stage commands the shell registers"}
 {"id":"LA-PLT-CMD03-H","title":"choose","command_id":"LA-PLT-CMD03","file":"app/src/theme/ThemeProvider.tsx"}
 {"id":"LA-PLT-CMD04-H","title":"setMode","command_id":"LA-PLT-CMD04","file":"app/src/theme/ThemeProvider.tsx"}
 {"id":"LA-PLT-CMD05-H","title":"duplicate","command_id":"LA-PLT-CMD05","file":"app/src/theme/ThemeProvider.tsx"}

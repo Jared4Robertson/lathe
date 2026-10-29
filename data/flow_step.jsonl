@@ -91,11 +91,11 @@
 {"id":"LA-AUT-UC13-FL04-S02","title":"The Agent sorts a long list of requirements or rules into groups with set","flow_id":"LA-AUT-UC13-FL04","path":"main","position":2}
 {"id":"LA-AUT-UC13-FL04-S03","title":"The Agent describes the data sets tests start from, with the file that builds each, and links the tests","flow_id":"LA-AUT-UC13-FL04","path":"main","position":3}
 {"id":"LA-AUT-UC14-FL01-S01","title":"The Reader opens the record format from the palette or the shortcuts sheet","flow_id":"LA-AUT-UC14-FL01","path":"main","position":1}
-{"id":"LA-AUT-UC14-FL01-S02","title":"They open a kind's page from the side bar's Kind row or a column label","flow_id":"LA-AUT-UC14-FL01","path":"main","position":2}
+{"id":"LA-AUT-UC14-FL01-S02","title":"They open a kind's page from the wiki card's kind line or a column label","flow_id":"LA-AUT-UC14-FL01","path":"main","position":2}
 {"id":"LA-AUT-UC14-FL01-S03","title":"They open a check's page from a problem's code","flow_id":"LA-AUT-UC14-FL01","path":"main","position":3}
 {"id":"LA-AUT-UC14-FL01-S04","title":"They find a kind or a check by quick find","flow_id":"LA-AUT-UC14-FL01","path":"find","position":1}
 {"id":"LA-AUT-UC14-FL02-S01","title":"The Reader opens the record format from the palette, the shortcuts sheet or the Help menu","flow_id":"LA-AUT-UC14-FL02","path":"main","position":1}
-{"id":"LA-AUT-UC14-FL02-S02","title":"The Reader opens a kind's page from the side bar's Kind row or a column label","flow_id":"LA-AUT-UC14-FL02","path":"main","position":2}
+{"id":"LA-AUT-UC14-FL02-S02","title":"The Reader opens a kind's page from the wiki card's kind line or a column label","flow_id":"LA-AUT-UC14-FL02","path":"main","position":2}
 {"id":"LA-AUT-UC14-FL02-S03","title":"The Reader opens a check's page from a problem's code","flow_id":"LA-AUT-UC14-FL02","path":"main","position":3}
 {"id":"LA-AUT-UC14-FL02-S04","title":"The Reader finds a kind or a check by quick find","flow_id":"LA-AUT-UC14-FL02","path":"find","position":1}
 {"id":"LA-AUT-UC15-FL02-S01","title":"In the desktop app, the author chooses Reveal in Finder, Open in editor or Copy ID for the record in front","flow_id":"LA-AUT-UC15-FL02","path":"main","position":1}
@@ -208,18 +208,18 @@
 {"id":"LA-EXP-UC02-FL02-S03","title":"The Reader clicks anywhere on a row, which opens its record","flow_id":"LA-EXP-UC02-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC03-FL01-S01","title":"The reader switches the page in hand to its Graph stage, never from the nav","flow_id":"LA-EXP-UC03-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC03-FL01-S02","title":"The graph frames the focus in the product's one map, at depth 1, its parent at the left","flow_id":"LA-EXP-UC03-FL01","path":"main","position":2}
-{"id":"LA-EXP-UC03-FL01-S03","title":"Nodes show their stage, kind, problems and gaps, with a legend, and hovering one spotlights what it joins","flow_id":"LA-EXP-UC03-FL01","path":"main","position":3}
+{"id":"LA-EXP-UC03-FL01-S03","title":"Nodes show their stage, kind, problems and gaps, with a key, and hovering one spotlights what it joins","flow_id":"LA-EXP-UC03-FL01","path":"main","position":3}
 {"id":"LA-EXP-UC03-FL01-S04","title":"They click a node: the camera glides to it, the map holds still, the address and the header strip follow","flow_id":"LA-EXP-UC03-FL01","path":"main","position":4}
-{"id":"LA-EXP-UC03-FL01-S05","title":"The side bar describes the focused record","flow_id":"LA-EXP-UC03-FL01","path":"main","position":5}
+{"id":"LA-EXP-UC03-FL01-S05","title":"The wiki card shows the focused record's page","flow_id":"LA-EXP-UC03-FL01","path":"main","position":5}
 {"id":"LA-EXP-UC03-FL01-S06","title":"They filter kinds and switch the minimap on","flow_id":"LA-EXP-UC03-FL01","path":"main","position":6}
 {"id":"LA-EXP-UC03-FL01-S07","title":"They switch the layout to Nested or Voronoi","flow_id":"LA-EXP-UC03-FL01","path":"main","position":7}
 {"id":"LA-EXP-UC03-FL01-S08","title":"From the keyboard they move between nodes, step out, in and across, and Escape clears the filters","flow_id":"LA-EXP-UC03-FL01","path":"main","position":8}
 {"id":"LA-EXP-UC03-FL01-S09","title":"They open a node's record page","flow_id":"LA-EXP-UC03-FL01","path":"main","position":9}
 {"id":"LA-EXP-UC03-FL02-S01","title":"In the desktop app, the Reader switches the page in hand to its Graph stage, never from the nav","flow_id":"LA-EXP-UC03-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC03-FL02-S02","title":"In the desktop app, the graph frames the focus in the product's one map, at depth 1, its parent at the left","flow_id":"LA-EXP-UC03-FL02","path":"main","position":2}
-{"id":"LA-EXP-UC03-FL02-S03","title":"The graph shows each node with its stage, kind, problems and gaps, with a legend, and spotlights what a hovered node joins","flow_id":"LA-EXP-UC03-FL02","path":"main","position":3}
+{"id":"LA-EXP-UC03-FL02-S03","title":"The graph shows each node with its stage, kind, problems and gaps, with a key, and spotlights what a hovered node joins","flow_id":"LA-EXP-UC03-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC03-FL02-S04","title":"The Reader clicks a node: the camera glides to it, the map holds still, the address and the header strip follow","flow_id":"LA-EXP-UC03-FL02","path":"main","position":4}
-{"id":"LA-EXP-UC03-FL02-S05","title":"In the desktop app, the side bar describes the focused record","flow_id":"LA-EXP-UC03-FL02","path":"main","position":5}
+{"id":"LA-EXP-UC03-FL02-S05","title":"In the desktop app, the wiki card shows the focused record's page","flow_id":"LA-EXP-UC03-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC03-FL02-S06","title":"The Reader filters kinds and switches the minimap on","flow_id":"LA-EXP-UC03-FL02","path":"main","position":6}
 {"id":"LA-EXP-UC03-FL02-S07","title":"The Reader switches the layout to Nested or Voronoi","flow_id":"LA-EXP-UC03-FL02","path":"main","position":7}
 {"id":"LA-EXP-UC03-FL02-S08","title":"The Reader moves between nodes from the keyboard, steps out, in and across, and clears the filters with Escape","flow_id":"LA-EXP-UC03-FL02","path":"main","position":8}
@@ -240,14 +240,12 @@
 {"id":"LA-EXP-UC05-FL01-S04","title":"Following a link in the wiki card or clicking on the stage moves them both, and Back and Forward move both","flow_id":"LA-EXP-UC05-FL01","path":"main","position":4}
 {"id":"LA-EXP-UC05-FL01-S05","title":"The wiki shows one level deep, grouped requirements under headings, and long lists ten rows at a time","flow_id":"LA-EXP-UC05-FL01","path":"main","position":5}
 {"id":"LA-EXP-UC05-FL01-S06","title":"They fold the nav's sections, collapse it to a rail, or open it as a sheet on a narrow screen","flow_id":"LA-EXP-UC05-FL01","path":"main","position":6}
-{"id":"LA-EXP-UC05-FL01-S07","title":"They fold the side bar away from the page bar","flow_id":"LA-EXP-UC05-FL01","path":"main","position":7}
 {"id":"LA-EXP-UC05-FL02-S01","title":"In the desktop app, the Reader opens quick find, types part of an ID or title and opens the record","flow_id":"LA-EXP-UC05-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC05-FL02-S02","title":"In the desktop app, the record, group, product or domain opens at its one address, in the views the link names","flow_id":"LA-EXP-UC05-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC05-FL02-S03","title":"The Reader switches between the Graph, ERD and Trace stages, collapses and resizes the wiki card, and the focus stays centered in the open space","flow_id":"LA-EXP-UC05-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC05-FL02-S04","title":"The Reader follows a link in the wiki card or clicks on the stage, which moves them both; Back and Forward move both","flow_id":"LA-EXP-UC05-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC05-FL02-S05","title":"In the desktop app, the wiki shows one level deep, grouped requirements under headings, and long lists ten rows at a time","flow_id":"LA-EXP-UC05-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC05-FL02-S06","title":"The Reader folds the nav's sections or collapses it to a rail","flow_id":"LA-EXP-UC05-FL02","path":"main","position":6}
-{"id":"LA-EXP-UC05-FL02-S07","title":"The Reader folds the side bar away from the page bar","flow_id":"LA-EXP-UC05-FL02","path":"main","position":7}
 {"id":"LA-EXP-UC06-FL01-S01","title":"The reader opens a flow's page and reads its steps in order, a table per path","flow_id":"LA-EXP-UC06-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC06-FL01-S02","title":"They unfold a step to read more; a step with problems shows its badge","flow_id":"LA-EXP-UC06-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC06-FL01-S03","title":"In the Graph stage the steps sit under the flow","flow_id":"LA-EXP-UC06-FL01","path":"main","position":3}
@@ -290,13 +288,13 @@
 {"id":"LA-EXP-UC10-FL01-S01","title":"A plain open shows the page in the preview tab, or activates the tab it is open in","flow_id":"LA-EXP-UC10-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC10-FL01-S02","title":"The reader keeps the tab by a double-click, Ctrl+K then Enter, or a change to its views","flow_id":"LA-EXP-UC10-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC10-FL01-S03","title":"They flip between tabs with Ctrl+Tab","flow_id":"LA-EXP-UC10-FL01","path":"main","position":3}
-{"id":"LA-EXP-UC10-FL01-S04","title":"Each tab keeps its own stage, side bar and wiki card scroll; the graph is drawn the same in every tab","flow_id":"LA-EXP-UC10-FL01","path":"main","position":4}
+{"id":"LA-EXP-UC10-FL01-S04","title":"Each tab keeps its own stage and wiki card scroll; the graph is drawn the same in every tab","flow_id":"LA-EXP-UC10-FL01","path":"main","position":4}
 {"id":"LA-EXP-UC10-FL01-S05","title":"They close a tab by its button, a middle-click or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL01","path":"main","position":5}
 {"id":"LA-EXP-UC10-FL01-S06","title":"A reload brings back each space's tabs as they were","flow_id":"LA-EXP-UC10-FL01","path":"main","position":6}
 {"id":"LA-EXP-UC10-FL02-S01","title":"The Reader opens a page plainly, which shows in the preview tab, or activates the tab it is open in","flow_id":"LA-EXP-UC10-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC10-FL02-S02","title":"In the desktop app, the Reader keeps the tab by a double-click, Ctrl+K then Enter, or a change to its views","flow_id":"LA-EXP-UC10-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC10-FL02-S03","title":"The Reader flips between tabs with Ctrl+Tab, or from View › Tabs in the menu bar","flow_id":"LA-EXP-UC10-FL02","path":"main","position":3}
-{"id":"LA-EXP-UC10-FL02-S04","title":"The app keeps each tab's own stage, side bar and wiki card scroll, and draws the graph the same in every tab","flow_id":"LA-EXP-UC10-FL02","path":"main","position":4}
+{"id":"LA-EXP-UC10-FL02-S04","title":"The app keeps each tab's own stage and wiki card scroll, and draws the graph the same in every tab","flow_id":"LA-EXP-UC10-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC10-FL02-S05","title":"The Reader closes a tab by its button, a middle-click or Alt+Shift+W","flow_id":"LA-EXP-UC10-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC10-FL02-S06","title":"The app brings back each space's tabs as they were after a reload","flow_id":"LA-EXP-UC10-FL02","path":"main","position":6}
 {"id":"LA-EXP-UC11-FL01-S01","title":"On a domain, aggregate or entity page the reader opens the ERD stage","flow_id":"LA-EXP-UC11-FL01","path":"main","position":1}
@@ -309,12 +307,8 @@
 {"id":"LA-EXP-UC11-FL02-S03","title":"The Reader clicks an aggregate's box: its entities with their fields, and the aggregates around it faded","flow_id":"LA-EXP-UC11-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC11-FL02-S04","title":"The ERD stage picks an entity out of the same ERD on its page","flow_id":"LA-EXP-UC11-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC11-FL02-S05","title":"The Reader reads the key under the diagram","flow_id":"LA-EXP-UC11-FL02","path":"main","position":5}
-{"id":"LA-EXP-UC12-FL01-S01","title":"In the Graph stage the side bar is open on Details, and follows the pointer over the boxes","flow_id":"LA-EXP-UC12-FL01","path":"main","position":1}
-{"id":"LA-EXP-UC12-FL01-S02","title":"On the ERD stage they switch the side bar to Outline and jump to a box; nothing outside the side bar moves","flow_id":"LA-EXP-UC12-FL01","path":"main","position":2}
-{"id":"LA-EXP-UC12-FL01-S03","title":"They switch to History: the uncommitted change first, an older commit's diff, Load more","flow_id":"LA-EXP-UC12-FL01","path":"main","position":3}
-{"id":"LA-EXP-UC12-FL02-S01","title":"The side bar opens on Details in the Graph stage, and follows the pointer over the boxes","flow_id":"LA-EXP-UC12-FL02","path":"main","position":1}
-{"id":"LA-EXP-UC12-FL02-S02","title":"The Reader switches the side bar to Outline on the ERD stage and jumps to a box; nothing outside the side bar moves","flow_id":"LA-EXP-UC12-FL02","path":"main","position":2}
-{"id":"LA-EXP-UC12-FL02-S03","title":"The Reader switches to History: the uncommitted change first, an older commit's diff, Load more","flow_id":"LA-EXP-UC12-FL02","path":"main","position":3}
+{"id":"LA-EXP-UC12-FL01-S03","title":"They expand the wiki card and show the history: the uncommitted change first, an older commit's diff, Load more","flow_id":"LA-EXP-UC12-FL01","path":"main","position":1}
+{"id":"LA-EXP-UC12-FL02-S03","title":"The Reader expands the wiki card and shows the history: the uncommitted change first, an older commit's diff, Load more","flow_id":"LA-EXP-UC12-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC13-FL01-S01","title":"The reader opens a domain's Interaction design and sees its endpoints, and the integrations only its steps exchange with","flow_id":"LA-EXP-UC13-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC13-FL01-S02","title":"They open a command and read its endpoint, method, route and API requirements","flow_id":"LA-EXP-UC13-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC13-FL01-S03","title":"They open an integration and read the steps that exchange with its system","flow_id":"LA-EXP-UC13-FL01","path":"main","position":3}
@@ -368,12 +362,12 @@
 {"id":"LA-PLT-UC05-FL02-S04","title":"The Reader rebinds a key, and every hint follows, the shortcuts sheet with them","flow_id":"LA-PLT-UC05-FL02","path":"main","position":4}
 {"id":"LA-PLT-UC06-FL01-S01","title":"The Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC06-FL01-S02","title":"Lathe remembers the sizes; a double-click resets one","flow_id":"LA-PLT-UC06-FL01","path":"main","position":2}
-{"id":"LA-PLT-UC06-FL01-S03","title":"Dragging the navigation or the side bar small folds it away","flow_id":"LA-PLT-UC06-FL01","path":"main","position":3}
-{"id":"LA-PLT-UC06-FL01-S04","title":"They hide the side bar; the stage takes its room and recenters, and the toggle brings it back","flow_id":"LA-PLT-UC06-FL01","path":"main","position":4}
+{"id":"LA-PLT-UC06-FL01-S03","title":"Dragging the navigation small folds it to its rail","flow_id":"LA-PLT-UC06-FL01","path":"main","position":3}
+{"id":"LA-PLT-UC06-FL01-S04","title":"They collapse the wiki card; the stage takes its room and recenters, and the toggle brings it back","flow_id":"LA-PLT-UC06-FL01","path":"main","position":4}
 {"id":"LA-PLT-UC06-FL02-S01","title":"In the desktop app, the Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC06-FL02-S02","title":"In the desktop app, Lathe remembers the sizes; a double-click resets one","flow_id":"LA-PLT-UC06-FL02","path":"main","position":2}
-{"id":"LA-PLT-UC06-FL02-S03","title":"The Reader drags the navigation or the side bar small, which folds it away","flow_id":"LA-PLT-UC06-FL02","path":"main","position":3}
-{"id":"LA-PLT-UC06-FL02-S04","title":"The Reader hides the side bar; the stage takes its room and recenters, and the toggle brings it back","flow_id":"LA-PLT-UC06-FL02","path":"main","position":4}
+{"id":"LA-PLT-UC06-FL02-S03","title":"The Reader drags the navigation small, which folds it to its rail","flow_id":"LA-PLT-UC06-FL02","path":"main","position":3}
+{"id":"LA-PLT-UC06-FL02-S04","title":"The Reader collapses the wiki card; the stage takes its room and recenters, and the toggle brings it back","flow_id":"LA-PLT-UC06-FL02","path":"main","position":4}
 {"id":"LA-PLT-UC07-FL01-S01","title":"The Reader presses g then t and arrows through the themes, each shown on the whole app at once","flow_id":"LA-PLT-UC07-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC07-FL01-S02","title":"They keep one with Enter, or put back the one before with Escape","flow_id":"LA-PLT-UC07-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC07-FL01-S03","title":"They switch Light, Dark or System from the palette","flow_id":"LA-PLT-UC07-FL01","path":"main","position":3}
@@ -398,13 +392,13 @@
 {"id":"LA-PLT-UC08-FL01-S02","title":"They tap search in the top bar, type a use case's ID and tap the result","flow_id":"LA-PLT-UC08-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC08-FL01-S03","title":"The wiki fills the screen; they tap Graph in the page bar","flow_id":"LA-PLT-UC08-FL01","path":"main","position":3}
 {"id":"LA-PLT-UC08-FL01-S04","title":"They pinch out, tap a node to see its name, and tap Open","flow_id":"LA-PLT-UC08-FL01","path":"main","position":4}
-{"id":"LA-PLT-UC08-FL01-S05","title":"They pull up the side bar sheet, drag it to full height, then swipe it away","flow_id":"LA-PLT-UC08-FL01","path":"main","position":5}
+{"id":"LA-PLT-UC08-FL01-S05","title":"They pull up the wiki card sheet, drag it to full height, then swipe it away","flow_id":"LA-PLT-UC08-FL01","path":"main","position":5}
 {"id":"LA-PLT-UC08-FL01-S06","title":"They open the nav sheet from the menu button and choose the domain","flow_id":"LA-PLT-UC08-FL01","path":"main","position":6}
 {"id":"LA-PLT-UC08-FL01-S07","title":"The Open pages sheet takes them back to the use case they started from","flow_id":"LA-PLT-UC08-FL01","path":"main","position":7}
 {"id":"LA-PLT-UC08-FL01-S08","title":"On a tablet in landscape they keep the workbench, with targets sized for a finger","flow_id":"LA-PLT-UC08-FL01","path":"tablet","position":1}
 {"id":"LA-PLT-UC09-FL01-S01","title":"The Reader opens a page; nothing drawn moves as the specs and fonts arrive","flow_id":"LA-PLT-UC09-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC09-FL01-S02","title":"They move between records by the nav, a link, a graph click, Back and quick find; the frame stays","flow_id":"LA-PLT-UC09-FL01","path":"main","position":2}
-{"id":"LA-PLT-UC09-FL01-S03","title":"They collapse, show and resize the wiki card and the side bar; only those panels move, and the stage recenters","flow_id":"LA-PLT-UC09-FL01","path":"main","position":3}
+{"id":"LA-PLT-UC09-FL01-S03","title":"They collapse, show and resize the wiki card; only it moves, and the stage recenters","flow_id":"LA-PLT-UC09-FL01","path":"main","position":3}
 {"id":"LA-PLT-UC09-FL01-S04","title":"They fold rows and use Expand all","flow_id":"LA-PLT-UC09-FL01","path":"main","position":4}
 {"id":"LA-PLT-UC09-FL01-S05","title":"They resize panels, which follow the pointer","flow_id":"LA-PLT-UC09-FL01","path":"main","position":5}
 {"id":"LA-PLT-UC09-FL01-S06","title":"They re-center the graph, change its depth and move around the ERD; the canvas and its bars hold still","flow_id":"LA-PLT-UC09-FL01","path":"main","position":6}
@@ -415,7 +409,7 @@
 {"id":"LA-PLT-UC09-FL01-S11","title":"Each move answers within the performance budgets","flow_id":"LA-PLT-UC09-FL01","path":"main","position":10}
 {"id":"LA-PLT-UC09-FL02-S01","title":"In the desktop app, the Reader opens a page; nothing drawn moves as the specs and fonts arrive","flow_id":"LA-PLT-UC09-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC09-FL02-S02","title":"The Reader moves between records by the nav, a link, a graph click, Back and quick find; the frame stays","flow_id":"LA-PLT-UC09-FL02","path":"main","position":2}
-{"id":"LA-PLT-UC09-FL02-S03","title":"The Reader collapses, shows and resizes the wiki card and the side bar; only those panels move, and the stage recenters","flow_id":"LA-PLT-UC09-FL02","path":"main","position":3}
+{"id":"LA-PLT-UC09-FL02-S03","title":"The Reader collapses, shows and resizes the wiki card; only it moves, and the stage recenters","flow_id":"LA-PLT-UC09-FL02","path":"main","position":3}
 {"id":"LA-PLT-UC09-FL02-S04","title":"The Reader folds rows and uses Expand all","flow_id":"LA-PLT-UC09-FL02","path":"main","position":4}
 {"id":"LA-PLT-UC09-FL02-S05","title":"The Reader resizes panels, which follow the pointer","flow_id":"LA-PLT-UC09-FL02","path":"main","position":5}
 {"id":"LA-PLT-UC09-FL02-S06","title":"The Reader re-centers the graph, changes its depth and moves around the ERD; the canvas and its bars hold still","flow_id":"LA-PLT-UC09-FL02","path":"main","position":6}
@@ -423,14 +417,14 @@
 {"id":"LA-PLT-UC09-FL02-S08","title":"The Reader opens a tooltip, quick find, the palette and the sheet, each placed before it shows","flow_id":"LA-PLT-UC09-FL02","path":"main","position":8}
 {"id":"LA-PLT-UC09-FL02-S09","title":"The Reader switches the theme; only colors change","flow_id":"LA-PLT-UC09-FL02","path":"main","position":9}
 {"id":"LA-PLT-UC09-FL02-S10","title":"The app answers each move within the performance budgets","flow_id":"LA-PLT-UC09-FL02","path":"main","position":10}
-{"id":"LA-PLT-UC10-FL01-S01","title":"The Reader tabs round the nav, the tab panel, the wiki card, the stage and the side bar; every control is reached, named for what it shows, big enough and never inside another, and every box that scrolls takes focus","flow_id":"LA-PLT-UC10-FL01","path":"main","position":1}
+{"id":"LA-PLT-UC10-FL01-S01","title":"The Reader tabs round the nav, the tab panel, the wiki card and the stage; every control is reached, named for what it shows, big enough and never inside another, and every box that scrolls takes focus","flow_id":"LA-PLT-UC10-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC10-FL01-S02","title":"They open a record from the nav or quick find; focus stays on the page","flow_id":"LA-PLT-UC10-FL01","path":"main","position":2}
-{"id":"LA-PLT-UC10-FL01-S03","title":"They switch views and show and hide the side bar; each change is announced","flow_id":"LA-PLT-UC10-FL01","path":"main","position":3}
+{"id":"LA-PLT-UC10-FL01-S03","title":"They switch stages and collapse and show the wiki card; each change is announced","flow_id":"LA-PLT-UC10-FL01","path":"main","position":3}
 {"id":"LA-PLT-UC10-FL01-S04","title":"They pick the High contrast theme by keyboard; every page reads clearly in it, in light and dark","flow_id":"LA-PLT-UC10-FL01","path":"main","position":4}
 {"id":"LA-PLT-UC10-FL01-S05","title":"They open a dialog or a phone sheet; focus is held inside and comes back to the opener","flow_id":"LA-PLT-UC10-FL01","path":"main","position":5}
-{"id":"LA-PLT-UC10-FL02-S01","title":"In the desktop app, the Reader tabs round the nav, the tab panel, the wiki card, the stage and the side bar; every control is reached, named for what it shows, big enough and never inside another, and every box that scrolls takes focus","flow_id":"LA-PLT-UC10-FL02","path":"main","position":1}
+{"id":"LA-PLT-UC10-FL02-S01","title":"In the desktop app, the Reader tabs round the nav, the tab panel, the wiki card and the stage; every control is reached, named for what it shows, big enough and never inside another, and every box that scrolls takes focus","flow_id":"LA-PLT-UC10-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC10-FL02-S02","title":"The Reader opens a record from the nav or quick find; focus stays on the page","flow_id":"LA-PLT-UC10-FL02","path":"main","position":2}
-{"id":"LA-PLT-UC10-FL02-S03","title":"The Reader switches views and shows and hides the side bar; each change is announced","flow_id":"LA-PLT-UC10-FL02","path":"main","position":3}
+{"id":"LA-PLT-UC10-FL02-S03","title":"The Reader switches stages and collapses and shows the wiki card; each change is announced","flow_id":"LA-PLT-UC10-FL02","path":"main","position":3}
 {"id":"LA-PLT-UC10-FL02-S04","title":"The Reader picks the High contrast theme by keyboard; every page reads clearly in it, in light and dark","flow_id":"LA-PLT-UC10-FL02","path":"main","position":4}
 {"id":"LA-PLT-UC10-FL02-S05","title":"The Reader opens a dialog; focus is held inside and comes back to the opener","flow_id":"LA-PLT-UC10-FL02","path":"main","position":5}
 {"id":"LA-PLT-UC11-FL02-S01","title":"The Reader chooses File › Open Product Folder… and picks a folder","flow_id":"LA-PLT-UC11-FL02","path":"main","position":1}
@@ -456,7 +450,7 @@
 {"id":"LA-PLT-UC14-FL02-S01","title":"The window has no system title bar; Lathe draws its own, with the window's controls over it","flow_id":"LA-PLT-UC14-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC14-FL02-S02","title":"The Reader goes back and forward from the bar","flow_id":"LA-PLT-UC14-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC14-FL02-S03","title":"They click the command center to open quick find","flow_id":"LA-PLT-UC14-FL02","path":"main","position":3}
-{"id":"LA-PLT-UC14-FL02-S04","title":"They show and hide the navigation and the side bar from the bar","flow_id":"LA-PLT-UC14-FL02","path":"main","position":4}
+{"id":"LA-PLT-UC14-FL02-S04","title":"They show and hide the navigation from the bar","flow_id":"LA-PLT-UC14-FL02","path":"main","position":4}
 {"id":"LA-PLT-UC14-FL02-S05","title":"They drag the window by the bar and double-click it to zoom","flow_id":"LA-PLT-UC14-FL02","path":"main","position":5}
 {"id":"LA-PLT-UC14-FL02-S06","title":"They change the theme; the bar and the window's controls follow","flow_id":"LA-PLT-UC14-FL02","path":"main","position":6}
 {"id":"LA-PLT-UC15-FL02-S01","title":"The Owner keeps Lathe in the Dock; its icon reads at every size, with a DEV band in development","flow_id":"LA-PLT-UC15-FL02","path":"main","position":1}
@@ -570,10 +564,10 @@
 {"id":"LA-TRC-UC11-FL02-S03","title":"The record page shows each test with its state","flow_id":"LA-TRC-UC11-FL02","path":"main","position":3}
 {"id":"LA-TRC-UC12-FL01-S01","title":"The Reader opens a domain page and unfolds Patterns we follow: each pattern, its rules, and whether this domain proves each","flow_id":"LA-TRC-UC12-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC12-FL01-S02","title":"They open a pattern: its settings, its rules, and the domains and use cases that follow it, with each domain's standing per rule","flow_id":"LA-TRC-UC12-FL01","path":"main","position":2}
-{"id":"LA-TRC-UC12-FL01-S03","title":"In the graph, the pattern's rules sit under the pattern, and the side bar lists its followers","flow_id":"LA-TRC-UC12-FL01","path":"main","position":3}
+{"id":"LA-TRC-UC12-FL01-S03","title":"In the graph, the pattern's rules sit under the pattern","flow_id":"LA-TRC-UC12-FL01","path":"main","position":3}
 {"id":"LA-TRC-UC12-FL02-S01","title":"In the desktop app, the Reader opens a domain page and unfolds Patterns we follow: each pattern, its rules, and whether this domain proves each","flow_id":"LA-TRC-UC12-FL02","path":"main","position":1}
 {"id":"LA-TRC-UC12-FL02-S02","title":"The Reader opens a pattern: its settings, its rules, and the domains and use cases that follow it, with each domain's standing per rule","flow_id":"LA-TRC-UC12-FL02","path":"main","position":2}
-{"id":"LA-TRC-UC12-FL02-S03","title":"The graph sets the pattern's rules under the pattern, and the side bar lists its followers","flow_id":"LA-TRC-UC12-FL02","path":"main","position":3}
+{"id":"LA-TRC-UC12-FL02-S03","title":"The graph sets the pattern's rules under the pattern","flow_id":"LA-TRC-UC12-FL02","path":"main","position":3}
 {"id":"LA-TRC-UC13-FL01-S01","title":"The Reader reads each domain card's tests by state","flow_id":"LA-TRC-UC13-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC13-FL01-S02","title":"In the product's Summary they read the tests by state in total","flow_id":"LA-TRC-UC13-FL01","path":"main","position":2}
 {"id":"LA-TRC-UC13-FL01-S03","title":"They open a domain and read the same in its Coverage section","flow_id":"LA-TRC-UC13-FL01","path":"main","position":3}
