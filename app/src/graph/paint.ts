@@ -4,6 +4,7 @@ import { notchOf, type Mark, type Outline, type Shape } from './shapes';
 import { MARK_PATHS, SHAPE_PATHS } from './shape-icons';
 import { fontFor, type GraphFonts } from './fonts';
 import { onScreen } from './hit';
+import { stickyLabel, type ScreenBox } from './sticky';
 import { GHOST_MS, markPhase, type StageMarks } from '../changes/marks';
 
 // The graph's canvas painter (LA-EXP-DS09, LA-EXP-DS10): each frame it draws what the camera
@@ -61,6 +62,8 @@ export interface PaintState {
   spot: number;
   /** The live changes' marks (changes/marks.ts): a glow, a pulse, a dot by each changed record, the removed ones' ghosts. */
   marks: StageMarks | null;
+  /** The part of the canvas no floating panel covers, in CSS pixels: a box cut by its edge draws a sticky label (sticky.ts). */
+  open: ScreenBox;
 }
 
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -347,9 +350,22 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     ctx.stroke();
   }
 
-  // The label: its icons, its lines, its badges.
-  for (const icon of p.icons) paintIcon(ctx, icon.draw, icon.name, X(icon.x), Y(icon.y), icon.w * zoom, icon.h * zoom, colors.edge, colors.fill);
+  // The label: its icons, its lines, its badges; a label the open space's edge cuts drawn in the box's visible part, or
+  // not at all (sticky.ts), its icons and badges with it.
+  const sticky = stickyLabel(p, zoom, X, Y, state.open);
   let font = '';
+  if (sticky.kind !== 'placed') {
+    if (sticky.kind === 'moved') {
+      for (const line of sticky.lines) {
+        const want = fontFor(fonts, line.face, line.px);
+        if (want !== font) { ctx.font = want; font = want; }
+        ctx.fillStyle = line.tone === 'ink' ? look.ink : look.muted;
+        ctx.fillText(line.text, line.x, line.baseline);
+      }
+    }
+    return;
+  }
+  for (const icon of p.icons) paintIcon(ctx, icon.draw, icon.name, X(icon.x), Y(icon.y), icon.w * zoom, icon.h * zoom, colors.edge, colors.fill);
   for (const line of p.lines) {
     const px = line.size * zoom;
     const x = X(line.x);

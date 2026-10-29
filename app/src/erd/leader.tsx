@@ -35,9 +35,13 @@ export function ErdLeader({ host, rects, focus, space }: { host: RefObject<Leade
       if (box) color.current = getComputedStyle(box).borderTopColor;
     }
     const [x, y, zoom] = flow.getState().transform;
+    const onScreen = (b: Rect) => ({ left: b.x * zoom + x, top: b.y * zoom + y, right: (b.x + b.width) * zoom + x, bottom: (b.y + b.height) * zoom + y });
+    // The line keeps clear of every other box, though not of one holding the focus's (its region).
+    const holds = (b: Rect) => r && b.x <= r.x && b.y <= r.y && b.x + b.width >= r.x + r.width && b.y + b.height >= r.y + r.height;
     drawLeaderLine(ctx, {
       host: el, space, dpr, color: color.current ?? getComputedStyle(el).color,
-      box: r ? { left: r.x * zoom + x, top: r.y * zoom + y, right: (r.x + r.width) * zoom + x, bottom: (r.y + r.height) * zoom + y } : null,
+      box: r ? onScreen(r) : null,
+      avoid: rects ? [...rects].filter(([id, b]) => id !== focus && !holds(b)).map(([, b]) => onScreen(b)) : [],
     });
   }, [host, rects, focus, space, flow]);
 

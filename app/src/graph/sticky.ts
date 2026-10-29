@@ -1,0 +1,86 @@
+import type { Plate } from './plate';
+import { largestFit, linesIn, LINE_HEIGHT, META_FONT, textMeasure, TITLE_FONT, LABEL_PAD, LABEL_PAD_BLOCK, type Face, type MapLabel } from './text';
+
+// Sticky labels (LA-EXP-DS06): a box only partly inside the open space (cut by a floating panel, the nav or the wiki
+// card, or by the canvas's edge) draws its label within its visible part, as a sticky header stays in view: laid out
+// anew for that part's width, wrapped on whole words, at no larger a scale than its own, centered in the part. A label
+// that cannot fit there at the readable floor is not drawn at all, so no text is ever drawn half cut. A label wholly
+// in the open space is drawn as the map placed it.
+
+/** A rectangle on the canvas, in its CSS pixels. */
+export interface ScreenBox { left: number; top: number; right: number; bottom: number }
+
+/** The least size, in CSS pixels, a sticky label's title is drawn at: below it the label is not drawn. */
+export const STICKY_READ_PX = 9;
+
+/** One line of a sticky label, on the canvas: its text, face, font size, left end and baseline, in CSS pixels. */
+export interface StickyLine { text: string; face: Face; px: number; x: number; baseline: number; tone: 'ink' | 'muted' }
+
+/** How a box's label is drawn: as the map placed it, laid out anew in its visible part, or not at all. */
+export type Sticky = { kind: 'placed' } | { kind: 'moved'; lines: StickyLine[] } | { kind: 'hidden' };
+
+const PLACED: Sticky = { kind: 'placed' };
+const HIDDEN: Sticky = { kind: 'hidden' };
+/** The layouts worked out lately, by box and room: a glide asks for the same ones frame after frame. */
+const known = new Map<string, Sticky>();
+const KNOWN_MAX = 400;
+
+/**
+ * How a box's label is drawn under a camera (`X`, `Y` place a map point on the canvas, `zoom` its scale) with `open`
+ * the part of the canvas no panel covers: as placed when its lines lie wholly in it (or the box is wholly outside it),
+ * else in the box's visible part, or hidden when it cannot fit there with its title at STICKY_READ_PX.
+ */
+export function stickyLabel(p: Plate, zoom: number, X: (x: number) => number, Y: (y: number) => number, open: ScreenBox): Sticky {
+  if (p.lines.length === 0) return PLACED;
+  let [l0, t0, l1, t1] = [Infinity, Infinity, -Infinity, -Infinity];
+  for (const l of p.lines) {
+    l0 = Math.min(l0, X(l.x)); l1 = Math.max(l1, X(l.x + l.width));
+    t0 = Math.min(t0, Y(l.top)); t1 = Math.max(t1, Y(l.top + l.height));
+  }
+  const tol = 0.5;
+  if (l0 >= open.left - tol && l1 <= open.right + tol && t0 >= open.top - tol && t1 <= open.bottom + tol) return PLACED;
+  // The label's room (its content box and the padding round it), cut to the open space.
+  const t = p.text;
+  const room = {
+    left: Math.max(X(p.label.x - LABEL_PAD * t), open.left), right: Math.min(X(p.label.x + p.label.w + LABEL_PAD * t), open.right),
+    top: Math.max(Y(p.label.y - LABEL_PAD_BLOCK * t), open.top), bottom: Math.min(Y(p.label.y + p.label.h + LABEL_PAD_BLOCK * t), open.bottom),
+  };
+  const w = room.right - room.left;
+  const h = room.bottom - room.top;
+  if (w <= 0 || h <= 0) return HIDDEN;
+  const most = t * zoom;
+  const key = `${p.place}|${Math.round(w)}|${Math.round(h)}|${most.toPrecision(4)}`;
+  let laid = known.get(key);
+  if (!laid) {
+    laid = layOut({ title: p.title, meta: p.meta }, w, h, most);
+    if (known.size >= KNOWN_MAX) known.delete(known.keys().next().value!);
+    known.set(key, laid);
+  }
+  if (laid.kind !== 'moved') return laid;
+  // Placed in the room's middle (cached relative to it).
+  const cx = (room.left + room.right) / 2;
+  const cy = (room.top + room.bottom) / 2;
+  return { kind: 'moved', lines: laid.lines.map((l) => ({ ...l, x: cx + l.x, baseline: cy + l.baseline })) };
+}
+
+/** A label laid out in a room `w` by `h` on the canvas at a scale of at most `most`, its lines centered on the room's middle (0, 0). */
+function layOut(label: MapLabel, w: number, h: number, most: number): Sticky {
+  const s = largestFit(label, true, w, h, most);
+  if (s * TITLE_FONT < STICKY_READ_PX) return HIDDEN;
+  const wrapped = linesIn(label, w / s, true);
+  const m = textMeasure();
+  const all = [
+    ...wrapped.meta.map((text) => ({ text, face: 'meta' as Face, px: META_FONT * s, tone: 'muted' as const })),
+    ...wrapped.title.map((text) => ({ text, face: 'title' as Face, px: TITLE_FONT * s, tone: 'ink' as const })),
+  ];
+  let y = -all.reduce((sum, l) => sum + l.px * LINE_HEIGHT, 0) / 2;
+  const lines: StickyLine[] = all.map((l) => {
+    const lh = l.px * LINE_HEIGHT;
+    const { ascent, descent } = m.metrics(l.face);
+    const baseline = y + (lh - (ascent + descent) * l.px) / 2 + ascent * l.px;
+    const width = m.em(l.text.trimEnd(), l.face) * l.px;
+    y += lh;
+    return { text: l.text, face: l.face, px: l.px, x: -width / 2, baseline, tone: l.tone };
+  });
+  return { kind: 'moved', lines };
+}
