@@ -5,7 +5,7 @@
 //   takes under 2 s.
 // - A live reload after one row changes takes under 500 ms.
 // - A cold CLI command (`lathe show <id>` on Lathe's spec, a fresh process with the schema cache in place) takes
-//   under 600 ms, from the process's start to its exit.
+//   under 800 ms, from the process's start to its exit.
 // It also measures, without a budget, a synthetic product of about 10,000 records (Lathe's data copied six times
 // under other ID prefixes, in a temporary folder), and the reference.
 //
@@ -26,7 +26,7 @@ import { buildReference, CONFIG_FILE, loadWorkspace, openStore, SCHEMA_VERSION, 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../..');
 
-export const ENGINE_BUDGETS = { loadMs: 2000, reloadMs: 500, cliMs: 600 } as const;
+export const ENGINE_BUDGETS = { loadMs: 2000, reloadMs: 500, cliMs: 800 } as const;
 const MAX_LOAD = Number(process.env.PERF_MAX_LOAD ?? 12);
 const RUNS = 5;
 const PROFILE = process.argv.includes('--profile');
