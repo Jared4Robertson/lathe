@@ -358,7 +358,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     // button with a name; and every problem row, the record's or else its check's, is never a dead box.
     let cards = 0;
     let problems = 0;
-    for (const path of ['/', '/DM', '/DM/checks', '/DM-SHOP-UC01-R01-T01', '/DM-SHOP-UC01-R01?stage=trace', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM?panel=checks', '/DM-SHOP-UC01-R01-T01', '/DM-SHOP-UC01-R01?stage=trace', '/DM?panel=appearance']) {
       await openApp(path);
       await screen.findByRole('heading', { level: 1 });
       // The Trace stage loads on its own: its chain's cards.
@@ -486,7 +486,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(CSS).toMatch(/\.markdown pre, \.spec-body pre \{[^}]*overflow-x:\s*auto/);
     expect(CSS).toMatch(/\.record-id[^{]*\{[^}]*overflow-wrap:\s*anywhere/);
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
-    for (const path of ['/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-CMD01-H', '/DM/checks', '/format']) {
+    for (const path of ['/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-CMD01-H', '/DM?panel=checks', '/DM?page=format']) {
       await openApp(path);
       await screen.findAllByRole('heading', { level: 1 });
       const loose = [...document.querySelectorAll('table')].filter((t) => !t.closest('.table-scroll') && !t.closest('.markdown') && !t.matches('.erd-key-table, .shortcut-table'));
@@ -537,7 +537,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     expect(raw).toEqual([]);
 
     // The pages.
-    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?stage=graph', '/DM/checks', '/format', '/settings/appearance']) {
+    for (const path of ['/', '/DM', '/DM-SHOP', '/DM-SHOP-UC01', '/DM-SHOP-UC01?stage=graph', '/DM?panel=checks', '/DM?page=format', '/DM?panel=appearance']) {
       await openApp(path);
       // Every page waits for its content.
       await screen.findAllByRole('heading', { level: 1 });

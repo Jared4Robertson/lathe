@@ -20,8 +20,8 @@ const node = (id: string) => boxElement(id);
 
 describe('keyboard shortcuts', () => {
   it('LA-V61-R08-T01 Ctrl+P (or Ctrl+K) opens quick find, from anywhere', async () => {
-    await openApp('/DM/checks');
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
+    await openApp('/DM?panel=checks');
+    await screen.findByRole('region', { name: 'Checks' });
     press(document.body, 'p', 'KeyP', { ctrlKey: true });
     await waitFor(() => expect(quickFind()).toHaveFocus());
     fireEvent.keyDown(quickFind(), { key: 'Escape' });
@@ -35,8 +35,8 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-V61-R09-T02 Ctrl+P keeps the browser from printing, and a key nobody handles is left to the browser', async () => {
-    await openApp('/DM/checks');
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
+    await openApp('/DM?panel=checks');
+    await screen.findByRole('region', { name: 'Checks' });
     const event = new KeyboardEvent('keydown', { key: 'p', code: 'KeyP', ctrlKey: true, bubbles: true, cancelable: true });
     act(() => { document.body.dispatchEvent(event); });
     expect(event.defaultPrevented).toBe(true);
@@ -112,17 +112,17 @@ describe('keyboard shortcuts', () => {
   });
 
   it('LA-V61-R11-T03 F8 says which problem it moved to', async () => {
-    await openApp('/DM/checks');
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
-    const problems = [...document.querySelectorAll<HTMLElement>('#main li.problem')];
+    await openApp('/DM?panel=checks');
+    await screen.findByRole('region', { name: 'Checks' });
+    const problems = [...document.querySelectorAll<HTMLElement>('#main li.problem, .tool-panel li.problem')];
     press(document.body, 'F8', 'F8');
     await waitFor(() => expect(announcer()).toHaveTextContent(`Problem 1 of ${problems.length}`));
   });
 
   it('LA-V61-R08-T04 F8 and Shift+F8 move through the problems on the page', async () => {
-    await openApp('/DM/checks');
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
-    const problems = [...document.querySelectorAll<HTMLElement>('#main li.problem')];
+    await openApp('/DM?panel=checks');
+    await screen.findByRole('region', { name: 'Checks' });
+    const problems = [...document.querySelectorAll<HTMLElement>('#main li.problem, .tool-panel li.problem')];
     expect(problems.length).toBeGreaterThan(1);
     press(document.body, 'F8', 'F8');
     expect(active()).toBe(problems[0]);
@@ -186,11 +186,11 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'g', 'KeyG');
     expect(document.querySelector('.key-pending')).toHaveTextContent('G…');
     press(document.body, 'c', 'KeyC');
-    expect(window.location.pathname).toBe('/DM/checks');
+    expect(window.location.pathname + window.location.search).toBe('/DM?panel=checks');
     expect(document.querySelector('.key-pending')).toBeNull();
     press(document.body, 'g', 'KeyG');
     press(document.body, 'f', 'KeyF');
-    expect(window.location.pathname).toBe('/format');
+    expect(window.location.pathname + window.location.search).toBe('/DM?panel=checks&page=format');
     press(document.body, 'g', 'KeyG');
     press(document.body, 'h', 'KeyH');
     expect(window.location.pathname).toBe('/');
@@ -259,11 +259,11 @@ describe('keyboard shortcuts', () => {
 
     // Ctrl+- goes back.
     fireEvent.click(within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ }));
-    expect(window.location.pathname).toBe('/P/checks');
+    expect(window.location.pathname + window.location.search).toBe('/P-D?panel=checks');
     await act(async () => {
       press(document.body, '-', 'Minus', { ctrlKey: true });
       await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
     });
-    expect(window.location.pathname).toBe('/P-D');
+    expect(window.location.pathname + window.location.search).toBe('/P-D');
   });
 });

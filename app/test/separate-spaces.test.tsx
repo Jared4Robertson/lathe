@@ -1,5 +1,6 @@
 import './graph/setup';
 import { screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { SpecData } from '../../lathe/src/server/contract';
 import { graphMap, mapRootOf } from '../src/graph/map';
@@ -72,22 +73,38 @@ describe('separate spaces', () => {
     expect(within(main()).getByText(/Like NF-NOTE, it keeps a list/, { selector: 'p' })).toBeInTheDocument();
     expect(main().querySelector('a[href="/NF-NOTE"]')).toBeNull();
     // The format reference counts and lists the space's records only.
-    await openApp('/format/kinds/domain', { data: crossingWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: /Domain/ });
+    await openApp('/DM?page=format/kinds/domain', { data: crossingWorkspace() });
+    await within(await screen.findByRole('region', { name: 'Wiki card' })).findByRole('heading', { level: 2, name: /Domain/ });
     expect(main().querySelector('a[href="/NF-NOTE"]')).toBeNull();
     expect(within(main()).getByText(/^2 domains in Demo shop/)).toBeInTheDocument();
     // Notebook's Checks names nothing of Demo shop, even the link that crosses into Notebook.
-    await openApp('/NF/checks', { data: crossingWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
-    expect(main().textContent).not.toMatch(/DM-/);
+    await openApp('/NF?panel=checks', { data: crossingWorkspace() });
+    const checks = await screen.findByRole('region', { name: 'Checks' });
+    expect(checks.textContent).not.toMatch(/DM-/);
   });
 
   it('LA-V97-R01-T01 The products page is the space chooser: each product with its name and domain count, nothing from inside it', async () => {
     await openApp('/', { data: crossingWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Products' });
-    const cards = [...screen.getByRole('list', { name: 'Products' }).querySelectorAll<HTMLElement>(':scope > .card')];
+    // A centered picker over the stage: an empty map on a first launch.
+    const picker = await screen.findByRole('dialog', { name: 'Products' });
+    expect(within(picker).getByRole('heading', { level: 1, name: 'Products' })).toBeInTheDocument();
+    expect(main().querySelector('.stage-layout.is-backdrop .focus-stage')).toBeEmptyDOMElement();
+    const cards = [...within(picker).getByRole('list', { name: 'Products' }).querySelectorAll<HTMLElement>(':scope > .card')];
     expect(cards.map((c) => c.querySelector('.card-title')?.getAttribute('href'))).toEqual(['/DM', '/NF']);
-    expect(cards.map((c) => c.textContent)).toEqual(['DMDemo shop2 domains', 'NFNotebook1 domain']);
-    expect(main().querySelector('.problem-badge, .coverage-bars, .problems')).toBeNull();
+    // Each card: its space's mark, its ID, name and number of domains.
+    expect(cards.map((c) => c.textContent)).toEqual(['DMDMDemo shop2 domains', 'NFNFNotebook1 domain']);
+    expect(picker.querySelector('.problem-badge, .coverage-bars, .problems')).toBeNull();
+    // Escape on a first launch leaves the picker open: there is no stage to go back to.
+    await userEvent.keyboard('{Escape}');
+    expect(screen.getByRole('dialog', { name: 'Products' })).toBeInTheDocument();
+    // Once in a space, the picker shows over that product's stage, and Escape goes back to it.
+    await userEvent.click(within(picker).getByRole('link', { name: /Notebook/ }));
+    expect(window.location.pathname).toBe('/NF');
+    await openApp('/', { data: crossingWorkspace() });
+    const again = await screen.findByRole('dialog', { name: 'Products' });
+    expect(within(again).getByRole('link', { name: /Notebook/ })).toHaveAttribute('aria-current', 'page');
+    await waitFor(() => expect(main().querySelector('.stage-layout.is-backdrop .focus-stage')).not.toBeEmptyDOMElement());
+    await userEvent.keyboard('{Escape}');
+    expect(window.location.pathname).toBe('/NF');
   });
 });

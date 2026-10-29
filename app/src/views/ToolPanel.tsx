@@ -19,7 +19,7 @@ export interface ToolPanelProps {
 }
 
 /**
- * A tool over the stage (LA-PAT-APP-UX-R19): a frosted panel floating at the left of the open space, right of
+ * A tool over the stage (LA-PAT-APP-UX-R20): a frosted panel floating at the left of the open space, right of
  * the nav, which the open space leaves room for (`data-floating`), with its name and a close button;
  * on a phone, a bottom sheet. It takes focus as it opens and gives it back as it closes.
  */

@@ -26,7 +26,7 @@ import {
   type SettingToken,
 } from './tokens';
 
-// Appearance, a tool over the stage (LA-V62, LA-PAT-APP-UX-R19): a popover anchored to its button at the
+// Appearance, a tool over the stage (LA-V62, LA-PAT-APP-UX-R20): a popover anchored to its button at the
 // foot of the nav (`?panel=appearance`) with the Light, Dark or System choice and the themes, each
 // previewed live on the stage while it is pointed at or focused, and kept with a click; and, for a
 // theme of one's own (duplicated from another), the editor, a larger panel over the stage
@@ -130,8 +130,7 @@ function ThemeList() {
       <ul className="theme-rows" aria-label="Themes" onMouseLeave={() => preview(null)}>
         {themes.map((t) => (
           <li key={t.id} className={`theme-row${t.id === active.id ? ' is-on' : ''}`}>
-            <button
-              type="button"
+            <Button
               className="theme-pick"
               aria-pressed={t.id === active.id}
               aria-label={`Use ${t.name}`}
@@ -145,7 +144,7 @@ function ThemeList() {
                 <span className="theme-row-name">{t.name}</span>
                 <small className="theme-row-state">{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small>
               </span>
-            </button>
+            </Button>
             <span className="theme-actions">
               {t.builtIn
                 ? <Button label={`Duplicate and edit ${t.name}`} onClick={() => { preview(null); navigate(panelHref('theme', duplicate(t.id))); }}>Duplicate</Button>
@@ -176,7 +175,6 @@ function download(name: string, text: string) {
 function ThemeEditor({ theme }: { theme: Theme }) {
   const { update, remove, reset, basedOn, exportFile, choose, active } = useThemes();
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const heading = useId();
   const base = basedOn(theme.id);
 
   // The theme being edited is the one in use, so the whole app shows each change.
@@ -192,9 +190,8 @@ function ThemeEditor({ theme }: { theme: Theme }) {
   const setToken = (token: SettingToken, value: string) => update(theme.id, (f) => ({ ...f, tokens: { ...f.tokens, [token]: value } }));
 
   return (
-    <section className="spec-section theme-editor" aria-labelledby={heading}>
+    <div className="theme-editor">
       <div className="spec-section-head">
-        <h3 id={heading} className="sr-only">Edit “{theme.name}”</h3>
         <div className="spec-section-actions">
           <Button onClick={() => download(theme.name, exportFile(theme.id))}>Export</Button>
           <Button onClick={() => reset(theme.id)}>Reset to {base.name}</Button>
@@ -268,7 +265,7 @@ function ThemeEditor({ theme }: { theme: Theme }) {
           tokens: { ...f.tokens, '--motion-speed': v === 'reduced' ? MOTION.off : MOTION.speed, '--hover-speed': v === 'reduced' ? MOTION.off : MOTION.hover },
         }))}
       />
-    </section>
+    </div>
   );
 }
 

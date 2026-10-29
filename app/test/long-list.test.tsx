@@ -114,9 +114,10 @@ describe('long lists', () => {
     await user.type(linksIn, 'CMD09');
     expect(within(main()).getByText('1 of 12')).toBeInTheDocument();
 
-    // The checks page.
-    await openApp('/BG/checks', served);
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
-    expect(within(section(/^not-proved/)).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
+    // The Checks panel.
+    await openApp('/BG?panel=checks', served);
+    const checks = await screen.findByRole('region', { name: 'Checks' });
+    const notProved = within(checks).getByRole('heading', { name: /^not-proved/ }).closest('section')!;
+    expect(within(notProved).getByRole('searchbox', { name: 'Filter problems' })).toBeInTheDocument();
   });
 });

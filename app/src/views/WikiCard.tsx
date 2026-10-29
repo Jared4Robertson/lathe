@@ -34,7 +34,7 @@ import { focusTrail } from './HeaderStrip';
 //
 // A format page (the record format, a kind's or a check's page) opens in it too, over the focus
 // (`?page=format/kinds/use_case`, overlays.ts): the whole page, with a link back to the focus, the
-// stage keeping its focus behind it (LA-PAT-APP-UX-R19).
+// stage keeping its focus behind it (LA-PAT-APP-UX-R20).
 
 export interface WikiCardProps {
   index: SpecIndex;

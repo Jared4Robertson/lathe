@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import { navigate } from '../router';
 import { isFocusPath } from './address';
 
-// Nothing replaces the stage: tools open as panels over it (LA-PAT-APP-UX-R19). The stage is what the
+// Nothing replaces the stage: tools open as panels over it (LA-PAT-APP-UX-R20). The stage is what the
 // Reader navigates; Checks, Appearance and the theme editor open as frosted panels over it, and a
 // format page opens in the wiki card. Each is layered on the current focus in the address's query
 // (`?panel=checks`, `?panel=appearance`, `?panel=theme&theme=<id>`, `?page=format/kinds/use_case`),
@@ -91,7 +91,7 @@ export function withoutOverlays(search: string): string {
 }
 
 /**
- * Escape closes the topmost overlay (LA-PAT-APP-UX-R19), unless something nearer the focus took the key
+ * Escape closes the topmost overlay (LA-PAT-APP-UX-R20), unless something nearer the focus took the key
  * first (a filter clearing its text, a menu, a dialog of its own, a stage clearing its filters).
  * `fallback` is what Escape does with no overlay open (the products picker going back to its stage).
  */
@@ -125,12 +125,8 @@ export function useOverlayFocus(box: RefObject<HTMLElement | null>, first?: stri
     return () => {
       const now = document.activeElement;
       const lost = !now || now === document.body || !now.isConnected || (el?.contains(now) ?? false);
-      if (!lost || !before || before === document.body) return;
-      // Once the address has settled: another overlay that opened in its place keeps the focus it took.
-      setTimeout(() => {
-        const after = document.activeElement;
-        if (before.isConnected && (!after || after === document.body)) before.focus({ preventScroll: true });
-      }, 0);
+      // At once, as it closes: an overlay that opens in its place in the same move takes focus after.
+      if (lost && before && before !== document.body && before.isConnected) before.focus({ preventScroll: true });
     };
   }, [box, first]);
 }

@@ -252,8 +252,8 @@ describe('folders by stage', () => {
   const testPlanOpened = async () => {
     const { user, folders } = await shoppingUnfolded();
     await user.click(head(folders, /^Test plan/));
-    await openApp('/DM/checks');
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
+    await openApp('/DM?panel=checks');
+    await screen.findByRole('region', { name: 'Checks' });
   };
 
   it('LA-EXP-INV05-T What is folded is remembered for the session only', async () => {

@@ -33,8 +33,8 @@ describe('side navigation', () => {
     expect(window.localStorage.getItem('lathe:nav-collapsed')).toBe('true');
 
     // Remembered on the next visit; the rail still lists the spaces, and expands again.
-    await openApp('/DM/checks');
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
+    await openApp('/DM?panel=checks');
+    await screen.findByRole('region', { name: 'Checks' });
     expect(nav().className).toContain('is-rail');
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link').map((a) => a.querySelector('.sr-only')!.textContent)).toEqual(['Demo shop', 'Notebook']);
     fireEvent.click(within(nav()).getByRole('button', { name: 'Expand the navigation' }));
@@ -77,10 +77,11 @@ describe('side navigation', () => {
     expect(head(/^Tools/)).toHaveAttribute('aria-expanded', 'false');
     expect(within(nav()).queryByRole('link', { name: /^Checks \d+/ })).toBeNull();
 
-    // Opening a page in a folded section opens it, and marks the page.
-    await openApp('/DM/checks');
-    await screen.findByRole('heading', { level: 1, name: 'Checks' });
+    // Opening a tool in a folded section opens it, and marks the tool open.
+    await openApp('/DM?panel=checks');
+    await screen.findByRole('region', { name: 'Checks' });
     expect(head(/^Tools/)).toHaveAttribute('aria-expanded', 'true');
+    expect(within(nav()).getByRole('link', { name: /^Checks \d+/ })).toHaveAttribute('aria-expanded', 'true');
     await openApp('/DM-PAY');
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     expect(within(nav()).getByRole('link', { name: 'Paying' })).toHaveAttribute('aria-current', 'page');
@@ -91,7 +92,9 @@ describe('side navigation', () => {
     expect(within(nav()).getByRole('link', { name: 'Shopping' })).toHaveAttribute('title', 'Shopping');
     const checks = within(nav()).getByRole('link', { name: /^Checks \d+ (errors?|warnings?|problems)/ });
     // The space's own errors and the workspace's (Demo shop: test-file-missing and meta-model), not Notebook's.
-    expect(checks).toHaveAttribute('href', '/DM/checks');
+    // Checks opens over the page's stage, which keeps its focus.
+    expect(checks).toHaveAttribute('href', '/DM-SHOP?panel=checks');
+    expect(checks).toHaveAttribute('aria-expanded', 'false');
     expect(checks.querySelector('.nav-badge.error')).toHaveTextContent(String(workspace().problems.filter((p) => p.severity === 'error' && !p.record?.startsWith('NF')).length));
     expect(checks.querySelector('.nav-badge.warning')).not.toBeNull();
     const foot = nav().querySelector('footer')!;
@@ -107,7 +110,7 @@ describe('side navigation', () => {
     expect(rankItems(items, 'basket').map((i) => i.id)).toContain('DM-SHOP-A1');
     expect(rankItems(items, 'shopping')[0].to).toBe('/DM-SHOP');
 
-    await openApp('/DM/checks');
+    await openApp('/DM?panel=checks');
     const user = userEvent.setup();
     // The nav's Go to button opens quick find over the page.
     const opener = within(nav()).getByRole('button', { name: 'Go to…' });

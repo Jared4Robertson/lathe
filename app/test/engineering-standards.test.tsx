@@ -74,14 +74,14 @@ describe('standards in the nav and the wiki', () => {
   });
 
   it('LA-V92-R73-T02 The format reference has a page for each standard kind, from the schema', async () => {
-    await openApp('/format/kinds/standard_rule', served());
-    expect(await screen.findByRole('heading', { level: 1, name: 'Standard rule' })).toBeInTheDocument();
+    await openApp('/DM?page=format/kinds/standard_rule', served());
+    expect(await within(await screen.findByRole('region', { name: 'Wiki card' })).findByRole('heading', { level: 2, name: 'Standard rule' })).toBeInTheDocument();
     const where = section('Where it sits');
     expect(fact(where, 'Stage')).toMatch(/^Technical specification/);
-    expect(within(section(/^Allowed parents/)).getByRole('link', { name: /standard/ })).toHaveAttribute('href', '/format/kinds/standard');
+    expect(within(section(/^Allowed parents/)).getByRole('link', { name: /standard/ })).toHaveAttribute('href', '/DM?page=format/kinds/standard');
     const into = section(/^Links in/);
     expect(within(into).getAllByText('Met by').length).toBeGreaterThan(0);
-    expect(within(into).getByRole('link', { name: /command_handler/ })).toHaveAttribute('href', '/format/kinds/command_handler');
+    expect(within(into).getByRole('link', { name: /command_handler/ })).toHaveAttribute('href', '/DM?page=format/kinds/command_handler');
     expect(within(main()).getByText(/^One rule of a standard\./)).toBeInTheDocument();
   });
 });

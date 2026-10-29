@@ -5,7 +5,7 @@ import { recordIds } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
-const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/DM/checks', '/format', '/format/kinds/use_case', '/format/checks/not-proved', ...recordIds(workspace()).map((id) => `/${id}`)];
+const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/DM?panel=checks', '/DM?page=format', '/DM?page=format/kinds/use_case', '/DM?page=format/checks/not-proved', ...recordIds(workspace()).map((id) => `/${id}`)];
 
 /** The record actions: the only controls on a page that lead to a write. */
 const RECORD_ACTIONS = ['Edit', 'Add…', 'Remove'];

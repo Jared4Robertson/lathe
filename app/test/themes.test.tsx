@@ -91,9 +91,11 @@ describe('themes', () => {
     window.localStorage.setItem(STORAGE_KEYS.mode, JSON.stringify('dark'));
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    // The same choice on the Appearance page, which the nav's footer links to.
+    // The same choice in Appearance, a popover over the stage from its button at the foot of the nav.
     fireEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('link', { name: 'Appearance' }));
-    await screen.findByRole('heading', { level: 1, name: 'Appearance' });
+    expect(window.location.pathname + window.location.search).toBe('/DM?panel=appearance');
+    await screen.findByRole('region', { name: 'Appearance' });
+    expect(screen.getByRole('region', { name: 'Graph stage' })).toBeInTheDocument();
     const modes = screen.getByRole('radiogroup', { name: 'Light, dark or system' });
     expect(within(modes).getByRole('radio', { name: 'Dark' })).toBeChecked();
     fireEvent.click(within(modes).getByRole('radio', { name: 'System' }));
@@ -103,26 +105,31 @@ describe('themes', () => {
     expect(root().getAttribute('data-mode')).toBe('light');
   });
 
-  /** The Appearance page, open. */
+  /** Appearance, open over the stage. */
   const appearance = async () => {
-    await openApp('/settings/appearance');
-    await screen.findByRole('heading', { level: 1, name: 'Appearance' });
+    await openApp('/DM?panel=appearance');
+    await screen.findByRole('region', { name: 'Appearance' });
   };
   /** A copy of Workshop, open in the editor. */
   const workshopCopy = async () => {
     await appearance();
     fireEvent.click(screen.getByRole('button', { name: 'Duplicate and edit Workshop' }));
-    await screen.findByRole('heading', { level: 2, name: 'Edit “Workshop copy”' });
+    await screen.findByRole('region', { name: 'Edit “Workshop copy”' });
   };
 
   it('LA-V62-R01-T02 The Appearance page lists every theme with a preview, the one in use marked', async () => {
     await appearance();
     const list = screen.getByRole('list', { name: 'Themes' });
     expect(within(list).getAllByRole('listitem')).toHaveLength(5);
-    expect(list.querySelectorAll('.theme-preview')).toHaveLength(5);
+    expect(list.querySelectorAll('.theme-chip')).toHaveLength(5);
     // A preview draws with its theme's tokens, set inline as custom properties.
-    expect((list.querySelectorAll<HTMLElement>('.theme-preview')[2]).style.getPropertyValue('--paper')).toBe('#F6F0E6');
+    expect((list.querySelectorAll<HTMLElement>('.theme-chip')[2]).style.getPropertyValue('--paper')).toBe('#F6F0E6');
     expect(screen.getByRole('button', { name: 'Use Lathe' })).toHaveAttribute('aria-pressed', 'true');
+    // Pointing at a theme previews it live on the stage; leaving puts back the one in use.
+    fireEvent.mouseEnter(screen.getByRole('button', { name: 'Use Graphite' }));
+    expect(root().getAttribute('data-theme')).toBe('graphite');
+    fireEvent.mouseLeave(list);
+    expect(root().getAttribute('data-theme')).toBe('lathe');
     fireEvent.click(screen.getByRole('button', { name: 'Use Graphite' }));
     expect(root().getAttribute('data-theme')).toBe('graphite');
   });
@@ -134,7 +141,7 @@ describe('themes', () => {
     expect(themeStyle()).toContain('--steel: #123456;');
     fireEvent.click(screen.getByRole('button', { name: 'Reset to Workshop' }));
     expect(themeStyle()).toContain('--steel: #9C3F17;');
-    expect(screen.getByRole('heading', { level: 2, name: 'Edit “Workshop copy”' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Edit “Workshop copy”' })).toBeInTheDocument();
     expect(BUILT_IN_THEMES[2].light['--steel']).toBe('#9C3F17');
   });
 
@@ -142,18 +149,19 @@ describe('themes', () => {
     await workshopCopy();
     fireEvent.click(screen.getByRole('button', { name: 'Delete…' }));
     fireEvent.click(within(screen.getByRole('group', { name: 'Confirm delete' })).getByRole('button', { name: 'Delete' }));
-    await waitFor(() => expect(window.location.search).toBe(''));
+    await waitFor(() => expect(window.location.search).toBe('?panel=appearance'));
     expect(root().getAttribute('data-theme')).toBe('lathe');
   });
 
   it('LA-V62-R02-T01 Duplicate and edit makes a copy in use, which is renamed, edited live, reset and deleted', async () => {
     await appearance();
     fireEvent.click(screen.getByRole('button', { name: 'Duplicate and edit Workshop' }));
-    await screen.findByRole('heading', { level: 2, name: 'Edit “Workshop copy”' });
-    expect(window.location.search).toBe('?edit=custom-workshop-copy');
+    // The editor is a larger panel over the stage, at its own address.
+    await screen.findByRole('region', { name: 'Edit “Workshop copy”' });
+    expect(window.location.search).toBe('?panel=theme&theme=custom-workshop-copy');
     expect(root().getAttribute('data-theme')).toBe('custom-workshop-copy');
     // Colors by purpose, light and dark side by side.
-    expect(screen.getAllByRole('group').map((g) => g.querySelector('legend')?.textContent).filter(Boolean)).toEqual(['Surfaces', 'Text', 'Borders', 'Accent', 'Signals', 'Graph', 'Depth']);
+    expect(within(screen.getByRole('region', { name: 'Edit “Workshop copy”' })).getAllByRole('group').map((g) => g.querySelector('legend')?.textContent).filter(Boolean)).toEqual(['Surfaces', 'Text', 'Borders', 'Accent', 'Signals', 'Graph', 'Depth']);
     expect(screen.getByRole('textbox', { name: 'Paper, light, value' })).toHaveValue('#F6F0E6');
     expect(screen.getByRole('textbox', { name: 'Paper, dark, value' })).toHaveValue('#1D1712');
 
@@ -177,28 +185,28 @@ describe('themes', () => {
     const name = screen.getByRole('textbox', { name: 'Name' });
     fireEvent.change(name, { target: { value: 'Shop floor' } });
     fireEvent.blur(name);
-    await screen.findByRole('heading', { level: 2, name: 'Edit “Shop floor”' });
+    await screen.findByRole('region', { name: 'Edit “Shop floor”' });
     expect(stored(STORAGE_KEYS.themes)).toContain('"name":"Shop floor"');
 
     // Reset goes back to Workshop's values, keeping the name.
     fireEvent.click(screen.getByRole('button', { name: 'Reset to Workshop' }));
     expect(themeStyle()).toContain('--steel: #9C3F17;');
     expect(themeStyle()).not.toContain('--text-size: 17px;');
-    expect(screen.getByRole('heading', { level: 2, name: 'Edit “Shop floor”' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Edit “Shop floor”' })).toBeInTheDocument();
 
     // Delete asks first, then goes back to the list and to Lathe.
     fireEvent.click(screen.getByRole('button', { name: 'Delete…' }));
     fireEvent.click(within(screen.getByRole('group', { name: 'Confirm delete' })).getByRole('button', { name: 'Delete' }));
-    await waitFor(() => expect(window.location.search).toBe(''));
+    await waitFor(() => expect(window.location.search).toBe('?panel=appearance'));
     expect(within(screen.getByRole('list', { name: 'Themes' })).getAllByRole('listitem')).toHaveLength(5);
     expect(root().getAttribute('data-theme')).toBe('lathe');
   });
 
   /** A copy of Lathe in the editor, with its light muted text set to a pale gray. */
   const paleMuted = async () => {
-    await openApp('/settings/appearance');
+    await openApp('/DM?panel=appearance');
     fireEvent.click(await screen.findByRole('button', { name: 'Duplicate and edit Lathe' }));
-    await screen.findByRole('heading', { level: 2, name: 'Edit “Lathe copy”' });
+    await screen.findByRole('region', { name: 'Edit “Lathe copy”' });
     const muted = screen.getByRole('textbox', { name: 'Muted text, light, value' });
     const row = muted.closest('[role="row"]') as HTMLElement;
     expect(row.querySelectorAll('.contrast-warning')).toHaveLength(0);
@@ -253,8 +261,7 @@ describe('themes', () => {
   });
 
   it('LA-V62-R04-T01 A theme file imports as a new theme of one\'s own, kept in local storage; a bad one is refused, saying why', async () => {
-    await openApp('/settings/appearance');
-    await screen.findByRole('heading', { level: 1, name: 'Appearance' });
+    await appearance();
     const upload = screen.getByLabelText('Import a theme file');
     fireEvent.change(upload, { target: { files: [new File(['{"format":"lathe-theme","version":9}'], 'bad.json')] } });
     expect(await screen.findByRole('alert')).toHaveTextContent('version 9');
