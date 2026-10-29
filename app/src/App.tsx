@@ -10,7 +10,8 @@ import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
 import { DesktopTitleBar } from './shell/DesktopTitleBar';
 import { SpacesProvider, useSpaceState, type SpacesApi } from './shell/spaces';
-import { pageHeading, QuickFindSheet, TopBar } from './shell/MobileBar';
+import { pageHeading, TopBar } from './shell/MobileBar';
+import { QuickOpen } from './shell/QuickOpen';
 import { useThemeColor } from './shell/themeColor';
 import { isBool, usePanelSize, usePref } from './shell/prefs';
 import { useNarrow } from './shell/useNarrow';
@@ -67,12 +68,11 @@ function Shell() {
   const [navWidth, setNavWidth, resetNavWidth] = usePanelSize(NAV_WIDTH.key, NAV_WIDTH.fallback, NAV_WIDTH.min, NAV_WIDTH.max);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
-  const findRef = useRef<HTMLInputElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
   useEffect(() => { setDrawerOpen(false); }, [path, narrow]);
   const closeDrawer = useCallback(() => { setDrawerOpen(false); setTimeout(() => menuButton.current?.focus(), 0); }, []);
-  // An opened drawer takes focus (the quick find); closing it gives focus back to the menu button.
-  useEffect(() => { if (narrow && drawerOpen) setTimeout(() => findRef.current?.focus(), 0); }, [narrow, drawerOpen]);
+  // An opened drawer takes focus (its Go to button); closing it gives focus back to the menu button.
+  useEffect(() => { if (narrow && drawerOpen) setTimeout(() => navRef.current?.querySelector<HTMLElement>('.quick-find-button')?.focus(), 0); }, [narrow, drawerOpen]);
   // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Its open state and width are the session's setting.
   const chatBridge = narrow ? null : desktopBridge()?.chat ?? null;
   const { chat, setChat } = useSessionSettings();
@@ -101,17 +101,20 @@ function Shell() {
     setNavOpen(navCollapsed);
     announce(navCollapsed ? 'Navigation expanded' : 'Navigation collapsed');
   });
-  // On a phone quick find is a full-screen sheet of its own, opened from the top bar.
-  const [findOpen, setFindOpen] = useState(false);
-  useEffect(() => { setFindOpen(false); }, [path, narrow]);
-  useCommand('quickOpen', () => {
-    if (narrow) { setDrawerOpen(false); setFindOpen(true); return; }
-    showNav(); setTimeout(() => findRef.current?.focus(), 0);
-  });
+  // Quick find and the command palette: one overlay (QuickOpen.tsx), on records or, after a ">", on commands.
+  const [quick, setQuick] = useState<{ query: string; n: number } | null>(null);
+  const openQuick = useCallback((query: string) => {
+    setDrawerOpen(false);
+    setQuick((q) => ({ query, n: (q?.n ?? 0) + 1 }));
+  }, []);
+  const closeQuick = useCallback(() => setQuick(null), []);
+  useEffect(() => { setQuick(null); }, [path]);
+  useCommand('quickOpen', () => openQuick(''));
+  useCommand('commandPalette', () => openQuick('>'));
   useThemeColor();
   useCommand('focusNav', () => {
     showNav();
-    setTimeout(() => (navRef.current?.querySelector<HTMLElement>('[aria-current="page"]') ?? findRef.current)?.focus(), 0);
+    setTimeout(() => (navRef.current?.querySelector<HTMLElement>('[aria-current="page"]') ?? navRef.current?.querySelector<HTMLElement>('.quick-find-button'))?.focus(), 0);
   });
   useCommand('goBack', () => window.history.back());
   useCommand('goForward', () => window.history.forward());
@@ -146,8 +149,7 @@ function Shell() {
     }
     const inPage = document.querySelector<HTMLInputElement>('#main input[type="search"]');
     if (inPage) inPage.focus();
-    else if (narrow) setFindOpen(true);
-    else { showNav(); setTimeout(() => findRef.current?.focus(), 0); }
+    else openQuick('');
   });
 
   const focusRoute = isFocusRoute(specRoute) ? specRoute : null;
@@ -188,10 +190,10 @@ function Shell() {
           heading={pageHeading(spaces.index, path, search)}
           navOpen={drawerOpen}
           onMenu={() => setDrawerOpen(true)}
-          onFind={() => setFindOpen(true)}
+          onFind={() => openQuick('')}
         />
       )}
-      {narrow && findOpen && <QuickFindSheet index={spaces.index} onClose={() => setFindOpen(false)} />}
+      {quick && <QuickOpen index={spaces.index} seed={quick} onClose={closeQuick} />}
       {narrow && drawerOpen && <div className="drawer-backdrop" onMouseDown={closeDrawer} />}
       {(!narrow || drawerOpen) && (
         <Nav
@@ -204,7 +206,6 @@ function Shell() {
           drawer={narrow}
           drawerOpen={drawerOpen}
           onCloseDrawer={closeDrawer}
-          findRef={findRef}
         />
       )}
       {!narrow && (
