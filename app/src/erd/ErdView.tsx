@@ -305,9 +305,14 @@ function ErdCanvas({ relations, erd, focus, onNavigate, onPeek, space }: { relat
     const motion = readMotion();
     // An open space too small to fit anything in fits on the whole stage.
     const room = box.width - margin.left - margin.right >= MIN_FIT && box.height - margin.top - margin.bottom >= MIN_FIT;
-    setViewport(fitRects(placed.rects, box.width, box.height, room ? margin : FIT_MARGIN), animate && motion.duration > 0 ? { duration: motion.duration, ease: motion.ease } : { duration: 0 });
+    const view = fitRects(placed.rects, box.width, box.height, room ? margin : FIT_MARGIN);
+    const duration = animate && motion.duration > 0 ? motion.duration : 0;
+    setViewport(view, duration > 0 ? { duration, ease: motion.ease } : { duration: 0 });
+    // Where the focus's box will sit once the diagram arrives, for the wiki card; none when the focus has no box (a domain's ERD).
+    const r = placed.rects.get(focus);
+    space?.setAnchor({ focus, y: r ? view.y + (r.y + r.height / 2) * view.zoom : null, at: performance.now() + duration });
     return true;
-  }, [placed, setViewport, margin, space, open]);
+  }, [placed, setViewport, margin, space, open, focus]);
   // A panel collapsed, opened or resized: the diagram glides to the new open space.
   const fittedMargin = useRef(margin);
   useEffect(() => {

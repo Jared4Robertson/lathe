@@ -186,4 +186,30 @@ test.describe('the stage and its panels', () => {
       expect(l.background, `${l.sel} is opaque`).not.toMatch(/\/ 0\.\d|, 0\.\d+\)/);
     }
   });
+
+  // The card settles level with the focused box (LA-V96-R23), below the stage's tools; a pan never moves it.
+  test('LA-V96-R23-T02 the wiki card settles level with the focused box, below the toolbar, and stays put while the Reader pans', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openPage(page, `${AGGREGATE}?stage=graph`, STRIP);
+    await stageReady(page);
+    const level = () => page.evaluate((stage) => {
+      const card = document.querySelector('.wiki-panel')!.getBoundingClientRect();
+      const title = document.querySelector('.wiki-panel-title h2')!.getBoundingClientRect();
+      const tools = document.querySelector(`${stage} [data-stage-tools="top"]`)?.getBoundingClientRect();
+      const host = document.querySelector(`${stage} .graph-flow`) as HTMLElement & { graphScene?: () => { boxes: { focus: boolean; rect: { top: number; height: number } }[] } };
+      const focus = host.graphScene!().boxes.find((b) => b.focus)!;
+      return { cardTop: card.top, toolsBottom: tools?.bottom ?? 0, title: title.top + title.height / 2, focus: focus.rect.top + focus.rect.height / 2 };
+    }, STAGE);
+    await expect.poll(async () => { const l = await level(); return Math.abs(l.title - l.focus); }, { message: 'the title row is level with the focused box', timeout: 5000 }).toBeLessThan(3);
+    const placed = await level();
+    expect(placed.cardTop, 'the card starts below the stage\'s toolbar').toBeGreaterThan(placed.toolsBottom);
+    // A pan by the Reader moves the stage, never the card.
+    const canvas = (await page.locator(`${STAGE} .graph-flow canvas`).boundingBox())!;
+    await page.mouse.move(canvas.x + 120, canvas.y + 300);
+    await page.mouse.down();
+    await page.mouse.move(canvas.x + 120, canvas.y + 200, { steps: 8 });
+    await page.mouse.up();
+    await page.waitForTimeout(600);
+    expect((await level()).cardTop, 'the card holds still while the Reader pans').toBeCloseTo(placed.cardTop, 0);
+  });
 });
