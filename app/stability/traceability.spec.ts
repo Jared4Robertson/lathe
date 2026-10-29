@@ -96,6 +96,8 @@ test.describe('Traceability flows', () => {
     const capabilities = rowsOf(spec, 'capability').filter((c) => c.domain_id === TRC).map((c) => String(c.id));
     expect((await traceSceneOf(page, true)).boxes.filter((b) => b.lane === -1 && b.column === 'capability' && b.strength === 1).map((b) => b.id)).toEqual(expect.arrayContaining(capabilities.filter((c) => rowsOf(spec, 'use_case').some((u) => u.capability_id === c))));
     expect(await pane.locator('.trace-matrix tr.group-row').count()).toBeGreaterThan(1);
+    // The domain's lanes sit in its band, labeled over its head (LA-V98-R14).
+    await expect(pane.locator('.trace-band-names li', { hasText: 'Traceability' }).first()).toBeAttached();
     // S04: Gaps only fades the lanes with no gap and keeps every lane in its place; those at full strength each have a dashed gap box. The table keeps the rows with one.
     const before = (await traceSceneOf(page, true)).boxes.length;
     await pane.getByRole('checkbox', { name: 'Gaps only' }).check();
@@ -107,6 +109,15 @@ test.describe('Traceability flows', () => {
     expect(gapped.boxes.some((b) => b.column === 'obligation' && b.role === 'record' && b.strength < 1), 'the complete lanes are faded').toBe(true);
     const left = await rows.count();
     for (let i = 0; i < Math.min(left, 20); i++) await expect(rows.nth(i).locator('td.is-gap').first()).toBeAttached();
+    // The arrows walk the map (LA-V61-R49): from the requirement, Right goes along its lane to what designs it, Left back.
+    await openPage(page, `/${REQUIREMENT}?stage=trace`);
+    await traceDrawn(page);
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('ArrowRight');
+    await page.waitForURL((u) => u.pathname !== `/${REQUIREMENT}`);
+    expect([...flows, ...steps, ...views, ...operations]).toContain(decodeURIComponent(new URL(page.url()).pathname.slice(1)));
+    await page.keyboard.press('ArrowLeft');
+    await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}`);
     // Every stage works on every focus (LA-PAT-APP-UX-R17): on a step, the lanes it belongs to at full strength, the step drawn as the focus in each.
     await openPage(page, `/${steps[0]}?stage=trace`);
     await traceDrawn(page);

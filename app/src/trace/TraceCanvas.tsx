@@ -19,14 +19,16 @@ import { useCameraGestures } from '../graph/gestures';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
-import { BOX_H, BOX_W, LANE_COLUMN_LABELS, lanesIn, traceFade, traceFocus, visibleIn, type TraceBox, type TraceLine, type TraceMap } from './lanes';
+import { BOX_H, BOX_W, LANE_COLUMN_LABELS, lanesIn, traceFade, visibleIn, type TraceBox, type TraceFocus, type TraceLine, type TraceMap } from './lanes';
+import type { TraceAt } from './walk';
 
 // The product's one map, laid out once (LA-PAT-APP-UX-R19): focusing a record glides the camera to
 // frame it (lanes.ts traceFocus) and fades what is not under it; Gaps only fades the complete lanes.
-// No box ever moves. Every frame draws what the camera shows: the boxes in view, each in its kind's
+// No box ever moves: the focus's lane, when its columns hold more than they show, is drawn open over
+// the lanes below it, on a tray, the lanes it covers left out where it covers them. Every frame draws what the camera shows: the boxes in view, each in its kind's
 // shape and its stage's colors with its label, and the arrows between them; further out, where a
 // box is too small to read or more boxes are in view than a frame draws, each box is a bar where it
-// is; further still, each lane is one bar, so the whole product reads as an overview. Only what is in
+// is; further still, each lane is one bar, so the whole product reads as an overview (each band of lanes under its label). Only what is in
 // view is ever drawn (lanes.ts visibleIn, lanesIn), so a product's map draws as fast as a lane. A
 // record repeated in several lanes shares its id across its copies: the focus is drawn on every
 // copy, and hovering one, or focusing it from the keyboard, lights every copy and their arrows.
@@ -34,6 +36,9 @@ import { BOX_H, BOX_W, LANE_COLUMN_LABELS, lanesIn, traceFade, traceFocus, visib
 // The canvas is hidden from assistive technology: the Trace stage's table (TraceView.tsx) is its
 // accessible layer, visually hidden on a wide screen. Its links carry keyboard focus, and the box a
 // link stands for gets the drawn focus ring, the camera bringing it into view (`ring`).
+
+/** A plain box's kind label: what a box that is no record is. */
+const PLAIN_LABELS: Record<Exclude<TraceBox['role'], 'record'>, string> = { file: 'File', gap: 'Gap', untraced: 'Untraced', more: 'More' };
 
 /** The most boxes one frame draws as boxes (LA-PAT-APP-UX-R11); more in view are drawn as bars. */
 const TRACE_MAX_DRAWN = 260;
@@ -47,6 +52,14 @@ const MIN_ZOOM = 1e-3;
 const FRAME_MAX = 1;
 /** The zoom a frame keeps at least while what it frames is only too wide, so its labels read; it then centers on the focus's box. */
 const READ_ZOOM = 0.8;
+/** The room around an open lane's tray, in map units. */
+const TRAY_PAD = 12;
+/** A band's label's size on screen, in CSS pixels, from min to max as the zoom grows; a label too long for its room down to least. */
+const BAND_FONT = { least: 10, min: 12, max: 22 };
+/** A column of lanes narrower than this on screen, in CSS pixels, shows no "continued" label of its band. */
+const CONTINUED_LABEL_PX = 120;
+/** How far a band's label may run past a narrow column, in CSS pixels, when no other label is in its way. */
+const LABEL_RUN_PX = 220;
 /** The space kept around the framed rectangle, in screen pixels. */
 const PAD = 24;
 const ZOOM_STEP = 1.2;
@@ -70,13 +83,16 @@ export interface TraceCanvasProps {
   index: SpecIndex;
   focus: string;
   map: TraceMap;
+  /** Where the focus is on the map (lanes.ts traceFocus): what the camera frames, the lanes kept and the lane drawn open. */
+  focused: TraceFocus;
   /** Gaps only: the lanes with no gap faded back. */
   gapsOnly: boolean;
-  onNavigate: (id: string) => void;
+  /** Opens a record, with the box it was opened from (a click on a box keeps its lane). */
+  onNavigate: (id: string, at?: TraceAt) => void;
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   space?: OpenSpaceStore;
-  /** The box the keyboard is on (from the table's focused link), drawn with the focus ring and brought into view; null for none. */
-  ring: { id: string; lane: string | null } | null;
+  /** The box the keyboard is on (the table's focused link, or the arrow keys' box that is no record) and its lane, drawn with the focus ring and brought into view; null for none. */
+  ring: { id: string; lane: number | null } | null;
 }
 
 /** The canvas, once the label's faces have loaded and the text measure is ready (graph/fonts.ts). */
@@ -144,7 +160,7 @@ function cameraStore() {
 /** What one frame draws: the boxes in view as plates, or bars far out, and the arrows between the plates. */
 interface TraceFrame { boxes: TraceBox[]; plates: Plate[]; bars: Bar[]; lines: Line[]; traceLines: TraceLine[] }
 
-function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ring: ringAt, fonts, theme }: TraceCanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
+function TraceScene({ index, focus, map, focused, gapsOnly, onNavigate, onPeek, space, ring: ringAt, fonts, theme }: TraceCanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
   const wrapper = useRef<TraceHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -171,7 +187,7 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
     setViewport,
     zoom: { min: MIN_ZOOM, max: MAX_ZOOM },
     onHover: (x, y) => setHover(hitAt(x, y)),
-    onTap: (x, y, e) => { const hit = hitAt(x, y); if (hit?.box.opens) tapToOpen.onNodeClick(e, hit.box.opens); else tapToOpen.clear(); },
+    onTap: (x, y, e) => { const hit = hitAt(x, y); tapped.current = hit?.box ?? null; if (hit?.box.opens) tapToOpen.onNodeClick(e, hit.box.opens); else tapToOpen.clear(); },
   });
   const { moveTo } = gestures;
 
@@ -185,8 +201,6 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
     return w < MIN_FRAME || h < MIN_FRAME ? { x: 0, y: 0, w: s.w, h: s.h } : { x: inset.left, y: inset.top, w, h };
   }, [insetKey]);
 
-  /** Where the focus is on the map: what the camera frames, and the lanes kept at full strength. */
-  const focused = useMemo(() => traceFocus(map, index, focus), [map, index, focus]);
   /** The camera that frames the focus (camera.ts frameRect). */
   const framing = useCallback((): Viewport | null => {
     if (!size || (space && !open)) return null;
@@ -260,29 +274,32 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
     if (known) return known;
     const label = boxLabel(index, b);
     const plain = b.role === 'record' ? undefined : {
-      kind: b.role === 'gap' || b.role === 'untraced' ? GAP_KIND : 'file', kindLabel: b.role === 'file' ? 'File' : b.role === 'gap' ? 'Gap' : 'Untraced',
-      title: label.words.title, meta: label.words.meta, stage: 'structural' as const, dashed: b.role !== 'file',
+      kind: b.role === 'gap' || b.role === 'untraced' ? GAP_KIND : b.role, kindLabel: PLAIN_LABELS[b.role],
+      title: label.words.title, meta: label.words.meta, stage: 'structural' as const, dashed: b.role === 'gap' || b.role === 'untraced',
     };
     const plate = plateOf(index, b.id, { view: 'trace', place: b.key, node: b, lines: label.lines, notes: label.notes, top: b.h > BOX_H + 1, plain });
     plates.set(b.key, plate);
     return plate;
   }, [plates, index]);
 
-  /** What a camera shows: the boxes in view as plates; bars far out or past the budget; one bar a lane further out. */
+  /** What a camera shows: the boxes in view as plates; bars far out or past the budget; one bar a lane further out. The open lane over its tray. */
+  const openLane = focused.open;
   const frameAt = useCallback((v: Viewport, s: { w: number; h: number }, whole = false): TraceFrame => {
     const r = whole ? { x0: -Infinity, y0: -Infinity, x1: Infinity, y1: Infinity } : viewRect(v, s.w, s.h);
     const none = { boxes: [] as TraceBox[], plates: [] as Plate[], lines: [] as Line[], traceLines: [] as TraceLine[] };
     const barOf = (b: TraceBox): Bar => ({ parent: b.key, x: b.x, y: b.y, w: b.w, h: b.h });
+    const lane = openLane === null ? undefined : map.lanes[openLane];
+    const tray: Bar[] = lane?.open ? [{ parent: `lane:${openLane}`, x: lane.left - TRAY_PAD, y: lane.top - TRAY_PAD, w: lane.right - lane.left + 2 * TRAY_PAD, h: lane.open.bottom - lane.top + 2 * TRAY_PAD }] : [];
     if (!whole && BOX_H * v.zoom < LANE_BAR_BELOW_PX) {
-      const seen = lanesIn(map, r);
-      const bars = [...seen.tree.map(barOf), ...seen.lanes.map((i): Bar => { const l = map.lanes[i]; return { parent: `lane:${i}`, x: l.left, y: l.top, w: l.right - l.left, h: l.height }; })];
+      const seen = lanesIn(map, r, openLane);
+      const bars = [...seen.tree.map(barOf), ...seen.lanes.map((l): Bar => ({ parent: `lane:${l.lane}`, x: l.x, y: l.y, w: l.w, h: l.h }))];
       return { ...none, bars };
     }
-    const seen = visibleIn(map, r);
-    if (!whole && (seen.boxes.length > TRACE_MAX_DRAWN || BOX_H * v.zoom < BAR_BELOW_PX)) return { ...none, bars: seen.boxes.map(barOf) };
+    const seen = visibleIn(map, r, openLane);
+    if (!whole && (seen.boxes.length > TRACE_MAX_DRAWN || BOX_H * v.zoom < BAR_BELOW_PX)) return { ...none, bars: [...tray, ...seen.boxes.map(barOf)] };
     const lines: Line[] = seen.lines.map((l) => ({ id: l.key, source: l.from, target: l.to, style: l.tree ? 'structure' : 'trace', link: !l.tree, points: l.points, scale: 1, label: '' }));
-    return { boxes: seen.boxes, plates: seen.boxes.map(plateFor), bars: [], lines, traceLines: seen.lines };
-  }, [map, plateFor]);
+    return { boxes: seen.boxes, plates: seen.boxes.map(plateFor), bars: whole ? [] : tray, lines, traceLines: seen.lines };
+  }, [map, plateFor, openLane]);
 
   // ---- The spotlight, the pointer, the keyboard's ring and a tap's selection ----
   const hover = useRef<string | null>(null);
@@ -349,7 +366,15 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
   useEffect(() => () => spot(null), [focus, map]);
 
   const canOpen = useCallback((id: string) => id !== focus && index.byId.has(id), [focus, index]);
-  const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus);
+  /** The box a tap was on, so opening its record keeps its lane: a record's own box, or the copy in its lane of the record a file or a "+N more" opens. */
+  const tapped = useRef<TraceBox | null>(null);
+  const openFrom = useCallback((id: string) => {
+    const box = tapped.current;
+    const lane = box ? (box.lane >= 0 ? box.lane : map.places.get(box.key)?.[0] ?? null) : null;
+    const own = box?.id === id ? box : map.copies.get(id)?.find((b) => b.lane === box?.lane);
+    onNavigate(id, own ? { key: own.key, lane } : undefined);
+  }, [map, onNavigate]);
+  const tapToOpen = useTapToOpen(openFrom, canOpen, wrapper, focus);
   tap.current = tapToOpen;
   useEffect(() => { onPeek?.('selected', tapToOpen.armed); requestPaint(); }, [tapToOpen.armed, onPeek]);
 
@@ -360,9 +385,8 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
     requestPaint();
     const s = sizeRef.current;
     if (!ringAt || !s) return;
-    const lane = ringAt.lane === null ? undefined : map.lanesOf.get(ringAt.lane)?.[0];
     const copies = map.copies.get(ringAt.id) ?? [];
-    const box = copies.find((b) => b.lane === lane) ?? copies[0];
+    const box = copies.find((b) => b.lane === ringAt.lane) ?? copies[0];
     if (!box) return;
     const v = view.current;
     const frame = frameBox(s);
@@ -403,9 +427,29 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
     gestures.zoomBy(box.x + box.w / 2, box.y + box.h / 2, factor);
   };
 
-  // The column names over the frame's top edge, following the camera across.
-  const columnsKey = useSyncExternalStore(store.subscribe, () => `${view.current.x.toFixed(1)} ${view.current.zoom.toFixed(4)}`);
-  const [cx, cz] = columnsKey.split(' ').map(Number);
+  // The column names over the frame's top edge, over each column of lanes in view, following the camera across; each
+  // band's label over its head in each column of lanes it runs in.
+  const cameraKey = useSyncExternalStore(store.subscribe, () => `${view.current.x.toFixed(1)} ${view.current.y.toFixed(1)} ${view.current.zoom.toFixed(5)}`);
+  const [cx, cy, cz] = cameraKey.split(' ').map(Number);
+  const paneW = size?.w ?? 0;
+  const paneH = size?.h ?? 0;
+  const segmentsInView = map.segments.filter((s) => s.x * cz + cx < paneW && (s.x + map.segmentWidth) * cz + cx > 0);
+  const bandPx = Math.max(BAND_FONT.min, Math.min(BAND_FONT.max, BAND_FONT.max * cz * 4));
+  // A band's first label may run over the columns it goes on in; the others show only where a column is wide enough to read them.
+  const columnPx = map.segmentWidth * cz;
+  const heads = map.bands.flatMap((b, i) => b.heads.map((h, n) => {
+    const right = (b.heads.at(-1)!.x + map.segmentWidth) * cz + cx;
+    const left = h.x * cz + cx;
+    return { key: `${i}:${n}`, label: b.label, continued: h.continued, left, top: h.y * cz + cy, width: h.continued ? columnPx : right - left, px: bandPx };
+  })).filter((h) => (!h.continued || columnPx >= CONTINUED_LABEL_PX) && h.top > -bandPx && h.top < paneH + bandPx * 2);
+  // A label narrower than its words runs on to the next label on its line, if there is room.
+  for (const h of heads) {
+    const next = Math.min(...heads.filter((o) => o.left > h.left && Math.abs(o.top - h.top) < 2 * bandPx).map((o) => o.left), h.left + LABEL_RUN_PX);
+    h.width = Math.max(h.width, next - h.left - 4);
+    // And a label still too long for its room is set smaller, down to the least a label reads at.
+    h.px = Math.max(BAND_FONT.least, Math.min(bandPx, h.width / (h.label.length * 0.62 + 1)));
+  }
+  const headsInView = heads.filter((h) => h.left < paneW && h.left + h.width > 0);
 
   // ---- The test hook: the drawn scene, in the page's pixels ----
   useEffect(() => {
@@ -454,11 +498,16 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
       />
       {cz * BOX_H >= BAR_BELOW_PX && (
         <ol className="trace-column-names" aria-hidden="true" style={{ top: headTop }}>
-          {map.columns.map((c) => (
-            <li key={c.column} style={{ left: c.x * cz + cx, width: BOX_W * cz, font: fontFor(fonts, 'meta', fontPx) }}><span>{LANE_COLUMN_LABELS[c.column]}</span></li>
-          ))}
+          {segmentsInView.flatMap((s, i) => map.columns.map((c) => (
+            <li key={`${i}:${c.column}`} style={{ left: (s.x + c.x) * cz + cx, width: BOX_W * cz, font: fontFor(fonts, 'meta', fontPx) }}><span>{LANE_COLUMN_LABELS[c.column]}</span></li>
+          )))}
         </ol>
       )}
+      <ol className="trace-band-names" aria-hidden="true">
+        {headsInView.map((h) => (
+          <li key={h.key} className={h.continued ? 'is-continued' : undefined} style={{ left: h.left, top: h.top, maxWidth: h.width, font: fontFor(fonts, h.continued ? 'meta' : 'title', h.px) }}><span>{h.label}</span></li>
+        ))}
+      </ol>
       <div className="graph-controls" role="group" aria-label="Camera">
         <Button variant="icon" className="graph-zoom-in" label="Zoom in" title="Zoom in" onClick={zoomButton(ZOOM_STEP)}><Icon name="plus" size={14} /></Button>
         <Button variant="icon" className="graph-zoom-out" label="Zoom out" title="Zoom out" onClick={zoomButton(1 / ZOOM_STEP)}><Icon name="minus" size={14} /></Button>
