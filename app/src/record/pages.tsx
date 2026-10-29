@@ -1,10 +1,19 @@
 import type { ComponentType, ReactNode } from 'react';
+import type { AggregateKind } from '../../../lathe/src/authoring/aggregate/model';
+import type { CommandKind } from '../../../lathe/src/authoring/command/model';
 import type { DomainKind } from '../../../lathe/src/authoring/domain/model';
+import type { DomainEventKind } from '../../../lathe/src/authoring/domain-event/model';
 import type { PatternKind } from '../../../lathe/src/authoring/pattern/model';
 import type { StandardKind } from '../../../lathe/src/authoring/standard/model';
 import type { UseCaseKind } from '../../../lathe/src/authoring/use-case/model';
+import { AddAggregateForm } from '../authoring/aggregate/AggregateEditor';
+import { AggregatePage } from '../authoring/aggregate/AggregatePage';
+import { AddCommandForm } from '../authoring/command/CommandEditor';
+import { CommandPage } from '../authoring/command/CommandPage';
 import { AddDomainForm } from '../authoring/domain/DomainEditor';
 import { DomainPage } from '../authoring/domain/DomainPage';
+import { AddDomainEventForm } from '../authoring/domain-event/DomainEventEditor';
+import { DomainEventPage } from '../authoring/domain-event/DomainEventPage';
 import { AddPatternForm } from '../authoring/pattern/PatternEditor';
 import { PatternPage } from '../authoring/pattern/PatternPage';
 import { AddStandardForm } from '../authoring/standard/StandardEditor';
@@ -33,7 +42,7 @@ export interface AggregatePageProps {
 }
 
 /** The kinds with an aggregate page. */
-type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind;
+type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | AggregateKind | DomainEventKind | CommandKind;
 
 /** Each kind with its aggregate's page. */
 const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = {
@@ -57,6 +66,18 @@ const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = 
   standard: StandardPage,
   standard_rule: StandardPage,
   standard_rule_test: StandardPage,
+  aggregate: AggregatePage,
+  entity: AggregatePage,
+  invariant: AggregatePage,
+  data_model: AggregatePage,
+  invariant_test: AggregatePage,
+  domain_event: DomainEventPage,
+  event_type: DomainEventPage,
+  command: CommandPage,
+  command_handler: CommandPage,
+  policy: CommandPage,
+  event_handler: CommandPage,
+  policy_test: CommandPage,
 };
 
 /** The page of the kind's aggregate, or undefined while its aggregate has none. */
@@ -70,12 +91,15 @@ export interface AggregateAdderProps {
 }
 
 /** Each aggregate root added from the page of what it sits under, with its aggregate's Add form. */
-const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard']: ComponentType<AggregateAdderProps> } = {
+const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'aggregate' | 'domain_event' | 'command']: ComponentType<AggregateAdderProps> } = {
   use_case: AddUseCaseForm,
   domain: AddDomainForm,
   test_data_set: AddTestDataSetForm,
   pattern: AddPatternForm,
   standard: AddStandardForm,
+  aggregate: AddAggregateForm,
+  domain_event: AddDomainEventForm,
+  command: AddCommandForm,
 };
 
 /** The Add form of the kind's aggregate, or undefined while its aggregate has none. */
