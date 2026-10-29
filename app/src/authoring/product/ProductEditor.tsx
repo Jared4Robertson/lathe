@@ -132,8 +132,9 @@ export function ProductEditor({ index, page, id, kind, children }: {
   const writer = useWriter();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
   const [adding, setAdding] = useState(false);
+  const [declaring, setDeclaring] = useState(false);
   const toolbar = useRef<HTMLDivElement>(null);
-  useEffect(() => { setMode({ mode: 'view' }); setAdding(false); }, [id]);
+  useEffect(() => { setMode({ mode: 'view' }); setAdding(false); setDeclaring(false); }, [id]);
   if (!writer) return <>{children(null)}</>;
   const back = () => {
     setMode({ mode: 'view' });
@@ -172,7 +173,7 @@ export function ProductEditor({ index, page, id, kind, children }: {
         {kind === 'product' && (
           <>
             <span className="record-add">
-              <Button icon="plus" aria-expanded={adding} aria-controls={`add-kinds-${id}`} onClick={() => setAdding(!adding)}>Add…</Button>
+              <Button icon="plus" aria-expanded={adding} aria-controls={`add-kinds-${id}`} onClick={() => { setAdding(!adding); setDeclaring(false); }}>Add…</Button>
               {adding && (
                 <span id={`add-kinds-${id}`} className="record-add-kinds" role="group" aria-label={`Kinds to add under ${id}`}>
                   {addableKinds(index.workspace.schema, 'product').map((k) => (
@@ -181,8 +182,15 @@ export function ProductEditor({ index, page, id, kind, children }: {
                 </span>
               )}
             </span>
-            <Button icon="plus" onClick={() => setMode({ mode: 'declare-kind' })}>Declare product kind</Button>
-            <Button icon="plus" onClick={() => setMode({ mode: 'declare-relation' })}>Declare product relation</Button>
+            <span className="record-add">
+              <Button icon="plus" aria-expanded={declaring} aria-controls={`declare-${id}`} onClick={() => setDeclaring(!declaring)}>Declare…</Button>
+              {declaring && (
+                <span id={`declare-${id}`} className="record-add-kinds" role="group" aria-label={`Declarations to add to ${id}`}>
+                  <Button onClick={() => { setDeclaring(false); setMode({ mode: 'declare-kind' }); }}>Product kind</Button>
+                  <Button onClick={() => { setDeclaring(false); setMode({ mode: 'declare-relation' }); }}>Product relation</Button>
+                </span>
+              )}
+            </span>
           </>
         )}
         {kind !== 'product' && <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>}

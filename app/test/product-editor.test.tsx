@@ -85,7 +85,8 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     const user = userEvent.setup();
     const { commands } = await openApp('/DM', { command: () => ({ answer: ok }) });
     await screen.findByRole('toolbar', { name: 'Change DM' });
-    await user.click(within(toolbar('DM')).getByRole('button', { name: 'Declare product kind' }));
+    await user.click(within(toolbar('DM')).getByRole('button', { name: 'Declare…' }));
+    await user.click(within(toolbar('DM')).getByRole('button', { name: 'Product kind' }));
     const form = screen.getByRole('form', { name: 'Declare a product kind' });
     await user.type(within(form).getByRole('textbox', { name: /^name/ }), 'report');
     await user.type(within(form).getByRole('textbox', { name: /^label/ }), 'Report');

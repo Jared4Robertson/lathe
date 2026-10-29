@@ -61,6 +61,10 @@ const PAGES: State[] = [
   { name: 'domain page', url: DOMAIN, ready: '.header-strip h1' },
   { name: 'record page', url: RECORD, ready: '.header-strip h1' },
   { name: 'interface page', url: '/LA-IF03', ready: '.interface-flows' },
+  { name: 'business outcome page', url: '/LA-BO05', ready: '[data-aggregate="business-outcome"]' },
+  { name: 'extension record page', url: '/LA-AUT-MOD10', ready: '[data-aggregate="extension-record"]' },
+  { name: 'entry point page', url: '/LA-PLT-ENTRY01', ready: '[data-aggregate="entry-point"]' },
+  { name: 'tooling page', url: '/LA-AUT-TOOL01', ready: '[data-aggregate="tooling"]' },
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
