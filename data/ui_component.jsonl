@@ -46,6 +46,9 @@
 {"id":"LA-UI144","title":"diffIndexes","file":"app/src/chat/diff.ts","description":"The records a chat turn changed, for the chat panel's record diffs: the spec before the turn against the spec after it, each record added, removed or changed, with its fields before and after."}
 {"id":"LA-UI145","title":"useChat","file":"app/src/chat/useChat.ts","description":"The chat as the panel keeps it: the items and status the shell sends as patches, and each turn with the spec as it was when the turn began, which the record diffs compare."}
 {"id":"LA-UI146","title":"Card place","file":"app/src/views/cardPlace.ts","description":"Where the wiki card sits on the stage's height: level with the focused box the stage last framed, kept in the room below the stage's tools and above its foot."}
+{"id":"LA-UI147","title":"ChecksPanel","file":"app/src/views/ChecksPanel.tsx","description":"The Checks panel over the stage: the space's problems by check, the workspace's and the recorded exceptions."}
+{"id":"LA-UI148","title":"ProductsPicker","file":"app/src/views/ProductsPicker.tsx","description":"The products picker: a card of every product, centered over the last product's dimmed stage."}
+{"id":"LA-UI149","title":"ToolPanelFrame","file":"app/src/views/ToolPanel.tsx","description":"The one frame of a tool over the stage: a frosted panel at the left of the open space, a bottom sheet on a phone."}
 {"id":"LA-UI52","title":"CoverageBars","file":"app/src/specs/ProductHealth.tsx","description":"CoverageBars, obligationGroups, ProductSummary, TestCountsLine, sumTestCounts"}
 {"id":"LA-UI53","title":"Traceability section","file":"app/src/specs/Traceability.tsx","description":"Traceability and its gap callouts, requirement table and run by."}
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
@@ -63,7 +66,7 @@
 {"id":"LA-UI71","title":"Early theme script","file":"app/index.html"}
 {"id":"LA-UI72","title":"Theme color","file":"app/src/shell/themeColor.ts"}
 {"id":"LA-UI73","title":"Theme quick pick","file":"app/src/theme/ThemeCommands.tsx","description":"The theme commands and their quick pick."}
-{"id":"LA-UI74","title":"Theme editor","file":"app/src/theme/AppearancePage.tsx","description":"The Appearance page and its theme editor."}
+{"id":"LA-UI74","title":"Theme editor","file":"app/src/theme/Appearance.tsx","description":"The Appearance popover and the theme editor panel."}
 {"id":"LA-UI75","title":"Desktop title bar","file":"app/src/shell/DesktopTitleBar.tsx"}
 {"id":"LA-UI76","title":"Theme to window chrome","file":"app/src/shell/desktopChrome.ts"}
 {"id":"LA-UI77","title":"Window title bar options","file":"desktop/src/chrome.ts"}
