@@ -1017,17 +1017,16 @@ a.row-link.row-link:focus-visible { outline: none; }
    the window's edge) by --card-gap, its top just under the stage's toolbar row by --card-gap-y (--tools-foot, which
    the open space's measure sets, openSpace.ts), never following the focus. Its height is a steady share of the
    stage, never its content's: 60% as a summary and 85% expanded, kept above the foot by --card-gap-y; content longer
-   scrolls inside, shorter leaves room below. The sheet's round corners, a hairline in the theme's line color, a
-   stripe in the focused box's color along its top and a lifting shadow; its handle at its left edge. */
+   scrolls inside, shorter leaves room below. The sheet's round corners, a border all round in the focused box's own color (its outline's, so the box, the
+   leader line and the card read as one object) and a lifting shadow; its handle at its left edge. */
 .wiki-panel {
   --card-top: calc(var(--tools-foot, calc(var(--below-strip) - var(--float-inset))) + var(--card-gap-y));
   position: absolute; z-index: 2; top: var(--card-top); right: calc(var(--side-space) - var(--float-inset) + var(--card-gap));
   box-sizing: border-box; width: var(--card-width, clamp(var(--card-min), calc((100% - var(--nav-space)) / 3), 640px)); min-width: var(--card-min);
   max-width: calc(100% - var(--nav-space) - var(--side-space) - var(--stage-min) - var(--float-inset) - var(--card-gap));
-  height: min(60%, 100% - var(--card-top) - var(--card-gap-y)); display: flex; flex-direction: column; border: 1px solid var(--rule); border-radius: var(--sheet-radius);
+  height: min(60%, 100% - var(--card-top) - var(--card-gap-y)); display: flex; flex-direction: column; border: 2px solid var(--card-accent, var(--rule)); border-radius: var(--sheet-radius);
 }
 .wiki-panel.is-expanded { height: min(85%, 100% - var(--card-top) - var(--card-gap-y)); }
-.wiki-panel::before { content: ""; position: absolute; z-index: 1; top: 0; left: 0; right: 0; height: 3px; border-radius: calc(var(--sheet-radius) - 1px) calc(var(--sheet-radius) - 1px) 0 0; background: var(--card-accent, var(--rule)); pointer-events: none; }
 @media (prefers-reduced-motion: no-preference) { .wiki-panel-page { animation: wiki-card-in var(--motion-speed) var(--motion-ease); } }
 @keyframes wiki-card-in { from { opacity: 0; } to { opacity: 1; } }
 @media (forced-colors: active) { .wiki-panel { border-color: CanvasText; } }
@@ -1050,7 +1049,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 .side-bar-handle.resize-handle { position: absolute; z-index: 4; top: var(--panel-radius); bottom: var(--panel-radius); left: calc(-1 * var(--float-inset)); width: var(--float-inset); }
 /* A stage's own tools float inside the open space: at its top (the graph's toolbar, the trace's filter) or its foot (the ERD's key). */
 .stage-tools { position: absolute; z-index: 1; box-sizing: border-box; left: var(--open-left, 0px); max-width: calc(100% - var(--open-left, 0px) - var(--open-right, 0px)); border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
-.stage-tools[data-stage-tools="top"] { top: var(--open-top, 0px); padding: 6px 10px; }
+/* A stage's own toolbar is centered across the open space, over the focus the camera frames there. */
+.stage-tools[data-stage-tools="top"] { top: var(--open-top, 0px); padding: 6px 10px; left: calc(var(--open-left, 0px) + (100% - var(--open-left, 0px) - var(--open-right, 0px)) / 2); transform: translateX(-50%); }
 .stage-tools[data-stage-tools="bottom"] { bottom: var(--open-bottom, 0px); right: var(--open-right, 0px); }
 /* The stages fill the stage; what they draw sits in the frame, the open space less their tools. */
 .focus-stage > :is(.graph-page, .erd-page, .trace-page), .focus-stage > .graph-page > .graph-workspace, .focus-stage .graph-workspace > .graph-canvas, .focus-stage .erd-page > :is(.erd-canvas, .erd-empty) { position: absolute; inset: 0; min-height: 0; }
