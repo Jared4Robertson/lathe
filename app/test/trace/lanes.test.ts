@@ -3,7 +3,7 @@ import { addRows, indexOf } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
 import { gap } from '../fixtures/workspace';
 import { obligationsUnder, untracedUnder } from '../../src/trace/chain';
-import { allBoxes, BOX_H, lanesIn, traceFade, traceFocus, traceMap, visibleIn, type LaneColumn, type TraceMap } from '../../src/trace/lanes';
+import { allBoxes, BOX_H, CELL_SHOWN, lanesIn, ROW_GAP, traceFade, traceFocus, traceMap, visibleIn, type LaneColumn, type TraceMap } from '../../src/trace/lanes';
 
 // The Trace stage's map (app/src/trace/lanes.ts): one map per product, a why tree from its outcomes
 // and a lane per obligation, gaps as dashed boxes, the Untraced lane last, laid out once in map
@@ -27,7 +27,7 @@ const boxesOf = (m: TraceMap, id: string) => allBoxes(m).filter((b) => b.id === 
 const laneOf = (m: TraceMap, obligation: string | null) => m.lanes.find((l) => l.obligation === obligation)!;
 const inColumn = (m: TraceMap, obligation: string | null, column: LaneColumn) => laneOf(m, obligation).boxes.filter((b) => b.column === column).map((b) => b.id);
 /** Every box's and line's place, as a snapshot. */
-const positions = (m: TraceMap) => JSON.stringify([...allBoxes(m).map((b) => [b.key, b.x, b.y, b.w, b.h]), ...[...m.tree.lines, ...m.lanes.flatMap((l) => l.lines)].map((l) => [l.key, l.points])]);
+const positions = (m: TraceMap) => JSON.stringify([...[...allBoxes(m), ...m.lanes.flatMap((l) => l.open?.boxes ?? [])].map((b) => [b.key, b.x, b.y, b.w, b.h]), ...[...m.tree.lines, ...m.lanes.flatMap((l) => l.lines)].map((l) => [l.key, l.points])]);
 
 describe('the Trace stage\'s map', () => {
   it('LA-V98-R03-T03 A product\'s why tree starts at its outcomes, a capability serving several repeated under each; with none, at its capabilities', () => {
@@ -101,7 +101,7 @@ describe('the Trace stage\'s map', () => {
     const map = traceMap(index, 'P');
     const lanesUnder = (ids: readonly string[]) => new Set(ids.flatMap((o) => map.lanesOf.get(o) ?? []));
     // The product: the whole map, nothing faded.
-    expect(traceFocus(map, index, 'P')).toEqual({ rect: { x: 0, y: 0, w: map.width, h: map.height }, anchor: null, lanes: null });
+    expect(traceFocus(map, index, 'P')).toEqual({ rect: { x: 0, y: 0, w: map.width, h: map.height }, anchor: null, lanes: null, open: null, box: null });
     // A use case: its first box in the tree and the lanes to its right, every copy's lanes kept.
     const uc = traceFocus(map, index, 'P-D-UC01');
     const ucBox = boxesOf(map, 'P-D-UC01')[0];
@@ -163,7 +163,8 @@ describe('the Trace stage\'s map', () => {
     expect(map.lanes.length).toBeGreaterThan(400);
     // A rectangle holds only the boxes and arrows that meet it: the tree's tall boxes and the lanes it crosses.
     const lane = map.lanes[200];
-    const rect = { x0: -1e6, x1: 1e6, y0: lane.top, y1: lane.top + lane.height };
+    const segment = map.segments[lane.segment];
+    const rect = { x0: segment.x, x1: segment.x + map.segmentWidth, y0: lane.top, y1: lane.top + lane.height };
     const seen = visibleIn(map, rect);
     const lanes = new Set(seen.boxes.filter((b) => b.lane >= 0).map((b) => b.lane));
     expect([...lanes].every((i) => Math.abs(i - 200) <= 1)).toBe(true);
@@ -171,9 +172,106 @@ describe('the Trace stage\'s map', () => {
     for (const b of seen.boxes) expect(b.y + b.h >= rect.y0 && b.y <= rect.y1).toBe(true);
     // Far out, a lane is one bar from its first box to its last.
     const far = lanesIn(map, rect);
-    expect(far.lanes.every((i) => Math.abs(i - 200) <= 1)).toBe(true);
+    expect(far.lanes.every((l) => Math.abs(l.lane - 200) <= 1)).toBe(true);
     expect(map.lanes[200].left).toBe(Math.min(...map.lanes[200].boxes.map((b) => b.x)));
     // A box is BOX_H tall.
     expect(map.lanes[0].boxes.every((b) => b.h === BOX_H)).toBe(true);
+  });
+
+  it('LA-V98-R13-T01 A lane\'s column shows four boxes then "+N more", one more shows all; focusing the lane opens it over the lanes below, nothing moving', () => {
+    /** The model product with `extra` more files under P-D-UC01-R01's test. */
+    const withFiles = (extra: number) => {
+      const data = modelWorkspace();
+      const chain = data.chains.find((c) => c.obligation === 'P-D-UC01-R01')!;
+      for (let n = 1; n <= extra; n++) chain.files.push({ path: `test/lend-${n}.test.ts`, named_by: ['P-D-UC01-R01-T01'] });
+      return indexOf(data);
+    };
+    const base = traceMap(withFiles(0), 'P').lanes.find((l) => l.obligation === 'P-D-UC01-R01')!.boxes.filter((b) => b.column === 'files').length;
+    // One more than CELL_SHOWN: every box shows, and the lane has no open form.
+    const five = laneOf(traceMap(withFiles(CELL_SHOWN + 1 - base), 'P'), 'P-D-UC01-R01');
+    expect(five.boxes.filter((b) => b.column === 'files')).toHaveLength(CELL_SHOWN + 1);
+    expect(five.open).toBeNull();
+
+    const index = withFiles(8);
+    const map = traceMap(index, 'P');
+    const all = base + 8;
+    const i = map.lanesOf.get('P-D-UC01-R01')![0];
+    const lane = map.lanes[i];
+    // Shown: the first four files, then "+N more", the lane five boxes tall; arrows to a hidden file go to it.
+    const shown = lane.boxes.filter((b) => b.column === 'files');
+    expect(shown.map((b) => b.role)).toEqual(['file', 'file', 'file', 'file', 'more']);
+    expect(shown[4].words).toEqual({ title: `+${all - CELL_SHOWN} more`, meta: `Files · ${all} in all` });
+    expect(shown[4].opens).toBe('P-D-UC01-R01-T01');
+    expect(lane.height).toBe(5 * BOX_H + 4 * ROW_GAP);
+    expect(lane.lines.filter((l) => l.target === shown[4].id)).toHaveLength(1);
+    // Open: every file, the shown ones where they are and the rest below them, past the lane's bottom.
+    const open = lane.open!;
+    const files = open.boxes.filter((b) => b.column === 'files');
+    expect(files).toHaveLength(all);
+    expect(files.slice(0, CELL_SHOWN)).toEqual(shown.slice(0, CELL_SHOWN));
+    expect(files.every((b, n) => n === 0 || b.y > files[n - 1].y)).toBe(true);
+    expect(open.bottom).toBeGreaterThan(lane.top + lane.height);
+    expect(open.lines.filter((l) => l.target.startsWith('file:'))).toHaveLength(all);
+
+    // Focusing the obligation, or a record in the lane, opens it and frames it to its open form's bottom.
+    const before = positions(map);
+    for (const id of ['P-D-UC01-R01', 'P-D-UC01-R01-T01']) {
+      const at = traceFocus(map, index, id);
+      expect(at.open, id).toBe(i);
+      expect(at.rect.y + at.rect.h).toBe(open.bottom);
+    }
+    // A domain focused opens none.
+    expect(traceFocus(map, index, 'P-D').open).toBeNull();
+    // Drawn open: the lane's every box; the boxes of the lanes below that it covers left out, their arrows too; the others where they were.
+    const whole = { x0: -1e9, y0: -1e9, x1: 1e9, y1: 1e9 };
+    const seen = visibleIn(map, whole, i);
+    expect(seen.boxes.filter((b) => b.lane === i && b.column === 'files')).toHaveLength(all);
+    const covered = (b: { lane: number; y: number }) => b.lane > i && map.lanes[b.lane].segment === lane.segment && b.y < open.bottom;
+    expect(seen.boxes.some(covered)).toBe(false);
+    expect(allBoxes(map).filter((b) => b.lane >= 0 && covered(b)).length).toBeGreaterThan(0);
+    const keys = new Set(seen.boxes.map((b) => b.key));
+    expect(seen.lines.every((l) => keys.has(l.from) && keys.has(l.to))).toBe(true);
+    const shut = visibleIn(map, whole);
+    expect(shut.boxes.filter((b) => b.lane === i && b.column === 'files').map((b) => b.role)).toEqual(['file', 'file', 'file', 'file', 'more']);
+    // Far out, the open lane is one bar to its open form's bottom, and the lanes it covers none.
+    const far = lanesIn(map, whole, i);
+    expect(far.lanes.find((l) => l.lane === i)!.h).toBe(open.bottom - lane.top);
+    expect(far.lanes.some((l) => covered({ lane: l.lane, y: l.y }))).toBe(false);
+    expect(positions(map)).toBe(before);
+  });
+
+  it('LA-V98-R14-T01 The lanes are grouped in labeled bands by domain, in the tree\'s order, flowing down columns so a large product\'s overview is about as wide as tall', () => {
+    const index = withOutcomes();
+    const map = traceMap(index, 'P');
+    // A band per part of the tree that holds obligations, in the tree's order, each labeled and its lanes together; the Untraced lane last, in its own.
+    expect(map.bands.map((b) => b.label)).toEqual([...map.bands.filter((b) => b.id !== 'untraced').map((b) => index.byId.get(b.id)?.title ?? 'Shared'), 'Untraced']);
+    expect(map.bands.find((b) => b.id === 'P-D')?.label).toBe(index.byId.get('P-D')!.title);
+    expect(map.bands.at(-1)).toMatchObject({ id: 'untraced', from: map.lanes.length - 1, to: map.lanes.length });
+    map.bands.forEach((b, n) => {
+      expect(b.from).toBe(n === 0 ? 0 : map.bands[n - 1].to);
+      for (let i = b.from; i < b.to; i++) expect(map.lanes[i].band).toBe(n);
+      // Its label sits over its first lane, in its head.
+      expect(b.heads[0]).toMatchObject({ x: map.segments[map.lanes[b.from].segment].x, continued: false });
+      expect(b.heads[0].y).toBeLessThan(map.lanes[b.from].top);
+    });
+    for (const o of obligationsUnder(index, 'P-D')) for (const i of map.lanesOf.get(o)!) expect(map.bands[map.lanes[i].band].id).toBe('P-D');
+    // A small product's bands go on in one column, under each other.
+    expect(map.segments).toHaveLength(1);
+
+    // A large one's flow down several columns side by side, the overview about a pane's shape; a band too tall for a
+    // column goes on at the next's top, labeled again, its tree boxes split there and marked "Continued".
+    const data = modelWorkspace();
+    addRows(data, 'uc_requirement', ...Array.from({ length: 900 }, (_, n) => ({ id: `P-D-UC01-R${String(n + 10).padStart(3, '0')}`, title: `Rule ${n + 10}`, use_case_id: 'P-D-UC01', statement: `Rule ${n + 10} MUST hold.` })));
+    const large = traceMap(indexOf(data), 'P');
+    expect(large.segments.length).toBeGreaterThan(2);
+    expect(large.width / large.height).toBeGreaterThan(0.8);
+    expect(large.width / large.height).toBeLessThan(3);
+    const domain = large.bands.find((b) => b.id === 'P-D')!;
+    expect(domain.heads.length).toBeGreaterThan(1);
+    expect(domain.heads.slice(1).every((h) => h.continued)).toBe(true);
+    expect(large.tree.boxes.filter((b) => b.id === 'P-D-UC01' && b.notes.includes('Continued')).length).toBe(domain.heads.length - 1);
+    // Down each column the lanes are in order, so what is in view is found by halving.
+    for (const s of large.segments) for (let i = s.from + 1; i < s.to; i++) expect(large.lanes[i].top).toBeGreaterThan(large.lanes[i - 1].top);
+    expect(large.segments.every((s, n) => n === 0 || s.x > large.segments[n - 1].x + large.segmentWidth)).toBe(true);
   });
 });

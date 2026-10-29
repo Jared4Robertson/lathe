@@ -279,7 +279,8 @@ describe('the Trace stage', () => {
     addRows(data, 'happens_in', { source_id: 'P-D-UC01-FL01-S03', target_id: 'P-V01' });
     await openApp('/P-D-UC01?stage=trace', served(await withEngineChains(data)));
     const copies = (await drawn(true)).boxes.filter((b) => b.id === 'P-V01' && b.lane >= 0);
-    expect(copies.map((b) => b.lane)).toEqual([0, 1]);
+    expect(copies).toHaveLength(2);
+    expect(copies[1].lane).toBe(copies[0].lane + 1);
     for (const c of copies) expect(c.notes).toEqual(['In 2 lanes']);
     // Hovering the first copy lights both, and the arrows touching them; the rest dims.
     const first = (await drawn()).boxes.find((b) => b.key === copies[0].key)!;
@@ -338,6 +339,36 @@ describe('the Trace stage', () => {
     await waitFor(async () => expect((await drawn(true)).boxes.some((b) => b.column === 'obligation' && b.id === 'P-D-UC01-R01' && b.strength < 1)).toBe(true));
     scene = await drawn(true);
     expect(scene.boxes.map((b) => inMap(scene, b))).toEqual(before);
+  });
+
+  it('LA-V98-R13-T02 A "+N more" box stands for a capped column; the arrows ring it, and Enter opens its lane over the lanes below', async () => {
+    const data = modelWorkspace();
+    const chains = data.chains;
+    for (let n = 1; n <= 8; n++) chains.find((c) => c.obligation === 'P-D-UC01-R01')!.files.push({ path: `test/lend-${n}.test.ts`, named_by: ['P-D-UC01-R01-T01'] });
+    chains.find((c) => c.obligation === 'P-D-UC01-R02')!.files.push({ path: 'test/return.test.ts', named_by: ['P-D-UC01-R02'] });
+    await openApp('/P-D-UC01-R02?stage=trace', served(data));
+    // The lane above, not open: four files and "+N more".
+    const more = (await drawn(true)).boxes.find((b) => b.role === 'more' && b.column === 'files')!;
+    expect(more).toMatchObject({ kind: 'more', dashed: false, name: expect.stringMatching(/^More \+\d+ more$/) });
+    const lane = more.lane;
+    expect((await drawn(true)).boxes.filter((b) => b.lane === lane && b.role === 'file')).toHaveLength(4);
+    // Right along the lane to its file, then Up onto the "+N more": the ring moves, the focus stays, and it is announced.
+    const announcer = () => screen.getByTestId('announcer');
+    for (let n = 0; n < 8 && !/^File /.test(announcer().textContent ?? ''); n++) {
+      fireEvent.keyDown(document.body, { key: 'ArrowRight', code: 'ArrowRight' });
+      await new Promise((r) => setTimeout(r, 0));
+    }
+    await waitFor(() => expect(announcer()).toHaveTextContent('File test/return.test.ts'));
+    const before = window.location.pathname;
+    fireEvent.keyDown(document.body, { key: 'ArrowUp', code: 'ArrowUp' });
+    await waitFor(() => expect(announcer()).toHaveTextContent(/^\+\d+ more in Files: Right or Enter shows them$/));
+    expect(window.location.pathname).toBe(before);
+    await waitFor(async () => expect((await drawn(true)).boxes.filter((b) => b.ring).map((b) => b.id)).toEqual([more.id]));
+    // Enter opens it: the focus moves to the record naming its first hidden file, and the lane is drawn open, every file in it.
+    fireEvent.keyDown(document.body, { key: 'Enter', code: 'Enter' });
+    await waitFor(() => expect(window.location.pathname).toBe('/P-D-UC01-R01-T01'));
+    await waitFor(async () => expect((await drawn(true)).boxes.filter((b) => b.lane === lane && b.role === 'file').length).toBeGreaterThan(8));
+    expect((await drawn(true)).boxes.some((b) => b.role === 'more' && b.lane === lane)).toBe(false);
   });
 
   it('LA-V98-R10-T02 On a phone the table is the Trace stage, and no canvas is drawn', async () => {
