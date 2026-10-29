@@ -62,8 +62,8 @@ Each decision lists the options weighed, the choice and why.
 | Nav | full screen, slides in from the left, keeps the space rail | menu button | Escape, ✕, choosing a page |
 | Inspector | bottom sheet, half or full height, grab handle | page bar ⓘ | Escape, swipe down, tap above, ✕ |
 | Open pages | bottom sheet, half or full height | page bar ⧉ | Escape, swipe down, tap above, ✕, choosing a page |
-| Quick find | full screen, box at the top, results below | top bar ⌕, Ctrl+P | Escape, Close, choosing a result |
-| Command palette, shortcuts | full screen | their shortcuts | as on the desktop |
+| Quick find and the command palette | full-width sheet at the top, box then results | top bar ⌕, Ctrl+P, Ctrl+Shift+P | Escape, Close, a tap below, choosing a result |
+| Shortcuts | full screen | its shortcut | as on the desktop |
 
 - Every sheet takes focus, keeps Tab inside it (`trapTab`) and gives focus back to the control that opened it (`LA-BRW-DR223`).
 - **The bottom sheet's drag** (`settle` in `BottomSheet.tsx`): from half, a drag up of 40 px or a flick goes to full and a drag down of 90 px or a flick closes; from full, 60 px down goes to half and 240 px (or a hard flick past 120 px) closes. The sheet follows the finger down while dragged. Tapping the handle toggles half and full, so the keyboard and switch users have the same sizes.
@@ -128,20 +128,19 @@ Each decision lists the options weighed, the choice and why.
 
 ### 8. Quick find
 
-Full screen on a phone: the box at the top (16 px text, no autocorrect, Enter labeled Go), Close beside it, and up to 20 results per group listed under it rather than in a dropdown, each row at least 44 px. Choosing a result goes there and closes the sheet.
+A full-width sheet at the top on a phone, the stage still showing (lightly dimmed) below it: the box at the top (16 px text, no autocorrect, Enter labeled Go), Close beside it, and up to 20 results listed under it, each row at least 44 px with its kind chip, ID, title (wrapping) and trail. Typing `>` lists commands instead, as on a wide screen. Choosing a result goes there and closes the sheet; a tap on the dimmed stage, Close or Escape closes it.
 
 ```
 ┌──────────────────────────────────────┐
 │ [⌕ graph                    ]  Close │
-│ IN LATHE                             │
+│ [Aggregate] LA-BRW-A4                │
 │ Graph                                │
-│ LA-BRW-A4 · Aggregate                │
+│ Lathe › … › Domain model             │
+│ [Component] LA-BRW-C20               │
 │ Graph model                          │
-│ LA-BRW-C20 · Component               │
-│ …                                    │
-│ EVERYTHING ELSE                      │
 │ …                                    │
 └──────────────────────────────────────┘
+  (the stage, dimmed)
 ```
 
 ### 9. Open pages (the tabs on a phone)
@@ -156,7 +155,7 @@ The page bar's ⧉ button shows the count and opens a bottom sheet: one row per 
 
 ### 11. Device details
 
-- `viewport-fit=cover`, and `env(safe-area-inset-*)` on the top bar, the app's sides, the sheets, quick find and the full-screen palette.
+- `viewport-fit=cover`, and `env(safe-area-inset-*)` on the top bar, the app's sides, the sheets and quick find.
 - `100dvh` for the app and the sheets; every other `vh` in the stylesheet became `dvh`.
 - `<meta name="theme-color">` in `index.html`, kept at the theme's `--sheet` by `useThemeColor` (it follows system dark mode, `data-theme` and `data-mode` on the root, and theme stylesheets added to the head).
 - Reduced motion: every sheet animation is inside `prefers-reduced-motion: no-preference` (UX-R04).
@@ -165,7 +164,7 @@ The page bar's ⧉ button shows the count and opens a bottom sheet: one row per 
 
 - On a coarse pointer every control's target is at least `--touch-target` (44 px): the control itself, or for a small control inside a row or a node (tree and tab chevrons, tab and pane close buttons, the graph group chevron, theme swatches), a `::before` stretched to 44 × 44 around it. The resize gaps of a tablet's workbench reach 19 px over the panels' edges, so a finger can grab them.
 - Nothing only by hover: a tab's close button shows always on touch; tooltips only repeat names and keys and also open on focus; the graph and ERD give a tap card instead of a hover title.
-- No sideways page scroll at 320 px: no fixed least width over 288 px outside a wide-screen query (the quick find dropdown is capped at the viewport).
+- No sideways page scroll at 320 px: no fixed least width over 288 px outside a wide-screen query.
 
 ## What was checked in a browser
 
@@ -173,7 +172,7 @@ With the in-app browser at 375 × 812 and 320 × 640 in touch emulation, against
 
 - the record page, a domain's Graph view and its ERD view (ERD): `document.documentElement.scrollWidth` equal to the viewport, and no element wider than the viewport outside a scrolling box, at both widths;
 - the inspector sheet opening at half height, a drag up to full, a drag down to half and a further drag closing it, with focus back on its toggle;
-- the nav sheet full screen with the rail, 44 px rows and indent guides; quick find full screen with 16 px text and inline results;
+- the nav sheet full screen with the rail, 44 px rows and indent guides; quick find as a full-width sheet at the top with 16 px text;
 - a touch tap on a graph node arming it and showing the card;
 - the desktop page bar at 1280 px: 40 px high over the panes only, the View toggles and the inspector toggle at its right, each pane's header holding only its close and full screen buttons.
 

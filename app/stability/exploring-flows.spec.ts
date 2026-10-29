@@ -26,10 +26,10 @@ async function graphReady(page: Page) {
 /** Opens quick find and the record whose ID is typed. */
 async function quickFind(page: Page, id: string) {
   await page.keyboard.press('Control+k');
-  const find = page.locator('.quick-find input');
+  const find = page.locator('.quick-open input');
   await expect(find).toBeFocused();
   await find.fill(id);
-  await page.locator('.quick-find-results li').first().waitFor();
+  await page.locator('.quick-open .palette-list li').first().waitFor();
   await page.keyboard.press('Enter');
   await page.waitForURL((u) => u.pathname === `/${id}`);
 }
@@ -224,20 +224,22 @@ test.describe('Exploring flows', () => {
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
     await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
-    // A requirement's Trace stage draws the step that fulfills it, with its flow and what it invokes, an arrow for each link.
+    // A requirement's Trace stage frames its lane of the product's map: the step that fulfills it, with its flow and what it invokes, an arrow for each link.
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
     await traceDrawn(page);
     const chain = await traceSceneOf(page, true);
-    expect(chain.boxes.find((b) => b.id === 'LA-EXP-UC03-FL01-S01')?.column).toBe('step');
-    expect(chain.boxes.find((b) => b.id === 'LA-EXP-UC03-FL01')?.column).toBe('flow');
-    expect(chain.boxes.find((b) => b.id === 'LA-EXP-CMD01')?.column).toBe('design');
+    const lane = chain.boxes.filter((b) => b.strength === 1);
+    expect(lane.find((b) => b.id === 'LA-EXP-UC03-FL01-S01')?.column).toBe('step');
+    expect(lane.find((b) => b.id === 'LA-EXP-UC03-FL01')?.column).toBe('flow');
+    expect(lane.find((b) => b.id === 'LA-EXP-CMD01')?.column).toBe('design');
+    expect((await traceSceneOf(page)).boxes.some((b) => b.id === 'LA-EXP-UC03-R18' && b.focus), 'the requirement is in view').toBe(true);
     expect(chain.lines.map((l) => `${l.source} > ${l.target}`)).toEqual(expect.arrayContaining(['LA-EXP-UC03-FL01 > LA-EXP-UC03-FL01-S01', 'LA-EXP-UC03-FL01-S01 > LA-EXP-CMD01']));
     // From the keyboard, through the table under the canvas: the step's link, then Enter.
     const design = page.locator('.focus-stage .trace-access .trace-column').nth(1);
     await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ }).focus();
     await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL01-S01');
-    // The step's own page in the wiki card, shown again (w); the Trace stage now draws the lanes it belongs to, the step as the focus.
+    // The step's own page in the wiki card, shown again (w); the Trace stage's camera now frames the lanes it belongs to, the step as the focus.
     await page.keyboard.press('w');
     await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
     await traceDrawn(page);
@@ -261,7 +263,7 @@ test.describe('Exploring flows', () => {
     await page.keyboard.press('Alt+1');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03');
     await page.keyboard.press('Control+Shift+p');
-    await page.locator('.dialog-search').fill('Switch to');
+    await page.locator('.quick-open input').fill('>Switch to');
     await expect(page.locator('.palette-list')).toContainText('Lathe');
     await page.keyboard.press('Escape');
     // Find a record in the space, and open its Checks.

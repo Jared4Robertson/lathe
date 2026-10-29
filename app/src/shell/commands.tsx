@@ -32,10 +32,10 @@ import { Button } from '../components/Button';
 import { formatPath } from '../specs/data';
 
 // The command dispatcher: components register handlers for command ids (useCommand), one key
-// listener matches key presses against the keymap, and the command palette and the shortcuts
-// sheet are drawn from the same table. A command only runs (and only shows as available in the
-// palette) while something has registered a handler for it, so "when it applies" follows what is
-// on screen: the graph's commands exist while a graph is shown. The same listener sends the plain arrow keys to the
+// listener matches key presses against the keymap, and the shortcuts sheet and quick find's
+// commands (QuickOpen.tsx) are drawn from the same table. A command only runs (and only shows as
+// available in quick find) while something has registered a handler for it, so "when it applies"
+// follows what is on screen: the graph's commands exist while a graph is shown. The same listener sends the plain arrow keys to the
 // stage's walk (useStageWalk) from anywhere on the page, except a control that uses arrows itself (keymap usesArrows).
 
 type Handler = () => void;
@@ -118,6 +118,19 @@ export function useAnnounce() {
   return api?.announce ?? (() => {});
 }
 
+/** The keymap with what applies now, for quick find's commands: each command's title, whether it is handled, and running it. */
+export function useCommandList() {
+  const api = useContext(CommandsContext);
+  const keymap = useKeymap();
+  return useMemo(() => ({
+    commands: keymap.commands,
+    mac: keymap.mac,
+    available: api?.available ?? (() => false),
+    titleOf: api?.titleOf ?? ((c: Command) => c.title),
+    run: api?.run ?? (() => false),
+  }), [api, keymap]);
+}
+
 export function useRunCommand() {
   const api = useContext(CommandsContext);
   return useCallback((id: string) => api?.run(id) ?? false, [api]);
@@ -136,7 +149,6 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
   const pendingRef = useRef<string[]>([]);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [sheet, setSheet] = useState(false);
-  const [palette, setPalette] = useState(false);
 
   const setPendingKeys = (keys: string[]) => {
     pendingRef.current = keys;
@@ -213,26 +225,24 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
 
   return (
     <CommandsContext.Provider value={api}>
-      <ProviderCommands openSheet={() => setSheet(true)} openPalette={() => setPalette(true)} />
+      <ProviderCommands openSheet={() => setSheet(true)} />
       {children}
       <div className="sr-only" role="status" aria-live="polite" data-testid="announcer">{message}</div>
       {pending.length > 0 && <div className="key-pending" aria-hidden="true">{pending.join(' ')}…</div>}
       {sheet && <ShortcutSheet commands={commands} mac={mac} available={available} titleOf={titleOf} onClose={() => setSheet(false)} />}
-      {palette && <CommandPalette commands={commands} mac={mac} available={available} titleOf={titleOf} onClose={() => setPalette(false)} onRun={(id) => { setPalette(false); setTimeout(() => run(id), 0); }} />}
     </CommandsContext.Provider>
   );
 }
 
-function ProviderCommands({ openSheet, openPalette }: { openSheet: () => void; openPalette: () => void }) {
+function ProviderCommands({ openSheet }: { openSheet: () => void }) {
   useCommand('showShortcuts', openSheet);
-  useCommand('commandPalette', openPalette);
   return null;
 }
 
 // ---------- Dialogs ----------
 
 /** A modal dialog: focus goes into it, Tab stays inside, Escape or a click outside closes it, and focus goes back. */
-function Dialog({ label, onClose, children, className }: { label: string; onClose: () => void; children: ReactNode; className?: string }) {
+export function Dialog({ label, onClose, children, className, backdropClassName }: { label: string; onClose: () => void; children: ReactNode; className?: string; backdropClassName?: string }) {
   const box = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const before = document.activeElement as HTMLElement | null;
@@ -251,7 +261,7 @@ function Dialog({ label, onClose, children, className }: { label: string; onClos
     }
   };
   return (
-    <div className="dialog-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+    <div className={`dialog-backdrop${backdropClassName ? ` ${backdropClassName}` : ''}`} onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div ref={box} className={`dialog ${className ?? ''}`} role="dialog" aria-modal="true" aria-label={label} onKeyDown={onKeyDown}>
         {children}
       </div>
@@ -322,55 +332,6 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
       <p className="hint shortcut-note">
         How records are written, and every kind and check: <Link to={formatPath} onClick={onClose}>Record format</Link>.
       </p>
-    </Dialog>
-  );
-}
-
-function CommandPalette({ commands, mac, available, titleOf, onClose, onRun }: ListProps & { onRun: (id: string) => void }) {
-  const [query, setQuery] = useState('');
-  const [active, setActive] = useState(0);
-  const listId = useId();
-  const q = query.trim().toLowerCase();
-  const items = commands.filter((c) => !c.local && !c.browser && c.id !== 'commandPalette' && available(c.id) && (!q || titleOf(c).toLowerCase().includes(q) || c.id.toLowerCase().includes(q)));
-  const at = Math.min(active, Math.max(0, items.length - 1));
-  const onKeyDown = (e: ReactKeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'ArrowDown') { e.preventDefault(); setActive((at + 1) % Math.max(1, items.length)); }
-    else if (e.key === 'ArrowUp') { e.preventDefault(); setActive((at - 1 + items.length) % Math.max(1, items.length)); }
-    else if (e.key === 'Enter' && items[at]) { e.preventDefault(); onRun(items[at].id); }
-  };
-  return (
-    <Dialog label="Command palette" onClose={onClose} className="palette">
-      <input
-        type="text"
-        role="combobox"
-        aria-expanded="true"
-        aria-controls={listId}
-        aria-activedescendant={items[at] ? `${listId}-${items[at].id}` : undefined}
-        aria-label="Type a command"
-        placeholder="Type a command"
-        className="dialog-search"
-        value={query}
-        onChange={(e) => { setQuery(e.target.value); setActive(0); }}
-        onKeyDown={onKeyDown}
-      />
-      <ul id={listId} role="listbox" aria-label="Commands" className="palette-list">
-        {items.map((c, i) => (
-          <li
-            key={c.id}
-            id={`${listId}-${c.id}`}
-            role="option"
-            aria-selected={i === at}
-            aria-keyshortcuts={ariaKeyShortcuts(c.keys, mac) || undefined}
-            className={i === at ? 'active' : undefined}
-            onMouseDown={(e) => { e.preventDefault(); onRun(c.id); }}
-            onMouseEnter={() => setActive(i)}
-          >
-            <span className="palette-title">{titleOf(c)}</span>
-            {c.keys[0] && <Keys binding={c.keys[0]} mac={mac} className="kbd-hint" />}
-          </li>
-        ))}
-        {items.length === 0 && <li className="hint" role="presentation">No command matches.</li>}
-      </ul>
     </Dialog>
   );
 }

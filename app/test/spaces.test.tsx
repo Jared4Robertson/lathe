@@ -3,7 +3,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import type { SpecData } from '../../lathe/src/server/contract';
-import { findItems, rankItems } from '../src/shell/QuickFind';
+import { findItems, rankItems } from '../src/shell/QuickOpen';
 import { colorField, colorOf, iconField, monogramOf, productOfPath, spaceOf } from '../src/shell/spaces';
 import { spaceIndex } from '../src/specs/data';
 import { addRows, indexOf, setRow } from './fixtures/load';
@@ -205,7 +205,7 @@ describe('product spaces', () => {
     await waitFor(() => expect(window.location.pathname).toBe('/DM'));
   });
 
-  it('LA-V90-R13-T01 Quick find searches the current space only', async () => {
+  it('LA-V64-R04-T01 Quick find searches the current space only', async () => {
     const index = indexOf(spacesWorkspace());
     const ranked = rankItems(findItems(spaceIndex(index, 'NF')), 'n', 50);
     expect(ranked.some((i) => i.id === 'NF-NOTE')).toBe(true);
@@ -214,17 +214,18 @@ describe('product spaces', () => {
     await openApp('/DM', { data: spacesWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     const user = userEvent.setup();
-    const find = within(nav()).getByRole('combobox', { name: 'Quick find' });
-    await user.click(find);
+    await user.click(within(nav()).getByRole('button', { name: 'Go to…' }));
+    const dialog = screen.getByRole('dialog', { name: 'Quick find' });
+    const find = within(dialog).getByRole('combobox', { name: 'Quick find' });
     await user.type(find, 'note');
-    let list = within(nav()).getByRole('listbox', { name: 'Quick find results' });
+    let list = within(dialog).getByRole('listbox', { name: 'Quick find results' });
     // Notebook's records are another space's: nothing of them is found from Demo shop.
     expect(within(list).queryAllByRole('option').map((o) => o.querySelector('code')!.textContent)).not.toEqual(expect.arrayContaining(['NF-NOTE']));
     expect(within(list).queryAllByRole('group')).toHaveLength(0);
 
     await user.clear(find);
     await user.type(find, 'n');
-    list = within(nav()).getByRole('listbox', { name: 'Quick find results' });
+    list = within(dialog).getByRole('listbox', { name: 'Quick find results' });
     const ids = within(list).getAllByRole('option').map((o) => o.querySelector('code')!.textContent!);
     expect(ids.filter((id) => /^[A-Z]/.test(id)).every((id) => id.startsWith('DM'))).toBe(true);
     // The arrow keys run through the results.

@@ -30,6 +30,11 @@ export interface PlateBadge { label: string; tone: (typeof BADGE_TONES)[number];
 
 export interface Plate {
   id: string;
+  /**
+   * Its place in the map, unique among the frame's plates: what the fade and the spotlight light (fade.ts). Its ID on
+   * the graph, where each record has one place; a Trace stage's box's key, a record there having a box in each lane.
+   */
+  place: string;
   kind: string;
   /** The kind's name ("Use case"), or "Group". */
   kindLabel: string;
@@ -151,7 +156,7 @@ export type PlateSource =
    * A Trace stage's box (LA-V98), at text scale 1: its lines, already wrapped and cut to its box, at its top when it
    * spans several lanes; its notes after them; `plain` for a box that is no record.
    */
-  | { view: 'trace'; node: { x: number; y: number; w: number; h: number }; lines: WrappedLabel; notes: readonly string[]; top: boolean; plain?: PlainBox };
+  | { view: 'trace'; place: string; node: { x: number; y: number; w: number; h: number }; lines: WrappedLabel; notes: readonly string[]; top: boolean; plain?: PlainBox };
 
 /** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DS06, LA-EXP-DS07, LA-EXP-DS08, LA-V93-R06). */
 export function plateOf(index: SpecIndex, id: string, source: PlateSource): Plate {
@@ -165,7 +170,7 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource): Plat
   const marks = marksOf(index, id);
   const marked = marks.errors + marks.warnings + marks.gaps.length > 0;
   const base = {
-    id, kind, kindLabel: record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
+    id, place: id, kind, kindLabel: record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
     stage, group: !record, shape, view: source.view, x, y, w, h, text: t, ...marks,
     dashed: kind === 'question',
   };
@@ -228,7 +233,7 @@ function tracePlate(index: SpecIndex, id: string, source: Extract<PlateSource, {
   const placed = placeLines({ lines: source.lines, box, centered: false, top: source.top, t: 1, icons: mark ? [{ draw: 'mark', name: mark }] : [], notes: source.notes });
   const badges = marked ? badgesAt(marks, x + w - inset - BADGE.right - room.r, y + inset + BADGE.top + room.t, 1) : [];
   return {
-    id, kind, kindLabel: plain ? plain.kindLabel : record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
+    id, place: source.place, kind, kindLabel: plain ? plain.kindLabel : record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
     stage: plain ? plain.stage : stageFor(index, id, kind), group: !plain && !record, shape, view: 'trace', x, y, w, h, text: 1, scale: 1, ...marks,
     dashed: plain ? plain.dashed : kind === 'question', outline, edged, border: BORDER, decoration: shape,
     label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges,

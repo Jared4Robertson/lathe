@@ -1,6 +1,7 @@
 // The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10, LA-V98).
 import { lazy, Suspense, useLayoutEffect, useMemo, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
+import { mapRootOf } from '../graph/map';
 import { groupName, isGroup } from '../graph/model';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { TRACE_COLUMN_LABELS, TRACE_COLUMNS, traceChain, traceShape, untracedUnder, type GapColumn, type TraceColumn, type TraceFile, type TraceGroup, type TraceRow } from './chain';
@@ -8,17 +9,19 @@ import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
 import { useNarrow } from '../shell/useNarrow';
 import type { OpenSpaceStore } from '../views/openSpace';
-import { tracePicture } from './lanes';
+import { traceMap } from './lanes';
 import { useStepWalk } from '../graph/steps';
 
-// What the focus owes and how far it has come, drawn on the canvas with the graph's renderer
-// (TraceCanvas.tsx, laid out by lanes.ts): one obligation's chain with its "why" columns, or a "why"
-// tree on the left and one lane per obligation on the right, gaps as dashed empty boxes and the
-// Untraced records in a lane of their own. It works on every focus (LA-PAT-APP-UX-R17).
+// What the product owes and how far it has come, drawn on the canvas with the graph's renderer
+// (TraceCanvas.tsx) as one map per product (lanes.ts, LA-PAT-APP-UX-R19): a "why" tree on the left
+// and one lane per obligation on the right, gaps as dashed empty boxes and the Untraced records in a
+// lane of their own. Focusing anything moves the camera to frame it and fades the rest; Gaps only
+// fades the complete lanes; the map never changes with either. It works on every focus
+// (LA-PAT-APP-UX-R17), and the stage stays mounted while the focus moves within its product.
 //
-// The table is its accessible layer and its phone form, the way the graph keeps a layer of its boxes
-// for the keyboard and assistive technology: on a wide screen it is visually hidden under the
-// canvas, its links carrying keyboard focus (the canvas rings the box a focused link stands for and
+// The table is its accessible layer and its phone form, listing what is under the focus, the way the
+// graph keeps a layer of its boxes for the keyboard and assistive technology: on a wide screen it is
+// visually hidden under the canvas, its links carrying keyboard focus (the canvas rings the box a focused link stands for and
 // brings it into view) and the arrow keys walking it; on a phone it is the stage. By the shape
 // chain.ts's traceShape gives the focus:
 // - an obligation: its chain, each column a list of cards;
@@ -44,7 +47,7 @@ export interface TraceViewProps {
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   /** Called with what the trace holds, for the header strip: "12 obligations · 3 with gaps · 4 untraced". */
   onCounts?: (counts: string) => void;
-  /** The open space the host's floating panels leave over the stage, where the canvas frames the trace. */
+  /** The open space the host's floating panels leave over the stage, where the canvas frames the focus. */
   space?: OpenSpaceStore;
 }
 
@@ -153,21 +156,28 @@ function walk(e: KeyboardEvent<HTMLElement>) {
   to?.focus();
 }
 
+/** The Trace stage: one per product, so moving the focus within it keeps its map, its camera and its filter. */
 export function TraceView(props: TraceViewProps) {
-  return <TraceStage key={props.focus} {...props} />;
+  const product = mapRootOf(props.index, props.focus);
+  return <TraceStage key={product} {...props} product={product} />;
 }
 
-function TraceStage(props: TraceViewProps) {
-  const { index, focus, onCounts } = props;
+function TraceStage(props: TraceViewProps & { product: string }) {
+  const { index, focus, onCounts, product } = props;
   const narrow = useNarrow();
   const spec = useMemo(() => matrixSpec(index, focus), [index, focus]);
   const [gapsOnly, setGapsOnly] = useState(false);
-  const [shown, setShown] = useState(TRACE_PAGE);
+  // The table's page and the keyboard's ring are the focus's: a new focus starts them again.
+  const [paging, setPaging] = useState({ focus, shown: TRACE_PAGE });
+  const shown = paging.focus === focus ? paging.shown : TRACE_PAGE;
   const page = useMemo(() => (spec ? pageOf(spec.groups, gapsOnly, shown) : null), [spec, gapsOnly, shown]);
-  const picture = useMemo(() => (narrow ? null : tracePicture(index, focus, { gapsOnly })), [narrow, index, focus, gapsOnly]);
-  const [ring, setRing] = useState<{ id: string; lane: string | null } | null>(null);
+  // The product's one map: laid out once per product and data change, whatever the focus or the filter.
+  const map = useMemo(() => (narrow ? null : traceMap(index, product)), [narrow, index, product]);
+  const [ringAt, setRing] = useState<{ focus: string; at: { id: string; lane: string | null } | null }>({ focus, at: null });
+  const ring = ringAt.focus === focus ? ringAt.at : null;
   // The plain arrows step the focus through the tree from anywhere, by the Tree view's keys (LA-V93-R19): the lanes, like
-  // the Tree, run from a record to what serves it, left to right. The table under the canvas keeps its own arrows (walk).
+  // the Tree, run from a record to what serves it, left to right; the camera follows the focus on the one map. The table
+  // under the canvas keeps its own arrows (walk).
   useStepWalk(index, focus, 'tree', props.onNavigate);
 
   // What the header strip says.
@@ -184,17 +194,17 @@ function TraceStage(props: TraceViewProps) {
   }, [spec, index, focus, total, page, untracedCount]);
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 
-  const drawn = !narrow && picture !== null;
+  const drawn = !narrow && map !== null;
   // Show more pages the table. Under the canvas, which draws every lane, it is for the keyboard alone: hidden until focused.
   const more = page && page.drawn < page.matching ? (
     <p className={`trace-more${drawn ? ' is-keys' : ''}`}>
-      <Button onClick={() => setShown((n) => n + TRACE_PAGE)}>Show {Math.min(TRACE_PAGE, page.matching - page.drawn)} more</Button>
+      <Button onClick={() => setPaging({ focus, shown: shown + TRACE_PAGE })}>Show {Math.min(TRACE_PAGE, page.matching - page.drawn)} more</Button>
       <span className="hint"> {page.drawn} of {page.matching} shown</span>
     </p>
   ) : null;
-  const filter = total > 0 ? (
+  const filter = total > 0 || (drawn && map.counts.obligations > 0) ? (
     <label className="trace-filter">
-      <input type="checkbox" checked={gapsOnly} onChange={(e) => { setGapsOnly(e.target.checked); setShown(TRACE_PAGE); }} />
+      <input type="checkbox" checked={gapsOnly} onChange={(e) => { setGapsOnly(e.target.checked); setPaging({ focus, shown: TRACE_PAGE }); }} />
       Gaps only
     </label>
   ) : null;
@@ -210,8 +220,8 @@ function TraceStage(props: TraceViewProps) {
       </section>
     );
   }
-  const onFocus = (e: FocusEvent<HTMLElement>) => setRing(linkTarget(e.target as Element, focus));
-  const onBlur = (e: FocusEvent<HTMLElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setRing(null); };
+  const onFocus = (e: FocusEvent<HTMLElement>) => setRing({ focus, at: linkTarget(e.target as Element, focus) });
+  const onBlur = (e: FocusEvent<HTMLElement>) => { if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setRing({ focus, at: null }); };
   return (
     <section className="trace-page is-drawn" aria-label="Trace" {...peekHandlers(props)}>
       {(filter || spec?.lead || more) && (
@@ -222,7 +232,7 @@ function TraceStage(props: TraceViewProps) {
         </div>
       )}
       <Suspense fallback={<div className="graph-flow trace-flow" aria-busy="true" />}>
-        <TraceCanvas index={index} focus={focus} picture={picture} onNavigate={props.onNavigate} onPeek={props.onPeek} space={props.space} ring={ring} />
+        <TraceCanvas index={index} focus={focus} map={map} gapsOnly={gapsOnly} onNavigate={props.onNavigate} onPeek={props.onPeek} space={props.space} ring={ring} />
       </Suspense>
       <div className="trace-access" data-arrows="own" onFocus={onFocus} onBlur={onBlur} onKeyDown={walk}>
         {table}

@@ -261,8 +261,8 @@ test.describe('Platform flows in the app', () => {
       await expect(page.getByRole('banner')).toBeVisible();
       // Search from the top bar, and open a use case.
       await page.getByRole('banner').getByRole('button', { name: 'Quick find' }).tap();
-      await page.locator('.find-sheet input').fill('LA-PLT-UC05');
-      const hit = page.locator('.find-sheet li').filter({ hasText: /LA-PLT-UC05(?![-\d])/ }).first();
+      await page.locator('.quick-open input').fill('LA-PLT-UC05');
+      const hit = page.locator('.quick-open .palette-list li').filter({ hasText: /LA-PLT-UC05(?![-\d])/ }).first();
       await hit.waitFor();
       await hit.tap();
       await page.waitForURL((u) => u.pathname === '/LA-PLT-UC05');
@@ -394,10 +394,10 @@ test.describe('Platform flows in the app', () => {
     // The put-back goal reloads the page too: let it land before the next step measures.
     await expect(page.locator(WIKI)).not.toContainText('A goal the flow test writes', { timeout: 20_000 });
     // Overlays are placed before they show.
-    expectStable(await step(page, 'flow', 'quick find', { keys: [...KEYS, '.quick-find input'], allow: ['.quick-find-results'] }, async () => {
+    expectStable(await step(page, 'flow', 'quick find', { keys: [...KEYS, '.quick-find-button'], allow: ['.quick-open-backdrop'] }, async () => {
       await page.keyboard.press('Control+k');
       await page.keyboard.type('graph', { delay: 40 });
-      await page.locator('.quick-find-results li').first().waitFor();
+      await page.locator('.quick-open .palette-list li').first().waitFor();
       await page.keyboard.press('Escape');
     }));
     // The theme: only colors change.
@@ -434,8 +434,8 @@ test.describe('Platform flows in the app', () => {
     expect([...reached].sort()).toEqual(['nav', 'page bar', 'side bar', 'stage', 'wiki card']);
     // Open a record from quick find: focus stays on the page.
     await page.keyboard.press('Control+k');
-    await page.locator('.quick-find input').fill('LA-EXP-UC03');
-    await page.locator('.quick-find-results li').first().waitFor();
+    await page.locator('.quick-open input').fill('LA-EXP-UC03');
+    await page.locator('.quick-open .palette-list li').first().waitFor();
     await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03');
     // Focus is not dropped to the document's body by the move.
@@ -455,7 +455,7 @@ test.describe('Platform flows in the app', () => {
     await page.keyboard.press('Enter');
     await expect(page.locator('html')).toHaveAttribute('data-theme', /high-contrast/);
     // A dialog holds focus inside, and gives it back to its opener.
-    const opener = nav(page).getByRole('combobox', { name: 'Quick find' });
+    const opener = nav(page).getByRole('button', { name: 'Go to…' });
     await opener.focus();
     await page.keyboard.press('Control+Shift+p');
     await expect(palette(page)).toBeVisible();
