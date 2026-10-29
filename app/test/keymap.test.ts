@@ -16,6 +16,8 @@ import {
   readOverrides,
   resolveCommands,
   usesArrows,
+  usesEnter,
+  walkArrow,
 } from '../src/shell/keymap';
 
 const key = (k: string, code: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey', boolean>> = {}) =>
@@ -53,7 +55,8 @@ describe('the keymap', () => {
     expect(keysOf('toggleNav')).toEqual(['Mod+B']);
     expect(keysOf('toggleSideBar')).toEqual(['Mod+Alt+B']);
     expect(keysOf('stageGraph')).toEqual(['Ctrl+G', 'Ctrl+1']);
-    expect(keysOf('toggleWikiCard')).toEqual(['w', 'Ctrl+W']);
+    expect(keysOf('toggleWikiCard')).toEqual(['Enter', 'Ctrl+W']);
+    expect(keysOf('collapseWikiCard')).toEqual(['Escape']);
     expect(COMMANDS.some((c) => ['viewWiki', 'viewGraph', 'maximizePane', 'toggleFullScreen'].includes(c.id))).toBe(false);
     expect(keysOf('nextProblem')).toEqual(['F8']);
   });
@@ -126,12 +129,16 @@ describe('the keymap', () => {
 
   const keysOn = (id: string, mac: boolean) => resolveCommands({}, mac).find((c) => c.id === id)!.keys;
 
-  it('LA-V61-R08-T08 The stage switch has Ctrl+G, Ctrl+E and Ctrl+T on a Mac and Alt+G, Alt+E and Alt+T elsewhere, then Ctrl+1, 2 and 3; the wiki card w, and Ctrl+W on a Mac or Alt+W elsewhere', () => {
-    expect(keysOn('toggleWikiCard', true)).toEqual(['w', 'Ctrl+W']);
+  it('LA-V61-R08-T08 The stage switch has Ctrl+G, Ctrl+E and Ctrl+T on a Mac and Alt+G, Alt+E and Alt+T elsewhere, then Ctrl+1, 2 and 3; the wiki card Enter, and Ctrl+W on a Mac or Alt+W elsewhere', () => {
+    expect(keysOn('toggleWikiCard', true)).toEqual(['Enter', 'Ctrl+W']);
     expect(keysOn('stageGraph', true)).toEqual(['Ctrl+G', 'Ctrl+1']);
     expect(keysOn('stageErd', true)).toEqual(['Ctrl+E', 'Ctrl+2']);
     expect(keysOn('stageTrace', true)).toEqual(['Ctrl+T', 'Ctrl+3']);
-    expect(keysOn('toggleWikiCard', false)).toEqual(['w', 'Alt+W']);
+    expect(keysOn('toggleWikiCard', false)).toEqual(['Enter', 'Alt+W']);
+    // No single letter but the walk's own is left on W, A, S or D.
+    for (const mac of [true, false]) for (const c of resolveCommands({}, mac)) for (const k of c.keys) {
+      if (['W', 'A', 'S', 'D'].includes(normalizeBinding(k, mac))) expect(c.id, k).toMatch(/^graphStep/);
+    }
     expect(keysOn('stageGraph', false)).toEqual(['Alt+G', 'Ctrl+1']);
     expect(keysOn('stageErd', false)).toEqual(['Alt+E', 'Ctrl+2']);
     expect(keysOn('stageTrace', false)).toEqual(['Alt+T', 'Ctrl+3']);
@@ -186,6 +193,67 @@ describe('the keymap', () => {
     expect(usesArrows(dialog.querySelector('button'))).toBe(false);
     expect(usesArrows(document.body)).toBe(false);
     expect(usesArrows(null)).toBe(false);
+    document.body.innerHTML = '';
+  });
+
+  it('LA-V61-R49-T05 W, A, S and D walk as Up, Left, Down and Right, plain only, and the guard keeps them with every element that takes text', () => {
+    expect(walkArrow(eventChord(key('w', 'KeyW')))).toBe('ArrowUp');
+    expect(walkArrow(eventChord(key('a', 'KeyA')))).toBe('ArrowLeft');
+    expect(walkArrow(eventChord(key('s', 'KeyS')))).toBe('ArrowDown');
+    expect(walkArrow(eventChord(key('d', 'KeyD')))).toBe('ArrowRight');
+    // Caps Lock types a capital and still walks.
+    expect(walkArrow(eventChord(key('W', 'KeyW')))).toBe('ArrowUp');
+    expect(walkArrow(eventChord(key('ArrowLeft', 'ArrowLeft')))).toBe('ArrowLeft');
+    // With a modifier the letter keeps its own meaning, and Shift adds nothing.
+    for (const mods of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }, { shiftKey: true }]) {
+      expect(walkArrow(eventChord(key('w', 'KeyW', mods))), JSON.stringify(mods)).toBeUndefined();
+    }
+    expect(walkArrow(eventChord(key('q', 'KeyQ')))).toBeUndefined();
+    // The graph's step rows list each step's letter after its arrow, in every view.
+    const step = (id: string) => COMMANDS.find((c) => c.id === id)!;
+    expect(step('graphStepOut').keys).toEqual(['ArrowLeft', 'A']);
+    expect(step('graphStepOut').nestedKeys).toEqual(['ArrowUp', 'W']);
+    expect(step('graphStepNext').keys).toEqual(['ArrowDown', 'S']);
+    expect(step('graphStepNext').nestedKeys).toEqual(['ArrowRight', 'D']);
+    // Every element that takes text keeps a letter; a button, a link and the page give it to the stage.
+    const make = (html: string) => {
+      const host = document.createElement('div');
+      host.innerHTML = html;
+      document.body.append(host);
+      return host.firstElementChild as HTMLElement;
+    };
+    for (const html of ['<input>', '<input type="search">', '<textarea></textarea>', '<select><option>a</option></select>', '<div contenteditable="true">x</div>']) {
+      expect(usesArrows(make(html)), html).toBe(true);
+    }
+    for (const html of ['<button>x</button>', '<a href="/x">x</a>', '<p>text</p>']) expect(usesArrows(make(html)), html).toBe(false);
+    document.body.innerHTML = '';
+  });
+
+  it('LA-V96-R19-T05 The Enter guard leaves a plain Enter with each control that handles it, and gives it to the wiki card everywhere else', () => {
+    const make = (html: string) => {
+      const host = document.createElement('div');
+      host.innerHTML = html;
+      document.body.append(host);
+      return host.firstElementChild as HTMLElement;
+    };
+    const own = [
+      '<a href="/x">x</a>', '<button>x</button>', '<summary>x</summary>', '<input>', '<input type="checkbox">', '<textarea></textarea>',
+      '<select><option>a</option></select>', '<div contenteditable="true"><b>x</b></div>',
+      ...['button', 'link', 'menuitem', 'option', 'tab', 'checkbox', 'switch', 'treeitem', 'gridcell'].map((r) => `<div role="${r}" tabindex="0">x</div>`),
+      ...['menu', 'listbox', 'combobox', 'tree', 'grid'].map((r) => `<div role="${r}"><span>x</span></div>`),
+      '<div role="dialog" aria-modal="true"><p>x</p></div>',
+    ];
+    for (const html of own) {
+      const el = make(html);
+      expect(usesEnter(el), html).toBe(true);
+      const inner = el.querySelector('span, p, b');
+      if (inner) expect(usesEnter(inner), `inside ${html}`).toBe(true);
+    }
+    // A graph box (a focusable group), a scrolling region, plain text and the page give Enter to the card.
+    const stage = ['<div class="graph-box" role="group" tabindex="0"></div>', '<div role="region" tabindex="0" aria-label="Scrolls">x</div>', '<p>text</p>', '<a>no href</a>'];
+    for (const html of stage) expect(usesEnter(make(html)), html).toBe(false);
+    expect(usesEnter(document.body)).toBe(false);
+    expect(usesEnter(null)).toBe(false);
     document.body.innerHTML = '';
   });
 });

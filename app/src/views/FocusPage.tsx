@@ -201,12 +201,15 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const cardCrowded = !narrow && card.open && crowded.has('card');
   const cardShown = narrow ? sheet : card.open && !cardCrowded;
   usePageRoom(card.open, side.open ? sideBarWidth : null);
-  const setCardShown = useCallback((show: boolean) => {
+  // Collapsed from inside the card (its own button or handle, or a key pressed with focus in it), focus goes to the page
+  // bar's toggle (LA-V61-R42); collapsed by a key from the stage, it stays where it was.
+  const setCardShown = useCallback((show: boolean, fromInside = false) => {
+    const inside = fromInside || document.activeElement?.closest('.wiki-panel') != null;
     if (narrow) setSheet(show); else { setCard({ open: show }); hold('card', show); }
     announce(show ? 'Wiki card shown' : 'Wiki card collapsed');
-    if (!show) setTimeout(() => cardButton.current?.focus(), 0);
+    if (!show && inside) setTimeout(() => cardButton.current?.focus(), 0);
   }, [narrow, setCard, hold, announce]);
-  const collapseCard = useCallback(() => setCardShown(false), [setCardShown]);
+  const collapseCard = useCallback(() => setCardShown(false, true), [setCardShown]);
   const expandCard = useCallback((expanded: boolean) => setCard({ expanded }), [setCard]);
   // A preview shows in the card's compact summary, whatever the session's setting, which it leaves alone.
   const cardExpanded = preview === null && card.expanded;
@@ -294,6 +297,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useCommand('stageErd', () => setStage('erd'));
   useCommand('stageTrace', () => setStage('trace'));
   useCommand('toggleWikiCard', () => setCardShown(!cardShown));
+  useCommand('collapseWikiCard', () => setCardShown(false), cardShown);
   useCommand('toggleSideBar', () => setShowing(!showing));
   useCommand('focusSideBar', () => openSideBarAt());
   useCommand('showReferences', () => openSideBarAt('.links-in-heading'), index.byId.has(focus));

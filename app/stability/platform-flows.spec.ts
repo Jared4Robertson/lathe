@@ -443,9 +443,10 @@ test.describe('Platform flows in the app', () => {
     // Switch the stage and the side bar: each change is announced.
     await page.keyboard.press('Control+2');
     await expect(announcer(page)).toContainText(/ERD stage/i);
-    await page.keyboard.press('w');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Enter');
     await expect(announcer(page)).toContainText(/wiki card collapsed/i);
-    await page.keyboard.press('w');
+    await page.keyboard.press('Enter');
     await page.keyboard.press('Control+Alt+b');
     await expect(announcer(page)).toContainText(/side bar/i);
     // High contrast, by keyboard.

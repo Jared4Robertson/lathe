@@ -33,10 +33,10 @@ const STAGES = [
   { name: 'Trace stage, a domain\'s lanes', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
 ];
 
-/** Collapses the wiki card (w) and hides the side bar, so the stage has the whole window under the tab panel. */
+/** Collapses the wiki card (Enter) and hides the side bar, so the stage has the whole window under the tab panel. */
 async function collapsePanels(page: Page) {
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-  await page.keyboard.press('w');
+  await page.keyboard.press('Enter');
   await page.locator('.wiki-panel').waitFor({ state: 'detached' });
   if (await page.locator('.stage-layout > .side-bar-column').count()) await page.keyboard.press('Control+Alt+b');
   await page.locator('.stage-layout > .side-bar-column').waitFor({ state: 'detached' });

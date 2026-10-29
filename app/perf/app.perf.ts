@@ -101,7 +101,7 @@ test.describe('performance', () => {
     // Collapsing the wiki card widens the open space: the graph recenters with a glide.
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     const r = await work(page, async () => {
-      await page.keyboard.press('w');
+      await page.keyboard.press('Enter');
       await expect(page.locator('.wiki-panel')).toHaveCount(0);
       await expect.poll(async () => (await sceneOf(page)).moves).toBeGreaterThan(still);
     }, 900);
