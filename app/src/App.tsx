@@ -91,7 +91,7 @@ function Shell() {
   const { chat, setChat } = useSessionSettings();
   const chatShown = !!chatBridge && chat.open;
   // Panels never crowd the page (LA-PAT-APP-UX-R18): the nav collapses to its rail for space last,
-  // after the page's side bar and wiki card; the Reader's own choice (`collapsed`) stays as set.
+  // after the page's wiki card; the Reader's own choice (`collapsed`) stays as set.
   const room = useRoomState({ nav: { open: !collapsed, width: navWidth, rail: NAV_RAIL }, chat: chatShown ? chat.width ?? CHAT_DEFAULT : null, tool: tool ? TOOL_WIDTHS[tool] : null }, narrow);
   const { hold } = room;
   const navCrowded = room.crowded.has('nav');

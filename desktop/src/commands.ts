@@ -24,7 +24,6 @@ export const VIEW_COMMANDS: readonly MenuCommand[] = [
   { id: 'stageTrace', label: 'Trace Stage', keys: 'Ctrl+3' },
   { id: 'toggleWikiCard', label: 'Show or Collapse Wiki Card', keys: 'w' },
   { id: 'toggleNav', label: 'Show or Hide Navigation', keys: 'Mod+B' },
-  { id: 'toggleSideBar', label: 'Show or Hide Side Bar', keys: 'Mod+Alt+B' },
   { id: 'toggleChat', label: 'Show or Hide Chat', keys: 'Ctrl+Meta+I', otherKeys: 'Ctrl+Alt+C' },
 ];
 

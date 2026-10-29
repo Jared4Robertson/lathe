@@ -37,7 +37,7 @@ export function useCoarsePointer(): boolean {
 const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), summary, [tabindex]:not([tabindex="-1"])';
 
 /**
- * Keeps Tab inside a sheet (the nav, the side bar, quick find): from the last control Tab goes
+ * Keeps Tab inside a sheet (the nav, a bottom sheet, quick find): from the last control Tab goes
  * to the first, and Shift+Tab from the first (or from the sheet itself) to the last.
  */
 export function trapTab(e: KeyboardEvent<HTMLElement>, sheet: HTMLElement | null) {

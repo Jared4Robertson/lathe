@@ -5,7 +5,7 @@ import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { COMMANDS, formatBinding, isMac } from '../shell/keymap';
 import { Icon } from '../components/icons';
-import type { GraphInfo } from './panel';
+import { KeyControl } from './key';
 import { TapCard, useTapToOpen } from './touch';
 import {
   NO_FILTERS,
@@ -51,8 +51,7 @@ import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 //
 // GraphView is the graph on its own: it takes the focus and an onNavigate callback and never reads
 // the address, so it can sit in any pane. The focus page (app/src/views/FocusPage.tsx) hosts it in
-// the Graph and Split views, keeps its settings across pages, and shows what it connects in the
-// side bar.
+// the Graph stage and keeps its settings across pages.
 
 /** How the graph draws the tree (LA-V93-R21): Tree, parents beside their children; Nested, parents made of them as boxes; Voronoi, as polygon cells. */
 export type GraphLayout = 'tree' | 'nested' | 'voronoi';
@@ -98,11 +97,9 @@ export interface GraphViewProps {
   /** The settings, when the host keeps them (so they survive moving between pages and views). */
   settings?: GraphSettings;
   onSettingsChange?: (settings: GraphSettings) => void;
-  /** Called with the framed picture, so the host's side bar can list what it connects. */
-  onGraph?: (info: GraphInfo) => void;
   /**
    * Called with the node under the pointer or keyboard focus (the spotlight's, `hover`) and the one
-   * selected by a first tap (`selected`), or null, so the host's side bar can describe it.
+   * selected by a first tap (`selected`), or null, so the host can tell the chat what is selected.
    */
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   /** Called with what the graph draws of the focus, for the header strip: "9 records · 8 links". */
@@ -111,7 +108,7 @@ export interface GraphViewProps {
   space?: OpenSpaceStore;
 }
 
-export function GraphView({ index, focus, onNavigate, settings: hosted, onSettingsChange, onGraph, onPeek, onCounts, space }: GraphViewProps) {
+export function GraphView({ index, focus, onNavigate, settings: hosted, onSettingsChange, onPeek, onCounts, space }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
   const { layout, depth, filters, minimap } = settings;
@@ -126,9 +123,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const setFilters = (f: Filters) => update({ filters: f });
 
   const graph = useMemo(() => neighborhood(index, focus, depth, filters), [index, focus, depth, filters]);
-  // Before paint, so the side bar shows what the graph connects in the same frame as the graph
-  // (in an effect it showed one frame without it, then pushed its legend down; LA-PAT-APP-UX-R08).
-  useLayoutEffect(() => { onGraph?.({ graph }); }, [graph, onGraph]);
+  // Before paint, so the header strip's counts change in the same frame as the graph (LA-PAT-APP-UX-R08).
   useLayoutEffect(() => { onCounts?.(graphSummary(graph)); }, [graph, onCounts]);
 
   const clearFilters = useCallback(() => update({ filters: NO_FILTERS }), [update]);
@@ -222,9 +217,10 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
               <div className="graph-more-body">{moreControls}</div>
             </details>
           ) : moreControls}
-          {/* The filters sit at the end. */}
+          {/* The filters and the key sit at the end. */}
           <div className="graph-toolbar-end">
             <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
+            <KeyControl stages={index.workspace.stages} />
           </div>
         </div>
       </div>

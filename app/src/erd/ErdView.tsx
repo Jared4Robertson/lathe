@@ -44,7 +44,7 @@ export interface ErdViewProps {
   index: SpecIndex;
   focus: string;
   onNavigate: (id: string) => void;
-  /** Called with the box under the pointer or keyboard focus (`hover`) and the one selected by a first tap (`selected`), for the side bar. */
+  /** Called with the box under the pointer or keyboard focus (`hover`) and the one selected by a first tap (`selected`), for the chat's app_focus. */
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   /** Called with what the focus's scope holds, for the header strip: "4 entities · 3 lines". */
   onCounts?: (counts: string) => void;

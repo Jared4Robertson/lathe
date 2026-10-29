@@ -9,6 +9,7 @@ import { Link } from '../router';
 import { FormatPageView } from '../format/FormatPages';
 import type { FormatRoute } from '../format/reference';
 import { pageHref } from './overlays';
+import { HistorySection } from './RecordHistory';
 import { Tooltip } from '../shell/Tooltip';
 import { gapsOf, kindLabel, type Problem, type SpecIndex, type SpecRecord } from '../specs/data';
 import { foldedChildren } from '../specs/folders';
@@ -21,8 +22,7 @@ import { addressOf, focusOf, type FocusRoute } from './address';
 import { focusTrail } from './HeaderStrip';
 
 // The wiki card (LA-V96): the one card, the focused record's or group's wiki page, with its editing,
-// floating over the right of the open space above whichever stage shows, between the open space and
-// the side bar, in one constant spot just under the stage's toolbar row, its height a steady share of
+// floating over the right of the open space above whichever stage shows, in one constant spot just under the stage's toolbar row, its height a steady share of
 // the stage (the stylesheet's). It reads as part of the graph: the boxes' kind line and a stripe in the
 // focused box's own color along its top, with round corners, a hairline border and a shadow that set it
 // off the map. It opens as a summary (the kind line, the title, the lead text clamped to a few lines and up to
@@ -206,12 +206,22 @@ function keyFacts(index: SpecIndex, record: SpecRecord): { label: string; value:
   return facts;
 }
 
+/** The whole wiki page (More): a record's page ends with its History (LA-V96-R26), read only when asked. */
 function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) {
+  if (route.page === 'group') return <GroupWiki index={index} gid={focusOf(route)} />;
+  return (
+    <>
+      <WikiPage index={index} route={route} />
+      <div className="spec-body"><HistorySection index={index} id={focusOf(route)} /></div>
+    </>
+  );
+}
+
+function WikiPage({ index, route }: { index: SpecIndex; route: Exclude<FocusRoute, { page: 'group' }> }) {
   switch (route.page) {
     case 'product': return <Editable key={route.product} index={index} id={route.product}><ProductWiki index={index} id={route.product} /></Editable>;
     case 'domain': return <Editable key={route.domain} index={index} id={route.domain}><DomainWiki index={index} id={route.domain} /></Editable>;
-    case 'record': return <Editable key={route.id} index={index} id={route.id}><div className="spec-body"><RecordContent index={index} id={route.id} header={false} side={false} /></div></Editable>;
-    case 'group': return <GroupWiki index={index} gid={focusOf(route)} />;
+    case 'record': return <Editable key={route.id} index={index} id={route.id}><div className="spec-body"><RecordContent index={index} id={route.id} header={false} /></div></Editable>;
   }
 }
 

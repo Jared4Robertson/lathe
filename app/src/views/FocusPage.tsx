@@ -5,20 +5,17 @@ import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
 import { CARD_MAX, CARD_MIN, useSessionSettings } from '../graph/settings';
 import { isGroup } from '../graph/model';
-import type { GraphInfo } from '../graph/panel';
 import { entryState, lastAddressMove, Link, navigate, noteInEntry, onLeaveEntry } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { BottomSheet } from '../shell/BottomSheet';
-import { usePanelSize } from '../shell/prefs';
-import { trapTab, useNarrow } from '../shell/useNarrow';
+import { useNarrow } from '../shell/useNarrow';
 import { parseSpecRoute, type SpecIndex, type SpecState } from '../specs/data';
 import { NotFound } from '../specs/SpecPages';
 import { addressOf, HOME_PATH, focusOf, isFocusRoute, STAGE_LABELS, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
 import { HeaderStrip } from './HeaderStrip';
 import { createOpenSpaceStore, usePageRoom, useOpenSpaceMeasure, useRoom } from './openSpace';
 import { PageBar, STAGE_COMMANDS } from './PageBar';
-import { SideBar } from './SideBar';
-import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, type SideModeState, type SideView } from './sideBarState';
+import { createPeekStore } from './peek';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { firstTabView, rememberStage, usePageTabs, type PageTabsApi } from './useTabs';
 import { usePreview } from './preview';
@@ -34,19 +31,18 @@ import { overlaysOf, pageHref } from './overlays';
 // matrix of the obligations under the focus, or the rows that hold it), switched in the page bar and named
 // in the address (`?stage=erd`). Everything else floats over it as frosted panels: the nav (the
 // shell's), the tab panel (the page bar, then the header strip naming the focus), the wiki card (the
-// focus's wiki page) and the side bar (Details, Outline or History, SideBar.tsx). The stage frames
+// focus's wiki page, its History at the end of the whole page). The stage frames
 // its focus in the open space the panels leave (openSpace.ts), and every part follows one focus:
 // a click on the stage, a link in the card, a tab, Back and Forward all change the address.
 //
 // Several pages can be open at once, as tabs (useTabs.ts and tabs.ts); each tab keeps its own
-// stage, side bar and wiki card scroll. How the graph is drawn and the wiki card's open state and
+// stage and wiki card scroll. How the graph is drawn and the wiki card's open state and
 // width are one setting for the session, not a tab's (graph/settings.ts).
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ErdView = lazy(() => import('../erd/ErdView').then((m) => ({ default: m.ErdView })));
 const TraceView = lazy(() => import('../trace/TraceView').then((m) => ({ default: m.TraceView })));
 
-const SIDE_BAR_WIDTH_KEY = 'lathe:side-bar-width';
 /** The key a history entry notes the wiki card's scroll under. */
 const CARD_SCROLL = 'cardScroll';
 /**
@@ -113,7 +109,7 @@ function useSettled<T>(value: T, ms: number): T {
 function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute; search: string }) {
   const focus = focusOf(route);
   // What the stage and the wiki card show: the focus, or the record quick find previews (preview.ts). The address,
-  // the tabs, the header strip and the side bar stay on the focus; when the preview ends the stage glides back.
+  // the tabs and the header strip stay on the focus; when the preview ends the stage glides back.
   const previewed = usePreview();
   const preview = previewed !== null && previewed !== focus && (index.byId.has(previewed) || isGroup(index, previewed)) ? previewed : null;
   const shownFocus = preview ?? focus;
@@ -153,47 +149,13 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     document.querySelector<HTMLElement>(`.page-bar [data-command="${STAGE_COMMANDS[stage]}"]`)?.focus();
   }, [stage]);
 
-  // The side bar: open or not, and its view, per stage and per tab; the last choices made start a
-  // space's first tab. On a phone it is a drawer, opened on demand.
-  const side = sideFor(tab.state.side, stage);
-  const setSide = useCallback((patch: Partial<SideModeState>) => {
-    const next = { ...side, ...patch };
-    update((s) => ({ ...s, side: { ...s.side, [stage]: next } }));
-    saveLastSide(stage, next);
-  }, [side, stage, update]);
-  const [sideBarWidth, setSideBarWidth, resetSideBarWidth] = usePanelSize(SIDE_BAR_WIDTH_KEY, 340, 260, 640);
   const layout = useRef<HTMLDivElement>(null);
-  const [drawer, setDrawer] = useState(false);
-  const sideBarEl = useRef<HTMLElement>(null);
-  const sideBarButton = useRef<HTMLButtonElement>(null);
-  // Panels never crowd the page (LA-PAT-APP-UX-R18): the side bar collapses for space first, then
-  // the wiki card; the Reader's choice stays as set, and one they open while it is collapsed is held open.
+  // Panels never crowd the page (LA-PAT-APP-UX-R18): the wiki card collapses for space first; the Reader's
+  // choice stays as set, and one they open while it is collapsed is held open.
   const { crowded, hold } = useRoom();
-  const sideBarCrowded = !narrow && side.open && crowded.has('sideBar');
-  const showing = narrow ? drawer : side.open && !sideBarCrowded;
-  const setShowing = useCallback((show: boolean) => {
-    if (narrow) setDrawer(show); else { setSide({ open: show }); hold('sideBar', show); }
-    announce(show ? 'Side bar shown' : 'Side bar hidden');
-    if (!show) setTimeout(() => sideBarButton.current?.focus(), 0);
-  }, [narrow, setSide, hold, announce]);
-  const setSideView = useCallback((view: SideView) => {
-    if (view === side.view) return;
-    setSide({ view });
-    announce(`${SIDE_VIEW_LABELS[view]} in the side bar`);
-  }, [side.view, setSide, announce]);
-  useEffect(() => { setDrawer(false); }, [focus, narrow]);
-  // What the stages and the wiki card tell the side bar: the node under the pointer, the one selected.
+  // What the stages tell the page: the node under the pointer, the one selected (for the chat's app_focus).
   const [peek] = useState(createPeekStore);
   useLayoutEffect(() => { peek.clear(); }, [peek, focus]);
-  const openSideBarAt = useCallback((selector?: string) => {
-    if (!showing) setShowing(true);
-    if (selector && side.view !== 'details') setSide({ view: 'details' });
-    setTimeout(() => {
-      const target = (selector && sideBarEl.current?.querySelector<HTMLElement>(selector)) || sideBarEl.current;
-      target?.focus();
-      target?.scrollIntoView?.({ block: 'nearest' });
-    }, 0);
-  }, [showing, setShowing, side.view, setSide]);
 
   // How the graph is drawn, and the wiki card's open state and width, are one setting for the
   // session, whatever the tab or page (LA-V93-R72): moving through the stage never changes them.
@@ -207,7 +169,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useEffect(() => { if (format && !narrow) hold('card', true); }, [format, narrow, hold]);
   const cardCrowded = !narrow && cardOpen && crowded.has('card');
   const cardShown = narrow ? sheet || format !== null : cardOpen && !cardCrowded;
-  usePageRoom(cardOpen, side.open ? sideBarWidth : null);
+  usePageRoom(cardOpen);
   const setCardShown = useCallback((show: boolean) => {
     // Collapsing the card closes a format page in it too.
     if (!show && format) navigate(pageHref(null));
@@ -229,8 +191,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const selectedNow = useCallback(() => peek.get().selected, [peek]);
   useViewState({ focus, stage, selected: null, wikiCard: cardShown }, selectedNow);
 
-  const [graphInfo, setGraphInfo] = useState<GraphInfo | null>(null);
-  const onGraph = useCallback((info: GraphInfo) => setGraphInfo(info), []);
   const [counts, setCounts] = useState('');
 
   // A link keeps the stage asked for.
@@ -305,9 +265,16 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   useCommand('stageErd', () => setStage('erd'));
   useCommand('stageTrace', () => setStage('trace'));
   useCommand('toggleWikiCard', () => setCardShown(!cardShown));
-  useCommand('toggleSideBar', () => setShowing(!showing));
-  useCommand('focusSideBar', () => openSideBarAt());
-  useCommand('showReferences', () => openSideBarAt('.links-in-heading'), index.byId.has(focus));
+  // Shift+F12: the wiki card's whole page, with focus on what links to the record.
+  useCommand('showReferences', () => {
+    if (!cardShown) setCardShown(true);
+    if (!card.expanded) setCard({ expanded: true });
+    setTimeout(() => {
+      const heading = document.querySelector<HTMLElement>('.wiki-panel .links-in-heading');
+      heading?.focus();
+      heading?.scrollIntoView?.({ block: 'nearest' });
+    }, 0);
+  }, index.byId.has(focus));
   useCommand('expandAll', () => { expandAllOnPage(true); announce('Expanded every row'); });
   useCommand('collapseAll', () => { expandAllOnPage(false); announce('Collapsed every row'); });
   // Tabs.
@@ -319,7 +286,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const content: Record<StageName, ReactNode> = {
     graph: (
       <Suspense fallback={<p className="hint graph-loading">Loading the graph…</p>}>
-        <GraphView index={index} focus={shownFocus} onNavigate={onNavigate} settings={settings} onSettingsChange={setGraph} onGraph={onGraph} onPeek={peek.set} onCounts={setCounts} space={space} />
+        <GraphView index={index} focus={shownFocus} onNavigate={onNavigate} settings={settings} onSettingsChange={setGraph} onPeek={peek.set} onCounts={setCounts} space={space} />
       </Suspense>
     ),
     erd: (
@@ -339,25 +306,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     </div>
   );
 
-  const sideBar = (asDrawer: boolean) => (
-    <SideBar
-      ref={sideBarEl}
-      index={index}
-      focus={focus}
-      mode={stage}
-      view={side.view}
-      onView={setSideView}
-      graph={stage === 'graph' ? graphInfo : null}
-      peek={peek}
-      card={cardScroll}
-      cardOpen={cardShown}
-      onNavigate={onNavigate}
-      hrefFor={hrefFor}
-      onClose={() => setShowing(false)}
-      drawer={asDrawer}
-    />
-  );
-
   if (narrow) {
     return (
       <PhoneLayout
@@ -370,11 +318,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} expanded={cardExpanded} onExpanded={expandCard} format={format} sheet /> : null}
         onCard={setCardShown}
         cardButton={cardButton}
-        sideBarShown={showing}
-        onSideBar={setShowing}
-        sideBarButton={sideBarButton}
-        sideBar={sideBar(true)}
-        sideBarRef={sideBarEl}
         layout={layout}
       />
     );
@@ -383,8 +326,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   return (
     <div
       ref={layout}
-      className={`stage-layout${showing ? ' with-side-bar' : ''}${cardShown ? ' with-wiki' : ''}`}
-      style={{ '--side-bar-width': `${sideBarWidth}px`, ...(card.width !== null ? { '--card-width': `${card.width}px` } : {}) } as CSSProperties}
+      className={`stage-layout${cardShown ? ' with-wiki' : ''}`}
+      style={(card.width !== null ? { '--card-width': `${card.width}px` } : {}) as CSSProperties}
     >
       <PageBar
         index={index}
@@ -396,10 +339,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         cardCrowded={cardCrowded}
         onCard={setCardShown}
         cardButton={cardButton}
-        sideBarShown={showing}
-        sideBarCrowded={sideBarCrowded}
-        onSideBar={setShowing}
-        sideBarButton={sideBarButton}
       />
       <div id={TAB_PANEL_ID} role="tabpanel" aria-labelledby={tab.key ? tabId(tab.key) : undefined} className="tab-body">
         <HeaderStrip index={index} focus={focus} counts={counts} />
@@ -418,26 +357,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         )}
         {stageBox}
       </div>
-      {showing && (
-        <div className="side-bar-column" data-floating="right">
-          <ResizeHandle
-            className="side-bar-handle"
-            label="Resize the side bar"
-            side="after"
-            value={sideBarWidth}
-            min={260}
-            max={640}
-            step={16}
-            bigStep={64}
-            valueAt={(x) => (layout.current?.getBoundingClientRect().right ?? x) - x - 8}
-            onChange={setSideBarWidth}
-            onReset={resetSideBarWidth}
-            collapseBelow={160}
-            onCollapse={() => setShowing(false)}
-          />
-          {sideBar(false)}
-        </div>
-      )}
     </div>
   );
 }
@@ -462,7 +381,7 @@ export function StageBackdrop({ index, focus }: { index: SpecIndex | null; focus
     const fallback = <p className="hint graph-loading">Loading the stage…</p>;
     content = (
       <Suspense fallback={fallback}>
-        {stage === 'graph' && <GraphView index={index} focus={shown} onNavigate={ignore} settings={settings} onSettingsChange={ignore} onGraph={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
+        {stage === 'graph' && <GraphView index={index} focus={shown} onNavigate={ignore} settings={settings} onSettingsChange={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
         {stage === 'erd' && <ErdView index={index} focus={shown} onNavigate={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
         {stage === 'trace' && <TraceView index={index} focus={shown} onNavigate={ignore} hrefFor={addressOf} onPeek={peek.set} onCounts={ignore} space={space} />}
       </Suspense>
@@ -526,30 +445,21 @@ interface PhoneLayoutProps {
   card: ReactNode;
   onCard: (show: boolean) => void;
   cardButton: RefObject<HTMLButtonElement | null>;
-  sideBarShown: boolean;
-  onSideBar: (show: boolean) => void;
-  sideBarButton: RefObject<HTMLButtonElement | null>;
-  sideBar: ReactNode;
-  sideBarRef: RefObject<HTMLElement | null>;
   layout: RefObject<HTMLDivElement | null>;
 }
 
 /**
  * On a phone (notes/mobile-design.md) the stage stays full screen under the shell's top bar and the
- * compact page bar: the open pages as a sheet, the stage switch, the wiki card as a bottom sheet and
- * the side bar as a drawer from the right.
+ * compact page bar: the open pages as a sheet, the stage switch, and the wiki card as a bottom sheet.
  */
 function PhoneLayout(props: PhoneLayoutProps) {
-  const { index, tabs, stage, onStage, stageBox, strip, card, onCard, cardButton, sideBarShown, onSideBar, sideBarButton, sideBar, sideBarRef, layout } = props;
+  const { index, tabs, stage, onStage, stageBox, strip, card, onCard, cardButton, layout } = props;
   const [pagesOpen, setPagesOpen] = useState(false);
   const pagesButton = useRef<HTMLButtonElement>(null);
   const pagesSheet = useRef<HTMLUListElement>(null);
-  const drawerBox = useRef<HTMLDivElement>(null);
   const count = tabs.set.tabs.length;
   const closePages = useCallback(() => { setPagesOpen(false); setTimeout(() => pagesButton.current?.focus(), 0); }, []);
   useEffect(() => { if (pagesOpen) pagesSheet.current?.querySelector<HTMLElement>('[aria-current], button')?.focus(); }, [pagesOpen]);
-  // The side bar drawer takes focus as it opens; closing it gives focus back to its button.
-  useEffect(() => { if (sideBarShown) sideBarRef.current?.focus(); }, [sideBarShown, sideBarRef]);
   const page = tabs.active.page;
   useEffect(() => { setPagesOpen(false); }, [page]);
 
@@ -564,9 +474,6 @@ function PhoneLayout(props: PhoneLayoutProps) {
         cardShown={card !== null}
         onCard={onCard}
         cardButton={cardButton}
-        sideBarShown={sideBarShown}
-        onSideBar={onSideBar}
-        sideBarButton={sideBarButton}
         pagesOpen={pagesOpen}
         onPages={() => setPagesOpen(true)}
         pagesButton={pagesButton}
@@ -577,24 +484,6 @@ function PhoneLayout(props: PhoneLayoutProps) {
         <BottomSheet label="Wiki card" className="wiki-panel-sheet" onClose={() => onCard(false)}>
           {card}
         </BottomSheet>
-      )}
-      {sideBarShown && (
-        <>
-          <div className="drawer-backdrop" onMouseDown={() => onSideBar(false)} />
-          <div
-            ref={drawerBox}
-            className="side-bar-drawer"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Side bar"
-            onKeyDown={(e) => {
-              if (e.key === 'Escape' && !e.defaultPrevented) { e.preventDefault(); onSideBar(false); return; }
-              trapTab(e, drawerBox.current);
-            }}
-          >
-            {sideBar}
-          </div>
-        </>
       )}
       {pagesOpen && (
         <BottomSheet label="Open pages" className="pages-sheet" onClose={closePages}>

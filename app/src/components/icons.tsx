@@ -21,8 +21,7 @@ const PATHS: Record<string, string[]> = {
   // The graph's zoom buttons, and a record's Add.
   plus: ['M12 5v14', 'M5 12h14'],
   minus: ['M5 12h14'],
-  // The side bar's views: Details is `info`; Outline and History.
-  outline: ['M9 6h11', 'M12 12h8', 'M15 18h5', 'M5 6v.01', 'M8 12v.01', 'M11 18v.01'],
+  // The chat's sessions.
   history: ['M12 8v4l2 2', 'M3.05 11a9 9 0 1 1 .5 4m-.5 5v-5h5'],
   // A record's Edit and Remove actions (Add is `plus`).
   edit: ['M7 7h-1a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2v-1', 'M20.385 6.585a2.1 2.1 0 0 0-2.97-2.97l-8.415 8.385v3h3l8.385-8.415z', 'M16 5l3 3'],

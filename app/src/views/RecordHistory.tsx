@@ -1,20 +1,36 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../components/Button';
 import type { SpecIndex, SpecRecord } from '../specs/data';
+import { Section } from '../specs/parts';
+import './RecordHistory.css';
 import { changeSummary, fetchHistory, shortDate, valueText, type HistoryAnswer, type HistoryChange, type HistoryCommit } from './history';
 
-// The side bar's History (LA-V95-R08): the commits that changed the record's rows (its own row,
-// the part rows it owns and the links it starts) in their data files, newest first, with "Load
-// more", and the changes not committed yet first, labeled so. Each says what it changed; choosing
-// one shows each changed field before and after. The list reloads with the data, so an edit shows
-// up as "Not committed" at once.
+// A record's History, at the end of its whole page in the wiki card (LA-V96-R26): the commits that
+// changed the record's rows (its own row, the part rows it owns and the links it starts) in their
+// data files, newest first, with "Load more", and the changes not committed yet first, labeled so.
+// Each says what it changed; choosing one shows each changed field before and after. Git is read
+// only once the Reader asks, with "Show the history"; the list then reloads with the data, so an
+// edit shows up as "Not committed" at once.
 
 type Loaded = { answer: HistoryAnswer; commits: HistoryCommit[]; more: boolean };
 
 const WORKING = 'working';
 
-export function SideBarHistory({ index, id }: { index: SpecIndex; id: string | null }) {
-  const record = id ? index.byId.get(id) : undefined;
+/** The History section of a record's whole page: a button that reads it, then the list. */
+export function HistorySection({ index, id }: { index: SpecIndex; id: string }) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => { setShown(false); }, [id]);
+  return (
+    <Section title="History" className="record-history">
+      {shown ? <RecordHistory index={index} id={id} /> : (
+        <p><Button onClick={() => setShown(true)}>Show the history</Button></p>
+      )}
+    </Section>
+  );
+}
+
+function RecordHistory({ index, id }: { index: SpecIndex; id: string }) {
+  const record = index.byId.get(id);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -33,7 +49,6 @@ export function SideBarHistory({ index, id }: { index: SpecIndex; id: string | n
     return () => abort.abort();
   }, [record?.id, index]);
 
-  if (!id) return <p className="hint">A group has no row of its own, so it has no history. Open one of its records to see its history.</p>;
   if (!record) return <p className="hint">There's no record <code>{id}</code>.</p>;
   if (error) return <p className="hint">History isn't available here: {error}</p>;
   if (!loaded) return <p className="hint" role="status">Reading the history of <code>{record.file}</code>…</p>;
@@ -95,7 +110,7 @@ export function SideBarHistory({ index, id }: { index: SpecIndex; id: string | n
 }
 
 function Files({ files }: { files: string[] }) {
-  return <p className="side-file" title="The data files that hold the record's rows">{files.map((f, i) => <span key={f}>{i > 0 && ' '}<code>{f}</code></span>)}</p>;
+  return <p className="history-files" title="The data files that hold the record's rows">{files.map((f, i) => <span key={f}>{i > 0 && ' '}<code>{f}</code></span>)}</p>;
 }
 
 /** Which of the record's rows a change is about: the record itself, one of its parts, or a link it starts. */

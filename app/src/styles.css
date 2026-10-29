@@ -40,7 +40,7 @@
   /* The ERD's key under the ERD view: one height for every ERD, so the canvas never resizes (LA-PAT-APP-UX-R08). */
   --erd-key-height: 9rem;
   /* The floating panels over the stage (LA-V96): their inset from the window and each other, their surfaces (the dense
-     ones, the nav, the tab panel, the side bar and the chat, nearer opaque than the wiki card), their blur and shadow,
+     ones, the nav, the tab panel and the chat, nearer opaque than the wiki card), their blur and shadow,
      and the header strip's height. The surfaces are the sheet's color, so every theme sets them in light and dark. The
      blur is strong enough that the stage behind reads as shape and color only: muted text keeps WCAG 2.2 AA (4.5:1)
      over every built-in theme's fills and over dense content (about a quarter ink over the paper) once blurred. */
@@ -89,6 +89,14 @@
 html, body, #root { height: 100%; height: 100dvh; margin: 0; }
 html { font-size: calc(var(--text-size) * 16 / 15); }
 body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(--line-height) var(--body); }
+:root {
+  /* (Used by a record's History in the wiki card and by the chat's change previews.) */
+  /* A change's values before and after: tints of the accent tokens, so every theme sets them. */
+  --change-after-bg: color-mix(in srgb, var(--steel) 16%, transparent);
+  --change-before-bg: color-mix(in srgb, var(--spark) 16%, transparent);
+  --change-after-ink: var(--steel);
+  --change-before-ink: var(--error);
+}
 /* The app (LA-V96): the stage behind everything, the nav and the page's panels floating over it, inset from the window
    and each other by --float-inset. Nothing replaces the stage (LA-PAT-APP-UX-R20): a tool (Checks, Appearance, the theme
    editor) floats over it right of the nav, keeping --tool-space clear, and the products picker is a card over it. In the desktop app the chat panel floats at the right edge, the full height, and the
@@ -103,8 +111,8 @@ body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(-
 .app:not(.is-narrow) > main { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); }
 .app:not(.is-narrow) > main.stage-page { inset: 0; }
 /* Frosted panels: mostly opaque, the stage showing through as shape and color behind a blur; the dense ones (the nav,
-   the tab panel, the side bar, a stage's tools) closer to opaque than the wiki card. Opaque under reduced transparency. */
-.app:not(.is-narrow) > .menu, .stage-layout:not(.is-phone) > .page-bar, .header-strip, .stage-layout > .side-bar-column, .stage-tools {
+   the tab panel, a stage's tools) closer to opaque than the wiki card. Opaque under reduced transparency. */
+.app:not(.is-narrow) > .menu, .stage-layout:not(.is-phone) > .page-bar, .header-strip, .stage-tools {
   background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur));
   box-shadow: var(--float-shadow);
 }
@@ -238,9 +246,9 @@ code { font: 0.86em var(--mono); }
 .record-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: baseline; }
 .row-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
 .meta { color: var(--muted); font-size: 0.8rem; }
-.spec-body a.record-link, .side-bar a.record-link { display: inline-flex; gap: 8px; align-items: baseline; color: var(--ink); text-decoration: none; }
-.spec-body a.record-link code, .side-bar a.record-link code { color: var(--steel); white-space: nowrap; }
-.spec-body a.record-link:hover span, .side-bar a.record-link:hover span { text-decoration: underline; }
+.spec-body a.record-link { display: inline-flex; gap: 8px; align-items: baseline; color: var(--ink); text-decoration: none; }
+.spec-body a.record-link code { color: var(--steel); white-space: nowrap; }
+.spec-body a.record-link:hover span { text-decoration: underline; }
 .record-link.missing code { color: var(--error); text-decoration: line-through; }
 /* A row's link may shrink, and its title moves below its ID when both don't fit, so a long title never runs into the row's count. */
 .record-row > .record-link { min-width: 0; flex-wrap: wrap; row-gap: 0; }
@@ -271,7 +279,7 @@ code { font: 0.86em var(--mono); }
 .markdown table { border-collapse: collapse; font-size: 0.9rem; }
 .markdown th, .markdown td { border: 1px solid var(--rule); padding: 4px 8px; text-align: left; }
 
-.record-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+.record-layout { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
 .record-main { display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; }
 .record-side { border: 1px solid var(--rule); border-radius: 10px; padding: 16px; gap: 8px; }
 .record-side h3 { display: flex; gap: 6px; align-items: baseline; }
@@ -292,7 +300,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .spec-body .tabs a { padding: 6px 12px; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .spec-body .tabs a[aria-current="page"] { color: var(--steel); border-bottom-color: var(--steel); font-weight: 600; }
 
-@media (max-width: 800px) { .record-layout { grid-template-columns: 1fr; } .spec-body { padding: 16px 16px 32px; } }
+@media (max-width: 800px) { .spec-body { padding: 16px 16px 32px; } }
 
 /* ---------- The Graph stage, owned by app/src/graph ---------- */
 .graph-page {
@@ -306,16 +314,18 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-depth button { font: inherit; font-size: 0.82rem; padding: 3px 8px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; }
 .graph-depth button[aria-pressed="true"] { background: var(--steel); border-color: var(--steel); color: var(--sheet); font-weight: 600; }
 .graph-depth button:disabled { opacity: 0.5; cursor: default; }
-.graph-filters { flex: none; }
-.graph-filters > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
+.graph-filters, .graph-key { flex: none; }
+.graph-filters > summary, .graph-key > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
 .graph-filter-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 12px; width: min(560px, calc(100% - 24px)); display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px 14px; padding: 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
 .graph-filter-body fieldset { border: 0; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; align-content: start; }
 .graph-filter-body legend { font-weight: 600; font-size: 0.78rem; margin-bottom: 2px; }
 .graph-filter-body label { display: flex; gap: 6px; align-items: center; font-size: 0.82rem; }
-.graph-filters > summary .icon { align-self: center; }
+.graph-filters > summary .icon, .graph-key > summary .icon { align-self: center; }
+/* The key: a popover under its button at the end of the toolbar, as the filters', scrolling inside when long. */
+.graph-key-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 12px; width: min(460px, calc(100% - 24px)); max-height: min(70vh, 560px); overflow-y: auto; scrollbar-gutter: stable; padding: 4px 12px 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
 /* The toolbar's narrower forms (TOOLBAR_TIERS): compact hides the names beside the icons and tightens the steps, narrow
    shows each layout by its first letter, menu moves depth and the steps into More. The names stay the accessible ones. */
-.graph-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-filters-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.graph-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-filters-name, .graph-key-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .graph-toolbar:not([data-tier="full"]) { gap: 6px; }
 .graph-toolbar:not([data-tier="full"]) .graph-step { padding-inline: 4px; }
 .graph-toolbar:is([data-tier="narrow"], [data-tier="menu"]) .graph-depth button { padding-inline: 6px; }
@@ -340,7 +350,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-near a { color: var(--ink); text-decoration: none; }
 .graph-near a code { color: var(--steel); }
 .graph-near a:hover { text-decoration: underline; }
-.graph-legend { margin-top: 10px; font-size: 0.8rem; }
+.graph-legend { font-size: 0.8rem; }
 .graph-legend li { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .graph-legend-heading { margin: 10px 0 0; font-size: 0.8rem; font-weight: 600; color: var(--ink); }
 
@@ -423,7 +433,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* The record content lays itself out by its own width, so it reads at half the screen beside the graph. */
 .record-content { container-type: inline-size; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; min-width: 0; }
 @container (max-width: 760px) {
-  .record-content .record-layout { grid-template-columns: 1fr; }
   .record-content .spec-header { flex-wrap: wrap; }
 }
 /* Long lists: past 10 items, a search box and a box 10 rows high that scrolls (the height is measured; this is the fallback). */
@@ -525,25 +534,8 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .drawer-backdrop { position: fixed; inset: 0; z-index: 70; background: var(--backdrop); }
 .menu.is-drawer { position: fixed; z-index: 80; inset: 0 auto 0 0; width: min(356px, 92vw); box-shadow: 4px 0 24px var(--shadow-strong); }
 
-/* The format pages' workbench (app/src/format): one pane and the side bar beside it. */
 .group-intro { margin: 16px 0 0; }
-.record-layout.single { grid-template-columns: minmax(0, 1fr); }
-.side-bar-column { min-height: 0; overflow: hidden; background: var(--sheet); container-type: inline-size; }
-/* A narrow side bar puts each field's name above its value, so a value never breaks one letter to a line. */
-@container (max-width: 260px) { .side-bar-column .fields > div { grid-template-columns: minmax(0, 1fr); gap: 0; } }
-.side-bar.record-side { height: 100%; box-sizing: border-box; overflow-y: auto; padding: 10px 16px 24px; border: 0; border-radius: 0; background: var(--sheet); display: flex; flex-direction: column; gap: 8px; }
-.side-bar:focus { outline: none; }
-.side-bar:focus-visible { outline: 2px solid var(--steel); outline-offset: -2px; }
-.side-bar-head { display: flex; justify-content: space-between; align-items: center; position: sticky; top: -10px; background: var(--sheet); z-index: 2; padding: 4px 0; }
-.side-bar-title { font: 500 0.72rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
-.side-bar-identity p { margin: 0; }
-.side-bar-name { font: 700 1.05rem/1.25 var(--display); overflow-wrap: break-word; }
-.side-bar a { color: var(--steel); }
-.side-bar h3 { display: flex; gap: 6px; align-items: baseline; margin-top: 10px; font-size: 0.88rem; }
-.side-bar-section { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
-.side-bar-gaps li { color: var(--warn); font-size: 0.85rem; }
 .links-in-heading:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
-.graph-legend summary { cursor: pointer; font-weight: 600; font-size: 0.85rem; margin-top: 10px; }
 .graph-legend ul { margin-top: 6px; }
 
 /* Trees: one level shown, the rest folded under a disclosure triangle. */
@@ -696,7 +688,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-UX-R01).
    Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
    The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
-.button, .graph-depth button, .palette-list li, .graph-filters > summary, .graph-legend summary {
+.button, .graph-depth button, .palette-list li, .graph-filters > summary, .graph-key > summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
 /* A row that leads to one record is one link (LA-PAT-APP-UX-R05): its record link, marked row-link, stretches over
@@ -706,15 +698,15 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 :is(.record-list > li:not(.tree-item), .problems > li, .tree-row) :is(a, button, input, select, textarea, summary, [title], [tabindex]):not(.row-link) { position: relative; z-index: 1; }
 .row-link::after { content: ''; position: absolute; inset: 0; border-radius: 5px; transition: background-color var(--hover-speed); }
 .row-link:hover::after { background: var(--hover-bg); }
-:is(.spec-body, .side-bar) a.row-link:hover span { color: var(--steel); text-decoration: none; }
+.spec-body a.row-link:hover span { color: var(--steel); text-decoration: none; }
 a.row-link.row-link:focus-visible { outline: none; }
 .row-link:focus-visible::after { outline: 2px solid var(--steel); outline-offset: -1px; }
 @media (prefers-reduced-motion: reduce) { .row-link::after { transition: none; } }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
 .palette-list li:not(.active):hover { background: var(--hover-bg); }
-.graph-filters > summary:hover, .graph-legend summary:hover { color: var(--steel); }
+.graph-filters > summary:hover, .graph-key > summary:hover { color: var(--steel); }
 @media (prefers-reduced-motion: reduce) {
-  .button, .graph-depth button, .palette-list li, .graph-filters > summary, .graph-legend summary { transition: none; }
+  .button, .graph-depth button, .palette-list li, .graph-filters > summary, .graph-key > summary { transition: none; }
 }
 
 /* The workbench (LA-PAT-APP-UX-R02): each panel is a rounded box on the shell; the gap between two
@@ -733,7 +725,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 
 /* A pane's title bar (LA-PAT-APP-UX-R03), as an editor group's in VS Code: a quiet label naming the pane's
    view at the left; at the right, icon buttons in one style: the view toggles, a divider, then the layout
-   actions (open beside, full screen, the side bar); then the pane's content. */
+   actions; then the pane's content. */
 .pane-divider { flex: none; width: 1px; height: 18px; margin: 0 4px; background: var(--rule); }
 /* The tab strip (app/src/views/TabStrip.tsx), at the left of the leftmost pane's bar: one tab per open page, as VS Code's
    editor tabs. The active tab is the sheet's ink with a steel underline, the preview tab's title italic; tabs that do
@@ -964,8 +956,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* ---------- End of themes ---------- */
 
 /* ---------- The page bar (LA-PAT-APP-UX-R03) ----------
-   The top of the tab panel: the page's tabs at its left; the stage switch, a divider, the wiki card and side bar
-   toggles at its right. One line high whatever it holds; the tabs scroll sideways (UX-R08). */
+   The top of the tab panel: the page's tabs at its left; the stage switch, a divider and the wiki card
+   toggle at its right. One line high whatever it holds; the tabs scroll sideways (UX-R08). */
 .page-bar { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; height: var(--page-bar-height); box-sizing: border-box; padding: 0 4px 0 4px; background: var(--sheet); }
 .page-bar-start { flex: 1 1 auto; display: flex; align-items: center; min-width: 0; height: 100%; }
 .page-bar-actions { flex: none; display: flex; align-items: center; gap: 2px; }
@@ -975,11 +967,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* ---------- The stage and the panels over it (LA-V96, app/src/views/FocusPage.tsx) ----------
    The stage fills the window behind everything. The tab panel (the page bar, then the header strip) floats across the
    top from the nav to the right edge, so its controls never move. Below it, on the right, from the open space outward:
-   the wiki card, a third of the space right of the nav wide until resized, then the side bar, then (in the desktop app)
-   the chat; the nav stays alone on the left. The stage measures what they leave (openSpace.ts) and sets
+   the wiki card, a third of the space right of the nav wide until resized, then (in the desktop app) the chat; the nav stays alone on the left. The stage measures what they leave (openSpace.ts) and sets
    --open-* and --frame-* on itself, where its own tools float. */
-.stage-layout { position: absolute; inset: 0; --side-space: var(--chat-space); --below-strip: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); }
-.stage-layout.with-side-bar { --side-space: calc(var(--side-bar-width, 340px) + var(--float-inset) + var(--chat-space)); }
+.stage-layout { position: absolute; inset: 0; --below-strip: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); }
 .focus-stage { position: absolute; inset: 0; z-index: 0; overflow: hidden; background: var(--paper); }
 .tab-body { position: absolute; inset: 0; pointer-events: none; }
 .tab-body > * { pointer-events: auto; }
@@ -995,17 +985,16 @@ a.row-link.row-link:focus-visible { outline: none; }
 .header-strip-id { flex: none; font: 500 0.74rem var(--mono); }
 .header-strip-title { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; font: 600 0.8rem/1.3 var(--body); color: var(--ink); }
 .header-strip-counts { flex: 0 1000 auto; min-width: 0; margin-left: auto; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-variant-numeric: tabular-nums; }
-/* The wiki card (WikiCard.tsx), a callout in the map in one constant spot: left of the side bar (or of the chat, or
-   the window's edge) by --card-gap, its top just under the stage's toolbar row by --card-gap-y (--tools-foot, which
+/* The wiki card (WikiCard.tsx), a callout in the map in one constant spot: left of the chat (or the window's edge) by --card-gap, its top just under the stage's toolbar row by --card-gap-y (--tools-foot, which
    the open space's measure sets, openSpace.ts), never following the focus. Its height is a steady share of the
    stage, never its content's: 60% as a summary and 85% expanded, kept above the foot by --card-gap-y; content longer
    scrolls inside, shorter leaves room below. The sheet's round corners, a border all round in the focused box's own color (its outline's, so the box, the
    leader line and the card read as one object) and a lifting shadow; its handle at its left edge. */
 .wiki-panel {
   --card-top: calc(var(--tools-foot, calc(var(--below-strip) - var(--float-inset))) + var(--card-gap-y));
-  position: absolute; z-index: 2; top: var(--card-top); right: calc(var(--side-space) - var(--float-inset) + var(--card-gap));
+  position: absolute; z-index: 2; top: var(--card-top); right: calc(var(--chat-space) - var(--float-inset) + var(--card-gap));
   box-sizing: border-box; width: var(--card-width, clamp(var(--card-min), calc((100% - var(--nav-space)) / 3), 640px)); min-width: var(--card-min);
-  max-width: calc(100% - var(--nav-space) - var(--tool-space, 0px) - var(--side-space) - var(--stage-min) - var(--float-inset) - var(--card-gap));
+  max-width: calc(100% - var(--nav-space) - var(--tool-space, 0px) - var(--chat-space) - var(--stage-min) - var(--float-inset) - var(--card-gap));
   height: min(60%, 100% - var(--card-top) - var(--card-gap-y)); display: flex; flex-direction: column; border: 2px solid var(--card-accent, var(--rule)); border-radius: var(--sheet-radius);
 }
 .wiki-panel.is-expanded { height: min(85%, 100% - var(--card-top) - var(--card-gap-y)); }
@@ -1024,16 +1013,11 @@ a.row-link.row-link:focus-visible { outline: none; }
 .wiki-panel-handle { position: absolute; z-index: 3; top: var(--sheet-radius); bottom: var(--sheet-radius); left: calc(-1 * var(--float-inset)); width: var(--float-inset); display: grid; grid-template-columns: minmax(0, 1fr); }
 .wiki-panel.is-sheet { position: static; width: auto; max-width: none; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .wiki-panel.is-sheet::before { content: none; }
-/* The side bar, floating at the right; its handle at its left edge. */
-.stage-layout > .side-bar-column { position: absolute; z-index: 3; top: var(--below-strip); bottom: var(--float-inset); right: var(--chat-space); width: var(--side-bar-width, 340px); max-width: calc(100% - var(--nav-space) - var(--chat-space)); box-sizing: border-box; overflow: visible; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
-.stage-layout > .side-bar-column > .side-bar.record-side { border-radius: var(--panel-radius); background: none; }
-.stage-layout > .side-bar-column .side-bar-head { background: var(--float-dense); }
-.side-bar-handle.resize-handle { position: absolute; z-index: 4; top: var(--panel-radius); bottom: var(--panel-radius); left: calc(-1 * var(--float-inset)); width: var(--float-inset); }
 /* A stage's own tools float inside the open space: at its top (the graph's toolbar, the trace's filter) or its foot (the ERD's key). */
 .stage-tools { position: absolute; z-index: 1; box-sizing: border-box; left: var(--open-left, 0px); max-width: calc(100% - var(--open-left, 0px) - var(--open-right, 0px)); border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
 /* A stage's own toolbar stays in one spot, centered on the whole stage whatever panels are open; on a narrow window it
-   narrows (its tiers fold its controls) rather than move, keeping clear of the nav and the side bar on both sides. */
-.stage-tools[data-stage-tools="top"] { top: var(--open-top, 0px); padding: 6px 10px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 2 * max(var(--open-left, 0px), var(--side-space, 0px))); }
+   narrows (its tiers fold its controls) rather than move, keeping clear of the nav and the chat on both sides. */
+.stage-tools[data-stage-tools="top"] { top: var(--open-top, 0px); padding: 6px 10px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 2 * max(var(--open-left, 0px), var(--chat-space, 0px))); }
 .stage-tools[data-stage-tools="bottom"] { bottom: var(--open-bottom, 0px); right: var(--open-right, 0px); }
 /* The stages fill the stage; what they draw sits in the frame, the open space less their tools. */
 .focus-stage > :is(.graph-page, .erd-page, .trace-page), .focus-stage > .graph-page > .graph-workspace, .focus-stage .graph-workspace > .graph-canvas, .focus-stage .erd-page > :is(.erd-canvas, .erd-empty) { position: absolute; inset: 0; min-height: 0; }
@@ -1043,11 +1027,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .focus-stage .graph-edge-hints { inset: var(--frame-top, 0px) var(--frame-right, 0px) var(--frame-bottom, 0px) var(--frame-left, 0px); }
 .stage-page > .focus-missing { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); background: var(--paper); }
 .stage-page > .error { position: absolute; z-index: 5; bottom: var(--float-inset); left: var(--nav-space); margin: 0; }
-/* On a phone the stage fills what the bars leave; the side bar is a drawer from the right. */
+/* On a phone the stage fills what the bars leave. */
 .stage-layout.is-phone { position: static; height: 100%; display: flex; flex-direction: column; }
 .stage-layout.is-phone > .focus-stage { position: relative; flex: 1; min-height: 0; }
-.side-bar-drawer { position: fixed; z-index: 80; inset: 0 0 0 auto; width: min(380px, 92vw); display: flex; flex-direction: column; background: var(--sheet); box-shadow: -4px 0 24px var(--shadow-strong); padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) 0; }
-.side-bar-drawer > .side-bar { flex: 1; min-height: 0; }
 
 /* The summary's facts: the label column as wide as its longest label, the value taking the rest of the card, and a
    record link's title wrapping at the card's width, not in a column beside its ID. */
@@ -1137,7 +1119,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .topbar-trail .crumb-link:hover { color: var(--steel); }
 .topbar-title { margin: 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 1.02rem/1.3 var(--display); color: var(--ink); }
 
-/* The page bar, compact: the open pages, the View switch and the side bar, under the top bar. */
+/* The page bar, compact: the open pages, the View switch and the wiki card, under the top bar. */
 .page-bar.is-compact { height: 54px; padding: 0 4px; border-bottom: 1px solid var(--rule); }
 .page-bar-pages { display: inline-flex; align-items: center; gap: 6px; min-width: var(--touch-target); min-height: var(--touch-target); padding: 0 10px; border: 1px solid transparent; border-radius: 8px; background: none; color: var(--muted); font: inherit; font-size: 0.85rem; cursor: pointer; }
 .page-bar-pages:hover, .page-bar-pages.is-on { color: var(--steel); background: var(--steel-bg); }
@@ -1147,7 +1129,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 .view-segment:hover { color: var(--ink); }
 .view-segment.is-on { background: var(--sheet); color: var(--steel); box-shadow: 0 1px 2px var(--shadow-soft); }
 @media (max-width: 380px) { .view-segment-label { display: none; } }
-.page-bar.is-compact .side-bar-toggle { min-width: var(--touch-target); min-height: var(--touch-target); }
 :is(.page-bar-pages, .view-segment, .sheet-handle, .pages-open):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 
 /* On a phone the page's own header keeps its padding small, and graph and model headers wrap their tools. */
@@ -1158,7 +1139,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* The nav sheet: the whole screen, the rail (with two or more products) kept at its left, sliding in from the left edge. */
 .menu.is-drawer { inset: 0; width: auto; padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); border: 0; border-radius: 0; box-shadow: none; }
 
-/* Bottom sheets (the side bar, the open pages): half the screen, or all of it below the top safe area. */
+/* Bottom sheets (the wiki card, the open pages): half the screen, or all of it below the top safe area. */
 .sheet-backdrop { position: fixed; inset: 0; z-index: 70; background: var(--backdrop); }
 .bottom-sheet { position: fixed; z-index: 80; left: 0; right: 0; bottom: 0; display: flex; flex-direction: column; height: 55dvh; max-height: calc(100dvh - env(safe-area-inset-top) - 8px); box-sizing: border-box; padding: 0 env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left); background: var(--sheet); color: var(--ink); border-radius: var(--sheet-radius) var(--sheet-radius) 0 0; box-shadow: 0 -8px 32px var(--shadow-strong); }
 .bottom-sheet.is-full { height: calc(100dvh - env(safe-area-inset-top) - 8px); }
@@ -1235,7 +1216,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   /* A gap between panels keeps its look, and its target reaches over the panels' edges. */
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
-    .graph-depth button, .graph-filters > summary, .graph-legend summary, .trace-filter, .quick-find-button,
+    .graph-depth button, .graph-filters > summary, .graph-key > summary, .trace-filter, .quick-find-button,
     .palette-list li, .tab, .long-list-tools input, .quick-open-box input, .dialog-search, .segment, .file-button, .crumb-more-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }
@@ -1252,7 +1233,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* Scroll boxes keep room for their scrollbar (LA-PAT-APP-UX-R08), so a classic scrollbar (Windows, a Mac with a
    mouse) that comes and goes with the content never narrows what is inside. The space rail hides its scrollbar
    instead: it is too narrow to give one room, and it still scrolls by wheel, touch and keyboard. */
-.nav-scroll, .side-bar.record-side, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
+.nav-scroll, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
 .space-rail { scrollbar-width: none; }
 .space-rail::-webkit-scrollbar { display: none; }
 
