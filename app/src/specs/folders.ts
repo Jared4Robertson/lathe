@@ -1,3 +1,4 @@
+import { termsBottomUp } from '../../../lathe/src/authoring/domain/read-model';
 import { plural } from '../plural';
 import { textOf, byIdOrder, kindLabel, type SpecIndex, type SpecRecord, type Stage } from './data';
 
@@ -86,11 +87,18 @@ const kindRank = (index: SpecIndex) => {
 
 /**
  * Records kind by kind in the schema's order; within a kind, those with a position in their order (capabilities, and
- * flow steps path by path, the main path first), then by ID.
+ * flow steps path by path, the main path first), then by ID; terms bottom-up, as every glossary lists them (each after
+ * the terms it builds on, otherwise by title).
  */
 export function sortRecords(index: SpecIndex, records: readonly SpecRecord[]): SpecRecord[] {
   const rank = kindRank(index);
-  return [...records].sort((a, b) => rank(a.kind) - rank(b.kind) || (a.kind === b.kind ? pathRank(a, b) || order(a) - order(b) : 0) || byIdOrder(a, b));
+  const sorted = [...records].sort((a, b) => rank(a.kind) - rank(b.kind) || (a.kind === b.kind ? pathRank(a, b) || order(a) - order(b) : 0) || byIdOrder(a, b));
+  const first = sorted.findIndex((r) => r.kind === 'term');
+  if (first === -1) return sorted;
+  const terms = sorted.filter((r) => r.kind === 'term');
+  const buildsOn = (id: string) => (index.outgoing.get(id) ?? []).filter((l) => l.relation === 'builds_on').map((l) => l.target);
+  sorted.splice(first, terms.length, ...termsBottomUp(terms, buildsOn));
+  return sorted;
 }
 
 const CONTAINERS: ReadonlySet<string> = new Set(['product', 'domain']);

@@ -11,6 +11,7 @@
 {"id":"LA-AUT-CK11","title":"flow-title-off-pattern","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-AUT-CK12","title":"query-title-verb","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-AUT-CK13","title":"repository-persists-nothing","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
+{"id":"LA-AUT-CK14","title":"term-used-unlinked","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK01","title":"too-many-children","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK02","title":"lone-child","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK04","title":"test-level-not-allowed","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
