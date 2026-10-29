@@ -57,7 +57,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(problems[0].message).toContain('cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02');
   });
 
-  it('LA-AUT-INV10-T refuses a policy hearing two events', async () => {
+  it('LA-AUT-INV104-T refuses a policy hearing two events', async () => {
     const problems = await refusal(adding({ domain_event: [{ id: 'TL-LEND-EV02', title: 'Loan closed', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool came back.' }], hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV02' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/hears.jsonl' })]);
   });
