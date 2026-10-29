@@ -97,6 +97,7 @@ export function everyKind(): Data {
     predicate: [{ id: 'TL-LEND-SP01-PR', title: 'isFree', specification_id: 'TL-LEND-SP01' }],
     event_type: [{ id: 'TL-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'TL-LEND-EV01', delivery: 'outbox' }],
     projection: [{ id: 'TL-LEND-RM01-PJ', title: 'loansByMember', read_model_id: 'TL-LEND-RM01', description: 'A view over the loans table.' }],
+    reader: [{ id: 'TL-LEND-RM01-RD', title: 'LoansByMemberReader', read_model_id: 'TL-LEND-RM01', description: 'Reads the loans view for the query handlers.' }],
     command_handler: [{ id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/lending/loans.ts', description: 'Saves the loan and its event in one transaction.' }],
     query_handler: [{ id: 'TL-LEND-QRY01-H', title: 'listFreeTools', query_id: 'TL-LEND-QRY01', description: 'Selects from the view on each call.' }],
     event_handler: [{ id: 'TL-LEND-PO01-H', title: 'onLoanOpened', policy_id: 'TL-LEND-PO01', description: 'Hears the event from the outbox relay.' }],
