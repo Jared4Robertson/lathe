@@ -115,6 +115,10 @@ export async function traceDrawn(page: Page, settle = 400) {
   await page.waitForTimeout(settle);
 }
 
+/** Starts every page of the test with the Trace stage drawn in a layout (LA-V98-R13), as if the Reader had chosen it: the tree's own scenarios pin the tree. */
+export const traceLayout = (page: Page, layout: 'tree' | 'columns') =>
+  page.addInitScript((l) => window.sessionStorage.setItem('lathe:trace-layout', JSON.stringify(l)), layout);
+
 /** What the Trace stage's canvas draws now, or (`whole`) every box of the product's map. */
 export const traceSceneOf = (page: Page, whole = false): Promise<TraceScene> =>
   page.evaluate(({ sel, whole }) => (document.querySelector(sel) as TraceHost).traceScene!(whole), { sel: TRACE, whole });
