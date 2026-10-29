@@ -3,3 +3,4 @@
 {"id":"TL-LEND-UC03-FL01","title":"Borrow a tool through the HTTP API","use_case_id":"TL-LEND-UC03","interface_id":"TL-IF01"}
 {"id":"TL-LEND-UC04-FL01","title":"Return a tool through the HTTP API","use_case_id":"TL-LEND-UC04","interface_id":"TL-IF01"}
 {"id":"TL-LEND-UC05-FL01","title":"Report damage through the HTTP API","use_case_id":"TL-LEND-UC05","interface_id":"TL-IF01"}
+{"id":"TL-LEND-UC06-FL01","title":"Mark a tool repaired through the HTTP API","use_case_id":"TL-LEND-UC06","interface_id":"TL-IF01"}

@@ -71,7 +71,7 @@ describe('Checking flows', () => {
     expect(tl.check().stdout).toContain('[aggregate-without-command] TL-LEND-A2: Aggregate TL-LEND-A2 has no command.');
   });
 
-  it('LA-CHK-UC04-FL03-T find structural problems', async () => {
+  it('LA-CHK-UC01-FL03-T find structural problems', async () => {
     const tl = product();
     // Stages written at different times: a view nothing uses yet, a use case with no flow, a test at a level its
     // kind does not allow, and a policy hearing an event of a stored aggregate that is delivered in process.

@@ -17,7 +17,7 @@ const record = (ws: Workspace, id: string) => ws.records.find((r) => r.id === id
 const shop = { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' };
 
 describe('capabilities', () => {
-  it("LA-AUT-UC05-R01-T01 A capability sits under a domain with a required whole-number position, and every use case sits under one of its domain's capabilities", async () => {
+  it("LA-AUT-UC02-R04-T01 A capability sits under a domain with a required whole-number position, and every use case sits under one of its domain's capabilities", async () => {
     expect(parentsOf(schema, 'capability')).toEqual(['domain.domain_id']);
     expect(requiredOf(schema, 'capability')).toEqual(['domain_id', 'position', 'description']);
     expect(schema.tables.capability.columns.find((c) => c.name === 'position')!.kind).toBe('integer');
@@ -37,7 +37,7 @@ describe('capabilities', () => {
     expect(await refusals(elsewhere)).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'TL-SHOP-UC01', message: expect.stringContaining('in domain TL-LEND, so its ID starts with TL-LEND-') })]);
   });
 
-  it("LA-AUT-UC05-R02-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
+  it("LA-AUT-UC02-R05-T01 A use case under a capability, and everything under it, belongs to the capability's domain and counts in its coverage", async () => {
     for (const id of ['EX-LEND-CAP01', 'EX-LEND-UC01', 'EX-LEND-UC01-R01', 'EX-LEND-UC01-FL01', 'EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-R01-T01']) {
       expect(record(good, id).domain, id).toBe('EX-LEND');
     }
@@ -191,7 +191,7 @@ describe('flows', () => {
 });
 
 describe('requirements and tests', () => {
-  it('LA-AUT-UC13-R06-T01 Requirements and rules may name a group, a column whose renaming changes no ID', async () => {
+  it('LA-AUT-UC06-R16-T01 Requirements and rules may name a group, a column whose renaming changes no ID', async () => {
     const grouped = ['uc_requirement', 'view_requirement', 'api_requirement', 'pattern_rule', 'standard_rule'];
     for (const kind of grouped) expect(schema.tables[kind].columns.find((c) => c.name === 'group_name'), kind).toMatchObject({ kind: 'text', required: false });
     expect(good.records.filter((r) => grouped.includes(r.kind)).every((r) => r.fields.group_name === undefined)).toBe(true);
@@ -208,7 +208,7 @@ describe('requirements and tests', () => {
     for (const table of grouped) expect(record(ws, complete()[table][0].id as string).fields.group_name, table).toBe('Checks');
   });
 
-  it('LA-AUT-UC13-R07-T01 Each test is of the test kind named after what it tests, and sits under that one record, which it proves', async () => {
+  it('LA-PAT-AGGREGATE-TESTS-R01-T01 Each test is of the test kind named after what it tests, and sits under that one record, which it proves', async () => {
     // What each test kind's name says it tests: its parent, or the record its parent sits under.
     for (const kind of Object.keys(ALLOWED_LEVELS)) {
       const parents = schema.kinds[kind].parents;
