@@ -903,7 +903,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .trace-column-names > li { position: absolute; top: 2px; box-sizing: border-box; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
 .trace-column-names > li > span { padding: 0 4px; border-radius: 4px; background: var(--paper); }
 
-/* ---------- Themes and the Appearance page (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
+/* ---------- Themes and Appearance (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
 /* A theme's chip in the picker and its preview on the page take the theme's tokens inline, so they draw with its colors. */
 .theme-chip { flex: none; display: inline-grid; grid-template-columns: minmax(0, 1fr) 8px; align-items: center; gap: 3px; width: 34px; height: 18px; padding: 0 3px; box-sizing: border-box; margin-right: 8px; vertical-align: middle; border: 1px solid var(--rule); border-radius: 4px; background: var(--paper); }
 .theme-chip-ink { height: 3px; border-radius: 2px; background: var(--ink); }

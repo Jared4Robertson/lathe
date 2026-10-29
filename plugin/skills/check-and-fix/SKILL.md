@@ -57,7 +57,7 @@ Fix the warnings your task is about; leave the rest and mention them.
 
 ## Recorded exceptions: deliberate, never warnings
 
-A recorded exception is a deviation made on purpose and written down with its reason: a command that also changes another aggregate of its domain in the same transaction (a `command_change` row), or a repository that also persists another aggregate, which has no repository of its own (a `repository_share` row). It is not a problem and never counts as a warning. `lathe check` lists every one in its own **Recorded exceptions** section, after the warnings, with its command or repository, aggregate and reason, and the app's Checks page shows them in a section of their own, so each stays visible. Read the list when you touch those commands or repositories: check each reason still holds, and prefer an event and a policy, or a repository of the aggregate's own, when it no longer does (then remove the row).
+A recorded exception is a deviation made on purpose and written down with its reason: a command that also changes another aggregate of its domain in the same transaction (a `command_change` row), or a repository that also persists another aggregate, which has no repository of its own (a `repository_share` row). It is not a problem and never counts as a warning. `lathe check` lists every one in its own **Recorded exceptions** section, after the warnings, with its command or repository, aggregate and reason, and the app's Checks panel shows them in a section of their own, so each stays visible. Read the list when you touch those commands or repositories: check each reason still holds, and prefer an event and a policy, or a repository of the aggregate's own, when it no longer does (then remove the row).
 
 ## Gaps and coverage
 

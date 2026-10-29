@@ -5,7 +5,7 @@
 {"id":"LA-AUT-QRY05","title":"Find a record's data file","read_model_id":"LA-AUT-RM02","description":"findDataFile (C67)"}
 {"id":"LA-CHK-QRY01","title":"Get the workspace's problems","read_model_id":"LA-CHK-RM01","description":"one load of the product's data, then every problem: `data-refused` errors when the store refuses the data (and nothing else), else Lathe's checks then each product's, in DS01's order, a product's check reporting only on records of its product. `lathe check`, the MCP `check` tool and `GET /api/spec` all read it."}
 {"id":"LA-CHK-QRY02","title":"List a product's problems","read_model_id":"LA-CHK-RM01","description":"one product's problems, errors before warnings, grouped by check, then the problems that belong to no product under Workspace."}
-{"id":"LA-CHK-QRY03","title":"Get the error count of the product in front","read_model_id":"LA-CHK-RM01","description":"the number of errors of the focused window's space, its product's and the workspace's, as its Checks page counts them."}
+{"id":"LA-CHK-QRY03","title":"Get the error count of the product in front","read_model_id":"LA-CHK-RM01","description":"the number of errors of the focused window's space, its product's and the workspace's, as its Checks panel counts them."}
 {"id":"LA-EXP-QRY01","title":"Get a record","read_model_id":"LA-EXP-RM01"}
 {"id":"LA-EXP-QRY02","title":"Find a record","read_model_id":"LA-EXP-RM01"}
 {"id":"LA-EXP-QRY03","title":"List a space's problems","read_model_id":"LA-EXP-RM01"}

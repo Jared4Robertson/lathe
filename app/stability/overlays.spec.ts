@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { FOCUS, RECORD, SHELL } from './scenarios';
 
-// LA-V61-R34-T01: tooltips, quick find, the command palette and the shortcuts sheet. Each is placed
+// LA-V61-R34-T01: tooltips, quick find, the command palette, the shortcuts sheet and the tools over the stage. Each is placed
 // before it shows and stays where it showed; typing in a search box filters the list under it
 // without moving the box; the page behind never moves.
 
@@ -61,7 +61,7 @@ test.describe('overlays', () => {
   });
 
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): a tool opens over it, and the stage, the nav and the tab panel stay put.
-  test('LA-PAT-APP-UX-R20-T02 the Checks panel and the Appearance popover open over the stage', async ({ page }) => {
+  test('LA-V61-R34-T01 the Checks panel and the Appearance popover open over the stage, and nothing on the page jumps', async ({ page }) => {
     await openPage(page, RECORD);
     const r = await step(page, 'overlays', 'Checks panel: open', { keys: ['nav#nav', '.stage-layout > .page-bar', '.header-strip', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage'] }, async () => {
       await page.locator('nav#nav').getByRole('link', { name: /^Checks/ }).click();

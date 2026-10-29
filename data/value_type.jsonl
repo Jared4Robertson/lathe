@@ -24,7 +24,7 @@
 {"id":"LA-VO63-VT","title":"ThemeFile","value_object_id":"LA-VO63","file":"app/src/theme/theme.ts","description":"ThemeFile, parseTheme, toFile, THEME_FORMAT, THEME_VERSION"}
 {"id":"LA-VO64-VT","title":"Bounds","value_object_id":"LA-VO64","file":"desktop/src/windowState.ts","description":"Bounds, SavedWindow"}
 {"id":"LA-VO65-VT","title":"Chrome","value_object_id":"LA-VO65","file":"desktop/src/chrome.ts","description":"Chrome, parseChrome, parseHexColor"}
-{"id":"LA-VO90-VT","title":"addressOf","value_object_id":"LA-VO90","file":"app/src/views/address.ts","description":"addressOf, isFocusPath, RECORD_ID, APP_PAGES, checksPathOf"}
+{"id":"LA-VO90-VT","title":"addressOf","value_object_id":"LA-VO90","file":"app/src/views/address.ts","description":"addressOf, isFocusPath, RECORD_ID, HOME_PATH"}
 {"id":"LA-VO91-VT","title":"StageName","value_object_id":"LA-VO91","file":"app/src/views/address.ts","description":"StageName, STAGE_NAMES, DEFAULT_STAGE, parseStage, stageFromSearch, withStage"}
 {"id":"LA-VO92-VT","title":"SessionSettings","value_object_id":"LA-VO92","file":"app/src/graph/settings.ts","description":"SessionSettings, GraphSettings, CardSettings, DEFAULT_GRAPH_SETTINGS, DEFAULT_CARD, sessionSettings"}
 {"id":"LA-VO93-VT","title":"product_setting.max_entities_per_aggregate","value_object_id":"LA-VO93","file":"lathe/schema/003-product.sql","description":"The CHECK on `product_setting.max_entities_per_aggregate`: a whole number of at least 1."}
