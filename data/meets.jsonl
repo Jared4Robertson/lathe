@@ -47,6 +47,7 @@
 {"source_id":"LA-AUT-REPO21","target_id":"LA-STD-MODELING-R10"}
 {"source_id":"LA-AUT-REPO21","target_id":"LA-STD-PRINCIPLES-R01"}
 {"source_id":"LA-AUT-RM11-RD","target_id":"LA-STD-MODELING-R11"}
+{"source_id":"LA-AUT-RM24-PJ","target_id":"LA-STD-MODELING-R12"}
 {"source_id":"LA-CHK-EN01-TB","target_id":"LA-STD-CODE-R01"}
 {"source_id":"LA-CHK-EN01-TB","target_id":"LA-STD-CODE-R05"}
 {"source_id":"LA-CHK-QRY01-H","target_id":"LA-STD-TRACEABILITY-R01"}
