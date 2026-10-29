@@ -1,11 +1,12 @@
 import { expect, test, type Page } from '@playwright/test';
+import { asDesktop } from './desktop';
 import { openPage } from './measure';
 import { cameraOf, clickBox, GRAPH, graphDrawn } from './scene';
 
-// LA-V93-R72-T02: moving through the graph never changes how it is drawn. In each layout, the four
-// arrows and clicks on boxes step across pages already open in a tab (a lasting one, drawn
-// differently before the person changed the settings) and pages that are not; the layout, depth
-// and minimap stay as the person set them.
+// LA-V93-R72-T02: moving through the graph never changes how it is drawn. In the desktop app (its bridge stood in
+// for), in each layout, the four arrows and clicks on boxes step across pages another tab holds (one drawn
+// differently before the person changed the settings) and pages that are not; the layout, depth and minimap stay as
+// the person set them, in the tab they were set in.
 
 const FLOW = 'LA-EXP-UC03-FL01';
 const LAYOUTS = { tree: 'Tree', nested: 'Nested' } as const;
@@ -42,16 +43,20 @@ async function cameraStill(page: Page) {
 
 for (const layout of ['tree', 'nested'] as const) {
   test(`LA-V93-R72-T02 in the ${LAYOUTS[layout]} layout, the arrows and clicks keep the layout, depth and minimap, into tabs open or new`, async ({ page }) => {
+    await asDesktop(page);
     await openPage(page, `/${FLOW}?stage=graph`);
     await graphDrawn(page);
     const canvas = page.locator(`${GRAPH}`);
-    // A lasting tab on the flow, drawn as it starts (Tree, depth 1, no minimap).
-    await page.locator('.tab.is-preview [role="tab"]').dblclick();
+    // On the flow's first step, a second tab drawn as it starts (Tree, depth 1, no minimap), by Cmd+click; back in the
+    // first tab, on the same step, the person sets depth 2, the minimap and the layout.
     await canvas.focus();
     await move(page, () => page.keyboard.press('ArrowRight'));
     const step = at(page);
-    // A lasting tab on its first step, where the person sets depth 2, the minimap and the layout.
-    await page.locator('.tab.is-preview [role="tab"]').dblclick();
+    await page.locator(`${GRAPH} .graph-box.is-focus`).dispatchEvent('click', { metaKey: true, button: 0 });
+    await expect(page.locator('[role="tablist"] [role="tab"]')).toHaveCount(2);
+    await page.locator('[role="tablist"] [role="tab"]').first().click();
+    await expect(page.locator('[role="tablist"] [role="tab"]').first()).toHaveAttribute('aria-selected', 'true');
+    await graphDrawn(page);
     await page.locator('.focus-stage .graph-depth:not(.graph-layout) button', { hasText: '2' }).click();
     await page.locator('.focus-stage .graph-filters > summary').click();
     await page.locator('.focus-stage .graph-filter-body input[role="switch"]').check();
@@ -69,8 +74,7 @@ for (const layout of ['tree', 'nested'] as const) {
       expect(await drawn(page), `${key} to ${at(page)}`).toEqual(set);
     }
     expect(at(page)).toBe(FLOW);
-    // Clicks from the flow: on the step open in its tab, and on steps no tab holds (the preview's
-    // and a new one's), each time back to the flow's tab by the Left arrow.
+    // Clicks from the flow: on the step another tab holds, and on steps no tab holds, each time back out by the arrow.
     for (const id of [step, `${FLOW}-S04`, `${FLOW}-S05`]) {
       await cameraStill(page);
       await move(page, () => clickBox(page, id));

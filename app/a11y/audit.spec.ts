@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD } from '../stability/scenarios';
 import { audit, LOOKS, useLook, type Finding } from './axe';
 import { withChat } from './chat';
+import { asDesktop } from '../stability/desktop';
 
 // LA-V61-R40-T01: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
 // desktop and phone widths, in the Lathe theme's light and dark and in High contrast's
@@ -163,6 +164,15 @@ const DESKTOP: State[] = [
     await open(page, RECORD, '.chat-session-open');
     await page.locator('.chat-session-open', { hasText: 'Plan the graph stage' }).click();
     await page.locator('.chat-warning').waitFor();
+  } },
+  // The desktop app's tab strip (LA-V96-R16), with a stand-in for the shell: two tabs, the second opened by Cmd+click.
+  { name: 'the desktop app\'s tab strip with two tabs', run: async (page) => {
+    await asDesktop(page);
+    await open(page, `${RECORD}?stage=graph`, '.tab-strip [role="tab"]');
+    const box = page.locator('.focus-stage .graph-box:not(.is-focus)').first();
+    await box.waitFor({ state: 'attached' });
+    await box.dispatchEvent('click', { metaKey: true, button: 0 });
+    await page.locator('.tab-strip [role="tab"]').nth(1).waitFor();
   } },
   // The wiki card opens as its summary on every page above; More shows the whole page in place (LA-V96-R22).
   { name: 'the wiki card expanded to the whole page', run: async (page) => {

@@ -254,7 +254,7 @@ test.describe('Platform flows in the app', () => {
   test.describe('on a phone', () => {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
 
-    test('LA-PLT-UC08-FL01-T read the spec on a phone: search, the graph by touch, the sheets, the nav, Open pages, a tablet', async ({ page }) => {
+    test('LA-PLT-UC08-FL01-T read the spec on a phone: search, the graph by touch, the sheets, the nav, Back, a tablet', async ({ page }) => {
       await openPage(page, '/LA', '.topbar');
       await expect(page.getByRole('banner')).toBeVisible();
       // Search from the top bar, and open a use case.
@@ -271,12 +271,6 @@ test.describe('Platform flows in the app', () => {
       await expect(page.locator('.wiki-panel-sheet .wiki-panel-title h2')).toHaveText(/./);
       await page.locator('.wiki-panel-sheet').getByRole('button', { name: 'Collapse the wiki card' }).tap();
       await expect(page.locator('.wiki-panel-sheet')).toHaveCount(0);
-      // Keep it open, from the Open pages sheet, to come back to.
-      await page.getByRole('button', { name: /^Open pages: \d+$/ }).tap();
-      const pages = page.getByRole('dialog', { name: 'Open pages' });
-      await pages.getByRole('button', { name: /^Keep LA-PLT-UC05 / }).tap();
-      await pages.getByRole('button', { name: 'Close the open pages' }).tap();
-      await expect(pages).toHaveCount(0);
       // Graph, from the page bar's stage switch.
       await page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'Graph' }).tap();
       await page.locator(`${FLOW} .graph-box`).first().waitFor({ state: 'attached' });
@@ -314,9 +308,11 @@ test.describe('Platform flows in the app', () => {
       await page.getByRole('button', { name: 'Open the navigation' }).tap();
       await nav(page).getByRole('link', { name: 'Platform', exact: true }).tap();
       await page.waitForURL((u) => u.pathname === '/LA-PLT');
-      // Open pages takes them back to the use case.
-      await page.getByRole('button', { name: /^Open pages: \d+$/ }).tap();
-      await page.getByRole('dialog', { name: 'Open pages' }).getByRole('button', { name: /^LA-PLT-UC05 / }).tap();
+      // Back, twice, takes them back to the use case: the browser tab's own history (no Open pages on the web).
+      await expect(page.getByRole('button', { name: /^Open pages/ })).toHaveCount(0);
+      await page.goBack();
+      await page.waitForURL((u) => u.pathname === `/${node!.id}`);
+      await page.goBack();
       await page.waitForURL((u) => u.pathname === '/LA-PLT-UC05');
       // A tablet in landscape keeps the floating panels, with targets sized for a finger.
       await page.setViewportSize({ width: 1180, height: 820 });

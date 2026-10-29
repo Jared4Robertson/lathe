@@ -14,7 +14,7 @@ import { colorOf } from '../src/theme/audit';
 import { contrast, over } from '../src/theme/contrast';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
 import { COLOR_TOKENS } from '../src/theme/tokens';
-import { openApp } from './helpers';
+import { desktopBridgeStub, openApp } from './helpers';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { testWorkspace } from './graph/workspace';
@@ -33,6 +33,8 @@ const card = () => screen.getByRole('region', { name: 'Wiki card' });
 const stageRegion = (name: string) => screen.getByRole('region', { name: `${name} stage` });
 const graphShown = () => waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
 const settings = () => JSON.parse(window.sessionStorage.getItem(SETTINGS_KEY) ?? 'null');
+/** The web's one place: the browser tab's depth, filters and wiki card. */
+const place = () => JSON.parse(window.sessionStorage.getItem('lathe:place') ?? 'null');
 
 async function back() {
   await act(async () => {
@@ -268,10 +270,14 @@ describe('one address, one stage', () => {
   });
 
   it('LA-V96-R04-T01 The page bar holds the tabs at its left and the stage switch, a divider and the wiki card toggle at its right; the pressed stage and the shown card share one on look', async () => {
+    // In the desktop app the page bar's left holds the app's tabs (on the web, the browser's tabs are the places).
+    const host = window as unknown as { latheDesktop?: LatheDesktop };
+    host.latheDesktop = desktopBridgeStub();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const page = document.querySelector<HTMLElement>('.page-bar')!;
     expect(within(page.querySelector<HTMLElement>('.page-bar-start')!).getByRole('tab', { selected: true })).toHaveTextContent('P-D-UC01 Lend a thing');
+    delete host.latheDesktop;
     const order = (el: HTMLElement) => [...el.querySelectorAll<HTMLElement>('button, .pane-divider')].map((b) => b.classList.contains('pane-divider') ? '|' : b.getAttribute('aria-label'));
     // Every stage works on every focus: three buttons, none disabled or dimmed (LA-PAT-APP-UX-R17).
     expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Graph', 'ERD', 'Trace', '|', 'Collapse the wiki card']);
@@ -320,10 +326,10 @@ describe('one address, one stage', () => {
     expect(card().getAttribute('data-page')).not.toBe(settled);
     await waitFor(() => expect(card()).toHaveAttribute('data-page', settled));
 
-    // Enter collapses it, and brings it back; so does its own button. Both are the session's setting.
+    // Enter collapses it, and brings it back; so does its own button. Both are the place's.
     fireEvent.keyDown(document.body, { key: 'Enter' });
     expect(screen.queryByRole('region', { name: 'Wiki card' })).toBeNull();
-    expect(settings()).toMatchObject({ card: false });
+    expect(place()).toMatchObject({ card: { open: false } });
     fireEvent.keyDown(document.body, { key: 'Enter' });
     expect(card()).toBeInTheDocument();
     fireEvent.click(within(card()).getByRole('button', { name: 'Collapse the wiki card' }));
@@ -334,7 +340,8 @@ describe('one address, one stage', () => {
     // Its width: its handle, kept for the session, and double-click resets it to a third of the open space.
     const handle = within(card()).getByRole('separator', { name: 'Resize the wiki card' });
     fireEvent.keyDown(handle, { key: 'End' });
-    expect(settings()).toMatchObject({ card: true, cardWidth: 900 });
+    expect(settings()).toMatchObject({ cardWidth: 900 });
+    expect(place()).toMatchObject({ card: { open: true } });
     expect(document.querySelector<HTMLElement>('.stage-layout')!.style.getPropertyValue('--card-width')).toBe('900px');
     await openApp('/P-V01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
@@ -343,7 +350,7 @@ describe('one address, one stage', () => {
     expect(settings()).toMatchObject({ cardWidth: null });
   });
 
-  it('LA-V96-R22-T01 The wiki card opens as a summary, More shows the whole page in place and Less goes back, the session\'s setting', async () => {
+  it('LA-V96-R22-T01 The wiki card opens as a summary, More shows the whole page in place and Less goes back, the place\'s setting', async () => {
     // The card's default, as a new session has it (the other tests start it expanded).
     window.sessionStorage.clear();
     await openApp('/P-D-UC01?stage=graph', served());
@@ -360,17 +367,17 @@ describe('one address, one stage', () => {
     // Edit stays in reach; the whole page's sections do not show yet.
     expect(within(card()).getByRole('button', { name: 'Edit' })).toBeInTheDocument();
     expect(within(card()).queryByRole('heading', { name: /^Flows by interface/ })).toBeNull();
-    // More: the whole page in place, saved for the session; Less: the summary again.
+    // More: the whole page in place, the place's; Less: the summary again.
     const more = within(card()).getByRole('button', { name: 'More' });
     expect(more).toHaveAttribute('aria-expanded', 'false');
     fireEvent.click(more);
     expect(card()).toHaveClass('is-expanded');
-    expect(settings()).toMatchObject({ cardExpanded: true });
+    expect(place()).toMatchObject({ card: { expanded: true } });
     expect(within(card()).getByRole('heading', { name: /^Flows by interface/ })).toBeInTheDocument();
     expect(within(card()).getByRole('button', { name: 'Edit' })).toBeInTheDocument();
     fireEvent.click(within(card()).getByRole('button', { name: 'Less' }));
     expect(card()).not.toHaveClass('is-expanded');
-    expect(settings()).toMatchObject({ cardExpanded: false });
+    expect(place()).toMatchObject({ card: { expanded: false } });
   });
 
   it('LA-V96-R19-T03 The wiki card sits in one spot under the tools, inset, its height a steady share of the stage, round, its whole border in the box\'s color, a lifting shadow and a quiet cross-fade', () => {

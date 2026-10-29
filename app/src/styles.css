@@ -33,7 +33,7 @@
   --g-structural: var(--ink); --g-structural-bg: var(--sheet);
   /* The page bar above the stage: one fixed height, so nothing below it moves (UX-R03, UX-R08). */
   --page-bar-height: 40px;
-  /* One width for every page tab, so a new page in the preview tab moves nothing (UX-R08). */
+  /* One width for every tab of the desktop app's, so a move in a tab moves nothing (UX-R08). */
   --tab-width: 14rem;
   /* Touch (LA-PAT-APP-UX-R07): the least size of a target under a finger, and the radius of a sheet's top corners. */
   --touch-target: 44px; --sheet-radius: 14px;
@@ -764,11 +764,10 @@ a.row-link.row-link:focus-visible { outline: none; }
    view at the left; at the right, icon buttons in one style: the view toggles, a divider, then the layout
    actions; then the pane's content. */
 .pane-divider { flex: none; width: 1px; height: 18px; margin: 0 4px; background: var(--rule); }
-/* The tab strip (app/src/views/TabStrip.tsx), at the left of the leftmost pane's bar: one tab per open page, as VS Code's
-   editor tabs. The active tab is the sheet's ink with a steel underline, the preview tab's title italic; tabs that do
-   not fit scroll sideways. A tab's close button shows on hover, on focus and on the active tab. Every tab has one width
-   (--tab-width), its title cut with an ellipsis, so a new page in the preview tab never moves its close button or the
-   tabs after it (LA-PAT-APP-UX-R08). */
+/* The desktop app's tab strip (app/src/views/TabStrip.tsx), at the left of the page bar: one tab per place, as a
+   browser's tabs. The active tab is the sheet's ink with a steel underline; tabs that do not fit scroll sideways. A
+   tab's close button shows on hover, on focus and on the active tab. Every tab has one width (--tab-width), its title
+   cut with an ellipsis, so a move in a tab never moves its close button or the tabs after it (LA-PAT-APP-UX-R08). */
 .tab-strip { display: flex; align-items: stretch; gap: 2px; min-width: 0; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
 .tab-strip::-webkit-scrollbar { display: none; }
 .tab { flex: none; display: inline-flex; align-items: center; gap: 6px; width: var(--tab-width); min-height: 28px; padding: 0 2px 0 8px; box-sizing: border-box; border-radius: 6px; color: var(--muted); font-size: 0.84rem; cursor: pointer; white-space: nowrap; user-select: none;
@@ -780,7 +779,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 .tab-text { flex: 1; min-width: 0; display: flex; align-items: center; gap: 6px; }
 .tab-id { flex: none; font: 500 0.72rem var(--mono); color: var(--muted); }
 .tab-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
-.tab.is-preview .tab-title { font-style: italic; font-weight: 500; }
 .tab-close { flex: none; display: inline-grid; place-items: center; width: 20px; height: 20px; padding: 0; border: 0; border-radius: 4px; background: none; color: var(--muted); cursor: pointer; opacity: 0;
   transition: opacity var(--hover-speed), background-color var(--hover-speed); }
 .tab:hover .tab-close, .tab.is-active .tab-close, .tab:focus-within .tab-close { opacity: 1; }
@@ -1179,9 +1177,6 @@ a.row-link.row-link:focus-visible { outline: none; }
 .pages-open:hover { background: var(--hover-bg); }
 .pages-open .tab-title { white-space: nowrap; }
 .pages-row.is-active .tab-title { color: var(--steel); }
-.pages-row.is-preview .tab-title { font-style: italic; font-weight: 500; }
-.pages-keep { flex: none; min-height: var(--touch-target); }
-.pages-hint { margin: 0; padding: 0 16px 12px; font-size: 0.8rem; }
 
 /* A sheet's Close button: quick find's on a phone. */
 .sheet-close { flex: none; min-height: var(--touch-target); font-weight: 600; }

@@ -3,6 +3,7 @@ import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { isGroup } from '../graph/model';
 import { navigate } from '../router';
+import { openInNewPlace } from '../views/usePlace';
 import type { SpecIndex } from '../specs/data';
 import { KindBadge } from '../specs/parts';
 import { checkPagePath, kindPagePath, useFormat } from '../format/reference';
@@ -17,7 +18,8 @@ import { useNarrow } from './useNarrow';
 // Quick open (LA-V64): one centered overlay for quick find and the command palette, as VS Code's.
 // Cmd/Ctrl+P opens it on records: typing filters the current space's records, domains and
 // products by ID or title (and the record format's kinds and checks), best matches first; Up and
-// Down move through them, Enter goes there, Escape closes. A query that starts with ">" lists the
+// Down move through them, Enter goes there (Cmd/Ctrl+Enter or a Cmd/Ctrl+click opens it in a new place: a tab,
+// or a browser tab on the web), Escape closes. A query that starts with ">" lists the
 // commands that apply instead, each with its keys (Cmd/Ctrl+Shift+P opens it so); deleting the
 // ">" goes back to records. While a record is highlighted the stage previews it (views/preview.ts):
 // the camera glides there and the wiki card shows it; Enter commits, Escape puts the camera, the
@@ -144,22 +146,23 @@ export function QuickOpen({ index, seed, onClose }: QuickOpenProps) {
     list.current?.querySelector<HTMLElement>(`[id="${optionId(at)}"]`)?.scrollIntoView?.({ block: 'nearest' });
   });
 
-  const goTo = (item: FindItem) => {
-    navigate(item.to);
+  /** Goes to a record in the place shown, or, with Cmd or Ctrl held, opens it in a new place (a new tab, or a browser tab on the web). */
+  const goTo = (item: FindItem, inNew = false) => {
+    if (inNew) openInNewPlace(item.to); else navigate(item.to);
     onClose();
   };
   const runCommand = (id: string) => {
     onClose();
     setTimeout(() => run(id), 0);
   };
-  const choose = (i: number) => {
+  const choose = (i: number, inNew = false) => {
     if (inCommands) { if (shownCommands[i]) runCommand(shownCommands[i].id); }
-    else if (records[i]) goTo(records[i]);
+    else if (records[i]) goTo(records[i], inNew);
   };
   const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'ArrowDown' && count) { e.preventDefault(); setActive((at + 1) % count); }
     else if (e.key === 'ArrowUp' && count) { e.preventDefault(); setActive((at - 1 + count) % count); }
-    else if (e.key === 'Enter') { e.preventDefault(); choose(at); }
+    else if (e.key === 'Enter') { e.preventDefault(); choose(at, e.metaKey || e.ctrlKey); }
   };
 
   const label = inCommands ? 'Command palette' : 'Quick find';
@@ -214,7 +217,7 @@ export function QuickOpen({ index, seed, onClose }: QuickOpenProps) {
                 role="option"
                 aria-selected={i === at}
                 className={`quick-open-record${i === at ? ' active' : ''}`}
-                onMouseDown={(e) => { e.preventDefault(); choose(i); }}
+                onMouseDown={(e) => { e.preventDefault(); choose(i, e.metaKey || e.ctrlKey); }}
               >
                 <span className="quick-open-line">
                   {r.kind ? <KindBadge index={index} kind={r.kind} /> : <span className="kind-badge stage-none">Record format</span>}

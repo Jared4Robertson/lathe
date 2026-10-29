@@ -14,6 +14,7 @@ import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
 import { ErdLeader } from './leader';
 import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
+import { keepCamera, keptCamera } from '../views/cameras';
 import { useWalk } from '../graph/steps';
 import { useCommand } from '../shell/commands';
 import { StageCamera, StageKey, StageToolbar, ZOOM_STEP, type KeyEntry } from '../views/StageChrome';
@@ -55,6 +56,10 @@ export interface ErdViewProps {
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the focus is framed. */
   space?: OpenSpaceStore;
+  /** The place the ERD shows (views/cameras.ts): its camera is kept as the place is left and taken back as it shows again. */
+  cameraKey?: string;
+  /** Opens a box in a new place (Cmd or Ctrl+click, or a middle-click for the background), when the host has places. */
+  onOpenNew?: (id: string, background: boolean) => void;
 }
 
 /**
@@ -184,7 +189,7 @@ export const erdCounts = (map: ErdMap, scope: string) => {
   return `${entities} ${entities === 1 ? 'entity' : 'entities'} · ${lines.length} ${lines.length === 1 ? 'line' : 'lines'}`;
 };
 
-export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: ErdViewProps) {
+export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space, cameraKey, onOpenNew }: ErdViewProps) {
   const at = useMemo(() => erdFocus(index, focus), [index, focus]);
   const map = useMemo(() => (at ? erdMap(index, at.product) : null), [index, at]);
   useLayoutEffect(() => { onCounts?.(map && at ? erdCounts(map, at.scope) : ''); }, [map, at, onCounts]);
@@ -208,7 +213,7 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: E
       ) : (
         <div className="erd-canvas">
           <ReactFlowProvider>
-            <ErdCanvas index={index} map={map} at={at} focus={focus} onNavigate={onNavigate} onPeek={onPeek} space={space} onLaidOut={() => setLaidOut((n) => n + 1)} />
+            <ErdCanvas index={index} map={map} at={at} focus={focus} onNavigate={onNavigate} onPeek={onPeek} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} onLaidOut={() => setLaidOut((n) => n + 1)} />
           </ReactFlowProvider>
         </div>
       )}
@@ -291,9 +296,9 @@ function fadeLook(at: HTMLElement | null): Pick<FadeLook, 'focusFade'> {
 /** A box's accessible name: its kind, title and root mark, and whether the focus picks it out. */
 const boxName = (box: ErdBox, pick: boolean) => `${BOX_KIND[box.kind]} ${box.title}${box.root ? ', root' : ''}${box.empty ? `, ${kindLine(box).split(' · ')[1]}` : ''}${pick ? ' (picked out)' : ''}`;
 
-interface CanvasProps { index: SpecIndex; map: ErdMap; at: ErdFocus; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek']; space?: OpenSpaceStore; onLaidOut: () => void }
+interface CanvasProps { index: SpecIndex; map: ErdMap; at: ErdFocus; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek']; space?: OpenSpaceStore; cameraKey?: string; onOpenNew?: ErdViewProps['onOpenNew']; onLaidOut: () => void }
 
-function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut }: CanvasProps) {
+function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey, onOpenNew, onLaidOut }: CanvasProps) {
   const relations = index.workspace.relations;
   // The map's layout: ready at once when this product was laid out before on the same data.
   const [placed, setPlaced] = useState<{ map: ErdMap; rects: Map<string, Rect> } | null>(() => {
@@ -412,12 +417,37 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut
   // Before paint (LA-PAT-APP-UX-R08): the first picture appears already framed, never drawn at the
   // default viewport and then moved; each focus after it, and each change of the open space, glides
   // there from the view before.
+  // Each place keeps its camera (views/cameras.ts): as the place shown changes (another tab), the one left keeps where
+  // its camera was, and the one shown takes its own back, at once, when it still frames the same scope.
   const framedFor = useRef('');
+  const framed = `${at.pick ?? at.scope}`;
+  const frameKey = `${framed}|${margin.left},${margin.right},${margin.top},${margin.bottom}|${placed ? 'placed' : ''}`;
+  const cameraPlace = useRef<{ key: string | undefined; framed: string; restore: boolean }>({ key: cameraKey, framed: '', restore: true });
   useLayoutEffect(() => {
-    const key = `${at.pick ?? at.scope}|${margin.left},${margin.right},${margin.top},${margin.bottom}|${placed ? 'placed' : ''}`;
+    const was = cameraPlace.current;
+    if (was.key !== cameraKey) {
+      if (was.key && fitted.current) keepCamera(was.key, 'erd', { framed: was.framed, view: getViewport() });
+      cameraPlace.current = { key: cameraKey, framed, restore: true };
+    }
+    cameraPlace.current.framed = framed;
+    if (!cameraPlace.current.restore || !placed) return;
+    cameraPlace.current.restore = false;
+    const back = cameraKey ? keptCamera<Viewport>(cameraKey, 'erd', framed) : null;
+    if (!back) return;
+    camera.moveTo(back, false);
+    wrapper.current?.setAttribute('data-framed', '');
+    fitted.current = true;
+    framedFor.current = frameKey;
+  }, [framed, frameKey, placed, cameraKey]);
+  useLayoutEffect(() => {
+    const key = frameKey;
     if (framedFor.current === key) return;
     if (frameFocus(fitted.current)) { fitted.current = true; framedFor.current = key; }
-  }, [at, margin, placed, frameFocus]);
+  }, [frameKey, frameFocus]);
+  useEffect(() => () => {
+    const { key, framed } = cameraPlace.current;
+    if (key && fitted.current) keepCamera(key, 'erd', { framed, view: getViewport() });
+  }, []);
   // `.` and the toolbar's Frame frame the focus again, as on every stage; the camera's buttons zoom about the frame's
   // middle and fit the whole map.
   useCommand('graphFit', () => { frameFocus(true); }, !!placed);
@@ -484,7 +514,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut
   const go = (id: string) => { if (id !== focus) onNavigate(id); };
   // By touch, a first tap selects a box and a second tap (or a tap on its card) opens it.
   const canOpen = useCallback((id: string) => id !== focus, [focus]);
-  const tap = useTapToOpen(onNavigate, canOpen, wrapper, focus);
+  const tap = useTapToOpen(onNavigate, canOpen, wrapper, focus, onOpenNew);
   const armedBox = tap.armed ? map.boxes.find((b) => b.id === tap.armed) : undefined;
   useEffect(() => { onPeek?.('selected', tap.armed); }, [tap.armed, onPeek]);
   // A new focus starts with nothing under the pointer.
@@ -502,7 +532,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut
 
   if (error) return <p className="error">Couldn't draw the diagram: {error}</p>;
   return (
-    <div ref={wrapper} className="erd-flow" onKeyDown={onKeyDown} onFocus={(e) => onPeek?.('hover', boxAt(e.target))} onBlur={() => onPeek?.('hover', null)}>
+    <div ref={wrapper} className="erd-flow" onKeyDown={onKeyDown} onAuxClick={(e) => { const id = boxAt(e.target); if (id) tap.onNodeAuxClick(e, id); }} onFocus={(e) => onPeek?.('hover', boxAt(e.target))} onBlur={() => onPeek?.('hover', null)}>
       {!placed && <p className="hint graph-loading">Laying out the map…</p>}
       <ReactFlow
         nodes={nodes}
