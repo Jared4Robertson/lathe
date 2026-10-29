@@ -41,11 +41,13 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 A repository sits under its domain and links the one aggregate it persists with `persists`: one repository per aggregate, and one aggregate per repository (a second either way is refused). A repository that persists none is an error (`repository-persists-nothing`). Separate methods per aggregate, such as `Store.findLoan` and `Store.findTool`, are separate repositories. Write one record per piece of code: a generic store that loads and saves every aggregate the same way is one repository, never a record per aggregate or per data file. It persists one aggregate, the most central, and records each other aggregate it persists as a recorded exception, a `repository_share` row with the reason, such as "One generic store persists every table, so a repository per aggregate would only pass calls through." `lathe check` and the Checks panel list each one under Recorded exceptions; the store refuses a share of an aggregate a repository persists. A repository shared by several domains sits under the domain that holds what they share, such as a Platform domain.
 
-Each has `file` (from the product root; it may not exist yet, and several records may share one file) and `description` (what in the file, such as the function names). Name the unit in its `title`, such as `LendingService.borrow`.
+Each has `file` (from the product root; it may not exist yet, and several records may share one file). Name the unit in its `title`, such as `LendingService.borrow`.
+
+Every kind's text is required or absent (`LA-STD-MODELING-R10`). The application layer and infrastructure choose how the work is done, which the design leaves open, so a repository, projection, command, query, event or endpoint handler and adapter must have a `description` saying how it works, in a sentence or two: where and in what form a repository keeps its aggregate, when a projection is rebuilt, a handler's transaction and the order of its checks, where an event handler hears its event, how an adapter calls its outside system. Never restate the design record it implements, and never only list code names. A data model, value type, predicate, event type and service transcribe their domain record, and a table's columns follow from its fields, so they have no description: the domain record says what it is, and the title and file say where. A UI component must have a `description`: what it renders and where it sits.
 
 ## Naming
 
-A technical record is bound to code, so its `title` is the identifier exactly as the code writes it, with no spaces: `LoanRow`, `buildReference`, `loans`. It is unique within its kind and product and has no trailing period; the store refuses a duplicate, a trailing period or a title with whitespace. Explain the unit in `description`, never in the title (`Store (loans)` is refused; `Store.insertLoan` is not). This holds for every technical kind but the UI component, named for what it shows (Record card, see `design-interactions`), and for a product's own code-bound kinds, such as an entry point, tooling, an IPC channel or a plugin hook.
+A technical record is bound to code, so its `title` is the identifier exactly as the code writes it, with no spaces: `LoanRow`, `buildReference`, `loans`. It is unique within its kind and product and has no trailing period; the store refuses a duplicate, a trailing period or a title with whitespace. Explain the unit in its `description` where its kind has one, never in the title (`Store (loans)` is refused; `Store.insertLoan` is not). This holds for every technical kind but the UI component, named for what it shows (Record card, see `design-interactions`), and for a product's own code-bound kinds, such as an entry point, tooling, an IPC channel or a plugin hook.
 
 | Kind | Title | Good |
 | --- | --- | --- |
@@ -99,11 +101,9 @@ add  { "command_handler": { "id": "TL-LEND-CMD05-H", "title": "LendingService.bo
 add  { "repository": { "id": "TL-LEND-REPO03", "title": "Store.findLoan", "domain_id": "TL-LEND", "file": "src/store.ts",
        "description": "The Store class's loan methods: insertLoan, findLoan, activeLoansForMember, activeLoanForTool and markReturned on the SQLite store." } }
 link { "source": "TL-LEND-REPO03", "relation": "persists", "target": "TL-LEND-A3" }
-add  { "data_model": { "id": "TL-LEND-EN04-DM", "title": "Loan", "entity_id": "TL-LEND-EN04", "file": "src/model.ts",
-       "description": "The Loan interface; mapped from its row by toLoan in src/store.ts." } }
+add  { "data_model": { "id": "TL-LEND-EN04-DM", "title": "Loan", "entity_id": "TL-LEND-EN04", "file": "src/model.ts" } }
 add  { "event_type": { "id": "TL-LEND-EV06-ET", "title": "ToolReturned", "domain_event_id": "TL-LEND-EV06", "delivery": "outbox",
-       "file": "src/events.ts",
-       "description": "The ToolReturned interface, as LendingService.return saves it. TL-LEND-PO01 hears it, so it goes by outbox: saved in the return's transaction, relayed to its handlers after commit." } }
+       "file": "src/events.ts" } }
 add  { "event_handler": { "id": "TL-LEND-PO01-H", "title": "reportDamageOnReturn", "policy_id": "TL-LEND-PO01",
        "file": "src/event-handlers.ts",
        "description": "Subscribed to ToolReturned on the outbox; for a return needing repair it invokes Report damage's handler, in its own transaction." } }

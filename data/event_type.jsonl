@@ -1,10 +1,10 @@
-{"id":"LA-AUT-EV01-ET","title":"spec:changed","domain_event_id":"LA-AUT-EV01","delivery":"in process","file":"lathe/src/server/api.ts","description":"`watchTargets`: `spec:changed` for the data folder and Lathe's check rows."}
-{"id":"LA-AUT-EV03-ET","title":"tools/list_changed","domain_event_id":"LA-AUT-EV03","delivery":"in process","file":"lathe/src/cli/mcp.ts","description":"The declarations-changed branch that sends `notifications/tools/list_changed`."}
-{"id":"LA-CHK-EV01-ET","title":"spec:changed(check.jsonl)","domain_event_id":"LA-CHK-EV01","delivery":"in process","file":"lathe/src/server/api.ts","description":"`watchTargets`: `spec:changed` when a file of check rows changes, Lathe's `lathe/data/check.jsonl` or the product's own in its data folder."}
-{"id":"LA-EXP-EV01-ET","title":"lathe:navigate","domain_event_id":"LA-EXP-EV01","delivery":"in process","file":"app/src/router.tsx","description":"the lathe:navigate event and popstate; delivery in process"}
-{"id":"LA-EXP-EV02-ET","title":"change","domain_event_id":"LA-EXP-EV02","delivery":"in process","file":"app/src/views/useTabs.ts","description":"`change` in usePageTabs: when a change leaves another tab active, it opens that tab's address (navigate(addressOfTab(now))) in the same call."}
-{"id":"LA-PLT-EV01-ET","title":"ThemeState.chosen","domain_event_id":"LA-PLT-EV01","delivery":"in process","file":"app/src/theme/ThemeProvider.tsx","description":"`choose` sets ThemeState.chosen; the effect that follows applies the theme and keeps it (applyTheme, themeStore.save)."}
-{"id":"LA-PLT-EV02-ET","title":"ThemeState.mode","domain_event_id":"LA-PLT-EV02","delivery":"in process","file":"app/src/theme/ThemeProvider.tsx","description":"`setMode` sets ThemeState.mode; the effect that follows applies it and keeps it (applyTheme, themeStore.save)."}
-{"id":"LA-PLT-EV03-ET","title":"ThemeState.custom","domain_event_id":"LA-PLT-EV03","delivery":"in process","file":"app/src/theme/ThemeProvider.tsx","description":"`duplicate` and `importFile` add the new theme to ThemeState.custom; the effect that follows keeps it (themeStore.save)."}
-{"id":"LA-PLT-EV04-ET","title":"openFolder","domain_event_id":"LA-PLT-EV04","delivery":"in process","file":"desktop/src/main.ts","description":"`openFolder`: once the folder checks, it adds it to the recent folders (rememberRecent) and opens its window, whose server startApp starts, in the same call."}
-{"id":"LA-PLT-EV05-ET","title":"closed","domain_event_id":"LA-PLT-EV05","delivery":"in process","file":"desktop/src/main.ts","description":"Electron's `closed` event on a product window: its handler stops the window's server and forgets the window."}
+{"id":"LA-AUT-EV01-ET","title":"spec:changed","domain_event_id":"LA-AUT-EV01","delivery":"in process","file":"lathe/src/server/api.ts"}
+{"id":"LA-AUT-EV03-ET","title":"tools/list_changed","domain_event_id":"LA-AUT-EV03","delivery":"in process","file":"lathe/src/cli/mcp.ts"}
+{"id":"LA-CHK-EV01-ET","title":"spec:changed(check.jsonl)","domain_event_id":"LA-CHK-EV01","delivery":"in process","file":"lathe/src/server/api.ts"}
+{"id":"LA-EXP-EV01-ET","title":"lathe:navigate","domain_event_id":"LA-EXP-EV01","delivery":"in process","file":"app/src/router.tsx"}
+{"id":"LA-EXP-EV02-ET","title":"change","domain_event_id":"LA-EXP-EV02","delivery":"in process","file":"app/src/views/useTabs.ts"}
+{"id":"LA-PLT-EV01-ET","title":"ThemeState.chosen","domain_event_id":"LA-PLT-EV01","delivery":"in process","file":"app/src/theme/ThemeProvider.tsx"}
+{"id":"LA-PLT-EV02-ET","title":"ThemeState.mode","domain_event_id":"LA-PLT-EV02","delivery":"in process","file":"app/src/theme/ThemeProvider.tsx"}
+{"id":"LA-PLT-EV03-ET","title":"ThemeState.custom","domain_event_id":"LA-PLT-EV03","delivery":"in process","file":"app/src/theme/ThemeProvider.tsx"}
+{"id":"LA-PLT-EV04-ET","title":"openFolder","domain_event_id":"LA-PLT-EV04","delivery":"in process","file":"desktop/src/main.ts"}
+{"id":"LA-PLT-EV05-ET","title":"closed","domain_event_id":"LA-PLT-EV05","delivery":"in process","file":"desktop/src/main.ts"}

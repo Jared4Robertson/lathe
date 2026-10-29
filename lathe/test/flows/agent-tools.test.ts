@@ -94,21 +94,21 @@ describe('Authoring flows through the MCP tools', () => {
       const listed = await a.server.request('tools/list');
       const addTool = JSON.stringify(listed.result!.tools!.find((t) => t.name === 'add')!.inputSchema);
       expect(addTool).toContain('subdomain_type');
-      await a.ok('add', { domain: { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' } });
-      await a.ok('add', { aggregate: { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND' } });
-      await a.ok('add', { entity: { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root' } });
+      await a.ok('add', { domain: { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' } });
+      await a.ok('add', { aggregate: { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One loan.' } });
+      await a.ok('add', { entity: { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' } });
       await a.ok('add', { entity_field: { entity_id: 'TL-LEND-EN01', position: 1, name: 'Due date', meaning: 'The last day of the loan.', type: 'date', required: true } });
       // S03: a column changed.
       await a.ok('set', { aggregate: { id: 'TL-LEND-A1', description: 'One tool lent to one member.' } });
       // S04: the rows land in the data files, one line each.
-      expect(data(a.tl, 'aggregate')).toEqual([{ id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', description: 'One tool lent to one member.' }]);
+      expect(data(a.tl, 'aggregate')).toEqual([{ id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' }]);
       expect(data(a.tl, 'entity_field').map((f) => f.name)).toEqual(['Due date']);
       // S05: show returns what was written.
       expect(await a.ok('show', { id: 'TL-LEND-A1' })).toContain('description: One tool lent to one member.');
       // S07: move; S08, S09: link and unlink; S10: remove.
-      await a.ok('add', { capability: { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1 } });
-      await a.ok('add', { capability: { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2 } });
-      await a.ok('add', { use_case: { id: 'TL-LEND-UC01', title: 'Return a tool', capability_id: 'TL-LEND-CAP01' } });
+      await a.ok('add', { capability: { id: 'TL-LEND-CAP01', title: 'Lending', domain_id: 'TL-LEND', position: 1, description: 'Lending tools and taking them back.' } });
+      await a.ok('add', { capability: { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back from members.' } });
+      await a.ok('add', { use_case: { id: 'TL-LEND-UC01', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' } });
       await a.ok('move', { id: 'TL-LEND-UC01', parent: 'TL-LEND-CAP02' });
       expect(data(a.tl, 'use_case')[0].capability_id).toBe('TL-LEND-CAP02');
       await a.ok('add', { business_outcome: { id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow more.', measure: 'Loans per month.', target: 'Twice as many.' } });
@@ -120,7 +120,7 @@ describe('Authoring flows through the MCP tools', () => {
       expect(data(a.tl, 'capability').map((c) => c.id)).toEqual(['TL-LEND-CAP02']);
       // S06: a refused write returns every reason and changes no file.
       const before = a.tl.read('data/domain.jsonl');
-      expect(await a.refused('add', { domain: { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'central' } })).toContain('subdomain_type');
+      expect(await a.refused('add', { domain: { id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'central', description: 'Selling tools to members.' } })).toContain('subdomain_type');
       expect(a.tl.read('data/domain.jsonl')).toBe(before);
     });
   });
@@ -134,8 +134,8 @@ describe('Authoring flows through the MCP tools', () => {
       const listed = await a.server.request('tools/list');
       expect(JSON.stringify(listed.result!.tools!.find((t) => t.name === 'add')!.inputSchema)).toContain('for one business capability');
       // S03: one domain per capability, with its subdomain type; one is named for a layer.
-      await a.ok('add', { domain: { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' } });
-      await a.ok('add', { domain: { id: 'TL-CAT', title: 'Web app', product_id: 'TL', subdomain_type: 'supporting' } });
+      await a.ok('add', { domain: { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' } });
+      await a.ok('add', { domain: { id: 'TL-CAT', title: 'Web app', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds and how members find them.' } });
       // S04: the check warns of the domain named for a technology; the Agent renames it.
       expect(found(await a.check(), 'domain-named-for-technology')).toEqual([expect.stringMatching(/^TL-CAT: .*"web app"/)]);
       await a.ok('set', { domain: { id: 'TL-CAT', title: 'Catalog' } });
@@ -166,15 +166,15 @@ describe('Authoring flows through the MCP tools', () => {
   });
 
   it('LA-AUT-UC05-FL04-T organize a domain\'s use cases into capabilities and patterns through the MCP tools', async () => {
-    await walk([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01' })], async (a) => {
+    await walk([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' })], async (a) => {
       // S01: the domain's capabilities in order; a repeated position is refused.
-      await a.ok('add', { capability: { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2 } });
-      await a.refused('add', { capability: { id: 'TL-LEND-CAP03', title: 'Fees', domain_id: 'TL-LEND', position: 2 } });
+      await a.ok('add', { capability: { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back from members.' } });
+      await a.refused('add', { capability: { id: 'TL-LEND-CAP03', title: 'Fees', domain_id: 'TL-LEND', position: 2, description: 'Charging members for late tools.' } });
       // S02: each use case under its capability.
       await a.ok('move', { id: 'TL-LEND-UC02', parent: 'TL-LEND-CAP02' });
       expect(await a.ok('show', { id: 'TL-LEND-UC02' })).toContain('parent: TL-LEND-CAP02');
       // S03: shared behavior once, as a pattern with its setting and rule.
-      await a.ok('add', { pattern: { id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL' } });
+      await a.ok('add', { pattern: { id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL', description: 'An action a librarian takes that saves a record.' } });
       await a.refused('add', { pattern_setting: { pattern_id: 'TL-PAT-ACT', position: 1, name: 'Record' } });
       await a.ok('add', { pattern_setting: { pattern_id: 'TL-PAT-ACT', position: 1, name: 'record', meaning: 'The record the action saves.' } });
       await a.ok('add', { pattern_rule: { id: 'TL-PAT-ACT-R01', title: 'A saved record reads the same', pattern_id: 'TL-PAT-ACT', statement: 'A record MUST read back as it was saved.' } });
@@ -192,15 +192,15 @@ describe('Authoring flows through the MCP tools', () => {
     await walk([
       ...LENDING,
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' }),
-      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01' }),
+      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' }),
       add('uc_requirement', { id: 'TL-LEND-UC02-R01', title: 'The return is dated', use_case_id: 'TL-LEND-UC02', statement: 'The return MUST carry its date.' }),
-      add('view', { id: 'TL-V01', title: 'Loan desk' }),
+      add('view', { id: 'TL-V01', title: 'Loan desk', description: 'Where the librarian opens and closes loans.' }),
     ], async (a) => {
       // S01: the interfaces, then a flow through each of two, its ID ending in the interface's number, and its steps in
       // order on their paths.
-      await a.ok('add', { interface: { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app' } });
-      await a.ok('add', { interface: { id: 'TL-IF02', title: 'Lending API', product_id: 'TL', kind: 'API' } });
-      await a.ok('add', { interface: { id: 'TL-IF03', title: 'Librarian tools', product_id: 'TL', kind: 'agent tools' } });
+      await a.ok('add', { interface: { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.' } });
+      await a.ok('add', { interface: { id: 'TL-IF02', title: 'Lending API', product_id: 'TL', kind: 'API', description: 'The API other systems lend tools through.' } });
+      await a.ok('add', { interface: { id: 'TL-IF03', title: 'Librarian tools', product_id: 'TL', kind: 'agent tools', description: 'The tools an agent uses to help the librarian.' } });
       await a.ok('add', { flow: { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' } });
       await a.ok('add', { flow: { id: 'TL-LEND-UC01-FL02', title: 'Borrow a tool through the API', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF02' } });
       const step = (flow: string, n: string, title: string, pathName: string, position: number) =>
@@ -215,7 +215,7 @@ describe('Authoring flows through the MCP tools', () => {
       await a.ok('link', { source: 'TL-LEND-UC01-FL01-S03', relation: 'fulfills', target: 'TL-LEND-UC01-R01' });
       await a.ok('link', { source: 'TL-LEND-UC01-FL02-S01', relation: 'invokes', target: 'TL-LEND-CMD01' });
       for (const r of ['R01', 'R02']) await a.ok('link', { source: 'TL-LEND-UC01-FL02-S01', relation: 'fulfills', target: `TL-LEND-UC01-${r}` });
-      await a.ok('add', { flow_test: { id: 'TL-LEND-UC01-FL02-T', title: 'Borrow a tool through the API', flow_id: 'TL-LEND-UC01-FL02', level: 'browser', state: 'not automated yet' } });
+      await a.ok('add', { flow_test: { id: 'TL-LEND-UC01-FL02-T', title: 'Borrow a tool through the API', flow_id: 'TL-LEND-UC01-FL02', level: 'browser', state: 'not automated yet', steps: ['Post a loan for a free tool'], expected_result: 'The loan is opened.' } });
       // S03: a second flow through one interface, a flow ID not ending in its interface's number and a repeated position.
       await a.refused('add', { flow: { id: 'TL-LEND-UC01-FL01', title: 'Again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' } });
       await a.refused('add', { flow: { id: 'TL-LEND-UC01-FL03', title: 'Through the wrong interface', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' } });
@@ -261,15 +261,15 @@ describe('Authoring flows through the MCP tools', () => {
 
   it('LA-AUT-UC10-FL04-T model each aggregate\'s entities and value objects through the MCP tools', async () => {
     await walk([
-      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }),
-      add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND' }),
-      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' }),
+      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
+      add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
+      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
     ], async (a) => {
       // S01: the aggregate's root and child entities.
-      await a.ok('add', { entity: { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root' } });
-      await a.ok('add', { entity: { id: 'TL-LEND-EN02', title: 'Renewal', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true } });
+      await a.ok('add', { entity: { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' } });
+      await a.ok('add', { entity: { id: 'TL-LEND-EN02', title: 'Renewal', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true, description: 'The loan running longer.' } });
       // S03: the value object with its constraint.
-      await a.ok('add', { value_object: { id: 'TL-VO01', title: 'Email address' } });
+      await a.ok('add', { value_object: { id: 'TL-VO01', title: 'Email address', description: 'Where a member gets mail.' } });
       await a.ok('add', { value_object_field: { value_object_id: 'TL-VO01', position: 1, name: 'Address', meaning: 'The address as typed.', type: 'text', required: true } });
       await a.ok('add', { constraint: { id: 'TL-VO01-C01', title: 'One at sign', value_object_id: 'TL-VO01', statement: 'An email address MUST hold exactly one @.' } });
       // S02: each entity's fields, typed by a basic type, a value object or another aggregate; two types are refused.
@@ -290,17 +290,17 @@ describe('Authoring flows through the MCP tools', () => {
 
   it('LA-AUT-UC12-FL04-T model commands, the events they raise and the policies that hear them through the MCP tools', async () => {
     await walk([
-      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }),
-      add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND' }),
-      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' }),
+      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
+      add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
+      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
       add('specification', { id: 'TL-LEND-SP01', title: 'Tool is free', statement: 'A tool is free when no active loan names it.' }),
       link('TL-LEND-SP01', 'reads', 'TL-LEND-A1'),
-      add('domain_event', { id: 'TL-LEND-EV02', title: 'Tool lent', aggregate_id: 'TL-LEND-A2', published: false }),
+      add('domain_event', { id: 'TL-LEND-EV02', title: 'Tool lent', aggregate_id: 'TL-LEND-A2', published: false, description: 'A tool left the shelf.' }),
     ], async (a) => {
       // S01: the commands, and the event with its field.
-      await a.ok('add', { command: { id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1' } });
-      await a.ok('add', { command: { id: 'TL-LEND-CMD02', title: 'Open a reminder', aggregate_id: 'TL-LEND-A1' } });
-      await a.ok('add', { domain_event: { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false } });
+      await a.ok('add', { command: { id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' } });
+      await a.ok('add', { command: { id: 'TL-LEND-CMD02', title: 'Open a reminder', aggregate_id: 'TL-LEND-A1', description: 'Sets a reminder for the loan\'s due date.' } });
+      await a.ok('add', { domain_event: { id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool went out on loan.' } });
       await a.ok('add', { event_field: { domain_event_id: 'TL-LEND-EV01', position: 1, name: 'Loan ID', meaning: 'Which loan.', type_aggregate_id: 'TL-LEND-A1', required: true } });
       // S02: what the command raises and checks; the event other domains hear is published.
       await a.ok('link', { source: 'TL-LEND-CMD01', relation: 'raises', target: 'TL-LEND-EV01' });
@@ -325,15 +325,15 @@ describe('Authoring flows through the MCP tools', () => {
     ], async (a) => {
       a.tl.write('test/loans.test.ts', "it('TL-LEND-INV01-T one active loan per tool');\nit('TL-LEND-UC01-R01-T01 a tool on loan is refused');\n");
       // S01: each test under the record it tests, of the kind named after it, with its run by.
-      await a.ok('add', { invariant_test: { id: 'TL-LEND-INV01-T', title: 'One active loan per tool', invariant_id: 'TL-LEND-INV01', level: 'integration', state: 'automated', file: 'test/loans.test.ts' } });
-      await a.ok('add', { use_case_test: { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/loans.test.ts' } });
-      await a.refused('add', { use_case_test: { id: 'TL-LEND-INV01-T01', title: 'Under the wrong kind', uc_requirement_id: 'TL-LEND-INV01', level: 'service', state: 'not automated yet' } });
+      await a.ok('add', { invariant_test: { id: 'TL-LEND-INV01-T', title: 'One active loan per tool', invariant_id: 'TL-LEND-INV01', level: 'integration', state: 'automated', file: 'test/loans.test.ts', when: 'A second loan opens for a tool on an active loan', then: 'It is refused' } });
+      await a.ok('add', { use_case_test: { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/loans.test.ts', when: 'A member borrows a tool that is on loan', then: 'The loan is refused' } });
+      await a.refused('add', { use_case_test: { id: 'TL-LEND-INV01-T01', title: 'Under the wrong kind', uc_requirement_id: 'TL-LEND-INV01', level: 'service', state: 'not automated yet', when: 'A second loan opens', then: 'It is refused' } });
       // S02: the requirements sorted into a group.
       await a.ok('set', { uc_requirement: { id: 'TL-LEND-UC01-R01', group_name: 'Refusals' } });
       await a.ok('set', { uc_requirement: { id: 'TL-LEND-UC01-R02', group_name: 'Refusals' } });
       expect(data(a.tl, 'uc_requirement').map((r) => r.group_name)).toEqual(['Refusals', 'Refusals']);
       // S03: the data set the tests start from, reported until a test starts from it and its file exists.
-      await a.ok('add', { test_data_set: { id: 'TL-LEND-TD01', title: 'One tool on loan', domain_id: 'TL-LEND', records: 'One member, one tool on loan.', file: 'test/seed.ts' } });
+      await a.ok('add', { test_data_set: { id: 'TL-LEND-TD01', title: 'One tool on loan', domain_id: 'TL-LEND', environment: 'The test database.', records: 'One member, one tool on loan.', prepare: 'Run the seed.', reset: 'Drop the database.', file: 'test/seed.ts', description: 'A tool already lent, for the tests that refuse a second loan.' } });
       expect(found(await a.check(), 'test-data-set-unused')).toEqual([expect.stringMatching(/^TL-LEND-TD01: /)]);
       await a.ok('link', { source: 'TL-LEND-INV01-T', relation: 'starts_from', target: 'TL-LEND-TD01' });
       const linked = await a.check();
@@ -345,15 +345,15 @@ describe('Authoring flows through the MCP tools', () => {
   });
 
   it('LA-AUT-UC16-FL04-T write the engineering standards the code follows through the MCP tools', async () => {
-    await walk([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' })], async (a) => {
+    await walk([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts', description: 'Opens the loan in one transaction.' })], async (a) => {
       a.tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
       a.tl.write('test/standards.test.ts', "it('TL-STD-LOG-R01-T01 no console.log in src');\n");
       // S01: a standard and its rule.
-      await a.ok('add', { standard: { id: 'TL-STD-LOG', title: 'Logging', product_id: 'TL' } });
+      await a.ok('add', { standard: { id: 'TL-STD-LOG', title: 'Logging', product_id: 'TL', description: 'How the code logs what it does.' } });
       await a.ok('add', { standard_rule: { id: 'TL-STD-LOG-R01', title: 'No console.log', standard_id: 'TL-STD-LOG', statement: 'Code MUST log through the logger, never console.log.' } });
       // S02: the technical record that meets it, and the test that proves it.
       await a.ok('link', { source: 'TL-LEND-CMD01-H', relation: 'meets', target: 'TL-STD-LOG-R01' });
-      await a.ok('add', { standard_rule_test: { id: 'TL-STD-LOG-R01-T01', title: 'No console.log in src', standard_rule_id: 'TL-STD-LOG-R01', level: 'unit', state: 'automated', file: 'test/standards.test.ts' } });
+      await a.ok('add', { standard_rule_test: { id: 'TL-STD-LOG-R01-T01', title: 'No console.log in src', standard_rule_id: 'TL-STD-LOG-R01', level: 'unit', state: 'automated', file: 'test/standards.test.ts', when: 'The test reads every file under src', then: 'No file calls console.log' } });
       // S03: the standard with its rule, what meets it and its test.
       expect(await a.ok('show', { id: 'TL-STD-LOG' })).toContain('TL-STD-LOG-R01 (standard_rule): No console.log');
       const rule = await a.ok('show', { id: 'TL-STD-LOG-R01' });
@@ -369,8 +369,8 @@ describe('Authoring flows through the MCP tools', () => {
       { op: 'add', table: 'entity_field', row: { entity_id: 'TL-LEND-EN01', position: 2, name: 'Tool ID', meaning: 'The tool lent.', type: 'text', required: true } },
     ], async (a) => {
       // S01: the technical records under the design records they implement, naming their file.
-      await a.ok('add', { command_handler: { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' } });
-      await a.ok('add', { repository: { id: 'TL-LEND-REPO01', title: 'Loans', domain_id: 'TL-LEND', file: 'src/loans.ts' } });
+      await a.ok('add', { command_handler: { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts', description: 'Opens the loan in one transaction.' } });
+      await a.ok('add', { repository: { id: 'TL-LEND-REPO01', title: 'Loans', domain_id: 'TL-LEND', file: 'src/loans.ts', description: 'Keeps loans in one table and reads them by tool.' } });
       await a.ok('link', { source: 'TL-LEND-REPO01', relation: 'persists', target: 'TL-LEND-A1' });
       expect(found(await a.check(), 'technical-file-missing').sort()).toEqual([expect.stringMatching(/^TL-LEND-CMD01-H: /), expect.stringMatching(/^TL-LEND-REPO01: /)]);
       a.tl.write('src/loans.ts', '// TL-LEND-CMD01-H TL-LEND-REPO01\n');
@@ -387,17 +387,17 @@ describe('Authoring flows through the MCP tools', () => {
   it('LA-AUT-UC18-FL04-T write the views, endpoints and integrations a flow reaches through the MCP tools', async () => {
     await walk([
       ...LENDING,
-      add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app' }),
+      add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.' }),
       add('flow', { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }),
       add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
     ], async (a) => {
       // S01: an endpoint under the command it exposes.
-      await a.ok('add', { endpoint: { id: 'TL-LEND-EP01', title: 'POST /loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans' } });
+      await a.ok('add', { endpoint: { id: 'TL-LEND-EP01', title: 'POST /loans', command_id: 'TL-LEND-CMD01', method: 'POST', route: '/loans', description: 'Opens a loan from the desk.' } });
       // S02: view requirements under views and API requirements under endpoints.
-      await a.ok('add', { view: { id: 'TL-V01', title: 'Loan desk', route: '/loans' } });
+      await a.ok('add', { view: { id: 'TL-V01', title: 'Loan desk', route: '/loans', description: 'Where the librarian opens and closes loans.' } });
       await a.ok('add', { view_requirement: { id: 'TL-V01-R01', title: 'The due date shows', view_id: 'TL-V01', statement: 'The desk MUST show the loan\'s due date.' } });
       await a.ok('add', { api_requirement: { id: 'TL-LEND-EP01-R01', title: 'A tool on loan is refused', endpoint_id: 'TL-LEND-EP01', statement: 'The endpoint MUST answer 409 for a tool on loan.' } });
-      await a.ok('add', { integration: { id: 'TL-INT01', title: 'Mail', system: 'The mail service' } });
+      await a.ok('add', { integration: { id: 'TL-INT01', title: 'Mail', system: 'The mail service', description: 'Sends the library\'s mail to members.' } });
       // S03: the check reports the view and integration nothing uses, until a step links them.
       const unused = await a.check();
       expect([...found(unused, 'view-unused'), ...found(unused, 'integration-unused')]).toEqual([expect.stringMatching(/^TL-V01: /), expect.stringMatching(/^TL-INT01: /)]);
@@ -411,9 +411,9 @@ describe('Authoring flows through the MCP tools', () => {
   it('LA-AUT-UC20-FL04-T sort a domain\'s rules by what they do through the MCP tools', async () => {
     await walk([
       ...LENDING,
-      add('read_model', { id: 'TL-LEND-RM01', title: 'Free tools', domain_id: 'TL-LEND' }),
-      add('query', { id: 'TL-LEND-QRY01', title: 'List free tools', read_model_id: 'TL-LEND-RM01' }),
-      add('value_object', { id: 'TL-VO01', title: 'Email address' }),
+      add('read_model', { id: 'TL-LEND-RM01', title: 'Free tools', domain_id: 'TL-LEND', description: 'The tools on no active loan.' }),
+      add('query', { id: 'TL-LEND-QRY01', title: 'List free tools', read_model_id: 'TL-LEND-RM01', description: 'The free tools, by name.' }),
+      add('value_object', { id: 'TL-VO01', title: 'Email address', description: 'Where a member gets mail.' }),
       { op: 'add', table: 'value_object_field', row: { value_object_id: 'TL-VO01', position: 1, name: 'Address', meaning: 'The address as typed.', type: 'text', required: true } },
       { op: 'add', table: 'entity_field', row: { entity_id: 'TL-LEND-EN01', position: 2, name: 'Borrower email', meaning: 'Where reminders go.', type_value_object_id: 'TL-VO01', required: true } },
       add('table', { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loan', storage: 'table' }),
@@ -436,11 +436,11 @@ describe('Authoring flows through the MCP tools', () => {
   it('LA-AUT-UC21-FL04-T model read models, queries, domain services and terms through the MCP tools', async () => {
     await walk(LENDING, async (a) => {
       // S01: the read model with its fields, the aggregate it reads, and its query; another domain's query is refused.
-      await a.ok('add', { read_model: { id: 'TL-LEND-RM01', title: 'Loans by member', domain_id: 'TL-LEND' } });
+      await a.ok('add', { read_model: { id: 'TL-LEND-RM01', title: 'Loans by member', domain_id: 'TL-LEND', description: 'Each member\'s open loans.' } });
       await a.ok('add', { read_model_field: { read_model_id: 'TL-LEND-RM01', position: 1, name: 'Loan', meaning: 'Which loan.', type_aggregate_id: 'TL-LEND-A1', required: true } });
       await a.ok('link', { source: 'TL-LEND-RM01', relation: 'reads', target: 'TL-LEND-A1' });
-      await a.ok('add', { query: { id: 'TL-LEND-QRY01', title: 'List a member\'s loans', read_model_id: 'TL-LEND-RM01' } });
-      await a.refused('add', { query: { id: 'TL-SHOP-QRY01', title: 'Another domain\'s query', read_model_id: 'TL-LEND-RM01' } });
+      await a.ok('add', { query: { id: 'TL-LEND-QRY01', title: 'List a member\'s loans', read_model_id: 'TL-LEND-RM01', description: 'One member\'s loans, the latest first.' } });
+      await a.refused('add', { query: { id: 'TL-SHOP-QRY01', title: 'Another domain\'s query', read_model_id: 'TL-LEND-RM01', description: 'A query filed under the wrong domain.' } });
       // S02: a domain service the query calls, and a term.
       await a.ok('add', { domain_service: { id: 'TL-LEND-DS01', title: 'Late fee', domain_id: 'TL-LEND', statement: 'The fee MUST be a day rate times the days late.' } });
       await a.ok('link', { source: 'TL-LEND-QRY01', relation: 'calls', target: 'TL-LEND-DS01' });
@@ -460,7 +460,7 @@ describe('Authoring flows through the MCP tools', () => {
       // S02: the capability that serves it.
       await a.ok('link', { source: 'TL-LEND-CAP01', relation: 'serves', target: 'TL-BO01' });
       // S03: the test that measures it.
-      await a.ok('add', { use_case_test: { id: 'TL-LEND-UC01-R01-T01', title: 'Loans are counted per tool', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet' } });
+      await a.ok('add', { use_case_test: { id: 'TL-LEND-UC01-R01-T01', title: 'Loans are counted per tool', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'Members borrow tools for a month', then: 'The loans are counted per tool' } });
       await a.ok('link', { source: 'TL-BO01', relation: 'measured_by', target: 'TL-LEND-UC01-R01-T01' });
       const shown = await a.ok('show', { id: 'TL-BO01' });
       expect(shown).toContain('Served by TL-LEND-CAP01');
@@ -471,7 +471,7 @@ describe('Authoring flows through the MCP tools', () => {
 
 describe('Checking flows through the MCP tools', () => {
   it('LA-CHK-UC02-FL04-T add a check through the MCP tools', async () => {
-    await walk([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' })], async (a) => {
+    await walk([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' })], async (a) => {
       // S01: the check as one row through the command layer.
       expect(await a.ok('add', { check: NO_COMMAND })).toContain('Added check aggregate-without-command');
       expect(a.tl.read('data/check.jsonl')).toContain('"name":"aggregate-without-command"');
@@ -486,14 +486,14 @@ describe('Checking flows through the MCP tools', () => {
     await walk([
       ...LENDING,
       add('table', { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loan', storage: 'table' }),
-      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' }),
-      add('command', { id: 'TL-LEND-CMD02', title: 'Open a reminder', aggregate_id: 'TL-LEND-A1' }),
+      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
+      add('command', { id: 'TL-LEND-CMD02', title: 'Open a reminder', aggregate_id: 'TL-LEND-A1', description: 'Sets a reminder for the loan\'s due date.' }),
       { op: 'add', table: 'command_change', row: { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' } },
       add('policy', { id: 'TL-LEND-PO01', title: 'Remind on loan', command_id: 'TL-LEND-CMD02', statement: 'Whenever a loan is opened, the library MUST open its reminder.' }),
       link('TL-LEND-PO01', 'hears', 'TL-LEND-EV01'),
       add('event_type', { id: 'TL-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'TL-LEND-EV01', delivery: 'in process' }),
-      add('view', { id: 'TL-V01', title: 'Loan page' }),
-      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'integration', state: 'not automated yet' }),
+      add('view', { id: 'TL-V01', title: 'Loan page', description: 'Shows one loan and its due date.' }),
+      add('use_case_test', { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'integration', state: 'not automated yet', when: 'A member borrows a tool that is on loan', then: 'The loan is refused' }),
     ], async (a) => {
       // S01, S03: the check tool on the product; what nothing uses is an error.
       const checked = await a.check();
@@ -513,7 +513,7 @@ describe('Checking flows through the MCP tools', () => {
       await a.ok('set', { event_type: { id: 'TL-LEND-EV01-ET', delivery: 'outbox' } });
       expect((await a.check()).problems.filter((p) => ['view-unused', 'test-level-not-allowed', 'event-not-by-outbox'].includes(p.check))).toEqual([]);
       // S02: a test given its parent's ID is refused once, naming its rule, file and line, and nothing that follows from it.
-      appendFileSync(path.join(a.tl.root, 'data', 'use_case_test.jsonl'), '{"id":"TL-LEND-UC01-R01","title":"Given its parent\'s ID","uc_requirement_id":"TL-LEND-UC01-R01","level":"service","state":"not automated yet"}\n');
+      appendFileSync(path.join(a.tl.root, 'data', 'use_case_test.jsonl'), '{"id":"TL-LEND-UC01-R01","title":"Given its parent\'s ID","uc_requirement_id":"TL-LEND-UC01-R01","level":"service","state":"not automated yet","when":"A member borrows a tool that is on loan","then":"The loan is refused"}\n');
       const refused = await a.check();
       expect(refused.problems).toHaveLength(1);
       expect(refused.problems[0]).toMatchObject({ severity: 'error', check: 'data-refused' });
@@ -522,7 +522,7 @@ describe('Checking flows through the MCP tools', () => {
   });
 
   it('LA-CHK-UC05-FL04-T add a product\'s own checks through the MCP tools', async () => {
-    await walk([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' })], async (a) => {
+    await walk([...LENDING, add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' })], async (a) => {
       // S02: a house rule as a check row with the product's product_id.
       await a.ok('add', { check: NO_COMMAND });
       expect(a.tl.read('data/check.jsonl')).toContain('"product_id":"TL"');
@@ -532,13 +532,13 @@ describe('Checking flows through the MCP tools', () => {
       expect(found(checked, 'aggregate-without-command')).toEqual(['TL-LEND-A2: Aggregate TL-LEND-A2 has no command.']);
       expect(names.lastIndexOf('aggregate-without-command')).toBe(names.length - 1);
       // S04: the Agent fixes what it finds and checks again.
-      await a.ok('add', { command: { id: 'TL-LEND-CMD02', title: 'Add a tool', aggregate_id: 'TL-LEND-A2' } });
+      await a.ok('add', { command: { id: 'TL-LEND-CMD02', title: 'Add a tool', aggregate_id: 'TL-LEND-A2', description: 'Puts a named tool in the catalog.' } });
       expect(found(await a.check(), 'aggregate-without-command')).toEqual([]);
       // S05: a check named like one of Lathe's is refused, naming lathe/data/check.jsonl.
       expect(await a.refused('add', { check: { ...NO_COMMAND, name: 'view-unused' } })).toContain('lathe/data/check.jsonl');
       // S06: a product check whose query fails is an error naming it, and the other checks still run.
       await a.ok('add', { check: { ...NO_COMMAND, name: 'broken-house-rule', position: 2, query: 'SELECT id AS record, title AS message FROM no_such_table' } });
-      await a.ok('add', { view: { id: 'TL-V01', title: 'Loan page' } });
+      await a.ok('add', { view: { id: 'TL-V01', title: 'Loan page', description: 'Shows one loan and its due date.' } });
       const failing = await a.check();
       expect(failing.problems.filter((p) => p.message.includes('broken-house-rule')).map((p) => p.severity)).toEqual(['error']);
       expect(found(failing, 'view-unused')).toHaveLength(1);
@@ -552,8 +552,8 @@ describe('Checking flows through the MCP tools', () => {
   it('LA-CHK-UC06-FL04-T keep each level of the spec a useful size through the MCP tools', async () => {
     await walk([
       ...LENDING,
-      add('entity', { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true }),
-      add('entity', { id: 'TL-LEND-EN03', title: 'Renewal', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true }),
+      add('entity', { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true, description: 'The tool coming back.' }),
+      add('entity', { id: 'TL-LEND-EN03', title: 'Renewal', aggregate_id: 'TL-LEND-A1', role: 'child', in_root_table: true, description: 'The loan running longer.' }),
       link('TL-LEND-EN01', 'has_many', 'TL-LEND-EN02'),
       link('TL-LEND-EN01', 'has_many', 'TL-LEND-EN03'),
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }),
@@ -569,7 +569,7 @@ describe('Checking flows through the MCP tools', () => {
       expect(found(checked, 'lone-child').sort()).toEqual([expect.stringMatching(/^TL-LEND-CAP01: /), expect.stringMatching(/^TL-LEND-UC01: .*"Dates"/)]);
       // S04: the Agent raises the limits, adds a use case, clears the group and checks again.
       await a.ok('set', { product_setting: { product_id: 'TL', max_children: 15, max_entities_per_aggregate: 7 } });
-      await a.ok('add', { use_case: { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01' } });
+      await a.ok('add', { use_case: { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' } });
       await a.ok('set', { uc_requirement: { id: 'TL-LEND-UC01-R04', group_name: null } });
       expect((await a.check()).problems.filter((p) => ['too-many-children', 'aggregate-too-large', 'lone-child'].includes(p.check))).toEqual([]);
     });
