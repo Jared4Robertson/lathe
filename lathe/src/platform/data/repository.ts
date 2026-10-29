@@ -49,7 +49,7 @@ export abstract class AggregateRepository<M extends { readonly root: string }> {
    */
   save(instance: M): void {
     const before = this.loaded.get(instance) ?? this.tx.refuse('repository', `${this.name} saves only an instance it loaded or created`);
-    const after = this.keyed(this.rowsOf(instance));
+    const after = this.keyed(this.rowsOf(instance), true);
     const removed: Located[] = [];
     for (const [table, rows] of before) {
       for (const [key, row] of rows) {
@@ -87,12 +87,19 @@ export abstract class AggregateRepository<M extends { readonly root: string }> {
     this.loaded.delete(instance);
   }
 
-  // The rows by table and key.
-  private keyed(rows: InstanceRows): Map<string, Map<string, Row>> {
+  // The rows by table and key. Saving, an instance holding two rows with one key is refused: an Add that reuses a key
+  // its own instance already holds is a duplicate, never a change.
+  private keyed(rows: InstanceRows, saving = false): Map<string, Map<string, Row>> {
     const keyed = new Map<string, Map<string, Row>>();
     for (const [table, list] of rows) {
       const description = this.tx.schema.tables[table];
-      keyed.set(table, new Map(list.map((row) => [rowKey(description, row), row])));
+      const byKey = new Map<string, Row>();
+      for (const row of list) {
+        const key = rowKey(description, row);
+        if (saving && byKey.has(key)) this.tx.refuse('primary-key', `${table} ${describeKey(description, row)} already exists`);
+        byKey.set(key, row);
+      }
+      keyed.set(table, byKey);
     }
     return keyed;
   }
