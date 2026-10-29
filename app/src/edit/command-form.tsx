@@ -169,7 +169,8 @@ export function changeInput(index: SpecIndex, specs: FieldSpec[], draft: Draft, 
   const input: Record<string, unknown> = { ...key };
   for (const spec of specs) {
     const value = draftValue(index, spec, draft);
-    const was = current[spec.field];
+    // Part rows are compared by the columns the form shows, as their draft holds them.
+    const was = 'columns' in spec ? ((current[spec.field] ?? []) as Record<string, unknown>[]).map((row) => partValue(index, spec, Object.fromEntries(spec.columns.map((c) => [c, row[c] === undefined || row[c] === null ? '' : String(row[c])])))) : current[spec.field];
     if ('many' in spec ? same([...(value as string[])].sort(), [...((was ?? []) as string[])].sort()) : same(value, was)) continue;
     input[spec.field] = value ?? (clearable.includes(spec.field) ? null : '');
   }

@@ -41,7 +41,7 @@ describe('LA-V122-R02-T01 the Pattern editor writes only through the aggregate\'
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add pattern rule', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit DM-PAT-AUDIT' });
-    await user.click(within(form).getByRole('button', { name: 'Remove Settings 2' }));
+    await user.click(within(form).getByRole('button', { name: 'Remove Settings: row 2' }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/pattern/change-pattern', input: { id: 'DM-PAT-AUDIT', settings: [{ name: 'retention', meaning: 'How long records are kept.' }] } }]));
     expect(writes).toEqual([]);
