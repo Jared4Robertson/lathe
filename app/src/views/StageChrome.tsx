@@ -6,12 +6,13 @@ import { COMMANDS, WALK_COMMANDS } from '../shell/keymap';
 import { Tooltip } from '../shell/Tooltip';
 import { KeyControl } from '../graph/key';
 import { MOVES, type Move } from './levels';
+import { ChangesTools } from '../changes/ChangesTools';
 
 // One stage chrome (LA-PAT-APP-UX-R21): every stage (Graph, ERD, Trace) has the same controls in the same places, built
 // from these two components, so no stage can drift.
 // - StageToolbar floats at the top of the open space, centered on the stage: first the shared controls in a fixed order
 //   (the step buttons Left, Right, Up and Down, each showing its letter, then Out and In between the levels, then Frame),
-//   then the stage's own, then its Key popover. Each step runs the stage's walk (views/levels.ts) through the commands
+//   then the Changes controls every stage shares (changes/ChangesTools.tsx), then the stage's own, then its Key popover. Each step runs the stage's walk (views/levels.ts) through the commands
 //   layer, as its keys do. It is one row at every width (LA-PAT-APP-UX-R08): while it does not fit it steps down a tier
 //   before paint, names hidden behind icons, then the stage's narrow form, then the steps and the stage's foldable
 //   controls in a More menu.
@@ -94,7 +95,7 @@ export function StageToolbar({ can, walkLabels = {}, own, stageKey, measureKey }
             <Tooltip label="The steps, and more">
               <summary aria-label="More: the steps and more"><Icon name="dots" size={16} /></summary>
             </Tooltip>
-            <div className="stage-more-body">{steps}{mine.fold}</div>
+            <div className="stage-more-body">{steps}<ChangesTools picker />{mine.fold}</div>
           </details>
         ) : steps}
         <Tooltip label="Frame the focus" command="graphFit">
@@ -102,6 +103,7 @@ export function StageToolbar({ can, walkLabels = {}, own, stageKey, measureKey }
             <Icon name="focus" size={14} /><span className="stage-frame-name">Frame</span>
           </Button>
         </Tooltip>
+        {!folded && <ChangesTools picker={name === 'full'} />}
         {mine.controls}
         {!folded && mine.fold}
         <div className="stage-toolbar-end">

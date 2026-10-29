@@ -24,7 +24,6 @@ import { Button } from '../components/Button';
 import { useViewState } from '../chat/appRequests';
 import { parseFormatPage } from '../format/reference';
 import { overlaysOf, pageHref } from './overlays';
-import { ChangesTools } from '../changes/ChangesTools';
 import { useChanges } from '../changes/changes';
 import { useLiveVersion } from '../changes/marks';
 
@@ -312,7 +311,6 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const stageBox = (
     <div ref={stageEl} className="focus-stage" data-stage={stage} aria-label={`${STAGE_LABELS[stage]} stage`} role="region">
       {content[stage]}
-      <ChangesTools search={search} />
     </div>
   );
 
