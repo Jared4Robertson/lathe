@@ -404,8 +404,9 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 /* The toolbar's narrower forms (TOOLBAR_TIERS): compact hides the names and letters beside the icons and tightens the
    steps, narrow lets a stage show its own controls narrower (the Graph's layouts by their first letter), menu moves the
    steps and a stage's foldable controls into More. The names stay the accessible ones. */
-.stage-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-filters-name, .stage-key-name, .stage-frame-name, .stage-step-letter) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.stage-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-filters-name, .stage-key-name, .stage-frame-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .stage-toolbar:not([data-tier="full"]) { gap: 6px; }
+.stage-toolbar:is([data-tier="narrow"], [data-tier="menu"]) .stage-step-letter { display: none; }
 .stage-toolbar:not([data-tier="full"]) .stage-step { padding-inline: 4px; }
 .stage-more { flex: none; }
 .stage-more > summary { cursor: pointer; display: inline-flex; align-items: center; padding: 3px 4px; border-radius: 5px; list-style: none; }
@@ -1005,8 +1006,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 .wiki-panel-handle { position: absolute; z-index: 3; top: var(--sheet-radius); bottom: var(--sheet-radius); left: calc(-1 * var(--float-inset)); width: var(--float-inset); display: grid; grid-template-columns: minmax(0, 1fr); }
 .wiki-panel.is-sheet { position: static; width: auto; max-width: none; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .wiki-panel.is-sheet::before { content: none; }
-/* A stage's toolbar floats inside the open space, at its top (views/StageChrome.tsx). */
-.stage-tools { position: absolute; z-index: 1; box-sizing: border-box; left: var(--open-left, 0px); max-width: calc(100% - var(--open-left, 0px) - var(--open-right, 0px)); border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
+/* A stage's toolbar floats inside the open space, at its top (views/StageChrome.tsx), above everything the stage draws (its column names, camera and edge hints), so its popovers open over them. */
+.stage-tools { position: absolute; z-index: 8; box-sizing: border-box; left: var(--open-left, 0px); max-width: calc(100% - var(--open-left, 0px) - var(--open-right, 0px)); border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
 /* A stage's own toolbar stays in one spot, centered on the whole stage whatever panels are open; on a narrow window it
    narrows (its tiers fold its controls) rather than move, keeping clear of the nav and the chat on both sides. */
 .stage-tools[data-stage-tools="top"] { top: var(--open-top, 0px); padding: 6px 10px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 2 * max(var(--open-left, 0px), var(--chat-space, 0px))); }
@@ -1121,8 +1122,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 @media (max-width: 380px) { .view-segment-label { display: none; } }
 :is(.page-bar-pages, .view-segment, .sheet-handle, .pages-open):focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 
-/* On a phone the page's own header keeps its padding small, and graph and model headers wrap their tools. */
-.app.is-narrow .stage-toolbar { flex-wrap: wrap; row-gap: 4px; }
+/* On a phone the page's own header keeps its padding small; a stage's toolbar folds by its tiers, as everywhere. */
 .app.is-narrow .placeholder { padding: 16px; }
 
 /* The nav sheet: the whole screen, the rail (with two or more products) kept at its left, sliding in from the left edge. */
