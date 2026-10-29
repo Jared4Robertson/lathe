@@ -6,8 +6,9 @@
 // is logged and leaves its event undelivered, for the next relay run: the reaction is never lost, and a handler
 // may see an event more than once. This is eventual consistency, done in-process for the example, with no
 // message broker.
+// The outbox reads and writes only the outbox table (TL-LEND-TB01), which database.ts creates.
+import type { Database, Row } from './database.ts';
 import type { Clock, Condition } from './model.ts';
-import type { Store } from './store.ts';
 
 /** TL-LEND-EV01-ET: a librarian registered a new member. */
 export interface MemberRegistered {
@@ -79,14 +80,14 @@ const logFailure: HandlerFailure = (error, event) => {
 
 /** The outbox: saves events with their command's change, and relays them to their handlers after commit. */
 export class Outbox {
-  private readonly store: Store;
+  private readonly db: Database;
   private readonly now: Clock;
   private readonly onFailure: HandlerFailure;
   private readonly handlers = new Map<EventName, ((event: DomainEvent) => void)[]>();
   private relaying = false;
 
-  constructor(store: Store, now: Clock, onFailure: HandlerFailure = logFailure) {
-    this.store = store;
+  constructor(db: Database, now: Clock, onFailure: HandlerFailure = logFailure) {
+    this.db = db;
     this.now = now;
     this.onFailure = onFailure;
   }
@@ -99,7 +100,17 @@ export class Outbox {
 
   /** Saves an event to the outbox table. Call it inside the transaction that changes its aggregate. */
   save(event: DomainEvent): void {
-    this.store.saveEvent(event.type, JSON.stringify(event), this.now().toISOString());
+    this.db.sqlite
+      .prepare('INSERT INTO outbox (type, event, raised_at) VALUES (?, ?, ?)')
+      .run(event.type, JSON.stringify(event), this.now().toISOString());
+  }
+
+  /** Every event of the given types the outbox keeps, delivered or not, oldest first. */
+  history<N extends EventName>(...names: N[]): Extract<DomainEvent, { type: N }>[] {
+    const rows = this.db.sqlite
+      .prepare(`SELECT event FROM outbox WHERE type IN (${names.map(() => '?').join(', ')}) ORDER BY id`)
+      .all(...names) as Row[];
+    return rows.map((r) => JSON.parse(String(r.event)) as Extract<DomainEvent, { type: N }>);
   }
 
   /**
@@ -113,14 +124,24 @@ export class Outbox {
     this.relaying = true;
     try {
       let after = 0;
-      for (let next = this.store.nextUndeliveredEvent(after); next; next = this.store.nextUndeliveredEvent(after)) {
+      for (let next = this.nextUndelivered(after); next; next = this.nextUndelivered(after)) {
         after = next.id;
         const event = JSON.parse(next.event) as DomainEvent;
-        if (this.deliver(event)) this.store.markEventDelivered(next.id, this.now().toISOString());
+        if (this.deliver(event)) {
+          this.db.sqlite.prepare('UPDATE outbox SET delivered_at = ? WHERE id = ?').run(this.now().toISOString(), next.id);
+        }
       }
     } finally {
       this.relaying = false;
     }
+  }
+
+  /** The oldest undelivered event after `afterId`. */
+  private nextUndelivered(afterId: number): { id: number; event: string } | undefined {
+    const r = this.db.sqlite
+      .prepare('SELECT id, event FROM outbox WHERE delivered_at IS NULL AND id > ? ORDER BY id LIMIT 1')
+      .get(afterId) as Row | undefined;
+    return r && { id: Number(r.id), event: String(r.event) };
   }
 
   /** Hands the event to each of its handlers; false when one fails. */
