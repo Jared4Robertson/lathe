@@ -3,7 +3,6 @@
 // whole; nothing in it belongs to another aggregate, and it holds only the links its own records start.
 import type { Slice } from '../../platform/commands/definition.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
-import type { Transaction } from '../../platform/data/transaction.ts';
 import type { FlowRow, FlowStepRow, FlowTestRow, UcRequirementRow, UseCaseRow, UseCaseTestRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
@@ -11,11 +10,6 @@ export const USE_CASE_AGGREGATE = 'LA-AUT-A11';
 
 /** How the interfaces reach the aggregate's commands: `lathe use-case`, the use_case_ tools, /api/use-case/. */
 export const USE_CASE_SLICE: Slice = { aggregate: USE_CASE_AGGREGATE, name: 'use-case' };
-
-/** Use case changed (LA-AUT-EV31): every command of the aggregate raises it for the use case it changed. */
-export function useCaseChanged(tx: Transaction, useCase: UseCase): void {
-  tx.raise({ event: 'LA-AUT-EV31', root: useCase.root });
-}
 
 /**
  * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.

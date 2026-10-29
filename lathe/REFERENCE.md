@@ -131,7 +131,7 @@ A part of the product with its own model, language and owner, for one business c
 The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
-- **Children:** [`entity`](#kind-entity), [`invariant`](#kind-invariant), [`domain_event`](#kind-domain_event), [`command`](#kind-command)
+- **Children:** [`entity`](#kind-entity), [`invariant`](#kind-invariant), [`domain_event`](#kind-domain_event)
 - **Obligation:** no
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
@@ -162,7 +162,7 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 A record the domain keeps, with an identity: its aggregate's root or one of its children. Its fields are entity_field rows; the value objects it has are the ones its fields are typed with.
 
 - **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
-- **Children:** [`data_model`](#kind-data_model), [`table`](#kind-table)
+- **Children:** [`command`](#kind-command), [`data_model`](#kind-data_model), [`table`](#kind-table)
 - **Obligation:** no
 - **ID:** `<P>-<D>-EN<nn>`, such as `TL-LEND-EN01`; it starts with its domain's ID
 - **Links out:** Has many ([`has_many`](#relation-has_many)), Has one ([`has_one`](#relation-has_one))
@@ -417,9 +417,9 @@ One field a domain event carries, in order. A published event's fields are a con
 
 ### Command (`command`)
 
-A request to change exactly one aggregate, its parent. It checks specifications, raises events and may call domain services, all of its own domain.
+A request to change exactly one aggregate: the one its entity belongs to. It sits under the entity it changes, and checks specifications, raises events and may call domain services, all of its own domain.
 
-- **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
+- **Parents:** [`entity`](#kind-entity) (`entity_id`)
 - **Children:** [`policy`](#kind-policy), [`endpoint`](#kind-endpoint), [`command_handler`](#kind-command_handler)
 - **Obligation:** no
 - **ID:** `<P>-<D>-CMD<nn>`, such as `TL-LEND-CMD01`; it starts with its domain's ID
@@ -434,7 +434,7 @@ A request to change exactly one aggregate, its parent. It checks specifications,
 | --- | --- | --- | --- |
 | `id` | VARCHAR → `record_id` | yes | The command's ID, such as TL-LEND-CMD01. |
 | `title` | VARCHAR | yes | What it asks for, in the imperative, such as Open a loan. |
-| `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The aggregate it changes. |
+| `entity_id` | VARCHAR → [`entity`](#table-entity) | yes | The entity it changes, the root or a child; its aggregate is the one the command changes. |
 | `description` | VARCHAR | yes | What it changes and when it is refused, in a sentence or two; how its handler does it belongs to the handler. |
 
 - **Key:** `id`

@@ -44,7 +44,7 @@ describe('checks', () => {
       check: [{
         name: 'every-loan-command', product_id: 'EX', position: 1, severity: 'warning',
         summary: 'A made-up check, added with no change to the engine.', explanation: 'It reports each command of the Loan aggregate. Remove it.',
-        query: "SELECT id AS record, 'Command ' || id || ' changes a loan.' AS message FROM command WHERE aggregate_id = 'EX-LEND-A1' ORDER BY id",
+        query: "SELECT c.id AS record, 'Command ' || c.id || ' changes a loan.' AS message FROM command c JOIN entity e ON e.id = c.entity_id WHERE e.aggregate_id = 'EX-LEND-A1' ORDER BY c.id",
       }],
     }));
     const loaded = await loadWorkspace(own);
@@ -148,13 +148,13 @@ describe('loading', () => {
   it('LA-CHK-UC01-R04-T01 A product whose data the store refuses loads no records, and each refusal is a data-refused error', async () => {
     const broken = await build(complete());
     const file = path.join(broken, 'data', 'command.jsonl');
-    writeFileSync(file, readFileSync(file, 'utf8').replace('"aggregate_id":"EX-LEND-A2"', '"aggregate_id":"EX-LEND-A9"'));
+    writeFileSync(file, readFileSync(file, 'utf8').replace('"entity_id":"EX-LEND-EN03"', '"entity_id":"EX-LEND-EN09"'));
     const loaded = await loadWorkspace(broken);
     expect(loaded.records).toEqual([]);
     expect(loaded.stages).toEqual([]);
     expect(loaded.problems.length).toBeGreaterThan(0);
     expect(loaded.problems.every((p) => p.check === 'data-refused' && p.severity === 'error')).toBe(true);
-    expect(loaded.problems.map((p) => p.message).join('\n')).toContain('EX-LEND-A9');
+    expect(loaded.problems.map((p) => p.message).join('\n')).toContain('EX-LEND-EN09');
   });
 
   /** The complete product with a kind of its own, memo, and one memo. */

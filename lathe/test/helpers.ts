@@ -176,9 +176,9 @@ export function complete(): Data {
       { domain_event_id: 'EX-LEND-EV02', position: 1, name: 'Tool', meaning: 'Which tool.', type_aggregate_id: 'EX-LEND-A2', required: true },
     ],
     command: [
-      { id: 'EX-LEND-CMD01', title: 'Open a loan', aggregate_id: 'EX-LEND-A1', description: 'Lends a free tool to a member.' },
-      { id: 'EX-LEND-CMD02', title: 'Add a tool', aggregate_id: 'EX-LEND-A2', description: 'Puts a named tool in the catalog.' },
-      { id: 'EX-LEND-CMD03', title: 'Remind the borrower', aggregate_id: 'EX-LEND-A1', description: 'Mails the borrower their due date.' },
+      { id: 'EX-LEND-CMD01', title: 'Open a loan', entity_id: 'EX-LEND-EN01', description: 'Lends a free tool to a member.' },
+      { id: 'EX-LEND-CMD02', title: 'Add a tool', entity_id: 'EX-LEND-EN03', description: 'Puts a named tool in the catalog.' },
+      { id: 'EX-LEND-CMD03', title: 'Remind the borrower', entity_id: 'EX-LEND-EN01', description: 'Mails the borrower their due date.' },
     ],
     read_model: [{ id: 'EX-LEND-RM01', title: 'Free tools', domain_id: 'EX-LEND', description: 'The tools on no active loan.' }],
     read_model_field: [{ read_model_id: 'EX-LEND-RM01', position: 1, name: 'Tool', meaning: 'A free tool.', type_aggregate_id: 'EX-LEND-A2', required: true }],
@@ -341,7 +341,7 @@ export function sparse(): Data {
     entity: [{ id: 'SP-D-EN01', title: 'Return', aggregate_id: 'SP-D-A1', role: 'child', description: 'The tool coming back.' }],
     value_object: [{ id: 'SP-VO01', title: 'Email address', description: 'Where a member gets mail.' }],
     domain_event: [{ id: 'SP-D-EV01', title: 'Tool added', aggregate_id: 'SP-D-A2', published: false, description: 'A tool joined the catalog.' }],
-    command: [{ id: 'SP-D-CMD01', title: 'Add a tool', aggregate_id: 'SP-D-A2', description: 'Puts a tool in the catalog.' }],
+    command: [{ id: 'SP-D-CMD01', title: 'Add a tool', entity_id: 'SP-D-EN01', description: 'Puts a tool in the catalog.' }],
     read_model: [
       { id: 'SP-D-RM01', title: 'Free tools', domain_id: 'SP-D', description: 'The tools on no loan.' },
       { id: 'SP-D-RM02', title: 'Loans', domain_id: 'SP-D', description: 'Every loan.' },

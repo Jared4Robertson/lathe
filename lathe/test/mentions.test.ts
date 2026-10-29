@@ -63,7 +63,7 @@ describe('IDs in text', () => {
   it('LA-AUT-UC07-R01-T03 Only link tables link records: a link to a record that does not exist is refused, while text naming it is not', async () => {
     const base = { product: [{ id: 'MX', title: 'Mentions', description: 'A product whose text names IDs.' }], domain: [{ id: 'MX-D', title: 'Domain', product_id: 'MX', subdomain_type: 'core', description: 'It reads MX-D-SP99.' }] };
     expect(await refusals(base)).toEqual([]);
-    const command = { aggregate: [{ id: 'MX-D-A1', title: 'Loan', domain_id: 'MX-D', identity: 'Loan ID', description: 'One loan.' }], command: [{ id: 'MX-D-CMD01', title: 'Open', aggregate_id: 'MX-D-A1', description: 'Opens a loan.' }] };
+    const command = { aggregate: [{ id: 'MX-D-A1', title: 'Loan', domain_id: 'MX-D', identity: 'Loan ID', description: 'One loan.' }], entity: [{ id: 'MX-D-EN01', title: 'Loan', aggregate_id: 'MX-D-A1', role: 'root', description: 'The loan itself.' }], command: [{ id: 'MX-D-CMD01', title: 'Open', entity_id: 'MX-D-EN01', description: 'Opens a loan.' }] };
     expect(await refusals({ ...base, ...command, checks: [{ source_id: 'MX-D-CMD01', target_id: 'MX-D-SP99' }] })).toEqual([expect.objectContaining({ rule: 'foreign-key', table: 'checks' })]);
   });
 

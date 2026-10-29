@@ -32,13 +32,15 @@ describe('graph groups', () => {
 
   it('LA-EXP-DS04-T01 LA-V93-R23-T01 A record with several kinds of child in its stage has a group per child kind, labeled with the plural and a count', () => {
     expect(childKinds(index, 'P-D')).toEqual(['aggregate', 'read_model', 'domain_service', 'term', 'capability', 'repository', 'question']);
-    // An aggregate with entities, invariants, events and commands reaches them through a group each.
+    // An aggregate with entities, invariants and events reaches them through a group each.
     expect(groupLabel(index, 'P-D-A3/entity')).toBe('Entities (3)');
-    expect(groupLabel(index, 'P-D-A3/command')).toBe('Commands (2)');
-    // One kind of child: no groups. Shelf holds one entity until a command joins it.
+    expect(groupLabel(index, 'P-D-A3/domain_event')).toBe('Domain events (2)');
+    // One kind of child: no groups. Shelf holds one entity until an event joins it; an entity holds its commands
+    // itself, its only kind of child in its stage.
     expect(isGraphNode(index, 'P-D-A4/entity')).toBe(false);
     expect(isGraphNode(grouped, 'P-D-A4/entity')).toBe(true);
-    expect(groupLabel(grouped, 'P-D-A4/command')).toBe('Commands (1)');
+    expect(groupLabel(grouped, 'P-D-A4/domain_event')).toBe('Domain events (1)');
+    expect(isGraphNode(index, 'P-D-EN03/command')).toBe(false);
     // Stages and folders are groups too.
     expect(groupLabel(index, 'P-D/technical-specification')).toBe('Technical specification (9)');
     expect(groupLabel(index, 'P-D/technical-specification/table')).toBe('Tables (3)');
@@ -72,7 +74,7 @@ describe('graph groups', () => {
     expect(spine(two)).not.toContain('P-D > P-D-Q01');
     // In the map every group holds all its members, right beside it, and spans them exactly.
     const map = graphMap(grouped, 'P');
-    for (const id of ['P-D/domain-model/aggregate', 'P-D-A3/entity', 'P-D-A4/command']) {
+    for (const id of ['P-D/domain-model/aggregate', 'P-D-A3/entity', 'P-D-A4/domain_event']) {
       const g = map.nodes.get(id)!;
       const members = g.children.map((c) => map.nodes.get(c)!);
       expect(members.map((m) => m.id)).toEqual(members.map((m) => m.id).filter((m) => map.nodes.get(m)!.parent === id));
@@ -82,7 +84,7 @@ describe('graph groups', () => {
     expect(map.nodes.get('P-D-A3/entity')!.children).toHaveLength(3);
     // A record with two kinds of children reaches them through a group per kind.
     const shelf = neighborhood(grouped, 'P-D-A4', 1);
-    expect(groups(shelf)).toEqual(['P-D-A4/command', 'P-D-A4/entity', 'P-D/domain-model/aggregate']);
+    expect(groups(shelf)).toEqual(['P-D-A4/domain_event', 'P-D-A4/entity', 'P-D/domain-model/aggregate']);
     expect(records(shelf)).toEqual(['P-D-A4']);
   });
 
@@ -94,7 +96,7 @@ describe('graph groups', () => {
     // A domain: its product, its stages and the open questions' group.
     expect(ids(at('P-D'))).toEqual(['P', 'P-D', ...STAGES, 'P-D/question'].sort());
     // A record with several kinds of children reaches them through their groups.
-    expect(ids(at('P-D-A4'))).toEqual(['P-D-A4', 'P-D-A4/command', 'P-D-A4/entity', 'P-D/domain-model/aggregate']);
+    expect(ids(at('P-D-A4'))).toEqual(['P-D-A4', 'P-D-A4/domain_event', 'P-D-A4/entity', 'P-D/domain-model/aggregate']);
     // A leaf frames only itself and its parent.
     expect(ids(at('P-D-UC01-R01'))).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
     for (const id of ['P-D-CAP01', 'P-D', 'P-D-UC01-R01']) expect(new Set(at(id).edges.map((e) => e.relation))).toEqual(new Set([PARENT]));
@@ -107,9 +109,11 @@ describe('graph groups', () => {
     for (const e of ['P-D/domain-model > P-D/domain-model/aggregate', 'P-D/domain-model/aggregate > P-D-A1', 'P-D/domain-model/aggregate > P-D-A4']) expect(spine(g)).toContain(e);
     // Depth 2 frames the members' own groups; depth 3 their members.
     const two = neighborhood(grouped, 'P-D/domain-model/aggregate', 2);
-    expect(ids(two)).toEqual(expect.arrayContaining(['P-D-A3/entity', 'P-D-A4/command', 'P-D-A4/entity']));
+    expect(ids(two)).toEqual(expect.arrayContaining(['P-D-A3/entity', 'P-D-A4/domain_event', 'P-D-A4/entity']));
     expect(ids(two)).not.toContain('P-D-EN03');
-    expect(ids(neighborhood(grouped, 'P-D/domain-model/aggregate', 3))).toEqual(expect.arrayContaining(['P-D-EN03', 'P-D-CMD06']));
+    expect(ids(neighborhood(grouped, 'P-D/domain-model/aggregate', 3))).toEqual(expect.arrayContaining(['P-D-EN03', 'P-D-EV04']));
+    expect(ids(neighborhood(grouped, 'P-D/domain-model/aggregate', 3))).not.toContain('P-D-CMD06');
+    expect(ids(neighborhood(grouped, 'P-D/domain-model/aggregate', 4))).toContain('P-D-CMD06');
     // A group the tree does not have shows nothing.
     expect(neighborhood(index, 'P-D/flow', 2).nodes).toEqual([]);
     expect(neighborhood(grouped, 'P-D/use_case', 1).nodes).toEqual([]);
@@ -148,7 +152,7 @@ describe('graph groups', () => {
     expect(groupMarks(index, 'P-D/domain-model/aggregate')).toEqual({ errors: 0, warnings: 1, gaps: ['proved', 'record-untraced'] });
     // A use case test has an error.
     expect(groupMarks(index, 'P-D/test-plan/use_case_test')).toEqual({ errors: 1, warnings: 0, gaps: [] });
-    expect(groupMarks(grouped, 'P-D-A4/command')).toEqual({ errors: 0, warnings: 0, gaps: [] });
+    expect(groupMarks(grouped, 'P-D-A4/domain_event')).toEqual({ errors: 0, warnings: 0, gaps: [] });
     // A group is a folder outlined in its stage's color; a group of no stage (open questions) in gray.
     expect(boxColors(PLAIN_LOOK, { group: true, kind: 'use_case_test', stage: 'test-plan' })).toEqual({ edge: PLAIN_LOOK.testPlanEdge, fill: PLAIN_LOOK.sheet });
     expect(boxColors(PLAIN_LOOK, { group: true, kind: 'question', stage: 'structural' })).toEqual({ edge: PLAIN_LOOK.muted, fill: PLAIN_LOOK.sheet });
@@ -156,7 +160,7 @@ describe('graph groups', () => {
 
   it('LA-V93-R23-T07 Filters hide groups with their kind or with the parent relation', () => {
     // A kind group and a folder go with their kind; a stage has no kind of its own and stays.
-    expect(ids(neighborhood(grouped, 'P-D-A4', 1, filters(['command'])))).not.toContain('P-D-A4/command');
+    expect(ids(neighborhood(grouped, 'P-D-A4', 1, filters(['domain_event'])))).not.toContain('P-D-A4/domain_event');
     expect(ids(neighborhood(index, 'P-D', 1, filters(['question'])))).not.toContain('P-D/question');
     expect(ids(neighborhood(index, 'P-D', 2, filters(['aggregate'])))).not.toContain('P-D/domain-model/aggregate');
     expect(ids(neighborhood(index, 'P-D', 2, filters(['aggregate'])))).toContain('P-D/domain-model');

@@ -1,0 +1,9 @@
+{"id":"LA-AUT-QRY01-CLI","title":"npm --prefix lathe run reference","query_id":"LA-AUT-QRY01","usage":"npm --prefix lathe run reference [-- --print | --out <file>]","file":"lathe/scripts/reference.ts"}
+{"id":"LA-AUT-QRY02-CLI","title":"lathe show","query_id":"LA-AUT-QRY02","usage":"lathe show <id>","mcp_tool":"show","file":"lathe/src/cli/writers.ts"}
+{"id":"LA-AUT-QRY03-CLI","title":"lathe list","query_id":"LA-AUT-QRY03","usage":"lathe list <table> [--parent <id>]","mcp_tool":"list","file":"lathe/src/cli/writers.ts"}
+{"id":"LA-AUT-QRY04-CLI","title":"lathe next-id","query_id":"LA-AUT-QRY04","usage":"lathe next-id <kind> --parent <id>","mcp_tool":"next_id","file":"lathe/src/cli/writers.ts"}
+{"id":"LA-AUT-QRY100-CLI","title":"lathe use-case get-use-case","query_id":"LA-AUT-QRY100","usage":"lathe use-case get-use-case --<field> <value>… | lathe use-case get-use-case --json <file|->","mcp_tool":"use_case_get_use_case","file":"lathe/src/cli/aggregates.ts"}
+{"id":"LA-AUT-QRY101-CLI","title":"lathe use-case list-use-cases","query_id":"LA-AUT-QRY101","usage":"lathe use-case list-use-cases --<field> <value>… | lathe use-case list-use-cases --json <file|->","mcp_tool":"use_case_list_use_cases","file":"lathe/src/cli/aggregates.ts"}
+{"id":"LA-AUT-QRY102-CLI","title":"lathe use-case next-id","query_id":"LA-AUT-QRY102","usage":"lathe use-case next-id --<field> <value>… | lathe use-case next-id --json <file|->","mcp_tool":"use_case_next_id","file":"lathe/src/cli/aggregates.ts"}
+{"id":"LA-CHK-QRY01-CLI","title":"lathe check","query_id":"LA-CHK-QRY01","usage":"lathe check [--json]","mcp_tool":"check","file":"lathe/bin/lathe.ts"}
+{"id":"LA-PLT-QRY09-CLI","title":"lathe app focus","query_id":"LA-PLT-QRY09","usage":"lathe app focus [--json]","mcp_tool":"app_focus","file":"lathe/src/cli/app-tools.ts"}
