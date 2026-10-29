@@ -463,13 +463,13 @@ A recorded exception to one aggregate per command: another aggregate of the same
 A view of its domain's data shaped for reading, which reads one or more of the domain's aggregates. Its fields are read_model_field rows, and it is stored in a table of its own.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
-- **Children:** [`query`](#kind-query), [`table`](#kind-table), [`projection`](#kind-projection)
+- **Children:** [`query`](#kind-query), [`table`](#kind-table), [`projection`](#kind-projection), [`reader`](#kind-reader)
 - **Obligation:** no
 - **ID:** `<P>-<D>-RM<nn>`, such as `TL-LEND-RM01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Fed by ([`fed_by`](#relation-fed_by)), Reads ([`reads`](#relation-reads))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`read_model_field`](#table-read_model_field)
-- **Gaps:** [`read-model-without-fields`](#gap-read-model-without-fields), [`read-model-reads-nothing`](#gap-read-model-reads-nothing), [`read-model-without-query`](#gap-read-model-without-query), [`read-model-without-projection`](#gap-read-model-without-projection), [`read-model-without-table`](#gap-read-model-without-table)
+- **Gaps:** [`read-model-without-fields`](#gap-read-model-without-fields), [`read-model-reads-nothing`](#gap-read-model-reads-nothing), [`read-model-without-query`](#gap-read-model-without-query), [`read-model-without-projection`](#gap-read-model-without-projection), [`read-model-without-reader`](#gap-read-model-without-reader), [`read-model-without-table`](#gap-read-model-without-table)
 
 <a id="table-read_model"></a>
 
@@ -1595,6 +1595,35 @@ Fills its read model's table and keeps it current, from events or as a view's qu
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(description) != '')`
 
+<a id="kind-reader"></a>
+
+### Reader (`reader`)
+
+Reads its read model's table for its query handlers: the way query handlers reach a read model's storage. It reads exactly one read model, its parent, and nothing else; a query handler reads only through its own read model's reader, and the projection alone fills the table it reads.
+
+- **Parents:** [`read_model`](#kind-read_model) (`read_model_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<read model>-RD`, such as `TL-LEND-RM01-RD`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
+- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-reader"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The reader's ID: its read model's ID and RD, such as TL-LEND-RM01-RD. |
+| `title` | VARCHAR | yes | Its name in code, such as OverdueLoansReader. |
+| `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | yes | The read model it reads; one reader each. |
+| `file` | VARCHAR | no | The file that holds its code, from the product root; it may not exist yet, and several records may share one file. |
+| `description` | VARCHAR | yes | How it reads its read model's table: where the table is kept and how a query handler is given the reader, in a sentence or two. |
+
+- **Key:** `id`
+- **Unique:** `read_model_id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
+
 <a id="kind-command_handler"></a>
 
 ### Command handler (`command_handler`)
@@ -1975,6 +2004,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-value-object-without-value-type"></a>`value-object-without-value-type` | [`value_object`](#kind-value_object), [`value_type`](#kind-value_type) | A value object with no value type. |
 | <a id="gap-event-without-event-type"></a>`event-without-event-type` | [`domain_event`](#kind-domain_event), [`event_type`](#kind-event_type) | A domain event with no event type. |
 | <a id="gap-read-model-without-projection"></a>`read-model-without-projection` | [`read_model`](#kind-read_model), [`projection`](#kind-projection) | A read model with no projection. |
+| <a id="gap-read-model-without-reader"></a>`read-model-without-reader` | [`read_model`](#kind-read_model), [`reader`](#kind-reader) | A read model with no reader. |
 | <a id="gap-read-model-without-table"></a>`read-model-without-table` | [`read_model`](#kind-read_model), [`table`](#kind-table) | A read model with no table. |
 | <a id="gap-command-without-handler"></a>`command-without-handler` | [`command`](#kind-command), [`command_handler`](#kind-command_handler) | A command with no command handler. |
 | <a id="gap-query-without-handler"></a>`query-without-handler` | [`query`](#kind-query), [`query_handler`](#kind-query_handler) | A query with no query handler. |
@@ -3089,6 +3119,7 @@ The technical record follows the standard rule: it shows where the rule is appli
 | [`predicate`](#kind-predicate) | [`standard_rule`](#kind-standard_rule) | The predicate follows the standard rule. |
 | [`projection`](#kind-projection) | [`standard_rule`](#kind-standard_rule) | The projection follows the standard rule. |
 | [`query_handler`](#kind-query_handler) | [`standard_rule`](#kind-standard_rule) | The query handler follows the standard rule. |
+| [`reader`](#kind-reader) | [`standard_rule`](#kind-standard_rule) | The reader follows the standard rule. |
 | [`repository`](#kind-repository) | [`standard_rule`](#kind-standard_rule) | The repository follows the standard rule. |
 | [`service`](#kind-service) | [`standard_rule`](#kind-standard_rule) | The service follows the standard rule. |
 | [`table`](#kind-table) | [`standard_rule`](#kind-standard_rule) | The table follows the standard rule. |

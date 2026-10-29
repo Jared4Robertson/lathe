@@ -4,7 +4,7 @@
 import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import { describe, expect, it } from 'vitest';
-import type { UseCase } from '../src/authoring/use-case/model.ts';
+import type { UseCasePage } from '../src/authoring/use-case/read-model.ts';
 import { closeStores, handleApi } from '../src/server/api.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../src/commands.ts';
 import { everyKind } from './store/fixture.ts';
@@ -27,9 +27,10 @@ describe('LA-AUT-UC06-R14-T02 each Use case query is read by name over HTTP, GET
     try {
       const whole = await fetch(`${base}/api/use-case/get-use-case?id=TL-LEND-UC01-FL01-S01`);
       expect(whole.status).toBe(200);
-      const useCase = (await whole.json()) as UseCase;
-      expect(useCase.root).toBe('TL-LEND-UC01');
-      expect(useCase.steps.map((s) => s.row.id)).toContain('TL-LEND-UC01-FL01-S01');
+      const page = (await whole.json()) as UseCasePage;
+      expect(page.record).toEqual({ id: 'TL-LEND-UC01-FL01-S01', kind: 'flow_step' });
+      expect(page.useCase.id).toBe('TL-LEND-UC01');
+      expect(page.flows.flatMap((f) => f.paths.flatMap((p) => p.steps.map((s) => s.step.id)))).toContain('TL-LEND-UC01-FL01-S01');
 
       const next = await fetch(`${base}/api/use-case/next-id?kind=uc_requirement&parent=TL-LEND-UC01`);
       expect(await next.json()).toBe('TL-LEND-UC01-R02');
