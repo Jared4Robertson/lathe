@@ -14,6 +14,11 @@
 {"read_model_id":"LA-AUT-RM11","position":2,"name":"Actors","meaning":"Its actors' roles, in order: the first is the main actor.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM11","position":3,"name":"Requirements","meaning":"Its UC requirements, each with its use case tests and the test data sets they start from.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM11","position":4,"name":"Flows","meaning":"Its flows, each with its steps (with the requirements each fulfills, what it invokes, the view it happens in and the integrations it exchanges with) and its flow test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM21","position":1,"name":"Product","meaning":"The product's row.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM21","position":2,"name":"Roles","meaning":"Its roles, in order.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM21","position":3,"name":"Declarations","meaning":"Its product kinds with their fields, and its product relations.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM21","position":4,"name":"Questions","meaning":"Its open questions, each with the records it is about.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM21","position":5,"name":"Interfaces","meaning":"Its interfaces.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM22","position":1,"name":"Pattern","meaning":"The pattern's row: its ID, title, product, description and notes.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM22","position":2,"name":"Settings","meaning":"Its settings in order, each a name and what a follower decides in it.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM22","position":3,"name":"Rules","meaning":"Its rules, each with its tests and the test data sets they start from.","type":"text","required":true}
@@ -34,7 +39,18 @@
 {"read_model_id":"LA-AUT-RM28","position":2,"name":"Links","meaning":"The events it raises, the specifications it checks and the domain services it calls.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM28","position":3,"name":"Handler","meaning":"Its command handler, with the standard rules it meets and the packages it uses.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM28","position":4,"name":"Policies","meaning":"Its policies, each with the event it hears, its event handler and its test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM36","position":1,"name":"Outcome","meaning":"The outcome's row.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM36","position":2,"name":"Measured by","meaning":"The tests and records that measure it.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM37","position":1,"name":"Test data set","meaning":"The test data set's row: its ID, title, domain, environment, accounts, records, prepare, reset, file and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM39","position":1,"name":"Record","meaning":"The record's row, with its kind.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM39","position":2,"name":"Links","meaning":"The links it starts, by relation.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM39","position":3,"name":"Packages","meaning":"The packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM40","position":1,"name":"Entry point","meaning":"The entry point's row.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM40","position":2,"name":"Packages","meaning":"The packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM40","position":3,"name":"Meets","meaning":"The standard rules it meets.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM41","position":1,"name":"Tooling","meaning":"The tooling record's row.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM41","position":2,"name":"Packages","meaning":"The packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM41","position":3,"name":"Meets","meaning":"The standard rules it meets.","type":"text","required":true}
 {"read_model_id":"LA-CHK-RM01","position":1,"name":"Check","meaning":"The check that found it, or the engine's own `data-refused`.","type_aggregate_id":"LA-CHK-A1","required":true,"column_name":"check_name","example":"value-object-unused"}
 {"read_model_id":"LA-CHK-RM01","position":2,"name":"Severity","meaning":"`error` or `warning`: whether the data is broken or has work still to do.","type":"text","required":true,"example":"error"}
 {"read_model_id":"LA-CHK-RM01","position":3,"name":"Record","meaning":"The ID of the record it is about; none for the whole workspace.","type":"text","required":false,"example":"TL-VO05"}

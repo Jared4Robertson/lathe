@@ -389,6 +389,24 @@
 {"entity_id":"LA-AUT-EN76","position":3,"name":"Product","meaning":"The product it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"product_id"}
 {"entity_id":"LA-AUT-EN76","position":4,"name":"Kind","meaning":"What it is: web app or desktop (its flows' steps happen in views), API (they call endpoints), CLI or agent tools (they run commands and queries), or other.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN76","position":5,"name":"Description","meaning":"Who uses it and how.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN80","position":1,"name":"ID","meaning":"The outcome's ID: its product's ID and BO<nn>, such as TL-BO01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN80","position":2,"name":"Title","meaning":"The outcome in a few words.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN80","position":3,"name":"Product","meaning":"The product it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"product_id"}
+{"entity_id":"LA-AUT-EN80","position":4,"name":"Statement","meaning":"The outcome, stated so it can be measured.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN80","position":5,"name":"Measure","meaning":"What is measured, and how.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN80","position":6,"name":"Target","meaning":"The value of the measure that counts as reached, and by when.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN81","position":1,"name":"ID","meaning":"The record's ID, written as its kind's ID pattern says.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN81","position":2,"name":"Title","meaning":"The record's title.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN81","position":3,"name":"Kind","meaning":"The product kind it is a record of.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN82","position":1,"name":"ID","meaning":"The entry point's ID: its domain's ID and ENTRY<nn>.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN82","position":2,"name":"Title","meaning":"Its file's name.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN82","position":3,"name":"Domain","meaning":"The domain it starts.","type_value_object_id":"LA-VO01","required":true,"column_name":"domain_id"}
+{"entity_id":"LA-AUT-EN82","position":4,"name":"File","meaning":"The start-up file.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN82","position":5,"name":"Description","meaning":"What it does at start-up.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN83","position":1,"name":"ID","meaning":"The tooling record's ID: its domain's ID and TOOL<nn>.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN83","position":2,"name":"Title","meaning":"Its file's name.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN83","position":3,"name":"Domain","meaning":"The domain it serves.","type_value_object_id":"LA-VO01","required":true,"column_name":"domain_id"}
+{"entity_id":"LA-AUT-EN83","position":4,"name":"File","meaning":"The script or config file.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN85","position":1,"name":"ID","meaning":"The data set's ID: its domain's ID and TD<nn>, such as TL-LEND-TD01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN85","position":2,"name":"Title","meaning":"The data set in a few words, such as Two members, one tool on loan.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN85","position":3,"name":"Domain","meaning":"The domain whose tests it serves.","type_aggregate_id":"LA-AUT-A4","required":true,"column_name":"domain_id"}

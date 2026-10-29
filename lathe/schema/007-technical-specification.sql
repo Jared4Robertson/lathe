@@ -226,6 +226,32 @@ COMMENT ON COLUMN table_key.invariant_id IS 'For a unique key, the invariant it 
 COMMENT ON COLUMN table_key.condition IS 'For a partial unique key, the rows it holds for, such as returned_at IS NULL for one active loan per tool; only a unique key has one.';
 COMMENT ON COLUMN table_key.target_table_id IS 'For a foreign key, the table it points at, of the same domain; required for a foreign key and only for one.';
 
+CREATE TABLE entry_point (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  domain_id VARCHAR NOT NULL REFERENCES domain (id),
+  file VARCHAR,
+  description VARCHAR NOT NULL CHECK (trim(description) <> '')
+);
+COMMENT ON TABLE entry_point IS 'A start-up file: what runs first and wires the rest together, such as a server''s main file or a desktop app''s main process. No design record is implemented by it alone, so it sits under the domain it starts.';
+COMMENT ON COLUMN entry_point.id IS 'The entry point''s ID: its domain''s ID and ENTRY<nn>, such as TL-LEND-ENTRY01.';
+COMMENT ON COLUMN entry_point.title IS 'Its file''s name, or its name in code, such as server.ts.';
+COMMENT ON COLUMN entry_point.domain_id IS 'The domain it starts.';
+COMMENT ON COLUMN entry_point.file IS 'The start-up file, from the product root; it may not exist yet.';
+COMMENT ON COLUMN entry_point.description IS 'What it does at start-up, in a sentence or two: what it reads, opens and serves.';
+
+CREATE TABLE tooling (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  domain_id VARCHAR NOT NULL REFERENCES domain (id),
+  file VARCHAR
+);
+COMMENT ON TABLE tooling IS 'A dev script or config file outside the running product: a build, a generator, a watcher, or a config of the tools it is checked and tested with, such as a type checker''s or a test runner''s. Its title and file say what it is.';
+COMMENT ON COLUMN tooling.id IS 'The tooling record''s ID: its domain''s ID and TOOL<nn>, such as TL-LEND-TOOL01.';
+COMMENT ON COLUMN tooling.title IS 'Its file''s name, such as vitest.config.ts.';
+COMMENT ON COLUMN tooling.domain_id IS 'The domain whose code it builds, checks or tests.';
+COMMENT ON COLUMN tooling.file IS 'The script or config file, or the folder of them, from the product root; it may not exist yet.';
+
 CREATE TABLE ui_component (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
@@ -277,10 +303,12 @@ INSERT INTO meta_kind VALUES
   ('service', 'Service', 'technical-specification', 40, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
   ('endpoint_handler', 'Endpoint handler', 'technical-specification', 42, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
   ('adapter', 'Adapter', 'technical-specification', 43, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
+  ('entry_point', 'Entry point', 'technical-specification', 44, false, '<domain>-ENTRY<nn>', 'TL-LEND-ENTRY01', 'parent', NULL),
+  ('tooling', 'Tooling', 'technical-specification', 45, false, '<domain>-TOOL<nn>', 'TL-LEND-TOOL01', 'parent', NULL),
   ('table', 'Table', 'technical-specification', 32, false, '<entity or read model>-TB, or <domain>-TB<nn>', 'TL-LEND-EN01-TB', 'parent', NULL),
   ('ui_component', 'UI component', 'technical-specification', 41, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
-  ('standard', 'Standard', 'technical-specification', 44, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
-  ('standard_rule', 'Standard rule', 'technical-specification', 45, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
+  ('standard', 'Standard', 'technical-specification', 46, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
+  ('standard_rule', 'Standard rule', 'technical-specification', 47, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('repository', 'domain', 1, 'domain_id'),
   ('data_model', 'entity', 1, 'entity_id'),
@@ -294,6 +322,8 @@ INSERT INTO meta_kind_parent VALUES
   ('service', 'domain_service', 1, 'domain_service_id'),
   ('endpoint_handler', 'endpoint', 1, 'endpoint_id'),
   ('adapter', 'integration', 1, 'integration_id'),
+  ('entry_point', 'domain', 1, 'domain_id'),
+  ('tooling', 'domain', 1, 'domain_id'),
   ('table', 'entity', 1, 'entity_id'), ('table', 'read_model', 2, 'read_model_id'), ('table', 'domain', 3, 'domain_id'),
   ('standard', 'product', 1, 'product_id'),
   ('standard_rule', 'standard', 1, 'standard_id');
@@ -301,9 +331,10 @@ INSERT INTO meta_kind_title VALUES
   ('repository', 'identifier'), ('data_model', 'identifier'), ('value_type', 'identifier'), ('predicate', 'identifier'),
   ('event_type', 'identifier'), ('projection', 'identifier'), ('command_handler', 'identifier'), ('query_handler', 'identifier'),
   ('event_handler', 'identifier'), ('service', 'identifier'), ('endpoint_handler', 'identifier'), ('adapter', 'identifier'),
-  ('table', 'identifier');
+  ('entry_point', 'identifier'), ('tooling', 'identifier'), ('table', 'identifier');
 INSERT INTO meta_table VALUES
   ('repository', 'kind', NULL), ('repository_share', 'part', 'repository_id'), ('data_model', 'kind', NULL), ('value_type', 'kind', NULL), ('predicate', 'kind', NULL), ('event_type', 'kind', NULL), ('projection', 'kind', NULL), ('command_handler', 'kind', NULL), ('query_handler', 'kind', NULL), ('event_handler', 'kind', NULL), ('service', 'kind', NULL), ('endpoint_handler', 'kind', NULL), ('adapter', 'kind', NULL),
+  ('entry_point', 'kind', NULL), ('tooling', 'kind', NULL),
   ('table', 'kind', NULL), ('table_key', 'part', 'table_id'), ('ui_component', 'kind', NULL), ('standard', 'kind', NULL), ('standard_rule', 'kind', NULL);
 
 -- The packages technical records use: every package a product's package.json files list is named by a record, so each
@@ -314,6 +345,6 @@ CREATE TABLE package_use (
   PRIMARY KEY (record_id, package)
 );
 COMMENT ON TABLE package_use IS 'A package a technical record uses: a dependency one of the product''s package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a record of a kind in the technical specification may name one.';
-COMMENT ON COLUMN package_use.record_id IS 'The technical record that uses the package: an adapter, a UI component, or a record of a product''s own technical kind such as a tooling record.';
+COMMENT ON COLUMN package_use.record_id IS 'The technical record that uses the package: an adapter, a UI component, an entry point, a tooling record, or a record of a product''s own technical kind.';
 COMMENT ON COLUMN package_use.package IS 'The package''s name as package.json lists it, such as @duckdb/node-api.';
 INSERT INTO meta_table VALUES ('package_use', 'part', 'record_id');

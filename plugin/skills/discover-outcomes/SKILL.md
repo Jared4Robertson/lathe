@@ -54,7 +54,7 @@ When you add a capability later (the `write-use-cases` skill), give the outcomes
 Name what measures each outcome in its `measured_by` (business outcome to test or record). What can measure one:
 
 - **A test of any kind** that counts or holds the measure: a performance test for a time budget, an accessibility audit for violations, a specification test for a rule that keeps a count at zero. A test counts only when it runs: manual, or automated with its file naming its ID.
-- **A record of the product's own kind** that computes the measure, such as a report script or a command whose output is the measure. Lathe allows it once the product declares the pair: a product relation named `measured_by` from `business_outcome` to that kind (`product_add_product_relation`, see `extend-the-meta-model`).
+- **A record of the product's own kind** that computes the measure, such as a report script or a command whose output is the measure. Lathe allows it once the product declares the pair: a product relation named `measured_by` from `business_outcome` to that kind (`product_declare_product_relation`, see `extend-the-meta-model`).
 - **Nothing in the code**, for an outcome only the world shows (adoption by other repos, sales): say so in `measured_outside`, with who counts it and from where. Prefer building the report when the product's own data holds the measure.
 
 Coverage reports `outcome-not-measured` until one of these is in.
@@ -78,10 +78,10 @@ domain_change_capability { "id": "TL-LEND-CAP03", "serves": ["TL-BO01", "TL-BO02
 A report of the product's own kind that measures them: the kind and the relation are declared first (`extend-the-meta-model`), then the report is added, then each outcome names it.
 
 ```
-product_add_product_kind { "name": "report", "product_id": "TL", "label": "Report", "parent_kind": "domain",
+product_declare_product_kind { "name": "report", "product_id": "TL", "label": "Report", "parent_kind": "domain",
        "description": "A script that measures the library's business outcomes from its own records.",
        "stage": "technical-specification", "obligation": false, "id_pattern": "<domain>-RP<nn>" }
-product_add_product_relation { "name": "measured_by", "source_kind": "business_outcome", "target_kind": "report", "product_id": "TL",
+product_declare_product_relation { "name": "measured_by", "source_kind": "business_outcome", "target_kind": "report", "product_id": "TL",
        "forward_label": "Measured by", "reverse_label": "Measures",
        "description": "The report measures the business outcome: it counts the measure from the library's records." }
 business_outcome_change_business_outcome { "id": "TL-BO01", "measured_by": ["TL-LEND-RP01"] }
