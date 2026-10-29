@@ -58,19 +58,19 @@ export const productKey = (base: string, sql: string): string => `${base}-${hash
 const fileOf = (key: string) => path.join(cacheDir(), `${key}.duckdb`);
 
 /**
- * Attaches the cache file of key as the database alias, read only, and returns the schema stamped in it; or returns
+ * Attaches the cache file of key as the database name, read only, and returns the schema stamped in it; or returns
  * undefined, attaching nothing, when there is no file or the file is stale or corrupt (and then removes it).
  */
-export async function attachCached(connection: DuckDBConnection, alias: string, key: string): Promise<SchemaDescription | undefined> {
+export async function attachCached(connection: DuckDBConnection, name: string, key: string): Promise<SchemaDescription | undefined> {
   const file = fileOf(key);
   if (!existsSync(file)) return undefined;
   try {
-    await connection.run(`ATTACH ${sqlString(file)} AS ${sqlName(alias)} (READ_ONLY)`);
-    const [stamp] = (await connection.runAndReadAll(`SELECT key, schema FROM ${sqlName(alias)}.${STAMP_SCHEMA}.stamp`)).getRowObjectsJson() as { key: string; schema: string }[];
+    await connection.run(`ATTACH ${sqlString(file)} AS ${sqlName(name)} (READ_ONLY)`);
+    const [stamp] = (await connection.runAndReadAll(`SELECT key, schema FROM ${sqlName(name)}.${STAMP_SCHEMA}.stamp`)).getRowObjectsJson() as { key: string; schema: string }[];
     if (stamp?.key !== key) throw new Error('stale');
     return JSON.parse(stamp.schema) as SchemaDescription;
   } catch {
-    await connection.run(`DETACH DATABASE IF EXISTS ${sqlName(alias)}`).catch(() => undefined);
+    await connection.run(`DETACH DATABASE IF EXISTS ${sqlName(name)}`).catch(() => undefined);
     await rm(file, { force: true }).catch(() => undefined);
     return undefined;
   }
@@ -116,17 +116,17 @@ export async function writeCached(connection: DuckDBConnection, source: string, 
   const dir = cacheDir();
   const file = fileOf(key);
   const temp = `${file}.${process.pid}-${++writes}.tmp`;
-  const alias = `lathe_cache_write_${writes}`;
+  const name = `lathe_cache_write_${writes}`;
   try {
     await mkdir(dir, { recursive: true });
-    await connection.run(`ATTACH ${sqlString(temp)} AS ${sqlName(alias)}`);
+    await connection.run(`ATTACH ${sqlString(temp)} AS ${sqlName(name)}`);
     try {
-      await copyDatabase(connection, source, alias, false);
-      await connection.run(`CREATE SCHEMA ${sqlName(alias)}.${STAMP_SCHEMA}`);
-      await connection.run(`CREATE TABLE ${sqlName(alias)}.${STAMP_SCHEMA}.stamp (key VARCHAR NOT NULL, schema VARCHAR NOT NULL)`);
-      await connection.run(`INSERT INTO ${sqlName(alias)}.${STAMP_SCHEMA}.stamp VALUES (${sqlString(key)}, ${sqlString(JSON.stringify(schema))})`);
+      await copyDatabase(connection, source, name, false);
+      await connection.run(`CREATE SCHEMA ${sqlName(name)}.${STAMP_SCHEMA}`);
+      await connection.run(`CREATE TABLE ${sqlName(name)}.${STAMP_SCHEMA}.stamp (key VARCHAR NOT NULL, schema VARCHAR NOT NULL)`);
+      await connection.run(`INSERT INTO ${sqlName(name)}.${STAMP_SCHEMA}.stamp VALUES (${sqlString(key)}, ${sqlString(JSON.stringify(schema))})`);
     } finally {
-      await connection.run(`DETACH DATABASE IF EXISTS ${sqlName(alias)}`);
+      await connection.run(`DETACH DATABASE IF EXISTS ${sqlName(name)}`);
     }
     await rename(temp, file);
     await prune(dir, key);
