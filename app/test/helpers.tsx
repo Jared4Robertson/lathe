@@ -8,6 +8,7 @@ import { workspace as fixtureWorkspace } from './fixtures/workspace';
 import { SETTINGS_KEY } from '../src/graph/settings';
 import { ALL_COMMANDS, ALL_QUERIES } from '../../lathe/src/commands';
 import { InputError } from '../../lathe/src/platform/commands/definition';
+import { answerQuery } from '../../lathe/src/platform/commands/run';
 import { StoreError } from '../../lathe/src/platform/data/problems';
 import type { ReadView } from '../../lathe/src/platform/data/rules';
 import { forgetReads } from '../src/record/read';
@@ -82,7 +83,7 @@ export function serve(served: Served = {}): { requests: Requests; writes: Writes
     const read = ALL_QUERIES.find((q) => q.route === route);
     if (read && (init?.method ?? 'GET') === read.method) {
       try {
-        return json(read.run(readViewOf(data), Object.fromEntries(new URLSearchParams(query)) as never));
+        return json(answerQuery(readViewOf(data), read, Object.fromEntries(new URLSearchParams(query))));
       } catch (error) {
         if (error instanceof StoreError) return json({ error: error.message, problems: error.problems }, 422);
         if (error instanceof InputError) return json({ error: error.message }, 400);

@@ -126,33 +126,74 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
   });
 });
 
-describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query handler or projection imports a repository or an aggregate\'s model', () => {
-  // The slices whose reads are converted to their own read model: each group adds its own line when its slice is
-  // converted, so nothing converted can regress while the rest still convert. The cutover removes this list and the
-  // check then holds for every slice that has a queries.ts.
+describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query handler or projection imports a repository or an aggregate\'s model, and a query handler reads only through its own read model\'s reader', () => {
+  // The slices whose reads are converted to their own read model and reader: each group adds its own line when its
+  // slice is converted, so nothing converted can regress while the rest still convert. The cutover removes this list
+  // and the checks then hold for every slice that has a queries.ts.
   const READ_MODEL_SLICES: string[] = [
     'lathe/src/authoring/use-case',
   ];
+  const files = sources();
+  const file = (name: string) => files.find((f) => f.file === name);
+  /** The names a file imports from a module, and those it imports as values (not `import type`). */
+  const importsFrom = (text: string, module: string) => {
+    const found = [...text.matchAll(new RegExp(`^import\\s(type\\s)?([^;]*?)from\\s+'${module.replace('.', '\\.')}'`, 'gms'))];
+    const names = (m: RegExpMatchArray) => (m[2].match(/\w+/g) ?? []).filter((n) => n !== 'type');
+    return { all: found.flatMap(names), values: found.filter((m) => !m[1]).flatMap((m) => [...m[2].replace(/\btype\s+\w+/g, '').matchAll(/\w+/g)].map((x) => x[0])) };
+  };
 
-  it('lets a converted slice\'s queries.ts and read-model.ts import neither its repository nor its model type or row builder', () => {
-    const files = sources();
+  it('lets a converted slice\'s queries.ts, read-model.ts and reader.ts import neither its repository nor its model type or row builder', () => {
     const crossing = READ_MODEL_SLICES.flatMap((slice) => {
-      const model = files.find((f) => f.file === `${slice}/model.ts`)!;
+      const model = file(`${slice}/model.ts`)!;
       // The model's types (the instance type and its parts) and every function over them (the row builders).
       const types = [...model.text.matchAll(/^export interface (\w+)/gm)].map((m) => m[1]);
       const mentions = (signature: string) => types.some((t) => new RegExp(`\\b${t}\\b`).test(signature));
       const builders = [...model.text.matchAll(/^export function (\w+)[^{]*/gm)].filter((m) => mentions(m[0])).map((m) => m[1]);
       const forbidden = new Set([...types, ...builders]);
-      return ['queries.ts', 'read-model.ts'].flatMap((name) => {
-        const reader = files.find((f) => f.file === `${slice}/${name}`);
+      return ['queries.ts', 'read-model.ts', 'reader.ts'].flatMap((name) => {
+        const reader = file(`${slice}/${name}`);
         if (!reader) return [`${slice}/${name} is missing`];
-        const fromModel = [...reader.text.matchAll(/^import\s([^;]*?)from\s+'\.\/model\.ts'/gms)].flatMap((m) => m[1].match(/\w+/g) ?? []);
         return [
           ...(reader.imports.includes(`${slice}/repository.ts`) ? [`${reader.file} imports repository.ts`] : []),
-          ...fromModel.filter((n) => forbidden.has(n)).map((n) => `${reader.file} imports ${n} from model.ts`),
+          ...importsFrom(reader.text, './model.ts').all.filter((n) => forbidden.has(n)).map((n) => `${reader.file} imports ${n} from model.ts`),
         ];
       });
     });
     expect(crossing).toEqual([]);
+  });
+
+  it('lets a converted slice\'s query handlers read only through its reader, the reader only its read model\'s table, and only the projection the source rows', () => {
+    const crossing = READ_MODEL_SLICES.flatMap((slice) => {
+      const queries = file(`${slice}/queries.ts`)!;
+      const reader = file(`${slice}/reader.ts`)!;
+      const readsData = (text: string) => /\.(rows|record)\(/.test(text);
+      return [
+        // A handler is given its reader: it never sees the data, and takes from the read model only its types.
+        ...(readsData(queries.text) || /\bReadView\b/.test(queries.text) ? [`${queries.file} reads the data itself`] : []),
+        ...importsFrom(queries.text, './read-model.ts').values.map((n) => `${queries.file} imports ${n} from read-model.ts, not through its reader`),
+        ...(readsData(reader.text) ? [`${reader.file} reads the source rows itself`] : []),
+        // Each of the slice's queries is given its reader by the runner.
+        ...ALL_QUERIES.filter((q) => queries.text.includes(`id: '${q.id}'`) && !q.reader).map((q) => `${q.id} names no reader`),
+      ];
+    });
+    expect(crossing).toEqual([]);
+    // Everywhere: a reader is imported only by its own slice's queries.ts.
+    const readers = files.filter((f) => f.file.endsWith('/reader.ts')).map((f) => f.file);
+    const importers = files.flatMap((f) => f.imports.filter((i) => readers.includes(i) && f.file !== `${path.dirname(i)}/queries.ts`).map((i) => `${f.file} imports ${i}`));
+    expect(importers).toEqual([]);
+  });
+
+  it('matches each converted read model to its one reader record: its file the slice\'s reader.ts, its title declared there', () => {
+    const readers = data('reader');
+    for (const slice of READ_MODEL_SLICES) {
+      const handlers = data('query_handler').filter((h) => h.file === `${slice}/queries.ts`);
+      const readModels = new Set(handlers.map((h) => data('query').find((q) => q.id === h.query_id)?.read_model_id));
+      for (const readModel of readModels) {
+        const own = readers.filter((r) => r.read_model_id === readModel);
+        expect(own, String(readModel)).toHaveLength(1);
+        expect(own[0], String(readModel)).toMatchObject({ id: `${String(readModel)}-RD`, file: `${slice}/reader.ts` });
+        expect(file(`${slice}/reader.ts`)!.text).toMatch(new RegExp(`^export (interface|class|const|function) ${String(own[0].title)}\\b`, 'm'));
+      }
+    }
   });
 });

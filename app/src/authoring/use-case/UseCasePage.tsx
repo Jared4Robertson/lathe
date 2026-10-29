@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import type { UseCaseKind } from '../../../../lathe/src/authoring/use-case/model';
-import { stepsOf, type UseCasePage as UseCaseRead } from '../../../../lathe/src/authoring/use-case/read-model';
+import type { UseCasePage as UseCaseRead } from '../../../../lathe/src/authoring/use-case/read-model';
 import { Refusal, problemText } from '../../edit/fields';
 import { LongList } from '../../components/LongList';
 import { TreeList } from '../../components/TreeList';
@@ -14,7 +14,7 @@ import { groupRecords } from '../../specs/groups';
 import type { SpecIndex, SpecRecord } from '../../specs/data';
 import { FlowSteps } from './FlowSteps';
 import { UseCaseEditor } from './UseCaseEditor';
-import { useUseCase } from './reads';
+import { stepsOf, useUseCase } from './reads';
 
 // The Use case page (LA-AUT-A11's page): any record of a use case, at its address (/<id>), drawn from the use case read whole
 // (GET /api/use-case/get-use-case) and changed only through its own commands (UseCaseEditor). A use case shows its

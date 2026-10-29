@@ -1,6 +1,6 @@
 import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import type { UseCaseKind } from '../../../../lathe/src/authoring/use-case/model';
-import { stepsOf, type StepOnPage, type TestOnPage, type UseCasePage } from '../../../../lathe/src/authoring/use-case/read-model';
+import type { StepOnPage, TestOnPage, UseCasePage } from '../../../../lathe/src/authoring/use-case/read-model';
 import type { ColumnDescription } from '../../../../lathe/src/platform/data/schema';
 import type { StoreProblem, Value, WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
@@ -12,7 +12,7 @@ import type { SpecIndex } from '../../specs/data';
 import { RecordLink } from '../../specs/parts';
 import { addressOf } from '../../views/address';
 import { sendUseCase, type UseCaseCommands, type UseCaseRoute } from './commands';
-import { useNextId } from './reads';
+import { stepsOf, useNextId } from './reads';
 import '../../edit/edit.css';
 
 // The Use case editor (LA-AUT-A11): the actions on a record of a use case, each sending one of the aggregate's own
