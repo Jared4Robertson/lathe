@@ -1,27 +1,57 @@
-// The HTTP API: maps routes to services and service errors to HTTP responses.
+// The HTTP API: one endpoint handler per endpoint, each calling its command or query handler, and the
+// errors they raise turned into HTTP responses.
 // Spec: the endpoint handlers TL-LEND-EP01-H to EP07-H (examples/tool-library/data/).
 // Every error response is JSON: { "error": "<code>", "message": "<sentence>" }.
 // Each route's statuses and bodies are its endpoint's API requirements (TL-LEND-EP0n-R0n).
-// TL-PAT-LIBRARIAN-ACTION-R02: each librarian action answers with the record as the store saved it
-// (the store returns rows with RETURNING *), so what the librarian sees is what is stored.
+// TL-PAT-LIBRARIAN-ACTION-R02: each librarian action answers with the record as its repository saved it
+// (the repositories return rows with RETURNING *), so what the librarian sees is what is stored.
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { catalogEntry, listCatalog } from './catalog.ts';
+import type { Database } from './database.ts';
 import { subscribePolicies } from './event-handlers.ts';
-import { Outbox } from './events.ts';
-import { LendingService } from './lending-service.ts';
-import { MemberService } from './member-service.ts';
-import { DEFAULT_TIME_ZONE, LendingError, type Clock, type LibrarySettings } from './model.ts';
-import type { Store } from './store.ts';
-import { ToolService } from './tool-service.ts';
+import { Outbox, type HandlerFailure } from './events.ts';
+import type { Loan } from './loan.ts';
+import { borrowTool, returnTool, type LoanCommandContext } from './loan-commands.ts';
+import { LoanRepository } from './loan-repository.ts';
+import { registerMember } from './member-commands.ts';
+import { MemberRepository } from './member-repository.ts';
+import { DEFAULT_TIME_ZONE, LendingError, assertTimeZone, type Clock, type LibrarySettings } from './model.ts';
+import { addTool, markToolRepaired, reportDamage } from './tool-commands.ts';
+import { ToolRepository } from './tool-repository.ts';
 
-type Handler = (params: number[], body: Record<string, unknown>) => { status: number; body: unknown };
+/** The Lending domain over one database: each aggregate's repository, the outbox, the clock and the time zone. */
+export type Lending = LoanCommandContext;
+
+/**
+ * Opens the Lending domain over `db`: one repository per aggregate and one outbox. `now` is the clock, so tests can
+ * move time; `timeZone` is the library's, refused unless known. No event handler is subscribed yet.
+ */
+export function openLending(db: Database, now: Clock, timeZone: string, onFailure?: HandlerFailure): Lending {
+  return {
+    db,
+    members: new MemberRepository(db),
+    tools: new ToolRepository(db),
+    loans: new LoanRepository(db),
+    outbox: new Outbox(db, now, onFailure),
+    now,
+    timeZone: assertTimeZone(timeZone),
+  };
+}
+
+interface Reply {
+  status: number;
+  body: unknown;
+}
+
+type EndpointHandler = (lending: Lending, params: number[], body: Record<string, unknown>) => Reply;
 
 interface Route {
   method: string;
-  pattern: RegExp;
-  handler: Handler;
+  route: RegExp;
+  handler: EndpointHandler;
 }
 
-// TL-LEND-EP06-H, TL-LEND-EP06-R03: a body over 64 KB is refused with 413 `body_too_large` before it is parsed,
+// TL-LEND-EP06-R03: a body over 64 KB is refused with 413 `body_too_large` before it is parsed,
 // for every endpoint. A declared Content-Length over the limit is refused before any byte is read;
 // a chunked or endless body is read only up to the limit, then reading stops and the connection closes.
 export const MAX_BODY_BYTES = 64 * 1024;
@@ -106,64 +136,94 @@ function send(res: ServerResponse, status: number, body: unknown): void {
   res.end(JSON.stringify(body));
 }
 
+/** A loan as the API answers with it: the loan and its return, flattened. */
+function loanBody(loan: Loan) {
+  return {
+    id: loan.id,
+    memberId: loan.memberId,
+    toolId: loan.toolId,
+    borrowedAt: loan.borrowedAt,
+    dueDate: loan.dueDate,
+    returnedAt: loan.return?.returnedAt ?? null,
+    returnCondition: loan.return?.condition ?? null,
+    returnNote: loan.return?.note ?? null,
+  };
+}
+
+/** TL-LEND-EP01-H: POST /members registers a member and answers 201 with it (R01-R03). */
+function postMembers(lending: Lending, _params: number[], body: Record<string, unknown>): Reply {
+  return { status: 201, body: registerMember(lending, body) };
+}
+
+/** TL-LEND-EP02-H: POST /tools adds a tool and answers 201 with its catalog entry (R01-R02). */
+function postTools(lending: Lending, _params: number[], body: Record<string, unknown>): Reply {
+  return { status: 201, body: catalogEntry(lending.loans, addTool(lending, body)) };
+}
+
+/** TL-LEND-EP03-H: GET /tools answers 200 with the catalog (R01). */
+function getTools(lending: Lending): Reply {
+  return { status: 200, body: listCatalog(lending) };
+}
+
+/** TL-LEND-EP04-H: POST /loans borrows a tool and answers 201 with the loan (R01-R05). */
+function postLoans(lending: Lending, _params: number[], body: Record<string, unknown>): Reply {
+  return { status: 201, body: loanBody(borrowTool(lending, body)) };
+}
+
+/** TL-LEND-EP05-H: POST /loans/{loanId}/return returns a tool and answers 200 with the loan and whether it was late (R01-R03). */
+function postLoanReturn(lending: Lending, [loanId]: number[], body: Record<string, unknown>): Reply {
+  const { loan, late } = returnTool(lending, loanId, body);
+  return { status: 200, body: { ...loanBody(loan), late } };
+}
+
+/** TL-LEND-EP06-H: POST /tools/{toolId}/damage reports damage and answers 200 with the catalog entry (R01-R04). */
+function postToolDamage(lending: Lending, [toolId]: number[], body: Record<string, unknown>): Reply {
+  return { status: 200, body: catalogEntry(lending.loans, reportDamage(lending, toolId, body.note)) };
+}
+
+/** TL-LEND-EP07-H: POST /tools/{toolId}/repair marks a tool repaired and answers 200 with the catalog entry (R01-R02). */
+function postToolRepair(lending: Lending, [toolId]: number[]): Reply {
+  return { status: 200, body: catalogEntry(lending.loans, markToolRepaired(lending, toolId)) };
+}
+
+/** Each endpoint's method and route, and its handler. */
+const ROUTES: Route[] = [
+  { method: 'POST', route: /^\/members$/, handler: postMembers },
+  { method: 'POST', route: /^\/tools$/, handler: postTools },
+  { method: 'GET', route: /^\/tools$/, handler: getTools },
+  { method: 'POST', route: /^\/loans$/, handler: postLoans },
+  { method: 'POST', route: /^\/loans\/(\d+)\/return$/, handler: postLoanReturn },
+  { method: 'POST', route: /^\/tools\/(\d+)\/damage$/, handler: postToolDamage },
+  { method: 'POST', route: /^\/tools\/(\d+)\/repair$/, handler: postToolRepair },
+];
+
 /**
- * Builds the request handler for a store. `now` is the clock, so tests can move time;
+ * Builds the request handler over a database. `now` is the clock, so tests can move time;
  * `settings.timeZone` is the library's time zone (default America/New_York).
  * The command handlers share one outbox, with every policy's event handler subscribed. The relay runs once
  * here, so events a crash or a failed handler left undelivered are delivered when the API starts.
+ * Every endpoint's body is read through `readJson`, so the 64 KB limit holds on each (TL-LEND-EP06-R03).
  */
 export function createRouter(
-  store: Store,
+  db: Database,
   now: Clock = () => new Date(),
   settings: LibrarySettings = { timeZone: DEFAULT_TIME_ZONE },
 ) {
-  const outbox = new Outbox(store, now);
-  const members = new MemberService(store, now, outbox);
-  const tools = new ToolService(store, now, outbox);
-  const lending = new LendingService(store, now, outbox, settings.timeZone);
-  subscribePolicies(outbox, tools);
-  outbox.relay();
-
-  const routes: Route[] = [
-    // TL-LEND-EP01-H: R01-R03
-    { method: 'POST', pattern: /^\/members$/, handler: (_p, b) => ({ status: 201, body: members.register(b) }) },
-    // TL-LEND-EP02-H: R01-R02
-    { method: 'POST', pattern: /^\/tools$/, handler: (_p, b) => ({ status: 201, body: tools.add(b) }) },
-    // TL-LEND-EP03-H: R01
-    { method: 'GET', pattern: /^\/tools$/, handler: () => ({ status: 200, body: tools.list() }) },
-    // TL-LEND-EP04-H: R01-R05
-    { method: 'POST', pattern: /^\/loans$/, handler: (_p, b) => ({ status: 201, body: lending.borrow(b) }) },
-    // TL-LEND-EP05-H: R01-R03
-    {
-      method: 'POST',
-      pattern: /^\/loans\/(\d+)\/return$/,
-      handler: ([loanId], b) => ({ status: 200, body: lending.return(loanId, b) }),
-    },
-    // TL-LEND-EP06-H: R01-R03
-    {
-      method: 'POST',
-      pattern: /^\/tools\/(\d+)\/damage$/,
-      handler: ([toolId], b) => ({ status: 200, body: tools.reportDamage(toolId, b.note) }),
-    },
-    // TL-LEND-EP07-H: R01-R02
-    {
-      method: 'POST',
-      pattern: /^\/tools\/(\d+)\/repair$/,
-      handler: ([toolId]) => ({ status: 200, body: tools.markRepaired(toolId) }),
-    },
-  ];
+  const lending = openLending(db, now, settings.timeZone);
+  subscribePolicies(lending.outbox, lending);
+  lending.outbox.relay();
 
   return async function handle(req: IncomingMessage, res: ServerResponse): Promise<void> {
     try {
       const path = new URL(req.url ?? '/', 'http://localhost').pathname;
-      const matching = routes.filter((r) => r.pattern.test(path));
+      const matching = ROUTES.filter((r) => r.route.test(path));
       if (matching.length === 0) throw new LendingError(404, 'not_found', `There is no route ${path}.`);
       const route = matching.find((r) => r.method === req.method);
       if (!route) throw new LendingError(405, 'method_not_allowed', `${req.method} is not allowed on ${path}.`);
-      const params = (path.match(route.pattern) ?? []).slice(1).map(Number);
+      const params = (path.match(route.route) ?? []).slice(1).map(Number);
       const body = req.method === 'GET' ? {} : await readJson(req);
-      const result = route.handler(params, body);
-      send(res, result.status, result.body);
+      const reply = route.handler(lending, params, body);
+      send(res, reply.status, reply.body);
     } catch (err) {
       if (err instanceof LendingError && err.code === 'body_too_large') {
         sendAndClose(res, err.status, { error: err.code, message: err.message });

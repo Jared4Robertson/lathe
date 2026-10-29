@@ -38,7 +38,7 @@ export function traceKeyEntries(index: SpecIndex, map: TraceMap, kept: ReadonlyS
     out.push({ id: `stage-${stage}`, group: 'colors', sample: <span className={`graph-swatch stage-${stage}`} />, words: name, meaning: `A record of the ${name.toLowerCase()} stage, in its color` });
   }
   if (stages.has('structural')) out.push({ id: 'stage-structural', group: 'colors', sample: <span className="graph-swatch stage-structural" />, words: 'Structural', meaning: 'A product or domain, in the structural colors' });
-  if (roles.has('link')) out.push({ id: 'link-box', group: 'boxes', sample: <span className="graph-swatch stage-structural" />, words: 'Link', meaning: 'A link under an outcome to a capability serving it; it focuses the capability in its domain' });
+  if (roles.has('outside')) out.push({ id: 'outside', group: 'boxes', sample: <span className="graph-swatch stage-structural" />, words: 'Not under an outcome', meaning: 'After the outcomes: the obligations no business outcome reaches, by domain' });
   if (roles.has('file')) out.push({ id: 'file', group: 'boxes', sample: <span className="graph-swatch stage-structural" />, words: 'File', meaning: 'A file the records in the chain name' });
   if (roles.has('gap')) out.push({ id: 'gap', group: 'boxes', sample: <span className="graph-swatch is-gap" />, words: 'Gap', meaning: 'A gap coverage reports, dashed: not designed, not built or not proved' });
   if (roles.has('untraced')) out.push({ id: 'untraced', group: 'boxes', sample: <span className="graph-swatch is-gap" />, words: 'Untraced', meaning: 'Last under the product, dashed: the records no requirement or rule reaches' });
@@ -75,7 +75,7 @@ export function traceColumnKeyEntries(index: SpecIndex, map: TraceMap, columns: 
     const name = stage === 'structural' ? 'Structural' : index.workspace.stages.find((s) => s.stage === stage)?.label ?? stage;
     out.push({ id: `stage-${stage}`, group: 'colors', sample: <span className={`graph-swatch stage-${stage}`} />, words: name, meaning: stage === 'structural' ? 'A product or domain, in the structural colors' : `A record of the ${name.toLowerCase()} stage, in its color` });
   }
-  if (roles.has('link')) out.push({ id: 'link-box', group: 'boxes', sample: <span className="graph-swatch stage-structural" />, words: 'Link', meaning: 'A link under an outcome to a capability serving it; it focuses the capability in its domain' });
+  if (roles.has('outside')) out.push({ id: 'outside', group: 'boxes', sample: <span className="graph-swatch stage-structural" />, words: 'Not under an outcome', meaning: 'After the outcomes: the obligations no business outcome reaches, by domain' });
   if (roles.has('file')) out.push({ id: 'file', group: 'boxes', sample: <span className="graph-swatch stage-structural" />, words: 'File', meaning: 'A file the records in the chain name' });
   if (roles.has('gap')) out.push({ id: 'gap', group: 'boxes', sample: <span className="graph-swatch is-gap" />, words: 'Gap', meaning: 'A gap coverage reports, dashed: not designed, not built or not proved' });
   if (roles.has('untraced')) out.push({ id: 'untraced', group: 'boxes', sample: <span className="graph-swatch is-gap" />, words: 'Untraced', meaning: 'Last under the product, dashed: the records no requirement or rule reaches' });

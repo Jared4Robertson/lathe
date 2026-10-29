@@ -1,7 +1,8 @@
 // The Lending domain's policies, run by event handlers.
 // Spec: the event handler TL-LEND-PO01-H (examples/tool-library/data/).
 import type { Outbox, ToolReturned } from './events.ts';
-import type { ToolService } from './tool-service.ts';
+import { LendingError } from './model.ts';
+import { reportDamage, type ToolCommandContext } from './tool-commands.ts';
 
 /** The damage note when a tool is returned needing repair with no note. */
 export const RETURNED_NEEDING_REPAIR = 'Returned needing repair.';
@@ -9,17 +10,23 @@ export const RETURNED_NEEDING_REPAIR = 'Returned needing repair.';
 /**
  * TL-LEND-PO01-H: hears Tool returned, relayed from the outbox, and, when the tool came back needing repair,
  * invokes Report damage through its command handler, in its own transaction, with the return note as the
- * damage note. The relay may hand it an event again after a failure; reporting the same damage twice is harmless.
- * A return recorded as good invokes nothing, so it never clears damage (TL-LEND-INV02).
+ * damage note. A tool that already needs repair keeps its first damage report (TL-LEND-INV02): Report damage
+ * refuses it, and the handler is done. So an event the relay hands it again after a failure changes nothing.
+ * A return recorded as good invokes nothing, so it never clears damage.
  */
-export function reportDamageOnReturn(tools: ToolService): (event: ToolReturned) => void {
+export function reportDamageOnReturn(ctx: ToolCommandContext): (event: ToolReturned) => void {
   return (event) => {
     if (event.condition !== 'needs_repair') return;
-    tools.reportDamage(event.toolId, event.note ?? RETURNED_NEEDING_REPAIR);
+    try {
+      reportDamage(ctx, event.toolId, event.note ?? RETURNED_NEEDING_REPAIR);
+    } catch (err) {
+      if (err instanceof LendingError && err.code === 'tool_already_damaged') return;
+      throw err;
+    }
   };
 }
 
 /** Subscribes every Lending policy's event handler to the outbox's relay. */
-export function subscribePolicies(outbox: Outbox, tools: ToolService): void {
-  outbox.subscribe('ToolReturned', reportDamageOnReturn(tools));
+export function subscribePolicies(outbox: Outbox, ctx: ToolCommandContext): void {
+  outbox.subscribe('ToolReturned', reportDamageOnReturn(ctx));
 }
