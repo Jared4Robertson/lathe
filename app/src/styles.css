@@ -1054,8 +1054,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 .side-bar-handle.resize-handle { position: absolute; z-index: 4; top: var(--panel-radius); bottom: var(--panel-radius); left: calc(-1 * var(--float-inset)); width: var(--float-inset); }
 /* A stage's own tools float inside the open space: at its top (the graph's toolbar, the trace's filter) or its foot (the ERD's key). */
 .stage-tools { position: absolute; z-index: 1; box-sizing: border-box; left: var(--open-left, 0px); max-width: calc(100% - var(--open-left, 0px) - var(--open-right, 0px)); border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
-/* A stage's own toolbar is centered across the open space, over the focus the camera frames there. */
-.stage-tools[data-stage-tools="top"] { top: var(--open-top, 0px); padding: 6px 10px; left: calc(var(--open-left, 0px) + (100% - var(--open-left, 0px) - var(--open-right, 0px)) / 2); transform: translateX(-50%); }
+/* A stage's own toolbar stays in one spot, centered on the whole stage whatever panels are open; on a narrow window it
+   narrows (its tiers fold its controls) rather than move, keeping clear of the nav and the side bar on both sides. */
+.stage-tools[data-stage-tools="top"] { top: var(--open-top, 0px); padding: 6px 10px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 2 * max(var(--open-left, 0px), var(--side-space, 0px))); }
 .stage-tools[data-stage-tools="bottom"] { bottom: var(--open-bottom, 0px); right: var(--open-right, 0px); }
 /* The stages fill the stage; what they draw sits in the frame, the open space less their tools. */
 .focus-stage > :is(.graph-page, .erd-page, .trace-page), .focus-stage > .graph-page > .graph-workspace, .focus-stage .graph-workspace > .graph-canvas, .focus-stage .erd-page > :is(.erd-canvas, .erd-empty) { position: absolute; inset: 0; min-height: 0; }
