@@ -211,9 +211,12 @@ describe('Enter and Escape on the stage', () => {
     expect(box('P-D-UC01')).toHaveFocus();
     press(box('P-D-UC01'), 'Enter');
     expect(card()).not.toBeNull();
-    box('P-D-CAP01').focus();
-    press(box('P-D-CAP01'), 'Enter');
-    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
+    // Another box the frame draws (a use case's frame draws its children's column).
+    const other = [...document.querySelectorAll<HTMLElement>('.focus-stage .graph-box')].find((b) => b.dataset.id !== 'P-D-UC01')!;
+    const otherId = other.dataset.id!;
+    other.focus();
+    press(other, 'Enter');
+    await waitFor(() => expect(at()).toBe(`/${otherId}`));
     expect(card()).not.toBeNull();
 
     // A button keeps its Enter: the stage switch's Graph button is its own, never the card's.

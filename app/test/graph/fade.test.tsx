@@ -42,10 +42,13 @@ describe('focus fade', () => {
   it.each(LAYOUTS)('LA-V93-R73-T01 In the %s layout the focus and its subtree are drawn at full strength, the trail at its own, and every other box faded; the fade follows the focus', async (layout) => {
     vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
     startAtDepth(1, layout);
-    await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
-    await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-    await waitFor(() => expectFade(layout, 'P-D-UC01'), { timeout: 3000 });
-    const places = expectFade(layout, 'P-D-UC01');
+    // In the Tree, a stage whose children read, so its frame keeps its parent's level in view (a use case's frames its
+    // requirements' column, LA-EXP-DS09).
+    const focus = layout === 'tree' ? 'P-E/domain-model' : 'P-D-UC01';
+    await openApp(`/${focus}?stage=graph`, { data: testWorkspace() });
+    await waitFor(() => expect(isCenter(focus)).toBe(true));
+    await waitFor(() => expectFade(layout, focus), { timeout: 3000 });
+    const places = expectFade(layout, focus);
     // The picture has all three: the focus's subtree, the levels above it and other boxes beside it.
     expect(places.subtree).toBeGreaterThan(1);
     expect(places.ancestor).toBeGreaterThan(0);
@@ -53,7 +56,7 @@ describe('focus fade', () => {
 
     // A faded box still answers a click, which makes it the focus: the fade follows, and the old focus fades.
     const map = mapOf(layout);
-    const faded = scene().boxes.find((b) => placeOf(map, 'P-D-UC01', b.id) === 'other' && placeOf(map, b.id, 'P-D-UC01') === 'other' && b.id.startsWith('P-') && boxElement(b.id));
+    const faded = scene().boxes.find((b) => placeOf(map, focus, b.id) === 'other' && placeOf(map, b.id, focus) === 'other' && b.id.startsWith('P-') && boxElement(b.id));
     expect(faded, `${layout}: a faded box to click`).toBeDefined();
     fireEvent.click(boxElement(faded!.id)!);
     await waitFor(() => expect(isCenter(faded!.id)).toBe(true));
