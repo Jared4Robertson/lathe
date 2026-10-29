@@ -18,7 +18,7 @@ import { FocusPage } from './views/FocusPage';
 import { ChatPanel } from './chat/ChatPanel';
 import { useAppRequests } from './chat/appRequests';
 import { CARD_MIN, CHAT_DEFAULT, useSessionSettings } from './graph/settings';
-import { crowdedLabel, RoomContext, STAGE_MIN, useRoomState } from './views/openSpace';
+import { CARD_GAP, CARD_GAP_Y, crowdedLabel, RoomContext, STAGE_MIN, useRoomState } from './views/openSpace';
 import { desktopBridge } from './shell/desktopChrome';
 import { checksPathOf, HOME_PATH, isFocusRoute } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
@@ -175,7 +175,7 @@ function Shell() {
     <div
       className={`app${navCollapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}${chatShown ? ' with-chat' : ''}`}
       style={{
-        '--nav-width': `${navWidth}px`, '--rail-width': `${NAV_RAIL}px`, '--card-min': `${CARD_MIN}px`, '--stage-min': `${STAGE_MIN}px`,
+        '--nav-width': `${navWidth}px`, '--rail-width': `${NAV_RAIL}px`, '--card-min': `${CARD_MIN}px`, '--stage-min': `${STAGE_MIN}px`, '--card-gap': `${CARD_GAP}px`, '--card-gap-y': `${CARD_GAP_Y}px`,
         ...(chat.width !== null ? { '--chat-width': `${chat.width}px` } : {}),
       } as CSSProperties}
       data-crowded={room.crowded.size > 0 ? [...room.crowded].join(' ') : undefined}
