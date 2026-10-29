@@ -94,6 +94,12 @@ describe('the technical specification', () => {
         expect(parents).toEqual([]);
         continue;
       }
+      // A repository sits under its domain and links each aggregate it persists, one repository per aggregate.
+      if (kind === 'repository') {
+        expect(parentsOf(schema, 'repository')).toEqual(['domain.domain_id']);
+        expect(schema.tables.persists.unique).toContainEqual(['target_id']);
+        continue;
+      }
       for (const p of parents) expect(designStages.includes(schema.kinds[p.kind].stage!), `${kind} under ${p.kind}`).toBe(true);
       if (kind !== 'table') {
         expect(parents, kind).toHaveLength(1);
