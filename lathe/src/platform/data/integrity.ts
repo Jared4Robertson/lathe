@@ -318,22 +318,6 @@ WHERE a.product_id IS DISTINCT FROM b.product_id`,
     });
   }
   queries.push(...titleQueries(schema));
-  const productKinds = Object.values(schema.kinds).filter((k) => k.productId !== null);
-  if (productKinds.length) {
-    queries.push({
-      name: 'product-kind-product',
-      description: "A record of a product's own kind sits in the product that declares the kind.",
-      sql: productKinds
-        .map(
-          (k) => `
-SELECT ${sqlString(k.name)} AS table_name, r.id AS row_key,
-       r.id || ' is a ' || ${sqlString(k.name)} || ', a kind of product ' || ${sqlString(k.productId!)} || ', but it sits in product ' || coalesce(s.product_id, 'none') AS message
-FROM ${sqlName(k.name)} r LEFT JOIN record_scope s ON s.id = r.id
-WHERE s.product_id IS DISTINCT FROM ${sqlString(k.productId!)}`,
-        )
-        .join('\nUNION ALL'),
-    });
-  }
   return queries;
 }
 

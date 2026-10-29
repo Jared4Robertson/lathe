@@ -15,11 +15,11 @@ Change the spec only with Lathe's MCP tools, never by editing files. A product's
 
 | Aggregate | Its tools |
 | --- | --- |
-| Product | `product_add_product_kind` (with its `fields`), `product_change_product_kind`, `product_remove_product_kind`; `product_add_product_relation`, `product_change_product_relation`, `product_remove_product_relation`; `product_get_product` |
+| Product | `product_declare_product_kind` (with its `fields`), `product_change_product_kind`, `product_remove_product_kind`; `product_declare_product_relation`, `product_change_product_relation`, `product_remove_product_relation`; `product_get_product` |
 | Extension record | `extension_record_add_extension_record`, `extension_record_change_extension_record`, `extension_record_remove_extension_record`; `extension_record_get_extension_record`, `extension_record_list_extension_records`, `extension_record_next_id` |
 | Check | `check_add_check`, `check_change_check`, `check_remove_check`; `check_get_check`, `check_list_checks` |
 
-An extension record names its `kind`, and its kind's declaration is its rules: its parent column, its fields with their types, which are required, and its ID pattern. The links a record starts are fields of its own add and change, whether the relation is Lathe's or the product's. In a shell the same commands are `lathe <aggregate> <command> --<field> <value>` (`lathe product add-product-kind --help` prints its fields), or the tool's own JSON with `--json -` (stdin) or `--json <file>`.
+An extension record names its `kind` and its parent (`parent_id`), and gives its title and its kind's fields in `values`; its kind's declaration is its rules: its parent kind, its fields with their types, which are required, and its ID pattern. The links a record starts are its `links` (by relation, Lathe's or the product's) and the packages it uses its `packages`, in its own add and change. In a shell the same commands are `lathe <aggregate> <command> --<field> <value>` (`lathe product declare-product-kind --help` prints its fields), or the tool's own JSON with `--json -` (stdin) or `--json <file>`.
 
 ## Before you write
 
@@ -60,7 +60,7 @@ Its `id_pattern` is its own, such as `<domain>-RP<nn>` or `<command>-CLI`: start
 No technical kind fits `src/outcomes.ts`, the script that measures the library's business outcomes: it implements no design record. The Tool Library declares a report, in the technical specification, under the domain:
 
 ```
-product_add_product_kind { "name": "report", "product_id": "TL", "label": "Report",
+product_declare_product_kind { "name": "report", "product_id": "TL", "label": "Report",
        "description": "A script that measures the library's business outcomes from its own records, for the Owner to run each month.",
        "parent_kind": "domain", "stage": "technical-specification", "obligation": false,
        "id_pattern": "<domain>-RP<nn>", "id_example": "TL-LEND-RP01",
@@ -72,15 +72,15 @@ product_add_product_kind { "name": "report", "product_id": "TL", "label": "Repor
 A record of the new kind is then an extension record, with its ID from `extension_record_next_id` (`kind`: `report`, `parent`: the domain):
 
 ```
-extension_record_add_extension_record { "kind": "report", "id": "TL-LEND-RP01", "title": "printOutcomeReport", "domain_id": "TL-LEND",
-       "file": "src/outcomes.ts", "usage": "DB=library.db npm run outcomes -- 2026-03",
-       "description": "Counts each business outcome's measure for one month from the library's records and the outbox's events." }
+extension_record_add_extension_record { "kind": "report", "id": "TL-LEND-RP01", "parent_id": "TL-LEND",
+       "values": { "title": "printOutcomeReport", "file": "src/outcomes.ts", "usage": "DB=library.db npm run outcomes -- 2026-03",
+                   "description": "Counts each business outcome's measure for one month from the library's records and the outbox's events." } }
 ```
 
 A relation of the product's own, from one of Lathe's kinds to the new one; the outcome names the report in its own `measured_by`:
 
 ```
-product_add_product_relation { "name": "measured_by", "source_kind": "business_outcome", "target_kind": "report", "product_id": "TL",
+product_declare_product_relation { "name": "measured_by", "source_kind": "business_outcome", "target_kind": "report", "product_id": "TL",
        "forward_label": "Measured by", "reverse_label": "Measures",
        "description": "The report measures the business outcome: it counts the measure from the library's records." }
 business_outcome_change_business_outcome { "id": "TL-BO01", "measured_by": ["TL-LEND-RP01"] }
