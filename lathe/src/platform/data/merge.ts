@@ -1,5 +1,7 @@
 // The merge driver for data files: a three-way merge by row key. It keeps both sides' changes against the base,
-// sorts the rows again and checks the merged table's own rules. A real clash (one key added on both sides with
+// sorts the rows again and checks the merged table's own rules. It never drops a field: the schema it runs with is
+// this side's, which may not know a column the other side added, so a row keeps every field it has, and a table whose
+// rows carry a column this schema does not know is checked when the merged data next loads, under the merged schema. A real clash (one key added on both sides with
 // different content, or one row changed or removed on one side and changed on the other) fails, leaving conflict
 // markers around each clashing row.
 //
@@ -11,7 +13,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { insertRows, standaloneTableSql } from './insert.ts';
-import { normalizeRow, rowKey, rowLine, sortRows, type Row } from './rows.ts';
+import { keyColumns, normalizeRow, rowKey, rowLine, sortRows, type Row } from './rows.ts';
 import { applyMigrations, describeSchema, type SchemaDescription, type TableDescription } from './schema.ts';
 
 export interface MergeResult {
@@ -45,11 +47,27 @@ function readSide(text: string, table: TableDescription | null, label: string, p
       return;
     }
     const row = value as Row;
-    const key = table ? rowKey(table, row) : 'id' in row ? String(row.id) : 'source_id' in row ? `${row.source_id}\u0000${row.target_id}` : line;
-    rows.set(key, { line: table ? rowLine(table, row) : JSON.stringify(row), row });
+    const known = table !== null && keyColumns(table).every((c) => c in row);
+    const key = known ? rowKey(table, row) : 'id' in row ? String(row.id) : 'source_id' in row ? `${row.source_id}\u0000${row.target_id}` : line;
+    rows.set(key, { line: table ? mergedLine(table, row) : JSON.stringify(row), row });
   });
   return rows;
 }
+
+// A row's line: the table's columns in order, then any field this schema does not know, by name, never dropped.
+function mergedLine(table: TableDescription, row: Row): string {
+  const columns = new Set(table.columns.map((c) => c.name));
+  const unknown = Object.keys(row).filter((k) => !columns.has(k)).sort();
+  if (!unknown.length) return rowLine(table, row);
+  const ordered: Row = JSON.parse(rowLine(table, row));
+  for (const k of unknown) ordered[k] = row[k];
+  return JSON.stringify(ordered);
+}
+
+const unknownColumns = (table: TableDescription, rows: Row[]) => {
+  const columns = new Set(table.columns.map((c) => c.name));
+  return rows.some((row) => Object.keys(row).some((k) => !columns.has(k)));
+};
 
 const readable = (key: string) => key.replaceAll('\u0000', ' ');
 
@@ -91,7 +109,8 @@ export async function mergeData(base: string, ours: string, theirs: string, tabl
     ? sortRows(table, entries.map((e) => e.row)).map((row) => byRow.get(row)!)
     : entries.sort((x, y) => (x.key < y.key ? -1 : x.key > y.key ? 1 : 0));
   const text = sorted.flatMap((e) => e.lines.map((l) => `${l}\n`)).join('');
-  if (table && !clashes.length && !problems.length) problems.push(...(await checkTable(table, sorted.map((e) => e.row))));
+  const rows = sorted.map((e) => e.row);
+  if (table && !clashes.length && !problems.length && !unknownColumns(table, rows)) problems.push(...(await checkTable(table, rows)));
   return { text, clashes, problems };
 }
 

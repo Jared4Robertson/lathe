@@ -15,8 +15,8 @@
 // And a repository sits under a domain and persists its one aggregate with a persists link: each repository moves
 // from under its aggregate to under that aggregate's domain, renamed <domain>-REPO<nn> (TL-LEND-A1-REPO becomes
 // TL-LEND-REPO01) wherever it is named, and persists its aggregate, one to one as before. Which records are one piece of
-// code persisting several aggregates only the Owner knows: recording those as one repository with recorded exceptions
-// (repository_share), and the IDs in code, are the to-dos.
+// code persisting several aggregates only the Owner knows: splitting that code into one repository per aggregate, and
+// the IDs in code, are the to-dos.
 //
 // And every kind's text is required or absent (LA-STD-MODELING-R10). The descriptions of flows, flow steps, data models,
 // value types, predicates, event types, services and tables go, and a test's Given opens its When. A lead or scenario
@@ -110,7 +110,7 @@ function domainRepositories(data: RawData, notes: UpgradeNotes): void {
   data.write('repository', renamed.size ? rows.map(renameRow) : rows);
   data.write('persists', [...data.read('persists'), ...persists]);
   notes.changed(`Every repository sits under its aggregate's domain and persists its aggregate: ${renamed.size} renamed from <aggregate>-REPO to <domain>-REPO<nn>.`);
-  notes.todo('A repository persists one aggregate: where several records name one class that persists several aggregates, such as a generic store, keep the record of one, add a repository_share row with its reason for each other aggregate it persists, and remove the other records; or split the class into one repository per aggregate.');
+  notes.todo('A repository persists one aggregate: where several records name one class that persists several aggregates, such as a generic store, split the class into one repository per aggregate and name each record its own.');
   notes.todo('Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.');
 }
 
