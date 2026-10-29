@@ -18,8 +18,8 @@ const row = (name: string, position: number, query: string) => ({
 /** The complete product with a domain event nothing hears (a house rule here), two house checks and a product beside it. */
 const house = () =>
   adding(complete(), {
-    product: [{ id: 'OT', title: 'Other product' }],
-    domain: [{ id: 'OT-D', title: 'Other', product_id: 'OT', subdomain_type: 'generic' }],
+    product: [{ id: 'OT', title: 'Other product', description: 'A second product beside the first.' }],
+    domain: [{ id: 'OT-D', title: 'Other', product_id: 'OT', subdomain_type: 'generic', description: 'Work done in the second product.' }],
     check: [
       // One unheard event per aggregate; it returns a check column of its own, which is ignored.
       row('every-event-heard', 1, `SELECT e.id AS record, 'house-rule' AS check, 'Domain event ' || e.id || ' is heard by no policy.' AS message

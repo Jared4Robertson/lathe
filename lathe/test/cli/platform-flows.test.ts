@@ -152,7 +152,7 @@ describe('Platform flows', () => {
     // Data the store refuses ends the load: one data-refused error per refusal, and no records.
     const file = path.join(root, 'data', 'use_case.jsonl');
     const good = readFileSync(file, 'utf8');
-    writeFileSync(file, `${good}{"id":"EX-LEND-UC09","title":"Lost","capability_id":"EX-LEND-CAP09"}\n`);
+    writeFileSync(file, `${good}{"id":"EX-LEND-UC09","title":"Lost","capability_id":"EX-LEND-CAP09","goal":"A member finds the lost tool."}\n`);
     const refused = await loadWorkspace(root);
     expect(refused.records).toEqual([]);
     expect(refused.problems.length).toBeGreaterThan(0);
@@ -191,8 +191,8 @@ describe('Platform flows', () => {
     expect(git(root, 'check-attr', 'merge', 'data/domain.jsonl').trim()).toBe('data/domain.jsonl: merge: lathe-data');
 
     // The first domain and records, with lathe add, in the data folder the config names.
-    ok(root, 'add', 'domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core');
-    ok(root, 'add', 'aggregate', '--id', 'TL-LEND-A1', '--title', 'Loan', '--domain_id', 'TL-LEND');
+    ok(root, 'add', 'domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
+    ok(root, 'add', 'aggregate', '--id', 'TL-LEND-A1', '--title', 'Loan', '--domain_id', 'TL-LEND', '--identity', 'Loan ID', '--description', 'One tool lent to one member.');
     expect(Object.keys(files(root))).toEqual(['aggregate.jsonl', 'domain.jsonl', 'product.jsonl']);
     expect(lathe(root, 'check').status).toBe(0);
 
@@ -221,7 +221,7 @@ describe('Platform flows', () => {
     ok(root, 'init', '--name', 'Tool Library', '--prefix', 'TL');
 
     // The Owner runs lathe add.
-    ok(root, 'add', 'domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core');
+    ok(root, 'add', 'domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
 
     // An Agent calls the plugin's MCP tools.
     const mcp = spawn(process.execPath, [bin, 'mcp', '--root', root], { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -244,7 +244,7 @@ describe('Platform flows', () => {
         mcp.stdin!.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
       });
     expect((await request('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1' } })).result).toBeDefined();
-    const added = await request('tools/call', { name: 'add', arguments: { aggregate: { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND' } } });
+    const added = await request('tools/call', { name: 'add', arguments: { aggregate: { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', description: 'A loan of a tool.', identity: 'Loan ID' } } });
     expect(added.result?.isError, added.result?.content[0].text).toBeUndefined();
     mcp.stdin!.end();
     await exited(mcp, 15_000);
@@ -271,7 +271,7 @@ describe('Platform flows', () => {
     expect((await post(JSON.stringify({ commands: [{ op: 'set', table: 'aggregate', key: 'TL-LEND-A1', changes: { description: 'x'.repeat(WRITE_BODY_LIMIT + 1) } }] }))).status).toBe(413);
 
     // The store refuses a write that breaks a rule, with every reason, and no file changes.
-    const broken = await post(JSON.stringify({ commands: [{ op: 'add', table: 'aggregate', row: { id: 'TL-LEND-A2', title: 'Lost', domain_id: 'TL-NONE' } }] }));
+    const broken = await post(JSON.stringify({ commands: [{ op: 'add', table: 'aggregate', row: { id: 'TL-LEND-A2', title: 'Lost', domain_id: 'TL-NONE', description: 'A tool no one can find.', identity: 'Tool ID' } }] }));
     expect(broken.status).toBe(422);
     const refusal = (await broken.json()) as WriteAnswer;
     expect(refusal.ok).toBe(false);
@@ -281,10 +281,10 @@ describe('Platform flows', () => {
 
     // Reviewed and committed in git: two branches each add an aggregate, and git merges the file row by row.
     git(root, 'checkout', '-q', '-b', 'tools');
-    ok(root, 'add', 'aggregate', '--id', 'TL-LEND-A2', '--title', 'Tool', '--domain_id', 'TL-LEND');
+    ok(root, 'add', 'aggregate', '--id', 'TL-LEND-A2', '--title', 'Tool', '--domain_id', 'TL-LEND', '--identity', 'Tool ID', '--description', 'A tool the library holds.');
     git(root, 'commit', '-q', '-am', 'Tools');
     git(root, 'checkout', '-q', 'main');
-    ok(root, 'add', 'aggregate', '--id', 'TL-LEND-A3', '--title', 'Member', '--domain_id', 'TL-LEND');
+    ok(root, 'add', 'aggregate', '--id', 'TL-LEND-A3', '--title', 'Member', '--domain_id', 'TL-LEND', '--identity', 'Member ID', '--description', 'A member of the library.');
     git(root, 'commit', '-q', '-am', 'Members');
     git(root, 'merge', '-q', '--no-edit', 'tools');
     expect(readFileSync(path.join(root, 'data', 'aggregate.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l).id)).toEqual(['TL-LEND-A1', 'TL-LEND-A2', 'TL-LEND-A3']);

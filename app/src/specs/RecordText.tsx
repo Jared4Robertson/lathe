@@ -1,18 +1,17 @@
 import type { ReactNode } from 'react';
+import { LEAD_COLUMNS } from '../../../lathe/src/lead';
 import { parentColumns, partsOf, textOf, type Row, type SpecIndex, type SpecRecord } from './data';
 import { Prose } from './mentions';
 import { RecordLink, Section, isTestKind } from './parts';
 import { appliesWhenOf, appliesWhenText, settingOfRow, settingText } from './patterns';
 
 // A record's typed fields, in place of a Markdown body: its text fields (a rule's statement, a use
-// case's goal, a term's meaning, a test's Given, When and Then, an outcome's measure, target and measure outside the code, a
+// case's goal, a term's meaning, a test's When and Then, an outcome's measure, target and measure outside the code, a
 // test data set's environment and setup, the notes) on the page, read as Markdown, and its short
 // fields (a route, a method, a file, a level) as facts beside it. Its part rows show too: the fields of an entity, a value object, a domain event or a read model as a table,
 // each with its type (a basic type, a value object or a reference to an aggregate); a table's keys;
 // a command's recorded exceptions; a flow test's steps; a product's roles.
 
-/** Text columns that open the page, without a heading, in this order. */
-const LEAD_COLUMNS = ['statement', 'goal', 'meaning', 'description'] as const;
 /** Text columns shown under their own heading, after the lead. */
 const TITLED_COLUMNS: readonly { column: string; title: string }[] = [
   { column: 'identity', title: 'Identity' },
@@ -28,8 +27,8 @@ const TITLED_COLUMNS: readonly { column: string; title: string }[] = [
   { column: 'prepare', title: 'Prepare' },
   { column: 'reset', title: 'Reset' },
 ];
-/** A test's scenario, shown together: Given, When and Then, or what a constraint accepts and refuses. */
-const SCENARIO_COLUMNS = ['given', 'when', 'then', 'accepts', 'refuses'] as const;
+/** A test's scenario, shown together: When and Then, or what a constraint accepts and refuses. */
+const SCENARIO_COLUMNS = ['when', 'then', 'accepts', 'refuses'] as const;
 /** Every column the page shows as text; the rest of a record's columns are facts. */
 export const TEXT_COLUMNS: ReadonlySet<string> = new Set([...LEAD_COLUMNS, ...TITLED_COLUMNS.map((c) => c.column), ...SCENARIO_COLUMNS, 'notes', 'reason', 'manual_reason']);
 /** A pattern rule's applies-when columns read as one fact. */
@@ -48,7 +47,7 @@ const SHOWN_PARTS: ReadonlySet<string> = new Set([...FIELD_TABLES, 'table_key', 
 const scenarioLabel = (c: string) => c[0].toUpperCase() + c.slice(1);
 
 /** The record's text fields and part rows, for the body of its page. */
-/** A record's lead text: its statement, goal, meaning or description, the first it has; empty when none. */
+/** A record's lead text: the one lead column its kind has (LEAD_COLUMNS); empty for a kind with none. */
 export const leadOf = (record: SpecRecord): string => LEAD_COLUMNS.map((c) => textOf(record.row, c).trim()).find((t) => t) ?? '';
 
 export function RecordText({ index, record }: { index: SpecIndex; record: SpecRecord }) {
@@ -95,7 +94,7 @@ export function RecordText({ index, record }: { index: SpecIndex; record: SpecRe
       {roles.length > 0 && (
         <Section title="Roles" count={roles.length}>
           <dl className="fields roles">
-            {roles.map((r) => <div key={textOf(r, 'name')}><dt>{textOf(r, 'name')}</dt><dd>{textOf(r, 'description') || <span className="hint">No description.</span>}</dd></div>)}
+            {roles.map((r) => <div key={textOf(r, 'name')}><dt>{textOf(r, 'name')}</dt><dd>{textOf(r, 'description')}</dd></div>)}
           </dl>
         </Section>
       )}

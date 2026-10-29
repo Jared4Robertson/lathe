@@ -37,7 +37,7 @@ describe("Authoring's value objects", () => {
       expect(problems[0].message, id).toContain(`record_id ${id} breaks a rule of its table`);
     }
     // Capitals and digits in parts joined by hyphens, of any number of parts.
-    expect(await refusals(adding({ view: [{ id: 'TL-V2B', title: 'Desk' }], integration: [{ id: 'TL-INT02', title: 'Payments' }] }))).toEqual([]);
+    expect(await refusals(adding({ view: [{ id: 'TL-V2B', title: 'Desk', description: 'The desk where tools go out.' }], integration: [{ id: 'TL-INT02', title: 'Payments', description: 'Fees members pay.' }] }))).toEqual([]);
   });
 
   it('LA-VO02-C01-T An empty or blank title is refused, and a missing one is required', async () => {
@@ -110,8 +110,8 @@ describe("Authoring's value objects", () => {
       await refusals(
         adding({
           domain: [
-            { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting' },
-            { id: 'TL-MAIL', title: 'Mail', product_id: 'TL', subdomain_type: 'generic' },
+            { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' },
+            { id: 'TL-MAIL', title: 'Mail', product_id: 'TL', subdomain_type: 'generic', description: 'Mail sent to members.' },
           ],
         }),
       ),
@@ -140,7 +140,7 @@ describe("Authoring's value objects", () => {
       expect(
         await refusals(
           adding({
-            read_model: [{ id: 'TL-LEND-RM02', title: 'Overdue loans', domain_id: 'TL-LEND' }],
+            read_model: [{ id: 'TL-LEND-RM02', title: 'Overdue loans', domain_id: 'TL-LEND', description: 'The loans past their due date.' }],
             table: [{ id: 'TL-LEND-RM02-TB', title: 'overdue_loans', read_model_id: 'TL-LEND-RM02', name: 'overdue_loans', storage }],
           }),
         ),
@@ -159,7 +159,7 @@ describe("Authoring's value objects", () => {
     for (const method of ['post', 'TRACE']) {
       expect(await refusals(firstRow('endpoint', { method })), method).toEqual(notOneOf('endpoint', 'method', method, methods));
     }
-    const endpoints = methods.map((method, i) => ({ id: `TL-LEND-EP0${i + 2}`, title: `${method} /loans/${i}`, command_id: 'TL-LEND-CMD01', method, route: `/loans/${i}` }));
+    const endpoints = methods.map((method, i) => ({ id: `TL-LEND-EP0${i + 2}`, title: `${method} /loans/${i}`, command_id: 'TL-LEND-CMD01', method, route: `/loans/${i}`, description: `Answers ${method} on a loan.` }));
     expect(await refusals(adding({ endpoint: endpoints }))).toEqual([]);
   });
 
@@ -168,7 +168,7 @@ describe("Authoring's value objects", () => {
     expect(
       await refusals(
         adding({
-          domain_event: [{ id: 'TL-LEND-EV02', title: 'Loan closed', aggregate_id: 'TL-LEND-A1', published: false }],
+          domain_event: [{ id: 'TL-LEND-EV02', title: 'Loan closed', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool came back.' }],
           event_type: [{ id: 'TL-LEND-EV02-ET', title: 'LoanClosed', domain_event_id: 'TL-LEND-EV02', delivery: 'in process' }],
         }),
       ),
@@ -183,7 +183,7 @@ describe("Authoring's value objects", () => {
     for (const level of ['e2e-ui', 'manual', 'Browser']) {
       expect(await refusals(firstRow('invariant_test', { level })), level).toEqual(notOneOf('invariant_test', 'level', level, levels));
     }
-    const tests = levels.map((level, i) => ({ id: `TL-LEND-UC01-R01-T0${i + 2}`, title: `At ${level}`, uc_requirement_id: 'TL-LEND-UC01-R01', level, state: 'not automated yet' }));
+    const tests = levels.map((level, i) => ({ id: `TL-LEND-UC01-R01-T0${i + 2}`, title: `At ${level}`, uc_requirement_id: 'TL-LEND-UC01-R01', level, state: 'not automated yet', when: 'Borrows a tool on loan', then: 'Expects a refusal' }));
     expect(await refusals(adding({ use_case_test: tests }))).toEqual([]);
   });
 
@@ -192,9 +192,9 @@ describe("Authoring's value objects", () => {
       expect(await refusals(firstRow('invariant_test', { state })), state).toEqual(notOneOf('invariant_test', 'state', state, states));
     }
     const tests: Row[] = [
-      { id: 'TL-LEND-UC01-R01-T02', title: 'Automated', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/api.test.ts' },
-      { id: 'TL-LEND-UC01-R01-T03', title: 'Manual', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'browser', state: 'manual', manual_reason: 'Done at the desk.' },
-      { id: 'TL-LEND-UC01-R01-T04', title: 'Later', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet' },
+      { id: 'TL-LEND-UC01-R01-T02', title: 'Automated', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/api.test.ts', when: 'Borrows a tool on loan', then: 'Expects a refusal' },
+      { id: 'TL-LEND-UC01-R01-T03', title: 'Manual', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'browser', state: 'manual', manual_reason: 'Done at the desk.', when: 'Borrows a tool on loan', then: 'Expects a refusal' },
+      { id: 'TL-LEND-UC01-R01-T04', title: 'Later', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'Borrows a tool on loan', then: 'Expects a refusal' },
     ];
     expect(await refusals(adding({ use_case_test: tests }))).toEqual([]);
   });

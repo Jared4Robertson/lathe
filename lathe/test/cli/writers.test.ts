@@ -28,21 +28,21 @@ const line = (root: string, table: string, id: string) =>
 describe('lathe add', () => {
   it('LA-AUT-UC01-R05-T01 adds a record from its column flags and prints the row and the file', async () => {
     const root = writeData(everyKind());
-    const result = await lathe(root, 'add', 'capability', '--id', 'TL-LEND-CAP02', '--title', 'Returns', '--domain_id', 'TL-LEND', '--position', '2');
+    const result = await lathe(root, 'add', 'capability', '--id', 'TL-LEND-CAP02', '--title', 'Returns', '--domain_id', 'TL-LEND', '--position', '2', '--description', 'Taking tools back.');
     expect(result).toEqual({
       status: 0,
-      out: 'Added capability TL-LEND-CAP02: {"id":"TL-LEND-CAP02","title":"Returns","domain_id":"TL-LEND","position":2}\nWrote data/capability.jsonl\n',
+      out: 'Added capability TL-LEND-CAP02: {"id":"TL-LEND-CAP02","title":"Returns","domain_id":"TL-LEND","position":2,"description":"Taking tools back."}\nWrote data/capability.jsonl\n',
       err: '',
     });
-    expect(line(root, 'capability', 'TL-LEND-CAP02')).toBe('{"id":"TL-LEND-CAP02","title":"Returns","domain_id":"TL-LEND","position":2}');
+    expect(line(root, 'capability', 'TL-LEND-CAP02')).toBe('{"id":"TL-LEND-CAP02","title":"Returns","domain_id":"TL-LEND","position":2,"description":"Taking tools back."}');
   });
 
   it('LA-AUT-UC01-R05-T01 adds a kind with no owner, and one of a kind with two possible parents', async () => {
     const root = writeData(everyKind());
-    expect((await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Return desk')).out).toBe('Added view TL-V02: {"id":"TL-V02","title":"Return desk"}\nWrote data/view.jsonl\n');
+    expect((await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Return desk', '--description', 'Where tools come back.')).out).toBe('Added view TL-V02: {"id":"TL-V02","title":"Return desk","description":"Where tools come back."}\nWrote data/view.jsonl\n');
     expect((await lathe(root, 'add', 'specification', '--id', 'TL-LEND-SP02', '--title', 'Tool needs repair', '--statement', 'A tool needs repair when its condition says so.')).status).toBe(0);
-    const endpoint = await lathe(root, 'add', 'endpoint', '--id', 'TL-LEND-EP02', '--title', 'GET /tools', '--query_id', 'TL-LEND-QRY01', '--method', 'GET', '--route', '/tools');
-    expect(endpoint.out).toContain('Added endpoint TL-LEND-EP02: {"id":"TL-LEND-EP02","title":"GET /tools","query_id":"TL-LEND-QRY01","method":"GET","route":"/tools"}');
+    const endpoint = await lathe(root, 'add', 'endpoint', '--id', 'TL-LEND-EP02', '--title', 'GET /tools', '--query_id', 'TL-LEND-QRY01', '--method', 'GET', '--route', '/tools', '--description', 'Answers 200 with the tools.');
+    expect(endpoint.out).toContain('Added endpoint TL-LEND-EP02: {"id":"TL-LEND-EP02","title":"GET /tools","query_id":"TL-LEND-QRY01","method":"GET","route":"/tools","description":"Answers 200 with the tools."}');
     expect((await lathe(root, 'add', 'table', '--id', 'TL-LEND-EN02-TB', '--title', 'Returns', '--entity_id', 'TL-LEND-EN02', '--name', 'returns', '--storage', 'table')).err).toContain('[entity-table]');
   });
 
@@ -80,11 +80,11 @@ describe('lathe add', () => {
   it('LA-AUT-UC01-R07-T01 refuses a write the command layer refuses, printing the reason, and changes nothing', async () => {
     const root = writeData(everyKind());
     const before = files(root);
-    const result = await lathe(root, 'add', 'aggregate', '--id', 'TL-LEND-A3', '--title', 'Member', '--domain_id', 'TL-NOPE');
+    const result = await lathe(root, 'add', 'aggregate', '--id', 'TL-LEND-A3', '--title', 'Member', '--domain_id', 'TL-NOPE', '--identity', 'Member ID', '--description', 'A member of the library.');
     expect(result.status).toBe(1);
     expect(result.out).toBe('');
     expect(result.err).toContain('aggregate TL-LEND-A3: domain_id "TL-NOPE" names no domain [foreign-key]');
-    expect((await lathe(root, 'add', 'aggregate', '--id', 'TL-OTHER-A1', '--title', 'Member', '--domain_id', 'TL-LEND')).err).toContain('[id-prefix]');
+    expect((await lathe(root, 'add', 'aggregate', '--id', 'TL-OTHER-A1', '--title', 'Member', '--domain_id', 'TL-LEND', '--identity', 'Member ID', '--description', 'A member of the library.')).err).toContain('[id-prefix]');
     expect((await lathe(root, 'add', 'view', '--id', 'TL-V02')).err).toContain('view.title is required [required]');
     expect(files(root)).toEqual(before);
   });
@@ -95,12 +95,12 @@ describe('lathe add', () => {
     expect(field.err).toBe(
       'Refused; nothing changed:\n  entity_field entity_id TL-LEND-EN02, position 1 breaks a rule of its table: exactly one of type, type_value_object_id and type_aggregate_id is given [check]\n',
     );
-    const test = await lathe(root, 'add', 'domain_service_test', '--id', 'TL-LEND-DS01-T02', '--title', 'X', '--domain_service_id', 'TL-LEND-DS01', '--level', 'unit', '--state', 'automated');
+    const test = await lathe(root, 'add', 'domain_service_test', '--id', 'TL-LEND-DS01-T02', '--title', 'X', '--domain_service_id', 'TL-LEND-DS01', '--level', 'unit', '--state', 'automated', '--when', 'Works out a due date', '--then', 'It is 14 days on');
     expect(test.err).toContain('breaks a rule of its table: file is given when state is automated [check]');
-    const manual = await lathe(root, 'add', 'domain_service_test', '--id', 'TL-LEND-DS01-T02', '--title', 'X', '--domain_service_id', 'TL-LEND-DS01', '--level', 'unit', '--state', 'manual');
+    const manual = await lathe(root, 'add', 'domain_service_test', '--id', 'TL-LEND-DS01-T02', '--title', 'X', '--domain_service_id', 'TL-LEND-DS01', '--level', 'unit', '--state', 'manual', '--when', 'Works out a due date', '--then', 'It is 14 days on');
     expect(manual.err).toContain('breaks a rule of its table: manual_reason is given when, and only when, state is manual [check]');
     expect((await lathe(root, 'link', 'TL-LEND-EN01', 'has_one', 'TL-LEND-EN01')).err).toContain('source_id and target_id differ [check]');
-    expect((await lathe(root, 'add', 'entity', '--id', 'TL-LEND-EN03', '--title', 'X', '--aggregate_id', 'TL-LEND-A2', '--role', 'root', '--in_root_table', 'true')).err).toContain(
+    expect((await lathe(root, 'add', 'entity', '--id', 'TL-LEND-EN03', '--title', 'X', '--aggregate_id', 'TL-LEND-A2', '--role', 'root', '--in_root_table', 'true', '--description', 'A tool part.')).err).toContain(
       'in_root_table is given only when role is child [check]',
     );
   });
@@ -120,12 +120,12 @@ describe('lathe add', () => {
 
   it('LA-AUT-UC01-R05-T09 prints the result as JSON with --json', async () => {
     const root = writeData(everyKind());
-    const result = await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Desk', '--json');
+    const result = await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Desk', '--description', 'The desk where tools go out.', '--json');
     expect(JSON.parse(result.out)).toEqual({
-      changes: [{ change: 'added', table: 'view', link: false, key: 'TL-V02', row: { id: 'TL-V02', title: 'Desk' } }],
+      changes: [{ change: 'added', table: 'view', link: false, key: 'TL-V02', row: { id: 'TL-V02', title: 'Desk', description: 'The desk where tools go out.' } }],
       files: ['data/view.jsonl'],
     });
-    const refused = await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Desk', '--json');
+    const refused = await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Desk', '--description', 'The desk where tools go out.', '--json');
     expect(refused.status).toBe(1);
     expect(JSON.parse(refused.out)).toEqual({ refused: true, problems: [expect.objectContaining({ rule: 'primary-key', message: 'view TL-V02 already exists' })] });
   });
@@ -154,8 +154,8 @@ describe('lathe set', () => {
     const root = writeData(everyKind());
     const result = await lathe(root, 'set', 'TL-V01', '--route', '/tools', '--description', 'The tools.');
     expect(result.out).toBe('Changed view TL-V01: {"id":"TL-V01","title":"Catalog","route":"/tools","description":"The tools."}\nWrote data/view.jsonl\n');
-    expect((await lathe(root, 'set', 'TL-V01', '--description', '')).status).toBe(0);
-    expect(line(root, 'view', 'TL-V01')).toBe('{"id":"TL-V01","title":"Catalog","route":"/tools"}');
+    expect((await lathe(root, 'set', 'TL-V01', '--route', '')).status).toBe(0);
+    expect(line(root, 'view', 'TL-V01')).toBe('{"id":"TL-V01","title":"Catalog","description":"The tools."}');
   });
 
   it('LA-AUT-UC01-R05-T02 changes part rows named by their key columns', async () => {
@@ -182,7 +182,7 @@ describe('lathe move', () => {
   it('LA-AUT-UC01-R05-T03 moves a record and reports every row that changed with it', async () => {
     const root = writeData({
       ...everyKind(),
-      capability: [...everyKind().capability, { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2 }],
+      capability: [...everyKind().capability, { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back.' }],
     });
     const result = await lathe(root, 'move', 'TL-LEND-UC01', '--parent', 'TL-LEND-CAP02');
     expect(result.status).toBe(0);
@@ -193,7 +193,7 @@ describe('lathe move', () => {
   it('LA-AUT-UC01-R05-T03 moves a record between its two kinds of parent, clearing the other column', async () => {
     const root = writeData(everyKind());
     const result = await lathe(root, 'move', 'TL-LEND-EP01', '--parent', 'TL-LEND-QRY01');
-    expect(result.out).toContain('Changed endpoint TL-LEND-EP01: {"id":"TL-LEND-EP01","title":"POST /loans","method":"POST","route":"/loans","query_id":"TL-LEND-QRY01"}');
+    expect(result.out).toContain('Changed endpoint TL-LEND-EP01: {"id":"TL-LEND-EP01","title":"POST /loans","method":"POST","route":"/loans","description":"Takes a member and a tool; answers 201 with the loan.","query_id":"TL-LEND-QRY01"}');
   });
 
   it('LA-AUT-UC01-R07-T01 refuses a parent of the wrong kind, a record with no owner, and needs --parent', async () => {
@@ -262,6 +262,7 @@ describe('lathe show, list and next-id', () => {
         '  kind: command',
         '  parent: TL-LEND-A1',
         '  aggregate_id: TL-LEND-A1',
+        '  description: Lends a free tool to a member.',
         'command_change:',
         '  {"command_id":"TL-LEND-CMD01","aggregate_id":"TL-LEND-A2","reason":"The tool must never show as lent without its loan."}',
         'Children:',
@@ -283,7 +284,7 @@ describe('lathe show, list and next-id', () => {
   it('LA-AUT-UC01-R05-T06 shows where a record with no owner sits', async () => {
     const root = writeData(everyKind());
     expect((await lathe(root, 'show', 'TL-V01')).out).toMatch(/^View TL-V01: Catalog\n  kind: view\n  no owner; in domain TL-LEND\n/);
-    expect((await lathe(root, 'add', 'value_object', '--id', 'TL-VO09', '--title', 'Postcode')).status).toBe(0);
+    expect((await lathe(root, 'add', 'value_object', '--id', 'TL-VO09', '--title', 'Postcode', '--description', 'Where a member lives.')).status).toBe(0);
     expect((await lathe(root, 'show', 'TL-VO09')).out).toMatch(/^Value object TL-VO09: Postcode\n  kind: value_object\n  no owner; shared in product TL\n/);
     expect((await lathe(root, 'show', 'TL-LEND-SP01')).out).toMatch(/^Specification TL-LEND-SP01: Tool is free\n  kind: specification\n  no owner; in domain TL-LEND\n/);
   });
@@ -294,7 +295,7 @@ describe('lathe show, list and next-id', () => {
     expect((await lathe(root, 'list', 'entity', '--parent', 'TL-LEND-A1')).out).toBe('TL-LEND-EN01  Loan\nTL-LEND-EN02  Return\n');
     expect((await lathe(root, 'list', 'endpoint', '--parent', 'TL-LEND-CMD01')).out).toBe('TL-LEND-EP01  POST /loans\n');
     expect((await lathe(root, 'list', 'table', '--parent', 'TL-LEND-RM01')).out).toBe('TL-LEND-RM01-TB  loans_by_member\n');
-    expect((await lathe(root, 'list', 'view', '--parent', 'TL', '--json')).out).toBe(`${JSON.stringify([{ id: 'TL-V01', title: 'Catalog', route: '/catalog' }], null, 2)}\n`);
+    expect((await lathe(root, 'list', 'view', '--parent', 'TL', '--json')).out).toBe(`${JSON.stringify([{ id: 'TL-V01', title: 'Catalog', route: '/catalog', description: 'Every tool, with whether it is free.' }], null, 2)}\n`);
     expect((await lathe(root, 'list', 'specification', '--parent', 'TL-LEND')).out).toBe('TL-LEND-SP01  Tool is free\n');
     expect((await lathe(root, 'list', 'use_case_actor', '--parent', 'TL-LEND-UC01')).out).toBe('{"use_case_id":"TL-LEND-UC01","position":1,"role_name":"Member"}\n');
     expect((await lathe(root, 'list', 'hears', '--parent', 'TL-LEND-EV01')).out).toBe('{"source_id":"TL-LEND-PO01","target_id":"TL-LEND-EV01"}\n');
@@ -328,7 +329,7 @@ describe('lathe show, list and next-id', () => {
     const taken = await lathe(root, 'next-id', 'flow', '--parent', 'TL-LEND-UC01');
     expect(taken.status).toBe(1);
     expect(taken.err).toContain("TL-LEND-UC01 has a flow through every interface of TL; a flow's ID ends in its interface's number, so declare the interface first");
-    await lathe(root, 'add', 'interface', '--id', 'TL-IF02', '--title', 'CLI', '--product_id', 'TL', '--kind', 'CLI');
+    await lathe(root, 'add', 'interface', '--id', 'TL-IF02', '--title', 'CLI', '--product_id', 'TL', '--kind', 'CLI', '--description', 'The command line the librarian types in.');
     expect(await next(root, 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL02');
   });
 
@@ -353,7 +354,7 @@ describe('lathe show, list and next-id', () => {
 describe('the data after writes', () => {
   it('LA-AUT-UC01-R05-T01 loads with every key and check', async () => {
     const root = writeData(everyKind());
-    await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Desk');
+    await lathe(root, 'add', 'view', '--id', 'TL-V02', '--title', 'Desk', '--description', 'The desk where tools go out.');
     await lathe(root, 'add', 'flow_step', '--id', 'TL-LEND-UC01-FL01-S02', '--title', 'Return it', '--flow_id', 'TL-LEND-UC01-FL01', '--path', 'main', '--position', '2');
     await lathe(root, 'link', 'TL-LEND-UC01-FL01-S02', 'happens_in', 'TL-V02');
     const store = await openStore(root);
@@ -397,7 +398,7 @@ describe('a write given as JSON', () => {
     expect((await piped(root, '{"source": "TL-LEND-QRY01", "relation": "calls", "target": "TL-LEND-DS01"}', 'unlink', '--json', '-')).status).toBe(0);
     expect((await piped(root, '{"use_case": {"id": "TL-LEND-UC01", "notes": "N."}}', 'set', '--json', '-')).status).toBe(0);
     expect((await piped(root, '{"use_case": {"id": "TL-LEND-UC01", "notes": null}}', 'set', '--json', '-')).status).toBe(0);
-    expect((await piped(root, '{"view": {"id": "TL-V02", "title": "Desk"}}', 'add', '--json', '-')).status).toBe(0);
+    expect((await piped(root, '{"view": {"id": "TL-V02", "title": "Desk", "description": "The desk where tools go out."}}', 'add', '--json', '-')).status).toBe(0);
     expect((await piped(root, '{"id": "TL-V02"}', 'remove', '--json', '-')).status).toBe(0);
     const store = await openStore(root);
     expect(store.record('TL-LEND-UC01')?.row.notes).toBeUndefined();
@@ -408,13 +409,13 @@ describe('a write given as JSON', () => {
   it('LA-AUT-UC01-R11-T02 refuses as the flags do, with every reason, and changes nothing', async () => {
     const root = writeData(everyKind());
     const before = files(root);
-    const viaFlags = await lathe(root, 'add', 'aggregate', '--id', 'TL-OTHER-A3', '--title', 'Member', '--domain_id', 'TL-NOPE', '--json');
-    const viaJson = await piped(root, '{"aggregate": {"id": "TL-OTHER-A3", "title": "Member", "domain_id": "TL-NOPE"}}', 'add', '--json', '-');
+    const viaFlags = await lathe(root, 'add', 'aggregate', '--id', 'TL-OTHER-A3', '--title', 'Member', '--domain_id', 'TL-NOPE', '--identity', 'Member ID', '--description', 'A member of the library.', '--json');
+    const viaJson = await piped(root, '{"aggregate": {"id": "TL-OTHER-A3", "title": "Member", "domain_id": "TL-NOPE", "identity": "Member ID", "description": "A member of the library."}}', 'add', '--json', '-');
     expect(viaJson.status).toBe(1);
     expect(viaFlags.status).toBe(1);
     expect(JSON.parse(viaJson.out)).toEqual(JSON.parse(viaFlags.out));
     expect(JSON.parse(viaJson.out).problems).toEqual([expect.objectContaining({ rule: 'foreign-key' })]);
-    const shape = await piped(root, '[{"view": {"id": "TL-V02", "title": "Desk"}}, {"view": {}, "aggregate": {}}, 3]', 'add', '--json', '-');
+    const shape = await piped(root, '[{"view": {"id": "TL-V02", "title": "Desk", "description": "The desk where tools go out."}}, {"view": {}, "aggregate": {}}, 3]', 'add', '--json', '-');
     expect(shape.status).toBe(1);
     expect(JSON.parse(shape.out).problems.map((p: { message: string }) => p.message)).toEqual([
       'item 2: add takes exactly one property: the table, with the row as its value',
@@ -440,10 +441,10 @@ describe('a write given as JSON', () => {
 
   it('LA-AUT-UC01-R11-T04 writes an array as one write, all or nothing', async () => {
     const root = writeData(everyKind());
-    const both = await piped(root, JSON.stringify([{ view: { id: 'TL-V02', title: 'Desk' } }, { view: { id: 'TL-V03', title: 'Shelf' } }]), 'add', '--json', '-');
+    const both = await piped(root, JSON.stringify([{ view: { id: 'TL-V02', title: 'Desk', description: 'The desk where tools go out.' } }, { view: { id: 'TL-V03', title: 'Shelf', description: 'The shelf of free tools.' } }]), 'add', '--json', '-');
     expect(JSON.parse(both.out).changes.map((c: { key: string }) => c.key)).toEqual(['TL-V02', 'TL-V03']);
     const before = files(root);
-    const half = await piped(root, JSON.stringify([{ view: { id: 'TL-V04', title: 'Bench' } }, { view: { id: 'TL-V02', title: 'Again' } }]), 'add', '--json', '-');
+    const half = await piped(root, JSON.stringify([{ view: { id: 'TL-V04', title: 'Bench', description: 'The bench where tools get fixed.' } }, { view: { id: 'TL-V02', title: 'Again', description: 'The desk again.' } }]), 'add', '--json', '-');
     expect(half.status).toBe(1);
     expect(JSON.parse(half.out).problems).toEqual([expect.objectContaining({ rule: 'primary-key' })]);
     expect(files(root)).toEqual(before);

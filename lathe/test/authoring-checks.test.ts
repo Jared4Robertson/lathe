@@ -35,8 +35,8 @@ describe("Authoring's invariants kept by checks", () => {
     // In the complete product the rule's test names EX-LEND, whose use case EX-LEND-UC02 follows the pattern.
     expect(ofCheck(clean, 'pattern-rule-test-outside-followers')).toEqual([]);
     const outside = adding(complete(), {
-      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }],
-      pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet' }],
+      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+      pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet', when: 'The clerk saves a sale.', then: 'The sale reads the same everywhere.' }],
     });
     expect(ofCheck(await loadData(outside), 'pattern-rule-test-outside-followers')).toEqual([
       expect.objectContaining({ severity: 'error', record: 'EX-PAT-ACT-R01-T02', message: expect.stringContaining('which does not follow pattern EX-PAT-ACT') }),
