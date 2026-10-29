@@ -304,7 +304,6 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
     if (wrapper.current) drawLeaderLine(g, {
       host: wrapper.current, space, dpr, color: own ? boxColors(look.current, own).edge : look.current.ink,
       box: own ? box(own) : null,
-      avoid: frame.filter((d) => d.plate.place !== at).map((d) => box(d.plate)),
     });
     if (!faded.done || marksMoving(live, frame.map((d) => d.plate.id))) requestPaint();
   };

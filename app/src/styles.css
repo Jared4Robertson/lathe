@@ -910,7 +910,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .trace-col-row[aria-current="page"] { box-shadow: 0 0 0 2px var(--steel); }
 .trace-col-row.is-faded { opacity: var(--focus-fade); }
 .trace-col-meta { font: 0.72rem var(--mono); color: var(--muted); overflow-wrap: anywhere; }
-.trace-col-title { font-size: 0.92rem; font-weight: 600; overflow-wrap: anywhere; }
+.trace-col-title { font-size: 0.92rem; font-weight: 600; }
 .trace-col-count { position: absolute; right: 12px; bottom: 8px; font: 500 0.75rem var(--mono); color: var(--muted); }
 
 /* ---------- Themes and Appearance (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
