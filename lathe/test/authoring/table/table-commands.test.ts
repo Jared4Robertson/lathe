@@ -62,14 +62,14 @@ describe('LA-AUT-UC17-R50-T01 each Table command (LA-AUT-A18) changes one table 
   it('builds the data set with its own Add commands, and reads a table whole', async () => {
     const store = await tableDataSet();
     const whole = runQuery(store, GET_TABLE, { id: 'TL-LEND-EN01-TB' }) as ReturnType<typeof GET_TABLE.run>;
-    expect(whole).toMatchObject({ table: { id: 'TL-LEND-EN01-TB' }, meets: ['TL-STD-CODE-R01'], packages: [] });
+    expect(whole).toMatchObject({ record: { id: 'TL-LEND-EN01-TB', kind: 'table' }, table: { id: 'TL-LEND-EN01-TB' }, parent: { kind: 'entity', id: 'TL-LEND-EN01' }, meets: ['TL-STD-CODE-R01'], packages: [] });
     expect(whole.keys).toEqual([{ table_id: 'TL-LEND-EN01-TB', position: 1, ...primary }, { table_id: 'TL-LEND-EN01-TB', position: 2, type: 'unique', columns: ['tool_id'], name: 'loans_one_active_per_tool', invariant_id: 'TL-LEND-INV01', condition: 'returned_at IS NULL' }]);
     expect(GET_TABLE.text(whole)).toContain('key 2: unique (tool_id) loans_one_active_per_tool; enforces TL-LEND-INV01; where returned_at IS NULL');
     expect(runQuery(store, LIST_TABLES, { parent: 'TL-LEND' })).toEqual([{ id: 'TL-LEND-TB01', title: 'outbox' }]);
     expect(runQuery(store, LIST_TABLES, { parent: 'TL-LEND-EN01' })).toEqual([{ id: 'TL-LEND-EN01-TB', title: 'loans' }]);
     expect(runQuery(store, NEXT_TABLE_ID, { parent: 'TL-LEND' })).toBe('TL-LEND-TB02');
     expect(() => runQuery(store, NEXT_TABLE_ID, { parent: 'TL-LEND-EN01' })).toThrow(/already has its table, TL-LEND-EN01-TB/);
-    expect(() => runQuery(store, NEXT_TABLE_ID, { parent: 'TL-LEND-A1' })).toThrow(/a table sits under an entity, a read model or a domain, and TL-LEND-A1 is a aggregate/);
+    expect(() => runQuery(store, NEXT_TABLE_ID, { parent: 'TL-LEND-A1' })).toThrow(/a table sits under an entity, a read model or a domain, and TL-LEND-A1 is an aggregate/);
   });
 
   it('changes a table and moves it to another parent, writing only its own tables', async () => {
