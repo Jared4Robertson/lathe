@@ -51,10 +51,10 @@ describe('LA-AUT-UC12-R50-T01 each Command command (LA-AUT-A8) changes one comma
   it('builds the data set with its own Add commands, and reads a command whole by any record in it', async () => {
     const store = await commandDataSet();
     const whole = runQuery(store, GET_COMMAND, { id: 'TL-LEND-PO01-T' }) as Whole;
-    expect(whole).toMatchObject({ root: 'TL-LEND-CMD01', raises: ['TL-LEND-EV01'], checks: ['TL-LEND-SP01'], calls: ['TL-LEND-DS01'], policies: [{ hears: 'TL-LEND-EV01' }] });
-    expect(whole.handler).toMatchObject({ row: { id: 'TL-LEND-CMD01-H' }, meets: ['TL-STD-CODE-R01'] });
-    expect(whole.eventHandlers.map((h) => h.row.id)).toEqual(['TL-LEND-PO01-H']);
-    expect(whole.policyTests[0].startsFrom).toEqual(['TL-LEND-TD01']);
+    expect(whole).toMatchObject({ record: { id: 'TL-LEND-PO01-T', kind: 'policy_test' }, command: { id: 'TL-LEND-CMD01' }, raises: ['TL-LEND-EV01'], checks: ['TL-LEND-SP01'], calls: ['TL-LEND-DS01'], policies: [{ hears: 'TL-LEND-EV01' }] });
+    expect(whole.handler).toMatchObject({ handler: { id: 'TL-LEND-CMD01-H' }, meets: ['TL-STD-CODE-R01'] });
+    expect(whole.policies.map((p) => p.eventHandler?.handler.id)).toEqual(['TL-LEND-PO01-H']);
+    expect(whole.policies[0].test?.startsFrom).toEqual(['TL-LEND-TD01']);
     expect(runQuery(store, LIST_COMMANDS, { entity_id: 'TL-LEND-EN01' })).toEqual([{ id: 'TL-LEND-CMD01', title: 'Open a loan' }]);
     expect(runQuery(store, NEXT_COMMAND_ID, { kind: 'command', parent: 'TL-LEND-EN01' })).toBe('TL-LEND-CMD02');
     expect(runQuery(store, NEXT_COMMAND_ID, { kind: 'policy', parent: 'TL-LEND-CMD01' })).toBe('TL-LEND-PO02');
