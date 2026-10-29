@@ -41,7 +41,11 @@ Options for every command:
 // The data commands read their own flags, one per column of the schema, and the app commands theirs.
 const dataCommand = (DATA_COMMANDS as readonly string[]).includes(process.argv[2] ?? '');
 const appCommand = process.argv[2] === 'app';
-const aggregateCommand = AGGREGATE_COMMANDS.includes(process.argv[2] ?? '');
+// `lathe check` runs the checks, and `lathe check <command>` one of the Check aggregate's commands: an aggregate whose
+// name is also one of the commands above is reached with a command after it.
+const TOP_COMMANDS = ['init', 'upgrade', 'check', 'serve', 'merge-data', 'mcp', 'help'];
+const aggregateCommand =
+  AGGREGATE_COMMANDS.includes(process.argv[2] ?? '') && (!TOP_COMMANDS.includes(process.argv[2]) || /^[a-z]/.test(process.argv[3] ?? ''));
 const { positionals, values } = parseArgs({
   allowPositionals: true,
   args: dataCommand || appCommand || aggregateCommand ? [] : process.argv.slice(2),
