@@ -227,6 +227,25 @@ function widthKeeping(label: MapLabel, lines: WrappedLabel, centered: boolean): 
  * run ends where its widest line fills the room's width. Only those two bounds are found by halving, which needs no
  * wrapping.
  */
+/** Whether a label fits a room `w` by `h` at a text scale, wrapped as the map wraps it there, inside its border (`largestFit`). */
+export function fitsAt(label: MapLabel, centered: boolean, w: number, h: number, s: number, border: (s: number) => number = () => 0): boolean {
+  const width = (w - 2 * border(s)) / s;
+  return s > 0 && width >= narrowestWidth(label, centered) && labelHeight(linesIn(label, width, centered)) * s <= h - 2 * border(s);
+}
+
+/**
+ * A scale at or just under `s` at which the label fits: where a run of lines ends, rounding can wrap one more line at the
+ * bound itself, so it steps down by a hair until the label fits there, and halves from 0 if it never does.
+ */
+function settled(label: MapLabel, centered: boolean, w: number, h: number, s: number, border: (s: number) => number): number {
+  for (let step = 1e-12; step < 1e-3; step *= 16) {
+    const at = s * (1 - step);
+    if (fitsAt(label, centered, w, h, s, border)) return s;
+    s = at;
+  }
+  return largestWhere((x) => fitsAt(label, centered, w, h, x, border), 0, s);
+}
+
 export function largestFit(label: MapLabel, centered: boolean, w: number, h: number, most: number, border: (s: number) => number = () => 0): number {
   const narrowest = narrowestWidth(label, centered);
   if (most <= 0 || w - 2 * border(0) <= 0 || h - 2 * border(0) <= 0) return 0;
@@ -244,7 +263,7 @@ export function largestFit(label: MapLabel, centered: boolean, w: number, h: num
   // At `top` the label is wrapped narrowest and tallest: at any smaller scale it is no taller, so these lines' height
   // gives a scale that fits.
   let lines = linesIn(label, inner(top), centered);
-  if (tall(labelHeight(lines))(top)) return top;
+  if (tall(labelHeight(lines))(top)) return settled(label, centered, w, h, top, border);
   let at = largestWhere(tall(labelHeight(lines)), 0, top);
   for (;;) {
     lines = linesIn(label, inner(at), centered);
@@ -252,10 +271,10 @@ export function largestFit(label: MapLabel, centered: boolean, w: number, h: num
     // The run of these lines ends where the room is as narrow as their widest line; within it they fit up to their height.
     const end = largestWhere((s) => inner(s) >= keep, at, top);
     const fit = largestWhere(tall(labelHeight(lines)), at, top);
-    if (fit <= end || end >= top) return Math.min(fit, end, top);
+    if (fit <= end || end >= top) return settled(label, centered, w, h, Math.min(fit, end, top), border);
     // Past the run's end the label breaks into more lines: they fit there, or nothing past the end does.
     const next = linesIn(label, keep * (1 - 1e-12), centered);
-    if (!tall(labelHeight(next))(Math.min(top, end * (1 + 1e-12)))) return end;
+    if (!tall(labelHeight(next))(Math.min(top, end * (1 + 1e-12)))) return settled(label, centered, w, h, end, border);
     at = end * (1 + 1e-12);
   }
 }

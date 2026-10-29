@@ -1,5 +1,5 @@
 import type { SpecIndex } from '../specs/data';
-import { BORDER, largestFit, linesIn, treeLabel, type MapLabel, type WrappedLabel, textMeasure } from './text';
+import { BORDER, fitsAt, largestFit, linesIn, treeLabel, type MapLabel, type WrappedLabel, textMeasure } from './text';
 import { outlineInset, type Shape } from './shapes';
 import { treeChildren, treeParent } from './tree';
 
@@ -163,9 +163,11 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
     // Its border grows with its text (LA-EXP-DS06).
     const border = (s: number) => BORDER * s;
     const labels = ids.map((id) => labelOf(id));
-    // The smallest of the siblings' largest fits, at most their width's share.
-    // Each sibling's fit capped at the smallest so far, which a sibling that fits there answers at once, without halving.
-    const text = Math.min(treeText(w), w * labels.reduce((most, label) => unitFit(label, h / w, most), treeText(w) / w));
+    // The smallest of the siblings' largest fits, at most their width's share: each sibling's fit capped at the smallest so
+    // far, which a sibling that fits there answers at once. Scaled from one unit wide, it is settled just under itself
+    // where rounding would wrap a sibling's label one more line.
+    let text = Math.min(treeText(w), w * labels.reduce((most, label) => unitFit(label, h / w, most), treeText(w) / w));
+    for (let step = 1e-12; text > 0 && step < 1e-3 && !labels.every((label) => fitsAt(label, true, w, h, text, border)); step *= 16) text *= 1 - step;
     ids.forEach((id, i) => {
       const y = y0 + i * (h + gap);
       const own = kids.get(id)!;
