@@ -44,7 +44,7 @@ const AGGREGATES = [
 ];
 // The aggregates whose commands have not landed yet: the skills' examples of their tools are checked against the schema's
 // columns and relations only, not against the tools themselves. An aggregate leaves this list as soon as its commands land.
-const LANDED = new Set(['use-case', 'domain', 'test-data-set', 'pattern', 'standard', 'aggregate', 'domain-event', 'command', 'product', 'business-outcome', 'extension-record', 'entry-point', 'tooling', 'specification', 'value-object', 'read-model', 'table']);
+const LANDED = new Set(['use-case', 'domain', 'test-data-set', 'pattern', 'standard', 'aggregate', 'domain-event', 'command', 'product', 'business-outcome', 'extension-record', 'entry-point', 'tooling', 'specification', 'value-object', 'read-model', 'table', 'view', 'endpoint', 'integration', 'ui-component', 'check', 'product-setting', 'pattern-following']);
 const PENDING = new Set(AGGREGATES.filter((a) => !LANDED.has(a)));
 // The fields of a record's add or change that hold its parts, as lists of rows.
 const PARTS = new Set(['fields', 'keys', 'settings', 'roles', 'setting_values', 'packages']);

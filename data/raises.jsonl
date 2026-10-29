@@ -9,9 +9,6 @@
 {"source_id":"LA-AUT-CMD06","target_id":"LA-AUT-EV03"}
 {"source_id":"LA-AUT-CMD07","target_id":"LA-AUT-EV01"}
 {"source_id":"LA-AUT-CMD08","target_id":"LA-AUT-EV01"}
-{"source_id":"LA-CHK-CMD01","target_id":"LA-CHK-EV01"}
-{"source_id":"LA-CHK-CMD02","target_id":"LA-CHK-EV01"}
-{"source_id":"LA-CHK-CMD03","target_id":"LA-CHK-EV01"}
 {"source_id":"LA-EXP-CMD01","target_id":"LA-EXP-EV01"}
 {"source_id":"LA-EXP-CMD05","target_id":"LA-EXP-EV02"}
 {"source_id":"LA-EXP-CMD06","target_id":"LA-EXP-EV02"}
