@@ -26,7 +26,7 @@ import {
   BOX_HEIGHT, clampScroll, COLUMN_GAP, COLUMN_WIDTH, columnBoxes, columnHeight, columnLefts, columnScrolls, columnSizes, columnsView, columnView,
   COLUMNS_PAD, COMPACT_HEIGHT, COMPACT_WIDTH, COUNT_ROOM, holds, scrollToShow, traceColumns, type ColumnSize, type TraceColumn,
 } from './columns';
-import { nodeLabel, traceFade, type TraceMap, type TraceNode } from './tree';
+import { copyInChain, nodeLabel, traceFade, type TraceMap, type TraceNode } from './tree';
 import type { TraceHost, TraceScene, TraceSceneBox } from './TraceCanvas';
 
 // The focus's column, its parent's and its children's are full width, every box in them one size with its kind line,
@@ -44,7 +44,7 @@ import type { TraceHost, TraceScene, TraceSceneBox } from './TraceCanvas';
 const PLAIN: Record<Exclude<TraceNode['role'], 'record'>, { kind: string; label: string; dashed: boolean }> = {
   file: { kind: 'file', label: 'File', dashed: false },
   gap: { kind: GAP_KIND, label: 'Gap', dashed: true },
-  link: { kind: 'link', label: 'Link', dashed: false },
+  outside: { kind: 'outside', label: 'Branch', dashed: false },
   untraced: { kind: GAP_KIND, label: 'Untraced', dashed: true },
 };
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
@@ -339,7 +339,7 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
   const tapped = useRef<Plate | null>(null);
   const openFrom = useCallback((id: string) => {
     const n = tapped.current ? map.nodes.get(tapped.current.place) : undefined;
-    const own = !n ? undefined : n.id === id ? n.key : n.chain ? map.copies.get(id)?.find((k) => map.nodes.get(k)!.chain === n.chain) : undefined;
+    const own = !n ? undefined : n.id === id ? n.key : copyInChain(map, id, n.chain);
     onNavigate(id, own);
   }, [map, onNavigate]);
   const tapToOpen = useTapToOpen(openFrom, canOpen, wrapper, focus, onOpenNew);
@@ -371,7 +371,7 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
     const opens = hit ? map.nodes.get(hit.place)?.opens : null;
     if (c) {
       c.style.cursor = opens && canOpen(opens) ? 'pointer' : '';
-      c.title = hit ? (hit.kind === 'file' || hit.kind === 'link' || hit.kind === GAP_KIND ? `${hit.title} (${hit.meta})` : plateTip(hit)) : '';
+      c.title = hit ? (hit.kind === 'file' || hit.kind === 'outside' || hit.kind === GAP_KIND ? `${hit.title} (${hit.meta})` : plateTip(hit)) : '';
     }
     onPeek?.('hover', id && index.byId.has(id) ? id : null);
     requestPaint();

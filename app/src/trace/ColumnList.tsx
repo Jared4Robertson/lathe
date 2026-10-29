@@ -1,11 +1,11 @@
 // The Trace stage's columns on a phone (LA-V98-R13): one column at a time, the walk's levels, with a back row naming the
 // box above it. A box that holds anything opens its column (a record by becoming the focus, as a click on the canvas does);
-// a link opens its capability, a file its first naming record in its chain; a gap opens nothing.
+// a file opens its first naming record in its chain; a gap opens nothing.
 import { useMemo, useState, type MouseEvent } from 'react';
 import type { SpecIndex } from '../specs/data';
 import { stageFor } from '../graph/model';
 import { holds } from './columns';
-import { nodeLabel, traceFade, type TraceMap, type TraceNode } from './tree';
+import { copyInChain, nodeLabel, traceFade, type TraceMap, type TraceNode } from './tree';
 
 export interface ColumnListProps {
   index: SpecIndex;
@@ -38,7 +38,7 @@ export function ColumnList({ index, map, focus, at, gapsOnly, hrefFor, onNavigat
     if (n.role === 'record') { onNavigate(n.id, n.key); return; }
     if (holds(map, n.key) > 0) { setOpened({ focus, owner: n.key }); return; }
     if (!n.opens) return;
-    const own = n.chain ? map.copies.get(n.opens)?.find((k) => map.nodes.get(k)!.chain === n.chain) : undefined;
+    const own = copyInChain(map, n.opens, n.chain);
     onNavigate(n.opens, own);
   };
   const back = () => {

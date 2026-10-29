@@ -15,8 +15,8 @@ describe('the Trace stage\'s columns', () => {
     const map = traceMap(modelIndex(), 'P');
     const step = 'P-D-UC01-R01|P-D-UC01-FL01-S01';
     const columns = traceColumns(map, step);
-    expect(columns.map((c) => c.parent)).toEqual(['P', 'P-D', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R01|P-D-UC01-FL01', step]);
-    expect(columns.map((c) => c.chosen)).toEqual(['P-D', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R01|P-D-UC01-FL01', step, null]);
+    expect(columns.map((c) => c.parent)).toEqual(['P', 'outside', 'P-D', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R01|P-D-UC01-FL01', step]);
+    expect(columns.map((c) => c.chosen)).toEqual(['outside', 'P-D', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R01|P-D-UC01-FL01', step, null]);
     // The last column is the focus's children; each column holds its parent's children, in the tree's order.
     expect(columns.at(-1)!.keys.map((k) => map.nodes.get(k)!.id)).toEqual(['P-D-CMD01', 'P-V01']);
     for (const c of columns) expect(c.keys).toEqual(map.map.nodes.get(c.parent)!.children);
