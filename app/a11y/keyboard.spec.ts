@@ -177,6 +177,37 @@ test.describe('keyboard', () => {
     await expect.poll(() => new URL(page.url()).pathname).toBe(child);
   });
 
+  test('LA-V61-R49-T03 the arrow keys walk the stage from the wiki card and the page bar, and stay with quick find', async ({ page }) => {
+    await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
+    const path = () => decodeURIComponent(new URL(page.url()).pathname);
+    const start = path();
+    // Clicked into, the wiki card gives the arrows to the stage and does not scroll by them.
+    const scroller = page.locator('.wiki-panel-scroll');
+    await page.locator('.wiki-panel-title').click();
+    const top = await scroller.evaluate((el) => el.scrollTop);
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(path).not.toBe(start);
+    await expect(announcer(page)).not.toHaveText('');
+    expect(await scroller.evaluate((el) => el.scrollTop)).toBe(top);
+    const parent = path();
+    await page.keyboard.press('ArrowRight');
+    await expect.poll(path).not.toBe(parent);
+    // On the ERD stage, from a page bar button.
+    await page.keyboard.press('Control+2');
+    await expect(page.locator('.focus-stage[data-stage="erd"] .erd-page')).toBeVisible();
+    const before = path();
+    await page.locator('.page-bar .side-bar-toggle').focus();
+    await page.keyboard.press('ArrowLeft');
+    await expect.poll(path).not.toBe(before);
+    // Quick find keeps its arrows: Down moves through its results, the focus stays.
+    const here = path();
+    await page.locator('#nav input').first().focus();
+    await page.keyboard.type('a');
+    await page.keyboard.press('ArrowDown');
+    await page.waitForTimeout(300);
+    expect(path()).toBe(here);
+  });
+
   test('LA-V61-R41-T02 fold and unfold a row with the keyboard', async ({ page }) => {
     await open(page, DOMAIN);
     await tabUntil(page, (el) => el.classList.contains('tree-toggle') && !!el.closest('#main'), 'a row\'s fold button', 300);
