@@ -2,7 +2,7 @@
 // graph's renderer (paint.ts, plate.ts), camera (camera.ts), level of detail and pointer.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { SpecIndex } from '../specs/data';
-import { drawnFor, frameOnMap, frameRect, MAX_ZOOM, MIN_ZOOM, type Viewport } from '../graph/camera';
+import { drawnFor, frameOnMap, frameRect, maxZoomFor, MIN_ZOOM, type Viewport } from '../graph/camera';
 import { fadeTween, faintest, type FadeLook } from '../graph/fade';
 import { pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
 import { hitPlate } from '../graph/hit';
@@ -46,7 +46,6 @@ const PLAIN: Record<Exclude<TraceNode['role'], 'record'>, { kind: string; label:
 /** The depth the camera frames below the focus: its children, as the Graph's Tree by default. */
 const FRAME_DEPTH = 1;
 /** How tall the map's smallest box may be drawn on screen at the most zoom, in CSS pixels: the zoom's ceiling. */
-const DEEPEST_PX = 400;
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 const MIN_FRAME = 120;
 
@@ -110,11 +109,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
   const sizeRef = useRef(size);
   sizeRef.current = size;
   /** The most the camera zooms in: enough to read the map's smallest box. */
-  const maxZoom = useMemo(() => {
-    let deepest = Infinity;
-    for (const n of map.map.nodes.values()) deepest = Math.min(deepest, n.h);
-    return Math.max(MAX_ZOOM, DEEPEST_PX / deepest);
-  }, [map]);
+  const maxZoom = useMemo(() => maxZoomFor(map.map), [map]);
 
   // ---- The camera ----
   const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
