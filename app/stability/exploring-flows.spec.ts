@@ -91,12 +91,13 @@ test.describe('Exploring flows', () => {
     const parent = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-CAP03')!;
     const focus = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-UC03')!;
     expect(parent.map.x, 'the parent at the left').toBeLessThan(focus.map.x);
-    // Nodes carry stage and kind; the toolbar's Key names the stages' colors and the kinds' shapes.
+    // Nodes carry stage and kind; the key bar along the bottom names the stages' colors and the kinds' shapes.
     expect(focus.stage).toBe('use-cases');
     expect(focus.kind).toBe('use_case');
-    await page.locator(`${STAGE_BOX} .stage-key > summary`).click();
-    await expect(page.locator(`${STAGE_BOX} .stage-key-body`).getByRole('region', { name: 'Key' })).toContainText('capability, use case');
-    await page.locator(`${STAGE_BOX} .stage-key > summary`).click();
+    const key = page.locator(STAGE_BOX).getByRole('region', { name: 'Key' });
+    await expect(key).toBeVisible();
+    await expect(key.locator('[data-key-entry="stage-use-cases"]')).toHaveAttribute('title', /capability, use case/);
+    await expect(key.locator('[data-key-entry="shape-stadium"]')).toContainText('Use case');
     // Hovering spotlights; clicking focuses, and the address and the header strip follow (the wiki card, shown again below, too).
     await clickBox(page, 'LA-EXP-UC03-R18');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-R18');
@@ -108,8 +109,8 @@ test.describe('Exploring flows', () => {
     await page.locator(`${STAGE_BOX} .graph-filter-body input[role="switch"]`).check();
     await expect(page.locator(`${STAGE_BOX} .graph-minimap`)).toBeVisible();
     await page.locator(`${STAGE_BOX} .graph-filters > summary`).click();
-    // Nested, then Voronoi.
-    for (const layout of ['Nested', 'Voronoi', 'Tree']) {
+    // Nested, then back to Tree.
+    for (const layout of ['Nested', 'Tree']) {
       await page.locator(`${STAGE_BOX} .graph-layout button`, { hasText: layout }).click();
       await expect(page.locator(FLOW)).toHaveAttribute('data-layout', layout.toLowerCase());
     }
@@ -407,10 +408,10 @@ test.describe('Exploring flows', () => {
     await page.locator('.focus-stage .erd-flow .react-flow__node:not([aria-hidden]):not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
     await page.waitForURL((u) => /^\/LA-EXP-EN\d+$/.test(u.pathname));
     await expect(page.locator('.focus-stage .react-flow__node .is-focus').first()).toBeVisible();
-    // The key, in the toolbar's Key popover.
-    await page.locator('.focus-stage .stage-key > summary').click();
-    await expect(page.locator('.focus-stage .stage-key-body').getByRole('region', { name: 'Key' })).toBeVisible();
-    await page.locator('.focus-stage .stage-key > summary').click();
+    // The key bar along the bottom, with the picked-out box and the faded ones.
+    const key = page.locator('.focus-stage').getByRole('region', { name: 'Key' });
+    await expect(key).toBeVisible();
+    await expect(key).toContainText('Picked out');
   });
 
   test('LA-EXP-UC12-FL01-T LA-EXP-UC12-R07-T01 read a record\'s history in the wiki card: its uncommitted change, a commit\'s diff and Load more', async ({ page }) => {

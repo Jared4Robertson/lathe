@@ -105,8 +105,8 @@ test.describe('performance', () => {
     await record({ name: 'camera move with every panel open (collapse the wiki card)', value: r.workMs, unit: 'ms', budget: BUDGETS.cameraMoveMs, detail: `longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms` });
   });
 
-  // In the Tree, Nested and Voronoi layouts (LA-V93-R21): the same budgets.
-  for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) test(`LA-V61-R37-T03 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
+  // In the Tree and Nested layouts (LA-V93-R21): the same budgets.
+  for (const layout of ['Tree', 'Nested'] as const) test(`LA-V61-R37-T03 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
     const label = layout === 'Tree' ? 'graph re-center at depth 3' : `${layout} graph re-center at depth 3`;
     await open(page, `${RECORD}?stage=graph`);
     await boxesDrawn(page);
@@ -129,7 +129,7 @@ test.describe('performance', () => {
         await page.waitForURL((u) => u.pathname !== before);
         await focusDrawn(page, id);
       }, 900);
-      // Nested and Voronoi, a framed leaf fills the pane with its equal siblings cut off at the edges (LA-EXP-DS06): go back to the record
+      // Nested, a framed leaf fills the pane with its equal siblings cut off at the edges (LA-EXP-DS06): go back to the record
       // before the next hop, outside the measure.
       if (layout !== 'Tree' && hop < 3) { await page.goBack(); await page.waitForURL((u) => u.pathname === before); await quiet(page, 900); }
       works.push(r.workMs);

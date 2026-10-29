@@ -10,7 +10,7 @@ import { openApp, startAtDepth } from '../helpers';
 import { boxElement, graphHost } from './scene';
 import { testWorkspace } from './workspace';
 
-/** The arrow that takes each step in a layout (LA-V93-R19): Tree Left out and Right in, Nested and Voronoi Up out and Down in. */
+/** The arrow that takes each step in a layout (LA-V93-R19): Tree Left out and Right in, Nested Up out and Down in. */
 const stepKey = (layout: string, step: 'out' | 'in' | 'previous' | 'next') => (layout === 'tree' ? { out: 'ArrowLeft', in: 'ArrowRight', previous: 'ArrowUp', next: 'ArrowDown' } : { out: 'ArrowUp', in: 'ArrowDown', previous: 'ArrowLeft', next: 'ArrowRight' })[step];
 
 // Moving through the graph never changes how it is drawn (LA-V93-R72): the arrow steps, a click
@@ -56,8 +56,8 @@ describe('moving through the graph keeps how it is drawn', () => {
     set = closeTab(set, set.active!);
     unchanged(set);
     // The person's own change is the only one.
-    saveSessionSettings({ graph: { ...mine, layout: 'voronoi' }, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES });
-    expect(sessionSettings().graph.layout).toBe('voronoi');
+    saveSessionSettings({ graph: { ...mine, layout: 'tree' }, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES });
+    expect(sessionSettings().graph.layout).toBe('tree');
   });
 
   for (const { layout, label } of GRAPH_LAYOUTS) {

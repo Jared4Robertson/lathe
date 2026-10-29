@@ -12,9 +12,10 @@ import type { OpenSpaceStore } from '../views/openSpace';
 import { useStageWalk } from '../shell/commands';
 import { isGraphNode } from '../graph/model';
 import { levelMove, type Move } from '../views/levels';
-import { StageToolbar } from '../views/StageChrome';
+import { StageKey, StageToolbar } from '../views/StageChrome';
 import { traceFocus, traceMap, type TraceMap } from './lanes';
-import { TraceKey } from './TraceKey';
+import { traceKeyEntries } from './TraceKey';
+import { useChangesKey } from '../changes/ChangesKey';
 import { bandNode, boxNode, focusOf, levelWords, startOf, traceLevels, traceNode, type TraceAt } from './walk';
 
 // What the product owes and how far it has come, drawn on the canvas with the graph's renderer
@@ -259,6 +260,9 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 
   const drawn = !narrow && map !== null && focused !== null;
+  // The key bar, while the map is drawn: what it draws, then the live marks.
+  const changesKey = useChangesKey();
+  const keyEntries = useMemo(() => (drawn && map && focused ? [...traceKeyEntries(index, map, focused, gapsOnly), ...changesKey] : []), [drawn, index, map, focused, gapsOnly, changesKey]);
   // Show more pages the table. Under the canvas, which draws every lane, it is for the keyboard alone, hidden with the table.
   const more = page && page.drawn < page.matching ? (
     <p className="trace-more">
@@ -275,7 +279,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   const table = spec && page
     ? <TraceMatrix {...props} spec={spec} page={page} untraced={untraced} access={drawn} more={more} />
     : <TraceChainCards {...props} access={drawn} />;
-  const toolbar = <StageToolbar can={(move) => targetOf(move) !== null} own={() => ({ primary: filter })} stageKey={<TraceKey lead={spec?.lead} />} />;
+  const toolbar = <StageToolbar can={(move) => targetOf(move) !== null} own={() => ({ primary: filter })} />;
 
   if (!drawn) {
     return (
@@ -290,6 +294,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   return (
     <section className="trace-page is-drawn" aria-label="Trace" {...peekHandlers(props)}>
       {toolbar}
+      <StageKey entries={keyEntries} />
       <Suspense fallback={<div className="graph-flow trace-flow" aria-busy="true" />}>
         <TraceCanvas index={index} focus={focus} map={map} focused={focused} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} />
       </Suspense>
@@ -439,7 +444,7 @@ interface MatrixProps extends TraceViewProps {
   spec: MatrixSpec;
   page: MatrixPage;
   untraced: { kind: string; ids: string[] }[];
-  /** Under the canvas: no focus stop of its own, and its note in the toolbar's key instead. */
+  /** Under the canvas: no focus stop of its own. */
   access: boolean;
   more: ReactNode;
 }
@@ -451,7 +456,7 @@ function TraceMatrix(props: MatrixProps) {
   const untracedCount = untraced.reduce((n, g) => n + g.ids.length, 0);
   return (
     <Region label={label} access={access}>
-      {access ? null : lead}
+      {lead}
       {total === 0 ? null : page.matching === 0 ? <p className="hint trace-none">No gaps: every obligation here is designed, built and proved.</p> : (
         <table className="data-table trace-matrix">
           <caption className="sr-only">{label}</caption>

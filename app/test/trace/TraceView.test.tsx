@@ -253,12 +253,18 @@ describe('the Trace stage', () => {
     expect(window.location.search).toBe('?stage=trace');
   });
 
-  it('LA-V98-R11-T01 Wheel and drag move the trace\'s camera, and . frames the focus again with a glide, as on the graph', async () => {
+  it('LA-V98-R11-T01 Scroll pans, Cmd/Ctrl+scroll zooms and a drag pans the trace\'s camera, and . frames the focus again with a glide, as on the graph', async () => {
     await openApp('/P-D-UC01?stage=trace', served());
     const host = await canvasHost();
     const framed = (await drawn()).camera;
     const canvas = host.querySelector('canvas')!;
-    fireEvent.wheel(canvas, { deltaY: -200, clientX: 200, clientY: 200 });
+    // Scroll pans, by the pixels it scrolled; Cmd or Ctrl with scroll zooms.
+    fireEvent.wheel(canvas, { deltaY: 40, clientX: 200, clientY: 200 });
+    await waitFor(async () => expect((await drawn()).camera.y).toBeCloseTo(framed.y - 40, 0));
+    expect((await drawn()).camera.zoom).toBe(framed.zoom);
+    // A new scroll after a pause: within one scroll, pressing Ctrl would drop the rest of it (wheelLatch).
+    await new Promise((r) => setTimeout(r, 200));
+    fireEvent.wheel(canvas, { deltaY: -200, ctrlKey: true, clientX: 200, clientY: 200 });
     await waitFor(async () => expect((await drawn()).camera.zoom).toBeGreaterThan(framed.zoom));
     fireEvent.pointerDown(canvas, { clientX: 300, clientY: 300, pointerType: 'mouse', pointerId: 1, button: 0 });
     fireEvent.pointerMove(canvas, { clientX: 340, clientY: 320, pointerType: 'mouse', pointerId: 1 });

@@ -14,9 +14,6 @@ export const sceneOf = (page: Page): Promise<Scene> => page.evaluate((sel) => (d
 export const boxOf = async (page: Page, id: string): Promise<SceneBox | undefined> => (await sceneOf(page)).boxes.find((b) => b.id === id);
 /** The camera, as one comparable string. */
 export const cameraOf = async (page: Page) => JSON.stringify((await sceneOf(page)).camera);
-/** The box under a point of the page, by the canvas's own hit test. */
-export const hitAt = (page: Page, x: number, y: number) => page.evaluate(({ sel, x, y }) => (document.querySelector(sel) as SceneHost).graphHit!(x, y), { sel: GRAPH, x, y });
-
 /** Waits for the graph to draw its boxes (the keyboard layer holds them), then for the camera to settle. */
 export async function graphDrawn(page: Page, layout?: string, settle = 500) {
   await page.locator(`${layout ? `${GRAPH}[data-layout="${layout}"]` : GRAPH} .graph-box`).first().waitFor({ state: 'attached' });

@@ -1,7 +1,7 @@
 // The camera's gestures on a canvas, one way for every canvas stage (the Graph, GraphPage.tsx, and
 // the Trace stage, trace/TraceCanvas.tsx): a glide to a viewport with the shared motion, zoom about
-// a point within the stage's limits, and the pointer: hover, a tap, drag to pan, pinch and the wheel
-// to zoom. A gesture during a glide takes over from it. Each stage keeps its own camera (its
+// a point within the stage's limits, and the pointer: hover, a tap, drag and scroll to pan, a pinch
+// and Cmd or Ctrl with scroll to zoom (Figma's convention, wheelMove). A gesture during a glide takes over from it. Each stage keeps its own camera (its
 // viewport ref and paint) and says what follows a move through the callbacks.
 import { useCallback, useEffect, useRef, type PointerEvent as ReactPointerEvent, type RefObject } from 'react';
 import { glideDuration, zoomPath, type Viewport } from './camera';
@@ -25,7 +25,7 @@ export interface CameraGestureOptions {
   onGlide?: (path: ReturnType<typeof zoomPath>, target: Viewport) => void;
   /** The camera arrived where it was sent: at once, or at a glide's end. */
   onArrive?: (target: Viewport) => void;
-  /** A drag, a pinch or the wheel moved the camera, or a press ended with no tap. */
+  /** A drag, a pinch or a scroll moved the camera, or a press ended with no tap. */
   onGesture?: () => void;
   /** A press began on the canvas. */
   onPress?: () => void;
@@ -53,6 +53,67 @@ export interface CameraGestures {
     onPointerMove: (e: ReactPointerEvent<HTMLCanvasElement>) => void;
     onPointerUp: (e: ReactPointerEvent<HTMLCanvasElement>) => void;
     onPointerCancel: (e: ReactPointerEvent<HTMLCanvasElement>) => void;
+  };
+}
+
+/** Pixels a line of scroll moves (a wheel in line mode, as Firefox sends it), as React Flow's on the ERD. */
+const LINE_PX = 20;
+/** A page of scroll when the pane has no size yet, in pixels. */
+const PAGE_PX = 800;
+/** The most a single wheel event zooms, as a power of two: one doubling. */
+const MAX_WHEEL_ZOOM = 1;
+
+/**
+ * What one wheel event does to the camera, Figma's convention: scroll (a wheel or a two-finger
+ * trackpad swipe) pans by the screen pixels it scrolled, deltaY down and deltaX across, both at
+ * once on a trackpad; Shift turns a mouse wheel's deltaY sideways, unless the browser already sent
+ * it as deltaX; Cmd or Ctrl with scroll, and a trackpad pinch (a wheel with Ctrl held), zoom by a
+ * power of two about the pointer. Line and page deltas are scaled to pixels.
+ */
+export function wheelMove(
+  e: Pick<WheelEvent, 'deltaX' | 'deltaY' | 'deltaMode' | 'shiftKey' | 'ctrlKey' | 'metaKey'>,
+  size: { w: number; h: number } | null,
+): { dx: number; dy: number } | { zoom: number } {
+  const scale = (axis: 'w' | 'h') => (e.deltaMode === 1 ? LINE_PX : e.deltaMode === 2 ? size?.[axis] ?? PAGE_PX : 1);
+  if (e.ctrlKey || e.metaKey) {
+    // A pinch's deltas are small and many; Ctrl's tenfold matches d3's zoom so a pinch keeps today's speed.
+    const zoom = -e.deltaY * (e.deltaMode === 1 ? 0.05 : e.deltaMode ? 1 : 0.002) * (e.ctrlKey ? 10 : 1);
+    return { zoom: Math.max(-MAX_WHEEL_ZOOM, Math.min(MAX_WHEEL_ZOOM, zoom)) };
+  }
+  const sideways = e.shiftKey && e.deltaX === 0;
+  return {
+    dx: (sideways ? e.deltaY : e.deltaX) * scale('w'),
+    dy: (sideways ? 0 : e.deltaY) * scale('h'),
+  };
+}
+
+/** The longest pause between two wheel events of one scroll, momentum included, in milliseconds. */
+const WHEEL_STREAM_GAP_MS = 150;
+/** How far a dropped stream's delta must grow past its faded least, in pixels, to count as a new scroll. */
+const WHEEL_REGROW_PX = 4;
+
+/**
+ * One scroll keeps the move it began with: a stream of wheel events (each within WHEEL_STREAM_GAP_MS
+ * of the one before, a trackpad's momentum included) zooms when it began with Cmd or Ctrl held and pans
+ * otherwise. Pressing or letting go of Cmd or Ctrl during a stream ends its move: the rest of that
+ * stream is dropped, so a zoom's momentum never turns into a pan (or a pan's into a zoom). A new
+ * scroll starts afresh: after a pause, or as soon as a dropped stream's deltas grow again (momentum
+ * only ever fades, so growing deltas are the fingers scrolling anew while momentum still arrives).
+ */
+export function wheelLatch(): (e: Pick<WheelEvent, 'ctrlKey' | 'metaKey' | 'deltaX' | 'deltaY'>, now: number) => 'move' | 'drop' {
+  let last = -Infinity;
+  let zooming = false;
+  let dropping = false;
+  /** The smallest delta of the stream since it began dropping: momentum's fade. */
+  let faded = Infinity;
+  return (e, now) => {
+    const zoom = e.ctrlKey || e.metaKey;
+    const size = Math.max(Math.abs(e.deltaX), Math.abs(e.deltaY));
+    if (now - last > WHEEL_STREAM_GAP_MS || (dropping && size > faded + WHEEL_REGROW_PX)) { zooming = zoom; dropping = false; }
+    last = now;
+    if (!dropping && zoom !== zooming) { dropping = true; faded = size; }
+    if (dropping) faded = Math.min(faded, size);
+    return dropping ? 'drop' : 'move';
   };
 }
 
@@ -160,16 +221,23 @@ export function useCameraGestures(options: CameraGestureOptions): CameraGestures
     o.current.onTap(p.x, p.y, e.nativeEvent);
   };
 
-  // The wheel zooms about the pointer (a pinch on a trackpad comes as a wheel with Ctrl held), as d3's zoom does.
+  // Scroll pans and Cmd/Ctrl+scroll or a pinch zooms about the pointer (wheelMove); a scroll keeps its move (wheelLatch).
   useEffect(() => {
     const c = o.current.canvas.current;
     if (!c) return;
+    const latch = wheelLatch();
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
+      if (latch(e, e.timeStamp) === 'drop') return;
       stopGlide();
-      const at = local(e);
-      const delta = -e.deltaY * (e.deltaMode === 1 ? 0.05 : e.deltaMode ? 1 : 0.002) * (e.ctrlKey ? 10 : 1);
-      zoomAt(at.x, at.y, 2 ** delta);
+      const move = wheelMove(e, o.current.size);
+      if ('zoom' in move) {
+        const at = local(e);
+        zoomAt(at.x, at.y, 2 ** move.zoom);
+      } else {
+        const v = o.current.getViewport();
+        o.current.setViewport({ ...v, x: v.x - move.dx, y: v.y - move.dy });
+      }
       o.current.onGesture?.();
     };
     c.addEventListener('wheel', onWheel, { passive: false });

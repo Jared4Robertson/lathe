@@ -30,22 +30,20 @@ import { treeChildren, treeParent } from './tree';
 // Pure and deterministic: the same index always gives the same map, and it is built once per index.
 
 /**
- * The product's box in every layout: the Tree map's height, the Nested map's side, the Voronoi
- * hexagon's width, in map units. Small enough that the product's title (its text scale times a
- * title's font) stays under the 10,000 px a browser draws a font at.
+ * The product's box in every layout: the Tree map's height, the Nested map's side, in map units.
+ * Small enough that the product's title (its text scale times a title's font) stays under the 10,000 px a browser draws a font at.
  */
 export const MAP_SIZE = 300_000;
 /**
  * A box's text scale is at most its size over this (LA-EXP-DS06): its width (the Tree map, where
- * siblings split their parent's height), its side (the Nested map) or the square root of its area
- * (the Voronoi map). So a box's text is the same share of it at every depth, and a framed box's
- * header reads at about the same size on screen.
+ * siblings split their parent's height) or its side (the Nested map). So a box's text is the same
+ * share of it at every depth, and a framed box's header reads at about the same size on screen.
  */
 export const TEXT_SIZE = 400;
 /**
- * The Tree map's own text share: a box's text scale is at most its width over this. Larger than the Nested and
- * Voronoi maps' (TEXT_SIZE), so a framed parent's children read at a useful size beside it; those layouts keep
- * TEXT_SIZE, since their headers take room from their children's cells.
+ * The Tree map's own text share: a box's text scale is at most its width over this. Larger than the Nested
+ * map's (TEXT_SIZE), so a framed parent's children read at a useful size beside it; that layout keeps
+ * TEXT_SIZE, since its headers take room from its children's boxes.
  */
 export const TREE_TEXT_SIZE = 250;
 /** A Tree box's largest text scale for its width: its width over TREE_TEXT_SIZE. */
@@ -90,10 +88,10 @@ export interface MapNode {
   centered: boolean;
 }
 
-/** What every layout's map shares (the Tree map here, the Nested and Voronoi maps in nested.ts and voronoi.ts): what the camera, the minimap and the filters read. */
+/** What every layout's map shares (the Tree map here, the Nested map in nested.ts): what the camera, the minimap and the filters read. */
 export interface PlacedMap {
   /** Which view it lays out (LA-V93-R21). */
-  view: 'tree' | 'nested' | 'voronoi';
+  view: 'tree' | 'nested';
   nodes: ReadonlyMap<string, MapNode>;
   /** The roots, top to bottom: the product (or the top of a tree no product reaches). */
   roots: readonly string[];

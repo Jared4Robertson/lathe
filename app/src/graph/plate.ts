@@ -2,7 +2,6 @@ import { kindLabel, type SpecIndex } from '../specs/data';
 import { groupKindLabel, stageFor, type BoxStage } from './model';
 import type { MapNode } from './map';
 import type { NestedNode } from './nested';
-import type { VoronoiNode } from './voronoi';
 import { treeGroup } from './tree';
 import { nodeShape, outlineOf, SHAPES, type Mark, type Outline, type Shape } from './shapes';
 import {
@@ -16,12 +15,12 @@ import {
 // (paint.ts), so a label keeps its size in the map and is crisp at any zoom. A plate is made once
 // per map and node, from the lines the map broke its label into.
 
-/** How a box is drawn: a Tree box in its kind's shape, a Nested box, a Voronoi cell, or a Trace stage's box in its kind's shape. */
-export type PlateView = 'tree' | 'nested' | 'voronoi' | 'trace';
+/** How a box is drawn: a Tree box in its kind's shape, a Nested box, or a Trace stage's box in its kind's shape. */
+export type PlateView = 'tree' | 'nested' | 'trace';
 
 /** One line of a label, at its place in the map: its text as the map broke it (a space it ends with is not drawn), its left end and baseline, its font size, and its width in map units. */
 export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
-/** A small drawing before the kind and ID line: a shape's mark (Nested and Voronoi) or a kind's mark. */
+/** A small drawing before the kind and ID line: a shape's mark (Nested) or a kind's mark. */
 export interface PlateIcon { draw: 'shape' | 'mark'; name: Shape | Mark; x: number; y: number; w: number; h: number }
 /** The problem badges' tones, by their swatches in the graph's key: errors, warnings, coverage gaps. */
 export const BADGE_TONES = ['error', 'warning', 'gap'] as const;
@@ -45,21 +44,21 @@ export interface Plate {
   group: boolean;
   shape: Shape;
   view: PlateView;
-  /** Its box in the map (a Voronoi cell's bounding box). */
+  /** Its box in the map. */
   x: number; y: number; w: number; h: number;
   /** Its border's and outline's scale, and its text's. */
   scale: number;
   text: number;
-  /** Its outline: its kind's shape in the Tree view, a box in the Nested view, its polygon in the Voronoi view. */
+  /** Its outline: its kind's shape in the Tree view, a box in the Nested view. */
   outline: Outline;
-  /** Whether its edge is drawn inside its outline in the state's color (a polygon, a cell), rather than ringed outside it. */
+  /** Whether its edge is drawn inside its outline in the state's color (a polygon), rather than ringed outside it. */
   edged: boolean;
   /** Its border's width and whether it is dashed (an open question). */
   border: number;
   dashed: boolean;
   /** What its shape draws inside its outline, in the Tree view. */
   decoration: Shape | null;
-  /** Where its label lies (its content box, or a cell's label box). */
+  /** Where its label lies (its content box). */
   label: { x: number; y: number; w: number; h: number };
   lines: PlateLine[];
   icons: PlateIcon[];
@@ -74,8 +73,6 @@ export interface Plate {
 const ICON = { shape: { w: 14, h: 10 }, mark: { w: 10, h: 10 }, gap: 4, drop: 1.5 };
 /** A badge at text scale 1: its height and least width, its padding, its font, the gap between two, and its offset from the top right. */
 const BADGE = { h: 15, minW: 15, pad: 3, font: 9.5, gap: 3, top: 3, right: 8 };
-/** A cell's label box's padding at text scale 1. */
-const CELL_PAD_BLOCK = 7.5;
 
 interface Place {
   lines: WrappedLabel;
@@ -147,18 +144,17 @@ function badgesAt(marks: { errors: number; warnings: number; gaps: string[] }, r
  */
 export interface PlainBox { kind: string; kindLabel: string; title: string; meta: string; stage: BoxStage; dashed: boolean }
 
-/** Where a box's map node, a Nested one or a Voronoi one, or a Trace stage's box comes from. */
+/** Where a box's map node, a Nested one, or a Trace stage's box comes from. */
 export type PlateSource =
   | { view: 'tree'; node: MapNode }
   | { view: 'nested'; node: NestedNode }
-  | { view: 'voronoi'; node: VoronoiNode }
   /**
    * A Trace stage's box (LA-V98), at text scale 1: its lines, already wrapped and cut to its box, at its top when it
    * spans several lanes; its notes after them; `plain` for a box that is no record.
    */
   | { view: 'trace'; place: string; node: { x: number; y: number; w: number; h: number }; lines: WrappedLabel; notes: readonly string[]; top: boolean; plain?: PlainBox };
 
-/** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DS06, LA-EXP-DS07, LA-EXP-DS08, LA-V93-R06). */
+/** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DS06, LA-EXP-DS07, LA-V93-R06). */
 export function plateOf(index: SpecIndex, id: string, source: PlateSource): Plate {
   if (source.view === 'trace') return tracePlate(index, id, source);
   const { x, y, w, h, text: t } = source.node;
@@ -193,26 +189,16 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource): Plat
     return { ...base, scale, outline, edged, border, decoration: shape, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
   }
 
-  // Nested and Voronoi (LA-EXP-DS07, LA-EXP-DS08): its border grows with its text; its shape is a mark before its kind and ID line.
+  // Nested (LA-EXP-DS07): its border grows with its text; its shape is a mark before its kind and ID line.
+  const n = source.node;
   const scale = Math.max(0.5, t);
   const border = BORDER * scale;
   const icons: Place['icons'] = [{ draw: 'shape' as const, name: shape }, ...(mark ? [{ draw: 'mark' as const, name: mark }] : [])];
-  if (source.view === 'nested') {
-    const n = source.node;
-    const box = { left: x + border + LABEL_PAD * t, right: x + w - border - LABEL_PAD * t, top: y + border + LABEL_PAD_BLOCK * t, bottom: n.header > 0 ? y + n.header - border - LABEL_PAD_BLOCK * t : y + h - border - LABEL_PAD_BLOCK * t };
-    const placed = placeLines({ lines: n.lines, box, centered: n.centered, top: n.header > 0, t, icons });
-    const outline = outlineOf('box', { x, y, w, h }, scale);
-    const badges = marked ? badgesAt(marks, x + w - border - BADGE.right * t, y + border + BADGE.top * t, t) : [];
-    return { ...base, scale, outline, edged: false, border, decoration: null, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
-  }
-  const n = (source as Extract<PlateSource, { view: 'voronoi' }>).node;
-  const box = { left: n.label.x + LABEL_PAD * t, right: n.label.x + n.label.w - LABEL_PAD * t, top: n.label.y + CELL_PAD_BLOCK * t, bottom: n.label.y + n.label.h - CELL_PAD_BLOCK * t };
-  const placed = placeLines({ lines: n.lines, box, centered: true, top: false, t, icons });
-  const badges = marked ? badgesAt(marks, n.label.x + n.label.w - BADGE.right * t, n.label.y + BADGE.top * t, t) : [];
-  return {
-    ...base, scale, outline: { kind: 'polygon', points: n.polygon.map(([px, py]) => [px, py]) }, edged: true, border, decoration: null,
-    label: { ...n.label }, lines: placed.lines, icons: placed.icons, badges,
-  };
+  const box = { left: x + border + LABEL_PAD * t, right: x + w - border - LABEL_PAD * t, top: y + border + LABEL_PAD_BLOCK * t, bottom: n.header > 0 ? y + n.header - border - LABEL_PAD_BLOCK * t : y + h - border - LABEL_PAD_BLOCK * t };
+  const placed = placeLines({ lines: n.lines, box, centered: n.centered, top: n.header > 0, t, icons });
+  const outline = outlineOf('box', { x, y, w, h }, scale);
+  const badges = marked ? badgesAt(marks, x + w - border - BADGE.right * t, y + border + BADGE.top * t, t) : [];
+  return { ...base, scale, outline, edged: false, border, decoration: null, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
 }
 
 /** A Trace stage's box: a record in its kind's shape, or a plain box, at text scale 1, its lines as given. */
