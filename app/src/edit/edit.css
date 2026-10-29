@@ -70,3 +70,9 @@ ul.form-error { padding-left: 1.2em; }
 @media (pointer: coarse) {
   .record-form :is(input[type="text"], input[type="number"], input[type="date"], textarea, select), .form-link-add input { min-height: var(--touch-target); }
 }
+
+/* A list of part rows (PartsField): each row a bordered group of its columns' inputs, then Remove. */
+.form-parts { display: grid; gap: 8px; margin: 0; padding: 8px 0 0; border: 0; border-top: 1px solid var(--rule); min-width: 0; }
+.form-parts > legend { padding: 0; }
+.form-part { display: grid; gap: 6px; padding: 8px; border: 1px solid var(--rule); border-radius: 6px; justify-items: start; }
+.form-part > .form-field { justify-self: stretch; }

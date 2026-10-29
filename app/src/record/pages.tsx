@@ -1,5 +1,7 @@
 import type { ComponentType, ReactNode } from 'react';
 import type { UseCaseKind } from '../../../lathe/src/authoring/use-case/model';
+import { AddBusinessOutcomeForm } from '../authoring/business-outcome/BusinessOutcomeEditor';
+import { BusinessOutcomePage } from '../authoring/business-outcome/BusinessOutcomePage';
 import { AddUseCaseForm } from '../authoring/use-case/UseCaseEditor';
 import { UseCasePage } from '../authoring/use-case/UseCasePage';
 import type { SpecIndex } from '../specs/data';
@@ -21,18 +23,22 @@ export interface AggregatePageProps {
   after?: ReactNode;
 }
 
+/** The kinds with an aggregate page. */
+type PagedKind = UseCaseKind | 'business_outcome';
+
 /** Each kind with its aggregate's page. */
-const PAGES: { readonly [K in UseCaseKind]: ComponentType<AggregatePageProps> } = {
+const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = {
   use_case: UseCasePage,
   uc_requirement: UseCasePage,
   use_case_test: UseCasePage,
   flow: UseCasePage,
   flow_step: UseCasePage,
   flow_test: UseCasePage,
+  business_outcome: BusinessOutcomePage,
 };
 
 /** The page of the kind's aggregate, or undefined while its aggregate has none. */
-export const pageOf = (kind: string): ComponentType<AggregatePageProps> | undefined => (Object.hasOwn(PAGES, kind) ? PAGES[kind as UseCaseKind] : undefined);
+export const pageOf = (kind: string): ComponentType<AggregatePageProps> | undefined => (Object.hasOwn(PAGES, kind) ? PAGES[kind as PagedKind] : undefined);
 
 export interface AggregateAdderProps {
   index: SpecIndex;
@@ -42,8 +48,9 @@ export interface AggregateAdderProps {
 }
 
 /** Each aggregate root added from the page of what it sits under, with its aggregate's Add form. */
-const ADDERS: { readonly use_case: ComponentType<AggregateAdderProps> } = {
+const ADDERS: { readonly [K in 'use_case' | 'business_outcome']: ComponentType<AggregateAdderProps> } = {
   use_case: AddUseCaseForm,
+  business_outcome: AddBusinessOutcomeForm,
 };
 
 /** The Add form of the kind's aggregate, or undefined while its aggregate has none. */
