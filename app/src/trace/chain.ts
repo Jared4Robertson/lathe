@@ -9,7 +9,8 @@ import { isObligation } from './offer';
 // missing (Coverage.gaps): this only reads them. A chain reads left to right in four columns after
 // the obligation: what designs it (for a UC requirement the flow steps that fulfill it, their flows,
 // the views they happen in, the commands and queries they invoke and the integrations they exchange
-// with; a constraint's value object; an invariant's aggregate; a policy's command), the technical
+// with; a constraint's value object; an invariant's aggregate; a policy's command; a domain
+// service's callers; a specification's checkers and selectors), the technical
 // records that build it, its tests, and the files those name. Its gaps are coverage's: not
 // designed, not built, not proved. A record of a kind a chain reaches that no chain does is
 // coverage's record-untraced gap. A matrix is one chain per obligation under the focus, in the

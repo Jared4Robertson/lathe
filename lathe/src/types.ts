@@ -167,7 +167,8 @@ export interface TraceFile {
  * one answer to "what traces to what", which the app's Trace stage reads and never works out.
  * - design: a UC requirement's fulfilling steps, their flows, the views they happen in, the commands and queries they
  *   invoke and the integrations they exchange with; a constraint's value object; an invariant's aggregate; a policy's
- *   command; empty for the other kinds, designed by construction or by their technical records;
+ *   command; the commands and queries that call a domain service; the commands that check a specification and the
+ *   queries that select by it; empty for the other kinds, designed by their technical records;
  * - build: the technical records that implement it, as built counts them;
  * - tests: its tests, whether or not they count as proof yet (Coverage.proved_by says which do);
  * - files: the files its build and test records name.

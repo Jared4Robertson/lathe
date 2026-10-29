@@ -231,15 +231,16 @@ FROM source_file f WHERE NOT f.traced AND EXISTS (SELECT 1 FROM product)`),
   },
   // A design or build record a trace relation links that no obligation's chain reaches (trace_link): it serves no
   // requirement or rule. The kinds are those a chain reaches through a trace relation: a step fulfills, a command or
-  // query is invoked (by a fulfilling step, or as a policy's command), a UI component renders a view a chain holds. A
+  // query is invoked by a fulfilling step, is a policy's command, calls a domain service, checks a specification or
+  // selects by one, a UI component renders a view a chain holds. A
   // command or query handler is left out: it serves what its operation serves, so its operation's gap stands for it
   // (reporting both would double each gap). So is a test: one of an obligation sits in its chain by construction, and a flow or integration test
   // proves its flow or integration, never an obligation.
   gap('record-untraced', 'interaction-design', [...UNTRACED_KINDS], 'A flow step, command, query or UI component no obligation\'s chain reaches.',
     `SELECT r.id, k.label || ' ' || r.id || ' is untraced: no obligation''s chain reaches it' || CASE r.kind
     WHEN 'flow_step' THEN ', as it fulfills no UC requirement.'
-    WHEN 'command' THEN ', as no step that fulfills a UC requirement invokes it and no policy does.'
-    WHEN 'query' THEN ', as no step that fulfills a UC requirement invokes it.'
+    WHEN 'command' THEN ', as no step that fulfills a UC requirement invokes it, no policy does, and it calls no domain service and checks no specification.'
+    WHEN 'query' THEN ', as no step that fulfills a UC requirement invokes it, and it calls no domain service and selects by no specification.'
     ELSE ', as it renders no view a chain holds.' END AS message
 FROM record_id r JOIN meta_kind k ON k.name = r.kind
 WHERE r.kind IN (${list(UNTRACED_KINDS)}) AND NOT EXISTS (SELECT 1 FROM trace_link t WHERE t.target_id = r.id)`),
@@ -367,7 +368,9 @@ SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;
 -- Each obligation's chain, link by link, each from the record nearer the obligation to the one it leads to (part: the
 -- column of its target). Design: a UC requirement's fulfilling steps, their flows, the views they happen in, what they
 -- invoke and the integrations they exchange with; a constraint's value object, an invariant's aggregate, a policy's
--- command. Build: what implements it (obligation_impl). Tests: its tests (obligation_proof), counting or not.
+-- command; the commands and queries that call a domain service; the commands that check a specification and the
+-- queries that select by it. Build: what implements it (obligation_impl). Tests: its tests (obligation_proof),
+-- counting or not.
 CREATE OR REPLACE TABLE trace_link AS
 SELECT DISTINCT * FROM (
   SELECT f.target_id AS obligation_id, f.target_id AS source_id, s.flow_id AS target_id, 'design' AS part FROM fulfills f JOIN flow_step s ON s.id = f.source_id
@@ -378,6 +381,9 @@ SELECT DISTINCT * FROM (
   UNION ALL SELECT id, id, value_object_id, 'design' FROM "constraint"
   UNION ALL SELECT id, id, aggregate_id, 'design' FROM invariant
   UNION ALL SELECT id, id, command_id, 'design' FROM policy
+  UNION ALL SELECT target_id, target_id, source_id, 'design' FROM calls
+  UNION ALL SELECT target_id, target_id, source_id, 'design' FROM checks
+  UNION ALL SELECT target_id, target_id, source_id, 'design' FROM selects_by
   UNION ALL SELECT obligation_id, coalesce(via_id, obligation_id), impl_id, 'build' FROM obligation_impl
   UNION ALL SELECT obligation_id, obligation_id, test_id, 'tests' FROM obligation_proof
 );

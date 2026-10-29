@@ -9,6 +9,7 @@
 {"id":"LA-AUT-UC01-FL03-S09","title":"...or unlink them","flow_id":"LA-AUT-UC01-FL03","path":"link","position":2}
 {"id":"LA-AUT-UC01-FL03-S10","title":"They remove a record with its parts","flow_id":"LA-AUT-UC01-FL03","path":"remove","position":1}
 {"id":"LA-AUT-UC01-FL03-S11","title":"They make several changes as one write","flow_id":"LA-AUT-UC01-FL03","path":"several","position":1}
+{"id":"LA-AUT-UC01-FL03-S12","title":"They list a kind's records, or those under a parent, with lathe list","flow_id":"LA-AUT-UC01-FL03","path":"list","position":1}
 {"id":"LA-AUT-UC01-FL04-S01","title":"The Agent follows the plugin's skills, which tell it to change data only through the tools","flow_id":"LA-AUT-UC01-FL04","path":"main","position":1}
 {"id":"LA-AUT-UC01-FL04-S02","title":"The Agent adds a record with add, its typed columns, parent and parts as the tool's input schema gives them","flow_id":"LA-AUT-UC01-FL04","path":"main","position":2}
 {"id":"LA-AUT-UC01-FL04-S03","title":"The Agent changes a record's columns with set","flow_id":"LA-AUT-UC01-FL04","path":"main","position":3}
@@ -161,6 +162,8 @@
 {"id":"LA-CHK-UC05-FL03-S05","title":"A product check whose query fails is an error naming the check, and the other checks still run","flow_id":"LA-CHK-UC05-FL03","path":"refused","position":2}
 {"id":"LA-CHK-UC05-FL03-S06","title":"A checks key in lathe.config.json is refused as an unknown setting","flow_id":"LA-CHK-UC05-FL03","path":"refused","position":3}
 {"id":"LA-CHK-UC05-FL03-S07","title":"They fix what the new check finds and run lathe check again until it is clean","flow_id":"LA-CHK-UC05-FL03","path":"main","position":4}
+{"id":"LA-CHK-UC05-FL03-S08","title":"They change their own check row with lathe set, and the next check runs it as it is now; Lathe's own rows are refused","flow_id":"LA-CHK-UC05-FL03","path":"change","position":1}
+{"id":"LA-CHK-UC05-FL03-S09","title":"They remove their own check row with lathe remove, and it no longer runs","flow_id":"LA-CHK-UC05-FL03","path":"change","position":2}
 {"id":"LA-CHK-UC05-FL04-S01","title":"Through the MCP tools, the Owner decides a rule belongs to their product, not to Lathe","flow_id":"LA-CHK-UC05-FL04","path":"main","position":1}
 {"id":"LA-CHK-UC05-FL04-S02","title":"The Agent adds it as a check row with the product's product_id, with add","flow_id":"LA-CHK-UC05-FL04","path":"main","position":2}
 {"id":"LA-CHK-UC05-FL04-S03","title":"The check tool runs Lathe's checks first, then the product's, whose problems carry its row's name and concern only its product's records","flow_id":"LA-CHK-UC05-FL04","path":"main","position":3}
@@ -349,6 +352,7 @@
 {"id":"LA-PLT-UC04-FL01-S03","title":"A screen reader hears what the command changed","flow_id":"LA-PLT-UC04-FL01","path":"main","position":3}
 {"id":"LA-PLT-UC04-FL01-S04","title":"While they type in a search box, single-key shortcuts don't fire, and keys the app doesn't handle reach the browser","flow_id":"LA-PLT-UC04-FL01","path":"typing","position":1}
 {"id":"LA-PLT-UC04-FL01-S05","title":"They press ?; the shortcuts sheet lists every shortcut by group, with a search and how to override a binding","flow_id":"LA-PLT-UC04-FL01","path":"main","position":4}
+{"id":"LA-PLT-UC04-FL01-S06","title":"They override a binding in local storage, and the palette, the sheet and every hint show their keys","flow_id":"LA-PLT-UC04-FL01","path":"main","position":5}
 {"id":"LA-PLT-UC04-FL02-S01","title":"In the desktop app, the Reader presses Cmd/Ctrl+Shift+P; the palette lists the commands that apply, from the one keymap, each with its keys for the platform","flow_id":"LA-PLT-UC04-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC04-FL02-S02","title":"The Reader runs commands by their VS Code keys, such as Cmd/Ctrl+B to hide the navigation","flow_id":"LA-PLT-UC04-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC04-FL02-S03","title":"The app announces to a screen reader what the command changed","flow_id":"LA-PLT-UC04-FL02","path":"main","position":3}
@@ -438,6 +442,9 @@
 {"id":"LA-PLT-UC11-FL02-S07","title":"They quit, and the app exits once every window's server has stopped","flow_id":"LA-PLT-UC11-FL02","path":"main","position":7}
 {"id":"LA-PLT-UC11-FL02-S08","title":"A workspace's folder opens with every product it lists, each a space, titled with them all","flow_id":"LA-PLT-UC11-FL02","path":"workspace","position":1}
 {"id":"LA-PLT-UC11-FL02-S09","title":"The window serves the product with its own installed Lathe, or the bundled copy, and About says which","flow_id":"LA-PLT-UC11-FL02","path":"main","position":3}
+{"id":"LA-PLT-UC11-FL02-S10","title":"They move or resize a window, which saves its size and place","flow_id":"LA-PLT-UC11-FL02","path":"window","position":1}
+{"id":"LA-PLT-UC11-FL02-S11","title":"They close the window: its place is kept, and its server stops","flow_id":"LA-PLT-UC11-FL02","path":"window","position":2}
+{"id":"LA-PLT-UC11-FL02-S12","title":"They clear the recent folders from File › Open Recent","flow_id":"LA-PLT-UC11-FL02","path":"recent","position":1}
 {"id":"LA-PLT-UC12-FL02-S01","title":"The Owner runs npm --prefix desktop run dev; a window loads the 5199 dev server when it serves the opened folder","flow_id":"LA-PLT-UC12-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC12-FL02-S02","title":"Otherwise the shell starts a dev server of its own for the folder","flow_id":"LA-PLT-UC12-FL02","path":"alternate","position":1}
 {"id":"LA-PLT-UC12-FL02-S03","title":"A change to the main process or a preload restarts Electron","flow_id":"LA-PLT-UC12-FL02","path":"main","position":2}

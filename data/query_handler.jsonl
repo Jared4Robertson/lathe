@@ -29,7 +29,7 @@
 {"id":"LA-TRC-QRY03-H","title":"COVERAGE_TESTS_SQL","query_id":"LA-TRC-QRY03","file":"lathe/src/index.ts","description":"computeCoverage, its tests (COVERAGE_TESTS_SQL)"}
 {"id":"LA-TRC-QRY04-H","title":"patternsFollowedBy","query_id":"LA-TRC-QRY04","file":"app/src/specs/patterns.ts","description":"patternsFollowedBy, followingDomains, ruleStatus (reads Coverage.pattern_rules)"}
 {"id":"LA-TRC-QRY05-H","title":"traceOf","query_id":"LA-TRC-QRY05","file":"app/src/specs/trace.ts","description":"traceOf, judge, owingDomains, isBuilt"}
-{"id":"LA-TRC-QRY06-H","title":"traceChain","query_id":"LA-TRC-QRY06","file":"app/src/trace/chain.ts","description":"traceChain, gapColumns"}
+{"id":"LA-TRC-QRY06-H","title":"traceChain","query_id":"LA-TRC-QRY06","file":"app/src/trace/chain.ts","description":"traceChain: the engine's chain of an obligation, with the gaps coverage reports for it"}
 {"id":"LA-TRC-QRY07-H","title":"test-file-missing","query_id":"LA-TRC-QRY07","file":"lathe/data/check.jsonl","description":"The file checks: the test-file-missing, test-file-missing-id, manual-test-file-silent, technical-file-missing and test-case-unnamed checks, each a query of file_facts (test-case-unnamed of test_case too)."}
 {"id":"LA-TRC-QRY08-H","title":"gatherRouteFacts","query_id":"LA-TRC-QRY08","file":"lathe/src/trace/routes.ts","description":"gatherRouteFacts, namesRoute and servedRoutes, written into route_facts and served_routes by writeRouteFacts; the gap rule ROUTE_GAP_RULES."}
 {"id":"LA-TRC-QRY09-H","title":"table-schema-mismatch","query_id":"LA-TRC-QRY09","file":"lathe/data/check.jsonl","description":"The table-schema-mismatch check."}
