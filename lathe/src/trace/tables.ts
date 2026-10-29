@@ -23,8 +23,8 @@
 // index's column list is not a column. Statements built at run time from pieces the text does not show are not seen.
 import { readdir, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
-import type { Store } from '../store/store.ts';
-import type { Row } from '../store/rows.ts';
+import type { Store } from '../platform/data/store.ts';
+import type { Row } from '../platform/data/rows.ts';
 
 /** What one CREATE TABLE or VIEW (and the indexes and ALTERs on it) in a file defines. */
 export interface TableDefinition {

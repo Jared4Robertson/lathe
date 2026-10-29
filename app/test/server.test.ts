@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { latheApi } from '../server/lathe';
 import * as realApi from '../../lathe/src/server/api.ts';
 import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract.ts';
-import { openStore } from '../../lathe/src/store/index.ts';
+import { openStore } from '../../lathe/src/platform/data/index.ts';
 import { SCHEMA_VERSION } from '../../lathe/src/config.ts';
 
 const engineDir = path.resolve(import.meta.dirname, '../../lathe');

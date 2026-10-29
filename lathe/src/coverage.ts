@@ -16,7 +16,7 @@
 // Besides obligations, coverage reports the records short of a minimum, the "at least one" and "exactly one" rules
 // the schema leaves to the checks because records are written stage by stage (GAP_RULES): a use case with no flow, an
 // aggregate with no root, a command with no handler. The checks read the same views and tables.
-import { sqlName, sqlString, type SchemaDescription, type Stage } from './store/schema.ts';
+import { sqlName, sqlString, type SchemaDescription, type Stage } from './platform/data/schema.ts';
 import { PACKAGE_FACTS_SQL, PACKAGE_GAP_SQL } from './trace/packages.ts';
 import { MEASURE_GAPS } from './trace/measures.ts';
 import { ROUTE_GAP_RULES } from './trace/routes.ts';

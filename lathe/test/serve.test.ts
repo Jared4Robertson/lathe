@@ -9,7 +9,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configuredRoot } from './store/fixture.ts';
 import { PACKAGE_DIR } from '../src/index.ts';
 import type { SpecData, WriteAnswer } from '../src/server/contract.ts';
-import { openStore, SCHEMA_DIR } from '../src/store/index.ts';
+import { openStore, SCHEMA_DIR } from '../src/platform/data/index.ts';
 import { APP_DIR, serve, type LatheServer } from '../src/server/serve.ts';
 
 const APP_SOURCE = path.join(PACKAGE_DIR, '..', 'app');

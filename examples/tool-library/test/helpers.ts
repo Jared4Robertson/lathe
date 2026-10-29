@@ -7,7 +7,7 @@ import { LendingService } from '../src/lending-service.ts';
 import { MemberService } from '../src/member-service.ts';
 import { DEFAULT_TIME_ZONE } from '../src/model.ts';
 import { createRouter } from '../src/router.ts';
-import { Store } from '../src/store.ts';
+import { Store } from '../src/platform/data.ts';
 import { ToolService } from '../src/tool-service.ts';
 
 export const DAY_MS = 24 * 60 * 60 * 1000;

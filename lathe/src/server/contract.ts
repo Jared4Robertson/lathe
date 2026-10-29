@@ -5,9 +5,10 @@
 //   POST /api/write              { commands: Command[] } -> WriteAnswer: one transaction through the command layer of the product the commands name
 //   GET  /api/history?id=<ID>    HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
 //   GET  /api/baseline?product=<ID>&since=<commit|branch|hash>   BaselineAnswer: the product's rows at a commit, for the record diff (../changes.ts)
-import type { Command, StoreProblem } from '../store/store.ts';
-import type { Row, Value } from '../store/rows.ts';
-import type { SchemaDescription } from '../store/schema.ts';
+import type { Command } from '../platform/data/generic-write.ts';
+import type { StoreProblem } from '../platform/data/problems.ts';
+import type { Row, Value } from '../platform/data/rows.ts';
+import type { SchemaDescription } from '../platform/data/schema.ts';
 import type { Coverage, Problem, RecordedException, TraceChain } from '../types.ts';
 
 export type { Row, StoreProblem, Value };

@@ -9,8 +9,8 @@ import { promisify } from 'node:util';
 import { DuckDBInstance } from '@duckdb/node-api';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { readMigrations, type Migration } from '../../src/index.ts';
-import { baseKey } from '../../src/store/cache.ts';
-import { closeEngine, openStore } from '../../src/store/store.ts';
+import { baseKey } from '../../src/platform/data/cache.ts';
+import { closeEngine, openStore } from '../../src/platform/data/store.ts';
 import { everyKind, removeData, writeData } from './fixture.ts';
 
 const run = promisify(execFile);

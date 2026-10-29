@@ -4,10 +4,12 @@
 // the app or git may have changed them since the last call). Writes never commit: the Agent or the Owner commits.
 import path from 'node:path';
 import { exceptionsText, loadProducts, type Coverage, type RecordedException } from '../index.ts';
-import { describeKey, rowKey, rowLine, type Row, type Value } from '../store/rows.ts';
-import { sqlString, type KindDescription, type SchemaDescription, type TableDescription } from '../store/schema.ts';
+import { describeKey, rowKey, rowLine, type Row, type Value } from '../platform/data/rows.ts';
+import { sqlString, type KindDescription, type SchemaDescription, type TableDescription } from '../platform/data/schema.ts';
 import { SchemaVersionError } from '../config.ts';
-import { openStore, StoreError, type Command, type Store, type StoreProblem } from '../store/store.ts';
+import type { Command } from '../platform/data/generic-write.ts';
+import { StoreError, type StoreProblem } from '../platform/data/problems.ts';
+import { openStore, type Store } from '../platform/data/store.ts';
 
 /** One row a write added, changed or removed. */
 export interface RowChange {

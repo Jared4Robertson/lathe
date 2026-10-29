@@ -1,7 +1,7 @@
 import path from 'node:path';
 import type { SpecData } from '../../../lathe/src/server/contract';
 import { loadConfig, readWorkspace } from '../../../lathe/src/index';
-import { openStore } from '../../../lathe/src/store/index';
+import { openStore } from '../../../lathe/src/platform/data/index';
 import { joinSchemas } from '../../../lathe/src/server/api';
 
 // This repo's own products as the workspace serves them, for the tests that hold every stage to real data: Lathe's

@@ -6,7 +6,7 @@ import { readFile, stat } from 'node:fs/promises';
 import { createServer, type IncomingMessage, type Server, type ServerResponse } from 'node:http';
 import path from 'node:path';
 import { PACKAGE_DIR } from '../config.ts';
-import { closeEngine } from '../store/store.ts';
+import { closeEngine } from '../platform/data/store.ts';
 import { closeStores, handleApi, watchTargets } from './api.ts';
 
 /** Where `npm --prefix lathe run build` puts the built web app. */

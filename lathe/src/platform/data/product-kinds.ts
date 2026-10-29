@@ -1,6 +1,6 @@
 // A product's own kinds and relations: from its product_kind, product_kind_field and product_relation rows, the SQL
 // that makes their tables, with the same registry, keys and checks as Lathe's own kinds, and their meta-model rows.
-import { isLeadColumn } from '../lead.ts';
+import { isLeadColumn } from '../../lead.ts';
 import type { Row } from './rows.ts';
 import { sqlName, sqlString, type SchemaDescription } from './schema.ts';
 

@@ -1,5 +1,5 @@
-import type { ColumnDescription, ColumnKind, SchemaDescription, TableDescription } from '../../../lathe/src/store/schema';
-import type { Command } from '../../../lathe/src/store/store';
+import type { ColumnDescription, ColumnKind, SchemaDescription, TableDescription } from '../../../lathe/src/platform/data/schema';
+import type { Command } from '../../../lathe/src/platform/data/generic-write';
 import { kindOrder, parentColumns, partsOf, partTablesOf, type Row, type SpecIndex, type SpecRecord, type Value } from '../specs/data';
 import { TEXT_COLUMNS } from '../specs/RecordText';
 

@@ -1,7 +1,7 @@
 // The shape the Lathe engine returns from loadWorkspace(root) and the web app reads from GET /api/spec: the typed
 // records of the product's data/ folder, read through the store, with the problems the checks found and coverage.
-import type { Row } from './store/rows.ts';
-import type { IdScope, Stage } from './store/schema.ts';
+import type { Row } from './platform/data/rows.ts';
+import type { IdScope, Stage } from './platform/data/schema.ts';
 
 export type { IdScope, Stage };
 

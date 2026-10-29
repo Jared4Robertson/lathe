@@ -4,8 +4,8 @@
 // own kinds, relations and checks); renderReference writes it as Markdown, by stage, as lathe/REFERENCE.md holds it
 // (`npm --prefix lathe run reference`).
 import { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE } from './coverage.ts';
-import type { ColumnDescription, IdScope, KindDescription, SchemaDescription, Stage, TableDescription, TableRole } from './store/schema.ts';
-import type { Row } from './store/rows.ts';
+import type { ColumnDescription, IdScope, KindDescription, SchemaDescription, Stage, TableDescription, TableRole } from './platform/data/schema.ts';
+import type { Row } from './platform/data/rows.ts';
 
 export interface ColumnReference {
   name: string;

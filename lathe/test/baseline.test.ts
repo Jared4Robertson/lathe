@@ -9,7 +9,7 @@ import { configuredRoot } from './store/fixture.ts';
 import { recordChanges } from '../src/changes.ts';
 import { closeStores, handleApi } from '../src/server/api.ts';
 import type { BaselineAnswer } from '../src/server/contract.ts';
-import { openStore, type Store } from '../src/store/index.ts';
+import { openStore, type Store } from '../src/platform/data/index.ts';
 
 const temps: string[] = [];
 let repo = '';
