@@ -104,8 +104,13 @@ describe('the schema cache', () => {
       instance.closeSync();
     }
 
+    // A file of an older base schema, which this Lathe never reads.
+    writeFileSync(path.join(dir, '0123456789abcdef0123456789abcdef.duckdb'), 'an older schema');
+
     expect(await load(dir)).toEqual(fresh);
-    // They were replaced by whole files of the right keys, which the next process uses as they are.
+    // They were replaced by whole files of the right keys, which the next process uses as they are; writing the base
+    // removed the older base's file.
+    expect(files(dir)).toHaveLength(2);
     const was = files(dir).map((f) => stamp(path.join(dir, f)));
     expect(await load(dir)).toEqual(fresh);
     expect(files(dir).map((f) => stamp(path.join(dir, f)))).toEqual(was);

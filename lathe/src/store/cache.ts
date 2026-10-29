@@ -10,7 +10,7 @@
 // once each write a whole file, and a reader never sees half of one.
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
-import { mkdir, readdir, rename, rm } from 'node:fs/promises';
+import { mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { version as duckdbVersion, type DuckDBConnection } from '@duckdb/node-api';
@@ -87,11 +87,30 @@ export async function copyDatabase(connection: DuckDBConnection, from: string, t
 
 let writes = 0;
 
+/** How many products' schemas are kept per base schema; a product whose declarations change leaves its old one. */
+const MAX_PRODUCT_FILES = 20;
+
+// Writing the base schema's file removes every file of another base, which no process of this Lathe reads again;
+// writing a product's keeps the MAX_PRODUCT_FILES written last. A file removed while another process reads it stays
+// readable to that process.
+async function prune(dir: string, key: string): Promise<void> {
+  const base = key.split('-')[0];
+  const names = await readdir(dir);
+  if (key === base) {
+    for (const name of names) if (!name.startsWith(base)) await rm(path.join(dir, name), { force: true });
+    return;
+  }
+  const products = names.filter((n) => n.startsWith(`${base}-`) && n.endsWith('.duckdb'));
+  if (products.length <= MAX_PRODUCT_FILES) return;
+  const written = await Promise.all(products.map(async (name) => ({ name, at: (await stat(path.join(dir, name))).mtimeMs })));
+  written.sort((a, b) => b.at - a.at);
+  for (const { name } of written.slice(MAX_PRODUCT_FILES)) await rm(path.join(dir, name), { force: true });
+}
+
 /**
  * Writes the database source, a schema built afresh, to the cache as key's file, stamped with the key and its
  * description. Any failure (a cache folder that cannot be written) leaves no file and is otherwise ignored: the next
- * process builds the schema again. Writing the base schema's file removes the files of other bases, which no process
- * of this Lathe reads again.
+ * process builds the schema again. Then it prunes the folder (see prune).
  */
 export async function writeCached(connection: DuckDBConnection, source: string, key: string, schema: SchemaDescription): Promise<void> {
   const dir = cacheDir();
@@ -110,11 +129,7 @@ export async function writeCached(connection: DuckDBConnection, source: string, 
       await connection.run(`DETACH DATABASE IF EXISTS ${sqlName(alias)}`);
     }
     await rename(temp, file);
-    if (!key.includes('-')) {
-      for (const name of await readdir(dir)) {
-        if (!name.startsWith(key)) await rm(path.join(dir, name), { force: true });
-      }
-    }
+    await prune(dir, key);
   } catch {
     // The cache is only a shortcut; the schema this process built serves it either way.
   } finally {
