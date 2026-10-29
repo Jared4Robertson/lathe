@@ -1,0 +1,37 @@
+// Change a domain (LA-AUT-CMD161): Changes a domain's title, subdomain type, description or notes. Its product never changes.
+import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
+import type { Transaction } from '../../../platform/data/transaction.ts';
+import type { DomainRow } from '../../../platform/data/tables.ts';
+import { DOMAIN_SLICE, changed } from '../model.ts';
+import { DomainRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
+
+/** The domain's changes: a column given is set, null clears an optional one. */
+export type ChangeDomain = Pick<DomainRow, 'id'> & { title?: DomainRow['title']; subdomain_type?: DomainRow['subdomain_type']; description?: DomainRow['description']; notes?: DomainRow['notes'] | null };
+
+/** Change a domain (LA-AUT-CMD161). */
+export const CHANGE_DOMAIN: CommandDefinition<ChangeDomain> = {
+  id: 'LA-AUT-CMD161',
+  slice: DOMAIN_SLICE,
+  name: 'change-domain',
+  description: "Changes a domain's title, subdomain type, description or notes. Its product never changes.",
+  method: 'POST',
+  route: '/api/domain/change-domain',
+  input: {
+    id: column('domain', 'id', 'required'),
+    title: column('domain', 'title', 'optional'),
+    subdomain_type: column('domain', 'subdomain_type', 'optional'),
+    description: column('domain', 'description', 'optional'),
+    notes: column('domain', 'notes', 'clearable'),
+  },
+  handler: changeDomain,
+};
+
+/** Changes the domain's own columns. */
+export function changeDomain(tx: Transaction, input: ChangeDomain): void {
+  const domains = new DomainRepository(tx);
+  const domain = domains.load(input.id) ?? tx.refuse('missing', `there is no domain ${input.id}`);
+  domain.domain = changed(domain.domain, input, ['title', 'subdomain_type', 'description', 'notes']);
+  holdToRules(tx, domain);
+  domains.save(domain);
+}
