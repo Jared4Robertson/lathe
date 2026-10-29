@@ -158,7 +158,7 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
   });
 });
 
-describe('LA-AUT-UC06-R13-T01 a use case, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
+describe('LA-AUT-UC06-R13-T01 LA-STD-CODE-R07-T01 a use case, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
   it('removes a use case whole, and refuses one while another aggregate references what is in it', async () => {
     const store = await storeOf();
     await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });

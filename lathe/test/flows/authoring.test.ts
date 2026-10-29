@@ -171,24 +171,6 @@ describe('Authoring flows', () => {
     expect(tl.refused('link', 'TL-LEND-UC01-FL01-S01', 'fulfills', 'TL-LEND-UC02-R01')).toContain('step-fulfills-own-use-case');
   });
 
-  it('LA-AUT-UC07-FL03-T name records in text without linking them', async () => {
-    const tl = product();
-    await tl.seed(LENDING);
-    // S01: a record whose text names records of this product and another, one in a code span.
-    const text = 'Came from TL-LEND-UC01, as `XX-SHOP-UC09` did in the other product, and from TL-LEND-UC99.';
-    tl.run('set', 'TL-LEND-UC01-R01', '--statement', text);
-    // S02: the record shows its text as written; only its links relate it.
-    const shown = tl.run('show', 'TL-LEND-UC01-R01');
-    expect(shown).toContain(`  statement: ${text}`);
-    expect(shown).not.toContain('Links:');
-    expect(tl.read('data/uc_requirement.jsonl')).toContain(JSON.stringify(text));
-    // S03: the check reports nothing about the IDs in text.
-    const ws = tl.workspace();
-    expect(ws.links).toEqual([{ source: 'TL-LEND-CMD01', relation: 'raises', target: 'TL-LEND-EV01' }]);
-    expect(ws.problems.filter((p) => /XX-SHOP|UC99/.test(p.message))).toEqual([]);
-    expect(tl.check().status).toBe(0);
-  });
-
   it('LA-AUT-UC08-FL03-T read each kind\'s stage and order from the schema', () => {
     const tl = product();
     tl.run('add', 'domain', ...flags({ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }));

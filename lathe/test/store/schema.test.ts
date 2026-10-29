@@ -30,7 +30,7 @@ describe('the schema description', () => {
     }
   });
 
-  describe('LA-STD-PRINCIPLES-R02-T01 every kind is stored one way', () => {
+  describe('every kind is stored one way', () => {
     it('LA-AUT-UC03-R04-T01 gives every kind an id in the registry, a title and its parent columns', () => {
       for (const kind of Object.values(schema.kinds)) {
         const table = schema.tables[kind.name];

@@ -483,7 +483,7 @@ describe('pattern rules, domain by domain', () => {
 });
 
 describe('the other obligation kinds and their gaps', () => {
-  it('LA-CHK-UC04-R02-T01 a use case with no flow is a use-case-without-flow gap in its domain, never an error', async () => {
+  it('LA-AUT-UC06-R15-T01 a use case with no flow is a use-case-without-flow gap in its domain, never an error', async () => {
     const data = adding(complete(), {
       use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', capability_id: 'EX-LEND-CAP01', goal: 'A member keeps a tool longer.' }],
       use_case_actor: [{ use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Member' }],
