@@ -177,7 +177,7 @@
 {"read_model_id":"LA-TRC-RM01","position":2,"name":"Obligation kind","meaning":"The obligation kind counted.","type":"text","required":true,"column_name":"kind","example":"invariant"}
 {"read_model_id":"LA-TRC-RM01","position":3,"name":"Total","meaning":"How many the domain owes.","type":"whole number","required":true,"example":"6"}
 {"read_model_id":"LA-TRC-RM01","position":4,"name":"Designed","meaning":"How many have their design specified (UC02-R02).","type":"whole number","required":true,"example":"6"}
-{"read_model_id":"LA-TRC-RM01","position":5,"name":"Built","meaning":"How many have that design's technical record naming a file that exists.","type":"whole number","required":true,"example":"6"}
+{"read_model_id":"LA-TRC-RM01","position":5,"name":"Built","meaning":"How many have every technical record of that design naming a file that exists.","type":"whole number","required":true,"example":"6"}
 {"read_model_id":"LA-TRC-RM01","position":6,"name":"Proved","meaning":"How many an automated or manual test proves, at a level its kind allows.","type":"whole number","required":true,"example":"6"}
 {"read_model_id":"LA-TRC-RM01","position":7,"name":"Not automated yet","meaning":"How many are not proved but have a test not automated yet.","type":"whole number","required":true,"column_name":"not_automated","example":"0"}
 {"read_model_id":"LA-TRC-RM02","position":1,"name":"Domain","meaning":"The domain that owes the obligation.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
