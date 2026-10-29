@@ -1,5 +1,5 @@
-{"id":"TL-LEND-EN01-DM","title":"Member","entity_id":"TL-LEND-EN01","file":"src/model.ts"}
-{"id":"TL-LEND-EN02-DM","title":"Tool","entity_id":"TL-LEND-EN02","file":"src/model.ts"}
-{"id":"TL-LEND-EN03-DM","title":"Tool.damageNote","entity_id":"TL-LEND-EN03","file":"src/model.ts"}
-{"id":"TL-LEND-EN04-DM","title":"Loan","entity_id":"TL-LEND-EN04","file":"src/model.ts"}
-{"id":"TL-LEND-EN05-DM","title":"Loan.returnedAt","entity_id":"TL-LEND-EN05","file":"src/model.ts"}
+{"id":"TL-LEND-EN01-DM","title":"Member","entity_id":"TL-LEND-EN01","file":"src/member.ts"}
+{"id":"TL-LEND-EN02-DM","title":"Tool","entity_id":"TL-LEND-EN02","file":"src/tool.ts"}
+{"id":"TL-LEND-EN03-DM","title":"DamageReport","entity_id":"TL-LEND-EN03","file":"src/tool.ts"}
+{"id":"TL-LEND-EN04-DM","title":"Loan","entity_id":"TL-LEND-EN04","file":"src/loan.ts"}
+{"id":"TL-LEND-EN05-DM","title":"LoanReturn","entity_id":"TL-LEND-EN05","file":"src/loan.ts"}

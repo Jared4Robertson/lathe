@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { servedByEngine } from '../fixtures/engine';
 import { addRows, indexOf } from '../fixtures/load';
+import { modelWorkspace } from '../fixtures/model';
 import { patternWorkspace } from '../fixtures/patterns';
 import { gap } from '../fixtures/workspace';
 import { holdersOf, obligationsUnder, traceChain, traceMatrix, traceShape, untracedUnder } from '../../src/trace/chain';
@@ -100,6 +101,20 @@ describe('the matrix under a record or group', () => {
     expect(traceShape(index, 'P-D-EN03')).toMatchObject({ shape: 'context', untraced: false, scope: 'P-D-A3' });
     expect(traceShape(index, 'P-D-TM01')).toMatchObject({ shape: 'context', untraced: false });
     expect(traceMatrix(index, 'P-D-UC01-R01-T01')).toEqual([]);
+  });
+
+  it('LA-V98-R03-T07 A business outcome\'s matrix is the obligations under the capabilities serving it, as the tree draws them under it', () => {
+    const data = modelWorkspace();
+    addRows(data, 'business_outcome',
+      { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans a month', target: 'Up a tenth' },
+      { id: 'P-BO02', title: 'Fewer lost things', product_id: 'P', statement: 'Fewer things go missing.', measure: 'Things lost a year', target: 'Down a half' });
+    addRows(data, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' });
+    const served = indexOf(data);
+    const shape = traceShape(served, 'P-BO01');
+    expect(shape.shape).toBe('matrix');
+    expect(shape.shape === 'matrix' && shape.groups.flatMap((g) => g.rows.map((r) => r.obligation))).toEqual(obligationsUnder(served, 'P-D-CAP01'));
+    // An outcome nothing serves: the matrix around it.
+    expect(traceShape(served, 'P-BO02').shape).toBe('context');
   });
 });
 

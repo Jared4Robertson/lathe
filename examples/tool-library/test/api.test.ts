@@ -434,6 +434,14 @@ describe('TL-LEND-UC05 Report damage', () => {
     const { report } = await damageDuringLoan();
     expect(report.body).toMatchObject({ condition: 'needs_repair', status: 'on_loan' });
   });
+
+  it('TL-LEND-EP06-R04-T01 A second damage report on a tool that needs repair gives 409 and keeps the first', async () => {
+    const t = await tool();
+    await api.call('POST', `/tools/${t}/damage`, { note: 'Cord frayed' });
+    const second = await api.call('POST', `/tools/${t}/damage`, { note: 'Switch sticks' });
+    expect(second).toMatchObject({ status: 409, body: { error: 'tool_already_damaged' } });
+    expect(await entryOf(t)).toMatchObject({ condition: 'needs_repair', damageNote: 'Cord frayed' });
+  });
 });
 
 // The Librarian action pattern's rules, proved in TL-LEND for every use case that follows it:

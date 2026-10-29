@@ -1,14 +1,11 @@
-// Shared test setup: a fresh in-memory store and a clock the test can move.
+// Shared test setup: a fresh in-memory database and a clock the test can move.
 import { createServer, type Server } from 'node:http';
 import type { AddressInfo } from 'node:net';
+import { Database } from '../src/database.ts';
 import { subscribePolicies } from '../src/event-handlers.ts';
-import { Outbox, type DomainEvent, type HandlerFailure } from '../src/events.ts';
-import { LendingService } from '../src/lending-service.ts';
-import { MemberService } from '../src/member-service.ts';
+import type { DomainEvent, HandlerFailure } from '../src/events.ts';
 import { DEFAULT_TIME_ZONE } from '../src/model.ts';
-import { createRouter } from '../src/router.ts';
-import { Store } from '../src/platform/data.ts';
-import { ToolService } from '../src/tool-service.ts';
+import { createRouter, openLending } from '../src/router.ts';
 
 export const DAY_MS = 24 * 60 * 60 * 1000;
 /** 05:00 on Monday 2 March 2026 in New York (EST), the library's default time zone. */
@@ -34,7 +31,7 @@ export class TestClock {
   }
 }
 
-export interface ServiceOptions {
+export interface LendingOptions {
   /** The library's time zone; the default unless given. */
   timeZone?: string;
   /** Whether the policies' event handlers are subscribed, as the router subscribes them. Default true. */
@@ -44,28 +41,19 @@ export interface ServiceOptions {
 }
 
 /**
- * Services over a fresh in-memory store, for domain rule tests, sharing one outbox.
+ * The Lending domain over a fresh in-memory database, for domain rule tests, opened as the router opens it.
  * `delivered` lists every event the relay handed to its handlers, in order.
  */
-export function services(options: ServiceOptions = {}) {
-  const store = new Store();
+export function lending(options: LendingOptions = {}) {
+  const db = new Database();
   const clock = new TestClock();
-  const outbox = new Outbox(store, clock.now, options.onFailure);
+  const ctx = openLending(db, clock.now, options.timeZone ?? DEFAULT_TIME_ZONE, options.onFailure);
   const delivered: DomainEvent[] = [];
   for (const name of ['MemberRegistered', 'ToolAdded', 'DamageReported', 'ToolRepaired', 'LoanOpened', 'ToolReturned'] as const) {
-    outbox.subscribe(name, (event) => delivered.push(event));
+    ctx.outbox.subscribe(name, (event) => delivered.push(event));
   }
-  const tools = new ToolService(store, clock.now, outbox);
-  if (options.policies ?? true) subscribePolicies(outbox, tools);
-  return {
-    store,
-    clock,
-    outbox,
-    delivered,
-    members: new MemberService(store, clock.now, outbox),
-    tools,
-    lending: new LendingService(store, clock.now, outbox, options.timeZone),
-  };
+  if (options.policies ?? true) subscribePolicies(ctx.outbox, ctx);
+  return { ...ctx, clock, delivered };
 }
 
 export interface Api {
@@ -78,9 +66,9 @@ export interface Api {
 
 /** The HTTP API on an ephemeral local port, for acceptance tests, in the default time zone. */
 export async function startApi(): Promise<Api> {
-  const store = new Store();
+  const db = new Database();
   const clock = new TestClock();
-  const server: Server = createServer(createRouter(store, clock.now, { timeZone: DEFAULT_TIME_ZONE }));
+  const server: Server = createServer(createRouter(db, clock.now, { timeZone: DEFAULT_TIME_ZONE }));
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const { port } = server.address() as AddressInfo;
   return {
@@ -96,7 +84,7 @@ export async function startApi(): Promise<Api> {
     },
     async close() {
       await new Promise<void>((resolve, reject) => server.close((err) => (err ? reject(err) : resolve())));
-      store.close();
+      db.close();
     },
   };
 }

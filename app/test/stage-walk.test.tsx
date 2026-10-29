@@ -63,12 +63,18 @@ describe('the stage walk', () => {
     window.history.go(-2);
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
 
-    // The Trace stage walks its tree by the Graph's Tree keys: Left out to the capability and Right back in, then Right in
-    // to the requirement and on into its chain, to its flow; a link of its table, the accessible layer under the canvas,
-    // keeps its own arrows.
+    // The Trace stage walks its tree by the Graph's Tree keys: Left out to the domain (the tree draws no capability; with
+    // no outcome the use case sits under Not under an outcome, in its domain) and Right back in, then Right in to the
+    // requirement and on into its chain, to its flow; a link of its table, the accessible layer under the canvas, keeps its
+    // own arrows.
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-page')).not.toBeNull());
-    await walksOutAndIn(() => document.body);
+    press(document.body, 'ArrowLeft');
+    await waitFor(() => expect(at()).toBe('/P-D'));
+    await waitFor(() => expect(announcer()).toHaveTextContent('Domain Domain'));
+    press(document.body, 'ArrowRight');
+    await waitFor(() => expect(at()).toBe('/P-D-UC01'));
+    await waitFor(() => expect(announcer()).toHaveTextContent('Use case Lend a thing'));
     press(document.body, 'ArrowRight');
     await waitFor(() => expect(at()).toBe('/P-D-UC01-R01'));
     press(document.body, 'ArrowRight');
@@ -131,7 +137,7 @@ describe('the walking letters', () => {
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-page')).not.toBeNull());
     letter(document.body, 'a');
-    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
+    await waitFor(() => expect(at()).toBe('/P-D'));
     letter(document.body, 'd');
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
   });
@@ -174,21 +180,18 @@ describe('out and in', () => {
     window.history.go(-3);
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
 
-    // The Trace: from the use case's box out to its capability and out to the domain, then in to the domain's first parent
-    // (the capability) and in again to its use case.
+    // The Trace: from the use case's box out to its domain (no capability is drawn), then in to the domain's first parent
+    // (the use case) and in again to its first requirement.
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-page')).not.toBeNull());
-    shift('ArrowUp');
-    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
-    await waitFor(() => expect(announcer()).toHaveTextContent('Capability Lending'));
     shift('ArrowUp');
     await waitFor(() => expect(at()).toBe('/P-D'));
     await waitFor(() => expect(announcer()).toHaveTextContent('Domain Domain'));
     shift('ArrowDown');
-    await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
-    fireEvent.click(toolbarButton('In to the first child'));
     await waitFor(() => expect(at()).toBe('/P-D-UC01'));
     await waitFor(() => expect(announcer()).toHaveTextContent(/^Use case /));
+    fireEvent.click(toolbarButton('In to the first child'));
+    await waitFor(() => expect(at()).toBe('/P-D-UC01-R01'));
   });
 });
 
