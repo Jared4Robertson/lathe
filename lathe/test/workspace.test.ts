@@ -141,6 +141,10 @@ describe('a workspace of several products', () => {
     const spec = (await request(root, '/api/spec')).json() as SpecData;
     expect(spec.sources.map((s) => s.dataDir)).toEqual(['data', `${SHOP}/data`]);
     expect(spec.sources.map((s) => s.tables.product.map((p) => p.id))).toEqual([['WS'], ['SH']]);
+    // A read that names no record reads every product's folder: the nav lists every product.
+    const listed = await request(root, '/api/product/list-products');
+    expect(listed.status).toBe(200);
+    expect((listed.json() as { id: string }[]).map((p) => p.id)).toEqual(['SH', 'WS']);
 
     // A new record under the shop's domain goes to the shop's folder, a new product to the workspace's.
     const added = await request(root, '/api/write', { commands: [{ op: 'add', table: 'capability', row: { id: 'SH-SELL-CAP01', title: 'Checkout', domain_id: 'SH-SELL', position: 1, description: 'Paying for a basket.' } }] });

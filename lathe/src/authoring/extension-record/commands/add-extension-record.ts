@@ -1,7 +1,8 @@
 // Add an extension record (LA-AUT-CMD145): Adds a record of a product's own kind under its parent, with its title and declared fields, the links it starts and the packages it uses.
 import { id, links, texts, values, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
-import { EXTENSION_RECORD_SLICE, parentColumn, productKinds, undeclared, withLinks, withValues } from '../model.ts';
+import { parentColumn, productKinds } from '../declaration.ts';
+import { EXTENSION_RECORD_SLICE, undeclared, withLinks, withValues } from '../model.ts';
 import { ExtensionRecordRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 

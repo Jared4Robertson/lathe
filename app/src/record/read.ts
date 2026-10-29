@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReadRefusal, StoreProblem } from '../../../lathe/src/server/contract';
 
 // An aggregate page's read: one of its aggregate's queries, GET /api/<aggregate>/<query>?<field>=<value>
@@ -38,10 +38,13 @@ async function readQuery<R>(address: string): Promise<Read<R>> {
 export function useRead<R>(route: string, input: Record<string, string>, version: unknown): Read<R> {
   const address = queryAddress(route, input);
   const [read, setRead] = useState<Read<R>>(() => (known.get(address)?.read as Read<R> | undefined) ?? { state: 'reading' });
+  // The address last read: the same address read again keeps its answer on screen even when nothing is kept for it.
+  const last = useRef(address);
   useEffect(() => {
     const cached = known.get(address);
     if (cached) setRead(cached.read as Read<R>);
-    else setRead({ state: 'reading' });
+    else if (last.current !== address) setRead({ state: 'reading' });
+    last.current = address;
     if (cached?.version === version) return;
     let live = true;
     void readQuery<R>(address).then((answer) => {
