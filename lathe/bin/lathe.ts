@@ -1,12 +1,11 @@
 #!/usr/bin/env node
 // The Lathe command line. Run `lathe help` for usage.
-import { existsSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { parseArgs } from 'node:util';
-import { CONFIG_FILE, exceptionsText, loadProducts, mergeDataFiles, openStore, SCHEMA_VERSION, SchemaVersionError, StoreError, upgradeProduct, type Problem, type Workspace } from '../src/index.ts';
+import { CONFIG_FILE, exceptionsText, loadProducts, mergeDataFiles, SCHEMA_VERSION, SchemaVersionError, upgradeProduct, type Problem, type Workspace } from '../src/index.ts';
 import { forOneCommand } from '../src/platform/data/store.ts';
 import { coverageLines, productFolder } from '../src/cli/operations.ts';
+import { INIT_NEXT, InitError, initProduct } from '../src/cli/init.ts';
 import { DATA_COMMANDS, DATA_USAGE, runDataCommand } from '../src/cli/writers.ts';
 import { APP_USAGE, runAppCommand } from '../src/cli/app-tools.ts';
 import { AGGREGATE_COMMANDS, AGGREGATE_USAGE, runAggregateCommand } from '../src/cli/aggregates.ts';
@@ -19,8 +18,7 @@ Commands:
            --name "Tool Library" --prefix TL
   upgrade  Move the product's data forward to this Lathe's schema version, one converter at a time, and
            print what changed and anything left to do by hand. Refuses a git working tree with changes,
-           so the upgrade is one reviewable commit.
-           --allow-dirty upgrades anyway.
+           or no git, so the upgrade is one reviewable commit.
   check    Load the data and check it: the product's, and that of each other product its ${CONFIG_FILE}
            lists under products, each on its own. Prints errors, warnings, the recorded exceptions (each
            command that also changes another aggregate, and each repository that also persists one, with
@@ -54,7 +52,6 @@ const { positionals, values } = parseArgs({
     prefix: { type: 'string' },
     port: { type: 'string' },
     help: { type: 'boolean' },
-    'allow-dirty': { type: 'boolean' },
   },
 });
 const command = positionals[0] ?? 'help';
@@ -100,28 +97,13 @@ function printProduct(productRoot: string, workspace: Workspace) {
 }
 
 async function init() {
-  const name = values.name?.trim();
-  const prefix = values.prefix?.trim();
-  if (!name || !prefix) fail('lathe init needs --name and --prefix, for example: lathe init --name "Tool Library" --prefix TL');
-  if (!/^[A-Z][A-Z0-9]*$/.test(prefix)) fail('--prefix must be capital letters and digits, starting with a letter, such as TL.');
-
-  const configFile = path.join(root, CONFIG_FILE);
-  if (!existsSync(configFile)) {
-    await writeFile(configFile, `${JSON.stringify({ schema: SCHEMA_VERSION, data: 'data' }, null, 2)}\n`);
-    console.log(`Wrote ${CONFIG_FILE}`);
-  }
-  const store = await openStore(root);
   try {
-    if (store.record(prefix)) fail(`The product ${prefix} already exists.`);
-    const { files } = await store.add('product', { id: prefix, title: name, description: `What ${name} is, who it is for, and what it must do.` });
-    for (const file of files) console.log(`Wrote ${path.relative(root, path.join(store.dataDir, file))}`);
+    for (const line of await initProduct(root, values.name, values.prefix)) console.log(line);
   } catch (error) {
-    if (error instanceof StoreError) fail(error.message);
+    if (error instanceof InitError) fail(error.message);
     throw error;
-  } finally {
-    await store.close();
   }
-  console.log('\nNext: add a domain under the product, with its subdomain_type, then its aggregates, commands and events (`lathe add --help`), and run `lathe check`. The tables and their columns are in REFERENCE.md.');
+  console.log(`\n${INIT_NEXT}`);
 }
 
 // The server and the MCP server are loaded only for their own commands, so every other command starts sooner.
@@ -154,7 +136,7 @@ const STOP_TIMEOUT = 10_000;
 async function upgrade() {
   let result: Awaited<ReturnType<typeof upgradeProduct>>;
   try {
-    result = await upgradeProduct(root, { allowDirty: values['allow-dirty'] ?? false });
+    result = await upgradeProduct(root);
   } catch (error) {
     fail(error instanceof Error ? error.message : String(error));
   }

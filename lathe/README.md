@@ -87,7 +87,7 @@ The driver checks the merged table's own rules (columns, types, keys and checks)
 | --- | --- |
 | `init --name <name> --prefix <P>` | Writes `lathe.config.json` (if there is none) with this Lathe's schema version, and adds the product record to `data/product.jsonl` through the store. Both options are required; the prefix is capital letters and digits, starting with a letter. It stops if that product already exists. |
 | `check [--json]` | Loads the data and checks it: the product's, then each product `products` lists, each from its own folder and reported on its own, with the counts of them all at the end. For each it prints the errors, then the warnings, then the coverage: for each domain, and for the product outside the domains, one line per obligation kind (designed, built and proved out of the total, and how many wait on a test not automated yet, with each gap), a line of test counts, and the records short of a minimum. Exits 1 on any error, data the store refuses included; warnings alone do not fail it. `--json` prints `{ products: [{ root, workspace }] }` instead, each product's folder and its whole `Workspace`. |
-| `upgrade [--allow-dirty]` | Moves the data forward to this Lathe's schema version (see [Upgrading](#upgrading)). |
+| `upgrade` | Moves the data forward to this Lathe's schema version (see [Upgrading](#upgrading)). |
 | `serve [--port <n>]` | Serves the web app and its API at `http://127.0.0.1:<port>` (default 5330), for the product and each product `products` lists. Open pages reload when any of their data changes. |
 | `merge-data <base> <ours> <theirs> <path>` | Git's merge driver for the data files (see [The merge driver](#the-merge-driver)). |
 | `mcp` | Serves the data commands as MCP tools over stdio, for the Claude Code plugin. |
@@ -108,27 +108,24 @@ Lathe's schema has a version: one whole number in [schema/version.json](schema/v
 npx lathe upgrade
 ```
 
-It runs each converter in order from the product's schema version to this Lathe's, prints what each changed, then a list of what it could not convert, for you to finish by hand (nothing is silently dropped), and raises `schema` in `lathe.config.json`. It refuses a git working tree with changes, so the whole upgrade is one commit to review with `git diff`; `--allow-dirty` upgrades anyway. If the converted data does not load under the new schema, it stops before raising the version and lists the store's refusals as the to-dos; `git checkout -- .` undoes it. The upgrade goes one way: nothing old is kept, and no Lathe reads the old form afterwards.
+It runs each converter in order from the product's schema version to this Lathe's, prints what each changed, then a list of what it could not convert, for you to finish by hand (nothing is silently dropped), and raises `schema` in `lathe.config.json`. It refuses a git working tree with changes, or a product not under git, so the whole upgrade is one commit to review with `git diff`. If the converted data does not load under the new schema, it stops before raising the version and lists the store's refusals as the to-dos; `git checkout -- .` undoes it. The upgrade goes one way: nothing old is kept, and no Lathe reads the old form afterwards.
 
-**Writing a converter.** A breaking schema change comes with `upgrades/<from>-to-<to>.ts`, moving the data forward exactly one version (`1-to-2.ts`). Its default export has up to two phases:
+**Writing a converter.** A breaking schema change comes with `upgrades/<from>-to-<to>.ts`, moving the data forward exactly one version (`1-to-2.ts`). Its default export rewrites the raw rows of the data files:
 
 ```ts
 import type { Converter } from '../src/index.ts';
 
 export default {
-  // What the new schema cannot load as it is, on the raw rows of the data files.
+  // What the new schema cannot load as it is: a renamed or removed column, a moved table, a required text.
   files(data, notes) {
     data.write('product', data.read('product').map(({ notes: delivery, ...row }) => ({ ...row, delivery })));
     notes.changed('product.notes is now product.delivery');
-  },
-  // Everything else, through the store's command layer, once the data loads.
-  async records(store, notes) {
-    for (const row of store.rows('product')) if (!row.delivery) notes.todo(`${row.id}: write how it is delivered`);
+    for (const row of data.read('product')) if (!row.delivery) notes.todo(`${row.id}: write how it is delivered`);
   },
 } satisfies Converter;
 ```
 
-Every converter's `files` phase runs in order, then every `records` phase in order: the store is Lathe's current one, so the files phases bring the data to a shape it loads. A table a files phase rewrites takes the store's own order and line format. `notes.changed` lines are the summary; `notes.todo` lines are the to-do list. Test each converter on a copy of a real product before release; [test/cli/upgrade.test.ts](test/cli/upgrade.test.ts) shows the whole path with a test converter.
+Every converter runs in order, then the data must load under the new schema, with every aggregate's rules, before the version is raised: the converters bring the data to a shape this Lathe loads. A table a converter rewrites takes the store's own order and line format. `notes.changed` lines are the summary; `notes.todo` lines are the to-do list. Test each converter on a copy of a real product before release; [test/cli/upgrade.test.ts](test/cli/upgrade.test.ts) shows the whole path with a test converter.
 
 ## The engine
 

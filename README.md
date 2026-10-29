@@ -2,7 +2,7 @@
 
 A lathe is a tool that makes tools, including better lathes. Lathe organizes a product's lifecycle (discovery, domain model, use cases, interaction design, technical specification, test plan) as typed data: a table per kind of record, kept as one `data/<table>.jsonl` file per table in the product's own repo. A database loads them with every key and rule of its schema, so data that breaks the model cannot be saved; checks report the work still to do, coverage traces each business outcome through the capabilities that serve it, and each obligation to the code that builds it and the tests that prove it, and a web app lets you read, navigate and edit the result.
 
-Lathe describes itself in its own format: its specification is the data in [data/](data/), and `lathe check` runs on it as on any product. Most records are written by agents; the [Claude Code plugin](plugin/) gives them MCP tools that write through the same command layer as the CLI and the app. Specs name roles (Owner, Reader, Agent), never people.
+Lathe describes itself in its own format: its specification is the data in [data/](data/), and `lathe check` runs on it as on any product. Most records are written by agents; the [Claude Code plugin](plugin/) gives them MCP tools, one per command of each aggregate of the model, the same commands the CLI and the app run. Specs name roles (Owner, Reader, Agent), never people.
 
 ## What's here
 
@@ -11,7 +11,7 @@ Lathe describes itself in its own format: its specification is the data in [data
 | [lathe/](lathe/) | The tool: the schema, the store, the engine and Lathe's checks, the `lathe` command and the server. Packaged as `@jaredrob/lathe`; see its [README](lathe/README.md). |
 | [app/](app/) | The web app's source. Built into the package for `lathe serve`. |
 | [desktop/](desktop/) | Lathe as a desktop app: an Electron shell around the web app and server. See its [README](desktop/README.md). |
-| [plugin/](plugin/) | The Claude Code plugin: skills for writing records, MCP tools that write through the command layer, and a hook that refuses hand edits to data files. |
+| [plugin/](plugin/) | The Claude Code plugin: skills for writing records, an MCP tool per command and query of each aggregate, and a hook that refuses hand edits to data files. |
 | [data/](data/) | Lathe's own specification (product `LA`), with this repo's own checks in `data/check.jsonl`. |
 | [examples/tool-library/](examples/tool-library/) | The example product (`TL`): its code, whose tests carry their spec IDs, and its specification in its own `data/`. |
 | [notes/](notes/) | Notes for contributors: the store's interfaces, the audits behind the accessibility and stability suites, and the phone layout's design. |
@@ -28,7 +28,7 @@ npm --prefix lathe install && npm --prefix app install && npm --prefix desktop i
 | --- | --- |
 | The web app, for working on Lathe | `npm --prefix app run dev` serves this repo at http://localhost:5199 and reloads as the data or app code change. with the Tool Library beside Lathe, as this repo's `lathe.config.json` lists it under `products`. `LATHE_ROOT=/path/to/product` points it at another product repo (or workspace); `-- --port <n>` picks another port. |
 | Check the spec | `npm --prefix lathe run check` checks Lathe's spec and the Tool Library's, each on its own, prints errors, warnings and coverage, and exits 1 on any error. |
-| Change the spec | `npm --prefix lathe run lathe -- add <table> --root .. --<column> <value> ...`, and `set`, `move`, `link`, `unlink` and `remove`, through the command layer; or edit a record in the app. `lathe help` lists them. |
+| Change the spec | `npm --prefix lathe run lathe -- <aggregate> <command> --root .. --<field> <value> ...`, such as `use-case add-flow-step`: each aggregate's own commands, which check its rules; or edit a record in the app. `lathe help` lists the aggregates, and `lathe <aggregate> --help` their commands. |
 | The reference | `npm --prefix lathe run reference` regenerates [lathe/REFERENCE.md](lathe/REFERENCE.md): stage by stage, every kind with its table, its checks and its coverage gaps, then every relation. |
 | Serve a built app | `npm --prefix lathe run build`, then `npm --prefix lathe run lathe -- serve --root ..` serves the built app at http://127.0.0.1:5330. |
 | The desktop app | `npm --prefix desktop run dev` (hot-reloading), `npm --prefix desktop run start` (from the built package) or `npm --prefix desktop run pack` (a `Lathe.app` in `desktop/release/`). |
@@ -41,7 +41,7 @@ git config merge.lathe-data.name "Lathe data files"
 git config merge.lathe-data.driver "node lathe/bin/lathe.ts merge-data %O %A %B %P"
 ```
 
-The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product repo, the same commands are `npx lathe check`, `npx lathe add ...` and `npx lathe serve`; the [package README](lathe/README.md) has every option.
+The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product repo, the same commands are `npx lathe check`, `npx lathe <aggregate> <command> ...` and `npx lathe serve`; the [package README](lathe/README.md) has every option.
 
 ## Upgrading
 
