@@ -25,24 +25,24 @@ test.describe('overlays', () => {
 
   test('LA-V61-R34-T01 quick find', async ({ page }) => {
     await openPage(page, RECORD);
-    const r = await step(page, 'overlays', 'quick find: open and type', { keys: [...SHELL, ...FOCUS, '.quick-find input'], allow: ['.quick-find-results'] }, async () => {
+    const r = await step(page, 'overlays', 'quick find: open and type', { keys: [...SHELL, ...FOCUS, '.quick-find-button'], allow: ['.quick-open-backdrop'] }, async () => {
       await page.keyboard.press('Control+k');
       await page.keyboard.type('graph re', { delay: 60 });
-      await page.locator('.quick-find-results li').first().waitFor();
+      await page.locator('.quick-open .palette-list li').first().waitFor();
     });
     expectStable(r);
-    const close = await step(page, 'overlays', 'quick find: Escape', { keys: [...SHELL, ...FOCUS, '.quick-find input'] }, async () => {
+    const close = await step(page, 'overlays', 'quick find: Escape', { keys: [...SHELL, ...FOCUS, '.quick-find-button'] }, async () => {
       await page.keyboard.press('Escape');
-      await expect(page.locator('.quick-find-results')).toHaveCount(0);
+      await expect(page.locator('.quick-open')).toHaveCount(0);
     });
     expectStable(close);
   });
 
   test('LA-V61-R34-T01 the command palette', async ({ page }) => {
     await openPage(page, RECORD);
-    const r = await step(page, 'overlays', 'palette: open and type', { keys: [...SHELL, ...FOCUS, '.dialog-search'], allow: ['.palette-list'] }, async () => {
+    const r = await step(page, 'overlays', 'palette: open and type', { keys: [...SHELL, ...FOCUS, '.quick-find-button'], allow: ['.quick-open-backdrop'] }, async () => {
       await page.keyboard.press('Control+Shift+p');
-      await page.locator('.dialog-search').waitFor();
+      await page.locator('.quick-open input').waitFor();
       await page.keyboard.type('graph', { delay: 60 });
     });
     expectStable(r);

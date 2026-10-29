@@ -14,6 +14,7 @@ const press = (target: Element, key: string, code: string, mods: Partial<Record<
   fireEvent.keyDown(target, { key, code, ...mods });
 const active = () => (document.activeElement ?? document.body) as HTMLElement;
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
+const quickFind = () => within(screen.getByRole('dialog', { name: 'Quick find' })).getByRole('combobox', { name: 'Quick find' });
 const announcer = () => screen.getByTestId('announcer');
 const node = (id: string) => boxElement(id);
 
@@ -22,12 +23,15 @@ describe('keyboard shortcuts', () => {
     await openApp('/DM/checks');
     await screen.findByRole('heading', { level: 1, name: 'Checks' });
     press(document.body, 'p', 'KeyP', { ctrlKey: true });
-    await waitFor(() => expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
+    await waitFor(() => expect(quickFind()).toHaveFocus());
+    fireEvent.keyDown(quickFind(), { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
 
-    // From a collapsed nav too: it opens.
+    // From a collapsed nav too: it opens over the page, and the nav stays collapsed.
     fireEvent.click(within(nav()).getByRole('button', { name: 'Collapse the navigation' }));
     press(document.body, 'k', 'KeyK', { ctrlKey: true });
-    await waitFor(() => expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
+    await waitFor(() => expect(quickFind()).toHaveFocus());
+    expect(nav().className).toContain('is-rail');
   });
 
   it('LA-V61-R09-T02 Ctrl+P keeps the browser from printing, and a key nobody handles is left to the browser', async () => {
@@ -152,15 +156,18 @@ describe('keyboard shortcuts', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
 
     // Typing "?" in a search box types it.
-    const find = within(nav()).getByRole('combobox', { name: 'Quick find' });
-    await user.type(find, '?');
-    expect(find).toHaveValue('?');
+    press(document.body, 'p', 'KeyP', { ctrlKey: true });
+    await user.type(quickFind(), '?');
+    expect(quickFind()).toHaveValue('?');
+    expect(screen.queryByRole('dialog', { name: 'Keyboard shortcuts' })).toBeNull();
+    await user.keyboard('{Escape}');
     expect(screen.queryByRole('dialog')).toBeNull();
 
     press(document.body, 'P', 'KeyP', { ctrlKey: true, shiftKey: true });
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
     const input = within(palette).getByRole('combobox', { name: 'Type a command' });
     await waitFor(() => expect(input).toHaveFocus());
+    expect(input).toHaveValue('>');
     await user.type(input, 'trace stage');
     const options = within(palette).getAllByRole('option');
     expect(options[0]).toHaveTextContent('Trace stage');
@@ -195,8 +202,8 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'g', 'KeyG');
     press(document.body, 'h', 'KeyH');
     expect(window.location.pathname).toBe('/');
-    const find = within(nav()).getByRole('combobox', { name: 'Quick find' });
-    find.focus();
+    press(document.body, 'p', 'KeyP', { ctrlKey: true });
+    const find = quickFind();
     press(find, 'g', 'KeyG');
     press(find, 'c', 'KeyC');
     expect(window.location.pathname).toBe('/');
@@ -241,9 +248,10 @@ describe('keyboard shortcuts', () => {
     press(document.body, 'I', 'KeyI', { ctrlKey: true, shiftKey: true });
     await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toHaveFocus());
 
-    // / focuses the nearest search box: the page's, or quick find.
+    // / focuses the nearest search box: the page's, or opens quick find.
     press(document.body, '/', 'Slash');
-    await waitFor(() => expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveFocus());
+    await waitFor(() => expect(quickFind()).toHaveFocus());
+    fireEvent.keyDown(quickFind(), { key: 'Escape' });
     await openApp('/P-D', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     press(document.body, '/', 'Slash');
