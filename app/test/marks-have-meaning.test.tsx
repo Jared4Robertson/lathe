@@ -40,7 +40,6 @@ describe('LA-V93-R12-T06 the Graph view key', () => {
     needs('the focus', '.graph-swatch.is-focus');
     for (const shape of Object.keys(SHAPES)) needs(`shape ${shape}`, `.graph-swatch.shape-${shape}`);
     needs('a Nested box', '.graph-swatch.stage-nested');
-    needs('a Voronoi cell', '.graph-swatch.is-cell');
     needs('bar', '.graph-swatch.stage-bar');
     for (const badge of BADGE_TONES) needs(`badge ${badge}`, `.graph-mark.${badge}`);
     // The one line the graph draws: parent to child.

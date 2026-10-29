@@ -46,7 +46,7 @@ export function GraphKey({ stages = [] }: { stages?: readonly StageRule[] }) {
           <li key={stage}><span className={`graph-swatch stage-${stage}`} /> {label(stage)} ({STAGE_KINDS[stage]})</li>
         ))}
         <li><span className="graph-swatch stage-structural" /> Structural (product)</li>
-        <li><span className="graph-swatch kind-question" /> Open question, in the warning color (dashed in the Nested and Voronoi views)</li>
+        <li><span className="graph-swatch kind-question" /> Open question, in the warning color (dashed in the Nested view)</li>
         <li><span className="graph-swatch stage-group" /> Groups: a stage, folder or group, a folder outlined in its stage's color (gray for open questions)</li>
         <li><span className="graph-swatch is-focus" /> The focus, ringed</li>
       </ul>
@@ -59,10 +59,9 @@ export function GraphKey({ stages = [] }: { stages?: readonly StageRule[] }) {
           <li key={mark}><span className={`graph-swatch is-shape mark-${mark}`}><MarkIcon mark={mark} /></span> {MARKS[mark]}</li>
         ))}
       </ul>
-      <p className="hint">In the Tree view each box's outline is its kind's shape. In the Nested and Voronoi views every box keeps its rectangle or cell, and its shape is the small mark before its kind and ID.</p>
+      <p className="hint">In the Tree view each box's outline is its kind's shape. In the Nested view every box keeps its rectangle, and its shape is the small mark before its kind and ID.</p>
       <ul className="plain">
         <li><span className="graph-swatch stage-nested" /> Nested view: a box holding its children below its name</li>
-        <li><span className="graph-swatch is-cell" /> Voronoi view: a cell made of its children's cells, its name at its top</li>
         <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>
         <li><span className="graph-line" /> parent / child (the tree, through stages, folders and groups)</li>
         <li><span className="graph-mark error">!</span> has errors <span className="graph-mark warning">!</span> has warnings <span className="graph-mark gap">gap</span> not designed or not proved (on a group: among its members)</li>
@@ -70,8 +69,7 @@ export function GraphKey({ stages = [] }: { stages?: readonly StageRule[] }) {
       <ChangesKey />
       <p className="hint">The graph is one map of the nav's tree: a product holds its own stages and its domains, a domain its five stages, each stage a folder per kind, each folder the records that start a branch of the stage, and each record what sits under it in the same stage. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A record's links to records in other branches are the Trace view's, which draws an obligation's chain from what designs it to the tests that prove it, and the wiki card's, which lists every link.</p>
       <p className="hint">The Nested layout (v) draws the same tree as boxes inside boxes: the product made of its stages and domains, each domain of its stages, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
-      <p className="hint">The Voronoi layout draws the same tree as polygon cells inside cells: the product a hexagon split into its stages and domains, each domain split into its stages, and so on down, each cell as big as the records under it and never too small for its name. It frames and labels as the Nested layout does.</p>
-      <p className="hint">Click a record or a group, or press Enter on it, to focus it; Enter on the focus, or anywhere but a button, link or field, shows or collapses the wiki card, and Escape collapses it. Scroll or drag to pan, Shift+scroll to pan sideways, and pinch or hold Cmd (Ctrl off a Mac) while scrolling to zoom about the pointer. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys, or W, A, S and D as Up, Left, Down and Right, step through the tree, each step moving the focus. In the Tree view, Left goes to the parent, Right to the first child, and Up and Down to the previous and next sibling; in the Nested and Voronoi views, which draw children inside their parent, Up goes to the parent, Down to the first child, and Left and Right to the previous and next sibling. Past the last sibling a step goes on to the first child of the next parent at that level, so repeated steps visit the whole level. In every view Shift+Up (or Shift+W) goes out to the parent and Shift+Down (or Shift+S) in to the first child, as the toolbar's Out and In do. Tab and Shift+Tab move between the boxes; + and - change the depth, and . frames the focus again.</p>
+      <p className="hint">Click a record or a group, or press Enter on it, to focus it; Enter on the focus, or anywhere but a button, link or field, shows or collapses the wiki card, and Escape collapses it. Scroll or drag to pan, Shift+scroll to pan sideways, and pinch or hold Cmd (Ctrl off a Mac) while scrolling to zoom about the pointer. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys, or W, A, S and D as Up, Left, Down and Right, step through the tree, each step moving the focus. In the Tree view, Left goes to the parent, Right to the first child, and Up and Down to the previous and next sibling; in the Nested view, which draws children inside their parent, Up goes to the parent, Down to the first child, and Left and Right to the previous and next sibling. Past the last sibling a step goes on to the first child of the next parent at that level, so repeated steps visit the whole level. In every view Shift+Up (or Shift+W) goes out to the parent and Shift+Down (or Shift+S) in to the first child, as the toolbar's Out and In do. Tab and Shift+Tab move between the boxes; + and - change the depth, and . frames the focus again.</p>
     </div>
   );
 }

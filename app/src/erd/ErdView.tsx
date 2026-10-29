@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Background, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore, ViewportPortal, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
-import { useCameraGestures } from '../graph/gestures';
+import { useCameraGestures, wheelLatch } from '../graph/gestures';
 import { frameRect, type Viewport } from '../graph/camera';
 import { PLAIN_LOOK, useThemeVersion } from '../graph/look';
 import type { FadeLook } from '../graph/fade';
@@ -461,6 +461,20 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, onLaidOut
     });
     observer.observe(el);
     return () => observer.disconnect();
+  }, []);
+
+  // A scroll keeps its move (graph/gestures.ts's wheelLatch): the rest of a stream whose Cmd or Ctrl changed never reaches React Flow.
+  useEffect(() => {
+    const el = wrapper.current;
+    if (!el) return;
+    const latch = wheelLatch();
+    const onWheel = (e: WheelEvent) => {
+      if (latch(e, e.timeStamp) === 'move') return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    el.addEventListener('wheel', onWheel, { capture: true, passive: false });
+    return () => el.removeEventListener('wheel', onWheel, { capture: true });
   }, []);
 
   // The edge hints count the boxes in focus past each edge: the innermost ones, each entity and each closed box.
