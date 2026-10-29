@@ -86,8 +86,8 @@ describe('LA-AUT-UC10-R50-T01 each Aggregate command (LA-AUT-A6) changes one agg
     const store = await aggregateDataSet();
     await expect(runCommand(store, ADD_INVARIANT, { id: 'TL-LEND-INV02', title: 'x', aggregate_id: 'TL-LEND-A2' })).rejects.toThrow(new InputError('add-invariant needs statement'));
     await expect(runCommand(store, CHANGE_ENTITY, { id: 'TL-LEND-EN03', aggregate_id: 'TL-LEND-A1' })).rejects.toThrow(/change-entity takes no aggregate_id/);
-    await expect(runCommand(store, CHANGE_ENTITY, { id: 'TL-LEND-EN03', fields: [{ name: 'Tool ID', type: 'text', required: true }] })).rejects.toThrow(/fields item 1 needs meaning/);
-    await expect(runCommand(store, CHANGE_ENTITY, { id: 'TL-LEND-EN03', fields: [{ name: 'Tool ID', meaning: 'x', type: 'text', required: true, position: 2 }] })).rejects.toThrow(/item 1 has no position/);
+    await expect(runCommand(store, CHANGE_ENTITY, { id: 'TL-LEND-EN03', fields: [{ name: 'Tool ID', type: 'text', required: true }] })).rejects.toThrow(/has an item with no meaning/);
+    await expect(runCommand(store, CHANGE_ENTITY, { id: 'TL-LEND-EN03', fields: [{ name: 'Tool ID', meaning: 'x', type: 'text', required: true, position: 2 }] })).rejects.toThrow(/has an item with position; an item takes/);
     expect((await refusal(store, ADD_ENTITY, { id: 'TL-LEND-EN09', title: 'x', aggregate_id: 'TL-LEND-A9', role: 'child', description: 'x' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no aggregate TL-LEND-A9' });
   });
 
