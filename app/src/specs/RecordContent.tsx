@@ -9,7 +9,6 @@ import { kindFieldPath, kindPagePath } from '../format/reference';
 import { PatternRuleSections, PatternSections } from './PatternParts';
 import { StandardSections } from './StandardParts';
 import { DomainEvents } from './DomainEvents';
-import { InterfaceFlows } from './InterfaceParts';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { Grouped, KindBadge, NavigateContext, StageFact, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, isTestKind, listTitle, notAutomatedYet } from './parts';
@@ -115,7 +114,6 @@ function RecordBody({ index, record, actions, header }: { index: SpecIndex; reco
         )}
       >
         <RecordText index={index} record={record} />
-        {record.kind === 'interface' && <InterfaceFlows index={index} iface={record} />}
         {record.kind === 'pattern' && <PatternSections index={index} pattern={record} />}
         {record.kind === 'pattern_rule' && <PatternRuleSections index={index} rule={record} />}
         {record.kind === 'standard' && <StandardSections index={index} standard={record} />}

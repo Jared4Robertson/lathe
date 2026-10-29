@@ -195,7 +195,8 @@ describe('adding a record', () => {
   it('LA-V92-R31-T01 adds a kind with no owner from the product\'s page: its ID takes the product, and it has no parent to choose', async () => {
     const user = userEvent.setup();
     const { writes } = await openApp('/DM', { write: () => ({ answer: ok }) });
-    const actions = toolbar('DM');
+    // The product's page is the Product aggregate's: its actions show once the product is read.
+    const actions = await screen.findByRole('toolbar', { name: 'Change DM' });
     await user.click(within(actions).getByRole('button', { name: 'Add…' }));
     const kinds = within(actions).getByRole('group', { name: 'Kinds to add under DM' });
     expect(within(kinds).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Domain', 'Value object', 'View', 'Integration', 'UI component', 'Open question']));
@@ -277,13 +278,13 @@ describe('removing a record', () => {
 
   it('LA-V92-R32-T01 removes a record nothing references, and goes to its parent', async () => {
     const user = userEvent.setup();
-    const removed = (): SpecData => removeRows(workspace(), 'question', (r) => r.id === 'DM-SHOP-Q01');
-    const { writes } = await openApp('/DM-SHOP-Q01', { write: () => ({ answer: ok, data: removed() }) });
-    await user.click(within(toolbar('DM-SHOP-Q01')).getByRole('button', { name: 'Remove' }));
-    const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-Q01?' });
+    const removed = (): SpecData => removeRows(workspace(), 'term', (r) => r.id === 'DM-SHOP-TM01');
+    const { writes } = await openApp('/DM-SHOP-TM01', { write: () => ({ answer: ok, data: removed() }) });
+    await user.click(within(toolbar('DM-SHOP-TM01')).getByRole('button', { name: 'Remove' }));
+    const panel = screen.getByRole('region', { name: 'Remove DM-SHOP-TM01?' });
     expect(panel).toHaveTextContent('Nothing else references it.');
-    await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-Q01' }));
+    await user.click(within(panel).getByRole('button', { name: 'Remove DM-SHOP-TM01' }));
     await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP'));
-    expect(writes).toEqual([[{ op: 'remove', table: 'question', key: 'DM-SHOP-Q01' }]]);
+    expect(writes).toEqual([[{ op: 'remove', table: 'term', key: 'DM-SHOP-TM01' }]]);
   });
 });

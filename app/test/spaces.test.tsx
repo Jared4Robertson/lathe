@@ -48,8 +48,8 @@ describe('product spaces', () => {
     expect(colorOf('TL')).toBe(colorOf('TL'));
     expect(colorOf('TL')).not.toBe(colorOf('LA'));
     const index = indexOf(spacesWorkspace());
-    expect(spaceOf(index.byId.get('NF')!).color).toBe('#335577');
-    expect(spaceOf(index.byId.get('DM')!).color).toBe(colorOf('DM'));
+    expect(spaceOf({ id: 'NF', title: 'Notebook', color: String(index.byId.get('NF')!.row.color) }).color).toBe('#335577');
+    expect(spaceOf({ id: 'DM', title: 'Demo shop' }).color).toBe(colorOf('DM'));
   });
 
   it('LA-V90-R08-T01 The rail lists the products in order with their icons or monograms, and nothing above every product', async () => {

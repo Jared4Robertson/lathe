@@ -33,7 +33,7 @@ describe('flows by interface', () => {
     expect(within(through).getByRole('link')).toHaveAttribute('href', addressOf('DM-IF02'));
   });
 
-  it('LA-V92-R78-T01 An interface lists its flows by capability and the use cases with no flow through it', async () => {
+  it('LA-V51-R09-T01 An interface lists its flows by capability and the use cases with no flow through it', async () => {
     await openApp(`${addressOf('DM-IF02')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Terminal' });
     const flows = section(/^Flows through it/);

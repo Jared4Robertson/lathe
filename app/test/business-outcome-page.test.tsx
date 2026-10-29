@@ -66,12 +66,13 @@ describe('LA-V110-R02-T01 the Business outcome editor writes only through the ag
     const user = userEvent.setup();
     const { commands, writes } = await openApp('/DM', { data: withOutcomes(), command: () => ({ answer: ok }) });
     await screen.findByRole('toolbar', { name: 'Change DM' });
-    await user.click(within(toolbar('DM')).getByRole('button', { name: 'Add business outcome' }));
+    await user.click(within(toolbar('DM')).getByRole('button', { name: 'Add…' }));
+    await user.click(within(toolbar('DM')).getByRole('button', { name: 'Business outcome' }));
     const form = screen.getByRole('form', { name: 'Add a business outcome' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-BO03'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Faster checkout');
     await user.type(within(form).getByRole('textbox', { name: /^statement/ }), 'Shoppers check out faster.');
-    await user.type(within(form).getByRole('textbox', { name: /^measure/ }), 'Median checkout time.');
+    await user.type(within(form).getByRole('textbox', { name: /^measure$/ }), 'Median checkout time.');
     await user.type(within(form).getByRole('textbox', { name: /^target/ }), 'Under a minute.');
     await user.click(within(form).getByRole('button', { name: 'Add business outcome' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/business-outcome/add-business-outcome', input: { product_id: 'DM', id: 'DM-BO03', title: 'Faster checkout', statement: 'Shoppers check out faster.', measure: 'Median checkout time.', target: 'Under a minute.' } }]));
