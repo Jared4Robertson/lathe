@@ -184,7 +184,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
         own={tools}
         measureKey={filters.hiddenKinds.size}
       />
-      <StageKey entries={keyEntries} />
+      <StageKey entries={keyEntries} beside={minimap ? 'minimap' : undefined} />
       <div className="graph-workspace">
         <div className="graph-canvas">
           <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} space={space} />

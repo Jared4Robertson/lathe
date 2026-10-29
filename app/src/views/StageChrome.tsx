@@ -207,13 +207,14 @@ const KEY_ROWS = 2;
  * it takes focus as one named region, so the arrow keys scroll it and never walk the stage. On a phone it is a Key chip
  * that opens the entries, with their meanings, as a sheet.
  */
-export function StageKey({ entries }: { entries: readonly KeyEntry[] }) {
+export function StageKey({ entries, beside }: { entries: readonly KeyEntry[]; beside?: 'minimap' }) {
   const phone = useNarrow();
   if (entries.length === 0) return null;
-  return phone ? <KeyChip entries={entries} /> : <KeyBar entries={entries} />;
+  return phone ? <KeyChip entries={entries} /> : <KeyBar entries={entries} beside={beside} />;
 }
 
-function KeyBar({ entries }: { entries: readonly KeyEntry[] }) {
+/** `beside`: a minimap in the bottom right corner, which the bar keeps clear of. */
+function KeyBar({ entries, beside }: { entries: readonly KeyEntry[]; beside?: 'minimap' }) {
   const room = useRef<HTMLDivElement>(null);
   const bar = useRef<HTMLElement>(null);
   const list = useRef<HTMLUListElement>(null);
@@ -251,7 +252,7 @@ function KeyBar({ entries }: { entries: readonly KeyEntry[] }) {
     return () => observer.disconnect();
   }, []);
   return (
-    <div className="stage-key-room" ref={room}>
+    <div className="stage-key-room" ref={room} data-beside={beside}>
       <section
         ref={bar}
         className={`stage-key${edges.start ? ' fade-start' : ''}${edges.end ? ' fade-end' : ''}`}
@@ -289,9 +290,7 @@ function KeyChip({ entries }: { entries: readonly KeyEntry[] }) {
   useEffect(() => { if (open) document.querySelector<HTMLElement>('.stage-key-sheet .sheet-head button')?.focus(); }, [open]);
   return (
     <>
-      <button ref={chip} type="button" className="stage-key-chip" data-floating="bottom" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>
-        <Icon name="info" size={14} />Key
-      </button>
+      <Button ref={chip} className="stage-key-chip" icon="info" data-floating="bottom" aria-haspopup="dialog" aria-expanded={open} onClick={() => setOpen(true)}>Key</Button>
       {open && createPortal(
         <BottomSheet label="Key" className="stage-key-sheet" onClose={close}>
           <div className="sheet-head">
