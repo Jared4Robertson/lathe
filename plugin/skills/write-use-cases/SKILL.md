@@ -11,7 +11,7 @@ A use case is an actor's goal: who acts, what they want, and the rules the produ
 
 The spec is typed data in the repo's `data/` folder, one table per kind. Change it only with Lathe's MCP tools, never by editing files: `add`, `set`, `move`, `link`, `unlink` and `remove` write; `show`, `list` and `next_id` read; `check` runs the checks. Each write is checked against the schema and refused, with its reasons, when it breaks the model; a refusal changes nothing, so fix the input and try again. Writes never commit: commit per task.
 
-- The `add` tool's input schema lists every table with its columns, their types and what each means. In a shell, `lathe add <table> --help` prints the same (`npx lathe` in a product repo; `npm --prefix lathe run lathe -- <command> --root ..` in the Lathe repo).
+- The `add` tool's input schema lists every table with its columns, their types and what each means. In a shell, `lathe add <table> --help` prints the same (`npx lathe` in a product repo; `npm --prefix lathe run lathe -- <command> --root ..` in the Lathe repo). An Owner's script hands a write the tool's own JSON instead of flags, on stdin with `--json -` or from a file with `--json <file>`, so a long statement keeps its quotes and newlines.
 - Take each new record's ID from `next_id`, with the record it will sit under as `parent`. IDs are never reused or renumbered.
 
 ## Before you write

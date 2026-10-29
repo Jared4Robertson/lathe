@@ -1,9 +1,11 @@
 // The CLI's data commands: add, set, move, link, unlink, remove, show, list and next-id. Their field flags and help
 // come from the schema description, so every kind, part and column the schema has is a flag, with its type, whether
 // it is required, and what it means. Every write goes through the command layer; a refusal prints each reason.
+import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { ColumnDescription, SchemaDescription, TableDescription } from '../store/schema.ts';
 import type { Value } from '../store/rows.ts';
+import type { WriteTool } from './mcp.ts';
 import {
   list,
   listText,
@@ -19,6 +21,7 @@ import {
   writtenText,
   type Outcome,
   type WriteRequest,
+  type Written,
 } from './operations.ts';
 
 /** The commands this module runs. */
@@ -42,6 +45,18 @@ export const DATA_USAGE = `Data commands (each validates through the command lay
                                         with no owner, --parent names the product (or domain) its ID starts with.
   Add --json for the result as JSON. Run \`lathe add --help\` for the tables, and \`lathe add <table> --help\` for
   a table's columns, from the schema.
+
+  Any write can take its fields as JSON instead of flags, with the result as JSON too: --json - reads stdin,
+  --json <file> reads a file. The JSON is what the MCP tool of the same name takes, and an array of them is
+  one write, all or nothing. Text keeps its quotes, newlines and backticks as given. For example:
+    lathe add --json - <<'EOF'
+    {"uc_requirement": {"id": "TL-LEND-UC01-R02", "title": "...", "use_case_id": "TL-LEND-UC01", "statement": "..."}}
+    EOF
+    lathe set --json - <<< '{"use_case": {"id": "TL-LEND-UC01", "notes": null}}'
+    lathe move --json move.json          {"id": "...", "parent": "..."}
+    lathe link --json links.json         [{"source": "...", "relation": "fulfills", "target": "..."}, ...]
+    lathe remove --json - <<< '{"id": "TL-LEND-UC01-R02"}'
+  With --json <file> or -, give no table, ID or field flags: the JSON names them.
 `;
 
 class UsageError extends Error {}
@@ -145,8 +160,55 @@ export function tableHelp(schema: SchemaDescription, name?: string): string {
 
 const relative = (root: string, file: string) => path.relative(root, file) || file;
 
+/** Where a data command writes, and reads the JSON `--json -` names. */
+export interface DataIo {
+  out: (text: string) => void;
+  err: (text: string) => void;
+  stdin?: () => Promise<string>;
+}
+
+async function readStdin(): Promise<string> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of process.stdin) chunks.push(chunk as Buffer);
+  return Buffer.concat(chunks).toString('utf8');
+}
+
+// A write's fields given as JSON (--json - or --json <file>): the MCP tool's arguments, or an array of them as one
+// write. Each item is read by the tool's own reader (mcp.ts), so the CLI has no second parser of fields.
+async function jsonWrite(root: string, command: WriteTool, source: string, io: DataIo): Promise<Outcome<Written>> {
+  let text: string;
+  try {
+    text = source === '-' ? await (io.stdin ?? readStdin)() : await readFile(path.resolve(source), 'utf8');
+  } catch (error) {
+    throw new UsageError(`--json ${source}: could not read it (${error instanceof Error ? error.message : String(error)}).`);
+  }
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch (error) {
+    throw new UsageError(`--json ${source} is not JSON: ${error instanceof Error ? error.message : String(error)}.`);
+  }
+  const items = Array.isArray(parsed) ? parsed : [parsed];
+  if (!items.length) throw new UsageError(`--json ${source} is an empty array; give at least one ${command}.`);
+  const { ArgumentError, writeRequests } = await import('./mcp.ts');
+  const requests: WriteRequest[] = [];
+  const problems: { rule: string; message: string }[] = [];
+  items.forEach((item, at) => {
+    const which = Array.isArray(parsed) ? `item ${at + 1}: ` : '';
+    try {
+      if (typeof item !== 'object' || item === null || Array.isArray(item)) throw new ArgumentError(`${command} takes an object`);
+      requests.push(writeRequests(command, item as Record<string, unknown>));
+    } catch (error) {
+      if (!(error instanceof ArgumentError)) throw error;
+      problems.push({ rule: 'arguments', message: `${which}${error.message}` });
+    }
+  });
+  if (problems.length) return { ok: false, problems };
+  return write(root, requests);
+}
+
 /** Runs one data command; returns the exit code: 0 done, 1 refused, 2 bad usage. */
-export async function runDataCommand(args: string[], io: { out: (text: string) => void; err: (text: string) => void } = { out: (t) => console.log(t), err: (t) => console.error(t) }): Promise<number> {
+export async function runDataCommand(args: string[], io: DataIo = { out: (t) => console.log(t), err: (t) => console.error(t) }): Promise<number> {
   const { positionals, flags } = parse(args);
   const [command, ...rest] = positionals;
   const root = path.resolve(flags.get('root')?.at(-1) ?? process.cwd());
@@ -182,6 +244,17 @@ export async function runDataCommand(args: string[], io: { out: (text: string) =
     if (flags.has('help')) {
       io.out(DATA_USAGE);
       return 0;
+    }
+    // --json with a value names where the write's fields are; bare, it only asks for the result as JSON.
+    const source = one('json');
+    if (source !== undefined && source !== 'true') {
+      // The MCP server is loaded only for a write given as JSON, so every other command starts sooner.
+      const { isWriteTool } = await import('./mcp.ts');
+      if (!isWriteTool(command)) throw new UsageError(`lathe ${command} takes no fields as JSON; give --json alone for the result as JSON.`);
+      const fieldFlags = [...flags.keys()].filter((f) => !GLOBAL_FLAGS.has(f));
+      if (fieldFlags.length) throw new UsageError(`lathe ${command} takes its fields from --json ${source} or from flags, not both; drop ${fieldFlags.map((f) => `--${f}`).join(', ')}.`);
+      if (rest.length) throw new UsageError(`lathe ${command} --json ${source} takes no ${rest.join(' ')}: the JSON names the ${command === 'add' ? 'table' : 'records'}.`);
+      return report(await jsonWrite(root, command, source, io), writtenText);
     }
     switch (command) {
       case 'add': {
