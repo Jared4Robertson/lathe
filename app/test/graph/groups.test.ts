@@ -31,7 +31,7 @@ describe('graph groups', () => {
   const grouped = indexOf(groupedWorkspace());
 
   it('LA-EXP-DS04-T01 LA-V93-R23-T01 A record with several kinds of child in its stage has a group per child kind, labeled with the plural and a count', () => {
-    expect(childKinds(index, 'P-D')).toEqual(['aggregate', 'read_model', 'domain_service', 'term', 'capability', 'question']);
+    expect(childKinds(index, 'P-D')).toEqual(['aggregate', 'read_model', 'domain_service', 'term', 'capability', 'repository', 'question']);
     // An aggregate with entities, invariants, events and commands reaches them through a group each.
     expect(groupLabel(index, 'P-D-A3/entity')).toBe('Entities (3)');
     expect(groupLabel(index, 'P-D-A3/command')).toBe('Commands (2)');
