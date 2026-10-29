@@ -1,5 +1,5 @@
 // The Graph stage of an address, /<id>?stage=graph (LA-V93).
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent, type PointerEvent as ReactPointerEvent} from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
 import { type SpecIndex } from '../specs/data';
 import { lowerLabel } from '../plural';
 import { useCommand } from '../shell/commands';
@@ -30,7 +30,8 @@ import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, typ
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
 import { setTextMeasure, type TextMeasure } from './text';
-import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, glideDuration, MAX_ZOOM, mergeDrawn, MIN_ZOOM, zoomPath, type Drawn, type Viewport } from './camera';
+import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, MAX_ZOOM, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
+import { useCameraGestures } from './gestures';
 import { EdgeHintChips, pastEdges, type Point, type Side } from './hints';
 import { readMotion } from './motion';
 import { nodeShape } from './shapes';
@@ -445,7 +446,6 @@ function MapOverview({ map, focus, hidden, view }: { map: PlacedMap; focus: stri
 /** The Voronoi map while it is being laid out: nothing to draw. */
 const EMPTY_VORONOI: VoronoiMap = { view: 'voronoi', nodes: new Map(), roots: [], byLevel: [], width: 0, height: 0 };
 
-const sameView = (a: Viewport, b: Viewport) => Math.abs(a.x - b.x) < 0.5 && Math.abs(a.y - b.y) < 0.5 && Math.abs(a.zoom - b.zoom) < 1e-6;
 
 /** How much one step of the zoom buttons zooms. */
 const ZOOM_STEP = 1.2;
@@ -454,7 +454,6 @@ const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 /** The least open space, in px, the camera frames the focus in; less frames on the whole stage. */
 const MIN_FRAME = 120;
 /** How far the pointer moves before a press is a drag, in CSS pixels. */
-const DRAG_PX = 3;
 
 /** One drawn box in the scene the test hook reports, in the page's pixels. */
 export interface SceneBox {
@@ -614,35 +613,23 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   const latestDrawnAt = useRef(drawnAt);
   latestDrawnAt.current = drawnAt;
 
-  const glide = useRef<number | null>(null);
-  const stopGlide = () => { if (glide.current !== null) { cancelAnimationFrame(glide.current); glide.current = null; } };
-  useEffect(() => stopGlide, []);
-  /** Moves the camera to a viewport: one smooth zoom and pan with the shared motion, or at once. Returns how long the glide takes, in ms (0 at once). */
-  const moveTo = useCallback((target: Viewport, animate: boolean): number => {
-    stopGlide();
-    const from = getViewport();
-    const motion = readMotion();
-    if (!size || !animate || motion.duration === 0 || sameView(from, target)) {
-      setViewport(target);
-      show(drawnAt(target));
-      return 0;
-    }
-    const path = zoomPath(from, target, size.w, size.h);
-    // Everything the glide passes over joins the keyboard's layer once, as it starts, and is trimmed when it ends.
-    show(mergeDrawn([0, 0.25, 0.5, 0.75, 1].map((t) => drawnAt(path.at(t)))));
-    const duration = glideDuration(motion.duration, path.S);
-    moves.current.glides++;
-    const start = performance.now();
-    const step = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      setViewport(path.at(motion.ease(t)));
-      if (t < 1) { glide.current = requestAnimationFrame(step); return; }
-      glide.current = null;
-      show(latestDrawnAt.current(target));
-    };
-    glide.current = requestAnimationFrame(step);
-    return duration;
-  }, [getViewport, setViewport, size, show, drawnAt]);
+  // The camera's glide, zoom and pointer (gestures.ts, shared with the Trace stage). Everything a glide passes over
+  // joins the keyboard's layer once, as it starts, and is trimmed when it ends; a move at once shows what is there.
+  const gestures = useCameraGestures({
+    canvas,
+    size,
+    getViewport,
+    setViewport,
+    zoom: { min: MIN_ZOOM, max: MAX_ZOOM },
+    onGlide: (path) => { show(mergeDrawn([0, 0.25, 0.5, 0.75, 1].map((t) => drawnAt(path.at(t))))); moves.current.glides++; },
+    onArrive: (target) => show(latestDrawnAt.current(target)),
+    onGesture: () => follow(),
+    // A click on the canvas gives the graph focus, so the arrow keys step through the tree.
+    onPress: () => { if (!wrapper.current?.contains(document.activeElement)) wrapper.current?.focus({ preventScroll: true }); },
+    onHover: (x, y) => setHover(hitAt(x, y)?.id ?? null),
+    onTap: (x, y, e) => { const hit = hitAt(x, y); if (hit) tapToOpen.onNodeClick(e, hit.id); else tapToOpen.clear(); },
+  });
+  const { moveTo } = gestures;
 
   // The frame: the open space the floating panels leave over the stage, less the stage's own tools
   // (openSpace.ts). The camera frames the focus there, so it sits centered in what is left.
@@ -683,7 +670,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     framedEmpty.current = map.nodes.size === 0;
   }, [framing]);
   // What is drawn follows the filters and the Links switch at once.
-  useEffect(() => { if (glide.current === null && size) show(drawnAt(getViewport())); requestPaint(); }, [drawnAt]);
+  useEffect(() => { if (!gestures.gliding() && size) show(drawnAt(getViewport())); requestPaint(); }, [drawnAt]);
 
   // The pane's size, observed once for the canvas's life.
   useLayoutEffect(() => {
@@ -723,28 +710,15 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   const pending = useRef<number | null>(null);
   const follow = useCallback(() => {
     if (pending.current !== null) return;
-    pending.current = requestAnimationFrame(() => { pending.current = null; if (glide.current === null) show(latestDrawnAt.current(getViewport())); });
+    pending.current = requestAnimationFrame(() => { pending.current = null; if (!gestures.gliding()) show(latestDrawnAt.current(getViewport())); });
   }, [show, getViewport]);
   useEffect(() => () => { if (pending.current !== null) cancelAnimationFrame(pending.current); pending.current = null; }, []);
 
-  const zoomLimit = MAX_ZOOM;
-  /** Zooms by a factor about a point of the pane, within the camera's limits. */
-  const zoomAt = useCallback((sx: number, sy: number, factor: number) => {
-    const v = getViewport();
-    const zoom = Math.min(zoomLimit, Math.max(MIN_ZOOM, v.zoom * factor));
-    const k = zoom / v.zoom;
-    setViewport({ x: sx - (sx - v.x) * k, y: sy - (sy - v.y) * k, zoom });
-  }, [getViewport, setViewport, zoomLimit]);
+  /** The zoom buttons: about the frame's center, the middle of what the panels leave open. */
   const zoomButton = (factor: number) => () => {
     if (!size) return;
-    const v = getViewport();
-    const zoom = Math.min(zoomLimit, Math.max(MIN_ZOOM, v.zoom * factor));
-    const k = zoom / v.zoom;
-    // About the frame's center, the middle of what the panels leave open.
     const box = frameBox(size);
-    const cx = box.x + box.w / 2;
-    const cy = box.y + box.h / 2;
-    moveTo({ x: cx - (cx - v.x) * k, y: cy - (cy - v.y) * k, zoom }, true);
+    gestures.zoomBy(box.x + box.w / 2, box.y + box.h / 2, factor);
     follow();
   };
 
@@ -958,11 +932,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     }
   };
 
-  // ---- The pointer: hover, click, drag, wheel and pinch ----
-  const local = (e: { clientX: number; clientY: number }) => {
-    const r = canvas.current!.getBoundingClientRect();
-    return { x: e.clientX - r.left, y: e.clientY - r.top };
-  };
+  // ---- The pointer: hover and click (drag, wheel and pinch are gestures.ts's) ----
   const hitAt = useCallback((x: number, y: number): Plate | null => {
     const v = view.current;
     const frame = lastFrame.current ?? frameAt(v);
@@ -980,75 +950,6 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     spot(id);
     requestPaint();
   };
-  const pointers = useRef(new Map<number, { x: number; y: number }>());
-  const press = useRef<{ x: number; y: number; moved: boolean } | null>(null);
-  const pinch = useRef<{ dist: number; mid: { x: number; y: number } } | null>(null);
-  const twoPointers = () => {
-    const [a, b] = [...pointers.current.values()];
-    return { dist: Math.hypot(a.x - b.x, a.y - b.y), mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 } };
-  };
-  const onPointerDown = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (e.pointerType === 'mouse' && e.button !== 0) return;
-    // A click on the canvas gives the graph focus, so the arrow keys step through the tree.
-    if (!wrapper.current?.contains(document.activeElement)) wrapper.current?.focus({ preventScroll: true });
-    canvas.current?.setPointerCapture?.(e.pointerId);
-    const at = local(e);
-    pointers.current.set(e.pointerId, at);
-    if (pointers.current.size === 1) press.current = { ...at, moved: false };
-    else if (pointers.current.size === 2) { pinch.current = twoPointers(); if (press.current) press.current.moved = true; stopGlide(); }
-  };
-  const onPointerMove = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    const at = local(e);
-    const before = pointers.current.get(e.pointerId);
-    if (!before) {
-      if (e.pointerType !== 'touch' && e.pointerType !== 'pen') setHover(hitAt(at.x, at.y)?.id ?? null);
-      return;
-    }
-    pointers.current.set(e.pointerId, at);
-    if (pointers.current.size >= 2 && pinch.current) {
-      const now = twoPointers();
-      const v = getViewport();
-      setViewport({ ...v, x: v.x + now.mid.x - pinch.current.mid.x, y: v.y + now.mid.y - pinch.current.mid.y });
-      zoomAt(now.mid.x, now.mid.y, now.dist / Math.max(1, pinch.current.dist));
-      pinch.current = now;
-      follow();
-      return;
-    }
-    const p = press.current;
-    if (!p) return;
-    if (!p.moved && Math.hypot(at.x - p.x, at.y - p.y) < DRAG_PX) return;
-    if (!p.moved) { p.moved = true; stopGlide(); }
-    const v = getViewport();
-    setViewport({ ...v, x: v.x + at.x - before.x, y: v.y + at.y - before.y });
-    follow();
-  };
-  const onPointerUp = (e: ReactPointerEvent<HTMLCanvasElement>) => {
-    if (!pointers.current.has(e.pointerId)) return;
-    pointers.current.delete(e.pointerId);
-    if (pointers.current.size < 2) pinch.current = null;
-    const p = press.current;
-    if (pointers.current.size > 0) return;
-    press.current = null;
-    if (!p || p.moved || e.type === 'pointercancel') { follow(); return; }
-    const hit = hitAt(p.x, p.y);
-    if (hit) tapToOpen.onNodeClick(e.nativeEvent, hit.id); else tapToOpen.clear();
-  };
-  // The wheel zooms about the pointer (a pinch on a trackpad comes as a wheel with Ctrl held), as d3's zoom does.
-  useEffect(() => {
-    const c = canvas.current;
-    if (!c) return;
-    const onWheel = (e: WheelEvent) => {
-      e.preventDefault();
-      stopGlide();
-      const at = local(e);
-      const delta = -e.deltaY * (e.deltaMode === 1 ? 0.05 : e.deltaMode ? 1 : 0.002) * (e.ctrlKey ? 10 : 1);
-      zoomAt(at.x, at.y, 2 ** delta);
-      follow();
-    };
-    c.addEventListener('wheel', onWheel, { passive: false });
-    return () => c.removeEventListener('wheel', onWheel);
-  }, [zoomAt, follow]);
-
   // The edge hints count the linked records past each edge; a click brings the nearest of them into view.
   const linkedCenters = useMemo(() => linked.flatMap((id) => { const n = map.nodes.get(id); return n && !hidden.has(id) ? [centerOf(n)] : []; }), [linked, map, hidden]);
   const hintKey = useSyncExternalStore(store.subscribe, () => {
@@ -1146,11 +1047,8 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         ref={canvas}
         className="graph-canvas-draw"
         aria-hidden="true"
-        onPointerDown={onPointerDown}
-        onPointerMove={onPointerMove}
-        onPointerUp={onPointerUp}
-        onPointerCancel={onPointerUp}
-        onPointerLeave={(e) => { if (!pointers.current.has(e.pointerId)) setHover(null); }}
+        {...gestures.handlers}
+        onPointerLeave={(e) => { if (!gestures.pressed(e.pointerId)) setHover(null); }}
       />
       <div
         ref={layer}

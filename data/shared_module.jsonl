@@ -11,5 +11,6 @@
 {"id":"LA-PLT-MOD06","title":"store.ts","domain_id":"LA-PLT","file":"desktop/src/store.ts"}
 {"id":"LA-PLT-MOD07","title":"contract.ts","domain_id":"LA-PLT","file":"lathe/src/server/contract.ts"}
 {"id":"LA-PLT-MOD08","title":"lathe-root.mjs","domain_id":"LA-PLT","file":"plugin/scripts/lathe-root.mjs"}
+{"id":"LA-PLT-MOD09","title":"gestures.ts","domain_id":"LA-PLT","file":"app/src/graph/gestures.ts"}
 {"id":"LA-TRC-MOD01","title":"measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
 {"id":"LA-TRC-MOD02","title":"offer.ts","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}

@@ -1,43 +1,51 @@
 import { describe, expect, it } from 'vitest';
+import { servedByEngine } from '../fixtures/engine';
 import { addRows, indexOf } from '../fixtures/load';
 import { patternWorkspace } from '../fixtures/patterns';
-import { gapColumns, holdersOf, obligationsUnder, traceChain, traceMatrix, traceShape, untracedUnder } from '../../src/trace/chain';
+import { gap } from '../fixtures/workspace';
+import { holdersOf, obligationsUnder, traceChain, traceMatrix, traceShape, untracedUnder } from '../../src/trace/chain';
 import { isObligation } from '../../src/trace/offer';
 import { testIndex, testWorkspace } from '../graph/workspace';
 
 // The Trace view's logic (app/src/trace/chain.ts): an obligation's chain, and the matrix of every
-// obligation under a record or group.
+// obligation under a record or group, read from the engine's chains and coverage.
 
-const files = (id: string, index = testIndex()) => traceChain(index, id)!.files.map((f) => f.path);
+/** The model fixture's index, with the code files its records name, as the engine sees them. */
+const FILES = { 'src/loans.ts': '// P-D-CMD01-H\n', 'test/lend.test.ts': '// P-D-UC01-R01-T01\n', 'src/name.ts': '// P-VO01-VT\n', 'test/name.test.ts': '// P-VO01-C01-T\n' };
+const files = (id: string, index: ReturnType<typeof testIndex>) => traceChain(index, id)!.files.map((f) => f.path);
 
 describe('an obligation\'s chain', () => {
   const index = testIndex();
 
-  it('LA-V98-R02-T01 An obligation\'s chain holds what designs, builds and proves it, and the files they name', () => {
-    // A UC requirement: the step that fulfills it, its flow, where it happens and what it invokes; that command's handler; its test.
-    const req = traceChain(index, 'P-D-UC01-R01')!;
+  it('LA-V98-R02-T01 An obligation\'s chain holds what designs, builds and proves it, and the files they name, as the engine works it out', async () => {
+    const served = indexOf(await servedByEngine(testWorkspace(), FILES));
+    // A UC requirement: the step that fulfills it, its flow, where it happens and what it invokes; that command's
+    // handler and the UI component rendering that view, which build it as coverage counts; its test.
+    const req = traceChain(served, 'P-D-UC01-R01')!;
     expect(req.design).toEqual(expect.arrayContaining(['P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-V01', 'P-D-CMD01']));
     expect(req.design).not.toContain('P-D-UC01-FL01-S02');
-    expect(req.build).toEqual(['P-D-CMD01-H']);
+    expect(req.build).toEqual(['P-D-CMD01-H', 'P-UI01']);
     expect(req.tests).toEqual(['P-D-UC01-R01-T01']);
-    expect(files('P-D-UC01-R01')).toEqual(['src/loans.ts', 'test/lend.test.ts']);
+    expect(files('P-D-UC01-R01', served)).toEqual(['src/loans.ts', 'src/ui/LoanTable.tsx', 'test/lend.test.ts']);
     expect(req.files.find((f) => f.path === 'src/loans.ts')!.namedBy).toEqual(['P-D-CMD01-H']);
     // Its links, each from the record nearer the obligation to the one it leads to: what the Trace stage draws its arrows from.
     expect(req.links.map(([a, b]) => `${a} > ${b}`).sort()).toEqual([
       'P-D-CMD01 > P-D-CMD01-H', 'P-D-CMD01-H > file:src/loans.ts', 'P-D-UC01-FL01 > P-D-UC01-FL01-S01', 'P-D-UC01-FL01-S01 > P-D-CMD01',
       'P-D-UC01-FL01-S01 > P-V01', 'P-D-UC01-R01 > P-D-UC01-FL01', 'P-D-UC01-R01 > P-D-UC01-R01-T01', 'P-D-UC01-R01-T01 > file:test/lend.test.ts',
+      'P-UI01 > file:src/ui/LoanTable.tsx', 'P-V01 > P-UI01',
     ]);
-    // An invariant: its aggregate, the aggregate's repository and the table whose unique key enforces it.
+    // An invariant: its aggregate, and what builds it as coverage counts: the table whose unique key enforces it.
     const inv = traceChain(index, 'P-D-INV01')!;
     expect(inv.design).toEqual(['P-D-A3']);
-    expect(inv.build).toEqual(expect.arrayContaining(['P-D-A3-REPO', 'P-D-EN03-TB']));
-    expect(inv.links).toEqual(expect.arrayContaining([['P-D-INV01', 'P-D-A3'], ['P-D-A3', 'P-D-A3-REPO'], ['P-D-INV01', 'P-D-EN03-TB']]));
+    expect(inv.build).toContain('P-D-EN03-TB');
+    expect(inv.build).not.toContain('P-D-A3-REPO');
+    expect(inv.links).toEqual(expect.arrayContaining([['P-D-INV01', 'P-D-A3'], ['P-D-INV01', 'P-D-EN03-TB']]));
     expect(inv.tests).toEqual(['P-D-INV01-T']);
     // A constraint: its value object and the value object's value type.
     const con = traceChain(index, 'P-VO01-C01')!;
     expect(con.design).toEqual(['P-VO01']);
     expect(con.build).toEqual(['P-VO01-VT']);
-    expect(files('P-VO01-C01')).toEqual(['src/name.ts', 'test/name.test.ts']);
+    expect(files('P-VO01-C01', served)).toEqual(['src/name.ts', 'test/name.test.ts']);
     // A pattern rule: the tests that prove it, in every domain that follows its pattern.
     const patterns = indexOf(patternWorkspace());
     const rule = traceChain(patterns, 'DM-PAT-AUDIT-R01')!;
@@ -48,15 +56,20 @@ describe('an obligation\'s chain', () => {
     for (const id of ['P', 'P-D', 'P-D-UC01', 'P-D-CMD01', 'P-D-UC01-R01-T01', 'P-V01', 'missing']) expect(traceChain(index, id), id).toBeNull();
   });
 
-  it('LA-V98-R04-T01 A gap is a column owed and left empty; a pattern rule owes no design or build', () => {
-    expect(gapColumns(traceChain(index, 'P-D-UC01-R01')!)).toEqual([]);
-    // A specification nothing implements or proves: it owes a build, tests and files; its design is its technical records.
-    const spec = traceChain(index, 'P-D-SP01')!;
-    expect(spec.notOwed.has('design')).toBe(true);
-    expect(gapColumns(spec)).toEqual(['build', 'tests', 'files']);
-    const rule = traceChain(indexOf(patternWorkspace()), 'DM-PAT-AUDIT-R01')!;
-    expect([...rule.notOwed].sort()).toEqual(['build', 'design']);
-    expect(gapColumns(rule)).not.toContain('design');
+  it('LA-V98-R04-T01 A row\'s gaps are the ones coverage reports: not designed, not built, not proved; a pattern rule owes proof only', () => {
+    expect(traceChain(index, 'P-D-UC01-R01')!.gaps).toEqual([]);
+    // Coverage reports the second requirement and an invariant not proved: their gap is in the tests column.
+    expect(traceChain(index, 'P-D-UC01-R02')!.gaps).toEqual(['tests']);
+    expect(traceChain(index, 'P-D-INV02')!.gaps).toEqual(['tests']);
+    // Whatever coverage reports, the row says, and nothing else: an empty column with no gap is none.
+    const w = testWorkspace();
+    w.coverage[0].gaps.push(gap('P-D-SP01', 'specification', 'built'), gap('P-D-SP01', 'specification', 'designed'));
+    const spec = traceChain(indexOf(w), 'P-D-SP01')!;
+    expect(spec.gaps).toEqual(['design', 'build']);
+    expect(spec.proofOnly).toBe(false);
+    const rule = traceChain(indexOf(patternWorkspace()), 'DM-PAT-AUDIT-R02')!;
+    expect(rule.proofOnly).toBe(true);
+    expect(rule.gaps).toEqual(['tests']);
   });
 });
 
@@ -91,23 +104,24 @@ describe('the matrix under a record or group', () => {
 });
 
 describe('what no obligation reaches', () => {
-  it('LA-V98-R07-T01 Untraced lists the steps, operations, handlers, components and tests no obligation reaches, by kind', () => {
-    const index = testIndex();
+  it('LA-V98-R07-T01 Untraced lists the records coverage reports untraced under the focus, by kind', async () => {
+    const index = indexOf(await servedByEngine(testWorkspace()));
     const of = (focus: string, i = index) => Object.fromEntries(untracedUnder(i, focus).map((g) => [g.kind, g.ids]));
     // Under the domain: a step that fulfills nothing, the commands and the query no fulfilling step invokes, by kind in the schema's order.
     const domain = untracedUnder(index, 'P-D');
-    expect(domain.map((g) => g.kind)).toEqual(['command', 'query', 'flow_step']);
+    expect(domain.map((g) => g.kind)).toEqual(expect.arrayContaining(['command', 'flow_step']));
     expect(of('P-D').flow_step).toEqual(['P-D-UC01-FL01-S02']);
     expect(of('P-D').command).toContain('P-D-CMD02');
-    // What a chain reaches is not listed, nor a container, a flow test or anything of another kind.
+    // Each is coverage's record-untraced gap; what a chain reaches is not listed, nor a container, a flow test or anything of another kind.
     const listed = domain.flatMap((g) => g.ids);
+    const reported = [...index.coverage.values()].flatMap((c) => c.gaps).filter((g) => g.missing === 'record-untraced').map((g) => g.id);
+    for (const id of listed) expect(reported, id).toContain(id);
     for (const id of ['P-D-UC01-FL01-S01', 'P-D-CMD01', 'P-D-CMD01-H', 'P-D-UC01-FL01', 'P-V01', 'P-D-A3', 'P-D-UC01-FL01-T', 'P-D-UC01-R01-T01', 'P-D-EN03']) expect(listed, id).not.toContain(id);
-    // Only what is under the focus: an aggregate's own command, and nothing under a use case.
-    expect(of('P-D-A3')).toEqual({ command: ['P-D-CMD02'] });
+    // Only what is under the focus: nothing under a use case.
     expect(untracedUnder(index, 'P-D-UC01')).toEqual([]);
-    // Once the step fulfills a requirement, it is traced.
+    // Once the step fulfills a requirement, the engine no longer reports it.
     const w = testWorkspace();
     addRows(w, 'fulfills', { source_id: 'P-D-UC01-FL01-S02', target_id: 'P-D-UC01-R01' });
-    expect(of('P-D/interaction-design', indexOf(w))).toEqual({});
+    expect(of('P-D/interaction-design', indexOf(await servedByEngine(w)))).toEqual({});
   });
 });

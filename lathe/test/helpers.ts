@@ -296,6 +296,7 @@ export function complete(): Data {
     calls: [{ source_id: 'EX-LEND-CMD01', target_id: 'EX-LEND-DS01' }],
     fulfills: [
       { source_id: 'EX-LEND-UC01-FL01-S01', target_id: 'EX-LEND-UC01-R01' },
+      { source_id: 'EX-LEND-UC01-FL01-S02', target_id: 'EX-LEND-UC01-R01' },
       { source_id: 'EX-LEND-UC02-FL01-S01', target_id: 'EX-LEND-UC02-R01' },
     ],
     invokes: [

@@ -30,10 +30,10 @@ export async function throughEngine(data: SpecData, files: Record<string, string
   }
 }
 
-/** The data with the engine's findings in place of the hand-written ones, as GET /api/spec would serve it. */
+/** The data with the engine's findings and chains in place of the hand-written and loaded ones, as GET /api/spec would serve it. */
 export async function servedByEngine(data: SpecData, files: Record<string, string> = {}): Promise<SpecData> {
   const ws = await throughEngine(data, files);
-  return { ...structuredClone(data), problems: ws.problems, exceptions: ws.exceptions, coverage: ws.coverage };
+  return { ...structuredClone(data), problems: ws.problems, exceptions: ws.exceptions, coverage: ws.coverage, chains: ws.chains };
 }
 
 /** Expects a fixture's hand-written pattern rule standings to be the engine's, domain by domain. */
@@ -42,4 +42,9 @@ export async function expectStandingsAsEngine(data: SpecData): Promise<void> {
   const standings = (coverage: SpecData['coverage']) =>
     Object.fromEntries(coverage.filter((c) => c.domain !== null && Object.keys(c.pattern_rules).length > 0).map((c) => [c.domain, c.pattern_rules]));
   expect(standings(data.coverage)).toEqual(standings(ws.coverage));
+}
+
+/** The data with the engine's chains for its rows as a test changed them, its hand-written findings kept. */
+export async function withEngineChains(data: SpecData): Promise<SpecData> {
+  return { ...data, chains: (await throughEngine(data)).chains };
 }
