@@ -6,7 +6,8 @@ import { describe, expect, it } from 'vitest';
 import { endPath, erdFocus, type ErdMap, erdMap, erdStrength, lineGeometry, lineOffsets, scopeContents } from '../src/erd/erd';
 import { erdLayout, groupGraph, layoutErd, layoutRegion, readyErdLayout } from '../src/erd/layout';
 import { elkLayout } from '../src/elk';
-import { DRAW_IN_VIEW_PAST, ErdKey, FIT_MARGIN, fitRects, framedRects, lineWords } from '../src/erd/ErdView';
+import { DRAW_IN_VIEW_PAST, erdKeyEntries, FIT_MARGIN, fitRects, framedRects, lineWords } from '../src/erd/ErdView';
+import { StageKey } from '../src/views/StageChrome';
 import { openApp } from './helpers';
 import { modelIndex, modelWorkspace } from './fixtures/model';
 
@@ -222,19 +223,17 @@ describe('the ERD stage', () => {
     expect(within(modelPane()).getByRole('region', { name: 'Key' })).toHaveTextContent('Picked out');
   });
 
-  it('LA-V94-R05-T01 Clicking a box goes to it, boxes show a hover state, and a key under the map lists only the boxes and lines drawn', async () => {
+  it('LA-V94-R05-T01 Clicking a box goes to it, boxes show a hover state, and the key bar lists only the boxes and lines drawn', async () => {
     await openApp('/P-D?stage=erd', served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
     const key = within(modelPane()).getByRole('region', { name: 'Key' });
-    const boxes = within(key).getByRole('list', { name: 'Boxes' });
-    expect(within(boxes).getAllByRole('listitem').map((li) => li.textContent?.trim())).toEqual(['Domain', 'Aggregate boundary', 'Entity', 'root Root entity', 'Picked out', 'Faded: out of focus']);
-    const lines = within(key).getByRole('list', { name: 'Lines' });
-    expect(within(lines).getAllByRole('listitem').map((li) => li.textContent?.trim())).toEqual(['Has one (1:1)', 'Has many (1:n)', 'Reference by ID']);
-    expect(lines.querySelector('.erd-key-line.rel-references.is-dashed')).not.toBeNull();
-    expect(lines.querySelector('.erd-key-line.rel-has_many:not(.is-dashed)')).not.toBeNull();
-    // In the stage toolbar's Key popover, after the canvas's controls.
-    expect(key.closest('.stage-tools[data-stage-tools="top"] .stage-key-body')).not.toBeNull();
+    // The boxes, the pick and the fade, then the lines, each a sample and a word or two.
+    expect(within(key).getAllByRole('listitem').map((li) => li.querySelector('.stage-key-words')?.textContent)).toEqual(['Domain', 'Aggregate', 'Entity', 'Root entity', 'Picked out', 'Faded', 'Has one (1:1)', 'Has many (1:n)', 'Reference by ID']);
+    expect(key.querySelector('.erd-key-line.rel-references.is-dashed')).not.toBeNull();
+    expect(key.querySelector('.erd-key-line.rel-has_many:not(.is-dashed)')).not.toBeNull();
+    // The stage's key bar along the bottom, a floating panel the open space leaves room for.
+    expect(key).toHaveAttribute('data-floating', 'bottom');
     fireEvent.click(box('P-D-A3')!);
     expect(window.location.pathname + window.location.search).toBe('/P-D-A3?stage=erd');
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
@@ -334,7 +333,7 @@ describe('the ERD stage', () => {
     const ref = map.lines.find((l) => l.id === 'P-D-EN05|references|P-D-EN02')!;
     const titles = new Map(map.boxes.map((b) => [b.id, b.title]));
     expect(lineWords(ref, 'References by ID', titles)).toEqual({ label: 'references by ID', title: 'Reminder references by ID Member (Reminder.Member)', hover: 'Reminder.Member' });
-    render(<ErdKey map={map} at={erdFocus(i, 'P')!} relations={i.workspace.relations} />);
+    render(<StageKey entries={erdKeyEntries(map, erdFocus(i, 'P')!, i.workspace.relations)} />);
     expect(screen.getByText('Reference by ID').closest('li')).toHaveAttribute('title', "A field holds the other aggregate's ID; the line points at its root.");
   });
 });

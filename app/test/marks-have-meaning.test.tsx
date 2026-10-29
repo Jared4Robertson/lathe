@@ -7,16 +7,25 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { GraphKey } from '../src/graph/key';
+import { graphKeyEntries, type GraphDrawn } from '../src/graph/key';
 import { BOX_LOOKS } from '../src/graph/paint';
 import { BADGE_TONES } from '../src/graph/plate';
-import { SHAPES } from '../src/graph/shapes';
+import { MARKS, SHAPES, type Mark, type Shape } from '../src/graph/shapes';
 import { erdFocus, erdMap, erdStrength } from '../src/erd/erd';
-import { ErdKey } from '../src/erd/ErdView';
+import { erdKeyEntries } from '../src/erd/ErdView';
+import { changesKeyEntries, type ChangeMark } from '../src/changes/ChangesKey';
+import { StageKey, type KeyEntry } from '../src/views/StageChrome';
 import { modelWorkspace } from './fixtures/model';
 
 /** The live marks every stage draws, and the Changes lens's dimming: each in every stage's key (changes/ChangesKey.tsx). */
-const CHANGE_MARKS = ['is-added', 'is-changed', 'is-removed', 'is-lens'];
+const CHANGE_MARKS: ChangeMark[] = ['is-added', 'is-changed', 'is-removed', 'is-lens'];
+const CHANGES = changesKeyEntries(new Set(CHANGE_MARKS));
+/** The graph drawing every look, shape, mark and badge, in a layout. */
+const everything = (layout: GraphDrawn['layout']): GraphDrawn => ({
+  looks: new Set(BOX_LOOKS), shapes: new Set(Object.keys(SHAPES) as Shape[]), marks: new Set(Object.keys(MARKS) as Mark[]), badges: new Set(BADGE_TONES), layout,
+});
+/** A key bar of entries, each once. */
+const bar = (entries: KeyEntry[]) => render(<StageKey entries={[...new Map(entries.map((e) => [e.id, e])).values()]} />);
 const CSS = readFileSync(path.resolve(import.meta.dirname, '../src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
 /** The modifier classes a stylesheet gives an element class, as in `.erd-box.erd-aggregate`. */
 const modifiers = (base: string) =>
@@ -28,7 +37,8 @@ afterEach(cleanup);
 
 describe('LA-V93-R12-T06 the Graph view key', () => {
   it('Every box look, badge and line style the Graph view can draw is in its key, with what it means', () => {
-    const { container } = render(<GraphKey />);
+    // Each layout's key, together: every look, shape, mark and badge drawn, each layout's lines or boxes.
+    const { container } = bar([...graphKeyEntries(everything('tree')), ...graphKeyEntries(everything('nested')), ...CHANGES]);
     const entry = (selector: string) => container.querySelector(selector);
     const missing: string[] = [];
     const needs = (what: string, selector: string) => {
@@ -72,7 +82,7 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
       if (!at) continue;
       const map = erdMap(index, at.product);
       const strength = erdStrength(map, at.scope, { focusFade: 0.25 });
-      const { container, unmount } = render(<ErdKey map={map} at={at} relations={index.workspace.relations} />);
+      const { container, unmount } = bar([...erdKeyEntries(map, at, index.workspace.relations), ...CHANGES]);
       const needs = (what: string, selector: string) => {
         const el = container.querySelector(selector);
         if (!el || meaning(el) === '') missing.push(`${focus}: ${what} (${selector})`);
