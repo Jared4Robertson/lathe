@@ -396,3 +396,31 @@ function RemoveDeclaration({ title, what, remove, onCancel }: { title: string; w
     </section>
   );
 }
+
+/**
+ * Add an open question under a domain of the product (from the domain's page): the Product aggregate's own Add a
+ * question, its ID the next free one under the domain. Under the product itself it is added from the product's page.
+ */
+export function AddQuestionForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+  const writer = useWriter()!;
+  const announce = useAnnounce();
+  const under = index.byId.get(parent);
+  const product = under?.kind === 'product' ? parent : under?.product ?? parent;
+  const next = useNextProductId('question', parent, index);
+  const specs = questionFields(index, product, true);
+  const suggested = next.state === 'read' ? next.answer : null;
+  const [update, setUpdate] = useState<((d: Draft) => Draft) | undefined>(undefined);
+  useEffect(() => {
+    if (suggested) setUpdate(() => (d: Draft) => (d.text.id ? d : { ...d, text: { ...d.text, id: suggested } }));
+  }, [suggested]);
+  const submit = async (draft: Draft) => {
+    const input = addInput(index, specs, draft, under?.kind === 'product' ? { product_id: parent } : { domain_id: parent });
+    const answer = await send(writer, '/api/product/add-question', input);
+    if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
+    return answer;
+  };
+  return (
+    <DraftForm index={index} specs={specs} initial={emptyDraft()} update={update} eyebrow={`New open question under ${parent}`} title="Add an open question"
+      saveLabel="Add open question" submit={submit} onDone={onDone} />
+  );
+}

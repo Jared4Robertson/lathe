@@ -81,6 +81,19 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     });
   });
 
+  it('adds an open question from a domain\'s page through the Product aggregate\'s own Add, under the domain', async () => {
+    const user = userEvent.setup();
+    const { commands } = await openApp('/DM-SHOP', { command: () => ({ answer: ok }) });
+    await user.click(within(await screen.findByRole('toolbar', { name: 'Change DM-SHOP' })).getByRole('button', { name: 'Add open question' }));
+    const form = screen.getByRole('form', { name: 'Add an open question' });
+    await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-Q02'));
+    await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Who restocks?');
+    await user.type(within(form).getByRole('textbox', { name: /^owner/ }), 'Clerk');
+    await user.type(within(form).getByRole('textbox', { name: /^description/ }), 'The clerk or a supplier.');
+    await user.click(within(form).getByRole('button', { name: 'Add open question' }));
+    await waitFor(() => expect(commands).toEqual([{ route: '/api/product/add-question', input: { domain_id: 'DM-SHOP', id: 'DM-SHOP-Q02', title: 'Who restocks?', owner: 'Clerk', description: 'The clerk or a supplier.' } }]));
+  });
+
   it('declares a product kind with its fields, as Declare a product kind', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM', { command: () => ({ answer: ok }) });
