@@ -2,11 +2,15 @@ import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { SpecData } from '../../lathe/src/server/contract';
 import { textOf } from '../src/specs/data';
-import { followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, rulesOf, settingValue, settingsOf } from '../src/specs/patterns';
+import { answerQuery } from '../../lathe/src/platform/commands/run';
+import { LIST_FOLLOWERS } from '../../lathe/src/traceability/pattern-following/queries';
+import type { PatternFollowers } from '../../lathe/src/traceability/pattern-following/read-model';
+import { notApplicableReason, patternsFollowedBy, ruleStatus, rulesOf, settingValue, settingsOf } from '../src/specs/patterns';
+import { readViewOf } from './read-view';
 import { owingDomains } from '../src/specs/trace';
 import { expectStandingsAsEngine, servedByEngine } from './fixtures/engine';
 import { patternWorkspace, withStandings } from './fixtures/patterns';
-import { openApp, section } from './helpers';
+import { main, openApp, section } from './helpers';
 import { addRows, indexOf, removeRows } from './fixtures/load';
 
 // Patterns in the app: the domain page's "Patterns we follow", a pattern's page and a pattern
@@ -47,7 +51,8 @@ describe('pattern logic', () => {
     const ix = index();
     expect(patternsFollowedBy(ix, 'DM-SHOP').map((f) => [f.pattern.id, f.byDomain, f.useCases.map((u) => u.id)])).toEqual([['DM-PAT-AUDIT', true, ['DM-SHOP-UC01']]]);
     expect(patternsFollowedBy(ix, 'NF-NOTE')).toEqual([]);
-    expect(followingDomains(ix, 'DM-PAT-AUDIT').map((d) => d.domain)).toEqual(['DM-PAY', 'DM-SHOP']);
+    const followers = answerQuery(readViewOf(twoDomains()), LIST_FOLLOWERS, { pattern_id: 'DM-PAT-AUDIT' }) as PatternFollowers;
+    expect(followers.domains.map((d) => d.domain)).toEqual(['DM-PAY', 'DM-SHOP']);
     expect(settingsOf(ix, ix.byId.get('DM-PAT-AUDIT')!)).toEqual(['retention', 'who']);
     // A follower's setting_value rows: a value, or the reason the setting does not apply.
     expect(settingValue(ix, 'DM-SHOP', 'DM-PAT-AUDIT', 'retention')).toEqual({ value: '1 year' });
@@ -169,7 +174,7 @@ describe('Patterns we follow, on the domain page', () => {
     for (const ws of [twoDomains(), payItself()]) {
       const data = await servedByEngine(ws);
       const ix = indexOf(data);
-      for (const followed of followingDomains(ix, 'DM-PAT-AUDIT')) {
+      for (const followed of ['DM-PAY', 'DM-SHOP'].flatMap((domain) => patternsFollowedBy(ix, domain).filter((f) => f.pattern.id === 'DM-PAT-AUDIT').map((f) => ({ ...f, domain })))) {
         const standings = ix.coverage.get(followed.domain)!.pattern_rules;
         await openApp(`/${followed.domain}`, { data });
         await screen.findByRole('heading', { level: 1, name: ix.byId.get(followed.domain)!.title });
@@ -199,6 +204,7 @@ describe('pattern pages (the Pattern page, LA-V122)', () => {
   it('LA-V122-R04-T01 A pattern page shows its settings table, its rules, and each following domain with its use cases and settings', async () => {
     await openApp('/DM-PAT-AUDIT', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Audited action' });
+    await within(main()).findByRole('heading', { name: /^(Followed|Owed) by\d/ });
     const settings = within(section(/^Settings/)).getByRole('table');
     expect(within(settings).getAllByRole('row').map((r) => r.textContent)).toEqual([
       'SettingMeaningRules that depend on it',
@@ -226,6 +232,7 @@ describe('pattern pages (the Pattern page, LA-V122)', () => {
   it('LA-V122-R04-T02 A pattern page shows each following domain\'s proof status per rule', async () => {
     await openApp('/DM-PAT-AUDIT', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Audited action' });
+    await within(main()).findByRole('heading', { name: /^(Followed|Owed) by\d/ });
     const followed = section(/^Followed by/);
     const statusOf = (domain: string, rule: string) => {
       const tables = within(within(followed).getByRole('region', { name: `Followed in ${domain}` })).getAllByRole('table');
@@ -241,6 +248,7 @@ describe('pattern pages (the Pattern page, LA-V122)', () => {
   it('LA-V122-R05-T01 A pattern rule page lists the domains that owe it, and a pattern nobody follows says so', async () => {
     await openApp('/DM-PAT-AUDIT-R02', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Records are kept' });
+    await within(main()).findByRole('heading', { name: /^(Followed|Owed) by\d/ });
     const owed = section(/^Owed by/);
     expect(within(owed).getAllByRole('row').slice(1).map((r) => r.querySelector('th')!.textContent)).toEqual(['DM-PAYPaying', 'DM-SHOPShopping']);
 
