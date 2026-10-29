@@ -1,4 +1,4 @@
-// The refusals of the domain model: what the schema's constraints and the validation queries refuse across columns and
+// The refusals of the domain model: what the schema's constraints, the integrity queries and the aggregates' rules refuse across columns and
 // tables. Each names the rule, the file and the line of the row that breaks it.
 import { afterAll, describe, expect, it } from 'vitest';
 import { openStore, StoreError, type Row, type StoreProblem } from '../../src/index.ts';
