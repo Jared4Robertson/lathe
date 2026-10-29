@@ -12,7 +12,7 @@ const stageButton = (name: string) => within(screen.getByRole('group', { name: '
 const at = () => decodeURIComponent(window.location.pathname);
 const press = (target: Element, key: string, mods: { altKey?: boolean } = {}) => fireEvent.keyDown(target, { key, code: key, ...mods });
 
-/** Left steps from the use case out to its capability and Right back in to it, by the Tree view's keys, each announced. */
+/** Left steps from the use case out to its capability and Right back in to it, each announced. */
 async function walksOutAndIn(target: () => Element) {
   press(target(), 'ArrowLeft');
   await waitFor(() => expect(at()).toBe('/P-D-CAP01'));
@@ -50,10 +50,21 @@ describe('the stage walk', () => {
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="erd"] .erd-page')).not.toBeNull());
     await walksOutAndIn(() => document.body);
 
-    // So does the Trace stage; a link of its table, the accessible layer under the canvas, keeps its own arrows.
+    // The Trace stage walks its map: Left and Right across the why tree's columns as well, then on along a lane, Right
+    // from the requirement to its flow (where the Tree view's Right would go to its first child); a link of its table,
+    // the accessible layer under the canvas, keeps its own arrows.
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="trace"] .trace-page')).not.toBeNull());
     await walksOutAndIn(() => document.body);
+    press(document.body, 'ArrowRight');
+    await waitFor(() => expect(at()).toBe('/P-D-UC01-R01'));
+    press(document.body, 'ArrowRight');
+    await waitFor(() => expect(at()).toBe('/P-D-UC01-FL01'));
+    await waitFor(() => expect(announcer()).toHaveTextContent('Flow Lend a thing in the web app'));
+    press(document.body, 'ArrowLeft');
+    await waitFor(() => expect(at()).toBe('/P-D-UC01-R01'));
+    press(document.body, 'ArrowLeft');
+    await waitFor(() => expect(at()).toBe('/P-D-UC01'));
     const link = await waitFor(() => {
       const el = document.querySelector<HTMLElement>('.trace-access a[data-trace-id]');
       expect(el).not.toBeNull();
