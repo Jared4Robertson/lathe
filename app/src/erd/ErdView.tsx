@@ -13,6 +13,7 @@ import { ERD_EMPTY, erdFocus, erdMap, erdStrength, LINE_WORDS, lineGeometry, lin
 import { erdLayout, readyErdLayout } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
+import { ErdLeader } from './leader';
 import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
 import { useWalk } from '../graph/steps';
 import { ARROW_DIRECTION, erdStep } from './walk';
@@ -499,6 +500,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasP
         <RegionLabels regions={regions} />
       </ReactFlow>
       <EdgeHints centers={centers} wrapper={wrapper} moveTo={(v) => camera.moveTo(v, true)} />
+      <ErdLeader host={wrapper} rects={placed?.rects ?? null} focus={focus} space={space} />
       {armedBox && <TapCard kind={BOX_KIND[armedBox.kind]} name={armedBox.title} onOpen={tap.openArmed} onDismiss={tap.clear} />}
     </div>
   );

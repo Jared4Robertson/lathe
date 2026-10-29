@@ -6,7 +6,7 @@ import { BUDGETS } from './budgets';
 import { installProbes, quiet, record, work } from './measure';
 import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 
-// LA-PAT-APP-UX-R11-T01, LA-V61-R37-T01 to T04 and LA-V96-R21-T01: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
+// LA-PAT-APP-UX-R11-T01, LA-V61-R37-T01 to T04, LA-V96-R21-T01 and LA-V96-R24-T03: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-PLT-UC05';
@@ -232,5 +232,22 @@ test.describe('performance', () => {
       await page.mouse.up();
     });
     await record({ name: "Trace stage: panning the product's trace", value: pan.worstFrameMs, unit: 'ms', budget: BUDGETS.traceDragFrameMs, detail: `${pan.slowFrames} of ${pan.frames} frames over 20 ms while dragging 600 px` });
+  });
+
+  test('LA-V96-R24-T03 the leader line to the wiki card adds no measurable cost: a pan with it drawn every frame stays within the camera-move budget', async ({ page }) => {
+    await open(page, `${AGGREGATE}?stage=graph`);
+    await boxesDrawn(page);
+    await expect(page.locator('.wiki-panel')).toBeVisible();
+    const drawn = () => page.evaluate(() => !!(document.querySelector('.focus-stage .graph-flow') as HTMLElement & { leaderLine?: unknown }).leaderLine);
+    await expect.poll(drawn, { message: 'the leader line is drawn' }).toBe(true);
+    const box = (await page.locator('.focus-stage .graph-flow canvas').boundingBox())!;
+    const pan = await work(page, async () => {
+      await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.5);
+      await page.mouse.down();
+      for (let i = 1; i <= 20; i++) await page.mouse.move(box.x + box.width * 0.4 - i * 4, box.y + box.height * 0.5 + i * 3);
+      await page.mouse.up();
+    });
+    expect(await drawn(), 'the line is still drawn after the pan').toBe(true);
+    await record({ name: 'a pan with the leader line drawn every frame', value: pan.workMs, unit: 'ms', budget: BUDGETS.cameraMoveMs, detail: `longest frame ${Math.round(pan.worstFrameMs)} ms, ${pan.slowFrames} of ${pan.frames} frames over 20 ms` });
   });
 });

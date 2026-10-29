@@ -10,7 +10,7 @@ import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } f
 import { hitPlate } from '../graph/hit';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from '../graph/look';
 import { readMotion } from '../graph/motion';
-import { GAP_KIND, paint, type Bar, type Camera, type Line, type PaintState } from '../graph/paint';
+import { boxColors, GAP_KIND, paint, type Bar, type Camera, type Line, type PaintState } from '../graph/paint';
 import { plateName, plateOf, plateTip, type Plate } from '../graph/plate';
 import { nodeShape, SHAPES } from '../graph/shapes';
 import { BORDER, labelLines, LABEL_PAD, LABEL_PAD_BLOCK, LINE_HEIGHT, META_FONT, setTextMeasure, TITLE_FONT, hasMarks, metaWidth, titleWidth, wrapLabel, wrapText, type TextMeasure, type WrappedLabel } from '../graph/text';
@@ -19,6 +19,7 @@ import { useCameraGestures } from '../graph/gestures';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
+import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { BOX_H, BOX_W, LANE_COLUMN_LABELS, lanesIn, traceFade, traceFocus, visibleIn, type TraceBox, type TraceLine, type TraceMap } from './lanes';
 
 // The product's one map, laid out once (LA-PAT-APP-UX-R19): focusing a record glides the camera to
@@ -295,6 +296,11 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
   const tap = useRef<ReturnType<typeof useTapToOpen> | null>(null);
   const lastFrame = useRef<TraceFrame | null>(null);
   lastFrame.current = null;
+  /** The focus's own box the leader line starts on: its box in the why tree, its obligation box, or its first copy in the lanes; none for a region. */
+  const focusBox = useMemo(() => {
+    const copies = map.copies.get(focus) ?? [];
+    return copies.find((b) => b.lane < 0) ?? copies.find((b) => b.column === 'obligation') ?? copies[0] ?? null;
+  }, [map, focus]);
 
   paintRef.current = () => {
     const s = sizeRef.current;
@@ -310,10 +316,18 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
     const v = view.current;
     const cam: Camera = { cx: (s.w / 2 - v.x) / v.zoom, cy: (s.h / 2 - v.y) / v.zoom, zoom: v.zoom, w: s.w, h: s.h };
     paint(ctx.current, dpr, cam, frame, look.current, fonts, state);
+    // The leader line to the wiki card (LA-V96-R24), under this camera, in the focus's outline color.
+    const b = focusBox;
+    if (wrapper.current) drawLeaderLine(ctx.current, {
+      host: wrapper.current, space, dpr, color: b ? boxColors(look.current, plateFor(b)).edge : look.current.ink,
+      box: b ? { left: b.x * v.zoom + v.x, top: b.y * v.zoom + v.y, right: (b.x + b.w) * v.zoom + v.x, bottom: (b.y + Math.min(b.h, BOX_H)) * v.zoom + v.y } : null,
+    });
     if (!spot.done || !faded.done) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
   };
   useEffect(() => { requestPaint(); });
+  // The wiki card moving without the camera draws its leader line again in the same frame.
+  useLeaderFollow(wrapper, space, () => paintRef.current());
 
   /** Each record's arrows, every copy's, worked out once per map for the spotlight. */
   const linesOf = useMemo(() => {
