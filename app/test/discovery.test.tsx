@@ -7,8 +7,9 @@ import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
 
 // Discovery and test data: a product's business outcomes on its page (LA-V51-R05), a test's size and markers on the
-// record page (LA-V92-R75), and what measures an outcome (LA-V92-R76). A capability's outcomes and a test data set's
-// page are their aggregates' pages' (domain-records-page.test.tsx, test-data-set-page.test.tsx).
+// record page (LA-V92-R75), and the outcomes a test measures (LA-V92-R76). An outcome's own page is the Business outcome
+// aggregate's (business-outcome-page.test.tsx); a capability's outcomes and a test data set's page are their
+// aggregates' pages' (domain-records-page.test.tsx, test-data-set-page.test.tsx).
 
 afterEach(() => cleanup());
 
@@ -67,20 +68,10 @@ describe('discovery', () => {
     expect(traceOf(index, index.byId.get('DM-SHOP-TD01')!).runBy).toBeNull();
   });
 
-  it('LA-V92-R76-T01 An outcome shows the tests that measure it and how it is measured outside the code; a test shows the outcomes it measures', () => {
+  it('LA-V92-R76-T01 A test shows the outcomes it measures', () => {
     const index = indexOf(withOutcomes());
     const trace = () => screen.getByRole('heading', { level: 2, name: 'Traceability' }).closest('section') as HTMLElement;
     const show = (id: string) => render(<RecordContent index={index} id={id} onNavigate={vi.fn()} />);
-
-    show('DM-BO01');
-    expect(within(trace()).getByRole('heading', { level: 3, name: /^Measured by/ })).toBeInTheDocument();
-    expect(within(trace()).getByRole('link', { name: /DM-SHOP-UC01-R01-T01/ })).toBeInTheDocument();
-    cleanup();
-
-    show('DM-BO02');
-    expect(within(document.body).getByRole('heading', { name: 'Measured outside the code' }).closest('section')).toHaveTextContent("Counted from the payment provider's refund report each month.");
-    expect(within(document.body).queryByRole('heading', { level: 3, name: /^Measured by/ })).toBeNull();
-    cleanup();
 
     show('DM-SHOP-UC01-R01-T01');
     expect(within(trace()).getByRole('heading', { level: 3, name: /^Measures/ })).toBeInTheDocument();
