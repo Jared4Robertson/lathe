@@ -346,10 +346,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-canvas { position: relative; min-height: 420px; }
 .graph-flow { position: absolute; inset: 0; background: var(--paper); }
 .graph-loading { position: absolute; top: 12px; left: 16px; z-index: 5; margin: 0; }
-.graph-near li { font-size: 0.85rem; }
-.graph-near a { color: var(--ink); text-decoration: none; }
-.graph-near a code { color: var(--steel); }
-.graph-near a:hover { text-decoration: underline; }
 .graph-legend { font-size: 0.8rem; }
 .graph-legend li { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
 .graph-legend-heading { margin: 10px 0 0; font-size: 0.8rem; font-weight: 600; color: var(--ink); }
