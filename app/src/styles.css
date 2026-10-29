@@ -322,7 +322,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-filter-body label { display: flex; gap: 6px; align-items: center; font-size: 0.82rem; }
 .graph-filters > summary .icon, .graph-key > summary .icon { align-self: center; }
 /* The key: a popover under its button at the end of the toolbar, as the filters', scrolling inside when long. */
-.graph-key-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 12px; width: min(460px, calc(100% - 24px)); max-height: min(70vh, 560px); overflow-y: auto; scrollbar-gutter: stable; padding: 4px 12px 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
+.graph-key-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 0; width: min(460px, calc(100vw - 32px)); white-space: normal; max-height: min(70vh, 560px); overflow-y: auto; scrollbar-gutter: stable; padding: 4px 12px 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
 /* The toolbar's narrower forms (TOOLBAR_TIERS): compact hides the names beside the icons and tightens the steps, narrow
    shows each layout by its first letter, menu moves depth and the steps into More. The names stay the accessible ones. */
 .graph-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-filters-name, .graph-key-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
