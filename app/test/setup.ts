@@ -37,7 +37,7 @@ beforeEach(() => {
   // A wide desktop window (jsdom's own is 1024 px), so no panel collapses for space unless a test narrows it.
   Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1920 });
   window.history.replaceState(null, '', '/');
-  // Remembered choices (view, nav, sideBar, open rows) start fresh in every test.
+  // Remembered choices (view, nav, open rows) start fresh in every test.
   window.localStorage.clear();
   window.sessionStorage.clear();
   // The wiki's tests read the card's whole page, so the card starts expanded (More) here; the card's own tests clear
