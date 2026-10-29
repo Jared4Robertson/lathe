@@ -3,14 +3,12 @@ import { describe, expect, it } from 'vitest';
 import { waitFor } from '@testing-library/react';
 import { graphMap } from '../../src/graph/map';
 import { nestedMap } from '../../src/graph/nested';
-import { readyVoronoiMap } from '../../src/graph/voronoi';
 import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
 import { hitPlate, inPlate, inPolygon, onScreen } from '../../src/graph/hit';
 import { TEXT_BAR_PX } from '../../src/graph/paint';
 import { canvasMeasure, fontFor } from '../../src/graph/fonts';
 import { META_FONT, PLAIN_MEASURE, TITLE_FONT } from '../../src/graph/text';
 import type { NestedNode } from '../../src/graph/nested';
-import type { VoronoiNode } from '../../src/graph/voronoi';
 import type { PlacedMap } from '../../src/graph/map';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
@@ -22,10 +20,10 @@ import { boxElements, scene } from './scene';
 
 const sourceOf = (map: PlacedMap, id: string): PlateSource => {
   const n = map.nodes.get(id)!;
-  return map.view === 'tree' ? { view: 'tree', node: n } : map.view === 'nested' ? { view: 'nested', node: n as NestedNode } : { view: 'voronoi', node: n as VoronoiNode };
+  return map.view === 'tree' ? { view: 'tree', node: n } : { view: 'nested', node: n as NestedNode };
 };
 const platesOf = (map: PlacedMap): Plate[] => [...map.nodes.keys()].map((id) => plateOf(testIndex(), id, sourceOf(map, id)));
-const maps = () => [graphMap(testIndex(), 'P'), nestedMap(testIndex(), 'P'), readyVoronoiMap(testIndex(), 'P')!] as PlacedMap[];
+const maps = () => [graphMap(testIndex(), 'P'), nestedMap(testIndex(), 'P')] as PlacedMap[];
 
 describe('text sizing', () => {
   it('LA-EXP-DS06-T13 LA-EXP-DS10-T07 LA-PAT-APP-UX-R12-T02 Every label line is placed in map units at its face\'s size times its box\'s text scale, inside its box, in every layout', () => {
@@ -36,17 +34,12 @@ describe('text sizing', () => {
           // Its size is its face's at text scale 1 times the box's text scale, fixed by the map.
           const base = line.tone === 'muted' ? META_FONT : TITLE_FONT;
           expect(line.size, `${p.id} ${line.text}`).toBeCloseTo(base * p.text, 9);
-          // The whole line lies inside its box: within its rectangle, and a cell's within its outline.
+          // The whole line lies inside its box: within its rectangle.
           const eps = 1e-6 * Math.max(1, p.w);
           expect(line.x, `${map.view} ${p.id}: "${line.text}" left`).toBeGreaterThanOrEqual(p.x - eps);
           expect(line.x + line.width, `${map.view} ${p.id}: "${line.text}" right`).toBeLessThanOrEqual(p.x + p.w + eps);
           expect(line.top, `${map.view} ${p.id}: "${line.text}" top`).toBeGreaterThanOrEqual(p.y - eps);
           expect(line.top + line.height, `${map.view} ${p.id}: "${line.text}" bottom`).toBeLessThanOrEqual(p.y + p.h + eps);
-          if (p.outline.kind === 'polygon' && p.view === 'voronoi') {
-            for (const [x, y] of [[line.x, line.top], [line.x + line.width, line.top], [line.x, line.top + line.height], [line.x + line.width, line.top + line.height]]) {
-              expect(inPolygon(p.outline.points, { x, y }), `${p.id}: "${line.text}" inside its cell`).toBe(true);
-            }
-          }
         }
         for (const b of p.badges) {
           expect(b.x).toBeGreaterThanOrEqual(p.x);
@@ -92,7 +85,7 @@ describe('text sizing', () => {
 });
 
 describe('hit testing', () => {
-  it('LA-V93-R07-T01 The pointer finds the deepest box under it from the map\'s outlines: a shape\'s polygon, rounded corners, a cell', () => {
+  it('LA-V93-R07-T01 The pointer finds the deepest box under it from the map\'s outlines: a shape\'s polygon, rounded corners', () => {
     // A polygon, by the even-odd rule.
     const tri: [number, number][] = [[0, 0], [10, 0], [0, 10]];
     expect(inPolygon(tri, { x: 2, y: 2 })).toBe(true);

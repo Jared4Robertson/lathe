@@ -80,7 +80,7 @@ export function section(name: string | RegExp) {
 }
 
 /** Starts the graph at a depth for the session, as if the person had chosen it (the default is 1). */
-export function startAtDepth(depth: number, layout: 'tree' | 'nested' | 'voronoi' = 'tree') {
+export function startAtDepth(depth: number, layout: 'tree' | 'nested' = 'tree') {
   window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
 }
 

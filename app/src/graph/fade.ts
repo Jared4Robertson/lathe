@@ -1,6 +1,6 @@
 // The focus fade (LA-EXP-DS09): in every layout the focus and everything under it are drawn at
 // full strength, and everything else (its siblings, other branches, the levels above) faded well
-// back, at `--focus-fade`. In the Nested and Voronoi layouts, where the focus's ancestors contain
+// back, at `--focus-fade`. In the Nested layout, where the focus's ancestors contain
 // it, each ancestor keeps a faint outline and name as a trail, at `--focus-trail`; their other
 // contents fade. The fade follows the focus and eases with the camera's glide to it.
 
@@ -13,7 +13,7 @@ export interface FadeMap {
 /** How strongly a faded box and a trail ancestor are drawn, 0 to 1. */
 export interface FadeLook { focusFade: number; focusTrail: number }
 
-/** For a focus, how strongly each box is drawn: 1 for the focus and what lies under it, the trail's strength for an ancestor in Nested and Voronoi, the fade's for the rest. */
+/** For a focus, how strongly each box is drawn: 1 for the focus and what lies under it, the trail's strength for an ancestor in Nested, the fade's for the rest. */
 export function focusStrength(map: FadeMap, focus: string, look: FadeLook): (id: string) => number {
   const ancestors = new Set<string>();
   for (let at = map.nodes.get(focus)?.parent ?? null; at !== null; at = map.nodes.get(at)?.parent ?? null) ancestors.add(at);
