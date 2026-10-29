@@ -280,7 +280,7 @@ describe('graph groups on the page', () => {
     expect(groupNode('P-D/test-plan')!.stage).toBe('test-plan');
     expect(groupNode('P-D/domain-model')!.stage).toBe('domain-model');
     const key = within(screen.getByRole('region', { name: 'Key' }));
-    expect(key.getByText(/Stage, folder or group/)).toBeTruthy();
+    expect(key.getByText('Folder').closest('li')).toHaveAttribute('title', expect.stringMatching(/Stage, folder or group/));
     // A labeled group is named for assistive technology by its name, count and owner; one with nothing wrong beneath it carries no mark.
     expect(node('P-D/test-plan')!.getAttribute('aria-label')).toMatch(/^Stage Test plan \(\d+\) in P-D$/);
     expect(marksOf(testIndex(), 'P-D/question')).toEqual({ errors: 0, warnings: 0, gaps: [] });

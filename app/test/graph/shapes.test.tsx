@@ -2,9 +2,10 @@ import './setup';
 import { indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
-import { GraphKey } from '../../src/graph/key';
+import { graphKeyEntries } from '../../src/graph/key';
+import { StageKey } from '../../src/views/StageChrome';
 import { parentLine } from '../../src/graph/map';
-import { MARKS, NODE_HEIGHT, NODE_WIDTH, outlineInset, outlineOf, shapeOf, SHAPES, type Shape } from '../../src/graph/shapes';
+import { MARKS, NODE_HEIGHT, NODE_WIDTH, outlineInset, outlineOf, shapeOf, SHAPES, type Mark, type Shape } from '../../src/graph/shapes';
 import { BORDER, LABEL_PAD, LABEL_PAD_BLOCK } from '../../src/graph/text';
 import { openApp, startAtDepth } from '../helpers';
 import { testWorkspace } from './workspace';
@@ -74,8 +75,9 @@ describe('a shape for each kind', () => {
     const used = new Set(['folder', ...Object.values(TABLE).map(([s]) => s)]);
     for (const shape of Object.keys(SHAPES)) expect(used.has(shape), shape).toBe(true);
     for (const mark of Object.keys(MARKS)) expect(Object.values(TABLE).some(([, m]) => m === mark), mark).toBe(true);
-    const key = render(<GraphKey />).container;
-    for (const shape of Object.keys(SHAPES)) expect(key.querySelector(`.graph-swatch.shape-${shape}`)?.closest('li')?.textContent, shape).toContain(SHAPES[shape as Shape].name);
+    const drawn = { looks: new Set<never>(), shapes: new Set(Object.keys(SHAPES) as Shape[]), marks: new Set(Object.keys(MARKS) as Mark[]), badges: new Set<never>(), layout: 'tree' as const };
+    const key = render(<StageKey entries={graphKeyEntries(drawn)} />).container;
+    for (const shape of Object.keys(SHAPES)) expect(key.querySelector(`.graph-swatch.shape-${shape}`)?.closest('li')?.getAttribute('title'), shape).toContain(SHAPES[shape as Shape].name);
     for (const mark of Object.keys(MARKS)) expect(key.querySelector(`.graph-swatch.mark-${mark} .graph-mark-icon`), mark).not.toBeNull();
     cleanup();
 

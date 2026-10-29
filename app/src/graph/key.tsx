@@ -1,17 +1,28 @@
-import type { ReactNode } from 'react';
-import { Icon } from '../components/icons';
-import { Tooltip } from '../shell/Tooltip';
-import type { Stage, StageRule } from '../specs/data';
-import { MARKS, SHAPES, type Mark, type Shape } from './shapes';
+import type { SpecIndex, Stage, StageRule } from '../specs/data';
+import type { KeyEntry } from '../views/StageChrome';
+import { BOX_LOOKS, type BoxLook } from './paint';
+import { BADGE_TONES } from './plate';
+import { MARKS, SHAPES, nodeShape, type Mark, type Shape } from './shapes';
 import { MarkIcon, ShapeIcon } from './shape-icons';
-import { ChangesKey } from '../changes/ChangesKey';
+import { stageFor, type Neighborhood } from './model';
+import { marksOf } from './text';
 
-// Every stage's Key (LA-PAT-APP-UX-R21): a small Key button at the end of the stage toolbar
-// (views/StageChrome.tsx) that opens the stage's key as a popover over the stage, as the Filters do.
-// The Graph's key is here (LA-V93-R12): what each color, shape, mark and line means, and how to move
-// around; the ERD's is erd/ErdView.tsx's ErdKey, the Trace's trace/TraceKey.tsx.
+// The Graph stage's key (LA-V93-R12): the entries of the stage's key bar (views/StageChrome.tsx StageKey), one for each
+// color, shape, mark, line and badge the graph draws around its focus, and nothing it does not: a kind the filters hide
+// takes its color, shape and mark with it when nothing else drawn has them.
 
-/** What each stage's swatch holds, in the key. */
+type Badge = (typeof BADGE_TONES)[number];
+
+/** What the graph draws now, for its key. */
+export interface GraphDrawn {
+  looks: ReadonlySet<BoxLook>;
+  shapes: ReadonlySet<Shape>;
+  marks: ReadonlySet<Mark>;
+  badges: ReadonlySet<Badge>;
+  layout: 'tree' | 'nested';
+}
+
+/** What each stage's color holds, in its tooltip. */
 const STAGE_KINDS: Readonly<Record<Stage, string>> = {
   discovery: 'business outcome',
   'domain-model': 'domain, aggregate, entity, value object, constraint, invariant, specification, domain event, command, read model, query, policy, domain service, term',
@@ -20,56 +31,84 @@ const STAGE_KINDS: Readonly<Record<Stage, string>> = {
   'technical-specification': 'the technical record that implements each design record, a table, a UI component, a standard and its rules',
   'test-plan': 'every kind of test, and the test data sets tests start from',
 };
-const STAGE_NAMES = Object.keys(STAGE_KINDS) as Stage[];
 
-/** The Key button and its popover, holding a stage's key, at the end of the stage toolbar. */
-export function KeyControl({ children }: { children: ReactNode }) {
-  return (
-    <details className="stage-key">
-      {/* In a narrow toolbar only the icon shows; the name stays the summary's text (LA-PAT-APP-UX-R08). */}
-      <Tooltip label="Key">
-        <summary><Icon name="info" size={14} /><span className="stage-key-name">Key</span></summary>
-      </Tooltip>
-      {/* The popover scrolls when long: a region that takes focus to scroll by the arrows (LA-V61-R46). */}
-      <div className="stage-key-body" role="region" aria-label="Key" tabIndex={0}>{children}</div>
-    </details>
-  );
+/** A shape's word in the key: the kind it is first drawn for. */
+const SHAPE_WORDS: Readonly<Record<Shape, string>> = {
+  product: 'Product', hexagon: 'Domain', folder: 'Folder', double: 'Aggregate', box: 'Entity', octagon: 'Rule', flag: 'Event',
+  parallelogram: 'Command', slice: 'Capability', stadium: 'Use case', page: 'Requirement', stack: 'Pattern', 'chevron-bar': 'Flow',
+  chevron: 'Flow step', window: 'View', port: 'Endpoint', component: 'Technical', stripes: 'Table', shield: 'Test', diamond: 'Question',
+};
+
+/** A mark's word in the key: what it tells apart. */
+const MARK_WORDS: Readonly<Record<Mark, string>> = {
+  value: 'Value', gear: 'Logic', lens: 'Read', marker: 'Term', ruler: 'Standard', port: 'Integration', target: 'Outcome', data: 'Test data', plug: 'Interface',
+};
+
+const BADGES: Readonly<Record<Badge, { sample: string; words: string; meaning: string }>> = {
+  error: { sample: '!', words: 'Errors', meaning: 'Has errors (on a group: among its members)' },
+  warning: { sample: '!', words: 'Warnings', meaning: 'Has warnings (on a group: among its members)' },
+  gap: { sample: 'gap', words: 'Gap', meaning: 'Not designed or not proved (on a group: among its members)' },
+};
+
+const stageName = (stages: readonly StageRule[], stage: Stage) =>
+  stages.find((s) => s.stage === stage)?.label ?? `${stage.charAt(0).toUpperCase()}${stage.slice(1).replaceAll('-', ' ')}`;
+
+/** The look's words and meaning: a stage's color, the structural colors, a group's outline or an open question's. */
+function lookEntry(look: BoxLook, stages: readonly StageRule[]): Pick<KeyEntry, 'words' | 'meaning'> {
+  if (look === 'stage-structural') return { words: 'Structural', meaning: 'Structural: the product and what has no stage' };
+  if (look === 'stage-group') return { words: 'Group', meaning: 'A stage, folder or group, outlined in its stage\'s color (gray for open questions)' };
+  if (look === 'kind-question') return { words: 'Open question', meaning: 'An open question, in the warning color (dashed in the Nested view)' };
+  const stage = look.slice('stage-'.length) as Stage;
+  const name = stageName(stages, stage);
+  return { words: name, meaning: `${name}: ${STAGE_KINDS[stage]}` };
 }
 
-/** The graph's key: one swatch per stage, labeled by the stage's label from the schema (or its name in words), then the shapes, marks and lines. */
-export function GraphKey({ stages = [] }: { stages?: readonly StageRule[] }) {
-  const label = (stage: Stage) => stages.find((s) => s.stage === stage)?.label ?? `${stage.charAt(0).toUpperCase()}${stage.slice(1).replaceAll('-', ' ')}`;
-  return (
-    <div className="graph-legend">
-      <ul className="plain">
-        {STAGE_NAMES.map((stage) => (
-          <li key={stage}><span className={`graph-swatch stage-${stage}`} /> {label(stage)} ({STAGE_KINDS[stage]})</li>
-        ))}
-        <li><span className="graph-swatch stage-structural" /> Structural (product)</li>
-        <li><span className="graph-swatch kind-question" /> Open question, in the warning color (dashed in the Nested view)</li>
-        <li><span className="graph-swatch stage-group" /> Groups: a stage, folder or group, a folder outlined in its stage's color (gray for open questions)</li>
-        <li><span className="graph-swatch is-focus" /> The focus, ringed</li>
-      </ul>
-      <h4 className="graph-legend-heading">Shapes</h4>
-      <ul className="plain">
-        {(Object.keys(SHAPES) as Shape[]).map((shape) => (
-          <li key={shape}><span className={`graph-swatch is-shape shape-${shape}`}><ShapeIcon shape={shape} /></span> {SHAPES[shape].kinds}: {SHAPES[shape].name}</li>
-        ))}
-        {(Object.keys(MARKS) as Mark[]).map((mark) => (
-          <li key={mark}><span className={`graph-swatch is-shape mark-${mark}`}><MarkIcon mark={mark} /></span> {MARKS[mark]}</li>
-        ))}
-      </ul>
-      <p className="hint">In the Tree view each box's outline is its kind's shape. In the Nested view every box keeps its rectangle, and its shape is the small mark before its kind and ID.</p>
-      <ul className="plain">
-        <li><span className="graph-swatch stage-nested" /> Nested view: a box holding its children below its name</li>
-        <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>
-        <li><span className="graph-line" /> parent / child (the tree, through stages, folders and groups)</li>
-        <li><span className="graph-mark error">!</span> has errors <span className="graph-mark warning">!</span> has warnings <span className="graph-mark gap">gap</span> not designed or not proved (on a group: among its members)</li>
-      </ul>
-      <ChangesKey />
-      <p className="hint">The graph is one map of the nav's tree: a product holds its own stages and its domains, a domain its five stages, each stage a folder per kind, each folder the records that start a branch of the stage, and each record what sits under it in the same stage. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A record's links to records in other branches are the Trace view's, which draws an obligation's chain from what designs it to the tests that prove it, and the wiki card's, which lists every link.</p>
-      <p className="hint">The Nested layout (v) draws the same tree as boxes inside boxes: the product made of its stages and domains, each domain of its stages, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
-      <p className="hint">Click a record or a group, or press Enter on it, to focus it; Enter on the focus, or anywhere but a button, link or field, shows or collapses the wiki card, and Escape collapses it. Scroll or drag to pan, Shift+scroll to pan sideways, and pinch or hold Cmd (Ctrl off a Mac) while scrolling to zoom about the pointer. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys, or W, A, S and D as Up, Left, Down and Right, step through the tree, each step moving the focus. In the Tree view, Left goes to the parent, Right to the first child, and Up and Down to the previous and next sibling; in the Nested view, which draws children inside their parent, Up goes to the parent, Down to the first child, and Left and Right to the previous and next sibling. Past the last sibling a step goes on to the first child of the next parent at that level, so repeated steps visit the whole level. In every view Shift+Up (or Shift+W) goes out to the parent and Shift+Down (or Shift+S) in to the first child, as the toolbar's Out and In do. Tab and Shift+Tab move between the boxes; + and - change the depth, and . frames the focus again.</p>
-    </div>
-  );
+/** The Graph stage's key entries for what it draws: colors, the focus, shapes, marks, the layout's lines or boxes, then badges. */
+export function graphKeyEntries(drawn: GraphDrawn, stages: readonly StageRule[] = []): KeyEntry[] {
+  const out: KeyEntry[] = [];
+  for (const look of BOX_LOOKS) {
+    if (drawn.looks.has(look)) out.push({ id: look, group: 'colors', sample: <span className={`graph-swatch ${look}`} />, ...lookEntry(look, stages) });
+  }
+  out.push({ id: 'focus', group: 'colors', sample: <span className="graph-swatch is-focus" />, words: 'Focus', meaning: 'The focus, ringed' });
+  for (const shape of Object.keys(SHAPES) as Shape[]) {
+    if (!drawn.shapes.has(shape)) continue;
+    out.push({ id: `shape-${shape}`, group: 'shapes', sample: <span className={`graph-swatch is-shape shape-${shape}`}><ShapeIcon shape={shape} /></span>, words: SHAPE_WORDS[shape], meaning: `${SHAPES[shape].kinds}: ${SHAPES[shape].name}` });
+  }
+  for (const mark of Object.keys(MARKS) as Mark[]) {
+    if (!drawn.marks.has(mark)) continue;
+    out.push({ id: `mark-${mark}`, group: 'marks', sample: <span className={`graph-swatch is-shape mark-${mark}`}><MarkIcon mark={mark} /></span>, words: MARK_WORDS[mark], meaning: MARKS[mark] });
+  }
+  if (drawn.layout === 'tree') out.push({ id: 'line', group: 'lines', sample: <span className="graph-line" />, words: 'Parent line', meaning: 'Parent to child: the tree, through stages, folders and groups' });
+  if (drawn.layout === 'nested') out.push({ id: 'nested', group: 'lines', sample: <span className="graph-swatch stage-nested" />, words: 'Box in box', meaning: 'Nested view: a box holding its children below its name, as big as the records under it' });
+  out.push({ id: 'bar', group: 'lines', sample: <span className="graph-swatch stage-bar" />, words: 'Too small', meaning: 'A bar: children too small to draw at this zoom' });
+  for (const badge of BADGE_TONES) {
+    if (!drawn.badges.has(badge)) continue;
+    const b = BADGES[badge];
+    out.push({ id: `badge-${badge}`, group: 'badges', sample: <span className={`graph-mark ${badge}`}>{b.sample}</span>, words: b.words, meaning: b.meaning });
+  }
+  return out;
+}
+
+/**
+ * What the graph draws around its focus, for its key: the picture the camera frames (the neighborhood, with the kind
+ * filters applied), each node by its look, shape, mark and badges. The rest of the map is the same kinds further off, so
+ * the key stays short and says what is in front of the Reader.
+ */
+export function graphDrawn(index: SpecIndex, graph: Neighborhood, layout: GraphDrawn['layout']): GraphDrawn {
+  const looks = new Set<BoxLook>();
+  const shapes = new Set<Shape>();
+  const marks = new Set<Mark>();
+  const badges = new Set<Badge>();
+  for (const { id } of graph.nodes) {
+    const record = index.byId.get(id);
+    looks.add(!record ? 'stage-group' : record.kind === 'question' ? 'kind-question' : `stage-${stageFor(index, id, record.kind)}`);
+    const { shape, mark } = nodeShape(index, id);
+    shapes.add(shape);
+    if (mark) marks.add(mark);
+    const m = marksOf(index, id);
+    if (m.errors > 0) badges.add('error');
+    else if (m.warnings > 0) badges.add('warning');
+    if (m.gaps.length > 0) badges.add('gap');
+  }
+  return { looks, shapes, marks, badges, layout };
 }
