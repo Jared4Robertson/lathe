@@ -114,7 +114,7 @@ describe('flows', () => {
     expect(from('EX-LEND-UC01-FL01-S02')).toEqual(['exchanges_with EX-INT01', 'fulfills EX-LEND-UC01-R01', 'invokes EX-LEND-QRY01']);
   });
 
-  it('LA-AUT-UC06-R01-T02 A well-formed flow raises no step problem; a second flow through one interface, a repeated position, a step fulfilling another use case and a second invoke are refused', async () => {
+  it('LA-AUT-UC06-R01-T02 LA-AUT-INV100-T A well-formed flow raises no step problem; a second flow through one interface, a repeated position, a step fulfilling another use case and a second invoke are refused', async () => {
     expect(ofCheck(good, 'step-order')).toEqual([]);
     const data = adding(everyKind(), { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a borrowed tool back.' }], uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'Tool is lent', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' }] });
     expect(await refusals(data)).toEqual([]);
@@ -208,7 +208,7 @@ describe('requirements and tests', () => {
     for (const table of grouped) expect(record(ws, complete()[table][0].id as string).fields.group_name, table).toBe('Checks');
   });
 
-  it('LA-PAT-AGGREGATE-TESTS-R01-T01 Each test is of the test kind named after what it tests, and sits under that one record, which it proves', async () => {
+  it('LA-AUT-UC03-R09-T01 Each test is of the test kind named after what it tests, and sits under that one record, which it proves', async () => {
     // What each test kind's name says it tests: its parent, or the record its parent sits under.
     for (const kind of Object.keys(ALLOWED_LEVELS)) {
       const parents = schema.kinds[kind].parents;

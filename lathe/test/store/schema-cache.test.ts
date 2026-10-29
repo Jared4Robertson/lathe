@@ -1,4 +1,4 @@
-// The schema cache (LA-PAT-AGGREGATE-COMMANDS-R05): a process attaches the migrated schema from a cache file instead of running the
+// The schema cache (LA-PLT-UC01-R11): a process attaches the migrated schema from a cache file instead of running the
 // migrations, and the result is the same as a schema built afresh. A stale or corrupt file is never used: it is
 // replaced by a schema built afresh. Two processes that start at once with no cache both load, and leave whole files.
 import { execFile } from 'node:child_process';
@@ -69,7 +69,7 @@ const stamp = (file: string) => {
 const fresh = await load(uncached());
 
 describe('the schema cache', () => {
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 A cached schema gives what one built afresh gives, and is used without being built again', async () => {
+  it('LA-PLT-UC01-R11-T01 A cached schema gives what one built afresh gives, and is used without being built again', async () => {
     const dir = cacheFolder();
     // The first process builds the schema and caches Lathe's and the product's (the fixture declares a kind).
     expect(await load(dir)).toEqual(fresh);
@@ -83,7 +83,7 @@ describe('the schema cache', () => {
     expect(cached.map((f) => stamp(path.join(dir, f)))).toEqual(was);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 A stale cache file is never used: a change to a migration changes the key, and a file whose stamp names another key is built afresh', async () => {
+  it('LA-PLT-UC01-R11-T01 A stale cache file is never used: a change to a migration changes the key, and a file whose stamp names another key is built afresh', async () => {
     const migrations = readMigrations();
     const changed: Migration[] = migrations.map((m, i) => (i === migrations.length - 1 ? { ...m, sql: `${m.sql}\n-- changed` } : m));
     expect(baseKey(changed)).not.toBe(baseKey(migrations));
@@ -116,7 +116,7 @@ describe('the schema cache', () => {
     expect(files(dir).map((f) => stamp(path.join(dir, f)))).toEqual(was);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 A corrupt cache file, garbage or cut short, is never used: the schema is built afresh and cached again', async () => {
+  it('LA-PLT-UC01-R11-T01 A corrupt cache file, garbage or cut short, is never used: the schema is built afresh and cached again', async () => {
     const dir = cacheFolder();
     await load(dir);
     const file = baseFile(dir);
@@ -133,7 +133,7 @@ describe('the schema cache', () => {
     expect(statSync(path.join(dir, product)).size).toBeGreaterThan(1000);
   });
 
-  it('LA-PAT-AGGREGATE-COMMANDS-R05-T01 Two processes starting at once with no cache both load the same, and leave only whole files', async () => {
+  it('LA-PLT-UC01-R11-T01 Two processes starting at once with no cache both load the same, and leave only whole files', async () => {
     const dir = cacheFolder();
     const index = path.resolve(import.meta.dirname, '../../src/index.ts');
     const script = `import { openStore } from ${JSON.stringify(index)};
