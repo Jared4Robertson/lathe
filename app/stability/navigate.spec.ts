@@ -4,11 +4,11 @@ import { DOMAIN, FOCUS, GRAPH_CANVAS, GRAPH_TOOLS, RECORD, SHELL } from './scena
 import { reachableBoxes } from './scene';
 
 // LA-V61-R28-T01: moving between records through the nav, a link, a graph click, Back and quick
-// find keeps the shell, the page bar, the header strip, the wiki card and the side bar where they were. The page's content
-// changes (it is a new page), so shifts inside the wiki card's scroll box, the header strip's line and the side bar's
-// body are the change itself; the frame around them must hold still.
+// find keeps the shell, the page bar, the header strip and the wiki card where they were. The page's content
+// changes (it is a new page), so shifts inside the wiki card's scroll box and the header strip's line are the change
+// itself; the frame around them must hold still.
 
-const CONTENT = ['.wiki-panel-scroll', '.header-strip', '.side-bar'];
+const CONTENT = ['.wiki-panel-scroll', '.header-strip'];
 const KEYS = [...SHELL, ...FOCUS];
 /** The header strip keeps one height whatever the title (LA-V96-R09): nothing in the frame resizes. */
 const TITLE: string[] = [];

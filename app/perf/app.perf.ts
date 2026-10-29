@@ -84,14 +84,10 @@ test.describe('performance', () => {
   });
 
   test('LA-V96-R21-T01 a camera move with every panel open takes under 500 ms of main-thread work, and the stage redraws only for the camera', async ({ page }) => {
-    // Every panel open: the nav, the tab panel, the wiki card and the side bar.
-    await page.addInitScript(() => {
-      try { localStorage.setItem('lathe:side-bar', JSON.stringify({ graph: { open: true, view: 'details' } })); } catch { /* no storage */ }
-    });
+    // Every panel open: the nav, the tab panel and the wiki card.
     await open(page, `${RECORD}?stage=graph`);
     await boxesDrawn(page);
     await expect(page.locator('.wiki-panel')).toBeVisible();
-    await expect(page.locator('.stage-layout > .side-bar-column')).toBeVisible();
     await quiet(page, 900);
     // A panel's content changing (the wiki card scrolled) moves no camera.
     const still = (await sceneOf(page)).moves;

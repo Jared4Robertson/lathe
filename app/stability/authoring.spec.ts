@@ -22,13 +22,13 @@ test.describe('Authoring flows', () => {
     const card = page.locator('.wiki-panel.is-format');
     await expect(card.locator('h2').first()).toHaveText('Record format');
     await expect(card.getByRole('heading', { name: 'How records are kept', level: 2 })).toBeVisible();
-    // S02: a kind's page, from the side bar's Kind row.
+    // S02: a kind's page, from the Kind line in the Facts after the record's body in the wiki card.
     await openPage(page, `${WITH_PROBLEM}?stage=graph`, '.focus-stage .graph-flow .graph-box');
-    await page.getByRole('complementary', { name: 'Side bar' }).getByRole('link', { name: 'UC requirement', exact: true }).click();
+    await page.locator('.wiki-panel').getByRole('complementary', { name: 'Facts' }).getByRole('link', { name: 'UC requirement', exact: true }).click();
     await page.waitForURL((u) => u.search.endsWith('page=format/kinds/uc_requirement'));
     await expect(card.locator('h2').first()).toHaveText('UC requirement');
     await expect(card.getByRole('table', { name: 'The columns of the uc_requirement table' })).toBeVisible();
-    // S03: a check's page, from a problem's code (on the page, or in the side bar while it is open).
+    // S03: a check's page, from a problem's code on the page.
     await openPage(page, WITH_PROBLEM);
     const code = page.getByRole('list', { name: 'Problems' }).first().getByRole('link').first();
     const check = (await code.textContent())!.trim();

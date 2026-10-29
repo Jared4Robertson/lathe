@@ -13,8 +13,8 @@ export const EDITED = '/LA-PLT-UC05-R05';
 
 /** The shell's frame: the nav and the page beside it. */
 export const SHELL = ['nav#nav', '#main'];
-/** A focus page's frame: the floating page bar, the header strip, the wiki card and the side bar (each holds still while what it shows changes). */
-export const FOCUS = ['.stage-layout > .page-bar', '.header-strip', '.wiki-panel', '.stage-layout > .side-bar-column'];
+/** A focus page's frame: the floating page bar, the header strip and the wiki card (each holds still while what it shows changes). */
+export const FOCUS = ['.stage-layout > .page-bar', '.header-strip', '.wiki-panel'];
 /** The stage, behind every panel. */
 export const STAGE = '.focus-stage';
 export const GRAPH_CANVAS = '.focus-stage .graph-canvas';

@@ -3,7 +3,7 @@ import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, RECORD, SHELL } from './scenarios';
 
 // LA-V61-R35-T01: switching theme changes colors only. LA-V61-R36-T01: at phone width (375 px) the
-// nav drawer, quick find, the wiki card's sheet and the side bar drawer open and close over the stage without moving it.
+// nav drawer, quick find and the wiki card's sheet open and close over the stage without moving it.
 
 test.describe('theme', () => {
   test('LA-V61-R35-T01 switching theme moves nothing', async ({ page }) => {
@@ -31,7 +31,7 @@ test.describe('mobile at 375 px', () => {
   test('LA-V61-R36-T01 the sheets and the drawer move nothing behind them', async ({ page }) => {
     await openPage(page, RECORD, '.header-strip h1');
     const behind = ['.topbar', '#main', '.page-bar.is-compact', '.header-strip', '.focus-stage'];
-    const sheets = ['.bottom-sheet', '.sheet', '.quick-open-backdrop', '.sheet-backdrop', '.drawer-backdrop', 'nav#nav', '.side-bar-drawer'];
+    const sheets = ['.bottom-sheet', '.sheet', '.quick-open-backdrop', '.sheet-backdrop', '.drawer-backdrop', 'nav#nav'];
     const nav = await step(page, 'mobile', 'open and close the nav drawer', { keys: behind, allow: sheets }, async () => {
       await page.getByRole('button', { name: 'Open the navigation' }).click();
       await page.locator('nav#nav').waitFor();
@@ -55,13 +55,5 @@ test.describe('mobile at 375 px', () => {
       await expect(page.locator('.wiki-panel-sheet')).toHaveCount(0);
     });
     expectStable(card);
-    const drawer = await step(page, 'mobile', 'open and close the side bar drawer', { keys: behind, allow: sheets }, async () => {
-      await page.getByRole('button', { name: 'Show the side bar' }).click();
-      await page.locator('.side-bar-drawer').waitFor();
-      await page.waitForTimeout(500);
-      await page.keyboard.press('Escape');
-      await expect(page.locator('.side-bar-drawer')).toHaveCount(0);
-    });
-    expectStable(drawer);
   });
 });

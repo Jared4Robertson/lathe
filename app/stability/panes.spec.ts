@@ -4,8 +4,8 @@ import { AGGREGATE, RECORD, STAGE } from './scenarios';
 import { sceneOf } from './scene';
 
 // LA-V61-R29-T01: the stage and the panels floating over it (LA-V96). Switching the stage changes
-// only the stage; collapsing or showing the wiki card or the side bar, or resizing the card, moves
-// only that panel and recenters the stage's focus in the open space they leave (a short glide).
+// only the stage; collapsing or showing the wiki card, or resizing it, moves
+// only the card and recenters the stage's focus in the open space they leave (a short glide).
 // The nav, the page bar, the header strip and every panel that stays must hold still, and none is
 // thrown away and drawn anew. The panels are frosted, and opaque under reduced transparency.
 
@@ -13,7 +13,6 @@ const NAV = 'nav#nav';
 const PAGE_BAR = '.stage-layout > .page-bar';
 const STRIP = '.header-strip';
 const CARD = '.wiki-panel';
-const SIDE_BAR = '.stage-layout > .side-bar-column';
 const BOXES = `${STAGE} .graph-flow .graph-box`;
 /** What floats in the open space (the stage's tools, the camera's buttons, the minimap, the edge hints): it moves with the open space on purpose. */
 const MOVES_WITH_OPEN_SPACE = [`${STAGE} .stage-tools`, `${STAGE} .graph-controls`, `${STAGE} .graph-minimap`, `${STAGE} .graph-edge-hints`, `${STAGE} .react-flow__controls`];
@@ -46,29 +45,29 @@ test.describe('the stage and its panels', () => {
   test('LA-V61-R29-T01 at 1440 px with every panel open, the panels never overlap and the stage spans the window behind them', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 700 });
     await openPage(page, `${AGGREGATE}?stage=erd`, STRIP);
-    await page.locator(SIDE_BAR).waitFor();
+    await page.locator(CARD).waitFor();
     // The narrow strip still names the focus: its title keeps room, the trail giving way first (LA-V96-R09).
     expect((await page.locator('.header-strip h1').boundingBox())?.width ?? 0, 'the title is shown').toBeGreaterThan(40);
     const box = (sel: string) => page.locator(sel).first().boundingBox();
-    const [nav, card, side, bar, stage] = await Promise.all([box(NAV), box(CARD), box(SIDE_BAR), box(PAGE_BAR), box(STAGE)]);
+    const [nav, card, bar, stage] = await Promise.all([box(NAV), box(CARD), box(PAGE_BAR), box(STAGE)]);
     expect(card!.x, 'the card starts after the nav ends').toBeGreaterThanOrEqual(nav!.x + nav!.width);
-    expect(side!.x, 'the side bar starts after the card ends').toBeGreaterThanOrEqual(card!.x + card!.width);
-    expect(side!.x - (card!.x + card!.width), 'the card sits beside the side bar, a gap away').toBeLessThanOrEqual(16);
+    expect(card!.x + card!.width, 'the card ends before the window does').toBeLessThanOrEqual(1440);
     expect(bar!.x, 'the page bar starts after the nav').toBeGreaterThanOrEqual(nav!.x + nav!.width);
-    expect(bar!.x + bar!.width, 'the page bar ends before the side bar').toBeLessThanOrEqual(side!.x);
-    expect(side!.x + side!.width).toBeLessThanOrEqual(1440);
+    expect(bar!.x + bar!.width, 'the page bar ends before the window does').toBeLessThanOrEqual(1440);
+    expect(card!.y, 'the card sits below the page bar').toBeGreaterThanOrEqual(bar!.y + bar!.height);
     expect(stage, 'the stage fills the window behind the panels').toEqual({ x: 0, y: 0, width: 1440, height: 700 });
   });
 
-  // The panels never crowd the page (LA-PAT-APP-UX-R18): as the window narrows the side bar collapses for space first, then the wiki
-  // card, then the nav; the card never gets narrower than its minimum, the stage keeps its own, and no title breaks mid-word.
+  // The panels never crowd the page (LA-PAT-APP-UX-R18): as the window narrows the wiki card collapses for space first, then
+  // the nav; the card never gets narrower than its minimum, the stage keeps its own, and no title breaks mid-word.
   test('LA-V96-R19-T02 panels collapse for space in order, the card never under 360 px, and come back as the window widens', async ({ page }) => {
     const crowded = () => page.locator('.app').getAttribute('data-crowded');
     await page.setViewportSize({ width: 1920, height: 900 });
     await openPage(page, `${RECORD}?stage=graph`, STRIP);
-    await page.locator(SIDE_BAR).waitFor();
+    await page.locator(CARD).waitFor();
     expect(await crowded()).toBeNull();
-    for (const [width, expected] of [[1440, null], [1100, 'sideBar'], [960, 'sideBar card'], [1920, null]] as const) {
+    // With the nav open (336 px) and no chat, the card at 360 px leaves the stage its 300 px down to about 1050 px.
+    for (const [width, expected] of [[1440, null], [1100, null], [960, 'card'], [1920, null]] as const) {
       await page.setViewportSize({ width, height: 900 });
       await expect.poll(crowded, { message: `collapsed for space at ${width} px` }).toBe(expected);
       const card = await page.locator(CARD).boundingBox();
@@ -98,19 +97,19 @@ test.describe('the stage and its panels', () => {
     await openPage(page, `${AGGREGATE}?stage=graph`);
     await stageReady(page);
     await test.step('LA-V93-R03-T01 the graph\'s canvas fits its first picture before it paints, with no glide', async () => expect((await sceneOf(page)).glides, 'the first picture is framed at once').toBe(0));
-    const keys = [NAV, PAGE_BAR, STRIP, CARD, SIDE_BAR, STAGE];
-    const erd = await step(page, 'stage', 'switch to ERD (Ctrl+2)', { keys, allow: [STAGE, '.header-strip-counts', '.side-bar'] }, async () => {
+    const keys = [NAV, PAGE_BAR, STRIP, CARD, STAGE];
+    const erd = await step(page, 'stage', 'switch to ERD (Ctrl+2)', { keys, allow: [STAGE, '.header-strip-counts'] }, async () => {
       await page.keyboard.press('Control+2');
       await page.locator(`${STAGE} .erd-flow .react-flow__node`).first().waitFor();
     });
     expectStable(erd);
     expect(new URL(page.url()).search).toBe('?stage=erd');
-    const trace = await step(page, 'stage', 'switch to Trace (Ctrl+3)', { keys, allow: [STAGE, '.header-strip-counts', '.side-bar'] }, async () => {
+    const trace = await step(page, 'stage', 'switch to Trace (Ctrl+3)', { keys, allow: [STAGE, '.header-strip-counts'] }, async () => {
       await page.keyboard.press('Control+3');
       await page.locator(`${STAGE} .trace-flow[data-ready]`).first().waitFor();
     });
     expectStable(trace);
-    const graph = await step(page, 'stage', 'back to Graph (Ctrl+1)', { keys, allow: [STAGE, '.header-strip-counts', '.side-bar'] }, async () => {
+    const graph = await step(page, 'stage', 'back to Graph (Ctrl+1)', { keys, allow: [STAGE, '.header-strip-counts'] }, async () => {
       await page.keyboard.press('Control+1');
       await stageReady(page);
     });
@@ -122,7 +121,7 @@ test.describe('the stage and its panels', () => {
     await stageReady(page);
     await expectFocusInOpenSpace(page, 'with the card open');
     const before = (await sceneOf(page)).moves;
-    const keys = [NAV, PAGE_BAR, STRIP, SIDE_BAR, STAGE];
+    const keys = [NAV, PAGE_BAR, STRIP, STAGE];
     const collapse = await step(page, 'stage', 'collapse the wiki card (Enter)', { keys, allow: MOVES_WITH_OPEN_SPACE, optional: [CARD] }, async () => {
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
       await page.keyboard.press('Enter');
@@ -139,29 +138,11 @@ test.describe('the stage and its panels', () => {
     await expectFocusInOpenSpace(page, 'with the card back');
   });
 
-  test('LA-V61-R29-T01 hide and show the side bar: only the side bar goes, and the focus recenters', async ({ page }) => {
-    await openPage(page, `${RECORD}?stage=graph`);
-    await stageReady(page);
-    const keys = [NAV, PAGE_BAR, STRIP, CARD, STAGE];
-    const hide = await step(page, 'stage', 'hide the side bar', { keys, allow: [...MOVES_WITH_OPEN_SPACE, CARD, PAGE_BAR], resizes: [PAGE_BAR, STRIP, CARD], optional: [SIDE_BAR] }, async () => {
-      await page.keyboard.press('Control+Alt+b');
-      await expect(page.locator(SIDE_BAR)).toHaveCount(0);
-    });
-    expectStable(hide);
-    await expectFocusInOpenSpace(page, 'with the side bar hidden');
-    const show = await step(page, 'stage', 'show the side bar', { keys, allow: [...MOVES_WITH_OPEN_SPACE, CARD, PAGE_BAR], resizes: [PAGE_BAR, STRIP, CARD], optional: [SIDE_BAR] }, async () => {
-      await page.keyboard.press('Control+Alt+b');
-      await expect(page.locator(SIDE_BAR)).toHaveCount(1);
-    });
-    expectStable(show);
-    await expectFocusInOpenSpace(page, 'with the side bar back');
-  });
-
   test('LA-V61-R29-T01 resize the wiki card from the keyboard: the card follows, the focus stays in the open space', async ({ page }) => {
     await openPage(page, `${RECORD}?stage=graph`);
     await stageReady(page);
     const handle = page.getByRole('separator', { name: 'Resize the wiki card' });
-    const r = await step(page, 'stage', 'widen the wiki card', { keys: [NAV, PAGE_BAR, STRIP, SIDE_BAR, STAGE], allow: [...MOVES_WITH_OPEN_SPACE, CARD], resizes: [CARD] }, async () => {
+    const r = await step(page, 'stage', 'widen the wiki card', { keys: [NAV, PAGE_BAR, STRIP, STAGE], allow: [...MOVES_WITH_OPEN_SPACE, CARD], resizes: [CARD] }, async () => {
       await handle.focus();
       await page.keyboard.press('Shift+ArrowLeft');
       await page.keyboard.press('Shift+ArrowLeft');
@@ -174,7 +155,7 @@ test.describe('the stage and its panels', () => {
     const looks = () => page.evaluate((sels) => sels.map((sel) => {
       const s = getComputedStyle(document.querySelector(sel)!);
       return { sel, filter: s.backdropFilter, background: s.backgroundColor };
-    }), ['nav#nav', '.stage-layout > .page-bar', '.header-strip', '.wiki-panel', '.stage-layout > .side-bar-column']);
+    }), ['nav#nav', '.stage-layout > .page-bar', '.header-strip', '.wiki-panel']);
     await openPage(page, `${RECORD}?stage=graph`);
     for (const l of await looks()) {
       expect(l.filter, `${l.sel} blurs the stage behind it`).toContain('blur');

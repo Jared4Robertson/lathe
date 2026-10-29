@@ -15,7 +15,6 @@ const STAGE_BOX = '.focus-stage';
 const FLOW = `${STAGE_BOX} .graph-flow`;
 const wikiTitle = (page: Page) => page.locator(`.header-strip h1`);
 const nav = (page: Page) => page.getByRole('navigation', { name: 'Main' });
-const sideBarViews = (page: Page) => page.getByRole('group', { name: 'Side bar views' });
 
 /** Waits for the graph stage to draw its boxes and settle. */
 async function graphReady(page: Page) {
@@ -92,17 +91,18 @@ test.describe('Exploring flows', () => {
     const parent = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-CAP03')!;
     const focus = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-UC03')!;
     expect(parent.map.x, 'the parent at the left').toBeLessThan(focus.map.x);
-    // Nodes carry stage and kind; the legend sits in the side bar's Details.
+    // Nodes carry stage and kind; the toolbar's Key names the stages' colors and the kinds' shapes.
     expect(focus.stage).toBe('use-cases');
     expect(focus.kind).toBe('use_case');
-    await expect(page.locator('.side-bar .graph-legend')).toBeAttached();
-    // Hovering spotlights; clicking focuses, the address and the header strip follow, the side bar describes it.
+    await page.locator(`${STAGE_BOX} .graph-key > summary`).click();
+    await expect(page.locator(`${STAGE_BOX} .graph-key-body`).getByRole('region', { name: 'Key' })).toContainText('capability, use case');
+    await page.locator(`${STAGE_BOX} .graph-key > summary`).click();
+    // Hovering spotlights; clicking focuses, and the address and the header strip follow (the wiki card, shown again below, too).
     await clickBox(page, 'LA-EXP-UC03-R18');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-R18');
     await focusDrawn(page, 'LA-EXP-UC03-R18');
     await expect(page.locator('.header-strip-id')).toHaveText('LA-EXP-UC03-R18');
     await expect(page.locator('.header-strip .breadcrumb .crumb').first()).toContainText('Lathe');
-    await expect(page.getByRole('complementary', { name: 'Side bar' }).getByRole('region', { name: 'Details' })).toContainText('LA-EXP-UC03-R18');
     // Filters: the minimap.
     await page.locator(`${STAGE_BOX} .graph-filters > summary`).click();
     await page.locator(`${STAGE_BOX} .graph-filter-body input[role="switch"]`).check();
@@ -152,7 +152,7 @@ test.describe('Exploring flows', () => {
     expect((await sceneOf(page)).lines.every((l) => !l.link)).toBe(true);
   });
 
-  test('LA-EXP-UC05-FL01-T read a record on a stage with its wiki card: quick find, stages, the card, links, Back, the nav and the side bar', async ({ page }) => {
+  test('LA-EXP-UC05-FL01-T read a record on a stage with its wiki card: quick find, stages, the card, links, Back and the nav', async ({ page }) => {
     await openPage(page, '/LA');
     await quickFind(page, 'LA-EXP-A1');
     await expect(wikiTitle(page)).toHaveText('Page');
@@ -198,12 +198,7 @@ test.describe('Exploring flows', () => {
     await nav(page).getByRole('button', { name: 'Collapse the navigation' }).click();
     await expect(nav(page).getByRole('button', { name: 'Expand the navigation' })).toBeVisible();
     await nav(page).getByRole('button', { name: 'Expand the navigation' }).click();
-    // Fold the side bar away from the page bar.
-    if (await page.getByRole('complementary', { name: 'Side bar' }).count()) await page.getByRole('complementary', { name: 'Side bar' }).getByRole('button', { name: 'Hide the side bar' }).click();
-    await page.getByRole('button', { name: 'Show the side bar' }).click();
-    await expect(page.getByRole('complementary', { name: 'Side bar' })).toBeVisible();
-    await page.getByRole('complementary', { name: 'Side bar' }).getByRole('button', { name: 'Hide the side bar' }).click();
-    await expect(page.getByRole('complementary', { name: 'Side bar' })).toHaveCount(0);
+    await expect(nav(page).getByRole('button', { name: 'Collapse the navigation' })).toBeVisible();
   });
 
   test('LA-EXP-UC06-FL01-T read a flow step by step: its table, a step unfolded, the graph, a requirement traced to its step', async ({ page }) => {

@@ -5,7 +5,7 @@ import { withChat } from './chat';
 // What axe can't check, walked with the keyboard alone (LA-PAT-APP-UX-R10):
 // LA-V61-R41-T01 every control on the main pages is reached by Tab and Shift+Tab, with no trap;
 // LA-V61-R41-T02 the main tasks by keyboard: open a record, switch views, re-center the graph, fold
-// rows, open and close the side bar, pick a theme, and the announcer saying what changed;
+// rows, collapse and show the wiki card, pick a theme, and the announcer saying what changed;
 // LA-V61-R42-T01 focus after navigation, and back on the opener when a dialog or a sheet closes;
 // and changing a record by keyboard: Edit, the form's first field, Save, and focus back on Edit.
 
@@ -196,7 +196,7 @@ test.describe('keyboard', () => {
     await page.keyboard.press('Control+2');
     await expect(page.locator('.focus-stage[data-stage="erd"] .erd-flow[data-framed]')).toBeVisible();
     const before = path();
-    await page.locator('.page-bar .side-bar-toggle').focus();
+    await page.locator('.page-bar .wiki-panel-toggle').focus();
     await page.keyboard.press('ArrowRight');
     await expect.poll(path).not.toBe(before);
     // Quick find keeps its arrows: Down moves through its results, the focus stays.
@@ -265,28 +265,6 @@ test.describe('keyboard', () => {
     await expect(page.locator(':focus')).toHaveAttribute('aria-expanded', before === 'true' ? 'false' : 'true');
     await page.keyboard.press('Space');
     await expect(page.locator(':focus')).toHaveAttribute('aria-expanded', before ?? 'false');
-  });
-
-  test('LA-V61-R41-T02 open and close the side bar, and focus it', async ({ page }) => {
-    // On the Trace stage the side bar starts hidden.
-    await open(page, `${RECORD}?stage=trace`, '.focus-stage .trace-page');
-    const toggle = page.locator('.page-bar .side-bar-toggle');
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await tabUntil(page, (el) => el.classList.contains('side-bar-toggle'), 'the side bar toggle');
-    await page.keyboard.press('Enter');
-    await expect(announcer(page)).toHaveText('Side bar shown');
-    await expect(page.locator('.stage-layout > .side-bar-column')).toBeVisible();
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await toggle.focus();
-    await page.keyboard.press('Enter');
-    await test.step('LA-V61-R43-T01 hiding the side bar is announced', () => expect(announcer(page)).toHaveText('Side bar hidden'));
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    // LA-V61-R42-T01: the toggle keeps focus when it hides the side bar, so the next Enter brings it back.
-    expect((await focused(page)).classes).toContain('side-bar-toggle');
-    await page.keyboard.press('Enter');
-    await expect(announcer(page)).toHaveText('Side bar shown');
-    await page.keyboard.press('Control+Shift+i');
-    await expect.poll(async () => page.evaluate(() => !!document.activeElement?.closest('#side-bar'))).toBe(true);
   });
 
   test('LA-V99-R02-T01 the chat by keyboard: focus its message box, send, stop, and walk the messages', async ({ page }) => {
@@ -361,7 +339,7 @@ test.describe('keyboard', () => {
 
   test('LA-V61-R42-T01 the palette and the shortcuts sheet give focus back when they close', async ({ page }) => {
     await open(page, RECORD);
-    await tabUntil(page, (el) => el.classList.contains('side-bar-toggle'), 'the side bar toggle');
+    await tabUntil(page, (el) => el.classList.contains('wiki-panel-toggle'), 'the wiki card toggle');
     for (const [keys, box] of [['Control+Shift+p', '.quick-open input'], ['Control+/', '.dialog-search']]) {
       await page.keyboard.press(keys);
       await page.locator(box).waitFor();
@@ -373,7 +351,7 @@ test.describe('keyboard', () => {
       }
       await page.keyboard.press('Escape');
       await expect(page.locator(box)).toHaveCount(0);
-      expect((await focused(page)).classes, `${keys}: focus back on the opener`).toContain('side-bar-toggle');
+      expect((await focused(page)).classes, `${keys}: focus back on the opener`).toContain('wiki-panel-toggle');
     }
   });
 });
@@ -390,15 +368,6 @@ test.describe('keyboard on a phone', () => {
     expect(await page.evaluate(() => !!document.activeElement?.closest('nav#nav, .sheet, [role="dialog"]')), 'focus moves into the drawer').toBe(true);
     await page.keyboard.press('Escape');
     await expect(opener).toBeFocused();
-    const sideBar = page.getByRole('button', { name: 'Show the side bar' });
-    if (await sideBar.count()) {
-      await sideBar.first().focus();
-      await page.keyboard.press('Enter');
-      await page.locator('.side-bar-drawer').waitFor();
-      await page.keyboard.press('Escape');
-      await expect(page.locator('.side-bar-drawer')).toHaveCount(0);
-      await expect(page.getByRole('button', { name: 'Show the side bar' }).first()).toBeFocused();
-    }
     // The wiki card's sheet, from the page bar's wiki button.
     const card = page.getByRole('button', { name: 'Show the wiki card' });
     await card.focus();
