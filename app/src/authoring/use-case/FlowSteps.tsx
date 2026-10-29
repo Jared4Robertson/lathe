@@ -72,7 +72,7 @@ export function FlowSteps({ index, flow, paths }: { index: SpecIndex; flow: stri
         <thead>
           <tr>
             <th scope="col">Step</th>
-            <th scope="col">What happens</th>
+            <th scope="col" className="step-what">What happens</th>
             {COLUMNS.map((c) => <th key={c.heading} scope="col">{c.heading}</th>)}
           </tr>
         </thead>
@@ -93,7 +93,7 @@ export function FlowSteps({ index, flow, paths }: { index: SpecIndex; flow: stri
                       <RecordLink index={index} id={id} showTitle={false} />
                     </span>
                   </th>
-                  <td>
+                  <td className="step-what">
                     {step.step.title} <ProblemBadge problems={index.problemsFor.get(id) ?? []} />
                   </td>
                   {linked.map((c) => <td key={c.heading}><IdLinks index={index} ids={c.ids} label={`${id} ${c.heading.toLowerCase()}`} /></td>)}

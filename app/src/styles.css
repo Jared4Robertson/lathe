@@ -666,6 +666,10 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 
 /* ---------- Flow steps ---------- */
 .data-table.flow-steps { width: 100%; }
+/* Every column keeps room for its words: in a narrow wiki card the table scrolls sideways in its .table-scroll rather than squeezing "What happens" to a word per line (LA-PAT-APP-UX-R18, as .trace-requirements does). */
+.data-table.flow-steps { min-width: 56rem; }
+.flow-steps .step-what { width: 20rem; }
+.flow-steps .step-ids > li { white-space: nowrap; }
 .flow-steps .step-head { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .flow-steps .step-order { font: 600 0.8rem var(--mono); min-width: 1.6em; text-align: right; color: var(--muted); }
 .flow-steps .step-ids { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 8px; }
