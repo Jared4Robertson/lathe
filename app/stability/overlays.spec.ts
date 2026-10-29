@@ -59,4 +59,30 @@ test.describe('overlays', () => {
     });
     expectStable(r);
   });
+
+  // Nothing replaces the stage (LA-PAT-APP-UX-R20): a tool opens over it, and the stage, the nav and the tab panel stay put.
+  test('LA-PAT-APP-UX-R20-T02 the Checks panel and the Appearance popover open over the stage', async ({ page }) => {
+    await openPage(page, RECORD);
+    const r = await step(page, 'overlays', 'Checks panel: open', { keys: ['nav#nav', '.stage-layout > .page-bar', '.header-strip', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage'] }, async () => {
+      await page.locator('nav#nav').getByRole('link', { name: /^Checks/ }).click();
+      await page.locator('.tool-panel.checks-panel .problems').first().waitFor();
+      await page.waitForTimeout(400);
+    });
+    expectStable(r);
+    const pick = await step(page, 'overlays', 'Checks panel: select a problem', { keys: ['nav#nav', '.stage-layout > .page-bar', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage', '.header-strip'] }, async () => {
+      await page.locator('.tool-panel.checks-panel li.problem a.row-link').first().click();
+      await page.locator('.tool-panel.checks-panel li.problem.is-current').first().waitFor();
+      await page.waitForTimeout(400);
+    });
+    expectStable(pick);
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.tool-panel')).toHaveCount(0);
+    const pop = await step(page, 'overlays', 'Appearance popover: open', { keys: ['nav#nav', '.stage-layout > .page-bar', '.header-strip', '.tool-panel'], allow: ['.wiki-panel', '.focus-stage'] }, async () => {
+      await page.locator('nav#nav').getByRole('link', { name: 'Appearance' }).click();
+      await page.locator('.tool-panel.appearance-popover .theme-rows').waitFor();
+      await page.waitForTimeout(400);
+    });
+    expectStable(pop);
+    await page.keyboard.press('Escape');
+  });
 });
