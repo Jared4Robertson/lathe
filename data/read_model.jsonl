@@ -2,7 +2,11 @@
 {"id":"LA-AUT-RM02","title":"Record","domain_id":"LA-AUT","description":"One record as `lathe show` answers it: its row, parts, children and links."}
 {"id":"LA-AUT-RM11","title":"Use case","domain_id":"LA-AUT","description":"One use case whole, as the Use case aggregate holds it: its row and actors, its UC requirements and their tests, and its flows with their steps, the links each step starts and their tests."}
 {"id":"LA-AUT-RM21","title":"Product","domain_id":"LA-AUT","description":"One product whole, as the Product aggregate holds it: its row and roles, its product kinds with their fields, its product relations, its open questions with what they are about, and its interfaces."}
+{"id":"LA-AUT-RM22","title":"Pattern","domain_id":"LA-AUT","description":"One pattern whole, as the Pattern aggregate holds it: its row, its settings in order, its rules, and their tests per following domain."}
+{"id":"LA-AUT-RM23","title":"Standard","domain_id":"LA-AUT","description":"One standard whole, as the Standard aggregate holds it: its row, its rules, and their tests."}
+{"id":"LA-AUT-RM24","title":"Domain","domain_id":"LA-AUT","description":"One domain whole, as the Domain aggregate holds it: its row, capabilities with the outcomes they serve, terms, domain services with their services and tests, and repositories with the aggregates they persist."}
 {"id":"LA-AUT-RM36","title":"Business outcome","domain_id":"LA-AUT","description":"One business outcome whole: its statement, measure and target, and the tests and records that measure it."}
+{"id":"LA-AUT-RM37","title":"Test data set","domain_id":"LA-AUT","description":"One test data set whole, as the Test data set aggregate holds it: its environment, accounts and records, how to prepare and reset it, and the file that builds it."}
 {"id":"LA-AUT-RM39","title":"Extension record","domain_id":"LA-AUT","description":"One record of a product's own kind whole: its row, the links it starts and the packages it uses."}
 {"id":"LA-AUT-RM40","title":"Entry point","domain_id":"LA-AUT","description":"One entry point whole: its row, the packages it uses and the standard rules it meets."}
 {"id":"LA-AUT-RM41","title":"Tooling","domain_id":"LA-AUT","description":"One tooling record whole: its row, the packages it uses and the standard rules it meets."}

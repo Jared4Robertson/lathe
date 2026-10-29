@@ -12,6 +12,15 @@
 {"id":"LA-AUT-MOD24","title":"business-outcome/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/business-outcome/commands/index.ts"}
 {"id":"LA-AUT-MOD25","title":"entry-point/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/entry-point/commands/index.ts"}
 {"id":"LA-AUT-MOD26","title":"tooling/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/tooling/commands/index.ts"}
+{"id":"LA-AUT-MOD30","title":"domain/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/domain/model.ts"}
+{"id":"LA-AUT-MOD31","title":"domain/rules.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/domain/rules.ts"}
+{"id":"LA-AUT-MOD32","title":"domain/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/domain/commands/index.ts"}
+{"id":"LA-AUT-MOD33","title":"test-data-set/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/test-data-set/model.ts"}
+{"id":"LA-AUT-MOD34","title":"test-data-set/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/test-data-set/commands/index.ts"}
+{"id":"LA-AUT-MOD35","title":"pattern/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/pattern/model.ts"}
+{"id":"LA-AUT-MOD36","title":"pattern/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/pattern/commands/index.ts"}
+{"id":"LA-AUT-MOD37","title":"standard/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/standard/model.ts"}
+{"id":"LA-AUT-MOD38","title":"standard/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/standard/commands/index.ts"}
 {"id":"LA-EXP-MOD01","title":"elk.ts","domain_id":"LA-EXP","file":"app/src/elk.ts"}
 {"id":"LA-EXP-MOD02","title":"model/events.ts","domain_id":"LA-EXP","file":"app/src/specs/events.ts"}
 {"id":"LA-EXP-MOD03","title":"plural.ts","domain_id":"LA-EXP","file":"app/src/plural.ts"}

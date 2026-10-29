@@ -3,6 +3,7 @@
 import { extensionRecordRules } from './authoring/extension-record/rules.ts';
 import { productRules } from './authoring/product/rules.ts';
 import { useCaseRules } from './authoring/use-case/rules.ts';
+import { domainRules } from './authoring/domain/rules.ts';
 import type { AggregateRules } from './platform/data/rules.ts';
 
-export const AGGREGATE_RULES: readonly AggregateRules[] = [useCaseRules, productRules, extensionRecordRules];
+export const AGGREGATE_RULES: readonly AggregateRules[] = [useCaseRules, domainRules, productRules, extensionRecordRules];
