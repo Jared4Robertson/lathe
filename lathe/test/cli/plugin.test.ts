@@ -70,7 +70,7 @@ describe('the plugin', () => {
     for (const script of scripts) expect(existsSync(path.join(pluginDir, script))).toBe(true);
   });
 
-  it('LA-AUT-UC01-R08-T01 no skill tells the Agent to write spec files by hand', () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R06-T01 no skill tells the Agent to write spec files by hand', () => {
     for (const skill of SKILLS) {
       const text = readFileSync(path.join(pluginDir, 'skills', skill, 'SKILL.md'), 'utf8');
       expect(text, skill).not.toMatch(/specs\/|```markdown|^---\nid:|YAML|header|FORMAT\.md|metaExtensions|kinds\.csv|relations\.csv|lathe format|\b(?!REFERENCE\.md\b)[\w-]+\.md\b/m);
@@ -78,7 +78,7 @@ describe('the plugin', () => {
     }
   });
 
-  it("LA-AUT-UC01-R08-T02 every example in the skills names real tables, columns and relations, with values of the columns' types", async () => {
+  it("LA-PAT-AGGREGATE-COMMANDS-R06-T01 every example in the skills names real tables, columns and relations, with values of the columns' types", async () => {
     for (const skill of SKILLS) {
       const writes = examples(readFileSync(path.join(pluginDir, 'skills', skill, 'SKILL.md'), 'utf8'));
       // The product's own kinds and relations an example declares are part of the schema its other examples use.
