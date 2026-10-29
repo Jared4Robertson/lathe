@@ -269,24 +269,22 @@
 {"id":"LA-CHK-UC05-FL03-S04","title":"They run lathe check: Lathe's checks run first, then the product's, whose problems carry its row's name and concern only its product's records","flow_id":"LA-CHK-UC05-FL03","path":"main","position":3}
 {"id":"LA-CHK-UC05-FL03-S05","title":"A product check whose query fails is an error naming the check, and the other checks still run","flow_id":"LA-CHK-UC05-FL03","path":"refused","position":2}
 {"id":"LA-CHK-UC05-FL03-S06","title":"A checks key in lathe.config.json is refused as an unknown setting","flow_id":"LA-CHK-UC05-FL03","path":"refused","position":3}
-{"id":"LA-CHK-UC05-FL03-S07","title":"They fix what the new check finds and run lathe check again until it is clean","flow_id":"LA-CHK-UC05-FL03","path":"main","position":4}
 {"id":"LA-CHK-UC05-FL03-S08","title":"They change their own check row with lathe set, and the next check runs it as it is now; Lathe's own rows are refused","flow_id":"LA-CHK-UC05-FL03","path":"change","position":1}
 {"id":"LA-CHK-UC05-FL03-S09","title":"They remove their own check row with lathe remove, and it no longer runs","flow_id":"LA-CHK-UC05-FL03","path":"change","position":2}
 {"id":"LA-CHK-UC05-FL04-S01","title":"Through the MCP tools, the Owner decides a rule belongs to their product, not to Lathe","flow_id":"LA-CHK-UC05-FL04","path":"main","position":1}
 {"id":"LA-CHK-UC05-FL04-S02","title":"The Agent adds it as a check row with the product's product_id, with add","flow_id":"LA-CHK-UC05-FL04","path":"main","position":2}
 {"id":"LA-CHK-UC05-FL04-S03","title":"The check tool runs Lathe's checks first, then the product's, whose problems carry its row's name and concern only its product's records","flow_id":"LA-CHK-UC05-FL04","path":"main","position":3}
-{"id":"LA-CHK-UC05-FL04-S04","title":"The Agent fixes what the new check finds and calls the check tool again until it is clean","flow_id":"LA-CHK-UC05-FL04","path":"main","position":4}
 {"id":"LA-CHK-UC05-FL04-S05","title":"The store refuses a check named like one of Lathe's, naming lathe/data/check.jsonl","flow_id":"LA-CHK-UC05-FL04","path":"refused","position":1}
 {"id":"LA-CHK-UC05-FL04-S06","title":"The check tool reports a product check whose query fails as an error naming the check, and the other checks still run","flow_id":"LA-CHK-UC05-FL04","path":"refused","position":2}
 {"id":"LA-CHK-UC05-FL04-S07","title":"The check tool refuses a checks key in lathe.config.json as an unknown setting","flow_id":"LA-CHK-UC05-FL04","path":"refused","position":3}
 {"id":"LA-CHK-UC06-FL03-S01","title":"The Owner sets the product's children and entities limits, or leaves the defaults of 15 and 7","flow_id":"LA-CHK-UC06-FL03","path":"main","position":1}
 {"id":"LA-CHK-UC06-FL03-S02","title":"Lathe check warns of each record with more children of one kind than the limit, counting a flow's steps per path and requirements and rules per group, and of each aggregate with more entities than its limit","flow_id":"LA-CHK-UC06-FL03","path":"main","position":2}
 {"id":"LA-CHK-UC06-FL03-S03","title":"It warns of each capability or group with one child","flow_id":"LA-CHK-UC06-FL03","path":"main","position":3}
-{"id":"LA-CHK-UC06-FL03-S04","title":"The Owner or an Agent adds a level or merges one, and checks again","flow_id":"LA-CHK-UC06-FL03","path":"main","position":4}
+{"id":"LA-CHK-UC06-FL03-S04","title":"The Owner or an Agent adds a capability as a level between the children, and checks again","flow_id":"LA-CHK-UC06-FL03","path":"main","position":4}
 {"id":"LA-CHK-UC06-FL04-S01","title":"The Agent sets the product's children and entities limits with add, or leaves the defaults of 15 and 7","flow_id":"LA-CHK-UC06-FL04","path":"main","position":1}
 {"id":"LA-CHK-UC06-FL04-S02","title":"The check tool warns of each record with more children of one kind than the limit, counting a flow's steps per path and requirements and rules per group, and of each aggregate with more entities than its limit","flow_id":"LA-CHK-UC06-FL04","path":"main","position":2}
 {"id":"LA-CHK-UC06-FL04-S03","title":"The check tool warns of each capability or group with one child","flow_id":"LA-CHK-UC06-FL04","path":"main","position":3}
-{"id":"LA-CHK-UC06-FL04-S04","title":"The Agent adds a level or merges one, and calls the check tool again","flow_id":"LA-CHK-UC06-FL04","path":"main","position":4}
+{"id":"LA-CHK-UC06-FL04-S04","title":"The Agent adds a capability as a level between the children with its tool, and calls the check tool again","flow_id":"LA-CHK-UC06-FL04","path":"main","position":4}
 {"id":"LA-CHK-UC07-FL01-S01","title":"While an Agent writes records, the Owner keeps the Checks panel open: its problems, errors first, grouped by check, and the workspace's below","flow_id":"LA-CHK-UC07-FL01","path":"main","position":1}
 {"id":"LA-CHK-UC07-FL01-S02","title":"Each time a data file changes, the page reloads and shows the problems as they are now","flow_id":"LA-CHK-UC07-FL01","path":"main","position":2}
 {"id":"LA-CHK-UC07-FL01-S03","title":"They open a problem's record to see it and its problems, and go back","flow_id":"LA-CHK-UC07-FL01","path":"main","position":3}
@@ -297,7 +295,7 @@
 {"id":"LA-CHK-UC07-FL02-S04","title":"The Owner follows a check's code to the check's page in the reference","flow_id":"LA-CHK-UC07-FL02","path":"main","position":4}
 {"id":"LA-CHK-UC07-FL02-S05","title":"The Dock badge shows the error count of the product in front","flow_id":"LA-CHK-UC07-FL02","path":"main","position":5}
 {"id":"LA-CHK-UC08-FL04-S01","title":"Claude Code loads Lathe's plugin, which declares the guard hook on Write, Edit, MultiEdit and NotebookEdit","flow_id":"LA-CHK-UC08-FL04","path":"main","position":1}
-{"id":"LA-CHK-UC08-FL04-S02","title":"The Agent changes records through the MCP tools, which validate each write in one transaction","flow_id":"LA-CHK-UC08-FL04","path":"main","position":2}
+{"id":"LA-CHK-UC08-FL04-S02","title":"The Agent adds a flow step with its tool, which holds the use case to its rules in one transaction","flow_id":"LA-CHK-UC08-FL04","path":"main","position":2}
 {"id":"LA-CHK-UC08-FL04-S03","title":"A hand edit of a data file is refused before it happens, pointing at the tools","flow_id":"LA-CHK-UC08-FL04","path":"refused","position":1}
 {"id":"LA-CHK-UC08-FL04-S04","title":"Every other edit goes through silently","flow_id":"LA-CHK-UC08-FL04","path":"main","position":3}
 {"id":"LA-EXP-UC01-FL01-S01","title":"The reader sees the current space's domains in the nav","flow_id":"LA-EXP-UC01-FL01","path":"main","position":1}
@@ -449,7 +447,7 @@
 {"id":"LA-PLT-UC01-FL06-S03","title":"After a write, the script loads again within the budgets","flow_id":"LA-PLT-UC01-FL06","path":"main","position":2}
 {"id":"LA-PLT-UC02-FL03-S01","title":"The Owner installs the package and runs lathe init with the product's name and prefix, and names the test files in lathe.config.json when they differ from the common names","flow_id":"LA-PLT-UC02-FL03","path":"main","position":1}
 {"id":"LA-PLT-UC02-FL03-S02","title":"They set up the merge driver once per clone, as the README says, so git merges the data files through it","flow_id":"LA-PLT-UC02-FL03","path":"main","position":2}
-{"id":"LA-PLT-UC02-FL03-S03","title":"They add the first domain and records with lathe add, in the data folder the config names, with any kinds of the product's own","flow_id":"LA-PLT-UC02-FL03","path":"main","position":3}
+{"id":"LA-PLT-UC02-FL03-S03","title":"They add the first domain with its own command, in the data folder the config names, then the product's other records","flow_id":"LA-PLT-UC02-FL03","path":"main","position":3}
 {"id":"LA-PLT-UC02-FL03-S04","title":"They run lathe serve to browse and edit the spec, with no build tools in the repo","flow_id":"LA-PLT-UC02-FL03","path":"main","position":4}
 {"id":"LA-PLT-UC02-FL03-S05","title":"They stop lathe serve from the terminal, and it closes the database before it ends","flow_id":"LA-PLT-UC02-FL03","path":"main","position":5}
 {"id":"LA-PLT-UC02-FL03-S06","title":"The Owner lists the other products in the workspace's lathe.config.json, and lathe check checks each in its own folder","flow_id":"LA-PLT-UC02-FL03","path":"workspace","position":1}
