@@ -303,15 +303,15 @@ test.describe('graph', () => {
     await page.locator('.erd-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
     const keys = ['.stage-layout > .page-bar', '.header-strip', '.focus-stage .erd-tools', ERD_CANVAS, '.focus-stage .erd-key'];
-    // An aggregate's boundary holds its entities: its head is where the boundary itself takes a click.
-    const box = page.locator('.erd-flow .react-flow__node .erd-aggregate .erd-box-head').first();
+    // On the product's one map, the boxes in the domain's scope: an aggregate's boundary holds its entities, so its head is where the boundary itself takes a click.
+    const box = page.locator('.erd-flow .react-flow__node:not([aria-hidden]) .erd-aggregate .erd-box-head').first();
     const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.side-bar'] }, async () => {
       await box.click();
       await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
       await page.locator('.erd-flow .react-flow__node').first().waitFor();
     });
     expectStable(r);
-    const entity = page.locator('.erd-flow .react-flow__node:not(:has(.is-focus))').first();
+    const entity = page.locator('.erd-flow .react-flow__node:not([aria-hidden]):not(:has(.is-focus)):has(.erd-entity)').first();
     const before = new URL(page.url()).pathname;
     const e = await step(page, 'graph', 'ERD: aggregate to entity', { keys, allow: ['.side-bar'] }, async () => {
       await entity.click();
