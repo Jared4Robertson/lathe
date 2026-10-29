@@ -518,14 +518,10 @@ a.button-primary.button-primary { color: var(--on-mark); }
 .nav-badge.quiet { margin-left: auto; }
 .nav-foot { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin: 0 -10px; padding-top: 8px; border-top: 1px solid var(--rule); }
 .nav-source { margin: 0; padding: 0 18px; font-size: 0.75rem; color: var(--muted); }
-.quick-find { position: relative; display: flex; align-items: center; gap: 6px; padding: 0 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--muted); }
-.quick-find:focus-within { border-color: var(--steel); box-shadow: 0 0 0 1px var(--steel); }
-.quick-find input { flex: 1; min-width: 0; min-height: 32px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 0.88rem; outline: none; }
-.quick-find-results { position: absolute; z-index: 40; top: calc(100% + 4px); left: 0; width: max(100%, 300px); max-width: calc(100vw - 72px); max-height: 60dvh; overflow-y: auto; margin: 0; padding: 4px; list-style: none; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 8px 24px var(--shadow); }
-.quick-find-results li { display: grid; grid-template-columns: minmax(0, 1fr); gap: 1px; padding: var(--item-pad-y) 8px; border-radius: 6px; cursor: pointer; }
-.quick-find-results li.active { background: var(--steel-bg); }
-.qf-title { color: var(--ink); font-size: 0.88rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.qf-meta { color: var(--muted); font-size: 0.75rem; }
+.quick-find-button { display: flex; align-items: center; gap: 6px; min-height: 34px; padding: 0 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); color: var(--muted); font: inherit; font-size: 0.88rem; text-align: left; cursor: pointer; }
+.quick-find-button:hover { border-color: var(--steel); }
+.quick-find-button:focus-visible { outline: 2px solid var(--steel); outline-offset: 0; }
+.quick-find-label { flex: 1; min-width: 0; }
 /* The rail: the nav collapsed to icons. */
 .rail { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; justify-items: center; }
 .menu .rail-item { position: relative; display: grid; place-items: center; width: 40px; height: 40px; padding: 0; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
@@ -599,6 +595,19 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .palette-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
 .palette-list li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: var(--item-pad-y) 8px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
 .palette-list li.active { background: var(--steel-bg); color: var(--steel); }
+/* Quick open (QuickOpen.tsx): quick find and the command palette, one box in the upper middle over a lightly dimmed
+   stage, so a highlighted record's preview shows behind it. Each record names its kind, ID and title, and its trail. */
+.quick-open-backdrop { background: color-mix(in srgb, var(--backdrop) 45%, transparent); }
+.dialog.quick-open { max-height: min(560px, 70dvh); gap: 8px; padding: 8px; }
+.quick-open-row { flex: none; display: flex; align-items: center; gap: 4px; }
+.quick-open-box { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; padding: 0 10px; border: 1px solid var(--steel); border-radius: 6px; background: var(--paper); color: var(--muted); }
+.quick-open-box input { flex: 1; min-width: 0; min-height: 36px; border: 0; background: none; color: var(--ink); font: inherit; font-size: 0.95rem; outline: none; }
+.palette-list li.quick-open-record { display: grid; grid-template-columns: minmax(0, 1fr); justify-content: stretch; gap: 2px; }
+.quick-open-line { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.quick-open-line .kind-badge { flex: none; font-size: 0.68rem; }
+.quick-open-id { flex: none; font-size: 0.78rem; color: var(--muted); }
+.quick-open-trail { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 0.75rem; color: var(--muted); }
+.palette-list li.active :is(.quick-open-id, .quick-open-trail) { color: inherit; }
 .key-pending { position: fixed; right: 16px; bottom: 16px; z-index: 130; padding: 4px 10px; font: 500 0.85rem var(--mono); background: var(--ink); color: var(--paper); border-radius: 6px; }
 @media (max-width: 900px) {
     .focus-layout, .focus-layout.with-side-bar { grid-template-columns: minmax(0, 1fr); }
@@ -687,7 +696,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .menu .nav-records .nav-row:hover { color: var(--ink); }
 .menu .nav-groups { margin-top: 2px; }
 /* The checks page's space filter. */
-/* Quick find: the current space first, then everything else under a divider. */
 /* Tooltips: a name and the keys, after a short hover or on keyboard focus. */
 .tooltip { position: fixed; z-index: 200; display: inline-flex; align-items: center; gap: 8px; max-width: 280px; padding: 4px 8px; border-radius: 6px; background: var(--ink); color: var(--paper); font: 500 0.78rem/1.3 var(--body); pointer-events: none; white-space: nowrap; box-shadow: 0 4px 12px var(--shadow-strong); }
 .tooltip-bottom { transform: translateX(-50%); }
@@ -705,7 +713,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-UX-R01).
    Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
    The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
-.button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-filters > summary, .graph-legend summary {
+.button, .graph-depth button, .palette-list li, .graph-filters > summary, .graph-legend summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
 /* A row that leads to one record is one link (LA-PAT-APP-UX-R05): its record link, marked row-link, stretches over
@@ -720,10 +728,10 @@ a.row-link.row-link:focus-visible { outline: none; }
 .row-link:focus-visible::after { outline: 2px solid var(--steel); outline-offset: -1px; }
 @media (prefers-reduced-motion: reduce) { .row-link::after { transition: none; } }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
-.quick-find-results li:not(.active):hover, .palette-list li:not(.active):hover { background: var(--hover-bg); }
+.palette-list li:not(.active):hover { background: var(--hover-bg); }
 .graph-filters > summary:hover, .graph-legend summary:hover { color: var(--steel); }
 @media (prefers-reduced-motion: reduce) {
-  .button, .graph-depth button, .quick-find-results li, .palette-list li, .graph-filters > summary, .graph-legend summary { transition: none; }
+  .button, .graph-depth button, .palette-list li, .graph-filters > summary, .graph-legend summary { transition: none; }
 }
 
 /* The workbench (LA-PAT-APP-UX-R02): each panel is a rounded box on the shell; the gap between two
@@ -1121,21 +1129,22 @@ a.row-link.row-link:focus-visible { outline: none; }
 .pages-keep { flex: none; min-height: var(--touch-target); }
 .pages-hint { margin: 0; padding: 0 16px 12px; font-size: 0.8rem; }
 
-/* Quick find, full screen: the box at the top, the results under it, Close beside it. */
-.sheet.find-sheet { position: fixed; inset: 0; z-index: 90; display: flex; flex-direction: column; padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) env(safe-area-inset-bottom) calc(8px + env(safe-area-inset-left)); background: var(--sheet); }
-.quick-find-inline { flex: 1; min-height: 0; display: flex; flex-direction: column; gap: 8px; }
-.quick-find-row { flex: none; display: flex; align-items: center; gap: 4px; }
-.quick-find-row > .quick-find { flex: 1; min-width: 0; }
-.quick-find-results.is-inline { position: static; flex: 1; min-height: 0; width: auto; max-height: none; border: 0; border-radius: 0; box-shadow: none; padding: 0; overflow-y: auto; }
+/* A sheet's Close button: quick find's on a phone. */
 .sheet-close { flex: none; min-height: var(--touch-target); font-weight: 600; }
 
 /* The command palette and the shortcuts sheet fill the screen on a phone. */
 @media (max-width: 900px) {
   .dialog-backdrop { padding: 0; place-items: stretch; }
   .dialog { width: 100%; max-height: none; height: 100dvh; border: 0; border-radius: 0; padding: calc(12px + env(safe-area-inset-top)) calc(12px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(12px + env(safe-area-inset-left)); }
+  /* Quick open is a full-width sheet at the top, the stage still showing under it. */
+  .quick-open-backdrop { place-items: start stretch; }
+  .dialog.quick-open { height: auto; max-height: 75dvh; border-bottom: 1px solid var(--rule); border-radius: 0 0 12px 12px; padding: calc(8px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) 8px calc(8px + env(safe-area-inset-left)); }
+  /* A long title wraps under its chip and ID rather than being cut short. */
+  .quick-open-line { flex-wrap: wrap; row-gap: 2px; }
+  .quick-open-line .palette-title { flex-basis: 100%; white-space: normal; }
   /* Readable on a phone: body text a step up, and boxes at 16 px so iOS never zooms in on focus. */
   body { font-size: max(var(--text-size), 16px); }
-  :is(.quick-find, .dialog, .long-list-tools, .graph-filters, .appearance-page) :is(input, select, textarea), .dialog-search { font-size: 16px; }
+  :is(.dialog, .long-list-tools, .graph-filters, .appearance-page) :is(input, select, textarea), .dialog-search { font-size: 16px; }
 }
 
 /* A canvas by touch: the selected node is outlined, and a card at the bottom names it; a tap on the card opens it. */
@@ -1149,7 +1158,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .tap-text strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font: 700 0.92rem var(--body); }
 
 /* Long IDs and code never widen the page: IDs wrap at any character, code blocks and tables scroll in their own box. */
-.record-id, .tab-id, .qf-meta code { overflow-wrap: anywhere; }
+.record-id, .tab-id { overflow-wrap: anywhere; }
 .markdown pre, .spec-body pre { max-width: 100%; overflow-x: auto; }
 
 /* ---------- Everything works by touch (LA-PAT-APP-UX-R07) ----------
@@ -1161,8 +1170,8 @@ a.row-link.row-link:focus-visible { outline: none; }
   /* A gap between panels keeps its look, and its target reaches over the panels' edges. */
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
-    .graph-depth button, .graph-filters > summary, .graph-legend summary, .trace-filter, .quick-find-results li,
-    .palette-list li, .tab, .long-list-tools input, .quick-find input, .dialog-search, .segment, .file-button, .crumb-more-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
+    .graph-depth button, .graph-filters > summary, .graph-legend summary, .trace-filter, .quick-find-button,
+    .palette-list li, .tab, .long-list-tools input, .quick-open-box input, .dialog-search, .segment, .file-button, .crumb-more-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }
   :is(.tree-toggle, .tab-close, .color-swatch) { position: relative; }
@@ -1178,7 +1187,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* Scroll boxes keep room for their scrollbar (LA-PAT-APP-UX-R08), so a classic scrollbar (Windows, a Mac with a
    mouse) that comes and goes with the content never narrows what is inside. The space rail hides its scrollbar
    instead: it is too narrow to give one room, and it still scrolls by wheel, touch and keyboard. */
-.nav-scroll, .quick-find-results, .quick-find-results.is-inline, .pane-scroll, .side-bar.record-side, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
+.nav-scroll, .pane-scroll, .side-bar.record-side, .shortcut-groups, .palette-list, .pages-list { scrollbar-gutter: stable; }
 .space-rail { scrollbar-width: none; }
 .space-rail::-webkit-scrollbar { display: none; }
 

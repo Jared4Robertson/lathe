@@ -50,7 +50,7 @@
 {"id":"LA-UI54","title":"DomainPatterns","file":"app/src/specs/PatternParts.tsx","description":"DomainPatterns, PatternSections, PatternRuleSections, RuleMarks"}
 {"id":"LA-UI56","title":"linkLabel","file":"app/src/specs/labels.ts","description":"linkLabel, relationLabelOf, groupByLabel"}
 {"id":"LA-UI61","title":"App shell","file":"app/src/App.tsx"}
-{"id":"LA-UI62","title":"Command palette and sheet","file":"app/src/shell/commands.tsx","description":"The command dispatcher, the palette and the shortcuts sheet."}
+{"id":"LA-UI62","title":"Command dispatcher and shortcuts sheet","file":"app/src/shell/commands.tsx","description":"The command dispatcher, the dialog and keys every overlay shares, and the shortcuts sheet."}
 {"id":"LA-UI63","title":"Tooltip","file":"app/src/shell/Tooltip.tsx"}
 {"id":"LA-UI64","title":"Resize handle","file":"app/src/components/ResizeHandle.tsx"}
 {"id":"LA-UI65","title":"Page bar","file":"app/src/views/PageBar.tsx","description":"The top of the tab panel: the tabs, the stage switch, and the wiki card and side bar toggles."}
@@ -77,5 +77,5 @@
 {"id":"LA-UI95","title":"Focus page","file":"app/src/views/FocusPage.tsx","description":"The stage and the panels floating over it, for one focus."}
 {"id":"LA-UI96","title":"Side bar","file":"app/src/views/SideBar.tsx"}
 {"id":"LA-UI97","title":"Nav","file":"app/src/shell/Nav.tsx"}
-{"id":"LA-UI98","title":"Quick find","file":"app/src/shell/QuickFind.tsx"}
+{"id":"LA-UI98","title":"Quick open","file":"app/src/shell/QuickOpen.tsx","description":"Quick find and the command palette in one overlay, with the stage's preview of the highlighted record."}
 {"id":"LA-UI99","title":"Tree list","file":"app/src/components/TreeList.tsx"}

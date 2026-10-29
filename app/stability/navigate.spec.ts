@@ -147,10 +147,10 @@ test.describe('navigate', () => {
   test('LA-V61-R28-T01 through quick find', async ({ page }) => {
     await openPage(page, RECORD);
     await page.keyboard.press('Control+k');
-    const find = page.locator('.quick-find input');
+    const find = page.locator('.quick-open input');
     await expect(find).toBeFocused();
     await find.fill('LA-EXP-UC07');
-    await page.locator('.quick-find-results li').first().waitFor();
+    await page.locator('.quick-open .palette-list li').first().waitFor();
     const r = await step(page, 'navigate', 'quick find', { keys: KEYS, allow: CONTENT, resizes: TITLE }, async () => {
       await page.keyboard.press('Enter');
       await page.waitForURL(/LA-EXP-UC07/);

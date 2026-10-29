@@ -9,10 +9,9 @@ import { Link } from '../router';
 import { parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState, type Stage } from '../specs/data';
 import { branchOf, domainFolders, productFolders, sharedKey, type Folder, type StageFolders } from '../specs/folders';
 import { recordText, StageMark } from '../specs/parts';
-import { useShortcutHint } from './commands';
+import { useRunCommand, useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
 import { isBool, usePref } from './prefs';
-import { QuickFind } from './QuickFind';
 import { SpaceMark, useSpaces, type Space } from './spaces';
 import { Tooltip } from './Tooltip';
 import { trapTab } from './useNarrow';
@@ -21,7 +20,7 @@ import { addressOf, checksPathOf, HOME_PATH } from '../views/address';
 // The side navigation. At its far left, when the workspace shows two or more products, is the space
 // rail: one square icon per product (each product is its own space); with one product there is no
 // rail, the panel takes its width, and the product's name and icon head the panel. The panel is all
-// the current space's: a quick find of
+// the current space's: a Go to button that opens quick find (QuickOpen.tsx) on
 // the space, its overview, its own stages (its business outcomes and what it shares, in Shared), its domains (each
 // folded into its stages and their folders) and its groups, then Tools (the space's Checks), a section that folds on its
 // own, and a footer with Appearance and where the specs come from (the record format is a command and a
@@ -48,7 +47,6 @@ export interface NavProps {
   drawer: boolean;
   drawerOpen: boolean;
   onCloseDrawer: () => void;
-  findRef: { current: HTMLInputElement | null };
 }
 
 type SectionId = 'tools';
@@ -66,7 +64,9 @@ function sectionOf(path: string): SectionId | null {
 }
 
 export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
-  const { spec, path, collapsed, onToggleCollapsed, expandLabel, drawer, drawerOpen, onCloseDrawer, findRef } = props;
+  const { spec, path, collapsed, onToggleCollapsed, expandLabel, drawer, drawerOpen, onCloseDrawer } = props;
+  const run = useRunCommand();
+  const findKeys = useShortcutHint('quickOpen');
   const { index } = spec;
   const spaces = useSpaces();
   const space = spaces?.current ?? null;
@@ -100,7 +100,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   useEffect(() => { if (followed.current !== path) followed.current = null; }, [path]);
   const onClickCapture = (e: MouseEvent) => {
     const a = (e.target as Element).closest?.('a[href]') as HTMLAnchorElement | null;
-    if (a && !a.closest('.quick-find')) followed.current = new URL(a.href, window.location.href).pathname;
+    if (a) followed.current = new URL(a.href, window.location.href).pathname;
   };
 
   // The current row is scrolled into view on the nav's first draw (and when it is expanded again)
@@ -153,7 +153,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             </button>
           </Tooltip>
           <Tooltip label="Quick find" command="quickOpen" placement="right">
-            <button type="button" className="rail-item" aria-label="Quick find" onClick={() => { onToggleCollapsed(); setTimeout(() => findRef.current?.focus(), 0); }}>
+            <button type="button" className="rail-item" aria-label="Quick find" aria-haspopup="dialog" aria-keyshortcuts={findKeys.aria} onClick={() => run('quickOpen')}>
               <Icon name="search" />
             </button>
           </Tooltip>
@@ -199,7 +199,11 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
             </Button>
           </Tooltip>
         </div>
-        <QuickFind ref={findRef} index={index} />
+        <button type="button" className="quick-find-button" aria-haspopup="dialog" aria-keyshortcuts={findKeys.aria} onClick={() => run('quickOpen')}>
+          <Icon name="search" size={16} />
+          <span className="quick-find-label">Go to…</span>
+          {findKeys.text && <kbd className="kbd kbd-hint" aria-hidden="true">{findKeys.text}</kbd>}
+        </button>
         <div className="nav-scroll" ref={scroller} aria-busy={!loaded || undefined}>
           {loaded && <>
           {/* The current space needs no heading of its own: its first row, its name and icon, is its overview. */}
