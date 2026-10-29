@@ -1,10 +1,12 @@
 import type { ElkNode } from 'elkjs/lib/elk-api';
 import { elkLayout } from '../elk';
-import { BOUNDARY_PAD, boxSize, type ErdBox, type ErdMap, type Rect } from './erd';
+import type { SpecIndex } from '../specs/data';
+import { onePerData } from '../graph/one-map';
+import { BOUNDARY_PAD, boxSize, erdMap, type ErdBox, type ErdMap, type Rect } from './erd';
 
 // Lays out a product's ERD map with ELK's layered algorithm, once per product and data change: the
-// layout is cached by the map's content (its boxes, their sizes and the lines between them), so a
-// focus, a stage switch or a reload that changes nothing drawn reads the same places (LA-V94-R08).
+// layout is cached by the spec's index (graph/one-map.ts, LA-PAT-APP-UX-R19), so every focus and
+// stage switch on the same data reads the same places (LA-V94-R08).
 // Three passes, from the inside out. First each aggregate's boundary: its entities, the root first,
 // along their has one and has many lines, left to right or top to bottom, whichever comes nearer
 // the map's shape. Then each domain's region: its aggregates at the size their entities take, left
@@ -119,34 +121,18 @@ export async function layoutErd(map: ErdMap): Promise<Map<string, Rect>> {
 
 // ---------- Once per product and data change ----------
 
-/** What the layout depends on: each box's place in the tree and its size, and the lines between boxes. */
-export const layoutKey = (map: ErdMap) =>
-  JSON.stringify([map.boxes.map((b) => [b.id, b.parent ?? '', b.empty ? 0 : 1, boxSize(b).height]), map.lines.map((l) => [l.source, l.target])]);
+interface Laying { promise: Promise<Map<string, Rect>>; rects?: Map<string, Rect> }
 
-const ready = new WeakMap<ErdMap, Map<string, Rect>>();
-const pending = new WeakMap<ErdMap, Promise<Map<string, Rect>>>();
-/** Each product's last layout this session, with the key it was built from: a spec loaded again that draws the same reuses it. */
-const last = new Map<string, { key: string; rects: Map<string, Rect> }>();
+/** A product's map laid out (in ELK's worker), once per index however many ask; its places kept once they arrive. */
+const layingOut = onePerData((index, product): Laying => {
+  const laying: Laying = { promise: layoutErd(erdMap(index, product)) };
+  laying.promise.then((rects) => { laying.rects = rects; }, () => {});
+  return laying;
+});
 
-/** A map's layout if it is ready: already laid out, or laid out before from the same content. */
-export function readyErdLayout(map: ErdMap): Map<string, Rect> | undefined {
-  const known = ready.get(map);
-  if (known) return known;
-  const before = last.get(map.product);
-  if (before && before.key === layoutKey(map)) { ready.set(map, before.rects); return before.rects; }
-  return undefined;
-}
+/** A product's layout if it has arrived, so a stage switch on the same data draws the map framed at once. */
+export const readyErdLayout = (index: SpecIndex, product: string): Map<string, Rect> | undefined => layingOut(index, product).rects;
 
-/** A map's layout: read when it is ready, else laid out once (in ELK's worker) however many ask. */
-export function erdLayout(map: ErdMap): Promise<Map<string, Rect>> {
-  const known = readyErdLayout(map);
-  if (known) return Promise.resolve(known);
-  let asked = pending.get(map);
-  if (!asked) {
-    const key = layoutKey(map);
-    asked = layoutErd(map).then((rects) => { ready.set(map, rects); last.set(map.product, { key, rects }); return rects; });
-    asked.catch(() => pending.delete(map));
-    pending.set(map, asked);
-  }
-  return asked;
-}
+/** A product's layout: laid out once per index (each data change), then read. */
+export const erdLayout = (index: SpecIndex, product: string): Promise<Map<string, Rect>> => layingOut(index, product).promise;
+

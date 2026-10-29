@@ -4,7 +4,7 @@ import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, u
 import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
 import { useCameraGestures } from '../graph/gestures';
-import type { Viewport } from '../graph/camera';
+import { frameRect, type Viewport } from '../graph/camera';
 import { PLAIN_LOOK, useThemeVersion } from '../graph/look';
 import type { FadeLook } from '../graph/fade';
 import { Button } from '../components/Button';
@@ -186,7 +186,7 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: E
       ) : (
         <div className="erd-canvas">
           <ReactFlowProvider>
-            <ErdCanvas relations={index.workspace.relations} map={map} at={at} focus={focus} onNavigate={onNavigate} onPeek={onPeek} space={space} />
+            <ErdCanvas index={index} map={map} at={at} focus={focus} onNavigate={onNavigate} onPeek={onPeek} space={space} />
           </ReactFlowProvider>
         </div>
       )}
@@ -260,23 +260,17 @@ export const FIT_MARGIN = { left: 60, right: 24, top: 24, bottom: 24 };
 const MIN_FIT = 120;
 
 /**
- * The viewport that shows the given boxes inside the margin, centered, never zoomed in past 1: a
- * small box is framed with the map around it, never blown up.
+ * The viewport that shows the given boxes inside the margin, centered, never zoomed in past 1: the
+ * shared framing of every one-map stage (graph/camera.ts `frameRect`, LA-PAT-APP-UX-R19) of the
+ * rectangle around them. A small box is framed with the map around it, never blown up.
  */
 export function fitRects(rects: Iterable<Rect>, width: number, height: number, margin = FIT_MARGIN): Viewport {
   const all = [...rects];
-  const minX = Math.min(...all.map((r) => r.x));
-  const minY = Math.min(...all.map((r) => r.y));
-  const maxX = Math.max(...all.map((r) => r.x + r.width));
-  const maxY = Math.max(...all.map((r) => r.y + r.height));
-  const innerW = Math.max(1, width - margin.left - margin.right);
-  const innerH = Math.max(1, height - margin.top - margin.bottom);
-  const zoom = Math.max(MIN_ZOOM, Math.min(1, innerW / (maxX - minX || 1), innerH / (maxY - minY || 1)));
-  return {
-    x: margin.left + innerW / 2 - ((minX + maxX) / 2) * zoom,
-    y: margin.top + innerH / 2 - ((minY + maxY) / 2) * zoom,
-    zoom,
-  };
+  const x = Math.min(...all.map((r) => r.x));
+  const y = Math.min(...all.map((r) => r.y));
+  const around = { x, y, w: Math.max(...all.map((r) => r.x + r.width)) - x, h: Math.max(...all.map((r) => r.y + r.height)) - y };
+  const frame = { x: margin.left, y: margin.top, w: Math.max(1, width - margin.left - margin.right), h: Math.max(1, height - margin.top - margin.bottom) };
+  return frameRect(around, null, frame, { pad: 0, read: MIN_ZOOM, max: 1, min: MIN_ZOOM });
 }
 
 const MIN_ZOOM = 0.05;
@@ -292,23 +286,22 @@ export function framedRects(rects: ReadonlyMap<string, Rect>, map: ErdMap, at: E
   return one ? [one] : [...rects.values()];
 }
 
-/** The look's two fade strengths, as the stylesheet sets them at an element. */
-function fadeLook(at: HTMLElement | null): FadeLook {
-  if (!at) return { focusFade: PLAIN_LOOK.focusFade, focusTrail: PLAIN_LOOK.focusTrail };
-  const style = getComputedStyle(at);
-  const number = (token: string, fallback: number) => { const n = parseFloat(style.getPropertyValue(token)); return Number.isFinite(n) ? n : fallback; };
-  return { focusFade: number('--focus-fade', PLAIN_LOOK.focusFade), focusTrail: number('--focus-trail', PLAIN_LOOK.focusTrail) };
+/** The focus fade's strength, as the stylesheet sets it at an element. */
+function fadeLook(at: HTMLElement | null): Pick<FadeLook, 'focusFade'> {
+  const n = at ? parseFloat(getComputedStyle(at).getPropertyValue('--focus-fade')) : NaN;
+  return { focusFade: Number.isFinite(n) ? n : PLAIN_LOOK.focusFade };
 }
 
 /** A box's accessible name: its kind, title and root mark, and whether the focus picks it out. */
 const boxName = (box: ErdBox, pick: boolean) => `${BOX_KIND[box.kind]} ${box.title}${box.root ? ', root' : ''}${box.empty ? `, ${kindLine(box).split(' · ')[1]}` : ''}${pick ? ' (picked out)' : ''}`;
 
-interface CanvasProps { relations: readonly RelationRule[]; map: ErdMap; at: ErdFocus; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek']; space?: OpenSpaceStore }
+interface CanvasProps { index: SpecIndex; map: ErdMap; at: ErdFocus; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek']; space?: OpenSpaceStore }
 
-function ErdCanvas({ relations, map, at, focus, onNavigate, onPeek, space }: CanvasProps) {
-  // The map's layout: ready at once when this product was laid out before with the same content.
+function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasProps) {
+  const relations = index.workspace.relations;
+  // The map's layout: ready at once when this product was laid out before on the same data.
   const [placed, setPlaced] = useState<{ map: ErdMap; rects: Map<string, Rect> } | null>(() => {
-    const rects = readyErdLayout(map);
+    const rects = readyErdLayout(index, at.product);
     return rects ? { map, rects } : null;
   });
   const [error, setError] = useState<string | null>(null);
@@ -318,12 +311,12 @@ function ErdCanvas({ relations, map, at, focus, onNavigate, onPeek, space }: Can
   useEffect(() => {
     if (placed?.map === map) return;
     let live = true;
-    erdLayout(map).then(
+    erdLayout(index, at.product).then(
       (rects) => { if (live) { setPlaced({ map, rects }); setError(null); } },
       (e) => { if (live) setError(e instanceof Error ? e.message : String(e)); },
     );
     return () => { live = false; };
-  }, [map, placed]);
+  }, [index, at.product, map, placed]);
 
   const theme = useThemeVersion();
   // The fade strengths, read again when the theme changes, and once the canvas is there to read them at.

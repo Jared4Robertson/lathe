@@ -21,7 +21,7 @@ const box = (id: string) => modelPane().querySelector<HTMLElement>(`.react-flow_
 const boxesShown = () => waitFor(() => expect(modelPane().querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
 const stageButton = (name: string) => within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
 const CSS = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
-const LOOK = { focusFade: 0.25, focusTrail: 0.45 };
+const LOOK = { focusFade: 0.25 };
 const ends = (lines: { id: string; sourceEnd: string; targetEnd: string; dashed: boolean }[]) =>
   Object.fromEntries(lines.map((l) => [l.id, `${l.sourceEnd}-${l.targetEnd}${l.dashed ? ' dashed' : ''}`]));
 /** Every box's place on the page, as React Flow draws it. */
@@ -140,10 +140,9 @@ describe('the ERD stage', () => {
   const proveLaV94R03T01 = async () => {
     const map = erdMap(index(), 'P');
     const strength = erdStrength(map, 'P-D-A3', LOOK);
-    // The aggregate and its entities at full strength, its domain's region a trail, the rest faded.
+    // The aggregate and its entities at full strength, the rest, its domain's region among them, faded back (the shared keptFade).
     expect(['P-D-A3', 'P-D-EN03', 'P-D-EN04', 'P-D-EN05'].map(strength)).toEqual([1, 1, 1, 1]);
-    expect(strength('P-D')).toBe(LOOK.focusTrail);
-    expect(['P-D-A1', 'P-D-EN01', 'P-E', 'P-E-A1'].map(strength)).toEqual([0.25, 0.25, 0.25, 0.25]);
+    expect(['P-D', 'P-D-A1', 'P-D-EN01', 'P-E', 'P-E-A1'].map(strength)).toEqual([0.25, 0.25, 0.25, 0.25, 0.25]);
     // Its scope: its entities, and the lines with an end in it, the references to the aggregates around it among them.
     expect(ends(scopeContents(map, 'P-D-A3').lines)).toEqual({
       'P-D-EN03|has_one|P-D-EN04': 'one-one',
@@ -265,16 +264,19 @@ describe('the ERD stage', () => {
     }
   });
 
-  it('LA-V94-R08-T01 The map is laid out once: focusing two records moves no box and changes no size, and the layout is read again, never redone', async () => {
+  const proveOneMap = async () => {
     const i = index();
     const map = erdMap(i, 'P');
-    // One map and one layout per product and data change: asked again, the same ones.
+    // One map and one layout per product and data change (the spec's index): asked again, the same ones.
     expect(erdMap(i, 'P')).toBe(map);
-    const rects = await erdLayout(map);
-    expect(await erdLayout(map)).toBe(rects);
-    expect(readyErdLayout(map)).toBe(rects);
-    // Data loaded again that draws the same reuses the layout; the map's size decides whether it draws only what is in view.
-    expect(readyErdLayout(erdMap(index(), 'P'))).toBe(rects);
+    const rects = await erdLayout(i, 'P');
+    expect(await erdLayout(i, 'P')).toBe(rects);
+    expect(readyErdLayout(i, 'P')).toBe(rects);
+    // New data (a new index) is laid out anew, once; the map's size decides whether it draws only what is in view.
+    const again = index();
+    expect(erdMap(again, 'P')).not.toBe(map);
+    expect(readyErdLayout(again, 'P')).toBeUndefined();
+    expect(await erdLayout(again, 'P')).toEqual(rects);
     expect(map.boxes.length).toBeLessThanOrEqual(DRAW_IN_VIEW_PAST);
 
     await openApp('/P-D?stage=erd', served());
@@ -290,7 +292,9 @@ describe('the ERD stage', () => {
     await screen.findByRole('heading', { level: 1, name: 'Reminder' });
     await waitFor(() => expect(box('P-D-EN05')!.querySelector('.erd-box')).toHaveClass('is-highlight'));
     expect(places()).toEqual(before);
-  });
+  };
+  it('LA-V94-R08-T01 The map is laid out once: focusing two records moves no box and changes no size, and the layout is read again, never redone', proveOneMap);
+  it('LA-PAT-APP-UX-R19-T02 The ERD map is laid out once: focusing two records moves no box, and the layout is read again for the same data', proveOneMap);
 
   it('LA-EXP-DS11-T01 The map draws exactly one line per relationship link and one per entity and aggregate it references', () => {
     const i = index();
