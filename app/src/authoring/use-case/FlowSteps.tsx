@@ -66,25 +66,25 @@ export function FlowSteps({ index, flow, paths }: { index: SpecIndex; flow: stri
   });
 
   const table = (onPath: readonly StepOnPage[], caption: string) => (
-    <div className="table-scroll">
-      <table className="data-table flow-steps">
+    <div className="table-scroll table-stack">
+      <table className="data-table flow-steps" role="table">
         <caption className="sr-only">{caption}</caption>
-        <thead>
-          <tr>
-            <th scope="col">Step</th>
-            <th scope="col" className="step-what">What happens</th>
-            {COLUMNS.map((c) => <th key={c.heading} scope="col">{c.heading}</th>)}
+        <thead role="rowgroup">
+          <tr role="row">
+            <th scope="col" role="columnheader">Step</th>
+            <th scope="col" role="columnheader" className="step-what">What happens</th>
+            {COLUMNS.map((c) => <th key={c.heading} scope="col" role="columnheader">{c.heading}</th>)}
           </tr>
         </thead>
-        <tbody>
+        <tbody role="rowgroup">
           {onPath.map((step) => {
             const { id } = step.step;
             const linked = COLUMNS.map((c) => ({ heading: c.heading, ids: c.of(step) }));
             const isOpen = open.has(id);
             return (
               <Fragment key={id}>
-                <tr className="flow-step" data-step={id}>
-                  <th scope="row">
+                <tr className="flow-step" data-step={id} role="row">
+                  <th scope="row" role="rowheader">
                     <span className="step-head">
                       <button type="button" className="tree-toggle" aria-expanded={isOpen} aria-label={`${isOpen ? 'Collapse' : 'Expand'} ${id}`} onClick={() => toggle(id)}>
                         <Icon name={isOpen ? 'chevron-down' : 'chevron-right'} size={14} />
@@ -93,14 +93,14 @@ export function FlowSteps({ index, flow, paths }: { index: SpecIndex; flow: stri
                       <RecordLink index={index} id={id} showTitle={false} />
                     </span>
                   </th>
-                  <td className="step-what">
+                  <td className="step-what" role="cell">
                     {step.step.title} <ProblemBadge problems={index.problemsFor.get(id) ?? []} />
                   </td>
-                  {linked.map((c) => <td key={c.heading}><IdLinks index={index} ids={c.ids} label={`${id} ${c.heading.toLowerCase()}`} /></td>)}
+                  {linked.map((c) => <td key={c.heading} role="cell" data-label={c.heading}><IdLinks index={index} ids={c.ids} label={`${id} ${c.heading.toLowerCase()}`} /></td>)}
                 </tr>
                 {isOpen && (
-                  <tr className="flow-step-detail">
-                    <td colSpan={2 + linked.length}>
+                  <tr className="flow-step-detail" role="row">
+                    <td colSpan={2 + linked.length} role="cell">
                       <div className="flow-step-more" role="region" aria-label={`Details of ${id}`}>
                         {linked.every((c) => c.ids.length === 0) && <p className="hint">The step links to nothing.</p>}
                         {linked.map((c) => <TitledLinks key={c.heading} index={index} ids={c.ids} heading={c.heading} />)}
