@@ -10,6 +10,7 @@ import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { loadConfig, PACKAGE_DIR } from '../config.ts';
+import { attachCached, baseKey, copyDatabase, productKey, writeCached } from './cache.ts';
 import { appendRows, insertRows } from './insert.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import { describeKey, normalizeRow, rowKey, sortRows, tableText, type Row, type Value } from './rows.ts';
@@ -110,11 +111,14 @@ const problemAt = (origins: WeakMap<Row, Origin>, row: Row | undefined, p: Store
   return 'file' in origin ? { ...p, file: origin.file, line: origin.line } : { ...p, command: origin.command };
 };
 
-// One DuckDB instance serves every store in the process. Its lathe_base database holds Lathe's migrations, applied
-// once; each store copies it into databases of its own, named uniquely.
+// One DuckDB instance serves every store in the process. Its lathe_base database holds Lathe's migrations: the schema
+// cache's file, attached read only, or else applied once and then cached (cache.ts). Each store copies it into
+// databases of its own, named uniquely.
 interface Engine {
   instance: DuckDBInstance;
   baseSchema: SchemaDescription;
+  /** The base schema's cache key, which the keys of products' schemas start with. */
+  key: string;
 }
 let engine: Promise<Engine> | undefined;
 const BASE_DB = 'lathe_base';
@@ -131,6 +135,15 @@ const spares = new Map<string, Promise<string>>();
 const background = new Set<Promise<unknown>>();
 // The stores opening or open, which closeEngine leaves the engine running for.
 let live = 0;
+
+// Whether the process runs one command and exits, as the CLI's commands do: then no load prepares a spare for a load
+// that never comes, which only delays the exit.
+let oneCommand = false;
+
+/** Tells the engine the process runs one command and exits (the CLI's commands, not serve or mcp). */
+export function forOneCommand(): void {
+  oneCommand = true;
+}
 
 function inBackground<T>(work: Promise<T>): Promise<T> {
   background.add(work);
@@ -160,17 +173,36 @@ function sharedEngine(): Promise<Engine> {
     const instance = await DuckDBInstance.create(':memory:');
     const connection = await instance.connect();
     try {
+      const migrations = readMigrations();
+      const key = baseKey(migrations);
+      const cached = await attachCached(connection, BASE_DB, key);
+      if (cached) return { instance, baseSchema: cached, key };
       await connection.run(`ATTACH ':memory:' AS ${BASE_DB}`);
       await connection.run(`USE ${BASE_DB}`);
-      await applyMigrations(connection, readMigrations());
+      await applyMigrations(connection, migrations);
       const baseSchema = await describeSchema(connection);
       await connection.run(storeViewsSql(baseSchema));
-      return { instance, baseSchema };
+      cache(instance, BASE_DB, key, baseSchema);
+      return { instance, baseSchema, key };
     } finally {
       connection.closeSync();
     }
   })();
   return engine;
+}
+
+// Writes a schema database built afresh to the schema cache, while nothing waits on it.
+function cache(instance: DuckDBInstance, schemaDb: string, key: string, schema: SchemaDescription) {
+  inBackground(
+    (async () => {
+      const writer = await instance.connect();
+      try {
+        await writeCached(writer, schemaDb, key, schema);
+      } finally {
+        writer.closeSync();
+      }
+    })(),
+  );
 }
 
 /** Opens the store of the product repo at root: reads its data files and loads them with every key and check. */
@@ -367,6 +399,8 @@ export class Store {
     });
     if (problems.length) throw new StoreError(problems);
     const { schemaDb, schema } = await this.step('schema', () => this.buildSchema(tables, this.origins));
+    // The empty database the data goes into is copied while the files are read.
+    this.prepareSpare(schemaDb, schema);
     await this.step('read files', () => {
       for (const folder of folders) for (const file of folder.files.filter((f) => !isDeclaration(f))) read(schema, folder, file);
     });
@@ -379,9 +413,9 @@ export class Store {
     await this.switchTo(dataDb);
   }
 
-  // The schema database: Lathe's migrations, copied from lathe_base, then the product's kinds and relations. Each
-  // set of declarations is built once per process and shared by every store that declares the same; a schema
-  // database holds no data, so it is never dropped.
+  // The schema database: Lathe's migrations, copied from lathe_base, then the product's kinds and relations; or the
+  // schema cache's file of the same. Each set of declarations is built once per process and shared by every store
+  // that declares the same; a schema database holds no data, so it is never dropped.
   private async buildSchema(tables: Tables, origins: WeakMap<Row, Origin>): Promise<{ schemaDb: string; schema: SchemaDescription }> {
     const declarations = {
       kinds: [...(tables.get('product_kind')?.values() ?? [])],
@@ -400,17 +434,22 @@ export class Store {
     if (!built) {
       built = (async () => {
         const name = `lathe_schema_${++databases}`;
+        const key = productKey((await sharedEngine()).key, sql);
         const builder = await this.instance.connect();
         try {
+          const cached = await attachCached(builder, name, key);
+          if (cached) return { schemaDb: name, schema: cached };
           await builder.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
-          await builder.run(`COPY FROM DATABASE ${BASE_DB} TO ${sqlName(name)}`);
+          await copyDatabase(builder, BASE_DB, name, false);
           await builder.run(`USE ${sqlName(name)}`);
           // A declaration DuckDB refuses (a pair Lathe already allows, a folder that does not exist) is a refusal.
           await builder.run(sql).catch((error: Error) => {
             throw new StoreError([{ rule: 'product-kind', message: `the product's kinds and relations cannot be added: ${error.message.split('\n')[0]}` }]);
           });
           await builder.run(storeViewsSql(await describeSchema(builder)));
-          return { schemaDb: name, schema: await describeSchema(builder) };
+          const schema = await describeSchema(builder);
+          cache(this.instance, name, key, schema);
+          return { schemaDb: name, schema };
         } finally {
           builder.closeSync();
         }
@@ -531,8 +570,9 @@ export class Store {
       return name;
     } finally {
       builder.closeSync();
-      // The next load or write of this schema finds its empty database ready.
-      this.prepareSpare(schemaDb, schema);
+      // The next load or write of this schema finds its empty database ready, unless the process ends after its one
+      // command.
+      if (!oneCommand) this.prepareSpare(schemaDb, schema);
     }
   }
 
@@ -556,7 +596,7 @@ export class Store {
     const copier = await this.instance.connect();
     try {
       await copier.run(`ATTACH ':memory:' AS ${sqlName(name)}`);
-      await copier.run(`COPY FROM DATABASE ${sqlName(schemaDb)} TO ${sqlName(name)} (SCHEMA)`);
+      await copyDatabase(copier, schemaDb, name, true);
       // The meta-model's rows come along; the data tables start empty.
       await copier.run(
         Object.values(schema.tables)
