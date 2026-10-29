@@ -46,17 +46,17 @@ describe('LA-AUT-UC18-R50-T01 each View command (LA-AUT-A12) changes one view th
   it('builds the data set with its own Add commands, and reads a view whole by any record in it', async () => {
     const store = await viewDataSet();
     const page = runQuery(store, GET_VIEW, { id: 'TL-V01-R01-T01' }) as Page;
-    expect(page).toEqual({
-      id: 'TL-V01', title: 'Catalog', route: '/catalog', description: 'Every tool the library holds, with whether it is free.', notes: null,
-      requirements: [{ id: 'TL-V01-R01', title: 'A tool on loan shows its due date', statement: 'A tool on loan MUST show the date it is due back.', group: null,
-        tests: [{ id: 'TL-V01-R01-T01', title: 'A tool on loan shows its due date', level: 'browser', state: 'automated', file: 'test/catalog.spec.ts', startsFrom: ['TL-LEND-TD01'] }] }],
-    });
+    expect(page.record).toEqual({ id: 'TL-V01-R01-T01', kind: 'view_test' });
+    expect(page.view).toEqual({ id: 'TL-V01', title: 'Catalog', route: '/catalog', description: 'Every tool the library holds, with whether it is free.' });
+    expect(page.requirements.map((r) => [r.requirement.id, r.tests.map((t) => [t.test.id, t.startsFrom])])).toEqual([['TL-V01-R01', [['TL-V01-R01-T01', ['TL-LEND-TD01']]]]]);
+    expect((runQuery(store, GET_VIEW, { id: 'TL-V01' }) as Page).record).toEqual({ id: 'TL-V01', kind: 'view' });
     expect(runQuery(store, LIST_VIEWS, { product_id: 'TL' })).toEqual([{ id: 'TL-V01', title: 'Catalog' }, { id: 'TL-V02', title: 'Loans' }]);
     expect(runQuery(store, NEXT_VIEW_ID, { kind: 'view', parent: 'TL' })).toBe('TL-V03');
     expect(runQuery(store, NEXT_VIEW_ID, { kind: 'view_requirement', parent: 'TL-V01' })).toBe('TL-V01-R02');
     expect(runQuery(store, NEXT_VIEW_ID, { kind: 'view_test', parent: 'TL-V01-R01' })).toBe('TL-V01-R01-T02');
     expect(() => runQuery(store, NEXT_VIEW_ID, { kind: 'view_test', parent: 'TL-V01' })).toThrow(/a view_test sits under a view_requirement, and TL-V01 is a view/);
     expect(() => runQuery(store, GET_VIEW, { id: 'TL-LEND' })).toThrow(/TL-LEND is a domain, not a view or a record in one/);
+    expect(() => runQuery(store, LIST_VIEWS, { product_id: 'TL-LEND' })).toThrow(/there is no product TL-LEND/);
   });
 
   it('changes each kind, writing only its own tables: a list given replaces its list, null clears an optional column', async () => {

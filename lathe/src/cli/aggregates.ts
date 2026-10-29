@@ -7,7 +7,10 @@ import path from 'node:path';
 import { ALL_COMMANDS, ALL_QUERIES } from '../commands.ts';
 import { fieldHelp, flagValue, InputError, inputSchema, toolName, type AnyCommand, type AnyQuery } from '../platform/commands/definition.ts';
 import { committedText, runCommand, runQuery } from '../platform/commands/run.ts';
+import type { ReadView } from '../platform/data/rules.ts';
 import type { SchemaDescription } from '../platform/data/schema.ts';
+import type { Store } from '../platform/data/store.ts';
+import { loadConfig, readWorkspace } from '../index.ts';
 import type { Tool } from './mcp.ts';
 import { readSchema, refusalText, withStore, type Outcome } from './operations.ts';
 
@@ -33,7 +36,7 @@ export async function runDefinition(root: string, found: Definition, args: unkno
   try {
     return await withStore(root, async (store) => {
       if (found.kind === 'query') {
-        const answer = runQuery(store, found.definition, args);
+        const answer = runQuery(found.definition.checked ? await checkedView(root, store) : store, found.definition, args);
         return { text: found.definition.text(answer as never), json: answer };
       }
       const committed = await runCommand(store, found.definition, args);
@@ -43,6 +46,12 @@ export async function runDefinition(root: string, found: Definition, args: unkno
     if (error instanceof InputError) return { ok: false, problems: [{ rule: 'input', message: error.message }] };
     throw error;
   }
+}
+
+/** The store's data with the checks' run over it, for a query that reads the run: the checks run first, as `lathe check` runs them. */
+async function checkedView(root: string, store: Store): Promise<ReadView> {
+  const { problems, coverage, chains } = await readWorkspace(store, loadConfig(root));
+  return { schema: store.schema, rows: (table) => store.rows(table), record: (id) => store.record(id), checked: { problems, coverage, chains } };
 }
 
 // ---------- MCP ----------

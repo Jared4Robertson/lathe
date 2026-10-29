@@ -1,7 +1,7 @@
 // The command runner: the one place a command's transaction starts. It checks the input against the command's
 // fields, runs its handler in a transaction of its own, and commits; a refusal, of the input, the handler or the
 // commit, changes nothing. A query runs the same way without a transaction: its handler is given its read model's
-// reader, made over the current data.
+// reader, made over the current data (and, for a query that reads the checks' run, the run over that data).
 import type { ReadView } from '../data/rules.ts';
 import type { Store } from '../data/store.ts';
 import type { Committed } from '../data/transaction.ts';
@@ -14,13 +14,17 @@ export async function runCommand(store: Store, definition: AnyCommand, args: unk
   return committed;
 }
 
-/** Runs the query on the store's current data with the given arguments. */
-export function runQuery(store: Store, definition: AnyQuery, args: unknown): unknown {
-  return answerQuery(store, definition, parseInput(store.schema, definition, args));
+/** Runs the query on the current data (a store's, or one with the checks' run) with the given arguments. */
+export function runQuery(view: ReadView, definition: AnyQuery, args: unknown): unknown {
+  return answerQuery(view, definition, parseInput(view.schema, definition, args));
 }
 
-/** The query's answer over the data: its handler is given its read model's reader, made over the data (injected). */
+/**
+ * The query's answer over the data: its handler is given its read model's reader, made over the data (injected). A
+ * query that reads the checks' run is refused over data that comes without one.
+ */
 export function answerQuery(view: ReadView, definition: AnyQuery, input: unknown): unknown {
+  if (definition.checked && !view.checked) throw new Error(`${definition.id} reads the checks' run, and the data it was given comes without one: run the checks first.`);
   return definition.run((definition.reader ? definition.reader(view) : view) as never, input as never);
 }
 
