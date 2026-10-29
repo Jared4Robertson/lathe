@@ -89,12 +89,13 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
 
   // The nav's lists wait for the specs, so nothing is drawn and then pushed down.
   const loaded = index !== null || !!spec.error;
-  // The space rail shows only with two or more products. Until the specs load, it shows as it did last time, so the
-  // panel beside it does not move sideways once they have.
+  // The space rail shows only with two or more products. Until the specs and the products are read, it shows as it did
+  // last time, so the panel beside it does not move sideways once they are.
   const several = (spaces?.spaces.length ?? 0) > 1;
   const [railBefore, setRailBefore] = usePref<boolean>(RAIL_KEY, true, isBool);
-  const showRail = index ? several : railBefore;
-  useEffect(() => { if (index) setRailBefore(several); }, [index, several, setRailBefore]);
+  const listed = !!index && !!spaces?.read;
+  const showRail = listed ? several : railBefore;
+  useEffect(() => { if (listed) setRailBefore(several); }, [listed, several, setRailBefore]);
 
   // The address last followed from a link in the nav (its rows or its rail). Only that move may
   // reshape the nav; once the address moves on another way, it is forgotten.

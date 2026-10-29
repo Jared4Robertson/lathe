@@ -56,7 +56,7 @@ export function Editable({ index, id, children }: { index: SpecIndex; id: string
     setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
   };
   // A kind whose aggregate has its own Add form is added through it, with its aggregate's own command.
-  const Adder = mode.mode === 'add' ? adderOf(mode.kind) : undefined;
+  const Adder = mode.mode === 'add' ? adderOf(index.workspace.schema, mode.kind) : undefined;
   if (Adder) return <div className="spec-body"><Adder index={index} parent={record.id} onDone={back} /></div>;
   if (mode.mode === 'edit' || mode.mode === 'add') {
     return (
@@ -92,6 +92,16 @@ export function Editable({ index, id, children }: { index: SpecIndex; id: string
       {children}
     </>
   );
+}
+
+/**
+ * Adds a record of the kind under the parent from another aggregate's page (such as a view from its product's page):
+ * through the kind's own aggregate's Add form when it has one, otherwise through the record form until it does.
+ */
+export function AddUnder({ index, parent, kind, onDone }: { index: SpecIndex; parent: string; kind: string; onDone: () => void }) {
+  const Adder = adderOf(index.workspace.schema, kind);
+  if (Adder) return <Adder index={index} parent={parent} onDone={onDone} />;
+  return <RecordForm index={index} kind={kind} record={null} parent={parent} onDone={onDone} />;
 }
 
 // ---------- The form ----------

@@ -18,7 +18,8 @@ import { Markdown } from '../specs/Markdown';
 import { gapText, ProblemBadge, RecordLink, RecordTree, Section, listTitle } from '../specs/parts';
 import { RecordContent, RecordFacts } from '../specs/RecordContent';
 import { factsOf, leadOf } from '../specs/RecordText';
-import { ProductWiki, problemsUnder } from '../specs/SpecPages';
+import { problemsUnder } from '../specs/SpecPages';
+import { ProductPage } from '../authoring/product/ProductPage';
 import { DomainPage } from '../authoring/domain/DomainPage';
 import { addressOf, focusOf, type FocusRoute } from './address';
 import { focusTrail } from './HeaderStrip';
@@ -193,7 +194,7 @@ function CardSummary({ index, route }: { index: SpecIndex; route: FocusRoute }) 
     );
   }
   // A kind whose aggregate has its own page draws its own summary, with its own actions.
-  const Page = pageOf(record.kind);
+  const Page = pageOf(index.workspace.schema, record.kind);
   if (Page) return <Page key={focus} index={index} id={focus} summary after={<CardChanges index={index} id={focus} summary />} />;
   const lead = leadOf(record);
   return (
@@ -238,11 +239,11 @@ function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) 
 
 function WikiPage({ index, route }: { index: SpecIndex; route: Exclude<FocusRoute, { page: 'group' }> }) {
   switch (route.page) {
-    case 'product': return <Editable key={route.product} index={index} id={route.product}><ProductWiki index={index} id={route.product} /><OwnFacts index={index} id={route.product} /></Editable>;
+    case 'product': return <ProductPage key={route.product} index={index} id={route.product} after={<OwnFacts index={index} id={route.product} />} />;
     case 'domain': return <DomainPage key={route.domain} index={index} id={route.domain} after={<OwnFacts index={index} id={route.domain} />} />;
     case 'record': {
       // A kind whose aggregate has its own page draws it; any other still shows the record content read from the workspace.
-      const Page = pageOf(index.byId.get(route.id)?.kind ?? '');
+      const Page = pageOf(index.workspace.schema, index.byId.get(route.id)?.kind ?? '');
       if (Page) return <Page key={route.id} index={index} id={route.id} />;
       return <Editable key={route.id} index={index} id={route.id}><div className="spec-body"><RecordContent index={index} id={route.id} header={false} /></div></Editable>;
     }

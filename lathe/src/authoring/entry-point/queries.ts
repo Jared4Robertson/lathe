@@ -1,23 +1,25 @@
-// The Entry point aggregate's own reads (read model LA-AUT-RM40): an entry point whole, the entry points of a domain, and the
-// next free ID for one. Each reads the current data and changes nothing.
+// The Entry point aggregate's own reads (read model LA-AUT-RM40): an entry point's page, the entry points of a domain,
+// and the next free ID for one. Each reads only the read model, through its reader (reader.ts), and changes
+// nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import type { ReadView } from '../../platform/data/rules.ts';
-import { entryPointsFrom, ENTRY_POINT_SLICE, type EntryPoint } from './model.ts';
+import { ENTRY_POINT_SLICE } from './model.ts';
+import type { EntryPointPage, EntryPointSummary } from './read-model.ts';
+import { entryPointReader, type EntryPointReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
 /** The entry point with this ID, whole. */
-export function getEntryPoint(view: ReadView, input: { id: string }): EntryPoint {
-  const record = view.record(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
-  if (record.kind !== 'entry_point') refuse('kind', `${input.id} is ${/^[aeiou]/.test(record.kind) ? 'an' : 'a'} ${record.kind}, not an entry point`);
-  return entryPointsFrom((table) => view.rows(table), input.id)[0];
+export function getEntryPoint(reader: EntryPointReader, input: { id: string }): EntryPointPage {
+  const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
+  if (kind !== 'entry_point') refuse('kind', `${input.id} is ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind}, not an entry point`);
+  return reader.page(input.id)!;
 }
 
 /** Get an entry point whole (LA-AUT-QRY120). */
-export const GET_ENTRY_POINT: QueryDefinition<{ id: string }, EntryPoint> = {
+export const GET_ENTRY_POINT: QueryDefinition<{ id: string }, EntryPointPage, EntryPointReader> = {
   id: 'LA-AUT-QRY120',
   slice: ENTRY_POINT_SLICE,
   name: 'get-entry-point',
@@ -25,22 +27,19 @@ export const GET_ENTRY_POINT: QueryDefinition<{ id: string }, EntryPoint> = {
   method: 'GET',
   route: '/api/entry-point/get-entry-point',
   input: { id: id('The entry point.', 'required') },
+  reader: entryPointReader,
   run: getEntryPoint,
   text: entryPointText,
 };
 
 /** The entry points of a domain, by ID. */
-export function listEntryPoints(view: ReadView, input: { domain_id: string }): { id: string; title: string }[] {
-  if (view.record(input.domain_id)?.kind !== 'domain') refuse('missing', `there is no domain ${input.domain_id}`);
-  return view
-    .rows('entry_point')
-    .filter((r) => r.domain_id === input.domain_id)
-    .map((r) => ({ id: String(r.id), title: String(r.title) }))
-    .sort((a, b) => a.id.localeCompare(b.id));
+export function listEntryPoints(reader: EntryPointReader, input: { domain_id: string }): EntryPointSummary[] {
+  if (reader.kindOf(input.domain_id) !== 'domain') refuse('missing', `there is no domain ${input.domain_id}`);
+  return reader.list(input.domain_id);
 }
 
 /** List the entry points of a domain (LA-AUT-QRY121). */
-export const LIST_ENTRY_POINTS: QueryDefinition<{ domain_id: string }, { id: string; title: string }[]> = {
+export const LIST_ENTRY_POINTS: QueryDefinition<{ domain_id: string }, EntryPointSummary[], EntryPointReader> = {
   id: 'LA-AUT-QRY121',
   slice: ENTRY_POINT_SLICE,
   name: 'list-entry-points',
@@ -48,24 +47,20 @@ export const LIST_ENTRY_POINTS: QueryDefinition<{ domain_id: string }, { id: str
   method: 'GET',
   route: '/api/entry-point/list-entry-points',
   input: { domain_id: id('The domain.', 'required') },
+  reader: entryPointReader,
   run: listEntryPoints,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No entry points.'),
 };
 
 /** The next free ID for an entry point of the domain: its domain's ID and ENTRY, one past the highest number in use. */
-export function nextEntryPointId(view: ReadView, input: { domain_id: string }): string {
-  if (view.record(input.domain_id)?.kind !== 'domain') refuse('parent', `an entry point sits under a domain, and ${input.domain_id} is not one`);
+export function nextEntryPointId(reader: EntryPointReader, input: { domain_id: string }): string {
+  if (reader.kindOf(input.domain_id) !== 'domain') refuse('parent', `an entry point sits under a domain, and ${input.domain_id} is not one`);
   const prefix = `${input.domain_id}-ENTRY`;
-  let highest = 0;
-  for (const row of view.rows('entry_point')) {
-    const id = String(row.id);
-    if (id.startsWith(prefix) && /^\d+$/.test(id.slice(prefix.length))) highest = Math.max(highest, Number(id.slice(prefix.length)));
-  }
-  return `${prefix}${String(highest + 1).padStart(2, '0')}`;
+  return `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(2, '0')}`;
 }
 
 /** Get the next ID for an entry point (LA-AUT-QRY122). */
-export const NEXT_ENTRY_POINT_ID: QueryDefinition<{ domain_id: string }, string> = {
+export const NEXT_ENTRY_POINT_ID: QueryDefinition<{ domain_id: string }, string, EntryPointReader> = {
   id: 'LA-AUT-QRY122',
   slice: ENTRY_POINT_SLICE,
   name: 'next-id',
@@ -73,12 +68,13 @@ export const NEXT_ENTRY_POINT_ID: QueryDefinition<{ domain_id: string }, string>
   method: 'GET',
   route: '/api/entry-point/next-id',
   input: { domain_id: id('The domain it will sit under.', 'required') },
+  reader: entryPointReader,
   run: nextEntryPointId,
   text: (next) => next,
 };
 
 /** An entry point as text: its row, then what it uses and meets. */
-function entryPointText(record: EntryPoint): string {
+function entryPointText(record: EntryPointPage): string {
   const row = record.entryPoint;
   const lines = [`Entry point ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, ...(row.file ? [`  file: ${row.file}`] : [])];
   lines.push(`  description: ${row.description}`);
