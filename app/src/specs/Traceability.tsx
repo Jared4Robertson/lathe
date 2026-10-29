@@ -108,24 +108,24 @@ function RequirementTable({ index, useCase, rows }: { index: SpecIndex; useCase:
   const has = (j: Judgment | null, kind: GapKind) => !!j?.gaps.some((g) => g.kind === kind);
   const judgmentOf = new Map(rows.map((r) => [r.record.id, r.judgment]));
   return (
-    <div className="table-scroll">
-      <table className="data-table trace-requirements">
+    <div className="table-scroll table-stack">
+      <table className="data-table trace-requirements" role="table">
         <caption className="sr-only">How each UC requirement of {useCase.id} is designed, built and proved</caption>
-        <thead>
-          <tr><th scope="col">UC requirement</th><th scope="col">Designed</th><th scope="col">Built</th><th scope="col">Proved</th></tr>
+        <thead role="rowgroup">
+          <tr role="row"><th scope="col" role="columnheader">UC requirement</th><th scope="col" role="columnheader">Designed</th><th scope="col" role="columnheader">Built</th><th scope="col" role="columnheader">Proved</th></tr>
         </thead>
         {/* One body per group (lathe/REFERENCE.md), the ungrouped first, each group headed by its name. */}
         {groupRecords(rows.map((r) => r.record)).map((g) => (
-          <tbody key={g.key} data-group={g.heading ?? undefined}>
-            {g.heading !== null && <tr className="group-row"><th scope="rowgroup" colSpan={4}>{g.heading}</th></tr>}
+          <tbody key={g.key} data-group={g.heading ?? undefined} role="rowgroup">
+            {g.heading !== null && <tr className="group-row" role="row"><th scope="rowgroup" colSpan={4} role="rowheader">{g.heading}</th></tr>}
             {g.records.map((record) => {
               const j = judgmentOf.get(record.id) ?? null;
               return (
-                <tr key={record.id} data-requirement={record.id}>
-                  <th scope="row"><RecordLink index={index} id={record.id} /></th>
-                  <td>{j && (j.needsDesign ? <Cell index={index} ids={j.designedBy} flag={has(j, 'not-designed') ? 'not designed' : null} /> : <span className="hint">Not asked</span>)}</td>
-                  <td>{j && (j.needsDesign ? <Cell index={index} ids={j.builtBy} flag={has(j, 'not-built') || has(j, 'not-designed') ? 'not built' : null} /> : <span className="hint">Not asked</span>)}</td>
-                  <td>{j && <Cell index={index} ids={j.provedBy} notAutomated={j.provedBy.length === 0 ? j.notAutomatedBy : []} flag={has(j, 'not-proved') || has(j, 'not-automated') ? 'not proved' : null} />}</td>
+                <tr key={record.id} data-requirement={record.id} role="row">
+                  <th scope="row" role="rowheader"><RecordLink index={index} id={record.id} /></th>
+                  <td role="cell" data-label="Designed">{j && (j.needsDesign ? <Cell index={index} ids={j.designedBy} flag={has(j, 'not-designed') ? 'not designed' : null} /> : <span className="hint">Not asked</span>)}</td>
+                  <td role="cell" data-label="Built">{j && (j.needsDesign ? <Cell index={index} ids={j.builtBy} flag={has(j, 'not-built') || has(j, 'not-designed') ? 'not built' : null} /> : <span className="hint">Not asked</span>)}</td>
+                  <td role="cell" data-label="Proved">{j && <Cell index={index} ids={j.provedBy} notAutomated={j.provedBy.length === 0 ? j.notAutomatedBy : []} flag={has(j, 'not-proved') || has(j, 'not-automated') ? 'not proved' : null} />}</td>
                 </tr>
               );
             })}

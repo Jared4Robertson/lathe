@@ -643,9 +643,9 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .trace-cell { display: inline-flex; flex-wrap: wrap; gap: 2px 8px; align-items: baseline; }
 /* Record links listed in a cell are 24 px targets (WCAG 2.5.8, LA-V61-R47). */
 .trace-cell > .record-link { min-block-size: 24px; align-items: center; }
-/* Four columns keep room for their words: in a narrow wiki card the table scrolls sideways in its .table-scroll rather than squeezing to a word per line (LA-PAT-APP-UX-R18). */
-.data-table.trace-requirements { width: 100%; min-width: 42rem; }
-.data-table.trace-requirements > tbody > tr > th[scope="row"] { width: 17rem; }
+/* Four columns keep room for their words; where they can't fit, the rows stack (.table-stack). */
+.data-table.trace-requirements { width: 100%; }
+@container (min-width: 64rem) { .data-table.trace-requirements > tbody > tr > th[scope="row"] { width: 17rem; } }
 .flow-path > h3 { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 4px; font-size: 0.9rem; }
 .rule-na-reasons { font-size: 0.8rem; color: var(--muted); }
 .data-table { border-collapse: collapse; font-size: 0.86rem; margin: 0 0 12px; }
@@ -655,6 +655,19 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .data-table tbody .group-row th { font-weight: 600; padding-top: 12px; }
 .data-table td.setting-na { color: var(--muted); font-style: italic; }
 .table-scroll { max-width: 100%; overflow-x: auto; }
+/* A table whose columns can't all fit lays each row out stacked instead, so nothing is drawn cut or squeezed to a word
+   per line (LA-PAT-APP-UX-R18): the row's header on one line, each cell beneath at full width, a cell with a data-label
+   behind its column's name. The column headers stay for screen readers, and the explicit roles keep the table's
+   semantics while its parts are laid out as blocks. At widths where every column fits, it stays a table. */
+.table-stack { container-type: inline-size; }
+@container (max-width: 64rem) {
+  .table-stack > table, .table-stack > table > tbody, .table-stack > table > tbody > tr, .table-stack > table > tbody > tr > :is(th, td) { display: block; width: auto; min-width: 0; }
+  .table-stack > table > thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  .table-stack > table > tbody > tr { padding: 6px 0; border-bottom: 1px solid var(--rule); }
+  .table-stack > table > tbody > tr > :is(th, td) { border-bottom: 0; padding: 2px 0; }
+  .table-stack > table > tbody > tr > td[data-label] { display: grid; grid-template-columns: 7.5rem minmax(0, 1fr); gap: 8px; align-items: baseline; }
+  .table-stack > table > tbody > tr > td[data-label]::before { content: attr(data-label); color: var(--muted); font-size: 0.8rem; }
+}
 .pattern-domain h3 { margin: 16px 0 6px; font-size: 1rem; }
 .markdown a.mention { font-family: var(--mono); font-size: 0.9em; }
 
@@ -666,6 +679,9 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 
 /* ---------- Flow steps ---------- */
 .data-table.flow-steps { width: 100%; }
+/* Every column keeps room for its words; where they can't fit, the rows stack (.table-stack). */
+@container (min-width: 64rem) { .flow-steps .step-what { width: 20rem; } }
+.flow-steps .step-ids > li { white-space: nowrap; }
 .flow-steps .step-head { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
 .flow-steps .step-order { font: 600 0.8rem var(--mono); min-width: 1.6em; text-align: right; color: var(--muted); }
 .flow-steps .step-ids { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 2px 8px; }
