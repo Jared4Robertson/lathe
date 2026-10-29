@@ -140,7 +140,7 @@ describe('graph page', () => {
     expect(drawnBox('P-D')!.stage).toBe('domain-model');
   });
 
-  it('LA-V93-R14-T01 The plain arrows step through the tree while the graph has focus, Enter re-centers on the focused box, and Escape clears the filters', async () => {
+  it('LA-V93-R14-T01 The plain arrows step through the tree from a focused box, Enter re-centers on the focused box, and Escape clears the filters', async () => {
     await showGraph(`/${STEP}`);
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
     const center = node(STEP)!;
