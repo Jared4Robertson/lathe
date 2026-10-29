@@ -168,6 +168,15 @@ describe('record page', () => {
     expect(also).toHaveTextContent(/recorded exception/);
   });
 
+  it('LA-V92-R13-T01 A repository shows the other aggregates it also persists, each with its reason', async () => {
+    await openApp('/P-D-REPO01', { data: modelWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'LoanRepository' });
+    const also = section(/^Also persists/);
+    expect(within(also).getByRole('link', { name: /P-D-A4/ })).toHaveAttribute('href', '/P-D-A4');
+    expect(also).toHaveTextContent('Shelves are stored with the loans that take things off them.');
+    expect(also).toHaveTextContent(/one repository per aggregate/);
+  });
+
   it('LA-V92-R13-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner says why it has no parent', async () => {
     openSideBar('details', ['graph']);
     await openApp('/DM-V01?stage=graph');

@@ -57,7 +57,7 @@ export function LongList<T>({ items, render, searchText, itemKey, label, classNa
 
   const Tag = ordered ? 'ol' : 'ul';
   const list = (
-    <Tag className={className} aria-label={label}>
+    <Tag className={className} aria-label={label} data-arrows={onItemKeyDown ? 'own' : undefined}>
       {shown.map((item) => (
         <li key={itemKey(item)} className={itemClassName?.(item)} onKeyDown={onItemKeyDown ? (e) => onItemKeyDown(item, e) : undefined}>
           {render(item, long ? q : '')}

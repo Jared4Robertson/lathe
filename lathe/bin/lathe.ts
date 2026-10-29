@@ -21,8 +21,9 @@ Commands:
            --allow-dirty upgrades anyway.
   check    Load the data and check it: the product's, and that of each other product its ${CONFIG_FILE}
            lists under products, each on its own. Prints errors, warnings, the recorded exceptions (each
-           command that also changes another aggregate, with its reason) and coverage (one line per domain
-           and obligation kind) per product; exits 1 on any error.
+           command that also changes another aggregate, and each repository that also persists one, with
+           its reason) and coverage (one line per domain and obligation kind) per product; exits 1 on any
+           error.
            --json prints { products: [{ root, workspace }] } instead.
   serve    Serve the web app for the product repo and each product it lists.  --port 5330 (default)
   merge-data <base> <ours> <theirs> <path>

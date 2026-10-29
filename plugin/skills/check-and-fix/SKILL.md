@@ -25,7 +25,7 @@ A refused write changed nothing. Its result lists every reason, each with the ru
 - `[primary-key]`, `[unique]`: it exists already, or its parent has its one already (one flow per use case and interface, one test per invariant, one technical record per design record, one event a policy hears, one operation a step invokes, one view it happens in).
 - `[id-prefix]`: the ID does not start with its scope's ID and a hyphen: its parent's, its domain's or its product's. `next_id` gives a right one.
 - `[relation-pair]`, `[link-scope]`, `[link-crosses-product]`: a link between kinds its relation does not join, across domains where the relation stays in one (`checks`, `reads`, `selects_by`, `calls`) or across aggregates (`raises`), or across products.
-- `[step-fulfills-own-use-case]`, `[policy-hears-published]`, `[command-change-in-domain]`: a step fulfilling another use case's requirement, a policy hearing another domain's unpublished event, a command change of the command's own aggregate or another domain's.
+- `[step-fulfills-own-use-case]`, `[policy-hears-published]`, `[command-change-in-domain]`, `[repository-share-unpersisted]`: a step fulfilling another use case's requirement, a policy hearing another domain's unpublished event, a command change of the command's own aggregate or another domain's, a repository share of an aggregate a repository already persists.
 - `[referenced]`: a removal while something still references the record; the refusal names what does. Unlink, remove or move those first.
 - A title refused: a duplicate within its kind and product, a trailing period, whitespace in a code-bound title, an endpoint title other than its method and route, or a check row title not in kebab case. Rename it by the naming convention in the skill that writes the kind; never add a number or a suffix just to make it unique.
 
@@ -57,7 +57,7 @@ Fix the warnings your task is about; leave the rest and mention them.
 
 ## Recorded exceptions: deliberate, never warnings
 
-A recorded exception is a deviation made on purpose and written down with its reason: a command that also changes another aggregate of its domain in the same transaction (a `command_change` row). It is not a problem and never counts as a warning. `lathe check` lists every one in its own **Recorded exceptions** section, after the warnings, with its command, aggregate and reason, and the app's Checks page shows them in a section of their own, so each stays visible. Read the list when you touch those commands: check each reason still holds, and prefer an event and a policy when it no longer does (then remove the row).
+A recorded exception is a deviation made on purpose and written down with its reason: a command that also changes another aggregate of its domain in the same transaction (a `command_change` row), or a repository that also persists another aggregate, which has no repository of its own (a `repository_share` row). It is not a problem and never counts as a warning. `lathe check` lists every one in its own **Recorded exceptions** section, after the warnings, with its command or repository, aggregate and reason, and the app's Checks page shows them in a section of their own, so each stays visible. Read the list when you touch those commands or repositories: check each reason still holds, and prefer an event and a policy, or a repository of the aggregate's own, when it no longer does (then remove the row).
 
 ## Gaps and coverage
 

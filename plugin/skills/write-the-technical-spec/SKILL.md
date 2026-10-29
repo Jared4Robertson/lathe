@@ -24,7 +24,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 | Technical kind | Implements (its parent) | ID |
 | --- | --- | --- |
-| `repository` | a domain: loads and saves the aggregates it `persists`, each whole | `<domain>-REPO<nn>` |
+| `repository` | a domain: loads and saves the one aggregate it `persists`, whole | `<domain>-REPO<nn>` |
 | `data_model` | an entity: its code, behavior and mapping to its table | `<entity>-DM` |
 | `table` | an entity or a read model: its storage | `<entity or read model>-TB` |
 | `value_type` | a value object, and so its constraints | `<value object>-VT` |
@@ -39,7 +39,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `adapter` | an integration | `<integration>-AD` |
 | `ui_component` | none: it `renders` the views it is used in | `<P>-UI<nn>` |
 
-A repository sits under its domain rather than under what it implements, since one piece of code often persists several aggregates: link each aggregate it persists with `persists`. Every aggregate is persisted by exactly one repository (a second is refused), and a repository that persists none is an error (`repository-persists-nothing`). Write one record per piece of code: a generic store that loads and saves every aggregate is one repository linked to each of them, never a record per aggregate or per data file; separate methods per aggregate, such as `Store.findLoan` and `Store.findTool`, are separate repositories. A repository shared by several domains' aggregates sits under the domain that holds what they share, such as a Platform domain.
+A repository sits under its domain and links the one aggregate it persists with `persists`: one repository per aggregate, and one aggregate per repository (a second either way is refused). A repository that persists none is an error (`repository-persists-nothing`). Separate methods per aggregate, such as `Store.findLoan` and `Store.findTool`, are separate repositories. Write one record per piece of code: a generic store that loads and saves every aggregate the same way is one repository, never a record per aggregate or per data file. It persists one aggregate, the most central, and records each other aggregate it persists as a recorded exception, a `repository_share` row with the reason, such as "One generic store persists every table, so a repository per aggregate would only pass calls through." `lathe check` and the Checks page list each one under Recorded exceptions; the store refuses a share of an aggregate a repository persists. A repository shared by several domains sits under the domain that holds what they share, such as a Platform domain.
 
 Each has `file` (from the product root; it may not exist yet, and several records may share one file) and `description` (what in the file, such as the function names). Name the unit in its `title`, such as `LendingService.borrow`.
 
@@ -56,7 +56,7 @@ A technical record is bound to code, so its `title` is the identifier exactly as
 
 The store refuses a check row title not in kebab case.
 
-What follows from the tree is not stored: a command is carried out by its handler and its aggregate root's data model, and a handler loads its aggregate through the repository that persists it. Link nothing for these; only a repository links the aggregates it persists.
+What follows from the tree is not stored: a command is carried out by its handler and its aggregate root's data model, and a handler loads its aggregate through the repository that persists it. Link nothing for these; only a repository links the aggregate it persists.
 
 ## Domain layer and application layer
 

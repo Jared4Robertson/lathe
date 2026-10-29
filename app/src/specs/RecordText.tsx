@@ -43,7 +43,7 @@ const label = (column: string) => column.replaceAll('_', ' ');
 export const FIELD_TABLES = ['entity_field', 'value_object_field', 'event_field', 'read_model_field'] as const;
 
 /** The part tables a record's page lays out itself, in place of listing their rows as facts. */
-const SHOWN_PARTS: ReadonlySet<string> = new Set([...FIELD_TABLES, 'table_key', 'command_change', 'pattern_setting', 'role', 'use_case_actor', 'setting_value', 'package_use']);
+const SHOWN_PARTS: ReadonlySet<string> = new Set([...FIELD_TABLES, 'table_key', 'command_change', 'repository_share', 'pattern_setting', 'role', 'use_case_actor', 'setting_value', 'package_use']);
 
 const scenarioLabel = (c: string) => c[0].toUpperCase() + c.slice(1);
 
@@ -57,9 +57,10 @@ export function RecordText({ index, record }: { index: SpecIndex; record: SpecRe
   const fields = FIELD_TABLES.flatMap((t) => partsOf(index, id, t));
   const keys = partsOf(index, id, 'table_key');
   const changes = partsOf(index, id, 'command_change');
+  const shares = partsOf(index, id, 'repository_share');
   const steps = Array.isArray(row.steps) ? row.steps : [];
   const roles = partsOf(index, id, 'role');
-  const empty = lead.length + titled.length + scenario.length + fields.length + keys.length + changes.length + steps.length + roles.length === 0 && !notes;
+  const empty = lead.length + titled.length + scenario.length + fields.length + keys.length + changes.length + shares.length + steps.length + roles.length === 0 && !notes;
   return (
     <div className="record-text">
       {empty && <p className="hint">No text yet.</p>}
@@ -80,7 +81,14 @@ export function RecordText({ index, record }: { index: SpecIndex; record: SpecRe
       )}
       {fields.length > 0 && <FieldsTable index={index} rows={fields} owner={id} />}
       {keys.length > 0 && <KeysTable index={index} rows={keys} owner={id} />}
-      {changes.length > 0 && <RecordedExceptions index={index} rows={changes} owner={id} />}
+      {changes.length > 0 && (
+        <RecordedExceptions index={index} rows={changes} owner={id} title="Also changes"
+          hint="A recorded exception to one aggregate per command: each is changed in the same transaction, and the checks list it so it stays deliberate." />
+      )}
+      {shares.length > 0 && (
+        <RecordedExceptions index={index} rows={shares} owner={id} title="Also persists"
+          hint="A recorded exception to one repository per aggregate: each has no repository of its own, and the checks list it so it stays deliberate." />
+      )}
       {roles.length > 0 && (
         <Section title="Roles" count={roles.length}>
           <dl className="fields roles">
@@ -178,11 +186,14 @@ function KeysTable({ index, rows, owner }: { index: SpecIndex; rows: Row[]; owne
   );
 }
 
-/** A command's recorded exceptions: the other aggregates of its domain it also changes in its transaction, each with why it can't follow through an event. */
-function RecordedExceptions({ index, rows, owner }: { index: SpecIndex; rows: Row[]; owner: string }) {
+/**
+ * A record's recorded exceptions, each another aggregate and why: those a command also changes in its transaction
+ * (command_change), or those a repository also persists (repository_share).
+ */
+function RecordedExceptions({ index, rows, owner, title, hint }: { index: SpecIndex; rows: Row[]; owner: string; title: string; hint: string }) {
   return (
-    <Section title="Also changes" count={rows.length} className="recorded-exceptions">
-      <p className="hint">A recorded exception to one aggregate per command: each is changed in the same transaction, and the checks list it so it stays deliberate.</p>
+    <Section title={title} count={rows.length} className="recorded-exceptions">
+      <p className="hint">{hint}</p>
       <dl className="fields">
         {rows.map((c) => (
           <div key={textOf(c, 'aggregate_id')}>
