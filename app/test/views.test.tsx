@@ -6,7 +6,8 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 import { parseSpecRoute } from '../src/specs/data';
 import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/address';
-import { frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
+import { CARD_GAP, CARD_GAP_Y, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
+import { cardTop } from '../src/views/cardPlace';
 import { SETTINGS_KEY } from '../src/graph/settings';
 import { colorOf } from '../src/theme/audit';
 import { contrast, over } from '../src/theme/contrast';
@@ -324,6 +325,70 @@ describe('one address, one stage', () => {
     expect(within(card()).getByRole('separator', { name: 'Resize the wiki card' })).toHaveAttribute('aria-valuenow', '900');
     fireEvent.doubleClick(within(card()).getByRole('separator', { name: 'Resize the wiki card' }));
     expect(settings()).toMatchObject({ cardWidth: null });
+  });
+
+  it('LA-V96-R22-T01 The wiki card opens as a summary, More shows the whole page in place and Less goes back, the session\'s setting', async () => {
+    // The card's default, as a new session has it (the other tests start it expanded).
+    window.sessionStorage.clear();
+    await openApp('/P-D-UC01?stage=graph', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    // The summary: the box's kind line, the title, the lead text clamped, and at most three key facts, its parent first.
+    expect(card()).not.toHaveClass('is-expanded');
+    expect(card().querySelector('.wiki-panel-kind')).toHaveTextContent('Use case · P-D-UC01');
+    expect(within(card()).getByRole('heading', { level: 2, name: 'Lend a thing' })).toBeInTheDocument();
+    expect(card().querySelector('.wiki-panel-lead')).toHaveTextContent('A member takes a thing home.');
+    const facts = [...card().querySelectorAll('.wiki-panel-summary .fields dt')].map((d) => d.textContent);
+    expect(facts.length).toBeGreaterThan(0);
+    expect(facts.length).toBeLessThanOrEqual(3);
+    expect(facts[0]).toBe('Capability');
+    // Edit stays in reach; the whole page's sections do not show yet.
+    expect(within(card()).getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    expect(within(card()).queryByRole('heading', { name: /^Flows by interface/ })).toBeNull();
+    // More: the whole page in place, saved for the session; Less: the summary again.
+    const more = within(card()).getByRole('button', { name: 'More' });
+    expect(more).toHaveAttribute('aria-expanded', 'false');
+    fireEvent.click(more);
+    expect(card()).toHaveClass('is-expanded');
+    expect(settings()).toMatchObject({ cardExpanded: true });
+    expect(within(card()).getByRole('heading', { name: /^Flows by interface/ })).toBeInTheDocument();
+    expect(within(card()).getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+    fireEvent.click(within(card()).getByRole('button', { name: 'Less' }));
+    expect(card()).not.toHaveClass('is-expanded');
+    expect(settings()).toMatchObject({ cardExpanded: false });
+  });
+
+  it('LA-V96-R23-T01 The wiki card settles level with the focused box, below the stage\'s tools and above the foot, and rests at the nearest edge for a focus off-screen', () => {
+    // Its title row 60 px down the card, the card 300 px high, the room from 120 px to 880 px of a 900 px stage.
+    const at = (anchorY: number | null) => cardTop({ anchorY, titleAt: 60, height: 300, minTop: 120, stageHeight: 900 });
+    expect(at(400)).toBe(340);
+    // Near the top or above it, near the foot or below it: the nearest edge of the room.
+    expect(at(130)).toBe(120);
+    expect(at(-500)).toBe(120);
+    expect(at(850)).toBe(900 - CARD_GAP_Y - 300);
+    expect(at(5000)).toBe(900 - CARD_GAP_Y - 300);
+    // No box for the focus: the top of the room.
+    expect(at(null)).toBe(120);
+  });
+
+  it('LA-V96-R19-T03 The wiki card reads as part of the graph: below the tools, inset, its height fitted, the boxes\' corners, a stripe in the box\'s color, a soft shadow, no border and a quiet cross-fade', () => {
+    const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+    // Every rule of exactly this selector, joined.
+    const rule = (selector: string) => [...css.matchAll(new RegExp(`(?:^|\\n)${selector.replace(/[.[\]()]/g, '\\$&')} \\{([^}]*)\\}`, 'g'))].map((m) => m[1]).join(';');
+    const panel = rule('.wiki-panel');
+    expect(panel).toMatch(/top: calc\(var\(--below-strip\) - var\(--float-inset\) \+ var\(--card-gap-y\)\)/);
+    expect(panel).toMatch(/right: calc\(var\(--side-space\) - var\(--float-inset\) \+ var\(--card-gap\)\)/);
+    expect(panel).toMatch(/border-radius: var\(--node-radius\)/);
+    expect(panel).not.toMatch(/bottom:|border:/);
+    expect(panel).toMatch(/max-height: var\(--card-room/);
+    expect(rule('.wiki-panel.is-expanded')).toMatch(/max-height: min\(70%, var\(--card-room, 70%\)\)/);
+    expect(rule('.wiki-panel::before')).toMatch(/background: var\(--card-accent/);
+    expect(css).toMatch(/\.wiki-panel \{ background: var\(--float-light\);[^}]*box-shadow: var\(--card-shadow\)/);
+    expect(css).toMatch(/@media \(forced-colors: active\) \{ \.wiki-panel \{ border: 1px solid CanvasText; \} \}/);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{ \.wiki-panel-page \{ animation: wiki-card-in/);
+    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.wiki-panel\[data-placed\] \{ transition: none; \} \}/);
+    // The card's gaps are wider than the panels' own, and 1440 px still holds it beside the chat (LA-PAT-APP-UX-R18).
+    expect(CARD_GAP).toBeGreaterThan(8);
+    expect(CARD_GAP_Y).toBeGreaterThan(8);
   });
 
   it('LA-V96-R20-T01 Panels float over the stage, frosted, and opaque under reduced transparency', async () => {

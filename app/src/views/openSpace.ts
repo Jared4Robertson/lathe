@@ -30,17 +30,32 @@ const SIDES = ['left', 'top', 'right', 'bottom'] as const;
 const NONE: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
 const same = (a: Insets, b: Insets) => SIDES.every((s) => Math.abs(a[s] - b[s]) < 0.5);
 
+/**
+ * Where the stage frames its focus (LA-V96-R19): the focused box's vertical center, in px from the
+ * stage's top, once the camera that frames it arrives (`at`, on `performance.now()`'s clock). Null
+ * when the stage draws no box for the focus. A stage reports it only when it frames the focus, never
+ * as the Reader pans or zooms, so the wiki card that settles level with it never chases the camera.
+ */
+export interface FocusAnchor { focus: string; y: number | null; at: number }
+
 export interface OpenSpaceStore {
   /** The measure, or null before the first one, so a stage never frames on a guess. */
   get: () => OpenSpace | null;
   subscribe: (listener: () => void) => () => void;
   /** Sets the measure; tells the listeners only when it changed. */
   set: (next: OpenSpace) => void;
+  /** Where the stage last framed its focus, or null before it has. */
+  anchor: () => FocusAnchor | null;
+  subscribeAnchor: (listener: () => void) => () => void;
+  /** A stage reports where it frames its focus. */
+  setAnchor: (next: FocusAnchor) => void;
 }
 
 export function createOpenSpaceStore(): OpenSpaceStore {
   let value: OpenSpace | null = null;
+  let anchor: FocusAnchor | null = null;
   const listeners = new Set<() => void>();
+  const anchorListeners = new Set<() => void>();
   return {
     get: () => value,
     subscribe: (l) => { listeners.add(l); return () => { listeners.delete(l); }; },
@@ -48,6 +63,12 @@ export function createOpenSpaceStore(): OpenSpaceStore {
       if (value && same(next.open, value.open) && same(next.frame, value.frame)) return;
       value = next;
       for (const l of listeners) l();
+    },
+    anchor: () => anchor,
+    subscribeAnchor: (l) => { anchorListeners.add(l); return () => { anchorListeners.delete(l); }; },
+    setAnchor: (next) => {
+      anchor = next;
+      for (const l of anchorListeners) l();
     },
   };
 }
@@ -164,6 +185,13 @@ const noValue = () => null;
  * nav, the wiki card and the chat open, only the side bar giving way.
  */
 export const STAGE_MIN = 300;
+/**
+ * The wiki card's gap from what is at its right (the side bar, the chat or the window), in px: wider than the
+ * panels' own gap (`--float-inset`), so the card floats in the map; no wider, so 1440 px still holds it beside the chat.
+ */
+export const CARD_GAP = 12;
+/** The card's gap from the stage's tools above it and the window's foot below it, in px. */
+export const CARD_GAP_Y = 20;
 /** A panel that collapses when the window is too narrow for every open panel. */
 export type CrowdPanel = 'sideBar' | 'card' | 'nav';
 /** The order panels collapse in as the window narrows; they reopen in reverse. */
@@ -202,7 +230,7 @@ export function openWidth(room: Room, collapsed: ReadonlySet<CrowdPanel>): numbe
   const chatSpace = room.chat !== null ? room.chat + 2 * inset : inset;
   const sideSpace = sideBar !== null ? sideBar + inset + chatSpace : chatSpace;
   let right = 0;
-  if (card) right = sideSpace + CARD_MIN + OPEN_GAP;
+  if (card) right = sideSpace - inset + CARD_GAP + CARD_MIN + OPEN_GAP;
   else if (sideBar !== null) right = sideSpace + OPEN_GAP;
   else if (room.chat !== null) right = chatSpace - inset + OPEN_GAP;
   return room.width - left - right;

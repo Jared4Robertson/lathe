@@ -162,6 +162,12 @@ const DESKTOP: State[] = [
     await page.locator('.chat-session-open', { hasText: 'Plan the graph stage' }).click();
     await page.locator('.chat-warning').waitFor();
   } },
+  // The wiki card opens as its summary on every page above; More shows the whole page in place (LA-V96-R22).
+  { name: 'the wiki card expanded to the whole page', run: async (page) => {
+    await open(page, RECORD, '.header-strip h1');
+    await page.locator('.wiki-panel').getByRole('button', { name: 'More' }).click();
+    await page.locator('.wiki-panel.is-expanded').waitFor();
+  } },
   { name: 'a tooltip on keyboard focus', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
     // A tooltip opens on keyboard focus: the last input is a key, as when the Reader tabs to it.

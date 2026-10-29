@@ -22,6 +22,7 @@ import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, type SideMode
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { rememberStage, usePageTabs, type PageTabsApi } from './useTabs';
 import { WikiCard } from './WikiCard';
+import { useCardPlace } from './cardPlace';
 import { Button } from '../components/Button';
 import { useViewState } from '../chat/appRequests';
 
@@ -199,6 +200,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     if (!show) setTimeout(() => cardButton.current?.focus(), 0);
   }, [narrow, setCard, hold, announce]);
   const collapseCard = useCallback(() => setCardShown(false), [setCardShown]);
+  const expandCard = useCallback((expanded: boolean) => setCard({ expanded }), [setCard]);
   // Made once per width, so the memoized card draws again only for a new page.
   const cardHandle = useMemo(() => (
     <CardHandle width={card.width} onWidth={(width) => setCard({ width })} onReset={() => setCard({ width: null })} onCollapse={collapseCard} />
@@ -273,6 +275,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const [space] = useState(createOpenSpaceStore);
   const stageEl = useRef<HTMLDivElement>(null);
   useOpenSpaceMeasure(stageEl, space, layout);
+  // The card settles level with the focused box, once the focus settles and the stage has framed it (cardPlace.ts).
+  useCardPlace(cardScroll, space, settledFocus, cardShown && !narrow);
 
   // Commands.
   useCommand('stageGraph', () => setStage('graph'));
@@ -341,7 +345,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         onStage={setStage}
         stageBox={stageBox}
         strip={<HeaderStrip index={index} focus={focus} counts={counts} />}
-        card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} sheet /> : null}
+        card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} expanded={card.expanded} onExpanded={expandCard} sheet /> : null}
         onCard={setCardShown}
         cardButton={cardButton}
         sideBarShown={showing}
@@ -384,6 +388,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
             route={cardRoute}
             onScroll={onCardScroll}
             onCollapse={collapseCard}
+            expanded={card.expanded}
+            onExpanded={expandCard}
             handle={cardHandle}
           />
         )}

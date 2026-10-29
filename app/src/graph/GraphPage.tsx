@@ -665,6 +665,9 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (!target || !size) return;
     const resized = framedFor.current !== null && (framedFor.current.w !== size.w || framedFor.current.h !== size.h);
     const duration = moveTo(target, framedFor.current !== null && !resized && !framedEmpty.current);
+    // Where the focused box will sit once the camera arrives, for the wiki card that settles level with it.
+    const node = map.nodes.get(focus);
+    space?.setAnchor({ focus, y: node ? target.y + (node.y + node.h / 2) * target.zoom : null, at: performance.now() + duration });
     if (fadeShift.current.to !== focus) fadeShift.current = { from: fadeShift.current.to, to: focus, start: performance.now(), duration };
     framedFor.current = size;
     framedEmpty.current = map.nodes.size === 0;

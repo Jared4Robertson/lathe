@@ -48,6 +48,9 @@ const SHOWN_PARTS: ReadonlySet<string> = new Set([...FIELD_TABLES, 'table_key', 
 const scenarioLabel = (c: string) => c[0].toUpperCase() + c.slice(1);
 
 /** The record's text fields and part rows, for the body of its page. */
+/** A record's lead text: its statement, goal, meaning or description, the first it has; empty when none. */
+export const leadOf = (record: SpecRecord): string => LEAD_COLUMNS.map((c) => textOf(record.row, c).trim()).find((t) => t) ?? '';
+
 export function RecordText({ index, record }: { index: SpecIndex; record: SpecRecord }) {
   const { row, id } = record;
   const lead = LEAD_COLUMNS.filter((c) => textOf(row, c).trim());
