@@ -6,7 +6,6 @@ import { groupByLabel } from './labels';
 import { Traceability } from './Traceability';
 import { RecordText, factsOf, rowPlace } from './RecordText';
 import { kindFieldPath, kindPagePath } from '../format/reference';
-import { InterfaceFlows } from './InterfaceParts';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
 import { Grouped, KindBadge, NavigateContext, StageFact, PageHeader, ProblemBadge, ProblemList, RecordLink, RecordTree, Section, SpecLink, TestStateTag, idText, isTestKind, listTitle, notAutomatedYet } from './parts';
@@ -107,7 +106,6 @@ function RecordBody({ index, record, actions, header }: { index: SpecIndex; reco
         )}
       >
         <RecordText index={index} record={record} />
-        {record.kind === 'interface' && <InterfaceFlows index={index} iface={record} />}
       </RecordFrame>
     </>
   );

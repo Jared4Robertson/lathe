@@ -199,7 +199,7 @@ function othersUnder(index: SpecIndex, kind: CommandKind): string[] {
   return Object.values(index.workspace.schema.kinds)
     .filter((k) => k.parents.some((p) => p.kind === kind))
     .map((k) => k.name)
-    .filter((k) => adderOf(k) !== undefined)
+    .filter((k) => adderOf(index.workspace.schema, k) !== undefined)
     .sort();
 }
 
@@ -233,7 +233,7 @@ export function CommandEditor({ index, page, children }: { index: SpecIndex; pag
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} place={place} kind={mode.kind} parent={id} onDone={back} /></div>;
   if (mode.mode === 'adopt') {
-    const Adder = adderOf(mode.kind)!;
+    const Adder = adderOf(index.workspace.schema, mode.kind)!;
     return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
   }
   // A command has one handler, and a policy one event handler and one test: once it has it, there is nothing more to add of that kind.

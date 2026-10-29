@@ -12,6 +12,7 @@
 {"id":"LA-AUT-MOD24","title":"business-outcome/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/business-outcome/commands/index.ts"}
 {"id":"LA-AUT-MOD25","title":"entry-point/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/entry-point/commands/index.ts"}
 {"id":"LA-AUT-MOD26","title":"tooling/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/tooling/commands/index.ts"}
+{"id":"LA-AUT-MOD27","title":"extension-record/declaration.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/extension-record/declaration.ts"}
 {"id":"LA-AUT-MOD30","title":"domain/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/domain/model.ts"}
 {"id":"LA-AUT-MOD31","title":"domain/rules.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/domain/rules.ts"}
 {"id":"LA-AUT-MOD32","title":"domain/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/domain/commands/index.ts"}

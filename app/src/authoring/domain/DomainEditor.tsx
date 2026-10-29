@@ -227,7 +227,7 @@ function othersUnder(index: SpecIndex, kind: DomainKind): string[] {
   return Object.values(index.workspace.schema.kinds)
     .filter((k) => k.parents.some((p) => p.kind === kind) || (kind === 'domain' && k.parents.length === 0 && k.idScope === 'domain'))
     .map((k) => k.name)
-    .filter((k) => adderOf(k) !== undefined)
+    .filter((k) => adderOf(index.workspace.schema, k) !== undefined)
     .sort();
 }
 
@@ -261,7 +261,7 @@ export function DomainEditor({ index, page, children }: { index: SpecIndex; page
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} page={page} kind={mode.kind} parent={id} onDone={back} /></div>;
   if (mode.mode === 'adopt') {
-    const Adder = adderOf(mode.kind)!;
+    const Adder = adderOf(index.workspace.schema, mode.kind)!;
     return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
   }
   // A domain service has one service: once it has it, there is nothing more to add of that kind.

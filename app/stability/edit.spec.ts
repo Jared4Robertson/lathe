@@ -3,8 +3,9 @@ import { expectStable, openPage, step } from './measure';
 import { EDITED, keepData, RECORD } from './scenarios';
 
 // Changing records in place, with nothing jumping (LA-PAT-APP-UX-R08): on the Use case page (its own editor, sending
-// the Use case aggregate's commands) and on the Domain, Test data set, Pattern, Standard, Aggregate, Domain event and
-// Command pages, opening a record's form, saving an edit, adding a child from its parent's page,
+// the Use case aggregate's commands) and on the Domain, Test data set, Pattern, Standard, Product, Business outcome,
+// Entry point, Tooling, Aggregate, Domain event and Command pages, opening a record's form, saving an edit, adding a
+// child from its parent's page,
 // and asking to remove a record that is still referenced, which the command refuses inline; and on the page of a kind
 // whose aggregate has no editor yet, the record form generated from the schema. The form takes the place of the page's content,
 // so shifts inside the wiki card's scroll box are the change itself; the nav, the card's head and
@@ -111,6 +112,13 @@ test.describe('editing', () => {
   test('LA-AUT-UC13-FL01-T on the Test data set page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TD30', /^reset/, 'Throw the folder away.'));
   test('LA-AUT-UC05-FL01-T on the Pattern page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PAT-RECORD-PAGE-R01', /^group name/, 'Stability'));
   test('LA-AUT-UC16-FL01-T on the Standard page, open a rule\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STD-CODE-R01', /^group name/, 'Stability'));
+  // The Product, Business outcome, Entry point and Tooling pages: each saves one field as its kind's Change command, with
+  // nothing jumping. Each is its aggregate's web-app flow test.
+  test('LA-AUT-UC23-FL01-T on the Product page, open an interface\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-IF03', /^description/, 'The command line, as the stability suite describes it.'));
+  test('LA-AUT-UC22-FL01-T on the Business outcome page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-BO05', /^notes/, 'Noted by the stability suite.'));
+  test('LA-AUT-UC29-FL01-T on the Entry point page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PLT-ENTRY01', /^description/, 'Starts the server, as the stability suite describes it.'));
+  test('LA-AUT-UC30-FL01-T on the Tooling page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TOOL01', /^title/, 'schema-types.ts'));
+  // The Aggregate, Domain event and Command pages, likewise.
   test('LA-AUT-UC10-FL01-T on the Aggregate page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-A6', /^identity/, 'Stability'));
   test('LA-AUT-UC25-FL01-T on the Domain event page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EV01', /^description/, 'Stability'));
   test('LA-AUT-UC12-FL01-T on the Command page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-CMD210', /^description/, 'Stability'));

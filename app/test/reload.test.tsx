@@ -26,9 +26,9 @@ describe('reload on change', () => {
     await act(async () => { for (const callback of listeners.get('spec:changed') ?? []) callback(); });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Basket store' })).toBeInTheDocument();
-    // The spec again, and the Changes baseline read again with it (GET /api/baseline, its last commit may have moved).
-    // The command's page reads its command again through the aggregate's own query.
-    expect(after.requests.filter((r) => !r.startsWith('GET /api/baseline?'))).toEqual(['GET /api/spec', 'GET /api/command/get-command?id=DM-SHOP-CMD01-H']);
+    // The spec again, and the products the nav lists and the Changes baseline read again with it (GET /api/baseline, its
+    // last commit may have moved); the command's page reads its command again through the aggregate's own query.
+    expect(after.requests.filter((r) => !r.startsWith('GET /api/baseline?'))).toEqual(['GET /api/spec', 'GET /api/product/list-products?', 'GET /api/command/get-command?id=DM-SHOP-CMD01-H']);
     // The address and page stay the same; no manual refresh.
     expect(window.location.pathname).toBe('/DM-SHOP-CMD01-H');
   });
