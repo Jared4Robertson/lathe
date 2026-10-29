@@ -10,7 +10,8 @@ import { sceneOf } from './scene';
 // thrown away and drawn anew. The panels are frosted, and opaque under reduced transparency.
 
 const NAV = 'nav#nav';
-const PAGE_BAR = '.stage-layout > .page-bar';
+// The page's controls: the page bar's right in the desktop app, the header strip's on the web.
+const PAGE_BAR = '.page-bar-actions';
 const STRIP = '.header-strip';
 const CARD = '.wiki-panel';
 const BOXES = `${STAGE} .graph-flow .graph-box`;
@@ -155,7 +156,7 @@ test.describe('the stage and its panels', () => {
     const looks = () => page.evaluate((sels) => sels.map((sel) => {
       const s = getComputedStyle(document.querySelector(sel)!);
       return { sel, filter: s.backdropFilter, background: s.backgroundColor };
-    }), ['nav#nav', '.stage-layout > .page-bar', '.header-strip', '.wiki-panel']);
+    }), ['nav#nav', '.page-bar-actions', '.header-strip', '.wiki-panel']);
     await openPage(page, `${RECORD}?stage=graph`);
     for (const l of await looks()) {
       expect(l.filter, `${l.sel} blurs the stage behind it`).toContain('blur');

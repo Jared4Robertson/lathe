@@ -184,7 +184,7 @@ const DESKTOP: State[] = [
     await open(page, RECORD, '.header-strip h1');
     // A tooltip opens on keyboard focus: the last input is a key, as when the Reader tabs to it.
     await page.keyboard.press('Shift');
-    await page.locator('.page-bar .stage-switch button').first().focus();
+    await page.locator('.page-bar-actions .stage-switch button').first().focus();
     await page.locator('.tooltip').waitFor();
   } },
 ];

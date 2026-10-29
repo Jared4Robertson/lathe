@@ -216,7 +216,7 @@ function Shell() {
     <SpaceCommands spaces={spaces} />
     <DesktopTitleBar index={spaces.index} />
     <div
-      className={`app${navCollapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}${chatShown ? ' with-chat' : ''}`}
+      className={`app${desktopBridge() ? ' has-tabs' : ''}${navCollapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}${chatShown ? ' with-chat' : ''}`}
       style={{
         '--nav-width': `${navWidth}px`, '--rail-width': `${NAV_RAIL}px`, '--card-min': `${CARD_MIN}px`, '--stage-min': `${STAGE_MIN}px`, '--card-gap': `${CARD_GAP}px`, '--card-gap-y': `${CARD_GAP_Y}px`,
         ...(chat.width !== null ? { '--chat-width': `${chat.width}px` } : {}),

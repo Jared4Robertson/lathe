@@ -20,7 +20,8 @@ const PANE_TITLE = '.header-strip';
  */
 const GRAPH_BOXES = `${GRAPH} .graph-access`;
 const DRAWING = `${GRAPH} canvas`;
-const PANE_BAR = '.stage-layout > .page-bar';
+// The page's controls: the page bar's right in the desktop app, the header strip's on the web.
+const PANE_BAR = '.page-bar-actions';
 
 const nodes = (page: Page) => graphDrawn(page);
 
@@ -302,7 +303,7 @@ test.describe('graph', () => {
     await openPage(page, `${DOMAIN}?stage=erd`);
     await page.locator('.erd-flow .react-flow__node').first().waitFor();
     await page.waitForTimeout(500);
-    const keys = ['.stage-layout > .page-bar', '.header-strip', '.focus-stage .stage-tools', ERD_CANVAS];
+    const keys = ['.page-bar-actions', '.header-strip', '.focus-stage .stage-tools', ERD_CANVAS];
     // On the product's one map, the boxes in the domain's scope: an aggregate's boundary holds its entities, so its head is where the boundary itself takes a click.
     const box = page.locator('.erd-flow .react-flow__node:not([aria-hidden]) .erd-aggregate .erd-box-head').first();
     const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.wiki-panel-scroll'] }, async () => {

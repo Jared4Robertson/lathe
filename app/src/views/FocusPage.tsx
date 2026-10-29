@@ -15,7 +15,7 @@ import { NotFound } from '../specs/SpecPages';
 import { addressOf, HOME_PATH, focusOf, isFocusRoute, pathOf, STAGE_LABELS, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
 import { HeaderStrip } from './HeaderStrip';
 import { createOpenSpaceStore, usePageRoom, useOpenSpaceMeasure, useRoom } from './openSpace';
-import { PageBar, STAGE_COMMANDS } from './PageBar';
+import { PageActions, PageBar, STAGE_COMMANDS } from './PageBar';
 import { createPeekStore } from './peek';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { rememberedStage, rememberStage, useNewPlaceOpener, usePlace, withStageIn, type TabsApi } from './usePlace';
@@ -159,7 +159,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
     shownStage.current = stage;
     const active = document.activeElement;
     if (active && active !== document.body && active.isConnected) return;
-    document.querySelector<HTMLElement>(`.page-bar [data-command="${STAGE_COMMANDS[stage]}"]`)?.focus();
+    document.querySelector<HTMLElement>(`.page-bar-actions [data-command="${STAGE_COMMANDS[stage]}"]`)?.focus();
   }, [stage]);
 
   const layout = useRef<HTMLDivElement>(null);
@@ -329,7 +329,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
     ),
     trace: (
       <Suspense fallback={<p className="hint graph-loading">Loading the trace…</p>}>
-        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} />
+        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
       </Suspense>
     ),
   };
@@ -338,6 +338,8 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
       {content[stage]}
     </div>
   );
+
+  const actionProps = { cardShown, cardCrowded, onCard: setCardShown, cardButton };
 
   if (narrow) {
     return (
@@ -359,22 +361,13 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   return (
     <div
       ref={layout}
-      className={`stage-layout${cardShown ? ' with-wiki' : ''}`}
+      className={`stage-layout${cardShown ? ' with-wiki' : ''}${tabs ? '' : ' one-place'}`}
       style={(card.width !== null ? { '--card-width': `${card.width}px` } : {}) as CSSProperties}
     >
-      <PageBar
-        index={index}
-        tabs={tabs}
-        stage={stage}
-        onStage={setStage}
-        compact={false}
-        cardShown={cardShown}
-        cardCrowded={cardCrowded}
-        onCard={setCardShown}
-        cardButton={cardButton}
-      />
+      {/* The desktop app's tab row; on the web the browser's tabs are the places, and the controls join the header strip's row. */}
+      {tabs && <PageBar index={index} tabs={tabs} stage={stage} onStage={setStage} compact={false} {...actionProps} />}
       <div id={TAB_PANEL_ID} role={tabs ? 'tabpanel' : undefined} aria-labelledby={tabs?.set.active ? tabId(tabs.set.active) : undefined} className="tab-body">
-        <HeaderStrip index={index} focus={focus} counts={counts} />
+        <HeaderStrip index={index} focus={focus} counts={counts} actions={tabs ? undefined : <PageActions stage={stage} onStage={setStage} compact={false} {...actionProps} />} />
         {cardShown && (
           <WikiCard
             ref={cardScroll}

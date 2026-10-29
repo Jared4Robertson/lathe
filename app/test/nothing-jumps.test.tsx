@@ -94,6 +94,8 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     // The tab panel: the page bar and the header strip under it, each a fixed height, each line cut with an ellipsis.
     expect(valueFor('.page-bar', 'height')).toBe('var(--page-bar-height)');
     expect(valueFor('.header-strip', 'height')).toBe('var(--strip-height)');
+    // On the web the header strip is the panel's one row, as high as a page bar.
+    expect(valueFor('.stage-layout.one-place:not(.is-phone) .header-strip', 'height')).toBe('var(--page-bar-height)');
     expect(valueFor('.header-strip', 'white-space')).toBe('nowrap');
     expect(valueFor('.header-strip-title', 'text-overflow')).toBe('ellipsis');
     expect(valueFor('.header-strip-counts', 'text-overflow')).toBe('ellipsis');
@@ -107,9 +109,10 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     await waitFor(() => expect(document.querySelector('.header-strip-counts')?.textContent).toMatch(/record/));
     const count = document.querySelector('.header-strip-counts')!;
     expect([...count.childNodes].map((n) => n.nodeType)).toEqual([Node.TEXT_NODE]);
-    // It ends the header strip, so a new count moves nothing before it; the stage's toolbar holds none.
+    // It ends the header strip's text, right-aligned, so a new count moves nothing before it; only the page's controls,
+    // of one fixed width, follow it (on the web, where they share its row); the stage's toolbar holds none.
     expect(count.parentElement?.classList.contains('header-strip')).toBe(true);
-    expect(count.nextElementSibling).toBeNull();
+    expect(count.nextElementSibling === null || (count.nextElementSibling.classList.contains('page-bar-actions') && count.nextElementSibling.nextElementSibling === null)).toBe(true);
     expect(document.querySelector('.stage-toolbar .header-strip-counts')).toBeNull();
   });
 
