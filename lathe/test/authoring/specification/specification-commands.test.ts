@@ -47,7 +47,7 @@ describe('LA-AUT-UC20-R50-T01 each Specification command (LA-AUT-A5) changes one
   it('builds the data set with its own Add commands, and reads a specification whole by any record in it', async () => {
     const store = await specificationDataSet();
     const whole = runQuery(store, GET_SPECIFICATION, { id: 'TL-LEND-SP02-T' }) as Whole;
-    expect(whole).toMatchObject({ specification: { id: 'TL-LEND-SP02' }, reads: ['TL-LEND-A1'], predicate: { id: 'TL-LEND-SP02-PR', meets: ['TL-STD-CODE-R01'], packages: ['date-fns'] }, test: { id: 'TL-LEND-SP02-T', startsFrom: ['TL-LEND-TD01'] } });
+    expect(whole).toMatchObject({ record: { id: 'TL-LEND-SP02-T', kind: 'specification_test' }, specification: { id: 'TL-LEND-SP02' }, domain: 'TL-LEND', reads: ['TL-LEND-A1'], predicate: { predicate: { id: 'TL-LEND-SP02-PR' }, meets: ['TL-STD-CODE-R01'], packages: ['date-fns'] }, test: { test: { id: 'TL-LEND-SP02-T' }, startsFrom: ['TL-LEND-TD01'] } });
     expect(GET_SPECIFICATION.text(whole)).toContain('Predicate TL-LEND-SP02-PR: isAtLoanLimit (src/lending/limits.ts) [meets TL-STD-CODE-R01; uses date-fns]');
     expect(runQuery(store, LIST_SPECIFICATIONS, { domain_id: 'TL-LEND' })).toEqual([
       { id: 'TL-LEND-SP01', title: 'Tool is free' },

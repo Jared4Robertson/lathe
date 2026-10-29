@@ -1,11 +1,12 @@
 // The Read model aggregate (LA-AUT-A10): a shape of a domain's data for reading, with its fields in order, the
 // aggregates it reads, the domain services it calls and the events that feed it; its queries (each with the
 // specifications it selects by and the domain services it calls), its projection and its query handlers (each with the
+// standard rules it meets and the packages it uses), and its reader, through which the query handlers read it (with the
 // standard rules it meets and the packages it uses). One instance is one read model, whole; it holds only the links its
 // own records start. Where it is stored is its table's, an aggregate of its own (A18).
 import type { Slice } from '../../platform/commands/definition.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
-import type { ProjectionRow, QueryHandlerRow, QueryRow, ReadModelFieldRow, ReadModelRow } from '../../platform/data/tables.ts';
+import type { ProjectionRow, QueryHandlerRow, QueryRow, ReadModelFieldRow, ReadModelRow, ReaderRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const READ_MODEL_AGGREGATE = 'LA-AUT-A10';
@@ -63,17 +64,20 @@ export interface ReadModel {
   queries: Query[];
   /** Its projection, if written: one at most. */
   projection: Technical<ProjectionRow> | null;
+  /** Its reader, if written: one at most. */
+  reader: Technical<ReaderRow> | null;
   queryHandlers: Technical<QueryHandlerRow>[];
 }
 
 /** The tables the Read model aggregate keeps its rows in: its kinds, its part, and the relations and parts its records start. */
-export const READ_MODEL_TABLES = ['read_model', 'read_model_field', 'query', 'projection', 'query_handler', 'reads', 'calls', 'fed_by', 'selects_by', 'meets', 'package_use'] as const;
+export const READ_MODEL_TABLES = ['read_model', 'read_model_field', 'query', 'projection', 'reader', 'query_handler', 'reads', 'calls', 'fed_by', 'selects_by', 'meets', 'package_use'] as const;
 
 /** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
 export const READ_MODEL_KINDS = {
   read_model: null,
   query: 'read_model_id',
   projection: 'read_model_id',
+  reader: 'read_model_id',
   query_handler: 'query_id',
 } as const;
 
@@ -81,7 +85,7 @@ export type ReadModelKind = keyof typeof READ_MODEL_KINDS;
 
 /** A new read model with its fields and links, and no queries or projection yet. */
 export function newReadModel(readModel: ReadModelRow, parts: Pick<ReadModel, 'fields' | 'reads' | 'calls' | 'fedBy'>): ReadModel {
-  return { root: readModel.id, readModel, ...parts, queries: [], projection: null, queryHandlers: [] };
+  return { root: readModel.id, readModel, ...parts, queries: [], projection: null, reader: null, queryHandlers: [] };
 }
 
 // A link table's targets by source, each list sorted.
@@ -101,6 +105,7 @@ export function readModelsFrom(rows: (table: string) => Row[], only?: string): R
   const queries = (rows('query') as unknown as QueryRow[]).filter((q) => ids.has(q.read_model_id));
   const readModelOf = new Map(queries.map((q) => [q.id, q.read_model_id]));
   const projections = (rows('projection') as unknown as ProjectionRow[]).filter((p) => ids.has(p.read_model_id));
+  const readers = (rows('reader') as unknown as ReaderRow[]).filter((r) => ids.has(r.read_model_id));
   const handlers = (rows('query_handler') as unknown as QueryHandlerRow[]).filter((h) => readModelOf.has(h.query_id));
   const [reads, calls, fedBy, selectsBy, meets] = ['reads', 'calls', 'fed_by', 'selects_by', 'meets'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
@@ -108,6 +113,7 @@ export function readModelsFrom(rows: (table: string) => Row[], only?: string): R
   const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) });
   return readModels.map((readModel) => {
     const projection = projections.find((p) => p.read_model_id === readModel.id);
+    const reader = readers.find((r) => r.read_model_id === readModel.id);
     return {
       root: readModel.id,
       readModel,
@@ -120,6 +126,7 @@ export function readModelsFrom(rows: (table: string) => Row[], only?: string): R
       fedBy: targets(fedBy, readModel.id),
       queries: queries.filter((q) => q.read_model_id === readModel.id).map((row) => ({ row, selectsBy: targets(selectsBy, row.id), calls: targets(calls, row.id) })),
       projection: projection ? technical(projection) : null,
+      reader: reader ? technical(reader) : null,
       queryHandlers: handlers.filter((h) => readModelOf.get(h.query_id) === readModel.id).map(technical),
     };
   });
@@ -130,12 +137,13 @@ const links = (source: string, ids: string[]): Row[] => ids.map((target) => ({ s
 /** The instance's rows, by table. */
 export function readModelRows(readModel: ReadModel): Map<string, Row[]> {
   const asRow = <T extends object>(row: T) => row as unknown as Row;
-  const technical = [...(readModel.projection ? [readModel.projection] : []), ...readModel.queryHandlers];
+  const technical = [...(readModel.projection ? [readModel.projection] : []), ...(readModel.reader ? [readModel.reader] : []), ...readModel.queryHandlers];
   return new Map<string, Row[]>([
     ['read_model', [asRow(readModel.readModel)]],
     ['read_model_field', readModel.fields.map((f, at) => asRow({ read_model_id: readModel.root, position: at + 1, ...f }))],
     ['query', readModel.queries.map((q) => asRow(q.row))],
     ['projection', readModel.projection ? [asRow(readModel.projection.row)] : []],
+    ['reader', readModel.reader ? [asRow(readModel.reader.row)] : []],
     ['query_handler', readModel.queryHandlers.map((h) => asRow(h.row))],
     ['reads', links(readModel.root, readModel.reads)],
     ['calls', [...links(readModel.root, readModel.calls), ...readModel.queries.flatMap((q) => links(q.row.id, q.calls))]],
@@ -151,6 +159,7 @@ export function kindInside(readModel: ReadModel, id: string): ReadModelKind | un
   if (readModel.root === id) return 'read_model';
   if (readModel.queries.some((q) => q.row.id === id)) return 'query';
   if (readModel.projection?.row.id === id) return 'projection';
+  if (readModel.reader?.row.id === id) return 'reader';
   if (readModel.queryHandlers.some((h) => h.row.id === id)) return 'query_handler';
   return undefined;
 }
