@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocalAction, specErrorMessage } from '../src/launch.ts';
+import { aboutLink, aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocalAction, REFERENCE_URL, REPO_URL, specErrorMessage } from '../src/launch.ts';
 
 const colors = { background: '#0A0F12', foreground: '#E2E8EA' };
 
@@ -41,7 +41,9 @@ describe('The launch view names the product, and the error page says what failed
   it('LA-V70-R01-T01 passes the model to the page as JSON, and gives About the versions and its two links', () => {
     const about = aboutModel({ app: '0.1.0', engine: '0.1.0', electron: '45.0.0', chrome: '140', node: '24' }, colors);
     expect(about.versions.map((v) => v.label)).toEqual(['Version', 'Engine', 'Electron', 'Chromium', 'Node.js']);
-    expect(about.actions.map((a) => a.id)).toEqual(['open-repo', 'open-reference']);
+    expect(about.links.map((l) => l.url)).toEqual([REPO_URL, REFERENCE_URL]);
+    expect(aboutLink(REPO_URL, about)).toBe(REPO_URL);
+    expect(aboutLink('https://example.com/', about)).toBeNull();
     expect(aboutModel({ app: '1', engine: null, electron: '1', chrome: '1', node: '1' }, colors).versions[1].value).toBe('unknown');
     expect(JSON.parse(modelQuery(about).model)).toEqual(about);
   });

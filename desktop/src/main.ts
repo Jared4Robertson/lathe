@@ -1,36 +1,63 @@
 // The desktop shell's main process: one window per product folder, each loading Lathe from its own
 // server (servers.ts), the native menus (menu.ts) and Dock (dock.ts), the launch view and error page
 // over a window (launch.ts), the record actions (records.ts, editor.ts), the chat panel's Claude Code
-// (chatSession.ts, claudeSessions.ts) and the app bridge its tools reach the window by (bridge.ts),
-// and the recent folders, window states, chrome and settings kept in the user data folder.
+// (chatSession.ts, claudeSessions.ts) and the app bridge its tools reach the window by (bridge.ts). It only
+// wires Electron to the aggregates' commands, policies and queries: the open windows, their places and chrome
+// (product-window/), their servers (app-server/), the recent folders (recent-folders/) and the shell's settings
+// (shell-settings/), each kept by its own repository, the only code that reaches its storage.
 //
 // Modes: `npm run start` and the packed app run serve() from the built Lathe package; `npm run dev`
 // (LATHE_DESKTOP_DEV=1) loads the app's Vite dev server instead, so app changes hot-reload.
 import { app, BrowserWindow, clipboard, dialog, ipcMain, Menu, nativeImage, nativeTheme, screen, session, shell, systemPreferences, WebContentsView, type MenuItemConstructorOptions, type WebContents } from 'electron';
 import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { closeProductWindow } from './product-window/commands/close-product-window.ts';
+import { copyRecordId } from './product-window/commands/copy-record-id.ts';
+import { openProductFolder } from './product-window/commands/open-product-folder.ts';
+import { openRecordDataFile } from './product-window/commands/open-record-data-file.ts';
+import { reportErrorCount } from './product-window/commands/report-error-count.ts';
+import { revealProductFolder } from './product-window/commands/reveal-product-folder.ts';
+import { revealRecordDataFile } from './product-window/commands/reveal-record-data-file.ts';
+import { saveWindowPlace } from './product-window/commands/save-window-place.ts';
+import { setWindowChrome } from './product-window/commands/set-window-chrome.ts';
+import { showRecordMenu } from './product-window/commands/show-record-menu.ts';
+import type { WindowClosedReactions, WindowOpenedReactions } from './product-window/events.ts';
+import { MIN_SIZE, windowFor, type OpenWindow } from './product-window/model.ts';
+import { ProductWindowRepository } from './product-window/repository.ts';
+import { startAppServer } from './app-server/commands/start-app-server.ts';
+import { stopAppServer } from './app-server/commands/stop-app-server.ts';
+import type { RunningServer } from './app-server/model.ts';
+import { onWindowClosedStopAppServer, onWindowOpenedStartAppServer } from './app-server/policies.ts';
+import { AppServerRepository } from './app-server/repository.ts';
+import { clearRecentFolders } from './recent-folders/commands/clear-recent-folders.ts';
+import { onWindowOpenedAddRecentFolder } from './recent-folders/policies.ts';
+import { listRecentFolders } from './recent-folders/queries.ts';
+import { recentFoldersReader } from './recent-folders/reader.ts';
+import { RecentFolderRepository } from './recent-folders/repository.ts';
+import { chooseEditor } from './shell-settings/commands/choose-editor.ts';
+import { openSettingsFile } from './shell-settings/commands/open-settings-file.ts';
+import type { Editor } from './shell-settings/model.ts';
+import { ShellSettingsRepository } from './shell-settings/repository.ts';
 import { startBridge, type Bridge, type OpenAnswer, type OpenRequest } from './bridge.ts';
-import { chatPatch, transcriptItems, type ChatState } from './chat.ts';
+import { chatPatch, transcriptItems } from './chat.ts';
 import { ChatSession } from './chatSession.ts';
 import { findClaude, listSessions, processAlive, runningSessions, transcriptFile } from './claudeSessions.ts';
-import { applyChrome, chromeWindowOptions, parseSavedChrome, startChrome, type Chrome, type SavedChrome } from './chrome.ts';
+import { chromeWindowOptions, startChrome, type Chrome } from './chrome.ts';
 import { commandKeys, keyPresses, MENU_COMMANDS, type KeyPress } from './commands.ts';
-import { badgeFor, dockMenuTemplate, parseErrorCount } from './dock.ts';
-import { editorLaunch, editorName, parseSettings, type Editor, type Settings } from './editor.ts';
-import { addRecent, checkFolder, parseRecent, productNames, windowTitle } from './folders.ts';
+import { badgeFor, dockMenuTemplate } from './dock.ts';
+import { editorLaunch, editorName } from './editor.ts';
+import { checkFolder, productNames, windowTitle } from './folders.ts';
 import { routeOpenFile, routeSecondInstance, folderArgument } from './instance.ts';
-import { aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocalAction, REFERENCE_URL, REPO_URL, specErrorMessage, type AboutModel, type LaunchModel, type LocalAction } from './launch.ts';
+import { aboutLink, aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocalAction, specErrorMessage, type AboutModel, type LaunchModel, type LocalAction } from './launch.ts';
 import { menuTemplate } from './menu.ts';
 import { optOutOfWindowRestoration } from './persistence.ts';
-import { DataFiles, parseRecordRequest, recordMenuTemplate } from './records.ts';
-import { latheFor, latheLabel, packageVersion, serveModulePath, settleWithin, startDev, startServe, type AppServer } from './servers.ts';
+import { DataFiles, recordMenuTemplate } from './records.ts';
+import { latheFor, latheLabel, packageVersion, serveModulePath, settleWithin, startDev, startServe } from './servers.ts';
 import { reloadInProgress, runSmoke, smokeFile, writeSmoke, type SmokeResult } from './smoke.ts';
-import { readJson, writeJson } from './store.ts';
-import { MIN_SIZE, parseWindowStates, saveWindow, windowFor, type WindowStates } from './windowState.ts';
 
 const DESKTOP_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const REPO_ROOT = path.resolve(DESKTOP_DIR, '..');
@@ -59,42 +86,15 @@ if (SMOKE) {
 
 if (process.env.LATHE_DESKTOP_USER_DATA) app.setPath('userData', process.env.LATHE_DESKTOP_USER_DATA);
 const userFile = (name: string) => () => path.join(app.getPath('userData'), name);
-const RECENT_FILE = userFile('recent-folders.json');
-const WINDOWS_FILE = userFile('window-state.json');
-const CHROME_FILE = userFile('chrome.json');
-const SETTINGS_FILE = userFile('settings.json');
 
-interface Entry {
-  folder: string;
-  product: string;
-  win: BrowserWindow;
-  server?: AppServer;
-  /** Which Lathe the window's server runs, as About says it: the product's own, the bundled copy, or the source. */
-  lathe?: string;
-  chrome?: Chrome;
-  /** The launch view or error page over the app's page, while it shows. */
-  overlay?: { view: WebContentsView; model: LaunchModel };
-  /** The text the launch view showed, for the smoke run. */
-  launchSeen?: string;
-  /** The product's check errors, as the page last reported them. */
-  errors: number;
-  dataFiles: DataFiles | null;
-  /** Bumped on each launch, so an old watch stops. */
-  launchRun: number;
-  /** The window's name on the app bridge. */
-  key: string;
-  /** The chat panel's Claude Code, once a session is opened. */
-  chat?: ChatSession;
-  /** The chat state the page last got, and the timer that sends the next patch. */
-  chatSent: ChatState | null;
-  chatTimer?: NodeJS.Timeout;
-}
+// The aggregates' repositories: the only code that reaches their storage.
+const productWindows = new ProductWindowRepository({ places: userFile('window-state.json'), chrome: userFile('chrome.json') });
+const appServers = new AppServerRepository();
+const recentFolders = new RecentFolderRepository(userFile('recent-folders.json'));
+const shellSettings = new ShellSettingsRepository(userFile('settings.json'));
+/** The open windows, by folder. */
+const openWindows = () => productWindows.load().open;
 
-const open = new Map<string, Entry>();
-let recent: string[] = [];
-let windowStates: WindowStates = {};
-let savedChrome: SavedChrome = {};
-let settings: Settings = parseSettings(undefined);
 let lastFocused: number | null = null;
 let about: { win: BrowserWindow; model: AboutModel } | null = null;
 /** The Dock icon set at launch, for the smoke run. */
@@ -106,53 +106,51 @@ const log = (line: string) => {
   if (DEV) process.stdout.write(line.endsWith('\n') ? line : line + '\n');
 };
 
-/** The servers' stops in progress, closed windows' too, which quitting waits for. */
-const stopping = new Set<Promise<void>>();
-
-/** Stops a window's server, keeping its stop until it settles so quitting can wait for it. */
-function stopServer(server: AppServer | undefined): Promise<void> {
-  if (!server) return Promise.resolve();
-  const stop = server.stop().catch((error: unknown) => log(`Lathe: a server did not stop cleanly: ${String(error)}`));
-  stopping.add(stop);
-  void stop.finally(() => stopping.delete(stop));
-  return stop;
-}
+/** The chats' stops in progress, which quitting waits for beside the servers' (app-server/). */
+const chatStops = new Set<Promise<void>>();
 
 const dark = () => nativeTheme.shouldUseDarkColors;
-const entryOf = (contents: WebContents) => [...open.values()].find((e) => !e.win.isDestroyed() && e.win.webContents === contents);
+const entryOf = (contents: WebContents) => [...openWindows().values()].find((e) => !e.win.isDestroyed() && e.win.webContents === contents);
 
-function rememberRecent(list: string[]) {
-  recent = list;
-  writeJson(RECENT_FILE(), recent);
-  refreshMenu();
-}
+/** The recent folders, through their read model's reader. */
+const recentList = () => listRecentFolders(recentFoldersReader(recentFolders.load()));
 
 function refreshMenu() {
   Menu.setApplicationMenu(
     Menu.buildFromTemplate(
       menuTemplate({
-        recent,
+        recent: recentList(),
         openFolder: () => void chooseFolder(),
         openRecent: (folder) => void openFolder(folder),
-        clearRecent: () => {
-          app.clearRecentDocuments();
-          rememberRecent([]);
-        },
+        clearRecent: clearRecentMenu,
         runCommand: (id) => sendCommand(BrowserWindow.getFocusedWindow(), id),
         about: showAbout,
         settings: () => sendCommandId(focusedProductWindow(), 'openAppearance', []),
-        settingsNow: settings,
-        chooseEditor,
-        editSettingsFile,
+        settingsNow: shellSettings.load(),
+        chooseEditor: pickEditor,
+        editSettingsFile: () => openSettingsFile(shellSettings, (file) => void shell.openPath(file)),
       }),
     ),
   );
 }
 
+/** File › Open Recent › Clear Menu: Clear the recent folders, and the system's recent documents with them. */
+function clearRecentMenu() {
+  app.clearRecentDocuments();
+  clearRecentFolders(recentFolders);
+  refreshMenu();
+}
+
+/** File › Open Records In: Choose an editor. */
+function pickEditor(editor: Editor) {
+  chooseEditor(shellSettings, { editor });
+  refreshMenu();
+}
+
 /** The focused product window, or the one focused last while another (the About window) is in front. */
 function focusedProductWindow(): BrowserWindow | null {
   const focused = BrowserWindow.getFocusedWindow();
-  const isProduct = (w: BrowserWindow | null | undefined) => !!w && [...open.values()].some((e) => e.win === w);
+  const isProduct = (w: BrowserWindow | null | undefined) => !!w && [...openWindows().values()].some((e) => e.win === w);
   if (isProduct(focused)) return focused;
   const last = lastFocused === null ? null : BrowserWindow.fromId(lastFocused);
   return isProduct(last) ? last : null;
@@ -185,10 +183,10 @@ function fail(message: string) {
   dialog.showErrorBox('Lathe cannot open this folder', message);
 }
 
-function saveBounds(folder: string, win: BrowserWindow) {
+/** Save a window's place, as it is now. */
+function keepWindowPlace(folder: string, win: BrowserWindow) {
   if (win.isDestroyed()) return;
-  windowStates = saveWindow(windowStates, folder, { ...win.getNormalBounds(), maximized: win.isMaximized(), fullScreen: win.isFullScreen() });
-  writeJson(WINDOWS_FILE(), windowStates);
+  saveWindowPlace(productWindows, { folder, place: { ...win.getNormalBounds(), maximized: win.isMaximized(), fullScreen: win.isFullScreen() } });
 }
 
 /** Links that leave the app open in the system browser; the window only ever shows the app. */
@@ -220,18 +218,18 @@ function nativeTextMenu(win: BrowserWindow) {
 
 // --- The launch view and error page -------------------------------------------------------------
 
-function currentColors(entry: Entry): Chrome {
-  return entry.chrome ?? startChrome(savedChrome, dark());
+function currentColors(entry: OpenWindow): Chrome {
+  return entry.chrome ?? startChrome(productWindows.load().chrome, dark());
 }
 
-function fitOverlay(entry: Entry) {
+function fitOverlay(entry: OpenWindow) {
   if (!entry.overlay || entry.win.isDestroyed()) return;
   const [width, height] = entry.win.getContentSize();
   entry.overlay.view.setBounds({ x: 0, y: 0, width, height });
 }
 
 /** Shows a launch view or error page over the window's page, in a view of its own. */
-async function showOverlay(entry: Entry, model: LaunchModel) {
+async function showOverlay(entry: OpenWindow, model: LaunchModel) {
   if (entry.win.isDestroyed()) return;
   if (!entry.overlay) {
     const view = new WebContentsView({ webPreferences: { preload: LOCAL_PRELOAD, contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false } });
@@ -248,7 +246,7 @@ async function showOverlay(entry: Entry, model: LaunchModel) {
 }
 
 /** Lifts the launch view off the page, with a short fade, and gives the page the keyboard. */
-async function hideOverlay(entry: Entry) {
+async function hideOverlay(entry: OpenWindow) {
   const overlay = entry.overlay;
   if (!overlay) return;
   entry.overlay = undefined;
@@ -261,12 +259,12 @@ async function hideOverlay(entry: Entry) {
   overlay.view.webContents.close();
 }
 
-async function showError(entry: Entry, message: string) {
+async function showError(entry: OpenWindow, message: string) {
   await showOverlay(entry, errorModel(entry.product, entry.folder, message, currentColors(entry), process.platform));
 }
 
 /** Waits for the page to have the product's specs, then lifts the launch view, or shows the error page. */
-async function watchLaunch(entry: Entry) {
+async function watchLaunch(entry: OpenWindow) {
   const run = ++entry.launchRun;
   const end = Date.now() + LAUNCH_TIMEOUT;
   while (Date.now() < end) {
@@ -281,39 +279,44 @@ async function watchLaunch(entry: Entry) {
 }
 
 /** What the engine said when it could not load the folder. */
-async function specError(entry: Entry): Promise<string> {
-  if (!entry.server) return 'Lathe is not running for this folder.';
+async function specError(entry: OpenWindow): Promise<string> {
+  const running = appServers.load().running.get(entry.folder);
+  if (!running) return 'Lathe is not running for this folder.';
   try {
-    const res = await fetch(`${entry.server.url}/api/spec`);
+    const res = await fetch(`${running.server.url}/api/spec`);
     return specErrorMessage(res.status, await res.json().catch(() => null));
   } catch (error) {
     return error instanceof Error ? error.message : String(error);
   }
 }
 
-/** Starts the folder's server, if it has none, and loads the app under the launch view. */
-async function startApp(entry: Entry): Promise<void> {
-  if (!entry.server) {
-    try {
-      if (DEV) {
-        entry.server = await startDev(REPO_ROOT, entry.folder, log);
-        entry.lathe = 'Lathe from source';
-      } else {
-        // The product's own installed Lathe when it has one, else the app's bundled copy.
-        const lathe = latheFor(entry.folder, bundledServe());
-        entry.server = await startServe(lathe.modulePath, entry.folder);
-        entry.lathe = latheLabel(lathe);
-      }
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      if (SMOKE) return fail(message);
-      return showError(entry, message);
-    }
-    if (entry.win.isDestroyed()) return stopServer(entry.server);
-    log(`Lathe: ${entry.folder} from ${entry.server.label} (${entry.lathe}) at ${entry.server.url}`);
-    keepLinksOutside(entry.win, entry.server.url);
+/** Starts a folder's server: serve() on the product's own installed Lathe or the bundled copy, or in development a dev server. */
+async function startServerFor(folder: string): Promise<RunningServer> {
+  if (DEV) return { server: await startDev(REPO_ROOT, folder, log), lathe: 'Lathe from source' };
+  // The product's own installed Lathe when it has one, else the app's bundled copy.
+  const lathe = latheFor(folder, bundledServe());
+  return { server: await startServe(lathe.modulePath, folder), lathe: latheLabel(lathe) };
+}
+
+/** Runs Start a window's app server for its folder, and loads the app under the launch view. */
+async function serveWindow(folder: string): Promise<void> {
+  const entry = openWindows().get(folder);
+  if (!entry) return;
+  const fresh = !appServers.load().running.has(folder);
+  let running: RunningServer;
+  try {
+    running = await startAppServer(appServers, { folder, start: () => startServerFor(folder) });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (SMOKE) return fail(message);
+    return showError(entry, message);
   }
-  const url = entry.server.url;
+  if (entry.win.isDestroyed()) return stopAppServer(appServers, { folder }, log);
+  if (fresh) {
+    log(`Lathe: ${folder} from ${running.server.label} (${running.lathe}) at ${running.server.url}`);
+    keepLinksOutside(entry.win, running.server.url);
+  }
+  const url = running.server.url;
   const loading = entry.win.loadURL(url);
   void watchLaunch(entry);
   await loading.catch((error: unknown) => {
@@ -323,22 +326,26 @@ async function startApp(entry: Entry): Promise<void> {
   });
 }
 
-async function retry(entry: Entry) {
+/** The error page's Retry: the launch view again, and the window's server started again when it has none. */
+async function retry(entry: OpenWindow) {
   await showOverlay(entry, launchModel(entry.product, currentColors(entry)));
-  await startApp(entry);
+  await serveWindow(entry.folder);
 }
 
-function runLocalAction(entry: Entry, action: LocalAction) {
-  if (action === 'retry') void retry(entry);
-  else if (action === 'open-another') void chooseFolder();
-  else if (action === 'reveal') shell.showItemInFolder(entry.folder);
-}
+/** What a window opened and closed set off: its policies, called in order by the commands that raise the events. */
+const windowOpenedReactions: WindowOpenedReactions = {
+  onWindowOpenedAddRecentFolder: (event) => onWindowOpenedAddRecentFolder(event, recentFolders, { addRecentDocument: (folder) => app.addRecentDocument(folder), recentFoldersChanged: refreshMenu }),
+  onWindowOpenedStartAppServer: (event) => onWindowOpenedStartAppServer(event, serveWindow),
+};
+const windowClosedReactions: WindowClosedReactions = {
+  onWindowClosedStopAppServer: (event) => onWindowClosedStopAppServer(event, appServers, log),
+};
 
 // --- Windows -------------------------------------------------------------------------------------
 
 async function openFolder(input: string) {
   const folder = path.resolve(input);
-  const existing = open.get(folder);
+  const existing = openWindows().get(folder);
   if (existing) {
     if (existing.win.isMinimized()) existing.win.restore();
     existing.win.show();
@@ -347,11 +354,10 @@ async function openFolder(input: string) {
   }
   const check = checkFolder(folder);
   if (!check.ok) return fail(check.message);
-  rememberRecent(addRecent(recent, folder));
-  app.addRecentDocument(folder);
 
   const names = productNames(check.dataDirs);
-  const placed = windowFor(windowStates, folder, screen.getAllDisplays().map((d) => d.workArea));
+  const { places, chrome: savedChrome } = productWindows.load();
+  const placed = windowFor(places, folder, screen.getAllDisplays().map((d) => d.workArea));
   // No system title bar: the app draws its own, in the shell's color, so the window never flashes white.
   const chromeOptions = chromeWindowOptions(process.platform, dark(), savedChrome);
   const win = new BrowserWindow({
@@ -370,15 +376,14 @@ async function openFolder(input: string) {
     },
   });
   if (MAC) win.setRepresentedFilename(folder);
-  const entry: Entry = { folder, product: names.length === 1 ? names[0] : path.basename(folder), win, errors: 0, dataFiles: new DataFiles(check.dataDirs), launchRun: 0, key: randomUUID(), chatSent: null };
-  open.set(folder, entry);
+  const entry: OpenWindow = { folder, product: names.length === 1 ? names[0] : path.basename(folder), win, errors: 0, dataFiles: new DataFiles(check.dataDirs), launchRun: 0, key: randomUUID(), chatSent: null };
 
   // The window keeps the product's name and folder, whatever the page calls itself.
   win.on('page-title-updated', (event) => event.preventDefault());
   let saveTimer: NodeJS.Timeout | undefined;
   const saveSoon = () => {
     clearTimeout(saveTimer);
-    saveTimer = setTimeout(() => saveBounds(folder, win), 400);
+    saveTimer = setTimeout(() => keepWindowPlace(folder, win), 400);
   };
   win.on('resize', () => {
     fitOverlay(entry);
@@ -406,15 +411,10 @@ async function openFolder(input: string) {
   });
   win.on('close', () => {
     clearTimeout(saveTimer);
-    saveBounds(folder, win);
+    keepWindowPlace(folder, win);
   });
-  win.on('closed', () => {
-    void stopServer(entry.server);
-    void stopChat(entry);
-    open.delete(folder);
-    if (lastFocused === entry.win.id) lastFocused = null;
-    updateBadge();
-  });
+  const id = win.id;
+  win.on('closed', () => windowClosed(entry, id));
   nativeTextMenu(win);
 
   // The launch view shows at once, over the shell color; the window shows with it.
@@ -430,23 +430,29 @@ async function openFolder(input: string) {
     win.show();
   });
 
-  if (SMOKE) {
-    await launch;
-    const smoke = runSmoke(win, entry.product, (id) => sendCommand(win, id), {
-      titleBarStyle: chromeOptions.titleBarStyle,
-      chrome: () => entry.chrome,
-      launch: () => ({ seen: entry.launchSeen, showing: !!entry.overlay }),
-      dockIcon: () => dockIcon,
-    });
-    void startApp(entry);
-    const result: SmokeResult = await smoke.catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
-    // It quits while a reload is in progress, as the reader might (LA-PLT-UC11-R07).
-    if (entry.server) result.reloadAtQuit = await reloadInProgress(entry.server.url, entry.folder);
-    writeSmoke(SMOKE, result);
-    app.quit();
-    return;
-  }
-  await startApp(entry);
+  if (!SMOKE) return openProductFolder(productWindows, { window: entry }, windowOpenedReactions);
+  await launch;
+  const smoke = runSmoke(win, entry.product, (command) => sendCommand(win, command), {
+    titleBarStyle: chromeOptions.titleBarStyle,
+    chrome: () => entry.chrome,
+    launch: () => ({ seen: entry.launchSeen, showing: !!entry.overlay }),
+    dockIcon: () => dockIcon,
+  });
+  void openProductFolder(productWindows, { window: entry }, windowOpenedReactions);
+  const result: SmokeResult = await smoke.catch((error: unknown) => ({ error: error instanceof Error ? error.message : String(error) }));
+  // It quits while a reload is in progress, as the reader might (LA-PLT-UC11-R07).
+  const running = appServers.load().running.get(folder);
+  if (running) result.reloadAtQuit = await reloadInProgress(running.server.url, entry.folder);
+  writeSmoke(SMOKE, result);
+  app.quit();
+}
+
+/** A window closed: Close a product window (which stops its server), and its chat stopped. */
+function windowClosed(entry: OpenWindow, id: number) {
+  void closeProductWindow(productWindows, { folder: entry.folder }, windowClosedReactions);
+  void stopChat(entry);
+  if (lastFocused === id) lastFocused = null;
+  updateBadge();
 }
 
 // --- The chat panel and the app bridge -----------------------------------------------------------
@@ -459,11 +465,14 @@ const CHAT_FRAME_MS = 33;
 const PAGE_ANSWER_MS = 5000;
 
 let bridge: Promise<Bridge> | null = null;
-/** The bridge's questions waiting for a page's answer, each with the window asked. */
-const pageAnswers = new Map<string, { entry: Entry; resolve: (answer: unknown) => void }>();
+/** The channel of each of the app bridge's questions: one per query or command it asks the page. */
+const ASK_CHANNELS = { focus: 'lathe:ask-focus', open: 'lathe:ask-open' } as const;
+type AskChannel = (typeof ASK_CHANNELS)[keyof typeof ASK_CHANNELS];
+/** The bridge's questions waiting for a page's answer, each with the window and the channel asked on. */
+const pageAnswers = new Map<string, { entry: OpenWindow; channel: AskChannel; resolve: (answer: unknown) => void }>();
 
-/** Asks a window's page (the preload's onAppRequest) and waits for its answer; null when it does not answer. */
-function askPage(entry: Entry, request: { kind: 'focus' } | { kind: 'open'; open: OpenRequest }): Promise<unknown> {
+/** Asks a window's page on a question's own channel (the preload's onAppRequest) and waits for its answer; null when it does not answer. */
+function askPage(entry: OpenWindow, channel: AskChannel, request: { open?: OpenRequest }): Promise<unknown> {
   if (entry.win.isDestroyed()) return Promise.resolve(null);
   const id = randomUUID();
   return new Promise((resolve) => {
@@ -473,29 +482,30 @@ function askPage(entry: Entry, request: { kind: 'focus' } | { kind: 'open'; open
     }, PAGE_ANSWER_MS);
     pageAnswers.set(id, {
       entry,
+      channel,
       resolve: (answer) => {
         clearTimeout(timer);
         pageAnswers.delete(id);
         resolve(answer);
       },
     });
-    entry.win.webContents.send('lathe:app-request', { id, ...request });
+    entry.win.webContents.send(channel, { id, ...request });
   });
 }
 
-const entryByKey = (key: string) => [...open.values()].find((e) => e.key === key && !e.win.isDestroyed());
+const entryByKey = (key: string) => [...openWindows().values()].find((e) => e.key === key && !e.win.isDestroyed());
 
 function appBridge(): Promise<Bridge> {
   bridge ??= startBridge({
     focus: async (key) => {
       const entry = entryByKey(key);
       if (!entry) return null;
-      return (await askPage(entry, { kind: 'focus' })) ?? { connected: true, page: null };
+      return (await askPage(entry, ASK_CHANNELS.focus, {})) ?? { connected: true, page: null };
     },
     open: async (key, request) => {
       const entry = entryByKey(key);
       if (!entry) return null;
-      const answer = (await askPage(entry, { kind: 'open', open: request })) as OpenAnswer | null;
+      const answer = (await askPage(entry, ASK_CHANNELS.open, { open: request })) as OpenAnswer | null;
       if (answer && typeof answer.ok === 'boolean' && typeof answer.message === 'string') {
         if (answer.ok) entry.win.focus();
         return { ok: answer.ok, message: answer.message };
@@ -507,7 +517,7 @@ function appBridge(): Promise<Bridge> {
 }
 
 /** Sends the chat's changes to its page, at most once a frame. */
-function chatChanged(entry: Entry) {
+function chatChanged(entry: OpenWindow) {
   if (entry.chatTimer) return;
   entry.chatTimer = setTimeout(() => {
     entry.chatTimer = undefined;
@@ -518,21 +528,21 @@ function chatChanged(entry: Entry) {
   }, CHAT_FRAME_MS);
 }
 
-function stopChat(entry: Entry): Promise<void> {
+function stopChat(entry: OpenWindow): Promise<void> {
   clearTimeout(entry.chatTimer);
   const chat = entry.chat;
   if (!chat) return Promise.resolve();
   const stop = chat.close();
-  stopping.add(stop);
-  void stop.finally(() => stopping.delete(stop));
+  chatStops.add(stop);
+  void stop.finally(() => chatStops.delete(stop));
   return stop;
 }
 
-const ourClaudes = () => new Set([...open.values()].map((e) => e.chat?.pid).filter((pid): pid is number => typeof pid === 'number'));
+const ourClaudes = () => new Set([...openWindows().values()].map((e) => e.chat?.pid).filter((pid): pid is number => typeof pid === 'number'));
 
 /** The `claude` the chat runs, and the folder's saved sessions, for the panel's picker. */
-function chatSessions(entry: Entry) {
-  settings = parseSettings(readJson(SETTINGS_FILE()));
+function chatSessions(entry: OpenWindow) {
+  const settings = shellSettings.load();
   const claude = findClaude(settings.claudePath, os.homedir(), process.env.PATH);
   const home = CLAUDE_HOME();
   const running = runningSessions(path.join(home, 'sessions'), processAlive, ourClaudes());
@@ -542,11 +552,11 @@ function chatSessions(entry: Entry) {
 }
 
 /** Opens a session in the window's chat: a new one, a saved one resumed, or a fork of one. */
-async function openChat(entry: Entry, input: unknown): Promise<boolean> {
+async function openChat(entry: OpenWindow, input: unknown): Promise<boolean> {
   if (!input || typeof input !== 'object') return false;
   const { mode, id } = input as { mode?: unknown; id?: unknown };
   if (mode !== 'new' && mode !== 'resume' && mode !== 'fork') return false;
-  const claude = findClaude(parseSettings(readJson(SETTINGS_FILE())).claudePath, os.homedir(), process.env.PATH);
+  const claude = findClaude(shellSettings.load().claudePath, os.homedir(), process.env.PATH);
   if (!claude) return false;
   let history: ReturnType<typeof transcriptItems> = [];
   if (mode !== 'new') {
@@ -571,8 +581,9 @@ async function openChat(entry: Entry, input: unknown): Promise<boolean> {
 
 // --- Record actions, the Dock and About ----------------------------------------------------------
 
+/** The Code editor integration (LA-INT03): opens a data file in the editor the Shell settings name. */
 function openInEditor(file: string) {
-  settings = parseSettings(readJson(SETTINGS_FILE()));
+  const settings = shellSettings.load();
   const launch = editorLaunch(settings, file, process.platform);
   const failed = (message: string) => {
     void dialog.showMessageBox({ type: 'warning', message: `Lathe couldn't open the data file in ${editorName(settings)}.`, detail: `${message}\n\nChoose another editor in File › Open Records In.` });
@@ -586,34 +597,27 @@ function openInEditor(file: string) {
   });
 }
 
-function runRecordAction(entry: Entry, input: unknown) {
-  const request = parseRecordRequest(input);
-  if (!request) return;
-  const file = entry.dataFiles?.find(request.id) ?? null;
-  const reveal = () => file && shell.showItemInFolder(file);
-  const edit = () => file && openInEditor(file);
-  const copy = () => clipboard.writeText(request.id);
-  if (request.action === 'reveal') reveal();
-  else if (request.action === 'open-in-editor') edit();
-  else if (request.action === 'copy-id') copy();
-  else Menu.buildFromTemplate(recordMenuTemplate(request.id, !!file, editorName(settings), { openInNewTab: () => sendCommandId(entry.win, 'openRecordInNewTab', []), reveal, openInEditor: edit, copyId: copy }, process.platform)).popup({ window: entry.win });
-}
+/** The File manager integration (LA-INT02): reveals a data file in its folder, and puts a record's ID on the clipboard. */
+const fileManager = {
+  reveal: (file: string) => shell.showItemInFolder(file),
+  copy: (text: string) => clipboard.writeText(text),
+};
 
-function chooseEditor(editor: Editor) {
-  settings = parseSettings({ ...(readJson(SETTINGS_FILE()) as object | undefined), editor });
-  writeJson(SETTINGS_FILE(), settings);
-  refreshMenu();
-}
-
-function editSettingsFile() {
-  const file = SETTINGS_FILE();
-  if (!existsSync(file)) writeJson(file, { ...settings, editorCommand: settings.editorCommand ?? '' });
-  void shell.openPath(file);
+/** A record's native menu, over its window: each item runs that record action's own command. */
+function popupRecordMenu(window: OpenWindow, id: string, file: string | null) {
+  const input = { folder: window.folder, request: { id } };
+  const actions = {
+    openInNewTab: () => sendCommandId(window.win, 'openRecordInNewTab', []),
+    reveal: () => revealRecordDataFile(productWindows, input, fileManager.reveal),
+    openInEditor: () => openRecordDataFile(productWindows, input, openInEditor),
+    copyId: () => copyRecordId(productWindows, input, fileManager.copy),
+  };
+  Menu.buildFromTemplate(recordMenuTemplate(id, !!file, editorName(shellSettings.load()), actions, process.platform)).popup({ window: window.win });
 }
 
 function updateBadge() {
   if (!MAC || !app.dock) return;
-  const counts = new Map([...open.values()].filter((e) => !e.win.isDestroyed()).map((e) => [e.win.id, e.errors]));
+  const counts = new Map([...openWindows().values()].filter((e) => !e.win.isDestroyed()).map((e) => [e.win.id, e.errors]));
   const focused = BrowserWindow.getFocusedWindow();
   app.dock.setBadge(badgeFor(counts, focused && counts.has(focused.id) ? focused.id : null, lastFocused));
 }
@@ -627,11 +631,12 @@ function showAbout() {
     about.win.focus();
     return;
   }
-  const colors = startChrome(savedChrome, dark());
+  const colors = startChrome(productWindows.load().chrome, dark());
   const front = focusedProductWindow();
-  const product = [...open.values()].find((e) => e.win === front);
+  const product = [...openWindows().values()].find((e) => e.win === front);
+  const lathe = product ? appServers.load().running.get(product.folder)?.lathe : undefined;
   const versions = { app: app.getVersion(), engine: packageVersion(bundledServe()), electron: process.versions.electron, chrome: process.versions.chrome, node: process.versions.node };
-  const model = aboutModel(versions, colors, product?.lathe ? { lathe: product.lathe } : null);
+  const model = aboutModel(versions, colors, lathe ? { lathe } : null);
   const win = new BrowserWindow({
     width: 300,
     height: 350,
@@ -645,7 +650,12 @@ function showAbout() {
     ...(MAC ? { titleBarStyle: 'hidden' as const } : { autoHideMenuBar: true }),
     webPreferences: { preload: LOCAL_PRELOAD, contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false },
   });
-  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
+  // Its links open in the system browser, only those it shows (LA-INT61).
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    const link = aboutLink(url, model);
+    if (link) void shell.openExternal(link);
+    return { action: 'deny' };
+  });
   win.webContents.on('will-navigate', (event) => event.preventDefault());
   about = { win, model };
   win.once('ready-to-show', () => win.show());
@@ -670,8 +680,8 @@ async function openOnLaunch() {
   const named = dropped ?? folderArgument(process.argv, app.isPackaged);
   dropped = undefined;
   if (named) return openFolder(named);
-  const last = recent.find((f) => checkFolder(f).ok);
-  if (last) return openFolder(last);
+  const last = recentList().find((item) => checkFolder(item.folder).ok);
+  if (last) return openFolder(last.folder);
   if (!app.isPackaged) return openFolder(REPO_ROOT);
   return chooseFolder();
 }
@@ -683,7 +693,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   app.on('second-instance', (_event, argv, workingDirectory) => {
     const route = routeSecondInstance(argv, workingDirectory, app.isPackaged);
     if (route.kind === 'open') return void openFolder(route.folder);
-    const win = focusedProductWindow() ?? [...open.values()][0]?.win;
+    const win = focusedProductWindow() ?? [...openWindows().values()][0]?.win;
     if (!win) return void openOnLaunch();
     if (win.isMinimized()) win.restore();
     win.show();
@@ -700,7 +710,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     if (!MAC || SMOKE) app.quit();
   });
   app.on('activate', () => {
-    if (open.size === 0) void openOnLaunch();
+    if (openWindows().size === 0) void openOnLaunch();
   });
   // Quitting waits until every window's server has stopped, so no database work outlives the process, and then
   // quits again; a server that hangs is given up on after QUIT_TIMEOUT (LA-PLT-UC11-R07).
@@ -710,12 +720,13 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     event.preventDefault();
     if (quit === 'stopping') return;
     quit = 'stopping';
-    for (const entry of open.values()) {
-      void stopServer(entry.server);
+    // Quitting stops each window's server as closing it would (LA-PLT-PO02), and its chat.
+    for (const entry of openWindows().values()) {
+      void stopAppServer(appServers, { folder: entry.folder }, log);
       void stopChat(entry);
     }
     if (bridge) void bridge.then((b) => b.close());
-    void settleWithin([...stopping], QUIT_TIMEOUT).then((all) => {
+    void settleWithin([...appServers.load().stopping, ...chatStops], QUIT_TIMEOUT).then((all) => {
       if (!all) log(`Lathe: quitting without waiting longer for a server to stop (${QUIT_TIMEOUT / 1000} s).`);
       quit = 'stopped';
       app.quit();
@@ -730,30 +741,32 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     return entry && event.senderFrame === entry.win.webContents.mainFrame ? entry : undefined;
   };
 
-  // The page's theme colors for its window's chrome (the preload's setChrome), checked before use.
+  // The page's theme colors for its window's chrome (the preload's setChrome): Set a window's chrome.
   ipcMain.on('lathe:set-chrome', (event, input: unknown) => {
     const entry = fromPage(event);
-    if (!entry) return;
-    const chrome = applyChrome(entry.win, process.platform, input);
-    if (!chrome) return;
-    entry.chrome = chrome;
-    entry.overlay?.view.setBackgroundColor(chrome.background);
-    const mode = dark() ? 'dark' : 'light';
-    if (savedChrome[mode]?.background !== chrome.background || savedChrome[mode]?.foreground !== chrome.foreground) {
-      savedChrome = { ...savedChrome, [mode]: chrome };
-      writeJson(CHROME_FILE(), savedChrome);
-    }
+    if (entry) setWindowChrome(productWindows, { folder: entry.folder, chrome: input, dark: dark(), platform: process.platform });
   });
+  // Report a window's error count, for the Dock badge.
   ipcMain.on('lathe:error-count', (event, input: unknown) => {
     const entry = fromPage(event);
-    const count = parseErrorCount(input);
-    if (!entry || count === null) return;
-    entry.errors = count;
-    updateBadge();
+    if (entry && reportErrorCount(productWindows, { folder: entry.folder, count: input })) updateBadge();
   });
-  ipcMain.on('lathe:record', (event, input: unknown) => {
+  // The record actions, each on its own channel, by record ID only (LA-PAT-SHELL-ACTIONS-R01).
+  ipcMain.on('lathe:reveal-record', (event, input: unknown) => {
     const entry = fromPage(event);
-    if (entry) runRecordAction(entry, input);
+    if (entry) revealRecordDataFile(productWindows, { folder: entry.folder, request: input }, fileManager.reveal);
+  });
+  ipcMain.on('lathe:open-record-in-editor', (event, input: unknown) => {
+    const entry = fromPage(event);
+    if (entry) openRecordDataFile(productWindows, { folder: entry.folder, request: input }, openInEditor);
+  });
+  ipcMain.on('lathe:copy-record-id', (event, input: unknown) => {
+    const entry = fromPage(event);
+    if (entry) copyRecordId(productWindows, { folder: entry.folder, request: input }, fileManager.copy);
+  });
+  ipcMain.on('lathe:show-record-menu', (event, input: unknown) => {
+    const entry = fromPage(event);
+    if (entry) showRecordMenu(productWindows, { folder: entry.folder, request: input }, popupRecordMenu);
   });
   // The chat panel (the preload's chat): each call from a product window's own page, about that window's chat.
   const fromPageCall = (event: Electron.IpcMainInvokeEvent) => {
@@ -788,36 +801,36 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     entry.chatSent = entry.chat?.state ?? null;
     return entry.chat ? chatPatch(null, entry.chat.state) : null;
   });
-  // The page's answer to the app bridge's question (askPage).
-  ipcMain.on('lathe:app-answer', (event, input: unknown) => {
+  // The page's answer to the app bridge's question (askPage), on the question's own channel.
+  const answered = (channel: AskChannel) => (event: Electron.IpcMainEvent, input: unknown) => {
     const entry = fromPage(event);
     if (!entry || !input || typeof input !== 'object') return;
     const { id, answer } = input as { id?: unknown; answer?: unknown };
     const waiting = typeof id === 'string' ? pageAnswers.get(id) : undefined;
-    if (waiting?.entry === entry) waiting.resolve(answer ?? null);
+    if (waiting?.entry === entry && waiting.channel === channel) waiting.resolve(answer ?? null);
+  };
+  ipcMain.on('lathe:ask-focus', answered(ASK_CHANNELS.focus));
+  ipcMain.on('lathe:ask-open', answered(ASK_CHANNELS.open));
+  // The error page's buttons, each on its command's own channel, run only when that page shows it.
+  const fromErrorPage = (event: Electron.IpcMainEvent, input: unknown, action: LocalAction) => {
+    const entry = [...openWindows().values()].find((e) => e.overlay?.view.webContents === event.sender);
+    return entry?.overlay && input === action && parseLocalAction(input, entry.overlay.model.actions) === action ? entry : undefined;
+  };
+  ipcMain.on('lathe:retry-app-server', (event, input: unknown) => {
+    const entry = fromErrorPage(event, input, 'retry');
+    if (entry) void retry(entry);
   });
-  // A button on a launch view, error page or the About window, run only when that page shows it.
-  ipcMain.on('lathe:local-action', (event, input: unknown) => {
-    const entry = [...open.values()].find((e) => e.overlay?.view.webContents === event.sender);
-    if (entry?.overlay) {
-      const action = parseLocalAction(input, entry.overlay.model.actions);
-      if (action) runLocalAction(entry, action);
-      return;
-    }
-    if (about && about.win.webContents === event.sender) {
-      const action = parseLocalAction(input, about.model.actions);
-      if (action === 'open-repo') void shell.openExternal(REPO_URL);
-      if (action === 'open-reference') void shell.openExternal(REFERENCE_URL);
-    }
+  ipcMain.on('lathe:open-product-folder', (event, input: unknown) => {
+    if (fromErrorPage(event, input, 'open-another')) void chooseFolder();
+  });
+  ipcMain.on('lathe:reveal-product-folder', (event, input: unknown) => {
+    const entry = fromErrorPage(event, input, 'reveal');
+    if (entry) revealProductFolder(productWindows, { folder: entry.folder }, fileManager.reveal);
   });
 
   void app.whenReady().then(async () => {
     // The app needs no camera, location or notifications; it may copy text.
     session.defaultSession.setPermissionRequestHandler((_contents, permission, callback) => callback(permission === 'clipboard-sanitized-write'));
-    recent = parseRecent(readJson(RECENT_FILE()));
-    windowStates = parseWindowStates(readJson(WINDOWS_FILE()));
-    savedChrome = parseSavedChrome(readJson(CHROME_FILE()));
-    settings = parseSettings(readJson(SETTINGS_FILE()));
     setDockIcon();
     if (MAC) app.dock?.setMenu(Menu.buildFromTemplate(dockMenuTemplate({ newWindow: () => void chooseFolder() })));
     app.setAboutPanelOptions({ applicationName: 'Lathe', applicationVersion: app.getVersion() });

@@ -2,7 +2,8 @@ import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { addRecent, checkFolder, displayPath, parseRecent, productNames, RECENT_LIMIT, windowTitle } from '../src/folders.ts';
+import { checkFolder, displayPath, productNames, windowTitle } from '../src/folders.ts';
+import { addRecent, parseRecent, RECENT_LIMIT } from '../src/recent-folders/model.ts';
 
 const temp = mkdtempSync(path.join(os.tmpdir(), 'lathe-desktop-folders-'));
 afterAll(() => rmSync(temp, { recursive: true, force: true }));
