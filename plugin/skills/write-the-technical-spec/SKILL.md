@@ -9,61 +9,66 @@ The technical specification says which code implements each design record, and h
 
 ## How you write
 
-The spec is typed data in the repo's `data/` folder, one table per kind. Change it only with Lathe's MCP tools, never by editing files: `add`, `set`, `move`, `link`, `unlink` and `remove` write; `show`, `list` and `next_id` read; `check` runs the checks. Each write is checked against the schema and refused, with its reasons, when it breaks the model; a refusal changes nothing, so fix the input and try again. Writes never commit: commit per task.
+The spec is typed data in the repo's `data/` folder, one table per kind. Change it only with Lathe's MCP tools, never by editing files. Every kind belongs to one aggregate of Lathe's own model, and each aggregate has its own tools, named for the aggregate and the command: `<aggregate>_add_<kind>`, `<aggregate>_change_<kind>` and `<aggregate>_remove_<kind>` for each kind it holds, a move where a record really moves (a table to another entity or read model); and its reads, `<aggregate>_get_<aggregate>` (it whole, by the ID of any record in it), `<aggregate>_list_<aggregate>s` (those under a parent) and `<aggregate>_next_id`. `check` runs the checks. Each command checks its aggregate's rules and is refused, with every reason, when it breaks them; a refusal changes nothing, so fix the input and try again. Writes never commit: commit per task.
 
-- The `add` tool's input schema lists every table with its columns, their types and what each means. In a shell, `lathe add <table> --help` prints the same (`npx lathe` in a product repo; `npm --prefix lathe run lathe -- <command> --root ..` in the Lathe repo).
-- Take each technical record's ID from `next_id`, with the design record it implements as `parent`: it is that record's ID and a suffix (`TL-LEND-CMD05-H`), one per design record. A UI component has no owner: give the product.
+- A technical record sits in the aggregate of the design record it implements: a command handler in the Command aggregate, a data model in the Aggregate aggregate, a value type in the Value object aggregate. Its parts and the links it starts are fields of its own add and change: the standard rules it `meets`, the `packages` it uses, a repository's `persists`, a table's `keys`. On a change a list replaces the list. There are no tools that link or unlink.
+- Each tool's input schema lists its fields, with each column's type and meaning. In a shell the same commands are `lathe <aggregate> <command> --<field> <value>` (`lathe command add-command-handler --help` prints its fields; `npx lathe` in a product repo, `npm --prefix lathe run lathe -- <aggregate> <command> --root ..` in the Lathe repo), or the tool's own JSON with `--json -` (stdin) or `--json <file>`.
+- Take each technical record's ID from its aggregate's `<aggregate>_next_id`, with the kind and the design record it implements as `parent`: it is that record's ID and a suffix (`TL-LEND-CMD05-H`), one per design record. A UI component has no owner: give the product.
 
 ## Before you write
 
-1. `show` the design record you implement, and `list` its children to see whether it has its technical record already.
+1. Read the design record you implement whole with its aggregate's get tool (`command_get_command`, `aggregate_get_aggregate`, ...), to see whether it has its technical record already.
 2. Read the code: a technical record names a real unit in a real file, not a wish.
 3. Every source file must be named by a technical record, directly or through a folder a record names; coverage lists each one that is not as a `code-file-untraced` gap. Name the record the file implements, add the missing record when the file implements something real, or delete the file when it is dead. Tests, configs, generated files and build output are left out; `source` in `lathe.config.json` says which files are source.
 
 ## The kinds
 
-| Technical kind | Implements (its parent) | ID |
-| --- | --- | --- |
-| `repository` | a domain: loads and saves the one aggregate it `persists`, whole | `<domain>-REPO<nn>` |
-| `data_model` | an entity: its code, behavior and mapping to its table | `<entity>-DM` |
-| `table` | an entity or a read model: its storage | `<entity or read model>-TB` |
-| `value_type` | a value object, and so its constraints | `<value object>-VT` |
-| `predicate` | a specification | `<specification>-PR` |
-| `event_type` | a domain event: its shape, a contract when published | `<domain event>-ET` |
-| `projection` | a read model: fills its table and keeps it current | `<read model>-PJ` |
-| `command_handler` | a command | `<command>-H` |
-| `query_handler` | a query | `<query>-H` |
-| `event_handler` | a policy | `<policy>-H` |
-| `service` | a domain service | `<domain service>-SV` |
-| `endpoint_handler` | an endpoint | `<endpoint>-H` |
-| `adapter` | an integration | `<integration>-AD` |
-| `ui_component` | none: it `renders` the views it is used in | `<P>-UI<nn>` |
+| Technical kind | Implements (its parent) | ID | Written with |
+| --- | --- | --- | --- |
+| `repository` | a domain: loads and saves the one aggregate it `persists`, whole | `<domain>-REPO<nn>` | `domain_add_repository` |
+| `data_model` | an entity: its code, behavior and mapping to its table | `<entity>-DM` | `aggregate_add_data_model` |
+| `table` | an entity or a read model: its storage | `<entity or read model>-TB` | `table_add_table`, `table_move_table` |
+| `value_type` | a value object, and so its constraints | `<value object>-VT` | `value_object_add_value_type` |
+| `predicate` | a specification | `<specification>-PR` | `specification_add_predicate` |
+| `event_type` | a domain event: its shape, a contract when published | `<domain event>-ET` | `domain_event_add_event_type` |
+| `projection` | a read model: fills its table and keeps it current | `<read model>-PJ` | `read_model_add_projection` |
+| `command_handler` | a command | `<command>-H` | `command_add_command_handler` |
+| `query_handler` | a query | `<query>-H` | `read_model_add_query_handler` |
+| `event_handler` | a policy | `<policy>-H` | `command_add_event_handler` |
+| `service` | a domain service | `<domain service>-SV` | `domain_add_service` |
+| `endpoint_handler` | an endpoint | `<endpoint>-H` | `endpoint_add_endpoint_handler` |
+| `adapter` | an integration | `<integration>-AD` | `integration_add_adapter` |
+| `ui_component` | none: it `renders` the views it is used in | `<P>-UI<nn>` | `ui_component_add_ui_component` |
+| `entry_point` | a domain: a file that starts the product | `<domain>-ENTRY<nn>` | `entry_point_add_entry_point` |
+| `tooling` | a domain: a tool's configuration, such as the type checker's or the test runner's | `<domain>-TOOL<nn>` | `tooling_add_tooling` |
 
-A repository sits under its domain and links the one aggregate it persists with `persists`: one repository per aggregate, and one aggregate per repository (a second either way is refused). A repository that persists none is an error (`repository-persists-nothing`). Separate methods per aggregate, such as `Store.findLoan` and `Store.findTool`, are separate repositories. Write one record per piece of code: a generic store that loads and saves every aggregate the same way is one repository, never a record per aggregate or per data file. It persists one aggregate, the most central, and records each other aggregate it persists as a recorded exception, a `repository_share` row with the reason, such as "One generic store persists every table, so a repository per aggregate would only pass calls through." `lathe check` and the Checks panel list each one under Recorded exceptions; the store refuses a share of an aggregate a repository persists. A repository shared by several domains sits under the domain that holds what they share, such as a Platform domain.
+Each has its change and remove tools beside its add.
 
-Each has `file` (from the product root; it may not exist yet, and several records may share one file). Name the unit in its `title`, such as `LendingService.borrow`.
+A repository sits under its domain and names the one aggregate it `persists`: one repository per aggregate, and one aggregate per repository (a second either way is refused). A repository that persists none is an error (`repository-persists-nothing`). Write one record per repository in the code, named for its class, such as `LoanRepository`, with its methods in its description. Code that loads and saves several aggregates the same way, such as a generic store over uniform rows, is not one repository for them all: split it into one repository per aggregate, each loading and saving only its own aggregate's tables. A repository shared by several domains sits under the domain that holds what they share, such as a Platform domain.
+
+Each has `file` (from the product root; it may not exist yet, and several records may share one file). Name the unit in its `title`, such as `borrowTool`.
 
 Every kind's text is required or absent (`LA-STD-MODELING-R10`). The application layer and infrastructure choose how the work is done, which the design leaves open, so a repository, projection, command, query, event or endpoint handler and adapter must have a `description` saying how it works, in a sentence or two: where and in what form a repository keeps its aggregate, when a projection is rebuilt, a handler's transaction and the order of its checks, where an event handler hears its event, how an adapter calls its outside system. Never restate the design record it implements, and never only list code names. A data model, value type, predicate, event type and service transcribe their domain record, and a table's columns follow from its fields, so they have no description: the domain record says what it is, and the title and file say where. A UI component must have a `description`: what it renders and where it sits.
 
 ## Naming
 
-A technical record is bound to code, so its `title` is the identifier exactly as the code writes it, with no spaces: `LoanRow`, `buildReference`, `loans`. It is unique within its kind and product and has no trailing period; the store refuses a duplicate, a trailing period or a title with whitespace. Explain the unit in its `description` where its kind has one, never in the title (`Store (loans)` is refused; `Store.insertLoan` is not). This holds for every technical kind but the UI component, named for what it shows (Record card, see `design-interactions`), and for a product's own code-bound kinds, such as an entry point, tooling, an IPC channel or a plugin hook.
+A technical record is bound to code, so its `title` is the identifier exactly as the code writes it, with no spaces: `LoanRow`, `buildReference`, `loans`. It is unique within its kind and product and has no trailing period; a duplicate, a trailing period or a title with whitespace is refused. Explain the unit in its `description` where its kind has one, never in the title (`Loans (repository)` is refused; `LoanRepository` is not). This holds for every technical kind but the UI component, named for what it shows (Record card, see `design-interactions`), and for an entry point, tooling and a product's own code-bound kinds, such as an IPC channel or a plugin hook.
 
 | Kind | Title | Good |
 | --- | --- | --- |
 | data model, projection, handlers, service, repository, adapter, predicate, value type, table, event type | the identifier in code | `Loan`, `ToolReturned`, `loans` |
 | standard, standard rule | a singular noun phrase; a sentence that is true when the rule holds | Code; Errors carry a code and a sentence |
-| a product's CLI command | the invocation | lathe add |
+| a CLI command or CLI query | the invocation | lathe use-case add-flow |
 | a check row | the kebab-case name of the mistake it finds | event-tense |
 
-The store refuses a check row title not in kebab case.
+A check row title not in kebab case is refused.
 
-What follows from the tree is not stored: a command is carried out by its handler and its aggregate root's data model, and a handler loads its aggregate through the repository that persists it. Link nothing for these; only a repository links the aggregate it persists.
+What follows from the tree is not stored: a command is carried out by its handler and its aggregate root's data model, and a handler loads and saves its aggregate only through the repository that persists it. Name nothing for these; only a repository names the aggregate it persists.
 
 ## Domain layer and application layer
 
 - **Domain layer:** data models, value types, predicates, event types and services. A service never uses a repository or an outside system: its inputs are passed in, and it returns a value or a decision.
-- **Application layer:** command handlers, query handlers and event handlers, what DDD calls application services. Only they, and projections, read or write storage. A command handler owns its transaction; a projection writes only its own read model's table. Several handlers may share one file, such as one service class per aggregate, but each command and query still has its own handler record.
+- **Application layer:** command handlers, query handlers and event handlers, what DDD calls application services. Only they, each through its own aggregate's repository, and projections, read or write storage. A command handler owns its transaction; a projection writes only its own read model's table. Several handlers may share one file, such as one service class per aggregate, but each command and query still has its own handler record.
 - Clean architecture's "use case" or "interactor" is what Lathe calls a command handler. A Lathe use case is the actor's goal, one level up.
 
 ## Tables and keys
@@ -80,60 +85,59 @@ An event type's `delivery` says how its event reaches what hears it: `in process
 
 ## Standards
 
-A product's engineering rules for its code, such as logging, error handling or naming, live in **standards** beside the patterns: a `standard` under the product (`<P>-STD-<NAME>`, such as `TL-STD-CODE`) with its `standard_rule` records (`<standard>-R<nn>`), one rule each in `statement`. A technical record that follows a rule says so with a `meets` link to it, which shows where the rule is applied and designs it. A standard rule is proved by its standard rule tests (`plan-tests`), such as a scan of the code for what the rule forbids; write only rules the code really follows.
+A product's engineering rules for its code, such as logging, error handling or naming, live in **standards** beside the patterns: a `standard` under the product (`<P>-STD-<NAME>`, such as `TL-STD-CODE`) with its `standard_rule` records (`<standard>-R<nn>`), one rule each in `statement`. A technical record that follows a rule says so with a `meets` link to it, which shows where the rule is applied and designs it. A standard rule is proved by its standard rule tests (`plan-tests`), such as a scan of the code for what the rule forbids; write only rules the code really follows. A standard and its rules are written with `standard_add_standard` and `standard_add_standard_rule`, and a technical record names the rules it meets in its own `meets`.
 
 ## Kinds of code Lathe has no kind for
 
-Where no technical kind fits, such as a server's entry point, a CLI command or a migration, the product declares a kind of its own in the technical-specification stage (see `extend-the-meta-model`). The Tool Library's `src/server.ts` is an `entry_point`, a product kind under the domain, and its tool configs are `tooling` records.
+The Tool Library's `src/server.ts` is an entry point and its tool configs are tooling records, both Lathe kinds under the domain. Where no technical kind fits at all, such as a migration or a graph layout, the product declares a kind of its own in the technical-specification stage (see `extend-the-meta-model`).
 
 ## Packages
 
-Every package the product's `package.json` files list, dev dependencies included, is accounted for by the technical record that uses it: a `package_use` row naming the record and the package, such as `add { "package_use": { "record_id": "TL-INT01-AD", "package": "nodemailer" } }` for the adapter that sends mail. A package no record names is a `package-not-accounted-for` gap on the product; a record that names a package no manifest lists is a `package-not-in-manifest` error, so remove the row when the dependency goes. Only a technical record names one: a tool the product is checked or tested with (the type checker, the test runner) is named on a record of the product's own tooling kind, as the Tool Library's `tsconfig.json` and `vitest.config.ts` are. The package folders are those `lathe.config.json`'s `packages` lists, or else the root and each folder directly under it with a `package.json`.
+Every package the product's `package.json` files list, dev dependencies included, is accounted for by the technical record that uses it, in that record's `packages`, such as `"packages": ["nodemailer"]` on the adapter that sends mail. A package no record names is a `package-not-accounted-for` gap on the product; a record that names a package no manifest lists is a `package-not-in-manifest` error, so drop it from the record's `packages` when the dependency goes. Only a technical record names one: a tool the product is checked or tested with (the type checker, the test runner) is named on a tooling record, as the Tool Library's `tsconfig.json` and `vitest.config.ts` are. The package folders are those `lathe.config.json`'s `packages` lists, or else the root and each folder directly under it with a `package.json`.
 
 ## Example: the Tool Library
 
 The handler of Borrow a tool, the repository and data model of the Loan, and the event type of Tool returned with the event handler of the policy that hears it. Every Tool Library event goes by outbox: one path for all six keeps the code plain, and an event a later policy hears needs no change.
 
 ```
-add  { "command_handler": { "id": "TL-LEND-CMD05-H", "title": "LendingService.borrow", "command_id": "TL-LEND-CMD05",
-       "file": "src/lending-service.ts",
-       "description": "Runs the checks in order in one transaction and inserts the loan with its due date. It saves LoanOpened to the outbox in that transaction and runs the relay once it commits." } }
-add  { "repository": { "id": "TL-LEND-REPO03", "title": "Store.findLoan", "domain_id": "TL-LEND", "file": "src/store.ts",
-       "description": "The Store class's loan methods: insertLoan, findLoan, activeLoansForMember, activeLoanForTool and markReturned on the SQLite store." } }
-link { "source": "TL-LEND-REPO03", "relation": "persists", "target": "TL-LEND-A3" }
-add  { "data_model": { "id": "TL-LEND-EN04-DM", "title": "Loan", "entity_id": "TL-LEND-EN04", "file": "src/model.ts" } }
-add  { "event_type": { "id": "TL-LEND-EV06-ET", "title": "ToolReturned", "domain_event_id": "TL-LEND-EV06", "delivery": "outbox",
-       "file": "src/events.ts" } }
-add  { "event_handler": { "id": "TL-LEND-PO01-H", "title": "reportDamageOnReturn", "policy_id": "TL-LEND-PO01",
+command_add_command_handler { "id": "TL-LEND-CMD05-H", "title": "borrowTool", "command_id": "TL-LEND-CMD05",
+       "file": "src/loan-commands.ts",
+       "description": "Checks the IDs, then in one transaction loads the member, the tool and their active loans through their repositories, and saves the new loan through LoanRepository.add. It saves LoanOpened to the outbox in that transaction and runs the relay once it commits." }
+domain_add_repository { "id": "TL-LEND-REPO03", "title": "LoanRepository", "domain_id": "TL-LEND", "file": "src/loan-repository.ts",
+       "description": "Keeps each loan as a row of the loans table: add, get, activeForMember, activeForTool and save, each inside its command handler's transaction.",
+       "persists": "TL-LEND-A3" }
+aggregate_add_data_model { "id": "TL-LEND-EN04-DM", "title": "Loan", "entity_id": "TL-LEND-EN04", "file": "src/loan.ts" }
+domain_event_add_event_type { "id": "TL-LEND-EV06-ET", "title": "ToolReturned", "domain_event_id": "TL-LEND-EV06", "delivery": "outbox",
+       "file": "src/events.ts" }
+command_add_event_handler { "id": "TL-LEND-PO01-H", "title": "reportDamageOnReturn", "policy_id": "TL-LEND-PO01",
        "file": "src/event-handlers.ts",
-       "description": "Subscribed to ToolReturned on the outbox; for a return needing repair it invokes Report damage's handler, in its own transaction." } }
+       "description": "Subscribed to ToolReturned on the outbox; for a return needing repair it invokes Report damage's handler, in its own transaction." }
 ```
 
 The loans table, with its primary key, a foreign key to the members table, and the partial unique key that enforces one active loan per tool:
 
 ```
-add  { "table": { "id": "TL-LEND-EN04-TB", "title": "loans", "entity_id": "TL-LEND-EN04", "name": "loans", "storage": "table", "file": "src/store.ts" } }
-add  { "table_key": { "table_id": "TL-LEND-EN04-TB", "position": 1, "type": "primary", "columns": ["id"] } }
-add  { "table_key": { "table_id": "TL-LEND-EN04-TB", "position": 2, "type": "foreign", "columns": ["member_id"], "target_table_id": "TL-LEND-EN01-TB" } }
-add  { "table_key": { "table_id": "TL-LEND-EN04-TB", "position": 4, "type": "unique", "columns": ["tool_id"],
-       "name": "loans_one_active_per_tool", "invariant_id": "TL-LEND-INV03", "condition": "returned_at IS NULL" } }
+table_add_table { "id": "TL-LEND-EN04-TB", "title": "loans", "entity_id": "TL-LEND-EN04", "name": "loans", "storage": "table", "file": "src/database.ts",
+       "keys": [ { "type": "primary", "columns": ["id"] },
+                 { "type": "foreign", "columns": ["member_id"], "target_table_id": "TL-LEND-EN01-TB" },
+                 { "type": "unique", "columns": ["tool_id"], "name": "loans_one_active_per_tool", "invariant_id": "TL-LEND-INV03", "condition": "returned_at IS NULL" } ] }
 ```
 
-A value type that checks its value object's constraints, and a standard rule a handler follows:
+A value type that checks its value object's constraints, and a standard rule a handler meets:
 
 ```
-add  { "value_type": { "id": "TL-VO02-VT", "title": "parseEmail", "value_object_id": "TL-VO02", "file": "src/model.ts" } }
-add  { "standard": { "id": "TL-STD-CODE", "title": "Code", "product_id": "TL", "description": "How the library's code is written." } }
-add  { "standard_rule": { "id": "TL-STD-CODE-R01", "title": "Errors carry a code and a sentence", "standard_id": "TL-STD-CODE",
-       "statement": "Every refusal MUST be an error with a machine-readable code and a sentence for people." } }
-link { "source": "TL-LEND-CMD05-H", "relation": "meets", "target": "TL-STD-CODE-R01" }
+value_object_add_value_type { "id": "TL-VO02-VT", "title": "parseEmail", "value_object_id": "TL-VO02", "file": "src/model.ts" }
+standard_add_standard { "id": "TL-STD-CODE", "title": "Code", "product_id": "TL", "description": "How the library's code is written." }
+standard_add_standard_rule { "id": "TL-STD-CODE-R01", "title": "Errors carry a code and a sentence", "standard_id": "TL-STD-CODE",
+       "statement": "Every refusal MUST be an error with a machine-readable code and a sentence for people." }
+command_change_command_handler { "id": "TL-LEND-CMD05-H", "meets": ["TL-STD-CODE-R01"] }
 ```
 
-When a file moves, `set` the record's `file`: `set { "command_handler": { "id": "TL-LEND-CMD05-H", "file": "src/lending/borrow.ts" } }`.
+When a file moves, change the record's `file`: `command_change_command_handler { "id": "TL-LEND-CMD05-H", "file": "src/lending/borrow.ts" }`.
 
 ## Rules
 
-- One technical record per design record: the store refuses a second.
+- One technical record per design record: a second is refused.
 - A record whose `file` does not exist yet is not built; it is built once the file is written.
 - Describe what in the file implements the record, by name, so a reader can find it.
 - An endpoint handler's file names its endpoint's method and route, and a UI component's file the route of a view it renders, any way routes are written (`/tools/{toolId}`, `/tools/:id`, a regular expression, or a comment); otherwise `endpoint-route-not-in-file` or `view-route-not-in-file` is an error. Every route the code serves, in the handlers' files and the files `routers` in `lathe.config.json` names, needs an endpoint or a view (the `route-without-record` gap).

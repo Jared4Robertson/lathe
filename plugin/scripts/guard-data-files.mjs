@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // PreToolUse hook: refuses a Write, Edit, MultiEdit or NotebookEdit of a Lathe data file (data/<table>.jsonl), and
-// points the Agent at Lathe's MCP tools instead. Nothing edits the spec by hand: every change goes through the
-// command layer, which checks it against the schema before it writes.
+// points the Agent at Lathe's MCP tools instead. Nothing edits the spec by hand: every change is one of an aggregate's
+// own commands, which checks the aggregate's rules before it writes.
 //
 // Reads the hook input (JSON) on stdin and always exits 0; a refusal is the permission decision "deny" on stdout.
 import { readFileSync } from 'node:fs';
@@ -30,7 +30,7 @@ const inside = (dir) => {
 if (!dataDirs(real(root)).some(inside)) quietExit();
 
 const reason =
-  `${path.relative(root, file)} is Lathe data: change it only with Lathe's MCP tools (add, set, move, link, unlink, remove), ` +
-  'which check every change against the schema before they write. Use show, list and next_id to read it.';
+  `${path.relative(root, file)} is Lathe data: change it only with Lathe's MCP tools, each aggregate's own commands ` +
+  '(such as use_case_add_flow_step), which check its rules before they write. Read it with each aggregate\'s get and list tools.';
 process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', permissionDecision: 'deny', permissionDecisionReason: reason } })}\n`);
 process.exit(0);
