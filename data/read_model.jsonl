@@ -7,6 +7,7 @@
 {"id":"LA-EXP-RM04","title":"ERD","domain_id":"LA-EXP","description":"A product's one ERD map: its domains, aggregates and entities as boxes and the lines between them, built once per data change, with the places they are laid out at, once per product and data change."}
 {"id":"LA-EXP-RM05","title":"Record history","domain_id":"LA-EXP","description":"The commits that changed a record's rows, read from git on each request."}
 {"id":"LA-EXP-RM06","title":"Spaces","domain_id":"LA-EXP","description":"Every product as a space in the rail, with its look and place."}
+{"id":"LA-EXP-RM07","title":"Record changes","domain_id":"LA-EXP","description":"What changed in a product's records between a baseline and the data now, by record, computed on each ask."}
 {"id":"LA-PLT-RM01","title":"Workspace","domain_id":"LA-PLT","description":"Every product's records, links, problems and coverage, as one load of the data files gives them: `Workspace` in `lathe/src/types.ts`. Filled from the data files whenever they change."}
 {"id":"LA-PLT-RM02","title":"Keymap","domain_id":"LA-PLT","description":"Every keyboard command with its bindings as the platform shows them, which every hint, the palette and the sheet read."}
 {"id":"LA-PLT-RM03","title":"Themes","domain_id":"LA-PLT","description":"Every theme, which one is in use and the color mode."}

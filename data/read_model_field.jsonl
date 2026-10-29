@@ -57,6 +57,12 @@
 {"read_model_id":"LA-EXP-RM06","position":3,"name":"Color","meaning":"The icon's color (DS01).","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM06","position":4,"name":"Place","meaning":"Its place in the rail, which Alt and its number opens (DS01).","type":"whole number","required":true}
 {"read_model_id":"LA-EXP-RM06","position":5,"name":"Domains","meaning":"How many domains it has, for the products page.","type":"whole number","required":true}
+{"read_model_id":"LA-EXP-RM07","position":1,"name":"Record","meaning":"The record's ID.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":2,"name":"Change","meaning":"Added, removed or changed.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":3,"name":"Fields","meaning":"Each changed column, its value before and after.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":4,"name":"Parts","meaning":"The part rows it owns, added, removed or changed.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":5,"name":"Links","meaning":"The links it starts, added and removed.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":6,"name":"Baseline","meaning":"What it is measured from: the last commit, where the branch left main, the Reader's last look, or the data before a reload or a chat turn.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":1,"name":"Data folder","meaning":"Where the product's data files were read from, as `lathe.config.json` names it.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":2,"name":"Records","meaning":"Every record with its kind, columns, part rows, parent, product and domain.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":3,"name":"Links","meaning":"Every link, with its relation and both ends.","type":"text","required":true}

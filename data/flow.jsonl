@@ -75,6 +75,8 @@
 {"id":"LA-EXP-UC13-FL02","title":"Read a domain's endpoints and integrations in the desktop app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC14-FL01","title":"Fix a record while reading in the web app","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC14-FL02","title":"Fix a record while reading in the desktop app","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF02"}
+{"id":"LA-EXP-UC15-FL01","title":"Watch the spec change in the web app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF01","description":"While the Reader has the product open on a stage, an Agent changes its data through the CLI; the page reloads and the stage marks what changed. The Reader follows the changes, opens the Changes lens against each baseline, the Changes panel, and a changed record's wiki card."}
+{"id":"LA-EXP-UC15-FL02","title":"Watch the spec change in the desktop app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF02","description":"While the Reader has the product open on a stage in the desktop app, the chat's Agent changes its data; the stage marks it as in the web app, and the chat lists the turn's changes from the same record diff. The Reader opens the Changes lens, the Changes panel and a changed record's wiki card."}
 {"id":"LA-PLT-UC01-FL06","title":"Load the workspace through the package API","use_case_id":"LA-PLT-UC01","interface_id":"LA-IF06"}
 {"id":"LA-PLT-UC02-FL03","title":"Set up Lathe in a product repo through the CLI","use_case_id":"LA-PLT-UC02","interface_id":"LA-IF03"}
 {"id":"LA-PLT-UC03-FL01","title":"See the current data in the web app","use_case_id":"LA-PLT-UC03","interface_id":"LA-IF01"}

@@ -18,6 +18,8 @@
 {"source_id":"LA-EXP-RM06","target_id":"LA-AUT-EV01"}
 {"source_id":"LA-EXP-RM06","target_id":"LA-AUT-EV03"}
 {"source_id":"LA-EXP-RM06","target_id":"LA-CHK-EV01"}
+{"source_id":"LA-EXP-RM07","target_id":"LA-AUT-EV01"}
+{"source_id":"LA-EXP-RM07","target_id":"LA-AUT-EV03"}
 {"source_id":"LA-PLT-RM01","target_id":"LA-AUT-EV01"}
 {"source_id":"LA-PLT-RM01","target_id":"LA-AUT-EV03"}
 {"source_id":"LA-PLT-RM01","target_id":"LA-CHK-EV01"}
