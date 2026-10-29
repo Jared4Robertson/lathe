@@ -1,6 +1,7 @@
 import './graph/setup';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import { TOOLBAR_FORMS, TOOLBAR_TIERS } from '../src/views/StageChrome';
 import { modelWorkspace } from './fixtures/model';
 import { openApp } from './helpers';
 
@@ -64,5 +65,62 @@ describe('one stage chrome', () => {
     // Each step button shows its arrow and letter, the same on every stage, and Out and In their names.
     const steps = [...stage().querySelectorAll('.stage-steps button')].map((b) => b.textContent);
     expect(steps).toEqual(['←A', '→D', '↑W', '↓S', 'Out', 'In']);
+  });
+});
+
+describe('the toolbar\'s fold order', () => {
+  it('LA-PAT-APP-UX-R21-T01 The toolbar folds the Changes controls first, then the secondary controls and Key, then drops the step letters; the walk, Frame and the stage\'s primary controls stay in the row until the phone\'s form', () => {
+    expect(Object.keys(TOOLBAR_FORMS)).toEqual([...TOOLBAR_TIERS]);
+    const folded = TOOLBAR_TIERS.map((t) => `${t}: ${TOOLBAR_FORMS[t].folded.join(' ') || '-'}`);
+    expect(folded).toEqual([
+      'full: -',
+      'compact: -',
+      'changes: changes',
+      'secondary: changes secondary key',
+      'narrow: changes secondary key',
+      'menu: steps changes secondary key',
+    ]);
+    // Each tier only gives way more: what one folds or hides stays folded or hidden in every narrower one.
+    TOOLBAR_TIERS.slice(1).forEach((t, i) => {
+      const [wider, now] = [TOOLBAR_FORMS[TOOLBAR_TIERS[i]], TOOLBAR_FORMS[t]];
+      for (const g of wider.folded) expect(now.folded).toContain(g);
+      for (const flag of ['names', 'picker', 'letters'] as const) if (!wider[flag]) expect(now[flag]).toBe(false);
+      if (wider.narrow) expect(now.narrow).toBe(true);
+    });
+    // Names and the baseline picker go first, the step letters before the steps fold; Frame and the primary controls never fold.
+    const first = (test: (t: (typeof TOOLBAR_TIERS)[number]) => boolean) => TOOLBAR_TIERS.findIndex(test);
+    expect(first((t) => !TOOLBAR_FORMS[t].names)).toBe(1);
+    expect(first((t) => !TOOLBAR_FORMS[t].picker)).toBe(1);
+    expect(first((t) => !TOOLBAR_FORMS[t].letters)).toBeLessThan(first((t) => TOOLBAR_FORMS[t].folded.includes('steps')));
+    expect(first((t) => TOOLBAR_FORMS[t].folded.includes('steps'))).toBe(TOOLBAR_TIERS.length - 1);
+    for (const t of TOOLBAR_TIERS) expect(TOOLBAR_FORMS[t].folded).not.toContain('frame');
+    for (const t of TOOLBAR_TIERS) expect(TOOLBAR_FORMS[t].folded).not.toContain('primary');
+  });
+
+  it('LA-PAT-APP-UX-R21-T01 Too narrow for the Changes controls, the secondary controls and Key, the Graph\'s toolbar keeps its walk, Frame, layouts and filters in the row and the rest in More', async () => {
+    // The row overflows until the Key and depth have folded (jsdom lays nothing out).
+    const fits = TOOLBAR_TIERS.indexOf('secondary');
+    const scroll = vi.spyOn(HTMLElement.prototype, 'scrollWidth', 'get').mockImplementation(function (this: HTMLElement) {
+      return this.classList.contains('stage-toolbar') && TOOLBAR_TIERS.indexOf(this.dataset.tier as (typeof TOOLBAR_TIERS)[number]) < fits ? 900 : 0;
+    });
+    const client = vi.spyOn(HTMLElement.prototype, 'clientWidth', 'get').mockReturnValue(600);
+    try {
+      await openApp('/P-D-UC01?stage=graph', { data: modelWorkspace() });
+      await waitFor(() => expect(stage().querySelector('.graph-box')).not.toBeNull());
+      const toolbar = stage().querySelector<HTMLElement>('.stage-toolbar')!;
+      await waitFor(() => expect(toolbar).toHaveAttribute('data-tier', 'secondary'));
+      const more = toolbar.querySelector<HTMLElement>('.stage-more-body')!;
+      const row = (el: Element) => toolbar.contains(el) && !more.contains(el);
+      // In the row: the steps with their letters, Out, In, Frame, the layouts and the filters; More is at the end.
+      expect([...toolbar.querySelectorAll('.stage-steps button')].map((b) => b.textContent)).toEqual(['←A', '→D', '↑W', '↓S', 'Out', 'In']);
+      for (const el of [toolbar.querySelector('.stage-steps')!, toolbar.querySelector('.stage-frame')!, toolbar.querySelector('.graph-layout')!, toolbar.querySelector('.graph-filters')!]) expect(row(el)).toBe(true);
+      expect(toolbar.querySelector('.stage-toolbar-end > .stage-more')).not.toBeNull();
+      // In More, in order: the Changes controls with the baseline picker, depth, then the Key.
+      expect([...more.children].map((c) => c.className.split(' ')[0])).toEqual(['changes-tools', 'graph-depth', 'stage-key']);
+      expect(within(more).getByRole('combobox')).toBeInTheDocument();
+    } finally {
+      scroll.mockRestore();
+      client.mockRestore();
+    }
   });
 });

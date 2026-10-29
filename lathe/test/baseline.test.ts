@@ -8,7 +8,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configuredRoot } from './store/fixture.ts';
 import { recordChanges } from '../src/changes.ts';
 import { closeStores, handleApi } from '../src/server/api.ts';
-import type { BaselineAnswer } from '../src/server/baseline.ts';
+import type { BaselineAnswer } from '../src/server/contract.ts';
 import { openStore, type Store } from '../src/store/index.ts';
 
 const temps: string[] = [];

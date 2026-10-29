@@ -11,26 +11,8 @@
 import path from 'node:path';
 import type { Row } from '../store/rows.ts';
 import type { SchemaDescription } from '../store/schema.ts';
+import type { BaselineAnswer, BaselineSince } from './contract.ts';
 import { runGit } from './history.ts';
-
-/** Which baseline is asked for: the last commit, the branch's start, or a commit the app noted earlier. */
-export type BaselineSince = 'commit' | 'branch' | { commit: string };
-
-/** What GET /api/baseline answers. (Its shapes belong in contract.ts, which this change could not edit.) */
-export type BaselineAnswer =
-  | {
-      state: 'ok';
-      /** The baseline's commit, its short hash, subject and author's date (ISO 8601). */
-      commit: string;
-      short: string;
-      subject: string;
-      date: string;
-      /** For `since=branch`, the default branch it is measured from (main, master); otherwise null. */
-      base: string | null;
-      /** The rows of every table its data files held at that commit. */
-      tables: Record<string, Row[]>;
-    }
-  | { state: 'no-repo' | 'no-commit'; message: string };
 
 /** The most one data file at a commit may hold. */
 const FILE_CAP = 64 * 1024 * 1024;

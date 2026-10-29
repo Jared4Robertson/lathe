@@ -7,6 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { parseSpecRoute } from '../src/specs/data';
 import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/address';
 import { CARD_GAP, CARD_GAP_Y, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
+import { settleWhenHidden } from '../src/views/WikiCard';
 import { NARROW_QUERY } from '../src/shell/useNarrow';
 import { SETTINGS_KEY } from '../src/graph/settings';
 import { colorOf } from '../src/theme/audit';
@@ -135,9 +136,11 @@ describe('one address, one stage', () => {
     expect(el.parentElement!.style.getPropertyValue('--tools-foot')).toBe(`${parseFloat(el.style.getPropertyValue('--frame-top')) - OPEN_GAP}px`);
     await waitFor(() => expect(el.querySelector('[data-stage-tools="top"]')).not.toBeNull());
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
-    expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{ top: var\(--open-top/);
-    // Centered on the whole stage, in one spot whatever panels are open, narrowing evenly to stay clear of them.
-    expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{[^}]*left: 50%; transform: translateX\(-50%\); max-width: calc\(100% - 2 \* max\(var\(--open-left, 0px\), var\(--chat-space, 0px\)\)\)/);
+    // Its room is the open space's width at the top, right of the nav and left of the chat (the card sits below its row).
+    expect(el.querySelector('[data-stage-tools="top"]')!.parentElement).toHaveClass('stage-tools-room');
+    expect(css).toMatch(/\.stage-tools-room \{[^}]*top: var\(--open-top, 0px\); left: var\(--open-left, 0px\); right: var\(--chat-space, 0px\);[^}]*container-type: inline-size/);
+    // Centered on the whole stage while it fits there, whatever panels are open; wider, it stays inside its room.
+    expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{[^}]*max-width: 100cqw; translate: clamp\(0px, 50cqw \+ \(var\(--chat-space, 0px\) - var\(--open-left, 0px\)\) \/ 2 - 50%, 100cqw - 100%\) 0/);
     expect(css).toMatch(/\.trace-scroll \{[^}]*padding: calc\(var\(--frame-top/);
   });
 
@@ -396,6 +399,31 @@ describe('one address, one stage', () => {
     // The card's gaps: well wider than the panels' own, the same at its right and above and below (LA-PAT-APP-UX-R18).
     expect(CARD_GAP).toBe(28);
     expect(CARD_GAP_Y).toBe(CARD_GAP);
+  });
+
+  it('LA-V96-R19-T08 A card page drawn or left mid-fade while the window is hidden ends its fade at once and shows whole', () => {
+    let hidden = true;
+    const visibility = vi.spyOn(document, 'hidden', 'get').mockImplementation(() => hidden);
+    const page = (finish: () => void) => Object.assign(document.createElement('div'), { getAnimations: () => [{ finish }] as unknown as Animation[] });
+    try {
+      // Drawn while hidden, where animations pause: the fade ends at once.
+      const drawnHidden = vi.fn();
+      settleWhenHidden(page(drawnHidden))?.();
+      expect(drawnHidden).toHaveBeenCalledTimes(1);
+      // Drawn while shown, the fade runs; hidden mid-fade, it ends; once let go, the page no longer listens.
+      hidden = false;
+      const midFade = vi.fn();
+      const stop = settleWhenHidden(page(midFade))!;
+      expect(midFade).not.toHaveBeenCalled();
+      hidden = true;
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(midFade).toHaveBeenCalledTimes(1);
+      stop();
+      document.dispatchEvent(new Event('visibilitychange'));
+      expect(midFade).toHaveBeenCalledTimes(1);
+    } finally {
+      visibility.mockRestore();
+    }
   });
 
   it('LA-V96-R20-T01 Panels float over the stage, frosted, and opaque under reduced transparency', async () => {

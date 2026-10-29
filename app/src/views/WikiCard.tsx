@@ -38,6 +38,18 @@ import { CardChanges } from '../changes/CardChanges';
 // (`?page=format/kinds/use_case`, overlays.ts): the whole page, with a link back to the focus, the
 // stage keeping its focus behind it (LA-PAT-APP-UX-R20).
 
+/**
+ * The cross-fade never leaves a page faint: a hidden window pauses its animations, so a page drawn while the window is
+ * hidden, or hidden mid-fade, ends its fade at once and shows whole.
+ */
+export function settleWhenHidden(page: HTMLElement | null) {
+  if (!page) return;
+  const settle = () => { if (document.hidden) for (const a of page.getAnimations?.() ?? []) a.finish(); };
+  settle();
+  document.addEventListener('visibilitychange', settle);
+  return () => document.removeEventListener('visibilitychange', settle);
+}
+
 export interface WikiCardProps {
   index: SpecIndex;
   /** The page it shows: the focus, once settled. */
@@ -84,7 +96,7 @@ export const WikiCard = memo(forwardRef<HTMLDivElement, WikiCardProps>(function 
       </div>
       <div className="wiki-panel-scroll" ref={scroller} onScroll={onScroll}>
         {/* A new page cross-fades in (none under reduced motion, the stylesheet's). */}
-        <div key={focus} className="wiki-panel-page">
+        <div key={focus} ref={settleWhenHidden} className="wiki-panel-page">
           <CardTitle index={index} route={route} />
           {expanded ? <WikiContent index={index} route={route} /> : <CardSummary index={index} route={route} />}
         </div>
@@ -126,7 +138,7 @@ const FormatCard = forwardRef<HTMLDivElement, FormatCardProps>(function FormatCa
         </Tooltip>
       </div>
       <div className="wiki-panel-scroll" ref={scroller} onScroll={onScroll}>
-        <div key={JSON.stringify(format)} className="wiki-panel-page">
+        <div key={JSON.stringify(format)} ref={settleWhenHidden} className="wiki-panel-page">
           <FormatPageView index={index} route={format} />
         </div>
       </div>

@@ -11,7 +11,8 @@ import { changeCounts, useChanges } from './changes';
 // (dim everything unchanged from the baseline), the baseline it compares with, Follow (glide to each change as it
 // lands), and the Changes panel's toggle with how many records changed. They are the stage's, not one stage's, so
 // the shared stage toolbar holds them (views/StageChrome.tsx), after its shared controls; the baseline picker shows in
-// its widest form only (and in the More menu, where the narrowest form folds them all), and is always in the Changes panel.
+// its widest form only (and in the More menu, the first group a narrower toolbar folds there), and is always in the
+// Changes panel.
 
 export function ChangesTools({ picker }: { picker: boolean }) {
   const c = useChanges();

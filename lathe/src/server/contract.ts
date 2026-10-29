@@ -4,6 +4,7 @@
 //   GET  /api/spec               SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions, coverage and each obligation's chain
 //   POST /api/write              { commands: Command[] } -> WriteAnswer: one transaction through the command layer of the product the commands name
 //   GET  /api/history?id=<ID>    HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
+//   GET  /api/baseline?product=<ID>&since=<commit|branch|hash>   BaselineAnswer: the product's rows at a commit, for the record diff (../changes.ts)
 import type { Command, StoreProblem } from '../store/store.ts';
 import type { Row, Value } from '../store/rows.ts';
 import type { SchemaDescription } from '../store/schema.ts';
@@ -107,3 +108,22 @@ export type HistoryAnswer =
       /** Whether older commits are left to load. */
       more: boolean;
     };
+
+/** Which baseline GET /api/baseline is asked for: the last commit, the branch's start, or a commit the app noted earlier. */
+export type BaselineSince = 'commit' | 'branch' | { commit: string };
+
+/** GET /api/baseline. */
+export type BaselineAnswer =
+  | {
+      state: 'ok';
+      /** The baseline's commit, its short hash, subject and author's date (ISO 8601). */
+      commit: string;
+      short: string;
+      subject: string;
+      date: string;
+      /** For `since=branch`, the default branch it is measured from (main, master); otherwise null. */
+      base: string | null;
+      /** The rows of every table its data files held at that commit. */
+      tables: Record<string, Row[]>;
+    }
+  | { state: 'no-repo' | 'no-commit'; message: string };
