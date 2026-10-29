@@ -4,11 +4,12 @@
 // the keymap does not use) and the keys a browser keeps for its tabs and history (commands.ts's TAB_COMMANDS).
 import type { MenuItemConstructorOptions } from 'electron';
 import { HELP_COMMANDS, TAB_COMMANDS, VIEW_COMMANDS, type MenuCommand } from './commands.ts';
-import { EDITOR_NAMES, EDITORS, type Editor, type Settings } from './editor.ts';
-import { displayPath } from './folders.ts';
+import { EDITOR_NAMES, EDITORS, type Editor, type Settings } from './shell-settings/model.ts';
+import type { RecentFolderItem } from './recent-folders/read-model.ts';
 
 export interface MenuActions {
-  recent: readonly string[];
+  /** File › Open Recent: the Recent folders' query's answer (recent-folders/queries.ts). */
+  recent: readonly RecentFolderItem[];
   openFolder: () => void;
   openRecent: (folder: string) => void;
   clearRecent: () => void;
@@ -41,7 +42,7 @@ function editorMenu(actions: MenuActions): MenuItemConstructorOptions[] {
 export function menuTemplate(actions: MenuActions, mac = process.platform === 'darwin'): MenuItemConstructorOptions[] {
   const command = (c: MenuCommand): MenuItemConstructorOptions => ({ label: c.label, ...(c.accelerator ? { accelerator: c.accelerator } : {}), click: () => actions.runCommand(c.id) });
   const recent: MenuItemConstructorOptions[] = actions.recent.length
-    ? [...actions.recent.map((folder) => ({ label: displayPath(folder), click: () => actions.openRecent(folder) })), { type: 'separator' }, { label: 'Clear Menu', click: actions.clearRecent }]
+    ? [...actions.recent.map((item) => ({ label: item.label, click: () => actions.openRecent(item.folder) })), { type: 'separator' }, { label: 'Clear Menu', click: actions.clearRecent }]
     : [{ label: 'No Recent Folders', enabled: false }];
   const settings: MenuItemConstructorOptions = { label: 'Settings…', accelerator: 'CmdOrCtrl+,', click: actions.settings };
   const appMenu: MenuItemConstructorOptions = {

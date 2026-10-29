@@ -9,13 +9,14 @@
 //                       the current state (macOS hides the traffic lights there);
 //   setErrorCount       sends the product's number of check errors, for the Dock badge (dock.ts);
 //   revealRecord, openRecordInEditor, copyRecordId, showRecordMenu
-//                       the record actions, by record ID only (the main process checks the request and
-//                       finds the data file itself, records.ts);
+//                       the record actions, each on its own channel, by record ID only (the main process
+//                       checks the request and finds the data file itself, product-window/commands/);
 //   chat                the chat panel's Claude Code (LA-PLT-UC19): the folder's saved sessions, open one
 //                       (new, resumed or forked), send a message, answer a permission prompt, stop the
 //                       turn, and subscribe to the chat's patches (chat.ts);
-//   onAppRequest        answers the app bridge's questions (bridge.ts): what the Reader is looking at,
-//                       and opening a record, for Lathe's MCP tools run by the chat's Claude Code.
+//   onAppRequest        answers the app bridge's questions (bridge.ts), each on its own channel: what the
+//                       Reader is looking at (lathe:ask-focus), and opening a record (lathe:ask-open), for
+//                       Lathe's MCP tools run by the chat's Claude Code.
 // Until the app subscribes, a menu choice presses the command's default keys in the page, so the
 // app's keymap runs it as if typed.
 const { contextBridge, ipcRenderer } = require('electron') as typeof import('electron');
@@ -52,18 +53,23 @@ ipcRenderer.on('lathe:chat', (_event, patch: unknown) => {
   for (const listener of patchListeners) listener(patch);
 });
 
-ipcRenderer.on('lathe:app-request', (_event, request: { id?: unknown }) => {
+// The app bridge's questions, each on its own channel, answered on the same channel with the question's id.
+// The page's handler gets them as it always has: { id, kind: 'focus' } or { id, kind: 'open', open }.
+const answerOn = (channel: string, kind: string) => (_event: unknown, request: { id?: unknown; open?: unknown }) => {
   const id = request?.id;
   if (typeof id !== 'string') return;
-  const reply = (answer: unknown) => ipcRenderer.send('lathe:app-answer', { id, answer });
+  const reply = (answer: unknown) => ipcRenderer.send(channel, { id, answer });
   if (!appRequestHandler) return reply(null);
   Promise.resolve()
-    .then(() => appRequestHandler?.(request))
+    .then(() => appRequestHandler?.(kind === 'open' ? { id, kind, open: request.open } : { id, kind }))
     .then(reply, () => reply(null));
-});
+};
+ipcRenderer.on('lathe:ask-focus', answerOn('lathe:ask-focus', 'focus'));
+ipcRenderer.on('lathe:ask-open', answerOn('lathe:ask-open', 'open'));
 
-const recordAction = (action: string) => (id: unknown) => {
-  if (typeof id === 'string') ipcRenderer.send('lathe:record', { action, id });
+// Each record action on its own channel, with the record's ID only.
+const recordAction = (channel: string) => (id: unknown) => {
+  if (typeof id === 'string') ipcRenderer.send(channel, { id });
 };
 
 contextBridge.exposeInMainWorld('latheDesktop', {
@@ -91,10 +97,10 @@ contextBridge.exposeInMainWorld('latheDesktop', {
   setErrorCount(count: unknown) {
     if (typeof count === 'number') ipcRenderer.send('lathe:error-count', count);
   },
-  revealRecord: recordAction('reveal'),
-  openRecordInEditor: recordAction('open-in-editor'),
-  copyRecordId: recordAction('copy-id'),
-  showRecordMenu: recordAction('menu'),
+  revealRecord: recordAction('lathe:reveal-record'),
+  openRecordInEditor: recordAction('lathe:open-record-in-editor'),
+  copyRecordId: recordAction('lathe:copy-record-id'),
+  showRecordMenu: recordAction('lathe:show-record-menu'),
   chat: {
     sessions: () => ipcRenderer.invoke('lathe:chat-sessions'),
     open: (choice: unknown) => ipcRenderer.invoke('lathe:chat-open', choice),
