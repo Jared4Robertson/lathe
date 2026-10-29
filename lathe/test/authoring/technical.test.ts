@@ -21,7 +21,7 @@ const technical = () =>
   Object.values(schema.kinds).filter((k) => k.productId === null && k.stage === 'technical-specification' && !k.name.startsWith('standard')).map((k) => k.name).sort();
 
 describe('files', () => {
-  it('LA-AUT-UC01-R04-T01 A technical record names the file that builds it and a test the file that runs it, each relative to the repo root', async () => {
+  it('LA-AUT-UC17-R10-T01 A technical record names the file that builds it and a test the file that runs it, each relative to the repo root', async () => {
     for (const kind of [...technical(), ...Object.keys(ALLOWED_LEVELS)]) expect(schema.tables[kind].columns.find((c) => c.name === 'file'), kind).toMatchObject({ kind: 'text', required: false });
     expect(record(good, 'EX-LEND-CMD01-H').fields.file).toBe('src/loans.ts');
     expect(record(good, 'EX-LEND-UC01-R01-T01').fields.file).toBe('test/api.test.ts');
@@ -41,7 +41,7 @@ describe('files', () => {
 });
 
 describe('the interaction design', () => {
-  it('LA-AUT-UC18-R04-T01 An endpoint sits under the one command or query it exposes, and a step reaches it only through that command or query', async () => {
+  it('LA-AUT-UC26-R01-T01 An endpoint sits under the one command or query it exposes, and a step reaches it only through that command or query', async () => {
     expect(parentsOf(schema, 'endpoint')).toEqual(['command.command_id', 'query.query_id']);
     expect(schema.tables.endpoint.checks).toContainEqual('((command_id IS NULL) != (query_id IS NULL))');
     expect(record(good, 'EX-LEND-EP01')).toMatchObject({ parent: 'EX-LEND-CMD01', domain: 'EX-LEND' });
@@ -55,7 +55,7 @@ describe('the interaction design', () => {
     expect(direct).toEqual([expect.objectContaining({ table: 'invokes', file: 'data/invokes.jsonl', line: 1 })]);
   });
 
-  it('LA-AUT-UC18-R05-T01 A view or an integration has no owner and takes its product from its ID, and one no step uses is an error', async () => {
+  it('LA-AUT-UC18-R05-T01 LA-AUT-UC27-R01-T01 A view or an integration has no owner and takes its product from its ID, and one no step uses is an error', async () => {
     for (const kind of ['view', 'integration']) {
       expect(parentsOf(schema, kind), kind).toEqual([]);
       expect(schema.kinds[kind].idScope, kind).toBe('product');
@@ -70,7 +70,7 @@ describe('the interaction design', () => {
     expect(await refusals(adding(everyKind(), { view: [{ id: 'XX-V09', title: 'Lost', description: 'A page of no product.' }] }))).toEqual([expect.objectContaining({ rule: 'id-prefix', key: 'XX-V09' })]);
   });
 
-  it('LA-AUT-UC18-R06-T01 A rule of the interaction design is a view requirement under its view or an API requirement under its endpoint', () => {
+  it('LA-AUT-UC18-R06-T01 LA-AUT-UC26-R02-T01 A rule of the interaction design is a view requirement under its view or an API requirement under its endpoint', () => {
     expect(parentsOf(schema, 'view_requirement')).toEqual(['view.view_id']);
     expect(parentsOf(schema, 'api_requirement')).toEqual(['endpoint.endpoint_id']);
     const rules = Object.values(schema.kinds).filter((k) => k.stage === 'interaction-design' && k.obligation).map((k) => k.name).sort();
@@ -116,7 +116,7 @@ describe('the technical specification', () => {
     expect(gaps(ws)).toEqual(['built EX-LEND-DS01']);
   });
 
-  it('LA-AUT-UC17-R09-T01 A repository that also persists another aggregate records it with its reason, listed as a recorded exception', async () => {
+  it('LA-AUT-UC02-R06-T01 A repository that also persists another aggregate records it with its reason, listed as a recorded exception', async () => {
     expect(schema.tables.repository_share).toMatchObject({ role: 'part', ownerColumn: 'repository_id' });
     expect(requiredOf(schema, 'repository_share')).toEqual(['repository_id', 'aggregate_id', 'reason']);
     const reason = 'One generic store persists every table.';
