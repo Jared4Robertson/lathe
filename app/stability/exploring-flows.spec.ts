@@ -4,7 +4,7 @@ import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { openPage } from './measure';
 import { keepData } from './scenarios';
-import { clickBox, focusDrawn, sceneOf, traceDrawn, traceLayout, traceSceneOf } from './scene';
+import { clickBox, expectKeyWhole, focusDrawn, sceneOf, traceDrawn, traceLayout, traceSceneOf } from './scene';
 
 // Exploring's flow tests (LA-EXP-UC01-FL01 to UC13-FL01): one per flow, each walking its main path in
 // Chromium over the suite's copy of Lathe's data, as the Reader does. They prove the flow end to
@@ -98,6 +98,7 @@ test.describe('Exploring flows', () => {
     await expect(key).toBeVisible();
     await expect(key.locator('[data-key-entry="stage-use-cases"]')).toHaveAttribute('title', /capability, use case/);
     await expect(key.locator('[data-key-entry="shape-stadium"]')).toContainText('Use case');
+    await expectKeyWhole(page);
     // Hovering spotlights; clicking focuses, and the address and the header strip follow (the wiki card, shown again below, too).
     await clickBox(page, 'LA-EXP-UC03-R18');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-R18');
@@ -225,7 +226,8 @@ test.describe('Exploring flows', () => {
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
     await traceDrawn(page);
     const chain = await traceSceneOf(page, true);
-    const inChain = (id: string) => chain.boxes.find((b) => b.key === `LA-EXP-UC03-R18|${id}`);
+    const requirementKey = chain.boxes.find((b) => b.id === 'LA-EXP-UC03-R18')!.key;
+    const inChain = (id: string) => chain.boxes.find((b) => b.key === `${requirementKey}|${id}`);
     for (const id of ['LA-EXP-UC03-FL01', 'LA-EXP-UC03-FL01-S01', 'LA-EXP-CMD01']) expect(inChain(id)?.strength, id).toBe(1);
     expect((await traceSceneOf(page)).boxes.some((b) => b.id === 'LA-EXP-UC03-R18' && b.focus), 'the requirement is in view').toBe(true);
     const idOf = new Map(chain.boxes.map((b) => [b.key, b.id]));
