@@ -148,6 +148,9 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
     'lathe/src/checking/check',
     'lathe/src/checking/product-setting',
     'lathe/src/traceability/pattern-following',
+    // Slices of reads alone, with no aggregate of their own and so no model.ts.
+    'lathe/src/checking/problems',
+    'lathe/src/traceability/trace',
   ];
   const files = sources();
   const file = (name: string) => files.find((f) => f.file === name);
@@ -160,8 +163,9 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
 
   it('lets a converted slice\'s queries.ts, read-model.ts and reader.ts import neither its repository nor its model type or row builder', () => {
     const crossing = READ_MODEL_SLICES.flatMap((slice) => {
-      const model = file(`${slice}/model.ts`)!;
-      // The model's types (the instance type and its parts) and every function over them (the row builders).
+      // The model's types (the instance type and its parts) and every function over them (the row builders); none for a
+      // slice of reads alone.
+      const model = file(`${slice}/model.ts`) ?? { text: '' };
       const types = [...model.text.matchAll(/^export interface (\w+)/gm)].map((m) => m[1]);
       const mentions = (signature: string) => types.some((t) => new RegExp(`\\b${t}\\b`).test(signature));
       const builders = [...model.text.matchAll(/^export function (\w+)[^{]*/gm)].filter((m) => mentions(m[0])).map((m) => m[1]);

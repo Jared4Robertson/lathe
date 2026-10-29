@@ -9,10 +9,10 @@ import { viewTableFrom, type ViewPage, type ViewSummary, type ViewTable } from '
 export interface ViewReader {
   /** The kind of the record with this ID, of any kind, or undefined when no record has it. */
   kindOf(id: string): string | undefined;
-  /** The page of the view that holds the record, or undefined when no view holds it. */
+  /** The page of a record inside a view, or undefined when no view holds it. */
   page(id: string): ViewPage | undefined;
-  /** A product's views, by ID. */
-  viewsOf(product: string): ViewSummary[];
+  /** A product's views, by ID, or undefined when there is no such product. */
+  viewsOf(productId: string): ViewSummary[] | undefined;
   /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
   highestAfter(prefix: string): number;
 }
@@ -30,12 +30,12 @@ export class InMemoryViewReader implements ViewReader {
   }
 
   page(id: string): ViewPage | undefined {
-    const root = this.table.holding.get(id);
-    return root === undefined ? undefined : this.table.views.get(root);
+    const holding = this.table.holding.get(id);
+    return holding && { record: { id, kind: holding.kind }, ...this.table.views.get(holding.root)! };
   }
 
-  viewsOf(product: string): ViewSummary[] {
-    return [...this.table.views.values()].filter((v) => v.id.startsWith(`${product}-`)).map((v) => ({ id: v.id, title: v.title }));
+  viewsOf(productId: string): ViewSummary[] | undefined {
+    return this.table.products.get(productId);
   }
 
   highestAfter(prefix: string): number {

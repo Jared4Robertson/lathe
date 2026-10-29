@@ -46,9 +46,13 @@ describe('LA-AUT-UC27-R50-T01 each Integration command (LA-AUT-A14) changes one 
   it('builds the data set with its own Add commands, and reads an integration whole by any record in it', async () => {
     const store = await integrationDataSet();
     const page = runQuery(store, GET_INTEGRATION, { id: 'TL-INT01-AD' }) as Page;
-    expect(page).toMatchObject({ id: 'TL-INT01', title: 'Mail', system: "The library's mail service" });
-    expect(page.adapter).toEqual({ id: 'TL-INT01-AD', title: 'mailer', file: 'src/mailer.ts', description: 'Sends one mail through the service.', meets: ['TL-STD-CODE-R01'], packages: ['nodemailer'] });
-    expect(page.tests.map((t) => [t.id, t.state, t.startsFrom])).toEqual([['TL-INT01-T01', 'manual', ['TL-LEND-TD01']]]);
+    expect(page.record).toEqual({ id: 'TL-INT01-AD', kind: 'adapter' });
+    expect(page.integration).toMatchObject({ id: 'TL-INT01', title: 'Mail', system: "The library's mail service" });
+    expect(page.adapter).toEqual({ adapter: { id: 'TL-INT01-AD', title: 'mailer', integration_id: 'TL-INT01', file: 'src/mailer.ts', description: 'Sends one mail through the service.' }, meets: ['TL-STD-CODE-R01'], packages: ['nodemailer'] });
+    expect(page.tests.map((t) => [t.test.id, t.test.state, t.startsFrom])).toEqual([['TL-INT01-T01', 'manual', ['TL-LEND-TD01']]]);
+    expect((runQuery(store, GET_INTEGRATION, { id: 'TL-INT01-T01' }) as Page).record).toEqual({ id: 'TL-INT01-T01', kind: 'integration_test' });
+    expect(() => runQuery(store, GET_INTEGRATION, { id: 'TL' })).toThrow(/TL is a product, not an integration or a record in one/);
+    expect(() => runQuery(store, LIST_INTEGRATIONS, { product_id: 'TL-INT01' })).toThrow(/there is no product TL-INT01/);
     expect(runQuery(store, LIST_INTEGRATIONS, { product_id: 'TL' })).toEqual([{ id: 'TL-INT01', title: 'Mail' }, { id: 'TL-INT02', title: 'Payments' }]);
     expect(runQuery(store, NEXT_INTEGRATION_ID, { kind: 'integration', parent: 'TL' })).toBe('TL-INT03');
     expect(runQuery(store, NEXT_INTEGRATION_ID, { kind: 'integration_test', parent: 'TL-INT01' })).toBe('TL-INT01-T02');

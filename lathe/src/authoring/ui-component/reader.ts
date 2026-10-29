@@ -9,10 +9,10 @@ import { uiComponentTableFrom, type UiComponentPage, type UiComponentSummary, ty
 export interface UiComponentReader {
   /** The kind of the record with this ID, of any kind, or undefined when no record has it. */
   kindOf(id: string): string | undefined;
-  /** The page of the UI component, or undefined when there is none with the ID. */
+  /** The page of a record inside a UI component (the component itself), or undefined when no UI component holds it. */
   page(id: string): UiComponentPage | undefined;
-  /** A product's UI components, by ID. */
-  componentsOf(product: string): UiComponentSummary[];
+  /** A product's UI components, by ID, or undefined when there is no such product. */
+  componentsOf(productId: string): UiComponentSummary[] | undefined;
   /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
   highestAfter(prefix: string): number;
 }
@@ -30,11 +30,12 @@ export class InMemoryUiComponentReader implements UiComponentReader {
   }
 
   page(id: string): UiComponentPage | undefined {
-    return this.table.components.get(id);
+    const holding = this.table.holding.get(id);
+    return holding && { record: { id, kind: holding.kind }, ...this.table.components.get(holding.root)! };
   }
 
-  componentsOf(product: string): UiComponentSummary[] {
-    return [...this.table.components.values()].filter((c) => c.id.startsWith(`${product}-`)).map((c) => ({ id: c.id, title: c.title }));
+  componentsOf(productId: string): UiComponentSummary[] | undefined {
+    return this.table.products.get(productId);
   }
 
   highestAfter(prefix: string): number {
