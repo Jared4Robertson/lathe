@@ -231,12 +231,12 @@ export function PartsField({ id, label, description, columns, rows, onChange }: 
       <legend><strong>{label}</strong> <span className="section-count">{rows.length}</span></legend>
       {description && <p className="form-help" id={`${id}-help`}>{description}</p>}
       {rows.map((row, at) => (
-        <div key={at} className="form-part" role="group" aria-label={`${label} ${at + 1}`}>
+        <div key={at} className="form-part" role="group" aria-label={`${label}: row ${at + 1}`}>
           {columns.map((column) => (
             <ColumnField key={column.name} id={`${id}-${at}-${column.name}`} column={column} label={`${column.name.replaceAll('_', ' ')} ${at + 1}`}
               value={row[column.name] ?? ''} onChange={(text) => set(at, column.name, text)} />
           ))}
-          <Button danger onClick={() => onChange(rows.filter((_, i) => i !== at))} aria-label={`Remove ${label} ${at + 1}`}>Remove</Button>
+          <Button danger onClick={() => onChange(rows.filter((_, i) => i !== at))} aria-label={`Remove ${label}: row ${at + 1}`}>Remove</Button>
         </div>
       ))}
       <Button icon="plus" onClick={() => onChange([...rows, blank()])} aria-label={`Add to ${label}`}>Add</Button>
