@@ -5,7 +5,8 @@
 // A binding is a chord such as "Mod+Shift+P" ("Mod" is Cmd on macOS and Ctrl elsewhere), or a
 // sequence of chords separated by a space, such as "g c" (GitHub-style). Nothing here touches
 // React; the dispatcher in commands.tsx uses it.
-import { MOVES, type Move } from '../views/levels';
+// With its extension: the desktop app compiles this file too, under Node's resolution.
+import { MOVES, type Move } from '../views/levels.ts';
 
 export type CommandGroup = 'Navigate' | 'View' | 'Graph' | 'Lists';
 
