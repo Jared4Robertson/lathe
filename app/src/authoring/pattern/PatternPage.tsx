@@ -57,16 +57,16 @@ function Settings({ index, page }: { index: SpecIndex; page: Pattern }) {
   return (
     <Section title="Settings" count={page.settings.length}>
       {page.settings.length === 0 ? <p className="hint">This pattern has no settings.</p> : (
-        <div className="table-scroll"><table className="data-table pattern-settings">
-          <thead><tr><th scope="col">Setting</th><th scope="col">Meaning</th><th scope="col">Rules that depend on it</th></tr></thead>
-          <tbody>
+        <div className="table-scroll table-stack"><table className="data-table pattern-settings" role="table">
+          <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Setting</th><th scope="col" role="columnheader">Meaning</th><th scope="col" role="columnheader">Rules that depend on it</th></tr></thead>
+          <tbody role="rowgroup">
             {page.settings.map((s) => {
               const dependent = page.rules.filter((r) => r.rule.setting?.trim() === s.name || r.rule.applies_when_setting === s.name);
               return (
-                <tr key={s.name}>
-                  <th scope="row"><code>{s.name}</code></th>
-                  <td>{s.meaning}</td>
-                  <td>{dependent.length === 0 ? <span className="hint">None</span> : dependent.map((r, i) => <Fragment key={r.rule.id}>{i > 0 && ', '}<RecordLink index={index} id={r.rule.id} showTitle={false} /></Fragment>)}</td>
+                <tr key={s.name} role="row">
+                  <th scope="row" role="rowheader"><code>{s.name}</code></th>
+                  <td role="cell" data-label="Meaning">{s.meaning}</td>
+                  <td role="cell" data-label="Rules that depend on it">{dependent.length === 0 ? <span className="hint">None</span> : dependent.map((r, i) => <Fragment key={r.rule.id}>{i > 0 && ', '}<RecordLink index={index} id={r.rule.id} showTitle={false} /></Fragment>)}</td>
                 </tr>
               );
             })}
@@ -110,19 +110,19 @@ function FollowedBy({ index, page }: { index: SpecIndex; page: Pattern }) {
             <h3>
               {d?.product ? <SpecLink to={addressOf(domain)} className="record-link"><code>{domain}</code> <span>{d.title}</span></SpecLink> : <SpecLink to={addressOf(domain)}><code>{domain}</code></SpecLink>}
             </h3>
-            <div className="table-scroll">
-              <table className="data-table pattern-use-cases">
+            <div className="table-scroll table-stack">
+              <table className="data-table pattern-use-cases" role="table">
                 <caption className="sr-only">Use cases in {domain} that follow {patternId}, with their settings</caption>
-                <thead>
-                  <tr><th scope="col">Use case</th>{page.settings.map((s) => <th key={s.name} scope="col"><code>{s.name}</code></th>)}</tr>
+                <thead role="rowgroup">
+                  <tr role="row"><th scope="col" role="columnheader">Use case</th>{page.settings.map((s) => <th key={s.name} scope="col" role="columnheader"><code>{s.name}</code></th>)}</tr>
                 </thead>
-                <tbody>
+                <tbody role="rowgroup">
                   {givers.map((uc) => (
-                    <tr key={uc.id}>
-                      <th scope="row">{uc.kind === 'domain' ? <>The whole domain</> : <RecordLink index={index} id={uc.id} />}</th>
+                    <tr key={uc.id} role="row">
+                      <th scope="row" role="rowheader">{uc.kind === 'domain' ? <>The whole domain</> : <RecordLink index={index} id={uc.id} />}</th>
                       {page.settings.map((s) => {
                         const given = settingValue(index, uc.id, patternId, s.name);
-                        return <td key={s.name} className={notApplicableReason(given) !== null ? 'setting-na' : undefined}>{given ? settingText(given) : <span className="hint">not given</span>}</td>;
+                        return <td key={s.name} role="cell" data-label={s.name} className={notApplicableReason(given) !== null ? 'setting-na' : undefined}>{given ? settingText(given) : <span className="hint">not given</span>}</td>;
                       })}
                     </tr>
                   ))}
@@ -130,7 +130,7 @@ function FollowedBy({ index, page }: { index: SpecIndex; page: Pattern }) {
               </table>
             </div>
             {page.rules.length > 0 && (
-              <div className="table-scroll"><table className="data-table pattern-rule-status">
+              <table className="data-table pattern-rule-status">
                 <caption className="sr-only">How {domain} proves each rule of {patternId}</caption>
                 <thead><tr><th scope="col">Rule</th><th scope="col">In {domain}</th></tr></thead>
                 <tbody>
@@ -141,7 +141,7 @@ function FollowedBy({ index, page }: { index: SpecIndex; page: Pattern }) {
                     </tr>
                   ))}
                 </tbody>
-              </table></div>
+              </table>
             )}
           </section>
         );
@@ -157,7 +157,7 @@ function OwedBy({ index, page, id }: { index: SpecIndex; page: Pattern; id: stri
   return (
     <Section title="Owed by" count={domains.length}>
       {domains.length === 0 || !rule ? <p className="hint">No domain follows this rule's pattern.</p> : (
-        <div className="table-scroll"><table className="data-table pattern-rule-status">
+        <table className="data-table pattern-rule-status">
           <thead><tr><th scope="col">Domain</th><th scope="col">Status</th></tr></thead>
           <tbody>
             {domains.map((followed) => (
@@ -167,7 +167,7 @@ function OwedBy({ index, page, id }: { index: SpecIndex; page: Pattern; id: stri
               </tr>
             ))}
           </tbody>
-        </table></div>
+        </table>
       )}
     </Section>
   );

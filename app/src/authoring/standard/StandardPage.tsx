@@ -41,18 +41,18 @@ function Rules({ index, page }: { index: SpecIndex; page: Standard }) {
   return (
     <Section title="Rules" count={page.rules.length}>
       {page.rules.length === 0 ? <p className="hint">No rules yet.</p> : (
-        <div className="table-scroll">
-          <table className="data-table standard-rules">
+        <div className="table-scroll table-stack">
+          <table className="data-table standard-rules" role="table">
             <caption className="sr-only">The rules of {page.standard.id}, with what meets each one and its tests</caption>
-            <thead><tr><th scope="col">Rule</th><th scope="col">{metLabel}</th><th scope="col">Proved by</th></tr></thead>
+            <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Rule</th><th scope="col" role="columnheader">{metLabel}</th><th scope="col" role="columnheader">Proved by</th></tr></thead>
             {groupsOf(page.rules).map((g) => (
-              <tbody key={g.heading ?? ''} data-group={g.heading ?? undefined}>
-                {g.heading !== null && <tr className="group-row"><th scope="rowgroup" colSpan={3}>{g.heading}</th></tr>}
+              <tbody key={g.heading ?? ''} data-group={g.heading ?? undefined} role="rowgroup">
+                {g.heading !== null && <tr className="group-row" role="row"><th scope="rowgroup" colSpan={3} role="rowheader">{g.heading}</th></tr>}
                 {g.rules.map((r) => (
-                  <tr key={r.rule.id}>
-                    <th scope="row"><RecordLink index={index} id={r.rule.id} /></th>
-                    <td><Ids index={index} ids={r.metBy} /></td>
-                    <td><Ids index={index} ids={r.tests.map((t) => t.test.id)} /></td>
+                  <tr key={r.rule.id} role="row">
+                    <th scope="row" role="rowheader"><RecordLink index={index} id={r.rule.id} /></th>
+                    <td role="cell" data-label={metLabel}><Ids index={index} ids={r.metBy} /></td>
+                    <td role="cell" data-label="Proved by"><Ids index={index} ids={r.tests.map((t) => t.test.id)} /></td>
                   </tr>
                 ))}
               </tbody>
