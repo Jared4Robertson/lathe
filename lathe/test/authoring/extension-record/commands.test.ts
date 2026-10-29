@@ -117,9 +117,11 @@ describe('LA-AUT-UC04-R01-T52 each Extension record command changes one record o
     expect(committed.tables).toEqual(['package_use', 'report', 'reports_on']);
     const whole = runQuery(store, GET_EXTENSION_RECORD, { id: 'TL-LEND-RP02' }) as ReturnType<typeof GET_EXTENSION_RECORD.run>;
     expect(whole).toEqual({
-      root: 'TL-LEND-RP02',
+      id: 'TL-LEND-RP02',
       kind: 'report',
-      row: { id: 'TL-LEND-RP02', title: 'printLateReport', domain_id: 'TL-LEND', file: 'src/late.ts', usage: 'npm run late', description: 'Counts late returns.' },
+      label: 'Report',
+      parent: 'TL-LEND',
+      values: { title: 'printLateReport', file: 'src/late.ts', usage: 'npm run late', description: 'Counts late returns.' },
       links: { reports_on: ['TL-LEND-CMD01'] },
       packages: ['vitest'],
     });
@@ -137,7 +139,9 @@ describe('LA-AUT-UC04-R01-T52 each Extension record command changes one record o
     const committed = await runCommand(store, CHANGE_EXTENSION_RECORD, { id: 'TL-LEND-RP01', values: { usage: null }, links: { reports_on: [] }, packages: [] });
     expect(committed.tables).toEqual(['package_use', 'report', 'reports_on']);
     expect(runQuery(store, GET_EXTENSION_RECORD, { id: 'TL-LEND-RP01' })).toMatchObject({
-      row: { id: 'TL-LEND-RP01', title: 'printOutcomeReport', domain_id: 'TL-LEND', file: 'src/outcomes.ts', description: 'Counts each outcome for a month.' },
+      id: 'TL-LEND-RP01',
+      parent: 'TL-LEND',
+      values: { title: 'printOutcomeReport', file: 'src/outcomes.ts', description: 'Counts each outcome for a month.' },
       links: {},
       packages: [],
     });

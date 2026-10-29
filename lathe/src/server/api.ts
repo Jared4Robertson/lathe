@@ -26,7 +26,8 @@ import type { ReadRefusal, RowChange, SpecData, WriteAnswer, WriteRequest } from
 import { baseline, parseSince } from './baseline.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../commands.ts';
 import { flagValue, InputError, type AnyCommand, type AnyQuery } from '../platform/commands/definition.ts';
-import { runCommand, runQuery } from '../platform/commands/run.ts';
+import { answerQuery, runCommand, runQuery } from '../platform/commands/run.ts';
+import type { ReadView } from '../platform/data/rules.ts';
 import { recordHistory } from './history.ts';
 
 /** The most a write's body may hold. */
@@ -396,6 +397,22 @@ const QUERY_ROUTES = new Map(ALL_QUERIES.map((definition) => {
   return [definition.route, definition];
 }));
 
+/** Every product's store of the workspace read as one: their schemas joined, each table's rows from every store. */
+async function workspaceView(products: LatheConfig[]): Promise<ReadView> {
+  const read = await Promise.all(products.map((config) => withStore(config.root, async (opened) => ({ schema: opened.store.schema, tables: tablesOf(opened.store) }))));
+  const rows = (table: string) => read.flatMap((r) => r.tables[table] ?? []);
+  const schema = joinSchemas(read.map((r) => r.schema));
+  let byId: Map<string, { kind: string; row: Row }> | null = null;
+  return {
+    schema,
+    rows,
+    record: (id) => {
+      byId ??= new Map(Object.keys(schema.kinds).flatMap((kind) => rows(kind).map((row) => [String(row.id), { kind, row }] as const)));
+      return byId.get(id);
+    },
+  };
+}
+
 /**
  * Reads one aggregate query on the product its input names: 200 with its answer, 400 when the input is not of its
  * shape, 422 when it refuses (a record that is missing or of another kind). The input is the query string, each field
@@ -404,6 +421,8 @@ const QUERY_ROUTES = new Map(ALL_QUERIES.map((definition) => {
 async function runRead(workspace: string, definition: AnyQuery, params: URLSearchParams): Promise<{ status: number; answer: unknown }> {
   const products = workspaceProducts(workspace);
   const values = [...new Set(params.keys())].flatMap((name) => params.getAll(name));
+  // A read that names no record, such as the list of the products, is of the whole workspace: every product's store.
+  if (values.length === 0 && products.length > 1) return { status: 200, answer: answerQuery(await workspaceView(products), definition, {}) };
   const routed = products.length === 1 ? { root: products[0].root } : await writeRoot(products, [values]);
   if ('refused' in routed) return { status: 422, answer: { error: 'A read is of one product, and this one names records of several.' } satisfies ReadRefusal };
   return withStore(routed.root, async (opened) => {
