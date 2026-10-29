@@ -1,7 +1,7 @@
 import type { MouseEvent, ReactNode } from 'react';
 import { LongList } from '../components/LongList';
 import type { SpecIndex, Stage, StageRule } from '../specs/data';
-import { PARENT, graphEdgeLabel, nodeParent, parseGroupId, type Neighborhood } from './model';
+import { nodeParent, parseGroupId, type Neighborhood } from './model';
 import { MARKS, SHAPES, type Mark, type Shape } from './shapes';
 import { MarkIcon, ShapeIcon } from './shape-icons';
 
@@ -19,9 +19,8 @@ export function NodeLink({ id, onNavigate, hrefFor, children, title, ariaLabel, 
   return <a href={hrefFor(id)} onClick={onClick} title={title} aria-label={ariaLabel} className={className}>{children}</a>;
 }
 
-/** How a node near the center is related to it: parent, child, a group, or the relations between them. */
-export function relationTo(index: SpecIndex, graph: Neighborhood, center: string, id: string): string {
-  // The tree first (stages, folders and groups are levels of it), then the links drawn.
+/** How a node near the center is related to it in the tree (stages, folders and groups are levels of it): parent, child or a group. */
+export function relationTo(index: SpecIndex, center: string, id: string): string {
   const isGroupId = !index.byId.has(id) && parseGroupId(id) !== null;
   if (nodeParent(index, id) === center) return isGroupId ? 'child group' : index.byId.has(center) ? 'child' : 'member';
   if (nodeParent(index, center) === id) return isGroupId ? 'its group' : 'parent';
@@ -29,11 +28,7 @@ export function relationTo(index: SpecIndex, graph: Neighborhood, center: string
   const record = index.byId.get(center);
   if (!record) return parseGroupId(center)?.parent === id ? 'parent' : 'member';
   if (record.parent === id) return 'parent';
-  if (index.byId.get(id)?.parent === center) return 'child';
-  return graph.edges
-    .filter((e) => e.relation !== PARENT && ((e.source === center && e.target === id) || (e.target === center && e.source === id)))
-    .map((e) => graphEdgeLabel(index, e, e.source === center ? 'source' : 'target'))
-    .join(', ');
+  return 'child';
 }
 
 export interface GraphInfo {
@@ -59,7 +54,7 @@ export function GraphConnections({ index, info, onNavigate, hrefFor }: { index: 
             render={(n) => (
               <>
                 <NodeLink id={n.id} onNavigate={onNavigate} hrefFor={hrefFor}>{n.group ? <>{n.title}</> : <><code>{n.id}</code> {n.title}</>}</NodeLink>
-                <small className="meta"> {relationTo(index, graph, graph.focus, n.id)}</small>
+                <small className="meta"> {relationTo(index, graph.focus, n.id)}</small>
               </>
             )}
           />
@@ -111,19 +106,13 @@ export function Legend({ stages = [] }: { stages?: readonly StageRule[] }) {
           <li><span className="graph-swatch stage-nested" /> Nested view: a box holding its children below its name</li>
           <li><span className="graph-swatch is-cell" /> Voronoi view: a cell made of its children's cells, its name at its top</li>
           <li><span className="graph-swatch stage-bar" /> A bar: children too small to draw at this zoom</li>
-          <li><span className="graph-line rel-structure" /> parent / child (the tree, through stages, folders and groups)</li>
-          <li><span className="graph-line is-link" /> the center's own links, with Links on (fulfills, invokes, raises and the rest)</li>
-          <li><span className="graph-line rel-fulfills" /> fulfills (a step and a UC requirement)</li>
-          <li><span className="graph-line rel-design" /> invokes, happens in, exchanges with, renders, meets (a standard rule)</li>
-          <li><span className="graph-line rel-pattern" /> follows (a domain's or use case's pattern, a cross-link)</li>
-          <li><span className="graph-line rel-event" /> raises, hears (a domain event's links)</li>
-          <li><span className="graph-line rel-other" /> other links</li>
+          <li><span className="graph-line" /> parent / child (the tree, through stages, folders and groups)</li>
           <li><span className="graph-mark error">!</span> has errors <span className="graph-mark warning">!</span> has warnings <span className="graph-mark gap">gap</span> not designed or not proved (on a group: among its members)</li>
         </ul>
-        <p className="hint">The graph is one map of the nav's tree: a product holds its own stages and its domains, a domain its five stages, each stage a folder per kind, each folder the records that start a branch of the stage, and each record what sits under it in the same stage. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. An obligation's chain, from what designs it to the tests that prove it, is the Trace view's.</p>
+        <p className="hint">The graph is one map of the nav's tree: a product holds its own stages and its domains, a domain its five stages, each stage a folder per kind, each folder the records that start a branch of the stage, and each record what sits under it in the same stage. Levels run left to right, each parent as tall as its children, and nothing changes size: focusing moves the camera. Depth is how many levels below the focus the camera frames, folders included. A record's links to records in other branches are the Trace view's, which draws an obligation's chain from what designs it to the tests that prove it, and the wiki card's, which lists every link.</p>
         <p className="hint">The Nested layout (v) draws the same tree as boxes inside boxes: the product made of its stages and domains, each domain of its stages, each stage of its folders, each box as big as the records under it. Focusing frames the box; depth is how many levels inside it are labeled, and zooming in labels the rest.</p>
         <p className="hint">The Voronoi layout draws the same tree as polygon cells inside cells: the product a hexagon split into its stages and domains, each domain split into its stages, and so on down, each cell as big as the records under it and never too small for its name. It frames and labels as the Nested layout does.</p>
-        <p className="hint">Click a record or a group, or press Enter on it, to focus it. Scroll, pinch or drag to look around. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys step through the tree, each step moving the focus. In the Tree view, Left goes to the parent, Right to the first child, and Up and Down to the previous and next sibling; in the Nested and Voronoi views, which draw children inside their parent, Up goes to the parent, Down to the first child, and Left and Right to the previous and next sibling. Tab and Shift+Tab move between the boxes; + and - change the depth, l switches Links, and . frames the focus again.</p>
+        <p className="hint">Click a record or a group, or press Enter on it, to focus it. Scroll, pinch or drag to look around. From anywhere on the page but a field, a list or a menu that uses them, the arrow keys step through the tree, each step moving the focus. In the Tree view, Left goes to the parent, Right to the first child, and Up and Down to the previous and next sibling; in the Nested and Voronoi views, which draw children inside their parent, Up goes to the parent, Down to the first child, and Left and Right to the previous and next sibling. Tab and Shift+Tab move between the boxes; + and - change the depth, and . frames the focus again.</p>
       </section>
     </details>
   );

@@ -209,9 +209,6 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
     if (was && !resized && was.focus === focus && was.map !== map) return;
     const ms = moveTo(target, was !== null && !resized);
     if (!was || was.focus !== focus) glideMs.current = ms;
-    // Where the focus's box will sit once the camera arrives (its first box, or the framed region's top), for the wiki card.
-    const mark = focused.anchor ?? focused.rect;
-    space?.setAnchor({ focus, y: target.y + (mark.y + Math.min(mark.h, BOX_H) / 2) * target.zoom, at: performance.now() + ms });
   }, [framing]);
   const frameFocus = useCallback(() => { const t = framing(); if (t) moveTo(t, true); }, [framing, moveTo]);
   // `.` frames the focus again, as on the graph: one command, whichever stage is drawn.
@@ -281,7 +278,7 @@ function TraceScene({ index, focus, map, gapsOnly, onNavigate, onPeek, space, ri
     }
     const seen = visibleIn(map, r);
     if (!whole && (seen.boxes.length > TRACE_MAX_DRAWN || BOX_H * v.zoom < BAR_BELOW_PX)) return { ...none, bars: seen.boxes.map(barOf) };
-    const lines: Line[] = seen.lines.map((l) => ({ id: l.key, source: l.from, target: l.to, style: l.tree ? 'structure' : 'trace', link: !l.tree, points: l.points, scale: 1, label: '' }));
+    const lines: Line[] = seen.lines.map((l) => ({ id: l.key, source: l.from, target: l.to, style: l.tree ? 'structure' : 'trace', link: !l.tree, points: l.points, scale: 1 }));
     return { boxes: seen.boxes, plates: seen.boxes.map(plateFor), bars: [], lines, traceLines: seen.lines };
   }, [map, plateFor]);
 

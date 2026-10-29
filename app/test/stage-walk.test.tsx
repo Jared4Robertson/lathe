@@ -1,6 +1,8 @@
 import './graph/setup';
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
-import { describe, expect, it } from 'vitest';
+import { Suspense, use } from 'react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
+import { CommandsProvider, useCommand, useRunCommand } from '../src/shell/commands';
 import { modelWorkspace } from './fixtures/model';
 import { openApp } from './helpers';
 
@@ -63,5 +65,55 @@ describe('the stage walk', () => {
     press(link, 'ArrowLeft');
     await new Promise((r) => setTimeout(r, 50));
     expect(at()).toBe('/P-D-UC01');
+  });
+});
+
+/** A stage that answers Frame the focus while it is shown. */
+function FitStage({ onFit }: { onFit: () => void }) {
+  useCommand('graphFit', onFit);
+  return <p>stage</p>;
+}
+/** The next stage's code, loading until the promise settles. */
+function NextStage({ loading }: { loading: Promise<void> | null }) {
+  if (loading) use(loading);
+  return null;
+}
+let runCommand: (id: string) => boolean = () => false;
+function Runner() {
+  runCommand = useRunCommand();
+  return null;
+}
+const stages = (onFit: () => void, loading: Promise<void> | null) => (
+  <CommandsProvider>
+    <Suspense fallback={<p>Loading…</p>}>
+      <FitStage onFit={onFit} />
+      <NextStage loading={loading} />
+    </Suspense>
+    <Runner />
+  </CommandsProvider>
+);
+
+describe('a hidden stage', () => {
+  it('LA-V64-R01-T02 A stage Suspense hides while the next one loads stops answering its commands at once, and answers again once shown', async () => {
+    const onFit = vi.fn();
+    const { rerender } = render(stages(onFit, null));
+    act(() => { expect(runCommand('graphFit')).toBe(true); });
+    expect(onFit).toHaveBeenCalledTimes(1);
+
+    // The next stage suspends: React hides this one and keeps it mounted, its passive effects included.
+    let settle: () => void = () => {};
+    const loading = new Promise<void>((r) => { settle = r; });
+    rerender(stages(onFit, loading));
+    await waitFor(() => expect(screen.getByText('Loading…')).toBeInTheDocument());
+    expect(screen.getByText('stage')).not.toBeVisible();
+    act(() => { expect(runCommand('graphFit')).toBe(false); });
+    expect(onFit).toHaveBeenCalledTimes(1);
+
+    // Loaded, it shows and answers again.
+    await act(async () => { settle(); await loading; });
+    rerender(stages(onFit, null));
+    await waitFor(() => expect(screen.getByText('stage')).toBeVisible());
+    act(() => { expect(runCommand('graphFit')).toBe(true); });
+    expect(onFit).toHaveBeenCalledTimes(2);
   });
 });

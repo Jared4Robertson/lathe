@@ -44,26 +44,6 @@ describe('graph columns by tree depth', () => {
     for (let i = 1; i < chain.length; i++) expect(x(chain[i - 1])).toBeLessThan(x(chain[i]));
   });
 
-  it('LA-EXP-DS05-T07 LA-V93-R15-T07 A cross-linked record sits one column after the record it is reached from, unless its tree position places it', () => {
-    // Without parent lines, what the step links to is reached from it, one column after it.
-    const chain = neighborhood(index, 'P-D-UC01-FL01-S01', 1, { hiddenKinds: new Set(), hiddenRelations: new Set(['parent']) }, { links: true });
-    const column = columnOf(chain);
-    expect(chain.via.get('P-V01')).toBe('P-D-UC01-FL01-S01');
-    expect(column.get('P-V01')).toBe(column.get('P-D-UC01-FL01-S01')! + 1);
-    // With the tree: the specification a command checks sits one column after it.
-    const command = columnOf(neighborhood(index, 'P-D-CMD01', 1, undefined, { links: true }));
-    expect(command.get('P-D-SP01')).toBe(command.get('P-D-CMD01')! + 1);
-    // But the Loan's returns and reminders are also its siblings among the aggregate's entities: their tree position
-    // wins, beside it.
-    const loan = neighborhood(index, 'P-D-EN03', 1, undefined, { links: true });
-    const lc = columnOf(loan);
-    expect(lc.get('P-D-EN04')).toBe(lc.get('P-D-EN03'));
-    expect(lc.get('P-D-EN05')).toBe(lc.get('P-D-EN03'));
-    expect(loan.edges.map((e) => e.id)).toContain('P-D-A3/entity|parent|P-D-EN04');
-    // In the map a linked record keeps its own place, the view in P-D, the one domain that uses it: links never move anything.
-    expect(map.nodes.get('P-V01')!.parent).toBe('P-D/interaction-design/view');
-  });
-
   it('LA-EXP-DS05-T08 LA-V93-R27-T02 A group sits in its own column between its parent and its members', () => {
     const grouped = graphMap(indexOf(groupedWorkspace()), 'P');
     const level = (id: string) => grouped.nodes.get(id)!.level;
