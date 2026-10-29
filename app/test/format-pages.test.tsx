@@ -2,7 +2,7 @@ import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { parseSpecRoute } from '../src/specs/data';
-import { findItems, rankItems } from '../src/shell/QuickFind';
+import { findItems, rankItems } from '../src/shell/QuickOpen';
 import { indexOf } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp, section } from './helpers';
@@ -172,7 +172,7 @@ describe('format reference pages', () => {
     expect(within(palette).getAllByRole('option').map((o) => o.querySelector('.palette-title')?.textContent)).toEqual(['Record format']);
   });
 
-  it('LA-V90-R71-T01 Quick find finds kinds and checks by name and leads to their pages', async () => {
+  it('LA-V64-R05-T01 Quick find finds kinds and checks by name and leads to their pages', async () => {
     const items = findItems(indexOf(workspace()), ['event-not-by-outbox']);
     const kind = rankItems(items, 'Kind: Use case')[0];
     expect(kind).toMatchObject({ title: 'Kind: Use case', to: '/format/kinds/use_case' });
@@ -182,7 +182,8 @@ describe('format reference pages', () => {
 
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
-    const find = screen.getAllByRole('combobox', { name: 'Quick find' })[0];
+    await userEvent.click(within(screen.getByRole('navigation', { name: 'Main' })).getByRole('button', { name: 'Go to…' }));
+    const find = screen.getByRole('combobox', { name: 'Quick find' });
     await userEvent.type(find, 'Check: not-pro');
     await userEvent.keyboard('{Enter}');
     expect(window.location.pathname).toBe('/format/checks/not-proved');

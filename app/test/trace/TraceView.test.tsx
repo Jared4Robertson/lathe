@@ -11,11 +11,11 @@ import type { TraceHost, TraceScene } from '../../src/trace/TraceCanvas';
 import { obligationsUnder, untracedUnder } from '../../src/trace/chain';
 import { openApp } from '../helpers';
 
-// The Trace stage (LA-V98): drawn on the canvas, an obligation's chain with its why columns, or a why
-// tree and a lane per obligation under a record or group with its gaps in view, the lanes that hold a
-// design, build or test record, or the lanes around a record outside every chain; and under it, its
-// accessible layer and the phone's stage, the table of the same chains. It works on every focus
-// (LA-PAT-APP-UX-R17).
+// The Trace stage (LA-V98): drawn on the canvas, the product's one map, a why tree and a lane per
+// obligation with its gaps in view, laid out once (LA-PAT-APP-UX-R19): focusing an obligation, a use
+// case, a domain or a design, build or test record moves the camera to frame it and fades the rest,
+// and Gaps only fades the complete lanes; and under it, its accessible layer and the phone's stage,
+// the table of the chains under the focus. It works on every focus (LA-PAT-APP-UX-R17).
 
 const served = (data = modelWorkspace()) => ({ data });
 const traceStage = () => screen.getByRole('region', { name: 'Trace stage' });
@@ -31,6 +31,13 @@ const canvasHost = async () => {
 };
 /** What the canvas draws now, or (`whole`) every box of its picture. */
 const drawn = async (whole = false): Promise<TraceScene> => (await canvasHost()).traceScene!(whole);
+/** A drawn box's place in the map, from its place on the page and the camera. */
+const inMap = (scene: TraceScene, b: TraceScene['boxes'][number]) => {
+  const { camera: v, canvas: c } = scene;
+  return [b.key, (b.rect.left - c.left - v.x) / v.zoom, (b.rect.top - c.top - v.y) / v.zoom, b.rect.width / v.zoom, b.rect.height / v.zoom].map((n) => (typeof n === 'number' ? Math.round(n * 1000) / 1000 : n));
+};
+/** Whether a drawn box lies inside the canvas. */
+const inView = (scene: TraceScene, b: TraceScene['boxes'][number]) => b.rect.left >= scene.canvas.left - 0.5 && b.rect.left + b.rect.width <= scene.canvas.left + scene.canvas.width + 0.5 && b.rect.top >= scene.canvas.top - 0.5 && b.rect.top <= scene.canvas.top + scene.canvas.height;
 /** The table under the canvas: its accessible layer. */
 const access = () => traceStage().querySelector<HTMLElement>('.trace-access')!;
 
@@ -78,21 +85,30 @@ describe('the Trace stage', () => {
     await waitFor(() => expect(counts()).toHaveTextContent(/^UC requirement · /));
   });
 
-  it('LA-V98-R03-T02 A use case\'s and a domain\'s Trace stage draw the why tree from the focus and a lane per obligation', async () => {
-    // A use case: its box is the tree's root, as tall as its lanes, each lane's obligation joined to it.
+  it('LA-V98-R03-T02 A use case\'s and a domain\'s Trace stage frame them on the product\'s map, their lanes at full strength, the rest faded', async () => {
+    // A use case: its box in the tree, as tall as its lanes, each lane's obligation joined to it; the camera frames it.
     await openApp('/P-D-UC01?stage=trace', served());
     let whole = await drawn(true);
-    const root = whole.boxes.find((b) => b.lane === -1)!;
-    expect(root).toMatchObject({ id: 'P-D-UC01', column: 'parent', focus: true });
-    const obligations = whole.boxes.filter((b) => b.column === 'obligation');
-    expect(obligations.map((b) => b.id)).toEqual(obligationsUnder(modelIndex(), 'P-D-UC01'));
-    for (const o of obligations) expect(o.rect.top >= root.rect.top && o.rect.top + o.rect.height <= root.rect.top + root.rect.height + 0.01).toBe(true);
-    expect(whole.lines.filter((l) => l.tree).map((l) => l.target)).toEqual(obligations.map((o) => o.id));
-    // A domain: its capabilities are the tree's roots, every obligation under it a lane.
+    const root = whole.boxes.find((b) => b.id === 'P-D-UC01' && b.lane === -1)!;
+    expect(root).toMatchObject({ column: 'parent', focus: true, strength: 1 });
+    const under = obligationsUnder(modelIndex(), 'P-D-UC01');
+    const obligations = whole.boxes.filter((b) => b.column === 'obligation' && under.includes(b.id));
+    expect(obligations.map((b) => b.id)).toEqual(under);
+    for (const o of obligations) {
+      expect(o.rect.top >= root.rect.top && o.rect.top + o.rect.height <= root.rect.top + root.rect.height + 0.01).toBe(true);
+      expect(o.strength).toBe(1);
+    }
+    expect(whole.lines.filter((l) => l.tree && l.source === 'P-D-UC01').map((l) => l.target)).toEqual(under);
+    // The product's other lanes are drawn, faded back.
+    expect(whole.boxes.find((b) => b.id === 'P-D-INV01' && b.column === 'obligation')!.strength).toBeLessThan(1);
+    expect(inView(whole, root)).toBe(true);
+    // A domain: every obligation under it a lane at full strength, P-E's records faded.
     await openApp('/P-D?stage=trace', served());
     whole = await drawn(true);
-    expect(whole.boxes.find((b) => b.lane === -1 && b.column === 'capability')?.id).toBe('P-D-CAP01');
-    expect(new Set(whole.boxes.filter((b) => b.column === 'obligation' && b.role === 'record').map((b) => b.id))).toEqual(new Set(obligationsUnder(modelIndex(), 'P-D')));
+    const domain = new Set(obligationsUnder(modelIndex(), 'P-D'));
+    const lanes = whole.boxes.filter((b) => b.column === 'obligation' && b.role === 'record');
+    expect(new Set(lanes.filter((b) => b.strength === 1).map((b) => b.id))).toEqual(domain);
+    expect(lanes.filter((b) => !domain.has(b.id)).every((b) => b.strength < 1)).toBe(true);
     // The table under it: the five columns, a heading row per parent linking to it.
     const table = await matrix();
     expect(within(table.querySelector('thead')!).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Obligation', 'Design', 'Build', 'Tests', 'Files']);
@@ -103,7 +119,7 @@ describe('the Trace stage', () => {
     expect(within(table).getByRole('rowheader', { name: /P-D-INV01/ })).toBeInTheDocument();
   });
 
-  it('LA-V98-R04-T02 Empty cells show as gaps, the header strip counts them, and Gaps only keeps those rows', async () => {
+  it('LA-V98-R04-T02 Empty cells show as gaps, the header strip counts them, and Gaps only keeps those rows and fades the other lanes', async () => {
     await openApp('/P-D?stage=trace', served());
     const table = await matrix();
     const rows = () => [...table.querySelectorAll('tbody tr:not(.group-row)')];
@@ -116,10 +132,11 @@ describe('the Trace stage', () => {
     fireEvent.click(within(traceStage()).getByRole('checkbox', { name: 'Gaps only' }));
     await waitFor(() => expect(rows().length).toBe(gapped));
     for (const r of rows()) expect(r.querySelector('td.is-gap')).not.toBeNull();
-    // The canvas keeps the lanes with a gap, each gap a dashed box in its column.
+    // The canvas keeps every lane, those with a gap at full strength and the rest faded; each gap a dashed box in its column.
     const whole = await drawn(true);
-    const lanes = new Set(whole.boxes.filter((b) => b.column === 'obligation' && b.role === 'record').map((b) => b.id));
-    expect(lanes.size).toBe(gapped);
+    const lanes = whole.boxes.filter((b) => b.column === 'obligation' && b.role === 'record' && obligationsUnder(modelIndex(), 'P-D').includes(b.id));
+    expect(lanes.length).toBe(all);
+    await waitFor(async () => expect((await drawn(true)).boxes.filter((b) => b.column === 'obligation' && b.role === 'record' && b.strength === 1 && lanes.some((l) => l.key === b.key)).length).toBe(gapped));
     const gaps = whole.boxes.filter((b) => b.role === 'gap');
     expect(gaps.length).toBeGreaterThan(0);
     for (const g of gaps) expect(g).toMatchObject({ dashed: true, kind: 'gap' });
@@ -236,7 +253,7 @@ describe('the Trace stage', () => {
     expect(window.location.search).toBe('?stage=trace');
   });
 
-  it('LA-V98-R11-T01 Wheel and drag move the trace\'s camera, and . frames the trace again with a glide, as on the graph', async () => {
+  it('LA-V98-R11-T01 Wheel and drag move the trace\'s camera, and . frames the focus again with a glide, as on the graph', async () => {
     await openApp('/P-D-UC01?stage=trace', served());
     const host = await canvasHost();
     const framed = (await drawn()).camera;
@@ -247,7 +264,7 @@ describe('the Trace stage', () => {
     fireEvent.pointerMove(canvas, { clientX: 340, clientY: 320, pointerType: 'mouse', pointerId: 1 });
     fireEvent.pointerUp(canvas, { clientX: 340, clientY: 320, pointerType: 'mouse', pointerId: 1 });
     expect((await drawn()).camera).not.toEqual(framed);
-    expect(screen.getByRole('button', { name: 'Frame the trace' })).toHaveAttribute('aria-keyshortcuts', '.');
+    expect(within(traceStage()).getByRole('button', { name: 'Frame the focus' })).toHaveAttribute('aria-keyshortcuts', '.');
     fireEvent.keyDown(document.body, { key: '.', code: 'Period' });
     await waitFor(async () => {
       const now = (await drawn()).camera;
@@ -261,14 +278,14 @@ describe('the Trace stage', () => {
     const data = modelWorkspace();
     addRows(data, 'happens_in', { source_id: 'P-D-UC01-FL01-S03', target_id: 'P-V01' });
     await openApp('/P-D-UC01?stage=trace', served(await withEngineChains(data)));
-    const copies = (await drawn(true)).boxes.filter((b) => b.id === 'P-V01');
+    const copies = (await drawn(true)).boxes.filter((b) => b.id === 'P-V01' && b.lane >= 0);
     expect(copies.map((b) => b.lane)).toEqual([0, 1]);
     for (const c of copies) expect(c.notes).toEqual(['In 2 lanes']);
     // Hovering the first copy lights both, and the arrows touching them; the rest dims.
     const first = (await drawn()).boxes.find((b) => b.key === copies[0].key)!;
     fireEvent.pointerMove((await canvasHost()).querySelector('canvas')!, { clientX: first.rect.left + first.rect.width / 2, clientY: first.rect.top + first.rect.height / 2, pointerType: 'mouse', pointerId: 1 });
     const lit = await drawn(true);
-    expect(lit.boxes.filter((b) => b.id === 'P-V01').every((b) => b.hover && b.lit)).toBe(true);
+    expect(lit.boxes.filter((b) => b.id === 'P-V01' && b.lane >= 0).every((b) => b.hover && b.lit)).toBe(true);
     expect(lit.boxes.find((b) => b.id === 'P-D-UC01-R02')?.lit).toBe(false);
     expect(lit.lines.filter((l) => l.target === 'P-V01').every((l) => l.lit)).toBe(true);
   });
@@ -291,6 +308,36 @@ describe('the Trace stage', () => {
     act(() => own.focus());
     fireEvent.keyDown(own, { key: 'ArrowDown' });
     expect(document.activeElement).toHaveAttribute('data-trace-id', 'P-D-UC01-R02');
+  });
+
+  it('LA-V98-R12-T01 The Trace stage is one map: focusing two records and Gaps only move the camera and fade, never a box; a stage switch lands on the focus', async () => {
+    // A stage switch from the graph keeps the focus and lands the camera on it at once: a command a chain holds, framed.
+    await openApp('/P-D-CMD01?stage=graph', served());
+    await screen.findByRole('heading', { level: 1 });
+    fireEvent.keyDown(document.body, { key: '3', code: 'Digit3', ctrlKey: true });
+    expect(window.location.search).toBe('?stage=trace');
+    let scene = await drawn();
+    const held = scene.boxes.filter((b) => b.id === 'P-D-CMD01');
+    expect(held.length).toBeGreaterThan(0);
+    expect(held.every((b) => b.focus)).toBe(true);
+    expect(inView(scene, held[0])).toBe(true);
+    const before = (await drawn(true)).boxes.map((b) => inMap(scene, b));
+    const camera = scene.camera;
+    // Focusing a requirement, then a flow step its chain holds, from the table: the camera moves, every box keeps its place.
+    for (const id of ['P-D-UC01-R01', 'P-D-UC01-FL01-S01']) {
+      const at = access().querySelector(`[data-trace-id="${id}"]`)!;
+      fireEvent.click(at.closest('a') ?? at.querySelector('a')!);
+      await waitFor(() => expect(window.location.pathname).toBe(`/${id}`));
+      await waitFor(async () => expect((await drawn()).camera).not.toEqual(camera));
+      scene = await drawn(true);
+      expect(scene.boxes.map((b) => inMap(scene, b))).toEqual(before);
+      expect(scene.boxes.filter((b) => b.focus).length).toBeGreaterThan(0);
+    }
+    // Gaps only fades the lanes with no gap, and moves nothing.
+    fireEvent.click(within(traceStage()).getByRole('checkbox', { name: 'Gaps only' }));
+    await waitFor(async () => expect((await drawn(true)).boxes.some((b) => b.column === 'obligation' && b.id === 'P-D-UC01-R01' && b.strength < 1)).toBe(true));
+    scene = await drawn(true);
+    expect(scene.boxes.map((b) => inMap(scene, b))).toEqual(before);
   });
 
   it('LA-V98-R10-T02 On a phone the table is the Trace stage, and no canvas is drawn', async () => {

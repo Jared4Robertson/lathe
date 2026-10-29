@@ -31,7 +31,7 @@ test.describe('mobile at 375 px', () => {
   test('LA-V61-R36-T01 the sheets and the drawer move nothing behind them', async ({ page }) => {
     await openPage(page, RECORD, '.header-strip h1');
     const behind = ['.topbar', '#main', '.page-bar.is-compact', '.header-strip', '.focus-stage'];
-    const sheets = ['.bottom-sheet', '.sheet', '.sheet-backdrop', '.drawer-backdrop', 'nav#nav', '.side-bar-drawer'];
+    const sheets = ['.bottom-sheet', '.sheet', '.quick-open-backdrop', '.sheet-backdrop', '.drawer-backdrop', 'nav#nav', '.side-bar-drawer'];
     const nav = await step(page, 'mobile', 'open and close the nav drawer', { keys: behind, allow: sheets }, async () => {
       await page.getByRole('button', { name: 'Open the navigation' }).click();
       await page.locator('nav#nav').waitFor();
@@ -41,10 +41,10 @@ test.describe('mobile at 375 px', () => {
     expectStable(nav);
     const find = await step(page, 'mobile', 'open and close quick find', { keys: behind, allow: sheets }, async () => {
       await page.locator('.topbar').getByRole('button', { name: 'Quick find' }).click();
-      await page.locator('.find-sheet').waitFor();
+      await page.locator('.quick-open').waitFor();
       await page.keyboard.type('graph', { delay: 50 });
       await page.waitForTimeout(400);
-      await page.locator('.find-sheet .sheet-close').click();
+      await page.locator('.quick-open .sheet-close').click();
     });
     expectStable(find);
     const card = await step(page, 'mobile', 'open and close the wiki card sheet', { keys: behind, allow: sheets }, async () => {
