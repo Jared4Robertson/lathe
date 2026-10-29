@@ -23,6 +23,7 @@ import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { rememberStage, usePageTabs, type PageTabsApi } from './useTabs';
 import { usePreview } from './preview';
 import { WikiCard } from './WikiCard';
+import { useCardPlace } from './cardPlace';
 import { Button } from '../components/Button';
 import { useViewState } from '../chat/appRequests';
 
@@ -207,6 +208,9 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
     if (!show) setTimeout(() => cardButton.current?.focus(), 0);
   }, [narrow, setCard, hold, announce]);
   const collapseCard = useCallback(() => setCardShown(false), [setCardShown]);
+  const expandCard = useCallback((expanded: boolean) => setCard({ expanded }), [setCard]);
+  // A preview shows in the card's compact summary, whatever the session's setting, which it leaves alone.
+  const cardExpanded = preview === null && card.expanded;
   // Made once per width, so the memoized card draws again only for a new page.
   const cardHandle = useMemo(() => (
     <CardHandle width={card.width} onWidth={(width) => setCard({ width })} onReset={() => setCard({ width: null })} onCollapse={collapseCard} />
@@ -285,6 +289,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const [space] = useState(createOpenSpaceStore);
   const stageEl = useRef<HTMLDivElement>(null);
   useOpenSpaceMeasure(stageEl, space, layout);
+  // The card settles level with the focused box, once the focus settles and the stage has framed it (cardPlace.ts).
+  useCardPlace(cardScroll, space, settledFocus, cardShown && !narrow);
 
   // Commands.
   useCommand('stageGraph', () => setStage('graph'));
@@ -353,7 +359,7 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         onStage={setStage}
         stageBox={stageBox}
         strip={<HeaderStrip index={index} focus={focus} counts={counts} />}
-        card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} sheet /> : null}
+        card={cardShown ? <WikiCard ref={cardScroll} index={index} route={cardRoute} onScroll={onCardScroll} onCollapse={collapseCard} expanded={cardExpanded} onExpanded={expandCard} sheet /> : null}
         onCard={setCardShown}
         cardButton={cardButton}
         sideBarShown={showing}
@@ -396,6 +402,8 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
             route={cardRoute}
             onScroll={onCardScroll}
             onCollapse={collapseCard}
+            expanded={cardExpanded}
+            onExpanded={expandCard}
             handle={cardHandle}
           />
         )}
@@ -437,21 +445,22 @@ function useCardRoute(index: SpecIndex, settled: string, route: FocusRoute): Foc
   return isFocusRoute(parsed) ? parsed : route;
 }
 
-/** The handle at the wiki card's right edge: drag or arrow keys for its width, double-click to reset, drag small to collapse. */
+/** The handle at the wiki card's left edge: drag or arrow keys for its width (Left grows it, as the card sits after it), double-click to reset, drag small to collapse. */
 function CardHandle({ width, onWidth, onReset, onCollapse }: { width: number | null; onWidth: (w: number) => void; onReset: () => void; onCollapse: () => void }) {
   const ref = useRef<HTMLDivElement>(null);
-  const cardLeft = () => ref.current?.closest('.wiki-panel')?.getBoundingClientRect().left ?? 0;
+  const cardRight = () => ref.current?.closest('.wiki-panel')?.getBoundingClientRect().right ?? 0;
   const value = width ?? Math.max(CARD_MIN, Math.round(ref.current?.closest('.wiki-panel')?.getBoundingClientRect().width ?? CARD_MIN));
   return (
     <div ref={ref} className="wiki-panel-handle">
       <ResizeHandle
         label="Resize the wiki card"
+        side="after"
         value={value}
         min={CARD_MIN}
         max={CARD_MAX}
         step={16}
         bigStep={64}
-        valueAt={(x) => x - cardLeft()}
+        valueAt={(x) => cardRight() - x}
         onChange={onWidth}
         onReset={onReset}
         collapseBelow={200}

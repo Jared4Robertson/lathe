@@ -175,12 +175,11 @@ test.describe('Platform flows in the app', () => {
     await expect.poll(openRight).toBeLessThan(narrow);
     await page.getByRole('button', { name: 'Show the side bar' }).click();
     await expect(page.getByRole('complementary', { name: 'Side bar' })).toBeVisible();
-    // The wiki card collapses by its button and comes back by the page bar's.
-    const openLeft = () => page.locator('.focus-stage').evaluate((el) => parseFloat((el as HTMLElement).style.getPropertyValue('--open-left')));
-    const withCard = await openLeft();
+    // The wiki card, inside the side bar on the right, collapses by its button and comes back by the page bar's.
+    const withCard = await openRight();
     await page.locator('.wiki-panel').getByRole('button', { name: 'Collapse the wiki card' }).click();
     await expect(page.locator('.wiki-panel')).toHaveCount(0);
-    await expect.poll(openLeft).toBeLessThan(withCard);
+    await expect.poll(openRight).toBeLessThan(withCard);
     await page.getByRole('button', { name: 'Show the wiki card' }).click();
     await expect(page.locator('.wiki-panel')).toBeVisible();
   });

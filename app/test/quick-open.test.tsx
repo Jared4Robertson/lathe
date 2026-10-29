@@ -21,6 +21,8 @@ describe('quick open', () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
+    // The card shows the whole page (the tests' setting), so the preview's compact summary can be told from it.
+    expect(card()).toHaveClass('is-expanded');
     const opener = screen.getByRole('button', { name: 'Go to…' });
     opener.focus();
     fireEvent.click(opener);
@@ -33,6 +35,7 @@ describe('quick open', () => {
     // The stage glides to the highlighted record and the card shows it; the address, the tabs and the strip stay.
     await waitFor(() => expect(isCenter('P-V01')).toBe(true));
     await waitFor(() => expect(card()).toHaveAttribute('data-page', 'P-V01'));
+    await waitFor(() => expect(card()).not.toHaveClass('is-expanded'));
     expect(window.location.pathname).toBe('/P-D-UC01');
     expect(title()).toBe('Lend a thing');
 
@@ -41,6 +44,7 @@ describe('quick open', () => {
     expect(screen.queryByRole('dialog')).toBeNull();
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     await waitFor(() => expect(card()).toHaveAttribute('data-page', 'P-D-UC01'));
+    await waitFor(() => expect(card()).toHaveClass('is-expanded'));
     expect(opener).toHaveFocus();
     expect(window.location.pathname).toBe('/P-D-UC01');
 

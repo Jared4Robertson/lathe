@@ -40,13 +40,17 @@
   /* The ERD's key under the ERD view: one height for every ERD, so the canvas never resizes (LA-PAT-APP-UX-R08). */
   --erd-key-height: 9rem;
   /* The floating panels over the stage (LA-V96): their inset from the window and each other, their surfaces (the dense
-     ones, the nav, the tab panel and the side bar, nearer opaque than the wiki card), their blur and shadow, and the
-     header strip's height. The surfaces are the sheet's color, so every theme sets them in light and dark. */
-  --float-inset: 8px; --float-blur: 14px; --strip-height: 28px;
-  --float-dense: color-mix(in srgb, var(--sheet) 94%, transparent);
-  --float-light: color-mix(in srgb, var(--sheet) 85%, transparent);
+     ones, the nav, the tab panel, the side bar and the chat, nearer opaque than the wiki card), their blur and shadow,
+     and the header strip's height. The surfaces are the sheet's color, so every theme sets them in light and dark. The
+     blur is strong enough that the stage behind reads as shape and color only: muted text keeps WCAG 2.2 AA (4.5:1)
+     over every built-in theme's fills and over dense content (about a quarter ink over the paper) once blurred. */
+  --float-inset: 8px; --float-blur: 22px; --strip-height: 28px;
+  --float-dense: color-mix(in srgb, var(--sheet) 82%, transparent);
+  --float-light: color-mix(in srgb, var(--sheet) 72%, transparent);
   --float-border: color-mix(in srgb, var(--rule) 85%, transparent);
   --float-shadow: 0 1px 3px rgb(0 0 0 / 0.08), 0 8px 28px rgb(0 0 0 / 0.14);
+  /* The wiki card's softer shadow: it has no border, so the shadow alone lifts it off the map. */
+  --card-shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 6px 20px rgb(0 0 0 / 0.09);
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "Public Sans", "Segoe UI", system-ui, sans-serif;
   --mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
@@ -73,6 +77,7 @@
     --g-technical-specification: #E88A5E; --g-technical-specification-bg: #3A2219;
     --g-test-plan: #E58AAE; --g-test-plan-bg: #3A1A27;
     --float-shadow: 0 1px 3px rgb(0 0 0 / 0.3), 0 8px 28px rgb(0 0 0 / 0.45);
+    --card-shadow: 0 1px 2px rgb(0 0 0 / 0.25), 0 6px 20px rgb(0 0 0 / 0.32);
     color-scheme: dark;
   }
 }
@@ -103,7 +108,7 @@ body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(-
   background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur));
   box-shadow: var(--float-shadow);
 }
-.wiki-panel { background: var(--float-light); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); }
+.wiki-panel { background: var(--float-light); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--card-shadow); }
 .placeholder { display: grid; place-items: center; color: var(--muted); }
 .menu { background: var(--sheet); padding: 0; display: flex; flex-direction: row; gap: 0; min-height: 0; overflow: hidden; box-sizing: border-box; }
 .brand { margin: 0; font: 700 1.3rem var(--display); display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; }
@@ -993,8 +998,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 
 /* ---------- The stage and the panels over it (LA-V96, app/src/views/FocusPage.tsx) ----------
    The stage fills the window behind everything. The tab panel (the page bar, then the header strip) floats across the
-   top from the nav to the right edge, so its controls never move; the wiki card floats at the left below it, a third of
-   the space right of the nav wide until resized; the side bar floats at the right below it. The stage measures what they leave (openSpace.ts) and sets
+   top from the nav to the right edge, so its controls never move. Below it, on the right, from the open space outward:
+   the wiki card, a third of the space right of the nav wide until resized, then the side bar, then (in the desktop app)
+   the chat; the nav stays alone on the left. The stage measures what they leave (openSpace.ts) and sets
    --open-* and --frame-* on itself, where its own tools float. */
 .stage-layout { position: absolute; inset: 0; --side-space: var(--chat-space); --below-strip: calc(2 * var(--float-inset) + var(--page-bar-height) + var(--strip-height)); }
 .stage-layout.with-side-bar { --side-space: calc(var(--side-bar-width, 340px) + var(--float-inset) + var(--chat-space)); }
@@ -1013,15 +1019,36 @@ a.row-link.row-link:focus-visible { outline: none; }
 .header-strip-id { flex: none; font: 500 0.74rem var(--mono); }
 .header-strip-title { min-width: 0; margin: 0; overflow: hidden; text-overflow: ellipsis; font: 600 0.8rem/1.3 var(--body); color: var(--ink); }
 .header-strip-counts { flex: 0 1000 auto; min-width: 0; margin-left: auto; overflow: hidden; text-overflow: ellipsis; color: var(--muted); font-variant-numeric: tabular-nums; }
-/* The wiki card (WikiCard.tsx). */
-.wiki-panel { position: absolute; z-index: 2; top: var(--below-strip); bottom: var(--float-inset); left: var(--nav-space); box-sizing: border-box; width: var(--card-width, clamp(var(--card-min), calc((100% - var(--nav-space)) / 3), 640px)); min-width: var(--card-min); max-width: calc(100% - var(--nav-space) - var(--side-space) - var(--stage-min) - 2 * var(--float-inset)); display: flex; flex-direction: column; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
-.wiki-panel-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 36px; padding: 2px 4px 2px 12px; border-bottom: 1px solid var(--float-border); font-size: 0.8rem; }
+/* The wiki card (WikiCard.tsx), a callout in the map: left of the side bar (or of the chat, or the window's edge) by
+   --card-gap, below the stage's tools and above the foot by --card-gap-y, its top set level with the focused box
+   (cardPlace.ts, which also sets --card-room, the height between those gaps). Its height fits its content: the
+   summary, or the whole page up to 70% of the stage, scrolling inside. The graph's boxes' corners and kind line, a
+   stripe in the focused box's color along its top, a soft shadow and no border; its handle at its left edge. */
+.wiki-panel {
+  position: absolute; z-index: 2; top: calc(var(--below-strip) - var(--float-inset) + var(--card-gap-y)); right: calc(var(--side-space) - var(--float-inset) + var(--card-gap));
+  box-sizing: border-box; width: var(--card-width, clamp(var(--card-min), calc((100% - var(--nav-space)) / 3), 640px)); min-width: var(--card-min);
+  max-width: calc(100% - var(--nav-space) - var(--side-space) - var(--stage-min) - var(--float-inset) - var(--card-gap));
+  max-height: var(--card-room, calc(100% - var(--below-strip) - 2 * var(--card-gap-y))); display: flex; flex-direction: column; border-radius: var(--node-radius);
+}
+.wiki-panel.is-expanded { max-height: min(70%, var(--card-room, 70%)); }
+.wiki-panel::before { content: ""; position: absolute; z-index: 1; top: 0; left: 0; right: 0; height: 3px; border-radius: var(--node-radius) var(--node-radius) 0 0; background: var(--card-accent, var(--rule)); pointer-events: none; }
+.wiki-panel[data-placed] { transition: top var(--motion-speed) var(--motion-ease); }
+@media (prefers-reduced-motion: no-preference) { .wiki-panel-page { animation: wiki-card-in var(--motion-speed) var(--motion-ease); } }
+@media (prefers-reduced-motion: reduce) { .wiki-panel[data-placed] { transition: none; } }
+@keyframes wiki-card-in { from { opacity: 0; } to { opacity: 1; } }
+@media (forced-colors: active) { .wiki-panel { border: 1px solid CanvasText; } }
+.wiki-panel-head { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 6px; min-height: 36px; padding: 5px 4px 2px 12px; border-bottom: 1px solid var(--float-border); font-size: 0.8rem; }
 .wiki-panel-trail { flex: 1 1 auto; min-width: 0; }
-.wiki-panel-scroll { flex: 1; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; border-radius: 0 0 var(--panel-radius) var(--panel-radius); }
+.wiki-panel-more { flex: none; padding-block: 2px; font-size: 0.78rem; }
+.wiki-panel-scroll { flex: 0 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; border-radius: 0 0 var(--node-radius) var(--node-radius); }
 .wiki-panel-title { padding: 14px 20px 0; }
+.wiki-panel-kind { margin: 0; font: 500 0.74rem var(--mono); color: var(--muted); }
 .wiki-panel-title h2 { margin: 2px 0 0; font: 700 1.35rem/1.25 var(--display); overflow-wrap: break-word; }
-.wiki-panel-handle { position: absolute; z-index: 3; top: var(--panel-radius); bottom: var(--panel-radius); right: calc(-1 * var(--float-inset)); width: var(--float-inset); display: grid; grid-template-columns: minmax(0, 1fr); }
-.wiki-panel.is-sheet { position: static; width: auto; max-width: none; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.wiki-panel-summary { padding-bottom: 14px; }
+.wiki-panel-lead { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4; overflow: hidden; }
+.wiki-panel-handle { position: absolute; z-index: 3; top: var(--node-radius); bottom: var(--node-radius); left: calc(-1 * var(--float-inset)); width: var(--float-inset); display: grid; grid-template-columns: minmax(0, 1fr); }
+.wiki-panel.is-sheet { position: static; width: auto; max-width: none; max-height: none; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
+.wiki-panel.is-sheet::before { content: none; }
 /* The side bar, floating at the right; its handle at its left edge. */
 .stage-layout > .side-bar-column { position: absolute; z-index: 3; top: var(--below-strip); bottom: var(--float-inset); right: var(--chat-space); width: var(--side-bar-width, 340px); max-width: calc(100% - var(--nav-space) - var(--chat-space)); box-sizing: border-box; overflow: visible; border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
 .stage-layout > .side-bar-column > .side-bar.record-side { border-radius: var(--panel-radius); background: none; }
