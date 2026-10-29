@@ -10,6 +10,7 @@
 {"source_id":"LA-AUT-UC01-FL03-S10","target_id":"LA-AUT-CMD06"}
 {"source_id":"LA-AUT-UC01-FL03-S11","target_id":"LA-AUT-CMD07"}
 {"source_id":"LA-AUT-UC01-FL03-S12","target_id":"LA-AUT-QRY03"}
+{"source_id":"LA-AUT-UC01-FL03-S13","target_id":"LA-AUT-CMD07"}
 {"source_id":"LA-AUT-UC01-FL04-S02","target_id":"LA-AUT-CMD01"}
 {"source_id":"LA-AUT-UC01-FL04-S03","target_id":"LA-AUT-CMD02"}
 {"source_id":"LA-AUT-UC01-FL04-S05","target_id":"LA-AUT-QRY02"}

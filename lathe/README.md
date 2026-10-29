@@ -53,7 +53,7 @@ Any other key, or a file that is not one JSON object, is refused when the config
 
 Every change goes through the command layer, which validates it in one transaction (every key, rule and validation query) and only then rewrites the lines it changed. Nobody edits the files by hand.
 
-- **The CLI.** `lathe add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list` and `next-id`, with flags and help generated from the schema (`lathe add --help`, `lathe add uc_requirement --help`). A refusal prints every reason, with the rule it broke, and changes nothing.
+- **The CLI.** `lathe add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list` and `next-id`, with flags and help generated from the schema (`lathe add --help`, `lathe add uc_requirement --help`). A refusal prints every reason, with the rule it broke, and changes nothing. `--json` prints the result as JSON. A write takes its fields as JSON instead of flags with `--json -` (stdin) or `--json <file>`: the arguments of the MCP tool of the same name, such as `{"uc_requirement": {"id": ..., "statement": ...}}` for `add` or `{"source": ..., "relation": ..., "target": ...}` for `link`, or an array of them as one write, all or nothing. Text keeps its quotes, newlines and backticks, the validation and refusals are the flags', the result is JSON, and JSON given with field flags as well is bad usage.
 - **The app.** Each record page edits the record in place with a form generated from the schema.
 - **The Claude Code plugin.** Its MCP tools (`lathe mcp`) expose the same operations to an Agent.
 - **Code.** `openStore` gives the same command layer:
@@ -92,6 +92,7 @@ The driver checks the merged table's own rules (columns, types, keys and checks)
 | `merge-data <base> <ours> <theirs> <path>` | Git's merge driver for the data files (see [The merge driver](#the-merge-driver)). |
 | `mcp` | Serves the data commands as MCP tools over stdio, for the Claude Code plugin. |
 | `add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list`, `next-id` | The data commands (see [Changing the data](#changing-the-data)). |
+| `app focus`, `app open <id> [--stage graph\|erd\|trace]` | The MCP tools `app_focus` and `app_open` from a shell: what the Reader is looking at in the desktop app's window, and opening a record there. They work in the desktop app's chat, which gives its Claude Code the window's bridge (`LATHE_APP_BRIDGE`, `LATHE_APP_TOKEN`); with no window connected they are refused and exit 1. `--json` prints the result as JSON. |
 
 A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 

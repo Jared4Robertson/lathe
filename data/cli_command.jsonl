@@ -1,9 +1,9 @@
-{"id":"LA-AUT-CMD01-CLI","title":"lathe add","domain_id":"LA-AUT","usage":"lathe add <table> --<column> <value>…","mcp_tool":"add","file":"lathe/src/cli/writers.ts"}
-{"id":"LA-AUT-CMD02-CLI","title":"lathe set","domain_id":"LA-AUT","usage":"lathe set <id> --<column> <value>…","mcp_tool":"set","file":"lathe/src/cli/writers.ts"}
-{"id":"LA-AUT-CMD03-CLI","title":"lathe move","domain_id":"LA-AUT","usage":"lathe move <id> --parent <id>","mcp_tool":"move","file":"lathe/src/cli/writers.ts"}
-{"id":"LA-AUT-CMD04-CLI","title":"lathe link","domain_id":"LA-AUT","usage":"lathe link <relation> <source> <target>","mcp_tool":"link","file":"lathe/src/cli/writers.ts"}
-{"id":"LA-AUT-CMD05-CLI","title":"lathe unlink","domain_id":"LA-AUT","usage":"lathe unlink <relation> <source> <target>","mcp_tool":"unlink","file":"lathe/src/cli/writers.ts"}
-{"id":"LA-AUT-CMD06-CLI","title":"lathe remove","domain_id":"LA-AUT","usage":"lathe remove <id>","mcp_tool":"remove","file":"lathe/src/cli/writers.ts"}
+{"id":"LA-AUT-CMD01-CLI","title":"lathe add","domain_id":"LA-AUT","usage":"lathe add <table> --<column> <value>… | lathe add --json <file|->","mcp_tool":"add","file":"lathe/src/cli/writers.ts"}
+{"id":"LA-AUT-CMD02-CLI","title":"lathe set","domain_id":"LA-AUT","usage":"lathe set <id> --<column> <value>… | lathe set --json <file|->","mcp_tool":"set","file":"lathe/src/cli/writers.ts"}
+{"id":"LA-AUT-CMD03-CLI","title":"lathe move","domain_id":"LA-AUT","usage":"lathe move <id> --parent <id> | lathe move --json <file|->","mcp_tool":"move","file":"lathe/src/cli/writers.ts"}
+{"id":"LA-AUT-CMD04-CLI","title":"lathe link","domain_id":"LA-AUT","usage":"lathe link <source> <relation> <target> | lathe link --json <file|->","mcp_tool":"link","file":"lathe/src/cli/writers.ts"}
+{"id":"LA-AUT-CMD05-CLI","title":"lathe unlink","domain_id":"LA-AUT","usage":"lathe unlink <source> <relation> <target> | lathe unlink --json <file|->","mcp_tool":"unlink","file":"lathe/src/cli/writers.ts"}
+{"id":"LA-AUT-CMD06-CLI","title":"lathe remove","domain_id":"LA-AUT","usage":"lathe remove <id> | lathe remove --json <file|->","mcp_tool":"remove","file":"lathe/src/cli/writers.ts"}
 {"id":"LA-AUT-CMD08-CLI","title":"lathe merge-data","domain_id":"LA-AUT","usage":"lathe merge-data %O %A %B %P","file":"lathe/bin/lathe.ts"}
 {"id":"LA-AUT-QRY01-CLI","title":"npm --prefix lathe run reference","domain_id":"LA-AUT","usage":"npm --prefix lathe run reference [-- --print | --out <file>]","file":"lathe/scripts/reference.ts"}
 {"id":"LA-AUT-QRY02-CLI","title":"lathe show","domain_id":"LA-AUT","usage":"lathe show <id>","mcp_tool":"show","file":"lathe/src/cli/writers.ts"}
@@ -13,3 +13,5 @@
 {"id":"LA-PLT-CMD17-CLI","title":"lathe serve","domain_id":"LA-PLT","usage":"lathe serve [--port <port>]","file":"lathe/bin/lathe.ts"}
 {"id":"LA-PLT-CMD21-CLI","title":"lathe init","domain_id":"LA-PLT","usage":"lathe init --name <name> --prefix <prefix>","file":"lathe/bin/lathe.ts"}
 {"id":"LA-PLT-CMD24-CLI","title":"lathe upgrade","domain_id":"LA-PLT","usage":"lathe upgrade [--allow-dirty]","file":"lathe/bin/lathe.ts"}
+{"id":"LA-PLT-CMD30-CLI","title":"lathe app open","domain_id":"LA-PLT","usage":"lathe app open <id> [--stage graph|erd|trace] [--json]","mcp_tool":"app_open","file":"lathe/src/cli/app-tools.ts"}
+{"id":"LA-PLT-QRY09-CLI","title":"lathe app focus","domain_id":"LA-PLT","usage":"lathe app focus [--json]","mcp_tool":"app_focus","file":"lathe/src/cli/app-tools.ts"}
