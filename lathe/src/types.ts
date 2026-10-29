@@ -37,8 +37,8 @@ export interface RelationRule {
   source_kind: string;
   /** A kind, or '*' for any kind. */
   target_kind: string;
-  /** 'design': the link designs its target; 'proof': it proves it; '' otherwise. */
-  role: 'design' | 'proof' | '';
+  /** 'design': the link designs its target; 'build': it builds it; 'proof': it proves it; '' otherwise. */
+  role: 'design' | 'build' | 'proof' | '';
   description: string;
   /** The link in plain words read from the source, in sentence case: "Fulfills". */
   forward_label: string;

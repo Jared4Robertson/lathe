@@ -14,7 +14,7 @@
 {"id":"LA-VO14","title":"Run by","description":"How a test runs: its level, its state, and the file that runs it or why it is manual. Fields: Level, State, File (optional), Manual reason (optional)."}
 {"id":"LA-VO15","title":"Kind field type","description":"The type of a product kind's field."}
 {"id":"LA-VO16","title":"Stage","description":"Where a kind is read and colored."}
-{"id":"LA-VO17","title":"Relation role","description":"Whether a relation designs or proves."}
+{"id":"LA-VO17","title":"Relation role","description":"Whether a relation designs, builds or proves."}
 {"id":"LA-VO18","title":"Group name","description":"A short heading a long list of requirements or rules is sorted under."}
 {"id":"LA-VO41","title":"Check name","description":"The name of a check, which its problems carry."}
 {"id":"LA-VO42","title":"Check severity","description":"What a check's problems are. An error means the data is broken; a warning means work is still to do."}

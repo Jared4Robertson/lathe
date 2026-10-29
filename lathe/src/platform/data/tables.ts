@@ -183,6 +183,52 @@ export interface ApiRequirementRow {
   group_name?: string;
 }
 
+/** A piece of the user interface that renders one or more views and builds the view requirements its code does (builds). It has no owner: it exists because views use it, and its product follows from its ID. */
+export interface UiComponentRow {
+  /** The UI component's ID: the product prefix and UI<nn>, such as TL-UI01. */
+  id: string;
+  /** Its name in code, such as CatalogPage. */
+  title: string;
+  /** The file that holds its code, from the product root; it may not exist yet. */
+  file?: string;
+  /** What it renders, in a sentence or two. */
+  description: string;
+}
+
+/** A screen or page a person uses. It has no owner: it exists because flow steps happen in it, and its product follows from its ID. */
+export interface ViewRow {
+  /** The view's ID: the product prefix and V<nn>, such as TL-V01. */
+  id: string;
+  /** The view's name, such as Catalog. */
+  title: string;
+  /** The address it is shown at, such as /catalog. */
+  route?: string;
+  /** What the view shows and lets a person do, in a paragraph. */
+  description: string;
+  /** Longer notes on the view. */
+  notes?: string;
+}
+
+/** One rule a view must follow, such as what it shows while loading or a field's limits. The UI components whose code does what it says build it (builds). */
+export interface ViewRequirementRow {
+  /** The requirement's ID: its view's ID and R<nn>, such as TL-V01-R01. */
+  id: string;
+  /** The requirement in a few words. */
+  title: string;
+  /** The view it belongs to. */
+  view_id: string;
+  /** The requirement, stated with MUST, MUST NOT, SHOULD or MAY. */
+  statement: string;
+  /** A short heading it is shown under among its siblings. */
+  group_name?: string;
+}
+
+/** The UI component builds the view requirement: its code does what the requirement says. A view requirement is built only through the components that build it, never through any component that renders its view. */
+export interface BuildsRow {
+  source_id: string;
+  target_id: string;
+}
+
 /** A business outcome: a measurable change the product exists to bring about, which its capabilities serve and its tests or records measure (measured_by). The trace runs from it to a capability, a use case, the code and the tests. */
 export interface BusinessOutcomeRow {
   /** The outcome's ID: its product's ID and BO<nn>, such as TL-BO01. */
@@ -685,20 +731,6 @@ export interface FulfillsRow {
   target_id: string;
 }
 
-/** A screen or page a person uses. It has no owner: it exists because flow steps happen in it, and its product follows from its ID. */
-export interface ViewRow {
-  /** The view's ID: the product prefix and V<nn>, such as TL-V01. */
-  id: string;
-  /** The view's name, such as Catalog. */
-  title: string;
-  /** The address it is shown at, such as /catalog. */
-  route?: string;
-  /** What the view shows and lets a person do, in a paragraph. */
-  description: string;
-  /** Longer notes on the view. */
-  notes?: string;
-}
-
 /** The flow step happens in the view: at most one per step. */
 export interface HappensInRow {
   source_id: string;
@@ -753,7 +785,7 @@ export interface IntegrationTestRow {
   notes?: string;
 }
 
-/** A rule that holds for one aggregate on every change. Uniqueness across records (no two members share an email) is an invariant, enforced by a unique key of the table. */
+/** A rule that holds for one aggregate on every change, enforced by its rule (rule) in the aggregate's code. Uniqueness across records (no two members share an email) is an invariant too, which a unique key of the table may back up. */
 export interface InvariantRow {
   /** The invariant's ID, such as TL-LEND-INV01. */
   id: string;
@@ -1027,8 +1059,8 @@ export interface ProductRelationRow {
   target_kind: string;
   /** The product that declares it. */
   product_id: string;
-  /** design or proof, for a new relation that counts toward coverage. A new relation's links stay inside one product. */
-  role?: "design" | "proof";
+  /** design, build or proof, for a new relation that counts toward coverage: a design or build link's source builds its target once it names a file that exists, and a proof link's source proves it. A new relation's links stay inside one product. */
+  role?: "design" | "build" | "proof";
   /** The link read from its source. */
   forward_label: string;
   /** The link read from its target. */
@@ -1125,18 +1157,6 @@ export interface ReadsRow {
   target_id: string;
 }
 
-/** A piece of the user interface that renders one or more views. It has no owner: it exists because views use it, and its product follows from its ID. */
-export interface UiComponentRow {
-  /** The UI component's ID: the product prefix and UI<nn>, such as TL-UI01. */
-  id: string;
-  /** Its name in code, such as CatalogPage. */
-  title: string;
-  /** The file that holds its code, from the product root; it may not exist yet. */
-  file?: string;
-  /** What it renders, in a sentence or two. */
-  description: string;
-}
-
 /** The UI component renders the view, or part of it. */
 export interface RendersRow {
   source_id: string;
@@ -1161,6 +1181,18 @@ export interface RoleRow {
   name: string;
   /** Who takes the role and what they do in the product, in a sentence. */
   description: string;
+}
+
+/** Enforces its invariant: the rule in its aggregate's code, run by the aggregate's commands before saving, which refuses a change that would break it. Lathe's own rules sit in each aggregate's rules.ts and also run over all data on every load. An invariant is built only through its rule. */
+export interface RuleRow {
+  /** The rule's ID: its invariant's ID and RL, such as TL-LEND-INV01-RL. */
+  id: string;
+  /** Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken. */
+  title: string;
+  /** The invariant it enforces; one rule each. */
+  invariant_id: string;
+  /** The file that holds its code, from the product root, such as its aggregate's rules.ts; it may not exist yet, and several records may share one file. */
+  file?: string;
 }
 
 /** The query selects the records that satisfy the specification, of its own domain. */
@@ -1433,20 +1465,6 @@ export interface ValueTypeRow {
   file?: string;
 }
 
-/** One rule a view must follow, such as what it shows while loading or a field's limits. */
-export interface ViewRequirementRow {
-  /** The requirement's ID: its view's ID and R<nn>, such as TL-V01-R01. */
-  id: string;
-  /** The requirement in a few words. */
-  title: string;
-  /** The view it belongs to. */
-  view_id: string;
-  /** The requirement, stated with MUST, MUST NOT, SHOULD or MAY. */
-  statement: string;
-  /** A short heading it is shown under among its siblings. */
-  group_name?: string;
-}
-
 /** Proves its view requirement in the view. */
 export interface ViewTestRow {
   /** The test's ID: its view requirement's ID and T<nn>, such as TL-V01-R01-T01. */
@@ -1492,6 +1510,10 @@ export interface TableRows {
   query: QueryRow;
   endpoint: EndpointRow;
   api_requirement: ApiRequirementRow;
+  ui_component: UiComponentRow;
+  view: ViewRow;
+  view_requirement: ViewRequirementRow;
+  builds: BuildsRow;
   business_outcome: BusinessOutcomeRow;
   domain_service: DomainServiceRow;
   calls: CallsRow;
@@ -1526,7 +1548,6 @@ export interface TableRows {
   follows: FollowsRow;
   uc_requirement: UcRequirementRow;
   fulfills: FulfillsRow;
-  view: ViewRow;
   happens_in: HappensInRow;
   has_many: HasManyRow;
   has_one: HasOneRow;
@@ -1557,10 +1578,10 @@ export interface TableRows {
   read_model_field: ReadModelFieldRow;
   reader: ReaderRow;
   reads: ReadsRow;
-  ui_component: UiComponentRow;
   renders: RendersRow;
   repository_share: RepositoryShareRow;
   role: RoleRow;
+  rule: RuleRow;
   selects_by: SelectsByRow;
   serves: ServesRow;
   service: ServiceRow;
@@ -1577,7 +1598,6 @@ export interface TableRows {
   use_case_test: UseCaseTestRow;
   value_object_field: ValueObjectFieldRow;
   value_type: ValueTypeRow;
-  view_requirement: ViewRequirementRow;
   view_test: ViewTestRow;
 }
 

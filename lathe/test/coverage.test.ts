@@ -61,7 +61,7 @@ describe('designed and built', () => {
     let data = without(complete(), 'value_type', () => true);
     data = without(data, 'predicate', () => true);
     data = without(data, 'event_handler', () => true);
-    data = without(data, 'renders', () => true);
+    data = without(data, 'builds', () => true);
     data = without(data, 'endpoint_handler', () => true);
     data = without(data, 'meets', (r) => r.source_id === 'EX-LEND-CMD01-H');
     data = without(data, 'fulfills', (r) => r.source_id === 'EX-LEND-UC02-FL01-S01');
@@ -82,7 +82,7 @@ describe('designed and built', () => {
       'built EX-LEND-EP01-R01', // its endpoint has no handler
       'built EX-LEND-PO01', // no event handler
       'built EX-LEND-SP01', // no predicate
-      'built EX-V01-R01', // no UI component renders its view
+      'built EX-V01-R01', // no UI component builds it
       'built EX-VO01-C01', // its value object has no value type
     ]);
     expect(obligation(ws, 'EX-LEND', 'domain_service')).toMatchObject({ total: 1, designed: 1, built: 0, proved: 1 });
@@ -90,40 +90,47 @@ describe('designed and built', () => {
     expect(gaps(ws)).not.toContain('built EX-LEND-UC02-R01');
   });
 
-  it('LA-TRC-UC01-R04-T02 an invariant is built by a data model of its aggregate, or by the table of a unique key naming it', async () => {
-    const noModels = without(complete(), 'data_model', (r) => r.entity_id !== 'EX-LEND-EN03');
-    const bare = await loadData(noModels);
-    expect(gaps(bare)).toEqual(['built EX-LEND-INV01', 'entity-without-data-model EX-LEND-EN01', 'entity-without-data-model EX-LEND-EN02']);
+  it('LA-TRC-UC01-R04-T02 an invariant is built only by its rule, once the rule\'s file exists: no data model or unique key builds it', async () => {
+    const noRule = without(complete(), 'rule', () => true);
+    // The aggregate's data models name files that exist, and the loans table gets a unique key naming the invariant.
     const key = { table_key: [{ table_id: 'EX-LEND-EN01-TB', position: 2, type: 'unique', columns: ['tool_id'], invariant_id: 'EX-LEND-INV01' }] };
-    expect(obligation(await loadData(adding(noModels, key)), 'EX-LEND', 'invariant')).toMatchObject({ designed: 1, built: 1 });
-    expect(obligation(await loadData(adding(noModels, key), { missing: ['src/schema.sql'] }), 'EX-LEND', 'invariant')).toMatchObject({ designed: 1, built: 0 });
+    expect(gaps(await loadData(adding(noRule, key)))).toEqual(['built EX-LEND-INV01']);
+    expect(obligation(clean, 'EX-LEND', 'invariant')).toMatchObject({ designed: 1, built: 1 });
+    expect(obligation(await loadData(complete(), { missing: ['src/loans.ts'] }), 'EX-LEND', 'invariant')).toMatchObject({ designed: 1, built: 0 });
   });
 
-  it("LA-TRC-UC01-R04-T03 a UC requirement is built through what its steps invoke, or a UI component of the view a step happens in", async () => {
+  it("LA-TRC-UC01-R04-T03 a UC requirement is built only through the handler of what its steps invoke: a UI component of the view a step happens in builds nothing", async () => {
     // UC01-R01 is fulfilled by S01 alone now, which invokes nothing; it still happens in the catalog, which a UI component renders.
     const alone = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC01-FL01-S02');
     const viaView = await loadData(without(alone, 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL01-S01'));
-    expect(obligation(viaView, 'EX-LEND', 'uc_requirement')).toMatchObject(covered(2));
-    const nowhere = await loadData(without(without(alone, 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL01-S01'), 'happens_in', (r) => r.source_id === 'EX-LEND-UC01-FL01-S01'));
-    expect(gaps(nowhere).filter((g) => !g.startsWith('record-untraced'))).toEqual(['built EX-LEND-UC01-R01']);
-    expect(nowhere.coverage[0].gaps.find((g) => g.missing === 'built')).toEqual({ id: 'EX-LEND-UC01-R01', kind: 'uc_requirement', missing: 'built', message: 'UC requirement EX-LEND-UC01-R01 is not built yet: no file of what implements it exists.' });
+    expect(gaps(viaView).filter((g) => !g.startsWith('record-untraced'))).toEqual(['built EX-LEND-UC01-R01']);
+    expect(viaView.coverage[0].gaps.find((g) => g.missing === 'built')).toEqual({ id: 'EX-LEND-UC01-R01', kind: 'uc_requirement', missing: 'built', message: 'UC requirement EX-LEND-UC01-R01 is not built yet: no file of what implements it exists.' });
+    expect(obligation(await loadData(alone), 'EX-LEND', 'uc_requirement')).toMatchObject(covered(2));
   });
 
-  it("LA-TRC-UC02-R10-T01 a UC requirement is built by the adapter of an integration its step exchanges with, or a product kind's record under it", async () => {
+  it('LA-TRC-UC02-R06-T02 a view requirement is built only by a UI component that builds it, not by one that only renders its view', async () => {
+    expect(obligation(clean, 'EX-LEND', 'view_requirement')).toMatchObject(covered(1));
+    const rendered = await loadData(without(complete(), 'builds', () => true));
+    // The component that only renders the view builds nothing, so no obligation's chain reaches it either.
+    expect(gaps(rendered)).toEqual(['built EX-V01-R01', 'record-untraced EX-UI01']);
+    expect(obligation(await loadData(complete(), { missing: ['web/catalog.tsx'] }), 'EX-LEND', 'view_requirement')).toMatchObject({ designed: 1, built: 0 });
+  });
+
+  it("LA-TRC-UC02-R10-T01 a UC requirement is built by the adapter of an integration its step exchanges with; a product kind's record under it builds nothing", async () => {
     // The one step that fulfills UC01-R01 invokes nothing and happens in no view; it exchanges with the mail integration.
     let alone = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC01-FL01-S02');
     alone = without(alone, 'invokes', (r) => r.source_id === 'EX-LEND-UC01-FL01-S01');
     alone = without(alone, 'happens_in', (r) => r.source_id === 'EX-LEND-UC01-FL01-S01');
     const exchanging = adding(alone, { exchanges_with: [{ source_id: 'EX-LEND-UC01-FL01-S01', target_id: 'EX-INT01' }] });
     expect(obligation(await loadData(exchanging), 'EX-LEND', 'uc_requirement')).toMatchObject(covered(2));
-    // With no adapter, a hook of the product's own kind under the integration carries it out, once its file exists.
+    expect(gaps(await loadData(exchanging, { missing: ['src/mail.ts'] }))).toContain('built EX-LEND-UC01-R01');
+    // With no adapter, a hook of the product's own kind under the integration does not build it.
     const hooked = adding(without(exchanging, 'adapter', () => true), {
       product_kind: [{ name: 'hook', product_id: 'EX', label: 'Hook', description: 'Code the mail service calls.', parent_kind: 'integration', stage: 'technical-specification', obligation: false }],
       product_kind_field: [{ kind: 'hook', position: 1, name: 'file', type: 'text', required: true, description: 'The file.' }],
       hook: [{ id: 'EX-INT01-HK01', title: 'On bounce', integration_id: 'EX-INT01', file: 'src/bounce.ts' }],
     });
-    expect(obligation(await loadData(hooked), 'EX-LEND', 'uc_requirement')).toMatchObject(covered(2));
-    expect(gaps(await loadData(hooked, { missing: ['src/bounce.ts'] }))).toContain('built EX-LEND-UC01-R01');
+    expect(gaps(await loadData(hooked))).toContain('built EX-LEND-UC01-R01');
     expect(gaps(await loadData(alone))).toContain('built EX-LEND-UC01-R01');
   });
 });
@@ -133,16 +140,19 @@ describe('chains', () => {
 
   it("LA-TRC-UC10-R05-T01 each obligation's chain holds what designs it, what builds it as built counts, its tests and their files, link by link", () => {
     // A UC requirement: its fulfilling steps, their flow, the view they happen in, what they invoke and the integration
-    // they exchange with; the handlers, the UI component and the adapter that build it; its test.
+    // they exchange with; the handlers and the adapter that build it; its test.
     const req = chain(clean, 'EX-LEND-UC01-R01');
     expect(new Set(req.design)).toEqual(new Set(['EX-V01', 'EX-INT01', 'EX-LEND-UC01-FL01', 'EX-LEND-UC01-FL01-S01', 'EX-LEND-UC01-FL01-S02', 'EX-LEND-CMD01', 'EX-LEND-QRY01']));
-    expect(req.build).toEqual(expect.arrayContaining(['EX-LEND-CMD01-H', 'EX-LEND-QRY01-H', 'EX-UI01']));
+    expect(new Set(req.build)).toEqual(new Set(['EX-LEND-CMD01-H', 'EX-LEND-QRY01-H', 'EX-INT01-AD']));
     expect(req.tests).toEqual(['EX-LEND-UC01-R01-T01']);
     expect(req.links).toEqual(expect.arrayContaining([
       ['EX-LEND-UC01-R01', 'EX-LEND-UC01-FL01'], ['EX-LEND-UC01-FL01', 'EX-LEND-UC01-FL01-S01'], ['EX-LEND-UC01-FL01-S01', 'EX-LEND-CMD01'],
-      ['EX-LEND-CMD01', 'EX-LEND-CMD01-H'], ['EX-V01', 'EX-UI01'], ['EX-LEND-UC01-FL01-S02', 'EX-INT01'], ['EX-LEND-UC01-R01', 'EX-LEND-UC01-R01-T01'],
+      ['EX-LEND-CMD01', 'EX-LEND-CMD01-H'], ['EX-LEND-UC01-FL01-S02', 'EX-INT01'], ['EX-INT01', 'EX-INT01-AD'], ['EX-LEND-UC01-R01', 'EX-LEND-UC01-R01-T01'],
     ]));
     expect(req.files.find((f) => f.path === 'test/api.test.ts')?.named_by).toEqual(['EX-LEND-UC01-R01-T01']);
+    // A view requirement: the UI component that builds it; an invariant: its rule.
+    expect(chain(clean, 'EX-V01-R01')).toMatchObject({ build: ['EX-UI01'], links: expect.arrayContaining([['EX-V01-R01', 'EX-UI01']]) });
+    expect(chain(clean, 'EX-LEND-INV01')).toMatchObject({ build: ['EX-LEND-INV01-RL'], links: expect.arrayContaining([['EX-LEND-INV01', 'EX-LEND-INV01-RL']]) });
     // A policy: its command, then its event handler; a constraint its value object, then its value type.
     expect(chain(clean, 'EX-LEND-PO01')).toMatchObject({ design: ['EX-LEND-CMD03'], build: ['EX-LEND-PO01-H'], tests: ['EX-LEND-PO01-T'] });
     expect(chain(clean, 'EX-VO01-C01').links).toEqual(expect.arrayContaining([['EX-VO01-C01', 'EX-VO01'], ['EX-VO01', 'EX-VO01-VT']]));
@@ -161,7 +171,7 @@ describe('chains', () => {
     });
     const ws = await loadData(data);
     // A step that fulfills nothing, the query only it invokes, a command nothing invokes and a UI component that
-    // renders no view; never the handlers, the integration's test or a flow test.
+    // builds no view requirement; never the handlers, the integration's test or a flow test.
     expect(gaps(ws).filter((g) => g.startsWith('record-untraced'))).toEqual([
       'record-untraced EX-LEND-CMD09', 'record-untraced EX-LEND-QRY01', 'record-untraced EX-LEND-UC01-FL01-S02', 'record-untraced EX-UI02',
     ]);
@@ -169,6 +179,7 @@ describe('chains', () => {
       id: 'EX-LEND-UC01-FL01-S02', kind: 'flow_step', missing: 'record-untraced',
       message: "Flow step EX-LEND-UC01-FL01-S02 is untraced: no obligation's chain reaches it, as it fulfills no UC requirement.",
     });
+    expect(ws.coverage.flatMap((c) => c.gaps).find((g) => g.id === 'EX-UI02')?.message).toBe("UI component EX-UI02 is untraced: no obligation's chain reaches it, as it builds no view requirement.");
     // It is a gap, never a problem.
     expect(ws.problems.filter((p) => p.record === 'EX-LEND-UC01-FL01-S02')).toEqual([]);
   });

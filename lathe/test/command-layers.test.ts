@@ -1,7 +1,7 @@
 // The guards that keep the data plumbing from becoming a generic command again, over every aggregate that has a slice:
 // only a repository writes data files, only a command handler loads a repository and then only its own aggregate's,
-// only the command runner starts a transaction, Lathe's command records match the code one to one, and a query reads
-// only its read model.
+// only the command runner starts a transaction, Lathe's command and rule records match the code one to one, and a
+// query reads only its read model.
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -123,6 +123,31 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     const sliced = [...handlers.values()].filter((h) => typeof h.file === 'string' && h.file.startsWith('lathe/src/') && h.file.endsWith('/queries.ts'));
     expect(sliced.filter((h) => !defined.has(String(h.query_id))).map((h) => h.query_id)).toEqual([]);
     expect([...endpoints.values()].filter((e) => sliced.some((h) => h.query_id === e.query_id) && !defined.has(String(e.query_id))).map((e) => e.id)).toEqual([]);
+  });
+});
+
+describe('LA-STD-MODELING-R09-T02 each rule record is a rule in its aggregate\'s rules.ts, by the name its refusal carries, and each rule there has its record', () => {
+  const files = sources();
+  /** The rules a rules.ts writes: each name a refusal of it carries. */
+  const rulesIn = (text: string) => new Set([...text.matchAll(/\brule: '([a-z0-9-]+)'/g)].map((m) => m[1]));
+
+  it('names, for each rule record, a rules.ts that writes a rule of its title', () => {
+    const records = data('rule');
+    expect(records.length).toBeGreaterThan(0);
+    const wrong = records.flatMap((r) => {
+      const file = files.find((f) => f.file === r.file);
+      if (!file || !String(r.file).endsWith('/rules.ts')) return [`${String(r.id)} names ${String(r.file)}, not an aggregate's rules.ts`];
+      return rulesIn(file.text).has(String(r.title)) ? [] : [`${String(r.id)}: ${String(r.file)} writes no rule ${String(r.title)}`];
+    });
+    expect(wrong).toEqual([]);
+  });
+
+  it('gives each rule of every aggregate\'s rules.ts its record, with that file', () => {
+    const records = data('rule');
+    const missing = files
+      .filter((f) => f.file.endsWith('/rules.ts'))
+      .flatMap((f) => [...rulesIn(f.text)].filter((name) => !records.some((r) => r.title === name && r.file === f.file)).map((name) => `${f.file}: ${name}`));
+    expect(missing).toEqual([]);
   });
 });
 
