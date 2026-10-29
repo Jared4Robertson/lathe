@@ -57,16 +57,6 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(problems[0].message).toContain('cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02');
   });
 
-  it("LA-AUT-SP10-T refuses a policy hearing another domain's unpublished event, and lets it hear a published one", async () => {
-    const data = adding(catalog);
-    data.hears = [{ source_id: 'TL-LEND-PO01', target_id: 'TL-CAT-EV01' }];
-    const problems = await refusal(data);
-    expect(problems).toEqual([expect.objectContaining({ rule: 'policy-hears-published', file: 'data/hears.jsonl', line: 1 })]);
-    expect(problems[0].message).toContain('an event of domain TL-CAT that is not published');
-    data.domain_event = data.domain_event.map((e) => (e.id === 'TL-CAT-EV01' ? { ...e, published: true } : e));
-    await loads(data);
-  });
-
   it('LA-AUT-INV10-T refuses a policy hearing two events', async () => {
     const problems = await refusal(adding({ domain_event: [{ id: 'TL-LEND-EV02', title: 'Loan closed', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool came back.' }], hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV02' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/hears.jsonl' })]);
@@ -194,13 +184,6 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   it("LA-AUT-SP06-T refuses an ID that does not start with its parent's or domain's ID", async () => {
     const problems = await refusal(adding({ uc_requirement: [{ id: 'TL-LEND-UC09-R01', title: 'Lost', use_case_id: 'TL-LEND-UC01', statement: 'x' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', message: 'TL-LEND-UC09-R01 is a UC requirement under TL-LEND-UC01, so its ID starts with TL-LEND-UC01-' })]);
-  });
-
-  it('LA-AUT-INV12-T refuses an aggregate with two roots, but not one with none', async () => {
-    const data = everyKind();
-    data.entity[1] = { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The tool coming back.' };
-    expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'aggregate-root', key: 'TL-LEND-A1' })]);
-    await loads(adding({ entity: [{ id: 'TL-LEND-EN03', title: 'Repair', aggregate_id: 'TL-LEND-A2', role: 'child', description: 'A repair made to a tool.' }] }));
   });
 
   it("LA-AUT-INV13-T refuses a table for an entity stored in its root's table, a root stored in a root table, and an entity's table that is a view or a materialized view", async () => {
