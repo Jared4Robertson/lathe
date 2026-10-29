@@ -5,7 +5,7 @@ import { graphMap } from '../../src/graph/map';
 import { groupedWorkspace, testIndex } from './workspace';
 
 // Columns follow the parent/child tree: in the one map a level is a column, so every sibling shares
-// one, and the framed picture (the side bar's Outline) counts its columns the same way.
+// one, and the framed picture (the records the graph frames at its depth) counts its columns the same way.
 
 const columnOf = (n: Neighborhood) => new Map(n.nodes.map((x) => [x.id, x.column]));
 const rowOf = (n: Neighborhood) => new Map(n.nodes.map((x) => [x.id, x.row]));

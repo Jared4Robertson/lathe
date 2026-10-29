@@ -2,7 +2,7 @@ import './setup';
 import { indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
-import { Legend } from '../../src/graph/panel';
+import { GraphKey } from '../../src/graph/key';
 import { parentLine } from '../../src/graph/map';
 import { MARKS, NODE_HEIGHT, NODE_WIDTH, outlineInset, outlineOf, shapeOf, SHAPES, type Shape } from '../../src/graph/shapes';
 import { BORDER, LABEL_PAD, LABEL_PAD_BLOCK } from '../../src/graph/text';
@@ -74,7 +74,7 @@ describe('a shape for each kind', () => {
     const used = new Set(['folder', ...Object.values(TABLE).map(([s]) => s)]);
     for (const shape of Object.keys(SHAPES)) expect(used.has(shape), shape).toBe(true);
     for (const mark of Object.keys(MARKS)) expect(Object.values(TABLE).some(([, m]) => m === mark), mark).toBe(true);
-    const key = render(<Legend />).container;
+    const key = render(<GraphKey />).container;
     for (const shape of Object.keys(SHAPES)) expect(key.querySelector(`.graph-swatch.shape-${shape}`)?.closest('li')?.textContent, shape).toContain(SHAPES[shape as Shape].name);
     for (const mark of Object.keys(MARKS)) expect(key.querySelector(`.graph-swatch.mark-${mark} .graph-mark-icon`), mark).not.toBeNull();
     cleanup();

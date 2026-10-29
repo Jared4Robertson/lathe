@@ -1,9 +1,9 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { main, openApp, openSideBar, section, sideBar, stageOf } from './helpers';
+import { main, openApp, section, stageOf } from './helpers';
 
-// Wiki pages and the side bar show one level below their record; deeper levels are folded under
+// Wiki pages show one level below their record; deeper levels are folded under
 // a disclosure triangle, with their counts and marks still on the folded row.
 
 const row = (scope: HTMLElement, id: string) => within(scope).getByRole('link', { name: new RegExp(`^${id}(?![-\\d])`) }).closest('li') as HTMLElement;
@@ -60,7 +60,6 @@ describe('one level deep', () => {
   it('LA-V92-R03-T01 Folded rows open by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
 
   const proveLaV92R21T02 = async () => {
-    openSideBar();
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const wiki = screen.getByRole('region', { name: 'Wiki card' });
@@ -71,11 +70,10 @@ describe('one level deep', () => {
     expect(cap.querySelector('ul.nested')).toBeNull();
     expect(within(children).queryByRole('link', { name: /DM-SHOP-UC01/ })).toBeNull();
 
-    // On a record's page the side bar does not repeat the children the wiki lists.
+    // A record's page: the wiki lists its children.
     await openApp('/DM-SHOP-CAP01');
     await screen.findByRole('heading', { level: 1, name: 'Buying' });
     expect(within(main()).getByRole('list', { name: 'Use cases of DM-SHOP-CAP01' })).toBeInTheDocument();
-    expect(within(sideBar()).queryByRole('list', { name: /^Use cases/ })).toBeNull();
 
     await openApp('/DM');
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
@@ -83,6 +81,6 @@ describe('one level deep', () => {
     expect(within(domains).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toBeInTheDocument();
     expect(within(main()).queryByRole('link', { name: /^DM-SHOP-UC01(?!-)/ })).toBeNull();
   };
-  it('LA-V92-R21-T02 A record page shows its direct children with theirs folded, in the wiki and the side bar, and a product page lists its domains but not their contents', proveLaV92R21T02);
-  it('LA-V92-R02-T02 A record page shows one level, and the side bar does not repeat it', proveLaV92R21T02);
+  it('LA-V92-R21-T02 A product page lists its domains but none of their records', proveLaV92R21T02);
+  it('LA-V92-R02-T02 A record page\'s wiki lists its children one level deep', proveLaV92R21T02);
 });

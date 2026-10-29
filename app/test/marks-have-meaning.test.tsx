@@ -7,7 +7,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { Legend } from '../src/graph/panel';
+import { GraphKey } from '../src/graph/key';
 import { BOX_LOOKS } from '../src/graph/paint';
 import { BADGE_TONES } from '../src/graph/plate';
 import { SHAPES } from '../src/graph/shapes';
@@ -26,7 +26,7 @@ afterEach(cleanup);
 
 describe('LA-V93-R12-T06 the Graph view key', () => {
   it('Every box look, badge and line style the Graph view can draw is in its key, with what it means', () => {
-    const { container } = render(<Legend />);
+    const { container } = render(<GraphKey />);
     const entry = (selector: string) => container.querySelector(selector);
     const missing: string[] = [];
     const needs = (what: string, selector: string) => {

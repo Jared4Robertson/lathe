@@ -21,14 +21,13 @@ import { boxElement, boxElements, graphHost, isCenter } from './graph/scene';
 
 // The focus page: one address per record or group, one stage behind the page (Graph, ERD or Trace),
 // switched in the page bar and named in the address, and the panels floating over it: the tab
-// panel with the header strip, the wiki card and the side bar.
+// panel with the header strip, and the wiki card.
 
 const served = () => ({ data: testWorkspace() });
 const node = (id: string) => boxElement(id);
 const title = () => screen.getByRole('heading', { level: 1 }).textContent;
 /** A button of the stage switch, in the page bar. */
 const stageButton = (name: 'Graph' | 'ERD' | 'Trace') => within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
-const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
 const card = () => screen.getByRole('region', { name: 'Wiki card' });
 const stageRegion = (name: string) => screen.getByRole('region', { name: `${name} stage` });
 const graphShown = () => waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
@@ -39,11 +38,6 @@ async function back() {
     window.history.back();
     await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
   });
-}
-
-/** Pretends the screen is narrow (under 900 px) for the next render. */
-export function narrowScreen() {
-  vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
 }
 
 describe('one address, one stage', () => {
@@ -122,8 +116,8 @@ describe('one address, one stage', () => {
     const panels = [
       { side: 'left', rect: rect(8, 8, 344, 892) }, // the nav
       { side: 'top', rect: rect(352, 8, 1432, 76) }, // the tab panel
-      { side: 'right', rect: rect(732, 84, 1084, 892) }, // the wiki card, inside the side bar
-      { side: 'right', rect: rect(1092, 84, 1432, 892) }, // the side bar
+      { side: 'right', rect: rect(732, 84, 1084, 892) }, // the wiki card
+      { side: 'right', rect: rect(1092, 84, 1432, 892) }, // the chat
       { side: 'left', rect: rect(0, 0, 0, 0) }, // a collapsed panel leaves nothing
     ];
     const open = openInsets(stage, panels);
@@ -143,7 +137,7 @@ describe('one address, one stage', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{ top: var\(--open-top/);
     // Centered on the whole stage, in one spot whatever panels are open, narrowing evenly to stay clear of them.
-    expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{[^}]*left: 50%; transform: translateX\(-50%\); max-width: calc\(100% - 2 \* max\(var\(--open-left, 0px\), var\(--side-space, 0px\)\)\)/);
+    expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{[^}]*left: 50%; transform: translateX\(-50%\); max-width: calc\(100% - 2 \* max\(var\(--open-left, 0px\), var\(--chat-space, 0px\)\)\)/);
     expect(css).toMatch(/\.trace-scroll \{[^}]*padding: calc\(var\(--frame-top/);
   });
 
@@ -239,7 +233,7 @@ describe('one address, one stage', () => {
     }
   });
 
-  it('LA-V92-R20-T01 Lists in the side bar, the graph part of the side bar and group pages stay at 10 rows and can be searched', async () => {
+  it('LA-V92-R20-T01 Lists on group pages stay at ten rows', async () => {
     const w = testWorkspace();
     for (let i = 3; i <= 13; i++) {
       const id = `P-D-INV${String(i).padStart(2, '0')}`;
@@ -248,10 +242,6 @@ describe('one address, one stage', () => {
     await openApp('/P-D-A3/invariant?stage=graph', { data: w });
     await screen.findByRole('heading', { level: 1, name: 'Invariants (13)' });
     expect(within(card()).getByRole('searchbox', { name: 'Filter invariants of P-D-A3/invariant' })).toBeInTheDocument();
-    await waitFor(() => expect(within(sideBar()).getByRole('searchbox', { name: 'Filter connected records' })).toBeInTheDocument());
-    // The side bar's Outline: the graph's records by level, each list searchable past 10 rows.
-    fireEvent.click(within(sideBar()).getByRole('button', { name: 'Outline' }));
-    await waitFor(() => expect(within(sideBar()).getAllByRole('searchbox', { name: /^Filter level \d$/ }).length).toBeGreaterThan(0));
   });
 
   it('LA-V96-R04-T02 Switching the stage by keyboard keeps focus, and the switch shows a focus ring', async () => {
@@ -274,19 +264,18 @@ describe('one address, one stage', () => {
     expect(css).toMatch(/\.icon-button\.is-on\s*\{/);
   });
 
-  it('LA-V96-R04-T01 The page bar holds the tabs at its left and the stage switch, a divider, the wiki card and side bar toggles at its right; the pressed stage and the shown panels share one on look', async () => {
+  it('LA-V96-R04-T01 The page bar holds the tabs at its left and the stage switch, a divider and the wiki card toggle at its right; the pressed stage and the shown card share one on look', async () => {
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const page = document.querySelector<HTMLElement>('.page-bar')!;
     expect(within(page.querySelector<HTMLElement>('.page-bar-start')!).getByRole('tab', { selected: true })).toHaveTextContent('P-D-UC01 Lend a thing');
     const order = (el: HTMLElement) => [...el.querySelectorAll<HTMLElement>('button, .pane-divider')].map((b) => b.classList.contains('pane-divider') ? '|' : b.getAttribute('aria-label'));
     // Every stage works on every focus: three buttons, none disabled or dimmed (LA-PAT-APP-UX-R17).
-    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Graph', 'ERD', 'Trace', '|', 'Collapse the wiki card', 'Hide the side bar']);
+    expect(order(page.querySelector<HTMLElement>('.page-bar-actions')!)).toEqual(['Graph', 'ERD', 'Trace', '|', 'Collapse the wiki card']);
     expect(page.querySelector('[aria-disabled="true"], .is-unavailable')).toBeNull();
     expect(stageButton('Graph')).toHaveClass('icon-button', 'is-on');
     expect(stageButton('ERD')).not.toHaveClass('is-on');
     expect(within(page).getByRole('button', { name: 'Collapse the wiki card' })).toHaveClass('icon-button', 'is-on');
-    expect(within(page).getByRole('button', { name: 'Hide the side bar' })).toHaveClass('icon-button', 'is-on');
     // The page's h1 is the header strip's, under the page bar, outside the card.
     expect(screen.getByRole('heading', { level: 1 }).closest('.header-strip')).not.toBeNull();
     expect(card().querySelector('h1')).toBeNull();
@@ -390,7 +379,7 @@ describe('one address, one stage', () => {
     expect(panel).toMatch(/--card-top: calc\(var\(--tools-foot, calc\(var\(--below-strip\) - var\(--float-inset\)\)\) \+ var\(--card-gap-y\)\)/);
     expect(panel).toMatch(/top: var\(--card-top\)/);
     expect(panel).not.toMatch(/transition|bottom:/);
-    expect(panel).toMatch(/right: calc\(var\(--side-space\) - var\(--float-inset\) \+ var\(--card-gap\)\)/);
+    expect(panel).toMatch(/right: calc\(var\(--chat-space\) - var\(--float-inset\) \+ var\(--card-gap\)\)/);
     // A steady share of the stage, never its content's height: 60% as a summary, 85% expanded, above the foot.
     expect(panel).toMatch(/(?:^|;)\s*height: min\(60%, 100% - var\(--card-top\) - var\(--card-gap-y\)\)/);
     expect(panel).not.toMatch(/max-height/);
@@ -425,7 +414,7 @@ describe('one address, one stage', () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const sides = [...document.querySelectorAll<HTMLElement>('[data-floating]')].map((p) => `${p.className.split(' ')[0]}:${p.dataset.floating}`);
-    expect(sides).toEqual(expect.arrayContaining(['menu:left', 'page-bar:top', 'header-strip:top', 'wiki-panel:right', 'side-bar-column:right']));
+    expect(sides).toEqual(expect.arrayContaining(['menu:left', 'page-bar:top', 'header-strip:top', 'wiki-panel:right']));
 
     // Text on a panel keeps AA (4.5:1) in every built-in theme and mode, the panel laid over any fill the stage draws
     // (the paper, the sheet, the shell, every tint) and over dense content (about a quarter ink over the paper, once blurred).
@@ -465,69 +454,26 @@ describe('every stage on every focus', () => {
   });
 });
 
-describe('the side bar', () => {
-  /** A use case on the Graph stage, where the side bar starts open. */
-  const inGraph = async () => {
+describe('the focused record', () => {
+  it('LA-V61-R05-T01 On the Graph stage the wiki card and the header strip show the focused record, and its toggle brings the card back', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    return within(sideBar());
-  };
-
-  it('LA-V61-R05-T01 The side bar shows the focused record, its facts and what the graph connects', async () => {
-    const facts = await inGraph();
-    expect(facts.getByText('Lend a thing', { selector: '.side-bar-name' })).toBeInTheDocument();
-    await waitFor(() => expect(facts.getByRole('heading', { name: /Connected in the graph/ })).toBeInTheDocument());
-  });
-
-  it('LA-V95-R03-T01 The side bar folds away with its toggle, giving its space to the stage, and comes back', async () => {
-    const facts = await inGraph();
-    expect(document.querySelector('.stage-layout')!.className).toContain('with-side-bar');
-    fireEvent.click(facts.getByRole('button', { name: 'Hide the side bar' }));
-    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
-    expect(document.querySelector('.stage-layout')!.className).not.toContain('with-side-bar');
-    fireEvent.click(screen.getByRole('button', { name: 'Show the side bar' }));
-    expect(screen.getAllByRole('complementary', { name: 'Side bar' })).toHaveLength(1);
-  });
-
-  it('LA-V95-R05-T01 The side bar keeps its open state per stage, in a new session too', async () => {
-    const facts = await inGraph();
-    fireEvent.click(facts.getByRole('button', { name: 'Hide the side bar' }));
-    expect(JSON.parse(window.localStorage.getItem('lathe:side-bar')!)).toMatchObject({ graph: { open: false } });
-    // Remembered on the Graph stage of another record, in a new session's first tab too.
-    window.sessionStorage.clear();
-    await openApp('/P-V01?stage=graph', served());
-    await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
-    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'Show the side bar' }));
-    expect(within(sideBar()).getByText('Loan desk', { selector: '.side-bar-name' })).toBeInTheDocument();
-    expect(screen.getAllByRole('complementary', { name: 'Side bar' })).toHaveLength(1);
-
-    // The Trace stage keeps its own choice: closed until opened there.
-    await openApp('/P-V01?stage=trace', served());
-    await screen.findByRole('heading', { level: 1, name: 'Loan desk' });
-    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
-  });
-
-  it('LA-V95-R03-T02 On a narrow screen the side bar is a drawer: focus moves in, and Escape closes it and gives focus back', async () => {
-    narrowScreen();
-    await openApp('/P-D-UC01', served());
-    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
-    const toggle = screen.getByRole('button', { name: 'Show the side bar' });
+    const h1 = await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    expect(h1.closest('.header-strip')).not.toBeNull();
+    expect(card()).toHaveAttribute('data-page', 'P-D-UC01');
+    expect(card().querySelector('.wiki-panel-kind')).toHaveTextContent('P-D-UC01');
+    // Collapsed, its toggle at the right of the page bar brings it back.
+    const bar = document.querySelector<HTMLElement>('.page-bar-actions')!;
+    fireEvent.click(within(bar).getByRole('button', { name: 'Collapse the wiki card' }));
+    expect(screen.queryByRole('region', { name: 'Wiki card' })).toBeNull();
+    const toggle = within(bar).getByRole('button', { name: 'Show the wiki card' });
+    expect([...bar.querySelectorAll('button')].at(-1)).toBe(toggle);
     fireEvent.click(toggle);
-    const drawer = sideBar();
-    expect(drawer.className).toContain('is-drawer');
-    expect(drawer.closest('[role="dialog"]')).toHaveClass('side-bar-drawer');
-    await waitFor(() => expect(drawer).toHaveFocus());
-    fireEvent.keyDown(drawer, { key: 'Escape' });
-    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
-    await waitFor(() => expect(toggle).toHaveFocus());
-    expect(screen.getByRole('main')).toBeInTheDocument();
+    expect(card()).toHaveAttribute('data-page', 'P-D-UC01');
   });
 });
 
 describe('the panels\' handles', () => {
-  it('LA-V61-R02-T01 The edge of every resizable panel is a handle moved by keys, within its limits', async () => {
+  it('LA-V61-R02-T01 The wiki card\'s handle moves with the arrow, Home and End keys within its limits, and the nav has one too', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const cardHandle = screen.getByRole('separator', { name: 'Resize the wiki card' });
@@ -538,22 +484,12 @@ describe('the panels\' handles', () => {
     expect(cardHandle).toHaveAttribute('aria-valuenow', '376');
     fireEvent.keyDown(cardHandle, { key: 'End' });
     expect(cardHandle).toHaveAttribute('aria-valuenow', '900');
-    // The side bar sits after its handle: Left grows it.
-    const sideHandle = screen.getByRole('separator', { name: 'Resize the side bar' });
-    const before = Number(sideHandle.getAttribute('aria-valuenow'));
-    fireEvent.keyDown(sideHandle, { key: 'ArrowLeft' });
-    expect(Number(sideHandle.getAttribute('aria-valuenow'))).toBe(before + 16);
     expect(screen.getByRole('separator', { name: 'Resize the navigation' })).toBeInTheDocument();
   });
 
   it('LA-V61-R03-T01 A panel size is remembered, and double-clicking its handle resets it', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    const sideHandle = screen.getByRole('separator', { name: 'Resize the side bar' });
-    fireEvent.keyDown(sideHandle, { key: 'End' });
-    expect(window.localStorage.getItem('lathe:side-bar-width')).toBe('640');
-    fireEvent.doubleClick(sideHandle);
-    expect(sideHandle).toHaveAttribute('aria-valuenow', '340');
     const cardHandle = screen.getByRole('separator', { name: 'Resize the wiki card' });
     fireEvent.keyDown(cardHandle, { key: 'End' });
     expect(settings()).toMatchObject({ cardWidth: 900 });

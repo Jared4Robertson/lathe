@@ -187,7 +187,7 @@ describe('tabs for open pages', () => {
     expect(address()).toBe('/P-D-UC01?stage=erd');
   });
 
-  it('LA-V96-R14-T01 Each tab keeps its own stage, side bar and wiki card scroll, and the graph\'s settings are the session\'s, whatever the tab', async () => {
+  it('LA-V96-R14-T01 Each tab keeps its own stage and wiki card scroll, and the graph\'s settings are the session\'s, whatever the tab', async () => {
     await firstTab();
     // The graph's depth, set here, is the session's.
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
@@ -197,11 +197,10 @@ describe('tabs for open pages', () => {
     const cardShows = (page: string) => waitFor(() => expect(screen.getByRole('region', { name: 'Wiki card' })).toHaveAttribute('data-page', page));
     cardScroll().scrollTop = 120;
     fireEvent.scroll(cardScroll());
-    // The ERD for this tab, its side bar hidden there.
+    // The ERD for this tab.
     fireEvent.click(stageButton('ERD'));
-    fireEvent.click(screen.getAllByRole('button', { name: 'Hide the side bar' })[0]);
 
-    // A new tab starts from the active one's stage; change it there, with the side bar left open.
+    // A new tab starts from the active one's stage; change it there.
     await go('/P-V01', 'Loan desk');
     expect(address()).toBe('/P-V01');
     expect(stageButton('ERD')).toHaveAttribute('aria-pressed', 'true');
@@ -210,15 +209,13 @@ describe('tabs for open pages', () => {
     fireEvent.click(stageButton('Graph'));
     await waitFor(() => expect(screen.getByRole('button', { name: '2' })).toHaveAttribute('aria-pressed', 'true'));
     fireEvent.click(screen.getByRole('button', { name: '3' }));
-    expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument();
     expect(tabs()).toEqual(['Lend a thing', 'Loan desk<']);
 
-    // Back on the first tab: its ERD, its side bar hidden and its scroll.
+    // Back on the first tab: its ERD and its scroll.
     fireEvent.click(tab('Lend a thing'));
     await waitFor(() => expect(title()).toBe('Lend a thing'));
     expect(address()).toBe('/P-D-UC01?stage=erd');
     expect(screen.getByRole('region', { name: 'ERD stage' })).toBeInTheDocument();
-    expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
     await cardShows('P-D-UC01');
     expect(cardScroll().scrollTop).toBe(120);
     // The depth is the one last set, in any tab.
