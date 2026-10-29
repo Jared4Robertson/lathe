@@ -30,6 +30,8 @@ export const GET_EXTENSION_RECORD: QueryDefinition<{ id: string }, ExtensionReco
   slice: EXTENSION_RECORD_SLICE,
   name: 'get-extension-record',
   description: "Reads a record of a product's own kind whole: its kind, its row, the links it starts by relation, and the packages it uses.",
+  method: 'GET',
+  route: '/api/extension-record/get-extension-record',
   input: { id: id('The record.', 'required') },
   run: getExtensionRecord,
   text: extensionRecordText,
@@ -52,6 +54,8 @@ export const LIST_EXTENSION_RECORDS: QueryDefinition<{ kind: string; parent: str
   slice: EXTENSION_RECORD_SLICE,
   name: 'list-extension-records',
   description: 'Lists the records of a product kind under one parent, by ID, with their titles.',
+  method: 'GET',
+  route: '/api/extension-record/list-extension-records',
   input: {
     kind: id('The product kind, by name.', 'required'),
     parent: id('The record they sit under.', 'required'),
@@ -103,6 +107,8 @@ export const NEXT_EXTENSION_RECORD_ID: QueryDefinition<{ kind: string; parent: s
   slice: EXTENSION_RECORD_SLICE,
   name: 'next-id',
   description: "The next free ID for a record of a product kind under its parent, by the kind's declared ID pattern: one past the highest in use.",
+  method: 'GET',
+  route: '/api/extension-record/next-id',
   input: {
     kind: id('The product kind, by name.', 'required'),
     parent: id('The record it will sit under.', 'required'),
