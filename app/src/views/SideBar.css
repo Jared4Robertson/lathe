@@ -42,13 +42,13 @@ a.outline-record:hover span { color: var(--steel); }
 .history-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
 .history-commit.button { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; width: 100%; justify-items: start; text-align: left; white-space: normal; height: auto; padding: 6px 8px; }
 .history-row.is-open > .history-commit { background: var(--hover-bg); }
-.history-subject { font-size: 0.86rem; overflow-wrap: anywhere; }
+.history-subject { font-size: 0.86rem; overflow-wrap: break-word; }
 .history-meta { color: var(--muted); font-family: var(--mono); font-size: 0.72rem; }
 .history-row.is-working .history-subject { color: var(--warn); font-weight: 600; }
 .history-more { margin: 4px 0 0; }
 .history-summary { color: var(--muted); font-size: 0.74rem; overflow-wrap: anywhere; }
 .history-changes { display: grid; gap: 8px; padding: 6px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--paper); }
-.history-change h4 { margin: 0 0 4px; font-size: 0.8rem; font-weight: 600; overflow-wrap: anywhere; }
+.history-change h4 { margin: 0 0 4px; font-size: 0.8rem; font-weight: 600; overflow-wrap: break-word; }
 .history-change h4 small { color: var(--muted); font-weight: 400; }
 .history-fields dd { display: grid; gap: 2px; font-size: 0.8rem; }
 .history-before, .history-after { padding: 0 4px; border-radius: 3px; text-decoration: none; overflow-wrap: anywhere; white-space: pre-wrap; }

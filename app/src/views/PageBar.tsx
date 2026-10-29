@@ -5,6 +5,7 @@ import { ErdIcon } from '../erd/ErdIcon';
 import { Tooltip } from '../shell/Tooltip';
 import type { SpecIndex } from '../specs/data';
 import { STAGE_LABELS, STAGE_NAMES, type StageName } from './address';
+import { crowdedLabel } from './openSpace';
 import { TabStrip } from './TabStrip';
 import type { PageTabsApi } from './useTabs';
 
@@ -33,9 +34,13 @@ export interface PageBarProps {
   /** The phone's compact bar. */
   compact: boolean;
   cardShown: boolean;
+  /** The wiki card is open by the Reader's choice but collapsed for space (LA-PAT-APP-UX-R18). */
+  cardCrowded?: boolean;
   onCard: (show: boolean) => void;
   cardButton?: RefObject<HTMLButtonElement | null>;
   sideBarShown: boolean;
+  /** The side bar is open by the Reader's choice but collapsed for space (LA-PAT-APP-UX-R18). */
+  sideBarCrowded?: boolean;
   onSideBar: (show: boolean) => void;
   sideBarButton: RefObject<HTMLButtonElement | null>;
   /** On a phone: whether the open pages sheet is shown, and its button. */
@@ -45,10 +50,11 @@ export interface PageBarProps {
 }
 
 export function PageBar(props: PageBarProps) {
-  const { index, tabs, stage, onStage, compact, cardShown, onCard, cardButton, sideBarShown, onSideBar, sideBarButton, pagesOpen = false, onPages, pagesButton } = props;
+  const { index, tabs, stage, onStage, compact, cardShown, cardCrowded = false, onCard, cardButton, sideBarShown, sideBarCrowded = false, onSideBar, sideBarButton, pagesOpen = false, onPages, pagesButton } = props;
   const count = tabs.set.tabs.length;
-  const sideBarLabel = `${sideBarShown ? 'Hide' : 'Show'} the side bar`;
-  const cardLabel = `${cardShown ? 'Collapse' : 'Show'} the wiki card`;
+  // A panel collapsed for space says so on its toggle, which opens it anyway.
+  const sideBarLabel = sideBarCrowded ? crowdedLabel('sideBar') : `${sideBarShown ? 'Hide' : 'Show'} the side bar`;
+  const cardLabel = cardCrowded ? crowdedLabel('card') : `${cardShown ? 'Collapse' : 'Show'} the wiki card`;
 
   let start: ReactNode;
   if (compact) {
@@ -96,7 +102,7 @@ export function PageBar(props: PageBarProps) {
           <Button
             variant="icon"
             ref={cardButton}
-            className={`wiki-panel-toggle${cardShown ? ' is-on' : ''}`}
+            className={`wiki-panel-toggle${cardShown ? ' is-on' : ''}${cardCrowded ? ' is-crowded' : ''}`}
             label={cardLabel}
             aria-expanded={cardShown}
             onClick={() => onCard(!cardShown)}
@@ -108,7 +114,7 @@ export function PageBar(props: PageBarProps) {
           <Button
             variant="icon"
             ref={sideBarButton}
-            className={`side-bar-toggle${sideBarShown ? ' is-on' : ''}`}
+            className={`side-bar-toggle${sideBarShown ? ' is-on' : ''}${sideBarCrowded ? ' is-crowded' : ''}`}
             label={sideBarLabel}
             aria-expanded={sideBarShown}
             aria-controls="side-bar"

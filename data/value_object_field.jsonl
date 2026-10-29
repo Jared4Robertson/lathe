@@ -48,5 +48,5 @@
 {"value_object_id":"LA-VO92","position":5,"name":"Hidden kinds","meaning":"The kinds the filters hide.","type":"text","required":false}
 {"value_object_id":"LA-VO92","position":6,"name":"Hidden relations","meaning":"The relations the filters hide.","type":"text","required":false}
 {"value_object_id":"LA-VO92","position":7,"name":"Wiki card","meaning":"Whether the wiki card is open.","type":"yes/no","required":true}
-{"value_object_id":"LA-VO92","position":8,"name":"Wiki card width","meaning":"The wiki card's width in pixels, 300 to 900, or none for a third of the open space.","type":"whole number","required":false}
+{"value_object_id":"LA-VO92","position":8,"name":"Wiki card width","meaning":"The wiki card's width in pixels, 360 to 900, or none for a third of the open space.","type":"whole number","required":false}
 {"value_object_id":"LA-VO93","position":1,"name":"Limit","meaning":"The most entities an aggregate should hold.","type":"whole number","required":true}

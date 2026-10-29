@@ -42,6 +42,8 @@ export interface NavProps {
   path: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  /** The rail's expand button's name while the nav is collapsed for space (LA-PAT-APP-UX-R18), not by the Reader. */
+  expandLabel?: string;
   /** On a narrow screen: shown as a drawer. */
   drawer: boolean;
   drawerOpen: boolean;
@@ -64,7 +66,7 @@ function sectionOf(path: string): SectionId | null {
 }
 
 export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
-  const { spec, path, collapsed, onToggleCollapsed, drawer, drawerOpen, onCloseDrawer, findRef } = props;
+  const { spec, path, collapsed, onToggleCollapsed, expandLabel, drawer, drawerOpen, onCloseDrawer, findRef } = props;
   const { index } = spec;
   const spaces = useSpaces();
   const space = spaces?.current ?? null;
@@ -145,8 +147,8 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
           <Tooltip label="Lathe home" command="goHome" placement="right">
             <Link to={HOME_PATH} className="rail-item brand-mark" aria-label="Lathe home"><LatheLogo size={24} /></Link>
           </Tooltip>
-          <Tooltip label="Expand the navigation" command="toggleNav" placement="right">
-            <button type="button" className="rail-item" aria-label="Expand the navigation" aria-expanded={false} aria-controls="nav" onClick={onToggleCollapsed}>
+          <Tooltip label={expandLabel ?? 'Expand the navigation'} command="toggleNav" placement="right">
+            <button type="button" className={`rail-item${expandLabel ? ' is-crowded' : ''}`} aria-label={expandLabel ?? 'Expand the navigation'} aria-expanded={false} aria-controls="nav" onClick={onToggleCollapsed}>
               <Icon name="sidebar-left" />
             </button>
           </Tooltip>
