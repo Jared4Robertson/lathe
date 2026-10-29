@@ -1,4 +1,4 @@
-// LA-AUT-TD32 A domain event with its fields and event type: the domain model base with the Loan aggregate, then the
+// LA-AUT-TD32 Loan opened and closed: the domain model base with the Loan aggregate, then the
 // Loan opened and Loan closed events written with the Domain event aggregate's own Add commands.
 import { ADD_DOMAIN_EVENT } from '../../../src/authoring/domain-event/commands/add-domain-event.ts';
 import { ADD_EVENT_TYPE } from '../../../src/authoring/domain-event/commands/add-event-type.ts';

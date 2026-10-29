@@ -1,4 +1,4 @@
-// LA-AUT-TD31 An aggregate with its entities and invariants: the domain model base, then the Loan and Tool aggregates
+// LA-AUT-TD31 Loan and Tool aggregates: the domain model base, then the Loan and Tool aggregates
 // of TL-LEND written with the Aggregate aggregate's own Add commands.
 import { ADD_AGGREGATE } from '../../../src/authoring/aggregate/commands/add-aggregate.ts';
 import { ADD_DATA_MODEL } from '../../../src/authoring/aggregate/commands/add-data-model.ts';
