@@ -454,11 +454,11 @@
 {"id":"LA-PLT-UC02-FL03-S05","title":"They stop lathe serve from the terminal, and it closes the database before it ends","flow_id":"LA-PLT-UC02-FL03","path":"main","position":5}
 {"id":"LA-PLT-UC02-FL03-S06","title":"The Owner lists the other products in the workspace's lathe.config.json, and lathe check checks each in its own folder","flow_id":"LA-PLT-UC02-FL03","path":"workspace","position":1}
 {"id":"LA-PLT-UC02-FL03-S07","title":"lathe serve shows each product as a space, and writes each change to its own product's folder","flow_id":"LA-PLT-UC02-FL03","path":"workspace","position":2}
-{"id":"LA-PLT-UC03-FL01-S01","title":"An Agent changes records through the command layer while the Reader keeps the page open","flow_id":"LA-PLT-UC03-FL01","path":"main","position":1}
-{"id":"LA-PLT-UC03-FL01-S02","title":"The server sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL01","path":"main","position":2}
+{"id":"LA-PLT-UC03-FL01-S01","title":"An Agent adds an aggregate with its own command while the Reader keeps the page open","flow_id":"LA-PLT-UC03-FL01","path":"main","position":1}
+{"id":"LA-PLT-UC03-FL01-S02","title":"The file watcher raises Data files changed, the server sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC03-FL01-S03","title":"When the data cannot be loaded, the page says what is wrong rather than showing other data","flow_id":"LA-PLT-UC03-FL01","path":"refused","position":1}
-{"id":"LA-PLT-UC03-FL02-S01","title":"The Agent changes records through the command layer while the Reader keeps the page open","flow_id":"LA-PLT-UC03-FL02","path":"main","position":1}
-{"id":"LA-PLT-UC03-FL02-S02","title":"In the desktop app, the server sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL02","path":"main","position":2}
+{"id":"LA-PLT-UC03-FL02-S01","title":"The Agent adds a use case's flow step with its own command while the Reader keeps the page open","flow_id":"LA-PLT-UC03-FL02","path":"main","position":1}
+{"id":"LA-PLT-UC03-FL02-S02","title":"In the desktop app, Data files changed sends spec:changed and the open page loads the data again at the same address","flow_id":"LA-PLT-UC03-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC03-FL02-S03","title":"The page says what is wrong when the data cannot be loaded, rather than showing other data","flow_id":"LA-PLT-UC03-FL02","path":"refused","position":1}
 {"id":"LA-PLT-UC04-FL01-S01","title":"The Reader presses Cmd/Ctrl+Shift+P; the palette lists the commands that apply, from the one keymap, each with its keys for the platform","flow_id":"LA-PLT-UC04-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC04-FL01-S02","title":"They run commands by their VS Code keys, such as Cmd/Ctrl+B to hide the navigation","flow_id":"LA-PLT-UC04-FL01","path":"main","position":2}
@@ -582,10 +582,10 @@
 {"id":"LA-PLT-UC15-FL02-S08","title":"From a record they reveal its data file in Finder, open it in the editor or copy its ID; the shell takes only the ID and finds the file itself","flow_id":"LA-PLT-UC15-FL02","path":"main","position":7}
 {"id":"LA-PLT-UC15-FL02-S09","title":"Opening Lathe again, or a folder from Finder, goes to the running app","flow_id":"LA-PLT-UC15-FL02","path":"main","position":8}
 {"id":"LA-PLT-UC15-FL02-S10","title":"A run that was killed leaves macOS nothing to reopen","flow_id":"LA-PLT-UC15-FL02","path":"main","position":9}
-{"id":"LA-PLT-UC16-FL05-S02","title":"The app sends one write's commands to POST /api/write, which applies them through the command layer as one transaction","flow_id":"LA-PLT-UC16-FL05","path":"main","position":1}
-{"id":"LA-PLT-UC16-FL05-S03","title":"A write from another site, not sent as JSON or over the limits is refused before the store sees it","flow_id":"LA-PLT-UC16-FL05","path":"refused","position":1}
-{"id":"LA-PLT-UC16-FL05-S04","title":"The store refuses a write that breaks a rule, with every reason, and no file changes","flow_id":"LA-PLT-UC16-FL05","path":"refused","position":2}
-{"id":"LA-PLT-UC16-FL05-S05","title":"The server answers with the rows the write changed, open pages load the data again, and git merges the change row by row","flow_id":"LA-PLT-UC16-FL05","path":"main","position":2}
+{"id":"LA-PLT-UC16-FL05-S02","title":"The app sends one command's fields to its route, POST /api/<aggregate>/<command>, which runs it in its own transaction","flow_id":"LA-PLT-UC16-FL05","path":"main","position":1}
+{"id":"LA-PLT-UC16-FL05-S03","title":"A command from another site, not sent as JSON or over 1 MB is refused before it runs","flow_id":"LA-PLT-UC16-FL05","path":"refused","position":1}
+{"id":"LA-PLT-UC16-FL05-S04","title":"The command refuses a change that breaks its aggregate's rules, with every reason, and no file changes","flow_id":"LA-PLT-UC16-FL05","path":"refused","position":2}
+{"id":"LA-PLT-UC16-FL05-S05","title":"The server answers with the rows the command changed, Data files changed reloads open pages, and git merges the change row by row","flow_id":"LA-PLT-UC16-FL05","path":"main","position":2}
 {"id":"LA-PLT-UC17-FL03-S01","title":"The Owner updates Lathe in the product repo, and the next load stops with what to do","flow_id":"LA-PLT-UC17-FL03","path":"main","position":1}
 {"id":"LA-PLT-UC17-FL03-S02","title":"With the work committed, they run lathe upgrade, which converts the data one version at a time and says what changed","flow_id":"LA-PLT-UC17-FL03","path":"main","position":2}
 {"id":"LA-PLT-UC17-FL03-S03","title":"They finish what it lists to do by hand, run lathe check, and commit the upgrade as one commit","flow_id":"LA-PLT-UC17-FL03","path":"main","position":3}
