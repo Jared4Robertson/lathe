@@ -1,7 +1,6 @@
 // Shared motion (LA-PAT-APP-UX-R04): the speed and easing every animation uses, read from the
 // stylesheet's `--motion-speed` and `--motion-ease` tokens, and turned off when the person asks for
-// reduced motion. The graph's camera glides on them (camera.ts), and so do the ERD view's camera
-// and the side bar's Outline.
+// reduced motion. The graph's camera glides on them (camera.ts), and so does the ERD view's camera.
 
 /** The values in `:root` (app/src/styles.css), used where the stylesheet can't be read (tests). */
 export const MOTION_SPEED_MS = 320;

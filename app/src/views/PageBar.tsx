@@ -11,13 +11,13 @@ import type { PageTabsApi } from './useTabs';
 
 // The page bar (LA-PAT-APP-UX-R03): the top of the tab panel, floating over the stage, as the top
 // of VS Code's editor area. At its left the page's tabs; at its right the stage switch (Graph, ERD,
-// Trace), a divider, the wiki card toggle and the side bar toggle. It is one line high whatever it
+// Trace), a divider and the wiki card toggle. It is one line high whatever it
 // holds (the tabs scroll sideways), so nothing below it moves (UX-R08). Every stage works on every
 // focus (LA-PAT-APP-UX-R17): the switch always holds all three, never disabled or hidden.
 //
 // On a phone it is the same bar, compact (notes/mobile-design.md): the tabs fold into an "Open
 // pages" button that opens them as a sheet, the stage switch is segments with names, the wiki
-// button opens the card as a bottom sheet and the side bar toggle opens the side bar as a drawer.
+// button opens the card as a bottom sheet.
 
 export const STAGE_COMMANDS: Record<StageName, string> = { graph: 'stageGraph', erd: 'stageErd', trace: 'stageTrace' };
 
@@ -38,11 +38,6 @@ export interface PageBarProps {
   cardCrowded?: boolean;
   onCard: (show: boolean) => void;
   cardButton?: RefObject<HTMLButtonElement | null>;
-  sideBarShown: boolean;
-  /** The side bar is open by the Reader's choice but collapsed for space (LA-PAT-APP-UX-R18). */
-  sideBarCrowded?: boolean;
-  onSideBar: (show: boolean) => void;
-  sideBarButton: RefObject<HTMLButtonElement | null>;
   /** On a phone: whether the open pages sheet is shown, and its button. */
   pagesOpen?: boolean;
   onPages?: () => void;
@@ -50,10 +45,9 @@ export interface PageBarProps {
 }
 
 export function PageBar(props: PageBarProps) {
-  const { index, tabs, stage, onStage, compact, cardShown, cardCrowded = false, onCard, cardButton, sideBarShown, sideBarCrowded = false, onSideBar, sideBarButton, pagesOpen = false, onPages, pagesButton } = props;
+  const { index, tabs, stage, onStage, compact, cardShown, cardCrowded = false, onCard, cardButton, pagesOpen = false, onPages, pagesButton } = props;
   const count = tabs.set.tabs.length;
   // A panel collapsed for space says so on its toggle, which opens it anyway.
-  const sideBarLabel = sideBarCrowded ? crowdedLabel('sideBar') : `${sideBarShown ? 'Hide' : 'Show'} the side bar`;
   const cardLabel = cardCrowded ? crowdedLabel('card') : `${cardShown ? 'Collapse' : 'Show'} the wiki card`;
 
   let start: ReactNode;
@@ -108,19 +102,6 @@ export function PageBar(props: PageBarProps) {
             onClick={() => onCard(!cardShown)}
           >
             <Icon name="wiki" size={compact ? 20 : 16} />
-          </Button>
-        </Tooltip>
-        <Tooltip label={sideBarLabel} command="toggleSideBar" placement="left">
-          <Button
-            variant="icon"
-            ref={sideBarButton}
-            className={`side-bar-toggle${sideBarShown ? ' is-on' : ''}${sideBarCrowded ? ' is-crowded' : ''}`}
-            label={sideBarLabel}
-            aria-expanded={sideBarShown}
-            aria-controls="side-bar"
-            onClick={() => onSideBar(!sideBarShown)}
-          >
-            <Icon name={compact ? 'info' : 'sidebar-right'} size={compact ? 20 : 16} />
           </Button>
         </Tooltip>
       </div>

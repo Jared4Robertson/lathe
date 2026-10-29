@@ -60,16 +60,11 @@ export interface RecordContentProps {
   actions?: ReactNode;
   /** Draw the header (title, ID, kind). Off when the host draws its own, as the focus page does. */
   header?: boolean;
-  /**
-   * Draw the record's facts (fields, parent, children, links, problems) beside the body. Off when
-   * the host shows them in its side bar; the body then lists the direct children itself.
-   */
-  side?: boolean;
 }
 
-export function RecordContent({ index, id, onNavigate, actions, header = true, side = true }: RecordContentProps) {
+export function RecordContent({ index, id, onNavigate, actions, header = true }: RecordContentProps) {
   const record = index.byId.get(id);
-  const body = record ? <RecordBody index={index} record={record} actions={actions} header={header} side={side} /> : (
+  const body = record ? <RecordBody index={index} record={record} actions={actions} header={header} /> : (
     <div className="placeholder"><p>There's no record with the ID <code>{id}</code>.</p></div>
   );
   return (
@@ -92,7 +87,7 @@ export function RecordEyebrow({ index, record }: { index: SpecIndex; record: Spe
   );
 }
 
-function RecordBody({ index, record, actions, header, side }: { index: SpecIndex; record: SpecRecord; actions?: ReactNode; header: boolean; side: boolean }) {
+function RecordBody({ index, record, actions, header }: { index: SpecIndex; record: SpecRecord; actions?: ReactNode; header: boolean }) {
   const { id } = record;
   // An aggregate's domain events and a flow's steps have their own sections, so its children list leaves them out.
   // So do a use case's flows, listed by interface.
@@ -109,7 +104,7 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
           {actions}
         </PageHeader>
       )}
-      <div className={side ? 'record-layout' : 'record-layout single'}>
+      <div className="record-layout">
         <div className="record-main">
           {isTest && notAutomatedYet(record) && (
             <p className="not-automated-note" role="note">
@@ -127,8 +122,8 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
           {record.kind === 'aggregate' && <DomainEvents index={index} aggregate={record} />}
           {/* After the body and its kind's own sections, before the children. A pattern's followers have their own section. */}
           <Traceability index={index} record={record} skip={record.kind === 'pattern' ? PATTERN_SKIP : undefined} />
-          {/* Without the facts beside it, the body lists the direct children itself (a pattern's and a standard's rules have their own sections); the problems show either way (the side bar does not repeat them). */}
-          {!side && children.length > 0 && record.kind !== 'pattern' && record.kind !== 'standard' && (
+          {/* The direct children (a pattern's and a standard's rules have their own sections). */}
+          {children.length > 0 && record.kind !== 'pattern' && record.kind !== 'standard' && (
             <Section title={childrenTitle} count={children.length}>
               {/* UC, view and API requirements and pattern and standard rules read under their groups. */}
               <Grouped records={children} level={3} render={(records, heading) => (
@@ -140,7 +135,8 @@ function RecordBody({ index, record, actions, header, side }: { index: SpecIndex
             <ProblemList index={index} problems={problems} showRecord={false} />
           </Section>
         </div>
-        {side && <aside className="record-side"><RecordFacts index={index} record={record} /></aside>}
+        {/* The record's facts after the body: its kind, fields, data file and links both ways. */}
+        <aside className="record-side" aria-label="Facts"><RecordFacts index={index} record={record} /></aside>
       </div>
     </>
   );
@@ -162,17 +158,14 @@ export function parentlessText(index: SpecIndex, record: SpecRecord): string {
 }
 
 /**
- * A record's facts: kind, stage, short fields, data file and line, parent, children (their own children folded) and
- * its links both ways. Shown beside the body, or in the side bar.
+ * A record's facts: kind, stage, short fields, data file and line, and its links both ways. Shown after the body, in the wiki card's whole page.
  */
 export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecRecord }) {
   const { id } = record;
   const kind = index.kinds.get(record.kind);
-  const children = index.children.get(id) ?? [];
   const isTest = isTestKind(index, record.kind);
   // A test's state gets its own row, with its tag.
   const facts = factsOf(index, record);
-  const childrenTitle = listTitle(index, children, 'Children');
   return (
     <>
       <dl className="fields">
@@ -188,10 +181,6 @@ export function RecordFacts({ index, record }: { index: SpecIndex; record: SpecR
         ))}
         <div><dt>Data file</dt><dd><code>{rowPlace(record)}</code><DesktopRecordActions id={id} /></dd></div>
       </dl>
-      <h3>Parent</h3>
-      {record.parent ? <RecordLink index={index} id={record.parent} /> : <p className="hint">{parentlessText(index, record)}</p>}
-      <h3>{childrenTitle} <span className="section-count">{children.length}</span></h3>
-      {children.length === 0 ? <p className="hint">None.</p> : <RecordTree index={index} records={children} label={childrenTitle} showKind bulk={false} />}
       <h3>Links out</h3>
       <LinkGroups index={index} links={index.outgoing.get(id) ?? []} direction="out" />
       <h3 id={`links-in-${id}`} tabIndex={-1} className="links-in-heading">Links in</h3>

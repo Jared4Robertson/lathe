@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 
 // The stage's preview (LA-V64): while quick find highlights a record, the focus page shows it on
-// its stage and in its wiki card without moving the address, the tabs or the side bar; when quick
+// its stage and in its wiki card without moving the address or the tabs; when quick
 // find commits, the address moves there, and when it is dismissed the preview ends and the stage,
 // the card and the camera go back to the page's own focus. One preview at a time, for the window.
 

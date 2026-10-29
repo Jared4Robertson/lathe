@@ -13,7 +13,7 @@ import { isBuilt, traceEmpty, traceOf, type GapKind, type Judgment, type Trace, 
 // use case shows its UC requirements in a table; a test shows what it proves and how it is run. The
 // logic is in trace.ts.
 
-/** What each gap is called, in the wiki's callouts and the side bar's Coverage gaps alike. */
+/** What each gap is called, in the wiki's callouts and its Coverage gaps alike. */
 export const GAP_TEXT: Record<GapKind, { title: string; detail: string }> = {
   'not-designed': { title: 'Not designed yet', detail: 'nothing specifies how it is carried out.' },
   'not-built': { title: 'Not built yet', detail: 'no technical record carrying it out names a file that exists.' },

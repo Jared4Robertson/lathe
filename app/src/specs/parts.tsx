@@ -284,7 +284,7 @@ export function listTitle(index: SpecIndex, records: readonly SpecRecord[], mixe
 
 /**
  * Records one level below the page's record, each with its own children folded under it: the
- * shape of every list of children on a wiki page and in the side bar. With `showKind`, each row
+ * shape of every list of children on a wiki page. With `showKind`, each row
  * names its kind, but only when the list holds more than one kind.
  */
 export function RecordTree({ index, records, label, query, showKind = false, bulk = true, nested }: {

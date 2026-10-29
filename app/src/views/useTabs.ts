@@ -5,14 +5,13 @@ import { productOfPath } from '../shell/spaces';
 import type { SpecIndex } from '../specs/data';
 import { DEFAULT_STAGE, focusOf, isFocusPath, parseStage, pathOf, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
 import { activateTab, activeTab, closeTab, cycleTab, emptyTabs, keepTab, openTab, parseTabSet, tabFor, updateTab, type Tab, type TabSet } from './tabs';
-import { sideStateFrom, type SideState } from './sideBarState';
 
 // The open tabs of the focus page, one tab set per space, kept for the browser session, and the
 // address kept in step with the active tab (LA-PAT-APP-UX-R06):
 // - a new address opens its page as tabs.ts says: the tab it is open in, or the preview tab;
 // - the address names the active tab's stage, so a link, a reload, Back and Forward work as before;
 // - activating, cycling or closing a tab moves the address to the tab now active.
-// Each tab keeps its own stage, side bar and wiki card scroll. A new tab starts from the active
+// Each tab keeps its own stage and wiki card scroll. A new tab starts from the active
 // tab's, or for a space's first tab from the stage last used. How the graph is drawn, and the wiki
 // card's open state and width, are not a tab's: they are one setting for the session (graph/settings.ts).
 
@@ -20,8 +19,6 @@ import { sideStateFrom, type SideState } from './sideBarState';
 export interface TabView {
   /** The stage the tab shows. */
   stage: StageName;
-  /** The side bar on each stage: open or not, and its view. Absent modes use the last used. */
-  side?: SideState;
 }
 export type PageTab = Tab<TabView>;
 export type PageTabs = TabSet<TabView>;
@@ -36,15 +33,14 @@ export const firstTabView = (): TabView => ({ stage: parseStage(readPref<string>
 
 // ---------- Stored tab sets ----------
 
-interface StoredTab { stage: string; scroll: number; side?: SideState }
+interface StoredTab { stage: string; scroll: number }
 
 function tabViewFrom(v: unknown): (TabView & { scroll: number }) | null {
   if (!v || typeof v !== 'object') return null;
   const s = v as Partial<StoredTab>;
   const stage = parseStage(typeof s.stage === 'string' ? s.stage : '');
   if (!stage) return null;
-  const side = sideStateFrom(s.side);
-  return { stage, scroll: isNumber(s.scroll) && s.scroll >= 0 ? s.scroll : 0, ...(Object.keys(side).length > 0 ? { side } : {}) };
+  return { stage, scroll: isNumber(s.scroll) && s.scroll >= 0 ? s.scroll : 0 };
 }
 
 const scrollKey = (t: { key: string; page: string }) => `${t.key} ${t.page}`;
@@ -78,7 +74,7 @@ function saveAll(all: Record<string, PageTabs>, scrolls: Map<string, number>) {
         key: t.key,
         page: t.page,
         preview: t.preview,
-        state: { stage: t.state.stage, scroll: scrolls.get(scrollKey(t)) ?? 0, ...(t.state.side ? { side: t.state.side } : {}) },
+        state: { stage: t.state.stage, scroll: scrolls.get(scrollKey(t)) ?? 0 },
       })),
     };
   }

@@ -43,7 +43,7 @@ export interface TraceViewProps {
   focus: string;
   onNavigate: (id: string) => void;
   hrefFor: (id: string) => string;
-  /** Called with the record under the pointer or keyboard focus, for the side bar's Details. */
+  /** Called with the record under the pointer or keyboard focus, for the chat's app_focus. */
   onPeek?: (kind: 'hover' | 'selected', id: string | null) => void;
   /** Called with what the trace holds, for the header strip: "12 obligations · 3 with gaps · 4 untraced". */
   onCounts?: (counts: string) => void;
@@ -243,7 +243,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
 
 /**
  * A link to a record: a real address for new tabs, onNavigate on a plain click. Its `data-trace-id` lets the
- * view's one set of listeners (peekHandlers) tell the side bar what is under the pointer, so a matrix of
+ * view's one set of listeners (peekHandlers) tell the page what is under the pointer, so a matrix of
  * many links draws no listeners of its own. The focus itself is marked as the current page.
  */
 function TraceLink({ id, props, title, className, children }: { id: string; props: TraceViewProps; title: string; className: string; children: ReactNode }) {
@@ -263,7 +263,7 @@ function TraceLink({ id, props, title, className, children }: { id: string; prop
 /** The record a pointer or focus event is on, by its link's `data-trace-id`. */
 const tracedAt = (target: EventTarget | null) => (target instanceof Element ? target.closest<HTMLElement>('[data-trace-id]')?.dataset.traceId ?? null : null);
 
-/** The view's listeners that tell the side bar which record the pointer or keyboard focus is on. */
+/** The view's listeners that tell the page which record the pointer or keyboard focus is on. */
 function peekHandlers(props: TraceViewProps) {
   const peek = (id: string | null) => props.onPeek?.('hover', id);
   return {

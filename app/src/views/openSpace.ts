@@ -164,10 +164,10 @@ const noValue = () => null;
 
 // ---------- Room: panels never crowd the page (LA-PAT-APP-UX-R18) ----------
 //
-// Every panel has a readable width: the wiki card shrinks to CARD_MIN and no further, the nav and the
-// side bar keep the width they were given, and the stage's open space keeps at least STAGE_MIN. When
-// the window can't hold every open panel at its readable width, panels collapse for space, in a set
-// order: the side bar first, then the wiki card, then the nav. The chat is the Reader's task at hand
+// Every panel has a readable width: the wiki card shrinks to CARD_MIN and no further, the nav keeps
+// the width it was given, and the stage's open space keeps at least STAGE_MIN. When the window can't
+// hold every open panel at its readable width, panels collapse for space, in a set order: the wiki
+// card first, then the nav. The chat is the Reader's task at hand
 // and never collapses for space, nor does a tool open over the stage (Checks, Appearance, the theme
 // editor, LA-PAT-APP-UX-R20), which floats right of the nav. They reopen in reverse order as the window grows. A collapse for
 // space is never the Reader's choice: their open or closed setting stays as they set it, and the
@@ -177,23 +177,21 @@ const noValue = () => null;
 
 /**
  * The narrowest the stage's open space may get before panels collapse for space, in px, between the
- * gaps at its edges: room for a column of the graph or a box of the ERD. With the chat open, 1456 px
- * keeps the nav, the wiki card and the chat open, only the side bar giving way; at 1440 px the card
- * gives way too.
+ * gaps at its edges: room for a column of the graph or a box of the ERD.
  */
 export const STAGE_MIN = 300;
 /**
- * The wiki card's gap from what is at its right (the side bar, the chat or the window), in px: well wider than the
+ * The wiki card's gap from what is at its right (the chat or the window), in px: well wider than the
  * panels' own gap (`--float-inset`), so the card floats in the map with room to its right.
  */
 export const CARD_GAP = 28;
 /** The card's gap from the stage's tools above it and the window's foot below it, in px: the same as at its right. */
 export const CARD_GAP_Y = 28;
 /** A panel that collapses when the window is too narrow for every open panel. */
-export type CrowdPanel = 'sideBar' | 'card' | 'nav';
+export type CrowdPanel = 'card' | 'nav';
 /** The order panels collapse in as the window narrows; they reopen in reverse. */
-const CROWD_ORDER: readonly CrowdPanel[] = ['sideBar', 'card', 'nav'];
-const CROWD_NAMES: Record<CrowdPanel, string> = { sideBar: 'side bar', card: 'wiki card', nav: 'navigation' };
+const CROWD_ORDER: readonly CrowdPanel[] = ['card', 'nav'];
+const CROWD_NAMES: Record<CrowdPanel, string> = { card: 'wiki card', nav: 'navigation' };
 
 /** What the window has to hold: the panels the Reader has open, at their widths, in px. */
 export interface Room {
@@ -205,8 +203,6 @@ export interface Room {
   nav: { open: boolean; width: number; rail: number };
   /** Whether the page has a wiki card the Reader has open. */
   card: boolean;
-  /** The side bar's width while the Reader has it open; null when closed or on a page with none. */
-  sideBar: number | null;
   /** The chat's width while it shows; null when hidden. */
   chat: number | null;
   /** The width of the tool open over the stage, right of the nav; null when none is. */
@@ -215,7 +211,7 @@ export interface Room {
   held: ReadonlySet<CrowdPanel>;
 }
 
-const isOpen = (room: Room, panel: CrowdPanel) => (panel === 'nav' ? room.nav.open : panel === 'card' ? room.card : room.sideBar !== null);
+const isOpen = (room: Room, panel: CrowdPanel) => (panel === 'nav' ? room.nav.open : room.card);
 
 /** The width of the stage's open space with the panels in `collapsed` collapsed. */
 export function openWidth(room: Room, collapsed: ReadonlySet<CrowdPanel>): number {
@@ -223,14 +219,11 @@ export function openWidth(room: Room, collapsed: ReadonlySet<CrowdPanel>): numbe
   const navShown = room.nav.open && !collapsed.has('nav');
   const navRight = inset + (navShown ? room.nav.width : room.nav.rail);
   const card = room.card && !collapsed.has('card');
-  const sideBar = room.sideBar !== null && !collapsed.has('sideBar') ? room.sideBar : null;
   const left = navRight + (room.tool !== null ? inset + room.tool : 0) + OPEN_GAP;
-  // On the right, from the window's edge inward: the chat, the side bar, then the wiki card.
+  // On the right, from the window's edge inward: the chat, then the wiki card.
   const chatSpace = room.chat !== null ? room.chat + 2 * inset : inset;
-  const sideSpace = sideBar !== null ? sideBar + inset + chatSpace : chatSpace;
   let right = 0;
-  if (card) right = sideSpace - inset + CARD_GAP + CARD_MIN + OPEN_GAP;
-  else if (sideBar !== null) right = sideSpace + OPEN_GAP;
+  if (card) right = chatSpace - inset + CARD_GAP + CARD_MIN + OPEN_GAP;
   else if (room.chat !== null) right = chatSpace - inset + OPEN_GAP;
   return room.width - left - right;
 }
@@ -245,8 +238,8 @@ export function crowded(room: Room): ReadonlySet<CrowdPanel> {
   return out;
 }
 
-/** What a page tells the shell about its own panels: whether its wiki card is open, and its side bar's width while open. */
-export interface PageRoom { card: boolean; sideBar: number | null }
+/** What a page tells the shell about its own panels: whether its wiki card is open. */
+export interface PageRoom { card: boolean }
 
 interface RoomApi {
   /** The panels collapsed for space now. */
@@ -263,12 +256,12 @@ export const RoomContext = createContext<RoomApi>({ crowded: NOTHING, setPage: (
 export const useRoom = () => useContext(RoomContext);
 
 /** A page's side of the rule: it tells the shell its panels while it shows them, before paint. */
-export function usePageRoom(card: boolean, sideBar: number | null) {
+export function usePageRoom(card: boolean) {
   const { setPage } = useRoom();
   useLayoutEffect(() => {
-    setPage({ card, sideBar });
+    setPage({ card });
     return () => setPage(null);
-  }, [setPage, card, sideBar]);
+  }, [setPage, card]);
 }
 
 const sameSet = (a: ReadonlySet<CrowdPanel>, b: ReadonlySet<CrowdPanel>) => a.size === b.size && [...a].every((p) => b.has(p));
@@ -288,7 +281,7 @@ export function useRoomState(shell: Pick<Room, 'nav' | 'chat' | 'tool'>, off: bo
   const [page, setPage] = useState<PageRoom | null>(null);
   const [held, setHeld] = useState<ReadonlySet<CrowdPanel>>(NOTHING);
   const [inset] = useState(() => parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--float-inset')) || OPEN_GAP);
-  const room: Room = { ...shell, width, inset, card: page?.card ?? false, sideBar: page?.sideBar ?? null, held: NOTHING };
+  const room: Room = { ...shell, width, inset, card: page?.card ?? false, held: NOTHING };
   // A hold on an open panel lasts only while the panel would otherwise collapse: once it would fit
   // anyway it goes, so a window that narrows again collapses it in its turn.
   const unheld = off ? NOTHING : crowded(room);
@@ -296,7 +289,7 @@ export function useRoomState(shell: Pick<Room, 'nav' | 'chat' | 'tool'>, off: bo
   const result = off ? NOTHING : kept.size === 0 ? unheld : crowded({ ...room, held: kept });
   useLayoutEffect(() => { if (!sameSet(kept, held)) setHeld(kept); });
   const [api] = useState(() => ({
-    setPage: (next: PageRoom | null) => setPage((was) => (was === next || (was && next && was.card === next.card && was.sideBar === next.sideBar) ? was : next)),
+    setPage: (next: PageRoom | null) => setPage((was) => (was === next || (was && next && was.card === next.card) ? was : next)),
     hold: (panel: CrowdPanel, on: boolean) => setHeld((was) => {
       if (was.has(panel) === on) return was;
       const next = new Set(was);

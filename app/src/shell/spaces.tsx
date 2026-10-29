@@ -10,7 +10,7 @@ import { usePref } from './prefs';
 // current space is the product of the page you are on (or the last one you chose, on a page that
 // belongs to no product, kept from one launch to the next). Everything inside a space reads the
 // space's own index (spaceIndex): the nav, quick find, the Checks panel, the graph, the ERD view, the
-// side bar and the format reference's records, so nothing of another product shows in it. Choosing a
+// wiki card and the format reference's records, so nothing of another product shows in it. Choosing a
 // space opens the last page you visited in it this session, or its product page; the tools open over
 // it are not part of that page.
 

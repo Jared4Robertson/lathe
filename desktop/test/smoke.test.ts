@@ -161,7 +161,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.titleBarStyle).toBe('hidden');
     expect(result.titleBar?.height).toBe(38);
     expect(result.titleBar?.center).toMatch(/^Lathe/);
-    expect(result.titleBar?.buttons).toEqual(['Go back', 'Go forward', expect.stringMatching(/^Lathe.*Quick find$/), 'Show or hide the navigation', 'Show or hide the side bar', 'Show or hide the chat with Claude']);
+    expect(result.titleBar?.buttons).toEqual(['Go back', 'Go forward', expect.stringMatching(/^Lathe.*Quick find$/), 'Show or hide the navigation', 'Show or hide the chat with Claude']);
   });
 
   it("LA-V67-R06-T01 sends the theme's chrome colors, which the main process applies", () => {
