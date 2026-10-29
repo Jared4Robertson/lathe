@@ -67,12 +67,15 @@ export const COMMANDS: readonly Command[] = [
   { id: 'goChecks', title: 'Go to Checks', group: 'Navigate', keys: ['g c'], when: 'global' },
   { id: 'goFormat', title: 'Record format', group: 'Navigate', keys: ['g f'], when: 'global' },
   { id: 'goHome', title: 'Go home (all products)', group: 'Navigate', keys: ['g h'], when: 'global' },
-  // Tabs, as VS Code's editors: Ctrl+K Enter keeps the preview tab (Alt+K Enter off a Mac, where Ctrl+K is quick open);
-  // Alt+Shift+W closes, since Ctrl+W toggles the wiki card on a Mac and the browser keeps it elsewhere.
-  { id: 'keepTab', title: 'Keep the tab open (no longer a preview)', group: 'Navigate', keys: ['Ctrl+K Enter'], otherKeys: ['Alt+K Enter'], when: 'page' },
-  { id: 'closeTab', title: 'Close the tab', group: 'Navigate', keys: ['Alt+Shift+W'], when: 'page' },
-  { id: 'nextTab', title: 'Next tab', group: 'Navigate', keys: ['Ctrl+Tab'], when: 'page' },
-  { id: 'previousTab', title: 'Previous tab', group: 'Navigate', keys: ['Ctrl+Shift+Tab'], when: 'page' },
+  // The desktop app's tabs, as a browser's (LA-V96-R10..R17), handled only there (on the web the browser's tabs are the
+  // places): its menu owns Cmd/Ctrl+T and Cmd/Ctrl+W, which a page never gets in a browser; Alt+Shift+T and Alt+Shift+W
+  // are the keys of the same commands, as Ctrl+W toggles the wiki card on a Mac.
+  { id: 'newTab', title: 'New tab at the product', group: 'Navigate', keys: ['Alt+Shift+T'], when: 'page', dynamic: true },
+  { id: 'closeTab', title: 'Close the tab', group: 'Navigate', keys: ['Alt+Shift+W'], when: 'page', dynamic: true },
+  { id: 'duplicateTab', title: 'Duplicate the tab, with its history', group: 'Navigate', keys: ['Alt+Shift+D'], when: 'page', dynamic: true },
+  { id: 'openRecordInNewTab', title: 'Open the record in a new tab', group: 'Navigate', keys: [], when: 'page', dynamic: true },
+  { id: 'nextTab', title: 'Next tab', group: 'Navigate', keys: ['Ctrl+Tab'], when: 'page', dynamic: true },
+  { id: 'previousTab', title: 'Previous tab', group: 'Navigate', keys: ['Ctrl+Shift+Tab'], when: 'page', dynamic: true },
   { id: 'showShortcuts', title: 'Keyboard shortcuts', group: 'Navigate', keys: ['?', 'Mod+/'], when: 'global' },
   // Spaces: one per product, in rail order. Each is titled "Switch to <product>" by whoever handles it.
   ...Array.from({ length: SPACE_KEYS }, (_, i): Command => ({ id: spaceCommandId(i + 1), title: `Switch to space ${i + 1}`, group: 'Navigate', keys: [`Alt+${i + 1}`], when: 'global', dynamic: true })),

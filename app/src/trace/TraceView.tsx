@@ -56,6 +56,10 @@ export interface TraceViewProps {
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the canvas frames the focus. */
   space?: OpenSpaceStore;
+  /** The place the Trace shows (views/cameras.ts): its camera is kept as the place is left and taken back as it shows again. */
+  cameraKey?: string;
+  /** Opens a record in a new place (Cmd or Ctrl+click, or a middle-click for the background), when the host has places. */
+  onOpenNew?: (id: string, background: boolean) => void;
 }
 
 /** How many matrix rows show before "Show more". */
@@ -278,7 +282,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
       {toolbar}
       <StageKey entries={keyEntries} />
       <Suspense fallback={<div className="graph-flow trace-flow" aria-busy="true" />}>
-        <TraceCanvas index={index} focus={focus} map={map} at={at} kept={kept} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} />
+        <TraceCanvas index={index} focus={focus} map={map} at={at} kept={kept} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} cameraKey={props.cameraKey} onOpenNew={props.onOpenNew} />
       </Suspense>
       <div className="trace-access" data-arrows="own" onFocus={onFocus} onBlur={onBlur} onKeyDown={walk}>
         {table}

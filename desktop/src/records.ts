@@ -81,14 +81,18 @@ export function revealLabel(platform: NodeJS.Platform): string {
 }
 
 export interface RecordMenuActions {
+  /** Opens the record in a new tab of the app's (LA-V96-R11). */
+  openInNewTab: () => void;
   reveal: () => void;
   openInEditor: () => void;
   copyId: () => void;
 }
 
-/** The native right-click menu of a record: reveal and open its file (when it has one), then copy its ID. */
+/** The native right-click menu of a record: open it in a new tab, reveal and open its file (when it has one), then copy its ID. */
 export function recordMenuTemplate(id: string, hasFile: boolean, editorName: string, actions: RecordMenuActions, platform: NodeJS.Platform): MenuItemConstructorOptions[] {
   return [
+    { label: 'Open in New Tab', click: actions.openInNewTab },
+    { type: 'separator' },
     { label: revealLabel(platform), enabled: hasFile, click: actions.reveal },
     { label: `Open in ${editorName}`, enabled: hasFile, click: actions.openInEditor },
     { type: 'separator' },

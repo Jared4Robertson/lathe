@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { openApp } from './helpers';
+import { desktopBridgeStub, openApp } from './helpers';
 import { REQUIRED_PAIRS, colorOf } from '../src/theme/audit';
 import { contrast } from '../src/theme/contrast';
 import { themeCss } from '../src/theme/css';
@@ -180,7 +180,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const stage = screen.getByRole('region', { name: 'Graph stage' });
     expect(stage).toHaveClass('focus-stage');
     expect(stage.closest('[data-floating]')).toBeNull();
-    for (const [panel, side] of [[document.querySelector('#nav'), 'left'], [document.querySelector('.wiki-panel'), 'right'], [document.querySelector('.page-bar'), 'top'], [document.querySelector('.header-strip'), 'top']] as const) {
+    for (const [panel, side] of [[document.querySelector('#nav'), 'left'], [document.querySelector('.wiki-panel'), 'right'], [document.querySelector('.header-strip'), 'top']] as const) {
       expect(panel).toHaveAttribute('data-floating', side);
     }
     expect(CSS).toMatch(/\.focus-stage \{ position: absolute; inset: 0; z-index: 0;/);
@@ -194,17 +194,25 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
   });
 
   it('LA-PAT-APP-UX-R03-T01 LA-PAT-APP-UX-R03-T02 The page bar holds the page\'s tabs and controls; a stage\'s own tools float in the open space, on wide and narrow screens alike', async () => {
-    for (const [path, narrow] of [['/DM-SHOP-UC01?stage=graph', false], ['/DM-SHOP-UC01?stage=erd', false], ['/DM-SHOP-UC01?stage=graph', true]] as const) {
+    const host = window as unknown as { latheDesktop?: LatheDesktop };
+    const cases = [['/DM-SHOP-UC01?stage=graph', false, false], ['/DM-SHOP-UC01?stage=erd', false, false], ['/DM-SHOP-UC01?stage=graph', false, true], ['/DM-SHOP-UC01?stage=graph', true, false], ['/DM-SHOP-UC01?stage=graph', true, true]] as const;
+    for (const [path, narrow, desktop] of cases) {
       if (narrow) vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
+      if (desktop) host.latheDesktop = desktopBridgeStub(); else delete host.latheDesktop;
       await openApp(path);
       await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-      // One page bar, at the top of the tab panel, outside the stage and the wiki card.
+      // In the desktop app and on a phone, one page bar at the top of the tab panel; on the web, wide, none: the header
+      // strip is the panel's one row and holds the page's controls. Either sits outside the stage and the wiki card.
       const bars = [...document.querySelectorAll<HTMLElement>('.page-bar')];
-      expect(bars).toHaveLength(1);
-      const bar = bars[0];
+      expect(bars).toHaveLength(desktop || narrow ? 1 : 0);
+      const bar = desktop || narrow ? bars[0] : document.querySelector<HTMLElement>('.header-strip')!;
       expect(bar.closest('.focus-stage, .wiki-panel')).toBeNull();
-      // Its left: the tabs (on a phone, the Open pages control that opens them as a sheet).
-      if (narrow) {
+      // Its left: in the desktop app the tabs (on a phone, the Open pages control that opens them as a sheet); on the
+      // web nothing, the browser's tabs being the places.
+      if (!desktop) {
+        expect(within(bar).queryByRole('button', { name: /^Open pages/ })).toBeNull();
+        expect(screen.queryAllByRole('tablist')).toEqual([]);
+      } else if (narrow) {
         expect(within(bar).getByRole('button', { name: /^Open pages: \d+$/ })).toBeInTheDocument();
         expect(screen.queryAllByRole('tablist')).toEqual([]);
       } else {
@@ -230,8 +238,10 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       // The page's title is the header strip's, under the page bar.
       expect(screen.getByRole('heading', { level: 1 }).closest('.header-strip')).not.toBeNull();
     }
-    // The page bar and the header strip keep one height whatever they hold.
+    delete host.latheDesktop;
+    // The page bar and the header strip keep one height whatever they hold; on the web the strip is as high as a page bar.
     expect(CSS).toMatch(/\.page-bar \{[^}]*height: var\(--page-bar-height\)/);
+    expect(CSS).toMatch(/\.stage-layout\.one-place:not\(\.is-phone\) \.header-strip \{[^}]*height: var\(--page-bar-height\)/);
     expect(CSS).toMatch(/\.header-strip \{[^}]*height: var\(--strip-height\)/);
   });
 

@@ -79,9 +79,10 @@ export function section(name: string | RegExp) {
   return element as HTMLElement;
 }
 
-/** Starts the graph at a depth for the session, as if the person had chosen it (the default is 1). */
+/** Starts the place at a depth and the window at a layout, as if the person had chosen them (the default is 1, Tree). */
 export function startAtDepth(depth: number, layout: 'tree' | 'nested' = 'tree') {
-  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
+  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, cardWidth: null, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
+  window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth, hiddenKinds: [], card: { open: true, expanded: true } }));
 }
 
 /** A record's facts (kind, fields, data file, links out and in), after its body in the wiki card's whole page. */

@@ -161,7 +161,7 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
 
 describe('the stages and the card show the changes', () => {
   it('LA-V96-R27-T01 A changed record\'s wiki card shows its changes; the summary says it in a line', async () => {
-    window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ ...settings(), cardExpanded: false }));
+    window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: false } }));
     await openAt('/DM-SHOP-CMD01');
     await land(agentEdits());
     expect(await within(card()).findByText(/Changed since the last commit/)).toHaveTextContent('title');

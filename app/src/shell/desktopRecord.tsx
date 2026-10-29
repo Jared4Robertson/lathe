@@ -45,6 +45,15 @@ export function useDesktopErrorCount(index: SpecIndex | null) {
   }, [setErrorCount, count]);
 }
 
+/** The record the native record menu was last opened on, for its Open in New Tab (the `openRecordInNewTab` command). */
+let menuRecord: string | null = null;
+/** The record the native menu was opened on, once: its Open in New Tab takes it. */
+export function takeMenuRecord(): string | null {
+  const id = menuRecord;
+  menuRecord = null;
+  return id;
+}
+
 /** A right-click on a record opens the shell's native record menu in place of the browser's. */
 export function useDesktopRecordMenu(index: SpecIndex | null) {
   const showRecordMenu = desktopBridge()?.showRecordMenu;
@@ -57,6 +66,7 @@ export function useDesktopRecordMenu(index: SpecIndex | null) {
       const id = recordIdAt(target, window.location.pathname, (candidate) => index.byId.has(candidate), { x: event.clientX, y: event.clientY });
       if (!id) return;
       event.preventDefault();
+      menuRecord = id;
       showRecordMenu(id);
     };
     document.addEventListener('contextmenu', onMenu);

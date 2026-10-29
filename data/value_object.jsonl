@@ -25,6 +25,7 @@
 {"id":"LA-VO64","title":"Window bounds","description":"Where a window was and how big."}
 {"id":"LA-VO65","title":"Window chrome","description":"The two colors a page sends for its window."}
 {"id":"LA-VO90","title":"App address","description":"A place in the app: a path and its stage query parameter."}
-{"id":"LA-VO91","title":"Page stage","description":"What a page or a tab shows on its stage."}
-{"id":"LA-VO92","title":"Session settings","description":"How the graph is drawn and how the wiki card shows, one for the browser session (LA-EXP-A6)."}
+{"id":"LA-VO91","title":"Page stage","description":"What a page or a place shows on its stage."}
+{"id":"LA-VO92","title":"Session settings","description":"How the graph is laid out and how wide the wiki card is, one for the browser session and shared by every place (LA-EXP-A6)."}
 {"id":"LA-VO93","title":"Entities limit","description":"The most entities an aggregate should hold."}
+{"id":"LA-VO94","title":"Place view","description":"How a place shows its focus, apart from its stage: its depth, kind filters and wiki card. Each place's own, kept per tab (LA-EXP-A5)."}

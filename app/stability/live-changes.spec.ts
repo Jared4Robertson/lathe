@@ -101,8 +101,9 @@ test.describe('watching the spec change', () => {
       commitCopy();
       // The desktop shell stood in for: its bridge, with a chat whose patches the test sends (window.chatPatch).
       await page.addInitScript(() => {
-        const settings = { layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: true, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} };
+        const settings = { layout: 'tree', minimap: false, cardWidth: null, chat: true, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} };
         window.sessionStorage.setItem('lathe:session-settings', JSON.stringify(settings));
+        window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
         let listener: ((patch: unknown) => void) | null = null;
         (window as unknown as { chatPatch: (patch: unknown) => void }).chatPatch = (patch) => listener?.(patch);
         const chat = {

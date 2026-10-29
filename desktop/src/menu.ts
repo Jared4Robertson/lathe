@@ -1,7 +1,7 @@
 // The native menus: the app menu on a Mac (About Lathe, Settings…), File (Open, Open Recent, Open
-// Records In, Close Window), Edit, View (with the record tabs), Window and Help. App commands carry no
+// Records In, Close Window), Edit, View (with the app's tabs), Window and Help. App commands carry no
 // accelerator, so every key still reaches the app's own keymap unchanged, except Settings (Cmd+,, which
-// the keymap does not use) and the keys a web page never receives (Ctrl+Tab and Ctrl+Shift+Tab).
+// the keymap does not use) and the keys a browser keeps for its tabs and history (commands.ts's TAB_COMMANDS).
 import type { MenuItemConstructorOptions } from 'electron';
 import { HELP_COMMANDS, TAB_COMMANDS, VIEW_COMMANDS, type MenuCommand } from './commands.ts';
 import { EDITOR_NAMES, EDITORS, type Editor, type Settings } from './editor.ts';
@@ -70,7 +70,8 @@ export function menuTemplate(actions: MenuActions, mac = process.platform === 'd
         { label: 'Open Recent', submenu: recent },
         ...editorMenu(actions),
         { type: 'separator' },
-        { role: 'close', label: 'Close Window' },
+        // Cmd/Ctrl+W closes the tab (View › Tabs), as in a browser; the window takes Shift too.
+        { role: 'close', label: 'Close Window', accelerator: 'CmdOrCtrl+Shift+W' },
         ...(mac ? [] : [{ type: 'separator' } as MenuItemConstructorOptions, settings, { type: 'separator' } as MenuItemConstructorOptions, { role: 'quit' } as MenuItemConstructorOptions]),
       ],
     },

@@ -10,8 +10,8 @@ export interface MenuCommand {
   /** The binding off a Mac, when the keymap gives another there (its otherKeys). */
   otherKeys?: string;
   /**
-   * The menu item's own accelerator, only for keys a web page never receives (Ctrl+Tab and
-   * Ctrl+Shift+Tab, which the browser keeps): the menu owns them and runs the command by ID.
+   * The menu item's own accelerator, only for keys a web page never receives, which a browser keeps for its tabs and
+   * history (Cmd/Ctrl+T and W, Ctrl+Tab, Cmd/Ctrl+[ and ]): the menu owns them and runs the command by ID.
    */
   accelerator?: string;
 }
@@ -27,12 +27,18 @@ export const VIEW_COMMANDS: readonly MenuCommand[] = [
   { id: 'toggleChat', label: 'Show or Hide Chat', keys: 'Ctrl+Meta+I', otherKeys: 'Ctrl+Alt+C' },
 ];
 
-/** The record tabs (app/src/views/useTabs.ts), in View › Tabs. */
+/**
+ * The app's tabs (app/src/views/useTabs.ts), in View › Tabs, as a browser's: the menu owns Cmd/Ctrl+T, Cmd/Ctrl+W,
+ * Ctrl+Tab, Ctrl+Shift+Tab, and Cmd/Ctrl+[ and ] for Back and Forward in the active tab.
+ */
 export const TAB_COMMANDS: readonly MenuCommand[] = [
+  { id: 'newTab', label: 'New Tab', keys: 'Alt+Shift+T', accelerator: 'CmdOrCtrl+T' },
+  { id: 'closeTab', label: 'Close Tab', keys: 'Alt+Shift+W', accelerator: 'CmdOrCtrl+W' },
+  { id: 'duplicateTab', label: 'Duplicate Tab', keys: 'Alt+Shift+D' },
   { id: 'nextTab', label: 'Show Next Tab', keys: 'Ctrl+Tab', accelerator: 'Ctrl+Tab' },
   { id: 'previousTab', label: 'Show Previous Tab', keys: 'Ctrl+Shift+Tab', accelerator: 'Ctrl+Shift+Tab' },
-  { id: 'keepTab', label: 'Keep Tab Open', keys: 'Ctrl+K Enter', otherKeys: 'Alt+K Enter' },
-  { id: 'closeTab', label: 'Close Tab', keys: 'Alt+Shift+W' },
+  { id: 'goBack', label: 'Back', keys: 'Ctrl+-', accelerator: 'CmdOrCtrl+[' },
+  { id: 'goForward', label: 'Forward', keys: 'Ctrl+Shift+-', accelerator: 'CmdOrCtrl+]' },
 ];
 
 export const HELP_COMMANDS: readonly MenuCommand[] = [

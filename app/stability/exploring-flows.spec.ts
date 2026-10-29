@@ -356,40 +356,38 @@ test.describe('Exploring flows', () => {
     await expect(page.locator('.header-strip .breadcrumb .crumb').last()).toContainText('Exploring');
   });
 
-  test('LA-EXP-UC10-FL01-T keep several records open in tabs: the preview, keep, Ctrl+Tab, each tab\'s stage, close, reload', async ({ page }) => {
-    const tabs = page.getByRole('tablist', { name: 'Open pages' });
-    await openPage(page, '/LA-EXP-A1');
-    await expect(tabs.getByRole('tab')).toHaveCount(1);
-    await expect(page.locator('.tab.is-preview')).toHaveCount(1);
-    // Keep it with a double-click; the next open takes a new preview.
-    await page.locator('.tab.is-preview [role="tab"]').dblclick();
-    await expect(page.locator('.tab.is-preview')).toHaveCount(0);
-    await quickFind(page, 'LA-EXP-A2');
-    await expect(tabs.getByRole('tab')).toHaveCount(2);
-    // A change to its stage keeps a tab too; each keeps its own.
-    await page.keyboard.press('Control+2');
-    await page.locator('.focus-stage .erd-flow .react-flow__node').first().waitFor();
-    await expect(page.locator('.tab.is-preview')).toHaveCount(0);
-    await page.keyboard.press('Control+Tab');
+  test('LA-EXP-UC10-FL01-T explore in browser tabs, each its own place: no tab strip, one entry per move, kept through a reload, Cmd+click a new browser tab', async ({ page, context }) => {
+    await openPage(page, '/LA-EXP-A1?stage=graph');
+    await graphReady(page);
+    // No tab strip of the app's: the browser's tabs are the places.
+    await expect(page.getByRole('tablist')).toHaveCount(0);
+    // Each move is one entry of the browser's history, the address following it.
+    const length = await page.evaluate(() => window.history.length);
+    await page.locator(FLOW).focus();
+    await page.keyboard.press('ArrowRight');
+    await page.waitForURL((u) => u.pathname !== '/LA-EXP-A1');
+    expect(await page.evaluate(() => window.history.length)).toBe(length + 1);
+    await page.goBack();
     await page.waitForURL((u) => u.pathname === '/LA-EXP-A1');
-    await expect(page.locator('.focus-stage')).toHaveAttribute('data-stage', 'graph');
-    await page.keyboard.press('Control+Tab');
-    await page.waitForURL((u) => u.pathname === '/LA-EXP-A2');
-    await expect(page.locator('.focus-stage')).toHaveAttribute('data-stage', 'erd');
-    // A reload brings the tabs back as they were.
+    // Depth 2 and a kind hidden, then a reload: the browser tab keeps them.
+    await graphReady(page);
+    await page.locator(`${STAGE_BOX} .graph-depth:not(.graph-layout) button`, { hasText: '2' }).click();
+    await page.locator(`${STAGE_BOX} .graph-filters > summary`).click();
+    await page.locator(`${STAGE_BOX} .graph-filter-body fieldset:not(:first-child) input[type="checkbox"]`).first().uncheck();
+    await page.locator(`${STAGE_BOX} .graph-filters > summary`).click();
     await page.reload();
-    await page.locator('.header-strip h1').first().waitFor();
-    await expect(tabs.getByRole('tab')).toHaveCount(2);
-    // Close one by Alt+Shift+W, then the other's button.
-    await quickFind(page, 'LA-EXP-A3');
-    await expect(tabs.getByRole('tab')).toHaveCount(3);
-    await page.keyboard.press('Alt+Shift+w');
-    await expect(tabs.getByRole('tab')).toHaveCount(2);
-    await page.locator('.tab', { has: page.locator('.tab-id', { hasText: /^LA-EXP-A1$/ }) }).locator('.tab-close').click({ force: true });
-    await expect(tabs.getByRole('tab')).toHaveCount(1);
-    await page.locator('.tab [role="tab"]').first().click({ button: 'middle' });
-    // The last tab stays: there is always a tab.
-    await expect(tabs.getByRole('tab')).toHaveCount(1);
+    await graphReady(page);
+    await expect(page.locator(`${STAGE_BOX} .graph-depth:not(.graph-layout) button[aria-pressed="true"]`)).toHaveText('2');
+    await expect(page.locator(`${STAGE_BOX} .graph-filters .section-count`)).toHaveText(/hidden/);
+    // Cmd+click on a box: a new browser tab at its address; this one stays.
+    const box = page.locator(`${FLOW} .graph-box:not(.is-focus)`).first();
+    const id = await box.getAttribute('data-id');
+    const opened = context.waitForEvent('page');
+    await box.dispatchEvent('click', { metaKey: true, button: 0 });
+    const other = await opened;
+    await other.waitForURL((u) => u.pathname === `/${id}`);
+    expect(new URL(page.url()).pathname).toBe('/LA-EXP-A1');
+    await other.close();
   });
 
   test('LA-EXP-UC11-FL01-T read a domain and its aggregates as an ERD: the ERD stage, an aggregate picked, an entity, the key', async ({ page }) => {
