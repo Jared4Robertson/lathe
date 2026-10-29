@@ -67,6 +67,8 @@ export const COMMANDS: readonly Command[] = [
   // View
   { id: 'toggleNav', title: 'Show or hide the navigation', group: 'View', keys: ['Mod+B'], when: 'global' },
   { id: 'toggleSideBar', title: 'Show or hide the side bar', group: 'View', keys: ['Mod+Alt+B'], when: 'page' },
+  // The desktop app's chat (LA-PLT-UC19), as VS Code's: Ctrl+Cmd+I on a Mac; Ctrl+Alt+C elsewhere, where Ctrl+Alt+I moves to the side bar. It shows the chat and focuses its message box.
+  { id: 'toggleChat', title: 'Show the chat with Claude, or hide it', group: 'View', keys: ['Ctrl+Meta+I'], otherKeys: ['Ctrl+Alt+C'], when: 'global' },
   // Ctrl is the Control key on a Mac too, where Cmd+W stays the browser's; elsewhere Ctrl+W closes the tab and Ctrl+G finds the next match, so Alt.
   { id: 'stageGraph', title: 'Graph stage', group: 'View', keys: ['Ctrl+G', 'Ctrl+1'], otherKeys: ['Alt+G', 'Ctrl+1'], when: 'page' },
   { id: 'stageErd', title: 'ERD stage', group: 'View', keys: ['Ctrl+E', 'Ctrl+2'], otherKeys: ['Alt+E', 'Ctrl+2'], when: 'page' },

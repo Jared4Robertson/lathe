@@ -1,9 +1,11 @@
 // The MCP server the Claude Code plugin starts (`lathe mcp`): the data commands as tools (add, set, move, link,
-// unlink, remove, show, list, next_id and check), with input schemas generated from the schema description. It speaks
+// unlink, remove, show, list, next_id and check), with input schemas generated from the schema description, and,
+// under the desktop app's chat, the app tools app_focus and app_open (app-tools.ts). It speaks
 // JSON-RPC 2.0 over stdio, one message per line. Every write goes through the command layer; a tool's result is the
 // rows it changed, or the refusal with its reasons. Writes never commit: the Agent commits per task.
 import { createInterface } from 'node:readline';
 import { SchemaVersionError } from '../config.ts';
+import { APP_TOOLS, appBridgeFromEnv, callAppTool, isAppTool, type AppBridge } from './app-tools.ts';
 import type { ColumnDescription, SchemaDescription, TableDescription } from '../store/schema.ts';
 import type { Row, Value } from '../store/rows.ts';
 import {
@@ -259,8 +261,9 @@ function result<T>(outcome: Outcome<T>, describe: (value: T) => string, structur
   return { content: [{ type: 'text', text: describe(outcome.value) }], structuredContent: structured(outcome.value) };
 }
 
-/** Runs one tool on the repo at root. */
-export async function callTool(root: string, name: string, args: Record<string, unknown> = {}): Promise<ToolResult> {
+/** Runs one tool on the repo at root; the app tools go to the window's bridge, when there is one. */
+export async function callTool(root: string, name: string, args: Record<string, unknown> = {}, app: AppBridge | null = null): Promise<ToolResult> {
+  if (isAppTool(name)) return callAppTool(app, name, args);
   try {
     const written = (requests: WriteRequest[]) => write(root, requests).then((o) => result(o, writtenText, (w) => ({ ...w })));
     switch (name) {
@@ -315,8 +318,8 @@ interface Message {
   params?: { [key: string]: unknown };
 }
 
-/** Serves the tools for the repo at root over the given streams until input ends. */
-export async function serveMcp(root: string, input: NodeJS.ReadableStream = process.stdin, output: NodeJS.WritableStream = process.stdout): Promise<void> {
+/** Serves the tools for the repo at root over the given streams until input ends; the app tools only with an app bridge. */
+export async function serveMcp(root: string, input: NodeJS.ReadableStream = process.stdin, output: NodeJS.WritableStream = process.stdout, app: AppBridge | null = appBridgeFromEnv()): Promise<void> {
   // A product whose data is for another schema version still gets a server: its one tool, check, says what to do.
   let mismatch: SchemaVersionError | null = null;
   let schema: SchemaDescription | null = await readSchema(root).catch((error: unknown) => {
@@ -350,12 +353,12 @@ export async function serveMcp(root: string, input: NodeJS.ReadableStream = proc
         if (isRequest) reply(id, { result: {} });
         return;
       case 'tools/list':
-        reply(id, { result: { tools: schema ? tools(schema) : [CHECK_TOOL] } });
+        reply(id, { result: { tools: [...(schema ? tools(schema) : [CHECK_TOOL]), ...(app ? APP_TOOLS : [])] } });
         return;
       case 'tools/call': {
         const name = String(params.name ?? '');
         const args = (params.arguments ?? {}) as Record<string, unknown>;
-        const called = await callTool(root, name, args);
+        const called = await callTool(root, name, args, app);
         reply(id, { result: called });
         // A product's own kinds or relations changed: the tools' schemas change with them.
         const changes = (called.structuredContent?.changes ?? []) as { table: string }[];

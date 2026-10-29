@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { DOMAIN, EDITED, keepData, PRODUCT, RECORD } from '../stability/scenarios';
+import { withChat } from './chat';
 
 // What axe can't check, walked with the keyboard alone (LA-PAT-APP-UX-R10):
 // LA-V61-R41-T01 every control on the main pages is reached by Tab and Shift+Tab, with no trap;
@@ -207,6 +208,45 @@ test.describe('keyboard', () => {
     await expect(announcer(page)).toHaveText('Side bar shown');
     await page.keyboard.press('Control+Shift+i');
     await expect.poll(async () => page.evaluate(() => !!document.activeElement?.closest('#side-bar'))).toBe(true);
+  });
+
+  test('LA-V99-R02-T01 the chat by keyboard: focus its message box, send, stop, and walk the messages', async ({ page }) => {
+    await withChat(page, RECORD.slice(1));
+    await open(page, RECORD, '.chat-log .chat-item');
+    // Its key focuses the message box (Ctrl+Alt+C off a Mac); pressed there, it hides the chat, and again shows it.
+    await page.keyboard.press('Control+Alt+c');
+    await expect(page.getByRole('textbox', { name: 'Message Claude' })).toBeFocused();
+    await page.keyboard.press('Control+Alt+c');
+    await expect(page.locator('#chat-panel')).toHaveCount(0);
+    await expect(announcer(page)).toHaveText('Chat hidden');
+    await page.keyboard.press('Control+Alt+c');
+    const box = page.getByRole('textbox', { name: 'Message Claude' });
+    await expect(box).toBeFocused();
+    // Enter sends; Shift+Enter is a new line.
+    await page.keyboard.type('Add the tests');
+    await page.keyboard.press('Shift+Enter');
+    await page.keyboard.type('please');
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.chat-item.is-user').last()).toHaveText('Add the tests\nplease');
+    await expect(page.locator('.chat-status')).toHaveText('Claude is working…');
+    // Escape stops the turn; focus stays in the box.
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.chat-status')).toHaveText('');
+    await expect(box).toBeFocused();
+    // Shift+Tab from the box reaches the log's one tab stop, the last message; the arrows walk the messages.
+    await tabUntil(page, (el) => el.classList.contains('chat-item'), 'a message in the chat', 10, true);
+    await expect(page.locator('.chat-item').last()).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(page.locator('.chat-item').nth(-2)).toBeFocused();
+    await page.keyboard.press('Home');
+    await expect(page.locator('.chat-item').first()).toBeFocused();
+    await page.keyboard.press('End');
+    await expect(page.locator('.chat-item').last()).toBeFocused();
+    // The permission prompt's buttons are reached with Tab and answered with Enter.
+    await page.locator('.chat-item.is-permission').focus();
+    await tabUntil(page, (el) => el.textContent === 'Allow once', 'Allow once', 10);
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.chat-permission-answer')).toHaveText('Allowed once');
   });
 
   test('LA-V61-R41-T02 pick a theme, and focus comes back', async ({ page }) => {
