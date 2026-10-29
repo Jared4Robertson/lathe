@@ -3,6 +3,7 @@ import { Breadcrumb } from '../shell/Breadcrumb';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { Editable } from '../edit/Editing';
+import { pageOf } from '../record/pages';
 import { groupKindLabel, groupLabel, groupMembers, groupName, groupOwner, stageFor } from '../graph/model';
 import { treeGroup } from '../graph/tree';
 import { Link } from '../router';
@@ -190,6 +191,9 @@ function CardSummary({ index, route }: { index: SpecIndex; route: FocusRoute }) 
       </div>
     );
   }
+  // A kind whose aggregate has its own page draws its own summary, with its own actions.
+  const Page = pageOf(record.kind);
+  if (Page) return <Page key={focus} index={index} id={focus} summary after={<CardChanges index={index} id={focus} summary />} />;
   const lead = leadOf(record);
   return (
     <Editable key={focus} index={index} id={focus}>
@@ -235,7 +239,12 @@ function WikiPage({ index, route }: { index: SpecIndex; route: Exclude<FocusRout
   switch (route.page) {
     case 'product': return <Editable key={route.product} index={index} id={route.product}><ProductWiki index={index} id={route.product} /><OwnFacts index={index} id={route.product} /></Editable>;
     case 'domain': return <Editable key={route.domain} index={index} id={route.domain}><DomainWiki index={index} id={route.domain} /><OwnFacts index={index} id={route.domain} /></Editable>;
-    case 'record': return <Editable key={route.id} index={index} id={route.id}><div className="spec-body"><RecordContent index={index} id={route.id} header={false} /></div></Editable>;
+    case 'record': {
+      // A kind whose aggregate has its own page draws it; any other still shows the record content read from the workspace.
+      const Page = pageOf(index.byId.get(route.id)?.kind ?? '');
+      if (Page) return <Page key={route.id} index={index} id={route.id} />;
+      return <Editable key={route.id} index={index} id={route.id}><div className="spec-body"><RecordContent index={index} id={route.id} header={false} /></div></Editable>;
+    }
   }
 }
 

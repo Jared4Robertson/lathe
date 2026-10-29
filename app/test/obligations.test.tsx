@@ -123,6 +123,8 @@ describe('obligation kinds and test states', () => {
 
     await openApp('/DM-SHOP-UC01-R02-T01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A person fills a basket to 50' });
+    // A use case's records are read whole first (the Use case page).
+    await screen.findByRole('complementary', { name: 'Facts' });
     expect(field('State')).toHaveTextContent('manual');
     expect(screen.queryByRole('note')).toBeNull();
     const runBy = section(/^Run by/);
@@ -130,6 +132,8 @@ describe('obligation kinds and test states', () => {
 
     await openApp('/DM-SHOP-UC01-R01-T01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
+    // A use case's records are read whole first (the Use case page).
+    await screen.findByRole('complementary', { name: 'Facts' });
     expect(field('State')).toHaveTextContent('automated');
     expect(section(/^Run by/)).toHaveTextContent('test/basket.test.ts');
   });

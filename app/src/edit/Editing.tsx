@@ -26,6 +26,8 @@ import {
   type FormField,
 } from './form';
 import { useWriter } from './write';
+import { adderOf } from '../record/pages';
+import { FieldRow, IdsField, Refusal, problemText } from './fields';
 import './edit.css';
 
 // Changing records in place (LA-EXP: edit, add, remove). A record's page carries Edit, Add and
@@ -53,6 +55,9 @@ export function Editable({ index, id, children }: { index: SpecIndex; id: string
     setMode({ mode: 'view' });
     setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
   };
+  // A kind whose aggregate has its own Add form is added through it, with its aggregate's own command.
+  const Adder = mode.mode === 'add' ? adderOf(mode.kind) : undefined;
+  if (Adder) return <div className="spec-body"><Adder index={index} parent={record.id} onDone={back} /></div>;
   if (mode.mode === 'edit' || mode.mode === 'add') {
     return (
       <div className="spec-body">
@@ -88,23 +93,6 @@ export function Editable({ index, id, children }: { index: SpecIndex; id: string
     </>
   );
 }
-
-// ---------- Refusals ----------
-
-/** The reasons a write was refused or cannot be sent, at the top of the form; it takes focus so a screen reader reads it. */
-function Refusal({ title, reasons, focusKey }: { title: string; reasons: string[]; focusKey: number }) {
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => { ref.current?.focus(); }, [focusKey]);
-  return (
-    <div className="write-refusal" role="alert" tabIndex={-1} ref={ref}>
-      <p><strong>{title}</strong></p>
-      {reasons.length > 0 && <ul>{reasons.map((r, i) => <li key={i}>{r}</li>)}</ul>}
-    </div>
-  );
-}
-
-/** A store problem as one line, without the file and line a loaded row would have. */
-const problemText = (p: StoreProblem) => `${p.key ? `${p.key}: ` : ''}${p.message}`;
 
 // ---------- The form ----------
 
@@ -264,17 +252,6 @@ function RecordForm({ index, kind, record, parent, onDone }: { index: SpecIndex;
   );
 }
 
-function FieldRow({ id, label, required, description, error, inline = false, children }: { id: string; label: string; required: boolean; description: string; error?: string; inline?: boolean; children: ReactNode }) {
-  return (
-    <div className={`form-field${inline ? ' is-inline' : ''}${error ? ' has-error' : ''}`}>
-      <label htmlFor={id}>{label}{required && <span className="form-required" aria-hidden="true"> *</span>}</label>
-      {children}
-      {description && <p className="form-help" id={`${id}-help`}>{description}</p>}
-      {error && <p className="form-error" id={`${id}-error`}>{error}</p>}
-    </div>
-  );
-}
-
 function PlaceRefusals({ problems }: { problems: StoreProblem[] }) {
   if (problems.length === 0) return null;
   return <ul className="form-error form-refusals">{problems.map((p, i) => <li key={i}>{problemText(p)}</li>)}</ul>;
@@ -320,47 +297,9 @@ function PartRows({ formId, part, rows, problems, refused, onChange, fieldInput 
 function LinkPicker({ formId, index, link, candidates, targets, refused, onChange }: {
   formId: string; index: SpecIndex; link: ReturnType<typeof linkForms>[number]; candidates: SpecRecord[]; targets: string[]; refused: StoreProblem[]; onChange: (targets: string[]) => void;
 }) {
-  const [typed, setTyped] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const inputId = `${formId}-link-${link.relation}`;
-  const listId = `${inputId}-options`;
-  const open = candidates.filter((c) => !targets.includes(c.id));
-  const add = () => {
-    const id = typed.trim().split(/\s/)[0] ?? '';
-    if (!id) return;
-    if (!open.some((c) => c.id === id)) {
-      setError(targets.includes(id) ? `It already links to ${id}.` : `${id} is not a ${link.targets.includes('*') ? 'record' : link.targets.map((k) => lowerLabel(kindLabel(index, k))).join(' or ')} it can link to.`);
-      return;
-    }
-    setError(null);
-    setTyped('');
-    onChange([...targets, id]);
-  };
   return (
-    <div className="form-link">
-      <p className="form-link-name"><strong>{link.label}</strong> <code>{link.relation}</code> <span className="section-count">{targets.length}</span></p>
-      {targets.length > 0 && (
-        <ul className="plain form-link-targets" aria-label={`${link.label}: current links`}>
-          {targets.map((t) => (
-            <li key={t}>
-              <RecordLink index={index} id={t} />
-              <Button danger onClick={() => onChange(targets.filter((x) => x !== t))} aria-label={`Remove the link ${link.label} ${t}`}>Remove</Button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className={`form-link-add${error ? ' has-error' : ''}`}>
-        <label htmlFor={inputId} className="sr-only">Add a link: {link.label}</label>
-        <input id={inputId} type="text" list={listId} value={typed} placeholder={`Add: an ID among ${open.length}`} spellCheck={false}
-          aria-invalid={error ? true : undefined} aria-describedby={error ? `${inputId}-error` : undefined}
-          onChange={(e) => { setTyped(e.target.value); setError(null); }}
-          onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } }} />
-        <datalist id={listId}>{open.map((c) => <option key={c.id} value={c.id}>{c.title}</option>)}</datalist>
-        <Button onClick={add} aria-label={`Add the link ${link.label}`}>Add</Button>
-        {error && <p className="form-error" id={`${inputId}-error`}>{error}</p>}
-      </div>
-      <PlaceRefusals problems={refused} />
-    </div>
+    <IdsField id={`${formId}-link-${link.relation}`} label={link.label} description="" ids={targets} choices={candidates} onChange={onChange}
+      renderId={(id) => <RecordLink index={index} id={id} />} refused={refused.map(problemText)} />
   );
 }
 

@@ -83,7 +83,7 @@ export function LongList<T>({ items, render, searchText, itemKey, label, classNa
           id={searchId}
           type="search"
           value={query}
-          placeholder="Filter by ID or title"
+          placeholder="Filter"
           aria-label={`Filter ${lowerLabel(label)}`}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => {
