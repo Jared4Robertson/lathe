@@ -25,7 +25,7 @@ export const GET_COMMAND: QueryDefinition<{ id: string }, CommandPage, CommandRe
   id: 'LA-AUT-QRY159',
   slice: COMMAND_SLICE,
   name: 'get-command',
-  description: 'Reads a command whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the command\'s row, the events it raises, the specifications it checks and the domain services it calls, its handler, its policies with the event each hears, their event handlers and tests, and the endpoints that expose it.',
+  description: 'Reads a command whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the command\'s row, the events it raises, the specifications it checks and the domain services it calls, its handler, its policies with the event each hears, their event handlers and tests, the endpoints that expose it, and the other aggregates it also changes with their reasons.',
   method: 'GET',
   route: '/api/command/get-command',
   input: { id: id('The command, or its handler, a policy, or a policy\'s event handler or test.', 'required') },
@@ -126,6 +126,7 @@ function commandText(page: CommandPage): string {
     if (p.test) lines.push(`  policy test ${p.test.test.id}: ${p.test.test.title} (${p.test.test.state})`);
   }
   for (const e of page.endpoints) lines.push(`Endpoint ${e}`);
+  for (const c of page.alsoChanges) lines.push(`Also changes ${c.aggregate}: ${c.reason}`);
   return lines.join('\n');
 }
 

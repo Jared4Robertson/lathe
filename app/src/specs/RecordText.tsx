@@ -122,7 +122,7 @@ export function FieldType({ index, field }: { index: SpecIndex; field: Row }) {
 }
 
 /** The fields of an entity, a value object, a domain event or a read model, as a table: name, meaning, type, whether required, and example. */
-function FieldsTable({ index, rows, owner }: { index: SpecIndex; rows: Row[]; owner: string }) {
+export function FieldsTable({ index, rows, owner }: { index: SpecIndex; rows: Row[]; owner: string }) {
   const examples = rows.some((r) => textOf(r, 'example'));
   const columns = rows.some((r) => textOf(r, 'column_name'));
   return (

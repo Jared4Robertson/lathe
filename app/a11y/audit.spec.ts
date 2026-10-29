@@ -66,6 +66,10 @@ const PAGES: State[] = [
   { name: 'test data set page', url: '/LA-AUT-TD30', ready: '[data-aggregate="test-data-set"] .record-lead' },
   { name: 'pattern page', url: '/LA-PAT-RECORD-PAGE', ready: '[data-aggregate="pattern"] .pattern-rules' },
   { name: 'standard page', url: '/LA-STD-CODE', ready: '[data-aggregate="standard"] .standard-rules' },
+  // The Aggregate, Domain event and Command aggregates' own pages.
+  { name: 'aggregate page', url: '/LA-AUT-A6', ready: '[data-aggregate="aggregate"] .aggregate-entities' },
+  { name: 'domain event page', url: '/LA-AUT-EV01', ready: '[data-aggregate="domain-event"] .record-lead' },
+  { name: 'command page', url: '/LA-AUT-CMD210', ready: '[data-aggregate="command"] .command-endpoints' },
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
@@ -115,6 +119,11 @@ PAGES.push(
   { name: 'the pattern form, its settings as rows', run: async (page: Page) => {
     await open(page, '/LA-PAT-RECORD-PAGE', '[data-aggregate="pattern"] .pattern-rules');
     await page.getByRole('toolbar', { name: 'Change LA-PAT-RECORD-PAGE' }).getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('form').locator('.form-parts').waitFor();
+  } },
+  { name: 'the entity form, its fields as rows', run: async (page: Page) => {
+    await open(page, '/LA-AUT-EN11', '[data-aggregate="aggregate"] .entity-commands');
+    await page.getByRole('toolbar', { name: 'Change LA-AUT-EN11' }).getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('form').locator('.form-parts').waitFor();
   } },
   { name: 'the remove question and its refusal', run: async (page: Page) => {

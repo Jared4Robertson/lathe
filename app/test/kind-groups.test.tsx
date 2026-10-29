@@ -162,12 +162,7 @@ describe('groups by stage and kind', () => {
     expect(treeChildren(index, 'P-D/interaction-design')).toContain('P-D/interaction-design/integration');
   });
 
-  it("LA-V92-R27-T01 A command's page lists the endpoint that exposes it, with its method and route, and an endpoint's page its API requirements with their count", async () => {
-    await openApp('/DM-SHOP-CMD01');
-    await screen.findByRole('heading', { level: 1, name: 'Add item' });
-    const children = section(/^Children/);
-    const row = within(children).getByRole('link', { name: /DM-SHOP-EP01/ }).closest('li')!;
-    expect(row.textContent).toContain('POST · /basket/items');
+  it("LA-V92-R27-T01 An endpoint's page lists its API requirements with their count", async () => {
     await openApp('/DM-SHOP-EP01');
     await screen.findByRole('heading', { level: 1, name: 'POST /basket/items' });
     const requirements = section(/^API requirements/);

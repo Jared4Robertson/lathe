@@ -6,7 +6,6 @@ import { groupByLabel } from './labels';
 import { Traceability } from './Traceability';
 import { RecordText, factsOf, rowPlace } from './RecordText';
 import { kindFieldPath, kindPagePath } from '../format/reference';
-import { DomainEvents } from './DomainEvents';
 import { InterfaceFlows } from './InterfaceParts';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
@@ -83,8 +82,7 @@ export function RecordEyebrow({ index, record }: { index: SpecIndex; record: Spe
 
 function RecordBody({ index, record, actions, header }: { index: SpecIndex; record: SpecRecord; actions?: ReactNode; header: boolean }) {
   const { id } = record;
-  // An aggregate's domain events have their own section, so its children list leaves them out.
-  const children = (index.children.get(id) ?? []).filter((c) => !(record.kind === 'aggregate' && c.kind === 'domain_event'));
+  const children = index.children.get(id) ?? [];
   // A list of one kind is titled by that kind ("Commands"); a mixed one stays "Children".
   const childrenTitle = listTitle(index, children, 'Children');
   return (
@@ -110,7 +108,6 @@ function RecordBody({ index, record, actions, header }: { index: SpecIndex; reco
       >
         <RecordText index={index} record={record} />
         {record.kind === 'interface' && <InterfaceFlows index={index} iface={record} />}
-        {record.kind === 'aggregate' && <DomainEvents index={index} aggregate={record} />}
       </RecordFrame>
     </>
   );
