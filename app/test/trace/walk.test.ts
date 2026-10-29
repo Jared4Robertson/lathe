@@ -1,86 +1,51 @@
 import { describe, expect, it } from 'vitest';
 import { indexOf } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
-import { traceFocus, traceMap, type TraceMap } from '../../src/trace/lanes';
-import { boxWords, focusOf, startOf, traceStep, type TraceAt } from '../../src/trace/walk';
-import type { Direction } from '../../src/views/levels';
+import { gap } from '../fixtures/workspace';
+import { traceMap, type TraceMap } from '../../src/trace/tree';
+import { nodeWords, traceTarget } from '../../src/trace/walk';
+import type { Move } from '../../src/views/levels';
 
-// The Trace stage's walk (app/src/trace/walk.ts): the arrow keys move over the map as drawn, Right along a lane and
-// Left back into the why tree, Up and Down in a column; a "+N more" opened by Right; a shared record keeping its lane.
+// The Trace stage's walk (app/src/trace/walk.ts): the arrow keys move over the tree as on the Graph's Tree, Left out to
+// the parent, Right in to the first child, Up and Down across the siblings and on past the last; each copy of a record a
+// node of its own, so the walk stays in the chain it arrived in.
 
-/** The model product with test/lend.test.ts and eight more files under P-D-UC01-R01's test: its files column capped. */
-function withFiles(extra = 8) {
-  const data = modelWorkspace();
-  const chain = data.chains.find((c) => c.obligation === 'P-D-UC01-R01')!;
-  for (let n = 1; n <= extra; n++) chain.files.push({ path: `test/lend-${n}.test.ts`, named_by: ['P-D-UC01-R01-T01'] });
-  return indexOf(data);
-}
-
-/** Walks a run of keys from a box, the map drawn with `open` open; each step's box id. */
-function walk(map: TraceMap, from: TraceAt, keys: Direction[], open: number | null): string[] {
-  const ids: string[] = [];
-  let at: TraceAt | null = from;
-  for (const key of keys) {
-    at = at && traceStep(map, at, key, open);
-    ids.push(at ? map.byKey.get(at.key)!.id : '-');
+/** Walks a run of moves from a node; each step's node key. */
+function walk(map: TraceMap, from: string, moves: Move[]): string[] {
+  const keys: string[] = [];
+  let at: string | null = from;
+  for (const move of moves) {
+    at = at && traceTarget(map, at, move);
+    keys.push(at ?? '-');
   }
-  return ids;
+  return keys;
 }
 
 describe('the Trace stage\'s walk', () => {
-  it('LA-V61-R49-T05 On the Trace stage the arrows move over the map: Right along the lane, Left back into the why tree, Up and Down in the column, Right opening a "+N more", a shared record keeping its lane', () => {
-    const index = withFiles();
+  it('LA-V61-R49-T05 On the Trace stage the arrows walk the tree as the Graph\'s Tree: Left out, Right in, Up and Down across, a shared record keeping its copy', () => {
+    const data = modelWorkspace();
+    data.coverage[0].gaps.push(gap('P-D-SP01', 'specification', 'built'));
+    const index = indexOf(data);
     const map = traceMap(index, 'P');
-    const lane = map.lanesOf.get('P-D-UC01-R01')![0];
-    const here = traceFocus(map, index, 'P-D-UC01-R01');
-    expect(here.open).toBe(lane);
-    const start = { key: here.box!.key, lane };
 
-    // Right one step along the lane, following its arrows; Left back, and past the obligation into the why tree.
-    expect(walk(map, start, ['right', 'right', 'left', 'left'], lane)).toEqual(['P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-D-UC01-FL01', 'P-D-UC01-R01']);
-    expect(walk(map, start, ['left', 'left', 'left', 'right', 'right'], lane)).toEqual(['P-D-UC01', 'P-D-CAP01', '-', '-', '-']);
-    // A tree box's Right goes back down to the lane the walk came from.
-    const up = traceStep(map, traceStep(map, start, 'left', lane)!, 'left', lane)!;
-    expect(walk(map, up, ['right', 'right'], lane)).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
-    expect(map.byKey.get(traceStep(map, traceStep(map, up, 'right', lane)!, 'right', lane)!.key)!.lane).toBe(lane);
-
-    // Up and Down: the next box down the column, then the same column in the next lane drawn: the lanes the open lane
-    // covers are not, so Down from it goes past them.
-    const obligationOf = (i: number) => map.lanes[i].boxes.find((b) => b.column === 'obligation')!.id;
-    expect(walk(map, start, ['down'], null)).toEqual([obligationOf(lane + 1)]);
-    const below = map.lanes.findIndex((l, i) => i > lane && l.top > map.lanes[lane].open!.bottom);
-    expect(below).toBeGreaterThan(lane + 1);
-    expect(walk(map, start, ['down'], lane)).toEqual([obligationOf(below)]);
-    expect(walk(map, start, ['up'], lane)).toEqual([lane > 0 ? obligationOf(lane - 1) : '-']);
-
-    // The lane open: its files column holds every file, Down walks them all. Not open (the walk on a lane above), the
-    // fifth box is "+N more", and Right on it lands on the first file it hides, its lane opening by its naming record.
-    const files = map.lanes[lane].open!.boxes.filter((b) => b.column === 'files');
-    expect(files.length).toBeGreaterThan(8);
-    const firstFile = { key: files[0].key, lane };
-    expect(walk(map, firstFile, Array(files.length - 1).fill('down'), lane)).toEqual(files.slice(1).map((b) => b.id));
-    const shut = walk(map, firstFile, ['down', 'down', 'down', 'down'], null);
-    expect(shut.at(-1)).toBe(`more:${lane}:files`);
-    const more = { key: map.lanes[lane].boxes.find((b) => b.role === 'more')!.key, lane };
-    expect(boxWords(index, map.byKey.get(more.key)!)).toBe(`+${files.length - 4} more in Files: Right, In or Enter shows them`);
-    const opened = traceStep(map, more, 'right', null)!;
-    expect(opened.key).toBe(files[4].key);
-    expect(focusOf(map, opened, null)).toBe('P-D-UC01-R01-T01');
-    expect(traceFocus(map, index, 'P-D-UC01-R01-T01', lane).open).toBe(lane);
-    // A box that is no record moves the ring alone; a record moves the focus.
-    expect(focusOf(map, more, null)).toBeNull();
-    expect(focusOf(map, start, lane)).toBe('P-D-UC01-R01');
-
-    // A record several lanes hold keeps the lane the walk arrived on: focusing it there frames and opens that lane.
-    const copies = map.copies.get('P-D-CMD01')!.filter((b) => b.lane >= 0);
-    expect(new Set(copies.map((b) => b.lane)).size).toBeGreaterThan(1);
-    const last = copies.at(-1)!;
-    const arrived = traceFocus(map, index, 'P-D-CMD01', last.lane);
-    expect(arrived.box).toBe(last);
-    expect(arrived.anchor).toMatchObject({ x: last.x, y: last.y });
-    expect(walk(map, { key: last.key, lane: last.lane }, ['left'], arrived.open).every((id) => map.copies.get(id)!.some((b) => b.lane === last.lane))).toBe(true);
-
-    // A focus with no box of its own (the product, a domain) starts the walk at its first lane's obligation.
-    expect(map.byKey.get(startOf(map, traceFocus(map, index, 'P-D').lanes)!.key)!.column).toBe('obligation');
+    // Right in to the first child, along the chain; Left back out; Out and In as Left and Right.
+    expect(walk(map, 'P-D-UC01-R01', ['right', 'right', 'right', 'left', 'left', 'left'])).toEqual([
+      'P-D-UC01-R01|P-D-UC01-FL01', 'P-D-UC01-R01|P-D-UC01-FL01-S01', 'P-D-UC01-R01|P-D-CMD01',
+      'P-D-UC01-R01|P-D-UC01-FL01-S01', 'P-D-UC01-R01|P-D-UC01-FL01', 'P-D-UC01-R01',
+    ]);
+    expect(walk(map, 'P-D-UC01-R01', ['out', 'in'])).toEqual(['P-D-UC01', 'P-D-UC01-R01']);
+    // Up and Down across the siblings, and on past the last to the next parent's first child at that level (a gap first).
+    expect(walk(map, 'P-D-UC01-R01', ['down', 'up'])).toEqual(['P-D-UC01-R02', 'P-D-UC01-R01']);
+    expect(walk(map, 'P-D-UC01-R01|P-D-UC01-FL01', ['down', 'down'])).toEqual(['P-D-UC01-R01|P-D-UC01-R01-T01', 'gap:P-D-UC01-R02:tests']);
+    // A copy's walk stays in its chain: Left from the command in the requirement's chain goes back to that chain's step.
+    expect(walk(map, 'P-D-SP01|P-D-CMD01', ['left'])).toEqual(['P-D-SP01']);
+    expect(walk(map, 'P-D-UC01-R01|P-D-CMD01', ['left'])).toEqual(['P-D-UC01-R01|P-D-UC01-FL01-S01']);
+    // A gap, a file and the Untraced mark are nodes too, each said in words.
+    expect(walk(map, 'P-D-SP01', ['right'])).toEqual(['gap:P-D-SP01:build']);
+    expect(nodeWords(index, map.nodes.get('gap:P-D-SP01:build')!)).toBe(`Not built, a gap of ${index.byId.get('P-D-SP01')!.title}`);
+    expect(nodeWords(index, map.nodes.get('P-D-UC01-R01|file:test/lend.test.ts')!)).toBe('File test/lend.test.ts');
+    expect(nodeWords(index, map.nodes.get('untraced')!)).toMatch(/^Untraced, \d+ records no chain reaches$/);
+    // From the product an arrow goes in.
+    expect(walk(map, 'P', ['right'])[0]).toBe(map.map.nodes.get('P')!.children[0]);
   });
 });

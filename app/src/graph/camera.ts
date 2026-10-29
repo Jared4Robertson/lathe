@@ -33,7 +33,7 @@ export const MIN_ZOOM = 1e-4;
  * The camera that frames a focus (LA-EXP-DS09): the focus and its descendants down to `depth`
  * levels below it fill the pane, the parent's level showing in a strip at the left edge (the frame
  * starts at the parent's right edge, past the strip). A node with fewer levels below it frames what
- * it has. Zoomed in no further than MAX_ZOOM.
+ * it has. Zoomed in no further than `max` (MAX_ZOOM; the Trace stage's deeper tree takes more).
  *
  * No box of the framed levels is cut at an edge. Top and bottom, the frame takes whole rows of the
  * focus's level, the focus and as many of its neighbors as the width leaves room for, its edges in
@@ -42,7 +42,7 @@ export const MIN_ZOOM = 1e-4;
  * first box past the framed ones in the rows taken (or the padding past the last), and takes in any box it would cut;
  * what width is left over goes to the parent's strip on the left.
  */
-export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number): Viewport {
+export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number, max = MAX_ZOOM): Viewport {
   const node = map.nodes.get(focus);
   if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: 1 };
   // The framed boxes: the focus and its descendants down to `depth` levels below it.
@@ -71,7 +71,7 @@ export function frameOnMap(map: GraphMap, focus: string, depth: number, width: n
   const parent = node.parent === null ? null : map.nodes.get(node.parent)!;
   const left = parent ? parent.x + parent.w : node.x;
   const strip = parent ? Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP) : 0;
-  const zoomFor = (edge: { right: number; pad: number }) => Math.min(MAX_ZOOM, (width - strip - FRAME_PADDING - edge.pad) / (edge.right - left));
+  const zoomFor = (edge: { right: number; pad: number }) => Math.min(max, (width - strip - FRAME_PADDING - edge.pad) / (edge.right - left));
   const widthZoom = zoomFor(rightEdge(subtree(node)));
 
   // The rows of the focus's level the frame takes, from row i to row j, and the zoom that fits them.
@@ -119,34 +119,21 @@ export function frameMap(map: GraphMap, width: number, height: number): Viewport
 export interface MapRect { x: number; y: number; w: number; h: number }
 
 /**
- * The camera that frames a rectangle of a stage's one map in a frame of the pane (LA-PAT-APP-UX-R19): the Trace
- * stage's lane, a tree box with what hangs from it, a domain's region. Zoomed in no further than `max` nor out past
- * `min`, `pad` pixels kept around it:
- * - with an `anchor` (the focus's own box in it), the whole rectangle when it fits at `read`, the zoom its labels read
- *   at, or more; else at `read`, centered on the anchor along each side it overflows;
- * - with none, its whole width, and its whole height unless that would zoom out past the width's zoom or `read`,
- *   whichever is less: then from its top, so a tall region (a product's or a domain's lanes) starts readable at its top
- *   edge and its overview is a zoom out away.
- * A rectangle narrower or shorter than the frame is centered in it.
+ * The camera that frames a rectangle of a stage's one map in a frame of the pane (LA-PAT-APP-UX-R19): a whole map (the
+ * camera's Fit), an ERD's region. Zoomed in no further than `max` nor out past `min`, `pad` pixels kept around it: its
+ * whole width, and its whole height unless that would zoom out past the width's zoom or `read`, whichever is less: then
+ * from its top, so a tall region starts readable at its top edge and its overview is a zoom out away. A rectangle
+ * narrower or shorter than the frame is centered in it.
  */
-export function frameRect(rect: MapRect, anchor: MapRect | null, frame: MapRect, { pad, read, max, min }: { pad: number; read: number; max: number; min: number }): Viewport {
+export function frameRect(rect: MapRect, frame: MapRect, { pad, read, max, min }: { pad: number; read: number; max: number; min: number }): Viewport {
   const w = Math.max(1, frame.w - 2 * pad);
   const h = Math.max(1, frame.h - 2 * pad);
   const tall = h / Math.max(1e-9, rect.h);
   const wide = w / Math.max(1e-9, rect.w);
-  const fit = anchor ? Math.max(read, Math.min(tall, wide)) : Math.max(Math.min(tall, wide), Math.min(wide, read));
-  const zoom = Math.max(min, Math.min(max, fit));
-  /** Along one side: centered when it fits; else around the anchor, or from its start with none. */
-  const along = (start: number, extent: number, room: number, from: number, at: { start: number; extent: number } | null) => {
-    if (extent * zoom <= room - 2 * pad) return from + room / 2 - (start + extent / 2) * zoom;
-    if (!at) return from + pad - start * zoom;
-    return from + room / 2 - (at.start + at.extent / 2) * zoom;
-  };
-  return {
-    x: along(rect.x, rect.w, frame.w, frame.x, anchor && { start: anchor.x, extent: anchor.w }),
-    y: along(rect.y, rect.h, frame.h, frame.y, anchor && { start: anchor.y, extent: anchor.h }),
-    zoom,
-  };
+  const zoom = Math.max(min, Math.min(max, Math.max(Math.min(tall, wide), Math.min(wide, read))));
+  /** Along one side: centered when it fits, else from its start. */
+  const along = (start: number, extent: number, room: number, from: number) => (extent * zoom <= room - 2 * pad ? from + room / 2 - (start + extent / 2) * zoom : from + pad - start * zoom);
+  return { x: along(rect.x, rect.w, frame.w, frame.x), y: along(rect.y, rect.h, frame.h, frame.y), zoom };
 }
 
 // ---------- The glide ----------
