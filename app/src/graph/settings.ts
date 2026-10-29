@@ -54,7 +54,7 @@ const isMark = (v: unknown): v is LookMark => {
 const isStored = (v: unknown): v is Stored => {
   if (!v || typeof v !== 'object') return false;
   const s = v as Stored;
-  return (s.layout === 'tree' || s.layout === 'nested' || s.layout === 'voronoi') && isNumber(s.depth) && Array.isArray(s.hiddenKinds)
+  return typeof s.layout === 'string' && isNumber(s.depth) && Array.isArray(s.hiddenKinds)
     && typeof s.minimap === 'boolean' && typeof s.card === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth)) && typeof s.cardExpanded === 'boolean'
     && typeof s.chat === 'boolean' && (s.chatWidth === null || isNumber(s.chatWidth))
     && typeof s.lens === 'boolean' && (s.since === 'commit' || s.since === 'branch' || s.since === 'looked') && typeof s.follow === 'boolean'
@@ -71,7 +71,8 @@ export function sessionSettings(): SessionSettings {
   if (!isStored(s)) return { graph: DEFAULT_GRAPH_SETTINGS, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES };
   return {
     graph: {
-      layout: s.layout,
+      // A layout the graph no longer has reads as the default.
+      layout: s.layout === 'nested' ? 'nested' : DEFAULT_GRAPH_SETTINGS.layout,
       depth: [1, 2, 3].includes(s.depth) ? s.depth : 1,
       filters: { hiddenKinds: new Set(s.hiddenKinds) },
       minimap: s.minimap,

@@ -13,7 +13,7 @@
   --node-radius: 4px; /* an ERD box's corners; the graph's canvas rounds a plain box the same (app/src/graph/shapes.ts) */
   /* The ERD view's context ring (LA-V94-R06): faded and a little smaller; the graph's hover spotlight dims the rest a step; the vignette's width at a canvas's edges (the graph's canvas draws its own, app/src/graph/paint.ts). */
   --context-opacity: 0.35; --spotlight-dim: 0.5; --vignette: 56px;
-  /* The graph's focus fade (LA-EXP-DS09, app/src/graph/fade.ts): what lies outside the focus's subtree, and the trail of its ancestors in Nested and Voronoi. */
+  /* The graph's focus fade (LA-EXP-DS09, app/src/graph/fade.ts): what lies outside the focus's subtree, and the trail of its ancestors in Nested. */
   --focus-fade: 0.25; --focus-trail: 0.45;
   /* The Trace stage's arrows, apart from the tree's ink lines, and the minimap's mask. */
   --link-edge: var(--spark); --minimap-mask: color-mix(in srgb, var(--ink) 8%, transparent);
@@ -331,9 +331,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-canvas { position: relative; min-height: 420px; }
 .graph-flow { position: absolute; inset: 0; background: var(--paper); }
 .graph-loading { position: absolute; top: 12px; left: 16px; z-index: 5; margin: 0; }
-.graph-legend, .trace-key { font-size: 0.8rem; }
-.graph-legend li, .trace-key li { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-.graph-legend-heading { margin: 10px 0 0; font-size: 0.8rem; font-weight: 600; color: var(--ink); }
 
 /* The map is drawn on a canvas, every frame (app/src/graph/paint.ts): boxes, shapes, labels, lines, badges, marks and every
    state in the stylesheet's colors, read from these tokens. The canvas fills the pane; the boxes' accessibility layer is
@@ -341,7 +338,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-canvas-draw { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
 .graph-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 .graph-box { position: absolute; top: 0; left: 0; width: 1px; height: 1px; }
-.graph-swatch.is-cell { border: 0; border-radius: 0; background: linear-gradient(115deg, var(--g-domain-model-bg) 46%, var(--g-domain-model) 46% 56%, var(--g-use-cases-bg) 56%); clip-path: polygon(30% 0, 100% 10%, 90% 85%, 35% 100%, 0 50%); }
 /* The key's marks: each kind's shape and each kind's own mark (a gear, a ruler, a port, a marker), ink on sheet, as the canvas
    draws them before a box's kind and ID line (app/src/graph/shape-icons.tsx), and the problem badges as the canvas draws them. */
 .graph-shape-icon, .graph-mark-icon { display: inline-block; overflow: visible; fill: color-mix(in srgb, var(--ink) 14%, var(--sheet)); stroke: var(--ink); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
@@ -399,16 +395,11 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-step { gap: 3px; }
 .stage-step-letter { font: 600 0.68rem var(--mono); color: var(--muted); }
 .stage-frame { flex: none; }
-.stage-key { flex: none; }
-.stage-key > summary { cursor: pointer; display: inline-flex; gap: 6px; align-items: baseline; }
-.stage-key > summary .icon { align-self: center; }
-/* The key: a popover under its button at the end of the toolbar, as the Graph's filters, scrolling inside when long. */
-.stage-key-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 0; width: min(460px, calc(100vw - 32px)); white-space: normal; max-height: min(70vh, 560px); overflow-y: auto; scrollbar-gutter: stable; padding: 4px 12px 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
 /* The toolbar's narrower forms (TOOLBAR_FORMS in StageChrome.tsx): the names beside the icons give way first (they stay
    the accessible ones), then groups fold into More at the right end (the Changes controls, then the stage's secondary
-   controls and the Key), then the step letters drop and a stage shows its own controls narrower; the walk, Frame and
+   controls), then the step letters drop and a stage shows its own controls narrower; the walk, Frame and
    the stage's primary controls stay in the row. In More every name shows again. */
-.stage-toolbar[data-names="hidden"] :is(.graph-depth-name, .graph-filters-name, .stage-key-name, .stage-frame-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.stage-toolbar[data-names="hidden"] :is(.graph-depth-name, .graph-filters-name, .stage-frame-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .stage-toolbar[data-names="hidden"] { gap: 6px; }
 .stage-toolbar[data-names="hidden"] .stage-step { padding-inline: 4px; }
 .stage-more { flex: none; }
@@ -416,8 +407,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-more > summary::-webkit-details-marker { display: none; }
 .stage-more > summary:hover { color: var(--steel); }
 .stage-more-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 12px; width: max-content; max-width: min(460px, calc(100vw - 32px)); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px; white-space: normal; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
-.stage-toolbar .stage-more-body :is(.graph-depth-name, .stage-key-name) { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
-.stage-more-body .stage-key-body { position: static; width: auto; max-height: min(50vh, 420px); margin-top: 6px; box-shadow: none; }
+.stage-toolbar .stage-more-body .graph-depth-name { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
 .stage-tools :is(button, input, summary, a):focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
 .stage-toolbar-end { display: inline-flex; flex-wrap: nowrap; gap: 8px; align-items: center; margin-left: auto; flex: none; }
 /* The camera's buttons at the bottom left of the frame: zoom in, zoom out and fit, on every stage. */
@@ -427,6 +417,37 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 @media (pointer: coarse) {
   :is(.stage-step, .stage-frame, .stage-more > summary, .stage-camera .icon-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
 }
+/* The stage's key (StageKey, LA-V96-R33): a frosted bar on the stage's foot row, the camera at its left and the minimap
+   (when shown) at its right, centered in the open space between them. It is a floating panel at the bottom
+   (data-floating), so the camera frames above it, while the camera, the minimap and the bar keep the foot row: they sit
+   at --stage-foot, never at the frame's bottom, which the bar itself raises. One row of samples and words; too long, it
+   wraps to two rows, then scrolls sideways inside itself, its edges fading where more lies. */
+.focus-stage { --stage-foot: var(--float-inset); --key-clear-left: calc(4px + 38px + 8px); --key-clear-right: var(--key-clear-left); }
+.stage-key-room { position: absolute; z-index: 6; bottom: var(--stage-foot); left: calc(var(--open-left, 0px) + var(--key-clear-left)); right: calc(var(--open-right, 0px) + var(--key-clear-right)); display: flex; justify-content: center; pointer-events: none; }
+.stage-key-room[data-beside="minimap"] { --key-clear-right: calc(4px + 210px + 8px); }
+.stage-key { box-sizing: border-box; max-width: 100%; min-width: 0; padding: 4px 10px; border: 1px solid var(--float-border); border-radius: var(--panel-radius); background: var(--float-dense); backdrop-filter: blur(var(--float-blur)); -webkit-backdrop-filter: blur(var(--float-blur)); box-shadow: var(--float-shadow); pointer-events: auto; font-size: 0.75rem; line-height: 1.3; color: var(--ink); }
+.stage-key:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
+.stage-key-list { display: flex; flex-wrap: wrap; justify-content: center; column-gap: 12px; row-gap: 2px; margin: 0; padding: 0; list-style: none; }
+.stage-key-entry { display: inline-flex; align-items: center; gap: 5px; min-height: 20px; white-space: nowrap; }
+.stage-key-entry[data-group-start] { padding-left: 12px; border-left: 1px solid var(--float-border); }
+.stage-key-sample { flex: none; display: inline-flex; align-items: center; line-height: 0; }
+.stage-key[data-form="scroll"] { overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; }
+.stage-key[data-form="scroll"] .stage-key-list { justify-content: flex-start; }
+.stage-key.fade-start { -webkit-mask-image: linear-gradient(to right, transparent, var(--ink) 24px); mask-image: linear-gradient(to right, transparent, var(--ink) 24px); }
+.stage-key.fade-end { -webkit-mask-image: linear-gradient(to left, transparent, var(--ink) 24px); mask-image: linear-gradient(to left, transparent, var(--ink) 24px); }
+.stage-key.fade-start.fade-end { -webkit-mask-image: linear-gradient(to right, transparent, var(--ink) 24px, var(--ink) calc(100% - 24px), transparent); mask-image: linear-gradient(to right, transparent, var(--ink) 24px, var(--ink) calc(100% - 24px), transparent); }
+@media (pointer: coarse) { .focus-stage { --key-clear-left: calc(4px + var(--touch-target) + 6px + 8px); } }
+/* On a phone: a Key chip at the foot of the stage, opening the entries with their meanings as a sheet. */
+.stage-key-chip { position: absolute; z-index: 6; bottom: var(--stage-foot); left: 50%; translate: -50% 0; padding: 4px 12px; border: 1px solid var(--float-border); border-radius: 999px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; }
+.stage-key-sheet-list { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 4px 16px 16px; list-style: none; overflow-y: auto; scrollbar-gutter: stable; font-size: 0.85rem; }
+.stage-key-sheet-list .stage-key-entry { flex: none; display: grid; grid-template-columns: 40px minmax(0, 1fr); column-gap: 8px; row-gap: 2px; align-items: start; white-space: normal; }
+.stage-key-sheet-list .stage-key-entry[data-group-start] { padding: 10px 0 0; border-left: 0; border-top: 1px solid var(--rule); }
+.stage-key-sheet-list .stage-key-sample { grid-row: 1 / span 2; padding-top: 3px; }
+.stage-key-sheet-list .stage-key-words { grid-column: 2; font-weight: 600; }
+.stage-key-sheet-list .stage-key-meaning { grid-column: 2; color: var(--muted); }
+/* The Trace's samples: a chain's arrow, a faded box. */
+.trace-key-arrow { overflow: visible; fill: none; stroke: var(--link-edge); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
+.graph-swatch.is-faded { opacity: var(--focus-fade); }
 /* ---------- End of the stage chrome ---------- */
 
 /* The product summary */
@@ -552,7 +573,6 @@ a.button-primary.button-primary { color: var(--on-mark); }
 
 .group-intro { margin: 16px 0 0; }
 .links-in-heading:focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
-.graph-legend ul { margin-top: 6px; }
 
 /* Trees: one level shown, the rest folded under a disclosure triangle. */
 .tree-row { display: flex; align-items: center; gap: 4px; min-width: 0; }
@@ -704,7 +724,7 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Hover: everything clickable answers the pointer the same way (LA-PAT-APP-UX-R01).
    Cards and graph nodes take a ring; rows and plain buttons take a tint; small text controls turn steel.
    The center node and file nodes are not clickable, so they keep the default cursor and no hover. */
-.button, .graph-depth button, .palette-list li, .graph-filters > summary, .stage-key > summary {
+.button, .graph-depth button, .palette-list li, .graph-filters > summary {
   transition: background-color var(--hover-speed), border-color var(--hover-speed), box-shadow var(--hover-speed), color var(--hover-speed);
 }
 /* A row that leads to one record is one link (LA-PAT-APP-UX-R05): its record link, marked row-link, stretches over
@@ -720,9 +740,9 @@ a.row-link.row-link:focus-visible { outline: none; }
 @media (prefers-reduced-motion: reduce) { .row-link::after { transition: none; } }
 .graph-depth button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); border-color: var(--steel); }
 .palette-list li:not(.active):hover { background: var(--hover-bg); }
-.graph-filters > summary:hover, .stage-key > summary:hover { color: var(--steel); }
+.graph-filters > summary:hover { color: var(--steel); }
 @media (prefers-reduced-motion: reduce) {
-  .button, .graph-depth button, .palette-list li, .graph-filters > summary, .stage-key > summary { transition: none; }
+  .button, .graph-depth button, .palette-list li, .graph-filters > summary { transition: none; }
 }
 
 /* The workbench (LA-PAT-APP-UX-R02): each panel is a rounded box on the shell; the gap between two
@@ -808,17 +828,10 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-line { opacity: var(--erd-strength, 1); transition: opacity var(--motion-speed) var(--motion-ease); }
 .erd-line-path, .erd-end { fill: none; stroke: var(--ink); stroke-width: 1.4; }
 .erd-line.is-dashed .erd-line-path, .erd-key-line.is-dashed .erd-line-path { stroke-dasharray: 6 4; }
-/* The key, in the toolbar's Key popover: one grid of cells, the boxes' and then the lines'. */
-.erd-key { display: flex; flex-direction: column; gap: 6px; font-size: 0.8rem; line-height: 1.4; color: var(--muted); }
-.erd-key .hint { margin: 0; }
+/* The ERD's samples in the stage's key bar (erdKeyEntries). */
 .erd-key-swatch { flex: none; display: inline-block; width: 18px; height: 11px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); border-radius: 2px; }
 .erd-key-swatch.erd-key-domain { border: 2px solid var(--muted); background: color-mix(in srgb, var(--g-domain-model-bg) 35%, var(--paper)); }
 .erd-key-swatch.erd-key-aggregate { background: var(--g-domain-model-bg); }
-.erd-key-grid { display: grid; grid-template-columns: repeat(auto-fill, 9.5rem); gap: 2px 12px; }
-/* Each list is a row group of the key's grid, sharing its columns (subgrid), so every cell has a fixed place. */
-.erd-key-ends { display: grid; grid-column: 1 / -1; grid-template-columns: subgrid; grid-auto-rows: 20px; row-gap: 2px; margin: 0; padding: 0; list-style: none; }
-.erd-key-ends li { display: flex; align-items: center; gap: 6px; min-width: 0; white-space: nowrap; }
-.erd-key-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .erd-key-line { flex: none; overflow: visible; }
 .erd-key-highlight { flex: none; display: inline-block; width: 14px; height: 10px; border: 1.5px solid var(--g-domain-model); background: var(--sheet); box-shadow: 0 0 0 2px var(--ink); border-radius: 2px; }
 /* Faded: outside the focus's scope (LA-V94-R08). */
@@ -1012,8 +1025,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 .stage-tools[data-stage-tools="top"] { top: 0; left: 0; padding: 6px 10px; width: max-content; max-width: 100cqw; translate: clamp(0px, 50cqw + (var(--chat-space, 0px) - var(--open-left, 0px)) / 2 - 50%, 100cqw - 100%) 0; }
 /* The stages fill the stage; what they draw sits in the frame, the open space less their tools. */
 .focus-stage > :is(.graph-page, .erd-page, .trace-page), .focus-stage > .graph-page > .graph-workspace, .focus-stage .graph-workspace > .graph-canvas, .focus-stage .erd-page > :is(.erd-canvas, .erd-empty) { position: absolute; inset: 0; min-height: 0; }
-.focus-stage .stage-camera { left: calc(var(--frame-left, 0px) + 4px); bottom: calc(var(--frame-bottom, 0px) + 4px); }
-.focus-stage .graph-minimap { right: calc(var(--frame-right, 0px) + 4px); bottom: calc(var(--frame-bottom, 0px) + 4px); }
+.focus-stage .stage-camera { left: calc(var(--frame-left, 0px) + 4px); bottom: var(--stage-foot); }
+.focus-stage .graph-minimap { right: calc(var(--frame-right, 0px) + 4px); bottom: var(--stage-foot); }
 .focus-stage .graph-edge-hints { inset: var(--frame-top, 0px) var(--frame-right, 0px) var(--frame-bottom, 0px) var(--frame-left, 0px); }
 .stage-page > .focus-missing { position: absolute; top: var(--float-inset); right: var(--chat-space); bottom: var(--float-inset); left: var(--nav-space); background: var(--paper); }
 .stage-page > .error { position: absolute; z-index: 5; bottom: var(--float-inset); left: var(--nav-space); margin: 0; }
@@ -1204,7 +1217,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   /* A gap between panels keeps its look, and its target reaches over the panels' edges. */
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
-    .graph-depth button, .graph-filters > summary, .stage-key > summary, .trace-filter, .quick-find-button,
+    .graph-depth button, .graph-filters > summary, .trace-filter, .quick-find-button,
     .palette-list li, .tab, .long-list-tools input, .quick-open-box input, .dialog-search, .segment, .file-button, .crumb-more-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }

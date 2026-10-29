@@ -3,7 +3,6 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { graphMap } from '../../src/graph/map';
 import { nestedMap } from '../../src/graph/nested';
-import { readyVoronoiMap } from '../../src/graph/voronoi';
 import { PLAIN_LOOK } from '../../src/graph/look';
 import type { FadeMap } from '../../src/graph/fade';
 import { openApp, startAtDepth } from '../helpers';
@@ -11,11 +10,11 @@ import { testIndex, testWorkspace } from './workspace';
 import { boxElement, isCenter, scene } from './scene';
 
 // The focus fade (LA-V93-R73, LA-EXP-DS09): in every layout the focus and everything under it are
-// drawn at full strength, the ancestors that contain it in Nested and Voronoi as a faint trail, and
+// drawn at full strength, the ancestors that contain it in Nested as a faint trail, and
 // everything else faded well back; the fade follows the focus, and a trace fades nothing.
 
-const LAYOUTS = ['tree', 'nested', 'voronoi'] as const;
-const mapOf = (layout: (typeof LAYOUTS)[number]): FadeMap => (layout === 'tree' ? graphMap(testIndex(), 'P') : layout === 'nested' ? nestedMap(testIndex(), 'P') : readyVoronoiMap(testIndex(), 'P')!);
+const LAYOUTS = ['tree', 'nested'] as const;
+const mapOf = (layout: (typeof LAYOUTS)[number]): FadeMap => (layout === 'tree' ? graphMap(testIndex(), 'P') : nestedMap(testIndex(), 'P'));
 
 /** Where a box stands to the focus in the map: the focus or under it, an ancestor of it, or elsewhere. */
 function placeOf(map: FadeMap, focus: string, id: string): 'subtree' | 'ancestor' | 'other' {
@@ -24,7 +23,7 @@ function placeOf(map: FadeMap, focus: string, id: string): 'subtree' | 'ancestor
   return 'other';
 }
 
-/** Expects every drawn box at its strength for the focus: 1 in its subtree, the trail's for an ancestor in Nested and Voronoi, the fade's for the rest. */
+/** Expects every drawn box at its strength for the focus: 1 in its subtree, the trail's for an ancestor in Nested, the fade's for the rest. */
 function expectFade(layout: (typeof LAYOUTS)[number], focus: string) {
   const map = mapOf(layout);
   const places = { subtree: 0, ancestor: 0, other: 0 };

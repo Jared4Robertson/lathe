@@ -189,15 +189,14 @@ describe('the graph tree, its depth and its camera', () => {
   });
 
   // The mapping the Owner decided, written out here rather than read from the keymap: in the Tree view Left out, Right
-  // in, Up and Down across; in the Nested and Voronoi views (children drawn inside their parent) Up out, Down in, Left
-  // and Right across. From a stage, which has a parent, a first child and a sibling either side.
+  // in, Up and Down across; in the Nested view (children drawn inside their parent) Up out, Down in, Left and Right
+  // across. From a stage, which has a parent, a first child and a sibling either side.
   const FROM = 'P-D/use-cases';
   const TARGETS = { out: 'P-D', in: 'P-D-CAP01', previous: 'P-D/domain-model', next: 'P-D/interaction-design' };
   const NESTED_KEYS = { ArrowUp: 'out', ArrowDown: 'in', ArrowLeft: 'previous', ArrowRight: 'next' } as const;
   const ARROWS = {
     tree: { ArrowLeft: 'out', ArrowRight: 'in', ArrowUp: 'previous', ArrowDown: 'next' },
     nested: NESTED_KEYS,
-    voronoi: NESTED_KEYS,
   } as const;
   const STEP_BUTTONS = { out: 'Step out to the parent', in: 'Step in to the first child', previous: 'Step to the previous sibling', next: 'Step to the next sibling' };
   const MARKS: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' };
@@ -205,9 +204,9 @@ describe('the graph tree, its depth and its camera', () => {
   // Each arrow's walking letter, which the step's keys name after it.
   const LETTERS: Record<string, string> = { ArrowLeft: 'A', ArrowRight: 'D', ArrowUp: 'W', ArrowDown: 'S' };
 
-  const VIEWS = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
-  for (const layout of ['tree', 'nested', 'voronoi'] as const) {
-    it(`LA-V93-R19-T02 In the ${VIEWS[layout]} view each arrow takes its view's step (in Tree, Left out, Right in, Up and Down across; in Nested and Voronoi, Up out, Down in, Left and Right across), across goes on past the first sibling, and the buttons, their tooltips and the shortcuts sheet say the same`, async () => {
+  const VIEWS = { tree: 'Tree', nested: 'Nested' } as const;
+  for (const layout of ['tree', 'nested'] as const) {
+    it(`LA-V93-R19-T02 In the ${VIEWS[layout]} view each arrow takes its view's step (in Tree, Left out, Right in, Up and Down across; in Nested, Up out, Down in, Left and Right across), across goes on past the first sibling, and the buttons, their tooltips and the shortcuts sheet say the same`, async () => {
       startAtDepth(1, layout);
       await openApp(`/${FROM}?stage=graph`, { data: testWorkspace() });
       await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));

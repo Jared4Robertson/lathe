@@ -114,8 +114,8 @@ PAGES.push(
     await panel.getByRole('alert').waitFor({ timeout: 20_000 });
   } },
 );
-// The graph in its Nested and Voronoi layouts (LA-V93-R21, LA-V93-R22): the same roles and names as the Tree layout.
-for (const layout of ['Nested', 'Voronoi'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
+// The graph in its Nested layout (LA-V93-R21): the same roles and names as the Tree layout.
+for (const layout of ['Nested'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
   await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
   await page.locator('.focus-stage .graph-layout button', { hasText: layout }).click();
   await page.locator(`.focus-stage .graph-flow[data-layout="${layout.toLowerCase()}"] .graph-box`).first().waitFor();
@@ -197,6 +197,11 @@ const PHONE: State[] = [
     await open(page, RECORD, '.header-strip h1');
     await page.getByRole('button', { name: 'Show the wiki card' }).click();
     await page.locator('.wiki-panel-sheet .wiki-panel').waitFor();
+  } },
+  { name: 'the stage key sheet', run: async (page) => {
+    await open(page, `${RECORD}?stage=graph`, '.stage-key-chip');
+    await page.locator('.stage-key-chip').click();
+    await page.locator('.stage-key-sheet .stage-key-sheet-list').waitFor();
   } },
 ];
 

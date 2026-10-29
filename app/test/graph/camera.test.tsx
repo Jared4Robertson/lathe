@@ -3,14 +3,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { drawnNested, frameMap, frameNested, frameOnMap, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, PARENT_STRIP_MAX, viewRect, zoomPath } from '../../src/graph/camera';
 import { nestedMap } from '../../src/graph/nested';
-import { readyVoronoiMap } from '../../src/graph/voronoi';
 import { graphMap } from '../../src/graph/map';
 import { MOTION_SPEED_MS } from '../../src/graph/motion';
 import { roundCamera } from '../../src/graph/GraphPage';
-import { inPolygon } from '../../src/graph/hit';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
-import { boxElement, drawnBox, graphHost, isCenter, scene } from './scene';
+import { boxElement, isCenter, scene } from './scene';
 
 // Focusing moves the camera, never the map (LA-EXP-DS09): the camera frames the focus and the
 // levels the depth shows below it, the parent kept at the left edge, in one smooth zoom and pan on
@@ -193,30 +191,5 @@ describe('graph camera in the Nested layout', () => {
     window.history.back();
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(nestedMap(testIndex(), 'P'), 'P-D-UC01', 1000, 800))), { timeout: 3000 });
-  });
-
-  it('LA-EXP-DS09-T12 LA-V93-R22-T02 On the page, the Voronoi layout draws each cell as its outline, the pointer taking the outline and not its box, and focusing a child glides to its cell', async () => {
-    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({ x: 0, y: 0, top: 0, left: 0, width: 1000, height: 800, right: 1000, bottom: 800, toJSON: () => ({}) } as DOMRect);
-    startAtDepth(1, 'voronoi');
-    await openApp('/P-D-UC01?stage=graph', { data: testWorkspace() });
-    await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
-    const map = () => readyVoronoiMap(testIndex(), 'P')!;
-    await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(map(), 'P-D-UC01', 1000, 800))));
-    expect(document.querySelector('.graph-flow.is-voronoi')).not.toBeNull();
-    // The cell is drawn as its outline, with its label inside it.
-    const cell = drawnBox('P-D-UC01')!;
-    expect(cell.view).toBe('voronoi');
-    expect(cell.polygon!.length).toBeGreaterThanOrEqual(3);
-    expect(cell.lines.map((l) => l.text).join(' ')).toContain('Lend a thing');
-    // The pointer takes the outline, not its box: a corner of its bounding box outside the outline is not the cell.
-    const corners = [[cell.rect.left + 1, cell.rect.top + 1], [cell.rect.left + cell.rect.width - 1, cell.rect.top + 1], [cell.rect.left + 1, cell.rect.top + cell.rect.height - 1], [cell.rect.left + cell.rect.width - 1, cell.rect.top + cell.rect.height - 1]];
-    const outside = corners.filter(([x, y]) => !inPolygon(cell.polygon!, { x, y }));
-    expect(outside.length).toBeGreaterThan(0);
-    for (const [x, y] of outside) expect(graphHost()!.graphHit!(x, y)).not.toBe('P-D-UC01');
-    const [cx, cy] = [cell.label.left + cell.label.width / 2, cell.label.top + cell.label.height / 2];
-    expect(graphHost()!.graphHit!(cx, cy)).toBe('P-D-UC01');
-    fireEvent.click(node('P-D-UC01-R01')!);
-    await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    await waitFor(() => expect(camera()).toEqual(roundCamera(frameNested(map(), 'P-D-UC01-R01', 1000, 800))), { timeout: 3000 });
   });
 });
