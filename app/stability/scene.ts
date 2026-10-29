@@ -122,3 +122,18 @@ export const traceLayout = (page: Page, layout: 'tree' | 'columns') =>
 /** What the Trace stage's canvas draws now, or (`whole`) every box of the product's map. */
 export const traceSceneOf = (page: Page, whole = false): Promise<TraceScene> =>
   page.evaluate(({ sel, whole }) => (document.querySelector(sel) as TraceHost).traceScene!(whole), { sel: TRACE, whole });
+
+/** Expects every entry of the stage's key whole inside the bar, and the bar inside the window (LA-V96-R30): never cut. */
+export async function expectKeyWhole(page: Page) {
+  const cut = await page.evaluate(() => {
+    const bar = document.querySelector('.focus-stage .stage-key')!.getBoundingClientRect();
+    const out: string[] = [];
+    if (bar.left < -0.5 || bar.right > window.innerWidth + 0.5 || bar.bottom > window.innerHeight + 0.5) out.push('the bar');
+    for (const li of document.querySelectorAll<HTMLElement>('.focus-stage .stage-key-entry')) {
+      const r = li.getBoundingClientRect();
+      if (r.left < bar.left - 0.5 || r.right > bar.right + 0.5 || r.top < bar.top - 0.5 || r.bottom > bar.bottom + 0.5) out.push(li.dataset.keyEntry ?? '?');
+    }
+    return out;
+  });
+  expect(cut, 'key entries cut').toEqual([]);
+}

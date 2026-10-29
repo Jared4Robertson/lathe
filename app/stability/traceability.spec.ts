@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { openPage } from './measure';
 import { rowsOf, served, testsText } from './flows';
 import { PRODUCT } from './scenarios';
-import { traceDrawn, traceLayout, traceSceneOf } from './scene';
+import { expectKeyWhole, traceDrawn, traceLayout, traceSceneOf } from './scene';
 import type { ColumnScene, ColumnsHost } from '../src/trace/TraceColumns';
 import { TITLE_FONT } from '../src/graph/text';
 
@@ -81,28 +81,47 @@ test.describe('Traceability flows', () => {
     await openPage(page, `/${REQUIREMENT}?stage=trace`);
     await traceDrawn(page);
     const chain = await traceSceneOf(page, true);
+    const idOf = (scene: Scene, key: string | null) => scene.boxes.find((b) => b.key === key)?.id;
     expect([...new Set(chain.boxes.filter((b) => b.focus).map((b) => b.id))]).toEqual([REQUIREMENT]);
-    expect(chain.boxes.find((b) => b.key === REQUIREMENT)!.parent).toBe(useCase);
+    // Each copy of the requirement under its use case, the use case under an outcome its capability serves.
+    const requirementKey = chain.boxes.find((b) => b.id === REQUIREMENT)!.key;
+    const ucBox = chain.boxes.find((b) => b.key === chain.boxes.find((r) => r.key === requirementKey)!.parent)!;
+    expect(ucBox.id).toBe(useCase);
+    expect(chain.boxes.find((b) => b.key === ucBox.parent)!.kind).toBe('business_outcome');
     const own = (await traceSceneOf(page)).boxes.find((b) => b.focus)!;
     expect(own.rect.left >= chain.canvas.left && own.rect.left + own.rect.width <= chain.canvas.left + chain.canvas.width, 'the camera frames the requirement').toBe(true);
-    expect(drawnUnder(chain, REQUIREMENT)).toEqual(expect.arrayContaining([...new Set([...steps, ...flows, ...views, ...operations, ...handlers, ...tests])]));
-    expect(chain.lines.some((l) => l.link && l.source === REQUIREMENT && tests.some((t) => l.target === `${REQUIREMENT}|${t}`))).toBe(true);
+    expect(drawnUnder(chain, requirementKey)).toEqual(expect.arrayContaining([...new Set([...steps, ...flows, ...views, ...operations, ...handlers, ...tests])]));
+    expect(chain.lines.some((l) => l.link && l.source === requirementKey && tests.some((t) => l.target === `${requirementKey}|${t}`))).toBe(true);
     await expect(pane.locator('.trace-access [aria-current="page"]')).toContainText(REQUIREMENT);
     expect((await ids('Design')).sort()).toEqual([...new Set([...steps, ...flows, ...views, ...operations])].sort());
     expect((await ids('Tests')).sort()).toEqual([...tests].sort());
-    // S03: the use case's tree, a box per requirement under it at full strength, framed; then the domain's, its capabilities side by side.
+    // S03: the use case's tree, a box per requirement under each copy at full strength, framed; then an outcome's, the use
+    // cases of the capabilities serving it; then the domain's, under Not under an outcome.
     const requirements = rowsOf(spec, 'uc_requirement').filter((r) => r.use_case_id === useCase).map((r) => String(r.id));
     await openPage(page, `/${useCase}?stage=trace`);
     await traceDrawn(page);
     const uc = await traceSceneOf(page, true);
-    expect(uc.boxes.filter((b) => b.parent === useCase && b.strength === 1).map((b) => b.id).sort()).toEqual([...requirements].sort());
-    expect(uc.boxes.find((b) => b.key === useCase)!.focus).toBe(true);
+    const ucKey = uc.boxes.find((b) => b.id === useCase)!.key;
+    expect(uc.boxes.filter((b) => b.parent === ucKey && b.strength === 1).map((b) => b.id).sort()).toEqual([...requirements].sort());
+    expect(uc.boxes.filter((b) => b.id === useCase).every((b) => b.focus)).toBe(true);
     const rows = pane.locator('.trace-matrix tbody tr:not(.group-row)');
     await expect(rows).toHaveCount(requirements.length);
+    const outcome = idOf(chain, ucBox.parent)!;
+    const serving = rowsOf(spec, 'serves').filter((l) => l.target_id === outcome).map((l) => String(l.source_id));
+    await openPage(page, `/${outcome}?stage=trace`);
+    await traceDrawn(page);
+    const outcomeScene = await traceSceneOf(page, true);
+    await expectKeyWhole(page);
+    const servedUseCases = rowsOf(spec, 'use_case').filter((u) => serving.includes(String(u.capability_id))).map((u) => String(u.id));
+    const underOutcome = outcomeScene.boxes.filter((b) => b.parent === outcome);
+    expect(underOutcome.map((b) => b.id)).toContain(useCase);
+    for (const b of underOutcome) expect(servedUseCases, b.id).toContain(b.id);
     await openPage(page, `/${TRC}?stage=trace`);
     await traceDrawn(page);
-    const capabilities = rowsOf(spec, 'capability').filter((c) => c.domain_id === TRC).map((c) => String(c.id));
-    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.parent === TRC && b.strength === 1).map((b) => b.id)).toEqual(expect.arrayContaining(capabilities.filter((c) => rowsOf(spec, 'use_case').some((u) => u.capability_id === c))));
+    const domain = await traceSceneOf(page, true);
+    expect(domain.boxes.find((b) => b.key === TRC)).toMatchObject({ focus: true, parent: 'outside' });
+    expect(domain.boxes.filter((b) => b.parent === TRC).every((b) => b.strength === 1)).toBe(true);
+    expect(domain.boxes.some((b) => b.kind === 'capability'), 'no capability is drawn').toBe(false);
     expect(await pane.locator('.trace-matrix tr.group-row').count()).toBeGreaterThan(1);
     // S04: Gaps only fades the complete branches and keeps every box in its place; each gap's box at full strength. The table keeps the rows with one.
     const before = (await traceSceneOf(page, true)).boxes.length;
@@ -129,7 +148,7 @@ test.describe('Traceability flows', () => {
     const held = await traceSceneOf(page, true);
     const focused = held.boxes.filter((b) => b.focus);
     expect(focused.every((b) => b.id === steps[0] && b.strength === 1)).toBe(true);
-    expect(focused.some((b) => b.key === `${REQUIREMENT}|${steps[0]}`)).toBe(true);
+    expect(focused.some((b) => b.key === `${requirementKey}|${steps[0]}`)).toBe(true);
     await expect(pane.locator('.trace-matrix td [aria-current="page"]').first()).toContainText(steps[0]);
   });
 
@@ -137,19 +156,24 @@ test.describe('Traceability flows', () => {
     const spec = await served(page);
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
     const capability = String(rowsOf(spec, 'use_case').find((u) => u.id === useCase)!.capability_id);
+    // The first outcome the capability serves: the requirement's first place, under that outcome and its use case.
+    const outcome = rowsOf(spec, 'serves').filter((l) => l.source_id === capability).map((l) => String(l.target_id)).sort()[0];
+    const ucKey = `${outcome}|${useCase}`;
+    const requirementKey = `${outcome}|${REQUIREMENT}`;
     const requirements = rowsOf(spec, 'uc_requirement').filter((r) => r.use_case_id === useCase);
     const pane = page.locator('.focus-stage');
     const columnsOf = (whole = false): Promise<ColumnScene> => page.evaluate((w) => (document.querySelector('.focus-stage .trace-flow') as ColumnsHost).traceScene!(w), whole);
     await openPage(page, `/${REQUIREMENT}?stage=trace`);
     await traceDrawn(page);
     await expect(pane.locator('.trace-flow')).toHaveAttribute('data-layout', 'columns');
-    // S01: a column for each box on the path from the product, each chosen box the next one on it, the requirement's chain last.
+    // S01: a column for each box on the path from the product (outcome, use case, requirement), each chosen box the next
+    // one on it, the requirement's chain last.
     const whole = await columnsOf(true);
-    expect(whole.columns.map((c) => c.parent).slice(0, 5)).toEqual(['LA', TRC, capability, useCase, REQUIREMENT]);
-    expect(whole.boxes.filter((b) => b.chosen).map((b) => b.key)).toEqual([TRC, capability, useCase, REQUIREMENT]);
-    expect(whole.boxes.find((b) => b.key === useCase)!.count).toBe(requirements.length);
-    // The columns above the use case's compact, their boxes titles alone; the rest one size; every title at 11 px at least.
-    expect(whole.columns.map((c) => c.compact).slice(0, 5)).toEqual([true, true, false, false, false]);
+    expect(whole.columns.map((c) => c.parent).slice(0, 4)).toEqual(['LA', outcome, ucKey, requirementKey]);
+    expect(whole.boxes.filter((b) => b.chosen).map((b) => b.key)).toEqual([outcome, ucKey, requirementKey]);
+    expect(whole.boxes.find((b) => b.key === ucKey)!.count).toBe(requirements.length);
+    // The column above the use case's compact, its boxes titles alone; the rest one size; every title at 11 px at least.
+    expect(whole.columns.map((c) => c.compact).slice(0, 4)).toEqual([true, false, false, false]);
     expect(new Set(whole.boxes.filter((b) => !b.compact).map((b) => `${Math.round(b.rect.width)}x${Math.round(b.rect.height)}`)).size).toBe(1);
     for (const b of whole.boxes) expect(b.textScale * TITLE_FONT * whole.camera.zoom, b.key).toBeGreaterThanOrEqual(11);
     // In view: the requirement's box and its chain's column whole, the use case's column beside them.
@@ -162,12 +186,12 @@ test.describe('Traceability flows', () => {
     await page.keyboard.press('ArrowRight');
     await page.waitForURL((u) => u.pathname !== `/${REQUIREMENT}`);
     await traceDrawn(page);
-    expect((await columnsOf(true)).boxes.filter((b) => b.chosen).map((b) => b.key)).toContain(REQUIREMENT);
+    expect((await columnsOf(true)).boxes.filter((b) => b.chosen).map((b) => b.key)).toContain(requirementKey);
     await page.keyboard.press('ArrowLeft');
     await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}`);
     // S03: a click on a sibling requirement's box focuses it, on the same stage.
     await traceDrawn(page);
-    const sibling = (await columnsOf()).boxes.find((b) => b.parent === useCase && b.key !== REQUIREMENT)!;
+    const sibling = (await columnsOf()).boxes.find((b) => b.parent === ucKey && b.key !== requirementKey)!;
     await page.mouse.click(sibling.rect.left + sibling.rect.width / 2, sibling.rect.top + sibling.rect.height / 2);
     await page.waitForURL((u) => u.pathname === `/${sibling.id}`);
     expect(new URL(page.url()).searchParams.get('stage')).toBe('trace');

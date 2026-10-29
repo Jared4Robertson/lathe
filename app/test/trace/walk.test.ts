@@ -42,9 +42,9 @@ describe('the Trace stage\'s walk', () => {
     expect(walk(map, 'P-D-UC01-R01|P-D-CMD01', ['left'])).toEqual(['P-D-UC01-R01|P-D-UC01-FL01-S01']);
     // A gap, a file and the Untraced mark are nodes too, each said in words.
     expect(walk(map, 'P-D-SP01', ['right'])).toEqual(['gap:P-D-SP01:build']);
-    expect(nodeWords(index, map.nodes.get('gap:P-D-SP01:build')!)).toBe(`Not built, a gap of ${index.byId.get('P-D-SP01')!.title}`);
-    expect(nodeWords(index, map.nodes.get('P-D-UC01-R01|file:test/lend.test.ts')!)).toBe('File test/lend.test.ts');
-    expect(nodeWords(index, map.nodes.get('untraced')!)).toMatch(/^Untraced, \d+ records no chain reaches$/);
+    expect(nodeWords(index, map, map.nodes.get('gap:P-D-SP01:build')!)).toBe(`Not built, a gap of ${index.byId.get('P-D-SP01')!.title}`);
+    expect(nodeWords(index, map, map.nodes.get('P-D-UC01-R01|file:test/lend.test.ts')!)).toBe('File test/lend.test.ts');
+    expect(nodeWords(index, map, map.nodes.get('untraced')!)).toMatch(/^Untraced, \d+ records no chain reaches$/);
     // From the product an arrow goes in.
     expect(walk(map, 'P', ['right'])[0]).toBe(map.map.nodes.get('P')!.children[0]);
   });
