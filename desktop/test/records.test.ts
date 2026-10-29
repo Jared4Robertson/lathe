@@ -12,7 +12,7 @@ function write(file: string, text: string) {
   writeFileSync(file, text);
 }
 
-describe('LA-PAT-RECORD-DATA-FILE-R01-T01 The record actions take only a known action and a record ID, and find the data file themselves', () => {
+describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The record actions take only a known action and a record ID, and find the data file themselves', () => {
   it('accepts exactly { action, id } with a known action and a record ID', () => {
     expect(parseRecordRequest({ action: 'reveal', id: 'SMK-ORD' })).toEqual({ action: 'reveal', id: 'SMK-ORD' });
     for (const action of ['open-in-editor', 'copy-id', 'menu']) expect(parseRecordRequest({ action, id: 'LA-V71-R01' })).toEqual({ action, id: 'LA-V71-R01' });
