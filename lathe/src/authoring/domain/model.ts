@@ -1,7 +1,8 @@
-// The Domain aggregate (LA-AUT-A4): a domain with its capabilities (and the business outcomes each serves), its terms,
-// its domain services with the service that implements each and their tests, and its repositories (each with the
-// aggregate it persists). Its technical records, the repositories and services, carry the standard rules they meet
-// and the packages they use. One instance is one domain, whole; it holds only the links its own records start.
+// The Domain aggregate (LA-AUT-A4): a domain with its capabilities (and the business outcomes each serves), its terms
+// (each with the terms it builds on), its domain services with the service that implements each and their tests, and
+// its repositories (each with the aggregate it persists). Its technical records, the repositories and services, carry
+// the standard rules they meet and the packages they use. One instance is one domain, whole; it holds only the links
+// its own records start.
 import type { Slice } from '../../platform/commands/definition.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, RepositoryShareRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
@@ -32,6 +33,12 @@ export interface Capability {
   serves: string[];
 }
 
+/** A term with the terms its meaning builds on (builds_on), of any domain of the product. */
+export interface Term {
+  row: TermRow;
+  buildsOn: string[];
+}
+
 /** A technical record with the standard rules it meets and the packages it uses. */
 export interface Technical<T> {
   row: T;
@@ -57,7 +64,7 @@ export interface Domain {
   readonly root: string;
   domain: DomainRow;
   capabilities: Capability[];
-  terms: TermRow[];
+  terms: Term[];
   domainServices: DomainServiceRow[];
   services: Technical<ServiceRow>[];
   domainServiceTests: Tested<DomainServiceTestRow>[];
@@ -79,6 +86,7 @@ export const DOMAIN_TABLES = [
   'meets',
   'package_use',
   'starts_from',
+  'builds_on',
 ] as const;
 
 /** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
@@ -120,7 +128,7 @@ export function domainsFrom(rows: (table: string) => Row[], only?: string): Doma
   const serviceOf = new Map(domainServices.map((s) => [s.id, s.domain_id]));
   const services = (rows('service') as unknown as ServiceRow[]).filter((s) => serviceOf.has(s.domain_service_id));
   const tests = (rows('domain_service_test') as unknown as DomainServiceTestRow[]).filter((t) => serviceOf.has(t.domain_service_id));
-  const [serves, persists, meets, startsFrom] = ['serves', 'persists', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
+  const [serves, persists, meets, startsFrom, buildsOn] = ['serves', 'persists', 'meets', 'starts_from', 'builds_on'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   const shares = rows('repository_share') as unknown as RepositoryShareRow[];
   const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
@@ -132,7 +140,7 @@ export function domainsFrom(rows: (table: string) => Row[], only?: string): Doma
       root: domain.id,
       domain,
       capabilities: capabilities.filter(own).map((row) => ({ row, serves: targets(serves, row.id) })),
-      terms: terms.filter(own),
+      terms: terms.filter(own).map((row) => ({ row, buildsOn: targets(buildsOn, row.id) })),
       domainServices: domainServices.filter(own),
       services: services.filter(ownServices).map(technical),
       domainServiceTests: tests.filter(ownServices).map((row) => ({ row, startsFrom: targets(startsFrom, row.id) })),
@@ -154,7 +162,7 @@ export function domainRows(domain: Domain): Map<string, Row[]> {
   return new Map<string, Row[]>([
     ['domain', [asRow(domain.domain)]],
     ['capability', domain.capabilities.map((c) => asRow(c.row))],
-    ['term', domain.terms.map(asRow)],
+    ['term', domain.terms.map((t) => asRow(t.row))],
     ['domain_service', domain.domainServices.map(asRow)],
     ['service', domain.services.map((s) => asRow(s.row))],
     ['domain_service_test', domain.domainServiceTests.map((t) => asRow(t.row))],
@@ -165,6 +173,7 @@ export function domainRows(domain: Domain): Map<string, Row[]> {
     ['meets', technical.flatMap((t) => links(t.row.id, t.meets))],
     ['package_use', technical.flatMap((t) => t.packages.map((name) => ({ record_id: t.row.id, package: name })))],
     ['starts_from', domain.domainServiceTests.flatMap((t) => links(t.row.id, t.startsFrom))],
+    ['builds_on', domain.terms.flatMap((t) => links(t.row.id, t.buildsOn))],
   ]);
 }
 
@@ -172,7 +181,7 @@ export function domainRows(domain: Domain): Map<string, Row[]> {
 export function kindInside(domain: Domain, id: string): DomainKind | undefined {
   if (domain.root === id) return 'domain';
   if (domain.capabilities.some((c) => c.row.id === id)) return 'capability';
-  if (domain.terms.some((t) => t.id === id)) return 'term';
+  if (domain.terms.some((t) => t.row.id === id)) return 'term';
   if (domain.domainServices.some((s) => s.id === id)) return 'domain_service';
   if (domain.repositories.some((r) => r.row.id === id)) return 'repository';
   if (domain.services.some((s) => s.row.id === id)) return 'service';

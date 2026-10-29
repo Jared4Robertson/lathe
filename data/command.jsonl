@@ -58,8 +58,8 @@
 {"id":"LA-AUT-CMD163","title":"Add a capability","entity_id":"LA-AUT-EN05","description":"Adds a capability to its domain, at a position, with the business outcomes it serves."}
 {"id":"LA-AUT-CMD164","title":"Change a capability","entity_id":"LA-AUT-EN05","description":"Changes a capability's title, position or description, or the business outcomes it serves (the whole list)."}
 {"id":"LA-AUT-CMD165","title":"Remove a capability","entity_id":"LA-AUT-EN05","description":"Removes a capability and the links it starts. Refused while a use case sits under it or anything else references it."}
-{"id":"LA-AUT-CMD166","title":"Add a term","entity_id":"LA-AUT-EN30","description":"Adds a term to its domain's glossary, with what it means there."}
-{"id":"LA-AUT-CMD167","title":"Change a term","entity_id":"LA-AUT-EN30","description":"Changes a term's title, meaning or group."}
+{"id":"LA-AUT-CMD166","title":"Add a term","entity_id":"LA-AUT-EN30","description":"Adds a term to its domain's glossary, with what it means there and the terms it builds on."}
+{"id":"LA-AUT-CMD167","title":"Change a term","entity_id":"LA-AUT-EN30","description":"Changes a term's title, meaning or group, or the terms it builds on (the whole list)."}
 {"id":"LA-AUT-CMD168","title":"Remove a term","entity_id":"LA-AUT-EN30","description":"Removes a term from its domain. Refused while anything references it."}
 {"id":"LA-AUT-CMD169","title":"Add a domain service","entity_id":"LA-AUT-EN42","description":"Adds a domain service to its domain, with what it must work out."}
 {"id":"LA-AUT-CMD170","title":"Change a domain service","entity_id":"LA-AUT-EN42","description":"Changes a domain service's title or statement."}

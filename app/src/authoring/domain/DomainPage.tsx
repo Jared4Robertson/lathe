@@ -18,7 +18,7 @@ import { useDomain } from './reads';
 // record's page holds around that (traceability, problems, facts and links) is the Record page's (RecordFrame).
 
 const capabilityOf = (page: Domain, id: string) => page.capabilities.find((c) => c.capability.id === id)!;
-const termOf = (page: Domain, id: string) => page.terms.find((t) => t.id === id)!;
+const termOf = (page: Domain, id: string) => page.terms.find((t) => t.term.id === id)!.term;
 const domainServiceOf = (page: Domain, id: string) => page.domainServices.find((s) => s.domainService.id === id)!;
 const serviceOf = (page: Domain, id: string) => page.domainServices.find((s) => s.service?.service.id === id)!;
 const testOf = (page: Domain, id: string) => page.domainServices.flatMap((s) => s.tests).find((t) => t.test.id === id)!;

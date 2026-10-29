@@ -88,6 +88,7 @@ function fieldsOf(index: SpecIndex, page: DomainPage | null, product: string, ki
         { field: 'title', column: 'title', table: 'term' },
         { field: 'meaning', column: 'meaning', table: 'term', long: true },
         { field: 'group_name', column: 'group_name', table: 'term' },
+        { field: 'builds_on', label: 'Builds on', description: 'The terms its meaning uses, of any domain of the product, each defined without it. The list replaces its links.', many: choices(index, product, ['term']).filter((c) => c.id !== page?.record.id || adding) },
       ];
     case 'domain_service':
       return [...id('domain_service'), { field: 'title', column: 'title', table: 'domain_service' }, { field: 'statement', column: 'statement', table: 'domain_service', long: true }];
@@ -135,8 +136,10 @@ function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<strin
       const c = page.capabilities.find((x) => x.capability.id === id)!;
       return { ...c.capability, serves: c.serves };
     }
-    case 'term':
-      return { ...page.terms.find((t) => t.id === id)! };
+    case 'term': {
+      const t = page.terms.find((x) => x.term.id === id)!;
+      return { ...t.term, builds_on: t.buildsOn };
+    }
     case 'domain_service':
       return { ...page.domainServices.find((s) => s.domainService.id === id)!.domainService };
     case 'service': {
@@ -205,7 +208,7 @@ function goesWith(page: DomainPage, kind: DomainKind, id: string): string[] {
   if (kind === 'domain') {
     return [
       ...page.capabilities.map((c) => c.capability.id),
-      ...page.terms.map((t) => t.id),
+      ...page.terms.map((t) => t.term.id),
       ...page.domainServices.flatMap((s) => [s.domainService.id, ...ofService(s)]),
       ...page.repositories.map((r) => r.repository.id),
     ];
