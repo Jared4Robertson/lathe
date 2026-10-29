@@ -1,6 +1,7 @@
 import type { Row, SpecIndex, SpecRecord } from '../specs/data';
 import { textOf, byIdOrder, partsOf } from '../specs/data';
-import { focusStrength, type FadeLook } from '../graph/fade';
+import { keptFade, type Fade, type FadeLook } from '../graph/fade';
+import { onePerData } from '../graph/one-map';
 
 // The ERD stage's map, as plain data (no React): one entity-relationship diagram of a whole product,
 // laid out once per product and data change (layout.ts), that every focus navigates (LA-V94-R08).
@@ -93,18 +94,8 @@ export function fieldType(index: SpecIndex, field: Row): string {
 const fieldsOf = (index: SpecIndex, id: string): ErdField[] =>
   partsOf(index, id, 'entity_field').map((f) => ({ field: textOf(f, 'name'), kind: fieldType(index, f) }));
 
-const maps = new WeakMap<SpecIndex, Map<string, ErdMap>>();
-
-/** A product's map: built once per index (a data change makes a new index), then read. */
-export function erdMap(index: SpecIndex, productId: string): ErdMap {
-  let known = maps.get(index);
-  if (!known) { known = new Map(); maps.set(index, known); }
-  const cached = known.get(productId);
-  if (cached) return cached;
-  const map = buildMap(index, productId);
-  known.set(productId, map);
-  return map;
-}
+/** A product's map: built once per index, that is once per data change (graph/one-map.ts), then read. */
+export const erdMap = onePerData(buildMap);
 
 function buildMap(index: SpecIndex, productId: string): ErdMap {
   const boxes = new Map<string, ErdBox>();
@@ -196,14 +187,12 @@ export function scopeContents(map: ErdMap, scope: string): { boxes: ErdBox[]; li
 }
 
 /**
- * How strongly each box is drawn for a focus, 0 to 1: the graph's focus fade (graph/fade.ts) with
- * the scope as its focus: the scope and what lies in it at full strength, the regions around it
- * as a trail, the rest faded. The whole product is the scope of a product's focus: nothing fades.
+ * How strongly each box is drawn for a focus, by its place (a box's ID), 0 to 1: the shared fade of
+ * every one-map stage (graph/fade.ts `keptFade`, LA-PAT-APP-UX-R19), keeping the scope and what lies
+ * in it at full strength and fading the rest back. A product's focus keeps the whole map.
  */
-export function erdStrength(map: ErdMap, scope: string, look: FadeLook): (id: string) => number {
-  if (scope === map.product) return () => 1;
-  const nodes = new Map(map.boxes.map((b) => [b.id, { parent: b.parent ?? null }]));
-  return focusStrength({ view: 'nested', nodes }, scope, look);
+export function erdStrength(map: ErdMap, scope: string, look: Pick<FadeLook, 'focusFade'>): Fade {
+  return keptFade((id) => inScope(map, scope, id), look);
 }
 
 // ---------- Geometry ----------

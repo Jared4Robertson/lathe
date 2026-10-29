@@ -72,7 +72,7 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
       const at = erdFocus(index, focus);
       if (!at) continue;
       const map = erdMap(index, at.product);
-      const strength = erdStrength(map, at.scope, { focusFade: 0.25, focusTrail: 0.45 });
+      const strength = erdStrength(map, at.scope, { focusFade: 0.25 });
       const { container, unmount } = render(<ErdKey map={map} at={at} relations={index.workspace.relations} />);
       const needs = (what: string, selector: string) => {
         const el = container.querySelector(selector);
