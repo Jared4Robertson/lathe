@@ -167,7 +167,7 @@ describe('move', () => {
     await store.close();
   });
 
-  it('LA-AUT-SP01-T refuses to move a record with no owner', async () => {
+  it('LA-AUT-UC18-R05-T03 refuses to move a record with no owner', async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'move', id: 'TL-V01', parent: 'TL' }])).toEqual([expect.objectContaining({ rule: 'command', message: 'a view has no parent, so it cannot move' })]);
     await store.close();
@@ -201,7 +201,7 @@ describe('link and unlink', () => {
     await store.close();
   });
 
-  it('LA-AUT-SP07-T refuses a link its ends allow but its relation does not, a wrong kind at an end, and an unknown relation', async () => {
+  it('LA-PLT-UC01-R09-T02 refuses a link its ends allow but its relation does not, a wrong kind at an end, and an unknown relation', async () => {
     const { store } = await fresh();
     // A second pair widens documents to a link table whose target is any record, so its pairs are what hold.
     await store.add('product_relation', { name: 'documents', source_kind: 'cli_command', target_kind: 'integration', product_id: 'TL', forward_label: 'Documents', reverse_label: 'Documented by', description: 'The CLI command is documented with the integration.' });
@@ -233,7 +233,7 @@ describe('link and unlink', () => {
 });
 
 describe('remove', () => {
-  it('LA-AUT-SP02-T refuses a record others reference, saying what references it', async () => {
+  it('LA-STD-CODE-R07-T03 refuses a record others reference, saying what references it', async () => {
     const { store } = await fresh();
     const problems = await refused(store, [{ op: 'remove', table: 'uc_requirement', key: 'TL-LEND-UC01-R01' }]);
     expect(problems).toEqual([expect.objectContaining({ rule: 'referenced' })]);
