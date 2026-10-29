@@ -1,11 +1,9 @@
 import { Button } from '../components/Button';
 
-// Edge hints (LA-V93-R18): at each edge of a canvas a small chip counts the boxes of interest
-// past it ("3 ↑", "8 →"): the records the graph's center links to (the Links switch), or the Model
-// view's faded context boxes. A click pans the camera that way, with the shared motion, without
-// changing the focus: by about half the canvas, or as the host asks (the graph brings the nearest
-// linked record into view). The chips follow the camera, and an edge with nothing past it shows none.
-// The graph's canvas counts with its own camera; the ERD view's wrapper is app/src/erd/hints.tsx.
+// Edge hints (LA-V94-R06): at each edge of a canvas a small chip counts the boxes of interest
+// past it ("3 ↑", "8 →"): the ERD view's faded context boxes. A click pans the camera that way, with
+// the shared motion, without changing the focus, by about half the canvas. The chips follow the
+// camera, and an edge with nothing past it shows none. The ERD view's wrapper is app/src/erd/hints.tsx.
 
 export type Point = { x: number; y: number };
 export type Side = 'up' | 'down' | 'left' | 'right';
@@ -37,7 +35,7 @@ export function panToward(view: { x: number; y: number; zoom: number }, side: Si
   return { x: view.x + (h.dx * width) / 2, y: view.y + (h.dy * height) / 2, zoom: view.zoom };
 }
 
-/** The chips for the counts past each edge: `noun` says what they are ("faded", "linked"); `onPan` moves the camera toward a side. */
+/** The chips for the counts past each edge: `noun` says what they are ("more"); `onPan` moves the camera toward a side. */
 export function EdgeHintChips({ past, noun, onPan }: { past: Record<Side, number>; noun: string; onPan: (side: Side) => void }) {
   return (
     <div className="graph-edge-hints">

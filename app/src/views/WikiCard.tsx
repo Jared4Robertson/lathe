@@ -22,9 +22,10 @@ import { focusTrail } from './HeaderStrip';
 
 // The wiki card (LA-V96): the one card, the focused record's or group's wiki page, with its editing,
 // floating over the right of the open space above whichever stage shows, between the open space and
-// the side bar, level with the focused box (cardPlace.ts). It reads as part of the graph: the boxes'
-// corners, their kind line, a stripe in the focused box's own color along its top, and no hard border.
-// It opens as a summary (the kind line, the title, the lead text clamped to a few lines and up to
+// the side bar, in one constant spot just under the stage's toolbar row, its height a steady share of
+// the stage (the stylesheet's). It reads as part of the graph: the boxes' kind line and a stripe in the
+// focused box's own color along its top, with round corners, a hairline border and a shadow that set it
+// off the map. It opens as a summary (the kind line, the title, the lead text clamped to a few lines and up to
 // three key facts); More shows the whole wiki page in place and Less goes back, the session's setting
 // like its open state and width (graph/settings.ts). It follows the focus once the focus settles
 // (FocusPage.tsx), cross-fading to the new page, so arrowing through the stage never draws a page per

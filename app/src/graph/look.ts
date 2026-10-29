@@ -8,7 +8,7 @@ import { readMotion } from './motion';
 
 export interface Look {
   paper: string; sheet: string; ink: string; muted: string; rule: string;
-  steel: string; spark: string; sparkBg: string; warn: string; error: string; onMark: string;
+  steel: string; sparkBg: string; warn: string; error: string; onMark: string;
   hoverRing: string; linkEdge: string;
   discoveryEdge: string; discoveryFill: string; domainModelEdge: string; domainModelFill: string; useCasesEdge: string; useCasesFill: string;
   interactionDesignEdge: string; interactionDesignFill: string; technicalSpecificationEdge: string; technicalSpecificationFill: string;
@@ -26,7 +26,7 @@ export interface Look {
 
 const COLORS: Record<Exclude<keyof Look, 'spotlightDim' | 'contextOpacity' | 'focusFade' | 'focusTrail' | 'fade' | 'vignette'>, string> = {
   paper: '--paper', sheet: '--sheet', ink: '--ink', muted: '--muted', rule: '--rule',
-  steel: '--steel', spark: '--spark', sparkBg: '--spark-bg', warn: '--warn', error: '--error', onMark: '--on-mark',
+  steel: '--steel', sparkBg: '--spark-bg', warn: '--warn', error: '--error', onMark: '--on-mark',
   hoverRing: '--hover-ring', linkEdge: '--link-edge',
   discoveryEdge: '--g-discovery', discoveryFill: '--g-discovery-bg',
   domainModelEdge: '--g-domain-model', domainModelFill: '--g-domain-model-bg', useCasesEdge: '--g-use-cases', useCasesFill: '--g-use-cases-bg',
@@ -39,7 +39,7 @@ const COLORS: Record<Exclude<keyof Look, 'spotlightDim' | 'contextOpacity' | 'fo
 /** The look a page without a stylesheet draws in (the unit tests). */
 export const PLAIN_LOOK: Look = {
   paper: '#F4F6F5', sheet: '#FFFFFF', ink: '#1D2830', muted: '#5A6870', rule: '#CBD3D6',
-  steel: '#2E6A88', spark: '#B5512A', sparkBg: '#F8E8DF', warn: '#875C00', error: '#9E4320', onMark: '#fff',
+  steel: '#2E6A88', sparkBg: '#F8E8DF', warn: '#875C00', error: '#9E4320', onMark: '#fff',
   hoverRing: 'rgb(46 106 136 / 0.45)', linkEdge: '#B5512A',
   discoveryEdge: '#75640E', discoveryFill: '#F4EFD8',
   domainModelEdge: '#2E6A88', domainModelFill: '#E4EEF3', useCasesEdge: '#2F7148', useCasesFill: '#E2F1E7',

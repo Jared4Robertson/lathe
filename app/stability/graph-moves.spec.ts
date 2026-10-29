@@ -5,7 +5,7 @@ import { cameraOf, clickBox, GRAPH, graphDrawn } from './scene';
 // LA-V93-R72-T02: moving through the graph never changes how it is drawn. In each layout, the four
 // arrows and clicks on boxes step across pages already open in a tab (a lasting one, drawn
 // differently before the person changed the settings) and pages that are not; the layout, depth
-// and Links switch stay as the person set them.
+// and minimap stay as the person set them.
 
 const FLOW = 'LA-EXP-UC03-FL01';
 const LAYOUTS = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
@@ -18,7 +18,7 @@ const drawn = async (page: Page) => ({
   layout: await page.locator(GRAPH).getAttribute('data-layout'),
   pressed: (await page.locator('.focus-stage .graph-layout button[aria-pressed="true"]').textContent())?.trim(),
   depth: (await page.locator('.focus-stage .graph-depth:not(.graph-layout) button[aria-pressed="true"]').textContent())?.trim(),
-  links: await page.locator('.focus-stage button', { hasText: /^Links/ }).getAttribute('aria-pressed'),
+  minimap: await page.locator('.focus-stage .graph-minimap').count() > 0,
 });
 
 /** One move: the address changes, and the graph draws the new focus. */
@@ -41,22 +41,24 @@ async function cameraStill(page: Page) {
 }
 
 for (const layout of ['tree', 'nested', 'voronoi'] as const) {
-  test(`LA-V93-R72-T02 in the ${LAYOUTS[layout]} layout, the arrows and clicks keep the layout, depth and Links, into tabs open or new`, async ({ page }) => {
+  test(`LA-V93-R72-T02 in the ${LAYOUTS[layout]} layout, the arrows and clicks keep the layout, depth and minimap, into tabs open or new`, async ({ page }) => {
     await openPage(page, `/${FLOW}?stage=graph`);
     await graphDrawn(page);
     const canvas = page.locator(`${GRAPH}`);
-    // A lasting tab on the flow, drawn as it starts (Tree, depth 1, Links off).
+    // A lasting tab on the flow, drawn as it starts (Tree, depth 1, no minimap).
     await page.locator('.tab.is-preview [role="tab"]').dblclick();
     await canvas.focus();
     await move(page, () => page.keyboard.press('ArrowRight'));
     const step = at(page);
-    // A lasting tab on its first step, where the person sets depth 2, Links on and the layout.
+    // A lasting tab on its first step, where the person sets depth 2, the minimap and the layout.
     await page.locator('.tab.is-preview [role="tab"]').dblclick();
     await page.locator('.focus-stage .graph-depth:not(.graph-layout) button', { hasText: '2' }).click();
-    await page.locator('.focus-stage button', { hasText: /^Links/ }).click();
+    await page.locator('.focus-stage .graph-filters > summary').click();
+    await page.locator('.focus-stage .graph-filter-body input[role="switch"]').check();
+    await page.locator('.focus-stage .graph-filters > summary').click();
     await page.locator('.focus-stage .graph-layout button', { hasText: LAYOUTS[layout] }).click();
     await graphDrawn(page, layout, 900);
-    const set = { layout, pressed: LAYOUTS[layout], depth: '2', links: 'true' };
+    const set = { layout, pressed: LAYOUTS[layout], depth: '2', minimap: true };
     expect(await drawn(page)).toEqual(set);
 
     // The four arrows, each taking its step in this layout (LA-V93-R19): out to the flow's tab, in to the step's, and

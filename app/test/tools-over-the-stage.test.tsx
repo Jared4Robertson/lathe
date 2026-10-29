@@ -125,7 +125,7 @@ describe('LA-PAT-APP-UX-R20 Nothing replaces the stage: tools open as panels ove
     expect(window.location.pathname).toBe('/DM-SHOP-UC01');
   });
 
-  it('LA-V96-R24-T01 In the wiki card\'s summary a long value wraps at the card\'s width, its label column only as wide as its labels', () => {
+  it('LA-V96-R25-T01 In the wiki card\'s summary a long value wraps at the card\'s width, its label column only as wide as its labels', () => {
     const css = readFileSync(join(SRC, 'styles.css'), 'utf8');
     expect(css).toMatch(/\.wiki-panel-summary \.fields > div \{[^}]*grid-template-columns:\s*max-content minmax\(0, 1fr\)/);
     // A record link's title wraps with it, not in a column beside its ID.

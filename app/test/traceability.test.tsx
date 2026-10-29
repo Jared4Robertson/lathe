@@ -1,6 +1,5 @@
 import { cleanup, render, screen, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { graphEdgeLabel, graphRelationLabel } from '../src/graph/model';
 import { type SpecIndex } from '../src/specs/data';
 import { linkLabel, relationLabelOf } from '../src/specs/labels';
 import { RecordContent } from '../src/specs/RecordContent';
@@ -168,11 +167,10 @@ describe('traceability', () => {
     }
     expect(offenders).toEqual([]);
 
-    // The graph's edges, legend and connections, and the ERD view's lines, read the same labels.
-    expect(graphEdgeLabel(index, { source: 'P-D-UC01-FL01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' })).toBe('Fulfills');
-    expect(graphEdgeLabel(index, { source: 'P-D-UC01-FL01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' }, 'target')).toBe('Fulfilled by');
-    expect(graphRelationLabel('happens_in', index)).toBe('Happens in');
-    expect(graphRelationLabel('parent', index)).toBe('parent / child');
+    // The labels every view reads, by link and by relation.
+    expect(linkLabel(index, { source: 'P-D-UC01-FL01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' }, 'source')).toBe('Fulfills');
+    expect(linkLabel(index, { source: 'P-D-UC01-FL01-S01', relation: 'fulfills', target: 'P-D-UC01-R01' }, 'target')).toBe('Fulfilled by');
+    expect(relationLabelOf(index.workspace.relations, 'happens_in')).toBe('Happens in');
     expect(relationLabelOf(index.workspace.relations, 'hears', 'target')).toBe('Heard by');
     expect(linkLabel(index, { source: 'P-D-CMD01', relation: 'checks', target: 'P-D-SP01' }, 'target')).toBe('Checked by');
   }, 120_000);

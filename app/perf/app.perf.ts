@@ -6,7 +6,7 @@ import { BUDGETS } from './budgets';
 import { installProbes, quiet, record, work } from './measure';
 import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 
-// LA-PAT-APP-UX-R11-T01, LA-V61-R37-T01 to T04 and LA-V96-R21-T01: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
+// LA-PAT-APP-UX-R11-T01, LA-V61-R37-T01 to T04, LA-V96-R21-T01 and LA-V96-R24-T03: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-PLT-UC05';
@@ -166,7 +166,25 @@ test.describe('performance', () => {
     const start = await page.evaluate(() => performance.now());
     await page.locator('.focus-stage .erd-flow .react-flow__node').first().waitFor();
     const laid = (await page.evaluate(() => performance.now())) - start;
-    await record({ name: 'ERD stage: domain ERD drawn after the page', value: laid, unit: 'ms', budget: null });
+    await record({ name: 'ERD stage: map drawn after the page', value: laid, unit: 'ms', budget: null });
+  });
+
+  test("LA-V94-R08-T02 the product's ERD map is drawn and framed within its first-frame budget, and a focus after it lays nothing out", async ({ page }) => {
+    await open(page, '/LA?stage=graph');
+    await boxesDrawn(page);
+    const start = await page.evaluate(() => performance.now());
+    await page.keyboard.press('Control+2');
+    await page.locator('.focus-stage .erd-flow[data-framed] .react-flow__node').first().waitFor();
+    const first = (await page.evaluate(() => performance.now())) - start;
+    await record({ name: 'ERD map: first frame of the product map', value: first, unit: 'ms', budget: BUDGETS.erdMapFirstFrameMs, detail: 'key press to the map drawn and framed, ELK and the layout included' });
+    // A domain focus on the same map: the camera glides, nothing is laid out again.
+    await quiet(page);
+    const toDomain = await work(page, async () => {
+      await page.locator('.focus-stage .erd-flow .react-flow__node[data-id="LA-EXP"] .erd-box-head').click();
+      await page.waitForURL((u) => u.pathname === DOMAIN);
+      await quiet(page);
+    });
+    await record({ name: 'ERD map: focus a domain (camera only)', value: toDomain.workMs, unit: 'ms', budget: BUDGETS.cameraMoveMs, detail: `longest frame ${Math.round(toDomain.worstFrameMs)} ms` });
   });
 
   test("LA-V98-R06-T02 the Trace stage's first frame lays the product's map out within its budget; every switch and focus after it within the stage switch budget", async ({ page }) => {
@@ -214,5 +232,22 @@ test.describe('performance', () => {
       await page.mouse.up();
     });
     await record({ name: "Trace stage: panning the product's trace", value: pan.worstFrameMs, unit: 'ms', budget: BUDGETS.traceDragFrameMs, detail: `${pan.slowFrames} of ${pan.frames} frames over 20 ms while dragging 600 px` });
+  });
+
+  test('LA-V96-R24-T03 the leader line to the wiki card adds no measurable cost: a pan with it drawn every frame stays within the camera-move budget', async ({ page }) => {
+    await open(page, `${AGGREGATE}?stage=graph`);
+    await boxesDrawn(page);
+    await expect(page.locator('.wiki-panel')).toBeVisible();
+    const drawn = () => page.evaluate(() => !!(document.querySelector('.focus-stage .graph-flow') as HTMLElement & { leaderLine?: unknown }).leaderLine);
+    await expect.poll(drawn, { message: 'the leader line is drawn' }).toBe(true);
+    const box = (await page.locator('.focus-stage .graph-flow canvas').boundingBox())!;
+    const pan = await work(page, async () => {
+      await page.mouse.move(box.x + box.width * 0.4, box.y + box.height * 0.5);
+      await page.mouse.down();
+      for (let i = 1; i <= 20; i++) await page.mouse.move(box.x + box.width * 0.4 - i * 4, box.y + box.height * 0.5 + i * 3);
+      await page.mouse.up();
+    });
+    expect(await drawn(), 'the line is still drawn after the pan').toBe(true);
+    await record({ name: 'a pan with the leader line drawn every frame', value: pan.workMs, unit: 'ms', budget: BUDGETS.cameraMoveMs, detail: `longest frame ${Math.round(pan.worstFrameMs)} ms, ${pan.slowFrames} of ${pan.frames} frames over 20 ms` });
   });
 });

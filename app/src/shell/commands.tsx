@@ -92,7 +92,9 @@ export function useCommand(id: string, handler: Handler, enabled = true, title?:
   const ref = useRef<HandlerRef>({ current: handler, title });
   ref.current.current = handler;
   ref.current.title = title;
-  useEffect(() => {
+  // A layout effect, as the stage walk's, so a stage Suspense hides while the next one loads stops answering its commands
+  // at once: React keeps the hidden stage's passive effects, and only its layout effects go.
+  useLayoutEffect(() => {
     if (!api || !enabled) return;
     return api.register(id, ref.current);
   }, [api, id, enabled, title]);
