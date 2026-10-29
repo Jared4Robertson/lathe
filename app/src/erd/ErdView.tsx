@@ -399,14 +399,11 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space }: CanvasP
     // An open space too small to frame anything in frames on the whole stage.
     const room = box.width - margin.left - margin.right >= MIN_FIT && box.height - margin.top - margin.bottom >= MIN_FIT;
     const view = fitRects(framedRects(placed.rects, placed.map, at), box.width, box.height, room ? margin : FIT_MARGIN);
-    const duration = camera.moveTo(view, animate);
-    // Where the focus's box will sit once the camera arrives, for the wiki card; none when the focus picks out no box.
-    const r = at.pick ? placed.rects.get(at.pick) : undefined;
-    space?.setAnchor({ focus, y: r ? view.y + (r.y + r.height / 2) * view.zoom : null, at: performance.now() + duration });
+    camera.moveTo(view, animate);
     // Marks the map framed, for the browser suites and the perf budget of its first frame.
     wrapper.current?.setAttribute('data-framed', '');
     return true;
-  }, [placed, at, margin, space, open, camera, focus]);
+  }, [placed, at, margin, space, open, camera]);
   // Before paint (LA-PAT-APP-UX-R08): the first picture appears already framed, never drawn at the
   // default viewport and then moved; each focus after it, and each change of the open space, glides
   // there from the view before.
