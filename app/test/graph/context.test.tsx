@@ -69,7 +69,7 @@ describe('the graph tree, its depth and its camera', () => {
     expect(groupMembers(index, 'P-D/interaction-design/endpoint').map((r) => r.id)).toEqual(['P-D-EP01', 'P-D-EP02']);
     expect(treeChildren(index, 'P-D/technical-specification')).toEqual([
       'P-D/technical-specification/repository', 'P-D/technical-specification/data_model', 'P-D/technical-specification/table',
-      'P-D/technical-specification/command_handler', 'P-D/technical-specification/ui_component', 'P-D/technical-specification/endpoint_handler',
+      'P-D/technical-specification/rule', 'P-D/technical-specification/command_handler', 'P-D/technical-specification/ui_component', 'P-D/technical-specification/endpoint_handler',
       'P-D/technical-specification/adapter',
     ]);
     // An aggregate's own stage folds under it, through a group per kind; an entity's commands under the entity, and a
@@ -120,7 +120,7 @@ describe('the graph tree, its depth and its camera', () => {
     // The summary counts the framed picture: the domain, its parent and three levels below it.
     const n = neighborhood(indexOf(w), 'P-D', 3);
     await waitFor(() => expect(document.querySelector('.header-strip-counts')!.textContent).toBe(graphSummary(n)));
-    expect(graphSummary(n)).toBe('32 records · 26 groups · 57 links');
+    expect(graphSummary(n)).toBe('33 records · 27 groups · 59 links');
   });
 
   it('LA-V93-R20-T01 Filters have a Minimap switch, off by default and kept while walking, and the minimap is an overview of the whole map', async () => {

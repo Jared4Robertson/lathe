@@ -213,6 +213,7 @@ describe('standards', () => {
       standard_rule: [{ id: 'EX-STD-CODE-R02', title: 'Typed errors', standard_id: 'EX-STD-CODE', statement: 'Code MUST throw typed errors.' }],
       ui_component: [{ id: 'EX-UI02', title: 'ErrorBanner', file: 'web/errors.tsx', description: 'Shows errors as EX-STD-CODE-R02 asks.' }],
       renders: [{ source_id: 'EX-UI02', target_id: 'EX-V01' }],
+      builds: [{ source_id: 'EX-UI02', target_id: 'EX-V01-R01' }],
     }));
     expect(gaps(ws)).toEqual(['designed EX-STD-CODE-R02', 'proved EX-STD-CODE-R02']);
     expect(ofCheck(ws, 'not-proved')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-STD-CODE-R02', message: 'Standard rule EX-STD-CODE-R02 is not proved yet.' })]);
