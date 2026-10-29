@@ -122,7 +122,7 @@ export interface ObligationCoverage {
   total: number;
   /** Its implementation is specified: a step fulfills a UC requirement, a predicate implements a specification, and so on. */
   designed: number;
-  /** The technical record that implements it names a file that exists. */
+  /** Every technical record that implements it names a file that exists, and there is at least one. */
   built: number;
   /** Its test exists, automated or manual, at a level its test kind allows (an automated test's file names it). */
   proved: number;

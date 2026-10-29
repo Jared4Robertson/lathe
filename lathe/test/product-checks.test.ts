@@ -98,6 +98,6 @@ describe("a product's own checks", () => {
   it("LA-CHK-UC05-R01-T03 Without check rows of its own only Lathe's checks run", () => {
     const own = new Set(['every-event-heard', 'broken', 'every-domain']);
     expect(ws.problems.filter((p) => !own.has(p.check)).every((p) => latheChecks.includes(p.check))).toBe(true);
-    expect(ws.problems.filter((p) => !own.has(p.check)).map((p) => p.check)).toEqual(['technical-file-missing', 'not-built']);
+    expect(ws.problems.filter((p) => !own.has(p.check)).map((p) => p.check)).toEqual(['technical-file-missing', 'not-built', 'not-built']);
   });
 });
