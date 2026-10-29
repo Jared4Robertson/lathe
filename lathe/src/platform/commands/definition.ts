@@ -127,6 +127,9 @@ export interface QueryDefinition<T = never, R = unknown> {
   slice: Slice;
   name: string;
   description: string;
+  /** Its HTTP method and route, written whole so the route is found in this file: GET /api/<slice>/<name>. */
+  method: 'GET';
+  route: string;
   input: InputSpec<T>;
   /** Reads the answer, or refuses with a reason. */
   run: (view: ReadView, input: T) => R;

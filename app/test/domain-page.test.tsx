@@ -85,8 +85,8 @@ describe('domain page', () => {
 
     await user.clear(search);
     await user.type(search, 'add item');
-    // A match deeper down (the command under the aggregate's entity) keeps its record's row.
-    expect(ids(section(/^Aggregates/))).toEqual(['DM-SHOP-A1']);
+    // A match deeper down (the command under the aggregate's entity) opens the record and the entity that holds it.
+    expect(ids(section(/^Aggregates/))).toEqual(['DM-SHOP-A1', 'DM-SHOP-EN01', 'DM-SHOP-CMD01']);
     expect(within(section(/^Specifications/)).getByText('Nothing matches.')).toBeInTheDocument();
     expect(within(section(/^Command handlers/)).getByText('Nothing matches.')).toBeInTheDocument();
 

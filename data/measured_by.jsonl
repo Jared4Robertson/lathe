@@ -1,10 +1,2 @@
-{"source_id":"LA-BO01","target_id":"LA-CHK-QRY01-CLI"}
-{"source_id":"LA-BO02","target_id":"LA-CHK-QRY01-CLI"}
-{"source_id":"LA-BO03","target_id":"LA-PAT-AGGREGATE-COMMANDS-R04-T01"}
-{"source_id":"LA-BO03","target_id":"LA-PLT-UC01-R03-T01"}
-{"source_id":"LA-BO04","target_id":"LA-PAT-APP-UX-R08-T02"}
-{"source_id":"LA-BO04","target_id":"LA-PAT-APP-UX-R10-T01"}
-{"source_id":"LA-BO04","target_id":"LA-PAT-APP-UX-R10-T02"}
-{"source_id":"LA-BO04","target_id":"LA-PLT-UC09-FL01-T"}
-{"source_id":"LA-BO04","target_id":"LA-V61-R37-T01"}
-{"source_id":"LA-BO04","target_id":"LA-V61-R37-T02"}
+{"source_id":"LA-BO07","target_id":"LA-CHK-QRY01-CLI"}
+{"source_id":"LA-BO10","target_id":"LA-TRC-UC14-R07-T01"}
