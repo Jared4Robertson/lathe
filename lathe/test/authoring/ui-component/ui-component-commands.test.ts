@@ -84,7 +84,7 @@ describe('LA-AUT-UC28-R50-T01 each UI component command (LA-AUT-A15) changes one
   });
 });
 
-describe('LA-STD-CODE-R07-T53 a UI component is removed whole with the links it starts, refused while anything outside references it', () => {
+describe('LA-STD-CODE-R07-T59 a UI component is removed whole with the links it starts, refused while anything outside references it', () => {
   it('removes a UI component with its renders, meets and package rows', async () => {
     const store = await uiComponentDataSet();
     expect((await runCommand(store, REMOVE_UI_COMPONENT, { id: 'TL-UI01' })).changes.map((c) => c.table).sort()).toEqual(['meets', 'package_use', 'renders', 'ui_component']);

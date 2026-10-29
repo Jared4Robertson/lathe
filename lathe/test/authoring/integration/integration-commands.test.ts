@@ -97,7 +97,7 @@ describe('LA-AUT-UC27-R50-T01 each Integration command (LA-AUT-A14) changes one 
   });
 });
 
-describe('LA-STD-CODE-R07-T52 an integration, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
+describe('LA-STD-CODE-R07-T58 an integration, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
   it('removes a test, an adapter with its links and packages, and an integration whole', async () => {
     const store = await integrationDataSet();
     expect((await runCommand(store, REMOVE_INTEGRATION_TEST, { id: 'TL-INT01-T01' })).changes.map((c) => c.table).sort()).toEqual(['integration_test', 'starts_from']);
