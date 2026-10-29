@@ -33,6 +33,17 @@ import { AddTestDataSetForm } from '../authoring/test-data-set/TestDataSetEditor
 import { TestDataSetPage } from '../authoring/test-data-set/TestDataSetPage';
 import { AddUseCaseForm } from '../authoring/use-case/UseCaseEditor';
 import { UseCasePage } from '../authoring/use-case/UseCasePage';
+import type { ReadModelKind } from '../../../lathe/src/authoring/read-model/model';
+import type { SpecificationKind } from '../../../lathe/src/authoring/specification/model';
+import type { ValueObjectKind } from '../../../lathe/src/authoring/value-object/model';
+import { AddReadModelForm } from '../authoring/read-model/ReadModelEditor';
+import { ReadModelPage } from '../authoring/read-model/ReadModelPage';
+import { AddSpecificationForm } from '../authoring/specification/SpecificationEditor';
+import { SpecificationPage } from '../authoring/specification/SpecificationPage';
+import { AddTableForm } from '../authoring/table/TableEditor';
+import { TablePage } from '../authoring/table/TablePage';
+import { AddValueObjectForm } from '../authoring/value-object/ValueObjectEditor';
+import { ValueObjectPage } from '../authoring/value-object/ValueObjectPage';
 import type { SpecIndex } from '../specs/data';
 
 // The Record page's typed list of aggregate pages: each kind of an aggregate that has its own slice in the app
@@ -55,7 +66,7 @@ export interface AggregatePageProps {
 }
 
 /** The kinds with an aggregate page. */
-type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling' | AggregateKind | DomainEventKind | CommandKind;
+type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling' | SpecificationKind | ValueObjectKind | ReadModelKind | 'table' | AggregateKind | DomainEventKind | CommandKind;
 
 /** Each kind with its aggregate's page. */
 const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = {
@@ -97,6 +108,19 @@ const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = 
   business_outcome: BusinessOutcomePage,
   entry_point: EntryPointPage,
   tooling: ToolingPage,
+  specification: SpecificationPage,
+  predicate: SpecificationPage,
+  specification_test: SpecificationPage,
+  value_object: ValueObjectPage,
+  constraint: ValueObjectPage,
+  value_type: ValueObjectPage,
+  constraint_test: ValueObjectPage,
+  read_model: ReadModelPage,
+  query: ReadModelPage,
+  projection: ReadModelPage,
+  reader: ReadModelPage,
+  query_handler: ReadModelPage,
+  table: TablePage,
 };
 
 /** Whether the kind is one a product declares as its own: a kind of the Extension record aggregate. */
@@ -116,7 +140,7 @@ export interface AggregateAdderProps {
 }
 
 /** Each aggregate root added from the page of what it sits under, with its aggregate's Add form. */
-const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'question' | 'entry_point' | 'tooling' | 'aggregate' | 'domain_event' | 'command']: ComponentType<AggregateAdderProps> } = {
+const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'question' | 'entry_point' | 'tooling' | 'specification' | 'value_object' | 'read_model' | 'table' | 'aggregate' | 'domain_event' | 'command']: ComponentType<AggregateAdderProps> } = {
   use_case: AddUseCaseForm,
   domain: AddDomainForm,
   test_data_set: AddTestDataSetForm,
@@ -129,6 +153,10 @@ const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'patter
   question: AddQuestionForm,
   entry_point: AddEntryPointForm,
   tooling: AddToolingForm,
+  specification: AddSpecificationForm,
+  value_object: AddValueObjectForm,
+  read_model: AddReadModelForm,
+  table: AddTableForm,
 };
 
 /** The Extension record aggregate's Add form for each declared kind, made once per kind so a form keeps its draft. */

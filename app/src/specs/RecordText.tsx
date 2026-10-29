@@ -8,8 +8,8 @@ import { appliesWhenOf, appliesWhenText, settingOfRow, settingText } from './pat
 // A record's typed fields, in place of a Markdown body: its text fields (a rule's statement, a use
 // case's goal, a term's meaning, a test's When and Then, an outcome's measure, target and measure outside the code, a
 // test data set's environment and setup, the notes) on the page, read as Markdown, and its short
-// fields (a route, a method, a file, a level) as facts beside it. Its part rows show too: the fields of an entity, a value object, a domain event or a read model as a table,
-// each with its type (a basic type, a value object or a reference to an aggregate); a table's keys;
+// fields (a route, a method, a file, a level) as facts beside it. Its part rows show too: the fields of an entity or a domain event as a table,
+// each with its type (a basic type, a value object or a reference to an aggregate);
 // a command's recorded exceptions; a flow test's steps; a product's roles.
 
 /** Text columns shown under their own heading, after the lead. */
@@ -41,7 +41,7 @@ const label = (column: string) => column.replaceAll('_', ' ');
 /** The part tables with a field's shape: a name, a meaning and one type. */
 export const FIELD_TABLES = ['entity_field', 'value_object_field', 'event_field', 'read_model_field'] as const;
 
-/** The part tables a record's page lays out itself, in place of listing their rows as facts. */
+/** The part tables a record's page lays out itself, in place of listing their rows as facts (a table's keys and a value object's or read model's fields on their aggregates' own pages). */
 const SHOWN_PARTS: ReadonlySet<string> = new Set([...FIELD_TABLES, 'table_key', 'command_change', 'repository_share', 'pattern_setting', 'role', 'use_case_actor', 'setting_value', 'package_use']);
 
 const scenarioLabel = (c: string) => c[0].toUpperCase() + c.slice(1);
@@ -57,13 +57,12 @@ export function RecordText({ index, record }: { index: SpecIndex; record: SpecRe
   const scenario = SCENARIO_COLUMNS.filter((c) => textOf(row, c).trim());
   const notes = textOf(row, 'notes').trim();
   const fields = FIELD_TABLES.flatMap((t) => partsOf(index, id, t));
-  const keys = partsOf(index, id, 'table_key');
   const changes = partsOf(index, id, 'command_change');
   const shares = partsOf(index, id, 'repository_share');
   const steps = Array.isArray(row.steps) ? row.steps : [];
   const roles = partsOf(index, id, 'role');
   // A kind with no lead, scenario or parts, such as a flow, has no text of its own (LA-STD-MODELING-R10): nothing to show.
-  if (lead.length + titled.length + scenario.length + fields.length + keys.length + changes.length + shares.length + steps.length + roles.length === 0 && !notes) return null;
+  if (lead.length + titled.length + scenario.length + fields.length + changes.length + shares.length + steps.length + roles.length === 0 && !notes) return null;
   return (
     <div className="record-text">
       {lead.map((c) => <div key={c} className="record-lead" data-field={c}><Prose index={index} source={textOf(row, c)} self={id} /></div>)}
@@ -82,7 +81,6 @@ export function RecordText({ index, record }: { index: SpecIndex; record: SpecRe
         </Section>
       )}
       {fields.length > 0 && <FieldsTable index={index} rows={fields} owner={id} />}
-      {keys.length > 0 && <KeysTable index={index} rows={keys} owner={id} />}
       {changes.length > 0 && (
         <RecordedExceptions index={index} rows={changes} owner={id} title="Also changes"
           hint="A recorded exception to one aggregate per command: each is changed in the same transaction, and the checks list it so it stays deliberate." />
@@ -127,7 +125,7 @@ export function FieldsTable({ index, rows, owner }: { index: SpecIndex; rows: Ro
   const columns = rows.some((r) => textOf(r, 'column_name'));
   return (
     <Section title="Fields" count={rows.length}>
-      {/* Where its columns can't all fit, as in the wiki card, each field's row stacks (LA-PAT-APP-UX-R18). */}
+      {/* Where its columns can't all fit, as in the narrow wiki card, each field's row stacks (LA-PAT-APP-UX-R18). */}
       <div className="table-scroll table-stack">
         <table className="data-table entity-fields" role="table">
           <caption className="sr-only">The fields of {owner}</caption>
@@ -149,39 +147,6 @@ export function FieldsTable({ index, rows, owner }: { index: SpecIndex; rows: Ro
                 {examples && <td role="cell" data-label="Example">{textOf(f, 'example')}</td>}
               </tr>
             ))}
-          </tbody>
-        </table>
-      </div>
-    </Section>
-  );
-}
-
-/** A table's keys and indexes: the primary key, unique keys (with the invariant each enforces and its condition), foreign keys (with their target table) and indexes. */
-function KeysTable({ index, rows, owner }: { index: SpecIndex; rows: Row[]; owner: string }) {
-  return (
-    <Section title="Keys" count={rows.length}>
-      <div className="table-scroll">
-        <table className="data-table table-keys">
-          <caption className="sr-only">The keys and indexes of {owner}</caption>
-          <thead><tr><th scope="col">Key</th><th scope="col">Type</th><th scope="col">Columns</th><th scope="col">Details</th></tr></thead>
-          <tbody>
-            {rows.map((k) => {
-              const invariant = textOf(k, 'invariant_id');
-              const target = textOf(k, 'target_table_id');
-              const condition = textOf(k, 'condition');
-              return (
-                <tr key={String(k.position)}>
-                  <th scope="row">{textOf(k, 'name') || <span className="hint">unnamed</span>}</th>
-                  <td>{textOf(k, 'type')}</td>
-                  <td><code>{textOf(k, 'columns')}</code></td>
-                  <td>
-                    {invariant && <span className="key-detail">enforces <RecordLink index={index} id={invariant} /></span>}
-                    {target && <span className="key-detail">references <RecordLink index={index} id={target} /></span>}
-                    {condition && <span className="key-detail">where <code>{condition}</code></span>}
-                  </td>
-                </tr>
-              );
-            })}
           </tbody>
         </table>
       </div>

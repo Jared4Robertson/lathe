@@ -74,6 +74,11 @@ const PAGES: State[] = [
   { name: 'aggregate page', url: '/LA-AUT-A6', ready: '[data-aggregate="aggregate"] .aggregate-entities' },
   { name: 'domain event page', url: '/LA-AUT-EV01', ready: '[data-aggregate="domain-event"] .record-lead' },
   { name: 'command page', url: '/LA-AUT-CMD210', ready: '[data-aggregate="command"] .command-endpoints' },
+  // The Table, Specification, Value object and Read model aggregates' own pages.
+  { name: 'table page', url: '/LA-AUT-EN54-TB', ready: '[data-aggregate="table"] .table-keys' },
+  { name: 'specification page', url: '/LA-AUT-SP03', ready: '[data-aggregate="specification"] .record-lead' },
+  { name: 'value object page', url: '/LA-VO01', ready: '[data-aggregate="value-object"] .entity-fields' },
+  { name: 'read model page', url: '/LA-AUT-RM25', ready: '[data-aggregate="read-model"] .read-model-queries' },
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.

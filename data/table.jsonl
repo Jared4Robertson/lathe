@@ -71,6 +71,7 @@
 {"id":"LA-AUT-EN82-TB","title":"entry_point","entity_id":"LA-AUT-EN82","name":"entry_point","storage":"table","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-AUT-EN83-TB","title":"tooling","entity_id":"LA-AUT-EN83","name":"tooling","storage":"table","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-AUT-EN85-TB","title":"test_data_set","entity_id":"LA-AUT-EN85","name":"test_data_set","storage":"table","file":"lathe/schema/008-test-plan.sql"}
+{"id":"LA-AUT-EN90-TB","title":"reader","entity_id":"LA-AUT-EN90","name":"reader","storage":"table","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-AUT-RM01-TB","title":"Reference","read_model_id":"LA-AUT-RM01","name":"Reference","storage":"in memory","file":"lathe/src/index.ts"}
 {"id":"LA-AUT-RM02-TB","title":"Shown","read_model_id":"LA-AUT-RM02","name":"Shown","storage":"in memory","file":"lathe/src/cli/operations.ts"}
 {"id":"LA-AUT-RM11-TB","title":"UseCaseTable","read_model_id":"LA-AUT-RM11","name":"UseCaseTable","storage":"in memory","file":"lathe/src/authoring/use-case/read-model.ts"}
@@ -78,19 +79,19 @@
 {"id":"LA-AUT-RM22-TB","title":"PatternTable","read_model_id":"LA-AUT-RM22","name":"PatternTable","storage":"in memory","file":"lathe/src/authoring/pattern/read-model.ts"}
 {"id":"LA-AUT-RM23-TB","title":"StandardTable","read_model_id":"LA-AUT-RM23","name":"StandardTable","storage":"in memory","file":"lathe/src/authoring/standard/read-model.ts"}
 {"id":"LA-AUT-RM24-TB","title":"DomainTable","read_model_id":"LA-AUT-RM24","name":"DomainTable","storage":"in memory","file":"lathe/src/authoring/domain/read-model.ts"}
-{"id":"LA-AUT-RM25-TB","title":"SpecificationPage","read_model_id":"LA-AUT-RM25","name":"SpecificationPage","storage":"in memory","file":"lathe/src/authoring/specification/read-model.ts"}
+{"id":"LA-AUT-RM25-TB","title":"SpecificationTable","read_model_id":"LA-AUT-RM25","name":"SpecificationTable","storage":"in memory","file":"lathe/src/authoring/specification/read-model.ts"}
 {"id":"LA-AUT-RM26-TB","title":"AggregateTable","read_model_id":"LA-AUT-RM26","name":"AggregateTable","storage":"in memory","file":"lathe/src/authoring/aggregate/read-model.ts"}
 {"id":"LA-AUT-RM27-TB","title":"DomainEventTable","read_model_id":"LA-AUT-RM27","name":"DomainEventTable","storage":"in memory","file":"lathe/src/authoring/domain-event/read-model.ts"}
 {"id":"LA-AUT-RM28-TB","title":"CommandTable","read_model_id":"LA-AUT-RM28","name":"CommandTable","storage":"in memory","file":"lathe/src/authoring/command/read-model.ts"}
-{"id":"LA-AUT-RM29-TB","title":"ValueObjectPage","read_model_id":"LA-AUT-RM29","name":"ValueObjectPage","storage":"in memory","file":"lathe/src/authoring/value-object/read-model.ts"}
-{"id":"LA-AUT-RM30-TB","title":"ReadModelPage","read_model_id":"LA-AUT-RM30","name":"ReadModelPage","storage":"in memory","file":"lathe/src/authoring/read-model/read-model.ts"}
+{"id":"LA-AUT-RM29-TB","title":"ValueObjectTable","read_model_id":"LA-AUT-RM29","name":"ValueObjectTable","storage":"in memory","file":"lathe/src/authoring/value-object/read-model.ts"}
+{"id":"LA-AUT-RM30-TB","title":"ReadModelTable","read_model_id":"LA-AUT-RM30","name":"ReadModelTable","storage":"in memory","file":"lathe/src/authoring/read-model/read-model.ts"}
 {"id":"LA-AUT-RM32-TB","title":"ViewTable","read_model_id":"LA-AUT-RM32","name":"ViewTable","storage":"in memory","file":"lathe/src/authoring/view/read-model.ts"}
 {"id":"LA-AUT-RM33-TB","title":"EndpointTable","read_model_id":"LA-AUT-RM33","name":"EndpointTable","storage":"in memory","file":"lathe/src/authoring/endpoint/read-model.ts"}
 {"id":"LA-AUT-RM34-TB","title":"IntegrationTable","read_model_id":"LA-AUT-RM34","name":"IntegrationTable","storage":"in memory","file":"lathe/src/authoring/integration/read-model.ts"}
 {"id":"LA-AUT-RM35-TB","title":"UiComponentTable","read_model_id":"LA-AUT-RM35","name":"UiComponentTable","storage":"in memory","file":"lathe/src/authoring/ui-component/read-model.ts"}
 {"id":"LA-AUT-RM36-TB","title":"BusinessOutcome","read_model_id":"LA-AUT-RM36","name":"BusinessOutcome","storage":"in memory","file":"lathe/src/authoring/business-outcome/model.ts"}
 {"id":"LA-AUT-RM37-TB","title":"TestDataSetTable","read_model_id":"LA-AUT-RM37","name":"TestDataSetTable","storage":"in memory","file":"lathe/src/authoring/test-data-set/read-model.ts"}
-{"id":"LA-AUT-RM38-TB","title":"TablePage","read_model_id":"LA-AUT-RM38","name":"TablePage","storage":"in memory","file":"lathe/src/authoring/table/read-model.ts"}
+{"id":"LA-AUT-RM38-TB","title":"TableTable","read_model_id":"LA-AUT-RM38","name":"TableTable","storage":"in memory","file":"lathe/src/authoring/table/read-model.ts"}
 {"id":"LA-AUT-RM39-TB","title":"ExtensionRecord","read_model_id":"LA-AUT-RM39","name":"ExtensionRecord","storage":"in memory","file":"lathe/src/authoring/extension-record/model.ts"}
 {"id":"LA-AUT-RM40-TB","title":"EntryPoint","read_model_id":"LA-AUT-RM40","name":"EntryPoint","storage":"in memory","file":"lathe/src/authoring/entry-point/model.ts"}
 {"id":"LA-AUT-RM41-TB","title":"Tooling","read_model_id":"LA-AUT-RM41","name":"Tooling","storage":"in memory","file":"lathe/src/authoring/tooling/model.ts"}

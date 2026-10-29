@@ -4,8 +4,8 @@ import { EDITED, keepData, RECORD } from './scenarios';
 
 // Changing records in place, with nothing jumping (LA-PAT-APP-UX-R08): on the Use case page (its own editor, sending
 // the Use case aggregate's commands) and on the Domain, Test data set, Pattern, Standard, Product, Business outcome,
-// Entry point, Tooling, Aggregate, Domain event and Command pages, opening a record's form, saving an edit, adding a
-// child from its parent's page,
+// Entry point, Tooling, Table, Specification, Read model, Value object, Aggregate, Domain event and Command pages,
+// opening a record's form, saving an edit, adding a child from its parent's page,
 // and asking to remove a record that is still referenced, which the command refuses inline; and on the page of a kind
 // whose aggregate has no editor yet, the record form generated from the schema. The form takes the place of the page's content,
 // so shifts inside the wiki card's scroll box are the change itself; the nav, the card's head and
@@ -118,6 +118,12 @@ test.describe('editing', () => {
   test('LA-AUT-UC22-FL01-T on the Business outcome page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-BO05', /^notes/, 'Noted by the stability suite.'));
   test('LA-AUT-UC29-FL01-T on the Entry point page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-PLT-ENTRY01', /^description/, 'Starts the server, as the stability suite describes it.'));
   test('LA-AUT-UC30-FL01-T on the Tooling page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-TOOL01', /^title/, 'schema-types.ts'));
+  // The Table, Specification, Read model and Value object pages: each saves one field as its kind's Change command, with
+  // nothing jumping. Each is its aggregate's web-app flow test.
+  test('LA-AUT-UC17-FL01-T on the Table page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EN54-TB', /^title/, 'projections'));
+  test('LA-AUT-UC20-FL01-T on the Specification page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-SP03', /^title/, 'Data files clash in a merge'));
+  test('LA-AUT-UC21-FL01-T on the Read model page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-RM25', /^description/, 'A specification as the stability suite reads it.'));
+  test('LA-AUT-UC24-FL01-T on the Value object page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-VO01', /^description/, 'Names one record across the store, as the stability suite describes it.'));
   // The Aggregate, Domain event and Command pages, likewise.
   test('LA-AUT-UC10-FL01-T on the Aggregate page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-A6', /^identity/, 'Stability'));
   test('LA-AUT-UC25-FL01-T on the Domain event page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EV01', /^description/, 'Stability'));
