@@ -80,14 +80,27 @@ export interface Problem {
 }
 
 /**
- * A recorded exception: a command that also changes another aggregate of its domain in the same transaction (a
- * command_change row), with the reason. Not a problem: lathe check lists every one, so each deviation stays deliberate
- * and visible.
+ * A recorded exception: a deliberate deviation from one aggregate per command or one repository per aggregate, with
+ * the reason. A command that also changes another aggregate of its domain in the same transaction (a command_change
+ * row), or a repository that also persists another aggregate (a repository_share row). Not a problem: lathe check lists
+ * every one, so each deviation stays deliberate and visible.
  */
-export interface RecordedException {
+export type RecordedException = CommandException | RepositoryException;
+
+/** A command that also changes another aggregate of its domain in the same transaction: a command_change row. */
+export interface CommandException {
   /** The command. */
   command: string;
   /** The other aggregate it also changes. */
+  aggregate: string;
+  reason: string;
+}
+
+/** A repository that also persists another aggregate, which has no repository of its own: a repository_share row. */
+export interface RepositoryException {
+  /** The repository. */
+  repository: string;
+  /** The other aggregate it also persists. */
   aggregate: string;
   reason: string;
 }
