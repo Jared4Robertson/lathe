@@ -174,9 +174,10 @@ describe('the stages and the card show the changes', () => {
     for (const stage of ['graph', 'erd', 'trace']) {
       await openAt(`/DM-SHOP-A1?stage=${stage}`);
       const group = tools();
-      expect(group.closest('.focus-stage')).not.toBeNull();
-      expect(group).toHaveAttribute('data-stage-tools', 'bottom');
-      shown.push([...group.querySelectorAll('button, select')].map((el) => el.getAttribute('aria-label') ?? el.className.split(' ').find((c) => c.startsWith('changes-')) ?? el.tagName));
+      // In the shared stage toolbar, right after Frame.
+      expect(group.closest('.stage-toolbar')).not.toBeNull();
+      expect(group.previousElementSibling?.matches('.stage-frame') ?? group.previousElementSibling?.querySelector('.stage-frame')).toBeTruthy();
+      shown.push([...group.querySelectorAll('button, select')].map((el) => el.className.split(' ').find((c) => c.startsWith('changes-')) ?? el.tagName));
     }
     expect(shown[1]).toEqual(shown[0]);
     expect(shown[2]).toEqual(shown[0]);

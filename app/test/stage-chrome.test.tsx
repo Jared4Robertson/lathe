@@ -5,7 +5,8 @@ import { modelWorkspace } from './fixtures/model';
 import { openApp } from './helpers';
 
 // One stage chrome (LA-PAT-APP-UX-R21): every stage has the same controls in the same places, from one component each
-// (views/StageChrome.tsx): the toolbar at the top of the open space, the shared controls first in a fixed order, then the
+// (views/StageChrome.tsx): the toolbar at the top of the open space, the shared controls first in a fixed order (the
+// Changes controls, changes/ChangesTools.tsx, among them), then the
 // stage's own, then the Key; the camera's zoom in, zoom out and fit at the bottom left corner of the frame.
 
 const stage = () => document.querySelector<HTMLElement>('.focus-stage')!;
@@ -20,6 +21,7 @@ function chrome() {
   const shared = (el: Element): string => {
     if (el.matches('.stage-steps')) return `steps: ${[...el.querySelectorAll('button')].map((b) => b.className.match(/is-(\w+)/)![1]).join(' ')}`;
     if (el.matches('.stage-frame')) return 'frame';
+    if (el.matches('.changes-tools')) return `changes: ${[...el.querySelectorAll('button')].map((b) => b.className.match(/changes-(\w+)/)![1]).join(' ')}`;
     if (el.matches('.stage-toolbar-end')) return `end: ${[...el.children].map((c) => c.className).join(' ')}`;
     return 'own';
   };
@@ -32,7 +34,7 @@ function chrome() {
   };
 }
 
-const SHARED = ['steps: left right up down out in', 'frame'];
+const SHARED = ['steps: left right up down out in', 'frame', 'changes: lens follow open'];
 const CAMERA = [['Zoom in', 'Zoom out', 'Fit the whole map']];
 
 describe('one stage chrome', () => {
