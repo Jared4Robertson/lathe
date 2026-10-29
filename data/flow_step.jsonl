@@ -10,6 +10,7 @@
 {"id":"LA-AUT-UC01-FL03-S10","title":"They remove a record with its parts","flow_id":"LA-AUT-UC01-FL03","path":"remove","position":1}
 {"id":"LA-AUT-UC01-FL03-S11","title":"They make several changes as one write","flow_id":"LA-AUT-UC01-FL03","path":"several","position":1}
 {"id":"LA-AUT-UC01-FL03-S12","title":"They list a kind's records, or those under a parent, with lathe list","flow_id":"LA-AUT-UC01-FL03","path":"list","position":1}
+{"id":"LA-AUT-UC01-FL03-S13","title":"The Owner's script hands a write its fields as JSON, on stdin or from a file, long text intact","flow_id":"LA-AUT-UC01-FL03","path":"json","position":1,"description":"`lathe add --json -` with the add tool's object piped in, or `lathe link --json links.json` with an array of links as one write; the result prints as JSON."}
 {"id":"LA-AUT-UC01-FL04-S01","title":"The Agent follows the plugin's skills, which tell it to change data only through the tools","flow_id":"LA-AUT-UC01-FL04","path":"main","position":1}
 {"id":"LA-AUT-UC01-FL04-S02","title":"The Agent adds a record with add, its typed columns, parent and parts as the tool's input schema gives them","flow_id":"LA-AUT-UC01-FL04","path":"main","position":2}
 {"id":"LA-AUT-UC01-FL04-S03","title":"The Agent changes a record's columns with set","flow_id":"LA-AUT-UC01-FL04","path":"main","position":3}
@@ -483,8 +484,8 @@
 {"id":"LA-PLT-UC19-FL02-S02","title":"The chat lists the folder's saved sessions by title and date, marking one another Claude client may have open","flow_id":"LA-PLT-UC19-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC19-FL02-S03","title":"They resume a session, or fork the one open elsewhere; the saved conversation shows first","flow_id":"LA-PLT-UC19-FL02","path":"main","position":3,"description":"Their own Claude Code starts headless in the folder on that session."}
 {"id":"LA-PLT-UC19-FL02-S04","title":"They ask Claude in their own words; it answers as rich text, with their login, settings, skills, plugins and CLAUDE.md","flow_id":"LA-PLT-UC19-FL02","path":"main","position":4}
-{"id":"LA-PLT-UC19-FL02-S05","title":"Claude asks what the Reader is looking at","flow_id":"LA-PLT-UC19-FL02","path":"main","position":5,"description":"Lathe's MCP tool app_focus, which reaches the window by its app bridge."}
-{"id":"LA-PLT-UC19-FL02-S06","title":"Claude opens a record in the window","flow_id":"LA-PLT-UC19-FL02","path":"main","position":6,"description":"Lathe's MCP tool app_open."}
+{"id":"LA-PLT-UC19-FL02-S05","title":"Claude asks what the Reader is looking at","flow_id":"LA-PLT-UC19-FL02","path":"main","position":5,"description":"Lathe's MCP tool app_focus, or `lathe app focus` in a shell, which reach the window by its app bridge."}
+{"id":"LA-PLT-UC19-FL02-S06","title":"Claude opens a record in the window","flow_id":"LA-PLT-UC19-FL02","path":"main","position":6,"description":"Lathe's MCP tool app_open, or `lathe app open <id>` in a shell."}
 {"id":"LA-PLT-UC19-FL02-S07","title":"Each tool call Claude makes shows as a row that expands to its input and result","flow_id":"LA-PLT-UC19-FL02","path":"main","position":7}
 {"id":"LA-PLT-UC19-FL02-S08","title":"A tool that needs permission waits in the chat until they allow it once or deny it","flow_id":"LA-PLT-UC19-FL02","path":"main","position":8}
 {"id":"LA-PLT-UC19-FL02-S09","title":"They stop the turn under way","flow_id":"LA-PLT-UC19-FL02","path":"main","position":9,"description":"With the Stop button or Escape; a prompt still waiting is withdrawn."}
