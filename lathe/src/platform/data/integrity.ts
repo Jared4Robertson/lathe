@@ -188,17 +188,6 @@ JOIN aggregate other ON other.id = c.aggregate_id
 WHERE c.aggregate_id = own.id OR other.domain_id <> own.domain_id`,
     },
     {
-      name: 'repository-share-unpersisted',
-      description: "A repository's recorded extra aggregate is one no repository persists: an aggregate has one repository.",
-      sql: `
-SELECT 'repository_share' AS table_name, s.repository_id || chr(0) || s.aggregate_id AS row_key,
-       s.repository_id || ' cannot also record ' || s.aggregate_id || ', '
-       || CASE WHEN p.source_id = s.repository_id THEN 'the aggregate it persists' ELSE 'which ' || p.source_id || ' persists: an aggregate has one repository' END
-       AS message
-FROM repository_share s
-JOIN persists p ON p.target_id = s.aggregate_id`,
-    },
-    {
       name: 'read-model-fed-by-published',
       description: "A read model is fed by its own domain's events, or another domain's published ones: domains meet only through published events.",
       sql: `

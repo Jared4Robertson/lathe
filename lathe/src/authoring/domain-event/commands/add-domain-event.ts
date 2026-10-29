@@ -22,7 +22,7 @@ export const ADD_DOMAIN_EVENT: CommandDefinition<AddDomainEvent> = {
     aggregate_id: column('domain_event', 'aggregate_id', 'required'),
     published: column('domain_event', 'published', 'required'),
     description: column('domain_event', 'description', 'required'),
-    fields: parts('event_field', 'The fields it carries, in order: each its name, meaning, one type (a basic type, a value object or an aggregate), whether it is required, and its column name and an example when it has them.', 'optional'),
+    fields: parts('event_field', ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], 'The fields it carries, in order: each its name, meaning, one type (a basic type, a value object or an aggregate), whether it is required, and its column name and an example when it has them.', 'optional'),
   },
   handler: addDomainEvent,
 };

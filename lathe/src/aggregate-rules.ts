@@ -3,6 +3,12 @@
 import { aggregateRules } from './authoring/aggregate/rules.ts';
 import { commandRules } from './authoring/command/rules.ts';
 import { useCaseRules } from './authoring/use-case/rules.ts';
+import { domainRules } from './authoring/domain/rules.ts';
 import type { AggregateRules } from './platform/data/rules.ts';
 
-export const AGGREGATE_RULES: readonly AggregateRules[] = [useCaseRules, aggregateRules, commandRules];
+export const AGGREGATE_RULES: readonly AggregateRules[] = [
+  useCaseRules,
+  domainRules,
+  aggregateRules,
+  commandRules,
+];

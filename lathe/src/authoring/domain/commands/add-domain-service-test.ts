@@ -1,0 +1,47 @@
+// Add a domain service test (LA-AUT-CMD178): Adds a domain service test under its domain service, with the test data sets it starts from.
+import { column, ids, type CommandDefinition } from '../../../platform/commands/definition.ts';
+import type { Transaction } from '../../../platform/data/transaction.ts';
+import type { DomainServiceTestRow } from '../../../platform/data/tables.ts';
+import { DOMAIN_SLICE } from '../model.ts';
+import { DomainRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
+
+/** A new domain service test, with the test data sets it starts from. */
+export type AddDomainServiceTest = Pick<DomainServiceTestRow, 'id' | 'title' | 'domain_service_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
+
+/** Add a domain service test (LA-AUT-CMD178). */
+export const ADD_DOMAIN_SERVICE_TEST: CommandDefinition<AddDomainServiceTest> = {
+  id: 'LA-AUT-CMD178',
+  slice: DOMAIN_SLICE,
+  name: 'add-domain-service-test',
+  description: 'Adds a domain service test under its domain service, with the test data sets it starts from.',
+  method: 'POST',
+  route: '/api/domain/add-domain-service-test',
+  input: {
+    id: column('domain_service_test', 'id', 'required'),
+    title: column('domain_service_test', 'title', 'required'),
+    domain_service_id: column('domain_service_test', 'domain_service_id', 'required'),
+    level: column('domain_service_test', 'level', 'required'),
+    state: column('domain_service_test', 'state', 'required'),
+    file: column('domain_service_test', 'file', 'optional'),
+    manual_reason: column('domain_service_test', 'manual_reason', 'optional'),
+    size: column('domain_service_test', 'size', 'optional'),
+    smoke: column('domain_service_test', 'smoke', 'optional'),
+    external: column('domain_service_test', 'external', 'optional'),
+    when: column('domain_service_test', 'when', 'required'),
+    then: column('domain_service_test', 'then', 'required'),
+    notes: column('domain_service_test', 'notes', 'optional'),
+    starts_from: ids('The test data sets it starts from.', 'optional'),
+  },
+  handler: addDomainServiceTest,
+};
+
+/** Adds the test under its domain service. */
+export function addDomainServiceTest(tx: Transaction, input: AddDomainServiceTest): void {
+  const domains = new DomainRepository(tx);
+  const domain = domains.loadHolding('domain_service', input.domain_service_id) ?? tx.refuse('missing', `there is no domain service ${input.domain_service_id}`);
+  const { starts_from = [], ...row } = input;
+  domain.domainServiceTests.push({ row, startsFrom: starts_from });
+  holdToRules(tx, domain);
+  domains.save(domain);
+}
