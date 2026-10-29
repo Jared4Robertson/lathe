@@ -17,6 +17,7 @@
 {"id":"LA-EXP-QRY10-H","title":"erdFocus","query_id":"LA-EXP-QRY10","file":"app/src/erd/erd.ts","description":"erdMap, erdFocus, erdStrength and scopeContents: the product's map, and what a focus fades, picks out and frames on it."}
 {"id":"LA-EXP-QRY11-H","title":"recordTables","query_id":"LA-EXP-QRY11","file":"lathe/src/server/history.ts","description":"recordTables, parseLog, changesInDiff"}
 {"id":"LA-EXP-QRY12-H","title":"ProductsPicker","query_id":"LA-EXP-QRY12","file":"app/src/views/ProductsPicker.tsx","description":"The products picker, `ProductsPicker`, and the rail's list, `SpaceRail`."}
+{"id":"LA-EXP-QRY13-H","title":"recordChanges","query_id":"LA-EXP-QRY13","file":"lathe/src/changes.ts","description":"recordChanges compares two sets of tables by record: its own row, the part rows it owns and the links it starts; rowDelta and applyDelta keep a moment as a commit plus the rows that differ from it."}
 {"id":"LA-PLT-QRY01-H","title":"loadWorkspace","query_id":"LA-PLT-QRY01","file":"lathe/src/index.ts","description":"loadWorkspace (la-chk.md's QRY01-H names it too)"}
 {"id":"LA-PLT-QRY02-H","title":"specData","query_id":"LA-PLT-QRY02","file":"lathe/src/server/api.ts","description":"The SpecData answer, `specData`: one store per product root, opened afresh when its files change; `dataSignature`."}
 {"id":"LA-PLT-QRY03-H","title":"resolveCommands","query_id":"LA-PLT-QRY03","file":"app/src/shell/keymap.ts","description":"resolveCommands, platformKeys"}

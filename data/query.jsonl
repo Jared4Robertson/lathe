@@ -17,6 +17,7 @@
 {"id":"LA-EXP-QRY10","title":"Get the ERD map","read_model_id":"LA-EXP-RM04"}
 {"id":"LA-EXP-QRY11","title":"Get a record's history","read_model_id":"LA-EXP-RM05"}
 {"id":"LA-EXP-QRY12","title":"List the spaces","read_model_id":"LA-EXP-RM06"}
+{"id":"LA-EXP-QRY13","title":"Get what changed since a baseline","read_model_id":"LA-EXP-RM07"}
 {"id":"LA-PLT-QRY01","title":"Get the workspace","read_model_id":"LA-PLT-RM01"}
 {"id":"LA-PLT-QRY02","title":"Get the product's data","read_model_id":"LA-PLT-RM01"}
 {"id":"LA-PLT-QRY03","title":"List the commands","read_model_id":"LA-PLT-RM02"}
