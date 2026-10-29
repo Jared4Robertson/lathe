@@ -390,7 +390,7 @@ describe('TL-LEND-UC05 Report damage', () => {
     return { t, unknown, notDamaged, ok };
   }
 
-  it('TL-LEND-UC05-R02-T01 Marking a tool repaired returns it to lending', async () => {
+  it('TL-LEND-UC06-R01-T01 Marking a tool repaired returns it to lending', async () => {
     const { t, notDamaged } = await markRepaired();
     expect(notDamaged.body.message).toMatch(/not marked as needing repair/);
     expect(await entryOf(t)).toMatchObject({ condition: 'good', damageNote: null, status: 'available' });
