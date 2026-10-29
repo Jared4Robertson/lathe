@@ -132,7 +132,7 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
           // it by. Where its old box lies inside an allowed part as it is now, it is placed there:
           // otherwise whether the browser reported the shift before or after the node was removed
           // (a page drawn twice in quick succession, as two Backs do, on a busy machine) decided
-          // whether a shift inside the side bar counted, which made "ERD: Back to the domain"
+          // whether a shift inside an allowed part counted, which made "ERD: Back to the domain"
           // flaky. Any other removed node cannot be placed: it neither explains nor condemns the
           // shift, and the other sources decide.
           if (!s.node || !s.node.isConnected) {
@@ -188,15 +188,10 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
 /** Starts the probes on a page; `firstKeys` are tracked from the very first frame (for a first load). */
 export async function installProbes(page: Page, firstKeys: string[] = []) {
   await page.addInitScript(probes, { firstKeys, deferred: DEFERRED });
-  // The scenarios read every page with the side bar open, as a Reader who opened it
-  // on the Trace stage too (it starts closed there); a choice made in a scenario is kept.
+  // The scenarios read the wiki card's whole page (More), as a Reader who expanded it (it opens as a
+  // summary); a choice made in a scenario is kept.
   await page.addInitScript(() => {
     try {
-      if (!localStorage.getItem('lathe:side-bar')) {
-        const open = { open: true, view: 'details' };
-        localStorage.setItem('lathe:side-bar', JSON.stringify({ graph: open, erd: open, trace: open }));
-      }
-      // They read the wiki card's whole page (More), as a Reader who expanded it (it opens as a summary).
       if (!sessionStorage.getItem('lathe:session-settings')) {
         sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
       }

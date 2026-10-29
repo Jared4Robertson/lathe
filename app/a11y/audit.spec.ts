@@ -33,13 +33,11 @@ const STAGES = [
   { name: 'Trace stage, a domain\'s lanes', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
 ];
 
-/** Collapses the wiki card (Enter) and hides the side bar, so the stage has the whole window under the tab panel. */
+/** Collapses the wiki card (Enter), so the stage has the whole window under the tab panel. */
 async function collapsePanels(page: Page) {
   await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
   await page.keyboard.press('Enter');
   await page.locator('.wiki-panel').waitFor({ state: 'detached' });
-  if (await page.locator('.stage-layout > .side-bar-column').count()) await page.keyboard.press('Control+Alt+b');
-  await page.locator('.stage-layout > .side-bar-column').waitFor({ state: 'detached' });
   await page.waitForTimeout(500);
 }
 
@@ -199,11 +197,6 @@ const PHONE: State[] = [
     await open(page, RECORD, '.header-strip h1');
     await page.getByRole('button', { name: 'Show the wiki card' }).click();
     await page.locator('.wiki-panel-sheet .wiki-panel').waitFor();
-  } },
-  { name: 'the side bar drawer', run: async (page) => {
-    await open(page, RECORD, '.header-strip h1');
-    await page.getByRole('button', { name: 'Show the side bar' }).first().click();
-    await page.locator('.side-bar-drawer').waitFor();
   } },
 ];
 

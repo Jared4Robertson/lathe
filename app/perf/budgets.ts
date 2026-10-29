@@ -23,7 +23,7 @@ export const BUDGETS = {
   /**
    * The longest frame in a re-center at depth 3. 16 ms (one frame at 60 Hz) is met by the glide's
    * frames but not by the frame of the click itself, where the page for the new address is drawn
-   * (the nav, the side bar, the graph's new picture), and the hover spotlight then marks up to 200
+   * (the nav, the wiki card, the graph's new picture), and the hover spotlight then marks up to 200
    * boxes, before the next frame: 60 to 80 ms. Before the fixes it was 450 to 520 ms.
    */
   recenterFrameMs: 100,

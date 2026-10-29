@@ -59,7 +59,7 @@ test.describe('live reload', () => {
     expect(anchor, 'something is in view').not.toBeNull();
     let restore = () => {};
     try {
-      const r = await step(page, 'reload', 'data edited while scrolled', { keys: ['nav#nav', '.wiki-panel-head', '.wiki-panel-scroll', '.stage-layout > .side-bar-column'], settle: 1500 }, async () => {
+      const r = await step(page, 'reload', 'data edited while scrolled', { keys: ['nav#nav', '.wiki-panel-head', '.wiki-panel-scroll'], settle: 1500 }, async () => {
         restore = edit('domain', DOMAIN.slice(1), 'description', 'A paragraph the stability suite adds while the page is open, above what is in view, to see that nothing in view moves when the data reloads.', 'top');
         await expect(page.locator('.wiki-panel')).toContainText('the stability suite adds', { timeout: 20_000 });
       });
@@ -77,7 +77,7 @@ test.describe('live reload', () => {
     let restore = () => {};
     try {
       const keys = ['.focus-stage .graph-canvas', '.focus-stage .graph-tools', '.focus-stage .graph-flow canvas', '.wiki-panel-head'];
-      const r = await step(page, 'reload', 'data edited with the graph open', { keys, allow: ['.wiki-panel-scroll', '.side-bar'], settle: 1500 }, async () => {
+      const r = await step(page, 'reload', 'data edited with the graph open', { keys, allow: ['.wiki-panel-scroll'], settle: 1500 }, async () => {
         restore = edit('use_case', RECORD.slice(1), 'goal', 'Another paragraph from the stability suite, with the graph open.', 'end');
         await expect(page.locator('.wiki-panel')).toContainText('with the graph open', { timeout: 20_000 });
       });

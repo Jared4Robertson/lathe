@@ -40,12 +40,12 @@ test.describe('graph', () => {
         await page.locator('.graph-depth button', { hasText: String(depth) }).click();
         await page.waitForTimeout(900);
       }
-      const keys = [PANE_BAR, PANE_TITLE, GRAPH_TOOLS, GRAPH_CANVAS, DRAWING, '.side-bar-column'];
+      const keys = [PANE_BAR, PANE_TITLE, GRAPH_TOOLS, GRAPH_CANVAS, DRAWING];
       // Two re-centers: out to a neighbor, then on to one of its neighbors.
       for (const hop of [1, 2]) {
         const before = new URL(page.url()).pathname;
         const { at } = await visibleNode(page, hop);
-        const r = await step(page, 'graph', `depth ${depth}: re-center ${hop}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, async () => {
+        const r = await step(page, 'graph', `depth ${depth}: re-center ${hop}`, { keys, allow: ['.wiki-panel-scroll', GRAPH_BOXES] }, async () => {
           await page.mouse.click(at.x, at.y);
           await page.waitForURL((u) => u.pathname !== before);
         });
@@ -59,7 +59,7 @@ test.describe('graph', () => {
     await nodes(page);
     const keys = [PANE_BAR, PANE_TITLE, GRAPH_TOOLS, GRAPH_CANVAS, DRAWING];
     for (const d of ['2', '3', '1']) {
-      const r = await step(page, 'graph', `depth to ${d}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, () => page.locator('.graph-depth button', { hasText: d }).click());
+      const r = await step(page, 'graph', `depth to ${d}`, { keys, allow: ['.wiki-panel-scroll', GRAPH_BOXES] }, () => page.locator('.graph-depth button', { hasText: d }).click());
       expectStable(r);
     }
   });
@@ -81,7 +81,7 @@ test.describe('graph', () => {
     for (const id of ['LA-EXP', 'LA-EXP/use-cases', 'LA-EXP-CAP03', 'LA-EXP-UC03']) {
       const before = new URL(page.url()).pathname;
       const r = await test.step(`LA-EXP-UC04-R10-T01 the Reader reaches ${id} through the stages and kind groups the nav shows`, () =>
-        step(page, 'graph', `focus ${id}`, { keys, allow: ['.side-bar', GRAPH_BOXES] }, async () => {
+        step(page, 'graph', `focus ${id}`, { keys, allow: ['.wiki-panel-scroll', GRAPH_BOXES] }, async () => {
           await clickBox(page, id);
           await page.waitForURL((u) => u.pathname !== before);
           await focusDrawn(page, id);
@@ -305,7 +305,7 @@ test.describe('graph', () => {
     const keys = ['.stage-layout > .page-bar', '.header-strip', '.focus-stage .erd-tools', ERD_CANVAS, '.focus-stage .erd-key'];
     // On the product's one map, the boxes in the domain's scope: an aggregate's boundary holds its entities, so its head is where the boundary itself takes a click.
     const box = page.locator('.erd-flow .react-flow__node:not([aria-hidden]) .erd-aggregate .erd-box-head').first();
-    const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.side-bar'] }, async () => {
+    const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.wiki-panel-scroll'] }, async () => {
       await box.click();
       await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
       await page.locator('.erd-flow .react-flow__node').first().waitFor();
@@ -313,12 +313,12 @@ test.describe('graph', () => {
     expectStable(r);
     const entity = page.locator('.erd-flow .react-flow__node:not([aria-hidden]):not(:has(.is-focus)):has(.erd-entity)').first();
     const before = new URL(page.url()).pathname;
-    const e = await step(page, 'graph', 'ERD: aggregate to entity', { keys, allow: ['.side-bar'] }, async () => {
+    const e = await step(page, 'graph', 'ERD: aggregate to entity', { keys, allow: ['.wiki-panel-scroll'] }, async () => {
       await entity.click();
       await page.waitForURL((u) => u.pathname !== before);
     });
     expectStable(e);
-    const back = await step(page, 'graph', 'ERD: Back to the domain', { keys, allow: ['.side-bar'] }, async () => {
+    const back = await step(page, 'graph', 'ERD: Back to the domain', { keys, allow: ['.wiki-panel-scroll'] }, async () => {
       await page.goBack();
       await page.goBack();
       await expect(page).toHaveURL(/\/LA-EXP(\?|$)/);
@@ -328,7 +328,7 @@ test.describe('graph', () => {
     // the region's edge into the entity beside it in the Authoring region.
     await openPage(page, '/LA-CHK-EN01?stage=erd');
     await page.locator('.erd-flow[data-framed]').waitFor();
-    const across = await step(page, 'graph', 'ERD: Right across a region edge', { keys, allow: ['.side-bar'] }, async () => {
+    const across = await step(page, 'graph', 'ERD: Right across a region edge', { keys, allow: ['.wiki-panel-scroll'] }, async () => {
       await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
       await page.keyboard.press('ArrowRight');
       await page.waitForURL((u) => u.pathname.startsWith('/LA-AUT-EN'));
@@ -489,25 +489,12 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'LA-V93-R17-T02 hovering a box spotlights it and Details follows the hover',
+    feature: 'LA-V93-R17-T02 hovering a box spotlights it',
     run: async (page) => {
-      const { id, x, y } = await labeledInView(page, true);
+      const { x, y } = await labeledInView(page, true);
       await page.mouse.move(x, y);
       await expect(page.locator(`${GRAPH}.has-spotlight`)).toBeAttached();
-      // Details names what is under the pointer: its title, as its box shows it.
-      const title = (await boxOf(page, id))!.lines.filter((l) => l.face === 'title').map((l) => l.text).join('');
-      await expect(page.locator('.side-bar')).toContainText(title.trim());
       await page.mouse.move(2, 2);
-    },
-  },
-  {
-    feature: 'the side bar\'s Outline lists what the camera frames, and History opens',
-    run: async (page) => {
-      for (const view of ['Outline', 'History', 'Details']) {
-        await page.locator('.side-bar .side-switch button', { hasText: view }).or(page.locator(`.side-bar .side-switch button[aria-label="${view}"]`)).first().click();
-        await page.locator('.side-bar .side-view > h2', { hasText: view }).waitFor();
-        if (view === 'Outline') expect(await page.locator('.side-bar .side-view a, .side-bar .side-view li').count()).toBeGreaterThan(0);
-      }
     },
   },
   {
