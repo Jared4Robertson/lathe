@@ -1,8 +1,8 @@
 // The Graph stage's walk (LA-V93-R19, LA-V61-R49): the stage walk's moves (views/levels.ts) over the graph's tree, from
 // anywhere on the page. The commands layer's one handler (useStageWalk, app/src/shell/commands.tsx) sends each move to
 // the stage shown. Out and In (Shift+Up and Shift+Down) go to the parent and the first child in every view; the arrows
-// keep each view's keys: in the Tree view Left out, Right in, Up and Down across the siblings; in the Nested and Voronoi
-// views, which draw children inside their parent, Up out, Down in, Left and Right across. Across goes on, past the last
+// keep each view's keys: in the Tree view Left out, Right in, Up and Down across the siblings; in the Nested
+// view, which draws children inside their parent, Up out, Down in, Left and Right across. Across goes on, past the last
 // sibling, to the next parent's first child at that level (levels.ts). The ERD stage walks its map through `useWalk`
 // (erd/walk.ts), the Trace stage its lanes (trace/walk.ts).
 import { useCallback } from 'react';
@@ -13,10 +13,10 @@ import { groupKindLabel, groupName, groupOwner, isGraphNode, isGroup, nodeChildr
 import { mapRootOf } from './map';
 import type { GraphLayout } from './GraphPage';
 
-/** Whether a view draws children inside their parent (Nested and Voronoi), and so steps out and in by Up and Down. */
+/** Whether a view draws children inside their parent (Nested), and so steps out and in by Up and Down. */
 const nestsChildren = (layout: GraphLayout) => layout !== 'tree';
 
-/** The level move an arrow takes in a view: Tree Left out and Right in, Nested and Voronoi Up out and Down in; the other arrows across. */
+/** The level move an arrow takes in a view: Tree Left out and Right in, Nested Up out and Down in; the other arrows across. */
 export function graphMove(layout: GraphLayout, move: Move): Move {
   if (nestsChildren(layout)) return move === 'up' ? 'out' : move === 'down' ? 'in' : move;
   return move === 'left' ? 'out' : move === 'right' ? 'in' : move;

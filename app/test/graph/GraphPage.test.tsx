@@ -55,11 +55,11 @@ describe('graph page', () => {
     await waitFor(() => expect(isCenter(STEP)).toBe(true));
   });
 
-  it('LA-V93-R21-T02 Depth shows only in the Tree layout: in Nested and Voronoi its slot stays but is neither shown nor reachable', async () => {
+  it('LA-V93-R21-T02 Depth shows only in the Tree layout: in Nested its slot stays but is neither shown nor reachable', async () => {
     await showGraph('/P-D/use-cases');
     const group = () => document.querySelector<HTMLElement>('[aria-label="Depth"]')!;
     expect(screen.getByRole('group', { name: 'Depth' })).toBeVisible();
-    for (const layout of ['Nested', 'Voronoi']) {
+    for (const layout of ['Nested']) {
       fireEvent.click(within(screen.getByRole('group', { name: 'Layout' })).getByRole('button', { name: layout }));
       await waitFor(() => expect(group()).toHaveClass('is-idle'));
       // The slot keeps its place, so nothing beside it moves (LA-PAT-APP-UX-R08), but it has no purpose here (LA-PAT-APP-CODE-R21).

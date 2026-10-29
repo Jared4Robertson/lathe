@@ -8,10 +8,10 @@ import { cameraOf, clickBox, GRAPH, graphDrawn } from './scene';
 // and minimap stay as the person set them.
 
 const FLOW = 'LA-EXP-UC03-FL01';
-const LAYOUTS = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
-/** The arrow for each step in each layout (LA-V93-R19): Tree steps Left out and Right in; Nested and Voronoi, Up out and Down in. */
+const LAYOUTS = { tree: 'Tree', nested: 'Nested' } as const;
+/** The arrow for each step in each layout (LA-V93-R19): Tree steps Left out and Right in; Nested, Up out and Down in. */
 const NESTED = { out: 'ArrowUp', in: 'ArrowDown', previous: 'ArrowLeft', next: 'ArrowRight' } as const;
-const ARROWS = { tree: { out: 'ArrowLeft', in: 'ArrowRight', previous: 'ArrowUp', next: 'ArrowDown' }, nested: NESTED, voronoi: NESTED } as const;
+const ARROWS = { tree: { out: 'ArrowLeft', in: 'ArrowRight', previous: 'ArrowUp', next: 'ArrowDown' }, nested: NESTED } as const;
 
 const at = (page: Page) => new URL(page.url()).pathname.slice(1);
 const drawn = async (page: Page) => ({
@@ -40,7 +40,7 @@ async function cameraStill(page: Page) {
   }
 }
 
-for (const layout of ['tree', 'nested', 'voronoi'] as const) {
+for (const layout of ['tree', 'nested'] as const) {
   test(`LA-V93-R72-T02 in the ${LAYOUTS[layout]} layout, the arrows and clicks keep the layout, depth and minimap, into tabs open or new`, async ({ page }) => {
     await openPage(page, `/${FLOW}?stage=graph`);
     await graphDrawn(page);

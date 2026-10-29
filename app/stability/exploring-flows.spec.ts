@@ -108,8 +108,8 @@ test.describe('Exploring flows', () => {
     await page.locator(`${STAGE_BOX} .graph-filter-body input[role="switch"]`).check();
     await expect(page.locator(`${STAGE_BOX} .graph-minimap`)).toBeVisible();
     await page.locator(`${STAGE_BOX} .graph-filters > summary`).click();
-    // Nested, then Voronoi.
-    for (const layout of ['Nested', 'Voronoi', 'Tree']) {
+    // Nested, then back to Tree.
+    for (const layout of ['Nested', 'Tree']) {
       await page.locator(`${STAGE_BOX} .graph-layout button`, { hasText: layout }).click();
       await expect(page.locator(FLOW)).toHaveAttribute('data-layout', layout.toLowerCase());
     }

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, GRAPH_CANVAS, GRAPH_TOOLS, ERD_CANVAS, RECORD } from './scenarios';
-import { boxOf, cameraOf, clickBox, clippedLabels, focusDrawn, GRAPH, graphDrawn, hitAt, placesOf, pointOnBox, reachableBoxes, sceneOf } from './scene';
+import { boxOf, cameraOf, clickBox, clippedLabels, focusDrawn, GRAPH, graphDrawn, placesOf, pointOnBox, reachableBoxes, sceneOf } from './scene';
 import type { SceneHost } from '../src/graph/GraphPage';
 
 // LA-V61-R32-T01: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The camera
@@ -221,7 +221,7 @@ test.describe('graph', () => {
   });
 
   test('LA-V93-R10-T08 in each layout, focusing each of Lathe\'s domains at depth 2, framed and zoomed in, every drawn box shows its title text and its whole label inside it', async ({ page }) => {
-    for (const layout of ['Tree', 'Nested', 'Voronoi'] as const) {
+    for (const layout of ['Tree', 'Nested'] as const) {
       for (const domain of ['LA-AUT', 'LA-CHK', 'LA-EXP', 'LA-PLT', 'LA-TRC']) {
         await openPage(page, `/${domain}?stage=graph`);
         await nodes(page);
@@ -337,9 +337,9 @@ test.describe('graph', () => {
   });
 });
 
-// LA-V93-R14-T02 (LA-V93-R21, LA-V93-R22, LA-V93-R14, LA-V93-R17): one table of the
-// graph's features, run in the Tree, Nested and Voronoi layouts alike, so none falls behind the others.
-const LAYOUT_NAMES = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
+// LA-V93-R14-T02 (LA-V93-R21, LA-V93-R14, LA-V93-R17): one table of the
+// graph's features, run in the Tree and Nested layouts alike, so neither falls behind the other.
+const LAYOUT_NAMES = { tree: 'Tree', nested: 'Nested' } as const;
 type Layout = keyof typeof LAYOUT_NAMES;
 
 const path = (page: Page) => new URL(page.url()).pathname;
@@ -406,7 +406,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'from the canvas, the plain arrow that steps out in this layout (Left in Tree, Up in Nested and Voronoi) steps out to the parent',
+    feature: 'from the canvas, the plain arrow that steps out in this layout (Left in Tree, Up in Nested) steps out to the parent',
     run: async (page, layout) => {
       const here = path(page);
       // The graph stage takes focus as a click on its canvas gives it.
@@ -450,7 +450,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'depth 1 to 3 frames more in the Tree layout; the Nested and Voronoi cameras frame the focus box or cell, so they have no depth',
+    feature: 'depth 1 to 3 frames more in the Tree layout; the Nested camera frames the focus box, so it has no depth',
     run: async (page, layout) => {
       if (layout !== 'tree') {
         // The Depth group keeps its slot but is neither shown nor reachable (LA-V93-R21).
@@ -505,39 +505,21 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
   },
 ];
 
-for (const layout of ['tree', 'nested', 'voronoi'] as const) {
+for (const layout of ['tree', 'nested'] as const) {
   test(`LA-V93-R14-T02 every graph feature works in the ${LAYOUT_NAMES[layout]} layout`, async ({ page }) => {
     await openPage(page, `${RECORD}?stage=graph`);
     await nodes(page);
     await page.locator('.focus-stage .graph-box[data-id^="LA-"]').nth(1).waitFor({ state: 'attached' });
     await page.waitForTimeout(900);
     if (layout !== 'tree') {
-      // v steps to the next layout: Nested, then Voronoi.
+      // v steps to the next layout: Nested.
       await page.locator('.focus-stage .graph-flow').focus();
-      for (let i = 0; i < (layout === 'nested' ? 1 : 2); i++) await page.keyboard.press('v');
+      await page.keyboard.press('v');
       await expect(page.locator(GRAPH)).toHaveAttribute('data-layout', layout);
       await page.locator('.focus-stage .graph-box[data-id^="LA-"]').nth(1).waitFor({ state: 'attached' });
       await page.waitForTimeout(1300);
     }
     for (const row of PARITY) await test.step(row.feature, () => row.run(page, layout));
-    if (layout === 'voronoi') {
-      await test.step('LA-V93-R22-T01 every drawn cell is a polygon, and the pointer finds the cell under it, not a larger cell\'s box', async () => {
-        const s = await sceneOf(page);
-        const c = s.canvas;
-        const wrong: string[] = [];
-        for (const b of s.boxes) {
-          if (!b.polygon || b.view !== 'voronoi') { wrong.push(`${b.id}: not a cell`); continue; }
-          const x = b.label.left + b.label.width / 2;
-          const y = b.label.top + b.label.height / 2;
-          if (!(x > c.left && x < c.left + c.width && y > c.top && y < c.top + c.height)) continue;
-          const over = await page.evaluate(({ x, y }) => document.elementFromPoint(x, y)?.tagName ?? '', { x, y });
-          if (over !== 'CANVAS') continue;
-          const hit = await hitAt(page, x, y);
-          if (hit !== b.id) wrong.push(`${b.id}: the pointer at its label finds ${hit}`);
-        }
-        expect(wrong).toEqual([]);
-      });
-    }
     if (layout !== 'tree') {
       await test.step('every drawn child lies inside its parent on screen', async () => {
         const rects = new Map((await sceneOf(page)).boxes.map((b) => [b.id, b.rect]));
