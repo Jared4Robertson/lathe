@@ -1,13 +1,11 @@
 import { Fragment } from 'react';
 import { TreeList } from '../components/TreeList';
 import { textOf, type SpecIndex, type SpecRecord } from './data';
-import { addressOf } from '../views/address';
-import { Grouped, RecordLink, Section, SpecLink, recordText } from './parts';
-import { appliesWhenOf, appliesWhenText, followingDomains, notApplicableReason, patternsFollowedBy, ruleStatus, rulesOf, settingText, settingValue, settingsOf, type RuleStatus } from './patterns';
+import { RecordLink, recordText } from './parts';
+import { appliesWhenOf, appliesWhenText, patternsFollowedBy, ruleStatus, rulesOf, type RuleStatus } from './patterns';
 
-// The patterns a domain follows ("Patterns we follow" on the domain page) and a pattern's own page:
-// its settings, its rules, and the domains and use cases that follow it with each domain's proof
-// status per rule.
+// The patterns a domain follows ("Patterns we follow" on the domain page), each with its rules and the domain's proof
+// status per rule, and a rule's status mark, which the Pattern page shows per following domain.
 
 const list = (ids: string[]) => ids.join(', ');
 
@@ -109,120 +107,5 @@ export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; d
         );
       }}
     />
-  );
-}
-
-/** A pattern's page: its settings table, its rules, and who follows it with each domain's status per rule. */
-export function PatternSections({ index, pattern }: { index: SpecIndex; pattern: SpecRecord }) {
-  const settings = settingsOf(index, pattern);
-  const rules = rulesOf(index, pattern.id);
-  const domains = followingDomains(index, pattern.id);
-  return (
-    <>
-      <Section title="Settings" count={settings.length}>
-        {settings.length === 0 ? <p className="hint">This pattern has no settings.</p> : (
-          <table className="data-table pattern-settings">
-            <thead><tr><th scope="col">Setting</th><th scope="col">Rules that depend on it</th></tr></thead>
-            <tbody>
-              {settings.map((s) => {
-                const dependent = rules.filter((r) => textOf(r.row, 'setting')?.trim() === s || appliesWhenOf(r)?.setting === s);
-                return (
-                  <tr key={s}>
-                    <th scope="row"><code>{s}</code></th>
-                    <td>{dependent.length === 0 ? <span className="hint">None</span> : dependent.map((r, i) => <Fragment key={r.id}>{i > 0 && ', '}<RecordLink index={index} id={r.id} showTitle={false} /></Fragment>)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </Section>
-      <Section title="Rules" count={rules.length}>
-        {rules.length === 0 ? <p className="hint">No rules yet. Add <code>pattern_rule</code> records under this pattern.</p> : (
-          <Grouped records={rules} level={3} render={(grouped) => (
-            <ul className="record-list plain pattern-rules">
-              {grouped.map((r) => (
-                <li key={r.id}>
-                  <RecordLink index={index} id={r.id} row />
-                  <RuleTags rule={r} />
-                </li>
-              ))}
-            </ul>
-          )} />
-        )}
-      </Section>
-      <Section title="Followed by" count={domains.length}>
-        {domains.length === 0 && <p className="hint">No use case follows this pattern, so no domain owes its rules.</p>}
-        {domains.map((followed) => {
-          const { domain, useCases } = followed;
-          const d = index.byId.get(domain);
-          // A domain that follows the pattern itself gives its settings on its own record, in the first row.
-          const givers = [...(followed.byDomain && d ? [d] : []), ...useCases];
-          return (
-            <section key={domain} className="pattern-domain" aria-label={`Followed in ${domain}`}>
-              <h3>
-                {d?.product ? <SpecLink to={addressOf(domain)} className="record-link"><code>{domain}</code> <span>{d.title}</span></SpecLink> : <SpecLink to={addressOf(domain)}><code>{domain}</code></SpecLink>}
-              </h3>
-              <div className="table-scroll">
-                <table className="data-table pattern-use-cases">
-                  <caption className="sr-only">Use cases in {domain} that follow {pattern.id}, with their settings</caption>
-                  <thead>
-                    <tr><th scope="col">Use case</th>{settings.map((s) => <th key={s} scope="col"><code>{s}</code></th>)}</tr>
-                  </thead>
-                  <tbody>
-                    {givers.map((uc) => (
-                      <tr key={uc.id}>
-                        <th scope="row">{uc.kind === 'domain' ? <>The whole domain</> : <RecordLink index={index} id={uc.id} />}</th>
-                        {settings.map((s) => {
-                          const given = settingValue(index, uc.id, pattern.id, s);
-                          const reason = notApplicableReason(given);
-                          return <td key={s} className={reason !== null ? 'setting-na' : undefined}>{given ? settingText(given) : <span className="hint">not given</span>}</td>;
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-              {rules.length > 0 && (
-                <table className="data-table pattern-rule-status">
-                  <caption className="sr-only">How {domain} proves each rule of {pattern.id}</caption>
-                  <thead><tr><th scope="col">Rule</th><th scope="col">In {domain}</th></tr></thead>
-                  <tbody>
-                    {rules.map((r) => (
-                      <tr key={r.id}>
-                        <th scope="row"><RecordLink index={index} id={r.id} /></th>
-                        <td><RuleMarks index={index} status={ruleStatus(index, r, domain, followed)} /></td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </section>
-          );
-        })}
-      </Section>
-    </>
-  );
-}
-
-/** A pattern rule's page: the domains that owe it and how each proves it. */
-export function PatternRuleSections({ index, rule }: { index: SpecIndex; rule: SpecRecord }) {
-  const domains = rule.parent ? followingDomains(index, rule.parent) : [];
-  return (
-    <Section title="Owed by" count={domains.length}>
-      {domains.length === 0 ? <p className="hint">No domain follows this rule's pattern.</p> : (
-        <table className="data-table pattern-rule-status">
-          <thead><tr><th scope="col">Domain</th><th scope="col">Status</th></tr></thead>
-          <tbody>
-            {domains.map((followed) => (
-              <tr key={followed.domain}>
-                <th scope="row"><RecordLink index={index} id={followed.domain} /></th>
-                <td><RuleMarks index={index} status={ruleStatus(index, rule, followed.domain, followed)} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Section>
   );
 }

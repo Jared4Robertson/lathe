@@ -192,7 +192,8 @@ function KeysTable({ index, rows, owner }: { index: SpecIndex; rows: Row[]; owne
  * A record's recorded exceptions, each another aggregate and why: those a command also changes in its transaction
  * (command_change), or those a repository also persists (repository_share).
  */
-function RecordedExceptions({ index, rows, owner, title, hint }: { index: SpecIndex; rows: Row[]; owner: string; title: string; hint: string }) {
+/** Recorded exceptions of a command or a repository: each other aggregate it also changes or persists, with its reason. */
+export function RecordedExceptions({ index, rows, owner, title, hint }: { index: SpecIndex; rows: Row[]; owner: string; title: string; hint: string }) {
   return (
     <Section title={title} count={rows.length} className="recorded-exceptions">
       <p className="hint">{hint}</p>

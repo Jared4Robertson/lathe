@@ -195,15 +195,15 @@ describe('Patterns we follow, on the domain page', () => {
   });
 });
 
-describe('pattern pages', () => {
-  it('LA-V92-R54-T01 A pattern page shows its settings table, its rules, and each following domain with its use cases and settings', async () => {
+describe('pattern pages (the Pattern page, LA-V122)', () => {
+  it('LA-V122-R04-T01 A pattern page shows its settings table, its rules, and each following domain with its use cases and settings', async () => {
     await openApp('/DM-PAT-AUDIT', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Audited action' });
     const settings = within(section(/^Settings/)).getByRole('table');
     expect(within(settings).getAllByRole('row').map((r) => r.textContent)).toEqual([
-      'SettingRules that depend on it',
-      'retentionDM-PAT-AUDIT-R02',
-      'whoDM-PAT-AUDIT-R03',
+      'SettingMeaningRules that depend on it',
+      'retentionHow long records are kept.DM-PAT-AUDIT-R02',
+      'whoWho is recorded.DM-PAT-AUDIT-R03',
     ]);
     expect(within(section(/^Rules/)).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
       'DM-PAT-AUDIT-R01Each change is recorded',
@@ -223,7 +223,7 @@ describe('pattern pages', () => {
     expect(within(pay).getByText('Not applicable: Payments keep no records')).toHaveClass('setting-na');
   });
 
-  it('LA-V92-R54-T02 A pattern page shows each following domain\'s proof status per rule', async () => {
+  it('LA-V122-R04-T02 A pattern page shows each following domain\'s proof status per rule', async () => {
     await openApp('/DM-PAT-AUDIT', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Audited action' });
     const followed = section(/^Followed by/);
@@ -238,7 +238,7 @@ describe('pattern pages', () => {
     expect(statusOf('DM-PAY', 'DM-PAT-AUDIT-R03')).toHaveTextContent('Waived here: who is Shopper');
   });
 
-  it('LA-V92-R55-T01 A pattern rule page lists the domains that owe it, and a pattern nobody follows says so', async () => {
+  it('LA-V122-R05-T01 A pattern rule page lists the domains that owe it, and a pattern nobody follows says so', async () => {
     await openApp('/DM-PAT-AUDIT-R02', { data: twoDomains() });
     await screen.findByRole('heading', { level: 1, name: 'Records are kept' });
     const owed = section(/^Owed by/);
