@@ -32,14 +32,7 @@
 {"source_id":"LA-AUT-INV80-T","target_id":"LA-AUT-TD52"}
 {"source_id":"LA-AUT-INV81-T","target_id":"LA-AUT-TD53"}
 {"source_id":"LA-AUT-INV82-T","target_id":"LA-AUT-TD53"}
-{"source_id":"LA-AUT-SP01-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-SP02-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-SP03-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-SP04-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-SP05-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-SP06-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-SP07-T","target_id":"LA-AUT-TD01"}
-{"source_id":"LA-AUT-SP08-T","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-SP09-T","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC01-FL04-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-AUT-UC01-R05-T01","target_id":"LA-AUT-TD01"}
@@ -181,6 +174,7 @@
 {"source_id":"LA-AUT-UC18-FL04-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-AUT-UC18-R05-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC18-R05-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-AUT-UC18-R05-T03","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC18-R06-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC18-R06-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-AUT-UC19-FL03-T","target_id":"LA-AUT-TD03"}
@@ -448,6 +442,9 @@
 {"source_id":"LA-PAT-APP-UX-R17-T02","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-PAT-APP-UX-R19-T02","target_id":"LA-EXP-TD01"}
 {"source_id":"LA-PAT-RECORD-IDENTITY-R01-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-PAT-RECORD-IDENTITY-R01-T02","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-PAT-RECORD-IDENTITY-R02-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-PAT-RECORD-IDENTITY-R03-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-PAT-RECORD-IDENTITY-R04-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-PAT-RECORD-IDENTITY-R04-T01","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-PAT-RECORD-IDENTITY-R05-T01","target_id":"LA-AUT-TD02"}
@@ -481,7 +478,9 @@
 {"source_id":"LA-PLT-UC01-R06-T04","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-PLT-UC01-R07-T02","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-PLT-UC01-R08-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-PLT-UC01-R08-T03","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-PLT-UC01-R09-T01","target_id":"LA-AUT-TD02"}
+{"source_id":"LA-PLT-UC01-R09-T02","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-PLT-UC02-FL03-T","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-PLT-UC02-R01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-PLT-UC02-R01-T01","target_id":"LA-TRC-TD01"}
@@ -507,6 +506,7 @@
 {"source_id":"LA-STD-CODE-R01-T01","target_id":"LA-AUT-TD02"}
 {"source_id":"LA-STD-CODE-R01-T01","target_id":"LA-EXP-TD03"}
 {"source_id":"LA-STD-CODE-R07-T02","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-STD-CODE-R07-T03","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-STD-CODE-R07-T30","target_id":"LA-AUT-TD40"}
 {"source_id":"LA-STD-CODE-R07-T31","target_id":"LA-AUT-TD41"}
 {"source_id":"LA-STD-CODE-R07-T32","target_id":"LA-AUT-TD42"}
