@@ -68,5 +68,5 @@
 {"id":"LA-AUT-CMD208-CLI","title":"lathe standard remove-standard-rule-test","command_id":"LA-AUT-CMD208","usage":"lathe standard remove-standard-rule-test --<field> <value>… | lathe standard remove-standard-rule-test --json <file|->","mcp_tool":"standard_remove_standard_rule_test","file":"lathe/src/cli/aggregates.ts"}
 {"id":"LA-PLT-CMD17-CLI","title":"lathe serve","command_id":"LA-PLT-CMD17","usage":"lathe serve [--port <port>]","file":"lathe/bin/lathe.ts"}
 {"id":"LA-PLT-CMD21-CLI","title":"lathe init","command_id":"LA-PLT-CMD21","usage":"lathe init --name <name> --prefix <prefix>","file":"lathe/bin/lathe.ts"}
-{"id":"LA-PLT-CMD24-CLI","title":"lathe upgrade","command_id":"LA-PLT-CMD24","usage":"lathe upgrade [--allow-dirty]","file":"lathe/bin/lathe.ts"}
+{"id":"LA-PLT-CMD24-CLI","title":"lathe upgrade","command_id":"LA-PLT-CMD24","usage":"lathe upgrade","file":"lathe/bin/lathe.ts"}
 {"id":"LA-PLT-CMD30-CLI","title":"lathe app open","command_id":"LA-PLT-CMD30","usage":"lathe app open <id> [--stage graph|erd|trace] [--json]","mcp_tool":"app_open","file":"lathe/src/cli/app-tools.ts"}
