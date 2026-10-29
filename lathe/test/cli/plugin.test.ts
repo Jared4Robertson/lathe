@@ -44,7 +44,7 @@ const AGGREGATES = [
 ];
 // The aggregates whose commands have not landed yet: the skills' examples of their tools are checked against the schema's
 // columns and relations only, not against the tools themselves. An aggregate leaves this list as soon as its commands land.
-const LANDED = new Set(['use-case', 'domain', 'test-data-set', 'pattern', 'standard', 'aggregate', 'domain-event', 'command']);
+const LANDED = new Set(['use-case', 'domain', 'test-data-set', 'pattern', 'standard', 'aggregate', 'domain-event', 'command', 'product', 'business-outcome', 'extension-record', 'entry-point', 'tooling']);
 const PENDING = new Set(AGGREGATES.filter((a) => !LANDED.has(a)));
 // The fields of a record's add or change that hold its parts, as lists of rows.
 const PARTS = new Set(['fields', 'keys', 'settings', 'roles', 'setting_values', 'packages']);
@@ -107,14 +107,14 @@ describe('the plugin', () => {
       const text = readFileSync(path.join(pluginDir, 'skills', skill, 'SKILL.md'), 'utf8');
       const calls = examples(text);
       // The product's own kinds and relations an example declares are part of the schema its other examples use.
-      const declared = calls.filter((c) => c.tool === 'product_add_product_kind').map((c) => c.args as Row & { fields?: Row[] });
+      const declared = calls.filter((c) => c.tool === 'product_declare_product_kind').map((c) => c.args as Row & { fields?: Row[] });
       const data = everyKind();
       const store = await openStore(
         writeData({
           ...data,
           product_kind: [...data.product_kind, ...declared.map(({ fields, ...kind }) => kind)],
           product_kind_field: [...data.product_kind_field, ...declared.flatMap((k) => (k.fields ?? []).map((f, at) => ({ kind: k.name, position: at + 1, ...f })))],
-          product_relation: [...data.product_relation, ...calls.filter((c) => c.tool === 'product_add_product_relation').map((c) => c.args as Row)],
+          product_relation: [...data.product_relation, ...calls.filter((c) => c.tool === 'product_declare_product_relation').map((c) => c.args as Row)],
         }),
       );
       const schema = store.schema;

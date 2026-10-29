@@ -89,7 +89,11 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     const sliced = [...handlers.values()].filter((h) => typeof h.file === 'string' && /\/commands\/[^/]+\.ts$/.test(h.file) && h.file.startsWith('lathe/src/'));
     expect(sliced.filter((h) => !defined.has(String(h.command_id))).map((h) => h.id)).toEqual([]);
     const aggregates = new Set(ALL_COMMANDS.map((d) => d.slice.aggregate));
-    expect([...commands.values()].filter((c) => aggregates.has(String(aggregateOf.get(c.entity_id))) && !defined.has(String(c.id))).map((c) => c.id)).toEqual([]);
+    // The generic write layer's commands (LA-AUT-CMD01–08, handled in platform/data/store.ts and merge.ts) still sit on
+    // the Product aggregate's root until the cutover (step 3) deletes them and this line with them.
+    const generic = new Set(['lathe/src/platform/data/store.ts', 'lathe/src/platform/data/merge.ts']);
+    const own = (c: Record<string, unknown>) => !generic.has(String(handlers.get(c.id)?.file));
+    expect([...commands.values()].filter((c) => aggregates.has(String(aggregateOf.get(c.entity_id))) && !defined.has(String(c.id)) && own(c)).map((c) => c.id)).toEqual([]);
   });
 
   it('matches each query definition to its query, handler, CLI, endpoint and endpoint handler records, one to one', () => {

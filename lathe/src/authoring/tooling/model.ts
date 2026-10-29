@@ -1,0 +1,63 @@
+// The Tooling aggregate (LA-AUT-A21): a dev script or config file of a domain, with the packages it uses and the standard rules it meets. One instance is one
+// tooling record, whole: its row, the package_use rows naming it and the meets links it starts, and nothing of another aggregate.
+import type { Slice } from '../../platform/commands/definition.ts';
+import type { Row, Value } from '../../platform/data/rows.ts';
+import type { ToolingRow } from '../../platform/data/tables.ts';
+
+/** The aggregate's record ID in Lathe's own spec. */
+export const TOOLING_AGGREGATE = 'LA-AUT-A21';
+
+/** How the interfaces reach the aggregate's commands: `lathe tooling`, the tooling_ tools, /api/tooling/. */
+export const TOOLING_SLICE: Slice = { aggregate: TOOLING_AGGREGATE, name: 'tooling' };
+
+/**
+ * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
+ * Only the columns named in `columns` are taken from the changes.
+ */
+export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
+  const next = { ...row } as Record<string, unknown>;
+  for (const [column, value] of Object.entries(changes)) {
+    if (!columns.includes(column) || value === undefined) continue;
+    if (value === null) delete next[column];
+    else next[column] = value as Value;
+  }
+  return next as R;
+}
+
+/** One tooling record, whole. */
+export interface Tooling {
+  /** The tooling record's ID: the aggregate's root. */
+  readonly root: string;
+  tooling: ToolingRow;
+  /** The packages it uses (package_use), sorted. */
+  packages: string[];
+  /** The standard rules it meets, sorted. */
+  meets: string[];
+}
+
+/** The tables the aggregate keeps its rows in: its kind, the package_use rows naming it, and the meets links it starts. */
+export const TOOLING_TABLES = ['tooling', 'package_use', 'meets'] as const;
+
+/** The tooling records in the data, each whole; only the one given, when given. */
+export function toolingsFrom(rows: (table: string) => Row[], only?: string): Tooling[] {
+  const found = rows('tooling').filter((r) => only === undefined || r.id === only) as unknown as ToolingRow[];
+  if (!found.length) return [];
+  const ids = new Set(found.map((r) => r.id));
+  const packages = rows('package_use').filter((p) => ids.has(String(p.record_id)));
+  const meets = rows('meets').filter((m) => ids.has(String(m.source_id)));
+  return found.map((row) => ({
+    root: row.id,
+    tooling: row,
+    packages: packages.filter((p) => p.record_id === row.id).map((p) => String(p.package)).sort(),
+    meets: meets.filter((m) => m.source_id === row.id).map((m) => String(m.target_id)).sort(),
+  }));
+}
+
+/** The instance's rows, by table: only rows it owns, so another record's packages and links stay as they are. */
+export function toolingRows(record: Tooling): Map<string, Row[]> {
+  return new Map<string, Row[]>([
+    ['tooling', [record.tooling as unknown as Row]],
+    ['package_use', record.packages.map((name) => ({ record_id: record.root, package: name }))],
+    ['meets', record.meets.map((target) => ({ source_id: record.root, target_id: target }))],
+  ]);
+}

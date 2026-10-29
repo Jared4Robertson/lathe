@@ -92,6 +92,16 @@ describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use
     expect(() => runQuery(store, NEXT_USE_CASE_ID, { kind: 'flow', parent: 'TL-LEND-UC02' })).toThrow(/a flow through every interface of TL/);
   });
 
+  it('refuses an Add whose ID its own use case already holds, even with the same content, and changes no file', async () => {
+    const store = await storeOf();
+    const requirement = { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' };
+    await runCommand(store, ADD_UC_REQUIREMENT, requirement);
+    const before = fileOf(store, 'uc_requirement');
+    const refused = await refusal(store, ADD_UC_REQUIREMENT, requirement);
+    expect(refused.problems).toEqual([expect.objectContaining({ rule: 'primary-key', message: 'uc_requirement TL-LEND-UC02-R01 already exists' })]);
+    expect(fileOf(store, 'uc_requirement')).toBe(before);
+  });
+
   it('changes a step\'s links: a list replaces the list, null clears a single link', async () => {
     const store = await storeOf();
     await runCommand(store, CHANGE_FLOW_STEP, { id: 'TL-LEND-UC01-FL01-S01', happens_in: null, exchanges_with: [], position: 1 });
