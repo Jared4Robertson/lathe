@@ -1,15 +1,24 @@
 import type { ElkNode } from 'elkjs/lib/elk-api';
 import { elkLayout } from '../elk';
-import { BOUNDARY_PAD, boxSize, type Erd, type ErdBox, type Rect } from './erd';
+import type { SpecIndex } from '../specs/data';
+import { onePerData } from '../graph/one-map';
+import { BOUNDARY_PAD, boxSize, erdMap, type ErdBox, type ErdMap, type Rect } from './erd';
 
-// Lays out an ERD with ELK's layered algorithm, in two passes. First each aggregate's boundary: its
-// entities, the root first, along their has one and has many lines, left to right or top to bottom,
-// whichever comes nearer the canvas's shape. Then the diagram: each boundary at the size its entities
-// take, and the closed aggregate boxes, left to right along the references between them, wrapped to
-// about the canvas's shape. The diagram's own boxes come first in model order and the faded context
-// after them, so the same diagram always gets the same picture.
+// Lays out a product's ERD map with ELK's layered algorithm, once per product and data change: the
+// layout is cached by the spec's index (graph/one-map.ts, LA-PAT-APP-UX-R19), so every focus and
+// stage switch on the same data reads the same places (LA-V94-R08).
+// Three passes, from the inside out. First each aggregate's boundary: its entities, the root first,
+// along their has one and has many lines, left to right or top to bottom, whichever comes nearer
+// the map's shape. Then each domain's region: its aggregates at the size their entities take, left
+// to right along the references between them, wrapped to about the map's shape. Then the product:
+// the regions, along the references between domains. Each level keeps model order, so the same
+// data always gets the same picture.
 
 type Direction = 'RIGHT' | 'DOWN';
+type Size = { width: number; height: number };
+
+/** The shape every level wraps to: about a wide screen's. */
+const ASPECT = 1.6;
 
 const layered = (direction: Direction) => ({
   'elk.algorithm': 'layered',
@@ -17,80 +26,113 @@ const layered = (direction: Direction) => ({
   'elk.layered.considerModelOrder.strategy': 'NODES_AND_EDGES',
 });
 
+/** The box under `group` that holds `id` (itself when it is a child of `group`), or undefined when `id` lies outside it. */
+function childOf(parents: ReadonlyMap<string, string | undefined>, group: string | undefined, id: string): string | undefined {
+  for (let at: string | undefined = id; at; at = parents.get(at)) if (parents.get(at) === group) return at;
+  return undefined;
+}
+
 /** One boundary's inside: its entities and the lines between them. */
-export function boundaryGraph(erd: Erd, aggregate: string, direction: Direction): ElkNode {
-  const members = erd.boxes.filter((b) => b.parent === aggregate);
+export function boundaryGraph(map: ErdMap, aggregate: string, direction: Direction): ElkNode {
+  const members = map.boxes.filter((b) => b.parent === aggregate);
   const ids = new Set(members.map((b) => b.id));
   return {
     id: aggregate,
     layoutOptions: { ...layered(direction), 'elk.layered.spacing.nodeNodeBetweenLayers': '40', 'elk.spacing.nodeNode': '16', 'elk.spacing.componentComponent': '20', 'elk.padding': '[top=0,left=0,bottom=0,right=0]' },
     children: members.map((b) => ({ id: b.id, ...boxSize(b) })),
-    edges: erd.lines.filter((l) => ids.has(l.source) && ids.has(l.target)).map((l, i) => ({ id: `e${i}`, sources: [l.source], targets: [l.target] })),
+    edges: map.lines.filter((l) => ids.has(l.source) && ids.has(l.target)).map((l, i) => ({ id: `e${i}`, sources: [l.source], targets: [l.target] })),
   };
 }
 
-/** The diagram's top level: the boundaries at their given sizes, the closed boxes, and the references between them. */
-export function erdGraph(erd: Erd, sizes: ReadonlyMap<string, { width: number; height: number }>, aspect = 1.6): ElkNode {
-  const top = erd.boxes.filter((b) => !b.parent);
-  const ordered = [...top.filter((b) => !b.context), ...top.filter((b) => b.context)];
-  const ownerOf = new Map(erd.boxes.map((b) => [b.id, b.parent ?? b.id]));
+/**
+ * A region's inside, or the product's top level (`group` undefined): its boxes at their given sizes,
+ * and one edge for each pair of them a line joins, read through the boxes that hold the line's ends.
+ */
+export function groupGraph(map: ErdMap, group: string | undefined, sizes: ReadonlyMap<string, Size>): ElkNode {
+  const members = map.boxes.filter((b) => b.parent === group);
+  const parents = new Map(map.boxes.map((b) => [b.id, b.parent]));
   const pairs = new Map<string, { sources: string[]; targets: string[] }>();
-  for (const l of erd.lines) {
-    const [s, t] = [ownerOf.get(l.source) ?? l.source, ownerOf.get(l.target) ?? l.target];
-    if (s !== t) pairs.set(`${s}|${t}`, { sources: [s], targets: [t] });
+  for (const l of map.lines) {
+    const [s, t] = [childOf(parents, group, l.source), childOf(parents, group, l.target)];
+    if (s && t && s !== t) pairs.set(`${s}|${t}`, { sources: [s], targets: [t] });
   }
   return {
-    id: 'root',
+    id: group ?? 'root',
     layoutOptions: {
       ...layered('RIGHT'),
-      'elk.layered.spacing.nodeNodeBetweenLayers': '56',
-      'elk.spacing.nodeNode': '20',
-      'elk.spacing.componentComponent': '32',
-      // A diagram wider than the canvas's shape wraps its layers into rows, read left to right then down.
-      'elk.aspectRatio': String(Math.round(aspect * 100) / 100),
+      'elk.layered.spacing.nodeNodeBetweenLayers': group ? '56' : '80',
+      'elk.spacing.nodeNode': group ? '20' : '40',
+      'elk.spacing.componentComponent': group ? '32' : '56',
+      'elk.padding': '[top=0,left=0,bottom=0,right=0]',
+      // A level wider than the map's shape wraps its layers into rows, read left to right then down.
+      'elk.aspectRatio': String(ASPECT),
       'elk.layered.wrapping.strategy': 'MULTI_EDGE',
       'elk.layered.wrapping.additionalEdgeSpacing': '10',
     },
-    children: ordered.map((b) => ({ id: b.id, ...(sizes.get(b.id) ?? boxSize(b)) })),
+    children: members.map((b) => ({ id: b.id, ...(sizes.get(b.id) ?? boxSize(b)) })),
     edges: [...pairs.values()].map((e, i) => ({ id: `e${i}`, ...e })),
   };
 }
 
-/** How far a layout's shape is from the canvas's: 0 when they match. */
-const misfit = (laid: ElkNode, aspect: number) => Math.abs(Math.log(Math.max(1, laid.width ?? 1) / Math.max(1, laid.height ?? 1) / aspect));
+/** How far a layout's shape is from the map's: 0 when they match. */
+const misfit = (laid: ElkNode) => Math.abs(Math.log(Math.max(1, laid.width ?? 1) / Math.max(1, laid.height ?? 1) / ASPECT));
 
-/** A boundary's inside laid out both ways, the one nearer the canvas's shape kept (left to right on a tie). */
-async function layoutBoundary(erd: Erd, aggregate: string, aspect: number): Promise<ElkNode> {
-  const [right, down] = await Promise.all([elkLayout(boundaryGraph(erd, aggregate, 'RIGHT')), elkLayout(boundaryGraph(erd, aggregate, 'DOWN'))]);
-  return misfit(down, aspect) < misfit(right, aspect) ? down : right;
+/** A boundary's inside laid out both ways, the one nearer the map's shape kept (left to right on a tie). */
+async function layoutBoundary(map: ErdMap, aggregate: string): Promise<ElkNode> {
+  const [right, down] = await Promise.all([elkLayout(boundaryGraph(map, aggregate, 'RIGHT')), elkLayout(boundaryGraph(map, aggregate, 'DOWN'))]);
+  return misfit(down) < misfit(right) ? down : right;
 }
 
-const isBoundary = (b: ErdBox) => b.kind === 'aggregate' && b.boundary;
+/** A region's size around its laid-out inside: its head on top, a gap on the other sides; a closed box when it holds nothing. */
+const around = (box: ErdBox, laid: ElkNode | null): Size => {
+  const closed = boxSize(box);
+  if (!laid || (laid.children ?? []).length === 0) return closed;
+  return {
+    width: Math.max(closed.width, Math.round(laid.width ?? 0) + 2 * BOUNDARY_PAD.side),
+    height: Math.round(laid.height ?? 0) + BOUNDARY_PAD.top + BOUNDARY_PAD.bottom,
+  };
+};
 
-/** Each box's place and size on the canvas: a boundary's, and each entity's inside it. */
-export async function layoutErd(erd: Erd, aspect = 1.6): Promise<Map<string, Rect>> {
+/** Each box's place and size on the map: every region's, every boundary's, and each entity's inside its boundary. */
+export async function layoutErd(map: ErdMap): Promise<Map<string, Rect>> {
   const out = new Map<string, Rect>();
-  if (erd.boxes.length === 0) return out;
-  const boundaries = erd.boxes.filter(isBoundary);
-  const inner = await Promise.all(boundaries.map((b) => (erd.boxes.some((m) => m.parent === b.id) ? layoutBoundary(erd, b.id, aspect) : Promise.resolve(null))));
-  const sizes = new Map<string, { width: number; height: number }>();
-  boundaries.forEach((b, i) => {
-    const laid = inner[i];
-    const closed = boxSize(b);
-    if (!laid) { sizes.set(b.id, closed); return; }
-    sizes.set(b.id, {
-      width: Math.max(closed.width, Math.round(laid.width ?? 0) + 2 * BOUNDARY_PAD.side),
-      height: Math.round(laid.height ?? 0) + BOUNDARY_PAD.top + BOUNDARY_PAD.bottom,
-    });
-  });
-  const laid = await elkLayout(erdGraph(erd, sizes, aspect));
-  for (const c of laid.children ?? []) out.set(c.id, { x: Math.round(c.x ?? 0), y: Math.round(c.y ?? 0), width: c.width ?? 0, height: c.height ?? 0 });
-  boundaries.forEach((b, i) => {
-    const at = out.get(b.id);
-    if (!at) return;
-    for (const c of inner[i]?.children ?? []) {
-      out.set(c.id, { x: at.x + BOUNDARY_PAD.side + Math.round(c.x ?? 0), y: at.y + BOUNDARY_PAD.top + Math.round(c.y ?? 0), width: c.width ?? 0, height: c.height ?? 0 });
+  if (map.boxes.length === 0) return out;
+  const sizes = new Map<string, Size>();
+  const inner = new Map<string, ElkNode>();
+  const aggregates = map.boxes.filter((b) => b.kind === 'aggregate');
+  const laidAggregates = await Promise.all(aggregates.map((a) => (a.empty ? Promise.resolve(null) : layoutBoundary(map, a.id))));
+  aggregates.forEach((a, i) => { const laid = laidAggregates[i]; sizes.set(a.id, around(a, laid)); if (laid) inner.set(a.id, laid); });
+  const domains = map.boxes.filter((b) => b.kind === 'domain');
+  const laidDomains = await Promise.all(domains.map((d) => (d.empty ? Promise.resolve(null) : elkLayout(groupGraph(map, d.id, sizes)))));
+  domains.forEach((d, i) => { const laid = laidDomains[i]; sizes.set(d.id, around(d, laid)); if (laid) inner.set(d.id, laid); });
+  const top = await elkLayout(groupGraph(map, undefined, sizes));
+  // From the top down: each box's place, then its inside's from its corner.
+  const place = (laid: ElkNode, at: { x: number; y: number }) => {
+    for (const c of laid.children ?? []) {
+      const r = { x: at.x + Math.round(c.x ?? 0), y: at.y + Math.round(c.y ?? 0), width: c.width ?? 0, height: c.height ?? 0 };
+      out.set(c.id, r);
+      const inside = inner.get(c.id);
+      if (inside) place(inside, { x: r.x + BOUNDARY_PAD.side, y: r.y + BOUNDARY_PAD.top });
     }
-  });
+  };
+  place(top, { x: 0, y: 0 });
   return out;
 }
+
+// ---------- Once per product and data change ----------
+
+interface Laying { promise: Promise<Map<string, Rect>>; rects?: Map<string, Rect> }
+
+/** A product's map laid out (in ELK's worker), once per index however many ask; its places kept once they arrive. */
+const layingOut = onePerData((index, product): Laying => {
+  const laying: Laying = { promise: layoutErd(erdMap(index, product)) };
+  laying.promise.then((rects) => { laying.rects = rects; }, () => {});
+  return laying;
+});
+
+/** A product's layout if it has arrived, so a stage switch on the same data draws the map framed at once. */
+export const readyErdLayout = (index: SpecIndex, product: string): Map<string, Rect> | undefined => layingOut(index, product).rects;
+
+/** A product's layout: laid out once per index (each data change), then read. */
+export const erdLayout = (index: SpecIndex, product: string): Promise<Map<string, Rect>> => layingOut(index, product).promise;
+
