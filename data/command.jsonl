@@ -6,6 +6,25 @@
 {"id":"LA-AUT-CMD06","title":"Remove a record","aggregate_id":"LA-AUT-A1","description":"Removes a record with its parts and the links it starts, refused while anything else references it (`store.remove`)."}
 {"id":"LA-AUT-CMD07","title":"Apply several changes as one","aggregate_id":"LA-AUT-A1","description":"Applies several changes as one write, all or nothing (`store.apply`). Every writer's change goes through it or the single commands: the CLI, the MCP tools and `POST /api/write`."}
 {"id":"LA-AUT-CMD08","title":"Merge two branches' data","aggregate_id":"LA-AUT-A1","description":"Merges two branches' versions of a data file row by row against their base, keeping both sides' rows (`mergeData`, `mergeDataFiles`)."}
+{"id":"LA-AUT-CMD100","title":"Add a use case","aggregate_id":"LA-AUT-A11","description":"Adds a use case under a capability, with its actors in order, the main actor first."}
+{"id":"LA-AUT-CMD101","title":"Change a use case","aggregate_id":"LA-AUT-A11","description":"Changes a use case's title, goal or notes, or its actors (the whole list, in order). Its capability changes only by Move a use case."}
+{"id":"LA-AUT-CMD102","title":"Move a use case","aggregate_id":"LA-AUT-A11","description":"Moves a use case, with everything in it, under another capability of its domain."}
+{"id":"LA-AUT-CMD103","title":"Remove a use case","aggregate_id":"LA-AUT-A11","description":"Removes a use case whole: its actors, requirements, flows, steps, tests and the links they start. Refused while anything outside it references what is in it."}
+{"id":"LA-AUT-CMD104","title":"Add a UC requirement","aggregate_id":"LA-AUT-A11","description":"Adds a UC requirement to its use case."}
+{"id":"LA-AUT-CMD105","title":"Change a UC requirement","aggregate_id":"LA-AUT-A11","description":"Changes a UC requirement's title, statement or group."}
+{"id":"LA-AUT-CMD106","title":"Remove a UC requirement","aggregate_id":"LA-AUT-A11","description":"Removes a UC requirement with its use case tests and the links they start. Refused while a step fulfills it, or anything else references it or its tests."}
+{"id":"LA-AUT-CMD107","title":"Add a flow","aggregate_id":"LA-AUT-A11","description":"Adds a flow to its use case, through one interface of its product: its ID ends in the interface's number."}
+{"id":"LA-AUT-CMD108","title":"Change a flow","aggregate_id":"LA-AUT-A11","description":"Changes a flow's title. Its interface is in its ID, so a flow through another interface is another flow."}
+{"id":"LA-AUT-CMD109","title":"Remove a flow","aggregate_id":"LA-AUT-A11","description":"Removes a flow with its steps, its flow test and the links they start. Refused while anything else references them."}
+{"id":"LA-AUT-CMD110","title":"Add a flow step","aggregate_id":"LA-AUT-A11","description":"Adds a step to its flow, on a path at a position, with the requirements it fulfills, what it invokes, the view it happens in and the integrations it exchanges with."}
+{"id":"LA-AUT-CMD111","title":"Change a flow step","aggregate_id":"LA-AUT-A11","description":"Changes a step's title, path or position, or its links: a list given replaces the list, null clears what it invokes or the view it happens in."}
+{"id":"LA-AUT-CMD112","title":"Remove a flow step","aggregate_id":"LA-AUT-A11","description":"Removes a flow step with the links it starts. Refused while anything else references it."}
+{"id":"LA-AUT-CMD113","title":"Add a use case test","aggregate_id":"LA-AUT-A11","description":"Adds a use case test under its UC requirement, with the test data sets it starts from."}
+{"id":"LA-AUT-CMD114","title":"Change a use case test","aggregate_id":"LA-AUT-A11","description":"Changes a use case test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD115","title":"Remove a use case test","aggregate_id":"LA-AUT-A11","description":"Removes a use case test with the links it starts. Refused while anything else references it, such as a business outcome it measures."}
+{"id":"LA-AUT-CMD116","title":"Add a flow test","aggregate_id":"LA-AUT-A11","description":"Adds a flow test under its flow, with the test data sets it starts from."}
+{"id":"LA-AUT-CMD117","title":"Change a flow test","aggregate_id":"LA-AUT-A11","description":"Changes a flow test's columns or the test data sets it starts from (the whole list)."}
+{"id":"LA-AUT-CMD118","title":"Remove a flow test","aggregate_id":"LA-AUT-A11","description":"Removes a flow test with the links it starts. Refused while anything else references it, such as a business outcome it measures."}
 {"id":"LA-CHK-CMD01","title":"Add a check","aggregate_id":"LA-CHK-A1","description":"Adds a check row through the command layer: a name, a position, a severity, a summary, an explanation and one SELECT."}
 {"id":"LA-CHK-CMD02","title":"Change a check","aggregate_id":"LA-CHK-A1","description":"Changes a product's check row; Lathe's own are read-only."}
 {"id":"LA-CHK-CMD03","title":"Remove a check","aggregate_id":"LA-CHK-A1","description":"Removes a product's check row; Lathe's own are read-only."}

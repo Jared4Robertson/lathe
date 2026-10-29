@@ -2,6 +2,8 @@
 // the HTTP API run them: each command changes one use case through UseCaseRepository, holds it to its rules before it
 // saves, and is refused with its reason, changing nothing.
 import { readFileSync } from 'node:fs';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { ADD_FLOW } from '../../src/authoring/use-case/commands/add-flow.ts';
@@ -18,6 +20,10 @@ import { REMOVE_USE_CASE } from '../../src/authoring/use-case/commands/remove-us
 import { REMOVE_USE_CASE_TEST } from '../../src/authoring/use-case/commands/remove-use-case-test.ts';
 import { GET_USE_CASE, LIST_USE_CASES, NEXT_USE_CASE_ID } from '../../src/authoring/use-case/queries.ts';
 import { UseCaseRepository } from '../../src/authoring/use-case/repository.ts';
+import { runAggregateCommand } from '../../src/cli/aggregates.ts';
+import { callTool, tools } from '../../src/cli/mcp.ts';
+import { readSchema } from '../../src/cli/operations.ts';
+import { closeStores, handleApi } from '../../src/server/api.ts';
 import { InputError, type AnyCommand } from '../../src/platform/commands/definition.ts';
 import { runCommand, runQuery } from '../../src/platform/commands/run.ts';
 import { DataFiles } from '../../src/platform/data/data-files.ts';
@@ -52,7 +58,7 @@ async function refusal(store: Store, definition: AnyCommand, input: unknown): Pr
 
 const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dataDir, `${table}.jsonl`), 'utf8');
 
-describe('the Use case aggregate\'s commands (LA-AUT-A11)', () => {
+describe('LA-AUT-UC06-R12-T01 each Use case command (LA-AUT-A11) changes one use case through UseCaseRepository, held to its rules', () => {
   it('adds a use case whole with its actors, raises Use case changed, and writes only its own tables', async () => {
     const store = await storeOf();
     const committed = await runCommand(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', notes: 'Late returns are fined.', actors: ['Member', 'Librarian'] });
@@ -94,7 +100,7 @@ describe('the Use case aggregate\'s commands (LA-AUT-A11)', () => {
     expect(step).toMatchObject({ happensIn: null, exchangesWith: [], invokes: 'TL-LEND-CMD01', fulfills: ['TL-LEND-UC01-R01'] });
   });
 
-  it('LA-AUT-INV08 refuses a step fulfilling another use case\'s requirement, with its reason, and changes no file', async () => {
+  it('refuses a step fulfilling another use case\'s requirement, with its reason, and changes no file', async () => {
     const store = await storeOf();
     const before = fileOf(store, 'fulfills');
     await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });
@@ -105,13 +111,13 @@ describe('the Use case aggregate\'s commands (LA-AUT-A11)', () => {
     expect(fileOf(store, 'fulfills')).toBe(before);
   });
 
-  it('LA-AUT-INV42 refuses a flow whose ID does not end in its interface\'s number', async () => {
+  it('LA-AUT-INV42-T refuses a flow whose ID does not end in its interface\'s number', async () => {
     const store = await storeOf();
     const refused = await refusal(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL02', title: 'Return a tool at the desk', use_case_id: 'TL-LEND-UC02', interface_id: 'TL-IF01' });
     expect(refused.problems).toEqual([expect.objectContaining({ rule: 'flow-id-interface', message: 'TL-LEND-UC02-FL02 goes through TL-IF01, so its ID is TL-LEND-UC02-FL01' })]);
   });
 
-  it('LA-AUT-INV43 refuses a view for a step of a flow through a CLI', async () => {
+  it('LA-AUT-INV43-T refuses a view for a step of a flow through a CLI', async () => {
     const data = everyKind();
     data.interface = data.interface.map((i) => ({ ...i, kind: 'CLI' }));
     data.happens_in = [];
@@ -129,7 +135,31 @@ describe('the Use case aggregate\'s commands (LA-AUT-A11)', () => {
     expect((await refusal(store, MOVE_USE_CASE, { id: 'TL-LEND-UC02', capability_id: 'TL-LEND-CAP02' })).problems[0].rule).toBe('parent');
   });
 
-  it('LA-AUT-INV39 removes a use case whole, and refuses one while another aggregate references what is in it', async () => {
+  it('refuses an input that is not the command\'s: an unknown field, a missing one, a wrong type, or a field that cannot be cleared', async () => {
+    const store = await storeOf();
+    await expect(runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'x', use_case_id: 'TL-LEND-UC02' })).rejects.toThrow(new InputError('add-uc-requirement needs statement'));
+    await expect(runCommand(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', capability_id: 'TL-LEND-CAP01' })).rejects.toThrow(/change-use-case takes no capability_id/);
+    await expect(runCommand(store, CHANGE_USE_CASE_TEST, { id: 'TL-LEND-UC01-R01-T01', level: 'sometimes' })).rejects.toThrow(/level "sometimes" is not one of/);
+    await expect(runCommand(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', goal: null })).rejects.toThrow(/goal cannot be cleared/);
+    expect((await refusal(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC09', title: 'Nothing' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no use case TL-LEND-UC09' });
+    expect((await refusal(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Again', capability_id: 'TL-LEND-CAP01', goal: 'Twice.' })).problems[0].rule).toBe('primary-key');
+  });
+
+  it('refuses a repository\'s write to a table it does not own, when it is made', async () => {
+    const store = await storeOf();
+    const refused = await store
+      .transact((tx) => {
+        new UseCaseRepository(tx).load('TL-LEND-UC01');
+        new DataFiles(tx, 'UseCaseRepository', ['use_case']).put('domain', { id: 'TL-X', title: 'X', product_id: 'TL', subdomain_type: 'core', description: 'X.' });
+      })
+      .catch((error: unknown) => error);
+    expect(refused).toBeInstanceOf(StoreError);
+    expect((refused as StoreError).problems[0]).toMatchObject({ rule: 'repository-scope', message: 'UseCaseRepository loads and saves only its own tables (use_case); domain is not one of them' });
+  });
+});
+
+describe('LA-AUT-UC06-R13-T01 a use case, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
+  it('removes a use case whole, and refuses one while another aggregate references what is in it', async () => {
     const store = await storeOf();
     await runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'Tool is on loan', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' });
     await runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC02-FL01', title: 'Return a tool at the desk', use_case_id: 'TL-LEND-UC02', interface_id: 'TL-IF01' });
@@ -166,26 +196,60 @@ describe('the Use case aggregate\'s commands (LA-AUT-A11)', () => {
     const refused = await refusal(store, REMOVE_USE_CASE_TEST, { id: 'TL-LEND-UC01-R01-T01' });
     expect(refused.problems[0].message).toBe('Use case test TL-LEND-UC01-R01-T01 is referenced, so it stays: TL-BO01 measured by TL-LEND-UC01-R01-T01');
   });
+});
 
-  it('refuses an input that is not the command\'s: an unknown field, a missing one, a wrong type, or a field that cannot be cleared', async () => {
-    const store = await storeOf();
-    await expect(runCommand(store, ADD_UC_REQUIREMENT, { id: 'TL-LEND-UC02-R01', title: 'x', use_case_id: 'TL-LEND-UC02' })).rejects.toThrow(new InputError('add-uc-requirement needs statement'));
-    await expect(runCommand(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', capability_id: 'TL-LEND-CAP01' })).rejects.toThrow(/change-use-case takes no capability_id/);
-    await expect(runCommand(store, CHANGE_USE_CASE_TEST, { id: 'TL-LEND-UC01-R01-T01', level: 'sometimes' })).rejects.toThrow(/level "sometimes" is not one of/);
-    await expect(runCommand(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC02', goal: null })).rejects.toThrow(/goal cannot be cleared/);
-    expect((await refusal(store, CHANGE_USE_CASE, { id: 'TL-LEND-UC09', title: 'Nothing' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no use case TL-LEND-UC09' });
-    expect((await refusal(store, ADD_USE_CASE, { id: 'TL-LEND-UC02', title: 'Again', capability_id: 'TL-LEND-CAP01', goal: 'Twice.' })).problems[0].rule).toBe('primary-key');
+describe('LA-AUT-UC06-R14-T01 each Use case command and query is reached by name from the CLI, the MCP tools and HTTP', () => {
+  it('runs `lathe use-case <command>` with flags or JSON, prints the refusal with its reasons, and helps from the schema', async () => {
+    const root = writeData(everyKind());
+    const out: string[] = [];
+    const err: string[] = [];
+    const io = { out: (t: string) => out.push(t), err: (t: string) => err.push(t), stdin: async () => JSON.stringify({ id: 'TL-LEND-UC01-R02', title: 'Member known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' }) };
+    expect(await runAggregateCommand(['use-case', 'add-uc-requirement', '--json', '-', '--root', root], io)).toBe(0);
+    expect(JSON.parse(out.pop()!)).toMatchObject({ tables: ['uc_requirement'], events: [{ event: 'LA-AUT-EV31', root: 'TL-LEND-UC01' }] });
+    expect(await runAggregateCommand(['use-case', 'change-flow-step', '--id', 'TL-LEND-UC01-FL01-S01', '--fulfills', 'TL-LEND-UC01-R01', '--fulfills', 'TL-LEND-UC01-R02', '--root', root], io)).toBe(0);
+    expect(out.pop()).toContain('Added fulfills source_id TL-LEND-UC01-FL01-S01, target_id TL-LEND-UC01-R02');
+    expect(await runAggregateCommand(['use-case', 'remove-uc-requirement', '--id', 'TL-LEND-UC01-R02', '--root', root], io)).toBe(1);
+    expect(err.pop()).toMatch(/^Refused; nothing changed:\n {2}UC requirement TL-LEND-UC01-R02 is referenced, so it stays: .* \[referenced\]$/);
+    expect(await runAggregateCommand(['use-case', 'add-flow-step', '--help', '--root', root], io)).toBe(0);
+    expect(out.pop()).toContain('--position                 integer, required. The step\'s place on its path, from 1.');
+    expect(await runAggregateCommand(['use-case', 'next-id', '--kind', 'uc_requirement', '--parent', 'TL-LEND-UC01', '--root', root], io)).toBe(0);
+    expect(out.pop()).toBe('TL-LEND-UC01-R03');
+    expect(await runAggregateCommand(['use-case', 'add-flow-step', '--colour', 'red', '--root', root], io)).toBe(2);
+    expect(err.pop()).toContain('lathe use-case add-flow-step has no field colour');
   });
 
-  it('refuses a repository\'s write to a table it does not own, when it is made', async () => {
-    const store = await storeOf();
-    const refused = await store
-      .transact((tx) => {
-        new UseCaseRepository(tx).load('TL-LEND-UC01');
-        new DataFiles(tx, 'UseCaseRepository', ['use_case']).put('domain', { id: 'TL-X', title: 'X', product_id: 'TL', subdomain_type: 'core', description: 'X.' });
-      })
-      .catch((error: unknown) => error);
-    expect(refused).toBeInstanceOf(StoreError);
-    expect((refused as StoreError).problems[0]).toMatchObject({ rule: 'repository-scope', message: 'UseCaseRepository loads and saves only its own tables (use_case); domain is not one of them' });
+  it('serves one MCP tool per command and query, each with its own input schema', async () => {
+    const root = writeData(everyKind());
+    const listed = tools(await readSchema(root));
+    const tool = listed.find((t) => t.name === 'use_case_add_flow_step')!;
+    expect(tool.inputSchema).toMatchObject({ required: ['id', 'title', 'flow_id', 'path', 'position'], additionalProperties: false });
+    expect(listed.map((t) => t.name)).toEqual(expect.arrayContaining(['use_case_move_use_case', 'use_case_get_use_case', 'use_case_next_id']));
+    const added = await callTool(root, 'use_case_add_uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'Member known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
+    expect(added.isError).toBeUndefined();
+    const refused = await callTool(root, 'use_case_add_flow', { id: 'TL-LEND-UC01-FL01', title: 'Again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01', extra: 1 });
+    expect(refused).toMatchObject({ isError: true, structuredContent: { refused: true, problems: [{ rule: 'input' }] } });
+    const read = await callTool(root, 'use_case_get_use_case', { id: 'TL-LEND-UC01-R02' });
+    expect(read.content[0].text).toContain('UC requirement TL-LEND-UC01-R02: Member known');
+  });
+
+  it('answers POST /api/use-case/<command> with the changed rows, 422 with the refusal, and 400 for an input of another shape', async () => {
+    const root = writeData(everyKind());
+    const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));
+    await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+    const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+    const post = (route: string, body: unknown) => fetch(`${base}${route}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
+    try {
+      const added = await post('/api/use-case/add-uc-requirement', { id: 'TL-LEND-UC01-R02', title: 'Member known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
+      expect(added.status).toBe(200);
+      expect(await added.json()).toMatchObject({ ok: true, tables: ['uc_requirement'], changes: [{ table: 'uc_requirement', key: 'TL-LEND-UC01-R02', before: null }] });
+      const refused = await post('/api/use-case/remove-uc-requirement', { id: 'TL-LEND-UC01-R01' });
+      expect(refused.status).toBe(422);
+      expect(await refused.json()).toMatchObject({ ok: false, problems: [{ rule: 'referenced' }] });
+      expect((await post('/api/use-case/add-flow', { id: 'TL-LEND-UC01-FL02' })).status).toBe(400);
+      expect((await fetch(`${base}/api/use-case/add-flow`)).status).toBe(405);
+    } finally {
+      await closeStores(root);
+      await new Promise((resolve) => server.close(resolve));
+    }
   });
 });

@@ -331,7 +331,7 @@ describe('a write', () => {
     await store.close();
   });
 
-  it('LA-AUT-INV34-T refuses an aggregate with two roots by its validation query, before any file changes', async () => {
+  it('LA-AUT-INV34-T refuses an aggregate with two roots by its integrity query, before any file changes', async () => {
     const { store } = await fresh();
     expect(await refused(store, [{ op: 'set', table: 'entity', key: 'TL-LEND-EN02', changes: { role: 'root', in_root_table: null } }])).toEqual([
       expect.objectContaining({ rule: 'aggregate-root', table: 'aggregate', key: 'TL-LEND-A1' }),

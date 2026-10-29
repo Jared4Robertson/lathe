@@ -1,5 +1,6 @@
 {"id":"LA-AUT-EV01-ET","title":"spec:changed","domain_event_id":"LA-AUT-EV01","delivery":"in process","file":"lathe/src/server/api.ts"}
 {"id":"LA-AUT-EV03-ET","title":"tools/list_changed","domain_event_id":"LA-AUT-EV03","delivery":"in process","file":"lathe/src/cli/mcp.ts"}
+{"id":"LA-AUT-EV31-ET","title":"useCaseChanged","domain_event_id":"LA-AUT-EV31","delivery":"in process","file":"lathe/src/authoring/use-case/model.ts"}
 {"id":"LA-CHK-EV01-ET","title":"spec:changed(check.jsonl)","domain_event_id":"LA-CHK-EV01","delivery":"in process","file":"lathe/src/server/api.ts"}
 {"id":"LA-EXP-EV01-ET","title":"lathe:navigate","domain_event_id":"LA-EXP-EV01","delivery":"in process","file":"app/src/router.tsx"}
 {"id":"LA-EXP-EV02-ET","title":"change","domain_event_id":"LA-EXP-EV02","delivery":"in process","file":"app/src/views/useTabs.ts"}

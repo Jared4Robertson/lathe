@@ -1,6 +1,6 @@
 {"id":"LA-VO01-VT","title":"record_id.id","value_object_id":"LA-VO01","file":"lathe/schema/002-registry.sql"}
-{"id":"LA-VO02-VT","title":"title","value_object_id":"LA-VO02","file":"lathe/src/store/rows.ts"}
-{"id":"LA-VO03-VT","title":"statement","value_object_id":"LA-VO03","file":"lathe/src/store/rows.ts"}
+{"id":"LA-VO02-VT","title":"title","value_object_id":"LA-VO02","file":"lathe/src/platform/data/rows.ts"}
+{"id":"LA-VO03-VT","title":"statement","value_object_id":"LA-VO03","file":"lathe/src/platform/data/rows.ts"}
 {"id":"LA-VO04-VT","title":"position","value_object_id":"LA-VO04","file":"lathe/schema/005-use-cases.sql"}
 {"id":"LA-VO05-VT","title":"flow_step.path","value_object_id":"LA-VO05","file":"lathe/schema/006-interaction-design.sql"}
 {"id":"LA-VO06-VT","title":"product_kind.name","value_object_id":"LA-VO06","file":"lathe/schema/012-product-kinds.sql"}
