@@ -199,19 +199,6 @@ FROM repository_share s
 JOIN persists p ON p.target_id = s.aggregate_id`,
     },
     {
-      name: 'policy-hears-published',
-      description: "A policy hears its own domain's events, or another domain's published ones: domains meet only through published events.",
-      sql: `
-SELECT 'hears' AS table_name, l.source_id || chr(0) || l.target_id AS row_key,
-       l.source_id || ' is a policy of domain ' || coalesce(a.domain_id, 'none') || ', so it cannot hear ' || l.target_id
-       || ', an event of domain ' || coalesce(b.domain_id, 'none') || ' that is not published' AS message
-FROM hears l
-JOIN domain_event e ON e.id = l.target_id
-JOIN record_scope a ON a.id = l.source_id
-JOIN record_scope b ON b.id = l.target_id
-WHERE a.domain_id IS DISTINCT FROM b.domain_id AND NOT e.published`,
-    },
-    {
       name: 'read-model-fed-by-published',
       description: "A read model is fed by its own domain's events, or another domain's published ones: domains meet only through published events.",
       sql: `
@@ -244,15 +231,6 @@ JOIN meta_kind k ON k.name = r.kind AND k.id_scope IS NOT NULL
 JOIN record_scope s ON s.id = r.id
 CROSS JOIN LATERAL (SELECT CASE k.id_scope WHEN 'parent' THEN r.parent_id WHEN 'domain' THEN s.domain_id ELSE s.product_id END AS expected) x
 WHERE x.expected IS NULL OR NOT starts_with(r.id, x.expected || '-')`,
-    },
-    {
-      name: 'aggregate-root',
-      description: 'An aggregate has at most one root entity.',
-      sql: `
-SELECT 'aggregate' AS table_name, e.aggregate_id AS row_key,
-       'aggregate ' || e.aggregate_id || ' has ' || e.roots || ' root entities; an aggregate has one root' AS message
-FROM (SELECT aggregate_id, count(*) AS roots FROM entity WHERE role = 'root' GROUP BY aggregate_id) e
-WHERE e.roots > 1`,
     },
     {
       name: 'entity-table',

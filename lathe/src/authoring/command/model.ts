@@ -1,0 +1,167 @@
+// The Command aggregate (LA-AUT-A8): a command with the events it raises, the specifications it checks and the
+// domain services it calls, its handler, and the policies that send it, each with the event it hears, its event
+// handler and its test. One instance is one command, whole; it holds only the links its own records start.
+import type { Slice } from '../../platform/commands/definition.ts';
+import type { Row, Value } from '../../platform/data/rows.ts';
+import type { CommandHandlerRow, CommandRow, EventHandlerRow, PolicyRow, PolicyTestRow } from '../../platform/data/tables.ts';
+
+/** The aggregate's record ID in Lathe's own spec. */
+export const COMMAND_AGGREGATE = 'LA-AUT-A8';
+
+/** How the interfaces reach the aggregate's commands: `lathe command`, the command_ tools, /api/command/. */
+export const COMMAND_SLICE: Slice = { aggregate: COMMAND_AGGREGATE, name: 'command' };
+
+/**
+ * The row with the changes applied: a value sets its column, null clears it, and a column left out keeps its value.
+ * Only the columns named in `columns` are taken from the changes.
+ */
+export function changed<R extends object>(row: R, changes: object, columns: readonly string[]): R {
+  const next = { ...row } as Record<string, unknown>;
+  for (const [column, value] of Object.entries(changes)) {
+    if (!columns.includes(column) || value === undefined) continue;
+    if (value === null) delete next[column];
+    else next[column] = value as Value;
+  }
+  return next as R;
+}
+
+/** A technical record with the standard rules it meets and the packages it uses. */
+export interface Built<T> {
+  row: T;
+  meets: string[];
+  packages: string[];
+}
+
+/** A test with the test data sets it starts from. */
+export interface Tested<T> {
+  row: T;
+  startsFrom: string[];
+}
+
+/** A policy with the one event it hears, once it hears one. */
+export interface Policy {
+  row: PolicyRow;
+  hears: string | null;
+}
+
+/** One command, whole. */
+export interface Command {
+  /** The command's ID: the instance's root. */
+  readonly root: string;
+  command: CommandRow;
+  /** The events of its aggregate it raises. */
+  raises: string[];
+  /** The specifications of its domain it checks before it acts. */
+  checks: string[];
+  /** The domain services of its domain it calls. */
+  calls: string[];
+  /** Its handler, when it has one: a command has at most one. */
+  handler: Built<CommandHandlerRow> | null;
+  policies: Policy[];
+  eventHandlers: Built<EventHandlerRow>[];
+  policyTests: Tested<PolicyTestRow>[];
+}
+
+/** The tables the Command aggregate keeps its rows in: its kinds and the relations its records start. */
+export const COMMAND_TABLES = [
+  'command',
+  'command_handler',
+  'policy',
+  'event_handler',
+  'policy_test',
+  'raises',
+  'checks',
+  'calls',
+  'hears',
+  'meets',
+  'package_use',
+  'starts_from',
+] as const;
+
+/** The kinds of the aggregate's records, each with the column that names its parent inside the aggregate. */
+export const COMMAND_KINDS = {
+  command: null,
+  command_handler: 'command_id',
+  policy: 'command_id',
+  event_handler: 'policy_id',
+  policy_test: 'policy_id',
+} as const;
+
+export type CommandKind = keyof typeof COMMAND_KINDS;
+
+/** A new command with its links, with nothing under it yet. */
+export function newCommand(command: CommandRow, links: { raises: string[]; checks: string[]; calls: string[] }): Command {
+  return { root: command.id, command, ...links, handler: null, policies: [], eventHandlers: [], policyTests: [] };
+}
+
+// A link table's targets by source, each list sorted.
+function bySource(links: Row[], source = 'source_id', target = 'target_id'): Map<string, string[]> {
+  const found = new Map<string, string[]>();
+  for (const l of links) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
+  for (const list of found.values()) list.sort();
+  return found;
+}
+
+/** The commands in the data, each whole, built from the aggregate's tables; only the one given, when given. */
+export function commandsFrom(rows: (table: string) => Row[], only?: string): Command[] {
+  const commands = rows('command').filter((r) => only === undefined || r.id === only) as unknown as CommandRow[];
+  if (!commands.length) return [];
+  const ids = new Set(commands.map((c) => c.id));
+  const handlers = (rows('command_handler') as unknown as CommandHandlerRow[]).filter((h) => ids.has(h.command_id));
+  const policies = (rows('policy') as unknown as PolicyRow[]).filter((p) => ids.has(p.command_id));
+  const policyIds = new Set(policies.map((p) => p.id));
+  const eventHandlers = (rows('event_handler') as unknown as EventHandlerRow[]).filter((h) => policyIds.has(h.policy_id));
+  const policyTests = (rows('policy_test') as unknown as PolicyTestRow[]).filter((t) => policyIds.has(t.policy_id));
+  const [raises, checks, calls, hears, meets, startsFrom] = ['raises', 'checks', 'calls', 'hears', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
+  const packages = bySource(rows('package_use'), 'record_id', 'package');
+  const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
+  const built = <T extends { id: string }>(row: T): Built<T> => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) });
+  return commands.map((command) => {
+    const handler = handlers.find((h) => h.command_id === command.id);
+    const own = policies.filter((p) => p.command_id === command.id);
+    const ownIds = new Set(own.map((p) => p.id));
+    return {
+      root: command.id,
+      command,
+      raises: targets(raises, command.id),
+      checks: targets(checks, command.id),
+      calls: targets(calls, command.id),
+      handler: handler ? built(handler) : null,
+      policies: own.map((row) => ({ row, hears: targets(hears, row.id)[0] ?? null })),
+      eventHandlers: eventHandlers.filter((h) => ownIds.has(h.policy_id)).map(built),
+      policyTests: policyTests.filter((t) => ownIds.has(t.policy_id)).map((row) => ({ row, startsFrom: targets(startsFrom, row.id) })),
+    };
+  });
+}
+
+const links = (source: string, ids: (string | null)[]): Row[] => ids.filter((id): id is string => id !== null).map((target) => ({ source_id: source, target_id: target }));
+
+/** The instance's rows, by table. */
+export function commandRows(command: Command): Map<string, Row[]> {
+  const asRow = <T extends object>(row: T) => row as unknown as Row;
+  const built = [...(command.handler ? [command.handler] : []), ...command.eventHandlers];
+  return new Map<string, Row[]>([
+    ['command', [asRow(command.command)]],
+    ['command_handler', command.handler ? [asRow(command.handler.row)] : []],
+    ['policy', command.policies.map((p) => asRow(p.row))],
+    ['event_handler', command.eventHandlers.map((h) => asRow(h.row))],
+    ['policy_test', command.policyTests.map((t) => asRow(t.row))],
+    ['raises', links(command.root, command.raises)],
+    ['checks', links(command.root, command.checks)],
+    ['calls', links(command.root, command.calls)],
+    ['hears', command.policies.flatMap((p) => links(p.row.id, [p.hears]))],
+    ['meets', built.flatMap((b) => links(b.row.id, b.meets))],
+    ['package_use', built.flatMap((b) => b.packages.map((p) => ({ record_id: b.row.id, package: p })))],
+    ['starts_from', command.policyTests.flatMap((t) => links(t.row.id, t.startsFrom))],
+  ]);
+}
+
+/** The kind of the record with this ID inside the command, or undefined. */
+export function kindInside(command: Command, id: string): CommandKind | undefined {
+  if (command.root === id) return 'command';
+  if (command.handler?.row.id === id) return 'command_handler';
+  if (command.policies.some((p) => p.row.id === id)) return 'policy';
+  if (command.eventHandlers.some((h) => h.row.id === id)) return 'event_handler';
+  if (command.policyTests.some((t) => t.row.id === id)) return 'policy_test';
+  return undefined;
+}

@@ -2,7 +2,7 @@
 // (each field read from the schema's own column, or a list or one of record IDs), and its handler. Each aggregate lists
 // its definitions in its commands/index.ts; the CLI, the MCP server and the HTTP API register each one by name, so a
 // route or tool always runs the one command it names and nothing is dispatched by a table or kind.
-import { valueProblem, type Value } from '../data/rows.ts';
+import { valueProblem, type Row, type Value } from '../data/rows.ts';
 import type { ColumnDescription, SchemaDescription } from '../data/schema.ts';
 import type { ReadView } from '../data/rules.ts';
 import type { TableName } from '../data/tables.ts';
@@ -25,8 +25,18 @@ interface IdField {
   description: string;
 }
 
+/**
+ * A field that is a record's part rows, in order (such as an entity's fields): each item a row of the part table's own
+ * columns but its owner and its position, which the record and the item's place in the list give.
+ */
+interface PartsField {
+  kind: 'parts';
+  table: TableName;
+  description: string;
+}
+
 /** One field of a command's or query's input. */
-export type Field = (ColumnField | IdField) & { required: boolean; clearable: boolean };
+export type Field = (ColumnField | IdField | PartsField) & { required: boolean; clearable: boolean };
 
 /** The field for a value of type V: required unless V may be undefined, and clearable only when V may be null. */
 type FieldFor<V> = Field & { required: undefined extends V ? false : true; clearable: null extends V ? true : false };
@@ -52,6 +62,11 @@ export function ids<M extends Exclude<Mode, 'clearable'>>(description: string, m
 /** A list of texts; an empty list clears it. */
 export function texts<M extends Exclude<Mode, 'clearable'>>(description: string, mode: M): IdField & Flags<M> {
   return { kind: 'texts', description, ...flags(mode) };
+}
+
+/** A record's part rows, in order: the list replaces its parts, and an empty list clears them. */
+export function parts<M extends Exclude<Mode, 'clearable'>>(table: TableName, description: string, mode: M): PartsField & Flags<M> {
+  return { kind: 'parts', table, description, ...flags(mode) };
 }
 
 function flags<M extends Mode>(mode: M): Flags<M> {
@@ -140,8 +155,41 @@ export function parseInput(schema: SchemaDescription, definition: { name: string
   return input as never;
 }
 
+// The columns an item of a parts field gives: the part table's own, but its owner and its position.
+function partColumns(schema: SchemaDescription, field: PartsField): ColumnDescription[] {
+  const table = schema.tables[field.table];
+  if (!table?.ownerColumn) throw new Error(`${field.table} is not a part table`);
+  return table.columns.filter((c) => c.name !== table.ownerColumn && c.name !== 'position');
+}
+
+// The first problem of a parts field's item, or null.
+function partProblem(schema: SchemaDescription, field: PartsField, item: unknown, at: number): string | null {
+  if (typeof item !== 'object' || item === null || Array.isArray(item)) return `item ${at} is not a JSON object`;
+  const columns = partColumns(schema, field);
+  const given = item as Record<string, unknown>;
+  const unknown = Object.keys(given).filter((name) => !columns.some((c) => c.name === name));
+  if (unknown.length) return `item ${at} has no ${unknown.join(', ')}; an item takes ${columns.map((c) => c.name).join(', ')}`;
+  for (const column of columns) {
+    const value = given[column.name];
+    if (value === undefined || value === null) {
+      if (column.required) return `item ${at} needs ${column.name}`;
+      continue;
+    }
+    const problem = valueProblem(column, value);
+    if (problem) return `item ${at} ${column.name} ${JSON.stringify(value)} ${problem}`;
+  }
+  return null;
+}
+
 function fieldProblem(schema: SchemaDescription, field: Field, value: unknown): string | null {
   switch (field.kind) {
+    case 'parts':
+      if (!Array.isArray(value)) return `is not a list of ${field.table} rows`;
+      for (const [at, item] of value.entries()) {
+        const problem = partProblem(schema, field, item, at + 1);
+        if (problem) return problem;
+      }
+      return null;
     case 'column':
       return valueProblem(columnOf(schema, field), value);
     case 'id':
@@ -159,8 +207,25 @@ function fieldSchema(schema: SchemaDescription, field: Field): JsonSchema {
   const nullable = (s: JsonSchema): JsonSchema =>
     field.clearable ? { ...s, type: [s.type, 'null'], ...(s.enum ? { enum: [...(s.enum as unknown[]), null] } : {}) } : s;
   if (field.kind === 'id') return nullable({ type: 'string', minLength: 1, description: field.description });
+  if (field.kind === 'parts') {
+    const columns = partColumns(schema, field);
+    return {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: Object.fromEntries(columns.map((c) => [c.name, columnSchema(c)])),
+        required: columns.filter((c) => c.required).map((c) => c.name),
+        additionalProperties: false,
+      },
+      description: field.description,
+    };
+  }
   if (field.kind !== 'column') return { type: 'array', items: { type: 'string', minLength: 1 }, description: field.description };
-  const c = columnOf(schema, field);
+  return nullable(columnSchema(columnOf(schema, field)));
+}
+
+/** A column's JSON schema: its type, with the column's own description. */
+function columnSchema(c: ColumnDescription): JsonSchema {
   const typed: JsonSchema = (() => {
     switch (c.kind) {
       case 'integer':
@@ -177,7 +242,7 @@ function fieldSchema(schema: SchemaDescription, field: Field): JsonSchema {
         return { type: 'string', minLength: 1 };
     }
   })();
-  return nullable({ ...typed, ...(c.description ? { description: c.description } : {}) });
+  return { ...typed, ...(c.description ? { description: c.description } : {}) };
 }
 
 /** The input's JSON schema, for the MCP tool: one property per field, the required ones listed. */
@@ -195,13 +260,27 @@ export function inputSchema(schema: SchemaDescription, input: Record<string, Fie
 export function fieldHelp(schema: SchemaDescription, name: string, field: Field): string {
   const s = fieldSchema(schema, field);
   const column = field.kind === 'column' ? columnOf(schema, field) : null;
-  const type = field.kind === 'ids' || field.kind === 'texts' ? 'list, the flag once per item' : !column ? 'record ID' : column.kind === 'enum' ? `one of ${column.values!.join(', ')}` : column.kind;
+  const type =
+    field.kind === 'parts'
+      ? `list of ${field.table} rows as JSON objects (${partColumns(schema, field).map((c) => c.name).join(', ')}), the flag once per item`
+      : field.kind === 'ids' || field.kind === 'texts'
+        ? 'list, the flag once per item' : !column ? 'record ID' : column.kind === 'enum' ? `one of ${column.values!.join(', ')}` : column.kind;
   const notes = [type, ...(field.required ? ['required'] : []), ...(field.clearable ? ['"" clears it'] : [])];
   return `  --${name.padEnd(24)} ${notes.join(', ')}. ${String(s.description ?? '')}`.trimEnd();
 }
 
 /** A CLI flag's texts as the field's value: a number, true or false, a list, or text; "" clears a clearable field. */
-export function flagValue(schema: SchemaDescription, name: string, field: Field, raw: string[]): Value | null {
+export function flagValue(schema: SchemaDescription, name: string, field: Field, raw: string[]): Value | Row[] | null {
+  if (field.kind === 'parts') {
+    if (raw.length === 1 && raw[0] === '') return [];
+    return raw.map((text, at) => {
+      try {
+        return JSON.parse(text) as Row;
+      } catch {
+        throw new InputError(`--${name} item ${at + 1} is not a JSON object: ${text}`);
+      }
+    });
+  }
   const list = field.kind === 'ids' || field.kind === 'texts' || (field.kind === 'column' && columnOf(schema, field).kind === 'text_list');
   if (list) return raw.length === 1 && raw[0] === '' ? [] : raw;
   if (raw.length > 1) throw new InputError(`--${name} is given ${raw.length} times; it takes one value`);
