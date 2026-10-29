@@ -1821,12 +1821,11 @@ A start-up file: what runs first and wires the rest together, such as a server's
 | `id` | VARCHAR → `record_id` | yes | The entry point's ID: its domain's ID and ENTRY<nn>, such as TL-LEND-ENTRY01. |
 | `title` | VARCHAR | yes | Its file's name, or its name in code, such as server.ts. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain it starts. |
-| `file` | VARCHAR | yes | The start-up file, from the product root. |
+| `file` | VARCHAR | no | The start-up file, from the product root; it may not exist yet. |
 | `description` | VARCHAR | yes | What it does at start-up, in a sentence or two: what it reads, opens and serves. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
-- **Rule:** `("trim"(file) != '')`
 - **Rule:** `("trim"(description) != '')`
 
 <a id="kind-tooling"></a>
@@ -1850,11 +1849,10 @@ A dev script or config file outside the running product: a build, a generator, a
 | `id` | VARCHAR → `record_id` | yes | The tooling record's ID: its domain's ID and TOOL<nn>, such as TL-LEND-TOOL01. |
 | `title` | VARCHAR | yes | Its file's name, such as vitest.config.ts. |
 | `domain_id` | VARCHAR → [`domain`](#table-domain) | yes | The domain whose code it builds, checks or tests. |
-| `file` | VARCHAR | yes | The script or config file, or the folder of them, from the product root. |
+| `file` | VARCHAR | no | The script or config file, or the folder of them, from the product root; it may not exist yet. |
 
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
-- **Rule:** `("trim"(file) != '')`
 
 <a id="kind-standard"></a>
 

@@ -20,7 +20,7 @@ export const ADD_TOOLING: CommandDefinition<AddTooling> = {
     id: column('tooling', 'id', 'required'),
     title: column('tooling', 'title', 'required'),
     domain_id: column('tooling', 'domain_id', 'required'),
-    file: column('tooling', 'file', 'required'),
+    file: column('tooling', 'file', 'optional'),
     packages: texts('The packages it uses, as the product\'s package.json files list them.', 'optional'),
     meets: ids('The standard rules it meets.', 'optional'),
   },

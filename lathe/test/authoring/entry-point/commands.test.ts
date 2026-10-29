@@ -78,7 +78,7 @@ describe('LA-AUT-UC29-R01-T51 each Entry point command changes one entry point t
   });
 });
 
-describe('LA-AUT-UC29-R01-T52 a entry point goes with its packages and links, refused while referenced', () => {
+describe('LA-AUT-UC29-R01-T52 an entry point goes with its packages and links, refused while referenced', () => {
   it('removes a record whole, and refuses one a question is about, naming the question', async () => {
     const store = await entryPointDataSet();
     const removed = await runCommand(store, REMOVE_ENTRY_POINT, { id: 'TL-LEND-ENTRY01' });

@@ -479,8 +479,8 @@ export interface EntryPointRow {
   title: string;
   /** The domain it starts. */
   domain_id: string;
-  /** The start-up file, from the product root. */
-  file: string;
+  /** The start-up file, from the product root; it may not exist yet. */
+  file?: string;
   /** What it does at start-up, in a sentence or two: what it reads, opens and serves. */
   description: string;
 }
@@ -1339,8 +1339,8 @@ export interface ToolingRow {
   title: string;
   /** The domain whose code it builds, checks or tests. */
   domain_id: string;
-  /** The script or config file, or the folder of them, from the product root. */
-  file: string;
+  /** The script or config file, or the folder of them, from the product root; it may not exist yet. */
+  file?: string;
 }
 
 /** One actor of a use case, in order: a role of the use case's product. */

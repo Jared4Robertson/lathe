@@ -5,6 +5,13 @@
 {"id":"LA-AUT-MOD13","title":"cli/aggregates.ts","domain_id":"LA-AUT","file":"lathe/src/cli/aggregates.ts"}
 {"id":"LA-AUT-MOD14","title":"lathe/src/commands.ts","domain_id":"LA-AUT","file":"lathe/src/commands.ts"}
 {"id":"LA-AUT-MOD15","title":"aggregate-rules.ts","domain_id":"LA-AUT","file":"lathe/src/aggregate-rules.ts"}
+{"id":"LA-AUT-MOD20","title":"product/rules.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/product/rules.ts"}
+{"id":"LA-AUT-MOD21","title":"product/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/product/commands/index.ts"}
+{"id":"LA-AUT-MOD22","title":"extension-record/rules.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/extension-record/rules.ts"}
+{"id":"LA-AUT-MOD23","title":"extension-record/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/extension-record/commands/index.ts"}
+{"id":"LA-AUT-MOD24","title":"business-outcome/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/business-outcome/commands/index.ts"}
+{"id":"LA-AUT-MOD25","title":"entry-point/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/entry-point/commands/index.ts"}
+{"id":"LA-AUT-MOD26","title":"tooling/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/tooling/commands/index.ts"}
 {"id":"LA-EXP-MOD01","title":"elk.ts","domain_id":"LA-EXP","file":"app/src/elk.ts"}
 {"id":"LA-EXP-MOD02","title":"model/events.ts","domain_id":"LA-EXP","file":"app/src/specs/events.ts"}
 {"id":"LA-EXP-MOD03","title":"plural.ts","domain_id":"LA-EXP","file":"app/src/plural.ts"}
@@ -31,5 +38,6 @@
 {"id":"LA-PLT-MOD13","title":"app-tools.ts","domain_id":"LA-PLT","file":"lathe/src/cli/app-tools.ts"}
 {"id":"LA-PLT-MOD14","title":"lead.ts","domain_id":"LA-PLT","file":"lathe/src/lead.ts"}
 {"id":"LA-PLT-MOD20","title":"platform/commands","domain_id":"LA-PLT","file":"lathe/src/platform/commands"}
+{"id":"LA-PLT-MOD30","title":"platform/data","domain_id":"LA-PLT","file":"lathe/src/platform/data"}
 {"id":"LA-TRC-MOD01","title":"measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
 {"id":"LA-TRC-MOD02","title":"offer.ts","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}
