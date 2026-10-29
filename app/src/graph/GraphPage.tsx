@@ -4,7 +4,7 @@ import { type SpecIndex } from '../specs/data';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { Icon } from '../components/icons';
-import { GraphKey } from './key';
+import { graphDrawn, graphKeyEntries } from './key';
 import { TapCard, useTapToOpen } from './touch';
 import {
   NO_FILTERS,
@@ -18,7 +18,7 @@ import {
   type Neighborhood,
 } from './model';
 import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
-import { StageCamera, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
+import { StageCamera, StageKey, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
 import { DEFAULT_GRAPH_SETTINGS } from './settings';
 import { graphMap, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
@@ -38,6 +38,7 @@ import { hitPlate } from './hit';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { useChanges } from '../changes/changes';
+import { useChangesKey } from '../changes/ChangesKey';
 import { GHOST_MS, lensFade, marksMoving, useStageMarks } from '../changes/marks';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
@@ -123,6 +124,11 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const setFilters = (f: Filters) => update({ filters: f });
 
   const graph = useMemo(() => neighborhood(index, focus, depth, filters), [index, focus, depth, filters]);
+  // The key bar: what the graph draws now, then the live marks.
+  const valid = isGraphNode(index, focus);
+  const drawn = useMemo(() => (valid ? graphDrawn(index, graph, layout) : null), [valid, index, graph, layout]);
+  const changesKey = useChangesKey();
+  const keyEntries = useMemo(() => (drawn ? [...graphKeyEntries(drawn, index.workspace.stages), ...changesKey] : []), [drawn, index, changesKey]);
   // Before paint, so the header strip's counts change in the same frame as the graph (LA-PAT-APP-UX-R08).
   useLayoutEffect(() => { onCounts?.(graphSummary(graph)); }, [graph, onCounts]);
 
@@ -130,7 +136,6 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const onPageKey = (e: KeyboardEvent<HTMLElement>) => {
     if (e.key === 'Escape' && isFiltered(filters)) { e.preventDefault(); clearFilters(); }
   };
-  const valid = isGraphNode(index, focus);
   useCommand('graphDepthUp', () => update({ depth: Math.min(MAX_DEPTH, latest.current.depth + 1) }), valid && layout === 'tree');
   useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && layout === 'tree');
   useCommand('graphLayout', () => update({ layout: nextLayout(latest.current.layout) }), valid);
@@ -142,8 +147,8 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
     );
   }
   // The shared stage toolbar (views/StageChrome.tsx): the steps, Out, In and Frame, the Changes controls, then the layout
-  // switch and the filters (primary, always in the row), and depth (secondary, folding into More), then the key. In the
-  // toolbar's narrow form the layouts show one letter each.
+  // switch and the filters (primary, always in the row), and depth (secondary, folding into More). In the toolbar's
+  // narrow form the layouts show one letter each. The key is a bar along the bottom (StageKey).
   const tools = (narrow: boolean) => ({
     primary: (
       <>
@@ -178,8 +183,8 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
         walkLabels={graphWalkLabels(layout)}
         own={tools}
         measureKey={filters.hiddenKinds.size}
-        stageKey={<GraphKey stages={index.workspace.stages} />}
       />
+      <StageKey entries={keyEntries} />
       <div className="graph-workspace">
         <div className="graph-canvas">
           <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} space={space} />
