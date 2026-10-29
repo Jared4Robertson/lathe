@@ -1,4 +1,4 @@
-// LA-TRC-TD02 A use case that follows a pattern: product TL with domain TL-LEND, a capability with use case
+// LA-TRC-TD02 Followed librarian action: product TL with domain TL-LEND, a capability with use case
 // TL-LEND-UC01, and patterns TL-PAT-ACT (settings record and required_input) and TL-PAT-LOG (no settings), written as
 // their rows; then TL-LEND-UC01 follows TL-PAT-ACT, giving each setting, with the Pattern following aggregate's own
 // command.
