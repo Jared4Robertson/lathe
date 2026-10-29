@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { indexOf } from '../fixtures/load';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { COLUMN_GAP_SHARE, graphMap, groupWidth, layoutTree, linkEnds, MAP_SIZE, MAX_ASPECT, MAX_COLUMN_SHARE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, treeText, type GraphMap, type MapNode } from '../../src/graph/map';
+import { COLUMN_GAP_SHARE, graphMap, groupWidth, layoutTree, MAP_SIZE, MAX_ASPECT, MAX_COLUMN_SHARE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, treeText, type GraphMap, type MapNode } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, MIN_ZOOM, viewRect } from '../../src/graph/camera';
 import { shapeOf, SHAPES } from '../../src/graph/shapes';
 import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK_ROOM, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
@@ -168,10 +168,6 @@ describe('columns and text', () => {
       expect(a).toEqual({ x: p.x + p.w, y: n.y + n.h / 2 });
       expect(b).toEqual({ x: n.x, y: n.y + n.h / 2 });
     }
-    // A cross-link leaves each box on the side facing the other, at its middle.
-    const s = { x: 0, y: 0, w: 100, h: 40 };
-    expect(linkEnds(s, { x: 300, y: 100, w: 100, h: 40 })).toEqual([{ x: 100, y: 20 }, { x: 300, y: 120 }]);
-    expect(linkEnds(s, { x: -300, y: 100, w: 100, h: 40 })).toEqual([{ x: 0, y: 20 }, { x: -200, y: 120 }]);
   });
 });
 

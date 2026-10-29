@@ -211,7 +211,7 @@
 {"id":"LA-EXP-UC03-FL01-S03","title":"Nodes show their stage, kind, problems and gaps, with a legend, and hovering one spotlights what it joins","flow_id":"LA-EXP-UC03-FL01","path":"main","position":3}
 {"id":"LA-EXP-UC03-FL01-S04","title":"They click a node: the camera glides to it, the map holds still, the address and the header strip follow","flow_id":"LA-EXP-UC03-FL01","path":"main","position":4}
 {"id":"LA-EXP-UC03-FL01-S05","title":"The side bar describes the focused record","flow_id":"LA-EXP-UC03-FL01","path":"main","position":5}
-{"id":"LA-EXP-UC03-FL01-S06","title":"They filter kinds and relations, switch Links on (edge hints count what lies past each edge) and the minimap","flow_id":"LA-EXP-UC03-FL01","path":"main","position":6}
+{"id":"LA-EXP-UC03-FL01-S06","title":"They filter kinds and switch the minimap on","flow_id":"LA-EXP-UC03-FL01","path":"main","position":6}
 {"id":"LA-EXP-UC03-FL01-S07","title":"They switch the layout to Nested or Voronoi","flow_id":"LA-EXP-UC03-FL01","path":"main","position":7}
 {"id":"LA-EXP-UC03-FL01-S08","title":"From the keyboard they move between nodes, step out, in and across, and Escape clears the filters","flow_id":"LA-EXP-UC03-FL01","path":"main","position":8}
 {"id":"LA-EXP-UC03-FL01-S09","title":"They open a node's record page","flow_id":"LA-EXP-UC03-FL01","path":"main","position":9}
@@ -220,19 +220,19 @@
 {"id":"LA-EXP-UC03-FL02-S03","title":"The graph shows each node with its stage, kind, problems and gaps, with a legend, and spotlights what a hovered node joins","flow_id":"LA-EXP-UC03-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC03-FL02-S04","title":"The Reader clicks a node: the camera glides to it, the map holds still, the address and the header strip follow","flow_id":"LA-EXP-UC03-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC03-FL02-S05","title":"In the desktop app, the side bar describes the focused record","flow_id":"LA-EXP-UC03-FL02","path":"main","position":5}
-{"id":"LA-EXP-UC03-FL02-S06","title":"The Reader filters kinds and relations, switches Links on (edge hints count what lies past each edge) and the minimap","flow_id":"LA-EXP-UC03-FL02","path":"main","position":6}
+{"id":"LA-EXP-UC03-FL02-S06","title":"The Reader filters kinds and switches the minimap on","flow_id":"LA-EXP-UC03-FL02","path":"main","position":6}
 {"id":"LA-EXP-UC03-FL02-S07","title":"The Reader switches the layout to Nested or Voronoi","flow_id":"LA-EXP-UC03-FL02","path":"main","position":7}
 {"id":"LA-EXP-UC03-FL02-S08","title":"The Reader moves between nodes from the keyboard, steps out, in and across, and clears the filters with Escape","flow_id":"LA-EXP-UC03-FL02","path":"main","position":8}
 {"id":"LA-EXP-UC03-FL02-S09","title":"The Reader opens a node's record page","flow_id":"LA-EXP-UC03-FL02","path":"main","position":9}
 {"id":"LA-EXP-UC04-FL01-S01","title":"On a domain the graph shows its stages and kind groups as folders, each with its name, count and marks, in its own column","flow_id":"LA-EXP-UC04-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC04-FL01-S02","title":"They click a group, which becomes the focus at its own address","flow_id":"LA-EXP-UC04-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC04-FL01-S03","title":"Under an aggregate its events sit in a Domain events group, as spark flags","flow_id":"LA-EXP-UC04-FL01","path":"main","position":3}
-{"id":"LA-EXP-UC04-FL01-S04","title":"Under a pattern sit its rules, and follows is drawn as a cross-link","flow_id":"LA-EXP-UC04-FL01","path":"main","position":4}
+{"id":"LA-EXP-UC04-FL01-S04","title":"Under a pattern sit its rules","flow_id":"LA-EXP-UC04-FL01","path":"main","position":4}
 {"id":"LA-EXP-UC04-FL01-S05","title":"The graph fills the stage behind the wiki card and reports each move to the page","flow_id":"LA-EXP-UC04-FL01","path":"main","position":5}
 {"id":"LA-EXP-UC04-FL02-S01","title":"The graph shows a domain's stages and kind groups as folders, each with its name, count and marks, in its own column","flow_id":"LA-EXP-UC04-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC04-FL02-S02","title":"The Reader clicks a group, which becomes the focus at its own address","flow_id":"LA-EXP-UC04-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC04-FL02-S03","title":"The graph puts an aggregate's events in a Domain events group, as spark flags","flow_id":"LA-EXP-UC04-FL02","path":"main","position":3}
-{"id":"LA-EXP-UC04-FL02-S04","title":"The graph puts a pattern's rules under it, and draws follows as a cross-link","flow_id":"LA-EXP-UC04-FL02","path":"main","position":4}
+{"id":"LA-EXP-UC04-FL02-S04","title":"The graph puts a pattern's rules under it","flow_id":"LA-EXP-UC04-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC04-FL02-S05","title":"In the desktop app, the graph fills the stage behind the wiki card and reports each move to the page","flow_id":"LA-EXP-UC04-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC05-FL01-S01","title":"The reader opens quick find, types part of an ID or title and opens the record","flow_id":"LA-EXP-UC05-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC05-FL01-S02","title":"The record, group, product or domain opens at its one address, in the views the link names","flow_id":"LA-EXP-UC05-FL01","path":"main","position":2}
@@ -570,10 +570,10 @@
 {"id":"LA-TRC-UC11-FL02-S03","title":"The record page shows each test with its state","flow_id":"LA-TRC-UC11-FL02","path":"main","position":3}
 {"id":"LA-TRC-UC12-FL01-S01","title":"The Reader opens a domain page and unfolds Patterns we follow: each pattern, its rules, and whether this domain proves each","flow_id":"LA-TRC-UC12-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC12-FL01-S02","title":"They open a pattern: its settings, its rules, and the domains and use cases that follow it, with each domain's standing per rule","flow_id":"LA-TRC-UC12-FL01","path":"main","position":2}
-{"id":"LA-TRC-UC12-FL01-S03","title":"In the graph, the pattern's rules sit under the pattern and each follows link is drawn as a cross-link","flow_id":"LA-TRC-UC12-FL01","path":"main","position":3}
+{"id":"LA-TRC-UC12-FL01-S03","title":"In the graph, the pattern's rules sit under the pattern, and the side bar lists its followers","flow_id":"LA-TRC-UC12-FL01","path":"main","position":3}
 {"id":"LA-TRC-UC12-FL02-S01","title":"In the desktop app, the Reader opens a domain page and unfolds Patterns we follow: each pattern, its rules, and whether this domain proves each","flow_id":"LA-TRC-UC12-FL02","path":"main","position":1}
 {"id":"LA-TRC-UC12-FL02-S02","title":"The Reader opens a pattern: its settings, its rules, and the domains and use cases that follow it, with each domain's standing per rule","flow_id":"LA-TRC-UC12-FL02","path":"main","position":2}
-{"id":"LA-TRC-UC12-FL02-S03","title":"The graph sets the pattern's rules under the pattern and draws each follows link as a cross-link","flow_id":"LA-TRC-UC12-FL02","path":"main","position":3}
+{"id":"LA-TRC-UC12-FL02-S03","title":"The graph sets the pattern's rules under the pattern, and the side bar lists its followers","flow_id":"LA-TRC-UC12-FL02","path":"main","position":3}
 {"id":"LA-TRC-UC13-FL01-S01","title":"The Reader reads each domain card's tests by state","flow_id":"LA-TRC-UC13-FL01","path":"main","position":1}
 {"id":"LA-TRC-UC13-FL01-S02","title":"In the product's Summary they read the tests by state in total","flow_id":"LA-TRC-UC13-FL01","path":"main","position":2}
 {"id":"LA-TRC-UC13-FL01-S03","title":"They open a domain and read the same in its Coverage section","flow_id":"LA-TRC-UC13-FL01","path":"main","position":3}

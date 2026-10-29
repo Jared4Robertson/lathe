@@ -173,30 +173,29 @@ describe('Lathe on a phone', () => {
 
   const proveLaV61R23T01 = async () => {
     phone();
-    window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], hiddenRelations: [], links: false, minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
+    window.sessionStorage.setItem('lathe:session-settings', JSON.stringify({ layout: 'tree', depth: 1, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
     await openApp('/P-D-UC01-R01?stage=graph', served());
-    // Links on, so the flow step that fulfills the UC requirement is drawn.
-    fireEvent.click(await screen.findByRole('button', { name: 'Links' }));
-    await waitFor(() => expect(boxElement('P-D-UC01-FL01-S01')).not.toBeNull());
-    const node = () => boxElement('P-D-UC01-FL01-S01')!;
+    // The requirement's use case, its parent, is drawn beside it.
+    await waitFor(() => expect(boxElement('P-D-UC01')).not.toBeNull());
+    const node = () => boxElement('P-D-UC01')!;
     // A finger's tap on the box drawn on the canvas.
-    tapAt(pointOn('P-D-UC01-FL01-S01'));
+    tapAt(pointOn('P-D-UC01'));
     expect(window.location.pathname).toBe('/P-D-UC01-R01');
     const card = await waitFor(() => { const c = document.querySelector<HTMLElement>('.card[role="status"]'); expect(c).not.toBeNull(); return c!; });
-    expect(card).toHaveTextContent('Librarian lends the thing');
+    expect(card).toHaveTextContent('Lend a thing');
     // The card is one button, its title, named for what it does.
     const [title, letGo] = within(card).getAllByRole('button');
-    expect(title).toHaveAccessibleName(/^Open .*Librarian lends the thing$/);
+    expect(title).toHaveAccessibleName(/^Open .*Lend a thing$/);
     expect(letGo).toHaveAccessibleName('Let go of the selection');
     expect(node()).toHaveClass('is-armed');
-    expect(drawnBox('P-D-UC01-FL01-S01')!.armed).toBe(true);
+    expect(drawnBox('P-D-UC01')!.armed).toBe(true);
     // A tap on the canvas lets go.
     tapEmpty();
     await waitFor(() => expect(document.querySelector('.card[role="status"]')).toBeNull());
     // A tap on the card opens it (selected again, here by the box in the keyboard's layer).
     fireEvent.click(node());
-    fireEvent.click(screen.getByRole('button', { name: /^Open .*Librarian lends the thing$/ }));
-    expect(window.location.pathname).toBe('/P-D-UC01-FL01-S01');
+    fireEvent.click(screen.getByRole('button', { name: /^Open .*Lend a thing$/ }));
+    expect(window.location.pathname).toBe('/P-D-UC01');
     // A click that says it came from a mouse opens at once; a finger's or a pen's selects first.
     expect(isTap({ pointerType: 'mouse' } as unknown as Event, true)).toBe(false);
     expect(isTap({ pointerType: 'touch' } as unknown as Event, false)).toBe(true);

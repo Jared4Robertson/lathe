@@ -149,7 +149,6 @@ describe('one address, one stage', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Links' }));
 
     // A link in the wiki card moves the graph and the header strip.
     await userEvent.setup().click(within(card()).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
@@ -158,13 +157,12 @@ describe('one address, one stage', () => {
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     await waitFor(() => expect(within(card()).getByText('The loan MUST be recorded.')).toBeInTheDocument());
 
-    // A node on the stage moves the card: the flow step that fulfills it, reached by the Links switch.
-    await waitFor(() => expect(node('P-D-UC01-FL01-S01')).not.toBeNull());
-    fireEvent.click(node('P-D-UC01-FL01-S01')!);
-    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01-FL01-S01?stage=graph');
-    await waitFor(() => expect(title()).toBe('Librarian lends the thing'));
-    await waitFor(() => expect(card()).toHaveAttribute('data-page', 'P-D-UC01-FL01-S01'));
-    await waitFor(() => expect(isCenter('P-D-UC01-FL01-S01')).toBe(true));
+    // A node on the stage moves the card: the requirement's sibling beside it in the tree.
+    await waitFor(() => expect(node('P-D-UC01-R02')).not.toBeNull());
+    fireEvent.click(node('P-D-UC01-R02')!);
+    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01-R02?stage=graph');
+    await waitFor(() => expect(card()).toHaveAttribute('data-page', 'P-D-UC01-R02'));
+    await waitFor(() => expect(isCenter('P-D-UC01-R02')).toBe(true));
   });
 
   it('LA-V96-R06-T01 The stage, the header strip and the wiki card follow one focus; Back moves them all, and graph settings survive', async () => {
@@ -172,12 +170,11 @@ describe('one address, one stage', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await userEvent.setup().click(within(card()).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    await waitFor(() => expect(node('P-D-UC01-FL01-S01')).not.toBeNull());
-    fireEvent.click(node('P-D-UC01-FL01-S01')!);
-    await waitFor(() => expect(title()).toBe('Librarian lends the thing'));
+    await waitFor(() => expect(node('P-D-UC01-R02')).not.toBeNull());
+    fireEvent.click(node('P-D-UC01-R02')!);
+    await waitFor(() => expect(card()).toHaveAttribute('data-page', 'P-D-UC01-R02'));
 
     // Back moves them all.
     await back();
@@ -235,9 +232,9 @@ describe('one address, one stage', () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     // Focus inside the graph, then switch to the ERD with the keyboard: the graph goes, and focus lands on the ERD's button, not lost.
-    const links = screen.getByRole('button', { name: 'Links' });
-    links.focus();
-    fireEvent.keyDown(links, { key: '2', code: 'Digit2', ctrlKey: true });
+    const depth = screen.getByRole('button', { name: '2' });
+    depth.focus();
+    fireEvent.keyDown(depth, { key: '2', code: 'Digit2', ctrlKey: true });
     expect(screen.queryByRole('region', { name: 'Graph stage' })).toBeNull();
     await waitFor(() => expect(stageButton('ERD')).toHaveFocus());
     expect(stageButton('ERD')).toHaveAttribute('aria-pressed', 'true');

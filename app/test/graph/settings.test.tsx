@@ -12,17 +12,17 @@ import { boxElement, graphHost } from './scene';
 import { testWorkspace } from './workspace';
 
 // Moving through the graph never changes how it is drawn (LA-V93-R72): the arrow steps, a click
-// or Enter on a box, a tab and Back keep the layout, depth and Links, whichever tab the page lands
+// or Enter on a box, a tab and Back keep the layout, depth and minimap, whichever tab the page lands
 // in (one already open, the preview, or a new one). Only the person's own change in the graph
 // (the toolbar, v, + and -) changes them.
 
 const FLOW = 'P-D-UC01-FL01';
 const layoutGroup = () => within(screen.getByRole('group', { name: 'Layout' }));
-/** The layout and depth the toolbar shows, and the Links switch. */
+/** The layout and depth the toolbar shows, and the Minimap switch. */
 const drawn = () => ({
   layout: layoutGroup().getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent,
   depth: document.querySelector('.graph-depth:not(.graph-layout) button[aria-pressed="true"]')?.textContent,
-  links: screen.getByRole('button', { name: /^Links/ }).getAttribute('aria-pressed'),
+  minimap: (screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement).checked,
 });
 const strip = () => screen.getByRole('tablist', { name: 'Open pages' });
 const at = () => window.location.pathname.slice(1);
@@ -35,7 +35,7 @@ async function step(key: string) {
 
 describe('moving through the graph keeps how it is drawn', () => {
   it('LA-EXP-INV09-T Opening, activating, cycling and closing tabs never touch the graph settings; only the person\'s change does', () => {
-    const mine: GraphSettings = { ...DEFAULT_GRAPH_SETTINGS, layout: 'nested', depth: 2, links: true };
+    const mine: GraphSettings = { ...DEFAULT_GRAPH_SETTINGS, layout: 'nested', depth: 2, minimap: true };
     saveSessionSettings({ graph: mine, card: DEFAULT_CARD, chat: DEFAULT_CHAT });
     const unchanged = (set: PageTabs) => {
       expect(sessionSettings().graph).toEqual(mine);
@@ -59,20 +59,20 @@ describe('moving through the graph keeps how it is drawn', () => {
   });
 
   for (const { layout, label } of GRAPH_LAYOUTS) {
-    it(`LA-V93-R72-T01 In the ${label} layout, the arrows, a click, Enter, a tab and Back keep the layout, depth and Links, in tabs open or new`, async () => {
+    it(`LA-V93-R72-T01 In the ${label} layout, the arrows, a click, Enter, a tab and Back keep the layout, depth and minimap, in tabs open or new`, async () => {
       startAtDepth(1, 'tree');
       await openApp(`/${FLOW}?stage=graph`, { data: testWorkspace() });
       await waitFor(() => expect(graphHost()).not.toBeNull());
       // A lasting tab on the flow, drawn as it starts; and one on its first step, where the person sets
-      // the depth, the Links switch and the layout: the two tabs were drawn differently.
+      // the depth, the minimap and the layout: the two tabs were drawn differently.
       fireEvent.doubleClick(within(strip()).getAllByRole('tab')[0]);
       await step('ArrowRight');
       const first = at();
       fireEvent.doubleClick(within(strip()).getAllByRole('tab')[1]);
       fireEvent.click(within(screen.getByRole('group', { name: 'Depth' })).getByRole('button', { name: '2' }));
-      fireEvent.click(screen.getByRole('button', { name: /^Links/ }));
+      fireEvent.click(screen.getByRole('switch', { name: 'Minimap' }));
       fireEvent.click(layoutGroup().getByRole('button', { name: label }));
-      const set = { layout: label, depth: '2', links: 'true' };
+      const set = { layout: label, depth: '2', minimap: true };
       expect(drawn()).toEqual(set);
 
       // Every arrow, into pages open in a tab and pages that are not: out, in, next, previous, next and out, each by the
@@ -101,7 +101,7 @@ describe('moving through the graph keeps how it is drawn', () => {
         await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
       });
       expect(drawn()).toEqual(set);
-      expect(sessionSettings().graph).toMatchObject({ layout, depth: 2, links: true });
+      expect(sessionSettings().graph).toMatchObject({ layout, depth: 2, minimap: true });
 
       // The person's own change does change it: v steps to the next layout.
       fireEvent.keyDown(document.body, { key: 'v' });
@@ -109,13 +109,13 @@ describe('moving through the graph keeps how it is drawn', () => {
     });
   }
 
-  it('LA-V93-R72-T03 The graph\'s settings last the session: the Links switch comes back on reload', async () => {
+  it('LA-V93-R72-T03 The graph\'s settings last the session: the minimap comes back on reload', async () => {
     await openApp('/DM-SHOP-UC01?stage=graph');
-    const links = await screen.findByRole('button', { name: /^Links/ });
-    expect(links).toHaveAttribute('aria-pressed', 'false');
-    fireEvent.click(links);
-    await waitFor(() => expect(screen.getByRole('button', { name: /^Links/ })).toHaveAttribute('aria-pressed', 'true'));
+    const minimap = await screen.findByRole('switch', { name: 'Minimap' });
+    expect(minimap).not.toBeChecked();
+    fireEvent.click(minimap);
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Minimap' })).toBeChecked());
     await openApp('/DM-SHOP-UC01?stage=graph');
-    await waitFor(() => expect(screen.getByRole('button', { name: /^Links/ })).toHaveAttribute('aria-pressed', 'true'));
+    await waitFor(() => expect(screen.getByRole('switch', { name: 'Minimap' })).toBeChecked());
   });
 });
