@@ -4,7 +4,7 @@ import type { ChatBridge, ChatItem, ChatPatch, ChatStatus } from './types';
 
 // The window's chat as the page keeps it (LA-PLT-UC19): the items and status the shell sends as
 // patches, and the turns, each with the spec as it was when the turn began, so the panel can show
-// the records each turn changed (diff.ts). A turn's spec after is the one current when the next
+// the records each turn changed (the engine's record diff, changes/changes.ts). A turn's spec after is the one current when the next
 // turn begins; the last turn's is the live one.
 
 export interface Turn {

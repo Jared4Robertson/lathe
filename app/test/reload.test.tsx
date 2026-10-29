@@ -26,7 +26,8 @@ describe('reload on change', () => {
     await act(async () => { for (const callback of listeners.get('spec:changed') ?? []) callback(); });
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Basket store' })).toBeInTheDocument();
-    expect(after.requests).toEqual(['GET /api/spec']);
+    // The spec again, and the Changes baseline read again with it (GET /api/baseline, its last commit may have moved).
+    expect(after.requests.filter((r) => !r.startsWith('GET /api/baseline?'))).toEqual(['GET /api/spec']);
     // The address and page stay the same; no manual refresh.
     expect(window.location.pathname).toBe('/DM-SHOP-CMD01-H');
   });

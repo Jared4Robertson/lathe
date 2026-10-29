@@ -44,6 +44,12 @@ export const BUDGETS = {
    * the camera shows of it. Every switch after it reuses the map and is held to the stage switch budget.
    */
   traceMapFirstFrameMs: 400,
+  /**
+   * Main-thread work for marking 50 changes at once (LA-V96-R29): an Agent's one write of 50 records lands, from the
+   * page's reload until the graph has marked every one it draws (the record diff against the data before, the marks,
+   * the Changes count) and the page is quiet. The reload itself (the new index, the redraw) is in it.
+   */
+  markChangesMs: 500,
 } as const;
 
 /** Above this one-minute load average the timings are measured and printed, but not judged (`not run (machine busy)`). */

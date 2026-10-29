@@ -266,7 +266,7 @@ export function ErdKey({ map, at, relations = [] }: { map: ErdMap; at: ErdFocus;
       <div className="erd-key-grid" id={gridId}>
         <ul className="erd-key-ends" aria-label="Boxes">{cells(boxes)}</ul>
         <ul className="erd-key-ends" aria-label="Lines">{cells(lineEntries)}</ul>
-        <ChangesKey />
+        <ChangesKey cells />
       </div>
     </div>
   );

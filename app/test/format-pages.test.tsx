@@ -198,7 +198,8 @@ describe('format reference pages', () => {
   it('LA-V02-R02-T01 The pages are built from the loaded data: a check with no row in the check table is the engine\'s own, listed without an explanation', async () => {
     const { requests } = await openApp('/DM?page=format');
     await within(await screen.findByRole('region', { name: 'Wiki card' })).findByRole('heading', { level: 2, name: 'Record format' });
-    expect(requests).toEqual(['GET /api/spec']);
+    // The spec, and nothing else but the Changes baseline (GET /api/baseline), which this test's server does not serve.
+    expect(requests.filter((r) => !r.startsWith('GET /api/baseline?'))).toEqual(['GET /api/spec']);
     expect(within(section(/^Checks\d/)).getByRole('link', { name: /^engine/ })).toHaveAttribute('href', over('format/checks/engine'));
     await openApp('/DM?page=format/checks/engine');
     expect(await screen.findByText(/The engine reports this itself/)).toBeInTheDocument();

@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
-import { Card } from '../shell/Card';
+import { Card, CardGrid } from '../shell/Card';
+import { lowerLabel } from '../plural';
 import { kindLabel, type SpecIndex } from '../specs/data';
 import { addressOf } from '../views/address';
 import { ToolPanelFrame } from '../views/ToolPanel';
@@ -45,9 +46,9 @@ export function ChangesPanel({ index, focus, sheet, onClose }: ChangesPanelProps
             {ordered.length === 0
               ? <p className="hint">Nothing has changed {baseline.label}.</p>
               : (
-                <ul className="card-grid card-stack changes-list" aria-label="Changed records">
+                <CardGrid stack label="Changed records">
                   {ordered.map((c) => <ChangeCard key={c.id} index={index} change={c} current={c.id === focus} when={at(c)} now={now} />)}
-                </ul>
+                </CardGrid>
               )}
           </>
         )}
@@ -70,7 +71,7 @@ function ChangeCard({ index, change, current, when, now }: { index: SpecIndex; c
     return (
       <Card onActivate={() => setOpen(!open)} pressed={open} label={`${change.id} ${change.title}, removed: ${open ? 'hide' : 'show'} what it was`} title={title} look="compact">
         {what}
-        {open && <p className="hint">Removed: it is no longer in the data, so it has no page. It was a {kindLabel(index, change.kind).toLowerCase()} titled “{change.title}”.</p>}
+        {open && <p className="hint">Removed: it is no longer in the data, so it has no page. It was a {lowerLabel(kindLabel(index, change.kind))} titled “{change.title}”.</p>}
       </Card>
     );
   }

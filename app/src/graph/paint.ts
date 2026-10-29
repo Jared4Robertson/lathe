@@ -404,7 +404,7 @@ const DOT_MIN_BOX_PX = 10;
 
 /**
  * A record's live mark (changes/marks.ts): a new one's soft glow, fading; a changed one's pulse in its own edge color,
- * a ring spreading out and fading; then each one's dot at its top right corner, which lasts.
+ * a ring spreading out and fading; then each one's dot on its top right corner, which lasts.
  */
 function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Look, marks: StageMarks, X: (x: number) => number, Y: (y: number) => number) {
   const m = marks.mark(p.id);
@@ -434,10 +434,11 @@ function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: L
   const w = p.w * zoom;
   const h = p.h * zoom;
   if (Math.min(w, h) < DOT_MIN_BOX_PX) return;
+  // On the box's top right corner, as a badge sits, and strong even on a faded box, so a change reads anywhere on the map.
   const r = Math.max(3, Math.min(5, Math.min(w, h) / 8));
-  const cx = X(p.x + p.w) - r - 3;
-  const cy = Y(p.y) + r + 3;
-  ctx.globalAlpha = alpha;
+  const cx = X(p.x + p.w);
+  const cy = Y(p.y);
+  ctx.globalAlpha = Math.max(alpha, 0.9);
   ctx.fillStyle = look.sheet;
   ctx.beginPath();
   ctx.arc(cx, cy, r + 1.5, 0, Math.PI * 2);

@@ -57,22 +57,24 @@ export type Baseline =
   | { state: 'none'; message: string }
   | { state: 'ok'; tables: Tables; label: string; detail: string };
 
-const known = new Map<string, Promise<BaselineAnswer>>();
+const known = new Map<string, { at: number; answer: Promise<BaselineAnswer> }>();
+/** A moving baseline asked for again within this long, in ms, is the answer already on its way (a page opening asks twice). */
+const FRESH_MS = 1000;
 
-/** Asks the server for the product's rows at a baseline; a commit's are asked for once, the moving ones on every `fresh`. */
+/** Asks the server for the product's rows at a baseline; a commit's are asked for once, the moving ones again on `fresh`. */
 export function fetchBaseline(product: string, since: 'commit' | 'branch' | { commit: string }, fresh = false): Promise<BaselineAnswer> {
   const key = `${product}\u0000${typeof since === 'string' ? since : since.commit}`;
   const cached = known.get(key);
-  if (cached && (!fresh || typeof since !== 'string')) return cached;
-  const asked = (async (): Promise<BaselineAnswer> => {
+  if (cached && (!fresh || typeof since !== 'string' || performance.now() - cached.at < FRESH_MS)) return cached.answer;
+  const answer = (async (): Promise<BaselineAnswer> => {
     const res = await fetch(`/api/baseline?product=${encodeURIComponent(product)}&since=${encodeURIComponent(typeof since === 'string' ? since : since.commit)}`, { headers: { accept: 'application/json' } });
     const body = await res.json().catch(() => null);
     if (!res.ok || !body || typeof body !== 'object' || !('state' in body)) return { state: 'no-commit', message: body?.error ?? `The server answered ${res.status}.` };
     return body as BaselineAnswer;
   })();
-  known.set(key, asked);
-  asked.catch(() => known.delete(key));
-  return asked;
+  known.set(key, { at: performance.now(), answer });
+  answer.catch(() => known.delete(key));
+  return answer;
 }
 
 const shortDay = (iso: string) => {
