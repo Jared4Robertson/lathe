@@ -33,8 +33,6 @@ export const ADD_EVENT_HANDLER: CommandDefinition<AddEventHandler> = {
 export function addEventHandler(tx: Transaction, input: AddEventHandler): void {
   const commands = new CommandRepository(tx);
   const command = commands.loadHolding('policy', input.policy_id) ?? tx.refuse('missing', `there is no policy ${input.policy_id}`);
-  const taken = command.eventHandlers.find((h) => h.row.policy_id === input.policy_id);
-  if (taken) tx.refuse('exists', `${input.policy_id} already has its event handler, ${taken.row.id}`);
   const { meets = [], packages = [], ...row } = input;
   command.eventHandlers.push({ row, meets, packages });
   holdToRules(tx, command);

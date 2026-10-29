@@ -3,6 +3,9 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { openStore, StoreError, type Row, type StoreProblem } from '../../src/index.ts';
 import { everyKind, removeData, writeData, type Data } from './fixture.ts';
+import { ADD_COMMAND_HANDLER } from '../../src/authoring/command/commands/add-command-handler.ts';
+import { ADD_POLICY_TEST } from '../../src/authoring/command/commands/add-policy-test.ts';
+import { runCommand } from '../../src/platform/commands/run.ts';
 
 afterAll(removeData);
 
@@ -55,6 +58,29 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     );
     expect(problems).toEqual([expect.objectContaining({ rule: 'step-fulfills-own-use-case', file: 'data/fulfills.jsonl', line: 2 })]);
     expect(problems[0].message).toContain('cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02');
+  });
+
+  it('LA-AUT-INV104-T refuses a second handler of a command and a second test of a policy from their commands, with command-one-each', async () => {
+    const store = await openStore(writeData(everyKind()), { latheDataDir: null });
+    try {
+      const refused = async (definition: Parameters<typeof runCommand>[1], input: unknown) => {
+        try {
+          await runCommand(store, definition, input);
+        } catch (error) {
+          if (error instanceof StoreError) return error.problems.map((p) => ({ rule: p.rule, message: p.message }));
+          throw error;
+        }
+        throw new Error('not refused');
+      };
+      expect(await refused(ADD_COMMAND_HANDLER, { id: 'TL-LEND-CMD01-H2', title: 'openLoanAgain', command_id: 'TL-LEND-CMD01', description: 'Saves it again.' })).toEqual([
+        { rule: 'command-one-each', message: 'command TL-LEND-CMD01 already has its command handler, so TL-LEND-CMD01-H2 cannot be a second: a command has one' },
+      ]);
+      expect(await refused(ADD_POLICY_TEST, { id: 'TL-LEND-PO01-T2', title: 'Again', policy_id: 'TL-LEND-PO01', level: 'integration', state: 'automated', file: 'test/policies.test.ts', when: 'Opens a loan', then: 'Expects a reminder' })).toEqual([
+        { rule: 'command-one-each', message: 'policy TL-LEND-PO01 already has its test, so TL-LEND-PO01-T2 cannot be a second: a policy has one' },
+      ]);
+    } finally {
+      await store.close();
+    }
   });
 
   it('LA-AUT-INV104-T refuses a policy hearing two events', async () => {

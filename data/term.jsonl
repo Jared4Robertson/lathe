@@ -20,7 +20,7 @@
 {"id":"LA-AUT-TM29","title":"View","domain_id":"LA-AUT","meaning":"A page or panel a flow's steps happen in, with its route and its view requirements.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM30","title":"Endpoint","domain_id":"LA-AUT","meaning":"The route that exposes one command or query, with its API requirements and handler.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM31","title":"Integration","domain_id":"LA-AUT","meaning":"An outside system the product exchanges with, through its adapter.","group_name":"Use cases and design"}
-{"id":"LA-AUT-TM32","title":"UI component","domain_id":"LA-AUT","meaning":"The code that draws the views it renders.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM32","title":"UI component","domain_id":"LA-AUT","meaning":"The code that draws the views it renders; a view requirement is built by the UI components whose code does what it says.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM33","title":"Business outcome","domain_id":"LA-AUT","meaning":"A measurable change the product exists to bring about, with its measure and target, which capabilities serve and tests measure.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM34","title":"Test data set","domain_id":"LA-AUT","meaning":"The starting records, environment and accounts some tests need, built with its aggregate's own commands.","group_name":"Build and test"}
 {"id":"LA-AUT-TM35","title":"Table","domain_id":"LA-AUT","meaning":"Where an entity's or read model's rows, or a domain's links, are stored, with its storage and keys.","group_name":"Build and test"}
@@ -28,7 +28,7 @@
 {"id":"LA-AUT-TM37","title":"Entry point","domain_id":"LA-AUT","meaning":"A file that starts the product or one of its processes, named as in code.","group_name":"Build and test"}
 {"id":"LA-AUT-TM38","title":"Tooling","domain_id":"LA-AUT","meaning":"A script or configuration that builds, checks or tests the product, named as in code.","group_name":"Build and test"}
 {"id":"LA-AUT-TM39","title":"Entity","domain_id":"LA-AUT","meaning":"A record the domain keeps, with an identity: its aggregate's root, which the aggregate is named for, or one of its children, reached only through the root. Its fields are typed by a basic type, a value object, or another aggregate by ID; its commands sit under it.","group_name":"Domain model"}
-{"id":"LA-AUT-TM40","title":"Invariant","domain_id":"LA-AUT","meaning":"A rule an aggregate always keeps, enforced by its own rule code before every save and proved by its test.","group_name":"Domain model"}
+{"id":"LA-AUT-TM40","title":"Invariant","domain_id":"LA-AUT","meaning":"A rule an aggregate always keeps, enforced by its rule before every save and proved by its test.","group_name":"Domain model"}
 {"id":"LA-AUT-TM41","title":"Repository","domain_id":"LA-AUT","meaning":"The one way an aggregate is loaded and saved whole, one per aggregate; a command handler reaches its aggregate only through it.","group_name":"Domain model"}
 {"id":"LA-AUT-TM42","title":"Capability","domain_id":"LA-AUT","meaning":"A lasting ability of the business that groups a domain's use cases, in order, and serves business outcomes.","group_name":"Domain model"}
 {"id":"LA-AUT-TM43","title":"Policy","domain_id":"LA-AUT","meaning":"A reaction under the command it runs, which hears one event: when that happens, run this command.","group_name":"Domain model"}
@@ -38,6 +38,7 @@
 {"id":"LA-AUT-TM47","title":"Interface","domain_id":"LA-AUT","meaning":"A way the product is used, such as the web app, the CLI or the MCP tools, that flows go through.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM48","title":"Role","domain_id":"LA-AUT","meaning":"Who acts in the product's use cases, such as the Owner, the Reader or an Agent.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM49","title":"Reader","domain_id":"LA-AUT","meaning":"The one way a query handler reaches its read model's storage, one per read model: an interface the handlers depend on, given to them by the query runner, reading only its read model's table, which its projection alone fills.","group_name":"Build and test"}
+{"id":"LA-AUT-TM50","title":"Rule","domain_id":"LA-AUT","meaning":"The code that enforces one invariant, named as its refusal names it: its aggregate's commands run it before every save and every load runs it over all data. An invariant is enforced by its rule, and built only through it.","group_name":"Domain model"}
 {"id":"LA-CHK-TM01","title":"Check","domain_id":"LA-CHK","meaning":"One rule the engine applies on every load: a row of the `check` table whose query returns a row for each problem."}
 {"id":"LA-CHK-TM02","title":"Problem","domain_id":"LA-CHK","meaning":"One thing a check found wrong or still to do in the loaded data. Problems are the result of a run, never stored."}
 {"id":"LA-CHK-TM03","title":"Error","domain_id":"LA-CHK","meaning":"A problem that means the data is broken. `lathe check` exits 1 on any error."}

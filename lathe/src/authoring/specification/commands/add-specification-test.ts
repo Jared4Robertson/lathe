@@ -4,6 +4,8 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { SpecificationTestRow } from '../../../platform/data/tables.ts';
 import { SPECIFICATION_SLICE } from '../model.ts';
 import { SpecificationRepository } from '../repository.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
+import { specificationOneEach } from '../rules.ts';
 
 /** A new specification test, with the test data sets it starts from. */
 export type AddSpecificationTest = Pick<SpecificationTestRow, 'id' | 'title' | 'specification_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
@@ -39,8 +41,8 @@ export const ADD_SPECIFICATION_TEST: CommandDefinition<AddSpecificationTest> = {
 export function addSpecificationTest(tx: Transaction, input: AddSpecificationTest): void {
   const specifications = new SpecificationRepository(tx);
   const specification = specifications.load(input.specification_id) ?? tx.refuse('missing', `there is no specification ${input.specification_id}`);
-  if (specification.test) tx.refuse('exists', `${specification.root} already has its test, ${specification.test.row.id}`);
   const { starts_from = [], ...row } = input;
+  refuseBroken(specificationOneEach([], [...(specification.test ? [specification.test.row] : []), row]));
   specification.test = { row, startsFrom: starts_from };
   specifications.save(specification);
 }

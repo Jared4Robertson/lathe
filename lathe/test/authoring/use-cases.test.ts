@@ -3,6 +3,11 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { ALLOWED_LEVELS, loadWorkspace, openStore, type SchemaDescription, type Workspace } from '../../src/index.ts';
 import { everyKind } from '../store/fixture.ts';
+import { ADD_FLOW } from '../../src/authoring/use-case/commands/add-flow.ts';
+import { ADD_FLOW_TEST } from '../../src/authoring/use-case/commands/add-flow-test.ts';
+import { runCommand } from '../../src/platform/commands/run.ts';
+import { StoreError } from '../../src/platform/data/problems.ts';
+import { writeData } from '../helpers.ts';
 import { adding, build, changing, complete, gaps, loadData, obligation, ofCheck, records, refusals, removeData, withTable, without } from '../helpers.ts';
 import { described, latheReference, latheSchema, pairsOf, parentsOf, requiredOf } from './shared.ts';
 
@@ -114,7 +119,7 @@ describe('flows', () => {
     expect(from('EX-LEND-UC01-FL01-S02')).toEqual(['exchanges_with EX-INT01', 'fulfills EX-LEND-UC01-R01', 'invokes EX-LEND-QRY01']);
   });
 
-  it('LA-AUT-UC06-R01-T02 LA-AUT-INV100-T A well-formed flow raises no step problem; a second flow through one interface, a repeated position, a step fulfilling another use case and a second invoke are refused', async () => {
+  it('LA-AUT-UC06-R01-T02 A well-formed flow raises no step problem; a second flow through one interface, a repeated position, a step fulfilling another use case and a second invoke are refused', async () => {
     expect(ofCheck(good, 'step-order')).toEqual([]);
     const data = adding(everyKind(), { use_case: [{ id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a borrowed tool back.' }], uc_requirement: [{ id: 'TL-LEND-UC02-R01', title: 'Tool is lent', use_case_id: 'TL-LEND-UC02', statement: 'The library MUST refuse a tool not on loan.' }] });
     expect(await refusals(data)).toEqual([]);
@@ -228,5 +233,30 @@ describe('requirements and tests', () => {
     // A test written under another requirement proves that one instead.
     const moved = await loadData(changing(complete(), 'use_case_test', (t) => t.id === 'EX-LEND-UC02-R01-T01', { id: 'EX-LEND-UC01-R01-T02', uc_requirement_id: 'EX-LEND-UC01-R01' }));
     expect(records(ofCheck(moved, 'not-proved'))).toEqual(['EX-LEND-UC02-R01']);
+  });
+});
+
+describe('LA-AUT-INV100-T the Use case aggregate refuses a second flow through one interface and a second test of a flow', () => {
+  it('refuses each from its command with use-case-one-each, before the unique key underneath', async () => {
+    const store = await openStore(writeData(everyKind()), { latheDataDir: null });
+    try {
+      const refused = async (run: () => Promise<unknown>) => {
+        try {
+          await run();
+        } catch (error) {
+          if (error instanceof StoreError) return error.problems.map((p) => ({ rule: p.rule, message: p.message }));
+          throw error;
+        }
+        throw new Error('not refused');
+      };
+      expect(await refused(() => runCommand(store, ADD_FLOW, { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool again', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }))).toContainEqual(
+        expect.objectContaining({ rule: 'use-case-one-each', message: 'use case TL-LEND-UC01 already has its flow through TL-IF01, so TL-LEND-UC01-FL01 cannot be a second: a use case has one flow per interface' }),
+      );
+      expect(await refused(() => runCommand(store, ADD_FLOW_TEST, { id: 'TL-LEND-UC01-FL01-T2', title: 'Again', flow_id: 'TL-LEND-UC01-FL01', level: 'browser', state: 'automated', file: 'e2e/again.spec.ts', steps: ['Borrow'], expected_result: 'Listed.' }))).toEqual([
+        { rule: 'use-case-one-each', message: 'flow TL-LEND-UC01-FL01 already has its test, so TL-LEND-UC01-FL01-T2 cannot be a second: a flow has one' },
+      ]);
+    } finally {
+      await store.close();
+    }
   });
 });
