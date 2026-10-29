@@ -8,6 +8,7 @@ import { parseSpecRoute } from '../src/specs/data';
 import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/address';
 import { CARD_GAP, CARD_GAP_Y, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
 import { cardTop } from '../src/views/cardPlace';
+import { NARROW_QUERY } from '../src/shell/useNarrow';
 import { SETTINGS_KEY } from '../src/graph/settings';
 import { colorOf } from '../src/theme/audit';
 import { contrast, over } from '../src/theme/contrast';
@@ -141,6 +142,29 @@ describe('one address, one stage', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{ top: var\(--open-top/);
     expect(css).toMatch(/\.trace-scroll \{[^}]*padding: calc\(var\(--frame-top/);
+  });
+
+  it('LA-V96-R05-T01 The measure follows the stage the page makes anew when it changes between the phone and the wide layout', async () => {
+    // A screen that narrows and widens again: the page makes its stage anew each way.
+    let narrow = false;
+    const listeners = new Set<() => void>();
+    vi.stubGlobal('matchMedia', (query: string) => ({
+      get matches() { return query === NARROW_QUERY && narrow; },
+      media: query,
+      addEventListener: (_: string, l: () => void) => { if (query === NARROW_QUERY) listeners.add(l); },
+      removeEventListener: (_: string, l: () => void) => { listeners.delete(l); },
+    }));
+    const flip = (to: boolean) => act(() => { narrow = to; for (const l of [...listeners]) l(); });
+    await openApp('/P-D-UC01?stage=erd', served());
+    await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
+    const before = stageRegion('ERD');
+    await waitFor(() => expect(before.style.getPropertyValue('--open-left')).toMatch(/^\d+px$/));
+    flip(true);
+    flip(false);
+    const after = stageRegion('ERD');
+    expect(after).not.toBe(before);
+    // The new stage is measured at once, so its tools (the ERD's key) sit inside the open space, clear of the nav.
+    await waitFor(() => expect(after.style.getPropertyValue('--open-left')).toMatch(/^\d+px$/));
   });
 
   it('LA-EXP-INV02-T Every part shows one focus: a node click moves the card, a card link moves the graph, Back moves them all, and graph settings survive', async () => {

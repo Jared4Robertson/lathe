@@ -192,12 +192,12 @@ test.describe('keyboard', () => {
     const parent = path();
     await page.keyboard.press('ArrowRight');
     await expect.poll(path).not.toBe(parent);
-    // On the ERD stage, from a page bar button.
+    // On the ERD stage, from a page bar button: Right to the region beside the domain's on the map.
     await page.keyboard.press('Control+2');
-    await expect(page.locator('.focus-stage[data-stage="erd"] .erd-page')).toBeVisible();
+    await expect(page.locator('.focus-stage[data-stage="erd"] .erd-flow[data-framed]')).toBeVisible();
     const before = path();
     await page.locator('.page-bar .side-bar-toggle').focus();
-    await page.keyboard.press('ArrowLeft');
+    await page.keyboard.press('ArrowRight');
     await expect.poll(path).not.toBe(before);
     // Quick find keeps its arrows: Down moves through its results, the focus stays.
     const here = path();
