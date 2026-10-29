@@ -22,7 +22,7 @@ export function fontFor(fonts: GraphFonts, face: Face, px: number): string {
   return `400 ${px}px ${fonts.mono}`;
 }
 
-const FACES: readonly Face[] = ['title', 'meta', 'badge', 'edge'];
+const FACES: readonly Face[] = ['title', 'meta', 'badge'];
 
 /** The stylesheet's stacks, read from the page's root. */
 export function readGraphFonts(): GraphFonts {

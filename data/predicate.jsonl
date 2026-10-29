@@ -11,7 +11,6 @@
 {"id":"LA-EXP-SP01-PR","title":"spaceIndex","specification_id":"LA-EXP-SP01","file":"app/src/specs/data.ts","description":"`spaceIndex`'s selection of a space's records, and `isWorkspaceProblem`."}
 {"id":"LA-EXP-SP03-PR","title":"kindsOf","specification_id":"LA-EXP-SP03","file":"app/src/graph/tree.ts","description":"`treeOf`'s kind groups: `kindsOf` gives a record's children's kinds; of more than one kind they go through a group per kind, of one kind straight under it."}
 {"id":"LA-EXP-SP04-PR","title":"filterKind","specification_id":"LA-EXP-SP04","file":"app/src/graph/model.ts","description":"filterKind, isFiltered"}
-{"id":"LA-EXP-SP05-PR","title":"neighborhood.links","specification_id":"LA-EXP-SP05","file":"app/src/graph/model.ts","description":"The Links hop of `neighborhood`: with the `links` option on, the focused record's own links, one hop."}
 {"id":"LA-PLT-SP01-PR","title":"checkFolder","specification_id":"LA-PLT-SP01","file":"desktop/src/folders.ts","description":"checkFolder"}
 {"id":"LA-PLT-SP02-PR","title":"chooseDevSource","specification_id":"LA-PLT-SP02","file":"desktop/src/devSource.ts","description":"chooseDevSource, ROOT_HEADER; also freePort, which keeps INV06"}
 {"id":"LA-TRC-SP01-PR","title":"pattern_rule_standing.followers","specification_id":"LA-TRC-SP01","file":"lathe/src/coverage.ts","description":"The `followers` step of `pattern_rule_standing` (a domain itself, or its use cases)."}

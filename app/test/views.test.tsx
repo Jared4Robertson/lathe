@@ -7,7 +7,6 @@ import { describe, expect, it, vi } from 'vitest';
 import { parseSpecRoute } from '../src/specs/data';
 import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/address';
 import { CARD_GAP, CARD_GAP_Y, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
-import { cardTop } from '../src/views/cardPlace';
 import { NARROW_QUERY } from '../src/shell/useNarrow';
 import { SETTINGS_KEY } from '../src/graph/settings';
 import { colorOf } from '../src/theme/audit';
@@ -138,6 +137,8 @@ describe('one address, one stage', () => {
     const el = stageRegion('Graph');
     await waitFor(() => expect(el.style.getPropertyValue('--open-left')).toMatch(/^\d+px$/));
     for (const side of ['left', 'top', 'right', 'bottom']) expect(el.style.getPropertyValue(`--frame-${side}`)).toMatch(/^\d+px$/);
+    // The foot of the stage's tools at its top, on the stage's parent, where the wiki card beside the stage reads it.
+    expect(el.parentElement!.style.getPropertyValue('--tools-foot')).toBe(`${parseFloat(el.style.getPropertyValue('--frame-top')) - OPEN_GAP}px`);
     await waitFor(() => expect(el.querySelector('[data-stage-tools="top"]')).not.toBeNull());
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     expect(css).toMatch(/\.stage-tools\[data-stage-tools="top"\] \{ top: var\(--open-top/);
@@ -172,7 +173,6 @@ describe('one address, one stage', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Links' }));
 
     // A link in the wiki card moves the graph and the header strip.
     await userEvent.setup().click(within(card()).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
@@ -181,13 +181,12 @@ describe('one address, one stage', () => {
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
     await waitFor(() => expect(within(card()).getByText('The loan MUST be recorded.')).toBeInTheDocument());
 
-    // A node on the stage moves the card: the flow step that fulfills it, reached by the Links switch.
-    await waitFor(() => expect(node('P-D-UC01-FL01-S01')).not.toBeNull());
-    fireEvent.click(node('P-D-UC01-FL01-S01')!);
-    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01-FL01-S01?stage=graph');
-    await waitFor(() => expect(title()).toBe('Librarian lends the thing'));
-    await waitFor(() => expect(card()).toHaveAttribute('data-page', 'P-D-UC01-FL01-S01'));
-    await waitFor(() => expect(isCenter('P-D-UC01-FL01-S01')).toBe(true));
+    // A node on the stage moves the card: the requirement's sibling beside it in the tree.
+    await waitFor(() => expect(node('P-D-UC01-R02')).not.toBeNull());
+    fireEvent.click(node('P-D-UC01-R02')!);
+    expect(window.location.pathname + window.location.search).toBe('/P-D-UC01-R02?stage=graph');
+    await waitFor(() => expect(card()).toHaveAttribute('data-page', 'P-D-UC01-R02'));
+    await waitFor(() => expect(isCenter('P-D-UC01-R02')).toBe(true));
   });
 
   it('LA-V96-R06-T01 The stage, the header strip and the wiki card follow one focus; Back moves them all, and graph settings survive', async () => {
@@ -195,12 +194,11 @@ describe('one address, one stage', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
     fireEvent.click(screen.getByRole('button', { name: '2' }));
-    fireEvent.click(screen.getByRole('button', { name: 'Links' }));
     await userEvent.setup().click(within(card()).getAllByRole('link', { name: /P-D-UC01-R01/ })[0]);
     await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
-    await waitFor(() => expect(node('P-D-UC01-FL01-S01')).not.toBeNull());
-    fireEvent.click(node('P-D-UC01-FL01-S01')!);
-    await waitFor(() => expect(title()).toBe('Librarian lends the thing'));
+    await waitFor(() => expect(node('P-D-UC01-R02')).not.toBeNull());
+    fireEvent.click(node('P-D-UC01-R02')!);
+    await waitFor(() => expect(card()).toHaveAttribute('data-page', 'P-D-UC01-R02'));
 
     // Back moves them all.
     await back();
@@ -258,9 +256,9 @@ describe('one address, one stage', () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     // Focus inside the graph, then switch to the ERD with the keyboard: the graph goes, and focus lands on the ERD's button, not lost.
-    const links = screen.getByRole('button', { name: 'Links' });
-    links.focus();
-    fireEvent.keyDown(links, { key: '2', code: 'Digit2', ctrlKey: true });
+    const depth = screen.getByRole('button', { name: '2' });
+    depth.focus();
+    fireEvent.keyDown(depth, { key: '2', code: 'Digit2', ctrlKey: true });
     expect(screen.queryByRole('region', { name: 'Graph stage' })).toBeNull();
     await waitFor(() => expect(stageButton('ERD')).toHaveFocus());
     expect(stageButton('ERD')).toHaveAttribute('aria-pressed', 'true');
@@ -381,45 +379,39 @@ describe('one address, one stage', () => {
     expect(settings()).toMatchObject({ cardExpanded: false });
   });
 
-  it('LA-V96-R23-T01 The wiki card settles level with the focused box, below the stage\'s tools and above the foot, and rests at the nearest edge for a focus off-screen', () => {
-    // Its title row 60 px down the card, the card 300 px high, the room from 120 px to 880 px of a 900 px stage.
-    const at = (anchorY: number | null) => cardTop({ anchorY, titleAt: 60, height: 300, minTop: 120, stageHeight: 900 });
-    expect(at(400)).toBe(340);
-    // Near the top or above it, near the foot or below it: the nearest edge of the room.
-    expect(at(130)).toBe(120);
-    expect(at(-500)).toBe(120);
-    expect(at(850)).toBe(900 - CARD_GAP_Y - 300);
-    expect(at(5000)).toBe(900 - CARD_GAP_Y - 300);
-    // No box for the focus: the top of the room.
-    expect(at(null)).toBe(120);
-  });
-
-  it('LA-V96-R19-T03 The wiki card reads as part of the graph: below the tools, inset, its height fitted, the boxes\' corners, a stripe in the box\'s color, a soft shadow, no border and a quiet cross-fade', () => {
+  it('LA-V96-R19-T03 The wiki card sits in one spot under the tools, inset, its height a steady share of the stage, round, with a hairline, a stripe in the box\'s color, a lifting shadow and a quiet cross-fade', () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     // Every rule of exactly this selector, joined.
     const rule = (selector: string) => [...css.matchAll(new RegExp(`(?:^|\\n)${selector.replace(/[.[\]()]/g, '\\$&')} \\{([^}]*)\\}`, 'g'))].map((m) => m[1]).join(';');
     const panel = rule('.wiki-panel');
-    expect(panel).toMatch(/top: calc\(var\(--below-strip\) - var\(--float-inset\) \+ var\(--card-gap-y\)\)/);
+    // One spot: just under the stage's toolbar row (the measure's --tools-foot), never moved by the focus.
+    expect(panel).toMatch(/--card-top: calc\(var\(--tools-foot, calc\(var\(--below-strip\) - var\(--float-inset\)\)\) \+ var\(--card-gap-y\)\)/);
+    expect(panel).toMatch(/top: var\(--card-top\)/);
+    expect(panel).not.toMatch(/transition|bottom:/);
     expect(panel).toMatch(/right: calc\(var\(--side-space\) - var\(--float-inset\) \+ var\(--card-gap\)\)/);
-    expect(panel).toMatch(/border-radius: var\(--node-radius\)/);
-    expect(panel).not.toMatch(/bottom:|border:/);
-    expect(panel).toMatch(/max-height: var\(--card-room/);
-    expect(rule('.wiki-panel.is-expanded')).toMatch(/max-height: min\(70%, var\(--card-room, 70%\)\)/);
+    // A steady share of the stage, never its content's height: 60% as a summary, 85% expanded, above the foot.
+    expect(panel).toMatch(/(?:^|;)\s*height: min\(60%, 100% - var\(--card-top\) - var\(--card-gap-y\)\)/);
+    expect(panel).not.toMatch(/max-height/);
+    expect(rule('.wiki-panel.is-expanded')).toMatch(/height: min\(85%, 100% - var\(--card-top\) - var\(--card-gap-y\)\)/);
+    // Rounder than a box (the sheet's radius, not the boxes' 4 px), a hairline in the theme's line color.
+    expect(panel).toMatch(/border: 1px solid var\(--rule\); border-radius: var\(--sheet-radius\)/);
+    const radius = (token: string) => Number(css.match(new RegExp(`${token}: (\\d+)px`))![1]);
+    expect(radius('--sheet-radius')).toBeGreaterThanOrEqual(3 * radius('--node-radius'));
     expect(rule('.wiki-panel::before')).toMatch(/background: var\(--card-accent/);
     expect(css).toMatch(/\.wiki-panel \{ background: var\(--float-light\);[^}]*box-shadow: var\(--card-shadow\)/);
-    expect(css).toMatch(/@media \(forced-colors: active\) \{ \.wiki-panel \{ border: 1px solid CanvasText; \} \}/);
+    expect(css).toMatch(/--card-shadow: 0 1px 3px rgb\(0 0 0 \/ 0\.07\), 0 10px 28px rgb\(0 0 0 \/ 0\.13\)/);
+    expect(css).toMatch(/@media \(forced-colors: active\) \{ \.wiki-panel \{ border-color: CanvasText; \} \}/);
     expect(css).toMatch(/@media \(prefers-reduced-motion: no-preference\) \{ \.wiki-panel-page \{ animation: wiki-card-in/);
-    expect(css).toMatch(/@media \(prefers-reduced-motion: reduce\) \{ \.wiki-panel\[data-placed\] \{ transition: none; \} \}/);
-    // The card's gaps are wider than the panels' own, and 1440 px still holds it beside the chat (LA-PAT-APP-UX-R18).
-    expect(CARD_GAP).toBeGreaterThan(8);
-    expect(CARD_GAP_Y).toBeGreaterThan(8);
+    // The card's gaps: well wider than the panels' own, the same at its right and above and below (LA-PAT-APP-UX-R18).
+    expect(CARD_GAP).toBe(28);
+    expect(CARD_GAP_Y).toBe(CARD_GAP);
   });
 
   it('LA-V96-R20-T01 Panels float over the stage, frosted, and opaque under reduced transparency', async () => {
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
     const root = css.match(/^:root \{([\s\S]*?)\n\}/m)![1];
     expect(root).toMatch(/--float-dense: color-mix\(in srgb, var\(--sheet\) 82%, transparent\)/);
-    expect(root).toMatch(/--float-light: color-mix\(in srgb, var\(--sheet\) 72%, transparent\)/);
+    expect(root).toMatch(/--float-light: color-mix\(in srgb, var\(--sheet\) 80%, transparent\)/);
     expect(root).toMatch(/--float-blur: 22px/);
     const reduced = css.match(/@media \(prefers-reduced-transparency: reduce\) \{([\s\S]*?)\n\}/)![1];
     expect(reduced).toMatch(/--float-dense: var\(--sheet\)/);
@@ -437,14 +429,17 @@ describe('one address, one stage', () => {
     // (the paper, the sheet, the shell, every tint) and over dense content (about a quarter ink over the paper, once blurred).
     const share = (token: string) => Number(root.match(new RegExp(`${token}: color-mix\\(in srgb, var\\(--sheet\\) (\\d+)%`))![1]) / 100;
     const fills = ['--paper', '--sheet', '--shell', ...COLOR_TOKENS.map((t) => t.name).filter((n) => n.endsWith('-bg'))];
+    // The wiki card's surface is a little more opaque than it was (72%), and its text keeps at least the 4.8:1 it had.
+    expect(share('--float-light')).toBeGreaterThanOrEqual(0.78);
+    expect(share('--float-light')).toBeLessThan(share('--float-dense'));
     const failing = BUILT_IN_THEMES.flatMap((theme) => (['light', 'dark'] as const).flatMap((mode) => {
       const color = (token: string) => colorOf(theme, mode, token);
       const sheet = color('--sheet')!;
       const ink = color('--ink')!;
       const behind = [...fills.map(color).filter((c) => c !== null), over([ink[0], ink[1], ink[2], 0.25], color('--paper')!)];
-      return [share('--float-dense'), share('--float-light')].flatMap((alpha) => behind.flatMap((under) => ['--ink', '--muted', '--steel', '--warn'].flatMap((fg) => {
-        const ratio = contrast(color(fg)!, over([sheet[0], sheet[1], sheet[2], alpha], under));
-        return ratio >= 4.5 ? [] : [`${theme.id} ${mode} ${fg} at ${alpha}: ${ratio.toFixed(2)}`];
+      return ([['--float-dense', 4.5], ['--float-light', 4.8]] as const).flatMap(([token, least]) => behind.flatMap((under) => ['--ink', '--muted', '--steel', '--warn'].flatMap((fg) => {
+        const ratio = contrast(color(fg)!, over([sheet[0], sheet[1], sheet[2], share(token)], under));
+        return ratio >= least ? [] : [`${theme.id} ${mode} ${fg} on ${token}: ${ratio.toFixed(2)}`];
       })));
     }));
     expect(failing).toEqual([]);

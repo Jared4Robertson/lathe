@@ -27,27 +27,26 @@ async function back() {
   });
 }
 
-/** Opens a graph page at a depth (1 unless asked). Most tests here are about links, so they turn Links on unless asked not to. */
-async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1, links = true) {
+/** Opens a graph page at a depth (1 unless asked). */
+async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1) {
   startAtDepth(depth);
   await openApp(path.includes('?') ? path : `${path}?stage=graph`, { data: workspace });
   await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
-  if (links) fireEvent.click(screen.getByRole('button', { name: 'Links' }));
 }
 
 describe('graph page', () => {
   it('LA-V93-R10-T03 LA-V93-R11-T02 Clicking a node re-centers the graph and changes the address, Back walks back, and no visited trail is drawn', async () => {
     await showGraph(`/${STEP}`);
     expect(title()).toBe('Librarian lends the thing');
-    await waitFor(() => expect(node('P-V01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL01')).not.toBeNull());
 
-    fireEvent.click(node('P-V01')!);
-    expect(window.location.pathname).toBe('/P-V01');
+    fireEvent.click(node('P-D-UC01-FL01')!);
+    expect(window.location.pathname).toBe('/P-D-UC01-FL01');
     expect(window.location.search).toBe('?stage=graph');
-    await waitFor(() => expect(title()).toBe('Loan desk'));
-    await waitFor(() => expect(isCenter('P-V01')).toBe(true));
-    // The view's own neighbor, the UI component that renders it, is now drawn.
-    await waitFor(() => expect(node('P-UI01')).not.toBeNull());
+    await waitFor(() => expect(title()).toBe('Lend a thing in the web app'));
+    await waitFor(() => expect(isCenter('P-D-UC01-FL01')).toBe(true));
+    // The flow's own parent, its use case, is now drawn.
+    await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
     // The graph keeps no trail of its own: the header strip's breadcrumb names where the focus sits, Back walks the path.
     expect(screen.queryByRole('navigation', { name: 'Records visited' })).toBeNull();
 
@@ -70,7 +69,7 @@ describe('graph page', () => {
   });
 
   it('LA-V93-R21-T02 Depth shows only in the Tree layout: in Nested and Voronoi its slot stays but is neither shown nor reachable', async () => {
-    await showGraph('/P-D/use-cases', testWorkspace(), 1, false);
+    await showGraph('/P-D/use-cases');
     const group = () => document.querySelector<HTMLElement>('[aria-label="Depth"]')!;
     expect(screen.getByRole('group', { name: 'Depth' })).toBeVisible();
     for (const layout of ['Nested', 'Voronoi']) {
@@ -86,8 +85,8 @@ describe('graph page', () => {
     expect(screen.getByRole('group', { name: 'Depth' })).toBeInTheDocument();
   });
 
-  it('LA-V93-R10-T05 The graph opens at depth 1, framing the parent and the children; depth 2 and 3 frame more levels below, and Links brings in the links', async () => {
-    await showGraph('/P-D/use-cases', testWorkspace(), 1, false);
+  it('LA-V93-R10-T05 The graph opens at depth 1, framing the parent and the children, and depth 2 and 3 frame more levels below; only parent lines are drawn', async () => {
+    await showGraph('/P-D/use-cases');
     const depth = within(screen.getByRole('group', { name: 'Depth' }));
     expect(depth.getAllByRole('button').map((b) => b.textContent)).toEqual(['1', '2', '3']);
     expect(depth.getByRole('button', { name: '1' })).toHaveAttribute('aria-pressed', 'true');
@@ -101,40 +100,43 @@ describe('graph page', () => {
     await waitFor(() => expect(count()).not.toBe(one));
     expect(count()).toBe('3 records · 1 group · 3 links');
     expect(viewport().zoom).toBeGreaterThan(0);
-    // Links brings in what the focus links to, dashed in their own color; a stage links to nothing.
-    await showGraph(`/${STEP}`, testWorkspace(), 1, false);
-    fireEvent.click(screen.getByRole('button', { name: 'Links' }));
-    await waitFor(() => expect(node('P-V01')).not.toBeNull());
-    expect(node('P-D-CMD01')).not.toBeNull();
-    await waitFor(() => expect(scene().lines.some((l) => l.link)).toBe(true));
+    // A record that links to others draws no line to them: what the step fulfills, invokes and happens in are the Trace
+    // stage's and the wiki card's, and there is no switch to draw them.
+    await showGraph(`/${STEP}`);
+    await waitFor(() => expect(node('P-D-UC01-FL01')).not.toBeNull());
+    expect(scene().lines.length).toBeGreaterThan(0);
+    expect(scene().lines.every((l) => l.style === 'structure' && !l.link)).toBe(true);
+    expect(screen.queryByRole('button', { name: /^Links/ })).toBeNull();
   });
 
-  it('LA-V93-R12-T01 Nodes show their stage and kind, records with errors or gaps are marked, edges carry their relation, and there is a legend', async () => {
+  it('LA-V93-R12-T01 Nodes show their stage and kind, records with errors or gaps are marked, parent lines join them, and there is a legend', async () => {
     await showGraph(`/${STEP}`);
-    await waitFor(() => expect(node('P-D-UC01-R01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL01')).not.toBeNull());
     expect(drawnBox(STEP)!.stage).toBe('interaction-design');
     expect(drawnBox(STEP)!.focus).toBe(true);
-    expect(drawnBox('P-D-UC01-R01')!.stage).toBe('use-cases');
-    expect(drawnBox('P-D-CMD01')!.stage).toBe('domain-model');
-    expect(drawnBox('P-V01')!.badges).toEqual([]);
+    expect(drawnBox('P-D-UC01-FL01')!.stage).toBe('interaction-design');
     expect(screen.getByRole('region', { name: 'Legend' })).toBeTruthy();
-
-    const edges = scene().lines.map((l) => l.style);
-    expect(edges).toContain('fulfills');
-    expect(edges).toContain('design');
-    expect(edges).toContain('structure');
+    expect(scene().lines.map((l) => l.style)).toContain('structure');
+    // A capability in the use cases' colors, its use case beside it.
+    await showGraph('/P-D-CAP01');
+    await waitFor(() => expect(node('P-D-UC01')).not.toBeNull());
+    expect(drawnBox('P-D-UC01')!.stage).toBe('use-cases');
+    // An aggregate in the domain model's.
+    await showGraph('/P-D-A4');
+    await waitFor(() => expect(node('P-D-A4')).not.toBeNull());
+    expect(drawnBox('P-D-A4')!.stage).toBe('domain-model');
 
     // A test with an error is marked, in the test plan's colors.
-    await showGraph('/P-D/test-plan/use_case_test', testWorkspace(), 1, false);
+    await showGraph('/P-D/test-plan/use_case_test');
     await waitFor(() => expect(node('P-D-UC01-R01-T01')).not.toBeNull());
     expect(drawnBox('P-D-UC01-R01-T01')!.stage).toBe('test-plan');
     expect(drawnBox('P-D-UC01-R01-T01')!.badges.map((b) => [b.label, b.tone])).toContainEqual(['!', 'error']);
     // An invariant with a coverage gap is marked.
-    await showGraph('/P-D-A3/invariant', testWorkspace(), 1, false);
+    await showGraph('/P-D-A3/invariant');
     await waitFor(() => expect(node('P-D-INV02')).not.toBeNull());
     expect(drawnBox('P-D-INV02')!.badges.map((b) => b.label)).toContain('gap');
     // The product is a structural record.
-    await showGraph('/P-D', testWorkspace(), 1, false);
+    await showGraph('/P-D');
     await waitFor(() => expect(node('P')).not.toBeNull());
     expect(drawnBox('P')!.stage).toBe('structural');
     expect(drawnBox('P-D')!.stage).toBe('domain-model');
@@ -200,24 +202,20 @@ describe('graph page', () => {
     }
   });
 
-  it('LA-EXP-DS05-T02 LA-V93-R15-T04 The page draws the map in columns with a solid parent/child spine, and links between siblings never move anything', async () => {
+  it('LA-EXP-DS05-T02 LA-V93-R15-T04 The page draws the map in columns with a solid parent/child spine, and draws no link between siblings', async () => {
     await showGraph(`/${STEP}`);
-    await waitFor(() => expect(node('P-V01')).not.toBeNull());
+    await waitFor(() => expect(node('P-D-UC01-FL01')).not.toBeNull());
     const left = (id: string) => drawnBox(id)!.map.x;
     expect(left('P-D-UC01-FL01')).toBeLessThan(left(STEP));
-    // What the step links to keeps its own place in the map: the view in its domain's Interaction design, left of the deeper requirement.
-    expect(left('P-V01')).toBeLessThan(left('P-D-UC01-R01'));
     expect(scene().lines.some((l) => l.style === 'structure' && !l.link)).toBe(true);
 
-    await showGraph('/P-D-EN03', testWorkspace(), 1, false);
-    const links = screen.getByRole('button', { name: 'Links' });
-    if (links.getAttribute('aria-pressed') !== 'true') fireEvent.click(links);
-    // The Loan and its return are siblings among the aggregate's entities, in one column, with the link drawn between them.
+    // The Loan and its return and reminder are siblings among the aggregate's entities, in one column; the Loan's links
+    // to them are not drawn.
+    await showGraph('/P-D-A3/entity');
     await waitFor(() => expect(node('P-D-EN04')).not.toBeNull());
     expect(left('P-D-EN04')).toBe(left('P-D-EN03'));
-    const link = (source: string, target: string) => scene().lines.some((l) => l.link && l.source === source && l.target === target);
-    await waitFor(() => expect(link('P-D-EN03', 'P-D-EN04')).toBe(true));
-    expect(link('P-D-EN03', 'P-D-EN05')).toBe(true);
+    expect(left('P-D-EN05')).toBe(left('P-D-EN03'));
+    expect(scene().lines.every((l) => !l.link)).toBe(true);
   });
 });
 
@@ -225,7 +223,7 @@ describe('graph groups on the page', () => {
   const groupNode = (id: string) => drawnBox(id) ?? null;
 
   it('LA-V93-R23-T04 LA-V93-R24-T01 A group shows its name and count, with no chevron; clicking the group, or Enter on it, goes to it', async () => {
-    await showGraph('/P-D', testWorkspace(), 1, false);
+    await showGraph('/P-D');
     await waitFor(() => expect(node('P-D/question')).not.toBeNull());
     expect(groupNode('P-D/question')!.group).toBe(true);
     expect(groupNode('P-D/question')!.stage).toBe('structural');
@@ -253,7 +251,7 @@ describe('graph groups on the page', () => {
   });
 
   it('LA-V93-R25-T02 A group has its own address showing its parent to the left and its members to the right, and Back works', async () => {
-    await showGraph('/P-D', testWorkspace(), 1, false);
+    await showGraph('/P-D');
     // The domain's side bar lists its stages, linking to their addresses.
     const link = sideBar().getByRole('link', { name: /^Domain model \(\d+\)$/ });
     const stageTitle = link.textContent!;
@@ -286,7 +284,7 @@ describe('graph groups on the page', () => {
   });
 
   it('LA-V93-R23-T05 LA-V93-R26-T02 Groups are drawn as folders and carry a mark when a member or anything beneath it has errors or gaps; the legend explains them', async () => {
-    await showGraph('/P-D', testWorkspace(), 1, false);
+    await showGraph('/P-D');
     await waitFor(() => expect(node('P-D/test-plan')).not.toBeNull());
     expect(groupNode('P-D/test-plan')!.badges.map((b) => [b.label, b.tone])).toContainEqual(['!', 'error']);
     expect(groupNode('P-D/domain-model')!.badges.map((b) => b.label)).toContain('gap');
@@ -306,13 +304,13 @@ describe('graph groups on the page', () => {
     const counts: string[] = [];
     const index = testIndex();
     const props = { index, onNavigate: (id: string) => moves.push(id), onCounts: (c: string) => counts.push(c) };
-    const { rerender } = render(<GraphView {...props} settings={{ ...DEFAULT_GRAPH_SETTINGS, links: true }} focus={STEP} />);
+    const { rerender } = render(<GraphView {...props} settings={DEFAULT_GRAPH_SETTINGS} focus={STEP} />);
     await waitFor(() => expect(node('P-V01')).not.toBeNull());
     expect(counts.at(-1)).toMatch(/^\d+ records? · .*\d+ links?$/);
     fireEvent.click(node('P-V01')!);
     expect(moves).toEqual(['P-V01']);
     expect(window.location.pathname).toBe('/somewhere-else');
-    rerender(<GraphView {...props} settings={{ ...DEFAULT_GRAPH_SETTINGS, links: true }} focus="P-V01" />);
+    rerender(<GraphView {...props} settings={DEFAULT_GRAPH_SETTINGS} focus="P-V01" />);
     await waitFor(() => expect(isCenter('P-V01')).toBe(true));
     expect(window.location.pathname).toBe('/somewhere-else');
 
@@ -356,7 +354,7 @@ describe('graph groups on the page', () => {
 
 describe('the map on the page', () => {
   it('LA-EXP-DS06-T03 LA-V93-R29-T02 Tall parents carry their height and text scale, every box its text scale as its box scale, and every parent line is level', async () => {
-    await showGraph('/P-D', testWorkspace(), 2, false);
+    await showGraph('/P-D', testWorkspace(), 2);
     await waitFor(() => expect(node('P-D/domain-model')).not.toBeNull());
     const height = (id: string) => drawnBox(id)!.map.h;
     const scale = (id: string) => drawnBox(id)!.textScale;

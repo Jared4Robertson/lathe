@@ -5,7 +5,7 @@ import { graphMap } from '../../src/graph/map';
 import { testIndex, testWorkspace } from './workspace';
 
 const ids = (n: { nodes: { id: string }[] }) => n.nodes.map((x) => x.id).sort();
-const filters = (kinds: string[] = [], relations: string[] = []): Filters => ({ hiddenKinds: new Set(kinds), hiddenRelations: new Set(relations) });
+const filters = (kinds: string[] = []): Filters => ({ hiddenKinds: new Set(kinds) });
 
 describe('graph neighborhood', () => {
   const index = testIndex();
@@ -30,7 +30,6 @@ describe('graph neighborhood', () => {
     const four = neighborhood(index, 'P-D/use-cases', 4);
     const distance = new Map(four.nodes.map((x) => [x.id, x.distance]));
     expect(['P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01'].map((id) => distance.get(id))).toEqual([1, 2, 3]);
-    expect(four.via.get('P-D-UC01-R01')).toBe('P-D-UC01');
     // Down as well as up: from an aggregate, its folder above and its entity below; no sibling and no link.
     const aggregate = neighborhood(index, 'P-D-A4', 1);
     expect(ids(aggregate)).toEqual(['P-D-A4', 'P-D-EN06', 'P-D/domain-model/aggregate']);
@@ -38,34 +37,7 @@ describe('graph neighborhood', () => {
     expect(ids(aggregate)).not.toContain('P-D-A1');
   });
 
-  it('LA-EXP-SP05-T LA-V93-R10-T02 The Links switch adds the records the focused record links to and from, one hop, in focus, with their links', () => {
-    const n = neighborhood(index, 'P-D-UC01-FL01-S01', 1, undefined, { links: true });
-    expect(ids(n)).toEqual(['P-D-CMD01', 'P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-D-UC01-R01', 'P-V01']);
-    expect(n.edges.filter((e) => e.relation !== 'parent').map((e) => `${e.source} ${e.relation} ${e.target}`).sort()).toEqual([
-      'P-D-UC01-FL01-S01 fulfills P-D-UC01-R01',
-      'P-D-UC01-FL01-S01 happens_in P-V01',
-      'P-D-UC01-FL01-S01 invokes P-D-CMD01',
-    ]);
-    // Each one step from the focus, reached from it; they bring nothing of their own.
-    for (const id of ['P-D-CMD01', 'P-D-UC01-R01', 'P-V01']) {
-      expect(n.nodes.find((x) => x.id === id)).toMatchObject({ distance: 1 });
-      expect(n.via.get(id)).toBe('P-D-UC01-FL01-S01');
-    }
-    // Off by default; at any depth the links are the focus's own, not its neighbors'.
-    expect(neighborhood(index, 'P-D-UC01-FL01-S01', 1).edges.some((e) => e.relation !== 'parent')).toBe(false);
-    expect(ids(neighborhood(index, 'P-D-UC01-FL01-S01', 3, undefined, { links: true }))).not.toContain('P-D-EV01');
-    // A linked record joins the focus.
-    expect(ids(neighborhood(index, 'P-D-UC01-R01', 1, undefined, { links: true }))).toContain('P-D-UC01-FL01-S01');
-    expect(n).toEqual(neighborhood(index, 'P-D-UC01-FL01-S01', 1, undefined, { links: true }));
-  });
-
-  it('LA-EXP-SP04-T LA-V93-R13-T01 Filters hide kinds and relations, nothing is reached through them, and the focus is never hidden', () => {
-    const links = { links: true };
-    expect(ids(neighborhood(index, 'P-D-UC01-FL01-S01', 1, filters(['view']), links))).not.toContain('P-V01');
-    // Hiding invokes keeps the command out and drops its edge.
-    const noInvokes = neighborhood(index, 'P-D-UC01-FL01-S01', 1, filters([], ['invokes']), links);
-    expect(ids(noInvokes)).not.toContain('P-D-CMD01');
-    expect(noInvokes.edges.some((e) => e.relation === 'invokes')).toBe(false);
+  it('LA-EXP-SP04-T LA-V93-R13-T01 Filters hide kinds, nothing is reached through them, and the focus is never hidden', () => {
     // Hiding use cases cuts the tree there: nothing above the requirement is reached.
     expect(ids(neighborhood(index, 'P-D-UC01-R01', 3, filters(['use_case'])))).toEqual(['P-D-UC01-R01']);
     // Hiding entities leaves the aggregate without them; a folder goes with its kind, a stage has none and stays.
@@ -74,9 +46,6 @@ describe('graph neighborhood', () => {
     expect(ids(neighborhood(index, 'P-D', 1, filters(['aggregate'])))).toContain('P-D/domain-model');
     // The focus stays even when its own kind is hidden.
     expect(ids(neighborhood(index, 'P-D-UC01-R01', 1, filters(['uc_requirement'])))).toContain('P-D-UC01-R01');
-    // Without parent lines there is no tree: the focus and, with Links on, its links.
-    expect(ids(neighborhood(index, 'P-D-UC01-FL01-S01', 3, filters([], ['parent'])))).toEqual(['P-D-UC01-FL01-S01']);
-    expect(ids(neighborhood(index, 'P-D-UC01-FL01-S01', 3, filters([], ['parent', 'fulfills']), links))).toEqual(['P-D-CMD01', 'P-D-UC01-FL01-S01', 'P-V01']);
   });
 
   it('LA-EXP-DS05-T01 The layout gives the same map every time, whatever the focus, with no overlaps', async () => {
@@ -128,20 +97,19 @@ describe('graph neighborhood', () => {
     for (let i = 1; i < chain.length; i++) expect(col(chain[i - 1])).toBeLessThan(col(chain[i]));
   });
 
-  it('LA-V93-R15-T03 LA-V93-R08-T01 Links between records in one column are drawn but never change the map', async () => {
+  it('LA-V93-R15-T03 Links never change the map or the framed picture: every box where it was without them', async () => {
     const w = testWorkspace();
     addRows(w, 'entity', { id: 'P-D-EN07', title: 'Tag', aggregate_id: 'P-D-A3', role: 'child' });
-    const before = graphMap(indexOf(w), 'P');
+    const before = indexOf(w);
     addRows(w, 'has_many', { source_id: 'P-D-EN03', target_id: 'P-D-EN07' });
     addRows(w, 'has_one', { source_id: 'P-D-EN07', target_id: 'P-D-EN03' });
     const linked = indexOf(w);
-    // Links on: the two entities are siblings, so they share a column, and both links are drawn.
-    const n = neighborhood(linked, 'P-D-EN07', 1, undefined, { links: true });
-    const column = new Map(n.nodes.map((x) => [x.id, x.column]));
-    expect(column.get('P-D-EN03')).toBe(column.get('P-D-EN07'));
-    expect(n.edges.filter((e) => e.relation === 'has_one' || e.relation === 'has_many')).toHaveLength(2);
     // Neither link shapes the map: every box is where it was without them.
-    const after = graphMap(linked, 'P');
-    expect([...after.nodes.values()].map((x) => [x.id, x.x, x.y])).toEqual([...before.nodes.values()].map((x) => [x.id, x.x, x.y]));
+    const at = (ix: typeof linked) => [...graphMap(ix, 'P').nodes.values()].map((x) => [x.id, x.x, x.y]);
+    expect(at(linked)).toEqual(at(before));
+    // Nor the picture framed around one end: only the tree, with no link drawn.
+    const picture = (ix: typeof linked) => neighborhood(ix, 'P-D-EN07', 1);
+    expect(picture(linked)).toEqual(picture(before));
+    expect(picture(linked).edges.every((e) => e.relation === 'parent')).toBe(true);
   });
 });

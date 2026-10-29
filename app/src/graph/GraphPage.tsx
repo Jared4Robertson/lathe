@@ -1,7 +1,6 @@
 // The Graph stage of an address, /<id>?stage=graph (LA-V93).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
 import { type SpecIndex } from '../specs/data';
-import { lowerLabel } from '../plural';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { COMMANDS, formatBinding, isMac } from '../shell/keymap';
@@ -11,27 +10,22 @@ import { TapCard, useTapToOpen } from './touch';
 import {
   NO_FILTERS,
   PARENT,
-  TRACE_RELATIONS,
   filterKind,
-  graphEdgeLabel,
-  graphRelationLabel,
   isFiltered,
   isGraphNode,
   kindGroups,
   neighborhood,
-  relationsOf,
   type Filters,
   type Neighborhood,
 } from './model';
 import { STEPS, STEP_COMMANDS, nestsChildren, stepKey, stepTarget, useStepWalk, type Step } from './steps';
 import { DEFAULT_GRAPH_SETTINGS } from './settings';
-import { centerOf, graphMap, linkEnds, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
+import { graphMap, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { readyVoronoiMap, voronoiMap, type VoronoiMap, type VoronoiNode } from './voronoi';
 import { setTextMeasure, type TextMeasure } from './text';
 import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, MAX_ZOOM, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
-import { EdgeHintChips, pastEdges, type Point, type Side } from './hints';
 import { readMotion } from './motion';
 import { nodeShape } from './shapes';
 import { Button } from '../components/Button';
@@ -59,18 +53,6 @@ import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpa
 // the Graph and Split views, keeps its settings across pages, and shows what it connects in the
 // side bar.
 
-/** CSS family for an edge's relation, so related relations share a line style. */
-export function relationStyle(relation: string): string {
-  if (relation === PARENT) return 'structure';
-  if (relation === 'fulfills') return 'fulfills';
-  if (['invokes', 'happens_in', 'exchanges_with', 'renders', 'meets'].includes(relation)) return 'design';
-  if (relation === 'follows') return 'pattern';
-  // A domain event's links: dashed, in the spark colors.
-  if (['raises', 'hears'].includes(relation)) return 'event';
-  return 'other';
-}
-
-
 /** How the graph draws the tree (LA-V93-R21): Tree, parents beside their children; Nested, parents made of them as boxes; Voronoi, as polygon cells. */
 export type GraphLayout = 'tree' | 'nested' | 'voronoi';
 export const GRAPH_LAYOUTS: readonly { layout: GraphLayout; label: string; tip: string }[] = [
@@ -79,14 +61,12 @@ export const GRAPH_LAYOUTS: readonly { layout: GraphLayout; label: string; tip: 
   { layout: 'voronoi', label: 'Voronoi', tip: 'Voronoi: each parent a cell made of its children' },
 ];
 
-/** What the person set on the graph: the view, depth, filters, the Links switch and the minimap. */
+/** What the person set on the graph: the view, depth, kind filters and the minimap. */
 export interface GraphSettings {
   /** Tree, Nested or Voronoi (LA-V93-R21). Tree by default. */
   layout: GraphLayout;
   depth: number;
   filters: Filters;
-  /** The Links switch: the focused record's own links, one step. Off by default. */
-  links: boolean;
   /** The minimap in a corner of the canvas. Off by default. */
   minimap: boolean;
 }
@@ -95,7 +75,7 @@ const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`
 
 export const MAX_DEPTH = 3;
 const DEPTHS = [1, 2, 3];
-/** The toolbar's forms, widest first: names hidden behind icons, then one-letter layouts, then depth, Links and the steps in a More menu. */
+/** The toolbar's forms, widest first: names hidden behind icons, then one-letter layouts, then depth and the steps in a More menu. */
 const TOOLBAR_TIERS = ['full', 'compact', 'narrow', 'menu'] as const;
 /** Depth is how many levels below the focus the camera frames, folders and stages included. The Nested and Voronoi cameras frame the focus's box or cell, whatever the depth, so they have none. */
 const DEPTH_LABELS = ['Frame the focus and its children', 'Frame two levels below the focus', 'Frame three levels below the focus'];
@@ -133,7 +113,7 @@ export interface GraphViewProps {
 export function GraphView({ index, focus, onNavigate, settings: hosted, onSettingsChange, onGraph, onPeek, onCounts, space }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
-  const { layout, depth, filters, links, minimap } = settings;
+  const { layout, depth, filters, minimap } = settings;
   const latest = useRef(settings);
   latest.current = settings;
   const update = useCallback((patch: Partial<GraphSettings>) => {
@@ -144,7 +124,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const setDepth = (d: number) => update({ depth: d });
   const setFilters = (f: Filters) => update({ filters: f });
 
-  const graph = useMemo(() => neighborhood(index, focus, depth, filters, { links }), [index, focus, depth, filters, links]);
+  const graph = useMemo(() => neighborhood(index, focus, depth, filters), [index, focus, depth, filters]);
   // Before paint, so the side bar shows what the graph connects in the same frame as the graph
   // (in an effect it showed one frame without it, then pushed its legend down; LA-PAT-APP-UX-R08).
   useLayoutEffect(() => { onGraph?.({ graph }); }, [graph, onGraph]);
@@ -157,7 +137,6 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const valid = isGraphNode(index, focus);
   useCommand('graphDepthUp', () => update({ depth: Math.min(MAX_DEPTH, latest.current.depth + 1) }), valid && layout === 'tree');
   useCommand('graphDepthDown', () => update({ depth: Math.max(1, latest.current.depth - 1) }), valid && layout === 'tree');
-  useCommand('graphLinks', () => update({ links: !latest.current.links }), valid);
   useCommand('graphLayout', () => update({ layout: nextLayout(latest.current.layout) }), valid);
   // Stepping through the tree moves the focus, as a click does (the arrow keys do it from anywhere, GraphStage's walk).
   const stepTo = (step: Step) => () => {
@@ -171,7 +150,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const [tier, setTier] = useState(0);
   const [, setRoom] = useState(0);
   const needs = useRef<number[]>([]);
-  const hiddenCount = filters.hiddenKinds.size + filters.hiddenRelations.size;
+  const hiddenCount = filters.hiddenKinds.size;
   useLayoutEffect(() => { needs.current = []; setTier(0); }, [hiddenCount]);
   useLayoutEffect(() => {
     const el = toolbar.current;
@@ -211,11 +190,6 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
           </Tooltip>
         ))}
       </div>
-      <div className="graph-links" role="group" aria-label="Cross-links">
-        <Tooltip label="Links: the center's own links, one step" command="graphLinks">
-          <button type="button" aria-pressed={links} onClick={() => update({ links: !links })}>Links</button>
-        </Tooltip>
-      </div>
       <div className="graph-steps" role="group" aria-label="Step through the tree">
         {steps.map((s) => (
           <Tooltip key={s.step} label={s.label} command={s.command} nested={nestsChildren(layout)}>
@@ -241,8 +215,8 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
           </div>
           {tier >= 3 ? (
             <details className="graph-more">
-              <Tooltip label="Depth, Links and the steps through the tree">
-                <summary aria-label="More: depth, Links and steps"><Icon name="dots" size={16} /></summary>
+              <Tooltip label="Depth and the steps through the tree">
+                <summary aria-label="More: depth and steps"><Icon name="dots" size={16} /></summary>
               </Tooltip>
               <div className="graph-more-body">{moreControls}</div>
             </details>
@@ -262,12 +236,6 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   );
 }
 
-/** The trace preset's button, worded with the relations' labels (LA-V92-R07): "Only fulfills, invokes and happens in links". */
-export function traceOnlyLabel(index: SpecIndex): string {
-  const words = ['fulfills', 'invokes', 'happens_in'].map((r) => lowerLabel(graphRelationLabel(r, index)));
-  return `Only ${words.slice(0, -1).join(', ')} and ${words.at(-1)} links`;
-}
-
 interface FilterProps {
   index: SpecIndex;
   filters: Filters;
@@ -277,13 +245,12 @@ interface FilterProps {
 }
 
 function FilterControls({ index, filters, setFilters, minimap, setMinimap }: FilterProps) {
-  const hidden = filters.hiddenKinds.size + filters.hiddenRelations.size;
+  const hidden = filters.hiddenKinds.size;
   const toggle = (set: ReadonlySet<string>, value: string) => {
     const next = new Set(set);
     if (next.has(value)) next.delete(value); else next.add(value);
     return next;
   };
-  const relations = relationsOf(index);
   return (
     <details className="graph-filters">
       {/* In a narrow toolbar only the icon shows; the name stays the summary's text (LA-PAT-APP-UX-R08). */}
@@ -313,24 +280,7 @@ function FilterControls({ index, filters, setFilters, minimap, setMinimap }: Fil
             ))}
           </fieldset>
         ))}
-        <fieldset>
-          <legend>Relations</legend>
-          {relations.map((r) => (
-            <label key={r}>
-              <input
-                type="checkbox"
-                checked={!filters.hiddenRelations.has(r)}
-                onChange={() => setFilters({ ...filters, hiddenRelations: toggle(filters.hiddenRelations, r) })}
-              />
-              <span className={`graph-line rel-${relationStyle(r)}`} aria-hidden="true" />
-              {graphRelationLabel(r, index)}
-            </label>
-          ))}
-        </fieldset>
         <div className="graph-filter-actions">
-          <Button onClick={() => setFilters({ ...filters, hiddenRelations: new Set(relations.filter((r) => !TRACE_RELATIONS.has(r))) })}>
-            {traceOnlyLabel(index)}
-          </Button>
           <Button onClick={() => setFilters(NO_FILTERS)} disabled={hidden === 0}>Clear filters</Button>
         </div>
         <p className="hint">Escape clears every filter.</p>
@@ -461,7 +411,7 @@ export interface Scene {
   textBarPx: number;
   boxes: SceneBox[];
   bars: Rect[];
-  lines: { id: string; source: string; target: string; style: string; link: boolean; label: string; lit: boolean | null; points: [number, number][] }[];
+  lines: { id: string; source: string; target: string; style: string; link: boolean; lit: boolean | null; points: [number, number][] }[];
   spotlight: boolean;
 }
 /** A camera as the scene reports it: to a hundredth of a pixel, and the zoom to nine significant digits. */
@@ -537,10 +487,8 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   sizeRef.current = size;
 
   const hidden = useMemo(() => hiddenNodes(index, map, filters, focus), [index, map, filters, focus]);
-  const parentShown = !filters.hiddenRelations.has(PARENT);
-  /** The records the focus links to (the Links switch): always drawn, and counted by the edge hints when out of view. */
-  const linked = useMemo(() => [...new Set(graph.edges.filter((e) => e.relation !== PARENT).flatMap((e) => [e.source, e.target]))].filter((id) => id !== focus), [graph, focus]);
-  const always = useMemo(() => [focus, ...linked], [focus, linked]);
+  /** The focus: drawn whatever its size. */
+  const always = useMemo(() => [focus], [focus]);
 
   // ---- The camera ----
   const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
@@ -628,14 +576,11 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (!target || !size) return;
     const resized = framedFor.current !== null && (framedFor.current.w !== size.w || framedFor.current.h !== size.h);
     const duration = moveTo(target, framedFor.current !== null && !resized && !framedEmpty.current);
-    // Where the focused box will sit once the camera arrives, for the wiki card that settles level with it.
-    const node = map.nodes.get(focus);
-    space?.setAnchor({ focus, y: node ? target.y + (node.y + node.h / 2) * target.zoom : null, at: performance.now() + duration });
     if (fadeShift.current.to !== focus) fadeShift.current = { from: fadeShift.current.to, to: focus, start: performance.now(), duration };
     framedFor.current = size;
     framedEmpty.current = map.nodes.size === 0;
   }, [framing]);
-  // What is drawn follows the filters and the Links switch at once.
+  // What is drawn follows the filters at once.
   useEffect(() => { if (!gestures.gliding() && size) show(drawnAt(getViewport())); requestPaint(); }, [drawnAt]);
 
   // The pane's size, observed once for the canvas's life.
@@ -719,26 +664,17 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     const byId = new Map(shown.map((p) => [p.id, p]));
     const lines: Line[] = [];
     // The tree's parent lines: level, from the parent's outline to the child's, at the child's middle. Nested and Voronoi have none: holding is the parent link (LA-EXP-DS07).
-    if (parentShown && map.view === 'tree') {
+    if (map.view === 'tree') {
       for (const b of shown) {
         const up = map.nodes.get(b.id)?.parent;
         const p = up ? byId.get(up) : undefined;
         if (!p) continue;
         const shape = (id: string) => nodeShape(index, id).shape;
-        lines.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, style: 'structure', link: false, points: parentLine(p, b, shape(p.id), shape(b.id)), scale: b.text, label: '' });
+        lines.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, style: 'structure', link: false, points: parentLine(p, b, shape(p.id), shape(b.id)), scale: b.text });
       }
     }
-    // The Links switch: the focus's own links, as curves between their boxes; in the Voronoi view, between their cells' labels, inside the cells.
-    const anchor = (b: Plate) => { const n = map.nodes.get(b.id); return n && 'polygon' in n ? (n as VoronoiNode).label : b; };
-    for (const e of graph.edges) {
-      if (e.relation === PARENT) continue;
-      const s = byId.get(e.source);
-      const t = byId.get(e.target);
-      if (!s || !t) continue;
-      lines.push({ id: e.id, source: e.source, target: e.target, style: relationStyle(e.relation), link: true, points: linkEnds(anchor(s), anchor(t)), scale: 1, label: graphEdgeLabel(index, e) });
-    }
     return { plates: shown, bars, lines };
-  }, [graph, drawnAt, plateFor, map, index, parentShown]);
+  }, [drawnAt, plateFor, map, index]);
   const lastFrame = useRef<{ plates: Plate[]; bars: Bar[]; lines: Line[] } | null>(null);
   // What the last frame drew is stale once anything it was drawn from changes: the pointer then hit-tests a fresh frame.
   lastFrame.current = null;
@@ -912,27 +848,6 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     spot(id);
     requestPaint();
   };
-  // The edge hints count the linked records past each edge; a click brings the nearest of them into view.
-  const linkedCenters = useMemo(() => linked.flatMap((id) => { const n = map.nodes.get(id); return n && !hidden.has(id) ? [centerOf(n)] : []; }), [linked, map, hidden]);
-  const hintKey = useSyncExternalStore(store.subscribe, () => {
-    const s = sizeRef.current;
-    if (!s || linkedCenters.length === 0) return '0 0 0 0';
-    const p = pastEdges(linkedCenters, view.current, s.w, s.h);
-    return `${p.up} ${p.down} ${p.left} ${p.right}`;
-  });
-  const past = useMemo(() => { const [up, down, left, right] = hintKey.split(' ').map(Number); return { up, down, left, right }; }, [hintKey]);
-  const panToward = useCallback((side: Side) => {
-    if (!size) return;
-    const v = getViewport();
-    const at = (p: Point) => ({ x: p.x * v.zoom + v.x, y: p.y * v.zoom + v.y });
-    const beyond = linkedCenters.filter((c) => {
-      const s = at(c);
-      return side === 'up' ? s.y < 0 : side === 'down' ? s.y > size.h : side === 'left' ? s.x < 0 : s.x > size.w;
-    });
-    const mid = { x: size.w / 2, y: size.h / 2 };
-    const nearest = beyond.sort((a, b) => Math.hypot(at(a).x - mid.x, at(a).y - mid.y) - Math.hypot(at(b).x - mid.x, at(b).y - mid.y))[0];
-    if (nearest) moveTo({ x: mid.x - nearest.x * v.zoom, y: mid.y - nearest.y * v.zoom, zoom: v.zoom }, true);
-  }, [size, getViewport, linkedCenters, moveTo]);
   // The minimap's view rectangle, in map units, as one key.
   const minimapView = useSyncExternalStore(store.subscribe, () => {
     const s = sizeRef.current;
@@ -969,7 +884,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         textBarPx: TEXT_BAR_PX,
         spotlight: sp.id !== null,
         bars: frame.bars.map((b) => rect(b.x, b.y, b.w, b.h)),
-        lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, label: l.label, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
+        lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
         boxes: frame.plates.map((p) => ({
           id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, group: p.group,
           hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, strength: strength(p.id),
@@ -1050,7 +965,6 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         </Tooltip>
       </div>
       {minimap && <MapOverview map={map} focus={focus} hidden={hidden} view={minimapView} />}
-      {size && linkedCenters.length > 0 && <EdgeHintChips past={past} noun="linked" onPan={panToward} />}
       {armedPlate && (
         <TapCard
           kind={armedPlate.kindLabel}
