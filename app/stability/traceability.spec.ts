@@ -148,8 +148,9 @@ test.describe('Traceability flows', () => {
     expect(whole.columns.map((c) => c.parent).slice(0, 5)).toEqual(['LA', TRC, capability, useCase, REQUIREMENT]);
     expect(whole.boxes.filter((b) => b.chosen).map((b) => b.key)).toEqual([TRC, capability, useCase, REQUIREMENT]);
     expect(whole.boxes.find((b) => b.key === useCase)!.count).toBe(requirements.length);
-    // Every box the same size and readable: its title at 11 px at least.
-    expect(new Set(whole.boxes.map((b) => `${Math.round(b.rect.width)}x${Math.round(b.rect.height)}`)).size).toBe(1);
+    // The columns above the use case's compact, their boxes titles alone; the rest one size; every title at 11 px at least.
+    expect(whole.columns.map((c) => c.compact).slice(0, 5)).toEqual([true, true, false, false, false]);
+    expect(new Set(whole.boxes.filter((b) => !b.compact).map((b) => `${Math.round(b.rect.width)}x${Math.round(b.rect.height)}`)).size).toBe(1);
     for (const b of whole.boxes) expect(b.textScale * TITLE_FONT * whole.camera.zoom, b.key).toBeGreaterThanOrEqual(11);
     // In view: the requirement's box and its chain's column whole, the use case's column beside them.
     const now = await columnsOf();

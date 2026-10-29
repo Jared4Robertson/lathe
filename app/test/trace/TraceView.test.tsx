@@ -397,7 +397,7 @@ describe('the Trace stage as columns', () => {
   const columnScene = async (whole = false) => (await canvasHost() as ColumnsHost).traceScene!(whole) as ColumnScene;
   const layoutButton = (name: string) => within(within(traceStage()).getByRole('group', { name: 'Layout' })).getByRole('button', { name });
 
-  it('LA-V98-R13-T05 Columns are the default: the path to the focus as columns of one readable size, a click focuses a box; Tree | Columns and v switch the layout, keeping the focus', async () => {
+  it('LA-V98-R13-T05 Columns are the default: the path to the focus as columns, readable, those above its parent\'s compact; a click focuses a box; Tree | Columns and v switch the layout, keeping the focus', async () => {
     await openApp('/P-D-UC01-R01?stage=trace', served());
     expect(await canvasHost()).toHaveAttribute('data-layout', 'columns');
     expect(layoutButton('Columns')).toHaveAttribute('aria-pressed', 'true');
@@ -405,7 +405,10 @@ describe('the Trace stage as columns', () => {
     expect(whole.columns.map((c) => c.parent)).toEqual(['P', 'P-D', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01']);
     expect(whole.boxes.filter((b) => b.chosen).map((b) => b.key)).toEqual(['P-D', 'P-D-CAP01', 'P-D-UC01', 'P-D-UC01-R01']);
     expect(whole.boxes.filter((b) => b.focus).map((b) => b.key)).toEqual(['P-D-UC01-R01']);
-    expect(new Set(whole.boxes.map((b) => `${b.rect.width}x${b.rect.height}`)).size).toBe(1);
+    // The use case's column (the focus's parent's), the focus's and its children's full width, one size; those above compact.
+    expect(whole.columns.map((c) => c.compact)).toEqual([true, true, false, false, false]);
+    expect(new Set(whole.boxes.filter((b) => !b.compact).map((b) => `${b.rect.width}x${b.rect.height}`)).size).toBe(1);
+    expect(whole.boxes.filter((b) => b.compact).every((b) => b.meta === '')).toBe(true);
     for (const b of whole.boxes) expect(b.textScale * TITLE_FONT * whole.camera.zoom, b.key).toBeGreaterThanOrEqual(11);
     expect(whole.boxes.find((b) => b.key === 'P-D-UC01')!.count).toBe(2);
     expect(whole.lines).toEqual([]);

@@ -12,26 +12,29 @@ import type { MapNode } from '../graph/map';
 import { readMotion } from '../graph/motion';
 import { boxColors, GAP_KIND, paint, type Camera, type PaintState } from '../graph/paint';
 import { plateName, plateOf, plateTip, type Plate, type PlainBox } from '../graph/plate';
-import { BORDER, largestFit, linesIn, setTextMeasure, type TextMeasure } from '../graph/text';
+import { BORDER, LABEL_PAD, largestFit, linesIn, setTextMeasure, titleWidth, type MapLabel, type TextMeasure, type WrappedLabel } from '../graph/text';
+import { outlineInset, SHAPES } from '../graph/shapes';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { useCommand } from '../shell/commands';
 import { keepCamera, keptCamera } from '../views/cameras';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
-import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
+import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
 import { useChanges } from '../changes/changes';
 import { lensFade, marksMoving, useStageMarks } from '../changes/marks';
 import {
-  BOX_HEIGHT, clampScroll, COLUMN_GAP, COLUMN_WIDTH, columnBoxes, columnHeight, columnLeft, columnScrolls, columnsView, columnView,
-  COLUMNS_PAD, COUNT_ROOM, holds, rowTop, scrollToShow, traceColumns, type TraceColumn,
+  BOX_HEIGHT, clampScroll, COLUMN_GAP, COLUMN_WIDTH, columnBoxes, columnHeight, columnLefts, columnScrolls, columnSizes, columnsView, columnView,
+  COLUMNS_PAD, COMPACT_HEIGHT, COMPACT_WIDTH, COUNT_ROOM, holds, scrollToShow, traceColumns, type ColumnSize, type TraceColumn,
 } from './columns';
 import { nodeLabel, traceFade, type TraceMap, type TraceNode } from './tree';
 import type { TraceHost, TraceScene, TraceSceneBox } from './TraceCanvas';
 
-// Every box is the same size and every column the same width, so the whole path to the focus reads at one size: the
-// chosen box in each column (the focus's path) ringed and joined to the column it opens, the focus ringed as on the
-// tree, each box's count of what it holds at its bottom right. The camera opens at zoom 1 on the focus's column, its
-// children and as many parents as fit; a column taller than the stage scrolls on its own under the wheel, its chosen box
+// The focus's column, its parent's and its children's are full width, every box in them one size with its kind line,
+// title and a count of what it holds at its right; the columns further up the path are compact, each box its title
+// alone in two lines at the same size (cut with an ellipsis, whole in its tooltip), so the whole path from the product
+// fits. The chosen box in each column (the focus's path) is ringed and joined to the column it opens, the focus ringed
+// as on the tree. Labels are always placed as the column lays them out: no sticky label moves under a panel. The camera
+// opens at zoom 1 with every column when they fit, else the last one ending at the frame's right; a column taller than the stage scrolls on its own under the wheel, its chosen box
 // scrolled into view as the focus moves. Drag, scroll across the gaps and Cmd or Ctrl with scroll move the camera as on
 // the tree. Gaps only and the Changes lens fade as on the tree; the focus fades nothing, since the path is the point.
 //
@@ -50,12 +53,13 @@ const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 4;
 /** The count's font size at zoom 1; it sits at the bottom right of the box's label room, inside its shape. */
 const COUNT_FONT = 11;
+const COUNT_PAD = 10;
 /** The ring round a chosen box, outside its outline, at zoom 1. */
 const CHOSEN_RING = 2;
 
 /** One drawn box as the test hook reports it: the tree's, with its column, whether it is on the focus's path, and its count. */
-export interface ColumnSceneBox extends TraceSceneBox { column: number; chosen: boolean; count: number }
-export interface ColumnScene extends Omit<TraceScene, 'boxes'> { boxes: ColumnSceneBox[]; columns: { parent: string; scroll: number; height: number }[] }
+export interface ColumnSceneBox extends TraceSceneBox { column: number; compact: boolean; chosen: boolean; count: number }
+export interface ColumnScene extends Omit<TraceScene, 'boxes'> { boxes: ColumnSceneBox[]; columns: { parent: string; compact: boolean; scroll: number; height: number }[] }
 export type ColumnsHost = HTMLDivElement & { traceScene?: (whole?: boolean) => ColumnScene; traceHit?: TraceHost['traceHit'] };
 
 export interface TraceColumnsProps {
@@ -89,22 +93,39 @@ export function TraceColumns(props: TraceColumnsProps) {
   return <ColumnsScene {...props} measure={measure} fonts={fonts} theme={theme} />;
 }
 
-/** A plate moved down by `dy` (up when negative): its column scrolled. */
-function shifted(p: Plate, dy: number): Plate {
-  if (dy === 0) return p;
+/** A plate made at the origin moved to its place in its column, scrolled. */
+function shifted(p: Plate, dx: number, dy: number): Plate {
   return {
     ...p,
+    x: p.x + dx,
     y: p.y + dy,
-    outline: p.outline.kind === 'polygon' ? { kind: 'polygon', points: p.outline.points.map(([x, y]) => [x, y + dy]) } : p.outline,
-    label: { ...p.label, y: p.label.y + dy },
-    lines: p.lines.map((l) => ({ ...l, baseline: l.baseline + dy, top: l.top + dy })),
-    icons: p.icons.map((i) => ({ ...i, y: i.y + dy })),
-    badges: p.badges.map((b) => ({ ...b, y: b.y + dy })),
+    outline: p.outline.kind === 'polygon' ? { kind: 'polygon', points: p.outline.points.map(([x, y]) => [x + dx, y + dy]) } : p.outline,
+    label: { ...p.label, x: p.label.x + dx, y: p.label.y + dy },
+    lines: p.lines.map((l) => ({ ...l, x: l.x + dx, baseline: l.baseline + dy, top: l.top + dy })),
+    icons: p.icons.map((i) => ({ ...i, x: i.x + dx, y: i.y + dy })),
+    badges: p.badges.map((b) => ({ ...b, x: b.x + dx, y: b.y + dy })),
   };
 }
 
-/** What one frame draws: the plates in view, scrolled, with each one's column, whether it is chosen, and its count. */
-interface Drawn { plate: Plate; column: number; chosen: boolean; count: number }
+/** A compact box's lines (LA-V98-R13): its title alone in at most two lines, the second cut with an ellipsis when it runs on. */
+function compactLines(label: MapLabel, width: number): WrappedLabel {
+  const full = linesIn({ ...label, meta: '', marks: 0, marked: false }, width, false);
+  let title = full.title;
+  if (title.length > 2) {
+    const room = label.shape ? SHAPES[label.shape].room : { l: 0, r: 0 };
+    const inner = width - 2 * LABEL_PAD - room.l - room.r;
+    let second = title.slice(1).join('').trimEnd();
+    while (second.length > 1 && titleWidth(`${second}…`) > inner) second = second.slice(0, -1).trimEnd();
+    title = [title[0], `${second}…`];
+  }
+  return full.pad ? { title, meta: [], pad: full.pad } : { title, meta: [] };
+}
+
+/** No panel cuts a column's label: every label is drawn where its column placed it (no sticky label, graph/sticky.ts). */
+const NO_CUT = { left: -1e9, top: -1e9, right: 1e9, bottom: 1e9 };
+
+/** What one frame draws: the plates in view, scrolled, with each one's column, whether it is compact or chosen, and its count. */
+interface Drawn { plate: Plate; column: number; compact: boolean; chosen: boolean; count: number }
 
 function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: TraceColumnsProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
   const wrapper = useRef<ColumnsHost>(null);
@@ -113,8 +134,10 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
   const sizeRef = useRef(size);
   sizeRef.current = size;
   const columns = useMemo(() => traceColumns(map, at), [map, at]);
-  const columnsRef = useRef<TraceColumn[]>(columns);
-  columnsRef.current = columns;
+  const sizes = useMemo(() => columnSizes(columns, at), [columns, at]);
+  const lefts = useMemo(() => columnLefts(sizes), [sizes]);
+  const columnsRef = useRef({ columns, sizes, lefts });
+  columnsRef.current = { columns, sizes, lefts };
 
   // ---- The camera and each column's scroll ----
   const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
@@ -149,14 +172,14 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
   }, [insetKey]);
   /** The height a column shows of itself now. */
   const viewHeight = useCallback(() => (sizeRef.current ? columnView(frameBox(sizeRef.current).h, view.current.zoom) : BOX_HEIGHT), [frameBox]);
-  const scrollOf = useCallback((c: TraceColumn) => clampScroll(scrolls.current.get(c.parent) ?? 0, c.keys.length, viewHeight()), [viewHeight]);
+  const scrollOf = useCallback((c: TraceColumn, size: ColumnSize) => clampScroll(scrolls.current.get(c.parent) ?? 0, c.keys.length, viewHeight(), size.h), [viewHeight]);
 
-  /** The camera that shows the focus's column, its children and as many parents as fit, and the scrolls that show each chosen box. */
+  /** The camera that shows the path (every column, or the last ending at the frame's right), and the scrolls that show each chosen box. */
   const framing = useCallback((): { v: Viewport; scrolls: Map<string, number> } | null => {
     if (!size || (space && !open)) return null;
     const box = frameBox(size);
-    return { v: columnsView(columns.length, box), scrolls: columnScrolls(columns, columnView(box.h, 1), scrolls.current) };
-  }, [size, columns, frameBox, space, open]);
+    return { v: columnsView(sizes, box), scrolls: columnScrolls(columns, sizes, columnView(box.h, 1), scrolls.current) };
+  }, [size, columns, sizes, frameBox, space, open]);
 
   // Each place keeps its camera and scrolls (views/cameras.ts), as the tree does.
   type Kept = { v: Viewport; scrolls: [string, number][] };
@@ -229,10 +252,10 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
   const tween = useMemo(() => fadeTween((t) => readMotion().ease(t)), []);
   useLayoutEffect(() => { tween.send(fade, look.current.fade); requestPaint(); }, [fade]);
 
-  /** Each box's plate at its home in its column (its column by its depth, its row by its place among its siblings), unscrolled; made once per map. */
+  /** Each box's plate at the origin, full or compact, made once per map; frameAt moves it to its place. */
   const plates = useMemo(() => new Map<string, Plate>(), [map, index, fonts]);
-  const plateFor = useCallback((key: string): Plate | null => {
-    const known = plates.get(key);
+  const plateFor = useCallback((key: string, compact: boolean): Plate | null => {
+    const known = plates.get(`${compact ? 'c' : 'f'}|${key}`);
     if (known) return known;
     const n = map.nodes.get(key);
     const node = map.map.nodes.get(key);
@@ -240,16 +263,17 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
     const label = nodeLabel(index, n);
     const border = (s: number) => BORDER * s;
     const room = COLUMN_WIDTH - COUNT_ROOM;
-    const text = largestFit(label, false, room, BOX_HEIGHT, 1, border) || 1;
+    const text = compact ? 1 : largestFit(label, false, room, BOX_HEIGHT, 1, border) || 1;
     const home: MapNode = {
-      id: key, parent: node.parent, children: node.children, level: node.level,
-      x: columnLeft(node.level - 1), y: rowTop(map.map.nodes.get(node.parent)!.children.indexOf(key)), w: COLUMN_WIDTH, h: BOX_HEIGHT,
-      text, lines: linesIn(label, (room - 2 * border(text)) / text, false), centered: false,
+      id: key, parent: node.parent, children: node.children, level: node.level, x: 0, y: 0,
+      w: compact ? COMPACT_WIDTH : COLUMN_WIDTH, h: compact ? COMPACT_HEIGHT : BOX_HEIGHT, text, centered: false,
+      lines: compact ? compactLines(label, COMPACT_WIDTH - 2 * border(1)) : linesIn(label, (room - 2 * border(text)) / text, false),
     };
     const role = n.role === 'record' ? null : PLAIN[n.role];
     const plain: PlainBox | undefined = role ? { kind: role.kind, kindLabel: role.label, title: n.words!.title, meta: n.words!.meta, dashed: role.dashed, stage: 'structural' } : undefined;
-    const plate = plateOf(index, n.id, { view: 'tree', node: home, place: key, plain });
-    plates.set(key, plate);
+    const made = plateOf(index, n.id, { view: 'tree', node: home, place: key, plain });
+    const plate = compact ? { ...made, badges: [] } : made;
+    plates.set(`${compact ? 'c' : 'f'}|${key}`, plate);
     return plate;
   }, [plates, map, index]);
 
@@ -258,16 +282,17 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
     const rows = whole ? undefined : { top: -v.y / v.zoom - BOX_HEIGHT, bottom: (s.h - v.y) / v.zoom };
     const left = -v.x / v.zoom - COLUMN_WIDTH;
     const right = (s.w - v.x) / v.zoom;
-    const scrollBy = new Map(columns.map((c) => [c.parent, scrollOf(c)]));
+    const scrollBy = new Map(columns.map((c, i) => [c.parent, scrollOf(c, sizes[i])]));
     const out: Drawn[] = [];
-    for (const b of columnBoxes(columns, (p) => scrollBy.get(p) ?? 0, rows)) {
+    for (const b of columnBoxes(columns, sizes, (p) => scrollBy.get(p) ?? 0, rows)) {
       if (!whole && (b.x < left || b.x > right)) continue;
-      const home = plateFor(b.key);
+      const compact = sizes[b.column].compact;
+      const home = plateFor(b.key, compact);
       if (!home) continue;
-      out.push({ plate: shifted(home, b.y - home.y), column: b.column, chosen: columns[b.column].chosen === b.key, count: holds(map, b.key) });
+      out.push({ plate: shifted(home, b.x, b.y), column: b.column, compact, chosen: columns[b.column].chosen === b.key, count: holds(map, b.key) });
     }
     return out;
-  }, [columns, scrollOf, plateFor, map]);
+  }, [columns, sizes, scrollOf, plateFor, map]);
 
   // ---- The pointer, the keyboard's ring and a tap's selection ----
   const hover = useRef<string | null>(null);
@@ -293,7 +318,7 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
     if (!g) return;
     const faded = tween.now();
     const live = marks.at(performance.now());
-    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: null, litLines: null, spot: 0, strength: faded.at, marks: live, open: openIn(wrapper.current, space, s.w, s.h) };
+    const state: PaintState = { focus, hover: hover.current, ring: ring.current, armed: tap.current?.armed ?? null, lit: null, litLines: null, spot: 0, strength: faded.at, marks: live, open: NO_CUT };
     const v = view.current;
     const cam: Camera = { cx: (s.w / 2 - v.x) / v.zoom, cy: (s.h / 2 - v.y) / v.zoom, zoom: v.zoom, w: s.w, h: s.h };
     paint(g, dpr, cam, { plates: frame.map((d) => d.plate), bars: [], lines: [] }, look.current, fonts, state);
@@ -325,10 +350,11 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
   useEffect(() => {
     ring.current = ringAt ? map.nodes.get(ringAt)?.id ?? null : null;
     const parent = ringAt ? map.map.nodes.get(ringAt)?.parent : null;
-    const c = parent ? columns.find((x) => x.parent === parent) : undefined;
-    if (c && ringAt) scrolls.current.set(c.parent, scrollToShow(c.keys.length, c.keys.indexOf(ringAt), viewHeight(), scrollOf(c)));
+    const i = parent ? columns.findIndex((x) => x.parent === parent) : -1;
+    const c = columns[i];
+    if (c && ringAt) scrolls.current.set(c.parent, scrollToShow(c.keys.length, c.keys.indexOf(ringAt), viewHeight(), scrollOf(c, sizes[i]), sizes[i].h));
     requestPaint();
-  }, [ringAt, columns]);
+  }, [ringAt, columns, sizes]);
 
   const hitAt = useCallback((x: number, y: number): Plate | null => {
     const v = view.current;
@@ -365,14 +391,16 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
       const v = view.current;
       const r = c0.getBoundingClientRect();
       const x = (e.clientX - r.left - v.x) / v.zoom;
-      const i = Math.floor(x / (COLUMN_WIDTH + COLUMN_GAP));
-      const c = columnsRef.current[i];
-      if (!c || x - columnLeft(i) > COLUMN_WIDTH) return;
+      const now = columnsRef.current;
+      const i = now.lefts.findIndex((l, j) => x >= l && x <= l + now.sizes[j].w);
+      const c = now.columns[i];
+      if (!c) return;
+      const size = now.sizes[i];
       const h = viewHeight();
-      if (columnHeight(c.keys.length) <= h) return;
+      if (columnHeight(c.keys.length, size.h) <= h) return;
       e.preventDefault();
       e.stopPropagation();
-      scrolls.current.set(c.parent, clampScroll(scrollOf(c) + move.dy / v.zoom, c.keys.length, h));
+      scrolls.current.set(c.parent, clampScroll(scrollOf(c, size) + move.dy / v.zoom, c.keys.length, h, size.h));
       requestPaint();
     };
     el.addEventListener('wheel', onWheel, { capture: true, passive: false });
@@ -388,8 +416,8 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
   const fitAll = () => {
     if (!size) return;
     const box = frameBox(size);
-    const width = columnLeft(columns.length - 1) + COLUMN_WIDTH;
-    const height = Math.max(BOX_HEIGHT, ...columns.map((c) => columnHeight(c.keys.length)));
+    const width = lefts[columns.length - 1] + sizes[columns.length - 1].w;
+    const height = Math.max(BOX_HEIGHT, ...columns.map((c, i) => columnHeight(c.keys.length, sizes[i].h)));
     const zoom = Math.max(MIN_ZOOM, Math.min(1, (box.w - 2 * COLUMNS_PAD) / width, (box.h - 2 * COLUMNS_PAD) / height));
     scrolls.current = new Map();
     moveTo({ x: box.x + COLUMNS_PAD, y: box.y + COLUMNS_PAD, zoom }, true);
@@ -413,15 +441,15 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
         canvas: { left: r.left, top: r.top, width: s.w, height: s.h },
         bars: 0,
         lines: [],
-        columns: columns.map((c) => ({ parent: c.parent, scroll: scrollOf(c), height: columnHeight(c.keys.length) })),
-        boxes: frameAt(v, s, whole).map(({ plate: p, column, chosen, count }) => {
+        columns: columns.map((c, i) => ({ parent: c.parent, compact: sizes[i].compact, scroll: scrollOf(c, sizes[i]), height: columnHeight(c.keys.length, sizes[i].h) })),
+        boxes: frameAt(v, s, whole).map(({ plate: p, column, compact, chosen, count }) => {
           const n = map.nodes.get(p.place)!;
           return {
             key: p.place, id: p.id, role: n.role, parent: map.map.nodes.get(p.place)?.parent ?? null, opens: n.opens, focus: p.id === focus, hover: hover.current === p.id, ring: ring.current === p.id,
             lit: null, strength: strength(p.place), change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(p.id)),
             dashed: p.dashed, kind: p.kind, stage: p.stage, meta: p.lines.filter((l) => l.face === 'meta').map((l) => l.text).join(''), name: plateName(p, p.id === focus), textScale: p.text,
             rect: { left: r.left + p.x * v.zoom + v.x, top: r.top + p.y * v.zoom + v.y, width: p.w * v.zoom, height: p.h * v.zoom },
-            column, chosen, count,
+            column, compact, chosen, count,
           };
         }),
       };
@@ -429,7 +457,7 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
   });
 
   const armedKey = tapToOpen.armed ? map.copies.get(tapToOpen.armed)?.[0] : undefined;
-  const armedPlate = armedKey ? plateFor(armedKey) : null;
+  const armedPlate = armedKey ? plateFor(armedKey, false) : null;
   return (
     <div ref={wrapper} className="graph-flow trace-flow" data-layout="columns" data-ready={size ? 'true' : undefined}>
       <canvas
@@ -489,18 +517,21 @@ function paintPath(g: CanvasRenderingContext2D, frame: readonly Drawn[], v: View
     g.roundRect(X(p.x) - grow, Y(p.y) - grow, p.w * z + 2 * grow, p.h * z + 2 * grow, 6 * z);
     g.stroke();
   }
-  // The counts, at the bottom right of each box's label room (inside its shape), in the kind and ID line's face.
+  // The counts of the full columns' boxes, at the right of the middle, inside the shape's straight part (clear of a
+  // chevron's point or a hexagon's side), in the kind and ID line's face.
   const px = COUNT_FONT * z;
   if (px >= 4) {
     g.font = fontFor(fonts, 'meta', px);
     g.textAlign = 'right';
-    g.textBaseline = 'alphabetic';
+    g.textBaseline = 'middle';
     for (const d of frame) {
-      if (d.count === 0) continue;
+      if (d.count === 0 || d.compact) continue;
       const p = d.plate;
+      const mid = p.y + p.h / 2;
+      const inset = Math.max(outlineInset(p, p.shape, p.scale, mid - COUNT_FONT, 'right'), outlineInset(p, p.shape, p.scale, mid + COUNT_FONT, 'right'));
       g.globalAlpha = strength(p.place);
       g.fillStyle = look.muted;
-      g.fillText(String(d.count), X(p.label.x + p.label.w), Y(p.label.y + p.label.h));
+      g.fillText(String(d.count), X(p.x + p.w - inset - (SHAPES[p.shape].room.r + COUNT_PAD) * p.text), Y(mid));
     }
   }
   g.restore();
