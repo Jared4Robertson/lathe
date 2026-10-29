@@ -205,7 +205,7 @@ test.describe('performance', () => {
     });
     await record({ name: 'Trace stage: first frame of the product map (loads its code, lays the map out)', value: first.workMs, unit: 'ms', budget: BUDGETS.traceMapFirstFrameMs, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
     await record({ name: 'stage switch: to the Trace', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
-    // Focusing the product from a domain's Trace stage: the map is the same, so only the camera moves (to the whole map, drawn as lane bars),
+    // Focusing the product from a domain's Trace stage: the map is the same, so only the camera moves (to the product and its children),
     // and the table's first page and its Untraced section are drawn.
     await open(page, `${DOMAIN}?stage=trace`, drawnTrace);
     const product = await work(page, async () => {

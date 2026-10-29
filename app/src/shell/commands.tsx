@@ -48,7 +48,7 @@ import { useOverlayFocus } from '../views/overlays';
 type Handler = () => void;
 /** A stage's walk: takes a move (an arrow, for W, A, S and D too, or Out and In), moves the focus, and returns what to announce, or null. */
 type Walk = (move: Move) => string | null;
-/** A stage's own meaning for a plain Enter where the walk stands (the Trace stage's "+N more" opens): true when it took it. */
+/** A stage's own meaning for a plain Enter where the walk stands (the Trace stage's link or file opens its record): true when it took it. */
 type StageEnter = () => boolean;
 type WalkRef = { current: Walk; enter?: StageEnter };
 /** A registered handler, and the title it gives its command while mounted ("Switch to Lathe"). */

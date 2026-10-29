@@ -1,6 +1,6 @@
 import type { SpecIndex } from '../specs/data';
 
-// Every stage is one map (LA-PAT-APP-UX-R19): the Graph (map.ts), the Trace stage (trace/lanes.ts)
+// Every stage is one map (LA-PAT-APP-UX-R19): the Graph (map.ts), the Trace stage (trace/tree.ts)
 // and the ERD each lay a product out once, per product and per data change, and every box keeps its
 // place whatever is focused or filtered and however deep the depth shows. One way for each move:
 // - focusing moves the camera only, framing the focus with the shared glide (gestures.ts) and the
