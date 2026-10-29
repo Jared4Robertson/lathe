@@ -7,8 +7,6 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
-import { relationStyle } from '../src/graph/GraphPage';
-import { PARENT } from '../src/graph/model';
 import { Legend } from '../src/graph/panel';
 import { BOX_LOOKS } from '../src/graph/paint';
 import { BADGE_TONES } from '../src/graph/plate';
@@ -16,7 +14,6 @@ import { SHAPES } from '../src/graph/shapes';
 import { erdFor } from '../src/erd/erd';
 import { ErdKey } from '../src/erd/ErdView';
 import { modelWorkspace } from './fixtures/model';
-import { testWorkspace } from './graph/workspace';
 
 const CSS = readFileSync(path.resolve(import.meta.dirname, '../src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
 /** The modifier classes a stylesheet gives an element class, as in `.erd-box.erd-aggregate`. */
@@ -44,9 +41,8 @@ describe('LA-V93-R12-T06 the Graph view key', () => {
     needs('a Voronoi cell', '.graph-swatch.is-cell');
     needs('bar', '.graph-swatch.stage-bar');
     for (const badge of BADGE_TONES) needs(`badge ${badge}`, `.graph-mark.${badge}`);
-    const relations = [PARENT, ...new Set(indexOf(testWorkspace()).workspace.relations.map((r) => r.relation))];
-    for (const style of new Set(relations.map(relationStyle))) needs(`line ${style}`, `.graph-line.rel-${style}`);
-    needs('cross-link', '.graph-line.is-link');
+    // The one line the graph draws: parent to child.
+    needs('the parent line', '.graph-line');
     expect(missing).toEqual([]);
   });
 });

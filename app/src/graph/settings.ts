@@ -4,7 +4,7 @@ import type { GraphLayout, GraphSettings } from './GraphPage';
 import { NO_FILTERS } from './model';
 
 // The one reader setting for the browser session, shared by every tab and every page (LA-V93-R72):
-// how the graph is drawn (its layout, depth, filters, Links switch and minimap), and whether the
+// how the graph is drawn (its layout, depth, kind filters and minimap), and whether the
 // wiki card is open and how wide it is, and whether the desktop app's chat panel is open and how
 // wide (LA-PLT-UC19). Moving through the stage (an arrow step, a click or Enter on a box, a link, a
 // tab, Back or Forward) never changes it; only the person changing a setting does: the graph's
@@ -13,7 +13,7 @@ import { NO_FILTERS } from './model';
 // Kept apart from GraphPage.tsx, which is loaded with import() when the graph is first shown.
 
 export const SETTINGS_KEY = 'lathe:session-settings';
-export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, filters: NO_FILTERS, links: false, minimap: false };
+export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, filters: NO_FILTERS, minimap: false };
 
 /** The wiki card: open or collapsed, and its width in px (null: a third of the open space). */
 export interface CardSettings { open: boolean; width: number | null }
@@ -33,15 +33,15 @@ export const CHAT_MAX = 760;
 export interface SessionSettings { graph: GraphSettings; card: CardSettings; chat: ChatSettings }
 
 interface Stored {
-  layout: GraphLayout; depth: number; hiddenKinds: string[]; hiddenRelations: string[]; links: boolean; minimap: boolean;
+  layout: GraphLayout; depth: number; hiddenKinds: string[]; minimap: boolean;
   card: boolean; cardWidth: number | null; chat: boolean; chatWidth: number | null;
 }
 /** Stored settings in today's form; anything else (an older form included) is dropped for the defaults. */
 const isStored = (v: unknown): v is Stored => {
   if (!v || typeof v !== 'object') return false;
   const s = v as Stored;
-  return (s.layout === 'tree' || s.layout === 'nested' || s.layout === 'voronoi') && isNumber(s.depth) && Array.isArray(s.hiddenKinds) && Array.isArray(s.hiddenRelations)
-    && typeof s.links === 'boolean' && typeof s.minimap === 'boolean' && typeof s.card === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth))
+  return (s.layout === 'tree' || s.layout === 'nested' || s.layout === 'voronoi') && isNumber(s.depth) && Array.isArray(s.hiddenKinds)
+    && typeof s.minimap === 'boolean' && typeof s.card === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth))
     && typeof s.chat === 'boolean' && (s.chatWidth === null || isNumber(s.chatWidth));
 };
 const isAny = (_v: unknown): _v is unknown => true;
@@ -57,8 +57,7 @@ export function sessionSettings(): SessionSettings {
     graph: {
       layout: s.layout,
       depth: [1, 2, 3].includes(s.depth) ? s.depth : 1,
-      filters: { hiddenKinds: new Set(s.hiddenKinds), hiddenRelations: new Set(s.hiddenRelations) },
-      links: s.links,
+      filters: { hiddenKinds: new Set(s.hiddenKinds) },
       minimap: s.minimap,
     },
     card: { open: s.card, width: clampWidth(s.cardWidth) },
@@ -69,7 +68,7 @@ export function sessionSettings(): SessionSettings {
 /** Sets the session's settings: only the person changing a setting calls this. */
 export function saveSessionSettings({ graph: g, card, chat }: SessionSettings) {
   const stored: Stored = {
-    layout: g.layout, depth: g.depth, hiddenKinds: [...g.filters.hiddenKinds], hiddenRelations: [...g.filters.hiddenRelations], links: g.links, minimap: g.minimap,
+    layout: g.layout, depth: g.depth, hiddenKinds: [...g.filters.hiddenKinds], minimap: g.minimap,
     card: card.open, cardWidth: clampWidth(card.width), chat: chat.open, chatWidth: clampChat(chat.width),
   };
   writePref(SETTINGS_KEY, stored, 'session');

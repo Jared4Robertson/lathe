@@ -102,9 +102,7 @@ test.describe('Exploring flows', () => {
     await expect(page.locator('.header-strip-id')).toHaveText('LA-EXP-UC03-R18');
     await expect(page.locator('.header-strip .breadcrumb .crumb').first()).toContainText('Lathe');
     await expect(page.getByRole('complementary', { name: 'Side bar' }).getByRole('region', { name: 'Details' })).toContainText('LA-EXP-UC03-R18');
-    // Filters: Links on, the minimap.
-    await page.locator(`${STAGE_BOX} .graph-links button`).click();
-    await expect(page.locator(`${STAGE_BOX} .graph-links button`)).toHaveAttribute('aria-pressed', 'true');
+    // Filters: the minimap.
     await page.locator(`${STAGE_BOX} .graph-filters > summary`).click();
     await page.locator(`${STAGE_BOX} .graph-filter-body input[role="switch"]`).check();
     await expect(page.locator(`${STAGE_BOX} .graph-minimap`)).toBeVisible();
@@ -141,17 +139,15 @@ test.describe('Exploring flows', () => {
     const events = (await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-A1/domain_event');
     expect(events?.group).toBe(true);
     expect((await sceneOf(page)).boxes.find((b) => b.id === 'LA-EXP-EV01')?.kind).toBe('domain_event');
-    // Under a pattern, its rules; follows is a cross-link once Links is on. With the wiki card collapsed (w): beside
-    // it, the open space is narrow and the pattern's fifteen rules are each under MIN_DRAWN pixels, drawn as one bar.
+    // Under a pattern, its rules. With the wiki card collapsed (w): beside it, the open space is narrow and the
+    // pattern's fifteen rules are each under MIN_DRAWN pixels, drawn as one bar.
     await page.goto('/LA-PAT-APP-UX?stage=graph');
     await graphReady(page);
     await page.keyboard.press('w');
     await expect(page.locator(WIKI)).toHaveCount(0);
     await expect.poll(async () => (await sceneOf(page)).boxes.some((b) => b.id === 'LA-PAT-APP-UX-R01')).toBe(true);
-    // Links, by its key.
-    await page.locator(FLOW).focus();
-    await page.keyboard.press('l');
-    await expect.poll(async () => (await sceneOf(page)).lines.some((l) => l.link && l.target === 'LA-PAT-APP-UX' && l.label === 'Follows')).toBe(true);
+    // Only the tree's lines: the domains that follow the pattern are the Trace stage's and the wiki card's.
+    expect((await sceneOf(page)).lines.every((l) => !l.link)).toBe(true);
   });
 
   test('LA-EXP-UC05-FL01-T read a record on a stage with its wiki card: quick find, stages, the card, links, Back, the nav and the side bar', async ({ page }) => {

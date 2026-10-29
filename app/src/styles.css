@@ -15,7 +15,7 @@
   --context-opacity: 0.35; --context-scale: 0.9; --spotlight-dim: 0.5; --vignette: 56px;
   /* The graph's focus fade (LA-EXP-DS09, app/src/graph/fade.ts): what lies outside the focus's subtree, and the trail of its ancestors in Nested and Voronoi. */
   --focus-fade: 0.25; --focus-trail: 0.45;
-  /* The graph's cross-links (the Links switch), dashed apart from the tree's solid lines, and the minimap's mask. */
+  /* The Trace stage's arrows, apart from the tree's ink lines, and the minimap's mask. */
   --link-edge: var(--spark); --minimap-mask: color-mix(in srgb, var(--ink) 8%, transparent);
   --paper: #F4F6F5; --sheet: #FFFFFF; --ink: #1D2830; --muted: #5A6870; --rule: #CBD3D6;
   --steel: #2E6A88; --steel-bg: #E4EEF3; --spark: #B5512A; --spark-bg: #F8E8DF; --warn: #875C00;
@@ -309,7 +309,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-filter-body label { display: flex; gap: 6px; align-items: center; font-size: 0.82rem; }
 .graph-filters > summary .icon { align-self: center; }
 /* The toolbar's narrower forms (TOOLBAR_TIERS): compact hides the names beside the icons and tightens the steps, narrow
-   shows each layout by its first letter, menu moves depth, Links and the steps into More. The names stay the accessible ones. */
+   shows each layout by its first letter, menu moves depth and the steps into More. The names stay the accessible ones. */
 .graph-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-filters-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .graph-toolbar:not([data-tier="full"]) { gap: 6px; }
 .graph-toolbar:not([data-tier="full"]) .graph-step { padding-inline: 4px; }
@@ -367,31 +367,17 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-swatch.stage-technical-specification { border-color: var(--g-technical-specification); background: var(--g-technical-specification-bg); }
 .graph-swatch.stage-test-plan { border-color: var(--g-test-plan); background: var(--g-test-plan-bg); }
 .graph-swatch.stage-bar { background: var(--rule); border-color: var(--rule); opacity: 0.6; }
-.graph-line { display: inline-block; width: 22px; height: 0; border-top: 1.5px solid var(--muted); vertical-align: middle; }
-.graph-line.rel-structure { border-top: 2.5px solid var(--ink); }
-.graph-line.rel-fulfills { border-top: 1.5px dashed var(--steel); }
-.graph-line.rel-design { border-top: 1.5px dotted var(--spark); }
-.graph-line.rel-pattern { border-top: 1.5px dashed var(--steel); border-top-style: dashed; opacity: 0.9; }
-.graph-line.rel-other { border-top: 1.5px dashed var(--muted); }
-/* Links, a toggle beside the depth, and the steps through the tree. */
-.graph-links { display: inline-flex; flex: none; }
-.graph-links button { font: inherit; font-size: 0.82rem; padding: 3px 10px; border: 1px solid var(--rule); border-radius: 5px; background: var(--sheet); color: var(--ink); cursor: pointer; }
-.graph-links button:not([aria-pressed="true"]):not(:disabled):hover { background: var(--hover-bg); }
-.graph-links button[aria-pressed="true"] { background: var(--steel); border-color: var(--steel); color: var(--sheet); font-weight: 600; }
-.graph-links button:disabled { opacity: 0.5; cursor: default; }
+/* The key's parent line: the tree's solid ink line. */
+.graph-line { display: inline-block; width: 22px; height: 0; border-top: 2.5px solid var(--ink); vertical-align: middle; }
+/* The steps through the tree, beside the depth. */
 .graph-steps { display: inline-flex; gap: 2px; flex: none; }
-/* The center's own links, with Links on: dashed in their own color. */
-.graph-line.is-link { border-top: 1.5px dashed var(--link-edge); }
-/* Event lines in the graph (LA-V93-R28, LA-V93-R04): a command raising an event and a policy hearing it,
-   dashed in spark, with Links on too. */
 .graph-swatch.kind-question { border-style: dashed; border-color: var(--warn); }
 .graph-swatch.is-focus { box-shadow: 0 0 0 2px var(--ink); }
-.graph-line.rel-event { border-top: 1.5px dashed var(--spark); }
 /* The edge hints take the hover tint on the hover speed; under reduced motion at once. */
 @media (prefers-reduced-motion: no-preference) {
   .graph-edge-hint { transition: background var(--hover-speed), color var(--hover-speed); }
 }
-/* Edge hints: how many linked records lie past each edge; a click brings the nearest into view. */
+/* Edge hints (the ERD stage's): how many boxes lie past each edge; a click pans that way. */
 .graph-edge-hints { position: absolute; inset: 0; z-index: 6; pointer-events: none; }
 /* One width for every count and arrow, so a new count never moves the chip (LA-PAT-APP-UX-R08). */
 .graph-edge-hint { position: absolute; pointer-events: auto; inline-size: 3.5rem; text-align: center; font: 600 0.75rem var(--body); font-variant-numeric: tabular-nums; padding: 2px 8px; border: 1px solid var(--rule); border-radius: 10px; background: var(--sheet); color: var(--muted); cursor: pointer; white-space: nowrap; }
@@ -408,7 +394,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-minimap-view { fill: var(--minimap-mask); stroke: var(--steel); stroke-width: 2; }
 /* By touch: the toolbar's toggles and the edge hints are touch-sized. */
 @media (pointer: coarse) {
-  :is(.graph-links button, .graph-step, .graph-more > summary, .graph-edge-hint, .graph-controls .icon-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
+  :is(.graph-step, .graph-more > summary, .graph-edge-hint, .graph-controls .icon-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
 }
 /* ---------- End of graph view ---------- */
 
