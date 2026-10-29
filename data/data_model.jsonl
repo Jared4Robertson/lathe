@@ -67,6 +67,7 @@
 {"id":"LA-AUT-EN74-DM","title":"PatternRuleTestRow","entity_id":"LA-AUT-EN74","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN75-DM","title":"StandardRuleTestRow","entity_id":"LA-AUT-EN75","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN76-DM","title":"InterfaceRow","entity_id":"LA-AUT-EN76","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-AUT-EN85-DM","title":"TestDataSetRow","entity_id":"LA-AUT-EN85","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-CHK-EN01-DM","title":"CheckRow","entity_id":"LA-CHK-EN01","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-CHK-EN03-DM","title":"ProductSettingRow","entity_id":"LA-CHK-EN03","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-EXP-EN01-DM","title":"SpecRoute","entity_id":"LA-EXP-EN01","file":"app/src/specs/data.ts"}

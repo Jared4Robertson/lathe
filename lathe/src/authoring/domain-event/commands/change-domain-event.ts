@@ -21,7 +21,7 @@ export const CHANGE_DOMAIN_EVENT: CommandDefinition<ChangeDomainEvent> = {
     title: column('domain_event', 'title', 'optional'),
     published: column('domain_event', 'published', 'optional'),
     description: column('domain_event', 'description', 'optional'),
-    fields: parts('event_field', 'The fields it carries, in order. Replaces the list.', 'optional'),
+    fields: parts('event_field', ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'], 'The fields it carries, in order. Replaces the list.', 'optional'),
   },
   handler: changeDomainEvent,
 };

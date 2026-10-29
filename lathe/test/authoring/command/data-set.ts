@@ -1,4 +1,4 @@
-// LA-AUT-TD33 Open a loan command: the domain model base with the Loan aggregate, its root entity
+// LA-AUT-TD42 Open a loan command: the domain model base with the Loan aggregate, its root entity
 // and events and a Catalog aggregate with an unpublished event, then Open a loan with its handler, policy, event
 // handler and policy test written with the Command aggregate's own Add commands.
 import { ADD_COMMAND } from '../../../src/authoring/command/commands/add-command.ts';
