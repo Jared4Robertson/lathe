@@ -1,4 +1,4 @@
-// The stage's walk: the plain arrow keys step the focus through the tree, out to the parent, in to the first child and
+// The stage's walk: the plain arrow keys (and W, A, S and D as Up, Left, Down and Right) step the focus through the tree, out to the parent, in to the first child and
 // across the siblings, from anywhere on the page (LA-V93-R19). The commands layer's one arrow handler
 // (useStageWalk, app/src/shell/commands.tsx) sends each arrow to the stage shown; each stage maps it to a step here. The
 // Graph steps by its layout's keys; the Trace stage, which draws parents beside their children as the Tree does, by the

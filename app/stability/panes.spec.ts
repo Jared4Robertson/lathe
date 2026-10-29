@@ -117,21 +117,22 @@ test.describe('the stage and its panels', () => {
     expectStable(graph);
   });
 
-  test('LA-V61-R29-T01 collapse and show the wiki card (w): only the card goes, and the focus recenters in the open space', async ({ page }) => {
+  test('LA-V61-R29-T01 collapse and show the wiki card (Enter): only the card goes, and the focus recenters in the open space', async ({ page }) => {
     await openPage(page, `${RECORD}?stage=graph`);
     await stageReady(page);
     await expectFocusInOpenSpace(page, 'with the card open');
     const before = (await sceneOf(page)).moves;
     const keys = [NAV, PAGE_BAR, STRIP, SIDE_BAR, STAGE];
-    const collapse = await step(page, 'stage', 'collapse the wiki card (w)', { keys, allow: MOVES_WITH_OPEN_SPACE, optional: [CARD] }, async () => {
-      await page.keyboard.press('w');
+    const collapse = await step(page, 'stage', 'collapse the wiki card (Enter)', { keys, allow: MOVES_WITH_OPEN_SPACE, optional: [CARD] }, async () => {
+      await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+      await page.keyboard.press('Enter');
       await expect(page.locator(CARD)).toHaveCount(0);
     });
     expectStable(collapse);
     expect((await sceneOf(page)).moves, 'the camera moved to the wider open space').toBeGreaterThan(before);
     await expectFocusInOpenSpace(page, 'with the card collapsed');
-    const show = await step(page, 'stage', 'show the wiki card (w)', { keys, allow: MOVES_WITH_OPEN_SPACE, optional: [CARD] }, async () => {
-      await page.keyboard.press('w');
+    const show = await step(page, 'stage', 'show the wiki card (Enter)', { keys, allow: MOVES_WITH_OPEN_SPACE, optional: [CARD] }, async () => {
+      await page.keyboard.press('Enter');
       await page.locator(CARD).waitFor();
     });
     expectStable(show);

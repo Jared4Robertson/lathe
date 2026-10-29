@@ -123,14 +123,14 @@ test.describe('keyboard', () => {
     await expect(page).toHaveURL(/stage=graph/);
   });
 
-  test('LA-V61-R41-T02 collapse and show the wiki card with w, focus kept on the page', async ({ page }) => {
+  test('LA-V61-R41-T02 collapse and show the wiki card with Enter, focus kept on the page', async ({ page }) => {
     await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
-    await page.keyboard.press('w');
+    await page.keyboard.press('Enter');
     await expect(page.locator('.wiki-panel')).toHaveCount(0);
     await test.step('LA-V61-R43-T01 collapsing the wiki card is announced', () => expect(announcer(page)).toHaveText('Wiki card collapsed'));
-    // LA-V61-R42-T01: focus moves to the page bar's toggle, which brings the card back.
-    expect((await focused(page)).classes).toContain('wiki-panel-toggle');
+    // LA-V61-R42-T01: collapsed from the page, focus stays there, and Enter brings the card back.
+    expect((await focused(page)).tag).toBe('body');
     await page.keyboard.press('Enter');
     await expect(page.locator('.wiki-panel')).toBeVisible();
     await expect(announcer(page)).toHaveText('Wiki card shown');
@@ -139,7 +139,7 @@ test.describe('keyboard', () => {
     await page.keyboard.press('Enter');
     await expect(page.locator('.wiki-panel')).toHaveCount(0);
     expect((await focused(page)).classes).toContain('wiki-panel-toggle');
-    await page.keyboard.press('w');
+    await page.keyboard.press('Enter');
     await expect(page.locator('.wiki-panel')).toBeVisible();
   });
 
@@ -208,6 +208,52 @@ test.describe('keyboard', () => {
     await page.waitForTimeout(300);
     expect(path()).toBe(here);
     await page.keyboard.press('Escape');
+  });
+
+  test('LA-V61-R49-T07 W, A, S and D walk the stage from the wiki card and stay typed in quick find', async ({ page }) => {
+    await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
+    const path = () => decodeURIComponent(new URL(page.url()).pathname);
+    const start = path();
+    // Clicked into, the wiki card gives the letters to the stage: A out to the parent, D back in.
+    await page.locator('.wiki-panel-title').click();
+    await page.keyboard.press('a');
+    await expect.poll(path).not.toBe(start);
+    await expect(announcer(page)).not.toHaveText('');
+    const parent = path();
+    await page.keyboard.press('d');
+    await expect.poll(path).not.toBe(parent);
+    // With Shift or Ctrl held, a letter keeps its own meaning: nothing steps.
+    const here = path();
+    await page.keyboard.press('Shift+A');
+    await page.waitForTimeout(300);
+    expect(path()).toBe(here);
+    // In quick find the letters are typed.
+    await page.keyboard.press('Control+k');
+    await expect(page.locator('.quick-open input')).toBeFocused();
+    await page.keyboard.type('wasd');
+    await expect(page.locator('.quick-open input')).toHaveValue('wasd');
+    expect(path()).toBe(here);
+    await page.keyboard.press('Escape');
+  });
+
+  test('LA-V96-R19-T07 Enter on the focused box toggles the wiki card, and Escape collapses it once quick find has closed', async ({ page }) => {
+    await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
+    const focusBox = page.locator('.focus-stage .graph-box.is-focus');
+    await focusBox.focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.wiki-panel')).toHaveCount(0);
+    await expect(focusBox).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.wiki-panel')).toBeVisible();
+    // Escape closes quick find first, then the card.
+    await page.keyboard.press('Control+k');
+    await expect(page.locator('.quick-open input')).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.quick-open')).toHaveCount(0);
+    await expect(page.locator('.wiki-panel')).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.wiki-panel')).toHaveCount(0);
+    await test.step('LA-V61-R43-T01 collapsing the wiki card by Escape is announced', () => expect(announcer(page)).toHaveText('Wiki card collapsed'));
   });
 
   test('LA-V61-R41-T02 fold and unfold a row with the keyboard', async ({ page }) => {
