@@ -18,8 +18,8 @@ export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1,
 /** The wiki card: open or collapsed, and its width in px (null: a third of the open space). */
 export interface CardSettings { open: boolean; width: number | null }
 export const DEFAULT_CARD: CardSettings = { open: true, width: null };
-/** The card's narrowest and widest, in px. */
-export const CARD_MIN = 300;
+/** The card's narrowest, the width it stays readable at (a long title on whole words, a table with room for its columns), and its widest, in px. */
+export const CARD_MIN = 360;
 export const CARD_MAX = 900;
 
 /** The desktop app's chat panel: open or closed, and its width in px (null: its default). */

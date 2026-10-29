@@ -7,6 +7,7 @@ import type { SpecIndex } from '../specs/data';
 import { desktopBridge } from './desktopChrome';
 import { useDesktopErrorCount, useDesktopRecordMenu } from './desktopRecord';
 import { Tooltip } from './Tooltip';
+import { crowdedLabel } from '../views/openSpace';
 import './DesktopTitleBar.css';
 
 // The desktop app's own title bar (LA-PLT-UC14), as in VS Code: the window has no system title bar,
@@ -26,6 +27,9 @@ interface PageState {
   /** Whether the page has a side bar to show or hide at all. */
   sideBarOffered: boolean;
   chatShown: boolean;
+  /** The panels collapsed for space (LA-PAT-APP-UX-R18), as the shell marks them. */
+  navCrowded: boolean;
+  sideBarCrowded: boolean;
   /** On a phone's width, where the chat is not offered. */
   narrow: boolean;
 }
@@ -34,22 +38,26 @@ function readPage(): PageState {
   const app = document.querySelector('.app');
   const narrow = app?.classList.contains('is-narrow') ?? false;
   const sideBarShown = !!document.getElementById('side-bar');
+  const crowded = (app?.getAttribute('data-crowded') ?? '').split(' ');
   return {
     title: document.querySelector('#main h1')?.textContent?.trim() ?? '',
     navShown: narrow ? !!document.getElementById('nav') : !(app?.classList.contains('nav-collapsed') ?? false),
     sideBarShown,
     sideBarOffered: sideBarShown || !!document.querySelector('.side-bar-toggle'),
     chatShown: !!document.getElementById('chat-panel'),
+    navCrowded: crowded.includes('nav'),
+    sideBarCrowded: crowded.includes('sideBar'),
     narrow,
   };
 }
 
 const samePage = (a: PageState, b: PageState) =>
-  a.title === b.title && a.navShown === b.navShown && a.sideBarShown === b.sideBarShown && a.sideBarOffered === b.sideBarOffered && a.chatShown === b.chatShown && a.narrow === b.narrow;
+  a.title === b.title && a.navShown === b.navShown && a.sideBarShown === b.sideBarShown && a.sideBarOffered === b.sideBarOffered && a.chatShown === b.chatShown
+  && a.navCrowded === b.navCrowded && a.sideBarCrowded === b.sideBarCrowded && a.narrow === b.narrow;
 
 /** The page's state, kept current as the page changes (the observer batches each turn's changes into one read). */
 function usePageState(): PageState {
-  const [page, setPage] = useState<PageState>({ title: '', navShown: true, sideBarShown: false, sideBarOffered: false, chatShown: false, narrow: false });
+  const [page, setPage] = useState<PageState>({ title: '', navShown: true, sideBarShown: false, sideBarOffered: false, chatShown: false, navCrowded: false, sideBarCrowded: false, narrow: false });
   useLayoutEffect(() => {
     const read = () => {
       const next = readPage();
@@ -57,7 +65,7 @@ function usePageState(): PageState {
     };
     read();
     const observer = new MutationObserver(read);
-    observer.observe(document.getElementById('root') ?? document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+    observer.observe(document.getElementById('root') ?? document.body, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class', 'data-crowded'] });
     return () => observer.disconnect();
   }, []);
   return page;
@@ -114,6 +122,9 @@ function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: SpecIndex | 
   const page = usePageState();
   const { canGoBack, canGoForward } = useHistoryEnds();
   const center = page.title ? `Lathe — ${page.title}` : 'Lathe';
+  // A panel collapsed for space says so on its toggle, which opens it anyway.
+  const navLabel = page.navCrowded ? crowdedLabel('nav') : 'Show or hide the navigation';
+  const sideBarLabel = page.sideBarCrowded ? crowdedLabel('sideBar') : 'Show or hide the side bar';
 
   // While the bar shows, the page lays out under it (DesktopTitleBar.css).
   useLayoutEffect(() => {
@@ -148,16 +159,16 @@ function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: SpecIndex | 
         </Tooltip>
       </div>
       <div className="title-bar-side title-bar-end">
-        <Tooltip label="Show or hide the navigation" command="toggleNav">
-          <Button variant="icon" className={`title-bar-button${page.navShown ? ' is-on' : ''}`} label="Show or hide the navigation" aria-pressed={page.navShown} onClick={() => run('toggleNav')}>
+        <Tooltip label={navLabel} command="toggleNav">
+          <Button variant="icon" className={`title-bar-button${page.navShown ? ' is-on' : ''}${page.navCrowded ? ' is-crowded' : ''}`} label={navLabel} aria-pressed={page.navShown} onClick={() => run('toggleNav')}>
             <Icon name="sidebar-left" size={16} />
           </Button>
         </Tooltip>
-        <Tooltip label="Show or hide the side bar" command="toggleSideBar">
+        <Tooltip label={sideBarLabel} command="toggleSideBar">
           <Button
             variant="icon"
-            className={`title-bar-button${page.sideBarShown ? ' is-on' : ''}`}
-            label="Show or hide the side bar"
+            className={`title-bar-button${page.sideBarShown ? ' is-on' : ''}${page.sideBarCrowded ? ' is-crowded' : ''}`}
+            label={sideBarLabel}
             aria-pressed={page.sideBarShown}
             disabled={!page.sideBarOffered}
             onClick={() => run('toggleSideBar')}

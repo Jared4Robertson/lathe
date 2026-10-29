@@ -15,7 +15,7 @@ import { parseSpecRoute, type SpecIndex, type SpecState } from '../specs/data';
 import { NotFound } from '../specs/SpecPages';
 import { addressOf, HOME_PATH, focusOf, isFocusRoute, STAGE_LABELS, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
 import { HeaderStrip } from './HeaderStrip';
-import { createOpenSpaceStore, useOpenSpaceMeasure } from './openSpace';
+import { createOpenSpaceStore, usePageRoom, useOpenSpaceMeasure, useRoom } from './openSpace';
 import { PageBar, STAGE_COMMANDS } from './PageBar';
 import { SideBar } from './SideBar';
 import { createPeekStore, saveLastSide, SIDE_VIEW_LABELS, sideFor, type SideModeState, type SideView } from './sideBarState';
@@ -156,12 +156,16 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const [drawer, setDrawer] = useState(false);
   const sideBarEl = useRef<HTMLElement>(null);
   const sideBarButton = useRef<HTMLButtonElement>(null);
-  const showing = narrow ? drawer : side.open;
+  // Panels never crowd the page (LA-PAT-APP-UX-R18): the side bar collapses for space first, then
+  // the wiki card; the Reader's choice stays as set, and one they open while it is collapsed is held open.
+  const { crowded, hold } = useRoom();
+  const sideBarCrowded = !narrow && side.open && crowded.has('sideBar');
+  const showing = narrow ? drawer : side.open && !sideBarCrowded;
   const setShowing = useCallback((show: boolean) => {
-    if (narrow) setDrawer(show); else setSide({ open: show });
+    if (narrow) setDrawer(show); else { setSide({ open: show }); hold('sideBar', show); }
     announce(show ? 'Side bar shown' : 'Side bar hidden');
     if (!show) setTimeout(() => sideBarButton.current?.focus(), 0);
-  }, [narrow, setSide, announce]);
+  }, [narrow, setSide, hold, announce]);
   const setSideView = useCallback((view: SideView) => {
     if (view === side.view) return;
     setSide({ view });
@@ -186,12 +190,14 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
   const { graph: settings, setGraph, card, setCard } = useSessionSettings();
   const [sheet, setSheet] = useState(false);
   const cardButton = useRef<HTMLButtonElement>(null);
-  const cardShown = narrow ? sheet : card.open;
+  const cardCrowded = !narrow && card.open && crowded.has('card');
+  const cardShown = narrow ? sheet : card.open && !cardCrowded;
+  usePageRoom(card.open, side.open ? sideBarWidth : null);
   const setCardShown = useCallback((show: boolean) => {
-    if (narrow) setSheet(show); else setCard({ open: show });
+    if (narrow) setSheet(show); else { setCard({ open: show }); hold('card', show); }
     announce(show ? 'Wiki card shown' : 'Wiki card collapsed');
     if (!show) setTimeout(() => cardButton.current?.focus(), 0);
-  }, [narrow, setCard, announce]);
+  }, [narrow, setCard, hold, announce]);
   const collapseCard = useCallback(() => setCardShown(false), [setCardShown]);
   // Made once per width, so the memoized card draws again only for a new page.
   const cardHandle = useMemo(() => (
@@ -358,9 +364,11 @@ function Focused({ index, route, search }: { index: SpecIndex; route: FocusRoute
         onStage={setStage}
         compact={false}
         cardShown={cardShown}
+        cardCrowded={cardCrowded}
         onCard={setCardShown}
         cardButton={cardButton}
         sideBarShown={showing}
+        sideBarCrowded={sideBarCrowded}
         onSideBar={setShowing}
         sideBarButton={sideBarButton}
       />

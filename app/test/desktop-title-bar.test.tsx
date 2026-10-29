@@ -1,6 +1,7 @@
-import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { desktopBridgeStub, openApp, openSideBar } from './helpers';
+import { crowdedLabel } from '../src/views/openSpace';
 import type { Chrome } from '../src/shell/desktopChrome';
 
 // The desktop app's own title bar (LA-PLT-UC14): drawn only in the desktop shell, with back and
@@ -107,6 +108,11 @@ describe('desktop title bar', () => {
     expect(screen.queryByRole('complementary', { name: 'Side bar' })).toBeNull();
     fireEvent.click(sideBar);
     await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toBeInTheDocument());
+
+    // A window too narrow for the side bar collapses it for space (LA-PAT-APP-UX-R18): the toggle says so.
+    act(() => { window.innerWidth = 1100; window.dispatchEvent(new Event('resize')); });
+    await waitFor(() => expect(bar().getByRole('button', { name: crowdedLabel('sideBar') })).toHaveAttribute('aria-pressed', 'false'));
+    expect(bar().getByRole('button', { name: crowdedLabel('sideBar') })).toHaveClass('is-crowded');
   });
 
   it('LA-V67-R06-T03 The window\'s chrome follows the theme: setChrome gets its shell and ink as hex colors', async () => {

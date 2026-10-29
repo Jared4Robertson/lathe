@@ -43,8 +43,8 @@ async function expectFocusInOpenSpace(page: Page, what: string) {
 const stageReady = (page: Page) => page.locator(BOXES).first().waitFor({ state: 'attached' });
 
 test.describe('the stage and its panels', () => {
-  test('LA-V61-R29-T01 at 1024 px with every panel open, the panels never overlap and the stage spans the window behind them', async ({ page }) => {
-    await page.setViewportSize({ width: 1024, height: 700 });
+  test('LA-V61-R29-T01 at 1440 px with every panel open, the panels never overlap and the stage spans the window behind them', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 700 });
     await openPage(page, `${AGGREGATE}?stage=erd`, STRIP);
     await page.locator(SIDE_BAR).waitFor();
     // The narrow strip still names the focus: its title keeps room, the trail giving way first (LA-V96-R09).
@@ -55,8 +55,42 @@ test.describe('the stage and its panels', () => {
     expect(side!.x, 'the side bar starts after the card ends').toBeGreaterThanOrEqual(card!.x + card!.width);
     expect(bar!.x, 'the page bar starts after the nav').toBeGreaterThanOrEqual(nav!.x + nav!.width);
     expect(bar!.x + bar!.width, 'the page bar ends before the side bar').toBeLessThanOrEqual(side!.x);
-    expect(side!.x + side!.width).toBeLessThanOrEqual(1024);
-    expect(stage, 'the stage fills the window behind the panels').toEqual({ x: 0, y: 0, width: 1024, height: 700 });
+    expect(side!.x + side!.width).toBeLessThanOrEqual(1440);
+    expect(stage, 'the stage fills the window behind the panels').toEqual({ x: 0, y: 0, width: 1440, height: 700 });
+  });
+
+  // The panels never crowd the page (LA-PAT-APP-UX-R18): as the window narrows the side bar collapses for space first, then the wiki
+  // card, then the nav; the card never gets narrower than its minimum, the stage keeps its own, and no title breaks mid-word.
+  test('LA-V96-R19-T02 panels collapse for space in order, the card never under 360 px, and come back as the window widens', async ({ page }) => {
+    const crowded = () => page.locator('.app').getAttribute('data-crowded');
+    await page.setViewportSize({ width: 1920, height: 900 });
+    await openPage(page, `${RECORD}?stage=graph`, STRIP);
+    await page.locator(SIDE_BAR).waitFor();
+    expect(await crowded()).toBeNull();
+    for (const [width, expected] of [[1440, null], [1100, 'sideBar'], [960, 'sideBar card'], [1920, null]] as const) {
+      await page.setViewportSize({ width, height: 900 });
+      await expect.poll(crowded, { message: `collapsed for space at ${width} px` }).toBe(expected);
+      const card = await page.locator(CARD).boundingBox();
+      if (card) expect(card.width, `the card at ${width} px`).toBeGreaterThanOrEqual(359);
+      const open = await openSpace(page);
+      expect(open.right - open.left, `the open space at ${width} px`).toBeGreaterThanOrEqual(299);
+    }
+    // The card's title wraps on whole words: no line of it ends inside a word.
+    const title = page.locator(`${CARD} .wiki-panel-title h2`);
+    const broken = await title.evaluate((h) => {
+      const text = h.textContent ?? '';
+      const range = document.createRange();
+      const node = h.firstChild;
+      if (!node || node.nodeType !== Node.TEXT_NODE) return [];
+      const tops: number[] = [];
+      for (let i = 0; i < text.length; i++) {
+        range.setStart(node, i);
+        range.setEnd(node, i + 1);
+        tops.push(range.getBoundingClientRect().top);
+      }
+      return text.split('').filter((c, i) => i > 0 && tops[i] > tops[i - 1] + 1 && /\w/.test(c) && /\w/.test(text[i - 1]));
+    });
+    expect(broken, 'no line break inside a word').toEqual([]);
   });
 
   test('LA-V61-R29-T01 switch the stage: only the stage changes', async ({ page }) => {

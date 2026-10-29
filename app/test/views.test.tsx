@@ -425,9 +425,9 @@ describe('the panels\' handles', () => {
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const cardHandle = screen.getByRole('separator', { name: 'Resize the wiki card' });
     fireEvent.keyDown(cardHandle, { key: 'Home' });
-    expect(cardHandle).toHaveAttribute('aria-valuenow', '300');
+    expect(cardHandle).toHaveAttribute('aria-valuenow', '360');
     fireEvent.keyDown(cardHandle, { key: 'ArrowRight' });
-    expect(cardHandle).toHaveAttribute('aria-valuenow', '316');
+    expect(cardHandle).toHaveAttribute('aria-valuenow', '376');
     fireEvent.keyDown(cardHandle, { key: 'End' });
     expect(cardHandle).toHaveAttribute('aria-valuenow', '900');
     // The side bar sits after its handle: Left grows it.

@@ -34,6 +34,8 @@ beforeEach(() => {
   if (typeof window === 'undefined') return; // server tests run in node
   vi.stubGlobal('EventSource', FakeEventSource);
   window.scrollTo = () => {};
+  // A wide desktop window (jsdom's own is 1024 px), so no panel collapses for space unless a test narrows it.
+  Object.defineProperty(window, 'innerWidth', { configurable: true, writable: true, value: 1920 });
   window.history.replaceState(null, '', '/');
   // Remembered choices (view, nav, sideBar, open rows) start fresh in every test.
   window.localStorage.clear();

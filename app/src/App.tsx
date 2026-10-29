@@ -17,7 +17,8 @@ import { useNarrow } from './shell/useNarrow';
 import { FocusPage } from './views/FocusPage';
 import { ChatPanel } from './chat/ChatPanel';
 import { useAppRequests } from './chat/appRequests';
-import { useSessionSettings } from './graph/settings';
+import { CARD_MIN, CHAT_DEFAULT, useSessionSettings } from './graph/settings';
+import { crowdedLabel, RoomContext, STAGE_MIN, useRoomState } from './views/openSpace';
 import { desktopBridge } from './shell/desktopChrome';
 import { checksPathOf, HOME_PATH, isFocusRoute } from './views/address';
 import { ThemeProvider } from './theme/ThemeProvider';
@@ -40,6 +41,8 @@ export default function App() {
 const NAV_KEY = 'lathe:nav-collapsed';
 /** The nav's width (the space rail and the panel), its limits, and below what a drag collapses it to the rail. */
 const NAV_WIDTH = { key: 'lathe:nav-width', fallback: 336, min: 256, max: 560, collapseBelow: 180 };
+/** The nav collapsed to its rail, in px. */
+const NAV_RAIL = 56;
 
 /** The app shell: the nav, the page for the address, and the commands that work everywhere. */
 function Shell() {
@@ -70,18 +73,33 @@ function Shell() {
   const closeDrawer = useCallback(() => { setDrawerOpen(false); setTimeout(() => menuButton.current?.focus(), 0); }, []);
   // An opened drawer takes focus (the quick find); closing it gives focus back to the menu button.
   useEffect(() => { if (narrow && drawerOpen) setTimeout(() => findRef.current?.focus(), 0); }, [narrow, drawerOpen]);
+  // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Its open state and width are the session's setting.
+  const chatBridge = narrow ? null : desktopBridge()?.chat ?? null;
+  const { chat, setChat } = useSessionSettings();
+  const chatShown = !!chatBridge && chat.open;
+  // Panels never crowd the page (LA-PAT-APP-UX-R18): the nav collapses to its rail for space last,
+  // after the page's side bar and wiki card; the Reader's own choice (`collapsed`) stays as set.
+  const room = useRoomState({ nav: { open: !collapsed, width: navWidth, rail: NAV_RAIL }, chat: chatShown ? chat.width ?? CHAT_DEFAULT : null }, narrow);
+  const { hold } = room;
+  const navCrowded = room.crowded.has('nav');
+  const navCollapsed = collapsed || navCrowded;
+  /** Opens or collapses the nav as the Reader asks; one opened while collapsed for space is held open. */
+  const setNavOpen = useCallback((open: boolean) => {
+    setCollapsed(!open);
+    hold('nav', open);
+  }, [setCollapsed, hold]);
   const showNav = useCallback(() => {
     if (narrow) setDrawerOpen(true);
-    else if (collapsed) setCollapsed(false);
-  }, [narrow, collapsed, setCollapsed]);
+    else if (navCollapsed) setNavOpen(true);
+  }, [narrow, navCollapsed, setNavOpen]);
   const spaces = useSpaceState(spec.index, path, search);
   // Every page inside a space, and the nav, read the current space's index, never the whole workspace.
   const spaceSpec = useMemo((): SpecState => ({ ...spec, index: spaces.index }), [spec, spaces.index]);
 
   useCommand('toggleNav', () => {
     if (narrow) { if (drawerOpen) closeDrawer(); else setDrawerOpen(true); announce(drawerOpen ? 'Navigation closed' : 'Navigation opened'); return; }
-    setCollapsed(!collapsed);
-    announce(collapsed ? 'Navigation expanded' : 'Navigation collapsed');
+    setNavOpen(navCollapsed);
+    announce(navCollapsed ? 'Navigation expanded' : 'Navigation collapsed');
   });
   // On a phone quick find is a full-screen sheet of its own, opened from the top bar.
   const [findOpen, setFindOpen] = useState(false);
@@ -108,10 +126,6 @@ function Shell() {
     if (href && href.startsWith('/')) navigate(href);
     else announce('Focus a link first, then press F12 to open its record.');
   });
-  // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Its open state and width are the session's setting.
-  const chatBridge = narrow ? null : desktopBridge()?.chat ?? null;
-  const { chat, setChat } = useSessionSettings();
-  const chatShown = !!chatBridge && chat.open;
   const chatInput = useRef<HTMLTextAreaElement>(null);
   const chatPanel = () => document.getElementById('chat-panel');
   useCommand('toggleChat', () => {
@@ -155,11 +169,16 @@ function Shell() {
   return (
     <WriterProvider value={writer}>
     <SpacesProvider value={spaces}>
+    <RoomContext.Provider value={room}>
     <SpaceCommands spaces={spaces} />
     <DesktopTitleBar index={spaces.index} />
     <div
-      className={`app${collapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}${chatShown ? ' with-chat' : ''}`}
-      style={{ '--nav-width': `${navWidth}px`, ...(chat.width !== null ? { '--chat-width': `${chat.width}px` } : {}) } as CSSProperties}
+      className={`app${navCollapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}${chatShown ? ' with-chat' : ''}`}
+      style={{
+        '--nav-width': `${navWidth}px`, '--rail-width': `${NAV_RAIL}px`, '--card-min': `${CARD_MIN}px`, '--stage-min': `${STAGE_MIN}px`,
+        ...(chat.width !== null ? { '--chat-width': `${chat.width}px` } : {}),
+      } as CSSProperties}
+      data-crowded={room.crowded.size > 0 ? [...room.crowded].join(' ') : undefined}
       data-specs={spec.index ? 'ready' : spec.error ? 'error' : 'loading'}
     >
       <a href="#main" className="skip-link">Skip to the page</a>
@@ -179,8 +198,9 @@ function Shell() {
           ref={navRef}
           spec={spaceSpec}
           path={path}
-          collapsed={collapsed}
-          onToggleCollapsed={() => setCollapsed(!collapsed)}
+          collapsed={navCollapsed}
+          expandLabel={navCrowded ? crowdedLabel('nav') : undefined}
+          onToggleCollapsed={() => setNavOpen(navCollapsed)}
           drawer={narrow}
           drawerOpen={drawerOpen}
           onCloseDrawer={closeDrawer}
@@ -191,16 +211,16 @@ function Shell() {
         <ResizeHandle
           className="app-nav-handle"
           label="Resize the navigation"
-          value={collapsed ? NAV_WIDTH.min : navWidth}
+          value={navCollapsed ? NAV_WIDTH.min : navWidth}
           min={NAV_WIDTH.min}
           max={NAV_WIDTH.max}
           step={16}
           bigStep={64}
           valueAt={(x) => x - (navRef.current?.getBoundingClientRect().left ?? 0)}
-          onChange={(w) => { setNavWidth(w); if (collapsed) setCollapsed(false); }}
-          onReset={() => { resetNavWidth(); setCollapsed(false); }}
+          onChange={(w) => { setNavWidth(w); if (navCollapsed) setNavOpen(true); }}
+          onReset={() => { resetNavWidth(); setNavOpen(true); }}
           collapseBelow={NAV_WIDTH.collapseBelow}
-          onCollapse={() => { if (!collapsed) setCollapsed(true); }}
+          onCollapse={() => { if (!navCollapsed) setNavOpen(false); }}
         />
       )}
       {page}
@@ -215,6 +235,7 @@ function Shell() {
         />
       )}
     </div>
+    </RoomContext.Provider>
     </SpacesProvider>
     </WriterProvider>
   );
