@@ -191,15 +191,16 @@ describe('the Trace stage', () => {
   });
 
   it.each(['LA-PAT-APP-UX-R17-T02', 'LA-V98-R08-T01'])('%s A design, build or test record shows the rows that hold it, marked; one nothing traces to says so above the matrix around it; any other record shows the matrix around it', async () => {
-    // A command a chain holds: the rows of each obligation whose chain holds it, the command marked in its cell.
+    // A command three chains hold: the requirement a step invokes it for, the domain service it calls and the
+    // specification it checks; a row for each, the command marked in its cell.
     await openApp('/P-D-CMD01?stage=trace', served());
     let table = await matrix();
-    expect(within(table).getAllByRole('rowheader').map((h) => h.querySelector('.trace-id')!.textContent)).toEqual(['P-D-UC01-R01']);
+    expect(within(table).getAllByRole('rowheader').map((h) => h.querySelector('.trace-id')!.textContent).sort()).toEqual(['P-D-DS01', 'P-D-SP01', 'P-D-UC01-R01']);
     const marked = table.querySelector('a[aria-current="page"]')!;
     expect(marked).toHaveClass('is-focus');
     expect(marked.querySelector('.trace-id')).toHaveTextContent('P-D-CMD01');
     expect(traceStage()).toHaveTextContent('Each requirement or rule whose chain holds this record');
-    await waitFor(() => expect(counts()).toHaveTextContent('1 obligation holds this record'));
+    await waitFor(() => expect(counts()).toHaveTextContent('3 obligations hold this record'));
     // A test is held by the obligation it proves.
     await openApp('/P-D-UC01-R01-T01?stage=trace', served());
     table = await matrix();

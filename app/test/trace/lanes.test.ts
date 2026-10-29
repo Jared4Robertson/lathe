@@ -106,11 +106,12 @@ describe('the Trace stage\'s picture', () => {
 
   it('LA-V98-R08-T02 A held record is drawn as the focus in each lane that holds it; an untraced one in the Untraced lane, in the frame', () => {
     const index = indexOf(modelWorkspace());
-    // A command a chain holds: only its obligation's lane, the command in the design column.
+    // A command chains hold: only the lanes of the obligations that hold it (the requirement a step invokes it for,
+    // the domain service it calls, the specification it checks), the command in each one's design column.
     const held = tracePicture(index, 'P-D-CMD01');
     expect(held.shape).toBe('rows');
-    expect(held.lanes.map((l) => l.obligation)).toEqual(['P-D-UC01-R01']);
-    expect(inColumn(held, 'P-D-UC01-R01', 'design')).toContain('P-D-CMD01');
+    expect(held.lanes.map((l) => l.obligation).sort()).toEqual(['P-D-DS01', 'P-D-SP01', 'P-D-UC01-R01']);
+    for (const lane of ['P-D-DS01', 'P-D-SP01', 'P-D-UC01-R01']) expect(inColumn(held, lane, 'design'), lane).toContain('P-D-CMD01');
     // A command nothing traces to: its aggregate's lanes, and the Untraced lane holding it.
     const untraced = tracePicture(index, 'P-D-CMD02');
     expect(untraced).toMatchObject({ shape: 'context', untraced: true, scope: 'P-D-A3' });
