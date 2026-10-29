@@ -131,7 +131,7 @@ describe('Lathe on a phone', () => {
     await waitFor(() => expect(pagesButton()).toHaveAccessibleName('Open pages: 1'));
   });
 
-  it('LA-V61-R22-T01 Quick find on a phone is a full-screen sheet: the results list under the box, choosing one goes there, Escape closes it and focus returns', async () => {
+  it('LA-V61-R22-T01 Quick find on a phone is a full-width sheet at the top: the results list under the box, choosing one goes there, Close or Escape closes it and focus returns', async () => {
     phone();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -143,7 +143,7 @@ describe('Lathe on a phone', () => {
     await waitFor(() => expect(box).toHaveFocus());
     fireEvent.change(box, { target: { value: 'loan desk' } });
     const results = within(sheet).getByRole('listbox', { name: 'Quick find results' });
-    expect(results).toHaveClass('is-inline');
+    expect(within(sheet).getByRole('button', { name: 'Close' })).toBeInTheDocument();
     fireEvent.mouseDown(within(results).getByRole('option', { name: /Loan desk/ }));
     expect(window.location.pathname).toBe('/P-V01');
     await waitFor(() => expect(screen.queryByRole('dialog', { name: 'Quick find' })).toBeNull());

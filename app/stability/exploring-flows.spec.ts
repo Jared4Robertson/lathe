@@ -26,10 +26,10 @@ async function graphReady(page: Page) {
 /** Opens quick find and the record whose ID is typed. */
 async function quickFind(page: Page, id: string) {
   await page.keyboard.press('Control+k');
-  const find = page.locator('.quick-find input');
+  const find = page.locator('.quick-open input');
   await expect(find).toBeFocused();
   await find.fill(id);
-  await page.locator('.quick-find-results li').first().waitFor();
+  await page.locator('.quick-open .palette-list li').first().waitFor();
   await page.keyboard.press('Enter');
   await page.waitForURL((u) => u.pathname === `/${id}`);
 }
@@ -263,7 +263,7 @@ test.describe('Exploring flows', () => {
     await page.keyboard.press('Alt+1');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03');
     await page.keyboard.press('Control+Shift+p');
-    await page.locator('.dialog-search').fill('Switch to');
+    await page.locator('.quick-open input').fill('>Switch to');
     await expect(page.locator('.palette-list')).toContainText('Lathe');
     await page.keyboard.press('Escape');
     // Find a record in the space, and open its Checks.
