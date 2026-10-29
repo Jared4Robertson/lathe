@@ -416,7 +416,7 @@ const PARITY: { feature: string; run: (page: Page, layout: Layout) => Promise<vo
     },
   },
   {
-    feature: 'once the graph has focus, the plain arrow that steps out in this layout (Left in Tree, Up in Nested and Voronoi) steps out to the parent',
+    feature: 'from the canvas, the plain arrow that steps out in this layout (Left in Tree, Up in Nested and Voronoi) steps out to the parent',
     run: async (page, layout) => {
       const here = path(page);
       // The graph stage takes focus as a click on its canvas gives it.

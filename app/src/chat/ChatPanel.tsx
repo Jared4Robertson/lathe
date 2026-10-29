@@ -292,7 +292,7 @@ function ChatLog({ items, turns, index, answer }: { items: ChatItem[]; turns: Tu
   };
 
   return (
-    <div ref={log} className="chat-log" role="log" aria-label="Conversation" aria-live="off" onScroll={onScroll} onKeyDown={onKey}>
+    <div ref={log} className="chat-log" role="log" data-arrows="own" aria-label="Conversation" aria-live="off" onScroll={onScroll} onKeyDown={onKey}>
       {items.length === 0 && <p className="hint chat-empty">Ask Claude about this product, or to change it. It works through Lathe's tools, and you see each change here.</p>}
       {items.map((item, n) => (
         <ItemWithChanges key={item.id} item={item} index={index} answer={answer} tabIndex={item.id === focusable ? 0 : -1} onFocus={setActive} turn={blocks.get(n)} />

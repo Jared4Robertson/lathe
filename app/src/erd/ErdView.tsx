@@ -11,6 +11,7 @@ import { layoutErd } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
 import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
+import { useStepWalk } from '../graph/steps';
 
 // The ERD stage: the entity-relationship diagram of a domain (each aggregate a boundary around its
 // entities) or of an aggregate (with the aggregates it references, or that reference it, faded around
@@ -124,6 +125,9 @@ export const erdCounts = (erd: Erd) => {
 export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space }: ErdViewProps) {
   const erd = useMemo(() => erdFor(index, focus), [index, focus]);
   useLayoutEffect(() => { onCounts?.(erd ? erdCounts(erd) : ''); }, [erd, onCounts]);
+  // The plain arrows step the focus through the tree from anywhere, by the Tree view's keys (LA-V93-R19): the diagram,
+  // like the Tree, draws what a record holds beside it.
+  useStepWalk(index, focus, 'tree', onNavigate);
   if (!erd) return <p className="hint erd-missing">There's no record or group <code>{focus}</code>.</p>;
   const scope = index.byId.get(erd.scope);
   const caption = erd.level === 'aggregate'
@@ -188,6 +192,7 @@ export function ErdKey({ erd, relations = [] }: { erd: Erd; relations?: readonly
       role="group"
       aria-label="Key"
       tabIndex={0}
+      data-arrows="own"
       onKeyDown={(e) => { if (e.key === 'Escape' && open) { e.stopPropagation(); setOpen(false); } }}
     >
       {/* In a narrow pane the key is one bar: this button opens the whole key over the canvas, moving nothing. */}
