@@ -6,11 +6,14 @@ import { createServer } from 'node:http';
 import type { AddressInfo } from 'node:net';
 import path from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
+import { ADD_DOMAIN } from '../../../src/authoring/domain/commands/add-domain.ts';
 import { ADD_REPOSITORY } from '../../../src/authoring/domain/commands/add-repository.ts';
+import { ADD_TERM } from '../../../src/authoring/domain/commands/add-term.ts';
 import { CHANGE_CAPABILITY } from '../../../src/authoring/domain/commands/change-capability.ts';
 import { CHANGE_DOMAIN } from '../../../src/authoring/domain/commands/change-domain.ts';
 import { CHANGE_REPOSITORY } from '../../../src/authoring/domain/commands/change-repository.ts';
 import { CHANGE_SERVICE } from '../../../src/authoring/domain/commands/change-service.ts';
+import { CHANGE_TERM } from '../../../src/authoring/domain/commands/change-term.ts';
 import { REMOVE_CAPABILITY } from '../../../src/authoring/domain/commands/remove-capability.ts';
 import { REMOVE_DOMAIN } from '../../../src/authoring/domain/commands/remove-domain.ts';
 import { REMOVE_DOMAIN_SERVICE } from '../../../src/authoring/domain/commands/remove-domain-service.ts';
@@ -23,7 +26,7 @@ import { runCommand, runQuery } from '../../../src/platform/commands/run.ts';
 import { StoreError } from '../../../src/platform/data/problems.ts';
 import { openStore, type Store } from '../../../src/platform/data/store.ts';
 import { everyKind } from '../../store/fixture.ts';
-import { writeData } from '../../helpers.ts';
+import { refusals, withTable, writeData } from '../../helpers.ts';
 import { lendingDomain } from './data-set.ts';
 
 const open: Store[] = [];
@@ -127,5 +130,64 @@ describe('LA-AUT-UC02-R06-T02 each Domain command (LA-AUT-A4) changes one domain
       await closeStores(root);
       await new Promise((resolve) => server.close(resolve));
     }
+  });
+});
+
+/** The lending domain with a second domain, Catalog, beside it, and terms added with the Domain commands. */
+async function withTerms(terms: { id: string; title: string; builds_on?: string[] }[]): Promise<Store> {
+  const store = await storeOf();
+  await runCommand(store, ADD_DOMAIN, { id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library has.' });
+  for (const term of terms) await runCommand(store, ADD_TERM, { domain_id: term.id.startsWith('TL-CAT') ? 'TL-CAT' : 'TL-LEND', meaning: `What ${term.title} means.`, ...term });
+  return store;
+}
+
+describe('LA-AUT-INV60-T a term never builds on itself: a loop of builds_on links is refused, naming it', () => {
+  it('refuses Change term closing a loop, inside a domain and through another, naming it by title from its lowest ID, and changes no file', async () => {
+    const store = await withTerms([
+      { id: 'TL-LEND-TM02', title: 'Entity' },
+      { id: 'TL-LEND-TM03', title: 'Aggregate', builds_on: ['TL-LEND-TM02'] },
+      { id: 'TL-CAT-TM01', title: 'Tool', builds_on: ['TL-LEND-TM03'] },
+    ]);
+    const before = fileOf(store, 'builds_on');
+    expect((await refusal(store, CHANGE_TERM, { id: 'TL-LEND-TM02', builds_on: ['TL-LEND-TM03'] })).problems).toEqual([
+      expect.objectContaining({ rule: 'term-builds-on-itself', message: 'TL-LEND-TM02 builds on itself: Entity → Aggregate → Entity; define the lower term in plain words, without the term it leads back to' }),
+    ]);
+    expect((await refusal(store, CHANGE_TERM, { id: 'TL-LEND-TM02', builds_on: ['TL-CAT-TM01'] })).problems).toEqual([
+      expect.objectContaining({ rule: 'term-builds-on-itself', message: expect.stringMatching(/^TL-CAT-TM01 builds on itself: Tool → Aggregate → Entity → Tool;/) }),
+    ]);
+    expect(fileOf(store, 'builds_on')).toBe(before);
+    // A link down the chain is no loop.
+    expect((await runCommand(store, CHANGE_TERM, { id: 'TL-LEND-TM02', builds_on: ['TL-LEND-TM01'] })).tables).toEqual(['builds_on']);
+  });
+
+  it('refuses Add term building on itself', async () => {
+    const store = await storeOf();
+    const problems = (await refusal(store, ADD_TERM, { id: 'TL-LEND-TM02', title: 'Member', domain_id: 'TL-LEND', meaning: 'A member.', builds_on: ['TL-LEND-TM02'] })).problems;
+    expect(problems.map((p) => p.rule)).toContain('term-builds-on-itself');
+    expect(problems.find((p) => p.rule === 'term-builds-on-itself')?.message).toMatch(/^TL-LEND-TM02 builds on itself: Member → Member;/);
+  });
+
+  it('refuses data holding a loop on load, naming it once', async () => {
+    const data = withTable(
+      { ...everyKind(), term: [...everyKind().term, { id: 'TL-LEND-TM02', title: 'Tool', domain_id: 'TL-LEND', meaning: 'A tool on loan.' }] },
+      'builds_on',
+      [{ source_id: 'TL-LEND-TM01', target_id: 'TL-LEND-TM02' }, { source_id: 'TL-LEND-TM02', target_id: 'TL-LEND-TM01' }],
+    );
+    expect(await refusals(data)).toEqual([expect.objectContaining({ rule: 'term-builds-on-itself', message: expect.stringMatching(/^TL-LEND-TM01 builds on itself: Loan → Tool → Loan;/) })]);
+  });
+});
+
+describe('LA-STD-MODELING-R12-T02 a domain\'s glossary lists each term after every term it builds on, otherwise by title', () => {
+  it('reads the terms bottom-up, through a term of another domain, each with the terms it builds on', async () => {
+    const store = await withTerms([
+      { id: 'TL-LEND-TM02', title: 'Zebra' },
+      { id: 'TL-LEND-TM03', title: 'Apple', builds_on: ['TL-LEND-TM02'] },
+      { id: 'TL-LEND-TM04', title: 'Yak' },
+      { id: 'TL-CAT-TM01', title: 'Banana', builds_on: ['TL-LEND-TM04'] },
+      { id: 'TL-LEND-TM05', title: 'Cherry', builds_on: ['TL-CAT-TM01'] },
+    ]);
+    const { terms } = runQuery(store, GET_DOMAIN, { id: 'TL-LEND' }) as ReturnType<typeof GET_DOMAIN.run>;
+    expect(terms.map((t) => t.term.title)).toEqual(['Loan', 'Yak', 'Cherry', 'Zebra', 'Apple']);
+    expect(terms.find((t) => t.term.title === 'Cherry')?.buildsOn).toEqual(['TL-CAT-TM01']);
   });
 });

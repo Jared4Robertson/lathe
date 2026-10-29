@@ -25,6 +25,6 @@ export const REMOVE_TERM: CommandDefinition<RemoveTerm> = {
 export function removeTerm(tx: Transaction, input: RemoveTerm): void {
   const domains = new DomainRepository(tx);
   const domain = domains.loadHolding('term', input.id) ?? tx.refuse('missing', `there is no term ${input.id}`);
-  domain.terms = domain.terms.filter((x) => x.id !== input.id);
+  domain.terms = domain.terms.filter((x) => x.row.id !== input.id);
   domains.save(domain);
 }
