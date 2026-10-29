@@ -132,6 +132,13 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
   // and the checks then hold for every slice that has a queries.ts.
   const READ_MODEL_SLICES: string[] = [
     'lathe/src/authoring/use-case',
+    'lathe/src/authoring/view',
+    'lathe/src/authoring/endpoint',
+    'lathe/src/authoring/integration',
+    'lathe/src/authoring/ui-component',
+    'lathe/src/checking/check',
+    'lathe/src/checking/product-setting',
+    'lathe/src/traceability/pattern-following',
   ];
   const files = sources();
   const file = (name: string) => files.find((f) => f.file === name);

@@ -53,6 +53,16 @@
 {"read_model_id":"LA-AUT-RM30","position":3,"name":"Links","meaning":"The aggregates it reads, the domain services it calls and the events that feed it.","type":"text","required":false}
 {"read_model_id":"LA-AUT-RM30","position":4,"name":"Queries","meaning":"Its queries, each with the specifications it selects by, the domain services it calls and its handler.","type":"text","required":false}
 {"read_model_id":"LA-AUT-RM30","position":5,"name":"Projection","meaning":"Its projection, if written, with the standard rules it meets and the packages it uses.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM32","position":1,"name":"View","meaning":"The view's ID, title, route, description and notes.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM32","position":2,"name":"Requirements","meaning":"Its view requirements, each with its view tests and the test data sets each starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM33","position":1,"name":"Endpoint","meaning":"The endpoint's ID, title, method, route, description and notes, and the command or query it exposes.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM33","position":2,"name":"Handler","meaning":"Its endpoint handler, with the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM33","position":3,"name":"Requirements","meaning":"Its API requirements, each with its endpoint tests and the test data sets each starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM34","position":1,"name":"Integration","meaning":"The integration's ID, title, system and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM34","position":2,"name":"Adapter","meaning":"Its adapter, with the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM34","position":3,"name":"Tests","meaning":"Its integration tests, with the test data sets each starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM35","position":1,"name":"UI component","meaning":"The UI component's ID, title, file and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM35","position":2,"name":"Renders","meaning":"The views it renders, the standard rules it meets and the packages it uses.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM36","position":1,"name":"Outcome","meaning":"The outcome's row.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM36","position":2,"name":"Measured by","meaning":"The tests and records that measure it.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM37","position":1,"name":"Test data set","meaning":"The test data set's row: its ID, title, domain, environment, accounts, records, prepare, reset, file and description.","type_value_object_id":"LA-VO01","required":true}
@@ -73,6 +83,10 @@
 {"read_model_id":"LA-CHK-RM01","position":2,"name":"Severity","meaning":"`error` or `warning`: whether the data is broken or has work still to do.","type":"text","required":true,"example":"error"}
 {"read_model_id":"LA-CHK-RM01","position":3,"name":"Record","meaning":"The ID of the record it is about; none for the whole workspace.","type":"text","required":false,"example":"TL-VO05"}
 {"read_model_id":"LA-CHK-RM01","position":4,"name":"Message","meaning":"What is wrong, naming the IDs involved, and the fix.","type":"text","required":true,"example":"Value object TL-VO05 is used by no field. Type a field with it, or remove it."}
+{"read_model_id":"LA-CHK-RM10","position":1,"name":"Name","meaning":"The check's name.","type":"text","required":true}
+{"read_model_id":"LA-CHK-RM10","position":2,"name":"Check","meaning":"Its product, place in the run order, severity, summary, explanation, query and kinds.","type":"text","required":true}
+{"read_model_id":"LA-CHK-RM11","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-CHK-RM11","position":2,"name":"Limits","meaning":"Its children limit and entities limit, and whether it set them or takes the defaults.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM01","position":1,"name":"Product","meaning":"The space's product.","type_aggregate_id":"LA-AUT-A1","required":true}
 {"read_model_id":"LA-EXP-RM01","position":2,"name":"Record","meaning":"A record's ID.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM01","position":3,"name":"Kind","meaning":"Its kind.","type":"text","required":true}
@@ -182,3 +196,6 @@
 {"read_model_id":"LA-TRC-RM07","position":4,"name":"Part","meaning":"What is expected: table, column, primary, unique or foreign.","type":"text","required":true,"example":"column"}
 {"read_model_id":"LA-TRC-RM07","position":5,"name":"Expected","meaning":"The table's name, the column, or the key's columns and target table.","type":"text","required":true,"example":"found"}
 {"read_model_id":"LA-TRC-RM07","position":6,"name":"Found","meaning":"Whether the file defines it.","type":"yes/no","required":true,"example":"yes"}
+{"read_model_id":"LA-TRC-RM10","position":1,"name":"Follower","meaning":"The domain or use case that follows the pattern.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-TRC-RM10","position":2,"name":"Pattern","meaning":"The pattern it follows.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-TRC-RM10","position":3,"name":"Settings","meaning":"Each setting with its value or not-applicable reason.","type":"text","required":true}
