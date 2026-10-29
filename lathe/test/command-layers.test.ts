@@ -67,7 +67,7 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     expect(drafting.sort()).toEqual(['lathe/src/platform/data/data-files.ts', 'lathe/src/platform/data/generic-write.ts']);
   });
 
-  it('LA-STD-PRINCIPLES-R02-T01 matches each command definition to its command, handler, endpoint and CLI records, one to one', () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R01-T01 LA-STD-PRINCIPLES-R02-T01 matches each command definition to its command, handler, endpoint and CLI records, one to one', () => {
     const handlerFiles = files.filter((f) => isHandler(f.file));
     const commands = new Map(data('command').map((r) => [r.id, r]));
     const handlers = new Map(data('command_handler').map((r) => [r.command_id, r]));

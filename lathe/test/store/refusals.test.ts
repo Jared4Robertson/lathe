@@ -174,7 +174,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     // A link from it would cross products too, so the prefix rule is the one reported for a lone record.
   });
 
-  it("LA-PAT-RECORD-IDENTITY-R02-T01 refuses an ID that does not start with its parent's or domain's ID", async () => {
+  it("LA-PAT-RECORD-IDENTITY-R02-T01 LA-PAT-RECORD-IDENTITY-R02-T04 LA-PAT-RECORD-IDENTITY-R02-T03 LA-PAT-RECORD-IDENTITY-R02-T02 refuses an ID that does not start with its parent's or domain's ID", async () => {
     const problems = await refusal(adding({ uc_requirement: [{ id: 'TL-LEND-UC09-R01', title: 'Lost', use_case_id: 'TL-LEND-UC01', statement: 'x' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', message: 'TL-LEND-UC09-R01 is a UC requirement under TL-LEND-UC01, so its ID starts with TL-LEND-UC01-' })]);
   });
