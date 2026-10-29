@@ -29,6 +29,12 @@ export const BUDGETS = {
   recenterFrameMs: 100,
   /** How many frames of one re-center at depth 3 may take more than 20 ms (a dropped frame or more): the rest glide at 60 Hz. */
   recenterSlowFrames: 3,
+  /**
+   * From the key press that switches a product's page to the ERD stage until its map is drawn and
+   * framed, the first time (LA-V94-R08): the ERD's code, ELK and the one layout of the product's
+   * map, in ELK's worker, included. Every later focus reads that layout and only moves the camera.
+   */
+  erdMapFirstFrameMs: 1000,
   /** The longest frame while dragging a product's whole Trace stage (LA-V98-R06): each frame draws only what is in view, at most 260 boxes. */
   traceDragFrameMs: 50,
 } as const;

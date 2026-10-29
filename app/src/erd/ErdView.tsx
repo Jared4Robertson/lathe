@@ -1,6 +1,6 @@
 // The ERD stage of any address, /<id>?stage=erd (LA-V94).
 import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
-import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
+import { Background, Controls, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
 import { useCameraGestures } from '../graph/gestures';
@@ -72,6 +72,34 @@ const kindLine = (box: ErdBox) => `${BOX_KIND[box.kind]}${box.empty ? ` · no ${
 
 /** A faded box's or line's strength, for its style. */
 const strengthStyle = (strength: number) => ({ '--erd-strength': String(strength) }) as CSSProperties;
+
+/** Below this zoom a region's head is too small to read, and its name shows over it at a readable size. */
+export const REGION_LABEL_BELOW = 0.6;
+
+interface Region { id: string; title: string; rect: Rect; strength: number }
+
+/**
+ * Each domain's name at the top left of its region when the map is zoomed out (the overview's level
+ * of detail), at one size on screen above everything drawn, so every region reads by name at any
+ * zoom. It follows the camera, fades with its region, and lets the pointer through.
+ */
+function RegionLabels({ regions }: { regions: readonly Region[] }) {
+  const [x, y, zoom] = useStore((s) => s.transform);
+  if (zoom >= REGION_LABEL_BELOW) return null;
+  return (
+    <div className="erd-region-labels" aria-hidden="true">
+      {regions.map((r) => (
+        <span
+          key={r.id}
+          className="erd-region-label"
+          style={{ left: x + r.rect.x * zoom + 4, top: y + r.rect.y * zoom + 4, maxWidth: Math.max(140, r.rect.width * zoom - 8), opacity: r.strength }}
+        >
+          {r.title}
+        </span>
+      ))}
+    </div>
+  );
+}
 
 function BoxView({ data }: NodeProps<BoxNode>) {
   const { box } = data;
@@ -373,6 +401,8 @@ function ErdCanvas({ relations, map, at, focus, onNavigate, onPeek, space }: Can
     // An open space too small to frame anything in frames on the whole stage.
     const room = box.width - margin.left - margin.right >= MIN_FIT && box.height - margin.top - margin.bottom >= MIN_FIT;
     camera.moveTo(fitRects(framedRects(placed.rects, placed.map, at), box.width, box.height, room ? margin : FIT_MARGIN), animate);
+    // Marks the map framed, for the browser suites and the perf budget of its first frame.
+    wrapper.current?.setAttribute('data-framed', '');
     return true;
   }, [placed, at, margin, space, open, camera]);
   // Before paint (LA-PAT-APP-UX-R08): the first picture appears already framed, never drawn at the
@@ -413,6 +443,11 @@ function ErdCanvas({ relations, map, at, focus, onNavigate, onPeek, space }: Can
       return r && !holders.has(b.id) && strength(b.id) === 1 ? [{ x: r.x + r.width / 2, y: r.y + r.height / 2 }] : [];
     });
   }, [placed, strength]);
+
+  const regions = useMemo<Region[]>(() => (placed ? placed.map.boxes.flatMap((b) => {
+    const rect = placed.rects.get(b.id);
+    return b.kind === 'domain' && rect ? [{ id: b.id, title: b.title, rect, strength: strength(b.id) }] : [];
+  }) : []), [placed, strength]);
 
   const go = (id: string) => { if (id !== focus) onNavigate(id); };
   // By touch, a first tap selects a box and a second tap (or a tap on its card) opens it.
@@ -456,6 +491,7 @@ function ErdCanvas({ relations, map, at, focus, onNavigate, onPeek, space }: Can
       >
         <Background gap={24} size={1} />
         <Controls showInteractive={false} />
+        <RegionLabels regions={regions} />
       </ReactFlow>
       <EdgeHints centers={centers} wrapper={wrapper} moveTo={(v) => camera.moveTo(v, true)} />
       {armedBox && <TapCard kind={BOX_KIND[armedBox.kind]} name={armedBox.title} onOpen={tap.openArmed} onDismiss={tap.clear} />}
