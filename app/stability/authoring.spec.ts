@@ -14,7 +14,7 @@ test.describe('Authoring flows', () => {
     // S01: the record format, from the command palette.
     await openPage(page, RECORD);
     await page.keyboard.press('Control+Shift+p');
-    await page.locator('.dialog-search').waitFor();
+    await page.locator('.quick-open input').waitFor();
     await page.keyboard.type('Record format');
     await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/format');
@@ -37,8 +37,8 @@ test.describe('Authoring flows', () => {
     await expect(page.locator('#main').getByRole('heading', { name: /^Problems now [1-9]\d*$/, level: 2 })).toBeVisible();
     // S04: a kind by quick find.
     await page.keyboard.press('Control+k');
-    await page.locator('.quick-find input').fill('Kind: Flow step');
-    await page.getByRole('option', { name: /^Kind: Flow step/ }).first().click();
+    await page.locator('.quick-open input').fill('Kind: Flow step');
+    await page.getByRole('option', { name: /Kind: Flow step/ }).first().click();
     await page.waitForURL((u) => u.pathname === '/format/kinds/flow_step');
     await expect(page.locator('#main h1')).toHaveText('Flow step');
   });

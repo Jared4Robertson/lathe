@@ -91,7 +91,7 @@ describe('shortcut hints', () => {
     expect(tooltip()).toHaveTextContent('the side bar ⌥⌘B');
     keyFocus(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link')[0]);
     expect(tooltip().querySelector('kbd')).toHaveTextContent('⌥1');
-    expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveAttribute('placeholder', 'Go to… ⌘P');
+    expect(within(nav()).getByRole('button', { name: 'Go to…' }).querySelector('kbd')).toHaveTextContent('⌘P');
 
     fireEvent.keyDown(document.body, { key: 'p', code: 'KeyP', metaKey: true, shiftKey: true });
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
@@ -165,7 +165,7 @@ describe('shortcut hints', () => {
     await openApp('/P-D-UC01', { data: twoProducts() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(within(nav()).getByRole('button', { name: 'Collapse the navigation' })).toHaveAttribute('aria-keyshortcuts', 'Control+B');
-    expect(within(nav()).getByRole('combobox', { name: 'Quick find' })).toHaveAttribute('aria-keyshortcuts', 'Control+P Control+K');
+    expect(within(nav()).getByRole('button', { name: 'Go to…' })).toHaveAttribute('aria-keyshortcuts', 'Control+P Control+K');
     expect(within(within(nav()).getByRole('list', { name: 'Spaces' })).getAllByRole('link')[0]).toHaveAttribute('aria-keyshortcuts', 'Alt+1');
     expect(within(nav()).getByRole('link', { name: /^Checks \d+/ })).toHaveAttribute('aria-keyshortcuts', 'Control+Shift+M');
     // Off a Mac: Alt+G and Alt+E first, as Ctrl+G finds the next match.
