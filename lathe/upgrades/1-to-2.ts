@@ -17,6 +17,11 @@
 // TL-LEND-REPO01) wherever it is named, and persists its aggregate, one to one as before. Which records are one piece of
 // code persisting several aggregates only the Owner knows: recording those as one repository with recorded exceptions
 // (repository_share), and the IDs in code, are the to-dos.
+//
+// And every kind's text is required or absent (LA-STD-MODELING-R10). The descriptions of flows, flow steps, data models,
+// value types, predicates, event types, services and tables go, and a test's Given opens its When. A lead or scenario
+// the schema now requires and a record lacks gets a stand-in that starts "To write:" and says what belongs there; writing
+// each from the code is a to-do.
 import { ALLOWED_LEVELS } from '../src/coverage.ts';
 import type { Converter, RawData, UpgradeNotes } from '../src/upgrade.ts';
 
@@ -105,47 +110,139 @@ function domainRepositories(data: RawData, notes: UpgradeNotes): void {
   notes.todo('Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.');
 }
 
+/** The tables whose description is gone: the record they implement, their title or their steps say it. */
+const TEXTLESS = ['flow', 'flow_step', 'data_model', 'value_type', 'predicate', 'event_type', 'service', 'table'];
+/** The test kinds with a scenario: When and Then, with no Given. */
+const SCENARIO_TESTS = ['invariant_test', 'specification_test', 'policy_test', 'domain_service_test', 'use_case_test', 'view_test', 'endpoint_test', 'integration_test', 'pattern_rule_test', 'standard_rule_test'];
+/** What each newly required text says, for the stand-in a record without it gets. */
+const REQUIRED_TEXT: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  product: { description: 'what the product is, who it is for and what it must do' },
+  role: { description: 'who takes the role and what they do' },
+  domain: { description: 'what the domain covers' },
+  aggregate: { description: 'what the aggregate keeps and why its entities change together', identity: 'what identifies one of its records in the business' },
+  entity: { description: 'what the entity is' },
+  value_object: { description: 'what the value is' },
+  domain_event: { description: 'what happened and what brings it about' },
+  command: { description: 'what it changes and when it is refused' },
+  read_model: { description: 'what it shows and from what' },
+  query: { description: 'what it returns' },
+  capability: { description: 'what the capability covers' },
+  use_case: { goal: 'what the actor wants to reach' },
+  pattern: { description: 'the shared behavior' },
+  pattern_setting: { meaning: 'what a follower decides in it' },
+  interface: { description: 'who uses it and how' },
+  view: { description: 'what the view shows and lets a person do' },
+  endpoint: { description: 'its request and responses' },
+  integration: { description: 'what the product exchanges with it' },
+  repository: { description: 'how it keeps its aggregate' },
+  projection: { description: 'how it fills its read model and when it is rebuilt' },
+  command_handler: { description: 'how it carries out its command' },
+  query_handler: { description: 'how it answers its query' },
+  event_handler: { description: 'where it hears its event and how it sends its command' },
+  endpoint_handler: { description: 'how it reads the request, calls its handler and answers' },
+  adapter: { description: 'how it talks to its outside system' },
+  ui_component: { description: 'what it renders' },
+  standard: { description: 'what the standard covers' },
+  question: { description: 'what is open and the options' },
+  test_data_set: { description: 'what it is for', environment: 'where it runs', records: 'the records it starts with', prepare: 'how to prepare it', reset: 'how to reset it' },
+  constraint_test: { accepts: 'values the value object accepts', refuses: 'values it refuses, and how' },
+  flow_test: { expected_result: 'what it expects at the end' },
+  ...Object.fromEntries(SCENARIO_TESTS.map((t) => [t, { when: 'what the test does', then: 'what the test expects' }])),
+};
+
+const blank = (value: unknown) => value === undefined || value === null || (typeof value === 'string' && value.trim() === '') || (Array.isArray(value) && value.length === 0);
+
+/** Drops the descriptions that are gone, folds each Given into its When, and stands in for each required text a record lacks. */
+function kindText(data: RawData, notes: UpgradeNotes): void {
+  let dropped = 0;
+  for (const table of TEXTLESS) {
+    const rows = data.read(table);
+    if (!rows.some((r) => 'description' in r)) continue;
+    dropped += rows.filter((r) => !blank(r.description)).length;
+    data.write(table, rows.map(({ description: _, ...row }) => row));
+  }
+  if (dropped) notes.changed(`The descriptions of flows, flow steps, data models, value types, predicates, event types, services and tables are gone, since the record each implements, its title or its steps say it: ${dropped} removed.`);
+  let folded = 0;
+  for (const table of SCENARIO_TESTS) {
+    const rows = data.read(table);
+    if (!rows.some((r) => 'given' in r)) continue;
+    data.write(table, rows.map(({ given, ...row }): Raw => {
+      if (blank(given)) return row;
+      folded++;
+      const setup = String(given).trim().replace(/[.]$/, '');
+      return { ...row, when: blank(row.when) ? `${setup}.` : `With ${setup[0].toLowerCase()}${setup.slice(1)}: ${String(row.when).trim()}` };
+    }));
+  }
+  if (folded) notes.changed(`Each test's Given opens its When: ${folded} folded.`);
+  const missing: string[] = [];
+  for (const [table, columns] of Object.entries(REQUIRED_TEXT)) {
+    const rows = data.read(table);
+    let changed = false;
+    const filled = rows.map((row): Raw => {
+      const out = { ...row };
+      for (const [column, says] of Object.entries(columns)) {
+        if (!blank(out[column])) continue;
+        out[column] = `To write: ${says}.`;
+        missing.push(`${String(row.id ?? row.name ?? table)} ${column}`);
+        changed = true;
+      }
+      return out;
+    });
+    if (changed) data.write(table, filled);
+  }
+  if (missing.length) {
+    notes.changed(`Each required text a record lacked stands in as "To write: …": ${missing.length} written.`);
+    notes.todo(`Write each text that starts "To write:" from the code, saying what the title, parent and links cannot (${missing.length}: ${missing.slice(0, 10).join(', ')}${missing.length > 10 ? ', …' : ''}).`);
+  }
+}
+
+/** Gives every product with flows one interface, <P>-IF01, and puts every flow through it, renamed wherever it is named. */
+function flowInterfaces(data: RawData, notes: UpgradeNotes): void {
+  const flows = data.read('flow');
+  if (flows.length === 0) return;
+  const products = useCaseProducts(data);
+  const useCases = [...new Set(flows.map((f) => String(f.use_case_id)))].sort((a, b) => b.length - a.length);
+  // A whole use case ID followed by -FL and no more letters or digits: the flow's own ID, or the start of a step's
+  // or its test's (TL-LEND-UC01-FL-S01).
+  const mention = new RegExp(`(?<![A-Za-z0-9-])(${useCases.map(escape).join('|')})-FL(?![A-Za-z0-9])`, 'g');
+  const rename = (value: unknown): unknown =>
+    typeof value === 'string' ? value.replace(mention, '$1-FL01') : Array.isArray(value) ? value.map(rename) : value;
+
+  const interfaces = [...new Set(flows.flatMap((f) => products.get(String(f.use_case_id)) ?? []))].sort();
+  for (const table of data.tables()) {
+    if (table === 'flow') continue;
+    const rows = data.read(table);
+    const renamed = rows.map((row) => Object.fromEntries(Object.entries(row).map(([column, value]) => [column, rename(value)])));
+    if (JSON.stringify(renamed) !== JSON.stringify(rows)) data.write(table, renamed);
+  }
+  data.write('flow', flows.map((flow): Raw => {
+    const renamed = Object.fromEntries(Object.entries(flow).map(([column, value]) => [column, rename(value)]));
+    const product = products.get(String(flow.use_case_id));
+    return product ? { ...renamed, interface_id: `${product}-IF01` } : renamed;
+  }));
+  data.write('interface', [
+    ...data.read('interface'),
+    ...interfaces.map((product) => ({
+      id: `${product}-IF01`,
+      title: 'Interface',
+      product_id: product,
+      kind: 'other',
+      description: 'Every flow written before interfaces were declared goes through this one.',
+    })),
+  ]);
+  notes.changed(`Every flow goes through its product's new interface (${interfaces.map((p) => `${p}-IF01`).join(', ')}), and its ID, its steps' and its test's end in FL01: ${flows.length} flows renamed.`);
+  for (const product of interfaces) {
+    notes.todo(`${product}-IF01 stands for every interface ${product}'s flows went through: give it the title and kind of the one most of them walk (web app, API, CLI, agent tools, desktop), declare the others, and give each flow that walks another interface that interface, with its ID ending in that interface's number.`);
+  }
+  notes.todo('Rename the flow, step and flow test IDs your code names, such as a test file naming its flow test: <use case>-FL-T is now <use case>-FL01-T.');
+}
+
 const converter: Converter = {
   files(data, notes) {
     testLevels(data, notes);
     domainRepositories(data, notes);
-    const flows = data.read('flow');
-    if (flows.length === 0) return;
-    const products = useCaseProducts(data);
-    const useCases = [...new Set(flows.map((f) => String(f.use_case_id)))].sort((a, b) => b.length - a.length);
-    // A whole use case ID followed by -FL and no more letters or digits: the flow's own ID, or the start of a step's
-    // or its test's (TL-LEND-UC01-FL-S01).
-    const mention = new RegExp(`(?<![A-Za-z0-9-])(${useCases.map(escape).join('|')})-FL(?![A-Za-z0-9])`, 'g');
-    const rename = (value: unknown): unknown =>
-      typeof value === 'string' ? value.replace(mention, '$1-FL01') : Array.isArray(value) ? value.map(rename) : value;
-
-    const interfaces = [...new Set(flows.flatMap((f) => products.get(String(f.use_case_id)) ?? []))].sort();
-    for (const table of data.tables()) {
-      if (table === 'flow') continue;
-      const rows = data.read(table);
-      const renamed = rows.map((row) => Object.fromEntries(Object.entries(row).map(([column, value]) => [column, rename(value)])));
-      if (JSON.stringify(renamed) !== JSON.stringify(rows)) data.write(table, renamed);
-    }
-    data.write('flow', flows.map((flow): Raw => {
-      const renamed = Object.fromEntries(Object.entries(flow).map(([column, value]) => [column, rename(value)]));
-      const product = products.get(String(flow.use_case_id));
-      return product ? { ...renamed, interface_id: `${product}-IF01` } : renamed;
-    }));
-    data.write('interface', [
-      ...data.read('interface'),
-      ...interfaces.map((product) => ({
-        id: `${product}-IF01`,
-        title: 'Interface',
-        product_id: product,
-        kind: 'other',
-        description: 'Every flow written before interfaces were declared goes through this one.',
-      })),
-    ]);
-    notes.changed(`Every flow goes through its product's new interface (${interfaces.map((p) => `${p}-IF01`).join(', ')}), and its ID, its steps' and its test's end in FL01: ${flows.length} flows renamed.`);
-    for (const product of interfaces) {
-      notes.todo(`${product}-IF01 stands for every interface ${product}'s flows went through: give it the title and kind of the one most of them walk (web app, API, CLI, agent tools, desktop), declare the others, and give each flow that walks another interface that interface, with its ID ending in that interface's number.`);
-    }
-    notes.todo('Rename the flow, step and flow test IDs your code names, such as a test file naming its flow test: <use case>-FL-T is now <use case>-FL01-T.');
+    flowInterfaces(data, notes);
+    kindText(data, notes);
   },
 };
 

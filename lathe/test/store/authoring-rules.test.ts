@@ -23,11 +23,11 @@ function changingRow(table: string, at: number, changes: Record<string, Row[stri
 const one = (rule: string, extra: Partial<StoreProblem> = {}) => [expect.objectContaining({ rule, ...extra })];
 
 /** A second domain of the fixture's product. */
-const catalog: Data = { domain: [{ id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting' }] };
+const catalog: Data = { domain: [{ id: 'TL-CAT', title: 'Catalog', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds.' }] };
 
 describe("Authoring's invariants", () => {
   it('LA-AUT-INV17-T Two capabilities in one domain with the same position are refused; other domains may reuse it', async () => {
-    const problems = await refusals(adding({ capability: [{ id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 1 }] }));
+    const problems = await refusals(adding({ capability: [{ id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 1, description: 'Taking tools back.' }] }));
     expect(problems).toEqual(one('unique', { table: 'capability', key: 'TL-LEND-CAP02', file: 'data/capability.jsonl', line: 2 }));
     expect(problems[0].message).toBe('capability TL-LEND-CAP02 has the same domain_id, position as capability TL-LEND-CAP01: TL-LEND, 1');
     // Another domain's capability at position 1, and this domain's next one at 2, load.
@@ -36,8 +36,8 @@ describe("Authoring's invariants", () => {
         adding({
           ...catalog,
           capability: [
-            { id: 'TL-CAT-CAP01', title: 'Listing', domain_id: 'TL-CAT', position: 1 },
-            { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2 },
+            { id: 'TL-CAT-CAP01', title: 'Listing', domain_id: 'TL-CAT', position: 1, description: 'Listing the tools on the shelf.' },
+            { id: 'TL-LEND-CAP02', title: 'Returns', domain_id: 'TL-LEND', position: 2, description: 'Taking tools back.' },
           ],
         }),
       ),
@@ -68,7 +68,7 @@ describe("Authoring's invariants", () => {
     expect(scope.domain_id).toBe('TL-LEND');
     expect(own.schema.kinds.domain_note.parents).toEqual([{ kind: 'domain', column: 'domain_id' }]);
     // Lathe's kinds are as they are without any product kind: the same parents and the same required columns.
-    const bare = await openStore(writeData({ product: [{ id: 'TL', title: 'Tool Library' }] }), { latheDataDir: null });
+    const bare = await openStore(writeData({ product: [{ id: 'TL', title: 'Tool Library', description: 'A neighborhood tool library.' }] }), { latheDataDir: null });
     for (const kind of ['domain', 'aggregate', 'command']) {
       expect(own.schema.kinds[kind].parents, kind).toEqual(bare.schema.kinds[kind].parents);
       const required = (s: typeof bare.schema) => s.tables[kind].columns.filter((c) => c.required).map((c) => c.name);
@@ -95,10 +95,10 @@ describe("Authoring's invariants", () => {
     );
     // A record of the kind in another product.
     const other: Data = {
-      product: [{ id: 'OT', title: 'Other' }],
-      domain: [{ id: 'OT-D', title: 'Other', product_id: 'OT', subdomain_type: 'generic' }],
-      aggregate: [{ id: 'OT-D-A1', title: 'Thing', domain_id: 'OT-D' }],
-      command: [{ id: 'OT-D-CMD01', title: 'Make a thing', aggregate_id: 'OT-D-A1' }],
+      product: [{ id: 'OT', title: 'Other', description: 'Another product.' }],
+      domain: [{ id: 'OT-D', title: 'Other', product_id: 'OT', subdomain_type: 'generic', description: 'The other product\'s one domain.' }],
+      aggregate: [{ id: 'OT-D-A1', title: 'Thing', domain_id: 'OT-D', identity: 'Thing ID', description: 'A thing the other product keeps.' }],
+      command: [{ id: 'OT-D-CMD01', title: 'Make a thing', aggregate_id: 'OT-D-A1', description: 'Makes a new thing.' }],
       cli_command: [{ id: 'OT-D-CMD01-CLI', title: 'ot make', command_id: 'OT-D-CMD01', usage: 'ot make' }],
     };
     expect(await refusals(adding(other))).toEqual(
@@ -148,9 +148,9 @@ describe("Authoring's domain services", () => {
     const root = writeData(
       adding({
         // A gap at A3 (never filled: IDs are not reused), a view numbered 7 and a value object with no constraint.
-        aggregate: [{ id: 'TL-LEND-A4', title: 'Member', domain_id: 'TL-LEND' }],
-        view: [{ id: 'TL-V07', title: 'Desk' }],
-        value_object: [{ id: 'TL-VO02', title: 'Phone number' }],
+        aggregate: [{ id: 'TL-LEND-A4', title: 'Member', domain_id: 'TL-LEND', identity: 'Member ID', description: 'A member of the library.' }],
+        view: [{ id: 'TL-V07', title: 'Desk', description: 'The desk where tools go out.' }],
+        value_object: [{ id: 'TL-VO02', title: 'Phone number', description: 'Where a member takes calls.' }],
       }),
     );
     const next = async (kind: string, under: string) => {

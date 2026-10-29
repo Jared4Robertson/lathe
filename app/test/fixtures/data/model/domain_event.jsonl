@@ -1,4 +1,4 @@
 {"id":"P-D-EV01","title":"Loan opened","aggregate_id":"P-D-A3","published":false,"description":"A thing was lent."}
-{"id":"P-D-EV02","title":"Thing returned","aggregate_id":"P-D-A3","published":false}
-{"id":"P-D-EV03","title":"Member joined","aggregate_id":"P-D-A2","published":true}
-{"id":"P-E-EV01","title":"Account closed","aggregate_id":"P-E-A1","published":true}
+{"id":"P-D-EV02","title":"Thing returned","aggregate_id":"P-D-A3","published":false,"description":"The fixture's domain event Thing returned."}
+{"id":"P-D-EV03","title":"Member joined","aggregate_id":"P-D-A2","published":true,"description":"The fixture's domain event Member joined."}
+{"id":"P-E-EV01","title":"Account closed","aggregate_id":"P-E-A1","published":true,"description":"The fixture's domain event Account closed."}

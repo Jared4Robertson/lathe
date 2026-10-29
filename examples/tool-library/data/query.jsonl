@@ -1,2 +1,2 @@
 {"id":"TL-LEND-QRY01","title":"List the catalog","read_model_id":"TL-LEND-RM01","description":"Every tool in the catalog, in ID order, with its status."}
-{"id":"TL-LEND-QRY02","title":"Get a month's outcome measures","read_model_id":"TL-LEND-RM02"}
+{"id":"TL-LEND-QRY02","title":"Get a month's outcome measures","read_model_id":"TL-LEND-RM02","description":"The measures for the one month asked for, given as YYYY-MM and counted as of the moment it runs, each with the counts behind it: loans and tools, loans due and late."}

@@ -23,6 +23,7 @@ function twoDomains(): SpecData {
   );
   addRows(ws, 'pattern_rule_test', {
     id: 'DM-PAT-AUDIT-R01-T02', title: 'A payment is recorded', pattern_rule_id: 'DM-PAT-AUDIT-R01', domain_id: 'DM-PAY', level: 'service', state: 'not automated yet',
+    when: 'A shopper pays for the basket by card.', then: 'The payment is in the audit record.',
   });
   return withStandings(ws, 'DM-PAY', { R01: 'owed', R02: 'not-applicable', R03: 'waived' });
 }

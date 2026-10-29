@@ -13,8 +13,8 @@ const goal = 'It follows EX-LEND-UC02, then\nEX-LEND-UC01-R01, then EX-LEND-UC02
 
 const data = () =>
   adding(changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC01', { goal }), {
-    product: [{ id: 'NX', title: 'Next product' }],
-    domain: [{ id: 'NX-E', title: 'Elsewhere', product_id: 'NX', subdomain_type: 'generic' }],
+    product: [{ id: 'NX', title: 'Next product', description: 'A second product beside the first.' }],
+    domain: [{ id: 'NX-E', title: 'Elsewhere', product_id: 'NX', subdomain_type: 'generic', description: 'Work done in the second product.' }],
   });
 
 let ws: Workspace;
@@ -61,17 +61,17 @@ describe('IDs in text', () => {
   });
 
   it('LA-AUT-UC07-R01-T03 Only link tables link records: a link to a record that does not exist is refused, while text naming it is not', async () => {
-    const base = { product: [{ id: 'MX', title: 'Mentions' }], domain: [{ id: 'MX-D', title: 'Domain', product_id: 'MX', subdomain_type: 'core', description: 'It reads MX-D-SP99.' }] };
+    const base = { product: [{ id: 'MX', title: 'Mentions', description: 'A product whose text names IDs.' }], domain: [{ id: 'MX-D', title: 'Domain', product_id: 'MX', subdomain_type: 'core', description: 'It reads MX-D-SP99.' }] };
     expect(await refusals(base)).toEqual([]);
-    const command = { aggregate: [{ id: 'MX-D-A1', title: 'Loan', domain_id: 'MX-D' }], command: [{ id: 'MX-D-CMD01', title: 'Open', aggregate_id: 'MX-D-A1' }] };
+    const command = { aggregate: [{ id: 'MX-D-A1', title: 'Loan', domain_id: 'MX-D', identity: 'Loan ID', description: 'One loan.' }], command: [{ id: 'MX-D-CMD01', title: 'Open', aggregate_id: 'MX-D-A1', description: 'Opens a loan.' }] };
     expect(await refusals({ ...base, ...command, checks: [{ source_id: 'MX-D-CMD01', target_id: 'MX-D-SP99' }] })).toEqual([expect.objectContaining({ rule: 'foreign-key', table: 'checks' })]);
   });
 
   /** The complete product with a step that happens in another product's view. */
   const crossing = () => {
     const both = adding(complete(), {
-      product: [{ id: 'NX', title: 'Next product' }],
-      view: [{ id: 'NX-V01', title: 'Elsewhere' }],
+      product: [{ id: 'NX', title: 'Next product', description: 'A second product beside the first.' }],
+      view: [{ id: 'NX-V01', title: 'Elsewhere', description: 'A page of the second product.' }],
       happens_in: [],
     });
     both.happens_in = [...both.happens_in.filter((l) => l.source_id !== 'EX-LEND-UC02-FL01-S01'), { source_id: 'EX-LEND-UC02-FL01-S01', target_id: 'NX-V01' }];
@@ -85,7 +85,7 @@ describe('IDs in text', () => {
   });
 
   it('LA-CHK-UC01-R04-T02 A link into another product in a data file is a data-refused error', async () => {
-    const root = await build(adding(complete(), { product: [{ id: 'NX', title: 'Next product' }], view: [{ id: 'NX-V01', title: 'Elsewhere' }] }));
+    const root = await build(adding(complete(), { product: [{ id: 'NX', title: 'Next product', description: 'A second product beside the first.' }], view: [{ id: 'NX-V01', title: 'Elsewhere', description: 'A page of the second product.' }] }));
     const file = path.join(root, 'data', 'happens_in.jsonl');
     writeFileSync(file, readFileSync(file, 'utf8').replace(/("source_id":"EX-LEND-UC02-FL01-S01","target_id":")[^"]+/, '$1NX-V01'));
     const loaded = await loadWorkspace(root);

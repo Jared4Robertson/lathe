@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
+import { LEAD_COLUMNS } from '../src/lead.ts';
 import { openStore } from '../src/index.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -71,5 +72,32 @@ describe("Lathe's own spec", () => {
     const step = skill.split(/^## /m).find((s) => s.startsWith('Step one')) ?? '';
     expect(step).toContain("Before you write any record, find the product's business capabilities and make each one a domain");
     expect(step.match(/^- .+\?/gm)?.length ?? 0).toBeGreaterThanOrEqual(4);
+  });
+
+  it("LA-STD-MODELING-R10-T01 Every kind's text is required or absent: at most one lead column, required, and a test's When and Then with no Given", async () => {
+    const store = await openStore(REPO, { dataDir: path.join(REPO, 'data') });
+    try {
+      const tables = Object.values(store.schema.tables).filter((t) => t.role === 'kind' || t.role === 'part' || t.role === 'declaration');
+      expect(tables.length).toBeGreaterThan(60);
+      const leads = tables.map((t) => ({ table: t.name, leads: t.columns.filter((c) => (LEAD_COLUMNS as readonly string[]).includes(c.name)) }));
+      expect(leads.filter((t) => t.leads.length > 1).map((t) => t.table)).toEqual([]);
+      const optional = leads.flatMap((t) => t.leads.filter((c) => !c.required).map((c) => `${t.table}.${c.name}`));
+      expect(optional).toEqual([]);
+      // A required lead is never blank: its table holds trim(<lead>) <> '' as a CHECK, which DuckDB reads back as ("trim"(<lead>) != ''), quoting a keyword such as statement.
+      const unchecked = leads.flatMap((t) => t.leads.filter((c) => ![`("trim"(${c.name}) != '')`, `("trim"("${c.name}") != '')`].some((x) => store.schema.tables[t.table].checks.includes(x))).map((c) => `${t.table}.${c.name}`));
+      expect(unchecked).toEqual([]);
+      const scenarios = tables.filter((t) => t.columns.some((c) => c.name === 'when'));
+      expect(scenarios.length).toBe(10);
+      for (const t of scenarios) {
+        expect(t.columns.find((c) => c.name === 'given'), t.name).toBeUndefined();
+        expect(t.columns.filter((c) => c.name === 'when' || c.name === 'then').map((c) => c.required), t.name).toEqual([true, true]);
+      }
+      // The kinds that implement one domain record in the domain layer have no lead: the record they implement says it.
+      for (const kind of ['data_model', 'value_type', 'predicate', 'event_type', 'service', 'table', 'flow', 'flow_step']) {
+        expect(store.schema.tables[kind].columns.map((c) => c.name), kind).not.toContain('description');
+      }
+    } finally {
+      await store.close();
+    }
   });
 });

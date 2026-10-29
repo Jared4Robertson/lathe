@@ -31,7 +31,7 @@ const STAGES = [
   { name: 'graph stage', url: `${RECORD}?stage=graph`, ready: '.focus-stage .graph-flow .graph-box' },
   { name: 'ERD stage', url: `${AGGREGATE}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'Trace stage, a chain', url: `${EDITED}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
-  { name: 'Trace stage, a domain\'s lanes', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
+  { name: 'Trace stage, a domain\'s branch', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
 ];
 
 /** Collapses the wiki card (Enter), so the stage has the whole window under the tab panel. */
@@ -64,9 +64,9 @@ const PAGES: State[] = [
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
-  { name: 'Trace stage, framed on the lanes a flow step belongs to', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
-  { name: 'Trace stage, an entity in its aggregate\'s lanes', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
-  { name: 'Trace stage, the product\'s overview in labeled bands', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-band-names li' },
+  { name: 'Trace stage, a flow step in the chains that hold it', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
+  { name: 'Trace stage, an entity framed on its aggregate', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
+  { name: 'Trace stage, the product\'s whole tree', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.
@@ -84,7 +84,7 @@ PAGES.push({ name: 'Trace stage, an untraced record', run: async (page: Page) =>
   await page.locator('.focus-stage .trace-note.is-untraced').waitFor();
   await page.waitForTimeout(400);
 } });
-// The Trace stage with only the lanes that have a gap.
+// The Trace stage with only the branches that have a gap.
 PAGES.push({ name: 'Trace stage, gaps only', run: async (page: Page) => {
   await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-flow[data-ready]');
   await page.locator('.focus-stage').getByRole('checkbox', { name: 'Gaps only' }).check();

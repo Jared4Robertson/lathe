@@ -1,2 +1,2 @@
 {"id":"TL-LEND-QRY01-H","title":"ToolService.list","query_id":"TL-LEND-QRY01","file":"src/tool-service.ts","description":"Lists the tools in ID order, each with its status from its active loan and condition (`entry`)."}
-{"id":"TL-LEND-QRY02-H","title":"measureOutcomes","query_id":"TL-LEND-QRY02","file":"src/outcomes.ts"}
+{"id":"TL-LEND-QRY02-H","title":"measureOutcomes","query_id":"TL-LEND-QRY02","file":"src/outcomes.ts","description":"Answered by running `src/outcomes.ts` from the command line with the month as its argument: it opens the SQLite store named by `DB`, checks `TIME_ZONE` (New York by default), prints what `measureOutcomes` works out as JSON and closes the store. Nothing is kept between runs."}

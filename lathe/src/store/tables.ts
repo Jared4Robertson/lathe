@@ -8,7 +8,7 @@ export interface ProductRow {
   /** The product's name, such as Tool Library. */
   title: string;
   /** What the product is, who it is for and what it must do, in a paragraph. */
-  description?: string;
+  description: string;
   /** An emoji or short text shown for the product in the app's space rail. */
   icon?: string;
   /** A CSS color for the product in the app's space rail. */
@@ -28,7 +28,7 @@ export interface DomainRow {
   /** core: the product's edge; supporting: needed for the core but not its edge; generic: solved the same way everywhere. It guides how much modeling the domain deserves. */
   subdomain_type: "core" | "supporting" | "generic";
   /** What the domain covers, in a paragraph. */
-  description?: string;
+  description: string;
   /** Longer notes on the domain. */
   notes?: string;
 }
@@ -45,8 +45,8 @@ export interface QuestionRow {
   domain_id?: string;
   /** The role that decides it, one of the product's roles, such as Owner. */
   owner: string;
-  /** What is open, and the options. */
-  description?: string;
+  /** What is open and the options, in a paragraph. */
+  description: string;
 }
 
 /** The open question concerns the record. */
@@ -64,7 +64,7 @@ export interface IntegrationRow {
   /** The outside system, such as Stripe. */
   system?: string;
   /** What the product exchanges with it, in a sentence or two. */
-  description?: string;
+  description: string;
 }
 
 /** Talks to its integration's outside system, so the rest of the code does not. */
@@ -77,8 +77,8 @@ export interface AdapterRow {
   integration_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
+  /** How it talks to its outside system, in a sentence or two. */
+  description: string;
 }
 
 /** The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only. */
@@ -89,10 +89,10 @@ export interface AggregateRow {
   title: string;
   /** The domain it belongs to. */
   domain_id: string;
-  /** What the aggregate keeps, in a paragraph. */
-  description?: string;
+  /** What the aggregate keeps and why its entities change together, in a paragraph. */
+  description: string;
   /** What identifies one of its records in the business, such as Loan ID. */
-  identity?: string;
+  identity: string;
   /** Longer notes on the aggregate. */
   notes?: string;
 }
@@ -105,8 +105,8 @@ export interface CommandRow {
   title: string;
   /** The aggregate it changes. */
   aggregate_id: string;
-  /** What it does, in a sentence or two. */
-  description?: string;
+  /** What it changes and when it is refused, in a sentence or two; how its handler does it belongs to the handler. */
+  description: string;
 }
 
 /** A view of its domain's data shaped for reading, which reads one or more of the domain's aggregates. Its fields are read_model_field rows, and it is stored in a table of its own. */
@@ -118,7 +118,7 @@ export interface ReadModelRow {
   /** The domain it belongs to. */
   domain_id: string;
   /** What it shows, in a sentence or two. */
-  description?: string;
+  description: string;
 }
 
 /** A question asked of one read model, its parent. It changes nothing, and may select by specifications and call domain services of its own domain. */
@@ -129,8 +129,8 @@ export interface QueryRow {
   title: string;
   /** The read model it reads. */
   read_model_id: string;
-  /** What it returns, in a sentence or two. */
-  description?: string;
+  /** What it returns, in a sentence or two; the code that answers it belongs to its handler. */
+  description: string;
 }
 
 /** An HTTP endpoint that exposes exactly one command or query, its parent. Flow steps reach it through their command or query, never directly. */
@@ -148,7 +148,7 @@ export interface EndpointRow {
   /** The route, such as /loans or /tools/{toolId}/damage. */
   route: string;
   /** Its request and responses, in a sentence or two. */
-  description?: string;
+  description: string;
   /** Longer notes on the endpoint. */
   notes?: string;
 }
@@ -216,7 +216,7 @@ export interface CapabilityRow {
   /** Its place in the domain, from 1. */
   position: number;
   /** What the capability covers, in a sentence or two. */
-  description?: string;
+  description: string;
 }
 
 /** A check: a query over the tables that returns a row (severity, check, record, message) for each problem it finds. An error means the workspace is broken; a warning is work still to do. */
@@ -275,8 +275,8 @@ export interface CommandHandlerRow {
   command_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
+  /** How it carries out its command (transaction, checks, what it writes), in a sentence or two; never what the command already says. */
+  description: string;
 }
 
 /** A value with no identity of its own, such as an email address or a money amount, defined by its fields and checked by its constraints when it is created. It has no owner: it exists because entities, events or read models use it as a field's type, and its product follows from its ID. */
@@ -286,7 +286,7 @@ export interface ValueObjectRow {
   /** The value object's name, such as Email address. */
   title: string;
   /** What the value is, in a sentence or two. */
-  description?: string;
+  description: string;
 }
 
 /** A value object's own rule, checked when the value is created, such as an email address having one @. */
@@ -324,9 +324,9 @@ export interface ConstraintTestRow {
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
   /** Values the value object accepts, such as a@b.org. */
-  accepts?: string;
+  accepts: string;
   /** Values it refuses, and how. */
-  refuses?: string;
+  refuses: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -344,7 +344,7 @@ export interface EntityRow {
   /** true: a child entity with no table of its own, stored in its aggregate root's table (which then holds its fields as columns); left out otherwise. An entity has at most one table. */
   in_root_table?: boolean;
   /** What the entity is, in a sentence or two. */
-  description?: string;
+  description: string;
 }
 
 /** Its entity in code: the entity's data, behavior and mapping to its table. A command is carried out by its handler and its aggregate root's data model. */
@@ -357,8 +357,6 @@ export interface DataModelRow {
   entity_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
 }
 
 /** An unchangeable record that something happened to an aggregate, named in the past tense (Loan opened), raised by its commands. What it carries are event_field rows. */
@@ -371,8 +369,8 @@ export interface DomainEventRow {
   aggregate_id: string;
   /** true: its shape is a promise to other domains, whose policies may hear it; false: only its own domain hears it. */
   published: boolean;
-  /** What happened, in a sentence. */
-  description?: string;
+  /** What happened and what brings it about, in a sentence. */
+  description: string;
 }
 
 /** Proves its domain service: from the inputs given, the value or decision it returns. */
@@ -397,12 +395,10 @@ export interface DomainServiceTestRow {
   smoke?: boolean;
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
-  /** The state the test starts from. */
-  given?: string;
-  /** What the test does. */
-  when?: string;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
   /** What the test expects. */
-  then?: string;
+  then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -417,8 +413,8 @@ export interface EndpointHandlerRow {
   endpoint_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
+  /** How it reads the request, calls its handler and answers or refuses, in a sentence or two; the request and response shapes belong to the endpoint. */
+  description: string;
 }
 
 /** Proves its API requirement at the endpoint: the request and the response. */
@@ -443,12 +439,10 @@ export interface EndpointTestRow {
   smoke?: boolean;
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
-  /** The state the test starts from. */
-  given?: string;
-  /** What the test does. */
-  when?: string;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
   /** What the test expects. */
-  then?: string;
+  then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -523,8 +517,8 @@ export interface EventHandlerRow {
   policy_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
+  /** Where it hears its event and how it sends its command, in a sentence or two. */
+  description: string;
 }
 
 /** Its domain event's shape in code; a contract with other domains when the event is published. */
@@ -539,8 +533,6 @@ export interface EventTypeRow {
   delivery?: "in process" | "outbox";
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
 }
 
 /** An actor's goal: its actors (use_case_actor rows), its UC requirements and its flows, one per interface it happens through. It changes nothing itself; its flows' steps invoke commands and queries. */
@@ -551,8 +543,8 @@ export interface UseCaseRow {
   title: string;
   /** The capability it sits in. */
   capability_id: string;
-  /** What the actor wants to reach, in a sentence. */
-  goal?: string;
+  /** What the actor wants to reach and from where they start, in a sentence or a short paragraph. */
+  goal: string;
   /** Longer notes, such as the order in which refusals are reported. */
   notes?: string;
 }
@@ -568,7 +560,7 @@ export interface InterfaceRow {
   /** What it is: web app or desktop (a flow's steps happen in views), API (they call endpoints, through the command or query each exposes), CLI or agent tools (they run commands and queries), or other. A step of an API, CLI or agent tools flow happens in no view. */
   kind: "web app" | "API" | "CLI" | "agent tools" | "desktop" | "other";
   /** Who uses it and how, in a sentence or two. */
-  description?: string;
+  description: string;
 }
 
 /** How its use case is carried out through one interface: the steps on its main path and its alternate paths. A use case has one flow per interface it happens through, and each flow belongs only to it. */
@@ -581,8 +573,6 @@ export interface FlowRow {
   use_case_id: string;
   /** The interface it goes through, of the same product; at most one flow per use case and interface. */
   interface_id: string;
-  /** The path, in a paragraph. */
-  description?: string;
 }
 
 /** One step of a flow, in order on its path. It fulfills UC requirements of its own use case, invokes at most one command or query, happens in at most one view (only on a web app, desktop or other interface) and may exchange with integrations. */
@@ -597,8 +587,6 @@ export interface FlowStepRow {
   path: string;
   /** The step's place on its path, from 1. */
   position: number;
-  /** What happens in the step, in a sentence or two. */
-  description?: string;
 }
 
 /** The flow step exchanges with the integration's outside system. */
@@ -636,9 +624,9 @@ export interface FlowTestRow {
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
   /** What the test does along the main path, step by step. */
-  steps?: string[];
+  steps: string[];
   /** What it expects at the end. */
-  expected_result?: string;
+  expected_result: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -652,7 +640,7 @@ export interface PatternRow {
   /** The product it belongs to. */
   product_id: string;
   /** The shared behavior, in a paragraph. */
-  description?: string;
+  description: string;
   /** Longer notes, such as how a domain or use case uses the pattern. */
   notes?: string;
 }
@@ -692,7 +680,7 @@ export interface ViewRow {
   /** The address it is shown at, such as /catalog. */
   route?: string;
   /** What the view shows and lets a person do, in a paragraph. */
-  description?: string;
+  description: string;
   /** Longer notes on the view. */
   notes?: string;
 }
@@ -743,12 +731,10 @@ export interface IntegrationTestRow {
   smoke?: boolean;
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
-  /** The state the test starts from. */
-  given?: string;
-  /** What the test does. */
-  when?: string;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
   /** What the test expects. */
-  then?: string;
+  then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -787,12 +773,10 @@ export interface InvariantTestRow {
   smoke?: boolean;
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
-  /** The state the test starts from. */
-  given?: string;
-  /** What the test does. */
-  when?: string;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
   /** What the test expects. */
-  then?: string;
+  then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -818,7 +802,7 @@ export interface StandardRow {
   /** The product it belongs to. */
   product_id: string;
   /** What the standard covers, in a paragraph. */
-  description?: string;
+  description: string;
 }
 
 /** One rule of a standard. Technical records that follow it link to it with meets; its standard rule tests prove it. */
@@ -858,7 +842,7 @@ export interface PatternSettingRow {
   /** The setting's name, in lower case with underscores, such as required_input. */
   name: string;
   /** What a follower decides in it. */
-  meaning?: string;
+  meaning: string;
 }
 
 /** One rule of a pattern. Every domain that follows the pattern owes it, unless it names a setting all of that domain's followers mark Not applicable, or its applies-when condition is met by no follower there. */
@@ -909,12 +893,10 @@ export interface PatternRuleTestRow {
   smoke?: boolean;
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
-  /** The state the test starts from. */
-  given?: string;
-  /** What the test does. */
-  when?: string;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
   /** What the test expects. */
-  then?: string;
+  then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -929,8 +911,8 @@ export interface RepositoryRow {
   domain_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
+  /** How it keeps its aggregate: where, in what form, and when it loads and saves, in a sentence or two. */
+  description: string;
 }
 
 /** The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository. Another aggregate a repository also persists is a recorded exception, a repository_share row. */
@@ -961,12 +943,10 @@ export interface PolicyTestRow {
   smoke?: boolean;
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
-  /** The state the test starts from. */
-  given?: string;
-  /** What the test does. */
-  when?: string;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
   /** What the test expects. */
-  then?: string;
+  then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -981,8 +961,6 @@ export interface PredicateRow {
   specification_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
 }
 
 /** A kind a product adds to Lathe's, such as a report or a CLI command. Its records sit under one parent kind, and its fields are product_kind_field rows. */
@@ -1015,7 +993,7 @@ export interface ProductKindFieldRow {
   kind: string;
   /** The field's place among the kind's columns, from 1. */
   position: number;
-  /** The column's name, in lower case with underscores; not id, title or the parent column. */
+  /** The column's name, in lower case with underscores; not id, title or the parent column. A field named statement, goal, meaning or description is the kind's lead text, shown first on its records' pages: a kind has at most one, and it must be required. */
   name: string;
   /** text, integer, boolean or date (YYYY-MM-DD). */
   type: "text" | "integer" | "boolean" | "date";
@@ -1065,8 +1043,8 @@ export interface ProjectionRow {
   read_model_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
+  /** How it fills its read model and when it is rebuilt, in a sentence or two. */
+  description: string;
 }
 
 /** Answers its query from its read model's table: an application service that changes nothing. */
@@ -1079,8 +1057,8 @@ export interface QueryHandlerRow {
   query_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
+  /** How it answers its query (from what, kept or computed on each call), in a sentence or two. */
+  description: string;
 }
 
 /** The command raises the event, of the aggregate it changes. */
@@ -1128,7 +1106,7 @@ export interface UiComponentRow {
   /** The file that holds its code, from the product root; it may not exist yet. */
   file?: string;
   /** What it renders, in a sentence or two. */
-  description?: string;
+  description: string;
 }
 
 /** The UI component renders the view, or part of it. */
@@ -1153,8 +1131,8 @@ export interface RoleRow {
   product_id: string;
   /** The role's name, such as Librarian. */
   name: string;
-  /** Who takes the role and what they do. */
-  description?: string;
+  /** Who takes the role and what they do in the product, in a sentence. */
+  description: string;
 }
 
 /** The query selects the records that satisfy the specification, of its own domain. */
@@ -1179,8 +1157,6 @@ export interface ServiceRow {
   domain_service_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
 }
 
 /** The value a use case or domain gives one setting of a pattern it follows: a value, or Not applicable with the reason. */
@@ -1219,12 +1195,10 @@ export interface SpecificationTestRow {
   smoke?: boolean;
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
-  /** The state the test starts from. */
-  given?: string;
-  /** What the test does. */
-  when?: string;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
   /** What the test expects. */
-  then?: string;
+  then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -1251,12 +1225,10 @@ export interface StandardRuleTestRow {
   smoke?: boolean;
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
-  /** The state the test starts from. */
-  given?: string;
-  /** What the test does. */
-  when?: string;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
   /** What the test expects. */
-  then?: string;
+  then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -1270,19 +1242,19 @@ export interface TestDataSetRow {
   /** The domain whose tests it serves. */
   domain_id: string;
   /** Where it runs: the database, server or browser storage it is built in. */
-  environment?: string;
+  environment: string;
   /** The accounts and roles it signs in as. */
   accounts?: string;
   /** The records it starts with. */
-  records?: string;
+  records: string;
   /** How to prepare it before a test. */
-  prepare?: string;
+  prepare: string;
   /** How to reset it after a test, so the next starts clean. */
-  reset?: string;
+  reset: string;
   /** The seed or fixture that builds it, from the product root. */
   file?: string;
   /** What it is for, in a sentence or two. */
-  description?: string;
+  description: string;
 }
 
 /** The test starts from the test data set: it is prepared before the test and reset after. */
@@ -1309,8 +1281,6 @@ export interface TableRow {
   storage: "table" | "view" | "materialized view" | "browser storage" | "file" | "in memory";
   /** The file that creates it, such as a migration, or that reads and writes it, from the product root; it may not exist yet. */
   file?: string;
-  /** Anything its keys do not say, in a sentence or two. */
-  description?: string;
 }
 
 /** One key or index of a table in a database (never of browser storage, a file or in memory), in order: its primary key, a unique key with the invariant it enforces, a foreign key with the table it points at, or an index. A foreign key points at a table of the same domain: a reference to another domain's aggregate stays a plain ID. */
@@ -1379,12 +1349,10 @@ export interface UseCaseTestRow {
   smoke?: boolean;
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
-  /** The state the test starts from. */
-  given?: string;
-  /** What the test does. */
-  when?: string;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
   /** What the test expects. */
-  then?: string;
+  then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }
@@ -1423,8 +1391,6 @@ export interface ValueTypeRow {
   value_object_id: string;
   /** The file that holds its code, from the product root; it may not exist yet, and several records may share one file. */
   file?: string;
-  /** How it works, in a sentence or two. */
-  description?: string;
 }
 
 /** One rule a view must follow, such as what it shows while loading or a field's limits. */
@@ -1463,12 +1429,10 @@ export interface ViewTestRow {
   smoke?: boolean;
   /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
   external?: boolean;
-  /** The state the test starts from. */
-  given?: string;
-  /** What the test does. */
-  when?: string;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
   /** What the test expects. */
-  then?: string;
+  then: string;
   /** Longer notes on the test, such as when to run it. */
   notes?: string;
 }

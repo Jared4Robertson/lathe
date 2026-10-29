@@ -1,2 +1,2 @@
-{"id":"TL-LEND-DS01-SV","title":"dueDate","domain_service_id":"TL-LEND-DS01","file":"src/model.ts","description":"The library calendar: `localDate`, `addDays`, `dueDate` (with `LOAN_DAYS`), `assertTimeZone` and `DEFAULT_TIME_ZONE`."}
+{"id":"TL-LEND-DS01-SV","title":"dueDate","domain_service_id":"TL-LEND-DS01","file":"src/model.ts"}
 {"id":"TL-LEND-DS02-SV","title":"measureOutcomes","domain_service_id":"TL-LEND-DS02","file":"src/outcomes.ts"}

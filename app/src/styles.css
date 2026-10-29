@@ -445,9 +445,8 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-key-sheet-list .stage-key-sample { grid-row: 1 / span 2; padding-top: 3px; }
 .stage-key-sheet-list .stage-key-words { grid-column: 2; font-weight: 600; }
 .stage-key-sheet-list .stage-key-meaning { grid-column: 2; color: var(--muted); }
-/* The Trace's samples: a chain's arrow, a "+N more", a faded box. */
+/* The Trace's samples: a chain's arrow, a faded box. */
 .trace-key-arrow { overflow: visible; fill: none; stroke: var(--link-edge); stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }
-.graph-swatch.trace-key-more { width: auto; height: auto; padding: 0 3px; font: 600 0.62rem/1.2 var(--mono); color: var(--muted); }
 .graph-swatch.is-faded { opacity: var(--focus-fade); }
 /* ---------- End of the stage chrome ---------- */
 
@@ -887,17 +886,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 .trace-note { margin: 0 0 12px; max-width: 48rem; font-size: 0.9rem; }
 .trace-note.is-untraced { padding: 8px 12px; border: 1px solid var(--warn); border-radius: 6px; }
 /* On a wide screen the trace is drawn on the canvas (TraceCanvas.tsx) and the table is its accessible layer, visually hidden
-   (its links carry focus and the arrow keys; the canvas rings the box a focused link stands for), its paging with it; the
-   column names ride the frame's top edge, following the camera across. */
+   (its links carry focus and the arrow keys; the canvas rings the box a focused link stands for), its paging with it. */
 .trace-access { position: absolute; top: 0; left: 0; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-.trace-column-names { position: absolute; left: 0; right: 0; z-index: 1; height: 0; margin: 0; padding: 0; list-style: none; pointer-events: none; }
-.trace-column-names > li { position: absolute; top: 2px; box-sizing: border-box; padding: 0 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
-.trace-column-names > li > span { padding: 0 4px; border-radius: 4px; background: var(--paper); }
-/* Each band's label (its domain's name) over its head on the map, its bottom on the head's: the overview reads as labeled bands. */
-.trace-band-names { position: absolute; inset: 0; z-index: 1; margin: 0; padding: 0; list-style: none; pointer-events: none; overflow: hidden; }
-.trace-band-names > li { position: absolute; transform: translateY(-100%); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--ink); }
-.trace-band-names > li > span { padding: 0 4px; border-radius: 4px; background: var(--paper); }
-.trace-band-names > li.is-continued { color: var(--muted); }
 
 /* ---------- Themes and Appearance (app/src/theme, LA-PAT-APP-CODE-R15) ---------- */
 /* A theme's chip in the picker and its preview on the page take the theme's tokens inline, so they draw with its colors. */

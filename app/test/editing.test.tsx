@@ -206,9 +206,10 @@ describe('adding a record', () => {
     expect(within(form).queryByRole('combobox', { name: /^Parent/ })).toBeNull();
     expect(within(form).queryByRole('group', { name: 'Where it sits' })).toBeNull();
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Checkout');
+    await user.type(within(form).getByRole('textbox', { name: /^description/ }), 'Shows the order before the shopper pays.');
     await user.click(within(form).getByRole('button', { name: 'Add view' }));
     await waitFor(() => expect(writes).toHaveLength(1));
-    expect(writes[0]).toEqual([{ op: 'add', table: 'view', row: { id: 'DM-V02', title: 'Checkout' } }]);
+    expect(writes[0]).toEqual([{ op: 'add', table: 'view', row: { id: 'DM-V02', title: 'Checkout', description: 'Shows the order before the shopper pays.' } }]);
   });
 
   it('LA-V92-R31-T01 adds from a domain\'s page the kinds that sit under it, and a specification, which takes its domain from its ID', async () => {

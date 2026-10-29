@@ -15,8 +15,8 @@ import {
 // (paint.ts), so a label keeps its size in the map and is crisp at any zoom. A plate is made once
 // per map and node, from the lines the map broke its label into.
 
-/** How a box is drawn: a Tree box in its kind's shape, a Nested box, or a Trace stage's box in its kind's shape. */
-export type PlateView = 'tree' | 'nested' | 'trace';
+/** How a box is drawn: a Tree box in its kind's shape (the Graph's and the Trace stage's), or a Nested box. */
+export type PlateView = 'tree' | 'nested';
 
 /** One line of a label, at its place in the map: its text as the map broke it (a space it ends with is not drawn), its left end and baseline, its font size, and its width in map units. */
 export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
@@ -31,7 +31,7 @@ export interface Plate {
   id: string;
   /**
    * Its place in the map, unique among the frame's plates: what the fade and the spotlight light (fade.ts). Its ID on
-   * the graph, where each record has one place; a Trace stage's box's key, a record there having a box in each lane.
+   * the graph, where each record has one place; a Trace stage's node's key, a record there having a node in each chain.
    */
   place: string;
   kind: string;
@@ -83,17 +83,14 @@ interface Place {
   top: boolean;
   t: number;
   icons: { draw: 'shape' | 'mark'; name: Shape | Mark }[];
-  /** Muted lines after the title (a Trace stage's box: the outcomes a capability serves, how many lanes hold a record). */
-  notes?: readonly string[];
 }
 
 /** A label's lines placed in its box, as a column of lines centered or at the left, its icons before the first kind and ID line. */
-function placeLines({ lines, box, centered, top, t, icons, notes = [] }: Place): { lines: PlateLine[]; icons: PlateIcon[] } {
+function placeLines({ lines, box, centered, top, t, icons }: Place): { lines: PlateLine[]; icons: PlateIcon[] } {
   const m = textMeasure();
   const all = [
     ...lines.meta.map((text) => ({ text, face: 'meta' as Face, size: META_FONT * t, tone: 'muted' as const })),
     ...lines.title.map((text) => ({ text, face: 'title' as Face, size: TITLE_FONT * t, tone: 'ink' as const })),
-    ...notes.map((text) => ({ text, face: 'meta' as Face, size: META_FONT * t, tone: 'muted' as const })),
   ];
   const height = all.reduce((s, l) => s + l.size * LINE_HEIGHT, 0);
   let y = top ? box.top : box.top + (box.bottom - box.top - height) / 2;
@@ -139,36 +136,35 @@ function badgesAt(marks: { errors: number; warnings: number; gaps: string[] }, r
 }
 
 /**
- * What a Trace stage box is when it is no record (a file, a gap, the Untraced lane's head): its kind, its words and its
- * colors' role. It is drawn as a plain box, dashed when it is a gap.
+ * What a Trace stage node is when it is no record (a file, a gap, a link to a capability, the Untraced mark): its kind,
+ * its words and its colors' role. It is drawn as a plain box, dashed when it is a gap or the mark.
  */
 export interface PlainBox { kind: string; kindLabel: string; title: string; meta: string; stage: BoxStage; dashed: boolean }
 
-/** Where a box's map node, a Nested one, or a Trace stage's box comes from. */
+/**
+ * Where a box comes from: a Tree map's node (the Graph's, or the Trace stage's, LA-V98, where `place` is its node's key
+ * and `plain` says what a node that is no record is), or a Nested one.
+ */
 export type PlateSource =
-  | { view: 'tree'; node: MapNode }
-  | { view: 'nested'; node: NestedNode }
-  /**
-   * A Trace stage's box (LA-V98), at text scale 1: its lines, already wrapped and cut to its box, at its top when it
-   * spans several lanes; its notes after them; `plain` for a box that is no record.
-   */
-  | { view: 'trace'; place: string; node: { x: number; y: number; w: number; h: number }; lines: WrappedLabel; notes: readonly string[]; top: boolean; plain?: PlainBox };
+  | { view: 'tree'; node: MapNode; place?: string; plain?: PlainBox }
+  | { view: 'nested'; node: NestedNode };
 
 /** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DS06, LA-EXP-DS07, LA-V93-R06). */
 export function plateOf(index: SpecIndex, id: string, source: PlateSource): Plate {
-  if (source.view === 'trace') return tracePlate(index, id, source);
   const { x, y, w, h, text: t } = source.node;
-  const record = index.byId.get(id);
-  const words = labelLines(index, id);
-  const kind = record ? record.kind : treeGroup(index, id)?.kind ?? 'folder';
-  const { shape, mark } = nodeShape(index, id);
-  const stage = stageFor(index, id, kind);
-  const marks = marksOf(index, id);
+  const plain = source.view === 'tree' ? source.plain : undefined;
+  const record = plain ? undefined : index.byId.get(id);
+  const words = plain ?? labelLines(index, id);
+  const kind = plain ? plain.kind : record ? record.kind : treeGroup(index, id)?.kind ?? 'folder';
+  const { shape, mark } = plain ? { shape: 'box' as Shape, mark: undefined } : nodeShape(index, id);
+  const stage = plain ? plain.stage : stageFor(index, id, kind);
+  const marks = plain ? { errors: 0, warnings: 0, gaps: [] as string[] } : marksOf(index, id);
   const marked = marks.errors + marks.warnings + marks.gaps.length > 0;
   const base = {
-    id, place: id, kind, kindLabel: record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
-    stage, group: !record, shape, view: source.view, x, y, w, h, text: t, ...marks,
-    dashed: kind === 'question',
+    id, place: (source.view === 'tree' ? source.place : undefined) ?? id, kind,
+    kindLabel: plain ? plain.kindLabel : record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
+    stage, group: !plain && !record, shape, view: source.view, x, y, w, h, text: t, ...marks,
+    dashed: plain ? plain.dashed : kind === 'question',
   };
 
   if (source.view === 'tree') {
@@ -199,31 +195,6 @@ export function plateOf(index: SpecIndex, id: string, source: PlateSource): Plat
   const outline = outlineOf('box', { x, y, w, h }, scale);
   const badges = marked ? badgesAt(marks, x + w - border - BADGE.right * t, y + border + BADGE.top * t, t) : [];
   return { ...base, scale, outline, edged: false, border, decoration: null, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
-}
-
-/** A Trace stage's box: a record in its kind's shape, or a plain box, at text scale 1, its lines as given. */
-function tracePlate(index: SpecIndex, id: string, source: Extract<PlateSource, { view: 'trace' }>): Plate {
-  const { x, y, w, h } = source.node;
-  const { plain } = source;
-  const record = plain ? undefined : index.byId.get(id);
-  const { shape, mark } = plain ? { shape: 'box' as Shape, mark: undefined } : nodeShape(index, id);
-  const kind = plain ? plain.kind : record?.kind ?? 'folder';
-  const words = plain ?? labelLines(index, id);
-  const marks = plain ? { errors: 0, warnings: 0, gaps: [] } : marksOf(index, id);
-  const marked = marks.errors + marks.warnings + marks.gaps.length > 0;
-  const outline = outlineOf(shape, { x, y, w, h }, 1);
-  const edged = outline.kind === 'polygon';
-  const inset = edged ? 0 : BORDER;
-  const { room } = SHAPES[shape];
-  const box = { left: x + inset + LABEL_PAD + room.l, right: x + w - inset - LABEL_PAD - room.r, top: y + inset + LABEL_PAD_BLOCK + room.t, bottom: y + h - inset - LABEL_PAD_BLOCK - room.b };
-  const placed = placeLines({ lines: source.lines, box, centered: false, top: source.top, t: 1, icons: mark ? [{ draw: 'mark', name: mark }] : [], notes: source.notes });
-  const badges = marked ? badgesAt(marks, x + w - inset - BADGE.right - room.r, y + inset + BADGE.top + room.t, 1) : [];
-  return {
-    id, place: source.place, kind, kindLabel: plain ? plain.kindLabel : record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
-    stage: plain ? plain.stage : stageFor(index, id, kind), group: !plain && !record, shape, view: 'trace', x, y, w, h, text: 1, scale: 1, ...marks,
-    dashed: plain ? plain.dashed : kind === 'question', outline, edged, border: BORDER, decoration: shape,
-    label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges,
-  };
 }
 
 /** The accessible name of a box: "Use case (center) Browse the map", "Stage Use cases (4) in LA-EXP". */

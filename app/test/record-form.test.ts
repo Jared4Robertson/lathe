@@ -41,7 +41,8 @@ describe('form generation from the schema', () => {
     const test = formFields(schema, 'use_case_test');
     // An enum is a choice of its values; a text field holding prose is a text area.
     expect(test.find((f) => f.name === 'state')).toMatchObject({ input: 'choice', values: ['automated', 'manual', 'not automated yet'], required: true });
-    expect(test.find((f) => f.name === 'then')).toMatchObject({ input: 'text', required: false });
+    expect(test.find((f) => f.name === 'then')).toMatchObject({ input: 'text', required: true });
+    expect(test.find((f) => f.name === 'notes')).toMatchObject({ input: 'text', required: false });
     // A whole number, an optional true/false (a choice, so it can be left out), each with the column's meaning.
     expect(formFields(schema, 'capability').find((f) => f.name === 'position')).toMatchObject({ input: 'integer', type: 'integer' });
     expect(formFields(schema, 'pattern_rule').find((f) => f.name === 'applies_when_negated')).toMatchObject({ input: 'choice', type: 'boolean', values: ['true', 'false'] });
@@ -193,13 +194,18 @@ describe('commands from a draft', () => {
     expect(draft.links.invokes).toEqual(['DM-SHOP-CMD01']);
 
     draft.values.title = 'Shopper adds it';
-    draft.values.description = '';
     draft.links.invokes = ['DM-SHOP-QRY01'];
     expect(commandsFor(index, 'flow_step', draft, record).commands).toEqual([
-      { op: 'set', table: 'flow_step', key: 'DM-SHOP-UC01-FL01-S01', changes: { title: 'Shopper adds it', description: null } },
+      { op: 'set', table: 'flow_step', key: 'DM-SHOP-UC01-FL01-S01', changes: { title: 'Shopper adds it' } },
       { op: 'unlink', relation: 'invokes', source: 'DM-SHOP-UC01-FL01-S01', target: 'DM-SHOP-CMD01' },
       { op: 'link', relation: 'invokes', source: 'DM-SHOP-UC01-FL01-S01', target: 'DM-SHOP-QRY01' },
     ]);
+
+    // A column cleared is set to null: a view's route.
+    const view = index.byId.get('DM-V01')!;
+    const cleared = draftOf(index, view);
+    cleared.values.route = '';
+    expect(commandsFor(index, 'view', cleared, view).commands).toEqual([{ op: 'set', table: 'view', key: 'DM-V01', changes: { route: null } }]);
 
     // An endpoint moves between its two kinds of parent.
     const endpoint = index.byId.get('DM-SHOP-EP01')!;

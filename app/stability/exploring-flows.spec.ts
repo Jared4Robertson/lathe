@@ -220,22 +220,21 @@ test.describe('Exploring flows', () => {
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
     await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
-    // A requirement's Trace stage frames its lane of the product's map: the step that fulfills it, with its flow and what it invokes, an arrow for each link.
+    // A requirement's Trace stage frames its box in the product's tree, its chain to its right: the step that fulfills it, with its flow and what it invokes, an arrow for each link.
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
     await traceDrawn(page);
     const chain = await traceSceneOf(page, true);
-    const lane = chain.boxes.filter((b) => b.strength === 1);
-    expect(lane.find((b) => b.id === 'LA-EXP-UC03-FL01-S01')?.column).toBe('step');
-    expect(lane.find((b) => b.id === 'LA-EXP-UC03-FL01')?.column).toBe('flow');
-    expect(lane.find((b) => b.id === 'LA-EXP-CMD01')?.column).toBe('design');
+    const inChain = (id: string) => chain.boxes.find((b) => b.key === `LA-EXP-UC03-R18|${id}`);
+    for (const id of ['LA-EXP-UC03-FL01', 'LA-EXP-UC03-FL01-S01', 'LA-EXP-CMD01']) expect(inChain(id)?.strength, id).toBe(1);
     expect((await traceSceneOf(page)).boxes.some((b) => b.id === 'LA-EXP-UC03-R18' && b.focus), 'the requirement is in view').toBe(true);
-    expect(chain.lines.map((l) => `${l.source} > ${l.target}`)).toEqual(expect.arrayContaining(['LA-EXP-UC03-FL01 > LA-EXP-UC03-FL01-S01', 'LA-EXP-UC03-FL01-S01 > LA-EXP-CMD01']));
+    const idOf = new Map(chain.boxes.map((b) => [b.key, b.id]));
+    expect(chain.lines.filter((l) => l.link).map((l) => `${idOf.get(l.source)} > ${idOf.get(l.target)}`)).toEqual(expect.arrayContaining(['LA-EXP-UC03-FL01 > LA-EXP-UC03-FL01-S01', 'LA-EXP-UC03-FL01-S01 > LA-EXP-CMD01']));
     // From the keyboard, through the table under the canvas: the step's link, then Enter.
     const design = page.locator('.focus-stage .trace-access .trace-column').nth(1);
     await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ }).focus();
     await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL01-S01');
-    // The step's own page in the wiki card, shown again (Enter, from the page); the Trace stage's camera now frames the lanes it belongs to, the step as the focus.
+    // The step's own page in the wiki card, shown again (Enter, from the page); the Trace stage's camera now frames its copy in the chain arrived in, the step as the focus.
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('Enter');
     await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();

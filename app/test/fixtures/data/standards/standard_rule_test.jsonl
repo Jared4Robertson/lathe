@@ -1,1 +1,1 @@
-{"id":"DM-STD-CODE-R01-T01","title":"Each command handler opens and commits its own transaction","standard_rule_id":"DM-STD-CODE-R01","level":"unit","state":"automated","file":"test/handlers.test.ts"}
+{"id":"DM-STD-CODE-R01-T01","title":"Each command handler opens and commits its own transaction","standard_rule_id":"DM-STD-CODE-R01","level":"unit","state":"automated","file":"test/handlers.test.ts","when":"Runs the scenario the title names.","then":"Expects what the title says."}
