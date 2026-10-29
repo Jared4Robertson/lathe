@@ -724,7 +724,6 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (wrapper.current) drawLeaderLine(ctx.current, {
       host: wrapper.current, space, dpr, color: focusPlate ? boxColors(look.current, focusPlate).edge : look.current.ink,
       box: node ? { left: node.x * v.zoom + v.x, top: node.y * v.zoom + v.y, right: (node.x + node.w) * v.zoom + v.x, bottom: (node.y + node.h) * v.zoom + v.y } : null,
-      avoid: frame.plates.filter((p) => p.id !== focus).map((p) => ({ left: p.x * v.zoom + v.x, top: p.y * v.zoom + v.y, right: (p.x + p.w) * v.zoom + v.x, bottom: (p.y + p.h) * v.zoom + v.y })),
     });
     if (!spot.done || !fade.done || marksMoving(live, frame.plates.map((p) => p.id))) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
