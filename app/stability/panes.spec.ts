@@ -246,22 +246,45 @@ test.describe('the stage toolbar', () => {
   });
 });
 
-// A flow's steps in the narrow wiki card (LA-V101-R06): the table keeps room for every column's words and scrolls
-// sideways in its own box, rather than squeezing "What happens" to a word per line (LA-PAT-APP-UX-R18).
+// A flow's steps in the narrow wiki card (LA-V101-R06): where its columns can't fit, each step is laid out stacked
+// (its number and ID on one line, What happens at full width beneath, its links below), so nothing is drawn cut or
+// squeezed to a word per line (LA-PAT-APP-UX-R18).
 test.describe('a flow\'s steps in the wiki card', () => {
-  test('LA-V101-R06-T02 in the 360 px wiki card, What happens keeps its width and the steps table scrolls sideways', async ({ page }) => {
+  test('LA-V101-R06-T02 in the 360 px wiki card, each step reads whole, stacked, and nothing scrolls sideways or is cut', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPage(page, '/LA-EXP-UC03-FL01?stage=graph', STRIP);
     await page.locator(CARD).getByRole('button', { name: 'More' }).click();
     const table = page.locator(`${CARD} table.flow-steps`).first();
     await table.waitFor();
     const sizes = await table.evaluate((el) => {
-      const box = el.parentElement!;
+      const box = el.parentElement!.getBoundingClientRect();
       const what = el.querySelector('td.step-what')!.getBoundingClientRect();
-      return { what: what.width, scrolls: box.scrollWidth > box.clientWidth, ids: [...el.querySelectorAll('.step-ids > li')].every((li) => li.getClientRects().length === 1) };
+      const head = el.querySelector('tr.flow-step > th')!.getBoundingClientRect();
+      const inside = [...el.querySelectorAll('tr.flow-step > *')].every((c) => c.getBoundingClientRect().right <= box.right + 1);
+      return { stacked: what.top >= head.bottom - 1, full: what.width >= box.width - 2, inside, scrolls: el.parentElement!.scrollWidth > el.parentElement!.clientWidth, ids: [...el.querySelectorAll('.step-ids > li')].every((li) => li.getClientRects().length === 1) };
     });
-    expect(sizes.what, 'What happens keeps room for its words').toBeGreaterThanOrEqual(300);
-    expect(sizes.scrolls, 'the table scrolls sideways in its own box').toBe(true);
+    expect(sizes.stacked, 'What happens sits beneath the step\'s number and ID').toBe(true);
+    expect(sizes.full, 'What happens takes the card\'s full width').toBe(true);
+    expect(sizes.inside, 'every cell lies inside the card').toBe(true);
+    expect(sizes.scrolls, 'nothing scrolls sideways').toBe(false);
     expect(sizes.ids, 'each linked ID stays on one line').toBe(true);
+  });
+
+  test('LA-V101-R10-T02 in the 360 px wiki card, a use case\'s requirement rows read whole, stacked, and nothing is cut', async ({ page }) => {
+    await page.setViewportSize({ width: 1440, height: 900 });
+    await openPage(page, '/LA-AUT-UC06?stage=graph', STRIP);
+    await page.locator(CARD).getByRole('button', { name: 'More' }).click();
+    const table = page.locator(`${CARD} table.trace-requirements`).first();
+    await table.waitFor();
+    const sizes = await table.evaluate((el) => {
+      const box = el.parentElement!.getBoundingClientRect();
+      const row = el.querySelector('tr[data-requirement]')!;
+      const head = row.querySelector('th')!.getBoundingClientRect();
+      const designed = row.querySelector('td')!.getBoundingClientRect();
+      return { stacked: designed.top >= head.bottom - 1, inside: [...el.querySelectorAll('tr[data-requirement] > *')].every((c) => c.getBoundingClientRect().right <= box.right + 1), scrolls: el.parentElement!.scrollWidth > el.parentElement!.clientWidth };
+    });
+    expect(sizes.stacked, 'Designed sits beneath the requirement').toBe(true);
+    expect(sizes.inside, 'every cell lies inside the card').toBe(true);
+    expect(sizes.scrolls, 'nothing scrolls sideways').toBe(false);
   });
 });
