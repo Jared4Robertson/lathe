@@ -18,7 +18,7 @@ import {
   type Neighborhood,
 } from './model';
 import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
-import { StageCamera, StageToolbar, ZOOM_STEP, type ToolbarTier } from '../views/StageChrome';
+import { StageCamera, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
 import { DEFAULT_GRAPH_SETTINGS } from './settings';
 import { graphMap, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
@@ -141,28 +141,25 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
       </div>
     );
   }
-  // The shared stage toolbar (views/StageChrome.tsx): the steps, Out, In and Frame, then the layout switch, the filters and
-  // depth, then the key. In the narrow tiers the layouts show one letter each, and in the narrowest depth folds into the
-  // More menu.
-  const tools = (tier: ToolbarTier) => ({
-    controls: (
+  // The shared stage toolbar (views/StageChrome.tsx): the steps, Out, In and Frame, the Changes controls, then the layout
+  // switch and the filters (primary, always in the row), and depth (secondary, folding into More), then the key. In the
+  // toolbar's narrow form the layouts show one letter each.
+  const tools = (narrow: boolean) => ({
+    primary: (
       <>
-        <div className="graph-depth graph-layout" role="group" aria-label="Layout">
-          {GRAPH_LAYOUTS.map((l) => {
-            const letter = tier === 'narrow' || tier === 'menu';
-            return (
-              <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
-                <button type="button" aria-pressed={layout === l.layout} aria-label={letter ? l.label : undefined} onClick={() => update({ layout: l.layout })}>{letter ? l.label[0] : l.label}</button>
-              </Tooltip>
-            );
-          })}
+        <div className={`graph-depth graph-layout${narrow ? ' is-narrow' : ''}`} role="group" aria-label="Layout">
+          {GRAPH_LAYOUTS.map((l) => (
+            <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
+              <button type="button" aria-pressed={layout === l.layout} aria-label={narrow ? l.label : undefined} onClick={() => update({ layout: l.layout })}>{narrow ? l.label[0] : l.label}</button>
+            </Tooltip>
+          ))}
         </div>
         <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
       </>
     ),
     // Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21).
-    fold: (
-      <div className={`graph-depth${layout === 'tree' ? '' : ' is-idle'}`} role="group" aria-label="Depth" aria-hidden={layout !== 'tree' || undefined} inert={layout !== 'tree' || undefined}>
+    secondary: (
+      <div className={`graph-depth${narrow ? ' is-narrow' : ''}${layout === 'tree' ? '' : ' is-idle'}`} role="group" aria-label="Depth" aria-hidden={layout !== 'tree' || undefined} inert={layout !== 'tree' || undefined}>
         <span className="graph-depth-name">Depth</span>
         {DEPTHS.map((d) => (
           <Tooltip key={d} label={DEPTH_LABELS[d - 1]} command={d === depth + 1 ? 'graphDepthUp' : d === depth - 1 ? 'graphDepthDown' : undefined}>

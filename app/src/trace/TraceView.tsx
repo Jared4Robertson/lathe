@@ -275,7 +275,7 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   const table = spec && page
     ? <TraceMatrix {...props} spec={spec} page={page} untraced={untraced} access={drawn} more={more} />
     : <TraceChainCards {...props} access={drawn} />;
-  const toolbar = <StageToolbar can={(move) => targetOf(move) !== null} own={() => ({ controls: filter })} stageKey={<TraceKey lead={spec?.lead} />} />;
+  const toolbar = <StageToolbar can={(move) => targetOf(move) !== null} own={() => ({ primary: filter })} stageKey={<TraceKey lead={spec?.lead} />} />;
 
   if (!drawn) {
     return (

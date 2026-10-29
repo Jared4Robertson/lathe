@@ -320,10 +320,9 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .graph-filter-body legend { font-weight: 600; font-size: 0.78rem; margin-bottom: 2px; }
 .graph-filter-body label { display: flex; gap: 6px; align-items: center; font-size: 0.82rem; }
 .graph-filters > summary .icon { align-self: center; }
-.stage-toolbar:is([data-tier="narrow"], [data-tier="menu"]) .graph-depth button { padding-inline: 6px; }
+.graph-depth.is-narrow button { padding-inline: 6px; }
 .stage-more-body .graph-depth.is-idle { display: none; }
 .stage-more-body .graph-depth { flex-wrap: wrap; }
-.stage-more-body .graph-depth-name { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
 .graph-filter-actions { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 6px; }
 .graph-filter-body .hint { grid-column: 1 / -1; margin: 0; font-size: 0.78rem; }
 .graph-page :is(button, input, summary, a):focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
@@ -405,18 +404,20 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-key > summary .icon { align-self: center; }
 /* The key: a popover under its button at the end of the toolbar, as the Graph's filters, scrolling inside when long. */
 .stage-key-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 0; width: min(460px, calc(100vw - 32px)); white-space: normal; max-height: min(70vh, 560px); overflow-y: auto; scrollbar-gutter: stable; padding: 4px 12px 12px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
-/* The toolbar's narrower forms (TOOLBAR_TIERS): compact hides the names and letters beside the icons and tightens the
-   steps, narrow lets a stage show its own controls narrower (the Graph's layouts by their first letter), menu moves the
-   steps and a stage's foldable controls into More. The names stay the accessible ones. */
-.stage-toolbar:not([data-tier="full"]) :is(.graph-depth-name, .graph-filters-name, .stage-key-name, .stage-frame-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
-.stage-toolbar:not([data-tier="full"]) { gap: 6px; }
-.stage-toolbar:is([data-tier="narrow"], [data-tier="menu"]) .stage-step-letter { display: none; }
-.stage-toolbar:not([data-tier="full"]) .stage-step { padding-inline: 4px; }
+/* The toolbar's narrower forms (TOOLBAR_FORMS in StageChrome.tsx): the names beside the icons give way first (they stay
+   the accessible ones), then groups fold into More at the right end (the Changes controls, then the stage's secondary
+   controls and the Key), then the step letters drop and a stage shows its own controls narrower; the walk, Frame and
+   the stage's primary controls stay in the row. In More every name shows again. */
+.stage-toolbar[data-names="hidden"] :is(.graph-depth-name, .graph-filters-name, .stage-key-name, .stage-frame-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.stage-toolbar[data-names="hidden"] { gap: 6px; }
+.stage-toolbar[data-names="hidden"] .stage-step { padding-inline: 4px; }
 .stage-more { flex: none; }
 .stage-more > summary { cursor: pointer; display: inline-flex; align-items: center; padding: 3px 4px; border-radius: 5px; list-style: none; }
 .stage-more > summary::-webkit-details-marker { display: none; }
 .stage-more > summary:hover { color: var(--steel); }
-.stage-more-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); left: 12px; max-width: calc(100% - 24px); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
+.stage-more-body { box-sizing: border-box; position: absolute; z-index: 10; top: calc(100% - 4px); right: 12px; width: max-content; max-width: min(460px, calc(100vw - 32px)); display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 10px; white-space: normal; background: var(--sheet); border: 1px solid var(--rule); border-radius: 8px; box-shadow: 0 6px 20px var(--shadow-soft); }
+.stage-toolbar .stage-more-body :is(.graph-depth-name, .stage-key-name) { position: static; width: auto; height: auto; overflow: visible; clip: auto; }
+.stage-more-body .stage-key-body { position: static; width: auto; max-height: min(50vh, 420px); margin-top: 6px; box-shadow: none; }
 .stage-tools :is(button, input, summary, a):focus-visible { outline: 2px solid var(--steel); outline-offset: 2px; }
 .stage-toolbar-end { display: inline-flex; flex-wrap: nowrap; gap: 8px; align-items: center; margin-left: auto; flex: none; }
 /* The camera's buttons at the bottom left of the frame: zoom in, zoom out and fit, on every stage. */
@@ -1012,9 +1013,12 @@ a.row-link.row-link:focus-visible { outline: none; }
 .wiki-panel.is-sheet::before { content: none; }
 /* A stage's toolbar floats inside the open space, at its top (views/StageChrome.tsx), above everything the stage draws (its column names, camera and edge hints), so its popovers open over them. */
 .stage-tools { position: absolute; z-index: 8; box-sizing: border-box; left: var(--open-left, 0px); max-width: calc(100% - var(--open-left, 0px) - var(--open-right, 0px)); border: 1px solid var(--float-border); border-radius: var(--panel-radius); }
-/* A stage's own toolbar stays in one spot, centered on the whole stage whatever panels are open; on a narrow window it
-   narrows (its tiers fold its controls) rather than move, keeping clear of the nav and the chat on both sides. */
-.stage-tools[data-stage-tools="top"] { top: var(--open-top, 0px); padding: 6px 10px; left: 50%; transform: translateX(-50%); max-width: calc(100% - 2 * max(var(--open-left, 0px), var(--chat-space, 0px))); }
+/* A stage's own toolbar has the open space's whole width at the top as its room (right of the nav, left of the chat; the
+   wiki card sits below its row), a zero-high strip the toolbar measures its tiers against. It sits centered on the
+   whole stage while it fits there, whatever panels are open; when it is wider than that it stays inside the room, against
+   the nav or the chat, rather than fold its walk away. */
+.stage-tools-room { position: absolute; z-index: 8; top: var(--open-top, 0px); left: var(--open-left, 0px); right: var(--chat-space, 0px); height: 0; container-type: inline-size; }
+.stage-tools[data-stage-tools="top"] { top: 0; left: 0; padding: 6px 10px; width: max-content; max-width: 100cqw; translate: clamp(0px, 50cqw + (var(--chat-space, 0px) - var(--open-left, 0px)) / 2 - 50%, 100cqw - 100%) 0; }
 /* The stages fill the stage; what they draw sits in the frame, the open space less their tools. */
 .focus-stage > :is(.graph-page, .erd-page, .trace-page), .focus-stage > .graph-page > .graph-workspace, .focus-stage .graph-workspace > .graph-canvas, .focus-stage .erd-page > :is(.erd-canvas, .erd-empty) { position: absolute; inset: 0; min-height: 0; }
 .focus-stage .stage-camera { left: calc(var(--frame-left, 0px) + 4px); bottom: calc(var(--frame-bottom, 0px) + 4px); }

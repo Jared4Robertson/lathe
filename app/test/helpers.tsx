@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor, within } from '@testing-library/react
 import { expect, vi } from 'vitest';
 import App from '../src/App';
 import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
-import type { BaselineAnswer } from '../../lathe/src/server/baseline';
+import type { BaselineAnswer } from '../../lathe/src/server/contract';
 import type { Command } from '../../lathe/src/store/store';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
 import { SETTINGS_KEY } from '../src/graph/settings';

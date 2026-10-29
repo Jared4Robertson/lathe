@@ -204,3 +204,43 @@ test.describe('the stage and its panels', () => {
     expect(expanded.top + expanded.height, 'above the foot').toBeLessThanOrEqual(expanded.foot - 20);
   });
 });
+
+// The stage toolbar's fold order (LA-PAT-APP-UX-R21) in the room the open space gives it (LA-V96-R05): at every desktop
+// width, the nav and the wiki card open, the walk, Frame and the Graph's layouts and filters stay in the row, inside the
+// room between the nav and the window's edge, while the Changes controls, depth and the Key fold into More first.
+test.describe('the stage toolbar', () => {
+  test('LA-V96-R05-T04 at 1024 to 1920 px with the nav and the card open, the toolbar keeps its walk, Frame and the Graph\'s layouts and filters in its row, inside the open space', async ({ page }) => {
+    await openPage(page, `${RECORD}?stage=graph`, STRIP);
+    await stageReady(page);
+    for (const width of [1024, 1280, 1440, 1600, 1920]) {
+      await page.setViewportSize({ width, height: 900 });
+      await page.waitForTimeout(400);
+      const seen = await page.evaluate((stage) => {
+        const tools = document.querySelector(`${stage} [data-stage-tools="top"]`)!;
+        const toolbar = tools.querySelector<HTMLElement>('.stage-toolbar')!;
+        const nav = document.querySelector('nav#nav')!.getBoundingClientRect();
+        const box = tools.getBoundingClientRect();
+        const shown = (sel: string) => {
+          const el = toolbar.querySelector(sel);
+          if (!el || el.closest('.stage-more-body')) return false;
+          const r = el.getBoundingClientRect();
+          return r.width > 0 && r.left >= box.left && r.right <= box.right + 1;
+        };
+        return {
+          tier: toolbar.dataset.tier,
+          overflows: toolbar.scrollWidth > toolbar.clientWidth + 1,
+          clear: box.left >= nav.right && box.right <= window.innerWidth,
+          row: ['.stage-steps .is-left', '.stage-steps .is-right', '.stage-steps .is-up', '.stage-steps .is-down', '.stage-steps .is-out', '.stage-steps .is-in', '.stage-frame', '.graph-layout', '.graph-filters'].filter((s) => !shown(s)),
+          changesInRow: shown('.changes-tools'),
+          more: !!toolbar.querySelector('.stage-more'),
+        };
+      }, STAGE);
+      expect(seen.overflows, `${width} px: the row fits`).toBe(false);
+      expect(seen.clear, `${width} px: the toolbar sits inside the open space, clear of the nav`).toBe(true);
+      expect(seen.row, `${width} px: the walk, Frame, the layouts and the filters in the row`).toEqual([]);
+      expect(seen.tier, `${width} px: never the phone's form`).not.toBe('menu');
+      // What is not in the row is in More: the Changes controls fold before anything the walk needs.
+      if (!seen.changesInRow) expect(seen.more, `${width} px: the Changes controls in More`).toBe(true);
+    }
+  });
+});

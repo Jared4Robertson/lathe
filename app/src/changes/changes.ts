@@ -1,9 +1,9 @@
 import { createContext, useContext } from 'react';
 import { applyDelta, recordChanges, rowDelta, type Delta, type RecordChange, type Tables } from '../../../lathe/src/changes';
-import type { BaselineAnswer } from '../../../lathe/src/server/baseline';
+import type { BaselineAnswer, BaselineSince } from '../../../lathe/src/server/contract';
 import type { SpecIndex, SpecSource } from '../specs/data';
 
-export type { BaselineAnswer, Delta, RecordChange, Tables };
+export type { Delta, RecordChange, Tables };
 
 // What changed in the product (LA-EXP-UC15): the engine's one record diff (lathe/src/changes.ts) between the data now
 // and a baseline, and the live changes as the data reloads. Three baselines: the last commit (the default), where the
@@ -62,7 +62,7 @@ const known = new Map<string, { at: number; answer: Promise<BaselineAnswer> }>()
 const FRESH_MS = 1000;
 
 /** Asks the server for the product's rows at a baseline; a commit's are asked for once, the moving ones again on `fresh`. */
-export function fetchBaseline(product: string, since: 'commit' | 'branch' | { commit: string }, fresh = false): Promise<BaselineAnswer> {
+export function fetchBaseline(product: string, since: BaselineSince, fresh = false): Promise<BaselineAnswer> {
   const key = `${product}\u0000${typeof since === 'string' ? since : since.commit}`;
   const cached = known.get(key);
   if (cached && (!fresh || typeof since !== 'string' || performance.now() - cached.at < FRESH_MS)) return cached.answer;

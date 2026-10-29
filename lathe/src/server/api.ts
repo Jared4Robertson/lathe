@@ -3,7 +3,7 @@
 //   GET  /api/spec                SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
 //   POST /api/write               { commands } -> WriteAnswer: one transaction through the command layer of the product the commands name
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
-//   GET  /api/baseline?product=<ID>&since=<commit|branch|hash>   BaselineAnswer (baseline.ts): the product's rows at a commit, for the record diff (../changes.ts)
+//   GET  /api/baseline?product=<ID>&since=<commit|branch|hash>   BaselineAnswer: the product's rows at a commit, for the record diff (../changes.ts)
 //   GET  /api/reference           the workspace's own product's Reference (reference.ts): kinds, tables, relations, folders, checks
 //
 // The root is a workspace: its own product, and each other product its lathe.config.json lists under products, each
