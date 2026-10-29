@@ -155,8 +155,8 @@ describe('the graph tree, its depth and its camera', () => {
 
     await showGraph('/P-D-UC01');
     const steps = within(screen.getByRole('group', { name: 'Step through the tree' }));
-    expect(steps.getByRole('button', { name: 'Step out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'ArrowLeft');
-    expect(steps.getByRole('button', { name: 'Step to the next sibling' })).toHaveAttribute('aria-keyshortcuts', 'ArrowDown');
+    expect(steps.getByRole('button', { name: 'Step out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'ArrowLeft A');
+    expect(steps.getByRole('button', { name: 'Step to the next sibling' })).toHaveAttribute('aria-keyshortcuts', 'ArrowDown S');
     expect(steps.getByRole('button', { name: 'Step to the previous sibling' })).toBeDisabled();
     // With a modifier held, nothing steps.
     fireEvent.keyDown(document.body, { key: 'ArrowDown', code: 'ArrowDown', altKey: true });
@@ -192,6 +192,8 @@ describe('the graph tree, its depth and its camera', () => {
   const LAST = 'P-D/question';
   const STEP_BUTTONS = { out: 'Step out to the parent', in: 'Step in to the first child', previous: 'Step to the previous sibling', next: 'Step to the next sibling' };
   const MARKS: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' };
+  // Each arrow's walking letter, which the step's keys name after it.
+  const LETTERS: Record<string, string> = { ArrowLeft: 'A', ArrowRight: 'D', ArrowUp: 'W', ArrowDown: 'S' };
 
   const VIEWS = { tree: 'Tree', nested: 'Nested', voronoi: 'Voronoi' } as const;
   for (const layout of ['tree', 'nested', 'voronoi'] as const) {
@@ -205,7 +207,7 @@ describe('the graph tree, its depth and its camera', () => {
       expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual(Object.values(STEP_BUTTONS));
       for (const [key, step] of Object.entries(ARROWS[layout])) {
         const button = screen.getByRole('button', { name: STEP_BUTTONS[step] });
-        expect(button, `${layout}: ${step}`).toHaveAttribute('aria-keyshortcuts', key);
+        expect(button, `${layout}: ${step}`).toHaveAttribute('aria-keyshortcuts', `${key} ${LETTERS[key]}`);
         expect(button, `${layout}: ${step}`).toHaveTextContent(MARKS[key]);
       }
       // Each arrow on the canvas steps where the mapping says, then Back returns to the stage.
@@ -227,14 +229,14 @@ describe('the graph tree, its depth and its camera', () => {
       await waitFor(() => expect(window.location.pathname, `${layout}: ${previousKey} from the first sibling`).toBe(`/${LAST}`));
       fireEvent.keyDown(graphHost()!, { key: nextKey, code: nextKey });
       await waitFor(() => expect(window.location.pathname, `${layout}: ${nextKey} from the last sibling`).toBe(`/${TARGETS.previous}`));
-      // The shortcuts sheet lists both mappings on each step's row, whatever the view.
+      // The shortcuts sheet lists both mappings on each step's row, each arrow with its walking letter, whatever the view.
       fireEvent.keyDown(document.body, { key: '?', code: 'Slash', shiftKey: true });
       const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
       const row = (title: string) => within(sheet).getByRole('rowheader', { name: title }).nextElementSibling;
-      expect(row('Step out to the parent')).toHaveTextContent('← in Tree, ↑ in Nested and Voronoi');
-      expect(row('Step in to the first child')).toHaveTextContent('→ in Tree, ↓ in Nested and Voronoi');
-      expect(row('Step to the previous sibling')).toHaveTextContent('↑ in Tree, ← in Nested and Voronoi');
-      expect(row('Step to the next sibling')).toHaveTextContent('↓ in Tree, → in Nested and Voronoi');
+      expect(row('Step out to the parent')).toHaveTextContent('← or a in Tree, ↑ or w in Nested and Voronoi');
+      expect(row('Step in to the first child')).toHaveTextContent('→ or d in Tree, ↓ or s in Nested and Voronoi');
+      expect(row('Step to the previous sibling')).toHaveTextContent('↑ or w in Tree, ← or a in Nested and Voronoi');
+      expect(row('Step to the next sibling')).toHaveTextContent('↓ or s in Tree, → or d in Nested and Voronoi');
     }, 30_000);
   }
 
