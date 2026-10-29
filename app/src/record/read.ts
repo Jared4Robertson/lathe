@@ -16,7 +16,7 @@ export type Read<R> =
 const known = new Map<string, { version: unknown; read: Read<unknown> }>();
 
 /** A query's address: its route and its input as the query string, such as /api/use-case/get-use-case?id=TL-LEND-UC01. */
-const addressOf = (route: string, input: Record<string, string>) => `${route}?${new URLSearchParams(input).toString()}`;
+const queryAddress = (route: string, input: Record<string, string>) => `${route}?${new URLSearchParams(input).toString()}`;
 
 /** Reads the query once; a refusal or a server that does not answer is a refused read, with its reasons. */
 async function readQuery<R>(address: string): Promise<Read<R>> {
@@ -36,7 +36,7 @@ async function readQuery<R>(address: string): Promise<Read<R>> {
  * one comes after every reload). Until the first answer it is reading.
  */
 export function useRead<R>(route: string, input: Record<string, string>, version: unknown): Read<R> {
-  const address = addressOf(route, input);
+  const address = queryAddress(route, input);
   const [read, setRead] = useState<Read<R>>(() => (known.get(address)?.read as Read<R> | undefined) ?? { state: 'reading' });
   useEffect(() => {
     const cached = known.get(address);
