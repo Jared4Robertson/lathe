@@ -186,17 +186,19 @@ test.describe('Traceability flows', () => {
 
   test('LA-TRC-UC14-FL01-T trace a record', async ({ page }) => {
     const spec = await served(page);
-    const steps = rowsOf(spec, 'fulfills').filter((l) => l.target_id === REQUIREMENT).map((l) => String(l.source_id));
+    // What designs and builds it is the engine's chain, the one the Trace stage draws.
+    const chain = spec.chains.find((c) => c.obligation === REQUIREMENT)!;
     const tests = rowsOf(spec, 'use_case_test').filter((t) => t.uc_requirement_id === REQUIREMENT);
     // S01: the Reader opens a domain, searches for a requirement and opens it.
     await openPage(page, `/${TRC}`);
     await page.locator(WIKI).getByRole('searchbox', { name: 'Filter records' }).fill(REQUIREMENT);
     await page.locator(WIKI).getByRole('link', { name: new RegExp(`^${REQUIREMENT} `) }).first().click();
     await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}`);
-    // S02: its Traceability: what designs it, what proves it, and a callout for each gap.
+    // S02: its Traceability: what designs it, what builds it, what proves it, and a callout for each gap.
     const wiki = page.locator(WIKI);
     await expect(wiki.getByRole('heading', { name: 'Traceability', level: 2 })).toBeVisible();
-    for (const s of steps) await expect(wiki.getByRole('list', { name: 'Designed by' }).getByRole('link', { name: new RegExp(`^${s} `) })).toBeVisible();
+    for (const id of chain.design) await expect(wiki.getByRole('list', { name: 'Designed by' }).getByRole('link', { name: new RegExp(`^${id} `) })).toBeVisible();
+    for (const id of chain.build) await expect(wiki.getByRole('list', { name: 'Built by' }).getByRole('link', { name: new RegExp(`^${id} `) })).toBeVisible();
     for (const t of tests) await expect(wiki.getByRole('list', { name: 'Proved by' }).getByRole('listitem').filter({ hasText: String(t.id) })).toContainText(String(t.state));
     const gaps = spec.coverage.flatMap((c) => c.gaps).filter((g) => g.id === REQUIREMENT);
     const callouts = wiki.getByRole('list', { name: `Gaps in ${REQUIREMENT}` }).getByRole('listitem');

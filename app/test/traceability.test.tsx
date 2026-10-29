@@ -4,17 +4,16 @@ import { graphEdgeLabel, graphRelationLabel } from '../src/graph/model';
 import { type SpecIndex } from '../src/specs/data';
 import { linkLabel, relationLabelOf } from '../src/specs/labels';
 import { RecordContent } from '../src/specs/RecordContent';
-import { buildersOf, designersOf, judge, notAutomatedTestsOf, owingDomains, traceOf } from '../src/specs/trace';
+import { judge, notAutomatedTestsOf, owingDomains, traceOf } from '../src/specs/trace';
 import { modelWorkspace } from './fixtures/model';
 import { patternWorkspace } from './fixtures/patterns';
 import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
 import { indexOf } from './fixtures/load';
 
-// A record's Traceability section (LA-TRC-UC14), on the new model's tree: an obligation is designed
-// by what specifies its implementation (the steps fulfilling a UC requirement, the technical records
-// carrying out anything else), built when one of those names a file that exists, and proved by the
-// tests under it; gap callouts agree with coverage; a use case shows its UC requirements in a table;
+// A record's Traceability section (LA-TRC-UC14), on the new model's tree: an obligation is designed,
+// built and proved by what its chain holds, as the engine works it out (Workspace.chains), each build
+// record marked built when it names a file that exists; gap callouts agree with coverage; a use case shows its UC requirements in a table;
 // a test shows what it proves and how it is run; other links are titled by their labels (LA-V92-R07).
 
 afterEach(() => cleanup());
@@ -34,30 +33,33 @@ const groupIds = (trace: HTMLElement, title: string) => {
 const gapKinds = (trace: HTMLElement) => [...trace.querySelectorAll('.trace-gap')].map((g) => g.getAttribute('data-gap'));
 
 describe('traceability', () => {
-  it('LA-V92-R56-T01 An obligation lists Designed by, then Proved by; a technical record that designs it is marked built or not', () => {
-    // A UC requirement is designed by the steps that fulfill it.
+  it('LA-V92-R56-T01 An obligation lists Designed by, Built by, then Proved by, as its chain holds them; a build record is marked built or not', () => {
+    // A UC requirement is designed by its fulfilling steps, their flows, the views they happen in and what they invoke,
+    // and built by the handlers of what they invoke: the engine's chain, which the Trace stage draws too.
     const index = indexOf(workspace());
     let trace = show(index, 'DM-SHOP-UC01-R01');
-    expect(groupTitles(trace)).toEqual(['Designed by', 'Proved by']);
-    expect(groupIds(trace, 'Designed by')).toEqual(['DM-SHOP-UC01-FL01-S01']);
+    expect(groupTitles(trace)).toEqual(['Designed by', 'Built by', 'Proved by']);
+    expect(groupIds(trace, 'Designed by')).toEqual(index.chains.get('DM-SHOP-UC01-R01')!.design);
+    expect(groupIds(trace, 'Designed by')).toEqual(['DM-SHOP-CMD01', 'DM-SHOP-UC01-FL01', 'DM-SHOP-UC01-FL01-S01', 'DM-V01']);
+    expect(groupIds(trace, 'Built by')).toEqual(['DM-SHOP-CMD01-H']);
     expect(groupIds(trace, 'Proved by')).toEqual(['DM-SHOP-UC01-R01-T01']);
-    // A step is no technical record: no built mark; designed, built (through the handler of the command its step invokes) and proved: no gap.
-    expect(trace.querySelector('[data-mark="built"]')).toBeNull();
+    // Only build records carry the built mark; designed, built and proved: no gap.
+    expect([...trace.querySelectorAll('[data-mark="built"]')].map((m) => m.closest('.trace-row')?.querySelector('code')?.textContent)).toEqual(['DM-SHOP-CMD01-H']);
     expect(trace.querySelector('.trace-gap')).toBeNull();
-    const r01 = index.byId.get('DM-SHOP-UC01-R01')!;
-    expect(buildersOf(index, r01, designersOf(index, r01))).toEqual(['DM-SHOP-CMD01-H']);
+    expect(judge(index, index.byId.get('DM-SHOP-UC01-R01')!, 'DM-SHOP').builtBy).toEqual(['DM-SHOP-CMD01-H']);
     cleanup();
 
-    // An invariant is designed by its aggregate's repository and the tables whose unique key enforces it.
+    // An invariant is designed by its aggregate and built by its entities' data models and the tables whose unique key enforces it.
     const model = indexOf(modelWorkspace());
     trace = show(model, 'P-D-INV01');
-    expect(groupTitles(trace)).toEqual(['Designed by', 'Proved by']);
-    expect(groupIds(trace, 'Designed by')).toEqual(['P-D-A3-REPO', 'P-D-EN03-TB']);
+    expect(groupTitles(trace)).toEqual(['Designed by', 'Built by', 'Proved by']);
+    expect(groupIds(trace, 'Designed by')).toEqual(['P-D-A3']);
+    expect(groupIds(trace, 'Built by')).toEqual(['P-D-EN03-DM', 'P-D-EN03-TB']);
     const marks = [...trace.querySelectorAll('[data-mark="built"]')].map((m) => [m.closest('.trace-row')?.querySelector('code')?.textContent, m.textContent]);
-    expect(marks).toEqual([['P-D-A3-REPO', 'built'], ['P-D-EN03-TB', 'not built']]);
+    expect(marks).toEqual([['P-D-EN03-DM', 'built'], ['P-D-EN03-TB', 'not built']]);
     expect(groupIds(trace, 'Proved by')).toEqual(['P-D-INV01-T']);
     // A list mixing kinds tags each row with its kind; a list of one kind does not.
-    expect(within(trace).getByText('Repository', { selector: 'small' })).toBeInTheDocument();
+    expect(within(trace).getByText('Data model', { selector: 'small' })).toBeInTheDocument();
     expect(within(trace).queryByText('Invariant test', { selector: 'small' })).toBeNull();
   });
 
@@ -115,8 +117,8 @@ describe('traceability', () => {
     const rows = [...table.querySelectorAll('tbody tr[data-requirement]')] as HTMLElement[];
     expect(rows.map((r) => r.dataset.requirement)).toEqual(['DM-SHOP-UC01-R01', 'DM-SHOP-UC01-R02']);
     const cells = (r: HTMLElement) => [...r.querySelectorAll('td')].map((td) => td.textContent);
-    expect(cells(rows[0])).toEqual(['DM-SHOP-UC01-FL01-S01', 'DM-SHOP-CMD01-H', 'DM-SHOP-UC01-R01-T01']);
-    expect(cells(rows[1])).toEqual(['DM-SHOP-UC01-FL01-S03', 'not built', 'not proved']);
+    expect(cells(rows[0])).toEqual(['DM-SHOP-CMD01DM-SHOP-UC01-FL01DM-SHOP-UC01-FL01-S01DM-V01', 'DM-SHOP-CMD01-H', 'DM-SHOP-UC01-R01-T01']);
+    expect(cells(rows[1])).toEqual(['DM-SHOP-UC01-FL01DM-SHOP-UC01-FL01-S03', 'not built', 'not proved']);
     expect(within(rows[0]).getAllByRole('link').map((a) => a.getAttribute('href'))).toContain('/DM-SHOP-UC01-R01-T01');
     // R02 sits under its group's heading.
     expect(table.querySelector('tbody[data-group="Refusals"]')).toHaveTextContent('Refusals');
@@ -175,13 +177,13 @@ describe('traceability', () => {
     expect(linkLabel(index, { source: 'P-D-CMD01', relation: 'checks', target: 'P-D-SP01' }, 'target')).toBe('Checked by');
   }, 120_000);
 
-  it('LA-V92-R07-T01 A record\'s links out show under their forward label and its links in under their reverse label; a UC requirement\'s steps are not repeated beside Designed by', () => {
+  it('LA-V92-R07-T01 A record\'s links out show under their forward label and its links in under their reverse label; what its chain holds is not repeated beside it', () => {
     const index = indexOf(modelWorkspace());
-    // A policy: what proves it, then the event it hears.
+    // A policy: its command, what proves it, then the event it hears.
     let trace = show(index, 'P-D-PO02');
-    expect(groupTitles(trace)).toEqual(['Proved by', 'Hears']);
+    expect(groupTitles(trace)).toEqual(['Designed by', 'Proved by', 'Hears']);
     expect(groupIds(trace, 'Hears')).toEqual(['P-D-EV01']);
-    expect(traceOf(index, index.byId.get('P-D-PO02')!).groups.map((g) => g.key)).toEqual(['proof', 'out:Hears']);
+    expect(traceOf(index, index.byId.get('P-D-PO02')!).groups.map((g) => g.key)).toEqual(['design', 'proof', 'out:Hears']);
     cleanup();
     // The event, read back: raised by its command, heard by the policy.
     trace = show(index, 'P-D-EV01');
@@ -189,9 +191,9 @@ describe('traceability', () => {
     expect(groupIds(trace, 'Raised by')).toEqual(['P-D-CMD01']);
     expect(trace).not.toHaveTextContent('hears');
     cleanup();
-    // The steps that fulfill a UC requirement show once, as Designed by.
+    // The steps that fulfill a UC requirement show once, in Designed by.
     trace = show(index, 'P-D-UC01-R01');
     expect(groupTitles(trace)).not.toContain('Fulfilled by');
-    expect(groupIds(trace, 'Designed by')).toEqual(['P-D-UC01-FL01-S01']);
+    expect(groupIds(trace, 'Designed by')).toContain('P-D-UC01-FL01-S01');
   });
 });

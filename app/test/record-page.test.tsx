@@ -70,9 +70,10 @@ describe('record page', () => {
     openSideBar();
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
-    // A UC requirement is designed by the steps that fulfill it and proved by its tests.
+    // A UC requirement is designed, built and proved by what its chain holds.
     expect(traceGroups()).toEqual({
-      'Designed by': ['/DM-SHOP-UC01-FL01-S01'],
+      'Designed by': ['/DM-SHOP-CMD01', '/DM-SHOP-UC01-FL01', '/DM-SHOP-UC01-FL01-S01', '/DM-V01'],
+      'Built by': ['/DM-SHOP-CMD01-H'],
       'Proved by': ['/DM-SHOP-UC01-R01-T01'],
     });
     // In brief in the side bar, each a link.

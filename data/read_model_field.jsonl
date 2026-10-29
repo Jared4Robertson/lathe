@@ -108,9 +108,9 @@
 {"read_model_id":"LA-TRC-RM05","position":3,"name":"Exists","meaning":"Whether the file exists.","type":"yes/no","required":true,"column_name":"file_exists","example":"yes"}
 {"read_model_id":"LA-TRC-RM05","position":4,"name":"Names its ID","meaning":"For a test, whether the file names the test's ID as a whole ID (DS01).","type":"yes/no","required":true,"column_name":"contains_id","example":"yes"}
 {"read_model_id":"LA-TRC-RM06","position":1,"name":"Record","meaning":"The record traced.","type":"text","required":true,"example":"TL-LEND-UC03-R02"}
-{"read_model_id":"LA-TRC-RM06","position":2,"name":"Group","meaning":"The group it falls in, by its label: Designed by, Proved by, or a link's label.","type":"text","required":true,"example":"Proved by"}
+{"read_model_id":"LA-TRC-RM06","position":2,"name":"Group","meaning":"The group it falls in, by its label: Designed by, Built by (Met by, for a standard rule), Proved by, or a link's label.","type":"text","required":true,"example":"Proved by"}
 {"read_model_id":"LA-TRC-RM06","position":3,"name":"Linked record","meaning":"The record in the group.","type":"text","required":true,"example":"TL-LEND-UC03-R02-T01"}
-{"read_model_id":"LA-TRC-RM06","position":4,"name":"Mark","meaning":"built or not built for a design; the state for a test.","type":"text","required":false,"example":"automated"}
+{"read_model_id":"LA-TRC-RM06","position":4,"name":"Mark","meaning":"built or not built for a build record; the state for a test.","type":"text","required":false,"example":"automated"}
 {"read_model_id":"LA-TRC-RM07","position":1,"name":"Record","meaning":"The table record.","type":"text","required":true,"example":"LA-TRC-RM07-TB"}
 {"read_model_id":"LA-TRC-RM07","position":2,"name":"Name","meaning":"The table's name, as the spec gives it.","type":"text","required":true,"example":"table_facts"}
 {"read_model_id":"LA-TRC-RM07","position":3,"name":"File","meaning":"The file it names, from the product root.","type":"text","required":true,"example":"lathe/src/trace/tables.ts"}

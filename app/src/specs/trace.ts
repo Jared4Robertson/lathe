@@ -4,20 +4,21 @@ import { isTestKind } from './parts';
 
 // What a record's Traceability section shows (LA-TRC-UC14), on the new model's tree: an obligation
 // (a constraint, invariant, specification, policy, domain service, UC requirement, view or API
-// requirement, pattern or standard rule, or a product's own obligation kind) is designed by what
-// specifies its implementation, built when that names a file that exists, and proved by its tests,
-// which sit under it. Its other links follow, titled by their labels. A use case lists its UC
+// requirement, pattern or standard rule, or a product's own obligation kind) is designed, built and
+// proved by what its chain holds, as the engine works it out (Workspace.chains, the chain the Trace
+// stage draws): this only reads it. A build record is marked built when it names a file that exists.
+// Its other links follow, titled by their labels, but for those to what its chain already shows. A use case lists its UC
 // requirements, each judged; a test shows what it proves (its parent) and how it is run. Coverage's
 // gaps, where the engine reports them, decide designed and built, and its proved_by decides proved and
 // names the proof, so this section never disagrees with the coverage marks or the checks. Pure logic,
 // tested directly; Traceability.tsx draws it.
 
-export type TraceRole = 'design' | 'proof' | 'plain';
+export type TraceRole = 'design' | 'build' | 'proof' | 'plain';
 
 export interface TraceGroup {
   /** Stable: the direction and the label. */
   key: string;
-  /** The group's title, read from this record's end: "Designed by", "Proved by", "Hears". */
+  /** The group's title, read from this record's end: "Designed by", "Built by", "Proved by", "Hears". */
   label: string;
   /** What the group's rows show besides the record: a built mark, a test's state. */
   role: TraceRole;
@@ -37,7 +38,9 @@ export interface Judgment {
   domain: string;
   /** Whether it must be designed and built (a pattern rule is proved only). */
   needsDesign: boolean;
+  /** Its chain's design records. */
   designedBy: string[];
+  /** Its chain's build records that name a file that exists. */
   builtBy: string[];
   /** The tests that count as its proof there, as the engine's coverage says. */
   provedBy: string[];
@@ -49,8 +52,6 @@ export interface Judgment {
 const sortIds = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
 const childrenOfKind = (index: SpecIndex, id: string, kind: string) => (index.children.get(id) ?? []).filter((c) => c.kind === kind);
 const childrenInStage = (index: SpecIndex, id: string, stage: string) => (index.children.get(id) ?? []).filter((c) => index.kinds.get(c.kind)?.stage === stage);
-const linked = (index: SpecIndex, id: string, relation: string, way: 'out' | 'in') =>
-  (way === 'out' ? index.outgoing.get(id) ?? [] : index.incoming.get(id) ?? []).filter((l) => l.relation === relation).map((l) => (way === 'out' ? l.target : l.source));
 
 /** A technical record counts as built when it names a file and no check reports that file missing. */
 export function isBuilt(index: SpecIndex, id: string): boolean {
@@ -59,43 +60,8 @@ export function isBuilt(index: SpecIndex, id: string): boolean {
   return !(index.problemsFor.get(id) ?? []).some((p) => p.check === 'technical-file-missing');
 }
 
-/**
- * What specifies an obligation's implementation:
- * - a UC requirement: the flow steps that fulfill it;
- * - a constraint: its value object's value type; an invariant: its aggregate's repository and the tables whose unique
- *   key names it; a specification, policy or domain service: its predicate, event handler or service;
- * - a view requirement: the UI components rendering its view; an API requirement: its endpoint's handler;
- * - a standard rule: the technical records that meet it;
- * - any other obligation (a product's own kind): its children of the technical specification stage.
- */
-export function designersOf(index: SpecIndex, record: SpecRecord): string[] {
-  const parent = record.parent ? index.byId.get(record.parent) : undefined;
-  const technical = (id: string) => childrenInStage(index, id, 'technical-specification').map((r) => r.id);
-  switch (record.kind) {
-    case 'uc_requirement': return sortIds(linked(index, record.id, 'fulfills', 'in'));
-    case 'constraint': return parent ? sortIds(childrenOfKind(index, parent.id, 'value_type').map((r) => r.id)) : [];
-    case 'invariant': {
-      const keyed = index.workspace.parts.filter((p) => p.table === 'table_key' && p.row.invariant_id === record.id).map((p) => p.owner);
-      return sortIds([...(parent ? childrenOfKind(index, parent.id, 'repository').map((r) => r.id) : []), ...keyed]);
-    }
-    case 'view_requirement': return parent ? sortIds(linked(index, parent.id, 'renders', 'in')) : [];
-    case 'api_requirement': return parent ? sortIds(childrenOfKind(index, parent.id, 'endpoint_handler').map((r) => r.id)) : [];
-    case 'standard_rule': return sortIds(linked(index, record.id, 'meets', 'in'));
-    case 'pattern_rule': return [];
-    default: return sortIds(technical(record.id));
-  }
-}
-
-/**
- * What builds an obligation: of what designs it, the technical records that name a file that exists. A UC requirement
- * is built through its steps: the handlers of the commands and queries they invoke.
- */
-export function buildersOf(index: SpecIndex, record: SpecRecord, designers: readonly string[]): string[] {
-  const technical = record.kind === 'uc_requirement'
-    ? designers.flatMap((step) => linked(index, step, 'invokes', 'out')).flatMap((op) => childrenInStage(index, op, 'technical-specification').map((r) => r.id))
-    : designers;
-  return sortIds(technical.filter((id) => isBuilt(index, id)));
-}
+/** An obligation's chain as the engine works it out (Workspace.chains): what designs, builds and proves it. */
+const chainOf = (index: SpecIndex, id: string) => index.chains.get(id) ?? { design: [], build: [], tests: [] };
 
 /** The tests of an obligation (its children of the test plan); for a pattern rule with a domain given, those naming that domain. */
 const testsOf = (index: SpecIndex, record: SpecRecord, domain?: string) =>
@@ -122,13 +88,14 @@ export function owingDomains(index: SpecIndex, record: SpecRecord): string[] {
 /** How one domain stands on an obligation, with the gaps coverage reports there (or the tree shows, when coverage has none). */
 export function judge(index: SpecIndex, record: SpecRecord, domain: string): Judgment {
   const needsDesign = record.kind !== 'pattern_rule';
-  const designedBy = needsDesign ? designersOf(index, record) : [];
-  const builtBy = buildersOf(index, record, designedBy);
+  const chain = chainOf(index, record.id);
+  const designedBy = needsDesign ? chain.design : [];
+  const builtBy = needsDesign ? chain.build.filter((id) => isBuilt(index, id)) : [];
   const provedBy = provedByOf(index, record.id, domain);
   const notAutomatedBy = notAutomatedTestsOf(index, record, domain);
   const coverage = index.coverage.get(domain);
   const missing = new Set((coverage?.gaps ?? []).filter((g) => g.id === record.id).map((g) => g.missing));
-  const designed = coverage ? !missing.has('designed') : designedBy.length > 0;
+  const designed = coverage ? !missing.has('designed') : designedBy.length + chain.build.length > 0;
   const built = coverage ? !missing.has('built') : builtBy.length > 0;
   const proved = provedBy.length > 0;
   const gaps: TraceGap[] = [];
@@ -168,7 +135,8 @@ export interface Trace {
 
 /**
  * A record's traceability, by kind:
- * - an obligation: Designed by and Proved by (as the domain owing it judges them), then its other links in and out;
+ * - an obligation: Designed by, Built by (Met by, for a standard rule) and Proved by, from its chain, then its other
+ *   links in and out to what the chain does not show;
  * - a use case: its UC requirements (judged), then its links;
  * - a test: Proves (its parent), its run by, then its links;
  * - anything else: links out under their forward labels, then links in under their reverse labels.
@@ -182,16 +150,17 @@ export function traceOf(index: SpecIndex, record: SpecRecord, skip: ReadonlySet<
 
   if (kind?.obligation) {
     trace.judgments = owingDomains(index, record).map((d) => judge(index, record, d));
-    // A record's own domain (or the product, for a standard rule): Designed by and Proved by as groups, then the rest.
-    const designers = record.kind === 'pattern_rule' ? [] : designersOf(index, record);
-    const tests = testsOf(index, record).map((t) => t.id);
-    const own = new Set(['fulfills', 'meets']);
+    // Its chain as groups, then the links to what the chain does not hold.
+    const chain = chainOf(index, record.id);
+    const held = new Set([...chain.design, ...chain.build, ...chain.tests]);
+    const group = (key: TraceRole, label: string, ids: string[]): TraceGroup[] => (ids.length > 0 ? [{ key, label, role: key, ids }] : []);
     trace.groups = [
+      ...group('design', 'Designed by', chain.design),
       // A standard rule is met, in its relation's own words, by what follows it.
-      ...(designers.length > 0 ? [{ key: 'design', label: record.kind === 'standard_rule' ? 'Met by' : 'Designed by', role: 'design' as TraceRole, ids: designers }] : []),
-      ...(tests.length > 0 ? [{ key: 'proof', label: 'Proved by', role: 'proof' as TraceRole, ids: sortIds(tests) }] : []),
-      ...grouped(index, into.filter((l) => !own.has(l.relation)), 'target'),
-      ...grouped(index, out, 'source'),
+      ...group('build', record.kind === 'standard_rule' ? 'Met by' : 'Built by', chain.build),
+      ...group('proof', 'Proved by', chain.tests),
+      ...grouped(index, into.filter((l) => !held.has(l.source)), 'target'),
+      ...grouped(index, out.filter((l) => !held.has(l.target)), 'source'),
     ];
     return trace;
   }

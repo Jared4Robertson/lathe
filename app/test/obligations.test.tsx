@@ -140,7 +140,9 @@ describe('obligation kinds and test states', () => {
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
     const trace = section(/^Traceability/);
     const designed = within(trace).getByRole('heading', { name: /^Designed by/ }).closest('section') as HTMLElement;
-    expect(within(designed).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-FL01-S01']);
+    expect(within(designed).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-CMD01', '/DM-SHOP-UC01-FL01', '/DM-SHOP-UC01-FL01-S01', '/DM-V01']);
+    const built = within(trace).getByRole('heading', { name: /^Built by/ }).closest('section') as HTMLElement;
+    expect(within(built).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-CMD01-H']);
     const proved = within(trace).getByRole('heading', { name: /^Proved by/ }).closest('section') as HTMLElement;
     expect(within(proved).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01-R01-T01']);
 
