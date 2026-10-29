@@ -37,9 +37,9 @@ describe('coverage of the complete product', () => {
     // A second domain's entity has a field typed by the value object: the product shares it, with its constraint.
     const shared = await loadData(
       adding(complete(), {
-        domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }],
-        aggregate: [{ id: 'EX-SHOP-A1', title: 'Order', domain_id: 'EX-SHOP' }],
-        entity: [{ id: 'EX-SHOP-EN01', title: 'Order', aggregate_id: 'EX-SHOP-A1', role: 'root' }],
+        domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+        aggregate: [{ id: 'EX-SHOP-A1', title: 'Order', domain_id: 'EX-SHOP', identity: 'Order ID', description: 'One order of parts.' }],
+        entity: [{ id: 'EX-SHOP-EN01', title: 'Order', aggregate_id: 'EX-SHOP-A1', role: 'root', description: 'The order itself.' }],
         entity_field: [{ entity_id: 'EX-SHOP-EN01', position: 1, name: 'Buyer email', meaning: 'Where the receipt goes.', type_value_object_id: 'EX-VO01', required: true }],
       }),
     );
@@ -155,9 +155,9 @@ describe('chains', () => {
     expect(gaps(clean).filter((g) => g.startsWith('record-untraced'))).toEqual([]);
     let data = without(complete(), 'fulfills', (r) => r.source_id === 'EX-LEND-UC01-FL01-S02');
     data = adding(data, {
-      command: [{ id: 'EX-LEND-CMD09', title: 'Forget a tool', aggregate_id: 'EX-LEND-A1' }],
-      command_handler: [{ id: 'EX-LEND-CMD09-H', title: 'forgetTool', command_id: 'EX-LEND-CMD09', file: 'src/tools.ts' }],
-      ui_component: [{ id: 'EX-UI02', title: 'Unused page', file: 'web/catalog.tsx' }],
+      command: [{ id: 'EX-LEND-CMD09', title: 'Forget a tool', aggregate_id: 'EX-LEND-A1', description: 'Drops a tool from its loans.' }],
+      command_handler: [{ id: 'EX-LEND-CMD09-H', title: 'forgetTool', command_id: 'EX-LEND-CMD09', file: 'src/tools.ts', description: 'Deletes the rows in one transaction.' }],
+      ui_component: [{ id: 'EX-UI02', title: 'Unused page', file: 'web/catalog.tsx', description: 'A page no view uses.' }],
     });
     const ws = await loadData(data);
     // A step that fulfills nothing, the query only it invokes, a command nothing invokes and a UI component that
@@ -214,9 +214,9 @@ describe('proved', () => {
 describe('pattern rules', () => {
   const shop = (data = complete()) =>
     adding(data, {
-      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }],
-      capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1 }],
-      use_case: [{ id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01' }],
+      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+      capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1, description: 'Selling tools.' }],
+      use_case: [{ id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01', goal: 'A customer buys a used tool.' }],
     });
 
   it("LA-TRC-SP04-T each domain that follows a pattern owes its rules, proved only by its own pattern rule test", async () => {
@@ -277,7 +277,7 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
   });
 
   it('LA-AUT-UC12-R07-T01 An aggregate changed only through a recorded exception (command_change) has a command', async () => {
-    const lone = adding(complete(), { aggregate: [{ id: 'EX-LEND-A3', title: 'Shelf', domain_id: 'EX-LEND' }] });
+    const lone = adding(complete(), { aggregate: [{ id: 'EX-LEND-A3', title: 'Shelf', domain_id: 'EX-LEND', identity: 'Shelf ID', description: 'A shelf the tools sit on.' }] });
     const ofCommand = (ws: Workspace) => gaps(ws).filter((g) => g.startsWith('aggregate-without-command'));
     expect(ofCommand(await loadData(lone))).toEqual(['aggregate-without-command EX-LEND-A3']);
     const changed = adding(lone, { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A3', reason: 'Opening a loan takes the tool off its shelf.' }] });
@@ -351,17 +351,17 @@ describe("a product's own obligation kinds", () => {
 describe('pattern rules, domain by domain', () => {
   const shop = (data = complete()) =>
     adding(data, {
-      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }],
-      capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1 }],
+      domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
+      capability: [{ id: 'EX-SHOP-CAP01', title: 'Selling', domain_id: 'EX-SHOP', position: 1, description: 'Selling tools.' }],
       use_case: [
-        { id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01' },
-        { id: 'EX-SHOP-UC02', title: 'Price a tool', capability_id: 'EX-SHOP-CAP01' },
+        { id: 'EX-SHOP-UC01', title: 'Sell a tool', capability_id: 'EX-SHOP-CAP01', goal: 'A customer buys a used tool.' },
+        { id: 'EX-SHOP-UC02', title: 'Price a tool', capability_id: 'EX-SHOP-CAP01', goal: 'The clerk sets the price of a used tool.' },
       ],
     });
   /** A second pattern of the complete product, with no settings and one rule. */
   const logged = (data = complete()) =>
     adding(data, {
-      pattern: [{ id: 'EX-PAT-LOG', title: 'Logged action', product_id: 'EX' }],
+      pattern: [{ id: 'EX-PAT-LOG', title: 'Logged action', product_id: 'EX', description: 'An action written to the log.' }],
       pattern_rule: [{ id: 'EX-PAT-LOG-R01', title: 'Each action is logged', pattern_id: 'EX-PAT-LOG', statement: 'Each action MUST be logged.' }],
     });
   /** A follower of EX-PAT-ACT with its value of record, or with record not applicable (null). */
@@ -388,7 +388,7 @@ describe('pattern rules, domain by domain', () => {
     const ws = await loadData(data);
     expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject(covered(1));
     expect(obligation(ws, 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1, proved: 0, not_automated: 0 });
-    const planned = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'A sale reads the same', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet' }] });
+    const planned = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'A sale reads the same', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet', when: 'The clerk saves a sale.', then: 'The sale reads the same everywhere.' }] });
     expect(obligation(await loadData(planned), 'EX-SHOP', 'pattern_rule')).toMatchObject({ total: 1, proved: 0, not_automated: 1 });
   });
 
@@ -461,7 +461,7 @@ describe('pattern rules, domain by domain', () => {
 
   it('LA-TRC-INV02-T a follower of two patterns with a setting of the same name gives each its own value', async () => {
     const data = adding(complete(), {
-      pattern: [{ id: 'EX-PAT-AUD', title: 'Audited action', product_id: 'EX' }],
+      pattern: [{ id: 'EX-PAT-AUD', title: 'Audited action', product_id: 'EX', description: 'An action the audit log records.' }],
       pattern_setting: [{ pattern_id: 'EX-PAT-AUD', position: 1, name: 'record', meaning: 'The record audited.' }],
       pattern_rule: [{ id: 'EX-PAT-AUD-R01', title: 'Each change is audited', pattern_id: 'EX-PAT-AUD', statement: 'Each change MUST be audited.' }],
       follows: [{ source_id: 'EX-LEND-UC02', target_id: 'EX-PAT-AUD' }],
@@ -485,7 +485,7 @@ describe('pattern rules, domain by domain', () => {
 describe('the other obligation kinds and their gaps', () => {
   it('LA-CHK-UC04-R02-T01 a use case with no flow is a use-case-without-flow gap in its domain, never an error', async () => {
     const data = adding(complete(), {
-      use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', capability_id: 'EX-LEND-CAP01' }],
+      use_case: [{ id: 'EX-LEND-UC03', title: 'Renew a loan', capability_id: 'EX-LEND-CAP01', goal: 'A member keeps a tool longer.' }],
       use_case_actor: [{ use_case_id: 'EX-LEND-UC03', position: 1, role_name: 'Member' }],
     });
     const ws = await loadData(data);

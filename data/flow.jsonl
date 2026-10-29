@@ -75,8 +75,8 @@
 {"id":"LA-EXP-UC13-FL02","title":"Read a domain's endpoints and integrations in the desktop app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC14-FL01","title":"Fix a record while reading in the web app","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC14-FL02","title":"Fix a record while reading in the desktop app","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC15-FL01","title":"Watch the spec change in the web app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF01","description":"While the Reader has the product open on a stage, an Agent changes its data through the CLI; the page reloads and the stage marks what changed. The Reader follows the changes, opens the Changes lens against each baseline, the Changes panel, and a changed record's wiki card."}
-{"id":"LA-EXP-UC15-FL02","title":"Watch the spec change in the desktop app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF02","description":"While the Reader has the product open on a stage in the desktop app, the chat's Agent changes its data; the stage marks it as in the web app, and the chat lists the turn's changes from the same record diff. The Reader opens the Changes lens, the Changes panel and a changed record's wiki card."}
+{"id":"LA-EXP-UC15-FL01","title":"Watch the spec change in the web app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC15-FL02","title":"Watch the spec change in the desktop app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC01-FL06","title":"Load the workspace through the package API","use_case_id":"LA-PLT-UC01","interface_id":"LA-IF06"}
 {"id":"LA-PLT-UC02-FL03","title":"Set up Lathe in a product repo through the CLI","use_case_id":"LA-PLT-UC02","interface_id":"LA-IF03"}
 {"id":"LA-PLT-UC03-FL01","title":"See the current data in the web app","use_case_id":"LA-PLT-UC03","interface_id":"LA-IF01"}
@@ -102,7 +102,7 @@
 {"id":"LA-PLT-UC16-FL05","title":"Accept writes only from the app through the HTTP API","use_case_id":"LA-PLT-UC16","interface_id":"LA-IF05"}
 {"id":"LA-PLT-UC17-FL03","title":"Move a product to a new Lathe through the CLI","use_case_id":"LA-PLT-UC17","interface_id":"LA-IF03"}
 {"id":"LA-PLT-UC18-FL04","title":"Start the plugin's tools in a product repo through the MCP tools","use_case_id":"LA-PLT-UC18","interface_id":"LA-IF04"}
-{"id":"LA-PLT-UC19-FL02","title":"Work with Claude beside the stage in the desktop app","use_case_id":"LA-PLT-UC19","interface_id":"LA-IF02","description":"The Owner shows the chat, resumes a session, asks Claude about the product and has it change records; they answer its permission prompts, stop a turn, read the records it changed, and follow a record it names onto the stage."}
+{"id":"LA-PLT-UC19-FL02","title":"Work with Claude beside the stage in the desktop app","use_case_id":"LA-PLT-UC19","interface_id":"LA-IF02"}
 {"id":"LA-TRC-UC01-FL03","title":"See a domain's coverage through the CLI","use_case_id":"LA-TRC-UC01","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC02-FL03","title":"Count coverage by the meta-model through the CLI","use_case_id":"LA-TRC-UC02","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC03-FL03","title":"Record how a test is run through the CLI","use_case_id":"LA-TRC-UC03","interface_id":"LA-IF03"}

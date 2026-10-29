@@ -1,2 +1,2 @@
-{"product_id":"P","name":"Librarian"}
-{"product_id":"P","name":"Member"}
+{"product_id":"P","name":"Librarian","description":"The fixture's role Librarian."}
+{"product_id":"P","name":"Member","description":"The fixture's role Member."}

@@ -46,8 +46,8 @@ describe('Authoring flows', () => {
     // S02: what the reference says a domain is.
     expect(section(reference(tl), '### Domain (`domain`)')).toContain('for one business capability');
     // S03: one domain per capability, with its subdomain type; one is named for a layer.
-    tl.run('add', 'domain', ...flags({ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }));
-    tl.run('add', 'domain', ...flags({ id: 'TL-CAT', title: 'Web app', product_id: 'TL', subdomain_type: 'supporting' }));
+    tl.run('add', 'domain', ...flags({ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }));
+    tl.run('add', 'domain', ...flags({ id: 'TL-CAT', title: 'Web app', product_id: 'TL', subdomain_type: 'supporting', description: 'The tools the library holds and how members find them.' }));
     // S04: the check warns of the domain named for a technology; they rename it for its capability.
     expect(problemsOf(tl.workspace(), 'domain-named-for-technology')).toEqual([expect.stringMatching(/^TL-CAT: .*"web app"/)]);
     tl.run('set', 'TL-CAT', '--title', 'Catalog');
@@ -62,7 +62,7 @@ describe('Authoring flows', () => {
     for (const part of ['bin', 'src', 'schema', 'scripts', 'data', 'package.json', 'REFERENCE.md']) cpSync(path.join(LATHE_DIR, part), path.join(copy, part), { recursive: true });
     symlinkSync(path.join(LATHE_DIR, 'node_modules'), path.join(copy, 'node_modules'));
     const tl = product();
-    tl.run('add', 'domain', ...flags({ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }));
+    tl.run('add', 'domain', ...flags({ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }));
     const term = flags({ id: 'TL-LEND-TM01', title: 'Loan', domain_id: 'TL-LEND', meaning: 'One tool lent to one member.', example: 'The loan is due on Friday.' });
     const copied = (...args: string[]) => node(path.join(copy, 'bin', 'lathe.ts'), [...args, '--root', tl.root]);
     expect(copied('add', 'term', ...term).stderr).toContain('example');
@@ -109,16 +109,16 @@ describe('Authoring flows', () => {
 
   it('LA-AUT-UC05-FL03-T organize a domain\'s use cases into capabilities and patterns', async () => {
     const tl = product();
-    await tl.seed([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01' })]);
+    await tl.seed([...LENDING, add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' })]);
     // S01: the domain's capabilities in order; a repeated position is refused.
-    tl.run('add', 'capability', '--id', 'TL-LEND-CAP02', '--title', 'Returns', '--domain_id', 'TL-LEND', '--position', '2');
-    tl.refused('add', 'capability', '--id', 'TL-LEND-CAP03', '--title', 'Fees', '--domain_id', 'TL-LEND', '--position', '2');
+    tl.run('add', 'capability', '--id', 'TL-LEND-CAP02', '--title', 'Returns', '--domain_id', 'TL-LEND', '--position', '2', '--description', 'Taking tools back from members.');
+    tl.refused('add', 'capability', '--id', 'TL-LEND-CAP03', '--title', 'Fees', '--domain_id', 'TL-LEND', '--position', '2', '--description', 'Charging members for late tools.');
     // S02: each use case under its capability.
     tl.run('move', 'TL-LEND-UC02', '--parent', 'TL-LEND-CAP02');
     expect(tl.run('show', 'TL-LEND-UC02')).toContain('parent: TL-LEND-CAP02');
     // S03: shared behavior once, as a pattern with its rules and settings; a setting name not in lower case and an
     // applies-when setting the pattern lacks are refused.
-    tl.run('add', 'pattern', '--id', 'TL-PAT-ACT', '--title', 'Librarian action', '--product_id', 'TL');
+    tl.run('add', 'pattern', '--id', 'TL-PAT-ACT', '--title', 'Librarian action', '--product_id', 'TL', '--description', 'An action a librarian takes that saves a record.');
     tl.refused('add', 'pattern_setting', '--pattern_id', 'TL-PAT-ACT', '--position', '1', '--name', 'Record');
     tl.run('add', 'pattern_setting', '--pattern_id', 'TL-PAT-ACT', '--position', '1', '--name', 'record', '--meaning', 'The record the action saves.');
     tl.run('add', 'pattern_rule', '--id', 'TL-PAT-ACT-R01', '--title', 'A saved record reads the same', '--pattern_id', 'TL-PAT-ACT', '--statement', 'A record MUST read back as it was saved.');
@@ -139,13 +139,13 @@ describe('Authoring flows', () => {
     await tl.seed([
       ...LENDING,
       add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' }),
-      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01' }),
+      add('use_case', { id: 'TL-LEND-UC02', title: 'Return a tool', capability_id: 'TL-LEND-CAP01', goal: 'A member brings a tool back.' }),
       add('uc_requirement', { id: 'TL-LEND-UC02-R01', title: 'The return is dated', use_case_id: 'TL-LEND-UC02', statement: 'The return MUST carry its date.' }),
-      add('view', { id: 'TL-V01', title: 'Loan desk' }),
+      add('view', { id: 'TL-V01', title: 'Loan desk', description: 'Where the librarian opens and closes loans.' }),
     ]);
     // S01: the flow through the product's interface, its ID ending in the interface's number, and its steps in order on
     // their paths.
-    tl.run('add', 'interface', '--id', 'TL-IF01', '--title', 'Loan desk', '--product_id', 'TL', '--kind', 'web app');
+    tl.run('add', 'interface', '--id', 'TL-IF01', '--title', 'Loan desk', '--product_id', 'TL', '--kind', 'web app', '--description', 'The desk where librarians lend tools.');
     expect(tl.run('next-id', 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL01');
     tl.run('add', 'flow', '--id', 'TL-LEND-UC01-FL01', '--title', 'Borrow a tool', '--use_case_id', 'TL-LEND-UC01', '--interface_id', 'TL-IF01');
     const step = (n: string, title: string, pathName: string, position: string) =>
@@ -191,7 +191,7 @@ describe('Authoring flows', () => {
 
   it('LA-AUT-UC08-FL03-T read each kind\'s stage and order from the schema', () => {
     const tl = product();
-    tl.run('add', 'domain', ...flags({ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }));
+    tl.run('add', 'domain', ...flags({ id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }));
     // S01: each kind's stage and place, in the reference and in the workspace, in the schema's one order.
     const before = reference(tl);
     const stages = [...before.matchAll(/^## (.+)$/gm)].map((m) => m[1]);
@@ -209,15 +209,15 @@ describe('Authoring flows', () => {
   it('LA-AUT-UC10-FL03-T model each aggregate\'s entities and value objects', async () => {
     const tl = product();
     await tl.seed([
-      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }),
-      add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND' }),
-      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' }),
+      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
+      add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
+      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
     ]);
     // S01: the aggregate's root and child entities.
-    tl.run('add', 'entity', '--id', 'TL-LEND-EN01', '--title', 'Loan', '--aggregate_id', 'TL-LEND-A1', '--role', 'root');
-    tl.run('add', 'entity', '--id', 'TL-LEND-EN02', '--title', 'Renewal', '--aggregate_id', 'TL-LEND-A1', '--role', 'child', '--in_root_table', 'true');
+    tl.run('add', 'entity', '--id', 'TL-LEND-EN01', '--title', 'Loan', '--aggregate_id', 'TL-LEND-A1', '--role', 'root', '--description', 'The loan itself.');
+    tl.run('add', 'entity', '--id', 'TL-LEND-EN02', '--title', 'Renewal', '--aggregate_id', 'TL-LEND-A1', '--role', 'child', '--in_root_table', 'true', '--description', 'The loan running longer.');
     // S03: the value objects with their constraints.
-    tl.run('add', 'value_object', '--id', 'TL-VO01', '--title', 'Email address');
+    tl.run('add', 'value_object', '--id', 'TL-VO01', '--title', 'Email address', '--description', 'Where a member gets mail.');
     tl.run('add', 'value_object_field', ...flags({ value_object_id: 'TL-VO01', position: 1, name: 'Address', meaning: 'The address as typed.', type: 'text', required: true }));
     tl.run('add', 'constraint', '--id', 'TL-VO01-C01', '--title', 'One at sign', '--value_object_id', 'TL-VO01', '--statement', 'An email address MUST hold exactly one @.');
     // S02: each entity's fields, typed by a basic type, a value object or another aggregate.
@@ -261,16 +261,16 @@ describe('Authoring flows', () => {
   it('LA-AUT-UC12-FL03-T model commands and their events', async () => {
     const tl = product();
     await tl.seed([
-      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core' }),
-      add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND' }),
-      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND' }),
+      add('domain', { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' }),
+      add('aggregate', { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', identity: 'Loan ID', description: 'One tool lent to one member, with its return.' }),
+      add('aggregate', { id: 'TL-LEND-A2', title: 'Tool', domain_id: 'TL-LEND', identity: 'Tool ID', description: 'A tool the library holds.' }),
       add('specification', { id: 'TL-LEND-SP01', title: 'Tool is free', statement: 'A tool is free when no active loan names it.' }),
       link('TL-LEND-SP01', 'reads', 'TL-LEND-A1'),
     ]);
     // S01: the commands, and the events each raises with their fields.
-    tl.run('add', 'command', '--id', 'TL-LEND-CMD01', '--title', 'Open a loan', '--aggregate_id', 'TL-LEND-A1');
-    tl.run('add', 'command', '--id', 'TL-LEND-CMD02', '--title', 'Open a reminder', '--aggregate_id', 'TL-LEND-A1');
-    tl.run('add', 'domain_event', '--id', 'TL-LEND-EV01', '--title', 'Loan opened', '--aggregate_id', 'TL-LEND-A1', '--published', 'false');
+    tl.run('add', 'command', '--id', 'TL-LEND-CMD01', '--title', 'Open a loan', '--aggregate_id', 'TL-LEND-A1', '--description', 'Lends a free tool to a member.');
+    tl.run('add', 'command', '--id', 'TL-LEND-CMD02', '--title', 'Open a reminder', '--aggregate_id', 'TL-LEND-A1', '--description', 'Sets a reminder for the loan\'s due date.');
+    tl.run('add', 'domain_event', '--id', 'TL-LEND-EV01', '--title', 'Loan opened', '--aggregate_id', 'TL-LEND-A1', '--published', 'false', '--description', 'A tool went out on loan.');
     tl.run('add', 'event_field', ...flags({ domain_event_id: 'TL-LEND-EV01', position: 1, name: 'Loan ID', meaning: 'Which loan.', type_aggregate_id: 'TL-LEND-A1', required: true }));
     // S02: what each command raises and checks; the event other domains hear is published.
     tl.run('link', 'TL-LEND-CMD01', 'raises', 'TL-LEND-EV01');
@@ -280,7 +280,7 @@ describe('Authoring flows', () => {
     tl.run('add', 'policy', '--id', 'TL-LEND-PO01', '--title', 'Remind on loan', '--command_id', 'TL-LEND-CMD02', '--statement', 'Whenever a loan is opened, the library MUST open its reminder.');
     tl.run('link', 'TL-LEND-PO01', 'hears', 'TL-LEND-EV01');
     // A command raises only its own aggregate's events.
-    tl.run('add', 'domain_event', '--id', 'TL-LEND-EV02', '--title', 'Tool lent', '--aggregate_id', 'TL-LEND-A2', '--published', 'false');
+    tl.run('add', 'domain_event', '--id', 'TL-LEND-EV02', '--title', 'Tool lent', '--aggregate_id', 'TL-LEND-A2', '--published', 'false', '--description', 'A tool left the shelf.');
     expect(tl.refused('link', 'TL-LEND-CMD01', 'raises', 'TL-LEND-EV02')).toContain('link-scope');
     tl.run('remove', 'TL-LEND-EV02');
     expect(tl.run('show', 'TL-LEND-CMD01')).toMatch(/Checks TL-LEND-SP01: Tool is free \[checks\]\n {2}Raises TL-LEND-EV01: Loan opened \[raises\]/);
@@ -303,9 +303,9 @@ describe('Authoring flows', () => {
     ]);
     tl.write('test/loans.test.ts', "it('TL-LEND-INV01-T one active loan per tool');\nit('TL-LEND-UC01-R01-T01 a tool on loan is refused');\n");
     // S01: each test under the record it tests, of the kind named after it, with its run by.
-    tl.run('add', 'invariant_test', ...flags({ id: 'TL-LEND-INV01-T', title: 'One active loan per tool', invariant_id: 'TL-LEND-INV01', level: 'integration', state: 'automated', file: 'test/loans.test.ts', given: 'A tool on an active loan', when: 'A second loan opens', then: 'It is refused' }));
-    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/loans.test.ts' }));
-    tl.refused('add', 'use_case_test', ...flags({ id: 'TL-LEND-INV01-T01', title: 'Under the wrong kind', uc_requirement_id: 'TL-LEND-INV01', level: 'service', state: 'not automated yet' }));
+    tl.run('add', 'invariant_test', ...flags({ id: 'TL-LEND-INV01-T', title: 'One active loan per tool', invariant_id: 'TL-LEND-INV01', level: 'integration', state: 'automated', file: 'test/loans.test.ts', when: 'A second loan opens for a tool on an active loan', then: 'It is refused' }));
+    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'automated', file: 'test/loans.test.ts', when: 'A member borrows a tool that is on loan', then: 'The loan is refused' }));
+    tl.refused('add', 'use_case_test', ...flags({ id: 'TL-LEND-INV01-T01', title: 'Under the wrong kind', uc_requirement_id: 'TL-LEND-INV01', level: 'service', state: 'not automated yet', when: 'A second loan opens', then: 'It is refused' }));
     expect(tl.workspace().coverage.find((c) => c.domain === 'TL-LEND')?.obligations.filter((o) => o.proved).map((o) => o.kind)).toEqual(['invariant', 'uc_requirement']);
     // S02: a long list of requirements sorted into groups.
     for (const [id, group] of [['TL-LEND-UC01-R01', 'Refusals'], ['TL-LEND-UC01-R02', 'Refusals'], ['TL-LEND-UC01-R03', 'Dates'], ['TL-LEND-UC01-R04', 'Dates']]) tl.run('set', id, '--group_name', group);
@@ -318,7 +318,7 @@ describe('Authoring flows', () => {
     ]);
     expect(problemsOf(ws, 'lone-child').filter((p) => p.startsWith('TL-LEND-UC01:'))).toEqual([]);
     // S03: the data set the tests start from, with the fixture that builds it, and the tests linked to it.
-    tl.run('add', 'test_data_set', ...flags({ id: 'TL-LEND-TD01', title: 'One tool on loan', domain_id: 'TL-LEND', records: 'One member, one tool on loan.', prepare: 'Run the seed.', reset: 'Drop the database.', file: 'test/seed.ts' }));
+    tl.run('add', 'test_data_set', ...flags({ id: 'TL-LEND-TD01', title: 'One tool on loan', domain_id: 'TL-LEND', environment: 'The test database.', records: 'One member, one tool on loan.', prepare: 'Run the seed.', reset: 'Drop the database.', file: 'test/seed.ts', description: 'A tool already lent, for the tests that refuse a second loan.' }));
     expect(problemsOf(tl.workspace(), 'test-data-set-unused')).toEqual([expect.stringMatching(/^TL-LEND-TD01: /)]);
     tl.run('link', 'TL-LEND-INV01-T', 'starts_from', 'TL-LEND-TD01');
     tl.run('link', 'TL-LEND-UC01-R01-T01', 'starts_from', 'TL-LEND-TD01');
@@ -347,7 +347,7 @@ describe('Authoring flows', () => {
     expect([...gapsOf(served, 'TL-LEND'), ...gapsOf(served, null)].filter((g) => g.includes('outcome'))).toEqual(['outcome-not-measured TL-BO01']);
     expect(tl.run('show', 'TL-BO01')).toContain('Served by TL-LEND-CAP01');
     // S03: each outcome linked to the test that measures it; a test not automated yet measures nothing.
-    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'Loans are counted per tool', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet' }));
+    tl.run('add', 'use_case_test', ...flags({ id: 'TL-LEND-UC01-R01-T01', title: 'Loans are counted per tool', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'Members borrow tools for a month', then: 'The loans are counted per tool' }));
     tl.run('link', 'TL-BO01', 'measured_by', 'TL-LEND-UC01-R01-T01');
     expect(gapsOf(tl.workspace(), null)).toEqual(['outcome-not-measured TL-BO01']);
     tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 loans are counted per tool');\n");
@@ -358,15 +358,15 @@ describe('Authoring flows', () => {
 
   it('LA-AUT-UC16-FL03-T write the engineering standards the code follows', async () => {
     const tl = product();
-    await tl.seed([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts' })]);
+    await tl.seed([...LENDING, add('command_handler', { id: 'TL-LEND-CMD01-H', title: 'openLoan', command_id: 'TL-LEND-CMD01', file: 'src/loans.ts', description: 'Opens the loan in one transaction.' })]);
     tl.write('src/loans.ts', '// TL-LEND-CMD01-H\n');
     tl.write('test/standards.test.ts', "it('TL-STD-LOG-R01-T01 no console.log in src');\n");
     // S01: a standard and its rules.
-    tl.run('add', 'standard', '--id', 'TL-STD-LOG', '--title', 'Logging', '--product_id', 'TL');
+    tl.run('add', 'standard', '--id', 'TL-STD-LOG', '--title', 'Logging', '--product_id', 'TL', '--description', 'How the code logs what it does.');
     tl.run('add', 'standard_rule', '--id', 'TL-STD-LOG-R01', '--title', 'No console.log', '--standard_id', 'TL-STD-LOG', '--statement', 'Code MUST log through the logger, never console.log.');
     // S02: each technical record that follows it, and the test that proves it.
     tl.run('link', 'TL-LEND-CMD01-H', 'meets', 'TL-STD-LOG-R01');
-    tl.run('add', 'standard_rule_test', ...flags({ id: 'TL-STD-LOG-R01-T01', title: 'No console.log in src', standard_rule_id: 'TL-STD-LOG-R01', level: 'unit', state: 'automated', file: 'test/standards.test.ts' }));
+    tl.run('add', 'standard_rule_test', ...flags({ id: 'TL-STD-LOG-R01-T01', title: 'No console.log in src', standard_rule_id: 'TL-STD-LOG-R01', level: 'unit', state: 'automated', file: 'test/standards.test.ts', when: 'The test reads every file under src', then: 'No file calls console.log' }));
     // S03: the standard with its rules, what meets them and their tests.
     expect(tl.run('show', 'TL-STD-LOG')).toContain('TL-STD-LOG-R01 (standard_rule): No console.log');
     const rule = tl.run('show', 'TL-STD-LOG-R01');
@@ -385,8 +385,8 @@ describe('Authoring flows', () => {
       { op: 'add', table: 'entity_field', row: { entity_id: 'TL-LEND-EN01', position: 2, name: 'Tool ID', meaning: 'The tool lent.', type: 'text', required: true } },
     ]);
     // S01: the technical record under the design record it implements, naming its file.
-    tl.run('add', 'command_handler', '--id', 'TL-LEND-CMD01-H', '--title', 'openLoan', '--command_id', 'TL-LEND-CMD01', '--file', 'src/loans.ts');
-    tl.run('add', 'repository', '--id', 'TL-LEND-REPO01', '--title', 'Loans', '--domain_id', 'TL-LEND', '--file', 'src/loans.ts');
+    tl.run('add', 'command_handler', '--id', 'TL-LEND-CMD01-H', '--title', 'openLoan', '--command_id', 'TL-LEND-CMD01', '--file', 'src/loans.ts', '--description', 'Opens the loan in one transaction.');
+    tl.run('add', 'repository', '--id', 'TL-LEND-REPO01', '--title', 'Loans', '--domain_id', 'TL-LEND', '--file', 'src/loans.ts', '--description', 'Keeps loans in one table and reads them by tool.');
     tl.run('link', 'TL-LEND-REPO01', 'persists', 'TL-LEND-A1');
     expect(problemsOf(tl.workspace(), 'technical-file-missing').sort()).toEqual([expect.stringMatching(/^TL-LEND-CMD01-H: /), expect.stringMatching(/^TL-LEND-REPO01: /)]);
     tl.write('src/loans.ts', '// TL-LEND-CMD01-H TL-LEND-REPO01\n');
@@ -406,17 +406,17 @@ describe('Authoring flows', () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
-      add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app' }),
+      add('interface', { id: 'TL-IF01', title: 'Loan desk', product_id: 'TL', kind: 'web app', description: 'The desk where librarians lend tools.' }),
       add('flow', { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }),
       add('flow_step', { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }),
     ]);
     // S01: an endpoint under the command it exposes.
-    tl.run('add', 'endpoint', '--id', 'TL-LEND-EP01', '--title', 'POST /loans', '--command_id', 'TL-LEND-CMD01', '--method', 'POST', '--route', '/loans');
+    tl.run('add', 'endpoint', '--id', 'TL-LEND-EP01', '--title', 'POST /loans', '--command_id', 'TL-LEND-CMD01', '--method', 'POST', '--route', '/loans', '--description', 'Opens a loan from the desk.');
     // S02: view requirements under views and API requirements under endpoints.
-    tl.run('add', 'view', '--id', 'TL-V01', '--title', 'Loan desk', '--route', '/loans');
+    tl.run('add', 'view', '--id', 'TL-V01', '--title', 'Loan desk', '--route', '/loans', '--description', 'Where the librarian opens and closes loans.');
     tl.run('add', 'view_requirement', '--id', 'TL-V01-R01', '--title', 'The due date shows', '--view_id', 'TL-V01', '--statement', 'The desk MUST show the loan\'s due date.');
     tl.run('add', 'api_requirement', '--id', 'TL-LEND-EP01-R01', '--title', 'A loan on loan is refused', '--endpoint_id', 'TL-LEND-EP01', '--statement', 'The endpoint MUST answer 409 for a tool on loan.');
-    tl.run('add', 'integration', '--id', 'TL-INT01', '--title', 'Mail', '--system', 'The mail service');
+    tl.run('add', 'integration', '--id', 'TL-INT01', '--title', 'Mail', '--system', 'The mail service', '--description', 'Sends the library\'s mail to members.');
     // S03: the check reports the view and integration nothing uses, until a step links them.
     const unused = tl.workspace();
     expect([...problemsOf(unused, 'view-unused'), ...problemsOf(unused, 'integration-unused')]).toEqual([expect.stringMatching(/^TL-V01: /), expect.stringMatching(/^TL-INT01: /)]);
@@ -475,9 +475,9 @@ describe('Authoring flows', () => {
     const tl = product();
     await tl.seed([
       ...LENDING,
-      add('read_model', { id: 'TL-LEND-RM01', title: 'Free tools', domain_id: 'TL-LEND' }),
-      add('query', { id: 'TL-LEND-QRY01', title: 'List free tools', read_model_id: 'TL-LEND-RM01' }),
-      add('value_object', { id: 'TL-VO01', title: 'Email address' }),
+      add('read_model', { id: 'TL-LEND-RM01', title: 'Free tools', domain_id: 'TL-LEND', description: 'The tools on no active loan.' }),
+      add('query', { id: 'TL-LEND-QRY01', title: 'List free tools', read_model_id: 'TL-LEND-RM01', description: 'The free tools, by name.' }),
+      add('value_object', { id: 'TL-VO01', title: 'Email address', description: 'Where a member gets mail.' }),
       { op: 'add', table: 'value_object_field', row: { value_object_id: 'TL-VO01', position: 1, name: 'Address', meaning: 'The address as typed.', type: 'text', required: true } },
       { op: 'add', table: 'entity_field', row: { entity_id: 'TL-LEND-EN01', position: 2, name: 'Borrower email', meaning: 'Where reminders go.', type_value_object_id: 'TL-VO01', required: true } },
       add('table', { id: 'TL-LEND-EN01-TB', title: 'Loans', entity_id: 'TL-LEND-EN01', name: 'loan', storage: 'table' }),
@@ -503,13 +503,13 @@ describe('Authoring flows', () => {
     const tl = product();
     await tl.seed(LENDING);
     // S01: each read model with its fields, the aggregates it reads, and its queries.
-    tl.run('add', 'read_model', '--id', 'TL-LEND-RM01', '--title', 'Loans by member', '--domain_id', 'TL-LEND');
+    tl.run('add', 'read_model', '--id', 'TL-LEND-RM01', '--title', 'Loans by member', '--domain_id', 'TL-LEND', '--description', 'Each member\'s open loans and how late they are.');
     tl.run('add', 'read_model_field', ...flags({ read_model_id: 'TL-LEND-RM01', position: 1, name: 'Days overdue', meaning: 'How late the loan is.', type: 'whole number', required: false }));
     tl.run('add', 'read_model_field', ...flags({ read_model_id: 'TL-LEND-RM01', position: 2, name: 'Loan', meaning: 'Which loan.', type_aggregate_id: 'TL-LEND-A1', required: true }));
     expect(gapsOf(tl.workspace(), 'TL-LEND').filter((g) => g.endsWith('TL-LEND-RM01')).sort()).toEqual(expect.arrayContaining(['read-model-reads-nothing TL-LEND-RM01', 'read-model-without-query TL-LEND-RM01']));
     tl.run('link', 'TL-LEND-RM01', 'reads', 'TL-LEND-A1');
-    tl.run('add', 'query', '--id', 'TL-LEND-QRY01', '--title', 'List a member\'s loans', '--read_model_id', 'TL-LEND-RM01');
-    tl.refused('add', 'query', '--id', 'TL-SHOP-QRY01', '--title', 'Another domain\'s query', '--read_model_id', 'TL-LEND-RM01');
+    tl.run('add', 'query', '--id', 'TL-LEND-QRY01', '--title', 'List a member\'s loans', '--read_model_id', 'TL-LEND-RM01', '--description', 'One member\'s loans, the latest first.');
+    tl.refused('add', 'query', '--id', 'TL-SHOP-QRY01', '--title', 'Another domain\'s query', '--read_model_id', 'TL-LEND-RM01', '--description', 'A query filed under the wrong domain.');
     // S02: domain services and the domain's terms.
     tl.run('add', 'domain_service', '--id', 'TL-LEND-DS01', '--title', 'Late fee', '--domain_id', 'TL-LEND', '--statement', 'The fee MUST be a day rate times the days late.');
     tl.run('link', 'TL-LEND-QRY01', 'calls', 'TL-LEND-DS01');

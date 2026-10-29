@@ -1,30 +1,30 @@
-{"id":"LA-VO01-VT","title":"record_id.id","value_object_id":"LA-VO01","file":"lathe/schema/002-registry.sql","description":"record_id's CHECK"}
-{"id":"LA-VO02-VT","title":"title","value_object_id":"LA-VO02","file":"lathe/src/store/rows.ts","description":"normalizeRow refuses an empty text"}
+{"id":"LA-VO01-VT","title":"record_id.id","value_object_id":"LA-VO01","file":"lathe/schema/002-registry.sql"}
+{"id":"LA-VO02-VT","title":"title","value_object_id":"LA-VO02","file":"lathe/src/store/rows.ts"}
 {"id":"LA-VO03-VT","title":"statement","value_object_id":"LA-VO03","file":"lathe/src/store/rows.ts"}
-{"id":"LA-VO04-VT","title":"position","value_object_id":"LA-VO04","file":"lathe/schema/005-use-cases.sql","description":"CHECK (position >= 1)"}
+{"id":"LA-VO04-VT","title":"position","value_object_id":"LA-VO04","file":"lathe/schema/005-use-cases.sql"}
 {"id":"LA-VO05-VT","title":"flow_step.path","value_object_id":"LA-VO05","file":"lathe/schema/006-interaction-design.sql"}
-{"id":"LA-VO06-VT","title":"product_kind.name","value_object_id":"LA-VO06","file":"lathe/schema/012-product-kinds.sql","description":"and 005-use-cases.sql for settings"}
-{"id":"LA-VO07-VT","title":"subdomain_type","value_object_id":"LA-VO07","file":"lathe/schema/004-domain-model.sql","description":"subdomain_type"}
-{"id":"LA-VO08-VT","title":"entity_role","value_object_id":"LA-VO08","file":"lathe/schema/004-domain-model.sql","description":"entity_role"}
-{"id":"LA-VO09-VT","title":"basic_type","value_object_id":"LA-VO09","file":"lathe/schema/004-domain-model.sql","description":"basic_type"}
-{"id":"LA-VO10-VT","title":"table_storage","value_object_id":"LA-VO10","file":"lathe/schema/007-technical-specification.sql","description":"table_storage"}
-{"id":"LA-VO11-VT","title":"key_type","value_object_id":"LA-VO11","file":"lathe/schema/007-technical-specification.sql","description":"key_type"}
-{"id":"LA-VO12-VT","title":"http_method","value_object_id":"LA-VO12","file":"lathe/schema/006-interaction-design.sql","description":"http_method"}
-{"id":"LA-VO13-VT","title":"event_delivery","value_object_id":"LA-VO13","file":"lathe/schema/007-technical-specification.sql","description":"event_delivery"}
-{"id":"LA-VO14-VT","title":"test_level","value_object_id":"LA-VO14","file":"lathe/schema/008-test-plan.sql","description":"test_level, test_state and the run by CHECKs"}
-{"id":"LA-VO15-VT","title":"field_type","value_object_id":"LA-VO15","file":"lathe/schema/012-product-kinds.sql","description":"field_type"}
-{"id":"LA-VO16-VT","title":"stage","value_object_id":"LA-VO16","file":"lathe/schema/001-meta.sql","description":"stage"}
-{"id":"LA-VO17-VT","title":"link_role","value_object_id":"LA-VO17","file":"lathe/schema/001-meta.sql","description":"link_role"}
-{"id":"LA-VO18-VT","title":"groupRecords","value_object_id":"LA-VO18","file":"app/src/specs/groups.ts","description":"`groupRecords`: groups compared trimmed and in lower case, headed as first written."}
+{"id":"LA-VO06-VT","title":"product_kind.name","value_object_id":"LA-VO06","file":"lathe/schema/012-product-kinds.sql"}
+{"id":"LA-VO07-VT","title":"subdomain_type","value_object_id":"LA-VO07","file":"lathe/schema/004-domain-model.sql"}
+{"id":"LA-VO08-VT","title":"entity_role","value_object_id":"LA-VO08","file":"lathe/schema/004-domain-model.sql"}
+{"id":"LA-VO09-VT","title":"basic_type","value_object_id":"LA-VO09","file":"lathe/schema/004-domain-model.sql"}
+{"id":"LA-VO10-VT","title":"table_storage","value_object_id":"LA-VO10","file":"lathe/schema/007-technical-specification.sql"}
+{"id":"LA-VO11-VT","title":"key_type","value_object_id":"LA-VO11","file":"lathe/schema/007-technical-specification.sql"}
+{"id":"LA-VO12-VT","title":"http_method","value_object_id":"LA-VO12","file":"lathe/schema/006-interaction-design.sql"}
+{"id":"LA-VO13-VT","title":"event_delivery","value_object_id":"LA-VO13","file":"lathe/schema/007-technical-specification.sql"}
+{"id":"LA-VO14-VT","title":"test_level","value_object_id":"LA-VO14","file":"lathe/schema/008-test-plan.sql"}
+{"id":"LA-VO15-VT","title":"field_type","value_object_id":"LA-VO15","file":"lathe/schema/012-product-kinds.sql"}
+{"id":"LA-VO16-VT","title":"stage","value_object_id":"LA-VO16","file":"lathe/schema/001-meta.sql"}
+{"id":"LA-VO17-VT","title":"link_role","value_object_id":"LA-VO17","file":"lathe/schema/001-meta.sql"}
+{"id":"LA-VO18-VT","title":"groupRecords","value_object_id":"LA-VO18","file":"app/src/specs/groups.ts"}
 {"id":"LA-VO41-VT","title":"check.name","value_object_id":"LA-VO41","file":"lathe/schema/011-checking.sql"}
 {"id":"LA-VO42-VT","title":"check_severity","value_object_id":"LA-VO42","file":"lathe/schema/011-checking.sql"}
 {"id":"LA-VO43-VT","title":"product_setting.max_children","value_object_id":"LA-VO43","file":"lathe/schema/003-product.sql"}
-{"id":"LA-VO61-VT","title":"normalizeChord","value_object_id":"LA-VO61","file":"app/src/shell/keymap.ts","description":"normalizeChord, normalizeBinding, RESERVED"}
-{"id":"LA-VO62-VT","title":"COLOR_TOKENS","value_object_id":"LA-VO62","file":"app/src/theme/tokens.ts","description":"the token table and how each value is checked"}
-{"id":"LA-VO63-VT","title":"ThemeFile","value_object_id":"LA-VO63","file":"app/src/theme/theme.ts","description":"ThemeFile, parseTheme, toFile, THEME_FORMAT, THEME_VERSION"}
-{"id":"LA-VO64-VT","title":"Bounds","value_object_id":"LA-VO64","file":"desktop/src/windowState.ts","description":"Bounds, SavedWindow"}
-{"id":"LA-VO65-VT","title":"Chrome","value_object_id":"LA-VO65","file":"desktop/src/chrome.ts","description":"Chrome, parseChrome, parseHexColor"}
-{"id":"LA-VO90-VT","title":"addressOf","value_object_id":"LA-VO90","file":"app/src/views/address.ts","description":"addressOf, isFocusPath, RECORD_ID, HOME_PATH"}
-{"id":"LA-VO91-VT","title":"StageName","value_object_id":"LA-VO91","file":"app/src/views/address.ts","description":"StageName, STAGE_NAMES, DEFAULT_STAGE, parseStage, stageFromSearch, withStage"}
-{"id":"LA-VO92-VT","title":"SessionSettings","value_object_id":"LA-VO92","file":"app/src/graph/settings.ts","description":"SessionSettings, GraphSettings, CardSettings, DEFAULT_GRAPH_SETTINGS, DEFAULT_CARD, sessionSettings"}
-{"id":"LA-VO93-VT","title":"product_setting.max_entities_per_aggregate","value_object_id":"LA-VO93","file":"lathe/schema/003-product.sql","description":"The CHECK on `product_setting.max_entities_per_aggregate`: a whole number of at least 1."}
+{"id":"LA-VO61-VT","title":"normalizeChord","value_object_id":"LA-VO61","file":"app/src/shell/keymap.ts"}
+{"id":"LA-VO62-VT","title":"COLOR_TOKENS","value_object_id":"LA-VO62","file":"app/src/theme/tokens.ts"}
+{"id":"LA-VO63-VT","title":"ThemeFile","value_object_id":"LA-VO63","file":"app/src/theme/theme.ts"}
+{"id":"LA-VO64-VT","title":"Bounds","value_object_id":"LA-VO64","file":"desktop/src/windowState.ts"}
+{"id":"LA-VO65-VT","title":"Chrome","value_object_id":"LA-VO65","file":"desktop/src/chrome.ts"}
+{"id":"LA-VO90-VT","title":"addressOf","value_object_id":"LA-VO90","file":"app/src/views/address.ts"}
+{"id":"LA-VO91-VT","title":"StageName","value_object_id":"LA-VO91","file":"app/src/views/address.ts"}
+{"id":"LA-VO92-VT","title":"SessionSettings","value_object_id":"LA-VO92","file":"app/src/graph/settings.ts"}
+{"id":"LA-VO93-VT","title":"product_setting.max_entities_per_aggregate","value_object_id":"LA-VO93","file":"lathe/schema/003-product.sql"}

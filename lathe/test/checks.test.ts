@@ -340,8 +340,8 @@ describe('coverage gaps as warnings', () => {
 
 check('pattern-rule-test-outside-followers', () => {
   it('LA-TRC-UC08-R02-T01 a pattern rule test naming a domain that does not follow the pattern is an error; one where the rule is waived is a warning', async () => {
-    let data = adding(complete(), { domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting' }] });
-    data = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet' }] });
+    let data = adding(complete(), { domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' }] });
+    data = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet', when: 'The clerk saves a sale.', then: 'The sale reads the same everywhere.' }] });
     const ws = await loadData(data);
     expect(ofCheck(ws, 'pattern-rule-test-outside-followers')).toEqual([
       expect.objectContaining({ severity: 'error', record: 'EX-PAT-ACT-R01-T02', message: expect.stringContaining('which does not follow pattern EX-PAT-ACT') }),
@@ -483,10 +483,10 @@ check('event-tense', () => {
   it('LA-AUT-INV27-T a title with no past form as its last word or after its first is a warning', async () => {
     const data = adding(complete(), {
       domain_event: [
-        { id: 'EX-LEND-EV03', title: 'Return tool', aggregate_id: 'EX-LEND-A1', published: false },
-        { id: 'EX-LEND-EV04', title: 'Loan became overdue', aggregate_id: 'EX-LEND-A1', published: false },
-        { id: 'EX-LEND-EV05', title: 'Fee needed', aggregate_id: 'EX-LEND-A1', published: false },
-        { id: 'EX-LEND-EV06', title: 'Speed', aggregate_id: 'EX-LEND-A1', published: false },
+        { id: 'EX-LEND-EV03', title: 'Return tool', aggregate_id: 'EX-LEND-A1', published: false, description: 'A tool came back.' },
+        { id: 'EX-LEND-EV04', title: 'Loan became overdue', aggregate_id: 'EX-LEND-A1', published: false, description: 'A loan passed its due date.' },
+        { id: 'EX-LEND-EV05', title: 'Fee needed', aggregate_id: 'EX-LEND-A1', published: false, description: 'A fee became due.' },
+        { id: 'EX-LEND-EV06', title: 'Speed', aggregate_id: 'EX-LEND-A1', published: false, description: 'A loan sped up.' },
       ],
     });
     expect(records(ofCheck(await loadData(data), 'event-tense'))).toEqual(['EX-LEND-EV03', 'EX-LEND-EV06']);
@@ -497,10 +497,10 @@ check('domain-named-for-technology', () => {
   it('LA-AUT-INV26-T a domain whose title or code names a technology is a warning; one only described so is not', async () => {
     const data = adding(complete(), {
       domain: [
-        { id: 'EX-WEB', title: 'Web app', product_id: 'EX', subdomain_type: 'generic' },
-        { id: 'EX-DB', title: 'Records', product_id: 'EX', subdomain_type: 'generic' },
+        { id: 'EX-WEB', title: 'Web app', product_id: 'EX', subdomain_type: 'generic', description: 'Pages members see.' },
+        { id: 'EX-DB', title: 'Records', product_id: 'EX', subdomain_type: 'generic', description: 'Records the library keeps.' },
         { id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'generic', description: 'Served by its own server.' },
-        { id: 'EX-TOUR', title: 'Guided tours', product_id: 'EX', subdomain_type: 'generic' },
+        { id: 'EX-TOUR', title: 'Guided tours', product_id: 'EX', subdomain_type: 'generic', description: 'Tours of the workshop.' },
       ],
     });
     const found = ofCheck(await loadData(data), 'domain-named-for-technology');
@@ -514,10 +514,10 @@ check('query-title-verb', () => {
     expect(ofCheck(clean, 'query-title-verb')).toEqual([]);
     const data = adding(complete(), {
       query: [
-        { id: 'EX-LEND-QRY02', title: 'Get a loan', read_model_id: 'EX-LEND-RM01' },
-        { id: 'EX-LEND-QRY03', title: 'find a tool by name', read_model_id: 'EX-LEND-RM01' },
-        { id: 'EX-LEND-QRY04', title: 'Show overdue loans', read_model_id: 'EX-LEND-RM01' },
-        { id: 'EX-LEND-QRY05', title: 'Getaway tools', read_model_id: 'EX-LEND-RM01' },
+        { id: 'EX-LEND-QRY02', title: 'Get a loan', read_model_id: 'EX-LEND-RM01', description: 'One loan by its number.' },
+        { id: 'EX-LEND-QRY03', title: 'find a tool by name', read_model_id: 'EX-LEND-RM01', description: 'Tools whose name matches.' },
+        { id: 'EX-LEND-QRY04', title: 'Show overdue loans', read_model_id: 'EX-LEND-RM01', description: 'Loans past their due date.' },
+        { id: 'EX-LEND-QRY05', title: 'Getaway tools', read_model_id: 'EX-LEND-RM01', description: 'Tools away from the library.' },
       ],
     });
     const found = ofCheck(await loadData(data), 'query-title-verb');
@@ -579,6 +579,8 @@ check('test-title-not-a-result', () => {
           uc_requirement_id: 'EX-LEND-UC01-R01',
           level: 'service',
           state: 'not automated yet',
+          when: 'A member asks for a tool on loan.',
+          then: 'The library refuses.',
         })),
       });
     const data = titled(['Tests that a lent tool is refused', 'Should refuse a lent tool', 'Test whether a tool is lent', 'Tests run one at a time', 'A lent tool is refused again']);
@@ -593,9 +595,9 @@ check('test-title-not-a-result', () => {
 check('title-breaks-convention', () => {
   const named = async (capabilities: string[], useCases: string[]) => {
     const data = adding(complete(), {
-      interface: [{ id: 'EX-IF02', title: 'Member portal', product_id: 'EX', kind: 'web app' }],
-      capability: capabilities.map((title, i) => ({ id: `EX-LEND-CAP${String(i + 2).padStart(2, '0')}`, title, domain_id: 'EX-LEND', position: i + 2 })),
-      use_case: useCases.map((title, i) => ({ id: `EX-LEND-UC${String(i + 3).padStart(2, '0')}`, title, capability_id: 'EX-LEND-CAP01' })),
+      interface: [{ id: 'EX-IF02', title: 'Member portal', product_id: 'EX', kind: 'web app', description: 'The pages members use from home.' }],
+      capability: capabilities.map((title, i) => ({ id: `EX-LEND-CAP${String(i + 2).padStart(2, '0')}`, title, domain_id: 'EX-LEND', position: i + 2, description: 'A part of lending.' })),
+      use_case: useCases.map((title, i) => ({ id: `EX-LEND-UC${String(i + 3).padStart(2, '0')}`, title, capability_id: 'EX-LEND-CAP01', goal: 'A member gets something done.' })),
     });
     return ofCheck(await loadData(data), 'title-breaks-convention');
   };
@@ -710,7 +712,7 @@ check('too-many-children', () => {
   });
 
   it('LA-CHK-UC06-R01-T04 tests are never counted, however many a record holds', async () => {
-    const tests = Array.from({ length: 20 }, (_, i) => ({ id: `EX-LEND-UC01-R01-T${String(i + 2).padStart(2, '0')}`, title: `Test ${i}`, uc_requirement_id: 'EX-LEND-UC01-R01', level: 'service', state: 'not automated yet' }));
+    const tests = Array.from({ length: 20 }, (_, i) => ({ id: `EX-LEND-UC01-R01-T${String(i + 2).padStart(2, '0')}`, title: `Test ${i}`, uc_requirement_id: 'EX-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'A member asks for a tool on loan.', then: 'The library refuses.' }));
     const ws = await loadData(adding(complete(), { use_case_test: tests }));
     expect(ofCheck(ws, 'too-many-children')).toEqual([]);
   });
@@ -744,7 +746,7 @@ check('too-many-children', () => {
 check('aggregate-too-large', () => {
   // Child entities of the loan (EX-LEND-A1, which holds the Loan and its Return), stored in its root's table.
   const children = (n: number) =>
-    Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-EN${String(i + 10).padStart(2, '0')}`, title: `Part ${i}`, aggregate_id: 'EX-LEND-A1', role: 'child', in_root_table: true }));
+    Array.from({ length: n }, (_, i) => ({ id: `EX-LEND-EN${String(i + 10).padStart(2, '0')}`, title: `Part ${i}`, aggregate_id: 'EX-LEND-A1', role: 'child', in_root_table: true, description: 'A part of the loan.' }));
 
   describe('LA-STD-MODELING-R01-T01 aggregates are small', () => {
     it('LA-CHK-UC06-R08-T01 an aggregate with more entities than max_entities_per_aggregate is a warning naming it, the count and the limit', async () => {
@@ -770,7 +772,7 @@ check('aggregate-too-large', () => {
 check('lone-child', () => {
   it('LA-CHK-UC06-R03-T01 a capability with exactly one use case is a warning naming it', async () => {
     const data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC02', { capability_id: 'EX-LEND-CAP02' });
-    const ws = await loadData(adding(data, { capability: [{ id: 'EX-LEND-CAP02', title: 'Catalog', domain_id: 'EX-LEND', position: 2 }] }));
+    const ws = await loadData(adding(data, { capability: [{ id: 'EX-LEND-CAP02', title: 'Catalog', domain_id: 'EX-LEND', position: 2, description: 'Keeping the list of tools.' }] }));
     expect(ofCheck(ws, 'lone-child').map((p) => p.message)).toEqual([
       'Capability EX-LEND-CAP01 has only one use case, EX-LEND-UC01; merge it into a neighboring capability, or give it more.',
       'Capability EX-LEND-CAP02 has only one use case, EX-LEND-UC02; merge it into a neighboring capability, or give it more.',
@@ -782,8 +784,8 @@ check('lone-child', () => {
     let data = changing(complete(), 'use_case', (r) => r.id === 'EX-LEND-UC02', { capability_id: 'EX-LEND-CAP02' });
     data = adding(data, {
       capability: [
-        { id: 'EX-LEND-CAP02', title: 'Catalog', domain_id: 'EX-LEND', position: 2 },
-        { id: 'EX-LEND-CAP03', title: 'Repairs', domain_id: 'EX-LEND', position: 3 },
+        { id: 'EX-LEND-CAP02', title: 'Catalog', domain_id: 'EX-LEND', position: 2, description: 'Keeping the list of tools.' },
+        { id: 'EX-LEND-CAP03', title: 'Repairs', domain_id: 'EX-LEND', position: 3, description: 'Fixing broken tools.' },
       ],
       uc_requirement: [{ id: 'EX-LEND-UC02-R02', title: 'Tool is priced', use_case_id: 'EX-LEND-UC02', statement: 'The library MUST refuse a tool with no price.' }],
     });
@@ -820,18 +822,18 @@ check('endpoint-route-not-in-file', () => {
   it('LA-TRC-UC15-R01-T01 An endpoint handler\'s file that does not name its method and route is an error', async () => {
     const data = adding(complete(), {
       endpoint: [
-        { id: 'EX-LEND-EP02', title: 'GET /tools/{toolId}', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/tools/{toolId}' },
-        { id: 'EX-LEND-EP03', title: 'POST /tools', command_id: 'EX-LEND-CMD02', method: 'POST', route: '/tools' },
-        { id: 'EX-LEND-EP04', title: 'POST /loans/{loanId}/remind', command_id: 'EX-LEND-CMD03', method: 'POST', route: '/loans/{loanId}/remind' },
-        { id: 'EX-LEND-EP05', title: 'GET /members', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/members' },
-        { id: 'EX-LEND-EP06', title: 'GET /fees', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/fees' },
+        { id: 'EX-LEND-EP02', title: 'GET /tools/{toolId}', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/tools/{toolId}', description: 'Answers with what the route names.' },
+        { id: 'EX-LEND-EP03', title: 'POST /tools', command_id: 'EX-LEND-CMD02', method: 'POST', route: '/tools', description: 'Answers with what the route names.' },
+        { id: 'EX-LEND-EP04', title: 'POST /loans/{loanId}/remind', command_id: 'EX-LEND-CMD03', method: 'POST', route: '/loans/{loanId}/remind', description: 'Answers with what the route names.' },
+        { id: 'EX-LEND-EP05', title: 'GET /members', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/members', description: 'Answers with what the route names.' },
+        { id: 'EX-LEND-EP06', title: 'GET /fees', query_id: 'EX-LEND-QRY01', method: 'GET', route: '/fees', description: 'Answers with what the route names.' },
       ],
       endpoint_handler: [
-        { id: 'EX-LEND-EP02-H', title: 'getTool', endpoint_id: 'EX-LEND-EP02', file: 'src/tool.ts' },
-        { id: 'EX-LEND-EP03-H', title: 'postTool', endpoint_id: 'EX-LEND-EP03', file: 'src/add-tool.ts' },
-        { id: 'EX-LEND-EP04-H', title: 'postReminder', endpoint_id: 'EX-LEND-EP04', file: 'src/remind.ts' },
-        { id: 'EX-LEND-EP05-H', title: 'getMembers', endpoint_id: 'EX-LEND-EP05', file: 'src/members.ts' },
-        { id: 'EX-LEND-EP06-H', title: 'getFees', endpoint_id: 'EX-LEND-EP06', file: 'src/fees.ts' },
+        { id: 'EX-LEND-EP02-H', title: 'getTool', endpoint_id: 'EX-LEND-EP02', file: 'src/tool.ts', description: 'Reads the request and calls its handler.' },
+        { id: 'EX-LEND-EP03-H', title: 'postTool', endpoint_id: 'EX-LEND-EP03', file: 'src/add-tool.ts', description: 'Reads the request and calls its handler.' },
+        { id: 'EX-LEND-EP04-H', title: 'postReminder', endpoint_id: 'EX-LEND-EP04', file: 'src/remind.ts', description: 'Reads the request and calls its handler.' },
+        { id: 'EX-LEND-EP05-H', title: 'getMembers', endpoint_id: 'EX-LEND-EP05', file: 'src/members.ts', description: 'Reads the request and calls its handler.' },
+        { id: 'EX-LEND-EP06-H', title: 'getFees', endpoint_id: 'EX-LEND-EP06', file: 'src/fees.ts', description: 'Reads the request and calls its handler.' },
       ],
     });
     const ws = await loadData(data, {
@@ -859,15 +861,15 @@ check('view-route-not-in-file', () => {
   it('LA-TRC-UC15-R02-T01 A view whose route no component file names is an error', async () => {
     const data = adding(complete(), {
       view: [
-        { id: 'EX-V02', title: 'Tool', route: '/tools/<tool-id>' },
-        { id: 'EX-V03', title: 'Members', route: '/members' },
-        { id: 'EX-V04', title: 'Fees', route: '/fees' },
-        { id: 'EX-V05', title: 'Menu' },
+        { id: 'EX-V02', title: 'Tool', route: '/tools/<tool-id>', description: 'A page of the library.' },
+        { id: 'EX-V03', title: 'Members', route: '/members', description: 'A page of the library.' },
+        { id: 'EX-V04', title: 'Fees', route: '/fees', description: 'A page of the library.' },
+        { id: 'EX-V05', title: 'Menu', description: 'The menu on every page.' },
       ],
       ui_component: [
-        { id: 'EX-UI02', title: 'ToolPage', file: 'web/tool.tsx' },
-        { id: 'EX-UI03', title: 'MembersPage', file: 'web/members.tsx' },
-        { id: 'EX-UI04', title: 'FeesPage', file: 'web/fees.tsx' },
+        { id: 'EX-UI02', title: 'ToolPage', file: 'web/tool.tsx', description: 'The page component.' },
+        { id: 'EX-UI03', title: 'MembersPage', file: 'web/members.tsx', description: 'The page component.' },
+        { id: 'EX-UI04', title: 'FeesPage', file: 'web/fees.tsx', description: 'The page component.' },
       ],
       renders: [
         { source_id: 'EX-UI02', target_id: 'EX-V02' },

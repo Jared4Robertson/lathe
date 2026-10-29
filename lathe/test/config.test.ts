@@ -26,7 +26,7 @@ describe('product configuration', () => {
   });
 
   it("LA-PLT-UC02-R07-T01 the config's tests globs choose the test files; node_modules, dist and another product's folder are never read", async () => {
-    const root = writeData({ product: [{ id: 'TL', title: 'Tool Library' }] });
+    const root = writeData({ product: [{ id: 'TL', title: 'Tool Library', description: 'A library that lends tools to its members.' }] });
     const unnamed = "it('proves nothing anyone can find', () => {});\n";
     for (const file of ['test/a.test.ts', 'checks/b.check.ts', 'node_modules/x/c.test.ts', 'dist/d.test.ts', 'other/test/e.test.ts']) {
       mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
@@ -45,7 +45,7 @@ describe('product configuration', () => {
   });
 
   it('LA-PLT-UC17-R01-T01 a product whose data is for another schema version stops every load with what to do', async () => {
-    const root = writeData({ product: [{ id: 'TL', title: 'Tool Library' }] });
+    const root = writeData({ product: [{ id: 'TL', title: 'Tool Library', description: 'A library that lends tools to its members.' }] });
     // No schema version is version 1, the first versioned schema.
     writeFileSync(path.join(root, 'lathe.config.json'), JSON.stringify({ data: 'data' }));
     expect(readConfig(root).schema).toBe(1);

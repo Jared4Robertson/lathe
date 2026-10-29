@@ -67,43 +67,43 @@
 {"id":"LA-AUT-EN74-TB","title":"pattern_rule_test","entity_id":"LA-AUT-EN74","name":"pattern_rule_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-AUT-EN75-TB","title":"standard_rule_test","entity_id":"LA-AUT-EN75","name":"standard_rule_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
 {"id":"LA-AUT-EN76-TB","title":"interface","entity_id":"LA-AUT-EN76","name":"interface","storage":"table","file":"lathe/schema/006-interaction-design.sql"}
-{"id":"LA-AUT-RM01-TB","title":"Reference","read_model_id":"LA-AUT-RM01","name":"Reference","storage":"in memory","file":"lathe/src/index.ts","description":"Computed on request and kept in referenceCache while no data file or migration changes."}
-{"id":"LA-AUT-RM02-TB","title":"Shown","read_model_id":"LA-AUT-RM02","name":"Shown","storage":"in memory","file":"lathe/src/cli/operations.ts","description":"Computed from the store on each request."}
+{"id":"LA-AUT-RM01-TB","title":"Reference","read_model_id":"LA-AUT-RM01","name":"Reference","storage":"in memory","file":"lathe/src/index.ts"}
+{"id":"LA-AUT-RM02-TB","title":"Shown","read_model_id":"LA-AUT-RM02","name":"Shown","storage":"in memory","file":"lathe/src/cli/operations.ts"}
 {"id":"LA-CHK-EN01-TB","title":"check","entity_id":"LA-CHK-EN01","name":"check","storage":"table","file":"lathe/schema/011-checking.sql"}
 {"id":"LA-CHK-EN03-TB","title":"product_setting","entity_id":"LA-CHK-EN03","name":"product_setting","storage":"table","file":"lathe/schema/003-product.sql"}
-{"id":"LA-CHK-RM01-TB","title":"problem","read_model_id":"LA-CHK-RM01","name":"problem","storage":"table","file":"lathe/schema/011-checking.sql","description":"Filled by its projection on every load, never written to a file."}
-{"id":"LA-EXP-EN01-TB","title":"history","entity_id":"LA-EXP-EN01","name":"history","storage":"browser storage","file":"app/src/router.tsx","description":"The browser's history: each page is an entry at its address, with its entry state (navigate, entryState)."}
-{"id":"LA-EXP-EN02-TB","title":"lathe:space-pages","entity_id":"LA-EXP-EN02","name":"lathe:space-pages","storage":"browser storage","file":"app/src/shell/spaces.tsx","description":"Each space's last page, in session storage; lathe:space names the space chosen last."}
-{"id":"LA-EXP-EN03-TB","title":"lathe:nav-folders","entity_id":"LA-EXP-EN03","name":"lathe:nav-folders","storage":"browser storage","file":"app/src/shell/Nav.tsx","description":"The rows the reader has open or folded, in session storage."}
-{"id":"LA-EXP-EN09-TB","title":"lathe:tabs","entity_id":"LA-EXP-EN09","name":"lathe:tabs","storage":"browser storage","file":"app/src/views/useTabs.ts","description":"Each space's tab set in the desktop app, with each tab's place and history, in session storage (parseTabSet); anything malformed is dropped."}
-{"id":"LA-EXP-EN11-TB","title":"lathe:session-settings","entity_id":"LA-EXP-EN11","name":"lathe:session-settings","storage":"browser storage","file":"app/src/graph/settings.ts","description":"The session's settings (the graph's layout and minimap, the wiki card's width), in session storage; a stored value in any other form is dropped for the defaults."}
-{"id":"LA-EXP-RM01-TB","title":"SpecIndex","read_model_id":"LA-EXP-RM01","name":"SpecIndex","storage":"in memory","file":"app/src/specs/data.ts","description":"Built from each load of the workspace, one per space."}
-{"id":"LA-EXP-RM02-TB","title":"Folder","read_model_id":"LA-EXP-RM02","name":"Folder","storage":"in memory","file":"app/src/specs/folders.ts","description":"Built from the space's index on each load."}
-{"id":"LA-EXP-RM03-TB","title":"GraphMap","read_model_id":"LA-EXP-RM03","name":"GraphMap","storage":"in memory","file":"app/src/graph/map.ts","description":"Laid out once per load, kept per index and root."}
-{"id":"LA-EXP-RM04-TB","title":"Erd","read_model_id":"LA-EXP-RM04","name":"Erd","storage":"in memory","file":"app/src/erd/erd.ts","description":"Worked out on each request."}
-{"id":"LA-EXP-RM05-TB","title":"HistoryCommit","read_model_id":"LA-EXP-RM05","name":"HistoryCommit","storage":"in memory","file":"lathe/src/server/history.ts","description":"Read from git on each request."}
-{"id":"LA-EXP-RM06-TB","title":"Space","read_model_id":"LA-EXP-RM06","name":"Space","storage":"in memory","file":"app/src/shell/spaces.tsx","description":"Worked out from the space's index on each load."}
-{"id":"LA-EXP-RM07-TB","title":"RecordChange","read_model_id":"LA-EXP-RM07","name":"RecordChange","storage":"in memory","file":"lathe/src/changes.ts","description":"Computed on each ask; the app keeps the data before a reload and the last look as deltas of a commit."}
-{"id":"LA-PLT-EN02-TB","title":"lathe:nav-*","entity_id":"LA-PLT-EN02","name":"lathe:nav-*","storage":"browser storage","file":"app/src/shell/prefs.ts","description":"Each panel's size and whether it shows, under its own keys in local storage (lathe:nav-width, lathe:nav-collapsed); the wiki card's width is the session's settings (LA-EXP-A6)."}
-{"id":"LA-PLT-EN03-TB","title":"lathe:keybindings","entity_id":"LA-PLT-EN03","name":"lathe:keybindings","storage":"browser storage","file":"app/src/shell/keymap.ts","description":"The person's own bindings by command ID, in local storage (readOverrides); the commands and their default keys are COMMANDS in the code."}
-{"id":"LA-PLT-EN06-TB","title":"lathe:themes","entity_id":"LA-PLT-EN06","name":"lathe:themes","storage":"browser storage","file":"app/src/theme/store.ts","description":"The person's own themes, in local storage; the built-in themes are in the code (BUILT_IN_THEMES)."}
-{"id":"LA-PLT-EN08-TB","title":"window-state.json","entity_id":"LA-PLT-EN08","name":"window-state.json","storage":"file","file":"desktop/src/main.ts","description":"Each window's place by folder, in the shell's user data folder (saveWindow, parseWindowStates), with its chrome in chrome.json; its server and error count are kept only in memory."}
-{"id":"LA-PLT-EN10-TB","title":"entry.server","entity_id":"LA-PLT-EN10","name":"entry.server","storage":"in memory","file":"desktop/src/main.ts","description":"Each window's server, on its entry in the map of open windows (open), while the shell runs."}
-{"id":"LA-PLT-EN14-TB","title":"lathe:theme","entity_id":"LA-PLT-EN14","name":"lathe:theme","storage":"browser storage","file":"app/src/theme/store.ts","description":"The chosen theme's ID in local storage, with the color mode under lathe:color-mode and the chosen theme's stylesheet under lathe:theme-css (STORAGE_KEYS)."}
-{"id":"LA-PLT-EN15-TB","title":"recent-folders.json","entity_id":"LA-PLT-EN15","name":"recent-folders.json","storage":"file","file":"desktop/src/main.ts","description":"The folders, latest first, in the shell's user data folder (parseRecent, rememberRecent)."}
-{"id":"LA-PLT-EN16-TB","title":"lathe.config.json","entity_id":"LA-PLT-EN16","name":"lathe.config.json","storage":"file","file":"lathe/src/config.ts","description":"In the repo's root folder: the schema version its data is for and where its data files are (loadConfig)."}
-{"id":"LA-PLT-RM01-TB","title":"Workspace","read_model_id":"LA-PLT-RM01","name":"Workspace","storage":"in memory","file":"lathe/src/types.ts","description":"Filled from the data files on each load."}
-{"id":"LA-PLT-RM02-TB","title":"Command","read_model_id":"LA-PLT-RM02","name":"Command","storage":"in memory","file":"app/src/shell/keymap.ts","description":"Worked out as the app starts, from COMMANDS and the overrides."}
-{"id":"LA-PLT-RM03-TB","title":"Theme","read_model_id":"LA-PLT-RM03","name":"Theme","storage":"in memory","file":"app/src/theme/ThemeProvider.tsx","description":"Worked out from the person's appearance on each change."}
-{"id":"LA-PLT-RM04-TB","title":"recent","read_model_id":"LA-PLT-RM04","name":"recent","storage":"in memory","file":"desktop/src/main.ts","description":"The recent folders the shell keeps in memory while it runs, read from recent-folders.json as it starts."}
-{"id":"LA-PLT-RM05-TB","title":"transcripts","read_model_id":"LA-PLT-RM05","name":"~/.claude/projects/<folder>/<session>.jsonl","storage":"file","file":"desktop/src/claudeSessions.ts","description":"Claude Code's own session store: one transcript per session, which the chat reads and never writes; the registry of running sessions is ~/.claude/sessions/<pid>.json."}
-{"id":"LA-PLT-RM06-TB","title":"shown","read_model_id":"LA-PLT-RM06","name":"shown","storage":"in memory","file":"app/src/chat/appRequests.ts","description":"The focus page's registered reader of what it shows, while it is mounted."}
-{"id":"LA-TRC-EN05-TB","title":"follows","entity_id":"LA-TRC-EN05","name":"follows","storage":"table","file":"lathe/schema/010-links.sql","description":"follows, storage table"}
-{"id":"LA-TRC-EN06-TB","title":"setting_value","entity_id":"LA-TRC-EN06","name":"setting_value","storage":"table","file":"lathe/schema/010-links.sql","description":"The `setting_value` table, a part of `follows`."}
-{"id":"LA-TRC-RM01-TB","title":"coverage_count","read_model_id":"LA-TRC-RM01","name":"coverage_count","storage":"view","file":"lathe/src/coverage.ts","description":"coverage_count, storage view"}
-{"id":"LA-TRC-RM02-TB","title":"coverage_gap","read_model_id":"LA-TRC-RM02","name":"coverage_gap","storage":"materialized view","file":"lathe/src/coverage.ts","description":"coverage_gap, a query's result kept as a table for each load"}
-{"id":"LA-TRC-RM03-TB","title":"coverage_tests","read_model_id":"LA-TRC-RM03","name":"coverage_tests","storage":"view","file":"lathe/src/coverage.ts","description":"coverage_tests, storage view"}
-{"id":"LA-TRC-RM04-TB","title":"pattern_rule_standing","read_model_id":"LA-TRC-RM04","name":"pattern_rule_standing","storage":"table","file":"lathe/src/coverage.ts","description":"pattern_rule_standing, storage table; owed_pattern_rules is the view of its owed rows"}
-{"id":"LA-TRC-RM05-TB","title":"file_facts","read_model_id":"LA-TRC-RM05","name":"file_facts","storage":"table","file":"lathe/src/coverage.ts","description":"file_facts (FACT_TABLES_SQL), storage table, filled by its projection on every load"}
-{"id":"LA-TRC-RM06-TB","title":"Trace","read_model_id":"LA-TRC-RM06","name":"Trace","storage":"in memory","file":"app/src/specs/trace.ts","description":"Read from the engine's chains and coverage in the space's index on each request."}
-{"id":"LA-TRC-RM07-TB","title":"table_facts","read_model_id":"LA-TRC-RM07","name":"table_facts","storage":"table","file":"lathe/src/trace/tables.ts","description":"table_facts (TABLE_FACTS_SQL), filled by its projection on every load"}
+{"id":"LA-CHK-RM01-TB","title":"problem","read_model_id":"LA-CHK-RM01","name":"problem","storage":"table","file":"lathe/schema/011-checking.sql"}
+{"id":"LA-EXP-EN01-TB","title":"history","entity_id":"LA-EXP-EN01","name":"history","storage":"browser storage","file":"app/src/router.tsx"}
+{"id":"LA-EXP-EN02-TB","title":"lathe:space-pages","entity_id":"LA-EXP-EN02","name":"lathe:space-pages","storage":"browser storage","file":"app/src/shell/spaces.tsx"}
+{"id":"LA-EXP-EN03-TB","title":"lathe:nav-folders","entity_id":"LA-EXP-EN03","name":"lathe:nav-folders","storage":"browser storage","file":"app/src/shell/Nav.tsx"}
+{"id":"LA-EXP-EN09-TB","title":"lathe:tabs","entity_id":"LA-EXP-EN09","name":"lathe:tabs","storage":"browser storage","file":"app/src/views/useTabs.ts"}
+{"id":"LA-EXP-EN11-TB","title":"lathe:session-settings","entity_id":"LA-EXP-EN11","name":"lathe:session-settings","storage":"browser storage","file":"app/src/graph/settings.ts"}
+{"id":"LA-EXP-RM01-TB","title":"SpecIndex","read_model_id":"LA-EXP-RM01","name":"SpecIndex","storage":"in memory","file":"app/src/specs/data.ts"}
+{"id":"LA-EXP-RM02-TB","title":"Folder","read_model_id":"LA-EXP-RM02","name":"Folder","storage":"in memory","file":"app/src/specs/folders.ts"}
+{"id":"LA-EXP-RM03-TB","title":"GraphMap","read_model_id":"LA-EXP-RM03","name":"GraphMap","storage":"in memory","file":"app/src/graph/map.ts"}
+{"id":"LA-EXP-RM04-TB","title":"Erd","read_model_id":"LA-EXP-RM04","name":"Erd","storage":"in memory","file":"app/src/erd/erd.ts"}
+{"id":"LA-EXP-RM05-TB","title":"HistoryCommit","read_model_id":"LA-EXP-RM05","name":"HistoryCommit","storage":"in memory","file":"lathe/src/server/history.ts"}
+{"id":"LA-EXP-RM06-TB","title":"Space","read_model_id":"LA-EXP-RM06","name":"Space","storage":"in memory","file":"app/src/shell/spaces.tsx"}
+{"id":"LA-EXP-RM07-TB","title":"RecordChange","read_model_id":"LA-EXP-RM07","name":"RecordChange","storage":"in memory","file":"lathe/src/changes.ts"}
+{"id":"LA-PLT-EN02-TB","title":"lathe:nav-*","entity_id":"LA-PLT-EN02","name":"lathe:nav-*","storage":"browser storage","file":"app/src/shell/prefs.ts"}
+{"id":"LA-PLT-EN03-TB","title":"lathe:keybindings","entity_id":"LA-PLT-EN03","name":"lathe:keybindings","storage":"browser storage","file":"app/src/shell/keymap.ts"}
+{"id":"LA-PLT-EN06-TB","title":"lathe:themes","entity_id":"LA-PLT-EN06","name":"lathe:themes","storage":"browser storage","file":"app/src/theme/store.ts"}
+{"id":"LA-PLT-EN08-TB","title":"window-state.json","entity_id":"LA-PLT-EN08","name":"window-state.json","storage":"file","file":"desktop/src/main.ts"}
+{"id":"LA-PLT-EN10-TB","title":"entry.server","entity_id":"LA-PLT-EN10","name":"entry.server","storage":"in memory","file":"desktop/src/main.ts"}
+{"id":"LA-PLT-EN14-TB","title":"lathe:theme","entity_id":"LA-PLT-EN14","name":"lathe:theme","storage":"browser storage","file":"app/src/theme/store.ts"}
+{"id":"LA-PLT-EN15-TB","title":"recent-folders.json","entity_id":"LA-PLT-EN15","name":"recent-folders.json","storage":"file","file":"desktop/src/main.ts"}
+{"id":"LA-PLT-EN16-TB","title":"lathe.config.json","entity_id":"LA-PLT-EN16","name":"lathe.config.json","storage":"file","file":"lathe/src/config.ts"}
+{"id":"LA-PLT-RM01-TB","title":"Workspace","read_model_id":"LA-PLT-RM01","name":"Workspace","storage":"in memory","file":"lathe/src/types.ts"}
+{"id":"LA-PLT-RM02-TB","title":"Command","read_model_id":"LA-PLT-RM02","name":"Command","storage":"in memory","file":"app/src/shell/keymap.ts"}
+{"id":"LA-PLT-RM03-TB","title":"Theme","read_model_id":"LA-PLT-RM03","name":"Theme","storage":"in memory","file":"app/src/theme/ThemeProvider.tsx"}
+{"id":"LA-PLT-RM04-TB","title":"recent","read_model_id":"LA-PLT-RM04","name":"recent","storage":"in memory","file":"desktop/src/main.ts"}
+{"id":"LA-PLT-RM05-TB","title":"transcripts","read_model_id":"LA-PLT-RM05","name":"~/.claude/projects/<folder>/<session>.jsonl","storage":"file","file":"desktop/src/claudeSessions.ts"}
+{"id":"LA-PLT-RM06-TB","title":"shown","read_model_id":"LA-PLT-RM06","name":"shown","storage":"in memory","file":"app/src/chat/appRequests.ts"}
+{"id":"LA-TRC-EN05-TB","title":"follows","entity_id":"LA-TRC-EN05","name":"follows","storage":"table","file":"lathe/schema/010-links.sql"}
+{"id":"LA-TRC-EN06-TB","title":"setting_value","entity_id":"LA-TRC-EN06","name":"setting_value","storage":"table","file":"lathe/schema/010-links.sql"}
+{"id":"LA-TRC-RM01-TB","title":"coverage_count","read_model_id":"LA-TRC-RM01","name":"coverage_count","storage":"view","file":"lathe/src/coverage.ts"}
+{"id":"LA-TRC-RM02-TB","title":"coverage_gap","read_model_id":"LA-TRC-RM02","name":"coverage_gap","storage":"materialized view","file":"lathe/src/coverage.ts"}
+{"id":"LA-TRC-RM03-TB","title":"coverage_tests","read_model_id":"LA-TRC-RM03","name":"coverage_tests","storage":"view","file":"lathe/src/coverage.ts"}
+{"id":"LA-TRC-RM04-TB","title":"pattern_rule_standing","read_model_id":"LA-TRC-RM04","name":"pattern_rule_standing","storage":"table","file":"lathe/src/coverage.ts"}
+{"id":"LA-TRC-RM05-TB","title":"file_facts","read_model_id":"LA-TRC-RM05","name":"file_facts","storage":"table","file":"lathe/src/coverage.ts"}
+{"id":"LA-TRC-RM06-TB","title":"Trace","read_model_id":"LA-TRC-RM06","name":"Trace","storage":"in memory","file":"app/src/specs/trace.ts"}
+{"id":"LA-TRC-RM07-TB","title":"table_facts","read_model_id":"LA-TRC-RM07","name":"table_facts","storage":"table","file":"lathe/src/trace/tables.ts"}

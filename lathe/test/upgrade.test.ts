@@ -89,7 +89,7 @@ describe('lathe upgrade', () => {
   });
 
   it('LA-PLT-UC17-R03-T01 lists what a converter cannot convert, and stops without raising the schema when the data no longer loads', async () => {
-    const root = committedProduct({ id: 'TL', title: 'Tool Library', notes: 'Delivered weekly.' });
+    const root = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.', notes: 'Delivered weekly.' });
     const todo: ConverterStep = {
       from: 1, to: 2, name: '1-to-2',
       converter: { records: (store, notes) => { for (const row of store.rows('product')) if (row.notes) notes.todo(`${row.id}: move its notes into a flow by hand`); } },
@@ -100,8 +100,8 @@ describe('lathe upgrade', () => {
     expect(readConfig(root).schema).toBe(2);
 
     // A files phase that leaves data the schema refuses: the refusals are the to-dos, and the schema stays.
-    const again = committedProduct({ id: 'TL', title: 'Tool Library' });
-    const breaks: ConverterStep = { from: 1, to: 2, name: '1-to-2', converter: { files: (data) => data.write('product', [{ id: 'TL', title: 'Tool Library', tagline: 'Lend' }]) } };
+    const again = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.' });
+    const breaks: ConverterStep = { from: 1, to: 2, name: '1-to-2', converter: { files: (data) => data.write('product', [{ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.', tagline: 'Lend' }]) } };
     const stopped = await upgradeProduct(again, { converters: [breaks], target: 2 });
     expect(stopped.done).toBe(false);
     expect(stopped.to).toBe(1);
@@ -109,14 +109,14 @@ describe('lathe upgrade', () => {
     expect(readConfig(again).schema).toBe(1);
 
     // A missing converter is Lathe's own mistake, refused before anything changes.
-    const gap = committedProduct({ id: 'TL', title: 'Tool Library' });
+    const gap = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.' });
     await expect(upgradeProduct(gap, { converters: [todo], target: 3 })).rejects.toThrow('This Lathe has no converter from schema 2 to schema 3 (upgrades/2-to-3.ts).');
     expect(git(gap, 'status', '--porcelain')).toBe('');
   });
 
   it('LA-PLT-UC17-R04-T01 refuses a working tree with changes, or no git, unless allowed', async () => {
     const converters: ConverterStep[] = [{ from: 1, to: 2, name: '1-to-2', converter: {} }];
-    const root = committedProduct({ id: 'TL', title: 'Tool Library' });
+    const root = committedProduct({ id: 'TL', title: 'Tool Library', description: 'Lends tools to members.' });
     writeFileSync(path.join(root, 'notes.md'), 'Unsaved work\n');
     await expect(upgradeProduct(root, { converters, target: 2 })).rejects.toThrow(/The git working tree has changes, so the upgrade would not be one reviewable commit\. Commit or stash them first, or pass --allow-dirty:\n\?\? notes\.md/);
     expect(readConfig(root).schema).toBe(1);
@@ -160,7 +160,11 @@ describe('the schema version', () => {
     git(root, 'commit', '-q', '-m', 'A flow before interfaces');
     const result = await upgradeProduct(root, { converters: (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1), target: 2 });
     expect(result.done).toBe(true);
-    expect(result.todos).toEqual([expect.stringMatching(/^1-to-2: TL-IF01 stands for every interface TL's flows went through/), expect.stringMatching(/^1-to-2: Rename the flow, step and flow test IDs your code names/)]);
+    expect(result.todos).toEqual([
+      expect.stringMatching(/^1-to-2: TL-IF01 stands for every interface TL's flows went through/),
+      expect.stringMatching(/^1-to-2: Rename the flow, step and flow test IDs your code names/),
+      expect.stringMatching(/^1-to-2: Write each text that starts "To write:" from the code/),
+    ]);
     const read = (table: string) => readFileSync(path.join(root, 'data', `${table}.jsonl`), 'utf8');
     expect(read('interface')).toBe(line({ id: 'TL-IF01', title: 'Interface', product_id: 'TL', kind: 'other', description: 'Every flow written before interfaces were declared goes through this one.' }));
     expect(read('flow')).toBe(line({ id: 'TL-LEND-UC01-FL01', title: 'Borrow', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' }));
@@ -196,11 +200,12 @@ describe('the schema version', () => {
       C1: 'integration', C2: 'unit', E1: 'service', E2: 'service', U1: 'system', U2: 'browser', U3: 'browser',
       F1: 'browser', V1: 'browser', P1: 'browser', I1: 'integration', S1: 'unit',
     });
-    expect(tables.use_case_test![2]).toEqual({ id: 'U3', level: 'browser', ...manual });
+    expect(tables.use_case_test![2]).toEqual({ id: 'U3', level: 'browser', ...manual, when: 'To write: what the test does.', then: 'To write: what the test expects.' });
     expect(changes).toEqual([
       'Every test runs at one of the five levels: 1 database to integration, 4 manual to browser, 1 e2e-api to system, 1 e2e-ui to browser, 1 api to service, 1 contract to service, 1 manual to integration, 1 manual to unit.',
+      expect.stringMatching(/^Each required text a record lacked stands in as "To write: …": \d+ written\.$/),
     ]);
-    expect(todos).toEqual([expect.stringMatching(/^Each manual test now names the level a person exercises/)]);
+    expect(todos).toEqual([expect.stringMatching(/^Each manual test now names the level a person exercises/), expect.stringMatching(/^Write each text that starts "To write:"/)]);
   });
   it("LA-AUT-UC03-R08-T04 1-to-2 puts every repository under its aggregate's domain, persisting that aggregate, renamed wherever it is named", async () => {
     const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
@@ -227,10 +232,10 @@ describe('the schema version', () => {
       { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
     );
     expect(tables.repository).toEqual([
-      { id: 'TL-CAT-REPO01', title: 'Listings', domain_id: 'TL-CAT', file: 'src/catalog.ts' },
+      { id: 'TL-CAT-REPO01', title: 'Listings', domain_id: 'TL-CAT', file: 'src/catalog.ts', description: 'To write: how it keeps its aggregate.' },
       { id: 'TL-LEND-REPO01', title: 'Members', domain_id: 'TL-LEND', file: 'src/store.ts', description: 'Unlike TL-LEND-REPO03, it keeps no history.' },
-      { id: 'TL-LEND-REPO02', title: 'Tools', domain_id: 'TL-LEND', file: 'src/store.ts' },
-      { id: 'TL-LEND-REPO03', title: 'Fines', domain_id: 'TL-LEND', file: 'src/store.ts' },
+      { id: 'TL-LEND-REPO02', title: 'Tools', domain_id: 'TL-LEND', file: 'src/store.ts', description: 'To write: how it keeps its aggregate.' },
+      { id: 'TL-LEND-REPO03', title: 'Fines', domain_id: 'TL-LEND', file: 'src/store.ts', description: 'To write: how it keeps its aggregate.' },
     ]);
     expect(tables.persists).toEqual([
       { source_id: 'TL-CAT-REPO01', target_id: 'TL-CAT-A1' },
@@ -240,7 +245,49 @@ describe('the schema version', () => {
     ]);
     expect(tables.meets).toEqual([{ source_id: 'TL-LEND-REPO01', target_id: 'TL-STD-CODE-R01' }]);
     expect(tables.package_use).toEqual([{ record_id: 'TL-CAT-REPO01', package: 'better-sqlite3' }]);
-    expect(changes).toEqual(["Every repository sits under its aggregate's domain and persists its aggregate: 4 renamed from <aggregate>-REPO to <domain>-REPO<nn>."]);
-    expect(todos).toEqual([expect.stringMatching(/^A repository persists one aggregate: .* add a repository_share row with its reason/), 'Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.']);
+    expect(changes).toEqual([
+      "Every repository sits under its aggregate's domain and persists its aggregate: 4 renamed from <aggregate>-REPO to <domain>-REPO<nn>.",
+      'Each required text a record lacked stands in as "To write: …": 11 written.',
+    ]);
+    expect(todos).toEqual([
+      expect.stringMatching(/^A repository persists one aggregate: .* add a repository_share row with its reason/),
+      'Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.',
+      expect.stringMatching(/^Write each text that starts "To write:"/),
+    ]);
+  });
+  it('LA-AUT-UC03-R08-T05 1-to-2 drops the descriptions that are gone, opens each When with its Given, and stands in for each required text a record lacks', async () => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
+    const tables: Record<string, Record<string, unknown>[]> = {
+      command: [
+        { id: 'TL-LEND-CMD01', title: 'Open a loan', aggregate_id: 'TL-LEND-A1', description: 'Lends a free tool to a member.' },
+        { id: 'TL-LEND-CMD02', title: 'Close a loan', aggregate_id: 'TL-LEND-A1' },
+      ],
+      data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', description: 'The Loan interface.' }],
+      flow_step: [{ id: 'TL-LEND-UC01-FL01-S01', title: 'Borrow', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 }],
+      invariant_test: [
+        { id: 'TL-LEND-INV01-T', title: 'A second loan is refused', given: 'A tool on loan.', when: 'Lends it again.', then: 'Expects a refusal.' },
+        { id: 'TL-LEND-INV02-T', title: 'A loan has a due date', given: 'An empty library', then: 'Expects a due date.' },
+      ],
+    };
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    expect(tables.data_model).toEqual([{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01' }]);
+    expect(tables.flow_step![0]).not.toHaveProperty('description');
+    expect(tables.invariant_test).toEqual([
+      { id: 'TL-LEND-INV01-T', title: 'A second loan is refused', when: 'With a tool on loan: Lends it again.', then: 'Expects a refusal.' },
+      { id: 'TL-LEND-INV02-T', title: 'A loan has a due date', when: 'An empty library.', then: 'Expects a due date.' },
+    ]);
+    expect(tables.command![0]!.description).toBe('Lends a free tool to a member.');
+    expect(tables.command![1]!.description).toBe('To write: what it changes and when it is refused.');
+    expect(changes).toEqual([
+      'The descriptions of flows, flow steps, data models, value types, predicates, event types, services and tables are gone, since the record each implements, its title or its steps say it: 1 removed.',
+      "Each test's Given opens its When: 2 folded.",
+      'Each required text a record lacked stands in as "To write: …": 1 written.',
+    ]);
+    expect(todos).toEqual(['Write each text that starts "To write:" from the code, saying what the title, parent and links cannot (1: TL-LEND-CMD02 description).']);
   });
 });

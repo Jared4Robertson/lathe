@@ -616,7 +616,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   /** The camera's Fit: the whole map in the frame. */
   const fitMap = () => {
     if (!size || map.nodes.size === 0) return;
-    moveTo(frameRect({ x: 0, y: 0, w: map.width, h: map.height }, null, frameBox(size), { pad: 24, read: MIN_ZOOM, max: MAX_ZOOM, min: MIN_ZOOM }), true);
+    moveTo(frameRect({ x: 0, y: 0, w: map.width, h: map.height }, frameBox(size), { pad: 24, read: MIN_ZOOM, max: MAX_ZOOM, min: MIN_ZOOM }), true);
     follow();
   };
 

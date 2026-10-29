@@ -1,4 +1,4 @@
-{"id":"TL-LEND-SP01-PR","title":"isOverdue","specification_id":"TL-LEND-SP01","file":"src/model.ts","description":"`isOverdue`, and `isLate` for the moment of return."}
-{"id":"TL-LEND-SP02-PR","title":"hasOverdueLoan","specification_id":"TL-LEND-SP02","file":"src/model.ts","description":"Whether any of a member's active loans is overdue."}
-{"id":"TL-LEND-SP03-PR","title":"atLoanLimit","specification_id":"TL-LEND-SP03","file":"src/model.ts","description":"Whether a member's active loans reach `MAX_ACTIVE_LOANS` (3)."}
-{"id":"TL-LEND-SP04-PR","title":"needsRepair","specification_id":"TL-LEND-SP04","file":"src/model.ts","description":"Whether a tool's condition is `needs_repair`; `toolStatus` uses it too."}
+{"id":"TL-LEND-SP01-PR","title":"isOverdue","specification_id":"TL-LEND-SP01","file":"src/model.ts"}
+{"id":"TL-LEND-SP02-PR","title":"hasOverdueLoan","specification_id":"TL-LEND-SP02","file":"src/model.ts"}
+{"id":"TL-LEND-SP03-PR","title":"atLoanLimit","specification_id":"TL-LEND-SP03","file":"src/model.ts"}
+{"id":"TL-LEND-SP04-PR","title":"needsRepair","specification_id":"TL-LEND-SP04","file":"src/model.ts"}

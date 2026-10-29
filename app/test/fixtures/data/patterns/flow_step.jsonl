@@ -1,4 +1,4 @@
 {"id":"DM-PAY-UC01-FL01-S01","title":"Shopper reviews the basket","flow_id":"DM-PAY-UC01-FL01","path":"main","position":1}
-{"id":"DM-SHOP-UC01-FL01-S01","title":"Shopper adds the item","flow_id":"DM-SHOP-UC01-FL01","path":"main","position":1,"description":"The shopper picks **Add**."}
+{"id":"DM-SHOP-UC01-FL01-S01","title":"Shopper adds the item","flow_id":"DM-SHOP-UC01-FL01","path":"main","position":1}
 {"id":"DM-SHOP-UC01-FL01-S02","title":"Shop shows the basket","flow_id":"DM-SHOP-UC01-FL01","path":"main","position":2}
 {"id":"DM-SHOP-UC01-FL01-S03","title":"Shop refuses a full basket","flow_id":"DM-SHOP-UC01-FL01","path":"refused","position":1}

@@ -24,12 +24,12 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 | Kind | Parent | ID | Holds |
 | --- | --- | --- | --- |
-| `capability` | the domain | `<P>-<D>-CAP<nn>` | `position`: its place in the domain, unique there. `description`: what it covers. Link: `serves` the business outcomes it serves (the `discover-outcomes` skill). |
-| `use_case` | a capability | `<P>-<D>-UC<nn>` | `goal`: what the actor wants, in one sentence. `notes`: anything longer, such as the order of checks. Its actors are `use_case_actor` rows. Link: `follows` the patterns it shares. |
+| `capability` | the domain | `<P>-<D>-CAP<nn>` | `position`: its place in the domain, unique there. `description` (required): what it covers, in a sentence or two. Link: `serves` the business outcomes it serves (the `discover-outcomes` skill). |
+| `use_case` | a capability | `<P>-<D>-UC<nn>` | `goal` (required): what the actor wants to reach and from where they start, in a sentence or a short paragraph. `notes`: anything longer, such as the order of checks. Its actors are `use_case_actor` rows. Link: `follows` the patterns it shares. |
 | `use_case_actor` (part) | the use case | its `position` | `role_name`: one of the product's roles. |
 | `uc_requirement` | the use case | `<use case>-R<nn>` | Title: the rule in a few words. `statement`: the rule with MUST / MUST NOT / SHOULD / MAY. `group_name`: a heading once there are more than about 8. |
-| `role` (part) | the product | its `name` | `description`: what the role does. |
-| `pattern` | the product | `<P>-PAT-<NAME>`, a name you choose | `description`: the shared behavior. Its settings are `pattern_setting` rows and its rules `pattern_rule` records. |
+| `role` (part) | the product | its `name` | `description` (required): who takes the role and what they do, in a sentence. |
+| `pattern` | the product | `<P>-PAT-<NAME>`, a name you choose | `description` (required): the shared behavior, in a paragraph. Its settings are `pattern_setting` rows and its rules `pattern_rule` records. |
 | `pattern_setting` (part) | the pattern | its `position` | `name`: lower case with underscores; `meaning`: what each follower decides. |
 | `pattern_rule` | the pattern | `<pattern>-R<nn>` | `statement`; `setting`, a setting it depends on; the applies-when columns (see Patterns). |
 | `setting_value` (part) | the follower | `pattern_id` and `setting` | `value`, or `not_applicable` with the reason. |

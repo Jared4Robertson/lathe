@@ -1,2 +1,2 @@
 {"id":"P-D","title":"Domain","product_id":"P","subdomain_type":"core","description":"Lending things to members."}
-{"id":"P-E","title":"Accounts","product_id":"P","subdomain_type":"generic"}
+{"id":"P-E","title":"Accounts","product_id":"P","subdomain_type":"generic","description":"The fixture's domain Accounts."}
