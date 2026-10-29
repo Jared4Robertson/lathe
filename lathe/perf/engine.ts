@@ -1,4 +1,4 @@
-// LA-PLT-UC01-R03-T01 LA-PAT-AGGREGATE-COMMANDS-R04-T01: the engine's performance budgets (LA-PLT-UC01-R03, LA-AUT-UC01-R09),
+// LA-PLT-UC01-R03-T01 LA-PAT-AGGREGATE-COMMANDS-R04-T01 LA-PAT-AGGREGATE-COMMANDS-R04-T02 LA-PAT-AGGREGATE-COMMANDS-R04-T03: the engine's performance budgets (LA-PLT-UC01-R03, LA-PAT-AGGREGATE-COMMANDS-R04),
 // measured: `npm --prefix lathe run test:perf`.
 //
 // - Loading Lathe's own spec (a cold load: the data files read and loaded with every key and rule, then checked)

@@ -208,7 +208,7 @@ describe('requirements and tests', () => {
     for (const table of grouped) expect(record(ws, complete()[table][0].id as string).fields.group_name, table).toBe('Checks');
   });
 
-  it('LA-PAT-AGGREGATE-TESTS-R01-T01 Each test is of the test kind named after what it tests, and sits under that one record, which it proves', async () => {
+  it('LA-PAT-AGGREGATE-TESTS-R01-T01 LA-PAT-AGGREGATE-TESTS-R01-T03 LA-PAT-AGGREGATE-TESTS-R01-T02 Each test is of the test kind named after what it tests, and sits under that one record, which it proves', async () => {
     // What each test kind's name says it tests: its parent, or the record its parent sits under.
     for (const kind of Object.keys(ALLOWED_LEVELS)) {
       const parents = schema.kinds[kind].parents;
