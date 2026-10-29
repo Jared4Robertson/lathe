@@ -1,16 +1,14 @@
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
-import { openApp, openSideBar } from './helpers';
+import { openApp } from './helpers';
 
-// Resizing the floating panels (the nav, the wiki card, the side bar) from the keyboard and by double-click, and collapsing by drag
+// Resizing the floating panels (the nav, the wiki card) from the keyboard and by double-click, and collapsing by drag
 // (LA-PAT-APP-UX-R02). Pointer drags need real layout, so they are checked in the browser.
 
 const handle = (name: string) => screen.getByRole('separator', { name });
 
 describe('resizable panels', () => {
   const proveLaV61R02T02 = async () => {
-    // The test reads the side bar open on every stage.
-    openSideBar('details');
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const nav = handle('Resize the navigation');
@@ -26,14 +24,6 @@ describe('resizable panels', () => {
     fireEvent.doubleClick(nav);
     expect(nav).toHaveAttribute('aria-valuenow', '336');
 
-    // The side bar sits after its handle, so Left grows it.
-    const sideBar = handle('Resize the side bar');
-    expect(sideBar).toHaveAttribute('aria-valuenow', '340');
-    fireEvent.keyDown(sideBar, { key: 'ArrowLeft' });
-    expect(sideBar).toHaveAttribute('aria-valuenow', '356');
-    fireEvent.keyDown(sideBar, { key: 'Home' });
-    expect(sideBar).toHaveAttribute('aria-valuenow', '260');
-
     // The wiki card sits after its handle too, so Left grows it; its width is the session's.
     const card = handle('Resize the wiki card');
     fireEvent.keyDown(card, { key: 'Home' });
@@ -48,16 +38,17 @@ describe('resizable panels', () => {
   it('LA-V61-R03-T02 A handle resizes its panel with the arrow keys, Shift, Home and End, remembers it, and double-click resets it', proveLaV61R02T02);
 
   const proveLaV61R03T03 = async () => {
-    // The test reads the side bar open on every stage.
-    openSideBar('details');
     window.localStorage.setItem('lathe:nav-width', '400');
-    window.localStorage.setItem('lathe:side-bar-width', '9999');
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     expect(handle('Resize the navigation')).toHaveAttribute('aria-valuenow', '400');
-    expect(handle('Resize the side bar')).toHaveAttribute('aria-valuenow', '340');
+    // An out-of-range width falls back to the default.
+    window.localStorage.setItem('lathe:nav-width', '9999');
+    await openApp('/DM-SHOP-UC01');
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+    expect(handle('Resize the navigation')).toHaveAttribute('aria-valuenow', '336');
 
-    // On a narrow screen the nav and the side bar are drawers: nothing to resize.
+    // On a narrow screen the nav and the wiki card are sheets: nothing to resize.
     vi.stubGlobal('matchMedia', (query: string) => ({ matches: true, media: query, addEventListener: () => {}, removeEventListener: () => {} }));
     await openApp('/DM-SHOP-UC01');
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });

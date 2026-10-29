@@ -10,9 +10,9 @@ import { testWorkspace } from './graph/workspace';
 import { boxElement, drawnBox, pointOn, tapAt, tapEmpty } from './graph/scene';
 
 // Lathe on a phone (notes/mobile-design.md): a compact top bar, the page bar compact under it, the
-// stage full screen, sheets for the nav, the wiki card, the open pages and quick find, the side bar a drawer, and taps that
+// stage full screen, sheets for the nav, the wiki card, the open pages and quick find, and taps that
 // select before they open on the graph and the ERD. Proves LA-V61-R17 to R07 and R09, LA-V61-R18,
-// LA-V93-R02 and LA-V61-R42, and the side bar sheet of LA-V95-R03.
+// LA-V93-R02 and LA-V61-R42.
 
 const served = () => ({ data: testWorkspace() });
 
@@ -64,27 +64,31 @@ describe('Lathe on a phone', () => {
   it('LA-V61-R17-T01 A phone shows a compact top bar with the title and a step up, the header strip, and the stage full screen switched from the page bar, leaving the stage remembered for a wide screen alone', proveLaV61R17T01);
   it('LA-V61-R18-T01 A phone shows the stage full screen, the wiki card a bottom sheet from the page bar', proveLaV61R17T01);
 
-  const proveLaV61R20T01 = async () => {
+  it('LA-V61-R20-T01 The wiki card is a bottom sheet: it opens at half height with focus inside, its handle takes it to full height and back, Escape closes it and focus returns', async () => {
     phone();
     await openApp('/P-D-UC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
-    const toggle = within(pageBar()).getByRole('button', { name: 'Show the side bar' });
+    const toggle = within(pageBar()).getByRole('button', { name: 'Show the wiki card' });
+    toggle.focus();
     fireEvent.click(toggle);
-    const drawer = screen.getByRole('dialog', { name: 'Side bar' });
-    expect(drawer).toHaveClass('side-bar-drawer');
-    expect(drawer).toHaveAttribute('aria-modal', 'true');
-    await waitFor(() => expect(screen.getByRole('complementary', { name: 'Side bar' })).toHaveFocus());
-    // Tab stays inside the drawer.
-    const buttons = within(drawer).getAllByRole('button');
+    const sheet = screen.getByRole('dialog', { name: 'Wiki card' });
+    expect(sheet).toHaveClass('bottom-sheet', 'is-half');
+    expect(sheet).toHaveAttribute('aria-modal', 'true');
+    await waitFor(() => expect(document.activeElement && sheet.contains(document.activeElement)).toBe(true));
+    // Its handle takes it to full height and back.
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Expand the wiki card to full height' }));
+    expect(sheet).toHaveClass('is-full');
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Shrink the wiki card to half height' }));
+    expect(sheet).toHaveClass('is-half');
+    // Tab stays inside the sheet.
+    const buttons = within(sheet).getAllByRole('button');
     buttons[buttons.length - 1].focus();
     fireEvent.keyDown(buttons[buttons.length - 1], { key: 'Tab' });
-    expect(document.activeElement && drawer.contains(document.activeElement)).toBe(true);
-    fireEvent.keyDown(drawer, { key: 'Escape' });
-    expect(screen.queryByRole('dialog', { name: 'Side bar' })).toBeNull();
-    await waitFor(() => expect(within(pageBar()).getByRole('button', { name: 'Show the side bar' })).toHaveFocus());
-  };
-  it('LA-V61-R20-T01 The side bar is a drawer: it opens with focus inside, keeps Tab inside, Escape closes it and focus returns', proveLaV61R20T01);
-  it('LA-V95-R03-T03 The side bar is a drawer on a phone, and Escape closes it', proveLaV61R20T01);
+    expect(document.activeElement && sheet.contains(document.activeElement)).toBe(true);
+    fireEvent.keyDown(sheet, { key: 'Escape' });
+    expect(screen.queryByRole('dialog', { name: 'Wiki card' })).toBeNull();
+    await waitFor(() => expect(within(pageBar()).getByRole('button', { name: 'Show the wiki card' })).toHaveFocus());
+  });
 
   it('LA-V61-R20-T02 A drag on a sheet\'s handle settles by distance and speed: up to full height, down to half, down from half away', () => {
     expect(settle('half', -50, 0.1)).toBe('full');

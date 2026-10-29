@@ -7,7 +7,7 @@ import { graphMap, mapRootOf } from '../src/graph/map';
 import { spaceIndex } from '../src/specs/data';
 import { addRows, indexOf, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
-import { main, openApp, openSideBar, sideBar } from './helpers';
+import { facts, main, openApp } from './helpers';
 import { boxElement, drawnIds } from './graph/scene';
 
 // Each product is a separate space: every view and count inside a space reads the
@@ -64,12 +64,12 @@ describe('separate spaces', () => {
   it('LA-EXP-DS05-T14 Each product has its own graph map with the product as its single root, and the graph shows nothing of another product', proveLaExpDs05T14);
   it('LA-V90-R15-T02 Each product has its own graph map, showing nothing of another product', proveLaExpDs05T14);
 
-  it('LA-V90-R15-T03 No screen of one space shows another product: the side bar, text, the format reference and Checks', async () => {
-    openSideBar();
+  it('LA-V90-R15-T03 No screen of one space shows another product: the wiki card, text, the format reference and Checks', async () => {
     await openApp('/DM-SHOP-UC01', { data: crossingWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
-    // The link into Notebook is not listed, and the ID in the text is plain text, not a link.
-    expect(sideBar().querySelector('a[href="/NF-NOTE"]')).toBeNull();
+    // The link into Notebook is not listed among the links out in the wiki card, and the ID in the text is plain text, not a link.
+    expect(within(facts()).getByRole('heading', { name: 'Links out' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'Wiki card' }).querySelector('a[href="/NF-NOTE"]')).toBeNull();
     expect(within(main()).getByText(/Like NF-NOTE, it keeps a list/, { selector: 'p' })).toBeInTheDocument();
     expect(main().querySelector('a[href="/NF-NOTE"]')).toBeNull();
     // The format reference counts and lists the space's records only.

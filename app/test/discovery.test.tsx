@@ -56,7 +56,7 @@ describe('discovery', () => {
   it('LA-V92-R75-T01 A capability shows the outcomes it serves; a test data set shows its setup and the tests that start from it; a test shows its size and markers', () => {
     const index = indexOf(withOutcomes());
     const trace = () => screen.getByRole('heading', { level: 2, name: 'Traceability' }).closest('section') as HTMLElement;
-    const show = (id: string) => render(<RecordContent index={index} id={id} onNavigate={vi.fn()} side={false} />);
+    const show = (id: string) => render(<RecordContent index={index} id={id} onNavigate={vi.fn()} />);
 
     show('DM-SHOP-CAP01');
     expect(within(trace()).getByRole('heading', { level: 3, name: /^Serves/ })).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe('discovery', () => {
   it('LA-V92-R76-T01 An outcome shows the tests that measure it and how it is measured outside the code; a test shows the outcomes it measures', () => {
     const index = indexOf(withOutcomes());
     const trace = () => screen.getByRole('heading', { level: 2, name: 'Traceability' }).closest('section') as HTMLElement;
-    const show = (id: string) => render(<RecordContent index={index} id={id} onNavigate={vi.fn()} side={false} />);
+    const show = (id: string) => render(<RecordContent index={index} id={id} onNavigate={vi.fn()} />);
 
     show('DM-BO01');
     expect(within(trace()).getByRole('heading', { level: 3, name: /^Measured by/ })).toBeInTheDocument();

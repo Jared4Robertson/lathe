@@ -129,9 +129,9 @@ describe('nothing jumps (LA-PAT-APP-UX-R08)', () => {
     expect(document.querySelector('.graph-flow canvas')).toBe(drawing);
   });
 
-  it('LA-V61-R38-T02 what the graph connects reaches the side bar before paint, not an effect later', () => {
+  it('LA-V61-R38-T02 what the graph counts reaches the header strip before paint, not an effect later', () => {
     const source = readFileSync(join(__dirname, '..', 'src', 'graph', 'GraphPage.tsx'), 'utf8');
-    expect(source).toMatch(/useLayoutEffect\(\(\) => \{ onGraph\?\.\(/);
+    expect(source).toMatch(/useLayoutEffect\(\(\) => \{ onCounts\?\.\(/);
     const model = readFileSync(join(__dirname, '..', 'src', 'erd', 'ErdView.tsx'), 'utf8');
     // The ERD map is framed before its first paint, and observes its size once (each new observer reported the size again and cut the glide short).
     expect(model).toMatch(/useLayoutEffect\(\(\) => \{\n[^;]*;\n[^;]*;\n\s*if \(frameFocus\(fitted\.current\)\) \{ fitted\.current = true;/);

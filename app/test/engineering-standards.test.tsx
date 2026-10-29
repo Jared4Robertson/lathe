@@ -3,12 +3,12 @@ import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { neighborhood } from '../src/graph/model';
-import { Legend } from '../src/graph/panel';
+import { GraphKey } from '../src/graph/key';
 import { shapeOf } from '../src/graph/shapes';
 import { standardWorkspace } from './fixtures/standards';
 import { main, openApp, section as pageSection } from './helpers';
 
-/** A section of the wiki card, on a record's page (the side bar has a Traceability of its own), or of the page elsewhere. */
+/** A section of the wiki card, on a record's page, or of the page elsewhere. */
 const section = (name: string | RegExp) => {
   const card = screen.queryByRole('region', { name: 'Wiki card' });
   return card ? within(card).getByRole('heading', { name }).closest('section') as HTMLElement : pageSection(name);
@@ -96,7 +96,7 @@ describe('standards in the graph', () => {
     ]));
     expect(n.nodes.find((x) => x.id === 'DM-STD-CODE')?.stage).toBe('technical-specification');
     cleanup();
-    const { container } = render(<Legend />);
+    const { container } = render(<GraphKey />);
     expect(container.querySelector('.graph-swatch.stage-technical-specification')?.closest('li')).toHaveTextContent(/a standard and its rules/);
     expect(shapeOf('standard')).toEqual({ shape: 'stack', mark: 'ruler' });
     expect(shapeOf('standard_rule')).toEqual({ shape: 'octagon', mark: 'ruler' });

@@ -4,7 +4,6 @@ import App from '../src/App';
 import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
 import type { Command } from '../../lathe/src/store/store';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
-import { STAGE_NAMES, type StageName } from '../src/views/address';
 import { SETTINGS_KEY } from '../src/graph/settings';
 
 export interface Served {
@@ -81,16 +80,8 @@ export function startAtDepth(depth: number, layout: 'tree' | 'nested' | 'voronoi
   window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, depth, hiddenKinds: [], minimap: false, card: true, cardWidth: null, cardExpanded: true, chat: false, chatWidth: null }));
 }
 
-/**
- * Opens the side bar on these stages for the rest of the test, as if the person
- * had opened it there last (it starts open on the graph and the ERD, closed on the trace).
- */
-export function openSideBar(view: 'details' | 'outline' | 'history' = 'details', modes: readonly StageName[] = STAGE_NAMES) {
-  window.localStorage.setItem('lathe:side-bar', JSON.stringify(Object.fromEntries(modes.map((m) => [m, { open: true, view }]))));
-}
-
-/** The side bar, by its name. */
-export const sideBar = () => screen.getByRole('complementary', { name: 'Side bar' });
+/** A record's facts (kind, fields, data file, links out and in), after its body in the wiki card's whole page. */
+export const facts = () => within(screen.getByRole('region', { name: 'Wiki card' })).getByRole('complementary', { name: 'Facts' });
 
 /** The desktop shell's bridge with every member a no-op, for a test to override what it watches. */
 export const desktopBridgeStub = (over: Partial<LatheDesktop> = {}): LatheDesktop => ({

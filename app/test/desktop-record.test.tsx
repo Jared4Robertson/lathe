@@ -2,7 +2,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recordIdAt } from '../src/shell/desktopRecord';
 import { indexOf } from './fixtures/load';
-import { desktopBridgeStub, openApp, openSideBar } from './helpers';
+import { desktopBridgeStub, facts, openApp } from './helpers';
 import { workspace } from './fixtures/workspace';
 
 // The desktop app's page hooks (LA-PLT-UC15; the record actions, LA-V92-R74): the record actions in a record's facts and on a
@@ -44,17 +44,17 @@ const heading = () => screen.findByRole('heading', { level: 1, name: 'Add an ite
 
 describe('desktop record actions', () => {
   it('LA-V92-R74-T01 A record\'s facts offer Reveal, Open in editor and Copy ID in the desktop app, and nothing in a browser', async () => {
-    // The side bar starts closed in the Wiki view; this test reads it open.
-    openSideBar('details');
     await openApp('/DM-SHOP-UC01');
     await heading();
+    // In a browser the Data file fact shows with no actions.
+    expect(within(facts()).getByText('Data file', { selector: 'dt' })).toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Data file of DM-SHOP-UC01' })).toBeNull();
 
     const { bridge } = desktop();
     await openApp('/DM-SHOP-UC01');
     await heading();
-    const sideBar = await screen.findByRole('complementary', { name: 'Side bar' });
-    const actions = within(sideBar).getByRole('group', { name: 'Data file of DM-SHOP-UC01' });
+    // The Data file fact, in the wiki card's whole page.
+    const actions = await waitFor(() => within(facts()).getByRole('group', { name: 'Data file of DM-SHOP-UC01' }));
     fireEvent.click(within(actions).getByRole('button', { name: 'Reveal in Finder' }));
     fireEvent.click(within(actions).getByRole('button', { name: 'Open in editor' }));
     fireEvent.click(within(actions).getByRole('button', { name: 'Copy ID' }));

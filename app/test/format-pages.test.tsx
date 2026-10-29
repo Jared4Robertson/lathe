@@ -5,11 +5,10 @@ import { parseFormatPage } from '../src/format/reference';
 import { findItems, rankItems } from '../src/shell/QuickOpen';
 import { indexOf } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
-import { checksPanel, openApp } from './helpers';
-// The Graph view, where the side bar's Details shows a record's facts, needs a ResizeObserver in jsdom.
+import { checksPanel, facts, openApp } from './helpers';
+// The Graph view needs a ResizeObserver in jsdom.
 import './graph/setup';
 
-const sideBar = () => document.getElementById('side-bar') as HTMLElement;
 // A format page opens in the wiki card over the stage (`?page=format/…`), the stage keeping its focus (LA-PAT-APP-UX-R20).
 const card = () => screen.getByRole('region', { name: 'Wiki card' });
 const fact = (box: HTMLElement, name: string) => within(box).getByText(name, { selector: 'dt' }).nextElementSibling?.textContent;
@@ -137,16 +136,16 @@ describe('format reference pages', () => {
   });
 
   const proveLaV92R71T01 = async () => {
-    // The side bar's Details, open in the Graph view.
+    // A record's facts, in the wiki card's whole page on the Graph stage.
     await openApp('/DM-SHOP-EP01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'POST /basket/items' });
-    expect(within(sideBar()).getByRole('link', { name: 'Endpoint' })).toHaveAttribute('href', over('format/kinds/endpoint', '/DM-SHOP-EP01?stage=graph'));
-    expect(within(sideBar()).getByRole('link', { name: 'method' })).toHaveAttribute('href', `${over('format/kinds/endpoint', '/DM-SHOP-EP01?stage=graph')}#field-method`);
+    expect(within(facts()).getByRole('link', { name: 'Endpoint' })).toHaveAttribute('href', over('format/kinds/endpoint', '/DM-SHOP-EP01?stage=graph'));
+    expect(within(facts()).getByRole('link', { name: 'method' })).toHaveAttribute('href', `${over('format/kinds/endpoint', '/DM-SHOP-EP01?stage=graph')}#field-method`);
 
     // A problem's code on a record page, a domain page and the Checks page.
     await openApp('/DM-SHOP-INV01');
     await screen.findByRole('heading', { level: 1, name: 'A basket holds at most 50 items' });
-    expect(within(sideBar()).getByRole('link', { name: 'not-proved' })).toHaveAttribute('href', over('format/checks/not-proved', '/DM-SHOP-INV01'));
+    expect(within(section(/^Problems/)).getByRole('link', { name: 'not-proved' })).toHaveAttribute('href', over('format/checks/not-proved', '/DM-SHOP-INV01'));
     await openApp('/DM-SHOP');
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     expect(within(section(/^Problems in this domain/)).getByRole('link', { name: 'test-file-missing' })).toHaveAttribute('href', over('format/checks/test-file-missing', '/DM-SHOP'));
@@ -157,9 +156,9 @@ describe('format reference pages', () => {
     // A group's kind leads to the kind's page too.
     await openApp('/DM-SHOP/interaction-design/flow');
     await screen.findByRole('heading', { level: 1, name: /^Flows/ });
-    expect(within(sideBar()).getByRole('link', { name: 'Flow' })).toHaveAttribute('href', over('format/kinds/flow', '/DM-SHOP/interaction-design/flow'));
+    expect(within(card()).getByRole('link', { name: 'Flow' })).toHaveAttribute('href', over('format/kinds/flow', '/DM-SHOP/interaction-design/flow'));
   };
-  it('LA-V92-R71-T01 The side bar\'s kind, each problem code and each column label link to their format pages', proveLaV92R71T01);
+  it('LA-V92-R71-T01 The wiki card\'s kind, each problem code and each column label link to their format pages', proveLaV92R71T01);
   it('LA-V41-R02-T01 Each problem code links to its check\'s page', proveLaV92R71T01);
 
   it('LA-V65-R71-T01 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {
