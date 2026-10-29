@@ -26,16 +26,7 @@ export function pageHeading(index: SpecIndex | null, path: string, search: strin
   // Going up keeps the stage, as following any link does.
   const stage = stageFromSearch(search);
   const keep = (to: string) => (stage ? withStage(to, stage) : to);
-  if (!route) return { title: 'Lathe', up: null };
   if (route.page === 'specs') return { title: 'Products', up: null };
-  if (route.page === 'checks') {
-    const product = index?.byId.get(route.product);
-    return { title: 'Checks', up: product ? { to: addressOf(product.id), label: product.title } : PRODUCTS };
-  }
-  if (route.page === 'format') return { title: 'Record format', up: null };
-  const FORMAT = { to: '/format', label: 'Record format' };
-  if (route.page === 'format-kind') return { title: index?.kinds.get(route.kind)?.label ?? route.kind, up: FORMAT };
-  if (route.page === 'format-check') return { title: route.check, up: FORMAT };
   if (!isFocusRoute(route) || !index) return { title: 'Lathe', up: null };
   const id = focusOf(route);
   if (route.page === 'group') {

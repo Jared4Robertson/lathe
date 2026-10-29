@@ -1,12 +1,13 @@
 import { useEffect, useId, useState, type CSSProperties, type ChangeEvent } from 'react';
 import { Button, buttonClass } from '../components/Button';
-import { Link, navigate, useLocation } from '../router';
-import { Card, CardGrid } from '../shell/Card';
+import { Link, navigate } from '../router';
+import { ToolPanelFrame } from '../views/ToolPanel';
+import { panelHref } from '../views/overlays';
 import { shownMode } from './apply';
 import { auditContrast } from './audit';
 import { formatRatio, parseColor, toHex } from './contrast';
 import { themeVars } from './css';
-import { APPEARANCE_PATH } from './ThemeCommands';
+import { ThemeChip } from './ThemeCommands';
 import { useThemes } from './ThemeProvider';
 import { MODE_CHOICES, MODE_LABELS, resolvedValue, tokenValue, type Mode, type Theme, type ThemeFile } from './theme';
 import {
@@ -25,35 +26,39 @@ import {
   type SettingToken,
 } from './tokens';
 
-// The Appearance page (/settings/appearance): the Light, Dark or System choice, the themes with a
-// small preview of each, and, for a theme of one's own, the editor. Every change shows at once
-// on the whole app around the page, which is the live preview, and is kept as it is made.
+// Appearance, a tool over the stage (LA-V62, LA-PAT-APP-UX-R19): a popover anchored to its button at the
+// foot of the nav (`?panel=appearance`) with the Light, Dark or System choice and the themes, each
+// previewed live on the stage while it is pointed at or focused, and kept with a click; and, for a
+// theme of one's own (duplicated from another), the editor, a larger panel over the stage
+// (`?panel=theme&theme=<id>`). Every change shows at once on the whole app around them, which is the
+// live preview, and is kept as it is made. On a phone each is a bottom sheet.
 
-const editPath = (id: string) => `${APPEARANCE_PATH}?edit=${encodeURIComponent(id)}`;
 const LABELS = Object.fromEntries(COLOR_TOKENS.map((t) => [t.name, t.label.split(',')[0]]));
 
-export function AppearancePage() {
-  const { search } = useLocation();
-  const { themes } = useThemes();
-  const editId = new URLSearchParams(search).get('edit');
-  const editing = themes.find((t) => t.id === editId && !t.builtIn) ?? null;
-
-  useEffect(() => { document.title = 'Appearance · Lathe'; }, []);
-
+/** The Appearance popover: the mode, then the themes, and importing one from a file. */
+export function AppearancePopover({ sheet, onClose }: { sheet: boolean; onClose: () => void }) {
   return (
-    <main className="spec-page panel appearance-page" id="main">
-      <div className="spec-body">
-        <header className="spec-header">
-          <div>
-            <p className="eyebrow">Settings</p>
-            <h1>Appearance</h1>
-            <p className="description">Pick a theme, or duplicate one and make it your own. Themes and your choices are kept in this browser.</p>
-          </div>
-        </header>
+    <ToolPanelFrame label="Appearance" className="appearance-popover" sheet={sheet} onClose={onClose}>
+      <div className="spec-body appearance-body">
         <ModeSection />
-        {editing ? <ThemeEditor key={editing.id} theme={editing} /> : <ThemeList />}
+        <ThemeList />
       </div>
-    </main>
+    </ToolPanelFrame>
+  );
+}
+
+/** The theme editor: a larger panel over the stage, for a theme of one's own. */
+export function ThemeEditorPanel({ id, sheet, onClose }: { id: string | null; sheet: boolean; onClose: () => void }) {
+  const { themes } = useThemes();
+  const theme = themes.find((t) => t.id === id && !t.builtIn) ?? null;
+  return (
+    <ToolPanelFrame label={theme ? `Edit “${theme.name}”` : 'Edit a theme'} className="theme-panel" sheet={sheet} onClose={onClose}>
+      <div className="spec-body appearance-body">
+        {theme
+          ? <ThemeEditor key={theme.id} theme={theme} />
+          : <p className="hint">There's no theme of yours to edit here. <Link to={panelHref('appearance')}>Choose or duplicate a theme</Link>.</p>}
+      </div>
+    </ToolPanelFrame>
   );
 }
 
@@ -62,7 +67,7 @@ function ModeSection() {
   const name = useId();
   return (
     <section className="spec-section" aria-labelledby={`${name}-h`}>
-      <h2 id={`${name}-h`}>Light, dark or system</h2>
+      <h3 id={`${name}-h`}>Light, dark or system</h3>
       <div className="segmented" role="radiogroup" aria-labelledby={`${name}-h`}>
         {MODE_CHOICES.map((m) => (
           <label key={m} className={`segment${mode === m ? ' is-on' : ''}`}>
@@ -77,7 +82,7 @@ function ModeSection() {
 }
 
 /** A small picture of the app in a theme's colors and fonts: the shell, the nav and a page. */
-export function ThemePreview({ theme, mode }: { theme: ThemeFile; mode: Mode }) {
+function ThemePreview({ theme, mode }: { theme: ThemeFile; mode: Mode }) {
   return (
     <div className="theme-preview" style={themeVars(theme, mode) as CSSProperties} aria-hidden="true">
       <span className="tp-nav"><span className="tp-line tp-current" /><span className="tp-line" /><span className="tp-line" /></span>
@@ -90,11 +95,17 @@ export function ThemePreview({ theme, mode }: { theme: ThemeFile; mode: Mode }) 
   );
 }
 
+/**
+ * The themes: each a row that previews it live on the stage while pointed at or focused, and keeps it
+ * when clicked; a built-in theme duplicates to edit, one's own opens in the editor; any exports to a file.
+ */
 function ThemeList() {
-  const { themes, active, choose, duplicate, exportFile, importFile, mode } = useThemes();
+  const { themes, active, choose, duplicate, exportFile, importFile, mode, preview } = useThemes();
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
   const heading = useId();
   const shows = shownMode(mode);
+  // A preview never outlives the list.
+  useEffect(() => () => preview(null), [preview]);
 
   const onImport = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -107,35 +118,41 @@ function ThemeList() {
   return (
     <section className="spec-section" aria-labelledby={heading}>
       <div className="spec-section-head">
-        <h2 id={heading}>Themes</h2>
+        <h3 id={heading}>Themes</h3>
         <div className="spec-section-actions">
           <label className={buttonClass('ghost', { className: 'file-button' })}>
-            Import a theme file
-            <input type="file" accept=".json,application/json" onChange={onImport} />
+            Import
+            <input type="file" accept=".json,application/json" aria-label="Import a theme file" onChange={onImport} />
           </label>
         </div>
       </div>
       {message && <p className={message.ok ? 'hint' : 'error inline-error'} role={message.ok ? 'status' : 'alert'}>{message.text}</p>}
-      <CardGrid label="Themes">
+      <ul className="theme-rows" aria-label="Themes" onMouseLeave={() => preview(null)}>
         {themes.map((t) => (
-          <Card
-            key={t.id}
-            onActivate={() => choose(t.id)}
-            pressed={t.id === active.id}
-            label={`Use ${t.name}`}
-            media={<ThemePreview theme={t} mode={shows} />}
-            title={<strong>{t.name}</strong>}
-          >
-            <small>{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small>
-            <div className="theme-actions">
+          <li key={t.id} className={`theme-row${t.id === active.id ? ' is-on' : ''}`}>
+            <button
+              type="button"
+              className="theme-pick"
+              aria-pressed={t.id === active.id}
+              aria-label={`Use ${t.name}`}
+              onClick={() => { preview(null); choose(t.id); }}
+              onMouseEnter={() => preview({ theme: t })}
+              onFocus={() => preview({ theme: t })}
+              onBlur={() => preview(null)}
+            >
+              <ThemeChip theme={t} mode={shows} />
+              <span className="theme-row-name">{t.name}</span>
+              <small className="theme-row-state">{t.id === active.id ? 'In use' : t.builtIn ? 'Built in' : 'Yours'}</small>
+            </button>
+            <span className="theme-actions">
               {t.builtIn
-                ? <Button label={`Duplicate and edit ${t.name}`} onClick={() => navigate(editPath(duplicate(t.id)))}>Duplicate and edit</Button>
-                : <Link to={editPath(t.id)} className={buttonClass()} aria-label={`Edit ${t.name}`} onClick={() => choose(t.id)}>Edit</Link>}
+                ? <Button label={`Duplicate and edit ${t.name}`} onClick={() => { preview(null); navigate(panelHref('theme', duplicate(t.id))); }}>Duplicate</Button>
+                : <Link to={panelHref('theme', t.id)} className={buttonClass()} aria-label={`Edit ${t.name}`} onClick={() => { preview(null); choose(t.id); }}>Edit</Link>}
               <Button label={`Export ${t.name}`} onClick={() => download(t.name, exportFile(t.id))}>Export</Button>
-            </div>
-          </Card>
+            </span>
+          </li>
         ))}
-      </CardGrid>
+      </ul>
     </section>
   );
 }
@@ -175,20 +192,20 @@ function ThemeEditor({ theme }: { theme: Theme }) {
   return (
     <section className="spec-section theme-editor" aria-labelledby={heading}>
       <div className="spec-section-head">
-        <h2 id={heading}>Edit “{theme.name}”</h2>
+        <h3 id={heading} className="sr-only">Edit “{theme.name}”</h3>
         <div className="spec-section-actions">
           <Button onClick={() => download(theme.name, exportFile(theme.id))}>Export</Button>
           <Button onClick={() => reset(theme.id)}>Reset to {base.name}</Button>
           {confirmDelete ? (
             <span className="confirm" role="group" aria-label="Confirm delete">
               <span>Delete “{theme.name}”?</span>
-              <Button danger onClick={() => { remove(theme.id); navigate(APPEARANCE_PATH); }}>Delete</Button>
+              <Button danger onClick={() => { remove(theme.id); navigate(panelHref('appearance')); }}>Delete</Button>
               <Button onClick={() => setConfirmDelete(false)}>Keep</Button>
             </span>
           ) : (
             <Button danger onClick={() => setConfirmDelete(true)}>Delete…</Button>
           )}
-          <Link to={APPEARANCE_PATH} className={buttonClass('primary')}>Done</Link>
+          <Link to={panelHref('appearance')} className={buttonClass('primary')}>Done</Link>
         </div>
       </div>
 
@@ -199,7 +216,7 @@ function ThemeEditor({ theme }: { theme: Theme }) {
         <figure><ThemePreview theme={theme} mode="dark" /><figcaption>Dark</figcaption></figure>
       </div>
 
-      <h3>Colors</h3>
+      <h4>Colors</h4>
       {COLOR_GROUPS.map((group) => (
         <fieldset key={group} className="theme-group">
           <legend>{group}</legend>
@@ -219,7 +236,7 @@ function ThemeEditor({ theme }: { theme: Theme }) {
         </fieldset>
       ))}
 
-      <h3>Type</h3>
+      <h4>Type</h4>
       <div className="setting-grid">
         <FontField label="Headings" token="--display" theme={theme} onChange={setToken} />
         <FontField label="Text" token="--body" theme={theme} onChange={setToken} />
@@ -227,7 +244,7 @@ function ThemeEditor({ theme }: { theme: Theme }) {
         <RangeField label="Text size" token="--text-size" theme={theme} min={TEXT_SIZE.min} max={TEXT_SIZE.max} step={0.5} onChange={setToken} />
       </div>
 
-      <h3>Shape and density</h3>
+      <h4>Shape and density</h4>
       <div className="setting-grid">
         <RangeField label="Panel corner radius" token="--panel-radius" theme={theme} min={RADIUS.min} max={RADIUS.max} step={1} onChange={setToken} />
         <RangeField label="Gap between panels" token="--panel-gap" theme={theme} min={GAP.min} max={GAP.max} step={1} onChange={setToken} />
@@ -239,7 +256,7 @@ function ThemeEditor({ theme }: { theme: Theme }) {
         />
       </div>
 
-      <h3>Motion</h3>
+      <h4>Motion</h4>
       <Choice
         label="Motion"
         value={tokenValue(theme, 'light', '--motion-speed') === MOTION.off ? 'reduced' : 'system'}

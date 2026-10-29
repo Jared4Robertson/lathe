@@ -1,14 +1,31 @@
 import { useMemo } from 'react';
 import type { ColumnDescription } from '../../../lathe/src/store/schema';
-import { formatPath, kindOrder, partTablesOf, textOf, type SpecIndex, type Stage, type StageRule, type Workspace } from '../specs/data';
+import { kindOrder, partTablesOf, textOf, type SpecIndex, type Stage, type StageRule, type Workspace } from '../specs/data';
+import { pageHref } from '../views/overlays';
 
 // The format reference in the app: every kind (its table and typed columns), relation, stage and
 // check of this space, read from the schema the server serves with the data and from the check
-// table's rows; and the addresses of the pages that show it.
+// table's rows; and the links that open its pages, which open in the wiki card over the stage,
+// the stage keeping its focus (`?page=format/kinds/use_case`, views/overlays.tsx).
 
-export { formatPath };
-export const kindPagePath = (kind: string) => `${formatPath}/kinds/${encodeURIComponent(kind)}`;
-export const checkPagePath = (check: string) => `${formatPath}/checks/${encodeURIComponent(check)}`;
+/** A format page: the format itself, a kind's page or a check's page. */
+export type FormatRoute = { page: 'format' } | { page: 'format-kind'; kind: string } | { page: 'format-check'; check: string };
+
+/** The link that opens the record format in the wiki card. */
+export const formatPath = pageHref('format');
+export const kindPagePath = (kind: string) => pageHref(`format/kinds/${encodeURIComponent(kind)}`);
+export const checkPagePath = (check: string) => pageHref(`format/checks/${encodeURIComponent(check)}`);
+
+/** The format page a `page` parameter names (`format/kinds/use_case`), or null for none. */
+export function parseFormatPage(value: string | null): FormatRoute | null {
+  if (!value) return null;
+  const parts = value.split('/').filter(Boolean).map((p) => { try { return decodeURIComponent(p); } catch { return p; } });
+  if (parts[0] !== 'format') return null;
+  if (parts.length === 1) return { page: 'format' };
+  if (parts.length === 3 && parts[1] === 'kinds') return { page: 'format-kind', kind: parts[2] };
+  if (parts.length === 3 && parts[1] === 'checks') return { page: 'format-check', check: parts[2] };
+  return null;
+}
 /** The anchor of a kind page's columns, and of one column within it. */
 export const FIELDS_ANCHOR = 'fields';
 export const fieldAnchor = (field: string) => `field-${field}`;

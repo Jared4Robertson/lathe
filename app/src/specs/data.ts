@@ -3,7 +3,7 @@ import type { Coverage, Kind, Problem, RecordedException, RelationRule, StageRul
 import type { Row, SpecData, Value } from '../../../lathe/src/server/contract';
 import type { SchemaDescription, Stage } from '../../../lathe/src/store/schema';
 import { onLatheEvent } from '../events';
-import { isRecordId, SPACE_CHECKS } from '../views/address';
+import { isRecordId } from '../views/address';
 
 export type { Coverage, Kind, Problem, RecordedException, RelationRule, Row, SchemaDescription, SpecData, Stage, StageRule, TraceChain, Value };
 
@@ -372,50 +372,32 @@ export function useSpec(): SpecState {
   return { index, error, reload };
 }
 
-// Records and groups are at their IDs, made by addressOf (app/src/views/address.ts); the app's own
-// pages are lowercase words. A space's Checks page is inside the space, under its product's ID
-// (checksPathOf).
-export const formatPath = '/format';
+// Records and groups are at their IDs, made by addressOf (app/src/views/address.ts); the app's one
+// page of its own is the products picker at `/`. Every tool (Checks, Appearance, the format pages)
+// opens over the stage, in the address's query (app/src/views/overlays.tsx).
 
 export type SpecRoute =
   | { page: 'product'; product: string }
   | { page: 'domain'; product: string; domain: string }
   | { page: 'record'; id: string }
   | { page: 'group'; parent: string; kind: string }
-  | { page: 'checks'; product: string }
-  | { page: 'format' }
-  | { page: 'format-kind'; kind: string }
-  | { page: 'format-check'; check: string }
   | { page: 'specs' }
   | { page: 'missing' };
 
-/** The app pages the spec routes leave to the shell: Settings. */
-const SHELL_PAGES = new Set(['settings']);
-
 /**
- * Parses a path: `/` (the products), an app page, a record's bare ID, a group's parent ID and
- * kind, or a product's ID and `checks` (its space's Checks page). Any other address is missing. With the index, a product's and a domain's ID is their
- * overview; without it (while the specs load) any ID reads as a record. Null for the shell's own
- * pages (Settings).
+ * Parses a path: `/` (the products picker), a record's bare ID, or a group's parent ID and kind.
+ * Any other address is missing. With the index, a product's and a domain's ID is their overview;
+ * without it (while the specs load) any ID reads as a record.
  */
-export function parseSpecRoute(pathname: string, index?: SpecIndex | null): SpecRoute | null {
+export function parseSpecRoute(pathname: string, index?: SpecIndex | null): SpecRoute {
   const parts = pathname.split('/').filter(Boolean).map(decodeURIComponent);
   if (parts.length === 0) return { page: 'specs' };
-  if (SHELL_PAGES.has(parts[0])) return null;
   if (isRecordId(parts[0])) {
-    if (parts.length === 2 && parts[1] === SPACE_CHECKS) return { page: 'checks', product: parts[0] };
     if (parts.length >= 2) return { page: 'group', parent: parts[0], kind: parts.slice(1).join('/') };
     const record = index?.byId.get(parts[0]);
     if (record?.kind === 'product') return { page: 'product', product: record.id };
     if (record?.kind === 'domain' && record.product) return { page: 'domain', product: record.product, domain: record.id };
     return { page: 'record', id: parts[0] };
-  }
-  if (parts[0] === 'format') {
-    if (parts.length === 1) return { page: 'format' };
-    // A kind's page and a check's page in the format reference.
-    if (parts.length === 3 && parts[1] === 'kinds') return { page: 'format-kind', kind: parts[2] };
-    if (parts.length === 3 && parts[1] === 'checks') return { page: 'format-check', check: parts[2] };
-    return { page: 'missing' };
   }
   return { page: 'missing' };
 }

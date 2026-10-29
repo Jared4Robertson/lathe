@@ -29,7 +29,7 @@ import {
 } from './keymap';
 import { Link } from '../router';
 import { Button } from '../components/Button';
-import { formatPath } from '../specs/data';
+import { formatPath } from '../format/reference';
 
 // The command dispatcher: components register handlers for command ids (useCommand), one key
 // listener matches key presses against the keymap, and the command palette and the shortcuts

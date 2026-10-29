@@ -6,8 +6,7 @@ import { themeVars } from './css';
 import { QuickPick } from './QuickPick';
 import { useThemes } from './ThemeProvider';
 import { MODE_CHOICES, MODE_LABELS, type ModeChoice, type Theme } from './theme';
-
-export const APPEARANCE_PATH = '/settings/appearance';
+import { panelHref } from '../views/overlays';
 
 /** A palette, drawn like the shared icons (app/src/components/icons.tsx): 24 x 24 lines, 2 px stroke. */
 export function PaletteIcon({ size = 16 }: { size?: number }) {
@@ -32,7 +31,7 @@ export function ThemeChip({ theme, mode }: { theme: Theme; mode: 'light' | 'dark
 /**
  * The theme commands: "Color theme" opens a quick pick that shows each theme as it is arrowed to,
  * keeping it on Enter and putting back the one before on Escape; "Light, dark or system" does the
- * same for the mode; and a command opens the Appearance page.
+ * same for the mode; and a command opens Appearance over the stage.
  */
 export function ThemeCommands() {
   const { themes, active, mode, choose, setMode, preview } = useThemes();
@@ -41,7 +40,7 @@ export function ThemeCommands() {
 
   useCommand('chooseTheme', () => setOpen('theme'));
   useCommand('chooseColorMode', () => setOpen('mode'));
-  useCommand('openAppearance', () => navigate(APPEARANCE_PATH));
+  useCommand('openAppearance', () => navigate(panelHref('appearance')));
 
   const close = () => { preview(null); setOpen(null); };
   const shows = shownMode(mode);
