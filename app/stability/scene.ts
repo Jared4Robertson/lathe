@@ -1,6 +1,6 @@
 import { expect, type Page } from '@playwright/test';
 import type { Scene, SceneBox, SceneHost } from '../src/graph/GraphPage';
-import type { TraceHost, TraceScene } from '../src/trace/TraceCanvas';
+import type { AllHost, AllScene } from '../src/trace/TraceAll';
 
 // The graph as its canvas draws it (LA-UI92), read through the canvas's test hook: every drawn
 // box with its place on screen and in the map, its label lines and their font sizes, its badges,
@@ -115,13 +115,9 @@ export async function traceDrawn(page: Page, settle = 400) {
   await page.waitForTimeout(settle);
 }
 
-/** Starts every page of the test with the Trace stage drawn in a layout (LA-V98-R13), as if the Reader had chosen it: the tree's own scenarios pin the tree. */
-export const traceLayout = (page: Page, layout: 'tree' | 'columns') =>
-  page.addInitScript((l) => window.sessionStorage.setItem('lathe:trace-layout', JSON.stringify(l)), layout);
-
-/** What the Trace stage's canvas draws now, or (`whole`) every box of the product's map. */
-export const traceSceneOf = (page: Page, whole = false): Promise<TraceScene> =>
-  page.evaluate(({ sel, whole }) => (document.querySelector(sel) as TraceHost).traceScene!(whole), { sel: TRACE, whole });
+/** What the Trace stage's All-at-once view draws now, or (`whole`) every box and link of the product's view. */
+export const traceSceneOf = (page: Page, whole = false): Promise<AllScene> =>
+  page.evaluate(({ sel, whole }) => (document.querySelector(sel) as AllHost).traceScene!(whole), { sel: TRACE, whole });
 
 /** Expects every entry of the stage's key whole inside the bar, and the bar inside the window (LA-V96-R30): never cut. */
 export async function expectKeyWhole(page: Page) {

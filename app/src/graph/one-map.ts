@@ -1,6 +1,6 @@
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
 
-// Every stage is one map (LA-PAT-APP-UX-R19): the Graph (map.ts), the Trace stage (trace/tree.ts)
+// Every stage is one map (LA-PAT-APP-UX-R19): the Graph (map.ts), the Trace stage (trace/all.ts)
 // and the ERD each lay a product out as one map, off the main thread and again only when what it reads
 // changes (layout.ts, erd/layout.ts), and every box keeps its
 // place whatever is focused or filtered and however deep the depth shows. One way for each move:

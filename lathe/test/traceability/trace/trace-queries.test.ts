@@ -15,6 +15,8 @@ import type { Store } from '../../../src/platform/data/store.ts';
 import { closeStores, handleApi } from '../../../src/server/api.ts';
 import type { Coverage, CoverageGap, TraceChain } from '../../../src/types.ts';
 import { closeTwoProducts, twoProducts } from '../../checking/problems/data-set.ts';
+import { openStore } from '../../../src/platform/data/store.ts';
+import { adding, complete, writeData } from '../../helpers.ts';
 
 afterEach(closeTwoProducts);
 
@@ -70,6 +72,31 @@ describe('LA-TRC-UC10-R05-T03 A product\'s traces read gives each obligation of 
     expect(nf.traces).toEqual([]);
     expect(nf.untraced).toEqual(['NF-NOTE-CMD01']);
     expect(() => runQuery(view, LIST_TRACES, { product_id: 'XX' })).toThrow(/there is no product XX/);
+  });
+
+  it('gives the product\'s outcomes and each use case of its space with the outcomes its capability serves and the obligations it reaches', async () => {
+    const data = adding(complete(), {
+      capability: [{ id: 'EX-LEND-CAP02', title: 'Cataloging', domain_id: 'EX-LEND', position: 2, description: 'Keeping the catalog.' }],
+      use_case: [{ id: 'EX-LEND-UC09', title: 'Count the shelf', capability_id: 'EX-LEND-CAP02', goal: 'Know what is on the shelf.' }],
+      uc_requirement: [{ id: 'EX-LEND-UC09-R01', title: 'Every tool is counted', use_case_id: 'EX-LEND-UC09', statement: 'Every tool on the shelf MUST be counted.' }],
+    });
+    const store = await openStore(writeData(data));
+    try {
+      const ex = runQuery(withRun(store, { chains: [], coverage: [] }), LIST_TRACES, { product_id: 'EX' }) as ProductTraces;
+      expect(ex.outcomes).toEqual(['EX-BO01']);
+      const uc01 = ex.useCases.find((u) => u.useCase === 'EX-LEND-UC01')!;
+      expect(uc01.outcomes).toEqual(['EX-BO01']);
+      // Its own requirements, and the invariants, specifications and view requirements it reaches through its steps.
+      expect(uc01.reaches).toEqual(expect.arrayContaining(['EX-LEND-UC01-R01', 'EX-LEND-INV01', 'EX-LEND-SP01', 'EX-V01-R01']));
+      // Only obligations: no aggregate, command or test.
+      expect(uc01.reaches).not.toContain('EX-LEND-A1');
+      expect(uc01.reaches).not.toContain('EX-LEND-INV01-T');
+      // A use case whose capability serves nothing still reaches its own requirements, serving no outcome.
+      expect(ex.useCases.find((u) => u.useCase === 'EX-LEND-UC09')).toEqual({ useCase: 'EX-LEND-UC09', outcomes: [], reaches: ['EX-LEND-UC09-R01'] });
+      expect(ex.useCases.map((u) => u.useCase)).toEqual([...ex.useCases.map((u) => u.useCase)].sort((a, b) => a.localeCompare(b, 'en', { numeric: true })));
+    } finally {
+      await store.close();
+    }
   });
 
   it('is refused over data that comes without the checks\' run', async () => {

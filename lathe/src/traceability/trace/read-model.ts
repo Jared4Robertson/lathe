@@ -1,12 +1,15 @@
 // The Trace read model (LA-TRC-RM11), shaped for the Trace stage: each obligation of a product's space with its chain
 // (what designs it, builds it and proves it, the files those name, and the links between them), the gaps coverage
-// reports for it and whether only proof is asked of its kind; and the records coverage reports untraced. Chains and
+// reports for it and whether only proof is asked of its kind; the records coverage reports untraced; and the Serves
+// links the All-at-once view draws: the product's business outcomes, and each use case of its space with the outcomes
+// its capability serves and the obligations it reaches (the Serves reach, trace/serves.ts). Chains and
 // coverage are the checks' run's, not rows': the projection reads the run the query runner was given
 // (`ReadView.checked`) and the rows only to place each obligation in its product, as the records' scope does (up its
 // parents to a product; a record of a kind with no owner by the longest product, or domain, its ID starts with). A
 // product's space holds its own records and those of no product. The projection is the only code that reads them for
 // the queries and the only code that writes the read model's table; the query handler reads it only through the reader.
 import type { ReadView } from '../../platform/data/rules.ts';
+import { useCaseReaches } from '../../trace/serves.ts';
 
 /** What an obligation misses, as coverage names it. */
 export type TraceGap = 'designed' | 'built' | 'proved';
@@ -32,6 +35,15 @@ export interface ObligationTrace {
   proofOnly: boolean;
 }
 
+/** A use case of a product's space with its Serves links: the outcomes its capability serves and the obligations it reaches. */
+export interface UseCaseLinks {
+  useCase: string;
+  /** The business outcomes its capability serves, in ID order: none when it serves none. */
+  outcomes: string[];
+  /** The obligations of the space it reaches, in ID order. */
+  reaches: string[];
+}
+
 /** A product's traces as its Trace stage reads them. */
 export interface ProductTraces {
   product: string;
@@ -39,6 +51,10 @@ export interface ProductTraces {
   traces: ObligationTrace[];
   /** The records coverage reports untraced: of a kind a chain reaches, and reached by none. */
   untraced: string[];
+  /** The product's business outcomes, in ID order. */
+  outcomes: string[];
+  /** Each use case of its space, in ID order, with its Serves links. */
+  useCases: UseCaseLinks[];
 }
 
 /** The read model's table, kept in memory: each product's traces, by product. */
@@ -47,6 +63,8 @@ export interface TraceTable {
 }
 
 const GAPS: readonly TraceGap[] = ['designed', 'built', 'proved'];
+
+const byId = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
 
 /** The longest of the IDs the ID starts with (and a hyphen), or undefined. */
 const longestPrefix = (ids: readonly string[], id: string) => ids.filter((p) => id.startsWith(`${p}-`)).sort((a, b) => b.length - a.length)[0];
@@ -93,6 +111,9 @@ function productPlacer(view: ReadView): (id: string) => string | null | undefine
 export function traceTableFrom(view: ReadView): TraceTable {
   const placeOf = productPlacer(view);
   const run = view.checked;
+  const reaches = useCaseReaches(view);
+  const isObligation = (id: string) => !!view.schema.kinds[view.record(id)?.kind ?? '']?.obligation;
+  const inSpace = (id: string, product: string) => { const at = placeOf(id); return at === product || at === null; };
   const products = new Map<string, ProductTraces>();
   for (const row of view.rows('product')) {
     const product = String(row.id);
@@ -124,7 +145,13 @@ export function traceTableFrom(view: ReadView): TraceTable {
         proofOnly: proofOnly.has(view.record(obligation)?.kind ?? ''),
       };
     });
-    products.set(product, { product, traces, untraced: [...untraced] });
+    const outcomes = view.rows('business_outcome').map((o) => String(o.id)).filter((o) => placeOf(o) === product).sort(byId);
+    const useCases = [...reaches].filter(([u]) => inSpace(u, product)).sort(([a], [b]) => byId(a, b)).map(([useCase, r]): UseCaseLinks => ({
+      useCase,
+      outcomes: r.outcomes.filter((o) => outcomes.includes(o)),
+      reaches: [...r.reached].filter((id) => isObligation(id) && inSpace(id, product)).sort(byId),
+    }));
+    products.set(product, { product, traces, untraced: [...untraced], outcomes, useCases });
   }
   return { products };
 }

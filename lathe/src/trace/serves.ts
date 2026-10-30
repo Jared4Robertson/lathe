@@ -41,8 +41,34 @@ function index(rows: readonly Row[], key: string, value: string): Map<string, st
   return by;
 }
 
+/** What a use case reaches (itself included), and the outcomes its capability serves: none when it serves none. */
+export interface UseCaseReach {
+  outcomes: readonly string[];
+  reached: ReadonlySet<string>;
+}
+
 /** Each record any use case reaches, with the outcomes it serves and the use cases through which it serves them. */
 export function servesOf(view: Pick<ReadView, 'schema' | 'rows'>): Map<string, Served> {
+  const served = new Map<string, { outcomes: Set<string>; useCases: Set<string> }>();
+  const mark = (id: string, outcomes: readonly string[], useCase: string | null) => {
+    const entry = served.get(id) ?? { outcomes: new Set<string>(), useCases: new Set<string>() };
+    for (const o of outcomes) entry.outcomes.add(o);
+    if (useCase) entry.useCases.add(useCase);
+    served.set(id, entry);
+  };
+  // A capability serves its own outcomes.
+  const rows = (table: string): Row[] => (view.schema.tables[table] ? view.rows(table) : []);
+  const capabilities = new Set(rows('capability').map((c) => String(c.id)));
+  for (const [capability, outcomes] of index(rows('serves'), 'source_id', 'target_id')) if (capabilities.has(capability)) mark(capability, outcomes, null);
+  for (const [useCase, { outcomes, reached }] of useCaseReaches(view)) {
+    if (outcomes.length === 0) continue;
+    for (const id of reached) mark(id, outcomes, useCase);
+  }
+  return new Map([...served].map(([id, s]) => [id, { outcomes: byId(s.outcomes), useCases: byId(s.useCases) }]));
+}
+
+/** What each use case reaches by the Serves reach, with the outcomes its capability serves: every use case, serving an outcome or not. */
+export function useCaseReaches(view: Pick<ReadView, 'schema' | 'rows'>): Map<string, UseCaseReach> {
   const { schema } = view;
   const rows = (table: string): Row[] => (schema.tables[table] ? view.rows(table) : []);
   const links = (relation: string) => rows(relation);
@@ -119,22 +145,10 @@ export function servesOf(view: Pick<ReadView, 'schema' | 'rows'>): Map<string, S
     }
   }
 
-  const served = new Map<string, { outcomes: Set<string>; useCases: Set<string> }>();
-  const mark = (id: string, outcomes: readonly string[], useCase: string | null) => {
-    const entry = served.get(id) ?? { outcomes: new Set<string>(), useCases: new Set<string>() };
-    for (const o of outcomes) entry.outcomes.add(o);
-    if (useCase) entry.useCases.add(useCase);
-    served.set(id, entry);
-  };
-
-  // A capability serves its own outcomes.
-  const capabilities = new Set(rows('capability').map((c) => String(c.id)));
-  for (const [capability, outcomes] of servesOutcomes) if (capabilities.has(capability)) mark(capability, outcomes, null);
-
+  const reaches = new Map<string, UseCaseReach>();
   for (const useCase of rows('use_case').map((u) => String(u.id))) {
     const capability = capabilityOf.get(useCase);
-    const outcomes = capability ? (servesOutcomes.get(capability) ?? []) : [];
-    if (outcomes.length === 0) continue;
+    const outcomes = byId(capability ? (servesOutcomes.get(capability) ?? []) : []);
     const reached = new Set<string>();
     const queue: string[] = [];
     const reach = (ids: readonly (string | undefined)[] | undefined) => {
@@ -191,8 +205,7 @@ export function servesOf(view: Pick<ReadView, 'schema' | 'rows'>): Map<string, S
       reach(carried.get(id));
       reach(designsOwn.get(id));
     }
-    for (const id of reached) mark(id, outcomes, useCase);
+    reaches.set(useCase, { outcomes, reached });
   }
-
-  return new Map([...served].map(([id, s]) => [id, { outcomes: byId(s.outcomes), useCases: byId(s.useCases) }]));
+  return reaches;
 }
