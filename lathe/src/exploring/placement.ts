@@ -38,8 +38,17 @@ const longestPrefix = (ids: readonly string[], id: string): string | null =>
 
 const text = (value: unknown): string | null => (typeof value === 'string' && value !== '' ? value : null);
 
-/** Every record of the data, placed, by ID, in the schema's kind order and each kind's key order. */
-export function placeRecords(view: ReadView): Map<string, Placed> {
+/**
+ * Every record of the data, placed, by ID, in the schema's kind order and each kind's key order: the one the data's
+ * holder keeps (Store.readerOf) until a table it read changes, shared by every projection that reads it, or else worked
+ * out on this view. Nothing changes what it gives.
+ */
+export function placementOf(view: ReadView): ReadonlyMap<string, Placed> {
+  return view.readerOf ? view.readerOf(placeRecords) : placeRecords(view);
+}
+
+// Every record of the data, placed (placementOf).
+function placeRecords(view: ReadView): Map<string, Placed> {
   const { schema } = view;
   const placed = new Map<string, Placed>();
   for (const kind of Object.keys(schema.kinds)) {
