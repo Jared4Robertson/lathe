@@ -326,12 +326,15 @@ test.describe('Traceability flows', () => {
     const served = (() => { try { return servesOf({ schema: store.schema, rows: (t) => store.rows(t) }); } finally { void store.close(); } })();
     const wiki = page.locator(WIKI);
     const servesLine = () => wiki.locator('[data-fact="serves"] dd');
+    /** The card's whole page (More), where a record's facts are. */
+    const whole = async () => { const more = wiki.getByRole('button', { name: 'More' }); if (await more.count()) await more.click(); };
     // S01, S02: an aggregate, a storage requirement and a view requirement each name the outcomes they serve, each a link.
     const aggregate = 'LA-AUT-A11';
     const storage = String(rowsOf(spec, 'storage_requirement').find((r) => r.aggregate_id === aggregate)?.id ?? rowsOf(spec, 'storage_requirement').find((r) => served.has(String(r.id)))!.id);
     const viewRequirement = 'LA-V92-R78';
     for (const id of [aggregate, storage, viewRequirement]) {
       await openPage(page, `/${id}`);
+      await whole();
       const outcomes = served.get(id)!.outcomes;
       expect(outcomes.length).toBeGreaterThan(0);
       await expect(wiki.getByRole('list', { name: `Outcomes ${id} serves` }).getByRole('link')).toHaveCount(outcomes.length);
@@ -341,6 +344,8 @@ test.describe('Traceability flows', () => {
     const first = served.get(viewRequirement)!.outcomes[0];
     await wiki.getByRole('list', { name: `Outcomes ${viewRequirement} serves` }).getByRole('link', { name: new RegExp(`^${first} `) }).click();
     await page.waitForURL((u) => u.pathname === `/${first}`);
+    await whole();
+    await expect(wiki.locator('dt', { hasText: /^Kind$/ })).toBeVisible();
     await expect(servesLine()).toHaveCount(0);
     // S04: Tools › Checks lists each serves-no-outcome warning the engine finds.
     const unserved = spec.problems.filter((p) => p.check === 'serves-no-outcome' && p.record?.startsWith('LA-'));
