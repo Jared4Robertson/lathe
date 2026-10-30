@@ -297,6 +297,21 @@ function ProviderCommands({ openSheet }: { openSheet: () => void }) {
 export function Dialog({ label, onClose, children, className, backdropClassName }: { label: string; onClose: () => void; children: ReactNode; className?: string; backdropClassName?: string }) {
   const box = useRef<HTMLDivElement>(null);
   useOverlayFocus(box, 'input, button, [href]');
+  // A control inside it that goes away (a key recorder taking its key) leaves the focus nowhere for a moment, before it
+  // comes back into the dialog; an Escape pressed then is still the dialog's, not lost.
+  const close = useRef(onClose);
+  close.current = onClose;
+  useEffect(() => {
+    const lost = (e: KeyboardEvent) => {
+      const at = document.activeElement;
+      if (e.key !== 'Escape' || e.defaultPrevented || (at && at !== document.body)) return;
+      e.preventDefault();
+      e.stopPropagation();
+      close.current();
+    };
+    window.addEventListener('keydown', lost, true);
+    return () => window.removeEventListener('keydown', lost, true);
+  }, []);
   const onKeyDown = (e: ReactKeyboardEvent) => {
     if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose(); return; }
     if (e.key === 'Tab' && box.current) {

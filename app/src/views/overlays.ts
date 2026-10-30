@@ -95,15 +95,14 @@ export function withoutOverlays(search: string): string {
  * first (a filter clearing its text, a menu, a dialog of its own, a stage clearing its filters).
  * `fallback` is what Escape does with no overlay open (the products picker going back to its stage).
  */
-export function useEscapeClosesTopmost(search: string, fallback: (() => void) | null) {
-  const searchRef = useRef(search);
-  searchRef.current = search;
+export function useEscapeClosesTopmost(fallback: (() => void) | null) {
   const fallbackRef = useRef(fallback);
   fallbackRef.current = fallback;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.defaultPrevented || e.metaKey || e.ctrlKey || e.altKey || e.shiftKey) return;
-      const close = closeTopmostHref(searchRef.current);
+      // The address as it is now, not as last drawn: a second Escape pressed straight away closes the next overlay.
+      const close = closeTopmostHref(window.location.search);
       if (close) { e.preventDefault(); navigate(close); return; }
       if (fallbackRef.current) { e.preventDefault(); fallbackRef.current(); }
     };
