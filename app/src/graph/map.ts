@@ -178,7 +178,7 @@ export function placeTree(shape: TreeShape, labelOf: (i: number) => MapLabel, ca
   const boxes = new Float64Array(shape.ids.length * 5);
   let right = 0;
   const unitFit = (label: MapLabel, aspect: number, most: number) => {
-    const key = `${aspect}\u0000${label.shape ?? ''}\u0000${label.marks ?? 0}\u0000${label.marked ? 1 : 0}\u0000${label.meta}\u0000${label.title}`;
+    const key = `${aspect}\u0000${label.shape ?? ''}\u0000${label.marks ?? 0}\u0000${label.meta}\u0000${label.title}`;
     const known = cache.fits.get(key);
     if (known && (known.exact || known.at >= most)) return Math.min(known.at, most);
     const at = largestFit(label, true, 1, aspect, most, (s) => BORDER * s);

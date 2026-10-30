@@ -92,17 +92,35 @@ describe('LA-EXP-DS07-T04 the Nested layout keeps every box outside a change whe
   it.each(LOCAL)('$name', (change) => staysLocal('nested', change));
 });
 
-describe('LA-EXP-DS05-T16 the Tree layout keeps a change local even where a parent gains its first child or loses its last', () => {
-  // The Tree's text fits each label in its own box, whether it has children or not, so a record that becomes a parent
-  // (or stops being one) changes nothing of its siblings.
-  const before = mapOf('tree', BEFORE);
+/** The boxes outside the changed parents' regions whose header band changed (the Nested map's), its siblings' insides with it. */
+function headerChangedOutside(before: PlacedMap, after: PlacedMap, parents: readonly string[]): string[] {
+  const inside = new Set(parents.flatMap((p) => [...region(before, p), ...region(after, p)]));
+  const header = (map: PlacedMap, id: string) => (map.nodes.get(id) as { header?: number } | undefined)?.header;
+  return [...before.nodes.keys()].filter((id) => !inside.has(id) && header(before, id) !== header(after, id));
+}
+
+describe.each([
+  ['tree', 'LA-EXP-DS05-T16'],
+  ['nested', 'LA-EXP-DS07-T04'],
+] as const)('%s: the layout keeps a change local even where a parent gains its first child or loses its last (%s)', (view: View, _test: string) => {
+  // Each sibling's text is fitted whether it has children or not (the Nested header band as if every sibling were a
+  // parent), so a record that becomes a parent, or stops being one, changes nothing of its siblings.
+  const before = mapOf(view, BEFORE);
   it('a first child moves nothing outside its new parent', () => {
-    const after = mapOf('tree', changed(BEFORE, (t) => { t.a3 = ['a3.1']; }));
+    const after = mapOf(view, changed(BEFORE, (t) => { t.a3 = ['a3.1']; }));
     expect(movedOutside(before, after, ['a3'])).toEqual([]);
+    expect(headerChangedOutside(before, after, ['a3'])).toEqual([]);
   });
   it('removing a last child moves nothing outside its parent', () => {
-    const after = mapOf('tree', changed(BEFORE, (t) => { t.c2 = []; }));
+    const after = mapOf(view, changed(BEFORE, (t) => { t.c2 = []; }));
     expect(movedOutside(before, after, ['c2'])).toEqual([]);
+    expect(headerChangedOutside(before, after, ['c2'])).toEqual([]);
+  });
+  it('a first child under a sibling with the longest label keeps its siblings\' insides', () => {
+    const after = mapOf(view, changed(BEFORE, (t) => { t.a3 = ['a3.1']; }), { ...TITLES, a3: 'A record whose title is long enough to wrap onto several lines of its box' });
+    const was = mapOf(view, BEFORE, { ...TITLES, a3: 'A record whose title is long enough to wrap onto several lines of its box' });
+    expect(movedOutside(was, after, ['a3'])).toEqual([]);
+    expect(headerChangedOutside(was, after, ['a3'])).toEqual([]);
   });
 });
 
@@ -141,6 +159,32 @@ const CHANGES: { name: string; records: string[]; edit: (d: ServedData) => void 
 /** The parents of every place the changed records have in the maps before and after: the changed regions. */
 const parentsOf = (maps: readonly PlacedMap[], records: readonly string[], idOf: (place: string) => string = (p) => p) =>
   [...new Set(maps.flatMap((map) => [...map.nodes.values()].filter((n) => records.includes(idOf(n.id)) && n.parent !== null).map((n) => n.parent!)))];
+
+describe('LA-PAT-APP-UX-R22 a problem badge appearing moves nothing', () => {
+  // The badge's room is kept on every label, whether its box has the badge or not, so a record that gains a problem (an
+  // ancestor's group badge appearing with it) changes no box's text or size, on any map.
+  const withProblem = () => {
+    const d = product();
+    d.problems.push({ severity: 'error', check: 'dangling-link', record: 'P-D-A2', message: 'Aggregate P-D-A2 links to a missing record.' });
+    return d;
+  };
+  const same = (before: PlacedMap, after: PlacedMap) => expect(movedOutside(before, after, [])).toEqual([]);
+  it('LA-EXP-DS05-T16 on the Graph\'s Tree map', () => same(graphMap(recordIndexOf(product()), 'P'), graphMap(recordIndexOf(withProblem()), 'P')));
+  it('LA-EXP-DS07-T04 on the Graph\'s Nested map', () => {
+    const [before, after] = [nestedMap(recordIndexOf(product()), 'P'), nestedMap(recordIndexOf(withProblem()), 'P')];
+    same(before, after);
+    expect(headerChangedOutside(before, after, [])).toEqual([]);
+  });
+  it('LA-V98-R12-T02 on the Trace\'s tree', () => {
+    const layOut = (d: ServedData) => {
+      const { index, traces } = traced(d);
+      const m = traceMap(index, traces, 'P');
+      const input = traceInput(m, index, textMeasure().key);
+      return layoutTree([m.product], (k) => m.tree.get(k)!.children, (k) => input.labels[input.shape.ids.indexOf(k)]);
+    };
+    same(layOut(product()), layOut(withProblem()));
+  });
+});
 
 describe.each(CHANGES)('$name keeps every box outside its parent where it was', ({ records, edit }) => {
   const changedData = () => { const d = product(); edit(d); return d; };

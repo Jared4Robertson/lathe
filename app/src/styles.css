@@ -396,12 +396,12 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-steps { display: inline-flex; gap: 2px; flex: none; }
 .stage-step { gap: 3px; }
 .stage-step-letter { font: 600 0.68rem var(--mono); color: var(--muted); }
-.stage-frame { flex: none; }
+.stage-frame, .stage-tidy { flex: none; }
 /* The toolbar's narrower forms (TOOLBAR_FORMS in StageChrome.tsx): the names beside the icons give way first (they stay
    the accessible ones), then groups fold into More at the right end (the Changes controls, then the stage's secondary
    controls), then the step letters drop and a stage shows its own controls narrower; the walk, Frame and
    the stage's primary controls stay in the row. In More every name shows again. */
-.stage-toolbar[data-names="hidden"] :is(.graph-depth-name, .graph-filters-name, .stage-frame-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.stage-toolbar[data-names="hidden"] :is(.graph-depth-name, .graph-filters-name, .stage-frame-name, .stage-tidy-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .stage-toolbar[data-names="hidden"] { gap: 6px; }
 .stage-toolbar[data-names="hidden"] .stage-step { padding-inline: 4px; }
 .stage-more { flex: none; }
@@ -417,7 +417,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-camera .icon-button { color: var(--ink); }
 /* By touch: the toolbar's toggles and the camera's buttons are touch-sized. */
 @media (pointer: coarse) {
-  :is(.stage-step, .stage-frame, .stage-more > summary, .stage-camera .icon-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
+  :is(.stage-step, .stage-frame, .stage-tidy, .stage-more > summary, .stage-camera .icon-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
 }
 /* The stage's key (StageKey, LA-V96-R33): a frosted bar on the stage's foot row, the camera at its left and the minimap
    (when shown) at its right, centered in the open space between them. It is a floating panel at the bottom
@@ -833,6 +833,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-flow .react-flow__node:focus { outline: none; }
 /* A new layout's boxes glide from their old places to their new ones (LA-PAT-APP-UX-R22); at once under reduced motion. */
 @media (prefers-reduced-motion: no-preference) { .erd-flow .react-flow__node { transition: opacity var(--hover-speed), transform var(--motion-speed) var(--motion-ease); } }
+/* While they glide (glide.ts) each box is a layer of its own, so none leaves a trace of its edge where it was; after, the layers go and the text is crisp again. */
+@media (prefers-reduced-motion: no-preference) { .erd-flow.is-gliding .react-flow__node { will-change: transform; } }
 .erd-flow .react-flow__node:focus-visible .erd-box { outline: 3px solid var(--steel); outline-offset: 3px; }
 .erd-handle { opacity: 0; pointer-events: none; }
 /* A box's strength (--erd-strength, the graph's focus fade) eases with the camera's glide; its place and size never change. */

@@ -224,7 +224,7 @@ describe('graph groups on the page', () => {
     await waitFor(() => expect(groupNode('P-D/question')!.focus).toBe(true));
     // Its name and count: in its label (LA-EXP-DS10), and in its tooltip.
     expect(groupNode('P-D/question')!.lines.map((l) => l.text)).toContain('Open questions (1)');
-    expect(groupNode('P-D/question')!.lines.map((l) => l.text).join(' ')).toMatch(/^Open question folder · P-D/);
+    expect(groupNode('P-D/question')!.lines.map((l) => l.text).join(' ')).toMatch(/^Open question folder · +P-D/);
     expect(groupNode('P-D/question')!.tip).toBe('Open questions (1) (in P-D)');
     expect(document.querySelector('.graph-group-chevron')).toBeNull();
 

@@ -111,7 +111,7 @@ function shifted(p: Plate, dx: number, dy: number): Plate {
 
 /** A compact box's lines (LA-V98-R13): its title alone in at most two lines, the second cut with an ellipsis when it runs on. */
 function compactLines(label: MapLabel, width: number): WrappedLabel {
-  const full = linesIn({ ...label, meta: '', marks: 0, marked: false }, width, false);
+  const full = linesIn({ ...label, meta: '', marks: 0 }, width, false);
   let title = full.title;
   if (title.length > 2) {
     const room = label.shape ? SHAPES[label.shape].room : { l: 0, r: 0 };
