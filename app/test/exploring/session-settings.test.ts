@@ -17,7 +17,7 @@ import { markProductLookedAt } from '../../src/exploring/session-settings/comman
 
 const stored = () => JSON.parse(window.sessionStorage.getItem(SETTINGS_KEY) ?? 'null');
 
-describe('the Session settings commands each keep one setting, in session storage', () => {
+describe('LA-EXP-INV30-T the Session settings commands each keep one setting, in session storage', () => {
   it('keeps the graph\'s look, the card\'s and the chat\'s widths and the chat\'s open state', () => {
     chooseGraphLayout({ layout: 'nested' });
     showOrHideMinimap({ shown: true });

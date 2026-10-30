@@ -32,17 +32,20 @@ export function storedText(key: string, store: Store = 'local'): string | null {
 export const isBool = (v: unknown): v is boolean => typeof v === 'boolean';
 export const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 
+/** One way an instance breaks its aggregate's rule: the rule's name, which its record is matched by, and what is wrong. */
+export interface RuleProblem { rule: string; message: string }
+
 /** A command broke one of its aggregate's rules: the change is refused and nothing is saved. */
 export class RuleBroken extends Error {
-  readonly problems: readonly string[];
-  constructor(problems: readonly string[]) {
-    super(problems.join(' '));
+  readonly problems: readonly RuleProblem[];
+  constructor(problems: readonly RuleProblem[]) {
+    super(problems.map((p) => p.message).join(' '));
     this.problems = problems;
   }
 }
 
 /** Refuses an instance with every problem its rules find. */
-export function refuseBroken(problems: readonly string[]): void {
+export function refuseBroken(problems: readonly RuleProblem[]): void {
   if (problems.length > 0) throw new RuleBroken(problems);
 }
 

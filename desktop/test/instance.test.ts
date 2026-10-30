@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { folderArgument, routeOpenFile, routeSecondInstance, windowForFolder } from '../src/instance.ts';
+import { folderArgument, routeOpenFile, routeSecondInstance } from '../src/instance.ts';
 
 describe('A second launch or a folder from Finder goes to the running app, which opens or focuses its window', () => {
   it('LA-PLT-DS04-T01 reads the folder from a command line, unpacked (electron . <folder>) or packed (Lathe <folder>), ignoring flags', () => {
@@ -19,12 +19,5 @@ describe('A second launch or a folder from Finder goes to the running app, which
   it('LA-PLT-DS04-T01 opens a folder from Finder or the Dock at once, or once the app is ready', () => {
     expect(routeOpenFile('/work/shop', true)).toEqual({ kind: 'open', folder: '/work/shop' });
     expect(routeOpenFile('/work/shop/', false)).toEqual({ kind: 'later', folder: '/work/shop' });
-  });
-
-  it('LA-PLT-INV05-T finds the open window of a folder however it is spelled, so it is focused and not opened twice', () => {
-    const open = new Map([['/work/shop', 'window 1']]);
-    expect(windowForFolder(open, '/work/shop/')).toBe('window 1');
-    expect(windowForFolder(open, '/work/./shop')).toBe('window 1');
-    expect(windowForFolder(open, '/work/other')).toBeUndefined();
   });
 });

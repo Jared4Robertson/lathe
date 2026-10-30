@@ -1,12 +1,12 @@
-import { refuseBroken } from '../../shell/prefs';
+import { refuseBroken, type RuleProblem } from '../../shell/prefs';
 import { PANEL_LIMITS, type PanelName, type Panels } from './model';
 
-/** What breaks the panels' rules: a width outside its panel's limits (LA-PLT-INV30). */
-export function panelProblems(panels: Panels): string[] {
+/** What breaks the panels' rule (panel-width-within-limits, LA-PLT-INV30): a width outside its panel's limits. */
+export function panelProblems(panels: Panels): RuleProblem[] {
   return (Object.keys(panels) as PanelName[]).flatMap((name) => {
     const { min, max } = PANEL_LIMITS[name];
     const { width } = panels[name];
-    return Number.isInteger(width) && width >= min && width <= max ? [] : [`The ${name} panel's width ${width} is outside ${min}–${max} px.`];
+    return Number.isInteger(width) && width >= min && width <= max ? [] : [{ rule: 'panel-width-within-limits', message: `The ${name} panel's width ${width} is outside ${min}–${max} px.` }];
   });
 }
 

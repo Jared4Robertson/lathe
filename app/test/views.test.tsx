@@ -76,7 +76,7 @@ describe('one address, one stage', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Terms (1)' })).toBeInTheDocument();
   });
 
-  it('LA-EXP-INV03-T The stage a link names opens and becomes the remembered one; an address without one opens the last', async () => {
+  it('LA-V96-R34-T01 The stage a link names opens and becomes the remembered one; an address without one opens the last', async () => {
     await openApp('/P-D-UC01?stage=trace', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(window.localStorage.getItem('lathe:stage')).toBe('"trace"');
@@ -169,7 +169,7 @@ describe('one address, one stage', () => {
     await waitFor(() => expect(after.style.getPropertyValue('--open-left')).toMatch(/^\d+px$/));
   });
 
-  it('LA-EXP-INV02-T Every part shows one focus: a node click moves the card, a card link moves the graph, Back moves them all, and graph settings survive', async () => {
+  it('LA-V96-R33-T01 Every part shows one focus: a node click moves the card, a card link moves the graph, Back moves them all, and graph settings survive', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));

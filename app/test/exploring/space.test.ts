@@ -9,7 +9,7 @@ import { holdToRules } from '../../src/exploring/space/rules';
 
 // The Space's commands (LA-EXP-CMD02, CMD20) and policy (LA-EXP-PO01), each saved through SpaceRepository.
 
-describe('the Space commands keep the spaces through SpaceRepository', () => {
+describe('LA-EXP-INV20-T the Space commands keep the spaces through SpaceRepository', () => {
   it('remembers a page as its space\'s last page and the space as the one chosen, and how many spaces were listed', () => {
     rememberPageInSpace({ product: 'P', address: '/P-D?stage=erd' });
     expect(window.localStorage.getItem('lathe:space')).toBe('"P"');

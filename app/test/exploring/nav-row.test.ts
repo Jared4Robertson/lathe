@@ -10,7 +10,7 @@ import { holdToRules } from '../../src/exploring/nav-row/rules';
 
 const folders = () => JSON.parse(window.sessionStorage.getItem('lathe:nav-folders') ?? 'null');
 
-describe('the Nav row commands keep the rows through NavRowRepository', () => {
+describe('LA-EXP-INV21-T the Nav row commands keep the rows through NavRowRepository', () => {
   it('opens a folded row with the branch below it that holds the page, and folds an open one', () => {
     foldOrUnfoldNavRow({ key: 'b', branch: ['a', 'b', 'c'] });
     expect(folders()).toEqual({ b: true, c: true });
