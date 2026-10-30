@@ -7,18 +7,25 @@ import type { DeliveryGraph } from './delivery';
 // columns, the outcomes and the use cases, linked by serves: an outcome sits by the rows it serves and a row by its
 // outcomes, so the lines between them stay short. The rows serving an outcome come first, those serving none after
 // them. A change moves only what it changed (LA-PAT-APP-UX-R22): given the order shown before, every outcome and row
-// kept keeps its order, a new outcome goes in at its barycenter among them, a removed row leaves its room (a closed
-// row's), and a new row takes the nearest such room within a few rows of its barycenter, else goes at the end of its
-// section; none is ordered afresh, nor any room closed, unless asked (Tidy up). It is worked out
+// kept keeps its order and an outcome its top (delivery-layout.ts), a removed row or outcome leaves its room (a closed
+// row's, a box's), and a new one takes the nearest such room within a few rows of where its links would put it, else
+// goes at the end of its section or column; none is ordered afresh, nor any room closed, unless asked (Tidy up). It is worked out
 // again only when what it reads changes (the outcomes, the rows and their serves links: the input's key), never on a
 // reload that left them alone; while a new order is made, the one before stays on screen with the graph it was made
 // for. Where there is no worker (the unit tests, in jsdom), the same ordering runs on the page.
 
 /**
  * An order: the outcomes top to bottom, the rows, how many removed rows' rooms lie before each row (none for most), and
- * the place in `rows` of the first row serving no outcome (`rows.length` when none does).
+ * the place in `rows` of the first row serving no outcome (`rows.length` when none does), and each outcome's top.
  */
-export interface DeliveryOrder { key: string; outcomes: readonly string[]; rows: readonly string[]; roomBefore: ReadonlyMap<string, number>; firstOutside: number }
+export interface DeliveryOrder {
+  key: string; outcomes: readonly string[]; rows: readonly string[]; roomBefore: ReadonlyMap<string, number>; firstOutside: number;
+  /**
+   * Each outcome's top once laid out (delivery-layout.ts fills it the first time it places an outcome, and keeps it
+   * after): an outcome never moves again until Tidy up. A new order keeps the tops of the outcomes it keeps.
+   */
+  outcomeTops: Map<string, number>;
+}
 
 /** The ordering's input for a graph, numbered (outcomes first, then rows), with its key. */
 function inputOf(graph: DeliveryGraph, previous: DeliveryOrder | null): { input: LayoutInput; keys: string[]; key: string } {
@@ -50,8 +57,9 @@ function orderOf(key: string, keys: readonly string[], order: number[][], input:
   const merged = order[1].map((b) => keys[b]);
   const number = new Map(keys.map((k, i) => [k, i]));
   const under = (u: string) => input.under[number.get(u)!] === 1;
-  if (!previous) return { key, outcomes, rows: merged, roomBefore: new Map(), firstOutside: firstOutsideOf(merged, under) };
-  return { key, outcomes, ...keptRows(previous, merged, under) };
+  if (!previous) return { key, outcomes, rows: merged, roomBefore: new Map(), firstOutside: firstOutsideOf(merged, under), outcomeTops: new Map() };
+  const kept = new Set(outcomes);
+  return { key, outcomes, ...keptRows(previous, merged, under), outcomeTops: new Map([...previous.outcomeTops].filter(([o]) => kept.has(o))) };
 }
 
 const firstOutsideOf = (rows: readonly string[], under: (u: string) => boolean) => { const i = rows.findIndex((u) => !under(u)); return i < 0 ? rows.length : i; };

@@ -12,6 +12,7 @@ import { delivered } from '../trace/deliveries';
 import { orderGraph } from '../../src/trace/delivery/delivery-order';
 import { layOutDelivery } from '../../src/trace/delivery/delivery-layout';
 import { cellKey, DELIVERY_STAGES } from '../../src/trace/delivery/delivery';
+import { ITEM_HEIGHT } from '../../src/trace/delivery/delivery-layout';
 import { graphMap, groundMap, groundMapAfter, layoutNested, layoutTree, nestedMap } from './maps';
 
 // A change moves only what it changed (LA-PAT-APP-UX-R22, LA-EXP-DS05, LA-EXP-DS07): adding, removing, renaming or
@@ -354,4 +355,30 @@ describe('LA-V98-R20-T02 on the Trace\'s Delivery view a use case added or remov
     // Tidy up: ordered afresh, no room kept.
     expect(orderGraph(delivered(less).graph, null).roomBefore.size).toBe(0);
   });
+
+  it('an outcome keeps its top through opening rows and new data; a new one takes a free place near its rows, else the bottom; a removed one leaves its place', () => {
+    const outcomeTop = (laid: ReturnType<typeof layOutDelivery>, o: string) => laid.places.get(`outcome/${o}`)?.y;
+    const first = rowsOf(product(), null);
+    const tops = { P_BO01: outcomeTop(first.laid, 'P-BO01'), P_BO02: outcomeTop(first.laid, 'P-BO02') };
+    // Opening every row moves rows, never an outcome.
+    const { graph } = delivered(product());
+    const open = layOutDelivery(graph, first.order, { open: new Set(graph.rows.flatMap((r) => DELIVERY_STAGES.map((st) => cellKey(r.useCase, st)))), step: null });
+    expect([outcomeTop(open, 'P-BO01'), outcomeTop(open, 'P-BO02')]).toEqual([tops.P_BO01, tops.P_BO02]);
+    // A new outcome: the others stay, and it sits a box clear of them.
+    const more = product();
+    addRows(more, 'business_outcome', { id: 'P-BO03', title: 'Members come back', product_id: 'P', statement: 'Members return.', measure: 'Visits a month', target: 'Up a fifth' });
+    addRows(more, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO03' });
+    const added = rowsOf(more, first.order);
+    expect([outcomeTop(added.laid, 'P-BO01'), outcomeTop(added.laid, 'P-BO02')]).toEqual([tops.P_BO01, tops.P_BO02]);
+    const y3 = outcomeTop(added.laid, 'P-BO03')!;
+    for (const t of [tops.P_BO01!, tops.P_BO02!]) expect(Math.abs(y3 - t)).toBeGreaterThanOrEqual(ITEM_HEIGHT);
+    // Removing P-BO01 leaves its place: P-BO02 and P-BO03 stay.
+    removeRows(more, 'serves', (r) => r.target_id === 'P-BO01');
+    removeRows(more, 'business_outcome', (r) => r.id === 'P-BO01');
+    const removed = rowsOf(more, added.order);
+    expect([outcomeTop(removed.laid, 'P-BO02'), outcomeTop(removed.laid, 'P-BO03')]).toEqual([tops.P_BO02, y3]);
+    // Tidy up: a fresh order keeps no tops.
+    expect(orderGraph(delivered(more).graph, null).outcomeTops.size).toBe(0);
+  });
 });
+
