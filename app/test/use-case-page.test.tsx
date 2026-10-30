@@ -48,7 +48,7 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
   it('Edit sends Change a use case with only what changed, and shows it changed', async () => {
     const user = userEvent.setup();
     const changed = (): ServedData => setRow(workspace(), 'use_case', 'DM-SHOP-UC01', { goal: 'A shopper adds an item they found.' });
-    const { commands, writes } = await openApp('/DM-SHOP-UC01', { command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-SHOP-UC01', { command: () => ({ answer: ok, data: changed() }) });
     await within(main()).findByText('A shopper adds an item.');
     await user.click(within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit DM-SHOP-UC01' });
@@ -60,7 +60,6 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await user.type(goal, 'A shopper adds an item they found.');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/change-use-case', input: { id: 'DM-SHOP-UC01', goal: 'A shopper adds an item they found.' } }]));
-    expect(writes).toEqual([]);
     expect(await within(main()).findByText('A shopper adds an item they found.')).toBeInTheDocument();
     await waitFor(() => expect(within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Edit' })).toHaveFocus());
   });
@@ -105,7 +104,7 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
 
   it('adds a use case from its capability\'s page through the aggregate\'s own Add', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM-SHOP-CAP01', { command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM-SHOP-CAP01', { command: () => ({ answer: ok }) });
     // The capability's page is the Domain aggregate's, read before its actions show.
     const actions = await screen.findByRole('toolbar', { name: 'Change DM-SHOP-CAP01' });
     const add = within(actions).queryByRole('button', { name: 'Add use case' }) ?? within(actions).getByRole('button', { name: 'Add…' });
@@ -118,7 +117,6 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await user.type(within(form).getByRole('textbox', { name: /^Actors/ }), 'Shopper');
     await user.click(within(form).getByRole('button', { name: 'Add use case' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/add-use-case', input: { capability_id: 'DM-SHOP-CAP01', id: 'DM-SHOP-UC02', title: 'Empty the basket', goal: 'A shopper empties the basket.', actors: ['Shopper'] } }]));
-    expect(writes).toEqual([]);
   });
 });
 

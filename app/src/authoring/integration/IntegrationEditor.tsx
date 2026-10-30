@@ -5,10 +5,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
+import { AddMenu } from '../../edit/AddMenu';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import { type RecordIndex } from '../../exploring/record-summaries/record-index';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendIntegration, type IntegrationCommands, type IntegrationRoute } from './commands';
 import { useNextIntegrationId } from './reads';
@@ -52,7 +53,7 @@ function fieldsOf(index: RecordIndex, product: string | undefined, kind: Integra
         { field: 'title', column: 'title', table: 'adapter' },
         { field: 'file', column: 'file', table: 'adapter' },
         { field: 'description', column: 'description', table: 'adapter', long: true },
-        { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
         { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choicesOf(index, product, 'standard_rule') },
       ];
     case 'integration_test': {
@@ -76,9 +77,6 @@ function fieldsOf(index: RecordIndex, product: string | undefined, kind: Integra
   }
 }
 
-/** The packages field's text as its list: one package per line. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 'packages');
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
 function currentOf(page: IntegrationPage, kind: IntegrationKind, id: string): Record<string, unknown> {
@@ -143,11 +141,7 @@ export function IntegrationEditor({ index, page, children }: { index: RecordInde
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, withoutPackages(specs), draft, current, { id }, CHANGE[kind].clearable);
-      if (kind === 'adapter') {
-        const packages = packagesOf(draft);
-        if (JSON.stringify([...packages].sort()) !== JSON.stringify(current.packages)) input.packages = packages;
-      }
+      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await send(writer, CHANGE[kind].route, input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
@@ -162,7 +156,7 @@ export function IntegrationEditor({ index, page, children }: { index: RecordInde
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {addsUnder(page).map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'add', kind: k })}>Add {LABEL[k]}</Button>)}
+        <AddMenu id={id} choices={addsUnder(page).map((k) => ({ key: k, label: kindLabel(index, k) }))} onPick={(k) => setMode({ mode: 'add', kind: k as Exclude<IntegrationKind, 'integration'> })} />
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
@@ -203,9 +197,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex;
   }, [next]);
   const specs = fieldsOf(index, product, kind, true);
   const submit = async () => {
-    const input = addInput(index, withoutPackages(specs), draft, { integration_id: parent });
-    const packages = packagesOf(draft);
-    if (kind === 'adapter' && packages.length > 0) input.packages = packages;
+    const input = addInput(index, specs, draft, { integration_id: parent });
     const answer = await send(writer, ADD[kind], input);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;

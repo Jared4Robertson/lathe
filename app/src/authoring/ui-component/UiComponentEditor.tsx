@@ -33,13 +33,10 @@ function fieldsOf(index: RecordIndex, product: string, adding: boolean): FieldSp
     { field: 'renders', label: 'Renders', description: 'The views it renders, or part of.', many: choicesOf(index, product, 'view') },
     { field: 'builds', label: 'Builds', description: 'The view requirements its code builds.', many: choicesOf(index, product, 'view_requirement') },
     { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choicesOf(index, product, 'standard_rule') },
-    { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
   ];
 }
 
-/** The packages field's text as its list: one package per line. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 'packages');
 
 type Mode = 'view' | 'change' | 'remove';
 
@@ -61,9 +58,7 @@ export function UiComponentEditor({ index, page, children }: { index: RecordInde
     const specs = fieldsOf(index, product, false);
     const current = { ...page.component, renders: page.renders, builds: page.builds, meets: page.meets, packages: page.packages } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, withoutPackages(specs), draft, current, { id }, ['file']);
-      const packages = packagesOf(draft);
-      if (JSON.stringify([...packages].sort()) !== JSON.stringify(page.packages)) input.packages = packages;
+      const input = changeInput(index, specs, draft, current, { id }, ['file']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await sendUiComponent(writer, '/api/ui-component/change-ui-component', input as unknown as UiComponentCommands['/api/ui-component/change-ui-component']);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
@@ -114,9 +109,7 @@ export function AddUiComponentForm({ index, parent, onDone }: { index: RecordInd
   }, [next]);
   const specs = fieldsOf(index, parent, true);
   const submit = async () => {
-    const input = addInput(index, withoutPackages(specs), draft, {});
-    const packages = packagesOf(draft);
-    if (packages.length > 0) input.packages = packages;
+    const input = addInput(index, specs, draft, {});
     const answer = await sendUiComponent(writer, '/api/ui-component/add-ui-component', input as unknown as UiComponentCommands['/api/ui-component/add-ui-component']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;

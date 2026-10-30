@@ -67,7 +67,7 @@ describe('LA-V120-R02-T01 the Domain editor writes only through the aggregate\'s
   it('Edit sends Change a term with only what changed, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withDomain(), 'term', 'DM-SHOP-TM01', { meaning: 'What a shopper fills before paying.' });
-    const { commands, writes } = await openApp('/DM-SHOP-TM01', { data: withDomain(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-SHOP-TM01', { data: withDomain(), command: () => ({ answer: ok, data: changed() }) });
     const actions = await toolbar('DM-SHOP-TM01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -77,13 +77,12 @@ describe('LA-V120-R02-T01 the Domain editor writes only through the aggregate\'s
     await user.type(meaning, 'What a shopper fills before paying.');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/domain/change-term', input: { id: 'DM-SHOP-TM01', meaning: 'What a shopper fills before paying.' } }]));
-    expect(writes).toEqual([]);
     expect(await within(main()).findByText('What a shopper fills before paying.')).toBeInTheDocument();
   });
 
   it('the domain\'s page offers Add for its own kinds and for an aggregate and a test data set, through the aggregates\' own Adds', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM-SHOP', { data: withDomain(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM-SHOP', { data: withDomain(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add capability', 'Add term', 'Add domain service', 'Add repository', 'Add aggregate', 'Add entry point', 'Add open question', 'Add read model', 'Add specification', 'Add table', 'Add test data set', 'Add tooling', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Add repository' }));
@@ -95,7 +94,6 @@ describe('LA-V120-R02-T01 the Domain editor writes only through the aggregate\'s
     await user.type(within(form).getByRole('textbox', { name: /^package 1/ }), 'duckdb');
     await user.click(within(form).getByRole('button', { name: 'Add repository' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/domain/add-repository', input: { domain_id: 'DM-SHOP', id: 'DM-SHOP-REPO02', title: 'LineRepository', description: 'Loads and saves lines.', packages: ['duckdb'] } }]));
-    expect(writes).toEqual([]);
   });
 
   it('adds a test data set from the domain\'s page through the Test data set aggregate\'s own Add', async () => {

@@ -47,7 +47,7 @@ function fieldsOf(index: RecordIndex, product: string, kind: DomainEventKind, ad
     { field: 'delivery', column: 'delivery', table: 'event_type' },
     { field: 'file', column: 'file', table: 'event_type' },
     { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
-    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files. The list replaces its packages.', table: 'package_use', columns: ['package'] },
+    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
   ];
 }
 
@@ -55,13 +55,7 @@ function fieldsOf(index: RecordIndex, product: string, kind: DomainEventKind, ad
 function currentOf(page: DomainEventPage, kind: DomainEventKind): Record<string, unknown> {
   if (kind === 'domain_event') return { ...page.event, fields: page.fields };
   const t = page.eventType!;
-  return { ...t.eventType, meets: t.meets, packages: t.packages.map((p) => ({ package: p })) };
-}
-
-/** The command's input with its packages as the names it takes, when it sends them. */
-function withPackageNames(input: Record<string, unknown>): Record<string, unknown> {
-  if (!Array.isArray(input.packages)) return input;
-  return { ...input, packages: (input.packages as { package?: string }[]).map((p) => p.package ?? '').filter(Boolean) };
+  return { ...t.eventType, meets: t.meets, packages: t.packages };
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
@@ -83,7 +77,7 @@ const REMOVE: Record<DomainEventKind, DomainEventRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: DomainEventRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendDomainEvent(writer, route, withPackageNames(input) as unknown as DomainEventCommands[typeof route]);
+const send = (writer: Writer, route: DomainEventRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendDomainEvent(writer, route, input as unknown as DomainEventCommands[typeof route]);
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add' } | { mode: 'remove' };
 

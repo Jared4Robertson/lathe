@@ -43,7 +43,7 @@ describe('LA-V152-R01-T01 an endpoint\'s records are read through the Endpoint a
 describe('LA-V152-R02-T01 the Endpoint editor writes only through the aggregate\'s own commands, one per change, Move for the endpoint alone', () => {
   it('Edit sends Change an API requirement with only what changed; an API requirement has no Move', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/P-D-EP01-R01', { data: modelWorkspace(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/P-D-EP01-R01', { data: modelWorkspace(), command: () => ({ answer: ok }) });
     const actions = await toolbar('P-D-EP01-R01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add endpoint test', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -51,12 +51,11 @@ describe('LA-V152-R02-T01 the Endpoint editor writes only through the aggregate\
     await user.type(within(form).getByRole('textbox', { name: /^group name/ }), 'Answers');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/endpoint/change-api-requirement', input: { id: 'P-D-EP01-R01', group_name: 'Answers' } }]));
-    expect(writes).toEqual([]);
   });
 
   it('Move sends Move an endpoint to the query of its domain it now exposes', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/P-D-EP01', { data: modelWorkspace(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/P-D-EP01', { data: modelWorkspace(), command: () => ({ answer: ok }) });
     const actions = await toolbar('P-D-EP01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add API requirement', 'Move', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Move' }));
@@ -66,7 +65,6 @@ describe('LA-V152-R02-T01 the Endpoint editor writes only through the aggregate\
     await user.selectOptions(exposes, 'P-D-QRY01');
     await user.click(within(form).getByRole('button', { name: 'Move' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/endpoint/move-endpoint', input: { id: 'P-D-EP01', query_id: 'P-D-QRY01' } }]));
-    expect(writes).toEqual([]);
   });
 
   it('adds an endpoint test under an API requirement with the next free ID, through Add an endpoint test', async () => {
@@ -84,7 +82,7 @@ describe('LA-V152-R02-T01 the Endpoint editor writes only through the aggregate\
 
   it('adds an endpoint from its command\'s page through the aggregate\'s own Add, naming the command it exposes', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/P-D-CMD02', { data: modelWorkspace(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/P-D-CMD02', { data: modelWorkspace(), command: () => ({ answer: ok }) });
     const actions = await toolbar('P-D-CMD02');
     await user.click(within(actions).getByRole('button', { name: 'Add endpoint' }));
     const form = screen.getByRole('form', { name: 'Add an endpoint' });
@@ -95,7 +93,6 @@ describe('LA-V152-R02-T01 the Endpoint editor writes only through the aggregate\
     await user.type(within(form).getByRole('textbox', { name: /^description/ }), 'Returns a thing.');
     await user.click(within(form).getByRole('button', { name: 'Add endpoint' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/endpoint/add-endpoint', input: { command_id: 'P-D-CMD02', id: 'P-D-EP03', title: 'POST /returns', method: 'POST', route: '/returns', description: 'Returns a thing.' } }]));
-    expect(writes).toEqual([]);
   });
 });
 

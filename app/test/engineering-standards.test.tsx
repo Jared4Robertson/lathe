@@ -14,7 +14,7 @@ const section = (name: string | RegExp) => {
   const card = screen.queryByRole('region', { name: 'Wiki card' });
   return card ? within(card).getByRole('heading', { name }).closest('section') as HTMLElement : pageSection(name);
 };
-import { indexOf } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 
 // Standards in the app (the standard and standard_rule tables): in Shared in the nav, in the
 // Technical specification stage, a standard's page listing its rules with what meets each one and its tests, a
@@ -98,7 +98,7 @@ describe('standards in the graph', () => {
     expect(n.nodes.find((x) => x.id === 'DM-STD-CODE')?.stage).toBe('technical-specification');
     cleanup();
     // The key bar of a graph that draws a standard: its stage's color, its shape and its mark, each with what it means.
-    const { container } = render(<StageKey entries={graphKeyEntries(graphDrawn(ix, n, 'tree'), ix.workspace.stages)} />);
+    const { container } = render(<StageKey entries={graphKeyEntries(graphDrawn(ix, n, 'tree'), ix.meta.stages)} />);
     expect(container.querySelector('.graph-swatch.stage-technical-specification')?.closest('li')).toHaveAttribute('title', expect.stringMatching(/a standard and its rules/));
     expect(shapeOf('standard')).toEqual({ shape: 'stack', mark: 'ruler' });
     expect(shapeOf('standard_rule')).toEqual({ shape: 'octagon', mark: 'ruler' });

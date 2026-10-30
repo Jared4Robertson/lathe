@@ -21,7 +21,7 @@ import '../../edit/edit.css';
 /** The tests and records of the outcome's product, as what may measure it. */
 function measures(index: RecordIndex, product: string): Choice[] {
   return [...index.byId.values()]
-    .filter((r) => r.product === product && (index.meta.kinds.get(r.kind)?.stage === 'test-plan' || index.workspace.schema.kinds[r.kind]?.productId === product))
+    .filter((r) => r.product === product && (index.meta.kinds.get(r.kind)?.stage === 'test-plan' || index.meta.kinds.get(r.kind)?.declared_by === product))
     .map((r) => ({ id: r.id, title: r.title }));
 }
 

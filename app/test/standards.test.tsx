@@ -8,12 +8,12 @@ import { contrast } from '../src/theme/contrast';
 import { themeCss } from '../src/theme/css';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
 import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
-import { parseSpecRoute } from '../src/specs/data';
+import { parseSpecRoute } from '../src/views/spec-route';
 import { isRecordId } from '../src/views/address';
 import { workspace } from './fixtures/workspace';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
-import { indexOf } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 import { Card } from '../src/shell/Card';
 
 // The app's standards (LA-PAT-APP-CODE and LA-PAT-APP-UX): each test proves one of the patterns' rules,

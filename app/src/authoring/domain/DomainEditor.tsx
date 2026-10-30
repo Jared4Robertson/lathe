@@ -6,8 +6,8 @@ import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
-import { adderOf } from '../../record/pages';
-import { lowerLabel } from '../../plural';
+import { adderOf, othersAddedUnder } from '../../record/pages';
+import { AddMenu } from '../../edit/AddMenu';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
@@ -59,7 +59,7 @@ function choices(index: RecordIndex, product: string, kinds: readonly string[], 
 /** A technical record's standard rules and packages: the packages a list of names, one part row each. */
 const technical = (index: RecordIndex, product: string): FieldSpec[] => [
   { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
-  { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files. The list replaces its packages.', table: 'package_use', columns: ['package'] },
+  { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
 ];
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
@@ -125,7 +125,6 @@ function fieldsOf(index: RecordIndex, page: DomainPage | null, product: string, 
 }
 
 /** Packages as the form's part rows. */
-const packageRows = (packages: readonly string[]) => packages.map((p) => ({ package: p }));
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
 function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<string, unknown> {
@@ -144,7 +143,7 @@ function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<strin
       return { ...page.domainServices.find((s) => s.domainService.id === id)!.domainService };
     case 'service': {
       const s = page.domainServices.find((x) => x.service?.service.id === id)!.service!;
-      return { ...s.service, meets: s.meets, packages: packageRows(s.packages) };
+      return { ...s.service, meets: s.meets, packages: s.packages };
     }
     case 'domain_service_test': {
       const t = page.domainServices.flatMap((s) => s.tests).find((x) => x.test.id === id)!;
@@ -152,15 +151,9 @@ function currentOf(page: DomainPage, kind: DomainKind, id: string): Record<strin
     }
     case 'repository': {
       const r = page.repositories.find((x) => x.repository.id === id)!;
-      return { ...r.repository, persists: r.persists ?? undefined, meets: r.meets, packages: packageRows(r.packages) };
+      return { ...r.repository, persists: r.persists ?? undefined, meets: r.meets, packages: r.packages };
     }
   }
-}
-
-/** The command's input with its packages as the names it takes, when it sends them. */
-function withPackageNames(input: Record<string, unknown>): Record<string, unknown> {
-  if (!Array.isArray(input.packages)) return input;
-  return { ...input, packages: (input.packages as { package?: string }[]).map((p) => p.package ?? '').filter(Boolean) };
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
@@ -197,7 +190,7 @@ const REMOVE: Record<DomainKind, DomainRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: DomainRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendDomain(writer, route, withPackageNames(input) as unknown as DomainCommands[typeof route]);
+const send = (writer: Writer, route: DomainRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendDomain(writer, route, input as unknown as DomainCommands[typeof route]);
 
 /** The domain service that holds a service or a domain service test. */
 const serviceHolding = (page: DomainPage, id: string) => page.domainServices.find((s) => s.service?.service.id === id || s.tests.some((t) => t.test.id === id))!;
@@ -224,15 +217,6 @@ function parentOf(page: DomainPage, kind: DomainKind, id: string): string {
   return page.domain.id;
 }
 
-/** The roots of other aggregates added under a record of this kind through their own Add form, by the schema's parents. */
-function othersUnder(index: RecordIndex, kind: DomainKind): string[] {
-  if (kind !== 'domain' && kind !== 'capability') return [];
-  return Object.values(index.workspace.schema.kinds)
-    .filter((k) => k.parents.some((p) => p.kind === kind) || (kind === 'domain' && k.parents.length === 0 && k.idScope === 'domain'))
-    .map((k) => k.name)
-    .filter((k) => adderOf(index.meta, k) !== undefined)
-    .sort();
-}
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'adopt'; kind: string } | { mode: 'remove' };
 
@@ -269,12 +253,13 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
   }
   // A domain service has one service: once it has it, there is nothing more to add of that kind.
   const adds = ADDED_UNDER[kind].filter((k) => k !== 'service' || !page.domainServices.find((s) => s.domainService.id === id)?.service);
+  const others = othersAddedUnder(index.meta, kind);
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {adds.map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'add', kind: k })}>Add {LABEL[k]}</Button>)}
-        {othersUnder(index, kind).map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'adopt', kind: k })}>Add {lowerLabel(kindLabel(index, k))}</Button>)}
+        <AddMenu id={id} choices={[...adds, ...others].map((k) => ({ key: k, label: kindLabel(index, k) }))}
+          onPick={(k) => setMode((adds as readonly string[]).includes(k) ? { mode: 'add', kind: k as Inside } : { mode: 'adopt', kind: k })} />
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (

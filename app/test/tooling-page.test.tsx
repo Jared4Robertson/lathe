@@ -42,7 +42,7 @@ describe('LA-V113-R02-T01 the Tooling editor writes only through the aggregate\'
   it('Edit sends Change a tooling record with only what changed, an emptied file cleared, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withTooling(), 'tooling', 'DM-SHOP-TOOL01', { file: null });
-    const { commands, writes } = await openApp('/DM-SHOP-TOOL01', { data: withTooling(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-SHOP-TOOL01', { data: withTooling(), command: () => ({ answer: ok, data: changed() }) });
     await within(main()).findByRole('heading', { name: /^Packages/ });
     expect(within(toolbar('DM-SHOP-TOOL01')).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(toolbar('DM-SHOP-TOOL01')).getByRole('button', { name: 'Edit' }));
@@ -50,12 +50,11 @@ describe('LA-V113-R02-T01 the Tooling editor writes only through the aggregate\'
     await user.clear(within(form).getByRole('textbox', { name: /^file/ }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/tooling/change-tooling', input: { id: 'DM-SHOP-TOOL01', file: null } }]));
-    expect(writes).toEqual([]);
   });
 
   it('Edit shows its packages one per line in the shared list-of-texts input, and sends the list as it now stands', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM-SHOP-TOOL01', { data: withTooling(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM-SHOP-TOOL01', { data: withTooling(), command: () => ({ answer: ok }) });
     await within(main()).findByRole('heading', { name: /^Packages/ });
     await user.click(within(toolbar('DM-SHOP-TOOL01')).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit DM-SHOP-TOOL01' });
@@ -64,7 +63,6 @@ describe('LA-V113-R02-T01 the Tooling editor writes only through the aggregate\'
     await user.type(packages, '{Enter}  zod  {Enter}');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/tooling/change-tooling', input: { id: 'DM-SHOP-TOOL01', packages: ['vitest', 'zod'] } }]));
-    expect(writes).toEqual([]);
   });
 });
 

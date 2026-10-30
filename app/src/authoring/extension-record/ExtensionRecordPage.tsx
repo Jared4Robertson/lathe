@@ -28,7 +28,6 @@ const textOf = (value: unknown) => (Array.isArray(value) ? value.join(', ') : ty
 function Content({ index, page }: { index: RecordIndex; page: Extension }) {
   const lead = leadOf(page);
   const fields = Object.entries(page.values).filter(([column]) => column !== 'title' && column !== lead);
-  const relations = index.workspace.schema.relations;
   return (
     <>
       {lead && <div className="record-lead" data-field={lead}><Prose index={index} source={String(page.values[lead])} self={page.id} /></div>}
@@ -43,7 +42,7 @@ function Content({ index, page }: { index: RecordIndex; page: Extension }) {
         </dl>
       )}
       {Object.entries(page.links).map(([relation, targets]) => {
-        const words = relations[relation]?.forwardLabel ?? relation;
+        const words = index.meta.relations.find((r) => r.relation === relation)?.forward_label ?? relation;
         return (
           <Section key={relation} title={labelOf(words)} count={targets.length} level={3} className="extension-links">
             <ul className="plain">{targets.map((t) => <li key={t}><RecordLink index={index} id={t} /></li>)}</ul>
@@ -64,7 +63,7 @@ function Summary({ index, page }: { index: RecordIndex; page: Extension }) {
   const lead = leadOf(page);
   const parentKind = index.byId.get(page.parent)?.kind;
   const facts: { label: string; value: ReactNode }[] = [
-    { label: parentKind ? labelOf(index.workspace.schema.kinds[parentKind]?.label ?? parentKind) : 'Under', value: <RecordLink index={index} id={page.parent} /> },
+    { label: parentKind ? labelOf(index.meta.kinds.get(parentKind)?.label ?? parentKind) : 'Under', value: <RecordLink index={index} id={page.parent} /> },
     ...Object.entries(page.values).filter(([c]) => c !== 'title' && c !== lead).slice(0, 2).map(([c, v]) => ({ label: labelOf(c), value: textOf(v) })),
   ];
   return (

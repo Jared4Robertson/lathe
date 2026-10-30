@@ -4,10 +4,11 @@ import type { StepOnPage, TestOnPage, UseCasePage } from '../../../../lathe/src/
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, type Choice } from '../../edit/fields';
+import { AddMenu } from '../../edit/AddMenu';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import { type RecordIndex } from '../../exploring/record-summaries/record-index';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendUseCase, type UseCaseCommands, type UseCaseRoute } from './commands';
 import { stepsOf, useNextId } from './reads';
@@ -73,7 +74,7 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: R
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
         {MOVE[kind] && <Button onClick={() => setMode({ mode: 'move' })}>Move</Button>}
-        {addable.map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'add', kind: k })}>Add {LABEL[k]}</Button>)}
+        <AddMenu id={id} choices={addable.map((k) => ({ key: k, label: kindLabel(index, k) }))} onPick={(k) => setMode({ mode: 'add', kind: k as UseCaseKind })} />
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (

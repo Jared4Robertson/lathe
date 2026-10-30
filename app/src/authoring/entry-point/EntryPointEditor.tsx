@@ -32,14 +32,11 @@ function fieldsOf(index: RecordIndex, domain: string, adding: boolean): FieldSpe
     { field: 'title', column: 'title', table: 'entry_point' },
     { field: 'file', column: 'file', table: 'entry_point' },
     { field: 'description', column: 'description', table: 'entry_point', long: true },
-    { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
     { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: standardRules(index, domain) },
   ];
 }
 
-/** The packages field's text as its list: one package per line. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 'packages');
 
 type Mode = 'view' | 'change' | 'remove';
 
@@ -60,9 +57,7 @@ export function EntryPointEditor({ index, page, children }: { index: RecordIndex
     const specs = fieldsOf(index, entryPoint.domain_id, false);
     const current = { ...entryPoint, packages: page.packages, meets: page.meets } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, withoutPackages(specs), draft, current, { id: entryPoint.id }, ['file']);
-      const packages = packagesOf(draft);
-      if (JSON.stringify([...packages].sort()) !== JSON.stringify(page.packages)) input.packages = packages;
+      const input = changeInput(index, specs, draft, current, { id: entryPoint.id }, ['file']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await sendEntryPoint(writer, '/api/entry-point/change-entry-point', input as unknown as EntryPointCommands['/api/entry-point/change-entry-point']);
       if (answer.ok) { announce(`Saved ${entryPoint.id}`); back(); }
@@ -113,9 +108,7 @@ export function AddEntryPointForm({ index, parent, onDone }: { index: RecordInde
   }, [next]);
   const specs = fieldsOf(index, parent, true);
   const submit = async () => {
-    const input = addInput(index, withoutPackages(specs), draft, { domain_id: parent });
-    const packages = packagesOf(draft);
-    if (packages.length > 0) input.packages = packages;
+    const input = addInput(index, specs, draft, { domain_id: parent });
     const answer = await sendEntryPoint(writer, '/api/entry-point/add-entry-point', input as unknown as EntryPointCommands['/api/entry-point/add-entry-point']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;

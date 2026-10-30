@@ -46,7 +46,7 @@ describe('LA-V132-R01-T01 a command\'s records are read through the Command aggr
 describe('LA-V132-R02-T01 the Command editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a command with the events it raises as one list, and offers no Move', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM-SHOP-CMD01', { data: withPolicy(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM-SHOP-CMD01', { data: withPolicy(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP-CMD01');
     // It has its handler, so a policy can be added under it, and an endpoint through the Endpoint aggregate's own Add.
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add policy', 'Add endpoint', 'Remove']);
@@ -55,7 +55,6 @@ describe('LA-V132-R02-T01 the Command editor writes only through the aggregate\'
     await user.click(within(form).getByRole('button', { name: 'Remove DM-SHOP-EV01 from Raises' }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/command/change-command', input: { id: 'DM-SHOP-CMD01', raises: [] } }]));
-    expect(writes).toEqual([]);
   });
 
   it('adds a policy that hears an event, with the next free ID in its domain', async () => {

@@ -6,8 +6,8 @@ import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
-import { lowerLabel } from '../../plural';
-import { adderOf } from '../../record/pages';
+import { adderOf, othersAddedUnder } from '../../record/pages';
+import { AddMenu } from '../../edit/AddMenu';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
@@ -70,7 +70,7 @@ const handlerFields = (index: RecordIndex, place: Place, table: string): FieldSp
   { field: 'file', column: 'file', table },
   { field: 'description', column: 'description', table, long: true },
   { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, ['standard_rule'], (r) => r.product === place.product) },
-  { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files. The list replaces its packages.', table: 'package_use', columns: ['package'] },
+  { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
 ];
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
@@ -119,7 +119,6 @@ function fieldsOf(index: RecordIndex, place: Place, kind: CommandKind, adding: b
 }
 
 const policyOf = (page: CommandPage, id: string) => page.policies.find((p) => p.policy.id === id || p.eventHandler?.handler.id === id || p.test?.test.id === id)!;
-const packageRows = (packages: readonly string[]) => packages.map((p) => ({ package: p }));
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
 function currentOf(page: CommandPage, kind: CommandKind, id: string): Record<string, unknown> {
@@ -127,26 +126,20 @@ function currentOf(page: CommandPage, kind: CommandKind, id: string): Record<str
     case 'command':
       return { ...page.command, raises: page.raises, checks: page.checks, calls: page.calls };
     case 'command_handler':
-      return { ...page.handler!.handler, meets: page.handler!.meets, packages: packageRows(page.handler!.packages) };
+      return { ...page.handler!.handler, meets: page.handler!.meets, packages: page.handler!.packages };
     case 'policy': {
       const p = policyOf(page, id);
       return { ...p.policy, hears: p.hears ?? undefined };
     }
     case 'event_handler': {
       const h = policyOf(page, id).eventHandler!;
-      return { ...h.handler, meets: h.meets, packages: packageRows(h.packages) };
+      return { ...h.handler, meets: h.meets, packages: h.packages };
     }
     case 'policy_test': {
       const t = policyOf(page, id).test!;
       return { ...t.test, starts_from: t.startsFrom };
     }
   }
-}
-
-/** The command's input with its packages as the names it takes, when it sends them. */
-function withPackageNames(input: Record<string, unknown>): Record<string, unknown> {
-  if (!Array.isArray(input.packages)) return input;
-  return { ...input, packages: (input.packages as { package?: string }[]).map((p) => p.package ?? '').filter(Boolean) };
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
@@ -177,7 +170,7 @@ const REMOVE: Record<CommandKind, CommandRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendCommand(writer, route, withPackageNames(input) as unknown as CommandCommands[typeof route]);
+const send = (writer: Writer, route: CommandRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendCommand(writer, route, input as unknown as CommandCommands[typeof route]);
 
 /** What goes with a record when it is removed, inside the command: what sits under it. */
 function goesWith(page: CommandPage, kind: CommandKind, id: string): string[] {
@@ -194,14 +187,6 @@ function parentOf(page: CommandPage, kind: CommandKind, id: string): string {
   return page.command.id;
 }
 
-/** The roots of other aggregates added under a record of this kind through their own Add form, by the schema's parents. */
-function othersUnder(index: RecordIndex, kind: CommandKind): string[] {
-  return Object.values(index.workspace.schema.kinds)
-    .filter((k) => k.parents.some((p) => p.kind === kind))
-    .map((k) => k.name)
-    .filter((k) => adderOf(index.meta, k) !== undefined)
-    .sort();
-}
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'adopt'; kind: string } | { mode: 'remove' };
 
@@ -241,12 +226,13 @@ export function CommandEditor({ index, page, children }: { index: RecordIndex; p
     (k !== 'command_handler' || !page.handler)
     && (k !== 'event_handler' || !policyOf(page, id).eventHandler)
     && (k !== 'policy_test' || !policyOf(page, id).test));
+  const others = othersAddedUnder(index.meta, kind);
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {adds.map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'add', kind: k })}>Add {LABEL[k]}</Button>)}
-        {othersUnder(index, kind).map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'adopt', kind: k })}>Add {lowerLabel(kindLabel(index, k))}</Button>)}
+        <AddMenu id={id} choices={[...adds, ...others].map((k) => ({ key: k, label: kindLabel(index, k) }))}
+          onPick={(k) => setMode((adds as readonly string[]).includes(k) ? { mode: 'add', kind: k as Inside } : { mode: 'adopt', kind: k })} />
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (

@@ -5,7 +5,6 @@ import type { AggregatePageProps } from '../../record/pages';
 import { Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink, Section } from '../../specs/parts';
-import { appliesWhenText, type AppliesWhen } from '../../specs/patterns';
 import { RecordFrame } from '../../specs/RecordContent';
 import { FollowedBy, FollowedInCount, OwedBy } from '../../traceability/pattern-following/Followers';
 import { PatternEditor } from './PatternEditor';
@@ -24,19 +23,9 @@ import { usePattern } from './reads';
 /** A pattern's followers have their own section, so its Traceability leaves them out. */
 const PATTERN_SKIP: ReadonlySet<string> = new Set(['in:follows']);
 
-/** A rule's applies-when condition, or null when it has none. */
-const conditionOf = (rule: PatternRuleRow): AppliesWhen | null =>
-  rule.applies_when_setting ? { setting: rule.applies_when_setting, not: rule.applies_when_negated === true, value: rule.applies_when_value ?? '' } : null;
-
-/** What a rule's row says of its setting and its condition: "setting audit", "applies when scope is not single". */
+/** What a rule's row says of its setting: "setting audit". */
 function RuleTags({ rule }: { rule: PatternRuleRow }) {
-  const condition = conditionOf(rule);
-  return (
-    <>
-      {rule.setting && <small className="meta"> setting {rule.setting}</small>}
-      {condition && <small className="meta"> applies when {appliesWhenText(condition)}</small>}
-    </>
-  );
+  return rule.setting ? <small className="meta"> setting {rule.setting}</small> : null;
 }
 
 /** The rules under their groups: the ungrouped ones first, then each group in the order it first appears. */
@@ -61,7 +50,7 @@ function Settings({ index, page }: { index: RecordIndex; page: Pattern }) {
           <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Setting</th><th scope="col" role="columnheader">Meaning</th><th scope="col" role="columnheader">Rules that depend on it</th></tr></thead>
           <tbody role="rowgroup">
             {page.settings.map((s) => {
-              const dependent = page.rules.filter((r) => r.rule.setting?.trim() === s.name || r.rule.applies_when_setting === s.name);
+              const dependent = page.rules.filter((r) => r.rule.setting?.trim() === s.name);
               return (
                 <tr key={s.name} role="row">
                   <th scope="row" role="rowheader"><code>{s.name}</code></th>
@@ -96,13 +85,11 @@ function Rules({ index, page }: { index: RecordIndex; page: Pattern }) {
 const ruleOf = (page: Pattern, id: string) => page.rules.find((r) => r.rule.id === id)!;
 const testOf = (page: Pattern, id: string) => page.rules.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
 
-/** A rule's short facts: its group, its setting and its condition. */
+/** A rule's short facts: its group and its setting. */
 function ruleFacts(rule: PatternRuleRow): Fact[] {
-  const condition = conditionOf(rule);
   return [
     ...(rule.group_name ? [{ label: 'Group', value: rule.group_name }] : []),
     ...(rule.setting ? [{ label: 'Setting', value: <code>{rule.setting}</code> }] : []),
-    ...(condition ? [{ label: 'Applies when', value: appliesWhenText(condition) }] : []),
   ];
 }
 
