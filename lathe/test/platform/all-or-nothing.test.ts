@@ -3,10 +3,10 @@
 // aggregate's commands on a copy of the Tool Library's data and stops the write at each point a crash can stop it: while
 // a new file is half written, while the journal is half written, and after the first data file is renamed into place.
 // The next load holds the data as it was (the journal was not there) or as the change meant (it was), never a mix.
-import { cpSync, existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { ALL_COMMANDS } from '../../src/commands.ts';
 import { runCommands } from '../../src/platform/commands/run.ts';
@@ -193,5 +193,35 @@ describe('a write a crash left is settled before anything reads the data, and sa
     }
     expect(existsSync(path.join(root, 'data', WRITE_FOLDER))).toBe(true);
     expect(execFileSync('git', ['status', '--porcelain', '--untracked-files=all', 'data/.lathe-write'], { cwd: root, encoding: 'utf8' })).toBe('');
+  });
+});
+
+// A write in progress is another process's (the CLI while the app serves the folder): a load in the middle of it must
+// not take it for a crash and roll it back under that process, which would then fail to finish it.
+describe('LA-AUT-A22-SR01-T03 a load leaves a write another running process owns, and settles one whose process is gone', () => {
+  it('leaves a running process\'s write alone, and rolls back an ended one\'s', async () => {
+    const root = copy();
+    const folder = path.join(root, 'data', WRITE_FOLDER);
+    mkdirSync(folder, { recursive: true });
+    writeFileSync(path.join(folder, 'product.jsonl'), 'half a new file');
+    // The parent of this test process is running for as long as the test is.
+    writeFileSync(path.join(folder, 'owner'), String(process.ppid));
+    const before = readFileSync(path.join(root, 'data', 'product.jsonl'), 'utf8');
+    const store = await openStore(root, { latheDataDir: null });
+    try {
+      expect(store.settled).toEqual([]);
+      expect(existsSync(folder)).toBe(true);
+      expect(readFileSync(path.join(root, 'data', 'product.jsonl'), 'utf8')).toBe(before);
+      // A process that has ended owns it now: the next load settles it.
+      const ended = spawnSync('node', ['-e', '0']).pid!;
+      writeFileSync(path.join(folder, 'owner'), String(ended));
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => undefined);
+      await store.reload();
+      warn.mockRestore();
+      expect(store.settled.map((s) => s.outcome)).toEqual(['rolled back']);
+      expect(existsSync(folder)).toBe(false);
+    } finally {
+      await store.close();
+    }
   });
 });

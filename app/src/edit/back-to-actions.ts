@@ -2,11 +2,11 @@ import type { RefObject } from 'react';
 
 // After a record's form or its remove question closes, the focus goes back to the actions that opened it (the record's
 // Change toolbar, or a section's), scrolled into view in the card, where the form was opened. The write reloads the data,
-// which may draw the page anew a moment later and drop the focus; until the Reader moves the focus themselves, it is
-// put back on the toolbar as drawn now, found by its name.
+// which may draw the page anew a moment later and drop the focus; until the Reader acts (a click, a key, the focus moved
+// elsewhere), it is put back on the toolbar as drawn now, found by its name.
 
-/** How long a reload may take to draw the page anew after the form closes. */
-const RELOAD_MS = 2000;
+/** How long a reload may take to draw the page anew after the form closes (a section that reads its own query, such as a pattern's followers, draws its actions only once read). */
+const RELOAD_MS = 10_000;
 
 /** Puts the focus back on the toolbar the form was opened from, in view, `label` its accessible name. */
 export function backToActions(toolbar: RefObject<HTMLElement | null>, label: string) {
@@ -20,12 +20,19 @@ export function backToActions(toolbar: RefObject<HTMLElement | null>, label: str
     placed = button;
   };
   const until = performance.now() + RELOAD_MS;
+  // The Reader acting ends the watch: from then on the focus is theirs.
+  let acted = false;
+  const act = () => { acted = true; };
+  const events = ['pointerdown', 'keydown', 'wheel'] as const;
+  for (const e of events) window.addEventListener(e, act, { capture: true, once: true });
+  const end = () => { for (const e of events) window.removeEventListener(e, act, { capture: true }); };
   const watch = () => {
-    // The Reader moved the focus elsewhere: leave it there.
     const active = document.activeElement;
-    if (placed && active !== placed && active !== document.body && active !== null) return;
+    // The Reader acted, or moved the focus elsewhere: leave it there.
+    if (acted || (placed && active !== placed && active !== document.body && active !== null)) { end(); return; }
     if (!placed || !placed.isConnected || active !== placed) place();
     if (performance.now() < until) requestAnimationFrame(watch);
+    else end();
   };
   setTimeout(watch, 0);
 }

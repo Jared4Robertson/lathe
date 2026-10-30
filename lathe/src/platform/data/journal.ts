@@ -9,6 +9,10 @@
 // write had left; without one, the write never reached its commit point, so it deletes the new files and the data is
 // as it was. Either way it says what it did. A journal is itself written through a temporary file and a rename, so it
 // is there whole or not at all.
+//
+// A write in progress is not a crash: another process (the CLI while the app serves the folder, or the app while an
+// Agent writes) may load the data in the middle of it. So a write names its process in the folder (owner) before it
+// writes anything else, and a load leaves a folder whose owner is still running to that process.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
@@ -16,6 +20,22 @@ import path from 'node:path';
 /** The folder of a write in progress, inside the data folder. */
 export const WRITE_FOLDER = '.lathe-write';
 const JOURNAL = 'journal.json';
+const OWNER = 'owner';
+
+/** Whether the write in the folder belongs to another process that is still running: then it is in progress, not crashed. */
+function ownedByAnother(folder: string): boolean {
+  const owner = path.join(folder, OWNER);
+  if (!existsSync(owner)) return false;
+  const pid = Number(readFileSync(owner, 'utf8').trim());
+  if (!Number.isInteger(pid) || pid <= 0 || pid === process.pid) return false;
+  try {
+    process.kill(pid, 0);
+    return true;
+  } catch (e) {
+    // EPERM: the process runs under another user, so it is running.
+    return (e as NodeJS.ErrnoException).code === 'EPERM';
+  }
+}
 
 /** One data file a write changes: its new text, or null when the write removes it. */
 export interface FileChange {
@@ -48,6 +68,7 @@ export async function writeAll(dataDir: string, changes: readonly FileChange[]):
   await settleWrite(dataDir);
   const folder = path.join(dataDir, WRITE_FOLDER);
   await mkdir(folder, { recursive: true });
+  await writeFile(path.join(folder, OWNER), String(process.pid));
   await writeFile(path.join(folder, '.gitignore'), '*\n');
   const journal: Journal = { write: [], remove: [] };
   for (const change of changes) {
@@ -76,11 +97,11 @@ async function finish(dataDir: string, journal: Journal): Promise<void> {
 
 /**
  * Settles a write a crash left in the data folder, before anything reads it: finishes it when its journal is there,
- * else rolls it back. Returns what it did, or null when no write was left.
+ * else rolls it back. Returns what it did, or null when no write was left or the one there is another running process's.
  */
 export async function settleWrite(dataDir: string): Promise<Settled | null> {
   const folder = path.join(dataDir, WRITE_FOLDER);
-  if (!existsSync(folder)) return null;
+  if (!existsSync(folder) || ownedByAnother(folder)) return null;
   const at = path.basename(dataDir);
   if (existsSync(path.join(folder, JOURNAL))) {
     const journal = JSON.parse(readFileSync(path.join(folder, JOURNAL), 'utf8')) as Journal;

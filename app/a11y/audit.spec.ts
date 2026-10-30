@@ -40,8 +40,8 @@ const SHARED = '/LA-PAT-APP-UX';
 const STAGES = [
   { name: 'graph stage', url: `${RECORD}?stage=graph`, ready: '.focus-stage .graph-flow .graph-box' },
   { name: 'ERD stage', url: `${AGGREGATE}?stage=erd`, ready: '.focus-stage .erd-canvas' },
-  { name: 'Trace stage, a chain', url: `${EDITED}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
-  { name: 'Trace stage, a domain (no box: the overview)', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
+  { name: 'Trace stage, a chain', url: `${EDITED}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]', state: 'attached' as const },
+  { name: 'Trace stage, a domain (no box: the overview)', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]', state: 'attached' as const },
 ];
 
 /** Collapses the wiki card (Enter), so the stage has the whole window under the tab panel. */
@@ -98,9 +98,9 @@ const PAGES: State[] = [
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
-  { name: 'Trace stage, a flow step in the chains that hold it', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
+  { name: 'Trace stage, a flow step in the chains that hold it', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]', state: 'attached' as const },
   { name: 'Trace stage, an entity framed on its aggregate', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note', state: 'attached' as const },
-  { name: 'Trace stage, the product all at once', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
+  { name: 'Trace stage, the product all at once', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]', state: 'attached' as const },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.
@@ -122,7 +122,7 @@ PAGES.push({ name: 'Trace stage, an untraced record', run: async (page: Page) =>
 } });
 // The Trace stage with only the branches that have a gap.
 PAGES.push({ name: 'Trace stage, gaps only', run: async (page: Page) => {
-  await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-flow[data-ready]');
+  await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-flow[data-ready]', 'attached');
   await page.locator('.focus-stage').getByRole('checkbox', { name: 'Gaps only' }).check();
   await page.waitForTimeout(200);
 } });
@@ -217,8 +217,8 @@ const DESKTOP: State[] = [
     await page.locator('.shortcut-offer').waitFor();
   } },
   // Each stage with the panels collapsed, and with them open under reduced transparency.
-  ...STAGES.map((s): State => ({ name: `${s.name}, panels collapsed`, run: async (page) => { await open(page, s.url, s.ready); await collapsePanels(page); } })),
-  ...STAGES.map((s): State => ({ name: `${s.name}, reduced transparency`, run: async (page) => { await reduceTransparency(page); await open(page, s.url, s.ready); } })),
+  ...STAGES.map((s): State => ({ name: `${s.name}, panels collapsed`, run: async (page) => { await open(page, s.url, s.ready, 'state' in s ? s.state : 'visible'); await collapsePanels(page); } })),
+  ...STAGES.map((s): State => ({ name: `${s.name}, reduced transparency`, run: async (page) => { await reduceTransparency(page); await open(page, s.url, s.ready, 'state' in s ? s.state : 'visible'); } })),
   { name: 'a deep breadcrumb with its hidden levels open', run: async (page) => {
     await open(page, EDITED, '.header-strip .crumb-more-button');
     await page.locator('.header-strip .crumb-more-button').click();
@@ -235,13 +235,13 @@ const DESKTOP: State[] = [
   { name: 'the chat, its permission mode menu open', run: async (page) => {
     await withChat(page, RECORD.slice(1));
     await open(page, RECORD, '.chat-log .chat-item');
-    await page.locator('.chat-mode-button').click();
+    await page.getByRole('button', { name: /^Permission mode/ }).click();
     await page.locator('.chat-mode-menu').waitFor();
   } },
   { name: 'the chat, the warning before Bypass, and its badge once on', run: async (page) => {
     await withChat(page, RECORD.slice(1));
     await open(page, RECORD, '.chat-log .chat-item');
-    await page.locator('.chat-mode-button').click();
+    await page.getByRole('button', { name: /^Permission mode/ }).click();
     await page.locator('.chat-mode-item.is-bypass').click();
     await page.locator('.chat-bypass-warning').waitFor();
   } },
