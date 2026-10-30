@@ -139,6 +139,7 @@ function DeliveryStage(props: DeliveryTraceProps & { delivery: ProductDelivery }
         <Button aria-pressed={rowOpen} disabled={!row} onClick={expandRow}>Expand row</Button>
       </Tooltip>
       <div className="graph-depth graph-layout delivery-every" role="group" aria-label="Expand all">
+        <span className="graph-depth-name" aria-hidden="true">Expand all</span>
         {DELIVERY_STAGES.map((s) => (
           <Tooltip key={s} label={`${every[s] ? 'Close' : 'Open'} ${DELIVERY_COLUMN_LABELS[s]} in every row`}>
             <button type="button" aria-pressed={every[s]} onClick={() => setEvery(s)}>{SHORT[s]}</button>

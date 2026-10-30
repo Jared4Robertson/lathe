@@ -280,16 +280,16 @@ export function shownChildren(graph: DeliveryGraph, item: Item, o: Openness): st
   return item.children;
 }
 
-/** A step's chain heading always shows its chain. */
-const alwaysOpen = (item: Item) => item.role === 'heading' && item.column === 3;
-
-/** Each cell's boxes that show, top to bottom (the cell's own box first). */
+/**
+ * Each cell's boxes that show, top to bottom (the cell's own box first): an open box's children, and always the children
+ * of a box that does not open (a view's requirements under it, a step's chain under its heading).
+ */
 export function visible(graph: DeliveryGraph, cell: string, o: Openness): string[] {
   const out: string[] = [];
   const walk = (key: string) => {
     out.push(key);
     const item = graph.items.get(key)!;
-    for (const c of alwaysOpen(item) ? item.children : shownChildren(graph, item, o)) walk(c);
+    for (const c of item.opens ? shownChildren(graph, item, o) : item.children) walk(c);
   };
   walk(cell);
   return out;

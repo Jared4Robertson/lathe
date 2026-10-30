@@ -27,7 +27,8 @@ import { useOpenSpace, type Insets, type OpenSpaceStore } from '../../views/open
 import { drawLeaderLine, openIn, useLeaderFollow } from '../../views/leaderLine';
 import { StageCamera, ZOOM_STEP } from '../../views/StageChrome';
 import { useChanges } from '../../changes/changes';
-import { lensFade, marksMoving, useStageMarks } from '../../changes/marks';
+import { highlightFade, marksMoving, useStageMarks, type MarkTree } from '../../changes/marks';
+import { anchorOf, rollupText, totalChanges, type ChangeCounts } from '../../changes/rollup';
 import { DELIVERY_COLUMN_LABELS, DELIVERY_COLUMNS, DELIVERY_STAGES, isOpen, type DeliveryGraph, type DeliveryStage, type Item, type Openness } from './delivery';
 import { lastDeliveryOrder, useDeliveryOrder } from './delivery-order';
 import { columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutDelivery, OUTSIDE_GAP, type BoxPlace, type DeliveryLaid } from './delivery-layout';
@@ -69,9 +70,11 @@ const COLUMN_STAGE: readonly BoxStage[] = ['discovery', 'use-cases', 'interactio
 /** One drawn box as the test hook reports it, in the page's pixels. */
 export interface DeliverySceneBox {
   key: string; id: string | null; row: string | null; role: Item['role']; column: number; depth: number; opens: boolean; open: boolean;
-  focus: boolean; ring: boolean; lit: boolean | null; strength: number; change: 'added' | 'changed' | null; dashed: boolean; block: boolean;
+  focus: boolean; ring: boolean; lit: boolean | null; strength: number; change: 'added' | 'changed' | null; pill: 'added' | 'changed' | null; rollup: string | null; dashed: boolean; block: boolean;
   kind: string; title: string; meta: string; name: string;
   rect: { left: number; top: number; width: number; height: number };
+  /** Its toggle's middle, in the page's pixels, for a box with children. */
+  toggle: { x: number; y: number } | null;
 }
 /** What the view draws now: its camera, boxes, bars and lines; or, `whole`, every box shown. */
 export interface DeliveryScene {
@@ -80,7 +83,7 @@ export interface DeliveryScene {
   boxes: DeliverySceneBox[];
   bars: number;
   lines: { from: string; to: string; kind: 'serves' | 'path'; lit: boolean }[];
-  columns: { name: string; count: number; open: boolean }[];
+  columns: { name: string; count: number; open: boolean; rollup: string | null }[];
   rows: string[];
   outsideTop: number | null;
   ordered: ReturnType<typeof lastDeliveryOrder>;
@@ -171,6 +174,9 @@ function firstFrom(order: readonly string[], places: ReadonlyMap<string, BoxPlac
 
 /** Where a box's toggle is, in map units: at the right of its label's room, clear of its shape's point. */
 const toggleAt = (p: Plate) => ({ x: p.label.x + p.label.w - TOGGLE, y: p.y + (p.h - TOGGLE) / 2, w: TOGGLE, h: TOGGLE });
+
+/** The record a box shows, or the box's own key for a box that is no record (a status, a gap, a heading). */
+const recordAt = (graph: DeliveryGraph, key: string) => { const item = graph.items.get(key); return item?.role === 'record' && item.id ? item.id : key; };
 
 /** What a non-record box looks like. */
 function plainOf(item: Item): PlainBox {
@@ -337,8 +343,8 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
   const counts = useMemo(() => [graph.outcomes.length, graph.rows.length, ...DELIVERY_STAGES.slice(1).map((s) => graph.rows.filter((r) => graph.items.get(r.cells[DELIVERY_STAGES.indexOf(s) + 1])!.role === 'gap').length)], [graph]);
   const fade = useMemo(() => {
     const own = lit.keys ? keptFade((key) => lit.keys!.has(key), fadeLook) : () => 1;
-    return changes.lens ? faintest(own, lensFade(changes.byId, fadeLook, (key) => graph.items.get(key)?.id ?? key)) : own;
-  }, [lit, graph, fadeLook, changes.lens, changes.byId]);
+    return changes.highlight ? faintest(own, highlightFade(changes.byId, (key) => recordAt(graph, key))) : own;
+  }, [lit, graph, fadeLook, changes.highlight, changes.byId]);
   const tween = useMemo(() => fadeTween((t) => readMotion().ease(t)), []);
   useLayoutEffect(() => {
     tween.send(fade, glideMs.current ?? look.current.fade);
@@ -355,7 +361,7 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
     const at = laid.places.get(key);
     if (!item || !at) return null;
     const plain = item.role === 'record' && item.id ? undefined : plainOf(item);
-    const id = item.id ?? key;
+    const id = plain ? key : item.id!;
     const label: MapLabel = plain ? { title: plain.title, meta: plain.meta, shape: 'box' } : treeLabel(index, id);
     const border = (s: number) => BORDER * s;
     // Its text as large as its label fits, beside its toggle when it opens, and never under LEAST_TEXT (a longer title is cut, whole in its tooltip).
@@ -504,7 +510,7 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
     };
     paint(g, dpr, cam, { plates: frame.plates, bars: frame.bars, lines: [], wires }, lk, fonts, state);
     paintToggles(g, frame.plates, graph, open, lk, fonts, v, dpr, strength);
-    paintHeads(g, counts, every, lk, fonts, v, frameBox(s), dpr);
+    paintHeads(g, counts, rolls, every, lk, fonts, v, frameBox(s), dpr);
     // The leader line to the wiki card (LA-V96-R24), from the focus's box, in its outline's color.
     const own = focusKey ? placeAt(focusKey, now) : undefined;
     const p = own ? plateFor(focusKey!) : null;
@@ -518,9 +524,30 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
   useEffect(() => { requestPaint(); });
   useLeaderFollow(wrapper, space, () => paintRef.current());
 
-  // The live marks: each record's on its box; a removed record's ghost where the layout before had it.
+  // The live marks: each record's on its box; a removed record's ghost where the layout before had it. With Highlight
+  // changes on, each box's roll-up counts what changed in its children, and a row's use case what changed in its row.
   const placeOf = useCallback((id: string) => { const keys = graph.boxesOf.get(id); const k = keys?.find((x) => laid.places.has(x)); return k ? laid.places.get(k)! : null; }, [laid, graph]);
-  const marks = useStageMarks(placeOf);
+  const tree = useMemo<MarkTree>(() => markTree(graph), [graph]);
+  const marks = useStageMarks(placeOf, tree);
+  // With Highlight changes on, each column's header says how many records in it are new, changed and removed; a removed record counts in the column of the record its ID names.
+  const rolls = useMemo<(ChangeCounts | undefined)[]>(() => {
+    const hl = marks.highlight;
+    if (!hl) return [];
+    const out: ChangeCounts[] = DELIVERY_COLUMNS.map(() => ({ added: 0, changed: 0, removed: 0 }));
+    const counted = new Set<string>();
+    for (const [id, keys] of graph.boxesOf) {
+      const c = hl.change(id);
+      if (!c || c === 'removed') continue;
+      for (const k of keys) { const column = graph.items.get(k)!.column; if (!counted.has(`${column} ${id}`)) { counted.add(`${column} ${id}`); out[column]![c]++; } }
+    }
+    for (const id of new Set([...changes.byId.keys(), ...changes.live.all().map((m) => m.id)])) {
+      if (hl.change(id) !== 'removed') continue;
+      const up = anchorOf(id, (x) => graph.boxesOf.has(x));
+      const key = up === null ? undefined : graph.boxesOf.get(up)?.[0];
+      if (key !== undefined) out[graph.items.get(key)!.column]!.removed++;
+    }
+    return out.map((c) => (totalChanges(c) > 0 ? c : undefined));
+  }, [marks.highlight, graph, changes.byId, changes.live]);
 
   /** Lights a box's path while the pointer is on it; null lets go. */
   const spot = useCallback((key: string | null) => {
@@ -637,7 +664,7 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
         outsideTop: laid.outsideTop,
         ordered: lastDeliveryOrder(),
         rows: [...laid.rows.keys()],
-        columns: DELIVERY_COLUMNS.map((c, i) => ({ name: DELIVERY_COLUMN_LABELS[c], count: counts[i] ?? 0, open: i > 0 && every[DELIVERY_STAGES[i - 1]] })),
+        columns: DELIVERY_COLUMNS.map((c, i) => ({ name: DELIVERY_COLUMN_LABELS[c], count: counts[i] ?? 0, open: i > 0 && every[DELIVERY_STAGES[i - 1]], rollup: rolls[i] ? rollupText(rolls[i]!) : null })),
         lines: [
           ...frame.serves.map((i) => ({ from: `outcome/${graph.serves[i][0]}`, to: `${graph.serves[i][1]}|use-case`, kind: 'serves' as const, lit: path.serves.has(`${graph.serves[i][0]}>${graph.serves[i][1]}`) })),
           ...path.lines.map(([from, to]) => ({ from, to, kind: 'path' as const, lit: true })),
@@ -648,8 +675,11 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
             key: p.place, id: item.id, row: item.row, role: item.role, column: item.column, depth: item.depth, opens: !!item.opens, open: isOpen(item, open),
             focus: p.place === focusKey, ring: ring.current === p.place, lit: path.keys ? path.keys.has(p.place) : null, strength: strength(p.place),
             change: ((m) => (m && m.change !== 'removed' ? m.change : null))(item.id ? changes.live.get(item.id) : undefined),
+            pill: ((c) => (c === 'added' || c === 'changed' ? c : null))(item.id ? marks.highlight?.change(item.id) : undefined),
+            rollup: ((r) => (r ? rollupText(r) : null))(marks.highlight?.rolls.get(p.place)),
             dashed: p.dashed, block: isBlock(p, v.zoom), kind: p.kind, title: p.title, meta: p.lines.filter((l) => l.face === 'meta').map((l) => l.text).join(''), name: plateName(p, p.place === focusKey),
             rect: { left: r.left + p.x * v.zoom + v.x, top: r.top + p.y * v.zoom + v.y, width: p.w * v.zoom, height: p.h * v.zoom },
+            toggle: item.opens ? ((t) => ({ x: r.left + (t.x + t.w / 2) * v.zoom + v.x, y: r.top + (t.y + t.h / 2) * v.zoom + v.y }))(toggleAt(p)) : null,
           };
         }),
       };
@@ -676,6 +706,21 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
       {armedPlate && <TapCard kind={armedPlate.kindLabel} name={armedPlate.title} onOpen={tapToOpen.openArmed} onDismiss={tapToOpen.clear} />}
     </div>
   );
+}
+
+/**
+ * The view's boxes as the change marks roll them up (changes/marks.ts): each box under its parent, and each stage's cell
+ * under its row's use case, so a closed cell's status counts what changed in it and the use case what changed in its row.
+ */
+const treeCache = new WeakMap<DeliveryGraph, MarkTree>();
+function markTree(graph: DeliveryGraph): MarkTree {
+  const known = treeCache.get(graph);
+  if (known) return known;
+  const nodes = new Map<string, { parent: string | null }>();
+  for (const [key, item] of graph.items) nodes.set(key, { parent: item.parent ?? (item.row && item.column > 1 ? `${item.row}|use-case` : null) });
+  const tree: MarkTree = { nodes, idOf: (place) => recordAt(graph, place), placeOfId: (id) => graph.boxesOf.get(id)?.[0] ?? null };
+  treeCache.set(graph, tree);
+  return tree;
 }
 
 /** The rows' bands: a rule between each two, and the mark over the rows serving no outcome. */
@@ -754,7 +799,7 @@ function paintToggles(g: CanvasRenderingContext2D, plates: readonly Plate[], gra
 }
 
 /** The columns' names and counts, kept at the top of the frame over each column; a stage's with its Expand all toggle. */
-function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], every: Readonly<Record<DeliveryStage, boolean>>, look: Look, fonts: GraphFonts, v: Viewport, box: { x: number; y: number; w: number; h: number }, dpr: number) {
+function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], rolls: readonly (ChangeCounts | undefined)[], every: Readonly<Record<DeliveryStage, boolean>>, look: Look, fonts: GraphFonts, v: Viewport, box: { x: number; y: number; w: number; h: number }, dpr: number) {
   g.save();
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   g.globalAlpha = 1;
@@ -781,11 +826,13 @@ function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], ever
     const countW = g.measureText(countText).width;
     const glyph = i >= 1 ? 14 : 0;
     const start = mid - (glyph + nameW + 6 + countW) / 2;
+    const roll = rolls[i];
+    const line = box.y + (roll ? 9 : HEAD_PX / 2);
     g.textAlign = 'left';
     if (glyph) {
       const open = every[DELIVERY_STAGES[i - 1]];
       const cx = start + 5;
-      const cy = box.y + HEAD_PX / 2;
+      const cy = line;
       g.fillStyle = look.muted;
       g.beginPath();
       if (!open) { g.moveTo(cx - 3, cy - 5); g.lineTo(cx + 4, cy); g.lineTo(cx - 3, cy + 5); }
@@ -795,10 +842,30 @@ function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], ever
     }
     g.fillStyle = look.ink;
     g.font = fontFor(fonts, 'title', HEAD_FONT);
-    g.fillText(name, start + glyph, box.y + HEAD_PX / 2);
+    g.fillText(name, start + glyph, line);
     g.fillStyle = i >= 2 && counts[i] ? look.warn : look.muted;
     g.font = fontFor(fonts, 'meta', HEAD_FONT - 1);
-    g.fillText(countText, start + glyph + nameW + 6, box.y + HEAD_PX / 2);
+    g.fillText(countText, start + glyph + nameW + 6, line);
+    if (roll) {
+      // The column's roll-up: all three counts when they fit across the column, else how many changes in all.
+      g.font = fontFor(fonts, 'badge', 10);
+      const room = ITEM_WIDTH * v.zoom - 4;
+      const full = rollupText(roll);
+      const total = `${totalChanges(roll)} ${totalChanges(roll) === 1 ? 'change' : 'changes'}`;
+      const text = g.measureText(full).width + 10 <= room ? full : total;
+      const w = g.measureText(text).width + 10;
+      g.beginPath();
+      g.roundRect(mid - w / 2, box.y + 16, w, 12, 6);
+      g.fillStyle = look.sheet;
+      g.fill();
+      g.strokeStyle = look.ink;
+      g.lineWidth = 1;
+      g.stroke();
+      g.fillStyle = look.ink;
+      g.textAlign = 'center';
+      g.fillText(text, mid, box.y + 22.5);
+      g.textAlign = 'left';
+    }
   });
   g.restore();
 }
