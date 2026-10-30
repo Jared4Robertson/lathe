@@ -1,12 +1,13 @@
 // The HTTP API: one endpoint handler per endpoint, each calling its command or query handler, and the
 // errors they raise turned into HTTP responses.
-// Spec: the endpoint handlers TL-LEND-EP01-H to EP07-H (examples/tool-library/data/).
+// Spec: the endpoint handlers TL-LEND-EP01-H to EP08-H (examples/tool-library/data/).
 // Every error response is JSON: { "error": "<code>", "message": "<sentence>" }.
 // Each route's statuses and bodies are its endpoint's API requirements (TL-LEND-EP0n-R0n).
 // TL-PAT-LIBRARIAN-ACTION-R02: each librarian action answers with the record as its repository saved it
 // (the repositories return rows with RETURNING *), so what the librarian sees is what is stored.
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { catalogEntry, listCatalog } from './catalog.ts';
+import { ActiveLoansReader, findLoan } from './active-loans.ts';
+import { CatalogReader, catalogEntry, listCatalog } from './catalog.ts';
 import type { Database } from './database.ts';
 import { subscribePolicies } from './event-handlers.ts';
 import { Outbox, type HandlerFailure } from './events.ts';
@@ -162,7 +163,7 @@ function postTools(lending: Lending, _params: number[], body: Record<string, unk
 
 /** TL-LEND-EP03-H: GET /tools answers 200 with the catalog (R01). */
 function getTools(lending: Lending): Reply {
-  return { status: 200, body: listCatalog(lending) };
+  return { status: 200, body: listCatalog(new CatalogReader(lending)) };
 }
 
 /** TL-LEND-EP04-H: POST /loans borrows a tool and answers 201 with the loan (R01-R05). */
@@ -186,6 +187,11 @@ function postToolRepair(lending: Lending, [toolId]: number[]): Reply {
   return { status: 200, body: catalogEntry(lending.loans, markToolRepaired(lending, toolId)) };
 }
 
+/** TL-LEND-EP08-H: GET /tools/{toolId}/loan answers 200 with the tool's active loan (R01-R02). */
+function getToolLoan(lending: Lending, [toolId]: number[]): Reply {
+  return { status: 200, body: findLoan(new ActiveLoansReader(lending), toolId) };
+}
+
 /** Each endpoint's method and route, and its handler. */
 const ROUTES: Route[] = [
   { method: 'POST', route: /^\/members$/, handler: postMembers },
@@ -195,6 +201,7 @@ const ROUTES: Route[] = [
   { method: 'POST', route: /^\/loans\/(\d+)\/return$/, handler: postLoanReturn },
   { method: 'POST', route: /^\/tools\/(\d+)\/damage$/, handler: postToolDamage },
   { method: 'POST', route: /^\/tools\/(\d+)\/repair$/, handler: postToolRepair },
+  { method: 'GET', route: /^\/tools\/(\d+)\/loan$/, handler: getToolLoan },
 ];
 
 /**

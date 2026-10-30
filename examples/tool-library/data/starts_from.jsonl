@@ -22,6 +22,8 @@
 {"source_id":"TL-LEND-EP06-R04-T01","target_id":"TL-LEND-TD02"}
 {"source_id":"TL-LEND-EP07-R01-T01","target_id":"TL-LEND-TD02"}
 {"source_id":"TL-LEND-EP07-R02-T01","target_id":"TL-LEND-TD02"}
+{"source_id":"TL-LEND-EP08-R01-T01","target_id":"TL-LEND-TD02"}
+{"source_id":"TL-LEND-EP08-R02-T01","target_id":"TL-LEND-TD02"}
 {"source_id":"TL-LEND-INV01-T","target_id":"TL-LEND-TD01"}
 {"source_id":"TL-LEND-INV02-T","target_id":"TL-LEND-TD01"}
 {"source_id":"TL-LEND-INV03-T","target_id":"TL-LEND-TD01"}
@@ -48,6 +50,7 @@
 {"source_id":"TL-LEND-UC04-R02-T02","target_id":"TL-LEND-TD02"}
 {"source_id":"TL-LEND-UC04-R03-T01","target_id":"TL-LEND-TD02"}
 {"source_id":"TL-LEND-UC04-R04-T01","target_id":"TL-LEND-TD02"}
+{"source_id":"TL-LEND-UC04-R05-T01","target_id":"TL-LEND-TD02"}
 {"source_id":"TL-LEND-UC05-R01-T01","target_id":"TL-LEND-TD02"}
 {"source_id":"TL-LEND-UC05-R03-T01","target_id":"TL-LEND-TD02"}
 {"source_id":"TL-LEND-UC05-R04-T01","target_id":"TL-LEND-TD02"}

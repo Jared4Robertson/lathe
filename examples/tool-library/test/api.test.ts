@@ -272,6 +272,38 @@ describe('TL-LEND-UC04 Return a tool', () => {
     return { t, responses };
   }
 
+  /** A tool lent to a member, then its active loan found from the tool; and the same for a tool not on loan and an unknown tool. */
+  async function findLoans() {
+    const t = await tool();
+    const m = await member();
+    const lent = (await borrow(m, t)).body;
+    const found = await api.call('GET', `/tools/${t}/loan`);
+    const idle = await tool('Plane');
+    const notOnLoan = await api.call('GET', `/tools/${idle}/loan`);
+    const unknown = await api.call('GET', '/tools/999/loan');
+    return { t, m, lent, found, notOnLoan, unknown };
+  }
+
+  it('TL-LEND-UC04-R05-T01 The librarian finds the loan from the tool brought back', async () => {
+    const { t, m, lent, found, notOnLoan } = await findLoans();
+    expect(found.body).toMatchObject({ id: lent.id, memberId: m, toolId: t, dueDate: START_DUE_DATE });
+    expect(notOnLoan.body.message).toMatch(/not on loan/);
+  });
+
+  it('TL-LEND-EP08-R01-T01 Finding a tool\'s loan returns 200 with the active loan', async () => {
+    const { lent, found } = await findLoans();
+    expect(found.status).toBe(200);
+    expect(found.body).toEqual({ id: lent.id, memberId: lent.memberId, toolId: lent.toolId, borrowedAt: lent.borrowedAt, dueDate: lent.dueDate });
+  });
+
+  it('TL-LEND-EP08-R02-T01 A tool not on loan, or unknown, gives 404 loan_not_found', async () => {
+    const { t, lent, notOnLoan, unknown } = await findLoans();
+    expect(notOnLoan).toMatchObject({ status: 404, body: { error: 'loan_not_found' } });
+    expect(unknown).toMatchObject({ status: 404, body: { error: 'loan_not_found' } });
+    await api.call('POST', `/loans/${lent.id}/return`, { condition: 'good' });
+    expect(await api.call('GET', `/tools/${t}/loan`)).toMatchObject({ status: 404, body: { error: 'loan_not_found' } });
+  });
+
   it('TL-LEND-UC04-R01-T01 A return without a valid condition is rejected', async () => {
     const { t, responses } = await returnWithoutCondition();
     for (const res of responses) expect(res.body.message).toMatch(/condition/);
