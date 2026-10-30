@@ -221,6 +221,19 @@ const DESKTOP: State[] = [
     await page.locator('.chat-tool-row').first().click();
     await page.locator('.chat-tool-body').waitFor();
   } },
+  { name: 'the chat, its permission mode menu open', run: async (page) => {
+    await withChat(page, RECORD.slice(1));
+    await open(page, RECORD, '.chat-log .chat-item');
+    await page.locator('.chat-mode-button').click();
+    await page.locator('.chat-mode-menu').waitFor();
+  } },
+  { name: 'the chat, the warning before Bypass, and its badge once on', run: async (page) => {
+    await withChat(page, RECORD.slice(1));
+    await open(page, RECORD, '.chat-log .chat-item');
+    await page.locator('.chat-mode-button').click();
+    await page.locator('.chat-mode-item.is-bypass').click();
+    await page.locator('.chat-bypass-warning').waitFor();
+  } },
   { name: 'the chat, its session picker warning of a session open elsewhere', run: async (page) => {
     await withChat(page, RECORD.slice(1), 'picker');
     await open(page, RECORD, '.chat-session-open');

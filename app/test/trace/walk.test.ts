@@ -46,6 +46,6 @@ describe('the Trace stage\'s walk', () => {
     expect(nodeWords(index, map, map.nodes.get('P-D-UC01-R01|file:test/lend.test.ts')!)).toBe('File test/lend.test.ts');
     expect(nodeWords(index, map, map.nodes.get('untraced')!)).toMatch(/^Untraced, \d+ records no chain reaches$/);
     // From the product an arrow goes in.
-    expect(walk(map, 'P', ['right'])[0]).toBe(map.map.nodes.get('P')!.children[0]);
+    expect(walk(map, 'P', ['right'])[0]).toBe(map.tree.get('P')!.children[0]);
   });
 });

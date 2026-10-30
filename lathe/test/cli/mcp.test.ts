@@ -5,7 +5,7 @@ import path from 'node:path';
 import { PassThrough } from 'node:stream';
 import { afterAll, describe, expect, it } from 'vitest';
 import { loadProducts, openStore, SCHEMA_VERSION } from '../../src/index.ts';
-import { callTool, serveMcp, tools, type Tool } from '../../src/cli/mcp.ts';
+import { callTool, serveMcp, tools, VIEW_ONLY_REFUSAL, type Tool } from '../../src/cli/mcp.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../../src/commands.ts';
 import { toolName } from '../../src/platform/commands/definition.ts';
 import { everyKind, removeData, writeData } from '../store/fixture.ts';
@@ -116,3 +116,51 @@ describe('the server', () => {
     for (const id of [3, 4]) expect(byId(id).result).toEqual({ content: [{ type: 'text', text: message }], structuredContent: { refused: true, problems: [{ rule: 'schema-version', message }] }, isError: true });
   });
 });
+
+/** Serves the tools over streams, sends the messages, and gives each answer by its ID. */
+async function exchange(root: string, messages: object[], app: Parameters<typeof serveMcp>[3], viewOnly: boolean) {
+  const input = new PassThrough();
+  const output = new PassThrough();
+  let received = '';
+  output.on('data', (chunk) => (received += chunk));
+  const served = serveMcp(root, input, output, app, viewOnly);
+  for (const message of messages) input.write(`${JSON.stringify({ jsonrpc: '2.0', ...message })}\n`);
+  input.end();
+  await served;
+  const all = received.trim().split('\n').map((l) => JSON.parse(l));
+  return (id: number) => all.find((m) => m.id === id);
+}
+
+describe('LA-PLT-UC19-R09-T02 In View only, the server lists only the reads and refuses every command', () => {
+  it('marks every query and the check read only, lists only them in View only, and refuses a command there, changing nothing', async () => {
+    const root = writeData(everyKind());
+    const all = tools(await schemaOf(root));
+    expect(all.filter((t) => t.annotations?.readOnlyHint).map((t) => t.name)).toEqual(['check', ...ALL_QUERIES.map(toolName)]);
+    expect(tools(await schemaOf(root), true).map((t) => t.name)).toEqual(['check', ...ALL_QUERIES.map(toolName)]);
+    const before = readFileSync(path.join(root, 'data', 'view.jsonl'), 'utf8');
+    const answer = await exchange(root, [
+      { id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {} } },
+      { id: 2, method: 'tools/list' },
+      { id: 3, method: 'tools/call', params: { name: 'view_add_view', arguments: { id: 'TL-V09', title: 'Desk', description: 'The desk.' } } },
+      { id: 4, method: 'tools/call', params: { name: 'product_get_product', arguments: { id: 'TL' } } },
+    ], null, true);
+    expect(answer(1).result.instructions).toContain('This chat is View only');
+    expect(answer(2).result.tools.map((t: Tool) => t.name)).not.toContain('view_add_view');
+    expect(answer(3).result).toEqual({ content: [{ type: 'text', text: VIEW_ONLY_REFUSAL }], structuredContent: { refused: true, problems: [{ rule: 'view-only', message: VIEW_ONLY_REFUSAL }] }, isError: true });
+    expect(answer(4).result.isError).toBeUndefined();
+    expect(readFileSync(path.join(root, 'data', 'view.jsonl'), 'utf8')).toBe(before);
+  });
+});
+
+describe('LA-PLT-UC19-R12-T02 Under the desktop chat, the server tells Claude to use the app tools for the window', () => {
+  it('says so in its instructions only with an app window, and marks app_focus read only', async () => {
+    const root = writeData(everyKind());
+    const init = [{ id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {} } }, { id: 2, method: 'tools/list' }];
+    const withApp = await exchange(root, init, { url: 'http://127.0.0.1:1/windows/w', token: 't' }, false);
+    expect(withApp(1).result.instructions).toContain('use them for anything about the window; never search the code or the files to find what the window shows.'.replace('use', 'Use'));
+    expect(withApp(2).result.tools.find((t: Tool) => t.name === 'app_focus').annotations).toEqual({ readOnlyHint: true });
+    const alone = await exchange(root, init, null, false);
+    expect(alone(1).result.instructions).not.toContain('app_focus');
+  });
+});
+

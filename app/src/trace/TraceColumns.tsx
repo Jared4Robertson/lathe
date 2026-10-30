@@ -260,7 +260,7 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
     const known = plates.get(`${compact ? 'c' : 'f'}|${key}`);
     if (known) return known;
     const n = map.nodes.get(key);
-    const node = map.map.nodes.get(key);
+    const node = map.tree.get(key);
     if (!n || !node || node.parent === null) return null;
     const label = nodeLabel(index, n);
     const border = (s: number) => BORDER * s;
@@ -351,7 +351,7 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
   // The keyboard's ring: the node the table's focused link or the walk stands for, its column scrolled to show it.
   useEffect(() => {
     ring.current = ringAt ? map.nodes.get(ringAt)?.id ?? null : null;
-    const parent = ringAt ? map.map.nodes.get(ringAt)?.parent : null;
+    const parent = ringAt ? map.tree.get(ringAt)?.parent : null;
     const i = parent ? columns.findIndex((x) => x.parent === parent) : -1;
     const c = columns[i];
     if (c && ringAt) scrolls.current.set(c.parent, scrollToShow(c.keys.length, c.keys.indexOf(ringAt), viewHeight(), scrollOf(c, sizes[i]), sizes[i].h));
@@ -450,7 +450,7 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
         boxes: frameAt(v, s, whole).map(({ plate: p, column, compact, chosen, count }) => {
           const n = map.nodes.get(p.place)!;
           return {
-            key: p.place, id: p.id, role: n.role, parent: map.map.nodes.get(p.place)?.parent ?? null, opens: n.opens, focus: p.id === focus, hover: hover.current === p.id, ring: ring.current === p.id,
+            key: p.place, id: p.id, role: n.role, parent: map.tree.get(p.place)?.parent ?? null, opens: n.opens, focus: p.id === focus, hover: hover.current === p.id, ring: ring.current === p.id,
             lit: null, strength: strength(p.place), change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(p.id)),
             dashed: p.dashed, kind: p.kind, stage: p.stage, meta: p.lines.filter((l) => l.face === 'meta').map((l) => l.text).join(''), name: plateName(p, p.id === focus), textScale: p.text,
             rect: { left: r.left + p.x * v.zoom + v.x, top: r.top + p.y * v.zoom + v.y, width: p.w * v.zoom, height: p.h * v.zoom },

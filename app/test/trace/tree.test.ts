@@ -4,12 +4,14 @@ import { modelWorkspace } from '../fixtures/model';
 import { gap } from '../fixtures/workspace';
 import { repoData } from '../fixtures/repo';
 import { obligationsUnder } from '../../src/trace/chain';
-import { focusKey, keptFor, traceFade, traceMap, type TraceMap } from '../../src/trace/tree';
+import { focusKey, keptFor, traceFade, traceInput, traceMap, type TraceMap } from '../../src/trace/tree';
 import { OUTSIDE, UNTRACED } from '../../src/trace/top';
 import { traced } from './traces';
 import { CHILD_READ_PX, drawnFor, frameFocus, frameMap, frameOnMap, MAX_DRAWN, viewRect } from '../../src/graph/camera';
-import { TITLE_FONT } from '../../src/graph/text';
+import { textMeasure, TITLE_FONT } from '../../src/graph/text';
 import { treeText } from '../../src/graph/map';
+import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
+import { layoutTree } from '../graph/maps';
 
 // The Trace stage's tree (app/src/trace/tree.ts): one tree per product laid out by the Graph's Tree layout, below its
 // top the record tree down to each obligation and its chain to its right by the chain's links, gaps as dashed boxes, the
@@ -26,10 +28,12 @@ function withOutcomes() {
 }
 
 const FADE = { focusFade: 0.25 };
-const childrenOf = (m: TraceMap, key: string) => m.map.nodes.get(key)!.children;
+const childrenOf = (m: TraceMap, key: string) => m.tree.get(key)!.children;
+/** The map's boxes, as the canvas lays them out (graph/layout.ts), on this thread. */
+const laid = (m: TraceMap, index: RecordIndex) => { const input = traceInput(m, index, textMeasure().key); return layoutTree([m.product], (k) => m.tree.get(k)!.children, (k) => input.labels[input.shape.ids.indexOf(k)]); };
 const idsUnder = (m: TraceMap, key: string) => childrenOf(m, key).map((k) => m.nodes.get(k)!.id);
 /** Every box's place, as a snapshot. */
-const positions = (m: TraceMap) => JSON.stringify([...m.map.nodes.values()].map((n) => [n.id, n.x, n.y, n.w, n.h, n.text]));
+const positions = (m: TraceMap, index: RecordIndex) => JSON.stringify([...laid(m, index).nodes.values()].map((n) => [n.id, n.x, n.y, n.w, n.h, n.text]));
 
 describe('the Trace stage\'s tree', () => {
   it('LA-V98-R03-T03 The tree\'s children rule: each outcome to its use cases, their requirements and each one\'s chain to the right, Not under an outcome by domain, a shared record repeated with its count', () => {
@@ -74,10 +78,11 @@ describe('the Trace stage\'s tree', () => {
     expect(map.counts.obligations).toBe(obligationsUnder(index, 'P').length);
     // Sized by the Graph's Tree layout: siblings share one size and text scale, at most their width's share; a parent with
     // fewer children holds larger ones.
-    const domain = childrenOf(map, 'P-D').map((k) => map.map.nodes.get(k)!);
+    const geo = laid(map, index);
+    const domain = childrenOf(map, 'P-D').map((k) => geo.nodes.get(k)!);
     expect(new Set(domain.map((n) => `${n.w} ${n.h} ${n.text}`)).size).toBe(1);
     expect(domain[0].text).toBeLessThanOrEqual(treeText(domain[0].w));
-    expect(map.map.nodes.get('P-BO01|P-D-UC01')!.h).toBeGreaterThan(map.map.nodes.get(r01)!.h);
+    expect(geo.nodes.get('P-BO01|P-D-UC01')!.h).toBeGreaterThan(geo.nodes.get(r01)!.h);
   });
 
   it('LA-V98-R04-T03 A gap is a dashed box beside its obligation, and Gaps only fades the complete branches', () => {
@@ -156,55 +161,57 @@ describe('the Trace stage\'s tree', () => {
   it('LA-PAT-APP-UX-R19-T01 The Trace tree is laid out once: focusing two records and toggling Gaps only moves no box', () => {
     const { index, traces } = withOutcomes();
     const map = traceMap(index, traces, 'P');
-    const before = positions(map);
+    const before = positions(map, index);
     for (const focus of ['P-D-UC01-R01', 'P-D-CMD01', 'P-D-CAP01']) {
       const key = focusKey(map, index, focus);
       traceFade(map, keptFor(map, focus, key), true, FADE)(key);
       traceFade(map, keptFor(map, focus, key), false, FADE)(key);
     }
-    expect(positions(map)).toBe(before);
+    expect(positions(map, index)).toBe(before);
     // The same tree for the same product and data; a new tree, laid out once, for new data.
     expect(traceMap(index, traces, 'P')).toBe(map);
     const next = withOutcomes();
     const again = traceMap(next.index, next.traces, 'P');
     expect(again).not.toBe(map);
-    expect(positions(again)).toBe(before);
+    expect(positions(again, next.index)).toBe(before);
   });
 
   it('LA-V98-R06-T03 Only what is in view is drawn, at most 260 boxes, the runs too small to see as bars', async () => {
     const { index, traces } = traced(await repoData({ chains: true }), 'LA');
     const map = traceMap(index, traces, 'LA');
-    expect(map.map.nodes.size).toBeGreaterThan(MAX_DRAWN * 10);
+    const geo = laid(map, index);
+    expect(geo.nodes.size).toBeGreaterThan(MAX_DRAWN * 10);
     // Far out, the whole tree: at most the budget as boxes, the rest as bars.
-    const far = drawnFor(map.map, frameMap(map.map, 1440, 900), 1440, 900);
+    const far = drawnFor(geo, frameMap(geo, 1440, 900), 1440, 900);
     expect(far.boxes.length).toBeLessThanOrEqual(MAX_DRAWN);
     expect(far.bars.length).toBeGreaterThan(0);
     // Framed on a requirement: only boxes that meet the view, and the requirement among them.
     const requirement = obligationsUnder(index, 'LA').find((o) => index.byId.get(o)!.kind === 'uc_requirement')!;
     const key = map.copies.get(requirement)![0];
-    const v = frameOnMap(map.map, key, 1, 1440, 900, 1e9);
+    const v = frameOnMap(geo, key, 1, 1440, 900, 1e9);
     const r = viewRect(v, 1440, 900);
-    const near = drawnFor(map.map, v, 1440, 900, [key]);
+    const near = drawnFor(geo, v, 1440, 900, [key]);
     expect(near.boxes.map((b) => b.id)).toContain(key);
-    for (const b of near.boxes) { const n = map.map.nodes.get(b.id)!; expect(n.x + n.w >= r.x0 && n.x <= r.x1 && n.y + n.h >= r.y0 && n.y <= r.y1, b.id).toBe(true); }
+    for (const b of near.boxes) { const n = geo.nodes.get(b.id)!; expect(n.x + n.w >= r.x0 && n.x <= r.x1 && n.y + n.h >= r.y0 && n.y <= r.y1, b.id).toBe(true); }
   }, 120_000);
 
   it("LA-V98-R03-T05 An outcome's use cases and a domain's parents read when focused: the camera frames their column", async () => {
     const { index, traces } = traced(await repoData({ chains: true }), 'LA');
     const map = traceMap(index, traces, 'LA');
     // The outcome holding the most use cases, and the Traceability domain under Not under an outcome.
-    const outcome = [...map.map.nodes.values()].filter((n) => index.byId.get(n.id)?.kind === 'business_outcome').sort((a, b) => b.children.length - a.children.length)[0];
+    const geo = laid(map, index);
+    const outcome = [...geo.nodes.values()].filter((n) => index.byId.get(n.id)?.kind === 'business_outcome').sort((a, b) => b.children.length - a.children.length)[0];
     expect(outcome.children.length, 'an outcome with several use cases').toBeGreaterThan(4);
     for (const focus of [outcome.id, focusKey(map, index, 'LA-TRC')]) {
-      const node = map.map.nodes.get(focus)!;
-      const first = map.map.nodes.get(node.children[0])!;
+      const node = geo.nodes.get(focus)!;
+      const first = geo.nodes.get(node.children[0])!;
       for (const [w, h] of [[1000, 700], [770, 640]] as const) {
         const titlePx = (zoom: number) => first.text * zoom * TITLE_FONT;
-        expect(titlePx(frameFocus(map.map, node, 1, w, h, 1e9).zoom), `${focus} in its own frame`).toBeLessThan(CHILD_READ_PX);
-        const v = frameOnMap(map.map, focus, 1, w, h, 1e9);
+        expect(titlePx(frameFocus(geo, node, 1, w, h, 1e9).zoom), `${focus} in its own frame`).toBeLessThan(CHILD_READ_PX);
+        const v = frameOnMap(geo, focus, 1, w, h, 1e9);
         expect(titlePx(v.zoom), focus).toBeGreaterThanOrEqual(CHILD_READ_PX * (1 - 1e-9));
         // The first child in view and every child in view whole (a long column runs on below, from its first); the focus at the left of them.
-        const kids = node.children.map((k) => map.map.nodes.get(k)!);
+        const kids = node.children.map((k) => geo.nodes.get(k)!);
         const seen = kids.filter((c) => (c.y + c.h) * v.zoom + v.y > 0 && c.y * v.zoom + v.y < h);
         expect(seen[0], focus).toBe(kids[0]);
         for (const c of seen) {

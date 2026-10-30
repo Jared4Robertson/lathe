@@ -3,7 +3,6 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { type ServedData } from './read-view';
 import { repoData } from './fixtures/repo';
 import { type RecordIndex } from '../src/exploring/record-summaries/record-index';
-import { graphMap } from '../src/graph/map';
 import { GRAPH_LAYOUTS } from '../src/graph/GraphPage';
 import { graphTarget } from '../src/graph/steps';
 import { erdLayout } from '../src/erd/layout';
@@ -13,6 +12,7 @@ import { traced, tracesOf } from './trace/traces';
 import { erdOf } from './erd-of';
 import { traceTarget } from '../src/trace/walk';
 import { MOVES, reachable } from '../src/views/levels';
+import { graphMap } from './graph/maps';
 
 // Every node is reachable by keyboard (LA-PAT-APP-UX-R21): on Lathe's own spec, a breadth-first search over every move
 // of the stage walk (the arrows, which W, A, S and D take too, and Out and In) from the product reaches every node each
@@ -54,7 +54,7 @@ describe('every node is reachable by keyboard', () => {
 
   it('LA-PAT-APP-UX-R21-T02 On the Trace, every box of the tree is reached from the product', () => {
     const map = traceMap(index, tracesOf(data, PRODUCT), PRODUCT);
-    expect(map.map.nodes.size).toBeGreaterThan(1000);
+    expect(map.tree.size).toBeGreaterThan(1000);
     const seen = new Set([map.product]);
     const queue = [map.product];
     for (let i = 0; i < queue.length; i++) {
@@ -63,6 +63,6 @@ describe('every node is reachable by keyboard', () => {
         if (to !== null && !seen.has(to)) { seen.add(to); queue.push(to); }
       }
     }
-    expect(missed(map.map.nodes.keys(), seen), 'unreachable').toEqual([]);
+    expect(missed(map.tree.keys(), seen), 'unreachable').toEqual([]);
   }, 120_000);
 });

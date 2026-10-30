@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Starts Lathe's MCP server for the project Claude Code is working in: finds the repo with lathe.config.json at or
-// above the project folder, and runs that repo's own `lathe mcp`, so the tools always match its installed Lathe and
-// its schema. The server speaks over this process's stdin and stdout. When the installed Lathe's major version is not
-// the one the plugin's skills were written for (plugin.json's lathe.major), the first tool result says so, once.
+// above the project folder, and runs that repo's own `lathe mcp` (or, under the desktop app's chat, the Lathe its
+// window runs, LATHE_CLI), so the tools always match the Lathe that reads its data and its schema. The server speaks
+// over this process's stdin and stdout. When the installed Lathe's major version is not the one the plugin's skills
+// were written for (plugin.json's lathe.major), the first tool result says so, once.
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import { createInterface } from 'node:readline';

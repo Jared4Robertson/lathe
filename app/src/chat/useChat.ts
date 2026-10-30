@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import type { ChatBridge, ChatItem, ChatPatch, ChatStatus } from './types';
+import type { ChatBridge, ChatItem, ChatMode, ChatPatch, ChatStatus, LatheTools, PromptAnswer } from './types';
 
 // The window's chat as the page keeps it (LA-PLT-UC19): the items and status the shell sends as
 // patches, and the turns, each with the spec as it was when the turn began, so the panel can show
@@ -22,9 +22,13 @@ export interface ChatView {
   turns: Turn[];
   /** Whether the window has a chat open at all (a session picked). */
   open: boolean;
+  /** The open chat's permission mode; null with none open. */
+  mode: ChatMode | null;
+  /** The Lathe tools the open chat has; null with none open. */
+  lathe: LatheTools | null;
 }
 
-const EMPTY: ChatView = { sessionId: null, status: 'closed', items: [], turns: [], open: false };
+const EMPTY: ChatView = { sessionId: null, status: 'closed', items: [], turns: [], open: false, mode: null, lathe: null };
 
 /** Applies a patch to the items: a reset replaces them, otherwise each item lands at its position. */
 export function applyPatch(items: ChatItem[], patch: ChatPatch): ChatItem[] {
@@ -51,12 +55,13 @@ export function useChat(bridge: ChatBridge, index: RecordIndex | null) {
         const start = Math.max(0, items.findLastIndex((i) => i.kind === 'user'));
         turns = [...turns.map((t, n) => (n === turns.length - 1 && t.after === null ? { ...t, after: now } : t)), { start, before: now, after: null }];
       }
-      return { sessionId: patch.sessionId, status: patch.status, items, turns, open: true };
+      return { sessionId: patch.sessionId, status: patch.status, items, turns, open: true, mode: patch.mode, lathe: patch.lathe };
     });
   }), [bridge]);
 
-  const send = useCallback((text: string) => bridge.send(text), [bridge]);
-  const answer = useCallback((id: string, allow: boolean) => bridge.answer(id, allow), [bridge]);
+  const send = useCallback((text: string, focus: string | null) => bridge.send(text, focus), [bridge]);
+  const answer = useCallback((id: string, reply: PromptAnswer) => bridge.answer(id, reply), [bridge]);
   const stop = useCallback(() => bridge.stop(), [bridge]);
-  return { view, send, answer, stop };
+  const setMode = useCallback((mode: ChatMode) => bridge.setMode(mode), [bridge]);
+  return { view, send, answer, stop, setMode };
 }
