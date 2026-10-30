@@ -1,10 +1,11 @@
 // Product window (LA-PLT-A6): the desktop windows open on product folders, one per folder, while the shell runs;
-// each folder's window place (size and position), remembered between launches; and the chrome colors the pages
-// last sent, so a new window opens in the theme's shell color (LA-V68-R01). The places are pure functions over a
-// plain object, so they are unit-tested.
+// each folder's window place (size and position), remembered between launches; the chrome colors the pages
+// last sent, so a new window opens in the theme's shell color (LA-V68-R01); and each folder's chat permission
+// mode (LA-PLT-UC19-R09), so a new chat there starts in the mode its last one had. The places are pure functions
+// over a plain object, so they are unit-tested.
 import type { BrowserWindow, WebContentsView } from 'electron';
 import path from 'node:path';
-import type { ChatState } from '../chat.ts';
+import { DEFAULT_MODE, isChatMode, type ChatMode, type ChatState } from '../chat.ts';
 import type { ChatSession } from '../chatSession.ts';
 import type { Chrome, SavedChrome } from '../chrome.ts';
 import type { LaunchModel } from '../launch.ts';
@@ -37,12 +38,36 @@ export interface OpenWindow {
   chatTimer?: NodeJS.Timeout;
 }
 
-/** The whole aggregate: the open windows by folder, the saved places by folder, and the saved chrome. */
+/** The whole aggregate: the open windows by folder, the saved places by folder, the saved chrome, and the chat modes by folder. */
 export interface ProductWindows {
   open: ReadonlyMap<string, OpenWindow>;
   places: WindowStates;
   chrome: SavedChrome;
+  modes: ChatModes;
 }
+
+/** Each folder's chat mode, by full path; a folder not listed starts in the default mode, which is never kept. */
+export type ChatModes = Readonly<Record<string, ChatMode>>;
+
+/** Reads the saved chat modes, keeping only full paths with a mode Lathe knows, other than the default. */
+export function parseChatModes(raw: unknown): ChatModes {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
+  const modes: Record<string, ChatMode> = {};
+  for (const [folder, mode] of Object.entries(raw as Record<string, unknown>)) {
+    if (path.isAbsolute(folder) && isChatMode(mode) && mode !== DEFAULT_MODE) modes[path.resolve(folder)] = mode;
+  }
+  return modes;
+}
+
+/** The modes with this folder's chat mode chosen. */
+export function chooseMode(modes: ChatModes, folder: string, mode: ChatMode): ChatModes {
+  const full = path.resolve(folder);
+  const { [full]: _was, ...rest } = modes;
+  return mode === DEFAULT_MODE ? rest : { ...rest, [full]: mode };
+}
+
+/** The mode a folder's chat starts in: its last chat's, else the default. */
+export const startingMode = (modes: ChatModes, folder: string): ChatMode => modes[path.resolve(folder)] ?? DEFAULT_MODE;
 
 export interface Bounds {
   x?: number;

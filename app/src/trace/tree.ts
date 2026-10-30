@@ -1,6 +1,7 @@
 import type { ProductTraces } from '../../../lathe/src/traceability/trace/read-model';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { layoutTree, type GraphMap } from '../graph/map';
+import { treeShape } from '../graph/map';
+import { mapInput, type MapInput } from '../graph/layout-input';
 import { treeChildren, treeParent } from '../graph/tree';
 import { treeLabel, type MapLabel } from '../graph/text';
 import { faintest, keptFade, type Fade, type FadeLook } from '../graph/fade';
@@ -8,8 +9,9 @@ import { onePerData } from '../graph/one-map';
 import { fileKey, traceChain, untracedUnder, type GapColumn } from './chain';
 import { OUTSIDE, traceTop, UNTRACED } from './top';
 
-// The Trace stage's map (LA-V98), pure and tested directly: one tree per product, laid out once per product and data
-// change by the Graph's own Tree layout (graph/map.ts layoutTree), so it sizes, paints and moves as the Graph's Tree
+// The Trace stage's map (LA-V98), pure and tested directly: one tree per product, worked out once per product and data
+// change, and laid out by the Graph's own Tree layout off the main thread (graph/layout.ts, traceInput), again only when
+// what it reads changes, so it sizes, paints and moves as the Graph's Tree
 // does (LA-EXP-DS06, LA-PAT-APP-UX-R19). Only the children rule differs: branches follow trace links, not stages and
 // folders, so each trace reads left to right from a business outcome to its tests.
 //
@@ -46,10 +48,13 @@ export interface TraceNode {
   note?: string;
 }
 
-/** One product's Trace map: the Graph's Tree map of its tree, and what each node is. */
+/** A node's place in the Trace map's tree: its parent, its children and its depth (its box is the canvas's, laid out off the main thread). */
+export interface TraceBranch { parent: string | null; children: readonly string[]; level: number }
+
+/** One product's Trace map: its tree, and what each node is; the canvas lays it out as the Graph's Tree map (traceInput). */
 export interface TraceMap {
   product: string;
-  map: GraphMap;
+  tree: ReadonlyMap<string, TraceBranch>;
   nodes: ReadonlyMap<string, TraceNode>;
   /** Every node of each record ID, in the tree's order. */
   copies: ReadonlyMap<string, readonly string[]>;
@@ -143,12 +148,12 @@ export function nodeLabel(index: RecordIndex, n: TraceNode): MapLabel {
   return n.note ? { ...label, meta: `${label.meta} · ${n.note}` } : label;
 }
 
-/** Each Trace read's layouts, one per product and data change. */
+/** Each Trace read's trees, one per product and data change. */
 const mapsOf = new WeakMap<ProductTraces, (index: RecordIndex, product: string) => TraceMap>();
 
 /**
- * A product's Trace map, laid out once per product and data change (one-map.ts) by the Graph's Tree layout, and again
- * for each answer of its Trace read (list-traces), which follows each data change.
+ * A product's Trace map, its tree worked out once per product and data change (one-map.ts), and again for each answer
+ * of its Trace read (list-traces), which follows each data change; the canvas lays it out (traceInput).
  */
 export function traceMap(index: RecordIndex, traces: ProductTraces, product: string): TraceMap {
   let layout = mapsOf.get(traces);
@@ -174,14 +179,29 @@ function layOut(index: RecordIndex, traces: ProductTraces, product: string): Tra
     const note = [capabilityNote(index, n.id), count > 1 ? `in ${count} places` : undefined].filter(Boolean).join(' · ');
     if (note) n.note = note;
   }
-  const map = layoutTree([product], (key) => children.get(key) ?? [], (key) => nodeLabel(index, nodes.get(key)!));
+  const shape = treeShape([product], (key) => children.get(key) ?? []);
+  const tree = new Map<string, TraceBranch>();
+  shape.ids.forEach((key, i) => tree.set(key, { parent: shape.parents[i] < 0 ? null : shape.ids[shape.parents[i]], children: shape.children[i].map((c) => shape.ids[c]), level: shape.levels[i] }));
   // The keys above an obligation with a gap.
   const above = new Set<string>();
-  for (const o of built.gapped) for (let up = map.nodes.get(o)?.parent ?? null; up !== null && !above.has(up); up = map.nodes.get(up)?.parent ?? null) above.add(up);
+  for (const o of built.gapped) for (let up = tree.get(o)?.parent ?? null; up !== null && !above.has(up); up = tree.get(up)?.parent ?? null) above.add(up);
   return {
-    product, map, nodes, copies, links: built.links, gapped: built.gapped, above,
+    product, tree, nodes, copies, links: built.links, gapped: built.gapped, above,
     counts: { obligations: built.obligations, withGaps: built.withGaps, untraced: built.untraced },
   };
+}
+
+const inputs = new WeakMap<TraceMap, Map<string, MapInput>>();
+/** The input the canvas lays a Trace map out from (graph/layout.ts), with a text measure: made once per map and measure. */
+export function traceInput(map: TraceMap, index: RecordIndex, measure: string): MapInput {
+  let known = inputs.get(map);
+  if (!known) { known = new Map(); inputs.set(map, known); }
+  let input = known.get(measure);
+  if (!input) {
+    input = mapInput('tree', [map.product], (key) => map.tree.get(key)?.children ?? [], (key) => nodeLabel(index, map.nodes.get(key)!), measure);
+    known.set(measure, input);
+  }
+  return input;
 }
 
 // ---------- Focusing ----------
@@ -211,7 +231,7 @@ export const copyInChain = (map: TraceMap, id: string, chain: string | null): st
 
 /** Whether a key lies under (or is) one of some keys. */
 function under(map: TraceMap, key: string, tops: ReadonlySet<string>): boolean {
-  for (let at: string | null = key; at !== null; at = map.map.nodes.get(at)?.parent ?? null) if (tops.has(at)) return true;
+  for (let at: string | null = key; at !== null; at = map.tree.get(at)?.parent ?? null) if (tops.has(at)) return true;
   return false;
 }
 
@@ -246,7 +266,7 @@ export const lineKey = (parent: string, child: string) => `${parent}>${child}`;
 export function linesAt(map: TraceMap, keys: readonly string[]): { key: string; from: string; to: string }[] {
   const out: { key: string; from: string; to: string }[] = [];
   for (const k of keys) {
-    const n = map.map.nodes.get(k);
+    const n = map.tree.get(k);
     if (!n) continue;
     if (n.parent !== null) out.push({ key: lineKey(n.parent, k), from: n.parent, to: k });
     for (const c of n.children) out.push({ key: lineKey(k, c), from: k, to: c });

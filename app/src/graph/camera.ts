@@ -117,7 +117,7 @@ function placeRows(row: readonly MapNode[], i: number, j: number, fit: { top: nu
  * column is short boxes), it frames the children's column instead (frameChildren): the children read, and the focus
  * keeps the strip at the left edge.
  */
-export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number, max = MAX_ZOOM): Viewport {
+export function frameOnMap(map: GraphMap, focus: string, depth: number, width: number, height: number, max = MAX_ZOOM, stripFor?: StripFor): Viewport {
   const node = map.nodes.get(focus);
   if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: 1 };
   const v = frameFocus(map, node, depth, width, height, max);
@@ -125,9 +125,17 @@ export function frameOnMap(map: GraphMap, focus: string, depth: number, width: n
   const first = map.nodes.get(node.children[0])!;
   const read = Math.min(max, CHILD_READ_PX / (first.text * TITLE_FONT));
   if (!(first.text > 0) || v.zoom >= read * (1 - 1e-9)) return v;
-  const children = frameChildren(map, node, depth, width, height, read, max);
+  const children = frameChildren(map, node, depth, width, height, read, max, stripFor);
   return children.zoom > v.zoom ? children : v;
 }
+
+/**
+ * The least width on screen, at a zoom, the focus's strip needs for its label to read (its title at CHILD_READ_PX or
+ * more), when its children's column is framed (frameChildren); 0 when the label needs no more than the strip has.
+ */
+export type StripFor = (zoom: number) => number;
+/** The most of the pane's width the focus's strip may take for its label to read: the children's column keeps the rest. */
+export const STRIP_MOST = 0.45;
 
 /**
  * Whole rows of the focus's level, from `left` (the parent's right edge, or the focus's own when its children's column
@@ -193,9 +201,22 @@ export function frameFocus(map: GraphMap, node: MapNode, depth: number, width: n
  * focus with many children), whole rows of its children from the first, as many as read. Should the width not let
  * the children read, they are framed as large as it lets them be.
  */
-function frameChildren(map: GraphMap, node: MapNode, depth: number, width: number, height: number, read: number, max: number): Viewport {
+function frameChildren(map: GraphMap, node: MapNode, depth: number, width: number, height: number, read: number, max: number, stripFor?: StripFor): Viewport {
+  // The strip the parent's level keeps in the focus's own frame, widened as the focus's label needs to read (its title
+  // at CHILD_READ_PX, as its children's), up to STRIP_MOST of the width: the strip and the zoom settle together.
+  const base = Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP);
+  let v = childrenFrame(map, node, depth, width, height, read, max, base);
+  for (let round = 0, strip = base; stripFor && round < 4; round++) {
+    const need = Math.min(width * STRIP_MOST, Math.max(base, stripFor(v.zoom)));
+    if (need <= strip + 0.5) break;
+    strip = need;
+    v = childrenFrame(map, node, depth, width, height, read, max, strip);
+  }
+  return v;
+}
+
+function childrenFrame(map: GraphMap, node: MapNode, depth: number, width: number, height: number, read: number, max: number, strip: number): Viewport {
   const left = node.x + node.w;
-  const strip = Math.min(PARENT_STRIP_MAX, width * PARENT_STRIP);
   const zoomFor = (edge: { right: number; pad: number }) => Math.min(max, (width - strip - FRAME_PADDING - edge.pad) / (edge.right - left));
   const level = map.byLevel[node.level];
   const own = level.indexOf(node);
@@ -297,6 +318,13 @@ export function zoomPath(from: Viewport, to: Viewport, width: number, height: nu
 export const glideDuration = (speed: number, S: number) => speed * Math.min(2, Math.max(1, S / 1.5));
 
 // ---------- Level of detail ----------
+
+/**
+ * A box whose title would be drawn smaller than this on screen, in CSS pixels, is drawn as a plain block, with no label,
+ * icons, badges, fields or decoration (LA-EXP-DS10): below it no text can be read. Every canvas stage's (paint.ts) and
+ * the ERD's.
+ */
+export const BLOCK_BELOW_PX = 5;
 
 /** A node too small to see on screen (in pixels) is not drawn: its parent draws a bar for it and its siblings that are as small. */
 export const MIN_DRAWN = 3;

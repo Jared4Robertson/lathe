@@ -27,7 +27,7 @@ const display = { x: 0, y: 0, width: 1728, height: 1080 };
 describe('LA-PLT-A6-SR01 a window\'s place is kept across launches', () => {
   it('LA-PLT-A6-SR01-T01 a saved window reopens at its place after a relaunch, and a broken file is a fresh start', () => {
     const file = userData();
-    const files = { places: file('window-state.json'), chrome: file('chrome.json') };
+    const files = { places: file('window-state.json'), chrome: file('chrome.json'), modes: file('chat-modes.json') };
     const first = new ProductWindowRepository(files);
     const windows = first.load();
     first.save({ ...windows, places: saveWindow(windows.places, '/p/lathe', { x: 100, y: 80, width: 1400, height: 900, maximized: true }) });

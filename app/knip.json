@@ -1,7 +1,8 @@
 {
   "$schema": "https://unpkg.com/knip@6/schema.json",
   "entry": [
-    "server/lathe.ts"
+    "server/lathe.ts",
+    "perf/retitle.ts"
   ],
   "project": [
     "src/**/*.{ts,tsx}",

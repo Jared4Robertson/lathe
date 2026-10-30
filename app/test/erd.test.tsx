@@ -286,16 +286,21 @@ describe('the ERD stage', () => {
     }
   });
 
+  let runs = 0;
   const proveOneMap = async () => {
+    runs++;
     const map = modelMap();
-    // One layout per answer of the ERD read (each data change): asked again, the same one.
+    // One layout for what the map reads: asked again, the same one; a new answer of the ERD read that changes nothing it
+    // reads (new data elsewhere) reads it too, at once.
     const rects = await erdLayout(map);
     expect(await erdLayout(map)).toBe(rects);
     expect(readyErdLayout(map)).toBe(rects);
-    // A new answer (new data) is laid out anew, once; the map's size decides whether it draws only what is in view.
-    const again = modelMap();
+    expect(readyErdLayout(modelMap())).toBe(rects);
+    // An answer that changes what it reads (a box's title) is laid out anew, once; the map's size decides whether it draws only what is in view.
+    const fresh = modelMap();
+    const again = { ...fresh, boxes: fresh.boxes.map((b) => (b.id === 'P-D-EN05' ? { ...b, title: `${b.title} retitled ${runs}` } : b)) };
     expect(readyErdLayout(again)).toBeUndefined();
-    expect(await erdLayout(again)).toEqual(rects);
+    expect((await erdLayout(again)).get('P-D-EN05')).toBeDefined();
     expect(map.boxes.length).toBeLessThanOrEqual(DRAW_IN_VIEW_PAST);
 
     await openApp('/P-D?stage=erd', served());

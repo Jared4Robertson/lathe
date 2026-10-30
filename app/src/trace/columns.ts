@@ -29,19 +29,19 @@ export interface TraceColumn { parent: string; keys: readonly string[]; chosen: 
 /** The keys from the product down to a key, both included. */
 export function pathTo(map: TraceMap, key: string): string[] {
   const path: string[] = [];
-  for (let at: string | null = key; at !== null; at = map.map.nodes.get(at)?.parent ?? null) path.unshift(at);
+  for (let at: string | null = key; at !== null; at = map.tree.get(at)?.parent ?? null) path.unshift(at);
   return path;
 }
 
 /** How many boxes a box holds: its children on the tree. */
-export const holds = (map: TraceMap, key: string): number => map.map.nodes.get(key)?.children.length ?? 0;
+export const holds = (map: TraceMap, key: string): number => map.tree.get(key)?.children.length ?? 0;
 
 /** The columns for the node the focus stands on (tree.ts focusKey): one per box on its path that holds anything. */
 export function traceColumns(map: TraceMap, at: string): TraceColumn[] {
-  const path = map.map.nodes.has(at) ? pathTo(map, at) : [map.product];
+  const path = map.tree.has(at) ? pathTo(map, at) : [map.product];
   const columns: TraceColumn[] = [];
   for (let i = 0; i < path.length; i++) {
-    const keys = map.map.nodes.get(path[i])!.children;
+    const keys = map.tree.get(path[i])!.children;
     if (keys.length === 0) break;
     columns.push({ parent: path[i], keys, chosen: path[i + 1] ?? null });
   }

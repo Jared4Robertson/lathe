@@ -1,5 +1,5 @@
 import type { Plate } from './plate';
-import { largestFit, linesIn, LINE_HEIGHT, META_FONT, textMeasure, TITLE_FONT, LABEL_PAD_BLOCK, type Face, type MapLabel } from './text';
+import { BORDER, largestFit, linesIn, LINE_HEIGHT, META_FONT, textMeasure, TITLE_FONT, LABEL_PAD, LABEL_PAD_BLOCK, type Face, type MapLabel } from './text';
 
 // Sticky labels (LA-EXP-DS06): a box only partly inside the open space (cut by a floating panel, the nav or the wiki
 // card, or by the canvas's edge) draws its label within its visible part, as a sticky header stays in view: laid out
@@ -11,6 +11,12 @@ import { largestFit, linesIn, LINE_HEIGHT, META_FONT, textMeasure, TITLE_FONT, L
 
 /** A rectangle on the canvas, in its CSS pixels. */
 export interface ScreenBox { left: number; top: number; right: number; bottom: number }
+
+/**
+ * How much of a label's side padding, at its box's scale, its room takes in when it is cut: all but twice a border, which
+ * a focus's wider edge and a shape's decoration (a stack's front sheet) are drawn in.
+ */
+const STICKY_SIDE = LABEL_PAD - 2 * BORDER;
 
 /** The least size, in CSS pixels, a sticky label's title is drawn at: below it the label is not drawn. */
 export const STICKY_READ_PX = 9;
@@ -62,13 +68,50 @@ export function stickyLabel(p: Plate, zoom: number, X: (x: number) => number, Y:
   return { kind: 'moved', lines: laid.lines.map((l) => ({ ...l, x: cx + l.x, baseline: cy + l.baseline })) };
 }
 
-/** The room a cut label is laid out in, on the canvas: the label's content box, inside the box's one fill, cut to the open space. */
+/**
+ * The room a cut label is laid out in, on the canvas: the label's content box with its side padding but twice a border
+ * (the box's one fill, clear of its edge, a focus's wider edge and its shape's decoration), cut to the open space. A
+ * label laid out there keeps its own side padding at its own scale, so it never meets the edge; a box drawn large keeps
+ * no padding at its own large scale, so the strip a focus is framed as holds its label at a readable size (camera.ts
+ * frameOnMap).
+ */
 export function stickyRoom(p: Plate, X: (x: number) => number, Y: (y: number) => number, open: ScreenBox): ScreenBox {
+  const side = STICKY_SIDE * p.text;
   return {
-    left: Math.max(X(p.label.x), open.left), right: Math.min(X(p.label.x + p.label.w), open.right),
+    left: Math.max(X(p.label.x - side), open.left), right: Math.min(X(p.label.x + p.label.w + side), open.right),
     top: Math.max(Y(p.label.y), open.top), bottom: Math.min(Y(p.label.y + p.label.h), open.bottom),
   };
 }
+
+/**
+ * The least width on screen a box's label room needs, `height` tall, to lay its label out with its title at `px` or
+ * more, at no larger a scale than its own at `zoom`; null when its own scale draws it smaller (frameOnMap's strip).
+ */
+export function roomFor(p: Plate, zoom: number, height: number, px: number): number | null {
+  const most = p.text * zoom;
+  const least = px / TITLE_FONT;
+  if (most < least || height <= 0) return null;
+  const pad = (s: number) => -LABEL_PAD_BLOCK * s;
+  const label = { title: p.title, meta: p.meta };
+  const fits = (w: number) => largestFit(label, true, w, height, most, pad) >= least * (1 - 1e-9);
+  let high = Math.max(1, (p.label.w + 2 * STICKY_SIDE * p.text) * zoom);
+  if (!fits(high)) return null;
+  let low = 0;
+  while (high - low > 0.5) {
+    const mid = (low + high) / 2;
+    if (fits(mid)) high = mid; else low = mid;
+  }
+  return high;
+}
+
+/**
+ * The width on screen a focus's strip needs, at a zoom, for its label to read with its title at `px` (camera.ts
+ * frameOnMap's StripFor): its label's room and the padding right of it, in a frame `height` tall; 0 when it cannot.
+ */
+export const labelStrip = (p: Plate, height: number, px: number) => (zoom: number): number => {
+  const room = roomFor(p, zoom, Math.min(height, p.label.h * zoom), px);
+  return room === null ? 0 : room + (p.x + p.w - (p.label.x + p.label.w + STICKY_SIDE * p.text)) * zoom;
+};
 
 /** A label laid out in a room `w` by `h` on the canvas at a scale of at most `most`, its lines centered on the room's middle (0, 0). */
 function layOut(label: MapLabel, w: number, h: number, most: number): Sticky {
