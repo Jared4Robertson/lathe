@@ -1,14 +1,17 @@
 // @vitest-environment node
 import { describe, expect, it } from 'vitest';
+import { PLAIN_LOOK } from '../../src/graph/look';
+import { paint, type PaintState } from '../../src/graph/paint';
 import { plateOf } from '../../src/graph/plate';
 import { keepLabel, STICKY_READ_PX, stickyLabel, stickyRoom, type ScreenBox } from '../../src/graph/sticky';
 import { BORDER, LABEL_PAD, TITLE_FONT, textMeasure } from '../../src/graph/text';
 import { testIndex } from './workspace';
 import { graphMap } from './maps';
 
-// A box only partly in the open space draws its label in its visible part, or not at all (graph/sticky.ts, LA-EXP-DS06).
+// A box only partly in the open space draws its label in its visible part, or, when it cannot fit there, where the map
+// placed it, cut by the edge: no box is drawn empty (graph/sticky.ts, LA-EXP-DS06).
 
-describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s visible part, never drawn half cut', () => {
+describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s visible part, else drawn as placed and cut by the edge', () => {
   const index = testIndex();
   const map = graphMap(index, 'P');
   const node = map.nodes.get('P-D')!;
@@ -20,7 +23,7 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
   const box = { left: 0, top: 0, right: 900, bottom: node.h * zoom };
   const own = plate.text * zoom * TITLE_FONT;
 
-  it('keeps its title when the visible part cannot hold its kind and ID line too, and hides it only when the title cannot fit', () => {
+  it('keeps its title when the visible part cannot hold its kind and ID line too, and draws it as placed, cut by the edge, only when the title cannot fit', () => {
     // A panel over the box's right part and one over its lower part: the visible part shrinks from below.
     const shown = (bottom: number) => stickyLabel(plate, zoom, X, Y, { left: -10, top: -10, right: 600, bottom });
     const labelTop = Y(plate.label.y);
@@ -32,7 +35,7 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
       else expect(s.lines.some((l) => l.face === 'title')).toBe(true);
     }
     expect(titleOnly).toBe(true);
-    expect(shown(labelTop + 2).kind).toBe('hidden');
+    expect(shown(labelTop + 2).kind).toBe('cut');
   });
 
   it('draws a label wholly in the open space as the map placed it', () => {
@@ -65,8 +68,22 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
     expect((Math.min(...lefts) + Math.max(...rights)) / 2).toBeCloseTo((seen.left + roomRight) / 2, 0);
   });
 
-  it('draws no label when the visible part cannot hold it at the readable floor', () => {
-    expect(stickyLabel(plate, zoom, X, Y, { left: 880, top: -10, right: 2000, bottom: 2000 }).kind).toBe('hidden');
+  it('still draws the title of a box mostly off screen, where the map placed it, the edge cutting it', () => {
+    // Only the box's right 20 px show: no room there for its title at the readable floor.
+    const open: ScreenBox = { left: 880, top: -10, right: 2000, bottom: 2000 };
+    expect(stickyLabel(plate, zoom, X, Y, open).kind).toBe('cut');
+    const drawn: string[] = [];
+    const ctx = new Proxy({ globalAlpha: 1, fillStyle: '', canvas: { width: 2000, height: 2000 } } as Record<string, unknown>, {
+      get: (t, k) => (k in t ? t[k as string] : k === 'measureText' ? () => ({ width: 10 }) : k === 'fillText' ? (text: string) => drawn.push(text) : () => undefined),
+      set: (t, k, v) => { t[k as string] = v; return true; },
+    }) as unknown as CanvasRenderingContext2D;
+    const state: PaintState = { focus: '', hover: null, ring: null, armed: null, lit: null, litLines: null, spot: 0, strength: () => 1, marks: null, open };
+    // The camera of X and Y: the box from x = 0 to 900 on a 2000 px canvas.
+    const cam = { cx: node.x + 1000 / zoom, cy: node.y + 1000 / zoom, zoom, w: 2000, h: 2000 };
+    paint(ctx, 1, cam, { plates: [plate], bars: [], lines: [] }, PLAIN_LOOK, { body: 'sans-serif', mono: 'monospace' }, state);
+    const title = plate.lines.filter((l) => l.face === 'title').map((l) => l.text);
+    expect(title.length).toBeGreaterThan(0);
+    expect(drawn).toEqual(expect.arrayContaining(title));
   });
 });
 
@@ -120,13 +137,13 @@ describe('LA-EXP-DS06-T15 a focused box is never left without its label: the cam
   });
 
   it('moves a camera whose cut leaves the label no room right, as little as it takes, at the same zoom', () => {
-    expect(at(v).kind).toBe('hidden');
+    expect(at(v).kind).toBe('cut');
     const kept = keepLabel(plate, v, open);
     expect(kept.zoom).toBe(zoom);
     expect(kept.y).toBe(v.y);
     expect(kept.x).toBeGreaterThan(v.x);
-    expect(at(kept).kind).not.toBe('hidden');
-    // A pixel less and it would not be drawn.
-    expect(at({ ...kept, x: kept.x - 1.5 }).kind).toBe('hidden');
+    expect(at(kept).kind).not.toBe('cut');
+    // A pixel less and it would only be drawn cut by the edge.
+    expect(at({ ...kept, x: kept.x - 1.5 }).kind).toBe('cut');
   });
 });
