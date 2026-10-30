@@ -10,10 +10,10 @@ import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
 import { useNarrow } from '../shell/useNarrow';
 import type { OpenSpaceStore } from '../views/openSpace';
-import { useStageWalk } from '../shell/commands';
+import { useCommand, useStageWalk } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import type { Move } from '../views/levels';
-import { StageKey, StageToolbar } from '../views/StageChrome';
+import { StageKey, StageToolbar, TidyUp } from '../views/StageChrome';
 import { allKeyEntries } from './TraceKey';
 import { AllList } from './AllList';
 import { allGraph } from './all';
@@ -209,7 +209,7 @@ function TraceStage(props: StageProps & { product: string }) {
   const narrow = useNarrow();
   const spec = useMemo(() => matrixSpec(index, traces, focus), [index, traces, focus]);
   const [gapsOnly, setGapsOnly] = useState(false);
-  // Tidy up: each press orders the columns afresh once (layout stability keeps the order otherwise, all-layout.ts).
+  // Tidy up: each press lays the columns out afresh once (a data change keeps every box where it was, all-layout.ts).
   const [tidy, setTidy] = useState(0);
   // The table's page and the keyboard's ring are the focus's: a new focus starts them again.
   const [paging, setPaging] = useState({ focus, shown: TRACE_PAGE });
@@ -268,16 +268,13 @@ function TraceStage(props: StageProps & { product: string }) {
       Gaps only
     </label>
   ) : null;
-  const tidyUp = drawn ? (
-    <Tooltip label="Tidy up: order the columns afresh to keep linked boxes near; a data change never reorders them on its own">
-      <Button onClick={() => setTidy((t) => t + 1)}>Tidy up</Button>
-    </Tooltip>
-  ) : null;
+  // Tidy up (LA-PAT-APP-UX-R22): the columns laid out afresh, by the stage's shared command and button.
+  useCommand('stageTidy', () => setTidy((t) => t + 1), drawn);
   const toolbar = (
     <StageToolbar
       can={(move) => targetOf(move) !== null}
       walkLabels={ALL_WALK_LABELS}
-      own={(n) => ({ primary: <><ViewSwitch view={view} onChange={props.onView} narrow={n} />{filter}</>, secondary: tidyUp })}
+      own={(n) => ({ primary: <><ViewSwitch view={view} onChange={props.onView} narrow={n} />{filter}{drawn && <TidyUp />}</> })}
     />
   );
   const table = spec && page

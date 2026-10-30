@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { pageFaces, type GraphFonts } from './fonts';
 import { assembleTree, placeTree, fitCache, type FitCache, type PlacedMap, type TreeGeometry, type TreeShape } from './map';
 import { assembleNested, placeNested } from './nested';
-import { assembleGround, placeGround, type GroundRole } from './ground';
+import { assembleGround, keptGround, placeGround, type GroundMap, type GroundRole } from './ground';
 import { probeOf, type LayoutReply, type LayoutRequest, type MapInput } from './layout-input';
 import { textMeasure, type MapLabel } from './text';
 
@@ -11,7 +11,9 @@ import { textMeasure, type MapLabel } from './text';
 // (layout-input.ts: its packed input is its key), never on a reload that left it alone. While a new layout is made, the
 // map before it stays on screen and answers the camera and the pointer; it is swapped for the new one when that arrives.
 // Where there is no worker (the unit tests, in jsdom), or the worker's measure does not match the page's (its faces did
-// not load), the same layout runs on the page's thread instead, as ELK does (elk.ts).
+// not load), the same layout runs on the page's thread instead, as ELK does (elk.ts). The Map, laid out bottom-up,
+// keeps every box of the product's Map shown before where it was (ground.ts, LA-PAT-APP-UX-R22), until Tidy up
+// (`tidyGround`) lays it out afresh.
 
 /** The layouts made lately, by their input: switching back to a product or a layout, or new data that changes nothing the map reads, reads one at once. */
 const done = new Map<string, PlacedMap>();
@@ -30,25 +32,25 @@ function assemble(input: MapInput, geometry: TreeGeometry): PlacedMap {
   return assembleNested(input.shape, labelOf, geometry);
 }
 
-/** A map's boxes, laid out by its view's rule (placeTree's, placeNested's or placeGround's). */
-function place(view: MapInput['view'], shape: TreeShape, labelOf: (i: number) => MapLabel, roleOf: (i: number) => GroundRole, cache: FitCache): TreeGeometry {
+/** A map's boxes, laid out by its view's rule (placeTree's, placeNested's or placeGround's, keeping `kept`). */
+function place(view: MapInput['view'], shape: TreeShape, labelOf: (i: number) => MapLabel, roleOf: (i: number) => GroundRole, cache: FitCache, kept: Float64Array | null): TreeGeometry {
   if (view === 'tree') return placeTree(shape, labelOf, cache);
-  if (view === 'map') return placeGround(shape, labelOf, roleOf);
+  if (view === 'map') return placeGround(shape, labelOf, roleOf, kept);
   return placeNested(shape, labelOf);
 }
 
 /** The page thread's fits (map.ts FitCache), kept across its layouts as the worker keeps its own. */
 const fits = fitCache();
 /** A map laid out on the page's thread. */
-function layOutHere(input: MapInput): PlacedMap {
+function layOutHere(input: MapInput, kept: Float64Array | null): PlacedMap {
   const labelOf = (i: number) => input.labels[i];
   const start = performance.now();
-  const geometry = place(input.view, input.shape, labelOf, (i) => input.roles[i], fits);
+  const geometry = place(input.view, input.shape, labelOf, (i) => input.roles[i], fits, kept);
   last = { thread: 'page', ms: performance.now() - start, nodes: input.labels.length, count: (last?.count ?? 0) + 1 };
   return remember(input.packed, assemble(input, geometry));
 }
 
-interface Host { post: (input: MapInput) => Promise<PlacedMap | null> }
+interface Host { post: (input: MapInput, kept: Float64Array | null) => Promise<PlacedMap | null> }
 
 /** The last layout made: where, how long it took to place its boxes, how many it placed, and how many layouts the page has made (the scene reports it, for the perf suite). */
 let last: { thread: 'worker' | 'page'; ms: number; nodes: number; count: number } | null = null;
@@ -65,7 +67,7 @@ function startHost(fonts: GraphFonts): Promise<Host | null> {
   return new Promise((resolve) => {
     let worker: Worker;
     try { worker = new Worker(new URL('./layout.worker.ts', import.meta.url), { type: 'module' }); } catch { resolve(null); return; }
-    type Job = { id: number; input: MapInput; done: (map: PlacedMap | null) => void };
+    type Job = { id: number; input: MapInput; kept: Float64Array | null; done: (map: PlacedMap | null) => void };
     const queued = new Map<string, Job>();
     let running: Job | null = null;
     let next = 0;
@@ -77,19 +79,19 @@ function startHost(fonts: GraphFonts): Promise<Host | null> {
       queued.delete(slot(job.input));
       running = job;
       const { input } = job;
-      worker.postMessage({ type: 'layout', id: job.id, view: input.view, packed: input.packed, roots: input.shape.roots.map((r) => input.shape.ids.indexOf(r)) } satisfies LayoutRequest);
+      worker.postMessage({ type: 'layout', id: job.id, view: input.view, packed: input.packed, roots: input.shape.roots.map((r) => input.shape.ids.indexOf(r)), kept: job.kept } satisfies LayoutRequest);
     };
-    const post = (input: MapInput) => new Promise<PlacedMap | null>((done) => {
+    const post = (input: MapInput, kept: Float64Array | null) => new Promise<PlacedMap | null>((done) => {
       const key = slot(input);
       queued.get(key)?.done(null);
-      queued.set(key, { id: next++, input, done });
+      queued.set(key, { id: next++, input, kept, done });
       pump();
     });
     worker.onerror = () => {
       // A worker that fails lays nothing out again: what it was laying out is laid out here.
       worker.terminate();
       host = Promise.resolve(null);
-      for (const job of [...(running ? [running] : []), ...queued.values()]) job.done(layOutHere(job.input));
+      for (const job of [...(running ? [running] : []), ...queued.values()]) job.done(layOutHere(job.input, job.kept));
       running = null;
       queued.clear();
       resolve(null);
@@ -116,18 +118,52 @@ function startHost(fonts: GraphFonts): Promise<Host | null> {
   });
 }
 
+/**
+ * Each product's Map shown last, by its roots: what a new one keeps its boxes from (ground.ts keptGround), with the
+ * input it was laid out for; and the products whose next Map is laid out afresh (Tidy up).
+ */
+const grounds = new Map<string, { packed: string; map: GroundMap; made: number }>();
+const afresh = new Set<string>();
+let made = 0;
+const groundSlot = (input: MapInput) => input.shape.roots.join(' ');
+
+/** Tidy up (LA-PAT-APP-UX-R22): the product's next Map laid out afresh, packed in reading order; every later change keeps its places from it. */
+export function tidyGround(input: MapInput) { afresh.add(groundSlot(input)); }
+
 /** A map's layout: at once when it was made lately; else from the worker, or laid out here where there is none. */
 const pending = new Map<string, Promise<PlacedMap | null>>();
 function layOut(input: MapInput, fonts: GraphFonts): PlacedMap | Promise<PlacedMap | null> {
-  const known = done.get(input.packed);
+  let kept: Float64Array | null = null;
+  let key = input.packed;
+  if (input.view === 'map') {
+    const slot = groundSlot(input);
+    const was = afresh.has(slot) ? undefined : grounds.get(slot);
+    if (was && was.packed === input.packed) return was.map;
+    kept = was ? keptGround(input.shape, was.map) : null;
+    key = `${input.packed}\u0002${was ? was.made : 'afresh'}`;
+    const keep = (map: PlacedMap | null) => {
+      if (map) { afresh.delete(slot); grounds.set(slot, { packed: input.packed, map: map as GroundMap, made: made++ }); }
+      return map;
+    };
+    if (typeof Worker === 'undefined') return keep(layOutHere(input, kept))!;
+    let laying = pending.get(key);
+    if (!laying) {
+      host ??= startHost(fonts);
+      laying = host.then((h) => (h ? h.post(input, kept) : layOutHere(input, kept))).then(keep);
+      pending.set(key, laying);
+      void laying.finally(() => pending.delete(key));
+    }
+    return laying;
+  }
+  const known = done.get(key);
   if (known) return known;
-  if (typeof Worker === 'undefined') return layOutHere(input);
-  let laying = pending.get(input.packed);
+  if (typeof Worker === 'undefined') return layOutHere(input, null);
+  let laying = pending.get(key);
   if (!laying) {
     host ??= startHost(fonts);
-    laying = host.then((h) => (h ? h.post(input) : layOutHere(input)));
-    pending.set(input.packed, laying);
-    void laying.finally(() => pending.delete(input.packed));
+    laying = host.then((h) => (h ? h.post(input, null) : layOutHere(input, null)));
+    pending.set(key, laying);
+    void laying.finally(() => pending.delete(key));
   }
   return laying;
 }
@@ -135,8 +171,9 @@ function layOut(input: MapInput, fonts: GraphFonts): PlacedMap | Promise<PlacedM
 /**
  * The map for an input, with what it was made for (`of`: the index its plates are read from): the input's own once it
  * is laid out; until then the one shown before, which stays on screen and answers the camera; null before the first.
+ * `tidy`, a count Tidy up raises after `tidyGround`, lays the Map out again.
  */
-export function useLaidOut<M extends PlacedMap, T>(input: MapInput | null, of: T, fonts: GraphFonts): { map: M; of: T } | null {
+export function useLaidOut<M extends PlacedMap, T>(input: MapInput | null, of: T, fonts: GraphFonts, tidy = 0): { map: M; of: T } | null {
   const [shown, setShown] = useState<{ packed: string; map: M; of: T } | null>(null);
   const now = input ? layOut(input, fonts) : null;
   const ready = now && !(now instanceof Promise) ? now as M : null;
@@ -146,7 +183,7 @@ export function useLaidOut<M extends PlacedMap, T>(input: MapInput | null, of: T
     let live = true;
     void (now as Promise<PlacedMap | null>).then((map) => { if (live && map) setShown({ packed: input.packed, map: map as M, of }); });
     return () => { live = false; };
-  }, [input, of]);
+  }, [input, of, tidy]);
   if (!input) return null;
   if (ready) return { map: ready, of };
   return shown ? { map: shown.map, of: shown.of } : null;
