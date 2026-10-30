@@ -428,4 +428,19 @@ describe('the Trace stage', () => {
     }
   });
 
+  it('LA-V96-R36-T02 With Highlight changes on, the All-at-once view gives a new record its pill, dims the rest and rolls each column\'s changes up in its header', async () => {
+    const committed = modelWorkspace().sources[0].tables;
+    const baseline = (since: string) => ({ state: 'ok' as const, commit: 'a'.repeat(40), short: 'aaaaaaa', subject: since, date: '2026-10-27T10:00:00Z', base: null, tables: committed });
+    await openApp('/P?stage=trace', { data: withOutcome(), baseline });
+    const tools = await screen.findByRole('group', { name: 'Changes' });
+    await waitFor(() => expect(tools.textContent).toMatch(/Changes\s*2/), { timeout: 4000 });
+    expect((await drawn(true)).boxes.find((b) => b.id === 'P-BO01')?.pill).toBeNull();
+    fireEvent.click(within(tools).getByRole('button', { name: 'Highlight changes' }));
+    await waitFor(async () => expect((await drawn(true)).boxes.find((b) => b.id === 'P-BO01')?.pill).toBe('added'));
+    const scene = await drawn(true);
+    // The unchanged boxes dim to a fifth (the capability the outcome is served by changed with its link); the new outcome stays whole, and its column says so.
+    expect(scene.boxes.find((b) => b.id === 'P-BO01')!.strength).toBe(1);
+    await waitFor(async () => expect((await drawn(true)).boxes.filter((b) => !b.pill).every((b) => b.strength <= 0.2 + 1e-9)).toBe(true));
+    expect(scene.columns[0]!.rollup).toBe('1 new');
+  });
 });

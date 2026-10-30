@@ -1,6 +1,8 @@
 // The schema cache: the migrated schema databases, built once and kept as DuckDB files, so a process starts by
 // attaching one instead of running the migrations. It holds schemas only (tables, views, the meta-model's rows), never
-// a product's data (LA-PLT-UC01-R04).
+// a product's data (LA-PLT-UC01-R04). Beside them, the validated-build stamps: one small file per set of data files
+// whose whole build passed, named by a hash of the files' contents and of everything that judges them, so a load of
+// the same files reads their rows without building them again (see validatedKey).
 //
 // Each file is named by its key, a hash of everything that shapes it: Lathe's version, DuckDB's, the migrations and
 // the engine's own code (this folder), and for a product's kinds and relations the SQL that adds them. The key is also
@@ -9,7 +11,7 @@
 // A file is written under a name of its own and renamed into place, so two processes that build the same schema at
 // once each write a whole file, and a reader never sees half of one.
 import { createHash } from 'node:crypto';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { mkdir, readdir, rename, rm, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -135,5 +137,80 @@ export async function writeCached(connection: DuckDBConnection, source: string, 
   } finally {
     await rm(temp, { force: true }).catch(() => undefined);
     await rm(`${temp}.wal`, { force: true }).catch(() => undefined);
+  }
+}
+
+// ---------- Validated builds ----------
+
+/** How many validated-build stamps are kept per base schema; a product whose files change leaves its old ones. */
+const MAX_VALIDATED_FILES = 50;
+const VALIDATED = '.validated';
+
+let code: string | undefined;
+
+/**
+ * A hash of every source file of the engine (the folder that holds src/, all of it: the aggregates' rules, the
+ * integrity queries and the store), so a change to any rule that judges a build makes every stamp stale.
+ */
+function codeHash(): string {
+  if (code) return code;
+  const here = fileURLToPath(import.meta.url);
+  const src = path.resolve(path.dirname(here), '..', '..');
+  const files = (readdirSync(src, { recursive: true }) as string[]).filter((f) => f.endsWith(path.extname(here))).sort();
+  const h = createHash('sha256');
+  for (const file of files) h.update(`${file}\0`).update(readFileSync(path.join(src, file))).update('\0');
+  code = h.digest('hex');
+  return code;
+}
+
+/**
+ * The key of a whole build of these data files: the base schema's key (Lathe's and DuckDB's versions, the migrations),
+ * the engine's code, and each file's folder, name and exact contents, in the order a load reads them. The product's
+ * kinds and relations are in its files, so their schema is in the key too.
+ */
+export function validatedKey(base: string, files: Iterable<readonly [string, string]>): string {
+  const parts = [codeHash()];
+  for (const [file, text] of files) parts.push(file, text);
+  return `${base}-${hash(...parts)}`;
+}
+
+const validatedFile = (key: string) => path.join(cacheDir(), `${key}${VALIDATED}`);
+
+/** Whether a whole build of the files with this key passed: its stamp is there and names the key. A stamp that does not is removed. */
+export function isValidated(key: string): boolean {
+  const file = validatedFile(key);
+  try {
+    if (readFileSync(file, 'utf8') === key) return true;
+  } catch {
+    return false;
+  }
+  rmSync(file, { force: true });
+  return false;
+}
+
+/**
+ * Records that a whole build of the files with this key passed, keeping the MAX_VALIDATED_FILES stamps of this base
+ * written last. Written under a name of its own and renamed into place; any failure leaves no stamp and is otherwise
+ * ignored: the next load builds whole again.
+ */
+export function markValidated(key: string): void {
+  const dir = cacheDir();
+  const file = validatedFile(key);
+  const temp = `${file}.${process.pid}.tmp`;
+  try {
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(temp, key);
+    renameSync(temp, file);
+    const base = key.split('-')[0];
+    const stamps = readdirSync(dir).filter((n) => n.startsWith(`${base}-`) && n.endsWith(VALIDATED));
+    if (stamps.length <= MAX_VALIDATED_FILES) return;
+    const written = stamps.map((name) => ({ name, at: statSync(path.join(dir, name)).mtimeMs })).sort((a, b) => b.at - a.at);
+    for (const { name } of written.slice(MAX_VALIDATED_FILES)) rmSync(path.join(dir, name), { force: true });
+  } catch {
+    try {
+      rmSync(temp, { force: true });
+    } catch {
+      // No folder to write in: there is no file to remove.
+    }
   }
 }

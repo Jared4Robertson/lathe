@@ -61,7 +61,7 @@ export function changeSummary(change: RecordChange): string {
   return parts.join(', ');
 }
 
-/** The baseline picker: what the lens, the panel and the card compare with. */
+/** The baseline picker: what Highlight changes, the panel and the card compare with. */
 export function SincePicker({ className }: { className?: string }) {
   const { since, setSince, baseline } = useChanges();
   return (

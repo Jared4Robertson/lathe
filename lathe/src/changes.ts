@@ -5,7 +5,7 @@
 // removed or changed, and each link added or removed.
 //
 // It reads only rows and the schema, never a file or git, so the server, the web app's stages and the desktop chat
-// all use it: the Changes lens and panel against a baseline (since the last commit, since the branch left the
+// all use it: Highlight changes and panel against a baseline (since the last commit, since the branch left the
 // default branch, since the Reader last looked), the live marks against the data before a reload, and the chat
 // against the data before a turn.
 import type { FieldChange, HistoryChange } from './server/contract.ts';

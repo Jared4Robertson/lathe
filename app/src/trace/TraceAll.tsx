@@ -26,7 +26,8 @@ import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpa
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
 import { useChanges } from '../changes/changes';
-import { lensFade, marksMoving, useStageMarks } from '../changes/marks';
+import { highlightFade, marksMoving, useStageMarks } from '../changes/marks';
+import { anchorOf, rollupText, totalChanges, type ChangeCounts } from '../changes/rollup';
 import { ALL_COLUMN_LABELS, ALL_COLUMNS, GAP_WORDS, keptBy, pathOf, type AllGraph, type LinkKind } from './all';
 import { BOX_HEIGHT, BOX_WIDTH, columnLeft, OUTSIDE_GAP } from './all-layout';
 import { lastAllLayout, useAllLaidOut, type AllLaid, type BoxPlace } from './all-laid';
@@ -71,7 +72,7 @@ const GAP_PLAIN = (missing: keyof typeof GAP_WORDS, obligation: string): PlainBo
 /** One drawn box as the test hook reports it, in the page's pixels. */
 export interface AllSceneBox {
   key: string; id: string; role: 'record' | 'gap'; column: number; under: boolean; focus: boolean; hover: boolean; ring: boolean;
-  lit: boolean | null; strength: number; change: 'added' | 'changed' | null; dashed: boolean; block: boolean; kind: string; stage: string; meta: string; name: string;
+  lit: boolean | null; strength: number; change: 'added' | 'changed' | null; pill: 'added' | 'changed' | null; dashed: boolean; block: boolean; kind: string; stage: string; meta: string; name: string;
   rect: { left: number; top: number; width: number; height: number };
 }
 /** What the view draws now: its camera, boxes, bars and lines; or, `whole`, every box and link. */
@@ -81,7 +82,7 @@ export interface AllScene {
   boxes: AllSceneBox[];
   bars: number;
   lines: { from: string; to: string; kind: LinkKind; lit: boolean }[];
-  columns: { name: string; count: number }[];
+  columns: { name: string; count: number; rollup: string | null }[];
   outsideTop: number | null;
   laidOut: ReturnType<typeof lastAllLayout>;
 }
@@ -341,8 +342,8 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
   const counts = useMemo(() => laid.order.map((c) => c.filter((k) => graph.nodes.get(k)?.role === 'record').length), [laid, graph]);
   const fade = useMemo(() => {
     const own = kept ? keptFade((key) => kept.keys.has(key), fadeLook) : () => 1;
-    return changes.lens ? faintest(own, lensFade(changes.byId, fadeLook, (key) => graph.nodes.get(key)?.gap?.obligation ?? key)) : own;
-  }, [kept, graph, fadeLook, changes.lens, changes.byId]);
+    return changes.highlight ? faintest(own, highlightFade(changes.byId, (key) => graph.nodes.get(key)?.gap?.obligation ?? key)) : own;
+  }, [kept, graph, changes.highlight, changes.byId]);
   const tween = useMemo(() => fadeTween((t) => readMotion().ease(t)), []);
   useLayoutEffect(() => {
     tween.send(fade, glideMs.current ?? look.current.fade);
@@ -507,7 +508,7 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
       c.globalAlpha = 1;
     };
     paint(g, dpr, cam, { plates: frame.plates, bars: frame.bars, lines: [], wires }, lk, fonts, state);
-    paintHeads(g, counts, lk, fonts, v, frameBox(s), dpr);
+    paintHeads(g, counts, rolls, lk, fonts, v, frameBox(s), dpr);
     // The leader line to the wiki card (LA-V96-R24), from the focus's box, in its outline's color.
     const own = focusKey ? placeAt(focusKey, now) : undefined;
     const p = own ? plateFor(focusKey!) : null;
@@ -525,6 +526,24 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
   // The live marks: each record's on its box; a removed record's ghost where the layout before had it.
   const placeOf = useCallback((id: string) => laid.places.get(id) ?? null, [laid]);
   const marks = useStageMarks(placeOf);
+  // With Highlight changes on, each column's header says how many records in it are new, changed and removed; a removed record counts in the column of the record its ID names.
+  const rolls = useMemo<(ChangeCounts | undefined)[]>(() => {
+    const hl = marks.highlight;
+    if (!hl) return [];
+    const out: ChangeCounts[] = ALL_COLUMNS.map(() => ({ added: 0, changed: 0, removed: 0 }));
+    for (const [key, n] of graph.nodes) {
+      if (n.role !== 'record') continue;
+      const c = hl.change(key);
+      if (c && c !== 'removed') out[n.column]![c]++;
+    }
+    for (const id of new Set([...changes.byId.keys(), ...changes.live.all().map((m) => m.id)])) {
+      if (hl.change(id) !== 'removed') continue;
+      const up = anchorOf(id, (x) => graph.nodes.has(x));
+      const column = up === null ? undefined : graph.nodes.get(up)?.column;
+      if (column !== undefined) out[column]!.removed++;
+    }
+    return out.map((c) => (totalChanges(c) > 0 ? c : undefined));
+  }, [marks.highlight, graph, changes.byId, changes.live]);
 
   /** Lights a box's whole path while the pointer is on it; null lets go. */
   const spot = useCallback((key: string | null) => {
@@ -618,7 +637,7 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
         bars: frame.bars.length,
         outsideTop: laid.outsideTop,
         laidOut: lastAllLayout(),
-        columns: ALL_COLUMNS.map((c, i) => ({ name: ALL_COLUMN_LABELS[c], count: counts[i] ?? 0 })),
+        columns: ALL_COLUMNS.map((c, i) => ({ name: ALL_COLUMN_LABELS[c], count: counts[i] ?? 0, rollup: rolls[i] ? rollupText(rolls[i]!) : null })),
         lines: (whole ? graph.links.map((_, i) => i) : frame.lines).map((l) => ({ from: graph.links[l].from, to: graph.links[l].to, kind: graph.links[l].kind, lit: litLinks?.has(l) ?? false })),
         boxes: (whole ? [...laid.places.keys()].map((k) => { const at = laid.places.get(k)!; return shifted(plateFor(k)!, at.x, at.y); }) : frame.plates).map((p) => {
           const n = graph.nodes.get(p.place)!;
@@ -626,6 +645,7 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
             key: p.place, id: p.id, role: n.role, column: n.column, under: n.under, focus: p.id === focus, hover: hover.current === p.place, ring: ring.current === p.place,
             lit: sp.key !== null && sp.lit ? sp.lit.has(p.place) : kept ? kept.keys.has(p.place) : null, strength: strength(p.place),
             change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(p.id)),
+            pill: ((c) => (c === 'added' || c === 'changed' ? c : null))(marks.highlight?.change(p.id)),
             dashed: p.dashed, block: isBlock(p, v.zoom), kind: p.kind, stage: p.stage, meta: p.lines.filter((l) => l.face === 'meta').map((l) => l.text).join(''), name: plateName(p, p.id === focus),
             rect: { left: r.left + p.x * v.zoom + v.x, top: r.top + p.y * v.zoom + v.y, width: p.w * v.zoom, height: p.h * v.zoom },
           };
@@ -682,7 +702,7 @@ function paintOutsideMark(g: CanvasRenderingContext2D, laid: AllLaid, graph: All
 }
 
 /** The columns' names and counts, kept at the top of the frame over each column. */
-function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], look: Look, fonts: GraphFonts, v: Viewport, box: { x: number; y: number; w: number; h: number }, dpr: number) {
+function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], rolls: readonly (ChangeCounts | undefined)[], look: Look, fonts: GraphFonts, v: Viewport, box: { x: number; y: number; w: number; h: number }, dpr: number) {
   g.save();
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
   // Solid, in the stage's own paper, so a box under it never shows through.
@@ -714,10 +734,32 @@ function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], look
     g.textAlign = 'left';
     g.fillStyle = look.ink;
     g.font = fontFor(fonts, 'title', HEAD_FONT);
-    g.fillText(name, start, box.y + HEAD_PX / 2);
+    const roll = rolls[i];
+    const line = box.y + (roll ? 9 : HEAD_PX / 2);
+    g.fillText(name, start, line);
     g.fillStyle = look.muted;
     g.font = fontFor(fonts, 'meta', HEAD_FONT - 1);
-    g.fillText(countText, start + nameW + 6, box.y + HEAD_PX / 2);
+    g.fillText(countText, start + nameW + 6, line);
+    if (roll) {
+      // The column's roll-up: all three counts when they fit across the column, else how many changes in all.
+      g.font = fontFor(fonts, 'badge', 10);
+      const room = BOX_WIDTH * v.zoom - 4;
+      const full = rollupText(roll);
+      const total = `${totalChanges(roll)} ${totalChanges(roll) === 1 ? 'change' : 'changes'}`;
+      const text = g.measureText(full).width + 10 <= room ? full : total;
+      const w = g.measureText(text).width + 10;
+      g.beginPath();
+      g.roundRect(mid - w / 2, box.y + 16, w, 12, 6);
+      g.fillStyle = look.sheet;
+      g.fill();
+      g.strokeStyle = look.ink;
+      g.lineWidth = 1;
+      g.stroke();
+      g.fillStyle = look.ink;
+      g.textAlign = 'center';
+      g.fillText(text, mid, box.y + 22.5);
+      g.textAlign = 'left';
+    }
   });
   g.restore();
 }

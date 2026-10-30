@@ -49,7 +49,7 @@ export const PLAIN_LOOK: Look = {
   interactionDesignEdge: '#6A4C9C', interactionDesignFill: '#EEE8F6', technicalSpecificationEdge: '#B5512A', technicalSpecificationFill: '#F8E8DF',
   testPlanEdge: '#A3365F', testPlanFill: '#F7E4EC',
   structuralEdge: '#1D2830', structuralFill: '#FFFFFF',
-  changeNew: '#2F7148', changeChanged: '#B5512A', changeGone: '#5A6870',
+  changeNew: '#2F7148', changeChanged: '#875C00', changeGone: '#A83523',
   spotlightDim: 0.5, contextOpacity: 0.35, focusFade: 0.25, focusTrail: 0.45, fade: 0, vignette: 56,
 };
 

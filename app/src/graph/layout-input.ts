@@ -26,7 +26,7 @@ export function mapInput(view: MapInput['view'], roots: readonly string[], child
   const shape = treeShape(roots, childrenOf);
   const labels = shape.ids.map((id) => labelOf(id));
   const parts: string[] = [`${view}${FIELD}${measure}`];
-  labels.forEach((l, i) => parts.push(`${shape.parents[i]}${FIELD}${l.title}${FIELD}${l.meta}${FIELD}${l.shape ?? ''}${FIELD}${l.marks ?? 0}${FIELD}${l.marked ? 1 : 0}`));
+  labels.forEach((l, i) => parts.push(`${shape.parents[i]}${FIELD}${l.title}${FIELD}${l.meta}${FIELD}${l.shape ?? ''}${FIELD}${l.marks ?? 0}`));
   return { view, shape, labels, packed: parts.join(NODE) };
 }
 
@@ -51,11 +51,11 @@ export function unpackInput(packed: string, roots: readonly number[]): { shape: 
   const levels = new Int32Array(nodes.length);
   const children: number[][] = nodes.map(() => []);
   const labels: MapLabel[] = nodes.map((node, i) => {
-    const [parent, title, meta, shape, marks, marked] = node.split(FIELD);
+    const [parent, title, meta, shape, marks] = node.split(FIELD);
     const up = Number(parent);
     parents[i] = up;
     if (up >= 0) { children[up].push(i); levels[i] = levels[up] + 1; }
-    return { title, meta, ...(shape ? { shape: shape as Shape } : {}), marks: Number(marks), marked: marked === '1' };
+    return { title, meta, ...(shape ? { shape: shape as Shape } : {}), marks: Number(marks) };
   });
   const ids = nodes.map((_, i) => String(i));
   return { shape: { roots: roots.map(String), ids, parents, levels, children }, labels };

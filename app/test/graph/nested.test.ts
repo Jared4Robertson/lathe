@@ -1,7 +1,7 @@
 import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
 import { MAP_SIZE, sizeText } from '../../src/graph/map';
-import { BORDER, LABEL_PAD, labelHeight, largestFit, mapLabel, metaWidth, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
+import { BORDER, LABEL_PAD, labelHeight, largestFit, linesIn, mapLabel, metaWidth, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
 import { gridOf, HEADER_SHARE, NEST_GAP, NEST_PAD, type NestedMap, type NestedNode } from '../../src/graph/nested';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
@@ -119,12 +119,14 @@ describe('the Nested map', () => {
         for (const n of group) expect(n.text, n.id).toBe(text);
         expect(text).toBeLessThanOrEqual(most);
         expect(text).toBeGreaterThan(0);
-        // The largest that fits: the size's share, or one sibling's label fills its room.
-        const fits = group.map((n) => largestFit(labelOf(map, n), n.centered, n.w, n.centered ? n.w : HEADER_SHARE * n.w, most, (s) => BORDER * Math.max(0.5, s)));
+        // The largest that fits: the size's share, or one sibling's label fills its room, as a leaf's (centered in its
+        // square) or as a parent's (in a header band), whichever it is now, so what a sibling holds sizes nothing of the others.
+        const border = (s: number) => BORDER * Math.max(0.5, s);
+        const fits = group.flatMap((n) => [largestFit(labelOf(map, n), true, n.w, n.w, most, border), largestFit(labelOf(map, n), false, n.w, HEADER_SHARE * n.w, most, border)]);
         expect(text).toBeCloseTo(Math.min(...fits), 9);
-        // One header band for the parents among them: the tallest of their labels.
-        const parents = group.filter((n) => n.children.length > 0);
-        for (const n of parents) expect(n.header).toBeCloseTo(Math.max(...parents.map((p) => text * labelHeight(p.lines))), 6);
+        // One header band for the parents among them: the tallest of every sibling's label as a parent's, a leaf's too.
+        const band = Math.max(...group.map((n) => text * labelHeight(linesIn(labelOf(map, n), (n.w - 2 * border(text)) / text, false))));
+        for (const n of group.filter((n) => n.children.length > 0)) expect(n.header).toBeCloseTo(band, 6);
       }
     }
     // A long title in a busy part lowers its siblings' text with its own, never its cousins'.

@@ -4,7 +4,7 @@
 // - Loading Lathe's own spec (a cold load: the data files read and loaded with every key and rule, then checked)
 //   takes under 2 s.
 // - Loading it again after one row changes takes under 500 ms.
-// - A cold CLI command (`lathe use-case get-use-case --id <id>` on Lathe's spec, a fresh process with the schema cache in place) takes
+// - A cold CLI command (`lathe use-case get-use-case --id <id>` on Lathe's spec, a fresh process with the schema cache and the files' validated-build stamp in place) takes
 //   under 800 ms, from the process's start to its exit.
 // - On the large product (lathe/perf/large-product.ts, about ten times Lathe's records), served as `lathe serve` serves
 //   it: one edit (a use case retitled by an Agent in another process) is visible, the server having read the changed
@@ -92,7 +92,8 @@ async function reload(root: string) {
 
 /**
  * A cold CLI command, as an Agent runs it: `lathe use-case get-use-case` in a fresh process, timed from its start to
- * its exit. The first run fills the schema cache, as any earlier command has on a working machine; then the median of RUNS.
+ * its exit. The first run fills the schema cache and stamps the files' whole build, as any earlier command has on a working
+ * machine; then the median of RUNS.
  */
 function cliGetUseCase(root: string, id: string): number {
   const bin = path.join(here, '..', 'bin', 'lathe.ts');

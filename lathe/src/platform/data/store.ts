@@ -12,7 +12,7 @@ import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { AGGREGATE_RULES } from '../../aggregate-rules.ts';
 import { productRules } from '../../authoring/product/rules.ts';
 import { loadConfig, PACKAGE_DIR } from '../../config.ts';
-import { attachCached, baseKey, copyDatabase, productKey, writeCached } from './cache.ts';
+import { attachCached, baseKey, copyDatabase, isValidated, markValidated, productKey, validatedKey, writeCached } from './cache.ts';
 import { appendRows, insertRows } from './insert.ts';
 import { integrityQueries, recordScopeColumns, recordScopeSql, storeViewsSql } from './integrity.ts';
 import { problemAt, StoreError, type Origin, type StoreProblem } from './problems.ts';
@@ -266,14 +266,14 @@ export class Store {
     return this.currentSchema;
   }
 
-  // The database is the current state's only after a load or a whole build; after a reload or a write held without
-  // one, whole() builds it.
+  // The database is the current state's only after a load that built it or a whole build; after a load of validated
+  // files, or a reload or a write held without one, ensureDatabase() or whole() builds it.
   private get database(): string {
-    if (!this.built) throw new Error('The store changed in part (a reload or a write) since its database was built: run SQL through whole().');
+    if (!this.built) throw new Error('The store changed in part (a reload or a write) or was loaded from validated files since its database was built: call ensureDatabase() or run SQL through whole().');
     return this.dataDb;
   }
 
-  /** A connection whose current database holds the current data. It follows every load and whole build. */
+  /** A connection whose current database holds the current data, once ensureDatabase() has built it. It follows every load and whole build. */
   get connection(): DuckDBConnection {
     void this.database;
     return this.main;
@@ -281,6 +281,7 @@ export class Store {
 
   /** A new connection on the current data, for queries run side by side; it reads the data as it was until the next whole build. */
   async connect(): Promise<DuckDBConnection> {
+    await this.ensureDatabase();
     const database = this.database;
     const connection = await this.instance.connect();
     await connection.run(`USE ${sqlName(database)}`);
@@ -289,7 +290,7 @@ export class Store {
 
   /** Runs a query on the current data and returns its rows as JSON values. */
   async query<T = Record<string, unknown>>(sql: string): Promise<T[]> {
-    void this.database;
+    await this.ensureDatabase();
     return (await this.main.runAndReadAll(sql)).getRowObjectsJson() as unknown as T[];
   }
 
@@ -384,7 +385,7 @@ export class Store {
   }
 
   // Reads one data file's rows into the table's map, each normalized, with its origin; a problem is added, not thrown.
-  private readFile(schema: SchemaDescription, folder: Folder, file: string, tables: Tables, problems: StoreProblem[]) {
+  private readFile(schema: SchemaDescription, folder: Folder, file: string, tables: Tables, problems: StoreProblem[], text = readFileSync(path.join(folder.dir, file), 'utf8')) {
     const name = file.slice(0, -'.jsonl'.length);
     const table = schema.tables[name];
     const display = `${folder.display}/${file}`;
@@ -394,7 +395,7 @@ export class Store {
     }
     // A table's rows from both folders share one map, so a key given in both is a duplicate.
     const rows = tables.get(name) ?? new Map<string, Row>();
-    const lines = readFileSync(path.join(folder.dir, file), 'utf8').split('\n');
+    const lines = text.split('\n');
     if (lines.at(-1) === '') lines.pop();
     lines.forEach((text, index) => {
       const line = index + 1;
@@ -425,14 +426,23 @@ export class Store {
     tables.set(name, rows);
   }
 
-  /** Reads every data file, Lathe's own folder's first and then the product's, and loads them whole. Called by openStore, and by a reload that must start afresh. */
+  /**
+   * Reads every data file, Lathe's own folder's first and then the product's, and loads them whole. Called by openStore,
+   * and by a reload that must start afresh. Files whose whole build passed before, exactly as they are now (their
+   * validated-build stamp, cache.ts), are read without building them again: the store holds their rows, and builds
+   * their database only when SQL first needs it (ensureDatabase()). Any other files are built whole, and stamped when they pass.
+   */
   async load(): Promise<void> {
     const folders = this.folders();
     // The files' sizes and times are taken before they are read, so a file changed while it is read reads again.
     const signatures = signaturesOf(folders);
+    // Each file is read once; the stamp's key is of the very text the rows are read from.
+    const texts = await this.step('read texts', () => new Map(folders.flatMap((folder) => folder.files.map((file) => [path.join(folder.dir, file), readFileSync(path.join(folder.dir, file), 'utf8')] as const))));
+    const key = validatedKey((await sharedEngine()).key, texts);
+    const validated = await this.step('validated stamp', () => isValidated(key));
     const problems: StoreProblem[] = [];
     const tables: Tables = new Map();
-    const read = (schema: SchemaDescription, folder: Folder, file: string) => this.readFile(schema, folder, file, tables, problems);
+    const read = (schema: SchemaDescription, folder: Folder, file: string) => this.readFile(schema, folder, file, tables, problems, texts.get(path.join(folder.dir, file)));
 
     // The declarations, with the products that declare them, are read first: the Product aggregate's rules judge them
     // before the schema is built from them.
@@ -442,13 +452,28 @@ export class Store {
     });
     if (problems.length) throw new StoreError(problems);
     const { schemaDb, schema } = await this.step('schema', () => this.buildSchema(tables, this.origins));
-    // The empty database the data goes into is copied while the files are read.
-    this.prepareSpare(schemaDb, schema);
+    // The empty database the data goes into is copied while the files are read; validated files need none yet.
+    if (!validated) this.prepareSpare(schemaDb, schema);
     await this.step('read files', () => {
       for (const folder of folders) for (const file of folder.files.filter((f) => !isDeclaration(f))) read(schema, folder, file);
     });
     if (problems.length) throw new StoreError(problems);
 
+    if (validated) {
+      // The same files passed a whole build: they hold every key, check, integrity query and rule. The previous
+      // database, of a reload that loaded afresh, no longer holds the current state.
+      const previous = this.dataDb;
+      this.dataDb = '';
+      this.dbTables = new Map();
+      if (previous) await this.detach(previous);
+      this.schemaDb = schemaDb;
+      this.currentSchema = schema;
+      this.tables = tables;
+      this.signatures = signatures;
+      this.becameWhole('all');
+      this.built = false;
+      return;
+    }
     const dataDb = await this.buildData(schemaDb, schema, tables, this.origins);
     this.schemaDb = schemaDb;
     this.currentSchema = schema;
@@ -456,6 +481,18 @@ export class Store {
     this.signatures = signatures;
     this.becameWhole('all');
     await this.switchTo(dataDb, tables);
+    markValidated(key);
+  }
+
+  /**
+   * Builds the current state's database when the store holds none (a load of validated files, a reload or a write
+   * held without one), through whole(); a store that holds one is left as it is. SQL reads (query, connect) call it.
+   */
+  async ensureDatabase(): Promise<void> {
+    while (!this.built) {
+      if (this.closing) throw new Error('The store is closing.');
+      await this.whole(async () => undefined);
+    }
   }
 
   // The current state was built whole (a load, a write): the database holds it, and a refused full check comes back to it.
