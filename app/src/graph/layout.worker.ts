@@ -34,6 +34,6 @@ self.onmessage = async (e: MessageEvent<LayoutRequest>) => {
   }
   const start = performance.now();
   const { shape, labels, roles } = unpackInput(message.packed, message.roots);
-  const geometry = message.view === 'tree' ? placeTree(shape, (i) => labels[i], fits) : message.view === 'map' ? placeGround(shape, (i) => labels[i], (i) => roles[i]) : placeNested(shape, (i) => labels[i]);
+  const geometry = message.view === 'tree' ? placeTree(shape, (i) => labels[i], fits) : message.view === 'map' ? placeGround(shape, (i) => labels[i], (i) => roles[i], message.kept) : placeNested(shape, (i) => labels[i]);
   self.postMessage({ type: 'laid', id: message.id, boxes: geometry.boxes, width: geometry.width, height: geometry.height, ms: performance.now() - start } satisfies LayoutReply, [geometry.boxes.buffer]);
 };

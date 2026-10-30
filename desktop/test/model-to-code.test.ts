@@ -38,7 +38,7 @@ describe('LA-STD-PRINCIPLES-R02-T04 Each desktop aggregate is reached only throu
   });
 
   it('gives each aggregate slice one repository class with a load and a save', () => {
-    for (const slice of ['product-window', 'app-server', 'recent-folders', 'shell-settings']) {
+    for (const slice of ['product-window', 'window-chat', 'app-server', 'recent-folders', 'shell-settings']) {
       const text = readFileSync(path.join(SRC, slice, 'repository.ts'), 'utf8');
       expect(text.match(/export class \w+Repository\b/g), slice).toHaveLength(1);
       expect(text, slice).toMatch(/^\s+load\(\)/m);

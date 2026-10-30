@@ -97,5 +97,6 @@
 {"id":"LA-PLT-EN24","title":"Key bindings","aggregate_id":"LA-PLT-A14","role":"root","description":"The person's key bindings: the shortcuts they changed, in the order first changed."}
 {"id":"LA-PLT-EN25","title":"Shortcut binding","aggregate_id":"LA-PLT-A14","role":"child","in_root_table":true,"description":"One shortcut whose keys the person changed: its keys now, or none when they left it without a key on purpose."}
 {"id":"LA-PLT-EN26","title":"Voice settings","aggregate_id":"LA-PLT-A15","role":"root","description":"The person's voice settings: the two modes and the phrases the voice grammar reads."}
+{"id":"LA-PLT-EN27","title":"Window chat","aggregate_id":"LA-PLT-A16","role":"root","description":"One product window's chat, kept by the window's folder."}
 {"id":"LA-TRC-EN05","title":"Pattern following","aggregate_id":"LA-TRC-A3","role":"root","description":"A domain or use case that follows one pattern."}
 {"id":"LA-TRC-EN06","title":"Setting value","aggregate_id":"LA-TRC-A3","role":"child","description":"A `setting_value` row: the value a following use case, or a domain that follows the pattern itself, gives one of the pattern's settings."}

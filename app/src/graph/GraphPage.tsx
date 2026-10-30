@@ -18,20 +18,20 @@ import {
   type Neighborhood,
 } from './model';
 import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
-import { StageCamera, StageKey, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
+import { StageCamera, StageKey, StageToolbar, TidyUp, ZOOM_STEP } from '../views/StageChrome';
 import { DEFAULT_GRAPH_SETTINGS } from '../exploring/session-settings/model';
 import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
 import { keptCamera } from '../exploring/tab-set/reads';
 import { runTabSetCommand } from '../exploring/tab-set/run';
 import { mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
-import { lastLayout, useLaidOut } from './layout';
+import { lastLayout, tidyGround, useLaidOut } from './layout';
 import { productInput } from './layout-input';
 import { type NestedMap, type NestedNode } from './nested';
 import { type GroundMap, type GroundNode } from './ground';
 import { treeParent } from './tree';
 import { linkLine, linksOf, MOST_LINKS } from './map-links';
 import { setTextMeasure, type TextMeasure } from './text';
-import { BLOCK_BELOW_PX, CHILD_READ_PX, drawnFor, drawnKey, drawnNested, frameGround, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
+import { BLOCK_BELOW_PX, drawnFor, drawnKey, drawnNested, frameGround, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, wholeIn, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
 import { followBox, useMorph } from './morph';
@@ -40,7 +40,7 @@ import { Button } from '../components/Button';
 import { pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
-import { keepLabel, labelStrip } from './sticky';
+import { keepLabel } from './sticky';
 import { focusStrength } from './fade';
 import { boxColors, isBlock, paint, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
@@ -166,7 +166,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
     );
   }
   // The shared stage toolbar (views/StageChrome.tsx): the steps, Out, In and Frame, the Changes controls, then the layout
-  // switch and the filters (primary, always in the row), and depth (secondary, folding into More). In the toolbar's
+  // switch, the filters and, in the Map, Tidy up (primary, always in the row), and depth (secondary, folding into More). In the toolbar's
   // narrow form the layouts show one letter each. The key is a bar along the bottom (StageKey).
   const tools = (narrow: boolean) => ({
     primary: (
@@ -179,6 +179,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
           ))}
         </div>
         <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} allLinks={layout === 'map' ? allLinks : null} setAllLinks={(on) => update({ allLinks: on })} />
+        {layout === 'map' && <TidyUp />}
       </>
     ),
     // Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21).
@@ -201,7 +202,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
         can={(move) => graphTarget(index, focus, layout, move) !== null}
         walkLabels={graphWalkLabels(layout)}
         own={tools}
-        measureKey={filters.hiddenKinds.size}
+        measureKey={`${layout}|${filters.hiddenKinds.size}`}
       />
       <StageKey entries={keyEntries} beside={minimap ? 'minimap' : undefined} />
       <div className="graph-workspace">
@@ -336,7 +337,8 @@ function MapOverview({ map, focus, hidden, view }: { map: PlacedMap; focus: stri
   const H = Math.min(200, Math.max(80, (W * map.height) / Math.max(1, map.width)));
   const pad = Math.max(map.width, map.height) * 0.02;
   return (
-    <div className="graph-minimap">
+    // A floating panel at the bottom (openSpace.ts): the camera frames the focus above it, never under it (LA-PAT-APP-UX-R23).
+    <div className="graph-minimap" data-floating="bottom">
       <svg role="img" aria-label="Minimap" width={W} height={H} viewBox={`${-pad} ${-pad} ${map.width + 2 * pad} ${map.height + 2 * pad}`} preserveAspectRatio="xMidYMid meet">
         {boxes.map((n) => shapeOf(n, 'graph-minimap-node'))}
         {f && shapeOf(f, 'graph-minimap-node is-focus')}
@@ -489,7 +491,11 @@ function GraphStage(props: CanvasProps & { measure: TextMeasure; fonts: GraphFon
   // The Map is always the product's ground; the Tree and Nested maps the focus's product's tree.
   const root = useMemo(() => (layout === 'map' ? index.product : mapRootOf(index, graph.focus)), [index, graph.focus, layout]);
   const input = useMemo(() => productInput(index, root, layout, measure.key), [index, root, layout, measure]);
-  const laid = useLaidOut<GraphMap | NestedMap | GroundMap, RecordIndex>(input, index, fonts);
+  // Tidy up (LA-PAT-APP-UX-R22): the Map laid out afresh, by the stage's shared command and button; every later change
+  // keeps its places from it. The Tree and Nested maps are laid out top-down, so they have nothing to tidy.
+  const [tidy, setTidy] = useState(0);
+  useCommand('stageTidy', () => { tidyGround(input); setTidy((t) => t + 1); }, layout === 'map');
+  const laid = useLaidOut<GraphMap | NestedMap | GroundMap, RecordIndex>(input, index, fonts, tidy);
   if (!laid) return <div className="graph-flow" data-layout={layout} aria-busy="true" />;
   return <GraphScene {...props} map={laid.map} mapIndex={laid.of} />;
 }
@@ -601,12 +607,12 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     const framed = map.view === 'map' ? onGround(index, map, focus) : focus;
     if (!size || (space && !open) || !map.nodes.has(framed)) return null;
     const box = frameBox(size);
-    // The focus is never left without its label: framed as a strip beside its children, the strip is as wide as its label
-    // needs to read; where its visible part cannot hold it, the camera moves to where it can.
+    // The focus is never left without its label: where its visible part cannot hold it, the camera moves to where it can;
+    // and the focused box is always whole in the frame (LA-PAT-APP-UX-R23).
     const plate = plateFor(framed);
-    const v = map.view === 'map' ? frameGround(map, framed, box.w, box.h, maxZoom) : map.view === 'nested' ? frameNested(map, focus, box.w, box.h, maxZoom) : frameOnMap(map, focus, depth, box.w, box.h, maxZoom, plate ? labelStrip(plate, box.h, CHILD_READ_PX) : undefined);
+    const v = map.view === 'map' ? frameGround(map, framed, box.w, box.h, maxZoom) : map.view === 'nested' ? frameNested(map, framed, box.w, box.h, maxZoom) : frameOnMap(map, framed, depth, box.w, box.h, maxZoom);
     const at = { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
-    return plate ? keepLabel(plate, at, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : at;
+    return wholeIn(plate ? keepLabel(plate, at, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : at, map.nodes.get(framed)!, box);
   }, [size, map, focus, depth, frameBox, space, open, plateFor, index]);
 
   // Frame the focus whenever it, the depth, the stage's size or the open space changes: a glide,
@@ -657,7 +663,8 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     if (!kept && was && node && was.key === framedKey) {
       const follow = followBox(view.current, was.box, node, { min: MIN_ZOOM, max: maxZoom });
       rememberFraming();
-      if (follow) moveTo(follow, true);
+      // Following the focus keeps it whole too (LA-PAT-APP-UX-R23).
+      if (follow && size) moveTo(wholeIn(follow, node, frameBox(size)), true);
       return;
     }
     const target = kept ?? framing();
