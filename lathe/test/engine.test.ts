@@ -1,11 +1,13 @@
 // The engine's load: the Workspace contract, records with their scope, check rows run in order, product kinds, and
 // a load that reads the files afresh and writes nothing. Then the Tool Library, Lathe's worked example, checks clean.
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { LATHE_DATA_DIR, loadWorkspace, openStore, PACKAGE_DIR, tableText, type Row, type Workspace } from '../src/index.ts';
-import { adding, build, complete, removeData } from './helpers.ts';
+import { ADD_CHECK } from '../src/checking/check/commands/add-check.ts';
+import { LATHE_DATA_DIR, loadWorkspace, openStore, PACKAGE_DIR, StoreError, tableText, type Row, type Workspace } from '../src/index.ts';
+import { runCommand } from '../src/platform/commands/run.ts';
+import { adding, build, complete, removeData, run } from './helpers.ts';
 
 const temps: string[] = [];
 const tempDir = () => {
@@ -73,7 +75,7 @@ describe('checks', () => {
     const one = (name: string) => `SELECT NULL AS record, '${name} ran.' AS message`;
     const checks = await checksFolder([
       { name: 'first', query: one('first') },
-      { name: 'broken', query: 'SELECT * FROM no_such_table' },
+      { name: 'broken', query: 'SELECT NULL AS record, NULL AS message FROM no_such_table' },
       { name: 'third', query: one('third') },
     ]);
     const loaded = await loadWorkspace(root, { latheDataDir: checks });
@@ -100,12 +102,45 @@ describe('checks', () => {
         for (const kind of (row.kinds as string[] | undefined) ?? []) expect(kinds.has(kind), `${String(row.name)}: ${kind}`).toBe(true);
       }
     });
+
+    it("LA-CHK-INV04-T refuses a check whose query is not one SELECT returning record and message, or returns a severity its check's severity does not ask for, with check-query-select, changing no file", async () => {
+      const store = await openStore(await build(complete()));
+      const file = path.join(store.dataDir, 'check.jsonl');
+      const read = () => (existsSync(file) ? readFileSync(file, 'utf8') : null);
+      const before = read();
+      const add = async (query: string, severity = 'warning') => {
+        const error = await runCommand(store, ADD_CHECK, { name: 'house-rule', product_id: 'EX', position: 1, severity, summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query }).then(() => null, (e: unknown) => e);
+        expect(error, query).toBeInstanceOf(StoreError);
+        return (error as StoreError).problems.map((p) => [p.rule, p.message]);
+      };
+      try {
+        expect(await add('DELETE FROM domain')).toEqual([
+          ['check-query-select', "check house-rule's query starts with neither SELECT nor WITH; a check's query is one SELECT"],
+          ['check-query-select', "check house-rule's query returns no record or message; a check's query returns record and message"],
+        ]);
+        expect(await add("SELECT NULL AS record, 'a;b' AS message; DROP TABLE domain")).toEqual([
+          ['check-query-select', "check house-rule's query holds more than one statement; a check's query is one SELECT"],
+        ]);
+        expect(await add('SELECT NULL AS record WHERE false')).toEqual([
+          ['check-query-select', "check house-rule's query returns no message; a check's query returns record and message"],
+        ]);
+        expect(await add("SELECT 'warning' AS severity, NULL AS record, NULL AS message")).toEqual([
+          ['check-query-select', "check house-rule's query returns a severity, but the check's severity is warning; only an error_or_warning check returns one"],
+        ]);
+        expect(await add('SELECT NULL AS record, NULL AS message', 'error_or_warning')).toEqual([
+          ['check-query-select', "check house-rule's severity is error_or_warning, so its query returns each row's severity (AS severity)"],
+        ]);
+      } finally {
+        await store.close();
+      }
+      expect(read()).toBe(before);
+    });
   });
 });
 
 describe('loading', () => {
   it('LA-PLT-UC01-R01-T01 loadWorkspace returns the Workspace contract', () => {
-    expect(Object.keys(ws).sort()).toEqual(['chains', 'coverage', 'exceptions', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
+    expect(Object.keys(ws).sort()).toEqual(['chains', 'coverage', 'kinds', 'links', 'problems', 'records', 'relations', 'stages']);
     expect(Object.keys(ws.chains[0]).sort()).toEqual(['build', 'design', 'files', 'links', 'obligation', 'tests']);
     expect(Object.keys(ws.kinds[0]).sort()).toEqual(['description', 'id_scope', 'kind', 'label', 'obligation', 'parent_kinds', 'position', 'required_fields', 'stage']);
     expect(ws.stages.map((s) => s.stage)).toEqual(['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan']);
@@ -183,7 +218,7 @@ describe('loading', () => {
 
   it('LA-AUT-UC03-R02-T01 Removing a kind while a record of it is left is refused, since its rows would have no table', async () => {
     const again = await openStore(await withMemo());
-    await expect(again.remove('product_kind', { name: 'memo' })).rejects.toThrow(/memo/);
+    await expect(run(again, 'product remove-product-kind', { name: 'memo' })).rejects.toThrow(/memo/);
     await again.close();
   });
 
@@ -195,7 +230,7 @@ describe('loading', () => {
     expect(listing(fresh)).toEqual(before);
 
     const store = await openStore(fresh);
-    await store.set('use_case', 'EX-LEND-UC01', { title: 'Borrow a tool for a week' });
+    await run(store, 'use-case change-use-case', { id: 'EX-LEND-UC01', title: 'Borrow a tool for a week' });
     await store.close();
     const second = await loadWorkspace(fresh);
     expect(second.records.find((r) => r.id === 'EX-LEND-UC01')?.title).toBe('Borrow a tool for a week');
@@ -211,6 +246,6 @@ describe('the Tool Library', () => {
     expect(tl.problems.filter((p) => p.severity === 'error')).toEqual([]);
     const lending = tl.coverage.find((c) => c.domain === 'TL-LEND')!;
     for (const o of lending.obligations) expect(o.designed, o.kind).toBe(o.total);
-    expect(lending.obligations.find((o) => o.kind === 'pattern_rule')).toMatchObject({ total: 3, proved: 3, proof_only: true });
+    expect(lending.obligations.find((o) => o.kind === 'pattern_rule')).toMatchObject({ total: 2, proved: 2, proof_only: true });
   });
 });

@@ -2,6 +2,8 @@ import { useEffect, useId, useState, type CSSProperties, type ChangeEvent } from
 import { Button, buttonClass } from '../components/Button';
 import { Link, navigate } from '../router';
 import { ToolPanelFrame } from '../views/ToolPanel';
+import { turnScrollToZoomOnOrOff } from '../platform/appearance/commands/turn-scroll-to-zoom-on-or-off';
+import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 import { panelHref } from '../views/overlays';
 import { shownMode } from './apply';
 import { auditContrast } from './audit';
@@ -27,7 +29,7 @@ import {
 } from './tokens';
 
 // Appearance, a tool over the stage (LA-V62, LA-PAT-APP-UX-R20): a popover anchored to its button at the
-// foot of the nav (`?panel=appearance`) with the Light, Dark or System choice and the themes, each
+// foot of the nav (`?panel=appearance`) with the Light, Dark or System choice, Scroll to zoom, and the themes, each
 // previewed live on the stage while it is pointed at or focused, and kept with a click; and, for a
 // theme of one's own (duplicated from another), the editor, a larger panel over the stage
 // (`?panel=theme&theme=<id>`). Every change shows at once on the whole app around them, which is the
@@ -35,12 +37,13 @@ import {
 
 const LABELS = Object.fromEntries(COLOR_TOKENS.map((t) => [t.name, t.label.split(',')[0]]));
 
-/** The Appearance popover: the mode, then the themes, and importing one from a file. */
+/** The Appearance popover: the mode, Scroll to zoom, then the themes, and importing one from a file. */
 export function AppearancePopover({ sheet, onClose }: { sheet: boolean; onClose: () => void }) {
   return (
     <ToolPanelFrame label="Appearance" className="appearance-popover" sheet={sheet} onClose={onClose}>
       <div className="spec-body appearance-body">
         <ModeSection />
+        <ScrollSection />
         <ThemeList />
       </div>
     </ToolPanelFrame>
@@ -77,6 +80,24 @@ function ModeSection() {
         ))}
       </div>
       <p className="hint">{mode === 'system' ? `Following the system, which is ${shownMode('system')} now.` : `Always ${mode}, whatever the system says.`}</p>
+    </section>
+  );
+}
+
+/** Scroll to zoom (LA-V62-R05): whether scroll zooms the stages' cameras or pans them, kept at once. */
+function ScrollSection() {
+  const on = useScrollToZoom();
+  const name = useId();
+  return (
+    <section className="spec-section" aria-labelledby={`${name}-h`}>
+      <h3 id={`${name}-h`}>Scroll</h3>
+      <label className="setting-switch">
+        <input type="checkbox" role="switch" checked={on} aria-describedby={`${name}-d`} onChange={(e) => turnScrollToZoomOnOrOff({ on: e.target.checked })} />
+        Scroll to zoom
+      </label>
+      <p id={`${name}-d`} className="hint">{on
+        ? 'Scroll zooms the Graph, the ERD and the Trace; Cmd or Ctrl with scroll pans.'
+        : 'Scroll pans the Graph, the ERD and the Trace; Cmd or Ctrl with scroll zooms.'}</p>
     </section>
   );
 }

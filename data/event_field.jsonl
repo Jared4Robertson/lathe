@@ -1,7 +1,3 @@
-{"domain_event_id":"LA-AUT-EV01","position":1,"name":"Data folder","meaning":"The product's data folder that changed.","type":"text","required":true,"example":"data"}
-{"domain_event_id":"LA-AUT-EV01","position":2,"name":"File","meaning":"The data file that changed.","type":"text","required":true,"example":"data/use_case.jsonl"}
-{"domain_event_id":"LA-AUT-EV01","position":3,"name":"Change","meaning":"What happened to the file.","type":"text","required":true,"example":"changed"}
-{"domain_event_id":"LA-AUT-EV01","position":4,"name":"Changed at","meaning":"When the change was seen.","type":"date and time","required":true,"example":"2026-10-24T14:02:00Z"}
 {"domain_event_id":"LA-AUT-EV03","position":1,"name":"File","meaning":"The migration or declaration file that changed.","type":"text","required":true,"example":"lathe/schema/004-domain-model.sql"}
 {"domain_event_id":"LA-AUT-EV03","position":2,"name":"Product","meaning":"The product whose declaration changed, or none for Lathe's schema.","type_value_object_id":"LA-VO01","required":false,"example":"none"}
 {"domain_event_id":"LA-AUT-EV03","position":3,"name":"Changed at","meaning":"When the change was seen.","type":"date and time","required":true,"example":"2026-10-24T23:24:05Z"}

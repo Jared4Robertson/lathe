@@ -4,6 +4,7 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRow } from '../../../platform/data/tables.ts';
 import { PATTERN_SLICE, changed, type PatternSetting } from '../model.ts';
 import { PatternRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 
 /** The pattern's changes: a column given is set, null clears an optional one; settings, when given, replace the list. */
 export type ChangePattern = Pick<PatternRow, 'id'> & { title?: PatternRow['title']; description?: PatternRow['description']; notes?: PatternRow['notes'] | null; settings?: PatternSetting[] };
@@ -32,5 +33,6 @@ export function changePattern(tx: Transaction, input: ChangePattern): void {
   const pattern = patterns.load(input.id) ?? tx.refuse('missing', `there is no pattern ${input.id}`);
   pattern.pattern = changed(pattern.pattern, input, ['title', 'description', 'notes']);
   if (input.settings) pattern.settings = input.settings;
+  holdToRules(tx, pattern);
   patterns.save(pattern);
 }

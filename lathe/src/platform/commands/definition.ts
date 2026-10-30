@@ -121,12 +121,10 @@ export interface CommandDefinition<T = never> {
 }
 
 /**
- * One query: how each interface names it, its input, and what it reads. A query whose read model has a reader (`D`)
- * names how the reader is made (`reader`), and the query runner injects it: its handler is given only that reader,
- * never the data. Until every read model has its reader, a query without one is given the read view; the cutover makes
- * `reader` required and drops the read view here.
+ * One query: how each interface names it, its input, and what it reads. It names how its read model's reader (`D`) is
+ * made (`reader`), and the query runner injects it: its handler is given only that reader, never the data.
  */
-export interface QueryDefinition<T = never, R = unknown, D = ReadView> {
+export interface QueryDefinition<T = never, R = unknown, D = unknown> {
   /** The query's record ID, such as LA-AUT-QRY100. */
   id: string;
   slice: Slice;
@@ -142,7 +140,7 @@ export interface QueryDefinition<T = never, R = unknown, D = ReadView> {
    */
   checked?: true;
   /** Makes its read model's reader over the current data: what the runner gives the handler. */
-  reader?: (view: ReadView) => D;
+  reader: (view: ReadView) => D;
   /** Reads the answer from its reader, or refuses with a reason. */
   run: (reader: D, input: T) => R;
   /** The answer as text, as the CLI prints it and the tool returns it. */
@@ -155,7 +153,7 @@ export type AnyCommand = Omit<CommandDefinition, 'input' | 'handler'> & { input:
 /** Any query, as the interfaces register it. */
 export type AnyQuery = Omit<QueryDefinition, 'input' | 'reader' | 'run' | 'text'> & {
   input: Record<string, Field>;
-  reader?: (view: ReadView) => unknown;
+  reader: (view: ReadView) => unknown;
   run: (reader: never, input: never) => unknown;
   text: (answer: never) => string;
 };

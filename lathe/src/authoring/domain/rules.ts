@@ -8,32 +8,75 @@ import { DOMAIN_AGGREGATE, domainsFrom, type Domain } from './model.ts';
 
 /**
  * Every rule the domain breaks (LA-AUT-INV112 a domain service has at most one service; LA-AUT-INV41 an aggregate has
- * one repository: a repository share names an aggregate no repository persists; LA-AUT-INV60 a term never builds on
- * itself). The view gives the persists links of the other domains' repositories and the builds_on links of the other
- * domains' terms.
+ * one repository; LA-AUT-INV60 a term never builds on itself; LA-AUT-INV17 each capability has its own position). The
+ * view gives the persists links of the other domains' repositories and the builds_on links of the other domains' terms.
  */
 export function domainProblems(domain: Domain, view: ReadView): RuleProblem[] {
-  return [...repositoryShareProblems(domain, view), ...buildsOnLoops(domain, view)];
+  return [...oneEach(domain, view), ...buildsOnLoops(domain, view), ...capabilityPositions(domain)];
 }
 
-// LA-AUT-INV41: a repository share names an aggregate no repository persists, never its repository's own.
-function repositoryShareProblems(domain: Domain, view: ReadView): RuleProblem[] {
+/** LA-AUT-INV17: no two capabilities of the domain have the same position; each after the first at one is refused. */
+function capabilityPositions(domain: Domain): RuleProblem[] {
+  const first = new Map<number, string>();
+  const problems: RuleProblem[] = [];
+  for (const { row } of domain.capabilities) {
+    const holder = first.get(row.position);
+    if (holder === undefined) first.set(row.position, row.id);
+    else {
+      problems.push({
+        rule: 'capability-position',
+        table: 'capability',
+        row: row as unknown as Row,
+        message: `capability ${holder} is at position ${row.position} of domain ${domain.root}, so ${row.id} cannot be too: each capability of a domain has its own position`,
+      });
+    }
+  }
+  return problems;
+}
+
+/**
+ * Every persists link that breaks LA-AUT-INV40: a repository persists at most one aggregate. Each link after the first
+ * of its repository is refused. (One that persists none is reported by repository-persists-nothing until its link is
+ * written.)
+ */
+export function repositoryPersistsOne(links: readonly { source_id: string; target_id: string }[]): RuleProblem[] {
+  const first = new Map<string, string>();
+  const problems: RuleProblem[] = [];
+  for (const link of links) {
+    const persisted = first.get(link.source_id);
+    if (persisted === undefined) first.set(link.source_id, link.target_id);
+    else {
+      problems.push({
+        rule: 'repository-persists-one',
+        table: 'persists',
+        row: link as unknown as Row,
+        message: `repository ${link.source_id} already persists ${persisted}, so it cannot also persist ${link.target_id}: a repository persists one aggregate`,
+      });
+    }
+  }
+  return problems;
+}
+
+// LA-AUT-INV41: no repository persists an aggregate another one already persists. LA-AUT-INV112: a domain service has
+// at most one service.
+function oneEach(domain: Domain, view: ReadView): RuleProblem[] {
   const own = new Set(domain.repositories.map((r) => r.row.id));
   const persistedBy = new Map<string, string>();
   for (const link of view.rows('persists')) if (!own.has(String(link.source_id))) persistedBy.set(String(link.target_id), String(link.source_id));
-  for (const repository of domain.repositories) if (repository.persists !== null) persistedBy.set(repository.persists, repository.row.id);
   const problems: RuleProblem[] = [];
   for (const repository of domain.repositories) {
-    for (const share of repository.shares) {
-      const persister = persistedBy.get(share.aggregate_id);
-      if (persister === undefined) continue;
-      problems.push({
-        rule: 'repository-share-unpersisted',
-        table: 'repository_share',
-        row: share as unknown as Row,
-        message: `${share.repository_id} cannot also record ${share.aggregate_id}, ${persister === share.repository_id ? 'the aggregate it persists' : `which ${persister} persists: an aggregate has one repository`}`,
-      });
+    if (repository.persists === null) continue;
+    const persister = persistedBy.get(repository.persists);
+    if (persister === undefined) {
+      persistedBy.set(repository.persists, repository.row.id);
+      continue;
     }
+    problems.push({
+      rule: 'one-repository',
+      table: 'repository',
+      row: repository.row as unknown as Row,
+      message: `${persister} and ${repository.row.id} both persist ${repository.persists}: an aggregate has one repository`,
+    });
   }
   for (const service of beyondFirst(domain.services.map((x) => x.row), (r) => r.domain_service_id)) {
     problems.push({
@@ -144,12 +187,15 @@ export const domainRules: AggregateRules = {
       named.add(p.message);
       return true;
     };
-    return domainsFrom((table) => view.rows(table)).flatMap((domain) => domainProblems(domain, view)).filter(once);
+    return [
+      ...domainsFrom((table) => view.rows(table)).flatMap((domain) => domainProblems(domain, view)).filter(once),
+      ...repositoryPersistsOne(view.rows('persists') as unknown as { source_id: string; target_id: string }[]),
+    ];
   },
 };
 
 /** Refuses the command, with every reason, when the domain as it would be saved breaks one of its rules. */
 export function holdToRules(tx: Transaction, domain: Domain): void {
   const problems = domainProblems(domain, tx);
-  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message, command: 0 })));
+  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message })));
 }

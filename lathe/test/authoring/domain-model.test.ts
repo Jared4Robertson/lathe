@@ -71,12 +71,10 @@ describe('entities and value objects', () => {
 
   it('LA-AUT-UC10-R01-T02 A well-formed domain model gives no entity problem, and each entity rule fails on its own data', async () => {
     expect(good.problems).toEqual([]);
-    // A child its root does not reach, and a has_one into another aggregate.
-    const broken = await loadData(adding(without(complete(), 'has_one', () => true), {
-      has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }],
-    }));
+    // A child its root does not reach is a warning; a has_many into another aggregate is refused.
+    const broken = await loadData(without(complete(), 'has_one', () => true));
     expect(records(ofCheck(broken, 'entity-unreferenced'))).toEqual(['EX-LEND-EN02']);
-    expect(ofCheck(broken, 'has-crosses-aggregate')).toEqual([expect.objectContaining({ severity: 'error', record: 'EX-LEND-EN01' })]);
+    expect((await refusals(adding(complete(), { has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }] }))).map((p) => p.rule)).toEqual(['has-crosses-aggregate']);
     // A second root, an entity with no role, and a has_one from an entity to itself are refused.
     const data = everyKind();
     expect((await refusals(changing(data, 'entity', (e) => e.id === 'TL-LEND-EN02', { role: 'root', in_root_table: undefined }))).map((p) => p.rule)).toEqual(['aggregate-root']);
@@ -145,9 +143,10 @@ describe('entities and value objects', () => {
     expect(await refusals(crossing)).toEqual([
       expect.objectContaining({ rule: 'foreign-key-crosses-domain', message: expect.stringContaining('table TL-SHOP-EN01-TB is in domain TL-SHOP, so its foreign key cannot point at table TL-LEND-EN01-TB') }),
     ]);
-    // A part link (has_one or has_many) into another aggregate is an error, never a way to refer to it.
-    const ws = await loadData(adding(complete(), { has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }] }));
-    expect(ofCheck(ws, 'has-crosses-aggregate')[0].message).toContain('refer to EX-LEND-A2 by a field typed by it');
+    // A part link (has_one or has_many) into another aggregate is refused, never a way to refer to it.
+    expect(await refusals(adding(complete(), { has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }] }))).toEqual([
+      expect.objectContaining({ rule: 'has-crosses-aggregate', message: expect.stringContaining('an entity of aggregate EX-LEND-A2: parts stay inside their aggregate; type a field by the other aggregate instead') }),
+    ]);
   });
 });
 
@@ -162,9 +161,7 @@ describe('commands, events and policies', () => {
     expect(pairsOf(schema, 'checks')).toEqual(['command>specification']);
     expect(pairsOf(schema, 'hears')).toEqual(['policy>domain_event']);
     expect(schema.tables.hears.unique).toContainEqual(['source_id']);
-    expect(schema.tables.command_change).toMatchObject({ role: 'part', ownerColumn: 'command_id' });
-    expect(requiredOf(schema, 'command_change')).toEqual(['command_id', 'aggregate_id', 'reason']);
-    described(reference, ['domain_event', 'command', 'policy'], ['command_change', 'raises', 'checks', 'hears']);
+    described(reference, ['domain_event', 'command', 'policy'], ['raises', 'checks', 'hears']);
     expect(reference.relations.find((r) => r.relation === 'raises')).toMatchObject({ forward_label: 'Raises', reverse_label: 'Raised by' });
     expect(reference.relations.find((r) => r.relation === 'hears')).toMatchObject({ forward_label: 'Hears', reverse_label: 'Heard by' });
   });
@@ -199,27 +196,13 @@ describe('commands, events and policies', () => {
     expect(twice).toEqual([expect.objectContaining({ file: 'data/event_field.jsonl', line: 2 })]);
   });
 
-  it('LA-AUT-UC12-R06-T01 A command changes its own aggregate; another of its domain changed in the same transaction is recorded with its reason and listed as a recorded exception', async () => {
+  it('LA-AUT-UC12-R06-T01 A command changes only its own aggregate, the one of the entity it sits under, and the schema keeps no way to record another', async () => {
     expect(schema.tables.command.columns.find((c) => c.name === 'entity_id')!.required).toBe(true);
-    const ws = await loadData(adding(complete(), {
-      command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as lent without its loan.' }],
-    }));
-    expect(ws.exceptions).toEqual([{ command: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A2', reason: 'The tool must never show as lent without its loan.' }]);
+    expect(Object.keys(schema.tables).filter((t) => /^command_|exception|_share$/.test(t))).toEqual(['command_handler']);
+    const ws = await loadData(complete());
     expect(ws.problems).toEqual([]);
-    const change = everyKind().command_change[0];
-    // No reason, its own aggregate, or an aggregate of another domain is refused.
-    const { reason: _, ...unreasoned } = change;
-    expect((await refusals(withTable(everyKind(), 'command_change', [unreasoned]))).map((p) => p.message)).toEqual(['command_change.reason is required']);
-    expect(await refusals(withTable(everyKind(), 'command_change', [{ ...change, aggregate_id: 'TL-LEND-A1' }]))).toEqual([
-      expect.objectContaining({ rule: 'command-change-in-domain', message: expect.stringContaining('cannot also record that same aggregate') }),
-    ]);
-    const other = adding(withTable(everyKind(), 'command_change', [{ ...change, aggregate_id: 'TL-SHOP-A1' }]), {
-      domain: [{ id: 'TL-SHOP', title: 'Shop', product_id: 'TL', subdomain_type: 'supporting', description: 'Selling spare parts.' }],
-      aggregate: [{ id: 'TL-SHOP-A1', title: 'Sale', domain_id: 'TL-SHOP', identity: 'Sale ID', description: 'One sale of parts.' }],
-    });
-    expect(await refusals(other)).toEqual([
-      expect.objectContaining({ rule: 'command-change-in-domain', message: expect.stringContaining('TL-SHOP-A1, an aggregate of another domain') }),
-    ]);
+    // Data naming another aggregate a command changes has no table to load into.
+    expect(await refusals(adding(complete(), { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'Both at once.' }] }))).not.toEqual([]);
   });
 });
 

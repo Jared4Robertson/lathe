@@ -1,7 +1,6 @@
 {"id":"LA-AUT-CK01","title":"domain-named-for-technology","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-AUT-CK02","title":"event-tense","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-AUT-CK03","title":"entity-unreferenced","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
-{"id":"LA-AUT-CK04","title":"has-crosses-aggregate","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-AUT-CK05","title":"step-order","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-AUT-CK06","title":"actor-not-a-role","domain_id":"LA-AUT","file":"data/check.jsonl"}
 {"id":"LA-AUT-CK07","title":"step-without-endpoint","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}

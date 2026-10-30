@@ -5,7 +5,7 @@ import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import type { Viewport } from '../graph/camera';
 import { faintest, fadeTween, type FadeLook } from '../graph/fade';
 import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
-import { useCameraGestures, wheelLatch, wheelMove } from '../graph/gestures';
+import { useCameraGestures, useWheelMove, wheelLatch } from '../graph/gestures';
 import { hitPlate } from '../graph/hit';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from '../graph/look';
 import type { MapNode } from '../graph/map';
@@ -37,8 +37,8 @@ import type { TraceHost, TraceScene, TraceSceneBox } from './TraceCanvas';
 // fits. The chosen box in each column (the focus's path) is ringed and joined to the column it opens, the focus ringed
 // as on the tree. Labels are always placed as the column lays them out: no sticky label moves under a panel. The camera
 // opens at zoom 1 with every column when they fit, else the last one ending at the frame's right; a column taller than the stage scrolls on its own under the wheel, its chosen box
-// scrolled into view as the focus moves. Drag, scroll across the gaps and Cmd or Ctrl with scroll move the camera as on
-// the tree. Gaps only and the Changes lens fade as on the tree; the focus fades nothing, since the path is the point.
+// scrolled into view as the focus moves. Drag and the wheel (across the gaps, or a zoom) move the camera as on the tree,
+// Scroll to zoom included. Gaps only and the Changes lens fade as on the tree; the focus fades nothing, since the path is the point.
 //
 // The canvas is hidden from assistive technology: the Trace stage's table (TraceView.tsx) stays its accessible layer.
 
@@ -379,17 +379,20 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
     requestPaint();
   };
 
-  // A column taller than the stage scrolls on its own under the wheel, before the camera's own wheel (gestures.ts) sees
-  // it; scroll across, over the gaps or over a column that fits pans the camera, and Cmd or Ctrl with scroll zooms.
+  // A column taller than the stage scrolls on its own under a wheel that pans down it, before the camera's own wheel
+  // (gestures.ts) sees it; scroll across, over the gaps or over a column that fits pans the camera, and a wheel that
+  // zooms (wheelMove, with the person's Scroll to zoom) zooms it.
+  const readWheel = useWheelMove();
   useEffect(() => {
     const el = wrapper.current;
     if (!el) return;
     const latch = wheelLatch();
     const onWheel = (e: WheelEvent) => {
       const c0 = canvas.current;
-      if (!c0 || e.target !== c0 || e.ctrlKey || e.metaKey || latch(e, e.timeStamp) === 'drop') return;
-      const move = wheelMove(e, sizeRef.current);
-      if (!('dy' in move) || Math.abs(move.dy) < Math.abs(move.dx)) return;
+      if (!c0 || e.target !== c0) return;
+      const move = readWheel(e, sizeRef.current);
+      if (latch({ zoom: 'zoom' in move, deltaX: e.deltaX, deltaY: e.deltaY }, e.timeStamp) === 'drop' || 'zoom' in move) return;
+      if (Math.abs(move.dy) < Math.abs(move.dx)) return;
       const v = view.current;
       const r = c0.getBoundingClientRect();
       const x = (e.clientX - r.left - v.x) / v.zoom;
@@ -407,7 +410,7 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
     };
     el.addEventListener('wheel', onWheel, { capture: true, passive: false });
     return () => el.removeEventListener('wheel', onWheel, { capture: true });
-  }, [viewHeight, scrollOf, requestPaint]);
+  }, [viewHeight, scrollOf, requestPaint, readWheel]);
 
   const zoomButton = (factor: number) => () => {
     if (!size) return;

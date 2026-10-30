@@ -4,6 +4,7 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRow } from '../../../platform/data/tables.ts';
 import { PATTERN_SLICE, newPattern, type PatternSetting } from '../model.ts';
 import { PatternRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 
 /** A new pattern, with its settings in order. */
 export type AddPattern = Pick<PatternRow, 'id' | 'title' | 'product_id' | 'description' | 'notes'> & { settings?: PatternSetting[] };
@@ -32,5 +33,6 @@ export function addPattern(tx: Transaction, input: AddPattern): void {
   const patterns = new PatternRepository(tx);
   const { settings = [], ...row } = input;
   const pattern = patterns.create(newPattern(row, settings));
+  holdToRules(tx, pattern);
   patterns.save(pattern);
 }

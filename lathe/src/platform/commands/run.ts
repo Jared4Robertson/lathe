@@ -25,7 +25,7 @@ export function runQuery(view: ReadView, definition: AnyQuery, args: unknown): u
  */
 export function answerQuery(view: ReadView, definition: AnyQuery, input: unknown): unknown {
   if (definition.checked && !view.checked) throw new Error(`${definition.id} reads the checks' run, and the data it was given comes without one: run the checks first.`);
-  return definition.run((definition.reader ? definition.reader(view) : view) as never, input as never);
+  return definition.run(definition.reader(view) as never, input as never);
 }
 
 /** What a command changed, one line per row, then the files it wrote. */

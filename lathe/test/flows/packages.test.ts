@@ -22,15 +22,14 @@ describe('Packages from the command line', () => {
     expect(open.stdout).toContain('Product TL depends on 2 packages no record uses: nodemailer (package.json), vitest (package.json).');
     expect(gapsOf(tl.workspace(), null)).toContain('package-not-accounted-for TL');
     expect(problemsOf(tl.workspace(), 'package-not-in-manifest')).toEqual([]);
-    // S03: the Agent names each package on the technical record that uses it; the store refuses one on a use case.
-    expect(tl.refused('add', 'package_use', '--record_id', 'TL-LEND-UC01', '--package', 'nodemailer')).toContain('TL-LEND-UC01 is a use case, not a technical record');
-    tl.run('add', 'package_use', '--record_id', 'TL-INT01-AD', '--package', 'nodemailer');
-    tl.run('add', 'package_use', '--record_id', 'TL-INT01-AD', '--package', 'vitest');
+    // S03: the Agent names each package on the technical record that uses it; a use case's commands take no package.
+    expect(tl.lathe('use-case', 'change-use-case', '--id', 'TL-LEND-UC01', '--packages', 'nodemailer').stderr).toContain('has no field packages');
+    tl.command('integration change-adapter', { id: 'TL-INT01-AD', packages: ['nodemailer', 'vitest'] });
     expect(gapsOf(tl.workspace(), null)).not.toContain('package-not-accounted-for TL');
     // S04: once a package leaves the manifest, the record that still names it is an error until the Agent removes it.
     tl.write('package.json', `${JSON.stringify({ dependencies: { nodemailer: '^7.0.0' } })}\n`);
     expect(problemsOf(tl.workspace(), 'package-not-in-manifest')).toEqual(['TL-INT01-AD: Adapter TL-INT01-AD names package vitest, which no package.json of its product lists.']);
-    tl.run('remove', 'package_use', '--record_id', 'TL-INT01-AD', '--package', 'vitest');
+    tl.command('integration change-adapter', { id: 'TL-INT01-AD', packages: ['nodemailer'] });
     expect(problemsOf(tl.workspace(), 'package-not-in-manifest')).toEqual([]);
   });
 });

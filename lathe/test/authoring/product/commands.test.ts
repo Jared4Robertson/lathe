@@ -157,7 +157,7 @@ describe('LA-AUT-UC04-R01-T51 a product kind and relation are declared, changed 
     const before = fileOf(store, 'product_kind');
     const inUse = await refusal(store, REMOVE_PRODUCT_KIND, { name: 'cli_command' });
     // The relation naming it is refused first, when the schema is built again; so are its records, with no kind left.
-    expect(inUse.problems[0]).toMatchObject({ rule: 'product-kind', message: 'The relation documents links cli_command to view, and one of them is not a kind.' });
+    expect(inUse.problems[0]).toMatchObject({ rule: 'product-relation-own', message: 'The relation documents links cli_command to view, and one of them is not a kind.' });
     expect(fileOf(store, 'product_kind')).toBe(before);
   });
 });

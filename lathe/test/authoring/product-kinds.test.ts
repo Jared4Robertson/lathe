@@ -3,7 +3,7 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace, openStore, type Workspace } from '../../src/index.ts';
 import { everyKind } from '../store/fixture.ts';
-import { adding, build, changing, complete, loadData, obligation, refusals, removeData, withTable, writeData, type Data } from '../helpers.ts';
+import { adding, build, changing, complete, loadData, obligation, refusals, removeData, run, withTable, writeData, type Data } from '../helpers.ts';
 
 afterAll(removeData);
 
@@ -43,7 +43,7 @@ const withReport = (): Data =>
 async function loadReport(): Promise<Workspace> {
   const root = await build(withReport());
   const store = await openStore(root, { latheDataDir: null });
-  await store.apply([{ op: 'link', relation: 'about', source: 'EX-LEND-Q01', target: 'EX-LEND-REP01' }]);
+  await run(store, 'product change-question', { id: 'EX-LEND-Q01', about: ['EX-LEND-REP01'] });
   await store.close();
   return loadWorkspace(root);
 }
