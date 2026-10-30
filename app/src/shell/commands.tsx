@@ -456,7 +456,6 @@ function ShortcutSheet({ commands, mac, available, titleOf, announce, onClose }:
                             {c.customizable && !(recording?.id === c.id && recording.replacing === undefined) && (
                               <Button className="shortcut-add" icon="plus" aria-label={`Add a key to ${title}`} onClick={() => { setOffer(null); setRecording({ id: c.id }); }}>Key</Button>
                             )}
-                            {c.changed && <Button className="shortcut-reset" aria-label={`Reset ${title}`} onClick={() => reset(c.id)}>Reset</Button>}
                             {!c.customizable && <span className="shortcut-fixed">{c.browser ? 'The browser’s' : 'Fixed'}</span>}
                           </div>
                           {mine && (
@@ -468,6 +467,7 @@ function ShortcutSheet({ commands, mac, available, titleOf, announce, onClose }:
                             </div>
                           )}
                         </td>
+                        <td className="shortcut-reset-cell">{c.changed && <Button className="shortcut-reset" aria-label={`Reset ${title}`} onClick={() => reset(c.id)}>Reset</Button>}</td>
                         <td className="cmd-id"><code>{c.id}</code></td>
                       </tr>
                     );
