@@ -372,7 +372,10 @@ for (const look of LOOKS) {
       test.beforeEach(({ page }) => useLook(page, look));
       test('LA-V96-R28-T02 the Changes controls, Highlight changes on and the Changes panel pass axe', async ({ page }) => {
         await open(page, `${RECORD}?stage=graph&panel=changes`, '.changes-panel .tool-panel-title, .tool-sheet.changes-panel');
-        await page.getByRole('group', { name: 'Changes' }).getByRole('button', { name: 'Highlight changes' }).click();
+        // A toolbar narrowed by the open panel folds the Changes controls into its More menu.
+        const highlight = page.getByRole('group', { name: 'Changes' }).getByRole('button', { name: 'Highlight changes' });
+        if (!(await highlight.isVisible())) await page.locator('.focus-stage .stage-more > summary').click();
+        await highlight.click();
         await page.waitForTimeout(300);
         await auditAll(page, `${look.name}, ${phone ? 'phone' : 'desktop'}: the Changes controls and panel`);
       });
