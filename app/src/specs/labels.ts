@@ -1,5 +1,5 @@
 import { type MetaRelation } from '../platform/meta-model/reads';
-import { type RecordIndex, type SummaryLink } from '../exploring/record-summaries/record-index';
+import { compareIds, type RecordIndex, type SummaryLink } from '../exploring/record-summaries/record-index';
 
 // The words a link is shown by (LA-PAT-RECORD-PAGE-R07): each relation rule's `forward_label`, read from the
 // link's source ("Fulfills"), and `reverse_label`, read from its target ("Fulfilled by"), from
@@ -43,5 +43,5 @@ export function groupByLabel(index: RecordIndex, links: readonly SummaryLink[], 
   }
   return [...groups.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([label, ids]) => ({ label, ids: [...ids].sort((a, b) => a.localeCompare(b, 'en', { numeric: true })) }));
+    .map(([label, ids]) => ({ label, ids: [...ids].sort(compareIds) }));
 }

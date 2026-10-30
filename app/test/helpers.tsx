@@ -140,5 +140,9 @@ export const desktopBridgeStub = (over: Partial<LatheDesktop> = {}): LatheDeskto
     stop: async () => false,
     setMode: async () => false,
     onPatch: () => () => {} },
+  voice: {
+    support: async () => ({ available: false, reason: 'Not in tests.', microphone: 'unknown', endOfTurn: false }),
+    listen: async () => 'unavailable',
+    onEvent: () => () => {} },
   onAppRequest: () => () => {},
   ...over });

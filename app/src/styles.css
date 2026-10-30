@@ -831,6 +831,8 @@ a.row-link.row-link:focus-visible { outline: none; }
 .erd-leader { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 4; pointer-events: none; }
 .erd-empty, .erd-missing { flex: 1; margin: 0; padding: 24px; }
 .erd-flow .react-flow__node:focus { outline: none; }
+/* A new layout's boxes glide from their old places to their new ones (LA-PAT-APP-UX-R22); at once under reduced motion. */
+@media (prefers-reduced-motion: no-preference) { .erd-flow .react-flow__node { transition: opacity var(--hover-speed), transform var(--motion-speed) var(--motion-ease); } }
 .erd-flow .react-flow__node:focus-visible .erd-box { outline: 3px solid var(--steel); outline-offset: 3px; }
 .erd-handle { opacity: 0; pointer-events: none; }
 /* A box's strength (--erd-strength, the graph's focus fade) eases with the camera's glide; its place and size never change. */

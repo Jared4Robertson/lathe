@@ -8,7 +8,7 @@ import { Link, useLocation } from '../router';
 import { useSpaces } from '../shell/spaces';
 import { addressOf } from '../views/address';
 import { treeGroup } from '../graph/tree';
-import { byIdOrder, type ListedProblem, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { byIdOrder, compareIds, type ListedProblem, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
 import { Markdown } from '../specs/Markdown';
 import { RecordLink, Section } from '../specs/parts';
@@ -315,7 +315,7 @@ function KindBody({ index, reference, kind, problems }: { index: RecordIndex; re
   const example = records[0];
   const groups = new Map<string, RecordSummary[]>();
   for (const r of records) if (r.parent) groups.set(r.parent, [...(groups.get(r.parent) ?? []), r]);
-  const parents = [...groups.keys()].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+  const parents = [...groups.keys()].sort(compareIds);
   const name = lowerLabel(plural(kind.label));
   return (
     <>

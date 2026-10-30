@@ -2,7 +2,7 @@ import { createContext, useContext } from 'react';
 import type { ProductChanges, RecordChange } from '../../../lathe/src/exploring/record-changes/read-model';
 import type { ReadRefusal } from '../../../lathe/src/server/contract';
 import { readModelChanges } from '../record/read';
-import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { byIdOrder, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { rollupText } from './rollup';
 
 export type { RecordChange };
@@ -49,7 +49,7 @@ export function reloadChanges(before: RecordIndex, after: RecordIndex): RecordCh
     else if (was.digest !== r.digest) out.push(recordLevel(r.id, r.kind, r.title, 'changed'));
   }
   for (const r of before.byId.values()) if (!after.byId.has(r.id)) out.push(recordLevel(r.id, r.kind, r.title, 'removed'));
-  return out.sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
+  return out.sort(byIdOrder);
 }
 
 // ---------- Baselines ----------
@@ -102,7 +102,7 @@ function sinceLook(index: RecordIndex, mark: LookMark, read: RecordChange[]): Re
     if (index.byId.has(id)) continue;
     out.push(detail.get(id) ?? recordLevel(id, '', id, 'removed'));
   }
-  return out.sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
+  return out.sort(byIdOrder);
 }
 
 /** The changes since the Reader's choice of baseline, with how the panel and the card name it. */
