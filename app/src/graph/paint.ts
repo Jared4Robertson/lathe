@@ -56,8 +56,8 @@ export interface Line {
 /** A bar standing for children too small to draw (LA-EXP-DS10), in map units, under its parent: the place it fades with. */
 export interface Bar { parent: string; x: number; y: number; w: number; h: number }
 
-/** What a frame draws, in draw order. */
-export interface Frame { plates: readonly Plate[]; bars: readonly Bar[]; lines: readonly Line[] }
+/** What a frame draws, in draw order: `wires`, when given, draws a stage's own lines in one go, after the bars and under the boxes (the Trace's links). */
+export interface Frame { plates: readonly Plate[]; bars: readonly Bar[]; lines: readonly Line[]; wires?: (ctx: CanvasRenderingContext2D, X: (x: number) => number, Y: (y: number) => number) => void }
 
 /** The states the frame shows: the focus, the box under the pointer, the keyboard's ring, a tap's selection, and the spotlight. */
 export interface PaintState {
@@ -157,6 +157,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     ctx.roundRect(X(b.x), Y(b.y), b.w * zoom, b.h * zoom, 4 * zoom);
     ctx.fill();
   }
+  frame.wires?.(ctx, X, Y);
   for (const line of frame.lines) {
     const [a0, b0] = line.points;
     if (!onCanvas({ x: Math.min(a0.x, b0.x), y: Math.min(a0.y, b0.y), w: Math.abs(b0.x - a0.x), h: Math.abs(b0.y - a0.y) }, cam)) continue;

@@ -1,13 +1,13 @@
 // Every stage's walk as levels (LA-V61-R49, LA-PAT-APP-UX-R21): each stage is a hierarchy, the Graph its tree, the ERD
-// product › domain region › aggregate area › entity, the Trace its tree. One walk moves over any of them:
+// product › domain region › aggregate area › entity. One walk moves over any of them:
 // - Out goes to the container, In to the first node inside it (Shift+Up and Shift+Down, Shift+W and Shift+S, or vim's Shift+K and Shift+J);
 // - an arrow moves among siblings, the same level in the same container, by the stage's own `across` (spatially on the
-//   ERD, by the layout's keys on the Graph and the Trace), and at the container's edge continues to the next container's
+//   ERD, by the layout's keys on the Graph), and at the container's edge continues to the next container's
 //   first node at that level in reading order (Right and Down), or the previous container's last (Left and Up), so
 //   repeated presses visit every node at a level;
 // - from the root, an arrow goes in: Right and Down to its first node, Left and Up to its last.
-// Pure and tested directly; each stage builds its levels (graph/steps.ts, erd/walk.ts, trace/walk.ts) and the commands
-// layer's one handler sends each move to the stage shown (shell/commands.tsx useStageWalk).
+// Pure and tested directly; each stage builds its levels (graph/steps.ts, erd/walk.ts; the Trace walks its columns and
+// links instead, trace/all-walk.ts) and the commands layer's one handler sends each move to the stage shown (shell/commands.tsx useStageWalk).
 
 export type Direction = 'left' | 'right' | 'up' | 'down';
 /** A move of the walk: an arrow, or out to the container and in to the first node inside it. */
