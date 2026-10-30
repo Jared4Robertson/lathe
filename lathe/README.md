@@ -80,6 +80,8 @@ git config merge.lathe-data.driver "npx lathe merge-data %O %A %B %P"
 
 The driver checks the merged table's own rules (columns, types, keys and checks); keys to other tables are checked when the data next loads, since the other files may still be mid-merge.
 
+A driver that cannot start, because this checkout's `lathe` is not installed, stops the merge with one message: the missing package, that the file was not merged and holds only our side, and the commands to install and to merge it again (`git checkout -m <file>`).
+
 ## The command
 
 `lathe <command> [options]`. Every command takes `--root <dir>`, the product repo (default: the current folder). `lathe help` prints the usage, every aggregate's commands included.

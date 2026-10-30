@@ -165,9 +165,11 @@
 {"source_id":"LA-AUT-UC19-R01-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC19-R01-T02","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC19-R01-T03","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-AUT-UC19-R01-T05","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC19-R02-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC19-R03-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC19-R04-T01","target_id":"LA-AUT-TD01"}
+{"source_id":"LA-AUT-UC19-R05-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-AUT-UC20-FL03-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-AUT-UC20-FL04-T","target_id":"LA-AUT-TD03"}
 {"source_id":"LA-AUT-UC20-R01-T01","target_id":"LA-AUT-TD01"}
