@@ -309,7 +309,7 @@ function TraceStage(props: StageProps & { product: string }) {
 }
 
 /**
- * The All at once | Delivery switch (LA-V98), the place's own view (views.ts); one letter each in the narrow toolbar.
+ * The All at once | Delivery switch (LA-V98), the place's own view (views.ts), each named in full in every toolbar.
  * Delivery is offered once its view is built (trace/delivery).
  */
 function ViewSwitch({ view, onChange, narrow }: { view: TraceViewName; onChange: (view: TraceViewName) => void; narrow: boolean }) {
@@ -319,7 +319,7 @@ function ViewSwitch({ view, onChange, narrow }: { view: TraceViewName; onChange:
         const built = v.view !== 'delivery';
         return (
           <Tooltip key={v.view} label={built ? v.tip : `${v.tip} (not built yet)`}>
-            <button type="button" aria-pressed={view === v.view} aria-label={narrow ? v.label : undefined} disabled={!built} onClick={() => onChange(v.view)}>{narrow ? v.label[0] : v.label}</button>
+            <button type="button" aria-pressed={view === v.view} disabled={!built} onClick={() => onChange(v.view)}>{v.label}</button>
           </Tooltip>
         );
       })}
