@@ -5,7 +5,7 @@ import { EDITED, keepData, RECORD } from './scenarios';
 // Changing records in place, with nothing jumping (LA-PAT-APP-UX-R08): on the Use case page (its own editor, sending
 // the Use case aggregate's commands) and on the Domain, Test data set, Pattern, Standard, Product, Business outcome,
 // Entry point, Tooling, Table, Specification, Read model, Value object, Aggregate, Domain event, Command, View, UI component,
-// Endpoint, Integration, Check and Pattern pages and the Product page's Limits, opening a record's form, saving an edit,
+// Endpoint, Integration, Storage requirement, Data store, Check and Pattern pages and the Product page's Limits, opening a record's form, saving an edit,
 // adding a child from its parent's page,
 // and asking to remove a record that is still referenced, which the command refuses inline. The form takes the place of
 // the page's content,
@@ -102,6 +102,8 @@ test.describe('editing', () => {
   // its aggregate's web-app flow test.
   test('LA-AUT-UC26-FL01-T on the Endpoint page, open an API requirement\'s form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EP01-R01', /^group name/, 'Stability'));
   test('LA-AUT-UC27-FL01-T on the Integration page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-INT04', /^system/, 'git, as the stability suite names it'));
+  test('LA-AUT-UC31-FL01-T on the Storage requirement page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-A22-SR01', /^title/, 'Every change to a storage requirement is saved whole'));
+  test('LA-AUT-UC32-FL01-T on the Data store page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-STORE04', /^description/, 'Each process\'s own memory, as the stability suite describes it.'));
   // The Check page, the Product page's Limits and the Pattern page's Followed by: each sends one of its aggregate's
   // commands, with nothing jumping.
   test('LA-V03-R03-T02 on the Check page, open a product check\'s form and save an edit', ({ page }) =>
