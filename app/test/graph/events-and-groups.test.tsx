@@ -73,7 +73,7 @@ describe('the rules the graph keeps', () => {
   });
 
   it('LA-VO92-C01-T A graph\'s depth is a whole number from 1 to 3, and its layout one of tree and nested', () => {
-    // The layout is the window's (graph/settings.ts); the depth is the place's (views/place.ts).
+    // The layout is the window's (exploring/session-settings); the depth is the place's (views/place.ts).
     const stored = (layout: string) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, cardWidth: null, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
     for (const layout of ['tree', 'nested'] as const) {
       stored(layout);

@@ -48,7 +48,7 @@ import { useLiveVersion } from '../changes/marks';
 //
 // The page shows one place (usePlace.ts): on the web the browser tab's, in the desktop app the active tab's (useTabs.ts),
 // each with its own stage, focus, camera, depth, filters, wiki card and history. How the graph is laid out, the
-// minimap and the wiki card's width are the window's, not a place's (graph/settings.ts).
+// minimap and the wiki card's width are the window's, not a place's (exploring/session-settings).
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ErdView = lazy(() => import('../erd/ErdView').then((m) => ({ default: m.ErdView })));
