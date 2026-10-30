@@ -60,7 +60,7 @@ export interface RelationReference {
   source_kind: string;
   /** A kind, or '*' for any kind. */
   target_kind: string;
-  role: 'design' | 'proof' | '';
+  role: 'design' | 'build' | 'proof' | '';
   description: string;
   forward_label: string;
   reverse_label: string;

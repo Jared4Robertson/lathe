@@ -74,13 +74,14 @@ const UNDER: Record<AggregateKind, string> = {
   entity: 'aggregate',
   invariant: 'aggregate',
   data_model: 'entity',
+  rule: 'invariant',
   invariant_test: 'invariant',
 };
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: one past the highest in use. An
  * aggregate's, an entity's and an invariant's start with their domain's ID; an entity has one data model and an
- * invariant one test, whose IDs are their parent's with DM and T.
+ * invariant one rule and one test, whose IDs are their parent's with DM, RL and T.
  */
 export function nextAggregateId(view: ReadView, input: { kind: string; parent: string }): string {
   if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Aggregate aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
@@ -100,6 +101,8 @@ export function nextAggregateId(view: ReadView, input: { kind: string; parent: s
       return onePast(view, 'invariant', `${parent!.row.domain_id}-INV`, 2);
     case 'data_model':
       return only(`${input.parent}-DM`);
+    case 'rule':
+      return only(`${input.parent}-RL`);
     case 'invariant_test':
       return only(`${input.parent}-T`);
   }
@@ -110,18 +113,18 @@ export const NEXT_AGGREGATE_ID: QueryDefinition<{ kind: string; parent: string }
   id: 'LA-AUT-QRY152',
   slice: AGGREGATE_SLICE,
   name: 'next-id',
-  description: 'The next free ID for an aggregate (under a domain), an entity or invariant (under an aggregate), a data model (under an entity) or an invariant test (under an invariant): one past the highest in use.',
+  description: 'The next free ID for an aggregate (under a domain), an entity or invariant (under an aggregate), a data model (under an entity), or a rule or invariant test (under an invariant): one past the highest in use.',
   method: 'GET',
   route: '/api/aggregate/next-id',
   input: {
-    kind: id('The kind: aggregate, entity, invariant, data_model or invariant_test.', 'required'),
+    kind: id('The kind: aggregate, entity, invariant, data_model, rule or invariant_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
   },
   run: nextAggregateId,
   text: (next) => next,
 };
 
-/** An aggregate as text: its row, then each entity with its fields, links and data model, then each invariant and test. */
+/** An aggregate as text: its row, then each entity with its fields, links and data model, then each invariant with its rule and test. */
 function aggregateText(aggregate: Aggregate): string {
   const { aggregate: row } = aggregate;
   const lines = [`Aggregate ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, `  identity: ${row.identity}`, `  description: ${row.description}`];
@@ -140,6 +143,10 @@ function aggregateText(aggregate: Aggregate): string {
   }
   for (const i of aggregate.invariants) {
     lines.push(`Invariant ${i.id}: ${i.title}`);
+    for (const r of aggregate.rules.filter((x) => x.row.invariant_id === i.id)) {
+      const extra = [...(r.row.file ? [r.row.file] : []), ...r.meets.map((x) => `meets ${x}`), ...r.packages.map((x) => `uses ${x}`)];
+      lines.push(`  rule ${r.row.id}: ${r.row.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
+    }
     for (const t of aggregate.invariantTests.filter((x) => x.row.invariant_id === i.id)) lines.push(`  invariant test ${t.row.id}: ${t.row.title} (${t.row.state})`);
   }
   return lines.join('\n');

@@ -15,6 +15,9 @@ import { CHANGE_QUERY_HANDLER } from '../../../src/authoring/read-model/commands
 import { CHANGE_READ_MODEL } from '../../../src/authoring/read-model/commands/change-read-model.ts';
 import { REMOVE_PROJECTION } from '../../../src/authoring/read-model/commands/remove-projection.ts';
 import { REMOVE_QUERY } from '../../../src/authoring/read-model/commands/remove-query.ts';
+import { ADD_READER } from '../../../src/authoring/read-model/commands/add-reader.ts';
+import { CHANGE_READER } from '../../../src/authoring/read-model/commands/change-reader.ts';
+import { REMOVE_READER } from '../../../src/authoring/read-model/commands/remove-reader.ts';
 import { REMOVE_QUERY_HANDLER } from '../../../src/authoring/read-model/commands/remove-query-handler.ts';
 import { REMOVE_READ_MODEL } from '../../../src/authoring/read-model/commands/remove-read-model.ts';
 import { GET_READ_MODEL, LIST_READ_MODELS, NEXT_READ_MODEL_ID } from '../../../src/authoring/read-model/queries.ts';
@@ -50,9 +53,11 @@ describe('LA-AUT-UC21-R50-T01 each Read model command (LA-AUT-A10) changes one r
     const store = await readModelDataSet();
     const whole = runQuery(store, GET_READ_MODEL, { id: 'TL-LEND-QRY01-H' }) as Whole;
     expect(whole).toMatchObject({
+      record: { id: 'TL-LEND-QRY01-H', kind: 'query_handler' },
       readModel: { id: 'TL-LEND-RM01' }, reads: ['TL-LEND-A1'], calls: ['TL-LEND-DS01'], fedBy: ['TL-LEND-EV01'],
-      queries: [{ id: 'TL-LEND-QRY01', selectsBy: ['TL-LEND-SP01'], calls: [], handler: { id: 'TL-LEND-QRY01-H', meets: ['TL-STD-CODE-R01'] } }],
-      projection: { id: 'TL-LEND-RM01-PJ' },
+      queries: [{ query: { id: 'TL-LEND-QRY01' }, selectsBy: ['TL-LEND-SP01'], calls: [], handler: { code: { id: 'TL-LEND-QRY01-H' }, meets: ['TL-STD-CODE-R01'] } }],
+      projection: { code: { id: 'TL-LEND-RM01-PJ' } },
+      reader: { code: { id: 'TL-LEND-RM01-RD' }, packages: [] },
     });
     expect(whole.fields).toEqual([{ read_model_id: 'TL-LEND-RM01', position: 1, name: 'Status', meaning: 'on_loan while the tool has an active loan, else available.', type: 'text', required: true }]);
     expect(GET_READ_MODEL.text(whole)).toContain('Query TL-LEND-QRY01: List the catalog [selects by TL-LEND-SP01]');
@@ -60,6 +65,8 @@ describe('LA-AUT-UC21-R50-T01 each Read model command (LA-AUT-A10) changes one r
     expect(runQuery(store, NEXT_READ_MODEL_ID, { kind: 'read_model', parent: 'TL-LEND' })).toBe('TL-LEND-RM02');
     expect(runQuery(store, NEXT_READ_MODEL_ID, { kind: 'query', parent: 'TL-LEND-RM01' })).toBe('TL-LEND-QRY02');
     expect(() => runQuery(store, NEXT_READ_MODEL_ID, { kind: 'projection', parent: 'TL-LEND-RM01' })).toThrow(/already has its projection, TL-LEND-RM01-PJ/);
+    expect(() => runQuery(store, NEXT_READ_MODEL_ID, { kind: 'reader', parent: 'TL-LEND-RM01' })).toThrow(/already has its reader, TL-LEND-RM01-RD/);
+    expect(GET_READ_MODEL.text(whole)).toContain('Reader TL-LEND-RM01-RD: CatalogReader');
     expect(() => runQuery(store, NEXT_READ_MODEL_ID, { kind: 'query_handler', parent: 'TL-LEND-RM01' })).toThrow(/a query_handler sits under a query, and TL-LEND-RM01 is a read_model/);
   });
 
@@ -69,13 +76,15 @@ describe('LA-AUT-UC21-R50-T01 each Read model command (LA-AUT-A10) changes one r
     expect((await runCommand(store, CHANGE_QUERY, { id: 'TL-LEND-QRY01', selects_by: [], calls: ['TL-LEND-DS01'] })).tables).toEqual(['calls', 'selects_by']);
     expect((await runCommand(store, CHANGE_PROJECTION, { id: 'TL-LEND-RM01-PJ', file: null, packages: ['kysely'] })).tables).toEqual(['package_use', 'projection']);
     expect((await runCommand(store, CHANGE_QUERY_HANDLER, { id: 'TL-LEND-QRY01-H', description: 'Reads the catalog view, in ID order.' })).tables).toEqual(['query_handler']);
+    expect((await runCommand(store, CHANGE_READER, { id: 'TL-LEND-RM01-RD', file: null, meets: ['TL-STD-CODE-R01'] })).tables).toEqual(['meets', 'reader']);
   });
 
   it("refuses a second projection or query handler, an input that is not the command's, and a record that is not there, changing no file", async () => {
     const store = await readModelDataSet();
     const before = fileOf(store, 'projection');
-    expect((await refusal(store, ADD_PROJECTION, { id: 'TL-LEND-RM01-PJ2', title: 'again', read_model_id: 'TL-LEND-RM01', description: 'x' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-LEND-RM01 already has its projection, TL-LEND-RM01-PJ' });
-    expect((await refusal(store, ADD_QUERY_HANDLER, { id: 'TL-LEND-QRY01-H2', title: 'again', query_id: 'TL-LEND-QRY01', description: 'x' })).problems[0].rule).toBe('exists');
+    expect((await refusal(store, ADD_PROJECTION, { id: 'TL-LEND-RM01-PJ2', title: 'again', read_model_id: 'TL-LEND-RM01', description: 'x' })).problems[0]).toMatchObject({ rule: 'read-model-one-each', message: 'read model TL-LEND-RM01 already has its projection, so TL-LEND-RM01-PJ2 cannot be a second: a read model has one' });
+    expect((await refusal(store, ADD_QUERY_HANDLER, { id: 'TL-LEND-QRY01-H2', title: 'again', query_id: 'TL-LEND-QRY01', description: 'x' })).problems[0].rule).toBe('read-model-one-each');
+    expect((await refusal(store, ADD_READER, { id: 'TL-LEND-RM01-RD2', title: 'again', read_model_id: 'TL-LEND-RM01', description: 'x' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-LEND-RM01 already has its reader, TL-LEND-RM01-RD' });
     await expect(runCommand(store, CHANGE_READ_MODEL, { id: 'TL-LEND-RM01', domain_id: 'TL-CAT' })).rejects.toThrow(/change-read-model takes no domain_id/);
     expect((await refusal(store, ADD_READ_MODEL, { id: 'TL-SHOP-RM01', title: 'Shop', domain_id: 'TL-SHOP', description: 'x' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no domain TL-SHOP' });
     expect((await refusal(store, CHANGE_QUERY, { id: 'TL-LEND-QRY09', title: 'x' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no query TL-LEND-QRY09' });
@@ -125,8 +134,9 @@ describe("LA-AUT-INV80-T a read model fed by another domain's unpublished event 
 });
 
 describe('LA-STD-CODE-R07-T52 a read model, or a record in one, is removed with what it holds, refused while anything outside references it', () => {
-  it('removes a query handler, a projection and a query with its handler, then the read model whole', async () => {
+  it('removes a query handler, a projection, a reader and a query with its handler, then the read model whole', async () => {
     const store = await readModelDataSet();
+    expect((await runCommand(store, REMOVE_READER, { id: 'TL-LEND-RM01-RD' })).changes.map((c) => c.table)).toEqual(['reader']);
     expect((await runCommand(store, REMOVE_QUERY_HANDLER, { id: 'TL-LEND-QRY01-H' })).changes.map((c) => c.table).sort()).toEqual(['meets', 'query_handler']);
     expect((await runCommand(store, REMOVE_PROJECTION, { id: 'TL-LEND-RM01-PJ' })).changes.map((c) => c.table)).toEqual(['projection']);
     await runCommand(store, ADD_QUERY_HANDLER, { id: 'TL-LEND-QRY01-H', title: 'listCatalog', query_id: 'TL-LEND-QRY01', description: 'Reads it.' });

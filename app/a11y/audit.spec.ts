@@ -76,6 +76,11 @@ const PAGES: State[] = [
   // The Endpoint and Integration aggregates' own pages.
   { name: 'endpoint page', url: '/LA-AUT-EP02', ready: '[data-aggregate="endpoint"] .endpoint-requirements' },
   { name: 'integration page', url: '/LA-INT04', ready: '[data-aggregate="integration"] .integration-tests' },
+  // The Table, Specification, Value object and Read model aggregates' own pages.
+  { name: 'table page', url: '/LA-AUT-EN54-TB', ready: '[data-aggregate="table"] .table-keys' },
+  { name: 'specification page', url: '/LA-AUT-SP03', ready: '[data-aggregate="specification"] .record-lead' },
+  { name: 'value object page', url: '/LA-VO01', ready: '[data-aggregate="value-object"] .entity-fields' },
+  { name: 'read model page', url: '/LA-AUT-RM25', ready: '[data-aggregate="read-model"] .read-model-queries' },
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.

@@ -112,7 +112,7 @@ describe('groups by stage and kind', () => {
     await openApp('/P-D', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     const kinds = kindHeadings('Technical specification').map((h) => h!.replace(/\d+$/, ''));
-    const order = ['Repositories', 'Data models', 'Tables', 'Value types', 'Predicates', 'Event types', 'Projections', 'Command handlers', 'Query handlers', 'Event handlers', 'Services', 'UI components', 'Endpoint handlers', 'Adapters'];
+    const order = ['Repositories', 'Data models', 'Tables', 'Value types', 'Rules', 'Predicates', 'Event types', 'Projections', 'Command handlers', 'Query handlers', 'Event handlers', 'Services', 'UI components', 'Endpoint handlers', 'Adapters'];
     expect(kinds.length).toBeGreaterThan(3);
     expect(kinds).toEqual(order.filter((k) => kinds.includes(k)));
     // Each row says its file, and a table its name and storage.

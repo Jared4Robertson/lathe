@@ -8,6 +8,15 @@ import { useCaseRules } from './authoring/use-case/rules.ts';
 import { domainRules } from './authoring/domain/rules.ts';
 import { readModelRules } from './authoring/read-model/rules.ts';
 import { tableRules } from './authoring/table/rules.ts';
+import { valueObjectRules } from './authoring/value-object/rules.ts';
+import { specificationRules } from './authoring/specification/rules.ts';
+import { patternRules } from './authoring/pattern/rules.ts';
+import { domainEventRules } from './authoring/domain-event/rules.ts';
+import { endpointRules } from './authoring/endpoint/rules.ts';
+import { integrationRules } from './authoring/integration/rules.ts';
 import type { AggregateRules } from './platform/data/rules.ts';
 
-export const AGGREGATE_RULES: readonly AggregateRules[] = [useCaseRules, domainRules, aggregateRules, commandRules, productRules, extensionRecordRules, readModelRules, tableRules];
+export const AGGREGATE_RULES: readonly AggregateRules[] = [
+  useCaseRules, domainRules, aggregateRules, commandRules, productRules, extensionRecordRules, readModelRules, tableRules,
+  valueObjectRules, specificationRules, patternRules, domainEventRules, endpointRules, integrationRules,
+];

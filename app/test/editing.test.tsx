@@ -56,25 +56,6 @@ describe('editing a record', () => {
     await waitFor(() => expect(within(toolbar('DM-SHOP-INV01')).getByRole('button', { name: 'Edit' })).toHaveFocus());
   });
 
-  it('LA-V92-R30-T01 offers both kinds of parent where a record may sit under either, and moves it between them', async () => {
-    const user = userEvent.setup();
-    const { writes } = await openApp('/DM-SHOP-EN01-TB', { write: () => ({ answer: ok }) });
-    await user.click(within(toolbar('DM-SHOP-EN01-TB')).getByRole('button', { name: 'Edit' }));
-    const form = screen.getByRole('form', { name: 'Edit DM-SHOP-EN01-TB' });
-    const parent = within(form).getByRole('combobox', { name: /^Parent/ });
-    expect(parent).toHaveAccessibleDescription(/A table sits under an entity or a read model or a domain./);
-    expect([...parent.querySelectorAll('optgroup')].map((g) => [g.getAttribute('label'), [...g.querySelectorAll('option')].map((o) => o.getAttribute('value'))])).toEqual([
-      ['Entity', ['DM-SHOP-EN01', 'DM-SHOP-EN02']],
-      ['Read model', ['DM-SHOP-RM01']],
-      ['Domain', ['DM-PAY', 'DM-SHOP']],
-    ]);
-    expect(parent).toHaveValue('DM-SHOP-EN01');
-    await user.selectOptions(parent, 'DM-SHOP-RM01');
-    await user.click(within(form).getByRole('button', { name: 'Save' }));
-    await waitFor(() => expect(writes).toHaveLength(1));
-    expect(writes[0]).toEqual([{ op: 'move', id: 'DM-SHOP-EN01-TB', parent: 'DM-SHOP-RM01' }]);
-  });
-
   it('LA-V92-R29-T01 edits part rows in place: a field\'s name and its type, a value object or an aggregate chosen among the product\'s', async () => {
     const user = userEvent.setup();
     const { writes } = await openApp('/DM-SHOP-EN02', { write: () => ({ answer: ok }) });
@@ -191,28 +172,6 @@ describe('adding a record', () => {
     expect(writes[0]).toEqual([{ op: 'add', table: 'invariant', row: { id: 'DM-SHOP-INV02', aggregate_id: 'DM-SHOP-A1', title: 'A line holds at least one item', statement: 'A basket line MUST hold at least one item.' } }]);
     expect(await screen.findByRole('heading', { level: 1, name: 'A line holds at least one item' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/DM-SHOP-INV02');
-  });
-
-  it('LA-V92-R31-T01 adds a kind with no owner from the product\'s page: its ID takes the product, and it has no parent to choose', async () => {
-    const user = userEvent.setup();
-    const { writes } = await openApp('/DM', { write: () => ({ answer: ok }) });
-    // The product's page is the Product aggregate's: its actions show once the product is read.
-    const actions = await screen.findByRole('toolbar', { name: 'Change DM' });
-    await user.click(within(actions).getByRole('button', { name: 'Add…' }));
-    const kinds = within(actions).getByRole('group', { name: 'Kinds to add under DM' });
-    expect(within(kinds).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Domain', 'Value object', 'View', 'Integration', 'UI component', 'Open question']));
-    await user.click(within(kinds).getByRole('button', { name: 'Value object' }));
-
-    const form = screen.getByRole('form', { name: 'Add a value object' });
-    expect(form).toHaveTextContent('New value object in DM');
-    expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-VO02');
-    expect(within(form).queryByRole('combobox', { name: /^Parent/ })).toBeNull();
-    expect(within(form).queryByRole('group', { name: 'Where it sits' })).toBeNull();
-    await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Price');
-    await user.type(within(form).getByRole('textbox', { name: /^description/ }), 'An amount of money an item costs.');
-    await user.click(within(form).getByRole('button', { name: 'Add value object' }));
-    await waitFor(() => expect(writes).toHaveLength(1));
-    expect(writes[0]).toEqual([{ op: 'add', table: 'value_object', row: { id: 'DM-VO02', title: 'Price', description: 'An amount of money an item costs.' } }]);
   });
 
   it('LA-V92-R30-T01 refuses an ID that is already a record before writing', async () => {

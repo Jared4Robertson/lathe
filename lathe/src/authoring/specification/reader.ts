@@ -1,0 +1,53 @@
+// The Specification read model's reader (LA-AUT-RM25-RD): the one way the Specification queries reach the read model's
+// storage. The query handlers depend only on the SpecificationReader interface; the query runner injects the reader
+// each query's definition makes (`reader`), so keeping the read model elsewhere is a new implementation of this
+// interface and nothing more. Today's implementation reads the projection's table, kept in memory and built on each read.
+import type { ReadView } from '../../platform/data/rules.ts';
+import { specificationTableFrom, type SpecificationPage, type SpecificationSummary, type SpecificationTable } from './read-model.ts';
+
+/** What the Specification queries read, and all they read. */
+export interface SpecificationReader {
+  /** The kind of the record with this ID, of any kind, or undefined when no record has it. */
+  kindOf(id: string): string | undefined;
+  /** The page of a record inside a specification, or undefined when no specification holds it. */
+  page(id: string): SpecificationPage | undefined;
+  /** A domain's specifications, by ID, or undefined when there is no such domain. */
+  specificationsOf(domainId: string): SpecificationSummary[] | undefined;
+  /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
+  highestAfter(prefix: string): number;
+}
+
+/** The reader over the read model's table in memory. */
+export class InMemorySpecificationReader implements SpecificationReader {
+  private readonly table: SpecificationTable;
+
+  constructor(table: SpecificationTable) {
+    this.table = table;
+  }
+
+  kindOf(id: string): string | undefined {
+    return this.table.kinds.get(id);
+  }
+
+  page(id: string): SpecificationPage | undefined {
+    const holding = this.table.holding.get(id);
+    return holding && { record: { id, kind: holding.kind }, ...this.table.specifications.get(holding.root)! };
+  }
+
+  specificationsOf(domainId: string): SpecificationSummary[] | undefined {
+    return this.table.domains.get(domainId);
+  }
+
+  highestAfter(prefix: string): number {
+    const shape = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
+    let highest = 0;
+    for (const id of this.table.kinds.keys()) {
+      const m = shape.exec(id);
+      if (m) highest = Math.max(highest, Number(m[1]));
+    }
+    return highest;
+  }
+}
+
+/** The reader the query runner gives each Specification query: today's, over the projection's table built from the data. */
+export const specificationReader = (view: ReadView): SpecificationReader => new InMemorySpecificationReader(specificationTableFrom(view));

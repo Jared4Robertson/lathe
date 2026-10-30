@@ -120,6 +120,7 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   data_model: TECHNICAL,
   table: { shape: 'stripes' },
   value_type: TECHNICAL,
+  rule: TECHNICAL,
   predicate: TECHNICAL,
   event_type: TECHNICAL,
   projection: TECHNICAL,

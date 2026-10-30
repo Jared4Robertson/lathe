@@ -86,7 +86,7 @@ describe('LA-AUT-UC26-R50-T01 each Endpoint command (LA-AUT-A13) changes one end
     await expect(runCommand(store, ADD_API_REQUIREMENT, { id: 'TL-LEND-EP01-R02', title: 'x', endpoint_id: 'TL-LEND-EP01' })).rejects.toThrow(new InputError('add-api-requirement needs statement'));
     await expect(runCommand(store, CHANGE_ENDPOINT, { id: 'TL-LEND-EP01', command_id: 'TL-LEND-CMD01' })).rejects.toThrow(/change-endpoint takes no command_id/);
     const before = fileOf(store, 'endpoint_handler');
-    expect((await refusal(store, ADD_ENDPOINT_HANDLER, { id: 'TL-LEND-EP01-H2', title: 'other', endpoint_id: 'TL-LEND-EP01', description: 'x' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-LEND-EP01 already has its endpoint handler, TL-LEND-EP01-H' });
+    expect((await refusal(store, ADD_ENDPOINT_HANDLER, { id: 'TL-LEND-EP01-H2', title: 'other', endpoint_id: 'TL-LEND-EP01', description: 'x' })).problems[0]).toMatchObject({ rule: 'one-endpoint-handler', message: 'endpoint TL-LEND-EP01 already has its endpoint handler, so TL-LEND-EP01-H2 cannot be a second: an endpoint has one' });
     expect(fileOf(store, 'endpoint_handler')).toBe(before);
     expect((await refusal(store, ADD_ENDPOINT, { id: 'TL-LEND-EP02', title: 'GET /x', query_id: 'TL-LEND-QRY01', method: 'GET', route: '/loans', description: 'x' })).problems[0].message).toMatch(/endpoint/);
   });
@@ -109,7 +109,7 @@ describe('LA-AUT-UC26-R50-T01 each Endpoint command (LA-AUT-A13) changes one end
       expect((await post('/api/endpoint/move-endpoint', { id: 'TL-LEND-EP02', command_id: 'TL-LEND-CMD01' })).status).toBe(200);
       const refused = await post('/api/endpoint/add-endpoint-handler', { id: 'TL-LEND-EP01-H3', title: 'again', endpoint_id: 'TL-LEND-EP01', description: 'x' });
       expect(refused.status).toBe(422);
-      expect(await refused.json()).toMatchObject({ ok: false, problems: [{ rule: 'exists' }] });
+      expect(await refused.json()).toMatchObject({ ok: false, problems: [{ rule: 'one-endpoint-handler' }] });
     } finally {
       await closeStores(root);
       await new Promise<void>((resolve) => server.close(() => resolve()));
