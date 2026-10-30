@@ -2,6 +2,7 @@
 // the value it gives each of the pattern's settings. One instance is one following, whole, named by its follower and
 // its pattern.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { SettingValueRow } from '../../platform/data/tables.ts';
 
@@ -38,14 +39,14 @@ export function valueRows(follower: string, pattern: string, values: SettingValu
 
 /** The followings in the data, each whole; only the one whose root is given, when given. */
 export function followingsFrom(rows: (table: string) => Row[], only?: string): PatternFollowing[] {
-  const values = rows('setting_value') as unknown as SettingValueRow[];
+  const valuesOf = groupBy(rows('setting_value') as unknown as SettingValueRow[], (v) => followingOf(v.follower_id, v.pattern_id));
   return rows('follows')
     .map((l) => ({ follower: String(l.source_id), pattern: String(l.target_id) }))
     .filter((f) => only === undefined || followingOf(f.follower, f.pattern) === only)
     .map((f) => ({
       root: followingOf(f.follower, f.pattern),
       ...f,
-      values: values.filter((v) => v.follower_id === f.follower && v.pattern_id === f.pattern).sort((a, b) => a.setting.localeCompare(b.setting)),
+      values: [...groupOf(valuesOf, followingOf(f.follower, f.pattern))].sort((a, b) => a.setting.localeCompare(b.setting)),
     }));
 }
 

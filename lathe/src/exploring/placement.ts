@@ -4,6 +4,7 @@
 // record of a kind with no owner by the longest product (or, for a kind placed by domain, domain) its ID starts with;
 // and a view, integration, value object or UI component in the one domain that uses it, or in none when two or more
 // do, or none. What sits under such a record follows it. It reads each source table once.
+import { groupBy, groupOf } from '../platform/data/grouped.ts';
 import type { ReadView } from '../platform/data/rules.ts';
 import type { Row } from '../platform/data/rows.ts';
 
@@ -93,9 +94,8 @@ export function placeRecords(view: ReadView): Map<string, Placed> {
   };
   for (const u of USED_BY) if (schema.tables[u.table]) for (const row of view.rows(u.table)) use(text(row[u.used]), text(row[u.user]));
   if (schema.tables.renders && schema.tables.happens_in) {
-    const stepsIn = new Map<string, string[]>();
-    for (const h of view.rows('happens_in')) stepsIn.set(String(h.target_id), [...(stepsIn.get(String(h.target_id)) ?? []), String(h.source_id)]);
-    for (const r of view.rows('renders')) for (const step of stepsIn.get(String(r.target_id)) ?? []) use(String(r.source_id), step);
+    const stepsIn = groupBy(view.rows('happens_in'), (h) => h.target_id);
+    for (const r of view.rows('renders')) for (const step of groupOf(stepsIn, String(r.target_id))) use(String(r.source_id), String(step.source_id));
   }
   for (const r of placed.values()) {
     if (r.domain) continue;

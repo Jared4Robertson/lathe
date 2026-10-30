@@ -11,6 +11,7 @@ import { ALL_QUERIES } from '../../src/commands.ts';
 import { formatProblem, loadConfig, openStore, readWorkspace, StoreError, type Row, type Store } from '../../src/index.ts';
 import { AGGREGATE_RULES } from '../../src/aggregate-rules.ts';
 import { answerQuery } from '../../src/platform/commands/run.ts';
+import { refusedBy, run } from '../helpers.ts';
 import { everyKind, removeData, writeData } from './fixture.ts';
 
 afterAll(removeData);
@@ -211,9 +212,45 @@ describe('LA-PLT-UC03-R03-T02 a reload reads only the changed tables, reruns onl
       expect(store.readerOf(meta)).toBe(metaReader);
       expect(store.readerOf(useCases)).not.toBe(useCaseReader);
       // The database holds the state last built whole, which whole() builds again in a database of its own.
-      expect(() => store.connection).toThrow(/reloaded in part/);
+      expect(() => store.connection).toThrow(/changed in part/);
       const titles = await store.whole((built) => built.query<{ title: string }>("SELECT title FROM question WHERE id = 'TL-LEND-Q01'"));
       expect(titles?.value[0].title).toMatch(/^Still: /);
+    } finally {
+      await store.close();
+    }
+  });
+});
+
+describe("LA-PLT-UC03-R04-T02 a command's commit refuses what the whole build would, without building the data whole", () => {
+  it('holds a write over the data last built whole, refuses what an integrity query or a column constraint refuses, and leaves the database to the whole build', async () => {
+    const root = writeData(everyKind());
+    const steps: Record<string, number> = {};
+    const store = await openStore(root, { steps });
+    const built = (name: string) => Object.keys(steps).some((s) => s === name);
+    try {
+      for (const name of Object.keys(steps)) delete steps[name];
+      await run(store, 'view add-view', { id: 'TL-V02', title: 'Shelf', route: '/shelf', description: 'The tools on one shelf.' });
+      // Held: no database of its own; the file is written and the rows are current.
+      expect(built('write holds')).toBe(true);
+      expect(built('copy schema')).toBe(false);
+      expect(readFileSync(path.join(root, 'data', 'view.jsonl'), 'utf8')).toContain('"TL-V02"');
+      expect(store.record('TL-V02')?.kind).toBe('view');
+      expect(() => store.connection).toThrow(/changed in part/);
+
+      // A second write is held over the same database, with both views beside it; what an integrity query refuses
+      // (a title its kind already has) and what a column's CHECK refuses (a position under 1) are refused as before,
+      // by the whole build, with every problem.
+      await run(store, 'view add-view', { id: 'TL-V03', title: 'Bench', route: '/bench', description: 'The tools on the bench.' });
+      expect((await refusedBy(store, 'view add-view', { id: 'TL-V04', title: 'shelf', route: '/shelf-2', description: 'Another shelf.' })).map((p) => p.rule)).toEqual(['title-unique', 'title-unique']);
+      for (const name of Object.keys(steps)) delete steps[name];
+      expect((await refusedBy(store, 'domain add-capability', { id: 'TL-LEND-CAP09', title: 'Repairs', domain_id: 'TL-LEND', position: 0, description: 'Mending tools.' })).map((p) => p.rule)).toEqual(['check']);
+      expect(built('copy schema')).toBe(true);
+      expect(store.rows('view').map((v) => v.id)).toEqual(['TL-V01', 'TL-V02', 'TL-V03']);
+
+      // The whole build holds both views, and its database becomes the store's own.
+      const views = await store.whole((data) => data.query<{ id: string }>('SELECT id FROM view ORDER BY id'));
+      expect(views?.value.map((v) => v.id)).toEqual(['TL-V01', 'TL-V02', 'TL-V03']);
+      expect((await store.query<{ n: number }>('SELECT count(*)::INTEGER AS n FROM view'))[0].n).toBe(3);
     } finally {
       await store.close();
     }

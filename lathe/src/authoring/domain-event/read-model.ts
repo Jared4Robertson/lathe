@@ -8,6 +8,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { DomainEventRow, EventFieldRow, EventTypeRow } from '../../platform/data/tables.ts';
 import type { DomainEventKind } from './model.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 /** An event type as the page shows it: its row, the standard rules it meets and the packages it uses. */
 export interface EventTypeOnPage {
@@ -52,8 +53,6 @@ export interface DomainEventTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -64,7 +63,7 @@ function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
 /** A link table's sources or targets, by the other end, each list sorted. */
 function linked(view: ReadView, table: string, by: string, to: string): (id: string) => string[] {
   const found = grouped<Row>(view.rows(table), by);
-  return (id) => (found.get(id) ?? []).map((l) => String(l[to])).sort(byId);
+  return (id) => (found.get(id) ?? []).map((l) => String(l[to])).sort(compareIds);
 }
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
@@ -93,7 +92,7 @@ export function domainEventTableFrom(view: ReadView): DomainEventTable {
     });
     aggregates.get(event.aggregate_id)?.events.push({ id: event.id, title: event.title });
   }
-  for (const a of aggregates.values()) a.events.sort((x, y) => byId(x.id, y.id));
+  for (const a of aggregates.values()) a.events.sort((x, y) => compareIds(x.id, y.id));
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { events, holding, aggregates, kinds };

@@ -2,6 +2,7 @@
 // order, its rules, and each rule's tests per following domain (with the test data sets they start from). One
 // instance is one pattern, whole; who follows it, and the values they give its settings, are Pattern following's.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { PatternRow, PatternRuleRow, PatternRuleTestRow, PatternSettingRow } from '../../platform/data/tables.ts';
 
@@ -69,19 +70,18 @@ export function patternsFrom(rows: (table: string) => Row[], only?: string): Pat
   const ids = new Set(patterns.map((p) => p.id));
   const rules = (rows('pattern_rule') as unknown as PatternRuleRow[]).filter((r) => ids.has(r.pattern_id));
   const patternOf = new Map(rules.map((r) => [r.id, r.pattern_id]));
-  const tests = (rows('pattern_rule_test') as unknown as PatternRuleTestRow[]).filter((t) => patternOf.has(t.pattern_rule_id));
-  const settings = (rows('pattern_setting') as unknown as PatternSettingRow[]).filter((s) => ids.has(s.pattern_id));
-  const startsFrom = new Map<string, string[]>();
-  for (const l of rows('starts_from')) startsFrom.set(String(l.source_id), [...(startsFrom.get(String(l.source_id)) ?? []), String(l.target_id)].sort());
+  const rulesOf = groupBy(rules, (r) => r.pattern_id);
+  const testsOf = groupBy((rows('pattern_rule_test') as unknown as PatternRuleTestRow[]).filter((t) => patternOf.has(t.pattern_rule_id)), (t) => patternOf.get(t.pattern_rule_id));
+  const settingsOf = groupBy((rows('pattern_setting') as unknown as PatternSettingRow[]).filter((s) => ids.has(s.pattern_id)), (s) => s.pattern_id);
+  const startsFrom = bySource(rows('starts_from'));
   return patterns.map((pattern) => ({
     root: pattern.id,
     pattern,
-    settings: settings
-      .filter((s) => s.pattern_id === pattern.id)
+    settings: [...groupOf(settingsOf, pattern.id)]
       .sort((a, b) => a.position - b.position)
       .map((s) => ({ name: s.name, meaning: s.meaning })),
-    rules: rules.filter((r) => r.pattern_id === pattern.id),
-    ruleTests: tests.filter((t) => patternOf.get(t.pattern_rule_id) === pattern.id).map((row) => ({ row, startsFrom: startsFrom.get(row.id) ?? [] })),
+    rules: groupOf(rulesOf, pattern.id),
+    ruleTests: groupOf(testsOf, pattern.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
   }));
 }
 

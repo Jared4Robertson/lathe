@@ -4,6 +4,7 @@
 import type { Row } from '../../platform/data/rows.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { InterfaceRow, ProductKindFieldRow, ProductKindRow, ProductRelationRow, ProductRow, QuestionRow, RoleRow } from '../../platform/data/tables.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A record the page names: its ID and title. */
 export interface Named {
@@ -61,8 +62,6 @@ export interface ProductSummary extends Named {
   color?: string;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 // A link table's targets by source, each list sorted.
 function bySource(links: Row[]): Map<string, string[]> {
   const found = new Map<string, string[]>();
@@ -92,7 +91,7 @@ function productPagesFrom(view: ReadView): ProductPage[] {
       .sort((a, b) => String(a.domain_id).localeCompare(String(b.domain_id)) || Number(a.position) - Number(b.position))
       .map((c) => ({
         capability: { id: String(c.id), title: String(c.title) },
-        useCases: useCases.filter((u) => u.capability_id === c.id).map((u) => ({ id: String(u.id), title: String(u.title) })).sort(byId),
+        useCases: useCases.filter((u) => u.capability_id === c.id).map((u) => ({ id: String(u.id), title: String(u.title) })).sort(byRecordId),
       }));
     const interfaceOf = (iface: InterfaceRow): InterfaceEntry => {
       const through = (useCase: Named) => flows.find((f) => f.use_case_id === useCase.id && f.interface_id === iface.id);
@@ -117,8 +116,8 @@ function productPagesFrom(view: ReadView): ProductPage[] {
         .rows('business_outcome')
         .filter(own)
         .map((o) => ({ id: String(o.id), title: String(o.title), statement: String(o.statement), measure: String(o.measure), target: String(o.target), servedBy: serves.get(String(o.id)) ?? [] }))
-        .sort(byId),
-      domains: domains.filter(own).map((d) => ({ id: String(d.id), title: String(d.title) })).sort(byId),
+        .sort(byRecordId),
+      domains: domains.filter(own).map((d) => ({ id: String(d.id), title: String(d.title) })).sort(byRecordId),
       kinds: (view.rows('product_kind') as unknown as ProductKindRow[])
         .filter((k) => k.product_id === product.id)
         .map((k) => ({ ...k, fields: fields.filter((f) => f.kind === k.name).sort((a, b) => a.position - b.position) })),
@@ -126,8 +125,8 @@ function productPagesFrom(view: ReadView): ProductPage[] {
       questions: (view.rows('question') as unknown as QuestionRow[])
         .filter((q) => (q.product_id ?? (q.domain_id === undefined ? undefined : productOfDomain.get(q.domain_id))) === product.id)
         .map((q) => ({ ...q, about: about.get(q.id) ?? [] }))
-        .sort(byId),
-      interfaces: (view.rows('interface') as unknown as InterfaceRow[]).filter((i) => i.product_id === product.id).sort(byId).map(interfaceOf),
+        .sort(byRecordId),
+      interfaces: (view.rows('interface') as unknown as InterfaceRow[]).filter((i) => i.product_id === product.id).sort(byRecordId).map(interfaceOf),
     };
   });
 }
@@ -136,7 +135,7 @@ function productPagesFrom(view: ReadView): ProductPage[] {
 function productSummariesFrom(view: ReadView): ProductSummary[] {
   return (view.rows('product') as unknown as ProductRow[])
     .map((p) => ({ id: p.id, title: p.title, ...(p.icon !== undefined ? { icon: p.icon } : {}), ...(p.color !== undefined ? { color: p.color } : {}) }))
-    .sort(byId);
+    .sort(byRecordId);
 }
 
 /** The read model's table: each product's page and summary, which product holds each record, and every record's kind. */

@@ -3,6 +3,7 @@
 // meets and the packages it uses.
 // One instance is one table, whole; it holds only the links its own record starts.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { TableKeyRow, TableRow } from '../../platform/data/tables.ts';
 
@@ -56,33 +57,24 @@ export function newTable(table: TableRow, parts: Pick<Table, 'keys' | 'storedIn'
   return { root: table.id, table, ...parts };
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[], source = 'source_id', target = 'target_id'): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The tables in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function tablesFrom(rows: (table: string) => Row[], only?: string): Table[] {
   const tables = rows('table').filter((r) => only === undefined || r.id === only) as unknown as TableRow[];
   if (!tables.length) return [];
   const ids = new Set(tables.map((t) => t.id));
-  const keys = (rows('table_key') as unknown as TableKeyRow[]).filter((k) => ids.has(k.table_id));
+  const keysOf = groupBy((rows('table_key') as unknown as TableKeyRow[]).filter((k) => ids.has(k.table_id)), (k) => k.table_id);
   const storedIn = bySource(rows('stored_in'));
   const meets = bySource(rows('meets'));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   return tables.map((table) => ({
     root: table.id,
     table,
-    keys: keys
-      .filter((k) => k.table_id === table.id)
+    keys: [...groupOf(keysOf, table.id)]
       .sort((a, b) => a.position - b.position)
       .map(({ table_id: _owner, position: _at, ...key }) => key),
-    storedIn: storedIn.get(table.id)?.[0] ?? null,
-    meets: meets.get(table.id) ?? [],
-    packages: packages.get(table.id) ?? [],
+    storedIn: groupOf(storedIn, table.id)[0] ?? null,
+    meets: groupOf(meets, table.id),
+    packages: groupOf(packages, table.id),
   }));
 }
 

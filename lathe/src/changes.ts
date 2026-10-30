@@ -11,6 +11,7 @@
 import type { FieldChange, HistoryChange } from './server/contract.ts';
 import { describeKey, rowKey, type Row, type Value } from './platform/data/rows.ts';
 import type { SchemaDescription, TableDescription } from './platform/data/schema.ts';
+import { compareIds } from './platform/data/ids.ts';
 
 export type { FieldChange, HistoryChange };
 
@@ -142,7 +143,7 @@ export function recordChanges(schema: SchemaDescription, before: Tables, after: 
     c.parts = [];
     c.links = { added: [], removed: [] };
   }
-  return out.sort((a, b) => a.id.localeCompare(b.id, 'en', { numeric: true }));
+  return out.sort((a, b) => compareIds(a.id, b.id));
 }
 
 // ---------- A moment's data as a commit and what differed from it ----------

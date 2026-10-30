@@ -3,7 +3,7 @@
 // nothing. This slice holds only the read, so it names its read model where an aggregate's slice names its aggregate.
 import { id, type AnyQuery, type QueryDefinition, type Slice } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import type { RecordSummaries } from './read-model.ts';
+import { summariesIn, type RecordSummaries } from './read-model.ts';
 import { recordSummariesReader, type RecordSummariesReader } from './reader.ts';
 
 /** How the interfaces reach the Record summaries read: `lathe record-summaries`, the record_summaries_ tools, /api/record-summaries/. */
@@ -30,7 +30,7 @@ export const LIST_RECORD_SUMMARIES: QueryDefinition<{ product_id: string }, Reco
   text: (s) =>
     [
       `${s.product}: ${s.records.length} record${s.records.length === 1 ? '' : 's'} · ${s.links.length} link${s.links.length === 1 ? '' : 's'}`,
-      ...s.records.map((r) => `  ${r.id} ${r.kind} ${r.title}`),
+      ...summariesIn(s).map((r) => `  ${r.id} ${r.kind} ${r.title}`),
     ].join('\n'),
 };
 

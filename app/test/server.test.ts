@@ -9,7 +9,7 @@ import { latheApi } from '../server/lathe';
 import * as realApi from '../../lathe/src/server/api.ts';
 import type { WriteAnswer } from '../../lathe/src/server/contract.ts';
 import type { DataChange } from '../../lathe/src/server/events.ts';
-import type { RecordSummaries } from '../../lathe/src/exploring/record-summaries/read-model.ts';
+import { summariesIn, type RecordSummaries } from '../../lathe/src/exploring/record-summaries/read-model.ts';
 import { openStore } from '../../lathe/src/platform/data/index.ts';
 import { ALL_COMMANDS } from '../../lathe/src/commands.ts';
 import { runCommand } from '../../lathe/src/platform/commands/run.ts';
@@ -107,7 +107,7 @@ describe('dev API plugin', () => {
     const read = await summaries(fake.middlewares[0]);
     expect(read.status).toBe(200);
     expect(decodeURIComponent(read.headers['x-lathe-root'])).toBe(root);
-    expect((read.json() as RecordSummaries).records.map((r) => r.id)).toContain('EX-NOTE-UC01-R01');
+    expect(summariesIn(read.json() as RecordSummaries).map((r) => r.id)).toContain('EX-NOTE-UC01-R01');
     // Non-API paths pass through.
     expect((await request(fake.middlewares[0], '/EX')).nextCalled).toBe(true);
   });
@@ -127,7 +127,7 @@ describe('dev API plugin', () => {
     const file = path.join(root, 'data/use_case.jsonl');
     await writeFile(file, (await readFile(file, 'utf8')).replace('Write a note', 'Write a long note'));
     const data = (await summaries(fake.middlewares[0])).json() as RecordSummaries;
-    expect(data.records.find((r) => r.id === 'EX-NOTE-UC01')?.title).toBe('Write a long note');
+    expect(summariesIn(data).find((r) => r.id === 'EX-NOTE-UC01')?.title).toBe('Write a long note');
     // A file that breaks the schema is an error naming the file and line, until it is fixed.
     const good = await readFile(file, 'utf8');
     await writeFile(file, `${good}{"id":"EX-NOTE-UC02","title":"No domain"}\n`);

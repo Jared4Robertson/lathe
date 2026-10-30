@@ -8,6 +8,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { ApiRequirementRow, EndpointHandlerRow, EndpointRow, EndpointTestRow } from '../../platform/data/tables.ts';
 import type { EndpointKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** An endpoint test as the page shows it: its row and the test data sets it starts from. */
 export interface EndpointTestOnPage {
@@ -60,8 +61,6 @@ export interface EndpointTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -93,9 +92,9 @@ export function endpointTableFrom(view: ReadView): EndpointTable {
     const tree: EndpointTree = {
       endpoint,
       handler: handler ? { handler, meets: meets(handler.id), packages: packages(handler.id) } : null,
-      requirements: [...(requirements.get(root) ?? [])].sort(byId).map((requirement) => ({
+      requirements: [...(requirements.get(root) ?? [])].sort(byRecordId).map((requirement) => ({
         requirement,
-        tests: [...(tests.get(requirement.id) ?? [])].sort(byId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
+        tests: [...(tests.get(requirement.id) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
       })),
     };
     if (handler) holding.set(handler.id, { root, kind: 'endpoint_handler' });
@@ -106,7 +105,7 @@ export function endpointTableFrom(view: ReadView): EndpointTable {
     endpoints.set(root, tree);
     parents.get(String(endpoint.command_id ?? endpoint.query_id))?.push({ id: endpoint.id, title: endpoint.title });
   }
-  for (const list of parents.values()) list.sort(byId);
+  for (const list of parents.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { endpoints, holding, parents, domains: view.rows('domain').map((d) => String(d.id)), kinds };

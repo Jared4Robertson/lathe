@@ -1,6 +1,7 @@
 // The Entry point aggregate (LA-AUT-A20): a start-up file of a domain, with the packages it uses and the standard rules it meets. One instance is one
 // entry point, whole: its row, the package_use rows naming it and the meets links it starts, and nothing of another aggregate.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { EntryPointRow } from '../../platform/data/tables.ts';
 
@@ -43,13 +44,13 @@ export function entryPointsFrom(rows: (table: string) => Row[], only?: string): 
   const found = rows('entry_point').filter((r) => only === undefined || r.id === only) as unknown as EntryPointRow[];
   if (!found.length) return [];
   const ids = new Set(found.map((r) => r.id));
-  const packages = rows('package_use').filter((p) => ids.has(String(p.record_id)));
-  const meets = rows('meets').filter((m) => ids.has(String(m.source_id)));
+  const packages = bySource(rows('package_use').filter((p) => ids.has(String(p.record_id))), 'record_id', 'package');
+  const meets = bySource(rows('meets').filter((m) => ids.has(String(m.source_id))));
   return found.map((row) => ({
     root: row.id,
     entryPoint: row,
-    packages: packages.filter((p) => p.record_id === row.id).map((p) => String(p.package)).sort(),
-    meets: meets.filter((m) => m.source_id === row.id).map((m) => String(m.target_id)).sort(),
+    packages: groupOf(packages, row.id),
+    meets: groupOf(meets, row.id),
   }));
 }
 

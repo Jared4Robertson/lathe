@@ -12,6 +12,7 @@ import { termsBottomUp } from '../../authoring/domain/read-model.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Stage } from '../../platform/data/schema.ts';
 import { inSpace, placeRecords, type Placed } from '../placement.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** One record in its folder, with the records that fold under it. */
 export interface FolderEntry {
@@ -68,7 +69,6 @@ export interface FolderTreeTable {
 }
 
 const CONTAINERS: ReadonlySet<string> = new Set(['product', 'domain']);
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
@@ -88,7 +88,7 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
   const pathRank = (a: Placed, b: Placed) => { const pa = path(a); const pb = path(b); return pa === pb ? 0 : pa === 'main' ? -1 : pb === 'main' ? 1 : pa.localeCompare(pb); };
   /** Kind by kind in the schema's order; within a kind by path, then position, then ID; terms bottom-up. */
   const sorted = (records: readonly Placed[]): Placed[] => {
-    const out = [...records].sort((a, b) => (kindRank.get(a.kind) ?? Infinity) - (kindRank.get(b.kind) ?? Infinity) || (a.kind === b.kind ? pathRank(a, b) || position(a) - position(b) : 0) || byId(a, b));
+    const out = [...records].sort((a, b) => (kindRank.get(a.kind) ?? Infinity) - (kindRank.get(b.kind) ?? Infinity) || (a.kind === b.kind ? pathRank(a, b) || position(a) - position(b) : 0) || byRecordId(a, b));
     const first = out.findIndex((r) => r.kind === 'term');
     if (first === -1) return out;
     const terms = out.filter((r) => r.kind === 'term');
@@ -145,7 +145,7 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
   const all = [...placed.values()];
   for (const product of all.filter((r) => r.kind === 'product')) {
     const space = all.filter((r) => inSpace(r, product.id));
-    const domains = space.filter((r) => r.kind === 'domain' && r.product === product.id).sort(byId);
+    const domains = space.filter((r) => r.kind === 'domain' && r.product === product.id).sort(byRecordId);
     products.set(product.id, {
       product: product.id,
       shared: ownerFolders(product, space.filter((r) => r.domain === null && r.kind !== 'product' && r.product === product.id)),

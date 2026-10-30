@@ -2,6 +2,7 @@
 // the standard rules it meets and the packages it uses. A UI component has no owner: its product follows from its ID. One instance is one UI
 // component, whole; it holds only the links it starts.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { UiComponentRow } from '../../platform/data/tables.ts';
 
@@ -43,14 +44,6 @@ export interface UiComponent {
 /** The tables the UI component aggregate keeps its rows in: its kind and the relations it starts. */
 export const UI_COMPONENT_TABLES = ['ui_component', 'renders', 'builds', 'meets', 'package_use'] as const;
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[], source: string, target: string): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The UI components in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function uiComponentsFrom(rows: (table: string) => Row[], only?: string): UiComponent[] {
   const components = rows('ui_component').filter((r) => only === undefined || r.id === only) as unknown as UiComponentRow[];
@@ -62,10 +55,10 @@ export function uiComponentsFrom(rows: (table: string) => Row[], only?: string):
   return components.map((component) => ({
     root: component.id,
     component,
-    renders: renders.get(component.id) ?? [],
-    builds: builds.get(component.id) ?? [],
-    meets: meets.get(component.id) ?? [],
-    packages: packages.get(component.id) ?? [],
+    renders: groupOf(renders, component.id),
+    builds: groupOf(builds, component.id),
+    meets: groupOf(meets, component.id),
+    packages: groupOf(packages, component.id),
   }));
 }
 

@@ -7,6 +7,7 @@
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { UiComponentRow } from '../../platform/data/tables.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** The kind of the aggregate's one record. */
 type UiComponentKind = 'ui_component';
@@ -47,8 +48,6 @@ export interface UiComponentTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -77,7 +76,7 @@ export function uiComponentTableFrom(view: ReadView): UiComponentTable {
     components.set(root, { component, renders: renders(root), builds: builds(root), meets: meets(root), packages: packages(root) });
     products.get(root.replace(/-UI\d+$/, ''))?.push({ id: root, title: component.title });
   }
-  for (const list of products.values()) list.sort(byId);
+  for (const list of products.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { components, holding, products, kinds };
