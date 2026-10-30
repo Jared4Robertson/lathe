@@ -1,4 +1,5 @@
 import {
+  Fragment,
   createContext,
   useCallback,
   useContext,
@@ -16,33 +17,42 @@ import {
   ariaKeyShortcuts,
   eventChord,
   formatBinding,
+  holderOf,
   isMac,
   isSingleKey,
   isTyping,
   match,
+  normalizeBinding,
   resolveCommands,
   usesArrows,
   usesEnter,
   walkMove,
   type Command,
 } from './keymap';
-import { OVERRIDES_KEY } from '../platform/keymap/read-model';
-import { keymapReader } from '../platform/keymap/reader';
-import { listKeyboardCommands } from '../platform/keymap/queries';
+import { RuleBroken, useAggregate } from './prefs';
+import { keyBindingsRepository } from '../platform/key-bindings/repository';
+import { keymapReader } from '../platform/key-bindings/reader';
+import { listKeyboardCommands } from '../platform/key-bindings/queries';
+import type { KeymapEntry } from '../platform/key-bindings/read-model';
+import { bindKey } from '../platform/key-bindings/commands/bind-key';
+import { removeBinding } from '../platform/key-bindings/commands/remove-binding';
+import { resetShortcut } from '../platform/key-bindings/commands/reset-shortcut';
+import { resetAllShortcuts } from '../platform/key-bindings/commands/reset-all-shortcuts';
 import type { Move } from '../views/levels';
 import { Link } from '../router';
 import { Button } from '../components/Button';
+import { Icon } from '../components/icons';
 import { formatPath } from '../format/reference';
 import { useOverlayFocus } from '../views/overlays';
 
 // The command dispatcher: components register handlers for command ids (useCommand), one key
 // listener matches key presses against the keymap, and the shortcuts sheet and quick find's
-// commands (QuickOpen.tsx) are drawn from the same table. A command only runs (and only shows as
-// available in quick find) while something has registered a handler for it, so "when it applies"
-// follows what is on screen: the graph's commands exist while a graph is shown. The same listener sends the plain arrow keys,
-// W, A, S and D (and vim's H, J, K and L) as the arrows, and Shift+Up and Shift+Down (Shift+W and Shift+S) as Out and In, to the
-// stage's walk (useStageWalk, keymap walkMove) from anywhere on the page, except a control that uses arrows itself
-// (keymap usesArrows); the stage toolbar's buttons run the same walk (useRunWalk). A plain Enter runs its command (the wiki card) only outside a control
+// commands (QuickOpen.tsx) are drawn from the same table, with the person's own keys (the Key bindings, edited in the
+// sheet). A command only runs (and only shows as available in quick find) while something has registered a handler for
+// it, so "when it applies" follows what is on screen: the graph's commands exist while a graph is shown. The same listener
+// sends the walk's keys (by default the plain arrow keys, W, A, S and D and vim's H, J, K and L as the arrows, and
+// Shift+Up and Shift+Down as Out and In) to the stage's walk (useStageWalk, keymap walkMove) from anywhere on the page,
+// except a control that uses arrows itself (keymap usesArrows); the stage toolbar's buttons run the same walk (useRunWalk). A plain Enter runs its command (the wiki card) only outside a control
 // that handles Enter (keymap usesEnter); Escape runs its command only when nothing took it first: an overlay that closes on
 // Escape (a dialog, a menu, a tooltip, a tool panel) calls preventDefault, so the topmost thing closes first.
 
@@ -56,7 +66,7 @@ type WalkRef = { current: Walk; enter?: StageEnter };
 type HandlerRef = { current: Handler; title?: string };
 
 interface CommandsApi {
-  commands: Command[];
+  commands: KeymapEntry[];
   mac: boolean;
   register: (id: string, handler: HandlerRef) => () => void;
   registerWalk: (walk: WalkRef) => () => void;
@@ -72,7 +82,7 @@ interface CommandsApi {
 
 const CommandsContext = createContext<CommandsApi | null>(null);
 
-/** The keymap (with overrides) and the platform, for showing shortcuts. Works without a provider. */
+/** The keymap (with the person's keys) and the platform, for showing shortcuts. Works without a provider. */
 export function useKeymap() {
   const api = useContext(CommandsContext);
   const fallback = useMemo(() => ({ commands: resolveCommands({}, isMac()), mac: isMac() }), []);
@@ -82,13 +92,13 @@ export function useKeymap() {
 export interface ShortcutHint {
   /** The first binding as shown: "⌘B", "Ctrl+B", "g then c"; '' when the command has none. */
   text: string;
-  /** The first binding as written in the keymap (after overrides), for <Keys>. */
+  /** The first binding as written in the keymap (the person's keys), for <Keys>. */
   binding: string;
   /** The value for aria-keyshortcuts, or undefined when no binding can be said that way. */
   aria: string | undefined;
 }
 
-/** How a command's shortcut is shown and announced, read from the keymap with its overrides. */
+/** How a command's shortcut is shown and announced, read from the keymap with the person's keys. */
 export function useShortcutHint(id: string | undefined): ShortcutHint {
   const { commands, mac } = useKeymap();
   const command = id ? commands.find((c) => c.id === id) : undefined;
@@ -162,7 +172,8 @@ const SEQUENCE_WAIT = 1500;
 
 export function CommandsProvider({ children }: { children: ReactNode }) {
   const mac = useMemo(() => isMac(), []);
-  const commands = useMemo(() => listKeyboardCommands(keymapReader(mac)), [mac]);
+  const bindings = useAggregate(keyBindingsRepository);
+  const commands = useMemo(() => listKeyboardCommands(keymapReader({ changed: bindings.changed, mac })), [bindings, mac]);
   const handlers = useRef(new Map<string, HandlerRef[]>());
   const walks = useRef<WalkRef[]>([]);
   const [, setVersion] = useState(0);
@@ -213,8 +224,12 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
   }, [announce]);
   const api = useMemo(() => ({ commands, mac, register, registerWalk, run, walk, available, titleOf, announce }), [commands, mac, register, registerWalk, run, walk, available, titleOf, announce]);
 
-  // In the desktop app, a native menu choice arrives as a command ID and runs like its keys would (LA-V66-R02).
+  // In the desktop app, a native menu choice arrives as a command ID and runs like its keys would (LA-V66-R02), and the
+  // menu shows the person's keys (LA-V66-R03), sent as they change; the shell keeps each window's own.
   useEffect(() => window.latheDesktop?.onCommand((id: string) => { run(id); }), [run]);
+  useEffect(() => {
+    window.latheDesktop?.setMenuKeys(Object.fromEntries(commands.map((c) => [c.id, c.keys.map((k) => normalizeBinding(k, mac))])));
+  }, [commands, mac]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -223,10 +238,10 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
       const chord = eventChord(e);
       const typing = isTyping(e.target);
       const before = pendingRef.current;
-      // A plain arrow, W, A, S or D, or Shift with Up, Down, W or S, walks the stage, wherever keyboard focus is, unless it
-      // is in a control that uses arrows itself or the key goes on a sequence already begun.
+      // A walk key walks the stage, wherever keyboard focus is, unless it is in a control that uses arrows itself (every
+      // field that takes text among them, so a letter typed there stays text) or the key goes on a sequence already begun.
       const walk = walks.current.at(-1);
-      const move = walkMove(chord);
+      const move = walkMove(chord, commands, mac);
       const continues = before.length > 0 && !chord.includes('Arrow') && match([...before, chord], commands, mac, available).command !== undefined;
       if (move && walk && !usesArrows(e.target) && !continues) {
         e.preventDefault();
@@ -266,7 +281,7 @@ export function CommandsProvider({ children }: { children: ReactNode }) {
       {children}
       <div className="sr-only" role="status" aria-live="polite" data-testid="announcer">{message}</div>
       {pending.length > 0 && <div className="key-pending" aria-hidden="true">{pending.join(' ')}…</div>}
-      {sheet && <ShortcutSheet commands={commands} mac={mac} available={available} titleOf={titleOf} onClose={() => setSheet(false)} />}
+      {sheet && <ShortcutSheet commands={commands} mac={mac} available={available} titleOf={titleOf} announce={announce} onClose={() => setSheet(false)} />}
     </CommandsContext.Provider>
   );
 }
@@ -307,19 +322,96 @@ export function Keys({ binding, mac, className }: { binding: string; mac: boolea
   return <kbd className={`kbd${className ? ` ${className}` : ''}`}>{formatBinding(binding, mac)}</kbd>;
 }
 
-interface ListProps {
-  commands: Command[];
+
+// ---------- The shortcuts sheet, where a person binds keys ----------
+
+interface SheetProps {
+  commands: KeymapEntry[];
   mac: boolean;
   available: (id: string) => boolean;
   titleOf: (c: Command) => string;
+  announce: (text: string) => void;
   onClose: () => void;
 }
 
-function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps) {
+/** What a row asks after a refusal: Swap or Cancel for a key another shortcut has, a choice to leave a shortcut without a key, or a reason. */
+type Offer =
+  | { kind: 'swap'; id: string; key: string; replacing?: string; message: string }
+  | { kind: 'unbind'; id: string; key: string; message: string }
+  | { kind: 'refused'; id: string; message: string };
+
+/** Where a row's recording is: a new key beside its keys, or in place of one. */
+interface Recording { id: string; replacing?: string }
+
+const MODIFIER_KEYS = ['Shift', 'Control', 'Alt', 'Meta', 'CapsLock', 'Fn'];
+
+/**
+ * The control that records a key: it takes focus, and the next key pressed with it (with its modifiers) is the new key.
+ * Escape cancels, as does Tab or leaving it, so the keyboard is never trapped; nothing it takes reaches a command.
+ */
+function KeyRecorder({ title, replacing, mac, onKey, onCancel }: { title: string; replacing?: string; mac: boolean; onKey: (chord: string) => void; onCancel: () => void }) {
+  const ref = useRef<HTMLButtonElement>(null);
+  useEffect(() => { ref.current?.focus(); }, []);
+  const label = `Press a key for ${title}${replacing ? `, in place of ${formatBinding(replacing, mac)}` : ''}. Escape cancels.`;
+  const onKeyDown = (e: ReactKeyboardEvent) => {
+    if (e.key === 'Tab') { onCancel(); return; }
+    e.preventDefault();
+    e.stopPropagation();
+    if (MODIFIER_KEYS.includes(e.key)) return;
+    if (e.key === 'Escape') { onCancel(); return; }
+    onKey(eventChord(e.nativeEvent));
+  };
+  return (
+    <Button ref={ref} className="key-recorder" aria-label={label} data-recording="" onKeyDown={onKeyDown} onBlur={onCancel}>
+      Press a key… <span className="key-recorder-hint">Esc cancels</span>
+    </Button>
+  );
+}
+
+function ShortcutSheet({ commands, mac, available, titleOf, announce, onClose }: SheetProps) {
   const [query, setQuery] = useState('');
+  const [recording, setRecording] = useState<Recording | null>(null);
+  const [offer, setOffer] = useState<Offer | null>(null);
+  const [askResetAll, setAskResetAll] = useState(false);
   const q = query.trim().toLowerCase();
   const id = useId();
-  const shown = commands.filter((c) => c.keys.length > 0 && (!c.dynamic || available(c.id)) && (!q || titleOf(c).toLowerCase().includes(q) || c.keys.some((k) => formatBinding(k, mac).toLowerCase().includes(q))));
+  const shown = commands.filter((c) => (!c.dynamic || available(c.id)) && (c.keys.length > 0 || c.customizable) && (!q || titleOf(c).toLowerCase().includes(q) || c.keys.some((k) => formatBinding(k, mac).toLowerCase().includes(q))));
+  const changed = commands.filter((c) => c.changed).length;
+  const shownKey = (k: string) => formatBinding(k, mac);
+  const titleById = (shortcut: string) => titleOf(commands.find((c) => c.id === shortcut)!);
+  /** After a row's change, focus goes back to its Add key button (or the sheet's search when the row is gone). */
+  const refocus = (shortcut: string) => setTimeout(() => (document.querySelector<HTMLElement>(`.shortcut-sheet [data-shortcut="${shortcut}"] .shortcut-add`) ?? document.querySelector<HTMLElement>('.shortcut-sheet .dialog-search'))?.focus(), 0);
+  /** Runs a change; a refusal becomes the row's offer, the swap or unbind one when it is that. */
+  const attempt = (shortcut: string, change: () => void, said: string, refused: (e: RuleBroken) => Offer) => {
+    try {
+      change();
+      setOffer(null);
+      announce(said);
+      refocus(shortcut);
+    } catch (e) {
+      if (!(e instanceof RuleBroken)) throw e;
+      setOffer(refused(e));
+    }
+  };
+  const reason = (shortcut: string) => (e: RuleBroken): Offer => ({ kind: 'refused', id: shortcut, message: e.problems.map((p) => p.message).join(' ') });
+  const record = (shortcut: string, key: string, replacing?: string) => {
+    setRecording(null);
+    const holder = holderOf(commands, shortcut, key, mac);
+    attempt(shortcut, () => bindKey({ shortcut, key, replacing, mac }), `${titleById(shortcut)}: ${shownKey(key)}`, (e) =>
+      holder && e.problems.every((p) => p.rule === 'key-free-where-it-applies') && normalizeBinding(key, mac) !== ''
+        ? { kind: 'swap', id: shortcut, key, replacing, message: `${shownKey(key)} is already “${titleOf(holder)}”.` }
+        : reason(shortcut)(e));
+  };
+  const swap = (o: Extract<Offer, { kind: 'swap' }>) =>
+    attempt(o.id, () => bindKey({ shortcut: o.id, key: o.key, replacing: o.replacing, swap: true, mac }), `${titleById(o.id)}: ${shownKey(o.key)}, swapped`, reason(o.id));
+  const remove = (shortcut: string, key: string, unbind = false) =>
+    attempt(shortcut, () => removeBinding({ shortcut, key, unbind, mac }), `${shownKey(key)} removed from ${titleById(shortcut)}`, (e) =>
+      e.problems.every((p) => p.rule === 'shortcut-keeps-a-key') ? { kind: 'unbind', id: shortcut, key, message: `“${titleById(shortcut)}” would have no key.` } : reason(shortcut)(e));
+  const reset = (shortcut: string) => attempt(shortcut, () => resetShortcut({ shortcut, mac }), `${titleById(shortcut)} reset to its own keys`, reason(shortcut));
+  const cancel = (shortcut: string) => { setOffer(null); refocus(shortcut); };
+  const onOfferKey = (shortcut: string) => (e: ReactKeyboardEvent) => {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel(shortcut); }
+  };
   return (
     <Dialog label="Keyboard shortcuts" onClose={onClose} className="shortcut-sheet">
       <div className="dialog-head">
@@ -336,15 +428,57 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
               <h3>{g}</h3>
               <table className="shortcut-table">
                 <tbody>
-                  {rows.map((c) => (
-                    <tr key={c.id}>
-                      <th scope="row">{titleOf(c)}</th>
-                      <td>
-                        {c.keys.map((k, i) => <span key={k}>{i > 0 && <span className="kbd-or"> or </span>}<Keys binding={k} mac={mac} /></span>)}
-                      </td>
-                      <td className="cmd-id"><code>{c.id}</code></td>
-                    </tr>
-                  ))}
+                  {rows.map((c) => {
+                    const title = titleOf(c);
+                    const mine = offer?.id === c.id ? offer : null;
+                    return (
+                      <Fragment key={c.id}>
+                      <tr data-shortcut={c.id} data-changed={c.changed ? '' : undefined}>
+                        <th scope="row">{title}</th>
+                        <td className="shortcut-keys">
+                          <div className="shortcut-key-list">
+                            {c.keys.map((k, i) => (
+                              <Fragment key={k}>
+                                {i > 0 && <span className="kbd-or"> or </span>}
+                                {recording?.id === c.id && recording.replacing === k ? (
+                                  <KeyRecorder title={title} replacing={k} mac={mac} onKey={(chord) => record(c.id, chord, k)} onCancel={() => setRecording(null)} />
+                                ) : c.customizable ? (
+                                  <span className="shortcut-key">
+                                    <Button className="shortcut-key-change" aria-label={`Change ${shownKey(k)} of ${title}`} onClick={() => { setOffer(null); setRecording({ id: c.id, replacing: k }); }}><Keys binding={k} mac={mac} /></Button>
+                                    <Button variant="icon" className="shortcut-key-remove" label={`Remove ${shownKey(k)} from ${title}`} onClick={() => remove(c.id, k)}><Icon name="x" size={12} /></Button>
+                                  </span>
+                                ) : <Keys binding={k} mac={mac} />}
+                              </Fragment>
+                            ))}
+                            {c.keys.length === 0 && <span className="shortcut-none">No key</span>}
+                            {recording?.id === c.id && recording.replacing === undefined && (
+                              <KeyRecorder title={title} mac={mac} onKey={(chord) => record(c.id, chord)} onCancel={() => setRecording(null)} />
+                            )}
+                            {c.customizable && !(recording?.id === c.id && recording.replacing === undefined) && (
+                              <Button className="shortcut-add" icon="plus" aria-label={`Add a key to ${title}`} onClick={() => { setOffer(null); setRecording({ id: c.id }); }}>Key</Button>
+                            )}
+                            {!c.customizable && <span className="shortcut-fixed">{c.browser ? 'The browser’s' : 'Fixed'}</span>}
+                          </div>
+                        </td>
+                        <td className="shortcut-reset-cell">{c.changed && <Button className="shortcut-reset" aria-label={`Reset ${title}`} onClick={() => reset(c.id)}>Reset</Button>}</td>
+                        <td className="cmd-id"><code>{c.id}</code></td>
+                      </tr>
+                      {/* A refusal's prompt has a row of its own under the shortcut's, so the shortcut's row never reflows. */}
+                      {mine && (
+                        <tr className="shortcut-offer-row" data-offer-for={c.id}>
+                          <td colSpan={4}>
+                            <div className="shortcut-offer" role="alert" onKeyDown={onOfferKey(c.id)}>
+                              <span>{mine.message}</span>
+                              {mine.kind === 'swap' && <Button variant="primary" autoFocus onClick={() => swap(mine)}>Swap</Button>}
+                              {mine.kind === 'unbind' && <Button variant="primary" autoFocus onClick={() => remove(c.id, mine.key, true)}>Leave without a key</Button>}
+                              <Button autoFocus={mine.kind === 'refused'} onClick={() => cancel(c.id)}>{mine.kind === 'refused' ? 'OK' : 'Cancel'}</Button>
+                            </div>
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
+                    );
+                  })}
                 </tbody>
               </table>
             </section>
@@ -352,13 +486,21 @@ function ShortcutSheet({ commands, mac, available, titleOf, onClose }: ListProps
         })}
         {shown.length === 0 && <p className="hint">No shortcut matches “{query.trim()}”.</p>}
       </div>
-      <p className="hint shortcut-note">
-        To change a shortcut, put a JSON map of command to keys in local storage under <code>{OVERRIDES_KEY}</code>, for
-        example <code>{'{"toggleNav": "Mod+J"}'}</code> (Mod is {mac ? '⌘' : 'Ctrl'}), and reload. Each command's name is in the last column.
-      </p>
-      <p className="hint shortcut-note">
-        How records are written, and every kind and check: <Link to={formatPath} onClick={onClose}>Record format</Link>.
-      </p>
+      <div className="shortcut-foot">
+        <p className="hint shortcut-note">
+          Choose a key to change it, or add one; press the new key, Escape cancels. How records are written, and every kind and
+          check: <Link to={formatPath} onClick={onClose}>Record format</Link>.
+        </p>
+        {askResetAll ? (
+          <div className="shortcut-offer" role="alert" onKeyDown={(e) => { if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setAskResetAll(false); } }}>
+            <span>Give all {changed} changed shortcuts their own keys again?</span>
+            <Button variant="primary" autoFocus onClick={() => { resetAllShortcuts({ mac }); setAskResetAll(false); setOffer(null); announce('Every shortcut has its own keys again'); }}>Reset all</Button>
+            <Button onClick={() => setAskResetAll(false)}>Cancel</Button>
+          </div>
+        ) : (
+          <Button className="shortcut-reset-all" disabled={changed === 0} onClick={() => setAskResetAll(true)}>Reset all</Button>
+        )}
+      </div>
     </Dialog>
   );
 }
@@ -380,6 +522,8 @@ declare global {
     setChrome: (chrome: { background: string; foreground: string }) => void;
     /** Subscribes to the window entering and leaving full screen; called at once with the current state. */
     onFullScreen: (listener: (fullScreen: boolean) => void) => () => void;
+    /** Sends each command's keys as the person bound them, by command ID, for the native menu's key labels (LA-V66-R03). */
+    setMenuKeys: (keys: Record<string, string[]>) => void;
     /** Sets the Dock badge to the product's number of check errors (LA-V71-R03). */
     setErrorCount: (count: number) => void;
     /** The record actions (LA-AUT-UC15-R01): reveal its data file, open it in the editor, copy its ID, or a native menu of the three. */

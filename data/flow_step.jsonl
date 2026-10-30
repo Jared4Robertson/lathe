@@ -459,21 +459,24 @@
 {"id":"LA-PLT-UC04-FL01-S02","title":"They run commands by their VS Code keys, such as Cmd/Ctrl+B to hide the navigation","flow_id":"LA-PLT-UC04-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC04-FL01-S03","title":"A screen reader hears what the command changed","flow_id":"LA-PLT-UC04-FL01","path":"main","position":3}
 {"id":"LA-PLT-UC04-FL01-S04","title":"While they type in a search box, single-key shortcuts don't fire, and keys the app doesn't handle reach the browser","flow_id":"LA-PLT-UC04-FL01","path":"typing","position":1}
-{"id":"LA-PLT-UC04-FL01-S05","title":"They press ?; the shortcuts sheet lists every shortcut by group, with a search and how to override a binding","flow_id":"LA-PLT-UC04-FL01","path":"main","position":4}
-{"id":"LA-PLT-UC04-FL01-S06","title":"They override a binding in local storage, and the palette, the sheet and every hint show their keys","flow_id":"LA-PLT-UC04-FL01","path":"main","position":5}
+{"id":"LA-PLT-UC04-FL01-S05","title":"They press ?; the shortcuts sheet lists every shortcut by group, with a search and each shortcut's keys to change","flow_id":"LA-PLT-UC04-FL01","path":"main","position":4}
+{"id":"LA-PLT-UC04-FL01-S06","title":"They choose a key in the sheet and press a new one, and the palette, the sheet and every hint show it at once","flow_id":"LA-PLT-UC04-FL01","path":"main","position":5}
+{"id":"LA-PLT-UC04-FL01-S07","title":"They remove a key they no longer want from a shortcut in the sheet","flow_id":"LA-PLT-UC04-FL01","path":"main","position":6}
+{"id":"LA-PLT-UC04-FL01-S08","title":"They reset a changed shortcut to its own keys","flow_id":"LA-PLT-UC04-FL01","path":"main","position":7}
+{"id":"LA-PLT-UC04-FL01-S09","title":"They reset all shortcuts, after the sheet asks first","flow_id":"LA-PLT-UC04-FL01","path":"main","position":8}
 {"id":"LA-PLT-UC04-FL02-S01","title":"In the desktop app, the Reader presses Cmd/Ctrl+Shift+P; the palette lists the commands that apply, from the one keymap, each with its keys for the platform","flow_id":"LA-PLT-UC04-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC04-FL02-S02","title":"The Reader runs commands by their VS Code keys, such as Cmd/Ctrl+B to hide the navigation","flow_id":"LA-PLT-UC04-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC04-FL02-S03","title":"The app announces to a screen reader what the command changed","flow_id":"LA-PLT-UC04-FL02","path":"main","position":3}
 {"id":"LA-PLT-UC04-FL02-S04","title":"The app fires no single-key shortcut while the Reader types in a search box, and passes keys it doesn't handle to the window","flow_id":"LA-PLT-UC04-FL02","path":"typing","position":1}
-{"id":"LA-PLT-UC04-FL02-S05","title":"The Reader presses ?; the shortcuts sheet lists every shortcut by group, with a search and how to override a binding","flow_id":"LA-PLT-UC04-FL02","path":"main","position":4}
+{"id":"LA-PLT-UC04-FL02-S05","title":"The Reader presses ?; the shortcuts sheet lists every shortcut by group, with a search and each shortcut's keys to change","flow_id":"LA-PLT-UC04-FL02","path":"main","position":4}
 {"id":"LA-PLT-UC05-FL01-S01","title":"The Reader rests on a control and its tooltip names its keys","flow_id":"LA-PLT-UC05-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC05-FL01-S02","title":"They open the palette and read each command's keys","flow_id":"LA-PLT-UC05-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC05-FL01-S03","title":"A screen reader hears the keys","flow_id":"LA-PLT-UC05-FL01","path":"main","position":3}
-{"id":"LA-PLT-UC05-FL01-S04","title":"They rebind a key and every hint follows, the shortcuts sheet with them","flow_id":"LA-PLT-UC05-FL01","path":"main","position":4}
+{"id":"LA-PLT-UC05-FL01-S04","title":"They rebind a key in the shortcuts sheet and every hint follows, the toolbar and the palette with it","flow_id":"LA-PLT-UC05-FL01","path":"main","position":4}
 {"id":"LA-PLT-UC05-FL02-S01","title":"In the desktop app, the Reader rests on a control and its tooltip names its keys","flow_id":"LA-PLT-UC05-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC05-FL02-S02","title":"The Reader opens the palette and reads each command's keys","flow_id":"LA-PLT-UC05-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC05-FL02-S03","title":"The app announces the keys to a screen reader","flow_id":"LA-PLT-UC05-FL02","path":"main","position":3}
-{"id":"LA-PLT-UC05-FL02-S04","title":"The Reader rebinds a key, and every hint follows, the shortcuts sheet with them","flow_id":"LA-PLT-UC05-FL02","path":"main","position":4}
+{"id":"LA-PLT-UC05-FL02-S04","title":"The Reader rebinds a key in the shortcuts sheet, and every hint follows, the menu's key labels with them","flow_id":"LA-PLT-UC05-FL02","path":"main","position":4}
 {"id":"LA-PLT-UC06-FL01-S01","title":"The Reader drags the gap between two panels, or focuses it and steps it with the keys","flow_id":"LA-PLT-UC06-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC06-FL01-S02","title":"Lathe remembers the sizes; a double-click resets one","flow_id":"LA-PLT-UC06-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC06-FL01-S03","title":"Dragging the navigation small folds it to its rail","flow_id":"LA-PLT-UC06-FL01","path":"main","position":3}

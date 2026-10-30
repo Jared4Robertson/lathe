@@ -2,8 +2,8 @@ import { createPortal } from 'react-dom';
 import { Fragment, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
-import { useRunCommand, useRunWalk } from '../shell/commands';
-import { COMMANDS, WALK_COMMANDS } from '../shell/keymap';
+import { useKeymap, useRunCommand, useRunWalk } from '../shell/commands';
+import { WALK_COMMANDS, walkLetter } from '../shell/keymap';
 import { Tooltip } from '../shell/Tooltip';
 import { BottomSheet } from '../shell/BottomSheet';
 import { useNarrow } from '../shell/useNarrow';
@@ -63,11 +63,9 @@ export const TOOLBAR_FORMS: Readonly<Record<ToolbarTier, ToolbarForm>> = {
   menu: { names: false, picker: false, letters: false, narrow: true, folded: ['steps', 'changes', 'secondary'] },
 };
 
-/** The arrow each step button shows, and the letter that takes the same step. */
-const STEP_MARKS: Readonly<Record<Move, { mark: string; letter: string }>> = {
-  left: { mark: '←', letter: 'A' }, right: { mark: '→', letter: 'D' }, up: { mark: '↑', letter: 'W' }, down: { mark: '↓', letter: 'S' }, out: { mark: 'Out', letter: '' }, in: { mark: 'In', letter: '' },
-};
-const titleOf = (move: Move) => COMMANDS.find((c) => c.id === WALK_COMMANDS[move])!.title;
+/** The mark each step button shows; beside it, the plain letter that takes the same step as the person bound it (A for Left by default). */
+const STEP_MARKS: Readonly<Record<Move, string>> = { left: '←', right: '→', up: '↑', down: '↓', out: 'Out', in: 'In' };
+const ARROW_MOVES: readonly Move[] = ['left', 'right', 'up', 'down'];
 
 export interface StageToolbarProps {
   /** Whether a move goes anywhere from the focus: a step that goes nowhere is shown disabled. */
@@ -82,6 +80,8 @@ export interface StageToolbarProps {
 
 export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToolbarProps) {
   const runWalk = useRunWalk();
+  const keymap = useKeymap();
+  const titleOf = (move: Move) => keymap.commands.find((c) => c.id === WALK_COMMANDS[move])!.title;
   const runCommand = useRunCommand();
   const room = useRef<HTMLDivElement>(null);
   const toolbar = useRef<HTMLDivElement>(null);
@@ -121,7 +121,8 @@ export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToo
     <div className="stage-steps" role="group" aria-label="Walk the stage">
       {MOVES.map((move) => {
         const label = walkLabels[move] ?? titleOf(move);
-        const { mark, letter } = STEP_MARKS[move];
+        const mark = STEP_MARKS[move];
+        const letter = ARROW_MOVES.includes(move) ? walkLetter(move, keymap.commands, keymap.mac) : '';
         return (
           <Tooltip key={move} label={label} command={WALK_COMMANDS[move]}>
             <Button className={`stage-step is-${move}`} aria-label={label} disabled={!can(move)} onClick={() => runWalk(move)}>

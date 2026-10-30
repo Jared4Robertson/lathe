@@ -6,7 +6,7 @@ import { Keys, useKeymap, useShortcutHint } from './commands';
 // keys ("Show or hide the navigation ⌘B", or "Ctrl+B" off a Mac). A tooltip opens after a short
 // hover, at once on focus while the keyboard is in use (not on a click, and not when a page
 // moves focus on load), and closes on leaving, on blur, on a click
-// or on Escape. The keys come from the keymap with its overrides, so a rebinding changes the hint,
+// or on Escape. The keys come from the keymap with the person's keys, so a rebinding changes the hint,
 // and the control gets `aria-keyshortcuts` from the same table.
 
 /** How long the pointer rests on a control before its tooltip shows. */

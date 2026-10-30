@@ -126,6 +126,7 @@ export const desktopBridgeStub = (over: Partial<LatheDesktop> = {}): LatheDeskto
   onCommand: () => () => {},
   setChrome: () => {},
   onFullScreen: () => () => {},
+  setMenuKeys: () => {},
   setErrorCount: () => {},
   revealRecord: () => {},
   openRecordInEditor: () => {},
