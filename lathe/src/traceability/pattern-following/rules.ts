@@ -9,15 +9,15 @@ import { PATTERN_FOLLOWING_AGGREGATE, followingOf, followingsFrom, type PatternF
 
 const given = (text: string | null | undefined) => text !== null && text !== undefined;
 
-const problem = (rule: string, value: SettingValueRow, message: string): RuleProblem => ({ rule, table: 'setting_value', row: value as unknown as Row, message });
+const problem = ({ rule }: { rule: string }, value: SettingValueRow, message: string): RuleProblem => ({ rule, table: 'setting_value', row: value as unknown as Row, message });
 
 /** Every setting value that breaks LA-TRC-INV01: it gives a value or a reason it does not apply, never both or neither, and a reason is not blank. */
 function valueOrReason(values: readonly SettingValueRow[]): RuleProblem[] {
   return values.flatMap((v) => {
     const what = `${v.follower_id} gives setting ${v.setting} of ${v.pattern_id}`;
-    if (given(v.value) && given(v.not_applicable)) return [problem('setting-value-or-reason', v, `${what} both a value and a reason it does not apply; give one or the other`)];
-    if (!given(v.value) && !given(v.not_applicable)) return [problem('setting-value-or-reason', v, `${what} neither a value nor a reason it does not apply; give one or the other`)];
-    if (given(v.not_applicable) && !String(v.not_applicable).trim()) return [problem('setting-value-or-reason', v, `${what} an empty reason it does not apply; say why`)];
+    if (given(v.value) && given(v.not_applicable)) return [problem({ rule: 'setting-value-or-reason' }, v, `${what} both a value and a reason it does not apply; give one or the other`)];
+    if (!given(v.value) && !given(v.not_applicable)) return [problem({ rule: 'setting-value-or-reason' }, v, `${what} neither a value nor a reason it does not apply; give one or the other`)];
+    if (given(v.not_applicable) && !String(v.not_applicable).trim()) return [problem({ rule: 'setting-value-or-reason' }, v, `${what} an empty reason it does not apply; say why`)];
     return [];
   });
 }
@@ -31,10 +31,10 @@ function ofFollowedSetting(values: readonly SettingValueRow[], view: ReadView, f
   const settings = new Set(view.rows('pattern_setting').map((s) => `${String(s.pattern_id)} ${String(s.name)}`));
   return values.flatMap((v) => {
     if (!settings.has(`${v.pattern_id} ${v.setting}`)) {
-      return [problem('setting-value-of-followed-setting', v, `${v.pattern_id} has no setting ${v.setting}, so ${v.follower_id} cannot give it a value`)];
+      return [problem({ rule: 'setting-value-of-followed-setting' }, v, `${v.pattern_id} has no setting ${v.setting}, so ${v.follower_id} cannot give it a value`)];
     }
     if (!follows.has(followingOf(v.follower_id, v.pattern_id))) {
-      return [problem('setting-value-of-followed-setting', v, `${v.follower_id} does not follow ${v.pattern_id}, so it cannot give its setting ${v.setting} a value`)];
+      return [problem({ rule: 'setting-value-of-followed-setting' }, v, `${v.follower_id} does not follow ${v.pattern_id}, so it cannot give its setting ${v.setting} a value`)];
     }
     return [];
   });
@@ -51,9 +51,9 @@ export function patternFollowingProblems(following: PatternFollowing, view: Read
   const seen = new Set<string>();
   for (const v of following.values) {
     if (v.follower_id !== following.follower || v.pattern_id !== following.pattern) {
-      problems.push(problem('setting-value-own-pattern', v, `the value ${v.follower_id} gives setting ${v.setting} of ${v.pattern_id} cannot answer ${following.pattern} for ${following.follower}: each followed pattern's settings take their own values`));
+      problems.push(problem({ rule: 'setting-value-own-pattern' }, v, `the value ${v.follower_id} gives setting ${v.setting} of ${v.pattern_id} cannot answer ${following.pattern} for ${following.follower}: each followed pattern's settings take their own values`));
     } else if (seen.has(v.setting)) {
-      problems.push(problem('setting-value-own-pattern', v, `${following.follower} gives setting ${v.setting} of ${following.pattern} a second value: a setting takes one value from each follower`));
+      problems.push(problem({ rule: 'setting-value-own-pattern' }, v, `${following.follower} gives setting ${v.setting} of ${following.pattern} a second value: a setting takes one value from each follower`));
     }
     seen.add(v.setting);
   }
