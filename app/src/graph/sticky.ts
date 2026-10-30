@@ -36,7 +36,8 @@ const KNOWN_MAX = 400;
 /**
  * How a box's label is drawn under a camera (`X`, `Y` place a map point on the canvas, `zoom` its scale) with `open`
  * the part of the canvas no panel covers: as placed when its lines lie wholly in it (or the box is wholly outside it),
- * else in the box's visible part, or hidden when it cannot fit there with its title at STICKY_READ_PX.
+ * else in the box's visible part (its title alone when its kind and ID line leaves no room for it), or hidden when its
+ * title cannot fit there at STICKY_READ_PX.
  */
 export function stickyLabel(p: Plate, zoom: number, X: (x: number) => number, Y: (y: number) => number, open: ScreenBox): Sticky {
   if (p.lines.length === 0) return PLACED;
@@ -57,7 +58,9 @@ export function stickyLabel(p: Plate, zoom: number, X: (x: number) => number, Y:
   const key = `${p.place}|${Math.round(w)}|${Math.round(h)}|${most.toPrecision(4)}`;
   let laid = known.get(key);
   if (!laid) {
+    // Its kind and ID line goes first when the room cannot hold the whole label: every box keeps its title.
     laid = layOut({ title: p.title, meta: p.meta, badge: false }, w, h, most);
+    if (laid.kind === 'hidden' && p.meta !== '') laid = layOut({ title: p.title, meta: '', badge: false }, w, h, most);
     if (known.size >= KNOWN_MAX) known.delete(known.keys().next().value!);
     known.set(key, laid);
   }
