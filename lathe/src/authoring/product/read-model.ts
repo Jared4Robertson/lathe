@@ -1,6 +1,7 @@
 // The Product read model (LA-AUT-RM21): what the Product aggregate's queries answer with, shaped for their readers
 // (the product's page with its open questions and interfaces, and the spaces the nav lists) and built from rows by its
 // projection. It shares no types with the aggregate's model.
+import { bySource } from '../../platform/data/grouped.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { InterfaceRow, ProductKindFieldRow, ProductKindRow, ProductRelationRow, ProductRow, QuestionRow, RoleRow } from '../../platform/data/tables.ts';
@@ -60,14 +61,6 @@ export interface ProductPage {
 export interface ProductSummary extends Named {
   icon?: string;
   color?: string;
-}
-
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[]): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l.source_id), [...(found.get(String(l.source_id)) ?? []), String(l.target_id)]);
-  for (const list of found.values()) list.sort();
-  return found;
 }
 
 // Each product's page, from the rows.
