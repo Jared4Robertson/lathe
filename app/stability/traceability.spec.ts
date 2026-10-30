@@ -5,6 +5,9 @@ import { PRODUCT } from './scenarios';
 import { expectKeyWhole, traceDrawn, traceLayout, traceSceneOf } from './scene';
 import type { ColumnScene, ColumnsHost } from '../src/trace/TraceColumns';
 import { TITLE_FONT } from '../src/graph/text';
+import path from 'node:path';
+import { openStore } from '../../lathe/src/platform/data/index';
+import { servesOf } from '../../lathe/src/trace/serves';
 
 // Traceability's flows that the Reader walks in the app, each on its main path, over the suite's copy
 // of this repo's data: the product's and the domains' coverage, the Trace stage, every
@@ -314,5 +317,37 @@ test.describe('Traceability flows', () => {
     // It opens in the wiki card over the stage, which keeps its focus (LA-PAT-APP-UX-R20).
     await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}` && u.search.endsWith(`page=format/checks/${name}`));
     await expect(page.locator('.wiki-panel.is-format h2')).toHaveText(name);
+  });
+
+  test('LA-TRC-UC20-FL01-T see the outcomes a record serves', async ({ page }) => {
+    const spec = await servedWorkspace();
+    // What each record serves, as the Serves reach works it out over Lathe's own data.
+    const store = await openStore(path.resolve(import.meta.dirname, '../..'));
+    const served = (() => { try { return servesOf({ schema: store.schema, rows: (t) => store.rows(t) }); } finally { void store.close(); } })();
+    const wiki = page.locator(WIKI);
+    const servesLine = () => wiki.locator('[data-fact="serves"] dd');
+    // S01, S02: an aggregate, a storage requirement and a view requirement each name the outcomes they serve, each a link.
+    const aggregate = 'LA-AUT-A11';
+    const storage = String(rowsOf(spec, 'storage_requirement').find((r) => r.aggregate_id === aggregate)?.id ?? rowsOf(spec, 'storage_requirement').find((r) => served.has(String(r.id)))!.id);
+    const viewRequirement = 'LA-V92-R78';
+    for (const id of [aggregate, storage, viewRequirement]) {
+      await openPage(page, `/${id}`);
+      const outcomes = served.get(id)!.outcomes;
+      expect(outcomes.length).toBeGreaterThan(0);
+      await expect(wiki.getByRole('list', { name: `Outcomes ${id} serves` }).getByRole('link')).toHaveCount(outcomes.length);
+      for (const o of outcomes) await expect(wiki.getByRole('list', { name: `Outcomes ${id} serves` }).getByRole('link', { name: new RegExp(`^${o} `) })).toBeVisible();
+    }
+    // S03: an outcome leads to its own page.
+    const first = served.get(viewRequirement)!.outcomes[0];
+    await wiki.getByRole('list', { name: `Outcomes ${viewRequirement} serves` }).getByRole('link', { name: new RegExp(`^${first} `) }).click();
+    await page.waitForURL((u) => u.pathname === `/${first}`);
+    await expect(servesLine()).toHaveCount(0);
+    // S04: Tools › Checks lists each serves-no-outcome warning the engine finds.
+    const unserved = spec.problems.filter((p) => p.check === 'serves-no-outcome' && p.record?.startsWith('LA-'));
+    expect(unserved.length).toBeGreaterThan(0);
+    await openPage(page, `${PRODUCT}?panel=checks`);
+    const panel = page.locator('.tool-panel.checks-panel');
+    await expect(panel.getByText('serves-no-outcome').first()).toBeVisible();
+    await expect(panel.getByText(unserved[0].message).first()).toBeAttached();
   });
 });
