@@ -439,7 +439,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     // The nav's rows take their height from --nav-row-height, which the coarse pointer sets to the touch target.
     for (const k of ['.nav-row', '.nav-chevron', '.nav-folder-head', '.nav-section-head']) covered.add(k);
     // Canvas nodes are sized by the layout and grow with pinch-zoom; a card's title is stretched over the whole card.
-    const exempt = new Set(['.graph-node', '.erd-box', '.card-title']);
+    const exempt = new Set(['.graph-node', '.card-title']);
     const missing = rules
       .filter((r) => !coarse(r) && /cursor:\s*pointer/.test(r.body))
       .flatMap((r) => topLevel(r.selector).map((s) => ({ key: keyOf(s.trim()), s: s.trim(), line: r.line })))

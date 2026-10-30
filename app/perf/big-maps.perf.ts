@@ -128,8 +128,8 @@ test.describe('big maps', () => {
   });
 
   test('LA-PLT-UC09-R13-T01 the ERD pans and zooms at 60 Hz on the large product', async ({ page }) => {
-    await open(page, `${DOMAIN}?stage=erd`, '.focus-stage .erd-flow[data-framed] .react-flow__node');
-    const { pan, zoom } = await panAndZoom(page, '.focus-stage .erd-flow');
+    await open(page, `${DOMAIN}?stage=erd`, '.focus-stage .erd-flow[data-framed][data-ready]');
+    const { pan, zoom } = await panAndZoom(page, '.focus-stage .erd-flow canvas');
     await slow('big map: panning the ERD', pan);
     await slow('big map: zooming the ERD', zoom);
   });

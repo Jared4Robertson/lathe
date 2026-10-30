@@ -177,6 +177,28 @@ test.describe('keyboard', () => {
     await expect.poll(() => new URL(page.url()).pathname).toBe(child);
   });
 
+  test('LA-V61-R41-T02 open a box on the ERD with Tab and Enter: its canvas rings the box with keyboard focus, and focus follows the walk', async ({ page }) => {
+    await open(page, `${DOMAIN}?stage=erd`, '.focus-stage .erd-flow[data-framed][data-ready]');
+    const ringed = () => page.evaluate(() => (document.querySelector('.focus-stage .erd-flow') as HTMLElement & { erdScene: () => { boxes: { id: string; ring: boolean }[] } }).erdScene().boxes.find((b) => b.ring)?.id ?? null);
+    const onBox = () => page.evaluate(() => document.activeElement?.closest('.erd-node')?.getAttribute('data-id') ?? null);
+    await tabUntil(page, (el) => !!el.closest('.erd-node'), 'a box on the ERD');
+    let target = await onBox();
+    for (let i = 0; i < 6 && target === DOMAIN.slice(1); i++) { await page.keyboard.press('Tab'); target = await onBox(); }
+    await expect.poll(ringed, 'the canvas rings the box with keyboard focus').toBe(target);
+    await page.keyboard.press('Enter');
+    await expect(page).toHaveURL(new RegExp(`/${target}`));
+    // LA-V61-R42-T01: focus follows the box that became the focus, and the arrow walk takes it along.
+    await expect.poll(onBox).toBe(target);
+    const at = new URL(page.url()).pathname;
+    for (const key of ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp']) {
+      await page.keyboard.press(key);
+      await page.waitForTimeout(200);
+      if (new URL(page.url()).pathname !== at) break;
+    }
+    await expect.poll(() => new URL(page.url()).pathname).not.toBe(at);
+    await expect.poll(onBox).toBe(decodeURIComponent(new URL(page.url()).pathname.slice(1)));
+  });
+
   test('LA-V61-R49-T03 the arrow keys walk the stage from the wiki card and the page bar, and stay with quick find', async ({ page }) => {
     await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
     const path = () => decodeURIComponent(new URL(page.url()).pathname);

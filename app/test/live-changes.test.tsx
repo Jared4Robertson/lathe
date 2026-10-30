@@ -8,6 +8,7 @@ import { workspace } from './fixtures/workspace';
 import { openApp, serve, startAtDepth, type Served } from './helpers';
 import './graph/setup';
 import { drawnBox, scene } from './graph/scene';
+import { erdBox, erdDrawn } from './erd-scene';
 
 // Watching the spec change (LA-EXP-UC15): the data reloads as the server reports a change (an Agent through the CLI
 // or MCP, a git pull, the Reader), the stages mark what changed, and Highlight changes, the Changes panel and the wiki
@@ -269,19 +270,17 @@ describe('the stages and the card show the changes', () => {
 
   it('LA-V96-R29-T01 Every stage marks the live changes: the ERD\'s boxes too, and only dots under reduced motion', async () => {
     await openAt('/DM-SHOP-A1?stage=erd');
-    await waitFor(() => expect(document.querySelector('.erd-box')).not.toBeNull());
+    await waitFor(() => expect(erdDrawn()).toBe(true));
     await land(setRow(workspace(), 'aggregate', 'DM-SHOP-A1', { title: 'Cart' }));
-    await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="DM-SHOP-A1"] .erd-box')).toHaveAttribute('data-change', 'changed'));
-    const box = document.querySelector('.react-flow__node[data-id="DM-SHOP-A1"] .erd-box')!;
-    expect(box.querySelector('.erd-change-dot')).not.toBeNull();
-    expect(box.querySelector('.erd-change-flash')).not.toBeNull();
+    // Its pulse as it lands, and its lasting dot (erd/paint.ts).
+    await waitFor(() => expect(erdBox('DM-SHOP-A1')).toMatchObject({ change: 'changed', flash: true, title: ['Cart'] }));
 
     // Under reduced motion: the dot, no pulse.
     vi.stubGlobal('matchMedia', (q: string) => ({ matches: q.includes('reduce'), media: q, addEventListener: () => {}, removeEventListener: () => {} }));
     window.matchMedia = globalThis.matchMedia;
     await land(setRow(workspace(), 'aggregate', 'DM-SHOP-A1', { title: 'Trolley' }));
-    await waitFor(() => expect(document.querySelector('.react-flow__node[data-id="DM-SHOP-A1"] .erd-box')?.querySelector('.erd-change-flash')).toBeNull());
-    expect(document.querySelector('.react-flow__node[data-id="DM-SHOP-A1"] .erd-change-dot')).not.toBeNull();
+    await waitFor(() => expect(erdBox('DM-SHOP-A1')?.title).toEqual(['Trolley']));
+    expect(erdBox('DM-SHOP-A1')).toMatchObject({ change: 'changed', flash: false });
   });
 });
 

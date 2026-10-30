@@ -28,8 +28,6 @@ const tokens = new Set(source.match(/[A-Za-z0-9_-]+/g));
 const strings = new Set([...source.matchAll(/(['"`])([A-Za-z0-9_-]+)\1/g)].map((m) => m[2]));
 /** The class-building helpers: a template literal that builds a class from a prefix, such as `rel-${style}`. */
 const prefixes = [...new Set([...source.matchAll(/(?<![A-Za-z0-9_-])([a-z][a-z0-9-]*-)\$\{/g)].map((m) => m[1]))];
-/** Classes the app does not write itself: React Flow's own. */
-const foreign = (name: string) => name === 'react-flow' || name.startsWith('react-flow__');
 
 interface Selector { file: string; line: number; name: string }
 
@@ -54,7 +52,6 @@ function classSelectors(file: string): Selector[] {
 }
 
 const used = (name: string) =>
-  foreign(name) ||
   tokens.has(name) ||
   prefixes.some((p) => name.startsWith(p) && name.length > p.length && (strings.has(name.slice(p.length)) || /^\d+$/.test(name.slice(p.length))));
 

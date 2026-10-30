@@ -35,8 +35,7 @@ function chrome() {
   const camera = [...stage().querySelectorAll('.stage-camera')];
   return {
     order,
-    camera: camera.map((c) => within(c as HTMLElement).getAllByRole('button').map((b) => b.getAttribute('aria-label'))),
-    reactFlowControls: stage().querySelectorAll('.react-flow__controls').length };
+    camera: camera.map((c) => within(c as HTMLElement).getAllByRole('button').map((b) => b.getAttribute('aria-label'))) };
 }
 
 const SHARED = ['steps: left right up down out in', 'frame', 'changes: highlight follow open'];
@@ -51,13 +50,12 @@ describe('one stage chrome', () => {
     expect(graph.camera).toEqual(CAMERA);
 
     fireEvent.click(stageButton('ERD'));
-    await waitFor(() => expect(stage().querySelector('.react-flow__node')).not.toBeNull());
+    await waitFor(() => expect(stage().querySelector('.erd-node')).not.toBeNull());
     const erd = chrome();
-    // The ERD's own: Tidy up; React Flow's own buttons give way to the shared ones.
+    // The ERD's own: Tidy up; its camera's buttons are the shared ones, and no others.
     expect(erd.order).toEqual([...SHARED, 'own', 'end: -']);
     expect(within(stage().querySelector<HTMLElement>('.stage-toolbar')!).getByRole('button', { name: 'Tidy up' })).toBeInTheDocument();
     expect(erd.camera).toEqual(CAMERA);
-    expect(erd.reactFlowControls).toBe(0);
 
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(stage().querySelector('.trace-flow[data-ready]')).not.toBeNull());
@@ -155,7 +153,7 @@ describe('the stage key bar', () => {
     expect(useCase).toHaveAttribute('title', expect.stringMatching(/^Use case: a stadium$/));
 
     fireEvent.click(stageButton('ERD'));
-    await waitFor(() => expect(stage().querySelector('.react-flow__node')).not.toBeNull());
+    await waitFor(() => expect(stage().querySelector('.erd-node')).not.toBeNull());
     expect(key()).toHaveAttribute('data-floating', 'bottom');
     expect(entries()).toEqual(expect.arrayContaining(['domain', 'aggregate', 'entity', 'line-has_many']));
 

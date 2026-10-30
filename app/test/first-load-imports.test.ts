@@ -1,5 +1,5 @@
-// The wiki's first load leaves out React Flow and ELK (LA-V61-R37, within LA-PAT-APP-UX-R11's budget), checked at the
-// source: no module that app/src/main.tsx reaches through static imports imports either. The graph,
+// The wiki's first load leaves out ELK (LA-V61-R37, within LA-PAT-APP-UX-R11's budget), checked at the
+// source: no module that app/src/main.tsx reaches through static imports imports it. The graph,
 // the ERD view and the theme editor are loaded with import() when first used.
 import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -7,8 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../src');
-// Their stylesheet is no JavaScript, and loads first so the app's own styles come after it.
-const HEAVY = [/^@xyflow\/react(\/(?!dist\/style\.css$)|$)/, /^elkjs(\/|$)/];
+const HEAVY = [/^elkjs(\/|$)/];
 
 /** The static imports of a module (not `import type`, not `import()`), with the line each is on. */
 function staticImports(file: string): { spec: string; line: number }[] {
@@ -31,7 +30,7 @@ function resolve(from: string, spec: string): string | null {
 }
 
 describe('the first load', () => {
-  it('LA-V61-R37-T05 reaches no React Flow and no ELK through static imports', () => {
+  it('LA-V61-R37-T05 reaches no ELK through static imports', () => {
     const seen = new Set<string>();
     const found: string[] = [];
     const walk = (file: string, via: string[]) => {

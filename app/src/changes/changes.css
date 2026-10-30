@@ -1,5 +1,5 @@
 /* What changed (app/src/changes, LA-EXP-UC15): the stages' Changes controls, the Changes panel, the wiki card's Changes
-   section, the ERD's live marks, and the marks' key entries. Colors are the --change-* tokens (styles.css). */
+   section, and the marks' key entries (the canvas stages draw the marks themselves, graph/paint.ts and erd/paint.ts). Colors are the --change-* tokens (styles.css). */
 
 /* The Changes controls, in every stage's toolbar (views/StageChrome.tsx), after its shared controls. */
 .changes-tools { position: relative; display: flex; align-items: center; gap: 4px; padding-inline: 6px; border-inline: 1px solid var(--float-border); }
@@ -37,44 +37,12 @@
 .change-links .is-added .change-sign { color: var(--change-after-ink); }
 .change-links .is-removed .change-sign { color: var(--change-before-ink); }
 
-/* The ERD's live marks: a new box's glow and a changed box's pulse, once, and the lasting dot. */
-.erd-box.has-change { position: relative; }
-.erd-change-dot { position: absolute; top: 4px; right: 4px; width: 9px; height: 9px; border-radius: 50%; background: var(--change-changed); box-shadow: 0 0 0 1.5px var(--sheet); pointer-events: none; }
-.erd-box.is-added > .erd-change-dot { background: var(--change-new); }
-.erd-change-flash { position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; }
-.erd-box.is-added > .erd-change-flash { box-shadow: inset 0 0 0 3px var(--change-new), inset 0 0 18px var(--change-new); animation: change-glow 4s ease-out; }
-.erd-box.is-changed > .erd-change-flash { box-shadow: inset 0 0 0 3px var(--box-edge); animation: change-pulse 1.4s ease-out; }
-.erd-ghost { position: absolute; top: 0; left: 0; box-sizing: border-box; border: 1.5px dashed var(--change-gone); border-radius: var(--node-radius); pointer-events: none; opacity: 0; animation: change-ghost 4s ease-out; }
-@keyframes change-glow { from { opacity: 0.8; } to { opacity: 0; } }
-@keyframes change-pulse { 0% { opacity: 1; } 30% { opacity: 0.4; } 55% { opacity: 1; } 100% { opacity: 0; } }
-@keyframes change-ghost { from { opacity: 0.8; } to { opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .erd-change-flash, .erd-ghost { display: none; } }
-
 /* The marks in a stage's key: each as the box it marks, in the change's color. */
 .change-swatch { display: inline-block; width: 18px; height: 11px; box-sizing: border-box; border: 2.5px solid var(--g-structural); border-radius: 2px; background: var(--sheet); vertical-align: middle; }
 .change-swatch.is-added { border-color: var(--change-new); background: color-mix(in srgb, var(--change-new) 14%, var(--sheet)); }
 .change-swatch.is-changed { border-color: var(--change-changed); background: color-mix(in srgb, var(--change-changed) 14%, var(--sheet)); }
 .change-swatch.is-removed { border: 2px dashed var(--change-gone); background: color-mix(in srgb, var(--change-gone) 10%, var(--sheet)); }
 .change-swatch.is-dimmed { border-width: 1.5px; opacity: 0.2; }
-
-/* Highlight changes (LA-EXP-UC15-R03): a pill on each changed box (New, Changed, Removed: words as well as color), a
-   container's roll-up beside it, a thick outline in the change's color and a light tint. The canvas stages draw the same
-   in graph/paint.ts; these are the ERD's, whose boxes are elements. The pills sit on the box's top edge, outside it. */
-.change-pills { position: absolute; top: -8px; left: 6px; z-index: 3; display: flex; gap: 4px; pointer-events: none; white-space: nowrap; }
-.change-pill { display: inline-block; height: 15px; padding: 0 6px; box-sizing: border-box; border-radius: 8px; font: 700 10px/15px var(--mono); color: var(--on-mark); background: var(--change-changed); }
-.change-pill.is-added { background: var(--change-new); }
-.change-pill.is-removed { background: var(--change-gone); }
-.change-pill.is-rollup { background: var(--sheet); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
-.erd-box.hl-added { --change-hl: var(--change-new); }
-.erd-box.hl-changed { --change-hl: var(--change-changed); }
-.erd-box.hl-removed { --change-hl: var(--change-gone); }
-.erd-box[class*="hl-"] { outline: 3px solid var(--change-hl); outline-offset: -1.5px; }
-.erd-box[class*="hl-"]::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: color-mix(in srgb, var(--change-hl) 12%, transparent); pointer-events: none; }
-.erd-box[class*="hl-"] { position: relative; }
-.erd-ghost.is-lasting { opacity: 1; animation: none; border-width: 2.5px; background: color-mix(in srgb, var(--change-gone) 10%, transparent); }
-.erd-ghost.is-lasting .change-pill { position: absolute; top: -8px; left: 6px; }
-@media (prefers-reduced-motion: reduce) { .erd-ghost.is-lasting { display: block; } }
-.erd-region-changes { font-weight: 600; }
 
 /* The change hints at the canvas's edges ("4 changes →"), clear of the focus's own, and the minimap's markers. */
 .graph-edge-hints.is-changes .graph-edge-hint { inline-size: auto; border-color: var(--change-changed); color: var(--ink); }

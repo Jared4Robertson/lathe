@@ -1,9 +1,9 @@
 import { Button } from '../components/Button';
 
 // Edge hints (LA-V94-R06): at each edge of a canvas a small chip counts the boxes of interest
-// past it ("3 ↑", "8 →"): the ERD view's faded context boxes. A click pans the camera that way, with
+// past it ("3 ↑", "8 →"): the ERD view's boxes in focus, and its changed boxes. A click pans the camera that way, with
 // the shared motion, without changing the focus, by about half the canvas. The chips follow the
-// camera, and an edge with nothing past it shows none. The ERD view's wrapper is app/src/erd/hints.tsx.
+// camera, and an edge with nothing past it shows none. The ERD's canvas counts them as it paints (erd/ErdView.tsx).
 
 export type Point = { x: number; y: number };
 export type Side = 'up' | 'down' | 'left' | 'right';
