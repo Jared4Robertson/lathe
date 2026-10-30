@@ -1,12 +1,16 @@
-import { freshPlace, movePlace, readPlace, replacePlace, setView, stepPlace, type Place, type PlaceView } from './place';
+import { DEFAULT_STAGE, type StageName } from '../../views/address';
+import { DEFAULT_VIEW, readPlace, type Place, type PlaceView } from '../../views/place';
 
-// The desktop app's tabs, as a browser's: each tab is one place (place.ts) where the Reader explores, with its own
-// focus, stage, camera, depth, filters, wiki card and Back and Forward. Moving never leaves the tab: a click, a step,
-// a link, quick open, Back and Forward change only the active tab's place, even onto a page another tab holds, so a
-// page may be open in several tabs. A new tab opens only when asked for, after the active one. There is always a tab:
-// closing the last leaves one at the product. On the web a browser tab is the one place and there is no tab set.
+// The Tab set aggregate (LA-EXP-A5): the places open in the window, as a browser's tabs. In the desktop app each space
+// has its tab set: each tab is one place (views/place.ts) where the Reader explores, with its own focus, stage,
+// camera, depth, filters, wiki card and Back and Forward. Moving never leaves the tab: a click, a step, a link, quick
+// open, Back and Forward change only the active tab's place, even onto a page another tab holds, so a page may be open
+// in several tabs. A new tab opens only when asked for, after the active one. There is always a tab: closing the last
+// leaves one at the product. On the web a browser tab is the one place and there is no tab set: the view last set is
+// that place's view. Besides the sets, the window keeps the view last set (what a space's first tab starts with), the
+// stage last chosen (what a place starts on when its address names none) and each place's cameras.
 //
-// These are pure functions over a TabSet: useTabs.ts holds one per space.
+// Its commands (commands/) are pure functions over the whole TabSets, run by run.ts through TabSetRepository.
 
 export interface Tab {
   /** Stable for the tab's life. */
@@ -20,17 +24,53 @@ export interface TabSet {
   active: string | null;
 }
 
-export const emptyTabs = (): TabSet => ({ tabs: [], active: null });
+/** A stage's camera kept for a place, with what it framed (the focus, the layout and the depth, joined). */
+export interface KeptCamera<V> {
+  framed: string;
+  view: V;
+}
+
+/** The Tab set aggregate as the window holds it. */
+export interface TabSets {
+  /** Each space's tab set, by product ID (the desktop app's). */
+  sets: Readonly<Record<string, TabSet>>;
+  /** The view last set: the web's one place's, and what a space's first tab starts with. */
+  view: PlaceView;
+  /** The stage last chosen: what a place starts on when its address names none. */
+  stage: StageName;
+  /** Each place's camera on each stage, by `<place> <stage>`, kept while the window is open. */
+  cameras: ReadonlyMap<string, KeptCamera<unknown>>;
+}
+
+export const NO_TABS: TabSets = { sets: {}, view: DEFAULT_VIEW, stage: DEFAULT_STAGE, cameras: new Map() };
+
+/** A space's tab set before its first tab: one value, never changed (every command makes a new set). */
+const NO_TAB_SET: TabSet = Object.freeze({ tabs: [], active: null }) as TabSet;
+export const emptyTabs = (): TabSet => NO_TAB_SET;
 
 export const activeTab = (set: TabSet): Tab | undefined => set.tabs.find((t) => t.key === set.active);
 
+/** A space's tab set (empty when it has none). */
+export const setOf = (tabs: TabSets, space: string): TabSet => tabs.sets[space] ?? emptyTabs();
+
+/** The tab sets with a space's set changed; the same object when nothing changed. */
+export function withSet(tabs: TabSets, space: string, change: (set: TabSet) => TabSet): TabSets {
+  const was = setOf(tabs, space);
+  const set = change(was);
+  return set === was ? tabs : { ...tabs, sets: { ...tabs.sets, [space]: set } };
+}
+
+/** The key a place's cameras are kept under: its space and tab in the desktop app. */
+export const placeKeyOf = (space: string, tab: string) => `${space}/${tab}`;
+
 /** A key no tab in the set has: t1, t2, … */
-function nextKey(set: TabSet): string {
+export function nextKey(set: TabSet): string {
   const n = set.tabs.reduce((max, t) => Math.max(max, Number(t.key.slice(1)) || 0), 0);
   return `t${n + 1}`;
 }
 
-function changeTab(set: TabSet, key: string, change: (place: Place) => Place): TabSet {
+/** The set with one tab's place changed; the same set when nothing changed. */
+export function changeTab(set: TabSet, key: string, change: (place: Place) => Place): TabSet {
   let changed = false;
   const tabs = set.tabs.map((t) => {
     if (t.key !== key) return t;
@@ -42,90 +82,12 @@ function changeTab(set: TabSet, key: string, change: (place: Place) => Place): T
   return changed ? { ...set, tabs } : set;
 }
 
-/**
- * A move in the active tab: its place goes to the address, dropping its forward entries. It never switches tabs. In
- * an empty set the address opens the first tab, with `view`.
- */
-export function moveInTab(set: TabSet, address: string, view: PlaceView): TabSet {
-  if (!set.active) return newTab(set, address, view);
-  return changeTab(set, set.active, (p) => movePlace(p, address));
-}
-
-/** The active tab's current entry at another address (a stage switched): no new entry. */
-export function replaceInTab(set: TabSet, address: string): TabSet {
-  return set.active ? changeTab(set, set.active, (p) => replacePlace(p, address)) : set;
-}
-
-/** Back and Forward in a tab: to the entry at `to` in its history. */
-export function stepTab(set: TabSet, key: string, to: number): TabSet {
-  return changeTab(set, key, (p) => stepPlace(p, to));
-}
-
-export interface NewTabOptions {
-  /** Opened in the background (a middle-click): the active tab stays active. */
-  background?: boolean;
-}
-
-/**
- * A new tab at an address, with a fresh history and the view given (the caller copies the active tab's stage, depth
- * and filters): after the active tab, and active unless opened in the background.
- */
-export function newTab(set: TabSet, address: string, view: PlaceView, { background = false }: NewTabOptions = {}): TabSet {
-  return insert(set, freshPlace(address, view), background);
-}
-
-/** A copy of a tab, with its history, after it, and active. */
-export function duplicateTab(set: TabSet, key: string): TabSet {
-  const tab = set.tabs.find((t) => t.key === key);
-  if (!tab) return set;
-  const at = set.tabs.indexOf(tab) + 1;
-  const copy: Tab = { key: nextKey(set), place: tab.place };
-  return { tabs: [...set.tabs.slice(0, at), copy, ...set.tabs.slice(at)], active: copy.key };
-}
-
-function insert(set: TabSet, place: Place, background: boolean): TabSet {
+/** The set with a tab at a place after the active one, active unless opened in the background. */
+export function insertTab(set: TabSet, place: Place, background: boolean): TabSet {
   const from = activeTab(set);
   const tab: Tab = { key: nextKey(set), place };
   const at = from ? set.tabs.indexOf(from) + 1 : set.tabs.length;
   return { tabs: [...set.tabs.slice(0, at), tab, ...set.tabs.slice(at)], active: background && from ? from.key : tab.key };
-}
-
-/**
- * Closes a tab. Closing the active tab activates its neighbor to the right, or else the left. Closing the only tab
- * leaves one tab at `home` (the product), with the closed tab's view and a fresh history, so there is always one.
- */
-export function closeTab(set: TabSet, key: string, home: string): TabSet {
-  const at = set.tabs.findIndex((t) => t.key === key);
-  if (at < 0) return set;
-  if (set.tabs.length === 1) {
-    const tab: Tab = { key: nextKey(set), place: freshPlace(home, set.tabs[0].place.view) };
-    return { tabs: [tab], active: tab.key };
-  }
-  const tabs = set.tabs.filter((t) => t.key !== key);
-  if (set.active !== key) return { ...set, tabs };
-  return { tabs, active: (tabs[at] ?? tabs[at - 1]).key };
-}
-
-export function activateTab(set: TabSet, key: string): TabSet {
-  return set.tabs.some((t) => t.key === key) && set.active !== key ? { ...set, active: key } : set;
-}
-
-/** The tab `step` places from the active one, in tab order, wrapping at either end. */
-export function cycleTab(set: TabSet, step: number): TabSet {
-  if (set.tabs.length < 2) return set;
-  const at = Math.max(0, set.tabs.findIndex((t) => t.key === set.active));
-  const n = set.tabs.length;
-  return { ...set, active: set.tabs[(((at + step) % n) + n) % n].key };
-}
-
-/** Changes a tab's view (its depth, filters or wiki card). */
-export function updateView(set: TabSet, key: string, change: (view: PlaceView) => PlaceView): TabSet {
-  return changeTab(set, key, (p) => setView(p, change));
-}
-
-/** Changes a tab's place by any of place.ts's functions (a note in its current entry). */
-export function updatePlace(set: TabSet, key: string, change: (place: Place) => Place): TabSet {
-  return changeTab(set, key, change);
 }
 
 /**

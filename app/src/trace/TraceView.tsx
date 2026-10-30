@@ -61,7 +61,7 @@ export interface TraceViewProps {
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the canvas frames the focus. */
   space?: OpenSpaceStore;
-  /** The place the Trace shows (views/cameras.ts): its camera is kept as the place is left and taken back as it shows again. */
+  /** The place the Trace shows (the Tab set's cameras, exploring/tab-set): its camera is kept as the place is left and taken back as it shows again. */
   cameraKey?: string;
   /** Opens a record in a new place (Cmd or Ctrl+click, or a middle-click for the background), when the host has places. */
   onOpenNew?: (id: string, background: boolean) => void;

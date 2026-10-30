@@ -20,7 +20,9 @@ import {
 import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
 import { StageCamera, StageKey, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
 import { DEFAULT_GRAPH_SETTINGS } from './settings';
-import { keepCamera, keptCamera } from '../views/cameras';
+import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
+import { keptCamera } from '../exploring/tab-set/reads';
+import { runTabSetCommand } from '../exploring/tab-set/run';
 import { graphMap, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
 import { nestedMap, type NestedMap, type NestedNode } from './nested';
 import { setTextMeasure, type TextMeasure } from './text';
@@ -106,7 +108,7 @@ export interface GraphViewProps {
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the camera frames the focus. */
   space?: OpenSpaceStore;
-  /** The place the graph shows (views/cameras.ts): its camera is kept as the place is left and taken back as it shows again. */
+  /** The place the graph shows (the Tab set's cameras, exploring/tab-set): its camera is kept as the place is left and taken back as it shows again. */
   cameraKey?: string;
   /** Opens a box in a new place (Cmd or Ctrl+click, or a middle-click for the background), when the host has places. */
   onOpenNew?: (id: string, background: boolean) => void;
@@ -524,7 +526,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   const fadeShift = useRef<{ from: string | null; to: string; start: number; duration: number }>({ from: null, to: focus, start: 0, duration: 0 });
   const framedEmpty = useRef(false);
 
-  // Each place keeps its camera (views/cameras.ts): as the place shown changes (another tab), the one left keeps where
+  // Each place keeps its camera (the Tab set's cameras, exploring/tab-set): as the place shown changes (another tab), the one left keeps where
   // its camera was, and the one shown takes its own back, at once, when it still frames the same focus, layout and depth.
   const framedNow = `${focus} ${layout} ${depth}`;
   const cameraPlace = useRef<{ key: string | undefined; framed: string }>({ key: cameraKey, framed: framedNow });
@@ -534,7 +536,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   useLayoutEffect(() => {
     const was = cameraPlace.current;
     if (was.key === cameraKey) { cameraPlace.current = { key: cameraKey, framed: framedNow }; return; }
-    if (was.key && sizeRef.current) keepCamera(was.key, 'graph', { framed: was.framed, view: view.current });
+    if (was.key && sizeRef.current) runTabSetCommand(keepCamera, { place: was.key, stage: 'graph', camera: { framed: was.framed, view: view.current } });
     cameraPlace.current = { key: cameraKey, framed: framedNow };
     const back = cameraKey ? keptCamera<Viewport>(cameraKey, 'graph', framedNow) : null;
     if (back && size) {
@@ -546,7 +548,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   });
   useEffect(() => () => {
     const { key, framed } = cameraPlace.current;
-    if (key && sizeRef.current) keepCamera(key, 'graph', { framed, view: view.current });
+    if (key && sizeRef.current) runTabSetCommand(keepCamera, { place: key, stage: 'graph', camera: { framed, view: view.current } });
   }, []);
   useLayoutEffect(() => {
     if (skipFraming.current === framing) { skipFraming.current = null; return; }

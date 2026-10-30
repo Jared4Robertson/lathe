@@ -16,7 +16,9 @@ import { BORDER, LABEL_PAD, largestFit, linesIn, setTextMeasure, titleWidth, typ
 import { outlineInset, SHAPES } from '../graph/shapes';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { useCommand } from '../shell/commands';
-import { keepCamera, keptCamera } from '../views/cameras';
+import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
+import { keptCamera } from '../exploring/tab-set/reads';
+import { runTabSetCommand } from '../exploring/tab-set/run';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
@@ -181,7 +183,7 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
     return { v: columnsView(sizes, box), scrolls: columnScrolls(columns, sizes, columnView(box.h, 1), scrolls.current) };
   }, [size, columns, sizes, frameBox, space, open]);
 
-  // Each place keeps its camera and scrolls (views/cameras.ts), as the tree does.
+  // Each place keeps its camera and scrolls (the Tab set's cameras, exploring/tab-set), as the tree does.
   type Kept = { v: Viewport; scrolls: [string, number][] };
   const framedNow = `${focus} ${at}`;
   const cameraPlace = useRef<{ key: string | undefined; framed: string }>({ key: cameraKey, framed: framedNow });
@@ -190,13 +192,13 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
   useLayoutEffect(() => {
     const was = cameraPlace.current;
     if (was.key === cameraKey) { cameraPlace.current = { key: cameraKey, framed: framedNow }; return; }
-    if (was.key && sizeRef.current) keepCamera(was.key, 'trace-columns', { framed: was.framed, view: keepNow() });
+    if (was.key && sizeRef.current) runTabSetCommand(keepCamera, { place: was.key, stage: 'trace-columns', camera: { framed: was.framed, view: keepNow() } });
     cameraPlace.current = { key: cameraKey, framed: framedNow };
     keptView.current = cameraKey ? keptCamera<Kept>(cameraKey, 'trace-columns', framedNow) : null;
   });
   useEffect(() => () => {
     const { key, framed: what } = cameraPlace.current;
-    if (key && sizeRef.current) keepCamera(key, 'trace-columns', { framed: what, view: keepNow() });
+    if (key && sizeRef.current) runTabSetCommand(keepCamera, { place: key, stage: 'trace-columns', camera: { framed: what, view: keepNow() } });
   }, []);
 
   // Frame the path whenever the focus's node, the stage's size or the open space changes: a glide, except the first
