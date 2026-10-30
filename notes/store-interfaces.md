@@ -35,6 +35,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | domain-model | `query` | read_model (read_model_id) | description | `<P>-<D>-QRY<nn>` |
 | domain-model | `policy` | command (command_id) | statement | `<P>-<D>-PO<nn>` |
 | domain-model | `domain_service` | domain (domain_id) | statement | `<P>-<D>-DS<nn>` |
+| domain-model | `storage_requirement` | aggregate (aggregate_id) or read_model (read_model_id), exactly one | statement | `<aggregate or read model>-SR<nn>` |
 | domain-model | `term` | domain (domain_id) | meaning, group_name? | `<P>-<D>-TM<nn>` |
 | use-cases | `capability` | domain (domain_id) | position (int), description | `<P>-<D>-CAP<nn>` |
 | use-cases | `use_case` | capability (capability_id) | goal, notes? | `<P>-<D>-UC<nn>` |
@@ -49,6 +50,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | interaction-design | `endpoint` | command (command_id) or query (query_id) | method (GET/POST/PUT/PATCH/DELETE/HEAD/OPTIONS), route, description, notes? | `<P>-<D>-EP<nn>` |
 | interaction-design | `api_requirement` | endpoint (endpoint_id) | statement, group_name? | `<endpoint>-R<nn>` |
 | interaction-design | `integration` | none | system?, description | `<P>-INT<nn>` |
+| technical-specification | `data_store` | product (product_id) or domain (domain_id), exactly one | kind (database/object store/file folder/file/browser storage/memory), description | `<P>-STORE<nn>` or `<P>-<D>-STORE<nn>` |
 | technical-specification | `repository` | domain (domain_id) | file?, description; part `repository_share` (aggregate_id, reason): another aggregate it also persists, which has no repository of its own, a recorded exception (`repository-share-unpersisted` refuses one a repository persists) | `<domain>-REPO<nn>` |
 | technical-specification | `data_model` | entity (entity_id) | file? | `<entity>-DM` |
 | technical-specification | `table` | entity (entity_id) or read_model (read_model_id) | name, storage (table/view/materialized view/browser storage/file/in memory), file? | `<entity or read model>-TB` |
@@ -71,6 +73,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | test-plan | `specification_test` | specification (specification_id) | run by, when, then, notes? | `<specification>-T` |
 | test-plan | `policy_test` | policy (policy_id) | run by, when, then, notes? | `<policy>-T` |
 | test-plan | `domain_service_test` | domain_service (domain_service_id) | run by, when, then, notes? | `<domain service>-T<nn>` |
+| test-plan | `storage_requirement_test` | storage_requirement (storage_requirement_id) | run by, when, then, notes? | `<storage requirement>-T<nn>` |
 | test-plan | `use_case_test` | uc_requirement (uc_requirement_id) | run by, when, then, notes? | `<UC requirement>-T<nn>` |
 | test-plan | `view_test` | view_requirement (view_requirement_id) | run by, when, then, notes? | `<view requirement>-T<nn>` |
 | test-plan | `endpoint_test` | api_requirement (api_requirement_id) | run by, when, then, notes? | `<API requirement>-T<nn>` |
@@ -113,6 +116,8 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `measured_by` | product | business_outcome | record_id | 12 pairs: business_outcome→every test kind; a product adds its own kinds with a product_relation named measured_by |
 | `meets` | product | meets_source | standard_rule | 14 pairs: every member of meets_source (the technical kinds; a standard rule is proved by its standard rule tests) |
 | `persists` (one per source, one per target) | product | repository | aggregate | repository→aggregate |
+| `stored_in` (one per source) | product | stored_in_source | data_store | repository→data_store, reader→data_store, table→data_store |
+| `provided_by` (one per source) | product | data_store | integration | data_store→integration |
 | `raises` | aggregate | command | domain_event | command→domain_event |
 | `reads` | domain | reads_source | aggregate | read_model→aggregate, specification→aggregate |
 | `renders` | product | ui_component | view | ui_component→view |
@@ -124,10 +129,11 @@ The full description, with every column's meaning, is `store.schema` at run time
 | --- | --- |
 | `follows_source` | domain, use_case |
 | `meets_source` | adapter, command_handler, data_model, endpoint_handler, event_handler, event_type, predicate, projection, query_handler, repository, service, table, ui_component, value_type |
-| `obligation` | api_requirement, constraint, domain_service, invariant, pattern_rule, policy, specification, standard_rule, uc_requirement, view_requirement |
+| `obligation` | api_requirement, constraint, domain_service, invariant, pattern_rule, policy, specification, standard_rule, storage_requirement, uc_requirement, view_requirement |
+| `stored_in_source` | reader, repository, table |
 | `operation` | command, query |
 | `reads_source` | read_model, specification |
-| `test` | constraint_test, domain_service_test, endpoint_test, flow_test, integration_test, invariant_test, pattern_rule_test, policy_test, specification_test, standard_rule_test, use_case_test, view_test |
+| `test` | constraint_test, domain_service_test, storage_requirement_test, endpoint_test, flow_test, integration_test, invariant_test, pattern_rule_test, policy_test, specification_test, standard_rule_test, use_case_test, view_test |
 
 Notes on the tables:
 - **Fields.** `entity_field`, `value_object_field`, `event_field` and `read_model_field` share one shape. A field's type is exactly one of `type` (a basic type: text, whole number, decimal, date, time, date and time, yes/no), `type_value_object_id` or `type_aggregate_id` (a reference by ID; another domain's aggregate is allowed). `required` says whether every record gives it a value; `column_name` names its column when that differs from the field's name (Member ID in `id`). A name is unique in its owner, trimmed and in any letter case. An entity's value objects are the ones its fields are typed with: no link stores them twice.

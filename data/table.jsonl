@@ -9,6 +9,9 @@
 {"id":"LA-AUT-EN09-TB","title":"invariant","entity_id":"LA-AUT-EN09","name":"invariant","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-AUT-EN10-TB","title":"domain_event","entity_id":"LA-AUT-EN10","name":"domain_event","storage":"table","file":"lathe/schema/004-domain-model.sql"}
 {"id":"LA-AUT-EN11-TB","title":"use_case","entity_id":"LA-AUT-EN11","name":"use_case","storage":"table","file":"lathe/schema/005-use-cases.sql"}
+{"id":"LA-AUT-EN110-TB","title":"storage_requirement","entity_id":"LA-AUT-EN110","name":"storage_requirement","storage":"table","file":"lathe/schema/004-domain-model.sql"}
+{"id":"LA-AUT-EN111-TB","title":"storage_requirement_test","entity_id":"LA-AUT-EN111","name":"storage_requirement_test","storage":"table","file":"lathe/schema/008-test-plan.sql"}
+{"id":"LA-AUT-EN112-TB","title":"data_store","entity_id":"LA-AUT-EN112","name":"data_store","storage":"table","file":"lathe/schema/007-technical-specification.sql"}
 {"id":"LA-AUT-EN12-TB","title":"uc_requirement","entity_id":"LA-AUT-EN12","name":"uc_requirement","storage":"table","file":"lathe/schema/005-use-cases.sql"}
 {"id":"LA-AUT-EN13-TB","title":"pattern","entity_id":"LA-AUT-EN13","name":"pattern","storage":"table","file":"lathe/schema/005-use-cases.sql"}
 {"id":"LA-AUT-EN14-TB","title":"pattern_rule","entity_id":"LA-AUT-EN14","name":"pattern_rule","storage":"table","file":"lathe/schema/005-use-cases.sql"}
@@ -96,6 +99,8 @@
 {"id":"LA-AUT-RM39-TB","title":"ExtensionRecord","read_model_id":"LA-AUT-RM39","name":"ExtensionRecord","storage":"in memory","file":"lathe/src/authoring/extension-record/model.ts"}
 {"id":"LA-AUT-RM40-TB","title":"EntryPoint","read_model_id":"LA-AUT-RM40","name":"EntryPoint","storage":"in memory","file":"lathe/src/authoring/entry-point/model.ts"}
 {"id":"LA-AUT-RM41-TB","title":"Tooling","read_model_id":"LA-AUT-RM41","name":"Tooling","storage":"in memory","file":"lathe/src/authoring/tooling/model.ts"}
+{"id":"LA-AUT-RM42-TB","title":"StorageRequirementTable","read_model_id":"LA-AUT-RM42","name":"StorageRequirementTable","storage":"in memory","file":"lathe/src/authoring/storage-requirement/read-model.ts"}
+{"id":"LA-AUT-RM43-TB","title":"DataStoreTable","read_model_id":"LA-AUT-RM43","name":"DataStoreTable","storage":"in memory","file":"lathe/src/authoring/data-store/read-model.ts"}
 {"id":"LA-AUT-TB30","title":"serves","domain_id":"LA-AUT","name":"serves","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-AUT-TB31","title":"persists","domain_id":"LA-AUT","name":"persists","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-AUT-TB40","title":"has_one","domain_id":"LA-AUT","name":"has_one","storage":"table","file":"lathe/schema/010-links.sql"}
@@ -118,6 +123,8 @@
 {"id":"LA-AUT-TB87","title":"about","domain_id":"LA-AUT","name":"about","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-AUT-TB88","title":"builds_on","domain_id":"LA-AUT","name":"builds_on","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-AUT-TB89","title":"builds","domain_id":"LA-AUT","name":"builds","storage":"table","file":"lathe/schema/010-links.sql"}
+{"id":"LA-AUT-TB90","title":"stored_in","domain_id":"LA-AUT","name":"stored_in","storage":"table","file":"lathe/schema/010-links.sql"}
+{"id":"LA-AUT-TB91","title":"provided_by","domain_id":"LA-AUT","name":"provided_by","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-CHK-EN01-TB","title":"check","entity_id":"LA-CHK-EN01","name":"check","storage":"table","file":"lathe/schema/011-checking.sql"}
 {"id":"LA-CHK-EN03-TB","title":"product_setting","entity_id":"LA-CHK-EN03","name":"product_setting","storage":"table","file":"lathe/schema/003-product.sql"}
 {"id":"LA-CHK-RM01-TB","title":"problem","read_model_id":"LA-CHK-RM01","name":"problem","storage":"table","file":"lathe/schema/011-checking.sql"}

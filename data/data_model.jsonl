@@ -9,6 +9,9 @@
 {"id":"LA-AUT-EN09-DM","title":"InvariantRow","entity_id":"LA-AUT-EN09","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN10-DM","title":"DomainEventRow","entity_id":"LA-AUT-EN10","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN11-DM","title":"UseCaseRow","entity_id":"LA-AUT-EN11","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-AUT-EN110-DM","title":"StorageRequirementRow","entity_id":"LA-AUT-EN110","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-AUT-EN111-DM","title":"StorageRequirementTestRow","entity_id":"LA-AUT-EN111","file":"lathe/src/platform/data/tables.ts"}
+{"id":"LA-AUT-EN112-DM","title":"DataStoreRow","entity_id":"LA-AUT-EN112","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN12-DM","title":"UcRequirementRow","entity_id":"LA-AUT-EN12","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN13-DM","title":"PatternRow","entity_id":"LA-AUT-EN13","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN14-DM","title":"PatternRuleRow","entity_id":"LA-AUT-EN14","file":"lathe/src/platform/data/tables.ts"}
