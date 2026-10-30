@@ -3,7 +3,7 @@
 // camera gestures (gestures.ts), with its links as lines between the columns.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { frameRect, MIN_ZOOM, type Viewport } from '../graph/camera';
+import { frameRect, MIN_ZOOM, wholeIn, type Viewport } from '../graph/camera';
 import { faintest, fadeTween, keptFade, type FadeLook } from '../graph/fade';
 import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
 import { useCameraGestures } from '../graph/gestures';
@@ -65,6 +65,8 @@ const LEAST_TEXT = 1.1;
 const OVERVIEW_ZOOM = 0.6;
 /** The height of the columns' names at the top of the frame, in CSS pixels. */
 const HEAD_PX = 30;
+/** The frame below the columns' names: where the camera frames a box. */
+const belowHead = (box: { x: number; y: number; w: number; h: number }) => ({ ...box, y: box.y + HEAD_PX, h: Math.max(MIN_FRAME, box.h - HEAD_PX) });
 const HEAD_FONT = 12;
 /** The view's own name for a gap box's look. */
 const GAP_PLAIN = (missing: keyof typeof GAP_WORDS, obligation: string): PlainBox => ({ kind: GAP_KIND, kindLabel: 'Gap', title: GAP_WORDS[missing], meta: `Gap · ${obligation}`, dashed: true, stage: 'structural' });
@@ -214,13 +216,13 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
 
   /**
    * The camera for the focus: every column across and its whole path's height, at a zoom its boxes read at, the focus
-   * always in the frame (a path taller or wider than that shows the part about the focus); with no box
+   * always whole in the frame (LA-PAT-APP-UX-R23; a path taller or wider than that shows the part about the focus); with no box
    * (the product, or a record the view does not draw), the columns' tops across the frame's width.
    */
   const framing = useCallback((): Viewport | null => {
     if (!size || (space && !open)) return null;
     const box = frameBox(size);
-    const head = { ...box, y: box.y + HEAD_PX, h: Math.max(MIN_FRAME, box.h - HEAD_PX) };
+    const head = belowHead(box);
     const own = focusKey ? laid.places.get(focusKey) : undefined;
     if (focusKey && !own) return null;
     if (!own) {
@@ -252,7 +254,7 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
       : own.x + own.w >= right ? head.x + head.w - 24 - (own.x + own.w) * v.zoom
       : own.x <= left ? head.x + 24 - own.x * v.zoom
       : head.x + head.w / 2 - (own.x + own.w / 2) * v.zoom;
-    return { x, y, zoom: v.zoom };
+    return wholeIn({ x, y, zoom: v.zoom }, own, head);
   }, [size, laid, graph, focusKey, frameBox, space, open]);
 
   // Each place keeps its camera (the Tab set's cameras, exploring/tab-set): taken back at once when it still frames the
@@ -328,7 +330,9 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
     const a = was.places.get(focusKey);
     const b = laid.places.get(focusKey);
     const v = a && b ? followBox(view.current, a, b, { min: MIN_ZOOM, max: MAX_ZOOM }) : null;
-    if (v) moveTo(v, true);
+    // Following the focus keeps it whole too (LA-PAT-APP-UX-R23).
+    const s = sizeRef.current;
+    if (v && b) moveTo(s ? wholeIn(v, b, belowHead(frameBox(s))) : v, true);
   }, [laid]);
 
   // ---- The look, the fade and the plates ----
@@ -612,7 +616,7 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
   const fitAll = () => {
     if (!size) return;
     const box = frameBox(size);
-    moveTo(frameRect({ x: 0, y: 0, w: laid.width, h: laid.height }, { ...box, y: box.y + HEAD_PX, h: Math.max(MIN_FRAME, box.h - HEAD_PX) }, { pad: 24, read: MIN_ZOOM, max: 1, min: MIN_ZOOM }), true);
+    moveTo(frameRect({ x: 0, y: 0, w: laid.width, h: laid.height }, belowHead(box), { pad: 24, read: MIN_ZOOM, max: 1, min: MIN_ZOOM }), true);
   };
 
   // ---- The test hook: the drawn scene, in the page's pixels ----

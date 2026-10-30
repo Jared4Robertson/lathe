@@ -31,7 +31,7 @@ import { type GroundMap, type GroundNode } from './ground';
 import { treeParent } from './tree';
 import { linkLine, linksOf, MOST_LINKS } from './map-links';
 import { setTextMeasure, type TextMeasure } from './text';
-import { BLOCK_BELOW_PX, CHILD_READ_PX, drawnFor, drawnKey, drawnNested, frameGround, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
+import { BLOCK_BELOW_PX, drawnFor, drawnKey, drawnNested, frameGround, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, wholeIn, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
 import { followBox, useMorph } from './morph';
@@ -40,7 +40,7 @@ import { Button } from '../components/Button';
 import { pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
-import { keepLabel, labelStrip } from './sticky';
+import { keepLabel } from './sticky';
 import { focusStrength } from './fade';
 import { boxColors, isBlock, paint, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
@@ -336,7 +336,8 @@ function MapOverview({ map, focus, hidden, view }: { map: PlacedMap; focus: stri
   const H = Math.min(200, Math.max(80, (W * map.height) / Math.max(1, map.width)));
   const pad = Math.max(map.width, map.height) * 0.02;
   return (
-    <div className="graph-minimap">
+    // A floating panel at the bottom (openSpace.ts): the camera frames the focus above it, never under it (LA-PAT-APP-UX-R23).
+    <div className="graph-minimap" data-floating="bottom">
       <svg role="img" aria-label="Minimap" width={W} height={H} viewBox={`${-pad} ${-pad} ${map.width + 2 * pad} ${map.height + 2 * pad}`} preserveAspectRatio="xMidYMid meet">
         {boxes.map((n) => shapeOf(n, 'graph-minimap-node'))}
         {f && shapeOf(f, 'graph-minimap-node is-focus')}
@@ -601,12 +602,12 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     const framed = map.view === 'map' ? onGround(index, map, focus) : focus;
     if (!size || (space && !open) || !map.nodes.has(framed)) return null;
     const box = frameBox(size);
-    // The focus is never left without its label: framed as a strip beside its children, the strip is as wide as its label
-    // needs to read; where its visible part cannot hold it, the camera moves to where it can.
+    // The focus is never left without its label: where its visible part cannot hold it, the camera moves to where it can;
+    // and the focused box is always whole in the frame (LA-PAT-APP-UX-R23).
     const plate = plateFor(framed);
-    const v = map.view === 'map' ? frameGround(map, framed, box.w, box.h, maxZoom) : map.view === 'nested' ? frameNested(map, focus, box.w, box.h, maxZoom) : frameOnMap(map, focus, depth, box.w, box.h, maxZoom, plate ? labelStrip(plate, box.h, CHILD_READ_PX) : undefined);
+    const v = map.view === 'map' ? frameGround(map, framed, box.w, box.h, maxZoom) : map.view === 'nested' ? frameNested(map, framed, box.w, box.h, maxZoom) : frameOnMap(map, framed, depth, box.w, box.h, maxZoom);
     const at = { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
-    return plate ? keepLabel(plate, at, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : at;
+    return wholeIn(plate ? keepLabel(plate, at, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : at, map.nodes.get(framed)!, box);
   }, [size, map, focus, depth, frameBox, space, open, plateFor, index]);
 
   // Frame the focus whenever it, the depth, the stage's size or the open space changes: a glide,
@@ -657,7 +658,8 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     if (!kept && was && node && was.key === framedKey) {
       const follow = followBox(view.current, was.box, node, { min: MIN_ZOOM, max: maxZoom });
       rememberFraming();
-      if (follow) moveTo(follow, true);
+      // Following the focus keeps it whole too (LA-PAT-APP-UX-R23).
+      if (follow && size) moveTo(wholeIn(follow, node, frameBox(size)), true);
       return;
     }
     const target = kept ?? framing();
