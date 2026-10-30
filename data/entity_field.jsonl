@@ -496,6 +496,7 @@
 {"entity_id":"LA-PLT-EN10","position":3,"name":"Port","meaning":"Where it answers; never 5199 for one the shell starts (INV06).","type":"whole number","required":true,"example":"61234"}
 {"entity_id":"LA-PLT-EN14","position":1,"name":"Chosen theme","meaning":"The theme in use, by its ID; Lathe when it is gone (INV04).","type":"text","required":true,"example":"workshop"}
 {"entity_id":"LA-PLT-EN14","position":2,"name":"Color mode","meaning":"System (the default, following the system), Light or Dark.","type":"text","required":true,"example":"system"}
+{"entity_id":"LA-PLT-EN14","position":3,"name":"Scroll to zoom","meaning":"Whether scroll zooms the stages' cameras, Cmd or Ctrl with scroll panning them; off (the default), scroll pans.","type":"yes/no","required":true,"example":"no"}
 {"entity_id":"LA-PLT-EN15","position":1,"name":"Limit","meaning":"The most folders it keeps, latest first: ten (RECENT_LIMIT).","type":"whole number","required":true,"example":"10"}
 {"entity_id":"LA-PLT-EN16","position":1,"name":"Root folder","meaning":"The product repo's folder.","type":"text","required":true,"example":"~/Development/tool-library"}
 {"entity_id":"LA-PLT-EN16","position":2,"name":"Data folder","meaning":"Where its data files are, as `lathe.config.json`'s `data` names it; `data` unless set.","type":"text","required":true,"example":"data"}

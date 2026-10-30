@@ -520,6 +520,7 @@
 {"id":"LA-PLT-UC07-FL01-S08","title":"They delete their copy, after being asked","flow_id":"LA-PLT-UC07-FL01","path":"alternate","position":2}
 {"id":"LA-PLT-UC07-FL01-S09","title":"They export it to share as a file","flow_id":"LA-PLT-UC07-FL01","path":"main","position":7}
 {"id":"LA-PLT-UC07-FL01-S10","title":"Someone else imports that file as a theme of their own","flow_id":"LA-PLT-UC07-FL01","path":"alternate","position":3}
+{"id":"LA-PLT-UC07-FL01-S11","title":"They turn Scroll to zoom on in Appearance, or from the palette, and scroll zooms every stage","flow_id":"LA-PLT-UC07-FL01","path":"alternate","position":4}
 {"id":"LA-PLT-UC07-FL02-S01","title":"In the desktop app, the Reader presses g then t and arrows through the themes, each shown on the whole app at once","flow_id":"LA-PLT-UC07-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC07-FL02-S02","title":"The Reader keeps one with Enter, or puts back the one before with Escape","flow_id":"LA-PLT-UC07-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC07-FL02-S03","title":"The Reader switches Light, Dark or System from the palette","flow_id":"LA-PLT-UC07-FL02","path":"main","position":3}
@@ -530,6 +531,7 @@
 {"id":"LA-PLT-UC07-FL02-S08","title":"The Reader deletes their copy, after being asked","flow_id":"LA-PLT-UC07-FL02","path":"alternate","position":2}
 {"id":"LA-PLT-UC07-FL02-S09","title":"The Reader exports it to share as a file","flow_id":"LA-PLT-UC07-FL02","path":"main","position":7}
 {"id":"LA-PLT-UC07-FL02-S10","title":"Another Reader imports that file as a theme of their own","flow_id":"LA-PLT-UC07-FL02","path":"alternate","position":3}
+{"id":"LA-PLT-UC07-FL02-S11","title":"The Reader turns Scroll to zoom on in Appearance, or from the palette, and scroll zooms every stage","flow_id":"LA-PLT-UC07-FL02","path":"alternate","position":4}
 {"id":"LA-PLT-UC08-FL01-S01","title":"On a phone the Reader opens Lathe: a compact top bar, the page filling the screen, text they can read","flow_id":"LA-PLT-UC08-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC08-FL01-S02","title":"They tap search in the top bar, type a use case's ID and tap the result","flow_id":"LA-PLT-UC08-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC08-FL01-S03","title":"The wiki fills the screen; they tap Graph in the page bar","flow_id":"LA-PLT-UC08-FL01","path":"main","position":3}
