@@ -7,6 +7,7 @@
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { TableKeyRow, TableRow } from '../../platform/data/tables.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** What a table sits under: the entity or read model it stores, or the domain whose own infrastructure it is. */
 export interface TableParent {
@@ -47,8 +48,6 @@ export interface TableTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -87,7 +86,7 @@ export function tableTableFrom(view: ReadView): TableTable {
     });
     under.set(parent.id, [...(under.get(parent.id) ?? []), { id: table.id, title: table.title }]);
   }
-  for (const list of under.values()) list.sort(byId);
+  for (const list of under.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { tables, under, kinds };

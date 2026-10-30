@@ -2,6 +2,7 @@
 // its flows with their steps (and the links each step starts) and their flow tests. One instance is one use case,
 // whole; nothing in it belongs to another aggregate, and it holds only the links its own records start.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { FlowRow, FlowStepRow, FlowTestRow, UcRequirementRow, UseCaseRow, UseCaseTestRow } from '../../platform/data/tables.ts';
 
@@ -91,14 +92,6 @@ export function newUseCase(useCase: UseCaseRow, actors: string[]): UseCase {
   return { root: useCase.id, useCase, actors, requirements: [], useCaseTests: [], flows: [], steps: [], flowTests: [] };
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[]): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l.source_id), [...(found.get(String(l.source_id)) ?? []), String(l.target_id)]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The use cases in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function useCasesFrom(rows: (table: string) => Row[], only?: string): UseCase[] {
   const useCases = rows('use_case').filter((r) => only === undefined || r.id === only) as unknown as UseCaseRow[];
@@ -106,37 +99,35 @@ export function useCasesFrom(rows: (table: string) => Row[], only?: string): Use
   const ids = new Set(useCases.map((u) => u.id));
   const requirements = (rows('uc_requirement') as unknown as UcRequirementRow[]).filter((r) => ids.has(r.use_case_id));
   const flows = (rows('flow') as unknown as FlowRow[]).filter((f) => ids.has(f.use_case_id));
-  const flowIds = new Set(flows.map((f) => f.id));
-  const requirementIds = new Set(requirements.map((r) => r.id));
-  const steps = (rows('flow_step') as unknown as FlowStepRow[]).filter((s) => flowIds.has(s.flow_id));
-  const useCaseTests = (rows('use_case_test') as unknown as UseCaseTestRow[]).filter((t) => requirementIds.has(t.uc_requirement_id));
-  const flowTests = (rows('flow_test') as unknown as FlowTestRow[]).filter((t) => flowIds.has(t.flow_id));
+  const useCaseOfFlow = new Map(flows.map((f) => [f.id, f.use_case_id]));
+  const useCaseOfRequirement = new Map(requirements.map((r) => [r.id, r.use_case_id]));
+  // Each table's rows by the use case they sit in, grouped once.
+  const requirementsOf = groupBy(requirements, (r) => r.use_case_id);
+  const flowsOf = groupBy(flows, (f) => f.use_case_id);
+  const stepsOf = groupBy((rows('flow_step') as unknown as FlowStepRow[]).filter((s) => useCaseOfFlow.has(s.flow_id)), (s) => useCaseOfFlow.get(s.flow_id));
+  const useCaseTestsOf = groupBy(
+    (rows('use_case_test') as unknown as UseCaseTestRow[]).filter((t) => useCaseOfRequirement.has(t.uc_requirement_id)),
+    (t) => useCaseOfRequirement.get(t.uc_requirement_id),
+  );
+  const flowTestsOf = groupBy((rows('flow_test') as unknown as FlowTestRow[]).filter((t) => useCaseOfFlow.has(t.flow_id)), (t) => useCaseOfFlow.get(t.flow_id));
+  const actorsOf = groupBy(rows('use_case_actor'), (a) => a.use_case_id);
   const [fulfills, invokes, happensIn, exchangesWith, startsFrom] = ['fulfills', 'invokes', 'happens_in', 'exchanges_with', 'starts_from'].map((table) => bySource(rows(table)));
-  const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
-  const actors = rows('use_case_actor');
-  return useCases.map((useCase) => {
-    const own = (r: { use_case_id: string }) => r.use_case_id === useCase.id;
-    const ownFlows = flows.filter(own).map((f) => f.id);
-    const ownRequirements = requirements.filter(own).map((r) => r.id);
-    return {
-      root: useCase.id,
-      useCase,
-      actors: actors.filter((a) => a.use_case_id === useCase.id).sort((a, b) => Number(a.position) - Number(b.position)).map((a) => String(a.role_name)),
-      requirements: requirements.filter(own),
-      useCaseTests: useCaseTests.filter((t) => ownRequirements.includes(t.uc_requirement_id)).map((row) => ({ row, startsFrom: targets(startsFrom, row.id) })),
-      flows: flows.filter(own),
-      steps: steps
-        .filter((s) => ownFlows.includes(s.flow_id))
-        .map((row) => ({
-          row,
-          fulfills: targets(fulfills, row.id),
-          invokes: targets(invokes, row.id)[0] ?? null,
-          happensIn: targets(happensIn, row.id)[0] ?? null,
-          exchangesWith: targets(exchangesWith, row.id),
-        })),
-      flowTests: flowTests.filter((t) => ownFlows.includes(t.flow_id)).map((row) => ({ row, startsFrom: targets(startsFrom, row.id) })),
-    };
-  });
+  return useCases.map((useCase) => ({
+    root: useCase.id,
+    useCase,
+    actors: [...groupOf(actorsOf, useCase.id)].sort((a, b) => Number(a.position) - Number(b.position)).map((a) => String(a.role_name)),
+    requirements: groupOf(requirementsOf, useCase.id),
+    useCaseTests: groupOf(useCaseTestsOf, useCase.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
+    flows: groupOf(flowsOf, useCase.id),
+    steps: groupOf(stepsOf, useCase.id).map((row) => ({
+      row,
+      fulfills: groupOf(fulfills, row.id),
+      invokes: groupOf(invokes, row.id)[0] ?? null,
+      happensIn: groupOf(happensIn, row.id)[0] ?? null,
+      exchangesWith: groupOf(exchangesWith, row.id),
+    })),
+    flowTests: groupOf(flowTestsOf, useCase.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
+  }));
 }
 
 const links = (source: string, ids: (string | null)[]): Row[] => ids.filter((id): id is string => id !== null).map((target) => ({ source_id: source, target_id: target }));

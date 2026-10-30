@@ -8,6 +8,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { ViewRequirementRow, ViewRow, ViewTestRow } from '../../platform/data/tables.ts';
 import type { ViewKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A view test as the page shows it: its row and the test data sets it starts from. */
 export interface ViewTestOnPage {
@@ -50,8 +51,6 @@ export interface ViewTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -79,9 +78,9 @@ export function viewTableFrom(view: ReadView): ViewTable {
     holding.set(root, { root, kind: 'view' });
     const tree: ViewTree = {
       view: row,
-      requirements: [...(requirements.get(root) ?? [])].sort(byId).map((requirement) => ({
+      requirements: [...(requirements.get(root) ?? [])].sort(byRecordId).map((requirement) => ({
         requirement,
-        tests: [...(tests.get(requirement.id) ?? [])].sort(byId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
+        tests: [...(tests.get(requirement.id) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
       })),
     };
     for (const r of tree.requirements) {
@@ -91,7 +90,7 @@ export function viewTableFrom(view: ReadView): ViewTable {
     views.set(root, tree);
     products.get(root.replace(/-V\d+$/, ''))?.push({ id: root, title: row.title });
   }
-  for (const list of products.values()) list.sort(byId);
+  for (const list of products.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { views, holding, products, kinds };
