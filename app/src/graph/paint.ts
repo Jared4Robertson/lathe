@@ -21,6 +21,8 @@ import { rollupText, totalChanges, type Change } from '../changes/rollup';
 /** The camera as the painter places points: its center in the map, its zoom and the pane's size in CSS pixels. */
 export interface Camera { cx: number; cy: number; zoom: number; w: number; h: number }
 
+/** The least strength a box is drawn at for its problem badges to be drawn: fainter, the badge's label cannot be read. */
+export const BADGE_LEAST_ALPHA = 0.5;
 /** Whether a box is drawn as a plain block at a zoom: its title under BLOCK_BELOW_PX on screen. */
 export const isBlock = (p: Pick<Plate, 'text'>, zoom: number) => p.text * TITLE_FONT * zoom < BLOCK_BELOW_PX;
 /** How far past the canvas's edges, in CSS pixels, a box, bar or line still counts as on screen: its stroke and ring reach that far. */
@@ -440,7 +442,9 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     ctx.fillStyle = line.tone === 'ink' ? look.ink : look.muted;
     ctx.fillText(line.text, x, Y(line.baseline));
   });
-  for (const b of p.badges) {
+  // A faded box's badge is not drawn: at its strength the pill's label (white on the badge's color) cannot be read, and
+  // a label-less pill is a mark that means nothing. It comes back with the box's strength.
+  for (const b of ctx.globalAlpha < BADGE_LEAST_ALPHA ? [] : p.badges) {
     const x = X(b.x);
     const y = Y(b.y);
     const w = b.w * zoom;

@@ -27,6 +27,29 @@ export async function runCommands(store: Store, steps: readonly (readonly [AnyCo
   return committed;
 }
 
+/** One command of an undo (server/undo.ts): it applies only while its record is there (`present`) or is not (`absent`). */
+export interface ConditionalStep {
+  definition: AnyCommand;
+  input: unknown;
+  id: string;
+  when: 'present' | 'absent';
+}
+
+/**
+ * Runs the steps as one write, each only when its record is as it expects at that point (a record an earlier step
+ * removed with its parent is not removed again), and one commit: any refusal changes nothing.
+ */
+export async function runConditionally(store: Store, steps: readonly ConditionalStep[]): Promise<Committed> {
+  const inputs = steps.map((s) => ({ ...s, input: parseInput(store.schema, s.definition, s.input) }));
+  const { committed } = await store.transact(async (tx) => {
+    for (const step of inputs) {
+      if ((tx.record(step.id) !== undefined) !== (step.when === 'present')) continue;
+      await step.definition.handler(tx, step.input);
+    }
+  });
+  return committed;
+}
+
 /** Runs the query on the current data (a store's, or one with the checks' run) with the given arguments. */
 export function runQuery(view: ReadView, definition: AnyQuery, args: unknown): unknown {
   return answerQuery(view, definition, parseInput(view.schema, definition, args));

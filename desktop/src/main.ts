@@ -45,7 +45,9 @@ import { openSettingsFile } from './shell-settings/commands/open-settings-file.t
 import type { Editor } from './shell-settings/model.ts';
 import { ShellSettingsRepository } from './shell-settings/repository.ts';
 import { startBridge, type Bridge, type OpenAnswer, type OpenRequest } from './bridge.ts';
-import { chatPatch, transcriptItems } from './chat.ts';
+import { chatPatch, isChatEffort, isChatModel, parseImages, transcriptItems } from './chat.ts';
+import { captureStage } from './chatCapture.ts';
+import { listSkills } from './chatSkills.ts';
 import { appPluginDir, chatLatheFor, countLatheTools, sourceLathe, withLatheCli, type ChatLathe } from './chatLathe.ts';
 import { ChatSession } from './chatSession.ts';
 import { claudeSignedIn, findClaude, listSessions, processAlive, runningSessions, transcriptFile } from './claudeSessions.ts';
@@ -667,14 +669,15 @@ async function openChat(entry: OpenWindow, input: unknown): Promise<boolean> {
   const lathe = chatLatheOf(entry);
   const env = withLatheCli({ ...claudeEnvFor(claude), ...(await appBridge()).envFor(entry.key) }, lathe);
   if (entry.win.isDestroyed()) return false;
-  // Each session gets a CLI of its own; the last one's ends first.
+  // Each session gets a CLI of its own; the last one's ends first. The model and effort the Owner chose carry over.
+  const choice = entry.chat?.state.choice;
   await stopChat(entry);
   const chat = new ChatSession({
     command: claude,
     cwd: entry.folder,
     env,
     // A new chat starts in the mode the folder's last chat had (LA-PLT-UC19-R09).
-    setup: { pluginDir: lathe.pluginDir, mode: startingMode(productWindows.load().modes, entry.folder) },
+    setup: { pluginDir: lathe.pluginDir, mode: startingMode(productWindows.load().modes, entry.folder), choice },
     countTools: (runEnv) => countLatheTools({ pluginDir: lathe.pluginDir, cwd: entry.folder, env: runEnv, version: lathe.version }),
     onChange: () => chatChanged(entry),
   });
@@ -713,6 +716,7 @@ function popupRecordMenu(window: OpenWindow, id: string, file: string | null) {
   const input = { folder: window.folder, request: { id } };
   const actions = {
     openInNewTab: () => sendCommandId(window.win, 'openRecordInNewTab', []),
+    askClaude: () => sendCommandId(window.win, 'askClaudeAboutRecord', []),
     reveal: () => revealRecordDataFile(productWindows, input, fileManager.reveal),
     openInEditor: () => openRecordDataFile(productWindows, input, openInEditor),
     copyId: () => copyRecordId(productWindows, input, fileManager.copy),
@@ -894,8 +898,29 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   });
   ipcMain.handle('lathe:chat-send', (event, input: unknown) => {
     const entry = fromPageCall(event);
-    const { text, focus } = (input ?? {}) as { text?: unknown; focus?: unknown };
-    return !!entry?.chat && typeof text === 'string' && entry.chat.send(text.slice(0, 100_000), typeof focus === 'string' ? focus : null);
+    const { text, focus, images } = (input ?? {}) as { text?: unknown; focus?: unknown; images?: unknown };
+    const pictures = parseImages(images);
+    return !!entry?.chat && pictures !== null && typeof text === 'string' && entry.chat.send(text.slice(0, 100_000), typeof focus === 'string' ? focus : null, pictures);
+  });
+  ipcMain.handle('lathe:chat-model', (event, input: unknown) => {
+    const entry = fromPageCall(event);
+    const { model, effort } = (input ?? {}) as { model?: unknown; effort?: unknown };
+    if (!entry?.chat || (model !== null && !isChatModel(model)) || (effort !== null && !isChatEffort(effort))) return false;
+    return entry.chat.setChoice({ model: model as never, effort: effort as never });
+  });
+  ipcMain.handle('lathe:chat-unqueue', (event, id: unknown) => {
+    const entry = fromPageCall(event);
+    return !!entry?.chat && typeof id === 'string' && entry.chat.unqueue(id);
+  });
+  // The skills and commands the "/" list shows, read from the files Claude Code reads them from.
+  ipcMain.handle('lathe:chat-skills', (event) => {
+    const entry = fromPageCall(event);
+    return entry ? listSkills({ home: CLAUDE_HOME(), folder: entry.folder, latheDir: chatLatheOf(entry).pluginDir }) : [];
+  });
+  // The stage as it is drawn (a rectangle of the page the page names), as a PNG, for a message.
+  ipcMain.handle('lathe:chat-capture', (event, rect: unknown) => {
+    const entry = fromPageCall(event);
+    return entry ? captureStage(entry.win.webContents, rect) : null;
   });
   ipcMain.handle('lathe:chat-answer', (event, input: unknown) => {
     const entry = fromPageCall(event);

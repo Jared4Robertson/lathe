@@ -32,15 +32,16 @@ export function stepChange(walk: readonly string[], focus: string, step: 1 | -1)
 
 /** The Next change and Previous change commands, for the stage in view: they move the focus the way the stage's own moves do. */
 export function useJumpChanges(index: RecordIndex, focus: string, onNavigate: (id: string) => void) {
-  const { byId, live, product } = useChanges();
+  const { byId, live, product, review } = useChanges();
   const version = useLiveVersion();
   const announce = useAnnounce();
   const walk = useMemo(() => {
     const ids: string[] = [];
     for (const c of byId.values()) if (c.change !== 'removed') ids.push(c.id);
-    for (const m of live.all()) if (m.product === product && m.change !== 'removed') ids.push(m.id);
+    // Under review the walk is Claude's turn alone; otherwise the baseline's changes and the live ones.
+    if (!review) for (const m of live.all()) if (m.product === product && m.change !== 'removed') ids.push(m.id);
     return changedInReadingOrder(ids.filter((id) => index.byId.has(id)));
-  }, [byId, live, product, index, version]);
+  }, [byId, live, product, index, version, review]);
   const jump = (step: 1 | -1) => {
     const to = stepChange(walk, focus, step);
     if (!to) { announce('No new or changed records to go to'); return; }

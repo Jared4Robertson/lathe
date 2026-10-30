@@ -4,7 +4,8 @@ import { waitFor } from '@testing-library/react';
 import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
 import { hitPlate, inPlate, inPolygon } from '../../src/graph/hit';
 import { BLOCK_BELOW_PX } from '../../src/graph/camera';
-import { onCanvas } from '../../src/graph/paint';
+import { BADGE_LEAST_ALPHA, onCanvas, paint, type PaintState } from '../../src/graph/paint';
+import { PLAIN_LOOK } from '../../src/graph/look';
 import { canvasMeasure, fontFor } from '../../src/graph/fonts';
 import { META_FONT, PLAIN_MEASURE, TITLE_FONT } from '../../src/graph/text';
 import type { NestedNode } from '../../src/graph/nested';
@@ -81,6 +82,28 @@ describe('text sizing', () => {
     // The plain measure: the same text always measures the same.
     expect(PLAIN_MEASURE.em('Lend a thing', 'title')).toBe(PLAIN_MEASURE.em('Lend a thing', 'title'));
     expect(PLAIN_MEASURE.em('LA-EXP', 'meta')).toBeCloseTo(6 * 0.6, 9);
+  });
+});
+
+describe('badges', () => {
+  it('LA-EXP-DS10-T08 A faded box draws no problem badge, whose label could not be read; a box at full strength draws it with its label', () => {
+    const map = graphMap(testIndex(), 'P');
+    const plate = platesOf(map).find((p) => p.badges.length > 0 && !p.group)!;
+    expect(plate).toBeDefined();
+    /** What a frame draws of the plate at a strength: each pill's rounded rectangle and each text, by their colors. */
+    const drawn = (strength: number) => {
+      const out: string[] = [];
+      const ctx = new Proxy({ globalAlpha: 1, fillStyle: '', canvas: { width: 2000, height: 2000 } } as Record<string, unknown>, {
+        get: (t, k) => (k in t ? t[k as string] : k === 'measureText' ? () => ({ width: 10 }) : k === 'fillText' ? (text: string) => out.push(`${String(t.fillStyle)}:${text}:${Number(t.globalAlpha).toFixed(2)}`) : () => undefined),
+        set: (t, k, v) => { t[k as string] = v; return true; },
+      }) as unknown as CanvasRenderingContext2D;
+      const state: PaintState = { focus: '', hover: null, ring: null, armed: null, lit: null, litLines: null, spot: 0, strength: () => strength, marks: null, open: { left: 0, top: 0, right: 2000, bottom: 2000 } };
+      const cam = { cx: plate.x + plate.w / 2, cy: plate.y + plate.h / 2, zoom: 1, w: 2000, h: 2000 };
+      paint(ctx, 1, cam, { plates: [plate], bars: [], lines: [] }, PLAIN_LOOK, { body: 'sans-serif', mono: 'monospace' }, state);
+      return out.filter((t) => plate.badges.some((b) => t.includes(`:${b.label}:`)));
+    };
+    expect(drawn(1)).toHaveLength(plate.badges.length);
+    expect(drawn(BADGE_LEAST_ALPHA - 0.3)).toEqual([]);
   });
 });
 
