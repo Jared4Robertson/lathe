@@ -8,12 +8,12 @@ import { contrast } from '../src/theme/contrast';
 import { themeCss } from '../src/theme/css';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
 import { COLOR_NAMES, SETTING_NAMES } from '../src/theme/tokens';
-import { parseSpecRoute } from '../src/specs/data';
+import { parseSpecRoute } from '../src/views/spec-route';
 import { isRecordId } from '../src/views/address';
 import { workspace } from './fixtures/workspace';
 // The split view loads the graph, which needs a ResizeObserver in jsdom.
 import './graph/setup';
-import { indexOf } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 import { Card } from '../src/shell/Card';
 
 // The app's standards (LA-PAT-APP-CODE and LA-PAT-APP-UX): each test proves one of the patterns' rules,
@@ -500,7 +500,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
       expect(loose.map((t) => `${path}: ${t.outerHTML.slice(0, 120)}`)).toEqual([]);
       const code = [...document.querySelectorAll('pre')].filter((p) => !p.closest('.markdown, .spec-body'));
       expect(code.map((p) => `${path}: ${p.outerHTML.slice(0, 120)}`)).toEqual([]);
-      const fixed = [...document.querySelectorAll<HTMLElement>('[style]')].filter((el) => /(?:^|;)\s*(?:min-)?width:\s*(\d{3,})px/.test(el.getAttribute('style') ?? '') && Number(/(\d{3,})px/.exec(el.getAttribute('style')!)![1]) > 288);
+      const fixed = [...document.querySelectorAll<HTMLElement>('[style]')].filter((el) => /(?:^|;)\s*(?:min-)?width:\s*(\d{3 })px/.test(el.getAttribute('style') ?? '') && Number(/(\d{3 })px/.exec(el.getAttribute('style')!)![1]) > 288);
       expect(fixed.map((el) => `${path}: ${el.outerHTML.slice(0, 120)}`)).toEqual([]);
     }
   });
@@ -565,7 +565,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
     const handBuilt = sources.flatMap((f) => where(f, readFileSync(f, 'utf8'), /[`'"]\/(records|specs|graph)\b|`\/\$\{/));
     expect(handBuilt).toEqual([]);
 
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     expect(parseSpecRoute('/', index)).toEqual({ page: 'specs' });
     for (const id of ['DM', 'DM-SHOP', 'DM-SHOP-UC01']) expect(parseSpecRoute(`/${id}`, index)?.page, id).toMatch(/^(product|domain|record)$/);
     expect(parseSpecRoute('/DM-SHOP/interaction-design/flow', index)).toEqual({ page: 'group', parent: 'DM-SHOP', kind: 'interaction-design/flow' });
@@ -584,7 +584,7 @@ describe('LA-PAT-APP-CODE App code and LA-PAT-APP-UX App experience', () => {
 
   it('LA-V96-R03-T02 An old address is no page: /records, /specs and /graph addresses say so, and the address stays as typed', async () => {
     for (const path of ['/records/DM-SHOP-UC01', '/records/DM-SHOP/use_case', '/specs', '/specs/DM/DM-SHOP', '/graph', '/graph/DM-SHOP-UC01', '/format', '/format/kinds/use_case', '/settings/appearance']) {
-      expect(parseSpecRoute(path, indexOf(workspace())), path).toEqual({ page: 'missing' });
+      expect(parseSpecRoute(path, recordIndexOf(workspace())), path).toEqual({ page: 'missing' });
       await openApp(path);
       expect(await screen.findByText(/There's no such page\./), path).toBeInTheDocument();
       expect(window.location.pathname, path).toBe(path);

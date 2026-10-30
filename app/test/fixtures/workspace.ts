@@ -1,5 +1,5 @@
+import type { ServedData } from '../read-view';
 import type { Coverage, CoverageGap, ObligationCoverage } from '../../../lathe/src/types';
-import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture } from './load';
 
 // A small workspace for the component tests (data/workspace/). Two products:
@@ -26,14 +26,13 @@ const shopCoverage = (): Coverage => ({
   ],
   tests: { automated: 1, manual: 0, not_automated: 1 },
   proved_by: { 'DM-SHOP-UC01-R01': ['DM-SHOP-UC01-R01-T01'] },
-  pattern_rules: {},
+  pattern_rules: [],
   gaps: [
     gap('DM-SHOP-INV01', 'invariant', 'built'),
     gap('DM-SHOP-INV01', 'invariant', 'proved'),
     gap('DM-SHOP-UC01-R02', 'uc_requirement', 'built'),
     gap('DM-SHOP-UC01-R02', 'uc_requirement', 'proved'),
-  ],
-});
+  ] });
 
 const payCoverage = (): Coverage => ({
   product: 'DM',
@@ -44,12 +43,11 @@ const payCoverage = (): Coverage => ({
   ],
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
-  pattern_rules: {},
+  pattern_rules: [],
   gaps: [
     gap('DM-PAY-UC01-R01', 'uc_requirement', 'designed'),
     gap('DM-PAY-UC01-R01', 'uc_requirement', 'proved'),
-  ],
-});
+  ] });
 
 /** What DM shares: its value object's constraint and its view's requirement. */
 const dmCoverage = (): Coverage => ({
@@ -61,14 +59,13 @@ const dmCoverage = (): Coverage => ({
   ],
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
-  pattern_rules: {},
+  pattern_rules: [],
   gaps: [
     gap('DM-VO01-C01', 'constraint', 'designed'),
     gap('DM-VO01-C01', 'constraint', 'proved'),
     gap('DM-V01-R01', 'view_requirement', 'designed'),
     gap('DM-V01-R01', 'view_requirement', 'proved'),
-  ],
-});
+  ] });
 
 const noteCoverage = (): Coverage => ({
   product: 'NF',
@@ -79,11 +76,10 @@ const noteCoverage = (): Coverage => ({
   ],
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
-  pattern_rules: {},
-  gaps: [],
-});
+  pattern_rules: [],
+  gaps: [] });
 
-export function workspace(): SpecData {
+export function workspace(): ServedData {
   return fixture('workspace', {
     problems: [
       { severity: 'warning', check: 'not-proved', record: 'DM-SHOP-INV01', message: 'No test proves invariant DM-SHOP-INV01.' },
@@ -93,6 +89,5 @@ export function workspace(): SpecData {
       { severity: 'error', check: 'lone-domain', record: 'NF-NOTE', message: 'NF-NOTE has no use cases yet.' },
       { severity: 'error', check: 'engine', record: null, message: 'The checks could not read a file.' },
     ],
-    coverage: [shopCoverage(), payCoverage(), dmCoverage(), noteCoverage()],
-  });
+    coverage: [shopCoverage(), payCoverage(), dmCoverage(), noteCoverage()] });
 }

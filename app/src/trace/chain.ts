@@ -1,5 +1,5 @@
 import type { ObligationTrace, ProductTraces, TraceGap } from '../../../lathe/src/traceability/trace/read-model';
-import { byIdOrder, type SpecIndex, type SpecRecord } from '../specs/data';
+import { byIdOrder, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { treeChildren, treeParent } from '../graph/tree';
 import { isObligation } from './offer';
 
@@ -75,9 +75,9 @@ function found(traces: ProductTraces): Found {
 /** Whether coverage reports a record untraced: of a kind a chain reaches, and reached by none. */
 export const isUntraced = (traces: ProductTraces, id: string): boolean => found(traces).untraced.has(id);
 
-const chains = new WeakMap<ProductTraces, WeakMap<SpecIndex, Map<string, TraceRow | null>>>();
+const chains = new WeakMap<ProductTraces, WeakMap<RecordIndex, Map<string, TraceRow | null>>>();
 /** An obligation's chain, or null for any other record, read once per answer and index: the matrix and Untraced share them. */
-export function traceChain(index: SpecIndex, traces: ProductTraces, id: string): TraceRow | null {
+export function traceChain(index: RecordIndex, traces: ProductTraces, id: string): TraceRow | null {
   let byIndex = chains.get(traces);
   if (!byIndex) { byIndex = new WeakMap(); chains.set(traces, byIndex); }
   let known = byIndex.get(index);
@@ -86,7 +86,7 @@ export function traceChain(index: SpecIndex, traces: ProductTraces, id: string):
   return known.get(id)!;
 }
 
-function rowOf(index: SpecIndex, traces: ProductTraces, id: string): TraceRow | null {
+function rowOf(index: RecordIndex, traces: ProductTraces, id: string): TraceRow | null {
   if (!isObligation(index, id)) return null;
   const trace = found(traces).traces.get(id);
   const files = trace?.files ?? [];
@@ -103,7 +103,7 @@ function rowOf(index: SpecIndex, traces: ProductTraces, id: string): TraceRow | 
 }
 
 /** Every obligation under a record or group in the tree (itself, when it is one), in the tree's order. */
-export function obligationsUnder(index: SpecIndex, focus: string): string[] {
+export function obligationsUnder(index: RecordIndex, focus: string): string[] {
   const out: string[] = [];
   const seen = new Set<string>();
   const walk = (id: string) => {
@@ -118,9 +118,9 @@ export function obligationsUnder(index: SpecIndex, focus: string): string[] {
 
 // ---------- Untraced: what no obligation's chain reaches, as coverage reports it ----------
 
-const holdersCache = new WeakMap<ProductTraces, WeakMap<SpecIndex, Map<string, string[]>>>();
+const holdersCache = new WeakMap<ProductTraces, WeakMap<RecordIndex, Map<string, string[]>>>();
 /** For every record some obligation's chain holds, in the whole space, the obligations whose chains hold it; read once per answer and index. */
-function holders(index: SpecIndex, traces: ProductTraces): Map<string, string[]> {
+function holders(index: RecordIndex, traces: ProductTraces): Map<string, string[]> {
   let byIndex = holdersCache.get(traces);
   if (!byIndex) { byIndex = new WeakMap(); holdersCache.set(traces, byIndex); }
   let known = byIndex.get(index);
@@ -137,11 +137,11 @@ function holders(index: SpecIndex, traces: ProductTraces): Map<string, string[]>
   return known;
 }
 
-const kindRanks = new WeakMap<SpecIndex, Map<string, number>>();
+const kindRanks = new WeakMap<RecordIndex, Map<string, number>>();
 /** IDs in the schema's kind order, then by ID. */
-function inKindOrder(index: SpecIndex, ids: readonly string[]): string[] {
+function inKindOrder(index: RecordIndex, ids: readonly string[]): string[] {
   let rank = kindRanks.get(index);
-  if (!rank) { rank = new Map(index.workspace.kinds.map((k, i) => [k.kind, i])); kindRanks.set(index, rank); }
+  if (!rank) { rank = new Map(index.meta.kindList.map((k, i) => [k.kind, i])); kindRanks.set(index, rank); }
   const ranks = rank;
   const of = (id: string) => ranks.get(index.byId.get(id)?.kind ?? '') ?? ranks.size;
   return [...ids].sort((a, b) => of(a) - of(b) || byIdOrder({ id: a }, { id: b }));
@@ -151,7 +151,7 @@ function inKindOrder(index: SpecIndex, ids: readonly string[]): string[] {
 export interface UntracedGroup { kind: string; ids: string[] }
 
 /** The records under a record or group that coverage reports untraced, by kind in the schema's order. */
-export function untracedUnder(index: SpecIndex, traces: ProductTraces, focus: string): UntracedGroup[] {
+export function untracedUnder(index: RecordIndex, traces: ProductTraces, focus: string): UntracedGroup[] {
   const listed: string[] = [];
   const seen = new Set<string>();
   const walk = (id: string) => {
@@ -172,12 +172,12 @@ export function untracedUnder(index: SpecIndex, traces: ProductTraces, focus: st
 
 /** A matrix's rows under one parent: a use case's requirements, an aggregate's invariants, a pattern's rules. */
 export interface TraceGroup {
-  parent: SpecRecord | null;
+  parent: RecordSummary | null;
   rows: TraceRow[];
 }
 
 /** The traceability matrix of a record or group: one row per obligation under it, grouped by its parent, in the tree's order. */
-export function traceMatrix(index: SpecIndex, traces: ProductTraces, focus: string): TraceGroup[] {
+export function traceMatrix(index: RecordIndex, traces: ProductTraces, focus: string): TraceGroup[] {
   return groupRows(index, traces, obligationsUnder(index, focus));
 }
 
@@ -201,16 +201,16 @@ export type TraceShape =
   | { shape: 'context'; untraced: boolean; scope: string | null; groups: TraceGroup[] };
 
 /** The obligations whose chains hold a record, in ID order; empty when none does. */
-export const holdersOf = (index: SpecIndex, traces: ProductTraces, id: string): string[] => [...(holders(index, traces).get(id) ?? [])].sort((a, b) => byIdOrder({ id: a }, { id: b }));
+export const holdersOf = (index: RecordIndex, traces: ProductTraces, id: string): string[] => [...(holders(index, traces).get(id) ?? [])].sort((a, b) => byIdOrder({ id: a }, { id: b }));
 
 /** A business outcome's obligations, as the Trace stage's tree draws them under it: those under each capability serving it, in ID order. */
-function obligationsServing(index: SpecIndex, outcome: string): string[] {
+function obligationsServing(index: RecordIndex, outcome: string): string[] {
   const capabilities = (index.incoming.get(outcome) ?? []).filter((l) => l.relation === 'serves' && index.byId.get(l.source)?.kind === 'capability').map((l) => l.source);
   return capabilities.sort((a, b) => byIdOrder({ id: a }, { id: b })).flatMap((c) => obligationsUnder(index, c));
 }
 
 /** The nearest container above a focus in the tree with an obligation under it, or null. */
-function nearestWithObligations(index: SpecIndex, focus: string): string | null {
+function nearestWithObligations(index: RecordIndex, focus: string): string | null {
   for (let at = treeParent(index, focus); at !== null; at = treeParent(index, at)) {
     if (obligationsUnder(index, at).length > 0) return at;
   }
@@ -218,7 +218,7 @@ function nearestWithObligations(index: SpecIndex, focus: string): string | null 
 }
 
 /** What the Trace stage shows for a focus. */
-export function traceShape(index: SpecIndex, traces: ProductTraces, focus: string): TraceShape {
+export function traceShape(index: RecordIndex, traces: ProductTraces, focus: string): TraceShape {
   if (isObligation(index, focus)) return { shape: 'chain' };
   const own = index.byId.get(focus)?.kind === 'business_outcome' ? obligationsServing(index, focus) : obligationsUnder(index, focus);
   if (own.length > 0) return { shape: 'matrix', groups: groupRows(index, traces, own) };
@@ -229,7 +229,7 @@ export function traceShape(index: SpecIndex, traces: ProductTraces, focus: strin
 }
 
 /** Rows of obligations, grouped by each obligation's parent in the order given. */
-function groupRows(index: SpecIndex, traces: ProductTraces, obligations: readonly string[]): TraceGroup[] {
+function groupRows(index: RecordIndex, traces: ProductTraces, obligations: readonly string[]): TraceGroup[] {
   const groups = new Map<string, TraceGroup>();
   for (const id of obligations) {
     const parentId = index.byId.get(id)?.parent ?? '';

@@ -1,6 +1,6 @@
 // The Graph stage of an address, /<id>?stage=graph (LA-V93).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
-import { type SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { Icon } from '../components/icons';
@@ -34,6 +34,7 @@ import { Button } from '../components/Button';
 import { pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
+import { keepLabel } from './sticky';
 import { focusStrength } from './fade';
 import { boxColors, paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
@@ -91,7 +92,7 @@ export function graphSummary(graph: Neighborhood): string {
 }
 
 export interface GraphViewProps {
-  index: SpecIndex;
+  index: RecordIndex;
   /** A record ID, or a group's ID in the graph's tree. */
   focus: string;
   /** Called with a record or group ID when the person moves the focus there. */
@@ -133,7 +134,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const valid = isGraphNode(index, focus);
   const drawn = useMemo(() => (valid ? graphDrawn(index, graph, layout) : null), [valid, index, graph, layout]);
   const changesKey = useChangesKey();
-  const keyEntries = useMemo(() => (drawn ? [...graphKeyEntries(drawn, index.workspace.stages), ...changesKey] : []), [drawn, index, changesKey]);
+  const keyEntries = useMemo(() => (drawn ? [...graphKeyEntries(drawn, index.meta.stages), ...changesKey] : []), [drawn, index, changesKey]);
   // Before paint, so the header strip's counts change in the same frame as the graph (LA-PAT-APP-UX-R08).
   useLayoutEffect(() => { onCounts?.(graphSummary(graph)); }, [graph, onCounts]);
 
@@ -200,7 +201,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
 }
 
 interface FilterProps {
-  index: SpecIndex;
+  index: RecordIndex;
   filters: Filters;
   setFilters: (f: Filters) => void;
   minimap: boolean;
@@ -269,7 +270,7 @@ export function keyboardOrder(boxes: readonly Pick<Box, 'id' | 'x' | 'y'>[], tre
  * The nodes hidden by the kind filters (LA-V93-R13): a node of a hidden kind and everything
  * beneath it. The focus and its ancestors are never hidden. The map keeps their places.
  */
-export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, focus: string): Set<string> {
+export function hiddenNodes(index: RecordIndex, map: PlacedMap, filters: Filters, focus: string): Set<string> {
   const hidden = new Set<string>();
   if (filters.hiddenKinds.size === 0) return hidden;
   const keep = new Set<string>();
@@ -407,7 +408,7 @@ function GraphCanvas(props: CanvasProps) {
 }
 
 interface CanvasProps {
-  index: SpecIndex;
+  index: RecordIndex;
   graph: Neighborhood;
   layout: GraphLayout;
   depth: number;
@@ -508,14 +509,30 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     return w < MIN_FRAME || h < MIN_FRAME ? { x: 0, y: 0, w: s.w, h: s.h } : { x: inset.left, y: inset.top, w, h };
   }, [insetKey]);
 
+  // ---- The plates (plate.ts): each box's outline and label, made once per map ----
+  const plates = useMemo(() => new Map<string, Plate>(), [map, index, measure]);
+  const plateFor = useCallback((id: string): Plate | null => {
+    const known = plates.get(id);
+    if (known) return known;
+    const n = map.nodes.get(id);
+    if (!n) return null;
+    const source: PlateSource = map.view === 'tree' ? { view: 'tree', node: n } : { view: 'nested', node: n as NestedNode };
+    const plate = plateOf(index, id, source);
+    plates.set(id, plate);
+    return plate;
+  }, [plates, map, index]);
+
   /** The camera that frames the focus: the focus and the levels the depth shows, in the frame. */
   const framing = useCallback((): Viewport | null => {
     // With a host that floats panels, never before their first measure: the first picture is framed once, in place.
     if (!size || (space && !open)) return null;
     const box = frameBox(size);
     const v = map.view !== 'tree' ? frameNested(map, focus, box.w, box.h, maxZoom) : frameOnMap(map, focus, depth, box.w, box.h, maxZoom);
-    return { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
-  }, [size, map, focus, depth, frameBox, space, open]);
+    const framed = { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
+    // The focus is never left without its label: where its visible part cannot hold it, the camera moves to where it can.
+    const plate = plateFor(focus);
+    return plate ? keepLabel(plate, framed, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : framed;
+  }, [size, map, focus, depth, frameBox, space, open, plateFor]);
 
   // Frame the focus whenever it, the depth, the stage's size or the open space changes: a glide,
   // except the first picture, a resize of the stage and a map that has just been laid out, which
@@ -628,17 +645,6 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   const look = useRef<Look>(PLAIN_LOOK);
   useLayoutEffect(() => { if (wrapper.current) look.current = readLook(wrapper.current); requestPaint(); }, [theme]);
 
-  const plates = useMemo(() => new Map<string, Plate>(), [map, index, measure]);
-  const plateFor = useCallback((id: string): Plate | null => {
-    const known = plates.get(id);
-    if (known) return known;
-    const n = map.nodes.get(id);
-    if (!n) return null;
-    const source: PlateSource = map.view === 'tree' ? { view: 'tree', node: n } : { view: 'nested', node: n as NestedNode };
-    const plate = plateOf(index, id, source);
-    plates.set(id, plate);
-    return plate;
-  }, [plates, map, index]);
 
   /** The boxes, bars and lines a camera shows, in draw order: in the Nested view a parent before its children, so each child lies over its parent (LA-EXP-DS09). */
   const frameAt = useCallback((v: Viewport): { plates: Plate[]; bars: Bar[]; lines: Line[] } => {

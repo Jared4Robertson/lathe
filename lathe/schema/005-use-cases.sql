@@ -90,25 +90,14 @@ CREATE TABLE pattern_rule (
   pattern_id VARCHAR NOT NULL REFERENCES pattern (id),
   statement VARCHAR NOT NULL CHECK (trim(statement) <> ''),
   group_name VARCHAR,
-  setting VARCHAR,
-  applies_when_setting VARCHAR,
-  applies_when_negated BOOLEAN,
-  applies_when_value VARCHAR,
-  notes VARCHAR,
-  FOREIGN KEY (pattern_id, setting) REFERENCES pattern_setting (pattern_id, name),
-  FOREIGN KEY (pattern_id, applies_when_setting) REFERENCES pattern_setting (pattern_id, name),
-  CHECK ((applies_when_setting IS NULL) = (applies_when_negated IS NULL) AND (applies_when_setting IS NULL) = (applies_when_value IS NULL))
+  notes VARCHAR
 );
-COMMENT ON TABLE pattern_rule IS 'One rule of a pattern. Every domain that follows the pattern owes it, unless it names a setting all of that domain''s followers mark Not applicable, or its applies-when condition is met by no follower there.';
+COMMENT ON TABLE pattern_rule IS 'One rule of a pattern. Every domain that follows the pattern owes it, with no exception: a rule that holds for only some followers belongs to their use cases, not to the pattern.';
 COMMENT ON COLUMN pattern_rule.id IS 'The rule''s ID: its pattern''s ID and R<nn>, such as TL-PAT-LIBRARIAN-ACTION-R01.';
 COMMENT ON COLUMN pattern_rule.title IS 'The rule in a few words.';
 COMMENT ON COLUMN pattern_rule.pattern_id IS 'The pattern it belongs to.';
 COMMENT ON COLUMN pattern_rule.statement IS 'The rule, stated with MUST, MUST NOT, SHOULD or MAY.';
 COMMENT ON COLUMN pattern_rule.group_name IS 'A short heading it is shown under among its siblings, such as Validation or Paging.';
-COMMENT ON COLUMN pattern_rule.setting IS 'A setting of its pattern the rule depends on: in a domain whose following use cases all mark it Not applicable, the rule does not apply.';
-COMMENT ON COLUMN pattern_rule.applies_when_setting IS 'The setting of its pattern its applies-when condition reads; the rule is waived in a domain where no follower gives that setting a value that meets it.';
-COMMENT ON COLUMN pattern_rule.applies_when_negated IS 'false: the condition is <setting> is <value>; true: <setting> is not <value>.';
-COMMENT ON COLUMN pattern_rule.applies_when_value IS 'The value the condition compares with, trimmed and in any letter case.';
 COMMENT ON COLUMN pattern_rule.notes IS 'Longer notes on how the rule applies.';
 
 INSERT INTO meta_kind VALUES

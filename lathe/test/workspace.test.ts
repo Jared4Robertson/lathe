@@ -8,7 +8,9 @@ import { Readable } from 'node:stream';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { loadConfig, loadProducts, openStore, SCHEMA_VERSION, workspaceProducts } from '../src/index.ts';
 import { closeStores, handleApi, watchTargets } from '../src/server/api.ts';
-import type { SpecData, WriteAnswer } from '../src/server/contract.ts';
+import type { RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
+import type { MetaModel } from '../src/platform/meta-model/read-model.ts';
+import type { ProductCoverage } from '../src/traceability/coverage/read-model.ts';
 import { gatherRouteFacts } from '../src/trace/routes.ts';
 import { readPackageFacts } from '../src/trace/packages.ts';
 import { sourceFiles } from '../src/trace/source-files.ts';
@@ -138,66 +140,47 @@ describe('a workspace of several products', () => {
   it('LA-PLT-UC02-R11-T01 The API serves every product of the workspace, writes to each product\'s folder and watches each', async () => {
     const root = workspace();
     opened.push(root);
-    const spec = (await request(root, '/api/spec')).json() as SpecData;
-    expect(spec.sources.map((s) => s.dataDir)).toEqual(['data', `${SHOP}/data`]);
-    expect(spec.sources.map((s) => s.tables.product.map((p) => p.id))).toEqual([['WS'], ['SH']]);
+    // A product's reads come from its own folder.
+    const summaries = async (product: string) => (await request(root, `/api/record-summaries/list-record-summaries?product_id=${product}`)).json() as RecordSummaries;
+    expect((await summaries('WS')).records.map((r) => r.id)).toContain('WS');
+    expect((await summaries('SH')).records.map((r) => r.id)).toContain('SH-SELL');
     // A read that names no record reads every product's folder: the nav lists every product.
     const listed = await request(root, '/api/product/list-products');
     expect(listed.status).toBe(200);
     expect((listed.json() as { id: string }[]).map((p) => p.id)).toEqual(['SH', 'WS']);
 
     // A new record under the shop's domain goes to the shop's folder, a new product to the workspace's.
-    const added = await request(root, '/api/write', { commands: [{ op: 'add', table: 'capability', row: { id: 'SH-SELL-CAP01', title: 'Checkout', domain_id: 'SH-SELL', position: 1, description: 'Paying for a basket.' } }] });
+    const added = await request(root, '/api/domain/add-capability', { id: 'SH-SELL-CAP01', title: 'Checkout', domain_id: 'SH-SELL', position: 1, description: 'Paying for a basket.' });
     expect(added.status).toBe(200);
     expect(existsSync(path.join(root, SHOP, 'data/capability.jsonl'))).toBe(true);
     expect(existsSync(path.join(root, 'data/capability.jsonl'))).toBe(false);
-    expect((await request(root, '/api/write', { commands: [{ op: 'add', table: 'product', row: { id: 'NP', title: 'New product', description: 'A product added through the API.' } }] })).status).toBe(200);
+    expect((await request(root, '/api/product/add-product', { id: 'NP', title: 'New product', description: 'A product added through the API.' })).status).toBe(200);
     expect(readFileSync(path.join(root, 'data/product.jsonl'), 'utf8')).toContain('"NP"');
 
     expect(watchTargets(root).map((t) => t.dir)).toEqual(expect.arrayContaining([path.join(root, 'data'), path.join(root, SHOP, 'data')]));
   });
 
-  it('LA-PLT-EP01-R02-T01 GET /api/spec serves each product folder\'s rows apart under one schema', async () => {
+  it('LA-PLT-UC02-R11-T02 A read of the whole workspace joins every product\'s schema and refuses one product in two folders', async () => {
     const shopKind: Data = {
       ...shop,
       product_kind: [{ name: 'shelf', product_id: 'SH', label: 'Shelf', description: 'A shelf in the shop.', parent_kind: 'domain', obligation: false }],
     };
     const root = workspace(shopKind);
     opened.push(root);
-    const answer = await request(root, '/api/spec');
+    const answer = await request(root, '/api/meta-model/get-meta-model');
     expect(answer.status).toBe(200);
-    const spec = answer.json() as SpecData;
-    expect(spec.sources[0].dataDir).toBe('data');
-    expect(spec.schema.kinds.shelf?.productId).toBe('SH');
-    expect(spec.schema.loadOrder).toContain('shelf');
-    expect([...new Set(spec.coverage.map((c) => c.product))].sort()).toEqual(['SH', 'WS']);
+    const meta = answer.json() as MetaModel;
+    expect(meta.kinds.find((k) => k.kind === 'shelf')?.declared_by).toBe('SH');
+    expect(meta.columns.shelf).toBeDefined();
+    const coverage = async (product: string) => (await request(root, `/api/coverage/get-coverage?product_id=${product}`)).json() as ProductCoverage;
+    expect((await coverage('SH')).product).toBe('SH');
+    expect((await coverage('WS')).product).toBe('WS');
 
     const twice = workspace({ product: [{ id: 'WS', title: 'Workspace again', description: 'The same product in a second folder.' }] });
     opened.push(twice);
-    const clash = await request(twice, '/api/spec');
+    const clash = await request(twice, '/api/product/list-products');
     expect(clash.status).toBe(500);
     expect(JSON.stringify(clash.json())).toContain('The product WS is in two folders, . and examples/shop');
   });
 
-  it('LA-AUT-EP02-R03-T01 POST /api/write goes to the folder of the product its commands name', async () => {
-    const root = workspace();
-    opened.push(root);
-    const shopFile = path.join(root, SHOP, 'data/domain.jsonl');
-    const ownFile = path.join(root, 'data/domain.jsonl');
-    const ownBefore = readFileSync(ownFile, 'utf8');
-    const set = await request(root, '/api/write', { commands: [{ op: 'set', table: 'domain', key: 'SH-SELL', changes: { title: 'Sales' } }] });
-    expect(set.status).toBe(200);
-    expect(readFileSync(shopFile, 'utf8')).toContain('"Sales"');
-    expect(readFileSync(ownFile, 'utf8')).toBe(ownBefore);
-
-    const shopBefore = readFileSync(shopFile, 'utf8');
-    const mixed = await request(root, '/api/write', { commands: [
-      { op: 'set', table: 'domain', key: 'SH-SELL', changes: { title: 'Selling' } },
-      { op: 'set', table: 'domain', key: 'WS-CORE', changes: { title: 'Heart' } },
-    ] });
-    expect(mixed.status).toBe(422);
-    expect((mixed.json() as WriteAnswer & { ok: false }).error).toBe("A write changes one product: these commands name records in examples/shop and the workspace's own folder. Send each product's commands as a write of its own.");
-    expect(readFileSync(shopFile, 'utf8')).toBe(shopBefore);
-    expect(readFileSync(ownFile, 'utf8')).toBe(ownBefore);
-  });
 });

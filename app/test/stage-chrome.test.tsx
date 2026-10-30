@@ -5,7 +5,7 @@ import { TOOLBAR_FORMS, TOOLBAR_TIERS } from '../src/views/StageChrome';
 import { graphDrawn, graphKeyEntries } from '../src/graph/key';
 import { NO_FILTERS, neighborhood } from '../src/graph/model';
 import { changesKeyEntries } from '../src/changes/ChangesKey';
-import { indexOf } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 import { modelWorkspace } from './fixtures/model';
 import { openApp } from './helpers';
 
@@ -36,8 +36,7 @@ function chrome() {
   return {
     order,
     camera: camera.map((c) => within(c as HTMLElement).getAllByRole('button').map((b) => b.getAttribute('aria-label'))),
-    reactFlowControls: stage().querySelectorAll('.react-flow__controls').length,
-  };
+    reactFlowControls: stage().querySelectorAll('.react-flow__controls').length };
 }
 
 const SHARED = ['steps: left right up down out in', 'frame', 'changes: lens follow open'];
@@ -172,7 +171,7 @@ describe('the stage key bar', () => {
   });
 
   it('LA-V96-R30-T01 A kind the filters hide leaves the Graph\'s key, and the live marks show only while there are any', () => {
-    const index = indexOf(modelWorkspace());
+    const index = recordIndexOf(modelWorkspace());
     const ids = (focus: string, hidden: string[]) => graphKeyEntries(graphDrawn(index, neighborhood(index, focus, 3, hidden.length ? { hiddenKinds: new Set(hidden) } : NO_FILTERS), 'tree')).map((e) => e.id);
     expect(ids('P-D-CAP01', [])).toContain('shape-stadium');
     expect(ids('P-D-CAP01', ['use_case'])).not.toContain('shape-stadium');

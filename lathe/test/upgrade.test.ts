@@ -319,4 +319,30 @@ describe('the schema version', () => {
       expect.stringMatching(/^A command that changes a child entity/),
     ]);
   });
+
+  it('LA-AUT-UC03-R08-T07 1-to-2 drops every recorded exception and waiver, and leaves a to-do to change the model', async () => {
+    const [step] = (await readConverters(UPGRADES_DIR)).filter((c) => c.from === 1);
+    const tables: Record<string, Record<string, unknown>[]> = {
+      command_change: [{ command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'Both at once.' }],
+      repository_share: [{ repository_id: 'TL-LEND-REPO01', aggregate_id: 'TL-LEND-A2', reason: 'One store.' }],
+      pattern_rule: [{ id: 'TL-PAT-ACT-R01', title: 'Saved', pattern_id: 'TL-PAT-ACT', statement: 'A tool MUST read the same.', setting: 'record', applies_when_setting: 'record', applies_when_negated: false, applies_when_value: 'Tool' }],
+      setting_value: [{ follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting: 'record', not_applicable: 'Nothing is saved.' }],
+    };
+    const changes: string[] = [];
+    const todos: string[] = [];
+    await step!.converter.files!(
+      { tables: () => Object.keys(tables), read: (table) => tables[table] ?? [], write: (table, rows) => void (tables[table] = rows) },
+      { changed: (text) => changes.push(text), todo: (text) => todos.push(text) },
+    );
+    expect(tables.command_change).toEqual([]);
+    expect(tables.repository_share).toEqual([]);
+    expect(tables.pattern_rule).toEqual([{ id: 'TL-PAT-ACT-R01', title: 'Saved', pattern_id: 'TL-PAT-ACT', statement: 'A tool MUST read the same.' }]);
+    expect(tables.setting_value).toEqual([{ follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting: 'record', value: 'Not applicable: Nothing is saved.' }]);
+    expect(changes).toContain('Recorded exceptions are gone: 1 command changes and 1 repository shares removed.');
+    expect(todos).toEqual([
+      expect.stringContaining('TL-LEND-CMD01 changed TL-LEND-A2; TL-LEND-REPO01 persisted TL-LEND-A2'),
+      expect.stringContaining('move TL-PAT-ACT-R01'),
+      expect.stringContaining('TL-LEND-UC01 record'),
+    ]);
+  });
 });

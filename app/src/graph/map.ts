@@ -1,4 +1,4 @@
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { BORDER, fitsAt, largestFit, linesIn, treeLabel, type MapLabel, type WrappedLabel, textMeasure } from './text';
 import { outlineInset, type Shape } from './shapes';
 import { treeChildren, treeParent } from './tree';
@@ -107,7 +107,7 @@ export interface GraphMap extends PlacedMap {
 }
 
 /** The root of the map that holds a node: its product, or the top of its tree when no product reaches it. */
-export function mapRootOf(index: SpecIndex, id: string): string {
+export function mapRootOf(index: RecordIndex, id: string): string {
   let at = id;
   const seen = new Set([at]);
   for (let up = treeParent(index, at); up !== null && !seen.has(up); up = treeParent(index, up)) { seen.add(up); at = up; }
@@ -191,10 +191,10 @@ export function layoutTree(roots: readonly string[], childrenOf: (id: string) =>
   };
 }
 
-const cache = new WeakMap<SpecIndex, Map<string, GraphMap>>();
+const cache = new WeakMap<RecordIndex, Map<string, GraphMap>>();
 
 /** The map of one product (or of a tree no product reaches), from its root: built on first use, then read. */
-export function graphMap(index: SpecIndex, root: string): GraphMap {
+export function graphMap(index: RecordIndex, root: string): GraphMap {
   let maps = cache.get(index);
   if (!maps) { maps = new Map(); cache.set(index, maps); }
   const key = `${textMeasure().key}|${root}`;

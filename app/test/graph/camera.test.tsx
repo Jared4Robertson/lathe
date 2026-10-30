@@ -80,8 +80,7 @@ describe('graph camera', () => {
       P: ['few', 'many', 'one', 'other 1', 'other 2', 'other 3'],
       few: ['few-a', 'few-b'],
       many: Array.from({ length: 8 }, (_, i) => `use case ${i + 1}`),
-      one: ['one-a'],
-    };
+      one: ['one-a'] };
     for (const k of kids.many) kids[k] = [`${k} step 1`, `${k} step 2`];
     const tree = layoutTree(['P'], (id) => kids[id] ?? [], (id) => ({ title: `The record called ${id}`, meta: `Use case · ${id}` }));
     const [w, h] = [1000, 800];

@@ -1,14 +1,15 @@
 // The ERD stage of any address, /<id>?stage=erd (LA-V94).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type KeyboardEvent } from 'react';
 import { Background, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore, ViewportPortal, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
-import type { RelationRule, SpecIndex } from '../specs/data';
+import { type MetaRelation } from '../platform/meta-model/reads';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { relationLabelOf } from '../specs/labels';
 import { useCameraGestures } from '../graph/gestures';
 import { frameRect, type Viewport } from '../graph/camera';
 import { PLAIN_LOOK, useThemeVersion } from '../graph/look';
 import type { FadeLook } from '../graph/fade';
 import { lowerLabel } from '../plural';
-import { ERD_EMPTY, erdFocus, erdMap, erdStrength, LINE_WORDS, lineGeometry, lineOffsets, RELATION_ENDS, scopeContents, type ErdBox, type ErdFocus, type ErdKind, type ErdLine, type ErdMap, type ErdRelation, type Rect } from './erd';
+import { ERD_EMPTY, erdFocus, erdStrength, LINE_WORDS, lineGeometry, lineOffsets, RELATION_ENDS, scopeContents, type ErdBox, type ErdFocus, type ErdKind, type ErdLine, type ErdMap, type ErdRelation, type Rect, useErd } from './erd';
 import { erdLayout, readyErdLayout } from './layout';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
@@ -49,7 +50,7 @@ const LINE_ORDER = Object.keys(LINE_KEY) as ErdRelation[];
 export const DRAW_IN_VIEW_PAST = 150;
 
 export interface ErdViewProps {
-  index: SpecIndex;
+  index: RecordIndex;
   focus: string;
   onNavigate: (id: string) => void;
   /** Called with the box under the pointer or keyboard focus (`hover`) and the one selected by a first tap (`selected`), for the chat's app_focus. */
@@ -79,7 +80,7 @@ type BoxNode = Node<BoxData>;
 type LineEdge = Edge<LineData>;
 
 /** A line's label, in sentence case: the relation's own words, or the ERD view's for a reference. */
-export function lineLabel(relations: readonly RelationRule[], relation: ErdRelation): string {
+export function lineLabel(relations: readonly MetaRelation[], relation: ErdRelation): string {
   const own = LINE_WORDS[relation];
   if (own) return own.charAt(0).toUpperCase() + own.slice(1);
   return relationLabelOf(relations, relation);
@@ -193,20 +194,24 @@ export const erdCounts = (map: ErdMap, scope: string) => {
 
 export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space, cameraKey, onOpenNew }: ErdViewProps) {
   const at = useMemo(() => erdFocus(index, focus), [index, focus]);
-  const map = useMemo(() => (at ? erdMap(index, at.product) : null), [index, at]);
+  // The product's map, from the ERD read, read again with every data change (the index is the data's version).
+  const read = useErd(at?.product ?? null, index);
+  const map = at && read.state === 'read' && read.answer.product === at.product ? read.answer : null;
   useLayoutEffect(() => { onCounts?.(map && at ? erdCounts(map, at.scope) : ''); }, [map, at, onCounts]);
   // The stage walk moves over the map from anywhere (LA-V61-R49): Out and In between the product, the regions, the areas
   // and the entities, each arrow to the nearest box that way among its siblings, as the picture shows them (walk.ts),
   // read from the map's one layout once it has arrived; each step only moves the camera.
   const [, setLaidOut] = useState(0);
   const target = useCallback((move: Move) => {
-    const rects = at ? readyErdLayout(index, at.product) : undefined;
+    const rects = map ? readyErdLayout(map) : undefined;
     return map && at && rects ? erdTarget(map, rects, at, move) : null;
-  }, [index, map, at]);
+  }, [map, at]);
   useWalk(index, focus, target, onNavigate);
   const changesKey = useChangesKey();
-  const keyEntries = useMemo(() => (map && at ? [...erdKeyEntries(map, at, index.workspace.relations), ...changesKey] : []), [map, at, index, changesKey]);
-  if (!at || !map) return <p className="hint erd-missing">There's no record or group <code>{focus}</code>.</p>;
+  const keyEntries = useMemo(() => (map && at ? [...erdKeyEntries(map, at, index.meta.relations), ...changesKey] : []), [map, at, index, changesKey]);
+  if (!at) return <p className="hint erd-missing">There's no record or group <code>{focus}</code>.</p>;
+  if (read.state === 'refused') return <p className="error erd-missing">Couldn't read the ERD: {read.error}</p>;
+  if (!map) return <p className="hint erd-reading" role="status">Reading the ERD…</p>;
   const product = index.byId.get(at.product);
   return (
     <section className="erd-page" aria-label={`ERD: The domains of ${product?.title ?? at.product}, their aggregates, entities and relationships`}>
@@ -226,7 +231,7 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space, cam
 }
 
 /** The ERD's key entries (LA-V94-R05), for the stage's key bar: each kind of box, badge and line the map draws, and nothing it does not. */
-export function erdKeyEntries(map: ErdMap, at: ErdFocus, relations: readonly RelationRule[] = []): KeyEntry[] {
+export function erdKeyEntries(map: ErdMap, at: ErdFocus, relations: readonly MetaRelation[] = []): KeyEntry[] {
   const sample = (relation: ErdRelation, dashed: boolean) => {
     const g = lineGeometry({ x: 0, y: 0, width: 2, height: 2 }, { x: 34, y: 0, width: 2, height: 2 }, RELATION_ENDS[relation]);
     return (
@@ -296,13 +301,13 @@ function fadeLook(at: HTMLElement | null): Pick<FadeLook, 'focusFade'> {
 /** A box's accessible name: its kind, title and root mark, and whether the focus picks it out. */
 const boxName = (box: ErdBox, pick: boolean) => `${BOX_KIND[box.kind]} ${box.title}${box.root ? ', root' : ''}${box.empty ? `, ${kindLine(box).split(' · ')[1]}` : ''}${pick ? ' (picked out)' : ''}`;
 
-interface CanvasProps { index: SpecIndex; map: ErdMap; at: ErdFocus; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek']; space?: OpenSpaceStore; cameraKey?: string; onOpenNew?: ErdViewProps['onOpenNew']; onLaidOut: () => void }
+interface CanvasProps { index: RecordIndex; map: ErdMap; at: ErdFocus; focus: string; onNavigate: (id: string) => void; onPeek?: ErdViewProps['onPeek']; space?: OpenSpaceStore; cameraKey?: string; onOpenNew?: ErdViewProps['onOpenNew']; onLaidOut: () => void }
 
 function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey, onOpenNew, onLaidOut }: CanvasProps) {
-  const relations = index.workspace.relations;
+  const relations = index.meta.relations;
   // The map's layout: ready at once when this product was laid out before on the same data.
   const [placed, setPlaced] = useState<{ map: ErdMap; rects: Map<string, Rect> } | null>(() => {
-    const rects = readyErdLayout(index, at.product);
+    const rects = readyErdLayout(map);
     return rects ? { map, rects } : null;
   });
   const [error, setError] = useState<string | null>(null);
@@ -312,12 +317,12 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
   useEffect(() => {
     if (placed?.map === map) return;
     let live = true;
-    erdLayout(index, at.product).then(
+    erdLayout(map).then(
       (rects) => { if (live) { setPlaced({ map, rects }); setError(null); onLaidOut(); } },
       (e) => { if (live) setError(e instanceof Error ? e.message : String(e)); },
     );
     return () => { live = false; };
-  }, [index, at.product, map, placed]);
+  }, [map, placed]);
 
   const theme = useThemeVersion();
   // The fade strengths, read again when the theme changes, and once the canvas is there to read them at.

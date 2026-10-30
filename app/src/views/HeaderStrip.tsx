@@ -2,7 +2,7 @@ import { memo, type ReactNode } from 'react';
 import { Breadcrumb, type Crumb } from '../shell/Breadcrumb';
 import { groupLabel, groupName, isGroup, parseGroupId } from '../graph/model';
 import { treeParent } from '../graph/tree';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { KindBadge } from '../specs/parts';
 import { Link } from '../router';
 import { addressOf } from './address';
@@ -15,7 +15,7 @@ import { addressOf } from './address';
 // places and there is no tab row above it, it is the panel's one row and holds the page's controls at its right.
 
 /** A place in the tree as a crumb: a record by its title, a group by its name, each with its whole name. */
-export function crumbOf(index: SpecIndex, id: string): Crumb {
+export function crumbOf(index: RecordIndex, id: string): Crumb {
   const record = index.byId.get(id);
   if (record) return { to: addressOf(id), label: record.title, full: `${record.title} (${id})` };
   const name = groupName(index, id);
@@ -23,7 +23,7 @@ export function crumbOf(index: SpecIndex, id: string): Crumb {
 }
 
 /** The places above a focus in the graph's tree, from its product down to its parent. */
-export function focusTrail(index: SpecIndex, focus: string): Crumb[] {
+export function focusTrail(index: RecordIndex, focus: string): Crumb[] {
   const out: Crumb[] = [];
   for (let at = treeParent(index, focus); at !== null; at = treeParent(index, at)) {
     if (index.byId.has(at) || isGroup(index, at)) out.unshift(crumbOf(index, at));
@@ -32,7 +32,7 @@ export function focusTrail(index: SpecIndex, focus: string): Crumb[] {
 }
 
 export interface HeaderStripProps {
-  index: SpecIndex;
+  index: RecordIndex;
   focus: string;
   /** What the stage draws of the focus, one text: "9 records · 2 groups · 8 links". */
   counts: string;

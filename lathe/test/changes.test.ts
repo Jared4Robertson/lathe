@@ -1,10 +1,11 @@
 // The one record diff (LA-EXP-QRY13, lathe/src/changes.ts): what changed between two versions of a product's rows, by
-// record, against a store made here, so the rows are the ones the command layer writes.
+// record, against a store made here, so the rows are the ones the aggregates' commands write.
 import { rmSync } from 'node:fs';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configuredRoot } from './store/fixture.ts';
 import { applyDelta, recordChanges, rowDelta, type Tables } from '../src/changes.ts';
 import { openStore, type Store } from '../src/platform/data/index.ts';
+import { run } from './helpers.ts';
 
 let root = '';
 let store: Store;
@@ -15,15 +16,12 @@ const tablesOf = (s: Store): Tables => Object.fromEntries(Object.entries(s.schem
 beforeAll(async () => {
   root = configuredRoot('lathe-changes-');
   store = await openStore(root);
-  await store.apply([
-    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example', description: 'A small product for writing notes.' } },
-    { op: 'add', table: 'role', row: { product_id: 'EX', name: 'Writer', description: 'Someone who writes notes.' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' } },
-    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' } },
-    { op: 'add', table: 'pattern', row: { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX', description: 'An action on one note.' } },
-    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.' } },
-    { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC02', title: 'Throw a note away', capability_id: 'EX-NOTE-CAP01', goal: 'A writer drops a note they no longer need.' } },
-  ]);
+  await run(store, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.', roles: [{ name: 'Writer', description: 'Someone who writes notes.' }] });
+  await run(store, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' });
+  await run(store, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
+  await run(store, 'pattern add-pattern', { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX', description: 'An action on one note.' });
+  await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC01', title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a thought.' });
+  await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC02', title: 'Throw a note away', capability_id: 'EX-NOTE-CAP01', goal: 'A writer drops a note they no longer need.' });
 }, 60_000);
 
 afterAll(async () => {
@@ -34,13 +32,10 @@ afterAll(async () => {
 describe('the record diff', () => {
   it('LA-EXP-UC15-R01-T01 One definition of what changed: records added, removed and changed field by field, their part rows, and the links they start', async () => {
     const before = tablesOf(store);
-    await store.apply([
-      { op: 'set', table: 'use_case', key: 'EX-NOTE-UC01', changes: { title: 'Write a short note', goal: 'A writer keeps a short thought.' } },
-      { op: 'add', table: 'use_case_actor', row: { use_case_id: 'EX-NOTE-UC01', position: 1, role_name: 'Writer' } },
-      { op: 'link', relation: 'follows', source: 'EX-NOTE-UC01', target: 'EX-PAT-NOTE' },
-      { op: 'remove', table: 'use_case', key: 'EX-NOTE-UC02' },
-      { op: 'add', table: 'use_case', row: { id: 'EX-NOTE-UC03', title: 'Share a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer lets someone else read a note.' } },
-    ]);
+    await run(store, 'use-case change-use-case', { id: 'EX-NOTE-UC01', title: 'Write a short note', goal: 'A writer keeps a short thought.', actors: ['Writer'] });
+    await run(store, 'pattern-following follow-pattern', { follower_id: 'EX-NOTE-UC01', pattern_id: 'EX-PAT-NOTE' });
+    await run(store, 'use-case remove-use-case', { id: 'EX-NOTE-UC02' });
+    await run(store, 'use-case add-use-case', { id: 'EX-NOTE-UC03', title: 'Share a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer lets someone else read a note.' });
     const after = tablesOf(store);
     const changes = recordChanges(store.schema, before, after);
     expect(changes.map((c) => [c.id, c.change])).toEqual([['EX-NOTE-UC01', 'changed'], ['EX-NOTE-UC02', 'removed'], ['EX-NOTE-UC03', 'added']]);

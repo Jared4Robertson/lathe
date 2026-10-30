@@ -1,14 +1,15 @@
-import type { RelationRule, SpecIndex, SpecLink } from './data';
+import { type MetaRelation } from '../platform/meta-model/reads';
+import { type RecordIndex, type SummaryLink } from '../exploring/record-summaries/record-index';
 
 // The words a link is shown by (LA-PAT-RECORD-PAGE-R07): each relation rule's `forward_label`, read from the
 // link's source ("Fulfills"), and `reverse_label`, read from its target ("Fulfilled by"), from
 // the schema's relations. Every page that shows a link reads them from here, never the relation's
 // code, so the wiki, the graph and the ERD view say the same thing.
 
-type Rules = readonly RelationRule[];
+type Rules = readonly MetaRelation[];
 
 /** The relation rule a link follows: the one for its source and target kinds, or a `*` target. */
-export function ruleFor(rules: Rules, relation: string, sourceKind: string | undefined, targetKind: string | undefined): RelationRule | undefined {
+export function ruleFor(rules: Rules, relation: string, sourceKind: string | undefined, targetKind: string | undefined): MetaRelation | undefined {
   return rules.find((r) => r.relation === relation && r.source_kind === sourceKind && r.target_kind === targetKind)
     ?? rules.find((r) => r.relation === relation && r.source_kind === sourceKind && r.target_kind === '*')
     ?? rules.find((r) => r.relation === relation);
@@ -27,13 +28,13 @@ export function relationLabelOf(rules: Rules, relation: string, from: 'source' |
 }
 
 /** The words for one link, read from its source (`source`: "Fulfills") or its target (`target`: "Fulfilled by"). */
-export function linkLabel(index: SpecIndex, link: Pick<SpecLink, 'source' | 'relation' | 'target'>, from: 'source' | 'target'): string {
-  const rule = ruleFor(index.workspace.relations, link.relation, index.byId.get(link.source)?.kind, index.byId.get(link.target)?.kind);
+export function linkLabel(index: RecordIndex, link: Pick<SummaryLink, 'source' | 'relation' | 'target'>, from: 'source' | 'target'): string {
+  const rule = ruleFor(index.meta.relations, link.relation, index.byId.get(link.source)?.kind, index.byId.get(link.target)?.kind);
   return (from === 'source' ? rule?.forward_label : rule?.reverse_label)?.trim() || codeWords(link.relation);
 }
 
 /** Links grouped by their label, read from one end, groups and IDs in order; each ID listed once per group. */
-export function groupByLabel(index: SpecIndex, links: readonly SpecLink[], from: 'source' | 'target'): { label: string; ids: string[] }[] {
+export function groupByLabel(index: RecordIndex, links: readonly SummaryLink[], from: 'source' | 'target'): { label: string; ids: string[] }[] {
   const groups = new Map<string, Set<string>>();
   for (const l of links) {
     const label = linkLabel(index, l, from);

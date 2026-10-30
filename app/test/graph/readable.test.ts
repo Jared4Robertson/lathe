@@ -1,5 +1,5 @@
+import { recordIndexOf } from '../read-view';
 // @vitest-environment node
-import { indexOf } from '../fixtures/load';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { repoData } from '../fixtures/repo';
 import { drawnFor, drawnNested, FRAME_PADDING, frameFocus, frameNested, frameOnMap, maxZoomFor, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
@@ -7,7 +7,8 @@ import { graphMap, treeText, type GraphMap, type PlacedMap } from '../../src/gra
 import { nestedMap } from '../../src/graph/nested';
 import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
 import { treeOf } from '../../src/graph/tree';
-import { spaceIndex, type SpecIndex } from '../../src/specs/data';
+import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
+import type { ServedData } from '../read-view';
 import { siblingGroups } from './workspace';
 import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
 import type { NestedNode } from '../../src/graph/nested';
@@ -40,7 +41,7 @@ const DEPTHS = [1, 2, 3] as const;
 /** A layout of the graph: its map of a product, its camera for a focus and depth, what that camera draws, how tall each box's label is with its border, and each box's size (what siblings share). */
 interface Layout {
   name: string;
-  map: (index: SpecIndex, root: string) => PlacedMap;
+  map: (index: RecordIndex, root: string) => PlacedMap;
   frame: (map: PlacedMap, focus: string, depth: number, w: number, h: number) => Viewport;
   drawn: (map: PlacedMap, v: Viewport, focus: string, w: number, h: number) => Drawn;
   height: (map: PlacedMap, id: string) => number;
@@ -53,26 +54,24 @@ const LAYOUTS: Layout[] = [
     frame: (map, focus, depth, w, h) => frameOnMap(map as GraphMap, focus, depth, w, h, maxZoomFor(map)),
     drawn: (map, v, focus, w, h) => drawnFor(map as GraphMap, v, w, h, [focus]),
     height: (map, id) => { const n = map.nodes.get(id)!; return n.text * (labelHeight(n.lines) + 2 * BORDER); },
-    size: (map, id) => map.nodes.get(id)!.h,
-  },
+    size: (map, id) => map.nodes.get(id)!.h },
   {
     name: 'Nested',
     map: nestedMap,
     frame: (map, focus, _depth, w, h) => frameNested(map, focus, w, h, maxZoomFor(map)),
     drawn: (map, v, focus, w, h) => drawnNested(map, v, w, h, [focus]),
     height: (map, id) => { const n = map.nodes.get(id)!; return n.text * labelHeight(n.lines); },
-    size: (map, id) => map.nodes.get(id)!.w,
-  },
+    size: (map, id) => map.nodes.get(id)!.w },
 ];
 
 /** Every drawn box with no name, or whose label does not fit it, named with its layout, focus, depth, pane and size on screen. */
-function nameless(whole: SpecIndex): { problems: string[]; frames: number } {
+function nameless(spaces: Map<string, RecordIndex>): { problems: string[]; frames: number } {
   const problems: string[] = [];
   let frames = 0;
-  for (const product of whole.products) {
-    const index = spaceIndex(whole, product.id);
+  for (const [id, index] of spaces) {
+    const product = { id };
     const foci = [
-      ...index.workspace.records.filter((r) => r.kind === 'domain' && r.product === product.id).map((r) => r.id),
+      ...index.domains.map((r) => r.id),
       ...[...treeOf(index).groups].filter(([, g]) => g.role === 'stage' || g.role === 'folder').map(([id]) => id),
     ];
     for (const layout of LAYOUTS) {
@@ -114,22 +113,23 @@ function nameless(whole: SpecIndex): { problems: string[]; frames: number } {
 describe('every drawn box shows its name', () => {
   // One index of the repo's data for every test, so each product's maps are laid out once (they are kept per index)
   // and the tests only frame and read them.
-  let whole: SpecIndex;
+  let spaces: Map<string, RecordIndex>;
   beforeAll(async () => {
-    whole = indexOf(await repoData());
-    for (const product of whole.products) for (const layout of LAYOUTS) layout.map(spaceIndex(whole, product.id), product.id);
+    const data: ServedData = await repoData();
+    spaces = new Map(['LA', 'TL'].map((product) => [product, recordIndexOf(data, product)]));
+    for (const [product, index] of spaces) for (const layout of LAYOUTS) layout.map(index, product);
   }, 60_000);
 
   it('LA-PAT-APP-UX-R12-T01 In the Tree and Nested layouts, at every domain, stage and folder of every product, at depths 1 to 3 in two panes, siblings share one size and text scale and every drawn box shows its name', () => {
-    expect(whole.products.map((r) => r.id).sort()).toEqual(['LA', 'TL']);
-    const { problems, frames } = nameless(whole);
+    expect([...spaces.keys()].sort()).toEqual(['LA', 'TL']);
+    const { problems, frames } = nameless(spaces);
     expect(frames).toBeGreaterThan(100);
     expect(problems.length, problems.slice(0, 40).join('\n')).toBe(0);
   }, 120_000);
 
   it("LA-EXP-DS06-T12 LA-EXP-DS09-T13 A framed box's header reads at about the same size on screen at every depth, and the camera can frame the deepest leaf", () => {
     for (const product of ['LA', 'TL']) {
-      const index = spaceIndex(whole, product);
+      const index = spaces.get(product)!;
       for (const layout of LAYOUTS) {
         const map = layout.map(index, product);
         // The title's size on screen, framed at depth 1 in a 770 by 640 pane. In the Tree, of each parent whose text its column sets (not one

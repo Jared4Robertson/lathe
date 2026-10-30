@@ -94,7 +94,7 @@ function patternText(page: PatternPage): string {
   if (row.notes) lines.push(`  notes: ${row.notes}`);
   page.settings.forEach((s, at) => lines.push(`  setting ${at + 1}. ${s.name}: ${s.meaning}`));
   for (const r of page.rules) {
-    lines.push(`Pattern rule ${r.rule.id}: ${r.rule.title}${r.rule.setting ? ` (setting ${r.rule.setting})` : ''}`);
+    lines.push(`Pattern rule ${r.rule.id}: ${r.rule.title}`);
     for (const t of r.tests) lines.push(`  pattern rule test ${t.test.id}: ${t.test.title} (in ${t.test.domain_id}, ${t.test.state})`);
   }
   return lines.join('\n');

@@ -2,10 +2,10 @@ import type { DomainEventPage as DomainEvent } from '../../../../lathe/src/autho
 import { plural } from '../../plural';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, Text, readState, type Fact } from '../../record/page-parts';
-import { kindLabel, type Row, type SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import { FieldsTable } from '../../specs/RecordText';
+import { FieldsTable } from '../../specs/FieldsTable';
 import { DomainEventEditor } from './DomainEventEditor';
 import { useDomainEvent } from './reads';
 
@@ -17,23 +17,23 @@ import { useDomainEvent } from './reads';
 // the Record page's (RecordFrame).
 
 /** A list of one kind is titled by that kind's plural label (LA-V92-R09). */
-const titleOf = (index: SpecIndex, kind: string) => plural(kindLabel(index, kind));
+const titleOf = (index: RecordIndex, kind: string) => plural(kindLabel(index, kind));
 
 /** What one record of the event shows on its page, by the kind it is in the event. */
-function Content({ index, page }: { index: SpecIndex; page: DomainEvent }) {
+function Content({ index, page }: { index: RecordIndex; page: DomainEvent }) {
   const { id, kind } = page.record;
   if (kind === 'event_type') return null;
   return (
     <>
       <Text index={index} id={id} source={page.event.description} field="description" />
-      {page.fields.length > 0 && <FieldsTable index={index} rows={page.fields as unknown as Row[]} owner={id} />}
+      {page.fields.length > 0 && <FieldsTable index={index} rows={page.fields} owner={id} />}
       <RowsSection index={index} title={titleOf(index, 'event_type')} ids={page.eventType ? [page.eventType.eventType.id] : []} label={`${titleOf(index, 'event_type')} of ${id}`} empty="No event type yet: add one when a policy or a projection hears it in code." />
     </>
   );
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: DomainEvent): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: DomainEvent): { lead?: string; facts: Fact[] } {
   if (page.record.kind === 'event_type') {
     const type = page.eventType!;
     return {

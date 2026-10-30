@@ -226,11 +226,10 @@ describe("Authoring's value objects", () => {
   });
 });
 
-/** The fixture with its pattern's setting renamed, and the rule and setting value that name it renamed with it. */
+/** The fixture with its pattern's setting renamed, and the setting value that names it renamed with it. */
 function withSetting(name: string): Data {
   const data = everyKind();
   data.pattern_setting = [{ ...data.pattern_setting[0], name }];
-  data.pattern_rule = [{ ...data.pattern_rule[0], setting: name, applies_when_setting: name }];
   data.setting_value = [{ ...data.setting_value[0], setting: name }];
   return data;
 }

@@ -1,9 +1,11 @@
+import type { ServedData } from './read-view';
+import { addChoices, chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { READ_MODEL_COMMANDS } from '../../lathe/src/authoring/read-model/commands/index';
 import type { ReadModelCommands } from '../src/authoring/read-model/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
@@ -17,7 +19,7 @@ const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${i
 const rows = (table: HTMLTableElement) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent));
 
 /** The model product with a reader for P-D-RM01. */
-function withReader(): SpecData {
+function withReader(): ServedData {
   return addRows(modelWorkspace(), 'reader', { id: 'P-D-RM01-RD', title: 'CatalogReader', read_model_id: 'P-D-RM01', file: 'src/catalog.ts', description: 'Reads the catalog view for the query handlers.' });
 }
 
@@ -57,7 +59,7 @@ describe('LA-V143-R04-T01 a read model shows its fields with their types, its qu
 describe('LA-V143-R02-T01 the Read model editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a reader with only what changed (a file emptied as null); Add a projection takes its one ID; no Move', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/P-D-RM01-RD', { data: withReader(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/P-D-RM01-RD', { data: withReader(), command: () => ({ answer: ok }) });
     const actions = await toolbar('P-D-RM01-RD');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -68,11 +70,11 @@ describe('LA-V143-R02-T01 the Read model editor writes only through the aggregat
 
     await openApp('/P-D-RM01', { data: withReader(), command: () => ({ answer: ok }) });
     const own = await toolbar('P-D-RM01');
-    expect(within(own).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add query', 'Add projection', 'Remove']);
-    await user.click(within(own).getByRole('button', { name: 'Add projection' }));
+    expect(within(own).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add…', 'Remove']);
+    expect(await addChoices(user, own)).toEqual(['Query', 'Projection', 'Storage requirement', 'Table']);
+    await chooseAdd(user, own, 'Projection');
     const add = screen.getByRole('form', { name: 'Add a projection' });
     await waitFor(() => expect(within(add).getByRole('textbox', { name: /^ID/ })).toHaveValue('P-D-RM01-PJ'));
-    expect(writes).toEqual([]);
   });
 });
 
@@ -81,12 +83,12 @@ describe('LA-V143-R03-T01 a refused Read model command shows every reason, keeps
     const user = userEvent.setup();
     const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'read-model-fed-by-published', table: 'fed_by', key: 'P-D-RM01', message: 'P-D-RM01 is a read model of domain P-D, so it cannot be fed by P-E-EV01, an event of domain P-E that is not published' }] };
     const { commands } = await openApp('/P-D-RM01', { data: withReader(), command: () => ({ answer: refusal }) });
-    await user.click(within(await toolbar('P-D-RM01')).getByRole('button', { name: 'Add query' }));
+    await chooseAdd(user, await toolbar('P-D-RM01'), 'Query');
     const add = screen.getByRole('form', { name: 'Add a query' });
     await waitFor(() => expect(within(add).getByRole('textbox', { name: /^ID/ })).toHaveValue('P-D-QRY02'));
     await user.type(within(add).getByRole('textbox', { name: /^title/ }), 'Lent things');
     await user.type(within(add).getByRole('textbox', { name: /^description/ }), 'The things out on loan.');
-    await user.click(within(add).getByRole('button', { name: 'Add query' }));
+    await chooseAdd(user, add, 'Query');
     const alert = await within(add).findByRole('alert');
     expect(alert).toHaveTextContent('The change was refused. Nothing was saved.');
     expect(alert).toHaveTextContent('an event of domain P-E that is not published');

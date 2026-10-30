@@ -1,20 +1,23 @@
 // Group names (group_name) compare trimmed and in any letter case: groupRecords sorts records into one group per name
 // so compared, headed as first written.
 import { describe, expect, it } from 'vitest';
-import type { SpecRecord } from '../src/specs/data';
+import type { RecordSummary } from '../src/exploring/record-summaries/record-index';
 import { groupRecords } from '../src/specs/groups';
 
-const requirement = (n: number, group?: string): SpecRecord => ({
+const requirement = (n: number, group?: string): RecordSummary => ({
   id: `TL-LEND-UC01-R0${n}`,
   kind: 'uc_requirement',
   title: `Requirement ${n}`,
   parent: 'TL-LEND-UC01',
   product: 'TL',
   domain: 'TL-LEND',
-  row: { id: `TL-LEND-UC01-R0${n}`, title: `Requirement ${n}`, use_case_id: 'TL-LEND-UC01', ...(group === undefined ? {} : { group_name: group }) },
-  file: 'data/uc_requirement.jsonl',
+  group: group ?? null,
+  testState: null,
+  names: null,
+  level: null,
+  file: 'uc_requirement.jsonl',
   line: n,
-});
+  digest: '' });
 
 describe('group names', () => {
   it('LA-VO18-C01-T Group names equal trimmed and in any letter case are one group; others are not', () => {

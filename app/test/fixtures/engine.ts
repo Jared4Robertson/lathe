@@ -1,9 +1,9 @@
+import type { ServedData } from '../read-view';
 import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { expect } from 'vitest';
 import { loadWorkspace, SCHEMA_VERSION } from '../../../lathe/src/index';
-import type { SpecData } from '../../../lathe/src/server/contract';
 import type { Workspace } from '../../../lathe/src/types';
 
 // A fixture's rows, as a test changed them, loaded through the real engine: written to a fresh product folder with
@@ -11,7 +11,7 @@ import type { Workspace } from '../../../lathe/src/types';
 // answer, and that keep a fixture's hand-written findings honest.
 
 /** What the engine finds in the data's rows. */
-export async function throughEngine(data: SpecData, files: Record<string, string> = {}): Promise<Workspace> {
+export async function throughEngine(data: ServedData, files: Record<string, string> = {}): Promise<Workspace> {
   const root = await mkdtemp(path.join(tmpdir(), 'lathe-fixture-'));
   try {
     const dataDir = path.join(root, 'data');
@@ -30,21 +30,21 @@ export async function throughEngine(data: SpecData, files: Record<string, string
   }
 }
 
-/** The data with the engine's findings and chains in place of the hand-written and loaded ones, as GET /api/spec would serve it. */
-export async function servedByEngine(data: SpecData, files: Record<string, string> = {}): Promise<SpecData> {
+/** The data with the engine's findings and chains in place of the hand-written and loaded ones, as the server's checks' run gives them. */
+export async function servedByEngine(data: ServedData, files: Record<string, string> = {}): Promise<ServedData> {
   const ws = await throughEngine(data, files);
-  return { ...structuredClone(data), problems: ws.problems, exceptions: ws.exceptions, coverage: ws.coverage, chains: ws.chains };
+  return { ...structuredClone(data), problems: ws.problems, coverage: ws.coverage, chains: ws.chains };
 }
 
-/** Expects a fixture's hand-written pattern rule standings to be the engine's, domain by domain. */
-export async function expectStandingsAsEngine(data: SpecData): Promise<void> {
+/** Expects a fixture's hand-written owed pattern rules to be the engine's, domain by domain. */
+export async function expectOwedRulesAsEngine(data: ServedData): Promise<void> {
   const ws = await throughEngine(data);
-  const standings = (coverage: SpecData['coverage']) =>
-    Object.fromEntries(coverage.filter((c) => c.domain !== null && Object.keys(c.pattern_rules).length > 0).map((c) => [c.domain, c.pattern_rules]));
-  expect(standings(data.coverage)).toEqual(standings(ws.coverage));
+  const owed = (coverage: ServedData['coverage']) =>
+    Object.fromEntries(coverage.filter((c) => c.domain !== null && c.pattern_rules.length > 0).map((c) => [c.domain, [...c.pattern_rules].sort()]));
+  expect(owed(data.coverage)).toEqual(owed(ws.coverage));
 }
 
 /** The data with the engine's chains for its rows as a test changed them, its hand-written findings kept. */
-export async function withEngineChains(data: SpecData): Promise<SpecData> {
+export async function withEngineChains(data: ServedData): Promise<ServedData> {
   return { ...data, chains: (await throughEngine(data)).chains };
 }

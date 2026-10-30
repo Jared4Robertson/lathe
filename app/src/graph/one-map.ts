@@ -1,4 +1,4 @@
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 
 // Every stage is one map (LA-PAT-APP-UX-R19): the Graph (map.ts), the Trace stage (trace/tree.ts)
 // and the ERD each lay a product out once, per product and per data change, and every box keeps its
@@ -14,8 +14,8 @@ import type { SpecIndex } from '../specs/data';
 // identity is the data's version, so a product's layout is worked out once for each.
 
 /** A stage's layout of one product, built on first use for each index (each data change) and then read. */
-export function onePerData<T>(build: (index: SpecIndex, product: string) => T): (index: SpecIndex, product: string) => T {
-  const cache = new WeakMap<SpecIndex, Map<string, T>>();
+export function onePerData<T>(build: (index: RecordIndex, product: string) => T): (index: RecordIndex, product: string) => T {
+  const cache = new WeakMap<RecordIndex, Map<string, T>>();
   return (index, product) => {
     let maps = cache.get(index);
     if (!maps) { maps = new Map(); cache.set(index, maps); }

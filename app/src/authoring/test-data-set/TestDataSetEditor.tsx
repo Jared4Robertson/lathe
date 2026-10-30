@@ -5,7 +5,7 @@ import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, Remove
 import { useWriter } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendTestDataSet, type TestDataSetCommands } from './commands';
 import { useNextTestDataSetId } from './reads';
@@ -36,7 +36,7 @@ function fieldsOf(adding: boolean): FieldSpec[] {
 type Mode = 'view' | 'change' | 'remove';
 
 /** The test data set with its actions; the form or the remove question shows in place of its page. */
-export function TestDataSetEditor({ index, page, children }: { index: SpecIndex; page: TestDataSetPage; children: ReactNode }) {
+export function TestDataSetEditor({ index, page, children }: { index: RecordIndex; page: TestDataSetPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>('view');
@@ -77,7 +77,7 @@ export function TestDataSetEditor({ index, page, children }: { index: SpecIndex;
 
 /** Edit: the test data set's Change, with only what changed. */
 function ChangeForm({ index, specs, current, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   id: string;
@@ -93,7 +93,7 @@ function ChangeForm({ index, specs, current, id, submit, onDone }: {
 }
 
 /** Add a test data set to a domain (from the domain's page): the aggregate's own Add, its ID the next free one. */
-export function AddTestDataSetForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddTestDataSetForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextTestDataSetId(parent, index);

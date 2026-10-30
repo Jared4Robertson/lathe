@@ -24,9 +24,8 @@ export default async function setup(project: TestProject) {
         const rows = store.rows(table);
         if (rows.length > 0) tables[table] = rows;
       }
-      const placements = await store.placements();
       const { chains } = await readWorkspace(store, { root: dir, source: [], tests: [], routers: [], packages: [] });
-      fixtures[name] = { schema: store.schema, sources: [{ dataDir: 'data', tables }], placements, chains };
+      fixtures[name] = { schema: store.schema, sources: [{ dataDir: 'data', tables }], chains };
     } finally {
       await store.close();
     }

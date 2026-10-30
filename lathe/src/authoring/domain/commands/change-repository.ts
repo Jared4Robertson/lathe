@@ -42,7 +42,6 @@ export function changeRepository(tx: Transaction, input: ChangeRepository): void
           storedIn: input.stored_in === undefined ? r.storedIn : input.stored_in,
           meets: input.meets ?? r.meets,
           packages: input.packages ?? r.packages,
-          shares: r.shares,
         }
       : r,
   );

@@ -11,10 +11,11 @@ import { ProblemBadge, RecordLink, RecordRowBody, Section, nestedCount, recordTe
 import { RecordFrame } from '../../specs/RecordContent';
 import { saysKind } from '../../specs/InterfaceParts';
 import { groupRecords } from '../../specs/groups';
-import type { SpecIndex, SpecRecord } from '../../specs/data';
+import { type RecordIndex, type RecordSummary } from '../../exploring/record-summaries/record-index';
 import { FlowSteps } from './FlowSteps';
 import { UseCaseEditor } from './UseCaseEditor';
 import { stepsOf, useUseCase } from './reads';
+import { useInterfaces } from '../product/reads';
 
 // The Use case page (LA-AUT-A11's page): any record of a use case, at its address (/<id>), drawn from the use case read whole
 // (GET /api/use-case/get-use-case) and changed only through its own commands (UseCaseEditor). A use case shows its
@@ -25,10 +26,10 @@ import { stepsOf, useUseCase } from './reads';
 // it names come from the workspace's index while the other aggregates are read whole.
 
 /** Records of the index, by ID, in the order given; an ID no record has is left out. */
-const recordsOf = (index: SpecIndex, ids: readonly string[]) => ids.flatMap((id) => index.byId.get(id) ?? []);
+const recordsOf = (index: RecordIndex, ids: readonly string[]) => ids.flatMap((id) => index.byId.get(id) ?? []);
 
 /** Rows that each lead to one record: its row in the shell's look (link, fields, test state, gaps, problems). */
-function Rows({ index, ids, label }: { index: SpecIndex; ids: readonly string[]; label: string }) {
+function Rows({ index, ids, label }: { index: RecordIndex; ids: readonly string[]; label: string }) {
   return (
     <LongList label={label} className="record-list" items={recordsOf(index, ids)} itemKey={(r) => r.id} searchText={recordText}
       render={(r) => <RecordRowBody index={index} record={r} />} />
@@ -36,11 +37,11 @@ function Rows({ index, ids, label }: { index: SpecIndex; ids: readonly string[];
 }
 
 /** The use case's UC requirements under their groups, each with its tests folded under it. */
-function Requirements({ index, useCase }: { index: SpecIndex; useCase: UseCaseRead }) {
+function Requirements({ index, useCase }: { index: RecordIndex; useCase: UseCaseRead }) {
   if (useCase.requirements.length === 0) return null;
-  const testsOf = (requirement: SpecRecord) => recordsOf(index, (useCase.requirements.find((r) => r.requirement.id === requirement.id)?.tests ?? []).map((t) => t.test.id));
+  const testsOf = (requirement: RecordSummary) => recordsOf(index, (useCase.requirements.find((r) => r.requirement.id === requirement.id)?.tests ?? []).map((t) => t.test.id));
   const groups = groupRecords(recordsOf(index, useCase.requirements.map((r) => r.requirement.id)));
-  const tree = (records: SpecRecord[], label: string) => (
+  const tree = (records: RecordSummary[], label: string) => (
     <TreeList label={label} items={records} itemKey={(r) => r.id} nestedOf={testsOf} renderRow={(r) => <RecordRowBody index={index} record={r} />}
       searchText={recordText} countLabel={(_, tests) => nestedCount(index, tests)} nestedLabel={(r) => `Use case tests of ${r.id}`} />
   );
@@ -54,14 +55,27 @@ function Requirements({ index, useCase }: { index: SpecIndex; useCase: UseCaseRe
 }
 
 /** An interface's name, with its kind when the name does not say it. */
-function InterfaceTag({ index, id }: { index: SpecIndex; id: string }) {
-  const iface = index.byId.get(id);
-  if (!iface) return <small className="meta" data-meta="interface">{id}</small>;
-  return <small className="meta" data-meta="interface">{saysKind(iface) ? iface.title : `${iface.title} · ${String(iface.row.kind)}`}</small>;
+function InterfaceTag({ index, id }: { index: RecordIndex; id: string }) {
+  const iface = useInterface(index, id);
+  // Its title from the space's summaries until the Product aggregate's list gives its kind.
+  if (!iface) return <small className="meta" data-meta="interface">{index.byId.get(id)?.title ?? id}</small>;
+  return <small className="meta" data-meta="interface">{saysKind(iface) ? iface.title : `${iface.title} · ${iface.kind}`}</small>;
+}
+
+/** An interface of the space's product with its kind, from the Product aggregate's list of interfaces, or undefined while it is read. */
+function useInterface(index: RecordIndex, id: string): { id: string; title: string; kind: string } | undefined {
+  const read = useInterfaces(index.product, index);
+  return read.state === 'read' ? read.answer.find((i) => i.id === id) : undefined;
+}
+
+/** A flow's interface kind, when the interface's name does not say it. */
+function InterfaceKind({ index, id }: { index: RecordIndex; id: string }) {
+  const iface = useInterface(index, id);
+  return iface && !saysKind(iface) ? <> <small className="meta">{iface.kind}</small></> : null;
 }
 
 /** The use case's flows, one row per flow named by the interface it goes through. */
-function FlowsByInterface({ index, useCase }: { index: SpecIndex; useCase: UseCaseRead }) {
+function FlowsByInterface({ index, useCase }: { index: RecordIndex; useCase: UseCaseRead }) {
   if (useCase.flows.length === 0) return null;
   const flows = useCase.flows.map((f) => f.flow);
   return (
@@ -82,7 +96,7 @@ function FlowsByInterface({ index, useCase }: { index: SpecIndex; useCase: UseCa
 }
 
 /** A text of the record, read as Markdown with the IDs it names as links, under its heading or as the page's lead. */
-function Text({ index, id, source, title, field }: { index: SpecIndex; id: string; source: string | undefined; title?: string; field: string }) {
+function Text({ index, id, source, title, field }: { index: RecordIndex; id: string; source: string | undefined; title?: string; field: string }) {
   if (!source?.trim()) return null;
   const prose = <Prose index={index} source={source} self={id} />;
   return title ? <Section title={title} className={`record-${field}`}>{prose}</Section> : <div className="record-lead" data-field={field}>{prose}</div>;
@@ -95,7 +109,7 @@ function Facts({ facts }: { facts: { label: string; value: ReactNode }[] }) {
 }
 
 /** What one record of the use case shows on its page, by the kind it is in the use case. */
-function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseCaseRead; id: string; kind: UseCaseKind }) {
+function Content({ index, useCase, id, kind }: { index: RecordIndex; useCase: UseCaseRead; id: string; kind: UseCaseKind }) {
   switch (kind) {
     case 'use_case':
       return (
@@ -123,12 +137,11 @@ function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseC
     }
     case 'flow': {
       const { flow, paths, test } = useCase.flows.find((f) => f.flow.id === id)!;
-      const iface = index.byId.get(flow.interface_id);
       return (
         <>
           <p className="flow-interface">
             Through <RecordLink index={index} id={flow.interface_id} />
-            {iface && !saysKind(iface) && <> <small className="meta">{String(iface.row.kind)}</small></>}
+            <InterfaceKind index={index} id={flow.interface_id} />
           </p>
           <FlowSteps index={index} flow={id} paths={paths} />
           {test && <Section title="Flow test" count={1}><Rows index={index} ids={[test.test.id]} label={`Flow test of ${id}`} /></Section>}
@@ -187,13 +200,13 @@ function Content({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseC
   }
 }
 
-function StartsFrom({ index, id, sets }: { index: SpecIndex; id: string; sets: string[] }) {
+function StartsFrom({ index, id, sets }: { index: RecordIndex; id: string; sets: string[] }) {
   if (sets.length === 0) return null;
   return <Section title="Starts from" count={sets.length} level={3}><Rows index={index} ids={sets} label={`Test data sets ${id} starts from`} /></Section>;
 }
 
 /** The record's summary in the wiki card: its lead text and a few key facts. */
-function Summary({ index, useCase, id, kind }: { index: SpecIndex; useCase: UseCaseRead; id: string; kind: UseCaseKind }) {
+function Summary({ index, useCase, id, kind }: { index: RecordIndex; useCase: UseCaseRead; id: string; kind: UseCaseKind }) {
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const { lead, facts } = ((): { lead?: string; facts: { label: string; value: ReactNode }[] } => {
     switch (kind) {

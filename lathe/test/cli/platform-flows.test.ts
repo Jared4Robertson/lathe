@@ -1,6 +1,6 @@
 // Platform's flows that run through code, the CLI and the server, end to end along their main paths: loading the
 // workspace from a script (LA-PLT-UC01), setting Lathe up in a product repo (LA-PLT-UC02) and changing the data
-// through the one command layer (LA-PLT-UC16). `lathe serve` needs the built web app: when lathe/dist/app is missing,
+// through each aggregate's own commands (LA-PLT-UC16). `lathe serve` needs the built web app: when lathe/dist/app is missing,
 // the app's own Vite builds it there, as the package's build does. It is skipped, with a message, only when the app's
 // packages are not installed (app/node_modules).
 import { spawn, spawnSync, type ChildProcess } from 'node:child_process';
@@ -11,10 +11,11 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { loadWorkspace, openStore, PACKAGE_DIR, SCHEMA_VERSION, type LoadTimings } from '../../src/index.ts';
-import type { SpecData, WriteAnswer } from '../../src/server/contract.ts';
+import type { WriteAnswer } from '../../src/server/contract.ts';
+import type { RecordSummaries } from '../../src/exploring/record-summaries/read-model.ts';
 import { WRITE_BODY_LIMIT } from '../../src/server/api.ts';
 import { APP_DIR } from '../../src/server/serve.ts';
-import { build, complete, removeData } from '../helpers.ts';
+import { build, complete, removeData, run } from '../helpers.ts';
 
 const bin = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..', 'bin', 'lathe.ts');
 const APP_SOURCE = path.join(PACKAGE_DIR, '..', 'app');
@@ -160,11 +161,11 @@ describe('Platform flows', () => {
     expect(refused.problems.map((p) => p.message).join('\n')).toContain('EX-LEND-CAP09');
     writeFileSync(file, good);
 
-    // After a write through the command layer, the next load sees it. Its timings are what the performance budgets
+    // After a write through the Use case aggregate's own command, the next load sees it. Its timings are what the performance budgets
     // judge (LA-PLT-UC01-R03, `npm --prefix lathe run test:perf`); here they are only taken.
     const store = await openStore(root);
     try {
-      await store.apply([{ op: 'set', table: 'use_case', key: 'EX-LEND-UC01', changes: { title: 'Borrow a tool at the desk' } }]);
+      await run(store, 'use-case change-use-case', { id: 'EX-LEND-UC01', title: 'Borrow a tool at the desk' });
     } finally {
       await store.close();
     }
@@ -190,20 +191,20 @@ describe('Platform flows', () => {
     git(root, 'config', 'merge.lathe-data.driver', `node ${bin} merge-data %O %A %B %P`);
     expect(git(root, 'check-attr', 'merge', 'data/domain.jsonl').trim()).toBe('data/domain.jsonl: merge: lathe-data');
 
-    // The first domain and records, with lathe add, in the data folder the config names.
-    ok(root, 'add', 'domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
-    ok(root, 'add', 'aggregate', '--id', 'TL-LEND-A1', '--title', 'Loan', '--domain_id', 'TL-LEND', '--identity', 'Loan ID', '--description', 'One tool lent to one member.');
+    // The first domain and records, with the aggregates' own commands, in the data folder the config names.
+    ok(root, 'domain', 'add-domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
+    ok(root, 'aggregate', 'add-aggregate', '--id', 'TL-LEND-A1', '--title', 'Loan', '--domain_id', 'TL-LEND', '--identity', 'Loan ID', '--description', 'One tool lent to one member.');
     expect(Object.keys(files(root))).toEqual(['aggregate.jsonl', 'domain.jsonl', 'product.jsonl']);
     expect(lathe(root, 'check').status).toBe(0);
 
-    // lathe serve: the app and the spec, with no build tools in the product repo.
+    // lathe serve: the app and its reads, with no build tools in the product repo.
     expect(existsSync(path.join(root, 'package.json'))).toBe(false);
     const { child, base } = await serveCli(root);
     const page = await fetch(`${base}/`);
     expect(page.status).toBe(200);
     expect(await page.text()).toContain('<div id="root">');
-    const spec = (await (await fetch(`${base}/api/spec`)).json()) as SpecData;
-    expect(spec.sources[0].tables.aggregate.map((r) => r.id)).toEqual(['TL-LEND-A1']);
+    const summaries = (await (await fetch(`${base}/api/record-summaries/list-record-summaries?product_id=TL`)).json()) as RecordSummaries;
+    expect(summaries.records.filter((r) => r.kind === 'aggregate').map((r) => r.id)).toEqual(['TL-LEND-A1']);
 
     // Stopped from the terminal, it closes the database and ends by the same signal, cleanly.
     child.kill('SIGINT');
@@ -212,7 +213,7 @@ describe('Platform flows', () => {
     expect(child.signalCode).toBe('SIGINT');
   }, 120_000);
 
-  it.skipIf(!canServe)('LA-PLT-UC16-FL05-T every change goes through one command layer: the CLI, the MCP tools and POST /api/write, refusals change nothing, open pages reload, and git merges row by row', async () => {
+  it.skipIf(!canServe)('LA-PLT-UC16-FL05-T every change is one command of its aggregate: the CLI, the MCP tools and POST /api/<aggregate>/<command>, refusals change nothing, open pages reload, and git merges row by row', async () => {
     const root = temp('lathe-layer-');
     git(root, 'init', '-q');
     writeFileSync(path.join(root, '.gitattributes'), '**/data/*.jsonl merge=lathe-data\n');
@@ -220,8 +221,8 @@ describe('Platform flows', () => {
     git(root, 'config', 'merge.lathe-data.driver', `node ${bin} merge-data %O %A %B %P`);
     ok(root, 'init', '--name', 'Tool Library', '--prefix', 'TL');
 
-    // The Owner runs lathe add.
-    ok(root, 'add', 'domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
+    // The Owner runs Add a domain from the command line.
+    ok(root, 'domain', 'add-domain', '--id', 'TL-LEND', '--title', 'Lending', '--product_id', 'TL', '--subdomain_type', 'core', '--description', 'Lending tools to members and getting them back.');
 
     // An Agent calls the plugin's MCP tools.
     const mcp = spawn(process.execPath, [bin, 'mcp', '--root', root], { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -244,7 +245,7 @@ describe('Platform flows', () => {
         mcp.stdin!.write(`${JSON.stringify({ jsonrpc: '2.0', id, method, params })}\n`);
       });
     expect((await request('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1' } })).result).toBeDefined();
-    const added = await request('tools/call', { name: 'add', arguments: { aggregate: { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', description: 'A loan of a tool.', identity: 'Loan ID' } } });
+    const added = await request('tools/call', { name: 'aggregate_add_aggregate', arguments: { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', description: 'A loan of a tool.', identity: 'Loan ID' } });
     expect(added.result?.isError, added.result?.content[0].text).toBeUndefined();
     mcp.stdin!.end();
     await exited(mcp, 15_000);
@@ -252,26 +253,29 @@ describe('Platform flows', () => {
     git(root, 'add', '-A');
     git(root, 'commit', '-q', '-m', 'Lending');
 
-    // The Owner saves a form on a record's page: the page sends POST /api/write, and the open page hears spec:changed.
+    // The Owner saves an aggregate's editor: the page sends POST /api/aggregate/change-aggregate, and the open page hears
+    // spec:changed.
     const { base } = await serveCli(root);
     const events = await fetch(`${base}/api/events`);
-    const post = (body: string, headers: Record<string, string> = {}) =>
-      fetch(`${base}/api/write`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body });
-    const saved = await post(JSON.stringify({ commands: [{ op: 'set', table: 'aggregate', key: 'TL-LEND-A1', changes: { description: 'One tool lent to one member.' } }] }));
+    const post = (route: string, body: string, headers: Record<string, string> = {}) =>
+      fetch(`${base}${route}`, { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body });
+    const saved = await post('/api/aggregate/change-aggregate', JSON.stringify({ id: 'TL-LEND-A1', description: 'One tool lent to one member.' }));
     expect(saved.status).toBe(200);
     expect((await saved.json()) as WriteAnswer).toMatchObject({ ok: true, tables: ['aggregate'] });
     expect(await eventsUntil(events, 'data: spec:changed', 10_000)).toContain('data: spec:changed');
-    const reloaded = (await (await fetch(`${base}/api/spec`)).json()) as SpecData;
-    expect(reloaded.sources[0].tables.aggregate[0].description).toBe('One tool lent to one member.');
+    const reloaded = (await (await fetch(`${base}/api/aggregate/get-aggregate?id=TL-LEND-A1`)).json()) as { aggregate: { description: string } };
+    expect(reloaded.aggregate.description).toBe('One tool lent to one member.');
 
     // Refused before the store sees it: another site's write, a body not sent as JSON, a body over the limit.
     const before = files(root);
-    expect((await post('{"commands":[]}', { origin: 'http://elsewhere.example' })).status).toBe(403);
-    expect((await fetch(`${base}/api/write`, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: '{}' })).status).toBe(415);
-    expect((await post(JSON.stringify({ commands: [{ op: 'set', table: 'aggregate', key: 'TL-LEND-A1', changes: { description: 'x'.repeat(WRITE_BODY_LIMIT + 1) } }] }))).status).toBe(413);
+    expect((await post('/api/aggregate/change-aggregate', '{"id":"TL-LEND-A1"}', { origin: 'http://elsewhere.example' })).status).toBe(403);
+    expect((await fetch(`${base}/api/aggregate/change-aggregate`, { method: 'POST', headers: { 'content-type': 'text/plain' }, body: '{}' })).status).toBe(415);
+    expect((await post('/api/aggregate/change-aggregate', JSON.stringify({ id: 'TL-LEND-A1', description: 'x'.repeat(WRITE_BODY_LIMIT + 1) }))).status).toBe(413);
+    // No route writes whatever table it is given.
+    expect((await post('/api/write', JSON.stringify({ commands: [] }))).status).toBe(404);
 
     // The store refuses a write that breaks a rule, with every reason, and no file changes.
-    const broken = await post(JSON.stringify({ commands: [{ op: 'add', table: 'aggregate', row: { id: 'TL-LEND-A2', title: 'Lost', domain_id: 'TL-NONE', description: 'A tool no one can find.', identity: 'Tool ID' } }] }));
+    const broken = await post('/api/aggregate/add-aggregate', JSON.stringify({ id: 'TL-LEND-A2', title: 'Lost', domain_id: 'TL-NONE', description: 'A tool no one can find.', identity: 'Tool ID' }));
     expect(broken.status).toBe(422);
     const refusal = (await broken.json()) as WriteAnswer;
     expect(refusal.ok).toBe(false);
@@ -281,10 +285,10 @@ describe('Platform flows', () => {
 
     // Reviewed and committed in git: two branches each add an aggregate, and git merges the file row by row.
     git(root, 'checkout', '-q', '-b', 'tools');
-    ok(root, 'add', 'aggregate', '--id', 'TL-LEND-A2', '--title', 'Tool', '--domain_id', 'TL-LEND', '--identity', 'Tool ID', '--description', 'A tool the library holds.');
+    ok(root, 'aggregate', 'add-aggregate', '--id', 'TL-LEND-A2', '--title', 'Tool', '--domain_id', 'TL-LEND', '--identity', 'Tool ID', '--description', 'A tool the library holds.');
     git(root, 'commit', '-q', '-am', 'Tools');
     git(root, 'checkout', '-q', 'main');
-    ok(root, 'add', 'aggregate', '--id', 'TL-LEND-A3', '--title', 'Member', '--domain_id', 'TL-LEND', '--identity', 'Member ID', '--description', 'A member of the library.');
+    ok(root, 'aggregate', 'add-aggregate', '--id', 'TL-LEND-A3', '--title', 'Member', '--domain_id', 'TL-LEND', '--identity', 'Member ID', '--description', 'A member of the library.');
     git(root, 'commit', '-q', '-am', 'Members');
     git(root, 'merge', '-q', '--no-edit', 'tools');
     expect(readFileSync(path.join(root, 'data', 'aggregate.jsonl'), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l).id)).toEqual(['TL-LEND-A1', 'TL-LEND-A2', 'TL-LEND-A3']);

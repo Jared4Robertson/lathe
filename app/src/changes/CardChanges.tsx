@@ -1,4 +1,4 @@
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { Section } from '../specs/parts';
 import { ChangeDetails, changeSummary } from './ChangeDetails';
 import { useChanges } from './changes';
@@ -12,7 +12,7 @@ function sinceText(label: string, detail: string) {
   return <>{label} <span className="changes-since-detail">({detail})</span></>;
 }
 
-export function CardChanges({ index, id, summary = false }: { index: SpecIndex; id: string; summary?: boolean }) {
+export function CardChanges({ index, id, summary = false }: { index: RecordIndex; id: string; summary?: boolean }) {
   const { byId, baseline } = useChanges();
   const change = byId.get(id);
   if (!change || baseline.state !== 'ok' || change.change === 'removed') return null;

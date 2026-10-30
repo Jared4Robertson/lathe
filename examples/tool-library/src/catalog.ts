@@ -1,7 +1,8 @@
 // The Catalog read model: every tool with its status, as a borrower sees it, worked out on each request.
-// Spec: the read model's table TL-LEND-RM01-TB (Catalog, kept in memory only), its projection TL-LEND-RM01-PJ and
-// the query handler TL-LEND-QRY01-H (examples/tool-library/data/).
-// It reads the Tool and Loan aggregates through their repositories and stores nothing.
+// Spec: the read model's table TL-LEND-RM01-TB (Catalog, kept in memory only), its projection TL-LEND-RM01-PJ, its
+// reader TL-LEND-RM01-RD and the query handler TL-LEND-QRY01-H (examples/tool-library/data/).
+// It reads the Tool and Loan aggregates through their repositories and stores nothing. The query handler reads the
+// catalog only through its reader.
 import type { LoanRepository } from './loan-repository.ts';
 import type { Condition } from './model.ts';
 import { needsRepair, type Tool } from './tool.ts';
@@ -42,7 +43,26 @@ export function catalogEntry(loans: LoanRepository, tool: Tool): CatalogEntry {
   };
 }
 
+/**
+ * TL-LEND-RM01-RD: the one way the catalog's query handlers read it. The catalog is never stored, so the reader builds
+ * its table with the projection on each read, from the Tool and Loan repositories.
+ */
+export class CatalogReader {
+  private readonly tools: ToolRepository;
+  private readonly loans: LoanRepository;
+
+  constructor(ctx: { tools: ToolRepository; loans: LoanRepository }) {
+    this.tools = ctx.tools;
+    this.loans = ctx.loans;
+  }
+
+  /** Every tool's catalog entry, in tool ID order. */
+  all(): Catalog {
+    return this.tools.all().map((tool) => catalogEntry(this.loans, tool));
+  }
+}
+
 /** TL-LEND-QRY01-H: the catalog, every tool in ID order with its status. */
-export function listCatalog(ctx: { tools: ToolRepository; loans: LoanRepository }): Catalog {
-  return ctx.tools.all().map((tool) => catalogEntry(ctx.loans, tool));
+export function listCatalog(catalog: CatalogReader): Catalog {
+  return catalog.all();
 }

@@ -41,7 +41,7 @@ async function load(dir: string) {
   try {
     return {
       schema: store.schema,
-      placements: await store.placements(),
+      scope: await store.query('SELECT id, product_id, domain_id FROM record_scope ORDER BY id'),
       parents: await store.query('SELECT * FROM record_parent ORDER BY id'),
       tables: await store.query("SELECT schema_name, table_name FROM duckdb_tables() WHERE database_name = current_database() ORDER BY ALL"),
     };
@@ -138,11 +138,11 @@ describe('the schema cache', () => {
     const index = path.resolve(import.meta.dirname, '../../src/index.ts');
     const script = `import { openStore } from ${JSON.stringify(index)};
 const store = await openStore(${JSON.stringify(root)});
-console.log(JSON.stringify({ tables: Object.keys(store.schema.tables).length, placements: await store.placements() }));
+console.log(JSON.stringify({ tables: Object.keys(store.schema.tables).length, scope: await store.query('SELECT id, product_id, domain_id FROM record_scope ORDER BY id') }));
 await store.close();`;
     const start = () => run(process.execPath, ['--input-type=module', '-e', script], { env: { ...process.env, LATHE_CACHE_DIR: dir } });
     const [a, b] = await Promise.all([start(), start()]);
-    const expected = JSON.stringify({ tables: Object.keys(fresh.schema.tables).length, placements: fresh.placements });
+    const expected = JSON.stringify({ tables: Object.keys(fresh.schema.tables).length, scope: fresh.scope });
     expect(a.stdout.trim()).toBe(expected);
     expect(b.stdout.trim()).toBe(expected);
     // Each wrote its own file and renamed it into place: no half-written file is left, and the files serve the next.

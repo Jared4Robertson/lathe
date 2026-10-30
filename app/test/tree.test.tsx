@@ -24,10 +24,10 @@ describe('one level deep', () => {
     const aggregates = section(/^Aggregates/);
     expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('4 children');
 
-    // The button opens and closes it, showing the use case within with its actor.
+    // The button opens and closes it, showing the use case within with its title.
     fireEvent.click(toggle);
     expect(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' })).toHaveAttribute('aria-expanded', 'true');
-    expect(row(cap, 'DM-SHOP-UC01')).toHaveTextContent('Shopper');
+    expect(row(cap, 'DM-SHOP-UC01')).toHaveTextContent('Add an item to the basket');
 
     // Left closes it (focus on the row), Right opens it, Right again moves into it, Left goes back up.
     const open = within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' });

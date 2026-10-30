@@ -14,7 +14,7 @@ const section = (name: string | RegExp) => {
   const card = screen.queryByRole('region', { name: 'Wiki card' });
   return card ? within(card).getByRole('heading', { name }).closest('section') as HTMLElement : pageSection(name);
 };
-import { indexOf } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 
 // Standards in the app (the standard and standard_rule tables): in Shared in the nav, in the
 // Technical specification stage, a standard's page listing its rules with what meets each one and its tests, a
@@ -31,7 +31,7 @@ const fact = (box: HTMLElement, name: string) => within(box).getByText(name, { s
 const served = () => ({ data: standardWorkspace() });
 
 describe('standards in the nav and the wiki', () => {
-  it('LA-V92-R72-T01 The product lists its standards under Shared, beside its patterns', async () => {
+  it('LA-V90-R75-T01 The product lists its standards under Shared, beside its patterns', async () => {
     await openApp('/DM', served());
     await screen.findByRole('heading', { level: 1, name: 'Demo shop' });
     expect(rows(list('Shared in Demo shop'))).toEqual(['Shared5']);
@@ -58,9 +58,10 @@ describe('standards in the nav and the wiki', () => {
     expect(row('DM-STD-CODE-R02').querySelectorAll('td')[1]).toHaveTextContent('Nothing yet');
   });
 
-  it('LA-V92-R73-T01 A standard rule\'s Traceability shows what meets it and its tests, and what meets it shows Meets', async () => {
+  it('LA-V123-R05-T01 A standard rule\'s Traceability shows what meets it and its tests, and what meets it shows Meets', async () => {
     await openApp('/DM-STD-CODE-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'Handlers own their transaction' });
+    await within(main()).findByRole('heading', { name: /^Traceability/ });
     const trace = section(/^Traceability/);
     const metBy = within(trace).getByRole('heading', { name: /^Met by/ }).closest('section')!;
     expect(within(metBy).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-CMD01-H']);
@@ -69,11 +70,12 @@ describe('standards in the nav and the wiki', () => {
 
     await openApp('/DM-SHOP-CMD01-H', served());
     await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
+    await within(main()).findByRole('heading', { name: /^Traceability/ });
     const meets = within(section(/^Traceability/)).getByRole('heading', { name: /^Meets/ }).closest('section')!;
     expect(within(meets).getByRole('link', { name: /DM-STD-CODE-R01/ })).toHaveAttribute('href', '/DM-STD-CODE-R01');
   });
 
-  it('LA-V92-R73-T02 The format reference has a page for each standard kind, from the schema', async () => {
+  it('LA-V123-R05-T02 The format reference has a page for each standard kind, from the schema', async () => {
     await openApp('/DM?page=format/kinds/standard_rule', served());
     expect(await within(await screen.findByRole('region', { name: 'Wiki card' })).findByRole('heading', { level: 2, name: 'Standard rule' })).toBeInTheDocument();
     const where = section('Where it sits');
@@ -88,7 +90,7 @@ describe('standards in the nav and the wiki', () => {
 
 describe('standards in the graph', () => {
   it('LA-V93-R71-T01 The graph draws a standard as stacked boxes with a ruler in the product\'s Technical specification', () => {
-    const ix = indexOf(standardWorkspace());
+    const ix = recordIndexOf(standardWorkspace());
     const n = neighborhood(ix, 'DM-STD-CODE', 1);
     expect(n.edges.map((e) => `${e.source} ${e.relation} ${e.target}`)).toEqual(expect.arrayContaining([
       'DM/technical-specification/standard parent DM-STD-CODE',
@@ -98,7 +100,7 @@ describe('standards in the graph', () => {
     expect(n.nodes.find((x) => x.id === 'DM-STD-CODE')?.stage).toBe('technical-specification');
     cleanup();
     // The key bar of a graph that draws a standard: its stage's color, its shape and its mark, each with what it means.
-    const { container } = render(<StageKey entries={graphKeyEntries(graphDrawn(ix, n, 'tree'), ix.workspace.stages)} />);
+    const { container } = render(<StageKey entries={graphKeyEntries(graphDrawn(ix, n, 'tree'), ix.meta.stages)} />);
     expect(container.querySelector('.graph-swatch.stage-technical-specification')?.closest('li')).toHaveAttribute('title', expect.stringMatching(/a standard and its rules/));
     expect(shapeOf('standard')).toEqual({ shape: 'stack', mark: 'ruler' });
     expect(shapeOf('standard_rule')).toEqual({ shape: 'octagon', mark: 'ruler' });

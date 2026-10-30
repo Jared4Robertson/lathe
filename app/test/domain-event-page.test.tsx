@@ -1,8 +1,10 @@
+import type { ServedData } from './read-view';
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { DOMAIN_EVENT_COMMANDS } from '../../lathe/src/authoring/domain-event/commands/index';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import type { DomainEventCommands } from '../src/authoring/domain-event/commands';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -16,7 +18,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The demo shop with a policy that hears the basket's event. */
-function withPolicy(): SpecData {
+function withPolicy(): ServedData {
   const w = workspace();
   addRows(w, 'policy', { id: 'DM-SHOP-PO01', title: 'Add again when an item is added', command_id: 'DM-SHOP-CMD01', statement: 'Whenever an item is added, it is added again.' });
   addRows(w, 'hears', { source_id: 'DM-SHOP-PO01', target_id: 'DM-SHOP-EV01' });
@@ -45,7 +47,7 @@ describe('LA-V131-R02-T01 the Domain event editor writes only through the aggreg
   it('Edit sends Change a domain event with only what changed, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withPolicy(), 'domain_event', 'DM-SHOP-EV01', { published: true });
-    const { commands, writes } = await openApp('/DM-SHOP-EV01', { data: withPolicy(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-SHOP-EV01', { data: withPolicy(), command: () => ({ answer: ok, data: changed() }) });
     const actions = await toolbar('DM-SHOP-EV01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add event type', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -53,13 +55,12 @@ describe('LA-V131-R02-T01 the Domain event editor writes only through the aggreg
     await user.click(within(form).getByRole('checkbox', { name: /^published/ }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/domain-event/change-domain-event', input: { id: 'DM-SHOP-EV01', published: true } }]));
-    expect(writes).toEqual([]);
   });
 
   it('Add sends Add an event type with the event\'s one event type ID', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-EV01', { data: withPolicy(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('DM-SHOP-EV01')).getByRole('button', { name: 'Add event type' }));
+    await chooseAdd(user, await toolbar('DM-SHOP-EV01'), 'Event type');
     const form = screen.getByRole('form', { name: 'Add an event type' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-EV01-ET'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'ItemAdded');

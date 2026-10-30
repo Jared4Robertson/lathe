@@ -3,7 +3,7 @@ import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { SpecificationEditor } from './SpecificationEditor';
 import { useSpecification } from './reads';
 
@@ -15,7 +15,7 @@ import { useSpecification } from './reads';
 // problems, facts and links) is the Record page's (RecordFrame).
 
 /** What one record of the specification shows on its page, by the kind it is in the specification. */
-function Content({ index, page }: { index: SpecIndex; page: Specification }) {
+function Content({ index, page }: { index: RecordIndex; page: Specification }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'specification':
@@ -37,7 +37,7 @@ function Content({ index, page }: { index: SpecIndex; page: Specification }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Specification): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Specification): { lead?: string; facts: Fact[] } {
   const spec = <RecordLink index={index} id={page.specification.id} />;
   switch (page.record.kind) {
     case 'specification':

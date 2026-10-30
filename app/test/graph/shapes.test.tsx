@@ -1,5 +1,5 @@
+import { recordIndexOf } from '../read-view';
 import './setup';
-import { indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { graphKeyEntries } from '../../src/graph/key';
@@ -27,8 +27,7 @@ const TABLE: Record<string, [Shape, string?]> = {
   ui_component: ['component'], endpoint_handler: ['component'], adapter: ['component'], entry_point: ['component'], tooling: ['component'], standard: ['stack', 'ruler'],
   standard_rule: ['octagon', 'ruler'], constraint_test: ['shield'], invariant_test: ['shield'], specification_test: ['shield'],
   policy_test: ['shield'], domain_service_test: ['shield'], storage_requirement_test: ['shield'], use_case_test: ['shield'], view_test: ['shield'], endpoint_test: ['shield'],
-  flow_test: ['shield'], integration_test: ['shield'], pattern_rule_test: ['shield'], standard_rule_test: ['shield'], question: ['diamond'],
-};
+  flow_test: ['shield'], integration_test: ['shield'], pattern_rule_test: ['shield'], standard_rule_test: ['shield'], question: ['diamond'] };
 
 describe('a shape for each kind', () => {
   it('LA-V93-R12-T02 LA-V93-R05-T01 A domain node has the hexagon class and its outline, and the tree lines meet that outline', async () => {
@@ -65,7 +64,7 @@ describe('a shape for each kind', () => {
 
   it('LA-V93-R12-T04 LA-V93-R06-T01 Every kind is drawn in its own shape, a group as a folder and a kind a product adds as a plain box, each shape keeping its label and badge clear of its notches and corners at every size, and the key shows every shape and mark', () => {
     // Every kind of the meta-model has the shape (and mark) the table gives it.
-    for (const { kind } of indexOf(testWorkspace()).workspace.kinds) {
+    for (const { kind } of recordIndexOf(testWorkspace()).meta.kindList) {
       expect(TABLE[kind], `${kind} is in the table`).toBeDefined();
       expect(shapeOf(kind), kind).toEqual(TABLE[kind][1] ? { shape: TABLE[kind][0], mark: TABLE[kind][1] } : { shape: TABLE[kind][0] });
     }

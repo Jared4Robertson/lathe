@@ -1,4 +1,4 @@
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { MAP_SIZE, sizeText, type MapNode, type PlacedMap } from './map';
 import { BORDER, labelHeight, largestFit, linesIn, mapLabel, type MapLabel, textMeasure } from './text';
 import { treeChildren } from './tree';
@@ -123,10 +123,10 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   };
 }
 
-const cache = new WeakMap<SpecIndex, Map<string, NestedMap>>();
+const cache = new WeakMap<RecordIndex, Map<string, NestedMap>>();
 
 /** The Nested map of one product (or of a tree no product reaches), from its root, as the Tree map has it (`mapRootOf`): built on first use, then read. */
-export function nestedMap(index: SpecIndex, root: string): NestedMap {
+export function nestedMap(index: RecordIndex, root: string): NestedMap {
   let maps = cache.get(index);
   if (!maps) { maps = new Map(); cache.set(index, maps); }
   const key = `${textMeasure().key}|${root}`;

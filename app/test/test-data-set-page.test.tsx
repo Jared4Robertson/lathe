@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { TEST_DATA_SET_COMMANDS } from '../../lathe/src/authoring/test-data-set/commands/index';
 import type { TestDataSetCommands } from '../src/authoring/test-data-set/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
@@ -15,12 +16,11 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The demo shop with a data set its use case test starts from. */
-function withDataSet(): SpecData {
+function withDataSet(): ServedData {
   const w = workspace();
   addRows(w, 'test_data_set', {
     id: 'DM-SHOP-TD01', title: 'A basket with two items', domain_id: 'DM-SHOP', environment: 'A fresh in-memory store.', records: 'One shopper and a basket of two items.',
-    prepare: 'Run the basket seed.', reset: 'Drop the store.', file: 'test/basket-seed.ts', description: 'A shopper part-way through shopping.',
-  });
+    prepare: 'Run the basket seed.', reset: 'Drop the store.', file: 'test/basket-seed.ts', description: 'A shopper part-way through shopping.' });
   addRows(w, 'starts_from', { source_id: 'DM-SHOP-UC01-R01-T01', target_id: 'DM-SHOP-TD01' });
   return w;
 }
@@ -42,7 +42,7 @@ describe('LA-V121-R02-T01 the Test data set editor writes only through the aggre
   it('Edit sends Change a test data set with only what changed; an emptied optional field is cleared with null', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withDataSet(), 'test_data_set', 'DM-SHOP-TD01', { reset: 'Drop and seed again.' });
-    const { commands, writes } = await openApp('/DM-SHOP-TD01', { data: withDataSet(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-SHOP-TD01', { data: withDataSet(), command: () => ({ answer: ok, data: changed() }) });
     const actions = await toolbar('DM-SHOP-TD01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -53,7 +53,6 @@ describe('LA-V121-R02-T01 the Test data set editor writes only through the aggre
     await user.clear(within(form).getByRole('textbox', { name: /^file/ }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/test-data-set/change-test-data-set', input: { id: 'DM-SHOP-TD01', reset: 'Drop and seed again.', file: null } }]));
-    expect(writes).toEqual([]);
     expect(await within(main()).findByText('Drop and seed again.')).toBeInTheDocument();
   });
 });

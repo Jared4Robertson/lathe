@@ -1,8 +1,7 @@
-{"id":"LA-AUT-DS01-SV","title":"idShapes","domain_service_id":"LA-AUT-DS01","file":"lathe/src/cli/operations.ts"}
 {"id":"LA-CHK-DS01-SV","title":"orderChecks","domain_service_id":"LA-CHK-DS01","file":"lathe/src/reference.ts"}
 {"id":"LA-EXP-DS01-SV","title":"spaceOf","domain_service_id":"LA-EXP-DS01","file":"app/src/shell/spaces.tsx"}
 {"id":"LA-EXP-DS02-SV","title":"productOfPath","domain_service_id":"LA-EXP-DS02","file":"app/src/shell/spaces.tsx"}
-{"id":"LA-EXP-DS03-SV","title":"folderPath","domain_service_id":"LA-EXP-DS03","file":"app/src/specs/folders.ts"}
+{"id":"LA-EXP-DS03-SV","title":"folderTreeTableFrom","domain_service_id":"LA-EXP-DS03","file":"lathe/src/exploring/folder-tree/read-model.ts"}
 {"id":"LA-EXP-DS04-SV","title":"treeOf","domain_service_id":"LA-EXP-DS04","file":"app/src/graph/tree.ts"}
 {"id":"LA-EXP-DS05-SV","title":"layoutTree","domain_service_id":"LA-EXP-DS05","file":"app/src/graph/map.ts"}
 {"id":"LA-EXP-DS06-SV","title":"labelLines","domain_service_id":"LA-EXP-DS06","file":"app/src/graph/text.ts"}

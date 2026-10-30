@@ -184,13 +184,13 @@ describe('the MCP launcher', () => {
     let out = '';
     server.stdout.on('data', (chunk) => (out += chunk));
     server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {} } })}\n`);
-    server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'show', arguments: { id: 'TL' } } })}\n`);
+    server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/call', params: { name: 'product_get_product', arguments: { id: 'TL' } } })}\n`);
     server.stdin.end();
     const code = await new Promise((resolve) => server.on('close', resolve));
     expect(code).toBe(0);
     const messages = out.trim().split('\n').map((l) => JSON.parse(l));
     expect(messages[0].result.serverInfo.name).toBe('lathe');
-    expect(messages[1].result.content[0].text).toBe('Product TL: Tool Library\n  kind: product\n  description: A neighborhood tool library.');
+    expect(messages[1].result.content[0].text).toBe('Product TL: Tool Library\n  description: A neighborhood tool library.');
   });
 
   it('LA-PLT-UC18-R01-T01 LA-PLT-UC18-FL04-T warns once, in the first tool result, when the installed Lathe is not the major version the skills were written for', async () => {
@@ -207,7 +207,7 @@ describe('the MCP launcher', () => {
       let out = '';
       server.stdout.on('data', (chunk) => (out += chunk));
       server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: '2025-06-18', capabilities: {} } })}\n`);
-      for (const id of [2, 3]) server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params: { name: 'show', arguments: { id: 'TL' } } })}\n`);
+      for (const id of [2, 3]) server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id, method: 'tools/call', params: { name: 'product_get_product', arguments: { id: 'TL' } } })}\n`);
       server.stdin.end();
       expect(await new Promise((resolve) => server.on('close', resolve))).toBe(0);
       return { root, calls: out.trim().split('\n').map((l) => JSON.parse(l)).slice(1).map((m) => m.result.content.map((c: { text: string }) => c.text)) };
@@ -215,14 +215,14 @@ describe('the MCP launcher', () => {
     const other = await results(`${major + 1}.3.0`);
     expect(other.calls).toEqual([
       [
-        'Product TL: Tool Library\n  kind: product\n  description: A neighborhood tool library.',
+        'Product TL: Tool Library\n  description: A neighborhood tool library.',
         `Warning: the Lathe plugin's skills were written for Lathe ${major}.x, but ${other.root} has Lathe ${major + 1}.3.0 (schema 7). ` +
           "The tools match the installed Lathe, but the skills may name tables, columns or steps it does not have: update the plugin or the product's @jaredrob/lathe so their major versions match.",
       ],
-      ['Product TL: Tool Library\n  kind: product\n  description: A neighborhood tool library.'],
+      ['Product TL: Tool Library\n  description: A neighborhood tool library.'],
     ]);
     // The same major version: no warning.
-    expect((await results(`${major}.9.1`)).calls).toEqual([['Product TL: Tool Library\n  kind: product\n  description: A neighborhood tool library.'], ['Product TL: Tool Library\n  kind: product\n  description: A neighborhood tool library.']]);
+    expect((await results(`${major}.9.1`)).calls).toEqual([['Product TL: Tool Library\n  description: A neighborhood tool library.'], ['Product TL: Tool Library\n  description: A neighborhood tool library.']]);
   });
 
   it('LA-INT01-T03 LA-PLT-UC18-R02-T01 says why it cannot start outside a Lathe repo', () => {

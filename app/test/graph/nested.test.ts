@@ -1,17 +1,17 @@
+import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
-import { indexOf } from '../fixtures/load';
 import { graphMap, MAP_SIZE, sizeText } from '../../src/graph/map';
 import { BORDER, LABEL_PAD, labelHeight, largestFit, mapLabel, metaWidth, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
 import { gridOf, HEADER_SHARE, layoutNested, NEST_GAP, NEST_PAD, nestedMap, type NestedMap, type NestedNode } from '../../src/graph/nested';
-import type { SpecIndex } from '../../src/specs/data';
+import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
 // The Nested map (LA-EXP-DS07): the Tree map's tree as nested squares, laid out once, top-down from
 // the product's square by one rule (LA-EXP-DS06): siblings are the same size, with the same text.
 
 /** The test workspaces' indexes, built once, so a map found by its index is the one the test laid out. */
-let built: SpecIndex[] | null = null;
-const indexes = (): SpecIndex[] => (built ??= [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())]);
+let built: RecordIndex[] | null = null;
+const indexes = (): RecordIndex[] => (built ??= [testIndex(), recordIndexOf(groupedWorkspace()), recordIndexOf(manyOfOneKindWorkspace())]);
 const maps = (): NestedMap[] => indexes().map((index) => nestedMap(index, 'P'));
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */

@@ -1,12 +1,12 @@
+import { recordIndexOf } from '../read-view';
 import { readdirSync, readFileSync } from 'node:fs';
-import { indexOf } from '../fixtures/load';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { COLUMN_GAP_SHARE, graphMap, groupWidth, layoutTree, MAP_SIZE, MAX_ASPECT, MAX_COLUMN_SHARE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, treeText, type GraphMap, type MapNode } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, MIN_ZOOM, viewRect } from '../../src/graph/camera';
 import { shapeOf, SHAPES } from '../../src/graph/shapes';
 import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK_ROOM, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
-import type { SpecIndex } from '../../src/specs/data';
+import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
 // The graph is one fixed map of its product's tree (LA-EXP-DS05), laid out top-down from the
@@ -15,8 +15,8 @@ import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } fr
 // column's width; the camera draws only what is in view and big enough to see (LA-EXP-DS10).
 
 /** The test workspaces' indexes, built once, so a map found by its index is the one the test laid out. */
-let built: SpecIndex[] | null = null;
-const indexes = (): SpecIndex[] => (built ??= [testIndex(), indexOf(groupedWorkspace()), indexOf(manyOfOneKindWorkspace())]);
+let built: RecordIndex[] | null = null;
+const indexes = (): RecordIndex[] => (built ??= [testIndex(), recordIndexOf(groupedWorkspace()), recordIndexOf(manyOfOneKindWorkspace())]);
 const maps = (): GraphMap[] => indexes().map((index) => graphMap(index, 'P'));
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */
@@ -153,10 +153,26 @@ describe('columns and text', () => {
     const lines = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
     expect(wrapLabel({ ...lines, title: `${lines.title} and on through every group in it` }).title.length).toBeGreaterThan(wrapLabel(lines).title.length);
     expect(wrapLabel(lines, { marked: true, centered: true }).meta).toEqual(['Use case · ', 'LA-EXP-UC03']);
+    // An ID is never broken across lines: too narrow a box keeps it whole on its own line (LA-EXP-DS06).
+    expect(wrapLabel(lines, { width: 2 * LABEL_PAD + metaWidth('LA-EXP') }).meta).toEqual(['Use ', 'case · ', 'LA-EXP-UC03']);
+    // With `whole` a word too wide for a line stays whole.
+    expect(wrapText('a well-formed step', 6, chars, '-', false, true)).toEqual(['a ', 'well-formed ', 'step']);
     expect(wrapLabel(lines).meta).toEqual(['Use case · LA-EXP-UC03']);
     expect(BADGE_ROOM).toBe(30);
     expect(labelHeight(wrapLabel(lines, { shape: 'hexagon', marked: true, centered: true }))).toBeGreaterThan(labelHeight(wrapLabel(lines)));
     expect(labelHeight(wrapLabel(lines, { shape: 'window' }))).toBe(labelHeight(wrapLabel(lines)) + SHAPES.window.room.t);
+  });
+
+  it('LA-EXP-DS06-T06 An ID is never broken across lines: a label fitted at its widest word, the ID, keeps it whole at every room', () => {
+    const label: MapLabel = { title: 'Record ID', meta: 'Value object · LA-V001', shape: 'box', marks: 1, marked: true };
+    for (let w = 20; w < 400; w += 0.37) {
+      for (const h of [80, 300]) {
+        const s = largestFit(label, true, w, h, 4);
+        if (s <= 0) continue;
+        const lines = wrapLabel(label, { shape: label.shape, marks: label.marks, marked: label.marked, centered: true, width: w / s });
+        expect(lines.meta.flatMap((l) => l.trim().split(/\s+/)), `w ${w}`).toContain('LA-V001');
+      }
+    }
   });
 
   it("LA-EXP-DS05-T12 A parent line runs level from the parent's right edge to the child's left edge, at the child's middle", () => {

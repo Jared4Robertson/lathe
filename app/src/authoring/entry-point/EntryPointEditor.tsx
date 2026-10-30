@@ -7,7 +7,7 @@ import type { Choice } from '../../edit/fields';
 import { useWriter } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendEntryPoint, type EntryPointCommands } from './commands';
 import { useNextEntryPointId } from './reads';
@@ -20,31 +20,28 @@ import '../../edit/edit.css';
 // keeps what was entered, and changes nothing.
 
 /** The standard rules of the domain's product, as what an entry point may meet. */
-function standardRules(index: SpecIndex, domain: string): Choice[] {
+function standardRules(index: RecordIndex, domain: string): Choice[] {
   const product = index.byId.get(domain)?.product;
   return [...index.byId.values()].filter((r) => r.kind === 'standard_rule' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
 /** The fields Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
-function fieldsOf(index: SpecIndex, domain: string, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, domain: string, adding: boolean): FieldSpec[] {
   return [
     ...(adding ? [{ field: 'id', column: 'id', table: 'entry_point' }] : []),
     { field: 'title', column: 'title', table: 'entry_point' },
     { field: 'file', column: 'file', table: 'entry_point' },
     { field: 'description', column: 'description', table: 'entry_point', long: true },
-    { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
     { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: standardRules(index, domain) },
   ];
 }
 
-/** The packages field's text as its list: one package per line. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 'packages');
 
 type Mode = 'view' | 'change' | 'remove';
 
 /** The entry point with its actions; the form or the remove question shows in place of its page. */
-export function EntryPointEditor({ index, page, children }: { index: SpecIndex; page: EntryPointPage; children: ReactNode }) {
+export function EntryPointEditor({ index, page, children }: { index: RecordIndex; page: EntryPointPage; children: ReactNode }) {
   const writer = useWriter();
   const [mode, setMode] = useState<Mode>('view');
   const toolbar = useRef<HTMLDivElement>(null);
@@ -60,9 +57,7 @@ export function EntryPointEditor({ index, page, children }: { index: SpecIndex; 
     const specs = fieldsOf(index, entryPoint.domain_id, false);
     const current = { ...entryPoint, packages: page.packages, meets: page.meets } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, withoutPackages(specs), draft, current, { id: entryPoint.id }, ['file']);
-      const packages = packagesOf(draft);
-      if (JSON.stringify([...packages].sort()) !== JSON.stringify(page.packages)) input.packages = packages;
+      const input = changeInput(index, specs, draft, current, { id: entryPoint.id }, ['file']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await sendEntryPoint(writer, '/api/entry-point/change-entry-point', input as unknown as EntryPointCommands['/api/entry-point/change-entry-point']);
       if (answer.ok) { announce(`Saved ${entryPoint.id}`); back(); }
@@ -87,7 +82,7 @@ export function EntryPointEditor({ index, page, children }: { index: SpecIndex; 
 
 /** Edit: the entry point's Change, with only what changed. */
 function ChangeForm({ index, specs, current, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   id: string;
@@ -103,7 +98,7 @@ function ChangeForm({ index, specs, current, id, submit, onDone }: {
 }
 
 /** Add an entry point to a domain (from the domain's page): the aggregate's own Add, its ID the next free one. */
-export function AddEntryPointForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddEntryPointForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextEntryPointId(parent, index);
@@ -113,9 +108,7 @@ export function AddEntryPointForm({ index, parent, onDone }: { index: SpecIndex;
   }, [next]);
   const specs = fieldsOf(index, parent, true);
   const submit = async () => {
-    const input = addInput(index, withoutPackages(specs), draft, { domain_id: parent });
-    const packages = packagesOf(draft);
-    if (packages.length > 0) input.packages = packages;
+    const input = addInput(index, specs, draft, { domain_id: parent });
     const answer = await sendEntryPoint(writer, '/api/entry-point/add-entry-point', input as unknown as EntryPointCommands['/api/entry-point/add-entry-point']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;

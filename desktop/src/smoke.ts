@@ -1,8 +1,8 @@
 // The smoke run (test/smoke.test.ts): with LATHE_DESKTOP_SMOKE set to a file, the shell opens the
-// folder in a hidden window, notes the launch view over it, waits for the page and its GET /api/spec
+// folder in a hidden window, notes the launch view over it, waits for the page and its GET /api/product/list-products
 // and for the launch view to lift, checks the app's own title bar and the chrome colors it sent, notes
 // the Dock icon, reads the application menu and runs View › Show or Hide Navigation by its command ID, chooses
-// Help › Keyboard Shortcuts, starts a reload by touching a data file and asking for the specs,
+// Help › Keyboard Shortcuts, starts a reload by touching a data file and asking for the products,
 // writes what it saw to that file as JSON, and quits while that reload is in progress.
 import { Menu, type BrowserWindow } from 'electron';
 import { readdirSync, utimesSync, writeFileSync } from 'node:fs';
@@ -57,7 +57,7 @@ export function writeSmoke(file: string, result: SmokeResult) {
 
 /**
  * Watches one window through the run. Call it before the window loads, so the page's first
- * GET /api/spec is seen; `runCommand` sends a menu command to it.
+ * GET /api/product/list-products is seen; `runCommand` sends a menu command to it.
  */
 export async function runSmoke(
   win: BrowserWindow,
@@ -72,7 +72,7 @@ export async function runSmoke(
 ): Promise<SmokeResult> {
   const result: SmokeResult = { titleBarStyle: frame.titleBarStyle, dockIcon: frame.dockIcon() };
   const spec = new Promise<number>((resolve) => {
-    win.webContents.session.webRequest.onCompleted({ urls: ['*://*/api/spec*'] }, (details) => resolve(details.statusCode));
+    win.webContents.session.webRequest.onCompleted({ urls: ['*://*/api/product/list-products*'] }, (details) => resolve(details.statusCode));
   });
   const loaded = new Promise<void>((resolve) => win.webContents.once('did-finish-load', () => resolve()));
   const js = <T>(code: string) => win.webContents.executeJavaScript(code) as Promise<T>;
@@ -124,7 +124,7 @@ export async function reloadInProgress(url: string, folder: string): Promise<boo
   const later = new Date(Date.now() + 2_000);
   for (const file of readdirSync(data).filter((f) => f.endsWith('.jsonl'))) utimesSync(path.join(data, file), later, later);
   let answered = false;
-  void fetch(`${url}/api/spec`).then((res) => res.arrayBuffer()).then(() => (answered = true), () => undefined);
+  void fetch(`${url}/api/product/list-products`).then((res) => res.arrayBuffer()).then(() => (answered = true), () => undefined);
   await sleep(20);
   return !answered;
 }

@@ -218,6 +218,13 @@ check('title-breaks-convention', () => {
       'Use case EX-LEND-UC04 is titled "Approve an invoice in the member portal", which names an interface or mechanism ("member portal"); name a use case for one goal of its actor, verb first, such as "Borrow a tool", and leave the interface to its flows.',
     );
   });
+
+  it('LA-STD-MODELING-R03-T02 a use case titled with a CRUD verb over a record or data is a warning', async () => {
+    const found = await named([], ["Change a product's data", 'Edit a record', 'Update the data', "Change Lathe's schema with a migration"]);
+    expect(records(found)).toEqual(['EX-LEND-UC03', 'EX-LEND-UC04', 'EX-LEND-UC05']);
+    expect(found.every((p) => p.severity === 'warning')).toBe(true);
+    expect(found.map((p) => /uses the CRUD verb "(\w+)" over a record or data/.exec(p.message)?.[1])).toEqual(['change', 'edit', 'update']);
+  });
 });
 
 check('step-order', () => {

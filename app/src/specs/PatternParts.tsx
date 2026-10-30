@@ -1,80 +1,49 @@
 import { Fragment } from 'react';
 import { TreeList } from '../components/TreeList';
-import { textOf, type SpecIndex, type SpecRecord } from './data';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { useRecordTrace } from '../traceability/record-trace/reads';
 import { RecordLink, recordText } from './parts';
-import { appliesWhenOf, appliesWhenText, patternsFollowedBy, ruleStatus, rulesOf, type RuleStatus } from './patterns';
+import { patternsFollowedBy, ruleStatus, rulesOf, type RuleStatus } from './patterns';
 
 // The patterns a domain follows ("Patterns we follow" on the domain page), each with its rules and the domain's proof
-// status per rule, and a rule's status mark, which the Pattern page shows per following domain.
+// status per rule, and a rule's status mark, which the Pattern page shows per following domain. Each mark reads the
+// rule's own trace (get-record-trace).
 
 const list = (ids: string[]) => ids.join(', ');
 
-/** What a rule's row says of its setting and its condition: "setting audit", "applies when scope is not single". */
-function RuleTags({ rule }: { rule: SpecRecord }) {
-  const condition = appliesWhenOf(rule);
-  return (
-    <>
-      {textOf(rule.row, 'setting') && <small className="meta"> setting {textOf(rule.row, 'setting')}</small>}
-      {condition && <small className="meta"> applies when {appliesWhenText(condition)}</small>}
-    </>
-  );
-}
-
-/** A rule's proved mark in one domain, or Not applicable with its reasons, or Waived here. */
-export function RuleMarks({ index, status }: { index: SpecIndex; status: RuleStatus }) {
-  if (!status.applies && status.why === 'waived') {
-    const { setting } = status.condition;
-    return (
-      <span className="rule-marks">
-        <span className="rule-mark na" data-mark="waived" title={`Waived: it applies only when ${appliesWhenText(status.condition)}, and no follower here meets that`}>
-          Waived here: {setting} is {status.given.length > 0 ? status.given.join(' or ') : 'not given'}
-        </span>
-      </span>
-    );
-  }
-  if (!status.applies) {
-    return (
-      <span className="rule-marks">
-        <span className="rule-mark na" title={`Not applicable: every following use case marks ${status.setting} Not applicable`}>not applicable</span>
-        <span className="rule-na-reasons">
-          {status.reasons.map((r, i) => (
-            <Fragment key={r.useCase}>
-              {i > 0 && '; '}
-              <RecordLink index={index} id={r.useCase} showTitle={false} />: {r.reason || 'no reason given'}
-            </Fragment>
-          ))}
-        </span>
-      </span>
-    );
-  }
-  const mark = (label: string, by: string[], kind: string, missing: string) => (
-    <span className={`rule-mark ${by.length > 0 ? 'ok' : 'missing'}`} title={by.length > 0 ? `${label} by ${list(by)}` : missing} data-mark={kind}>
-      {by.length > 0 ? label : `not ${label}`}
-    </span>
-  );
+/** A rule's proved mark in one domain. */
+function RuleMarks({ status }: { status: RuleStatus }) {
+  const proved = status.provedBy.length > 0;
   return (
     <span className="rule-marks">
-      {mark('proved', status.provedBy, 'proved', 'No automated or manual pattern rule test proves it in this domain.')}
-      {status.provedBy.length === 0 && status.notAutomatedBy.length > 0 && (
+      <span className={`rule-mark ${proved ? 'ok' : 'missing'}`} title={proved ? `proved by ${list(status.provedBy)}` : 'No automated or manual pattern rule test proves it in this domain.'} data-mark="proved">
+        {proved ? 'proved' : 'not proved'}
+      </span>
+      {!proved && status.notAutomatedBy.length > 0 && (
         <span className="rule-mark not-automated" title={`A test not automated yet is meant to prove it: ${list(status.notAutomatedBy)}. It is not proof yet.`} data-mark="not-automated">not automated yet</span>
       )}
     </span>
   );
 }
 
+/** A rule's standing in a domain, read from the rule's trace; blank until it answers. */
+export function RuleMark({ index, rule, domain }: { index: RecordIndex; rule: string; domain: string }) {
+  const trace = useRecordTrace(rule, index);
+  if (trace.state !== 'read' || trace.answer.id !== rule) return null;
+  return <RuleMarks status={ruleStatus(trace.answer, domain)} />;
+}
+
 /**
- * The domain page's "Patterns we follow": each pattern the domain's use cases follow, one row
- * each, with its rules folded under it, and per rule whether this domain proves it or marks it
- * not applicable.
+ * The domain page's "Patterns we follow": each pattern the domain or its use cases follow, one row each, with its
+ * rules folded under it, and per rule whether this domain proves it.
  */
-export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; domainId: string; query?: string }) {
+export function DomainPatterns({ index, domainId, query }: { index: RecordIndex; domainId: string; query?: string }) {
   const followed = patternsFollowedBy(index, domainId);
   if (followed.length === 0) return <p className="hint">This domain follows no pattern.</p>;
   const followedOf = new Map(followed.map((f) => [f.pattern.id, f]));
-  // A pattern the domain itself follows: no use case can mark its rules not applicable.
   const byDomain = new Set(followed.filter((f) => f.byDomain).map((f) => f.pattern.id));
   return (
-    <TreeList<SpecRecord>
+    <TreeList<RecordSummary>
       label="Patterns we follow"
       items={followed.map((f) => f.pattern)}
       itemKey={(r) => `${domainId}:${r.id}`}
@@ -95,13 +64,11 @@ export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; d
             </div>
           );
         }
-        const status = ruleStatus(index, r, domainId, followedOf.get(r.parent ?? '') ?? { useCases: [], byDomain: false });
         return (
           <div className="record-row pattern-rule-row">
             <RecordLink index={index} id={r.id} row />
             <span className="row-tags">
-              <RuleTags rule={r} />
-              <RuleMarks index={index} status={status} />
+              <RuleMark index={index} rule={r.id} domain={domainId} />
             </span>
           </div>
         );

@@ -96,11 +96,7 @@
 {"entity_id":"LA-AUT-EN14","position":3,"name":"Pattern","meaning":"The pattern it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"pattern_id"}
 {"entity_id":"LA-AUT-EN14","position":4,"name":"Statement","meaning":"The rule, stated with MUST, MUST NOT, SHOULD or MAY.","type_value_object_id":"LA-VO03","required":true}
 {"entity_id":"LA-AUT-EN14","position":5,"name":"Group name","meaning":"A short heading it is shown under among its siblings, such as Validation or Paging.","type_value_object_id":"LA-VO18","required":false}
-{"entity_id":"LA-AUT-EN14","position":6,"name":"Setting","meaning":"A setting of its pattern the rule depends on: in a domain whose following use cases all mark it Not applicable, the rule does not apply.","type_value_object_id":"LA-VO06","required":false}
-{"entity_id":"LA-AUT-EN14","position":7,"name":"Applies when setting","meaning":"The setting of its pattern its applies-when condition reads; the rule is waived in a domain where no follower gives that setting a value that meets it.","type_value_object_id":"LA-VO06","required":false}
-{"entity_id":"LA-AUT-EN14","position":8,"name":"Applies when negated","meaning":"false: the condition is <setting> is <value>; true: <setting> is not <value>.","type":"yes/no","required":false}
-{"entity_id":"LA-AUT-EN14","position":9,"name":"Applies when value","meaning":"The value the condition compares with, trimmed and in any letter case.","type":"text","required":false}
-{"entity_id":"LA-AUT-EN14","position":10,"name":"Notes","meaning":"Longer notes on how the rule applies.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN14","position":6,"name":"Notes","meaning":"Longer notes on how the rule applies.","type":"text","required":false}
 {"entity_id":"LA-AUT-EN15","position":1,"name":"Pattern","meaning":"The pattern.","type_value_object_id":"LA-VO01","required":true,"column_name":"pattern_id"}
 {"entity_id":"LA-AUT-EN15","position":2,"name":"Position","meaning":"The setting's place in the pattern, from 1.","type_value_object_id":"LA-VO04","required":true}
 {"entity_id":"LA-AUT-EN15","position":3,"name":"Name","meaning":"The setting's name, in lower case with underscores, such as required_input.","type_value_object_id":"LA-VO06","required":true}
@@ -190,9 +186,6 @@
 {"entity_id":"LA-AUT-EN36","position":2,"name":"Title","meaning":"What it asks for, in the imperative, such as Open a loan.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN36","position":3,"name":"Entity","meaning":"The entity it changes, the root or a child; its aggregate is the one the command changes.","type_aggregate_id":"LA-AUT-A6","required":true,"column_name":"entity_id"}
 {"entity_id":"LA-AUT-EN36","position":4,"name":"Description","meaning":"What it does, in a sentence or two.","type":"text","required":true}
-{"entity_id":"LA-AUT-EN37","position":1,"name":"Command","meaning":"The command that also changes the aggregate.","type_value_object_id":"LA-VO01","required":true,"column_name":"command_id"}
-{"entity_id":"LA-AUT-EN37","position":2,"name":"Aggregate","meaning":"The other aggregate it changes in the same transaction: of the command's domain, never its own.","type_aggregate_id":"LA-AUT-A6","required":true,"column_name":"aggregate_id"}
-{"entity_id":"LA-AUT-EN37","position":3,"name":"Reason","meaning":"Why the change cannot follow through an event and a policy.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN38","position":1,"name":"ID","meaning":"The read model's ID, such as TL-LEND-RM01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN38","position":2,"name":"Title","meaning":"The read model's name, such as Overdue loans.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN38","position":3,"name":"Domain","meaning":"The domain it belongs to.","type_aggregate_id":"LA-AUT-A4","required":true,"column_name":"domain_id"}
@@ -513,5 +506,4 @@
 {"entity_id":"LA-TRC-EN05","position":1,"name":"Follower","meaning":"The ID of the domain or use case that follows the pattern.","type":"text","required":true,"column_name":"source_id","example":"TL-LEND-UC01"}
 {"entity_id":"LA-TRC-EN05","position":2,"name":"Pattern","meaning":"The pattern followed.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"target_id","example":"TL-PAT-LIBRARIAN-ACTION"}
 {"entity_id":"LA-TRC-EN06","position":1,"name":"Setting","meaning":"One of the pattern's settings (a `pattern_setting` name).","type":"text","required":true,"example":"required_input"}
-{"entity_id":"LA-TRC-EN06","position":2,"name":"Value","meaning":"What the setting is for this follower.","type":"text","required":false,"example":"The member's name and a valid email address."}
-{"entity_id":"LA-TRC-EN06","position":3,"name":"Not applicable reason","meaning":"Why the setting does not apply to this follower, in place of a value.","type":"text","required":false,"column_name":"not_applicable","example":"Nothing is saved."}
+{"entity_id":"LA-TRC-EN06","position":2,"name":"Value","meaning":"What the setting is for this follower: a value like any other, such as No input.","type":"text","required":true,"example":"The member's name and a valid email address."}

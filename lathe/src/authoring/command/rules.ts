@@ -89,5 +89,5 @@ export const commandRules: AggregateRules = {
 /** Refuses the command, with every reason, when the command as it would be saved breaks one of its rules. */
 export function holdToRules(tx: Transaction, command: CommandInstance): void {
   const problems = commandProblems(command, tx);
-  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message, command: 0 })));
+  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message })));
 }

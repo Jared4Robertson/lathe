@@ -3,7 +3,7 @@ import type { AggregatePageProps } from '../../record/pages';
 import { Summary, readState, type Fact } from '../../record/page-parts';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { TableEditor } from './TableEditor';
 import { useTable } from './reads';
 
@@ -14,7 +14,7 @@ import { useTable } from './reads';
 // (RecordFrame).
 
 /** The table's keys and indexes in order: the primary key, unique keys with the invariant each enforces and its condition, foreign keys with their target, and indexes. */
-function Keys({ index, page }: { index: SpecIndex; page: Table }) {
+function Keys({ index, page }: { index: RecordIndex; page: Table }) {
   return (
     <Section title="Keys" count={page.keys.length} className="table-keys-section">
       {page.keys.length === 0 ? <p className="hint">No keys: {page.table.storage === 'table' ? 'a table in a database names its primary key here.' : `a table kept as ${page.table.storage} has none.`}</p> : (
@@ -47,7 +47,7 @@ function Keys({ index, page }: { index: SpecIndex; page: Table }) {
 }
 
 /** The table's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Table): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Table): { lead?: string; facts: Fact[] } {
   const stores = { entity: 'Stores', read_model: 'Stores', domain: 'Domain' }[page.parent.kind];
   return {
     facts: [

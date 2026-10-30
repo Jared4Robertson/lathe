@@ -5,10 +5,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, type Choice } from '../../edit/fields';
+import { AddMenu } from '../../edit/AddMenu';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendEndpoint, type EndpointCommands, type EndpointRoute } from './commands';
 import { useNextEndpointId } from './reads';
@@ -42,11 +43,11 @@ function addsUnder(page: EndpointPage): Exclude<EndpointKind, 'endpoint'>[] {
 const MOVE: Partial<Record<EndpointKind, '/api/endpoint/move-endpoint'>> = { endpoint: '/api/endpoint/move-endpoint' };
 
 /** The product's records of the kinds, as choices. */
-const choicesOf = (index: SpecIndex, product: string | undefined, kinds: readonly string[]): Choice[] =>
+const choicesOf = (index: RecordIndex, product: string | undefined, kinds: readonly string[]): Choice[] =>
   [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
-function fieldsOf(index: SpecIndex, product: string | undefined, kind: EndpointKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string | undefined, kind: EndpointKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'endpoint':
@@ -71,7 +72,7 @@ function fieldsOf(index: SpecIndex, product: string | undefined, kind: EndpointK
         { field: 'title', column: 'title', table: 'endpoint_handler' },
         { field: 'file', column: 'file', table: 'endpoint_handler' },
         { field: 'description', column: 'description', table: 'endpoint_handler', long: true },
-        { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
         { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choicesOf(index, product, ['standard_rule']) },
       ];
     case 'endpoint_test': {
@@ -95,9 +96,6 @@ function fieldsOf(index: SpecIndex, product: string | undefined, kind: EndpointK
   }
 }
 
-/** The packages field's text as its list: one package per line. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 'packages');
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
 function currentOf(page: EndpointPage, kind: EndpointKind, id: string): Record<string, unknown> {
@@ -158,7 +156,7 @@ function parentOf(page: EndpointPage, kind: EndpointKind, id: string): string {
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Exclude<EndpointKind, 'endpoint'> } | { mode: 'move' } | { mode: 'remove' };
 
 /** A record of the endpoint with its actions; a form or the remove question shows in place of its page. */
-export function EndpointEditor({ index, page, children }: { index: SpecIndex; page: EndpointPage; children: ReactNode }) {
+export function EndpointEditor({ index, page, children }: { index: RecordIndex; page: EndpointPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -175,11 +173,7 @@ export function EndpointEditor({ index, page, children }: { index: SpecIndex; pa
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, withoutPackages(specs), draft, current, { id }, CHANGE[kind].clearable);
-      if (kind === 'endpoint_handler') {
-        const packages = packagesOf(draft);
-        if (JSON.stringify([...packages].sort()) !== JSON.stringify(current.packages)) input.packages = packages;
-      }
+      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await send(writer, CHANGE[kind].route, input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
@@ -193,7 +187,7 @@ export function EndpointEditor({ index, page, children }: { index: SpecIndex; pa
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {addsUnder(page).map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'add', kind: k })}>Add {LABEL[k]}</Button>)}
+        <AddMenu id={id} choices={addsUnder(page).map((k) => ({ key: k, label: kindLabel(index, k) }))} onPick={(k) => setMode({ mode: 'add', kind: k as Exclude<EndpointKind, 'endpoint'> })} />
         {MOVE[kind] && <Button onClick={() => setMode({ mode: 'move' })}>Move</Button>}
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
@@ -208,7 +202,7 @@ export function EndpointEditor({ index, page, children }: { index: SpecIndex; pa
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -225,7 +219,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a kind under the record, its ID the next free one, sent as that kind's Add. */
-function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; product: string | undefined; kind: Exclude<EndpointKind, 'endpoint'>; parent: string; onDone: () => void }) {
+function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex; product: string | undefined; kind: Exclude<EndpointKind, 'endpoint'>; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextEndpointId(kind, parent, index);
@@ -235,9 +229,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
   }, [next]);
   const specs = fieldsOf(index, product, kind, true);
   const submit = async () => {
-    const input = addInput(index, withoutPackages(specs), draft, { [ADD[kind].parent]: parent });
-    const packages = packagesOf(draft);
-    if (kind === 'endpoint_handler' && packages.length > 0) input.packages = packages;
+    const input = addInput(index, specs, draft, { [ADD[kind].parent]: parent });
     const answer = await send(writer, ADD[kind].route, input);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
@@ -250,7 +242,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
 }
 
 /** Move: the endpoint to another command or query of its domain, as its own command. */
-function MoveForm({ index, page, writer, onDone }: { index: SpecIndex; page: EndpointPage; writer: Writer; onDone: () => void }) {
+function MoveForm({ index, page, writer, onDone }: { index: RecordIndex; page: EndpointPage; writer: Writer; onDone: () => void }) {
   const announce = useAnnounce();
   const { endpoint } = page;
   const exposes = endpoint.command_id ?? endpoint.query_id ?? '';
@@ -279,7 +271,7 @@ function MoveForm({ index, page, writer, onDone }: { index: SpecIndex; page: End
  * Add an endpoint under the command or query it exposes (from that record's page): the aggregate's own Add, its ID
  * the next free one in the domain, naming its parent by the parent's kind.
  */
-export function AddEndpointForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddEndpointForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextEndpointId('endpoint', parent, index);

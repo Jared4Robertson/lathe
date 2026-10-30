@@ -74,11 +74,11 @@ const PAGES: State[] = [
   { name: 'view page', url: '/LA-V150', ready: '[data-aggregate="view"] .view-requirements' },
   { name: 'UI component page', url: '/LA-UI280', ready: '[data-aggregate="ui-component"] .traceability' },
   // The Endpoint and Integration aggregates' own pages.
-  { name: 'endpoint page', url: '/LA-AUT-EP02', ready: '[data-aggregate="endpoint"] .endpoint-requirements' },
+  { name: 'endpoint page', url: '/LA-AUT-EP01', ready: '[data-aggregate="endpoint"] .endpoint-requirements' },
   { name: 'integration page', url: '/LA-INT04', ready: '[data-aggregate="integration"] .integration-tests' },
   // The Aggregate, Domain event and Command aggregates' own pages.
   { name: 'aggregate page', url: '/LA-AUT-A6', ready: '[data-aggregate="aggregate"] .aggregate-entities' },
-  { name: 'domain event page', url: '/LA-AUT-EV01', ready: '[data-aggregate="domain-event"] .record-lead' },
+  { name: 'domain event page', url: '/LA-AUT-EV03', ready: '[data-aggregate="domain-event"] .record-lead' },
   { name: 'command page', url: '/LA-AUT-CMD210', ready: '[data-aggregate="command"] .command-endpoints' },
   // The Table, Specification, Value object and Read model aggregates' own pages.
   { name: 'table page', url: '/LA-AUT-EN54-TB', ready: '[data-aggregate="table"] .table-keys' },
@@ -120,7 +120,7 @@ PAGES.push({ name: 'Trace stage, gaps only', run: async (page: Page) => {
 // removal with the store's refusal shown inline. None of them writes anything that stays: the
 // forms are not sent, and the store refuses the removal.
 PAGES.push(
-  { name: 'the record form', run: async (page: Page) => {
+  { name: 'an aggregate\'s edit form', run: async (page: Page) => {
     await open(page, EDITED, '.header-strip h1');
     await page.getByRole('toolbar', { name: `Change ${EDITED.slice(1)}` }).getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('form').waitFor();

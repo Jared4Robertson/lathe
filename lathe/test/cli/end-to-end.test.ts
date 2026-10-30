@@ -1,9 +1,9 @@
-// End to end, as the Owner and the Agent work: the `lathe` command and the `lathe mcp` server, run as child
-// processes, write a small product in the domain model: a domain, an aggregate with its root entity and fields, a
-// command raising an event, then a capability, a use case and its requirement, the product's interface, the use case's flow through it with a step that
-// invokes the command and fulfills the requirement, and a use case test under the requirement. The data files change
-// line by line as expected, a refused write changes nothing, and the data loads with every key and check.
-import { spawn, spawnSync } from 'node:child_process';
+// End to end, as the Agent works: the `lathe mcp` server, run as a child process, writes a small product through one
+// tool per aggregate command: a domain, an aggregate with its root entity and fields, a command raising an event,
+// then a capability, a use case and its requirement, the product's interface, the use case's flow through it with a
+// step that invokes the command and fulfills the requirement, and a use case test under the requirement. The data
+// files change line by line as expected, a refused command changes nothing, and the data loads with every key and check.
+import { spawn } from 'node:child_process';
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -27,16 +27,9 @@ function productRepo(): string {
   return root;
 }
 
-const lathe = (root: string, ...args: string[]) => piped(root, '', ...args);
-// The command with its stdin, as a shell pipes JSON into `--json -`.
-const piped = (root: string, input: string, ...args: string[]) => {
-  const result = spawnSync(process.execPath, [bin, ...args, '--root', root], { encoding: 'utf8', input });
-  return { status: result.status, stdout: result.stdout, stderr: result.stderr };
-};
-
 const data = (root: string) => Object.fromEntries(readdirSync(path.join(root, 'data')).sort().map((f) => [f, readFileSync(path.join(root, 'data', f), 'utf8')]));
 
-// The records and rows both writers make, in the order they are written, as each writer takes them.
+// The records and rows the Agent writes, in the order they are written.
 const DOMAIN = { id: 'TL-LEND', title: 'Lending', product_id: 'TL', subdomain_type: 'core', description: 'Lending tools to members and getting them back.' };
 const AGGREGATE = { id: 'TL-LEND-A1', title: 'Loan', domain_id: 'TL-LEND', description: 'One tool lent to one member, with its due date.', identity: 'Loan ID' };
 const ENTITY = { id: 'TL-LEND-EN01', title: 'Loan', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The loan itself.' };
@@ -53,11 +46,6 @@ const INTERFACE = { id: 'TL-IF01', title: 'HTTP API', product_id: 'TL', kind: 'A
 const FLOW = { id: 'TL-LEND-UC01-FL01', title: 'Borrow a tool', use_case_id: 'TL-LEND-UC01', interface_id: 'TL-IF01' };
 const STEP = { id: 'TL-LEND-UC01-FL01-S01', title: 'The member borrows a free tool', flow_id: 'TL-LEND-UC01-FL01', path: 'main', position: 1 };
 const TEST = { id: 'TL-LEND-UC01-R01-T01', title: 'A tool on loan is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'service', state: 'not automated yet', when: 'With a tool on loan, a member borrows it', then: 'It is refused' };
-const LINKS: [string, string, string][] = [
-  ['TL-LEND-CMD01', 'raises', 'TL-LEND-EV01'],
-  ['TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-CMD01'],
-  ['TL-LEND-UC01-FL01-S01', 'fulfills', 'TL-LEND-UC01-R01'],
-];
 
 const line = (row: object) => `${JSON.stringify(row)}\n`;
 const EXPECTED = {
@@ -104,60 +92,7 @@ const LOADED = {
   ],
 };
 
-// A row as `lathe add` flags.
-const flags = (row: Record<string, string | number | boolean>) => Object.entries(row).flatMap(([column, value]) => [`--${column}`, String(value)]);
-
 describe('writing a spec end to end', () => {
-  it('LA-AUT-UC01-FL03-T with the lathe command', async () => {
-    const root = productRepo();
-    const run = (...args: string[]) => {
-      const result = lathe(root, ...args);
-      expect(result.stderr).toBe('');
-      expect(result.status).toBe(0);
-      return result.stdout.trim();
-    };
-    run('add', 'domain', ...flags(DOMAIN));
-    expect(run('next-id', 'aggregate', '--parent', 'TL-LEND')).toBe('TL-LEND-A1');
-    run('add', 'aggregate', ...flags(AGGREGATE));
-    expect(run('next-id', 'entity', '--parent', 'TL-LEND-A1')).toBe('TL-LEND-EN01');
-    run('add', 'entity', ...flags(ENTITY));
-    for (const field of FIELDS) run('add', 'entity_field', ...flags(field));
-    run('add', 'command', ...flags(COMMAND));
-    expect(run('next-id', 'domain_event', '--parent', 'TL-LEND-A1')).toBe('TL-LEND-EV01');
-    run('add', 'domain_event', ...flags(EVENT));
-    run('add', 'capability', ...flags(CAPABILITY));
-    expect(run('next-id', 'use_case', '--parent', 'TL-LEND-CAP01')).toBe('TL-LEND-UC01');
-    run('add', 'use_case', ...flags(USE_CASE));
-    // A write's fields as JSON on stdin, in the add tool's shape: the result comes back as JSON.
-    const fromStdin = piped(root, JSON.stringify({ uc_requirement: REQUIREMENT }), 'add', '--json', '-');
-    expect(fromStdin.status).toBe(0);
-    expect(JSON.parse(fromStdin.stdout).changes).toEqual([expect.objectContaining({ change: 'added', key: 'TL-LEND-UC01-R01', row: REQUIREMENT })]);
-    expect(run('next-id', 'interface', '--parent', 'TL')).toBe('TL-IF01');
-    run('add', 'interface', ...flags(INTERFACE));
-    expect(run('next-id', 'flow', '--parent', 'TL-LEND-UC01')).toBe('TL-LEND-UC01-FL01');
-    run('add', 'flow', ...flags(FLOW));
-    expect(run('next-id', 'flow_step', '--parent', 'TL-LEND-UC01-FL01')).toBe('TL-LEND-UC01-FL01-S01');
-    run('add', 'flow_step', ...flags(STEP));
-    expect(run('next-id', 'use_case_test', '--parent', 'TL-LEND-UC01-R01')).toBe('TL-LEND-UC01-R01-T01');
-    run('add', 'use_case_test', ...flags(TEST));
-    // Several links from a file, as one write.
-    const links = path.join(root, 'links.json');
-    writeFileSync(links, JSON.stringify(LINKS.map(([source, relation, target]) => ({ source, relation, target }))));
-    expect(JSON.parse(run('link', '--json', links)).changes).toHaveLength(LINKS.length);
-    rmSync(links);
-
-    // A refused write leaves every file as it was: a step invokes a command or query, not an event.
-    const before = data(root);
-    const refused = lathe(root, 'link', 'TL-LEND-UC01-FL01-S01', 'invokes', 'TL-LEND-EV01');
-    expect(refused.status).toBe(1);
-    expect(refused.stderr).toMatch(/^Refused; nothing changed:\n/);
-    expect(data(root)).toEqual(before);
-
-    expect(data(root)).toEqual(EXPECTED);
-    expect(await loads(root)).toEqual(LOADED);
-    expect(run('show', 'TL-LEND-UC01-R01')).toContain('Fulfilled by TL-LEND-UC01-FL01-S01: The member borrows a free tool [fulfills, in]');
-  }, 120_000);
-
   it('LA-INT01-T01 with the MCP tools, as the plugin starts them', async () => {
     const root = productRepo();
     const server = spawn(process.execPath, [bin, 'mcp', '--root', root], { stdio: ['pipe', 'pipe', 'pipe'] });
@@ -187,22 +122,24 @@ describe('writing a spec end to end', () => {
     };
     try {
       expect((await request('initialize', { protocolVersion: '2025-06-18', capabilities: {}, clientInfo: { name: 'test', version: '1' } })).result).toBeDefined();
-      await call('add', { domain: DOMAIN });
-      await call('add', { aggregate: AGGREGATE });
-      await call('add', { entity: ENTITY });
-      for (const field of FIELDS) await call('add', { entity_field: field });
-      expect(await call('next_id', { kind: 'command', parent: 'TL-LEND-EN01' })).toBe('TL-LEND-CMD01');
-      await call('add', { command: COMMAND });
-      await call('add', { domain_event: EVENT });
-      await call('add', { capability: CAPABILITY });
-      await call('add', { use_case: USE_CASE });
-      await call('add', { uc_requirement: REQUIREMENT });
-      await call('add', { interface: INTERFACE });
-      await call('add', { flow: FLOW });
-      await call('add', { flow_step: STEP });
-      await call('add', { use_case_test: TEST });
-      for (const [source, relation, target] of LINKS) await call('link', { source, relation, target });
-      const refused = await request('tools/call', { name: 'link', arguments: { source: 'TL-LEND-UC01-FL01-S01', relation: 'invokes', target: 'TL-LEND-EV01' } });
+      await call('domain_add_domain', DOMAIN);
+      await call('aggregate_add_aggregate', AGGREGATE);
+      const { aggregate_id: _, ...entity } = ENTITY;
+      await call('aggregate_add_entity', { ...entity, aggregate_id: 'TL-LEND-A1', fields: FIELDS.map(({ entity_id: _e, position: _p, ...field }) => field) });
+      expect(await call('command_next_id', { kind: 'command', parent: 'TL-LEND-EN01' })).toBe('TL-LEND-CMD01');
+      await call('domain_event_add_domain_event', EVENT);
+      await call('command_add_command', { ...COMMAND, raises: ['TL-LEND-EV01'] });
+      await call('domain_add_capability', CAPABILITY);
+      await call('use_case_add_use_case', USE_CASE);
+      await call('use_case_add_uc_requirement', REQUIREMENT);
+      await call('product_add_interface', INTERFACE);
+      await call('use_case_add_flow', FLOW);
+      await call('use_case_add_flow_step', { ...STEP, invokes: 'TL-LEND-CMD01', fulfills: ['TL-LEND-UC01-R01'] });
+      await call('use_case_add_use_case_test', TEST);
+      // A step invokes a command or query, not an event: refused, and no file changes.
+      const before = data(root);
+      const refused = await request('tools/call', { name: 'use_case_change_flow_step', arguments: { id: 'TL-LEND-UC01-FL01-S01', invokes: 'TL-LEND-EV01' } });
+      expect(data(root)).toEqual(before);
       expect(refused.result!.isError).toBe(true);
     } finally {
       server.stdin.end();

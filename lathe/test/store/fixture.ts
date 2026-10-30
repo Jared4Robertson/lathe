@@ -39,7 +39,6 @@ export function everyKind(): Data {
     domain_event: [{ id: 'TL-LEND-EV01', title: 'Loan opened', aggregate_id: 'TL-LEND-A1', published: true, description: 'A tool went out on loan.' }],
     event_field: [{ domain_event_id: 'TL-LEND-EV01', position: 1, name: 'Loan ID', meaning: 'Which loan.', type_aggregate_id: 'TL-LEND-A1', required: true }],
     command: [{ id: 'TL-LEND-CMD01', title: 'Open a loan', entity_id: 'TL-LEND-EN01', description: 'Lends a free tool to a member.' }],
-    command_change: [{ command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A2', reason: 'The tool must never show as lent without its loan.' }],
     read_model: [{ id: 'TL-LEND-RM01', title: 'Loans by member', domain_id: 'TL-LEND', description: 'Each member with their loans.' }],
     read_model_field: [{ read_model_id: 'TL-LEND-RM01', position: 1, name: 'Days overdue', meaning: 'How late the loan is.', type: 'whole number', required: false }],
     query: [{ id: 'TL-LEND-QRY01', title: 'List free tools', read_model_id: 'TL-LEND-RM01', description: 'The tools no active loan names.' }],
@@ -66,10 +65,6 @@ export function everyKind(): Data {
         title: 'A saved tool reads the same',
         pattern_id: 'TL-PAT-ACT',
         statement: 'A saved tool MUST read the same in the catalog.',
-        setting: 'record',
-        applies_when_setting: 'record',
-        applies_when_negated: false,
-        applies_when_value: 'Tool',
       },
     ],
 
@@ -89,7 +84,6 @@ export function everyKind(): Data {
     data_store: [{ id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database, run by the service that also sends its mail." }],
     provided_by: [{ source_id: 'TL-STORE01', target_id: 'TL-INT01' }],
     stored_in: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-STORE01' }],
-    repository_share: [{ repository_id: 'TL-LEND-REPO01', aggregate_id: 'TL-LEND-A2', reason: 'Loans and tools are kept in one store.' }],
     data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }],
     table: [
       { id: 'TL-LEND-EN01-TB', title: 'loans', entity_id: 'TL-LEND-EN01', name: 'loans', storage: 'table', file: 'migrations/001.sql' },

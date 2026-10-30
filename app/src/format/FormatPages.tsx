@@ -1,4 +1,5 @@
-import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
+import { useProblems } from '../checking/problems/reads';
 import { AddCheck } from '../checking/check/CheckEditor';
 import { CheckPage } from '../checking/check/CheckPage';
 import { LongList } from '../components/LongList';
@@ -7,7 +8,8 @@ import { Link, useLocation } from '../router';
 import { useSpaces } from '../shell/spaces';
 import { addressOf } from '../views/address';
 import { treeGroup } from '../graph/tree';
-import { byIdOrder, type Problem, type SpecIndex, type SpecRecord, type Stage } from '../specs/data';
+import { byIdOrder, type ListedProblem, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
 import { Markdown } from '../specs/Markdown';
 import { RecordLink, Section } from '../specs/parts';
 import {
@@ -44,8 +46,10 @@ import './format.css';
 // Checks here (AddCheck).
 
 interface PageProps {
-  index: SpecIndex;
+  index: RecordIndex;
   reference: FormatReference;
+  /** The space's problems, its own and the workspace's (list-problems). */
+  problems: ListedProblem[];
 }
 
 /** A format page as the wiki card shows it: its kind line, its title, any tags beside the title, and its body. */
@@ -60,8 +64,10 @@ interface FormatPage {
  * A format page in the wiki card: its kind line and title as the card heads a record's page, then its
  * body. It starts at the top, or at the part the address names (`#fields`, `#field-title`).
  */
-export function FormatPageView({ index, route }: { index: SpecIndex; route: FormatRoute }) {
+export function FormatPageView({ index, route }: { index: RecordIndex; route: FormatRoute }) {
   const reference = useFormat(index);
+  const read = useProblems(index.product, index);
+  const problems = useMemo(() => (read.state === 'read' ? [...read.answer.own, ...read.answer.workspace].flatMap((g) => g.problems) : []), [read]);
   const { hash } = useLocation();
   const box = useRef<HTMLDivElement>(null);
   const key = JSON.stringify(route);
@@ -73,7 +79,7 @@ export function FormatPageView({ index, route }: { index: SpecIndex; route: Form
     else if (scroller) scroller.scrollTop = 0;
   }, [key, hash]);
   if (!reference) return null;
-  const page = formatPageFor({ index, reference }, route);
+  const page = formatPageFor({ index, reference, problems }, route);
   return (
     <div ref={box} className="format-page">
       <header className="wiki-panel-title spec-header">
@@ -95,7 +101,7 @@ function formatPageFor(props: PageProps, route: FormatRoute): FormatPage {
   }
   if (route.page === 'format-check') {
     const check = findCheck(props.reference, route.check);
-    const problems = props.index.workspace.problems.filter((p) => p.check === route.check);
+    const problems = props.problems.filter((p) => p.check === route.check);
     return check ? checkPage(props, check, problems) : missingPage('check', route.check);
   }
   return homePage(props);
@@ -150,10 +156,10 @@ function KindLink({ reference, kind, row = false }: { reference: FormatReference
 }
 
 /** A check as a clickable row: its name and summary, with how many problems it reports now. */
-function CheckRows({ index, checks, label }: { index: SpecIndex; checks: readonly CheckReference[]; label: string }) {
+function CheckRows({ problems, checks, label }: { problems: readonly ListedProblem[]; checks: readonly CheckReference[]; label: string }) {
   if (checks.length === 0) return <p className="hint">None.</p>;
   const counts = new Map<string, number>();
-  for (const p of index.workspace.problems) counts.set(p.check, (counts.get(p.check) ?? 0) + 1);
+  for (const p of problems) counts.set(p.check, (counts.get(p.check) ?? 0) + 1);
   return (
     <LongList
       label={label}
@@ -208,7 +214,7 @@ function RelationRows({ reference, relations, from, label }: { reference: Format
 
 // ---------- The record format ----------
 
-function homePage({ index, reference }: PageProps): FormatPage {
+function homePage({ index, reference, problems }: PageProps): FormatPage {
   const errors = reference.checks.filter((c) => c.severity === 'error');
   const warnings = reference.checks.filter((c) => c.severity === 'warning');
   return {
@@ -217,7 +223,7 @@ function homePage({ index, reference }: PageProps): FormatPage {
     body: (
       <>
         <Section title="How records are kept">
-          <p>Each kind of record is a table with typed columns. A record's parent is a column that names it, each relation is a table of links, and the database refuses data that breaks a key, a type or a rule. Every table's rows are one file in <code>{index.workspace.dataDir}/</code>, a row to a line, so git keeps their history.</p>
+          <p>Each kind of record is a table with typed columns. A record's parent is a column that names it, each relation is a table of links, and the database refuses data that breaks a key, a type or a rule. Every table's rows are one file in the product's data folder, a row to a line, so git keeps their history.</p>
         </Section>
         <section className="spec-section" id="kinds" aria-labelledby="kinds-heading">
           <header className="spec-section-head"><h2 id="kinds-heading">Kinds<span className="section-count">{reference.kinds.length}</span></h2></header>
@@ -230,8 +236,8 @@ function homePage({ index, reference }: PageProps): FormatPage {
         <section className="spec-section" id="checks" aria-labelledby="checks-heading">
           <header className="spec-section-head"><h2 id="checks-heading">Checks<span className="section-count">{reference.checks.length}</span></h2></header>
           <AddCheck index={index} />
-          <Section level={3} title="Errors" count={errors.length}><CheckRows index={index} checks={errors} label="Error checks" /></Section>
-          <Section level={3} title="Warnings" count={warnings.length}><CheckRows index={index} checks={warnings} label="Warning checks" /></Section>
+          <Section level={3} title="Errors" count={errors.length}><CheckRows problems={problems} checks={errors} label="Error checks" /></Section>
+          <Section level={3} title="Warnings" count={warnings.length}><CheckRows problems={problems} checks={warnings} label="Warning checks" /></Section>
         </section>
       </>
     ),
@@ -289,28 +295,25 @@ function AllRelations({ reference }: { reference: FormatReference }) {
 
 // ---------- A kind's page ----------
 
-/** A record's row as its data file holds it: one JSON object on one line. */
-export const rowLineOf = (record: SpecRecord) => JSON.stringify(record.row);
-
-function kindPage({ index, reference }: PageProps, kind: KindReference): FormatPage {
+function kindPage({ index, reference, problems }: PageProps, kind: KindReference): FormatPage {
   return {
     eyebrow: <><Link to={formatPath}>Record format</Link> · Kind · {stageName(reference, kind.stage)}</>,
     title: kind.label,
-    body: <KindBody index={index} reference={reference} kind={kind} />,
+    body: <KindBody index={index} reference={reference} kind={kind} problems={problems} />,
   };
 }
 
-function KindBody({ index, reference, kind }: { index: SpecIndex; reference: FormatReference; kind: KindReference }) {
+function KindBody({ index, reference, kind, problems }: { index: RecordIndex; reference: FormatReference; kind: KindReference; problems: readonly ListedProblem[] }) {
   const spaces = useSpaces();
   const stage = reference.stages.find((s) => s.stage === kind.stage);
   const relations = relationsOf(reference, kind.kind);
   const checks = checksOf(reference, kind.kind);
   // The current space's records: `index` is the space's own, so no other product's are counted.
-  const records = index.workspace.records.filter((r) => r.kind === kind.kind).sort(byIdOrder);
+  const records = [...index.byId.values()].filter((r) => r.kind === kind.kind).sort(byIdOrder);
   const space = spaces?.current ?? null;
   const inSpace = space ? ` in ${space.title}` : '';
   const example = records[0];
-  const groups = new Map<string, SpecRecord[]>();
+  const groups = new Map<string, RecordSummary[]>();
   for (const r of records) if (r.parent) groups.set(r.parent, [...(groups.get(r.parent) ?? []), r]);
   const parents = [...groups.keys()].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
   const name = lowerLabel(plural(kind.label));
@@ -333,7 +336,7 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
       </Section>
       <section className="spec-section" id={FIELDS_ANCHOR} aria-labelledby="fields-heading">
         <header className="spec-section-head"><h2 id="fields-heading">Columns<span className="section-count">{kind.columns.length}</span></h2></header>
-        <p>A {lowerLabel(kind.label)} is a row of the <code>{kind.kind}</code> table, in <code>{index.workspace.dataDir}/{kind.kind}.jsonl</code>. A required column must hold a value; the others may be left out.</p>
+        <p>A {lowerLabel(kind.label)} is a row of the <code>{kind.kind}</code> table, in <code>{kind.kind}.jsonl</code> in its product's data folder. A required column must hold a value; the others may be left out.</p>
         <div className="table-scroll">
           <table className="data-table kind-columns">
             <caption className="sr-only">The columns of the {kind.kind} table</caption>
@@ -373,13 +376,12 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
       <Section title="Checks that concern it" count={checks.length}>
         {checks.length === 0
           ? <p className="hint">No check names this kind. The checks that apply to records of every kind still apply.</p>
-          : <CheckRows index={index} checks={checks} label={`Checks that concern ${kind.label}`} />}
+          : <CheckRows problems={problems} checks={checks} label={`Checks that concern ${kind.label}`} />}
       </Section>
       <Section title="Example">
         {example ? (
           <>
-            <p>The first {lowerLabel(kind.label)}{inSpace}, <RecordLink index={index} id={example.id} />, on line {example.line} of <code>{example.file}</code>:</p>
-            <div className="markdown"><pre className="record-header" tabIndex={0}><code>{rowLineOf(example)}</code></pre></div>
+            <p>The first {lowerLabel(kind.label)}{inSpace}, <RecordLink index={index} id={example.id} />, on line {example.line} of <code>{example.file}</code>.</p>
           </>
         ) : <p className="hint">No record of this kind yet.</p>}
       </Section>
@@ -411,7 +413,7 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
 
 // ---------- A check's page ----------
 
-function checkPage({ index, reference }: PageProps, check: CheckReference, problems: Problem[]): FormatPage {
+function checkPage({ index, reference }: PageProps, check: CheckReference, problems: ListedProblem[]): FormatPage {
   return {
     eyebrow: <><Link to={formatPath}>Record format</Link> · Check · {check.severities.join(' or ')}</>,
     title: check.check,

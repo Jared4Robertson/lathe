@@ -1,3 +1,4 @@
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -20,7 +21,7 @@ describe('LA-V51-R06-T01 the product\'s page and the nav read the products throu
     const { requests } = await openApp('/DM');
     await screen.findByRole('toolbar', { name: 'Change DM' });
     expect(requests).toContain('GET /api/product/get-product?id=DM');
-    expect(requests).toContain('GET /api/product/list-products?');
+    expect(requests).toContain('GET /api/product/list-products');
     expect(within(main()).getByRole('heading', { name: /^Roles/ })).toBeInTheDocument();
     expect(within(main()).getByRole('heading', { level: 2, name: /^Interfaces/ })).toBeInTheDocument();
     const nav = await openApp('/DM-Q01');
@@ -44,7 +45,7 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
   it('Edit sends Change a product with only what changed, and the product offers no Move or Remove', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(workspace(), 'product', 'DM', { notes: 'Ships within the country.' });
-    const { commands, writes } = await openApp('/DM', { command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM', { command: () => ({ answer: ok, data: changed() }) });
     await screen.findByRole('toolbar', { name: 'Change DM' });
     const buttons = within(toolbar('DM')).getAllByRole('button').map((b) => b.textContent);
     expect(buttons).not.toContain('Move');
@@ -54,7 +55,6 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     await user.type(within(form).getByRole('textbox', { name: /^notes/ }), 'Ships within the country.');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/product/change-product', input: { id: 'DM', notes: 'Ships within the country.' } }]));
-    expect(writes).toEqual([]);
   });
 
   it('adds an open question from the product\'s page with the next free ID, and moves it to a domain as its own command', async () => {
@@ -71,6 +71,8 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     await user.click(within(form).getByRole('button', { name: 'Add open question' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/product/add-question', input: { product_id: 'DM', id: 'DM-Q02', title: 'Who answers the phone?', owner: 'Clerk', description: 'The desk or the owner.' } }]));
 
+    // The Add opens the new question's page once the data is read again.
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-Q02'));
     await openApp('/DM-Q01', { command: () => ({ answer: ok }) }).then(async ({ commands: moved }) => {
       await screen.findByRole('toolbar', { name: 'Change DM-Q01' });
       await user.click(within(toolbar('DM-Q01')).getByRole('button', { name: 'Move' }));
@@ -84,7 +86,7 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
   it('adds an open question from a domain\'s page through the Product aggregate\'s own Add, under the domain', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP', { command: () => ({ answer: ok }) });
-    await user.click(within(await screen.findByRole('toolbar', { name: 'Change DM-SHOP' })).getByRole('button', { name: 'Add open question' }));
+    await chooseAdd(user, await screen.findByRole('toolbar', { name: 'Change DM-SHOP' }), 'Open question');
     const form = screen.getByRole('form', { name: 'Add an open question' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-Q02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Who restocks?');
@@ -115,8 +117,7 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     await waitFor(() => expect(commands).toHaveLength(1));
     expect(commands[0]).toEqual({
       route: '/api/product/declare-product-kind',
-      input: { product_id: 'DM', name: 'report', label: 'Report', description: 'A script that counts.', parent_kind: 'domain', obligation: false, fields: [{ name: 'file', type: 'text', required: true, description: 'The script.' }] },
-    });
+      input: { product_id: 'DM', name: 'report', label: 'Report', description: 'A script that counts.', parent_kind: 'domain', obligation: false, fields: [{ name: 'file', type: 'text', required: true, description: 'The script.' }] } });
   });
 });
 

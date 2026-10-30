@@ -1,4 +1,4 @@
-// Follow a pattern (LA-TRC-CMD01): Makes a domain or use case follow a pattern, with the value, or the reason it does not apply, it gives each of the pattern's settings.
+// Follow a pattern (LA-TRC-CMD01): Makes a domain or use case follow a pattern, with the value it gives each of the pattern's settings.
 import { column, parts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { followingOf, PATTERN_FOLLOWING_SLICE, valueRows, type SettingValueInput } from '../model.ts';
@@ -13,13 +13,13 @@ export const FOLLOW_PATTERN: CommandDefinition<FollowPattern> = {
   id: 'LA-TRC-CMD01',
   slice: PATTERN_FOLLOWING_SLICE,
   name: 'follow-pattern',
-  description: "Makes a domain or use case follow a pattern, with the value, or the reason it does not apply, it gives each of the pattern's settings.",
+  description: "Makes a domain or use case follow a pattern, with the value it gives each of the pattern's settings.",
   method: 'POST',
   route: '/api/pattern-following/follow-pattern',
   input: {
     follower_id: column('setting_value', 'follower_id', 'required'),
     pattern_id: column('setting_value', 'pattern_id', 'required'),
-    setting_values: parts('setting_value', ['setting', 'value', 'not_applicable'], "Each of the pattern's settings with its value, or the reason it does not apply (not_applicable).", 'optional'),
+    setting_values: parts('setting_value', ['setting', 'value'], "Each of the pattern's settings with its value.", 'optional'),
   },
   handler: followPattern,
 };

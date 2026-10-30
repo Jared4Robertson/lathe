@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { ENTRY_POINT_COMMANDS } from '../../lathe/src/authoring/entry-point/commands/index';
 import type { EntryPointCommands } from '../src/authoring/entry-point/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
@@ -15,7 +16,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.getByRole('toolbar', { name: `Change ${id}` });
 
 /** The demo shop with an entry point of its Shopping domain that uses one package. */
-function withEntryPoint(): SpecData {
+function withEntryPoint(): ServedData {
   const w = workspace();
   addRows(w, 'entry_point', { id: 'DM-SHOP-ENTRY01', title: 'server.ts', domain_id: 'DM-SHOP', file: 'src/server.ts', description: 'Opens the store and serves the shop.' });
   addRows(w, 'package_use', { record_id: 'DM-SHOP-ENTRY01', package: 'express' });
@@ -41,7 +42,7 @@ describe('LA-V112-R02-T01 the Entry point editor writes only through the aggrega
   it('Edit sends Change an entry point with only what changed, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withEntryPoint(), 'entry_point', 'DM-SHOP-ENTRY01', { description: 'Opens the store, then serves the shop.' });
-    const { commands, writes } = await openApp('/DM-SHOP-ENTRY01', { data: withEntryPoint(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-SHOP-ENTRY01', { data: withEntryPoint(), command: () => ({ answer: ok, data: changed() }) });
     await within(main()).findByText('Opens the store and serves the shop.');
     expect(within(toolbar('DM-SHOP-ENTRY01')).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(toolbar('DM-SHOP-ENTRY01')).getByRole('button', { name: 'Edit' }));
@@ -49,10 +50,9 @@ describe('LA-V112-R02-T01 the Entry point editor writes only through the aggrega
     const description = within(form).getByRole('textbox', { name: /^description/ });
     await user.clear(description);
     await user.type(description, 'Opens the store, then serves the shop.');
-    await user.type(within(form).getByRole('textbox', { name: /^packages/ }), '{Enter}zod');
+    await user.type(within(form).getByRole('textbox', { name: /^Packages/ }), '{Enter}zod');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/entry-point/change-entry-point', input: { id: 'DM-SHOP-ENTRY01', description: 'Opens the store, then serves the shop.', packages: ['express', 'zod'] } }]));
-    expect(writes).toEqual([]);
     expect(await within(main()).findByText('Opens the store, then serves the shop.')).toBeInTheDocument();
   });
 });

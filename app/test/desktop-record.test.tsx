@@ -1,7 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recordIdAt } from '../src/shell/desktopRecord';
-import { indexOf } from './fixtures/load';
 import { desktopBridgeStub, facts, openApp } from './helpers';
 import { workspace } from './fixtures/workspace';
 
@@ -30,8 +29,7 @@ function desktop() {
     copyRecordId: vi.fn<(id: string) => void>(),
     showRecordMenu: vi.fn<(id: string) => void>(),
     chat: desktopBridgeStub().chat,
-    onAppRequest: () => () => {},
-  };
+    onAppRequest: () => () => {} };
   host.latheDesktop = bridge;
   return { bridge, setFullScreen: (value: boolean) => fullScreen?.(value) };
 }
@@ -86,8 +84,7 @@ describe('desktop record actions', () => {
     await openApp('/DM-SHOP-UC01');
     await heading();
     // The window's own product's errors (Demo shop's and the workspace's), not Notebook's.
-    const index = indexOf(workspace());
-    const errors = workspace().problems.filter((p) => p.severity === 'error' && index.byId.get(p.record ?? '')?.product !== 'NF').length;
+    const errors = workspace().problems.filter((p) => p.severity === 'error' && !p.record?.startsWith('NF')).length;
     expect(errors).toBe(2);
     await waitFor(() => expect(bridge.setErrorCount).toHaveBeenLastCalledWith(errors));
 

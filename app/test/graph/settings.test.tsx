@@ -43,8 +43,7 @@ const layoutGroup = () => within(screen.getByRole('group', { name: 'Layout' }));
 const drawn = () => ({
   layout: layoutGroup().getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent,
   depth: document.querySelector('.graph-depth:not(.graph-layout) button[aria-pressed="true"]')?.textContent,
-  minimap: (screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement).checked,
-});
+  minimap: (screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement).checked });
 const strip = () => screen.getByRole('tablist', { name: 'Open pages' });
 const host = window as unknown as { latheDesktop?: LatheDesktop };
 afterEach(() => { delete host.latheDesktop; });

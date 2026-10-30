@@ -3,13 +3,12 @@
 // their storage requirement tests), each walked through the real `lathe` command (LA-IF03) and a real `lathe mcp` server (LA-IF04)
 // on a temporary product. Each step runs the aggregate's own command, as the Owner or an Agent would.
 import { afterAll, describe, expect, it } from 'vitest';
-import type { Command } from '../../src/index.ts';
-import { add, flags, gapsOf, LENDING, link, mcp, product, removeProducts } from './product.ts';
+import { add, flags, gapsOf, LENDING, link, mcp, product, removeProducts, type Seed } from './product.ts';
 
 afterAll(removeProducts);
 
 /** The lending domain with the Loan aggregate's repository and table, neither stored anywhere yet. */
-const STORED: Command[] = [
+const STORED: Seed[] = [
   ...LENDING,
   add('repository', { id: 'TL-LEND-REPO01', title: 'LoanRepository', domain_id: 'TL-LEND', file: 'src/loans.ts', description: 'Saves a loan with its outbox event in one transaction.' }),
   link('TL-LEND-REPO01', 'persists', 'TL-LEND-A1'),

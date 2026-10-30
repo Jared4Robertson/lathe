@@ -32,7 +32,7 @@ describe('LA-V122-R06-T01 a pattern\'s followers are read through the Pattern fo
     const shop = within(followed).getByRole('region', { name: 'Followed in DM-SHOP' });
     expect(within(within(shop).getAllByRole('table')[0]).getAllByRole('row').map(rowText)).toEqual([
       'Use caseretentionwho',
-      'The whole domain1 yearNot applicable: Shoppers act for themselves.',
+      'The whole domain1 yearnot given',
       'DM-SHOP-UC01Add an item to the basketnot givennot given',
     ]);
   });
@@ -54,7 +54,7 @@ describe('LA-V122-R06-T01 a pattern\'s followers are read through the Pattern fo
 describe('LA-V122-R07-T01 the following\'s editor writes only through the Pattern following aggregate\'s own commands, one per change', () => {
   it('Change values sends Change the setting values with the whole list', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM-PAT-AUDIT', { data: patternWorkspace(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM-PAT-AUDIT', { data: patternWorkspace(), command: () => ({ answer: ok }) });
     await user.click(within(within(await followedBy()).getByRole('toolbar', { name: 'Change the following of DM-SHOP' })).getByRole('button', { name: 'Change values' }));
     const form = screen.getByRole('form', { name: 'Change the values DM-SHOP gives' });
     const retention = within(form).getByRole('textbox', { name: 'value 1' });
@@ -64,9 +64,7 @@ describe('LA-V122-R07-T01 the following\'s editor writes only through the Patter
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{
       route: '/api/pattern-following/change-setting-values',
-      input: { follower_id: 'DM-SHOP', pattern_id: 'DM-PAT-AUDIT', setting_values: [{ setting: 'retention', value: '2 years' }, { setting: 'who', not_applicable: 'Shoppers act for themselves.' }] },
-    }]));
-    expect(writes).toEqual([]);
+      input: { follower_id: 'DM-SHOP', pattern_id: 'DM-PAT-AUDIT', setting_values: [{ setting: 'retention', value: '2 years' }] } }]));
   });
 
   it('Stop following asks first, then sends Stop following a pattern', async () => {
@@ -92,12 +90,11 @@ describe('LA-V122-R07-T01 the following\'s editor writes only through the Patter
     expect(offered).not.toContain('NF-NOTE');
     await user.selectOptions(follower, 'DM-PAY');
     await user.type(within(form).getByRole('textbox', { name: 'value 1' }), '30 days');
-    await user.type(within(form).getByRole('textbox', { name: 'not applicable 2' }), 'Payments are anonymous.');
+    await user.type(within(form).getByRole('textbox', { name: 'value 2' }), 'Cashier');
     await user.click(within(form).getByRole('button', { name: 'Follow' }));
     await waitFor(() => expect(commands).toEqual([{
       route: '/api/pattern-following/follow-pattern',
-      input: { pattern_id: 'DM-PAT-AUDIT', follower_id: 'DM-PAY', setting_values: [{ setting: 'retention', value: '30 days' }, { setting: 'who', not_applicable: 'Payments are anonymous.' }] },
-    }]));
+      input: { pattern_id: 'DM-PAT-AUDIT', follower_id: 'DM-PAY', setting_values: [{ setting: 'retention', value: '30 days' }, { setting: 'who', value: 'Cashier' }] } }]));
   });
 });
 

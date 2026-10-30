@@ -8,7 +8,7 @@ import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendDomainEvent, type DomainEventCommands, type DomainEventRoute } from './commands';
 import { useNextDomainEventId } from './reads';
@@ -25,12 +25,12 @@ import '../../edit/edit.css';
 const LABEL: Record<DomainEventKind, string> = { domain_event: 'domain event', event_type: 'event type' };
 
 /** The product's records of these kinds, as choices. */
-function choices(index: SpecIndex, product: string, kinds: readonly string[]): Choice[] {
+function choices(index: RecordIndex, product: string, kinds: readonly string[]): Choice[] {
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
-function fieldsOf(index: SpecIndex, product: string, kind: DomainEventKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string, kind: DomainEventKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   if (kind === 'domain_event') {
     return [
@@ -47,7 +47,7 @@ function fieldsOf(index: SpecIndex, product: string, kind: DomainEventKind, addi
     { field: 'delivery', column: 'delivery', table: 'event_type' },
     { field: 'file', column: 'file', table: 'event_type' },
     { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
-    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files. The list replaces its packages.', table: 'package_use', columns: ['package'] },
+    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
   ];
 }
 
@@ -55,13 +55,7 @@ function fieldsOf(index: SpecIndex, product: string, kind: DomainEventKind, addi
 function currentOf(page: DomainEventPage, kind: DomainEventKind): Record<string, unknown> {
   if (kind === 'domain_event') return { ...page.event, fields: page.fields };
   const t = page.eventType!;
-  return { ...t.eventType, meets: t.meets, packages: t.packages.map((p) => ({ package: p })) };
-}
-
-/** The command's input with its packages as the names it takes, when it sends them. */
-function withPackageNames(input: Record<string, unknown>): Record<string, unknown> {
-  if (!Array.isArray(input.packages)) return input;
-  return { ...input, packages: (input.packages as { package?: string }[]).map((p) => p.package ?? '').filter(Boolean) };
+  return { ...t.eventType, meets: t.meets, packages: t.packages };
 }
 
 /** Each kind's Change command, and the fields it may clear with null. */
@@ -83,12 +77,12 @@ const REMOVE: Record<DomainEventKind, DomainEventRoute> = {
 };
 
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
-const send = (writer: Writer, route: DomainEventRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendDomainEvent(writer, route, withPackageNames(input) as unknown as DomainEventCommands[typeof route]);
+const send = (writer: Writer, route: DomainEventRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendDomainEvent(writer, route, input as unknown as DomainEventCommands[typeof route]);
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add' } | { mode: 'remove' };
 
 /** A record of the domain event with its actions; a form or the remove question shows in place of its page. */
-export function DomainEventEditor({ index, page, children }: { index: SpecIndex; page: DomainEventPage; children: ReactNode }) {
+export function DomainEventEditor({ index, page, children }: { index: RecordIndex; page: DomainEventPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -135,7 +129,7 @@ export function DomainEventEditor({ index, page, children }: { index: SpecIndex;
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -152,7 +146,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a kind of the aggregate (an event under its aggregate, or its event type), its ID the next free one, sent as that kind's Add. */
-function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; product: string; kind: DomainEventKind; parent: string; onDone: () => void }) {
+function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex; product: string; kind: DomainEventKind; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextDomainEventId(kind, parent, index);
@@ -178,6 +172,6 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
 }
 
 /** Add a domain event to an aggregate (from the aggregate's page): the aggregate's own Add, with the next free ID in its domain. */
-export function AddDomainEventForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddDomainEventForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   return <AddForm index={index} product={index.byId.get(parent)?.product ?? ''} kind="domain_event" parent={parent} onDone={onDone} />;
 }

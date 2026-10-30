@@ -1,4 +1,4 @@
-import { gapsOf, kindLabel, type SpecIndex } from '../specs/data';
+import { gapsOf, kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { groupKindLabel, groupLabel, groupMarks, groupOwner } from './model';
 import { NODE_WIDTH, nodeShape, SHAPES, type Room, type Shape } from './shapes';
 
@@ -67,12 +67,12 @@ export const metaWidth = (text: string, font = META_FONT) => current.em(text, 'm
 
 /**
  * Breaks a text into lines no wider than `width` by `measure`, greedily, only after a space, so no
- * word is cut. A word wider than a line on its own is the one exception: it breaks after one of
- * `breaks` (a hyphen in a title or an ID, a code identifier's punctuation in a title), with `camel` also
- * between the words of a camelCase identifier, and, if a part is still too wide, between characters. The
+ * word is cut. A word wider than a line on its own breaks after one of `breaks` (a code identifier's
+ * punctuation in a title), with `camel` also between the words of a camelCase identifier, and, if a part
+ * is still too wide, between characters; with `whole` it never breaks and stays on its own line. The
  * lines joined give the text back; a space ending a line is not measured.
  */
-export function wrapText(text: string, width: number, measure: (s: string) => number, breaks = '', camel = false): string[] {
+export function wrapText(text: string, width: number, measure: (s: string) => number, breaks = '', camel = false, whole = false): string[] {
   const fits = (s: string) => measure(s.trimEnd()) <= width;
   /** Greedy lines of some tokens; a line that is one token too wide is broken by `split`. */
   const greedy = (tokens: readonly string[], split: (token: string) => string[]): string[] => {
@@ -90,25 +90,25 @@ export function wrapText(text: string, width: number, measure: (s: string) => nu
   const at = breaks.replace(/[\]\\^-]/g, '\\$&');
   const parts = new RegExp(camel ? `[^${at}]*?(?:[${at}]+|[a-z0-9](?=[A-Z]))|[^${at}]+` : `[^${at}]*[${at}]+|[^${at}]+`, 'g');
   const byBreaks = (word: string) => greedy(word.match(parts) ?? [word], byChars);
-  return greedy(text.match(/\S+\s*|\s+/g) ?? [], at ? byBreaks : byChars);
+  return greedy(text.match(/\S+\s*|\s+/g) ?? [], whole ? (word) => [word] : at ? byBreaks : byChars);
 }
 
 /** What a box's label says: its title and its kind and ID line ("Use case · LA-EXP-UC03"; a group's "Stage · LA-EXP", "Aggregate folder · LA-EXP"). */
-export function labelLines(index: SpecIndex, id: string): { title: string; meta: string } {
+export function labelLines(index: RecordIndex, id: string): { title: string; meta: string } {
   const record = index.byId.get(id);
   if (record) return { title: record.title, meta: `${kindLabel(index, record.kind)} · ${id}` };
   return { title: groupLabel(index, id), meta: `${groupKindLabel(index, id)} · ${groupOwner(index, id)}` };
 }
 
 /** Whether a box shows the problem badge: it or, for a group, its members have problems or coverage gaps. */
-export const hasMarks = (index: SpecIndex, id: string) => {
+export const hasMarks = (index: RecordIndex, id: string) => {
   const m = marksOf(index, id);
   return m.errors + m.warnings + m.gaps.length > 0;
 };
 
 /** The marks of a node, records' and groups' (summed over the members), cached per index: a group's sum walks everything beneath it. */
-const marksCache = new WeakMap<SpecIndex, Map<string, { errors: number; warnings: number; gaps: string[] }>>();
-export function marksOf(index: SpecIndex, id: string) {
+const marksCache = new WeakMap<RecordIndex, Map<string, { errors: number; warnings: number; gaps: string[] }>>();
+export function marksOf(index: RecordIndex, id: string) {
   let cache = marksCache.get(index);
   if (!cache) { cache = new Map(); marksCache.set(index, cache); }
   const known = cache.get(id);
@@ -154,7 +154,8 @@ export function wrapLabel(lines: { title: string; meta: string }, { shape, marks
   const inner = width - 2 * LABEL_PAD - room.l - room.r;
   const label: WrappedLabel = {
     title: wrapText(lines.title, inner, (s) => titleWidth(s), TITLE_BREAKS, true),
-    meta: wrapText(lines.meta, inner - metaRoom({ marks, marked, centered }), (s) => metaWidth(s), '-'),
+    // The kind and ID line breaks only between words: an ID is never broken across lines (LA-EXP-DS06).
+    meta: wrapText(lines.meta, inner - metaRoom({ marks, marked, centered }), (s) => metaWidth(s), '', false, true),
   };
   const pad = room.t + room.b;
   return pad > 0 ? { ...label, pad } : label;
@@ -172,13 +173,13 @@ export const labelHeight = (label: WrappedLabel) => 2 * (LABEL_PAD_BLOCK + BORDE
 export interface MapLabel { title: string; meta: string; shape?: Shape; marks?: number; marked?: boolean }
 
 /** A node's label in the Tree map: its kind's shape is its outline, so the label keeps its shape's room, and its kind's mark comes before its kind and ID line (LA-V93-R06). */
-export function treeLabel(index: SpecIndex, id: string): MapLabel {
+export function treeLabel(index: RecordIndex, id: string): MapLabel {
   const { shape, mark } = nodeShape(index, id);
   return { ...labelLines(index, id), shape, marks: mark ? 1 : 0, marked: hasMarks(index, id) };
 }
 
 /** A node's label in the Nested map: its lines, its marks (its shape's and its kind's, LA-V93-R06) and whether it has the badge. */
-export function mapLabel(index: SpecIndex, id: string): MapLabel {
+export function mapLabel(index: RecordIndex, id: string): MapLabel {
   const marks = nodeShape(index, id).mark ? 2 : 1;
   return { ...labelLines(index, id), marks, marked: hasMarks(index, id) };
 }
