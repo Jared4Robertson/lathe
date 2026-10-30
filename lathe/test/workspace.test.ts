@@ -8,7 +8,7 @@ import { Readable } from 'node:stream';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { loadConfig, loadProducts, openStore, SCHEMA_VERSION, workspaceProducts } from '../src/index.ts';
 import { closeStores, handleApi, watchTargets } from '../src/server/api.ts';
-import type { RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
+import { summariesIn, type RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
 import type { MetaModel } from '../src/platform/meta-model/read-model.ts';
 import type { ProductCoverage } from '../src/traceability/coverage/read-model.ts';
 import { gatherRouteFacts } from '../src/trace/routes.ts';
@@ -141,9 +141,9 @@ describe('a workspace of several products', () => {
     const root = workspace();
     opened.push(root);
     // A product's reads come from its own folder.
-    const summaries = async (product: string) => (await request(root, `/api/record-summaries/list-record-summaries?product_id=${product}`)).json() as RecordSummaries;
-    expect((await summaries('WS')).records.map((r) => r.id)).toContain('WS');
-    expect((await summaries('SH')).records.map((r) => r.id)).toContain('SH-SELL');
+    const summaries = async (product: string) => summariesIn((await request(root, `/api/record-summaries/list-record-summaries?product_id=${product}`)).json() as RecordSummaries);
+    expect((await summaries('WS')).map((r) => r.id)).toContain('WS');
+    expect((await summaries('SH')).map((r) => r.id)).toContain('SH-SELL');
     // A read that names no record reads every product's folder: the nav lists every product.
     const listed = await request(root, '/api/product/list-products');
     expect(listed.status).toBe(200);

@@ -5,6 +5,7 @@
 // Nothing here is the aggregate's own instance type.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { TestDataSetRow } from '../../platform/data/tables.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A test data set as its page reads it: its row, the tests that start from it, and the record the page is about. */
 export interface TestDataSetPage {
@@ -30,8 +31,6 @@ export interface TestDataSetTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function testDataSetTableFrom(view: ReadView): TestDataSetTable {
   const startedFromBy = new Map<string, string[]>();
@@ -42,7 +41,7 @@ export function testDataSetTableFrom(view: ReadView): TestDataSetTable {
     sets.set(testDataSet.id, { record: { id: testDataSet.id, kind: 'test_data_set' }, testDataSet, startedFromBy: [...(startedFromBy.get(testDataSet.id) ?? [])].sort() });
     domains.get(testDataSet.domain_id)?.push({ id: testDataSet.id, title: testDataSet.title });
   }
-  for (const list of domains.values()) list.sort(byId);
+  for (const list of domains.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { sets, domains, kinds };

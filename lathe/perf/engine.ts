@@ -9,8 +9,9 @@
 // - On the large product (lathe/perf/large-product.ts, about ten times Lathe's records), served as `lathe serve` serves
 //   it: one edit (a use case retitled by an Agent in another process) is visible, the server having read the changed
 //   file and the page having read again what the change names (the record summaries, the folder tree and the use
-//   case's page), in under 500 ms from the file's change; the checks' run in the background is announced within 4 s
-//   of the change; and a cold load with every check takes under 4 s.
+//   case's page), in under 500 ms from the file's change; so is one of the page's own writes (the use case retitled
+//   through its command's route), from the request; the checks' run in the background is announced within 4 s of the
+//   change; and a cold load with every check takes under 4 s.
 // It also measures the reference, without a budget.
 //
 // Timings mean nothing on a machine that is busy with other work, so when the one-minute load average is above
@@ -41,9 +42,10 @@ const repo = path.resolve(here, '../..');
 
 export const ENGINE_BUDGETS = { loadMs: 2000, reloadMs: 500, cliMs: 800 } as const;
 /**
- * The large product's budgets (LA-PLT-UC03-R05). The edit's is the Owner's. The others are set from measurements on the
- * dev machine (2026-10-29): without its three slow parts (the term-used-unlinked check, the Use case rules and the
- * record summaries' sort) a cold load with every check took about 2.5 s, and so did the checks' run.
+ * The large product's budgets (LA-PLT-UC03-R05). The edit's is the Owner's, and holds for the page's own writes too.
+ * The others are set from measurements on the dev machine (2026-10-29): without its three slow parts (the
+ * term-used-unlinked check, the Use case rules and the record summaries' sort) a cold load with every check took about
+ * 2.5 s, and so did the checks' run.
  */
 export const LARGE_BUDGETS = { editMs: 500, checksMs: 4000, loadMs: 4000 } as const;
 const MAX_LOAD = Number(process.env.PERF_MAX_LOAD ?? 12);
@@ -125,7 +127,7 @@ function copyOfLarge(source: string): string {
  * retitles a use case RUNS times. Each edit is timed from the file's change to the page having read again what the
  * change names (the watcher's wait included), and the checks' run from the file's change to its announcement. Medians.
  */
-async function largeEdits(root: string): Promise<{ editMs: number; checksMs: number; reads: string }> {
+async function largeEdits(root: string): Promise<{ editMs: number; checksMs: number; writeMs: number; reads: string }> {
   const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));
   await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
   const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
@@ -149,7 +151,12 @@ async function largeEdits(root: string): Promise<{ editMs: number; checksMs: num
   const writer = await openStore(root);
   const edits: number[] = [];
   const checks: number[] = [];
+  const writes: number[] = [];
   const reread = new Set<string>();
+  // Waits for the checks' run that follows the change heard from `from` on.
+  const checked = async (from: number) => {
+    while (!heard.slice(from).some((h) => h.change.readModels?.includes('problems'))) await new Promise((resolve) => setTimeout(resolve, 10));
+  };
   try {
     // The page opens: each read once (the problems wait for the first checks' run).
     for (const route of Object.values(reads)) await get(route);
@@ -165,8 +172,22 @@ async function largeEdits(root: string): Promise<{ editMs: number; checksMs: num
       for (const model of named) reread.add(model);
       await Promise.all(named.map((model) => get(reads[model])));
       edits.push(performance.now() - start);
-      while (!heard.slice(from).some((h) => h.change.readModels?.includes('problems'))) await new Promise((resolve) => setTimeout(resolve, 10));
+      await checked(from);
       checks.push(heard.slice(from).find((h) => h.change.readModels?.includes('problems'))!.at - start);
+    }
+    // The page's own writes: the use case retitled through its command's route, timed from the request to the page
+    // having read again what the change names.
+    for (let i = 0; i < RUNS; i++) {
+      const from = heard.length;
+      const start = performance.now();
+      const res = await fetch(`${base}${CHANGE_USE_CASE.route}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ id: useCase, title: `Retitled in the app ${i}` }) });
+      if (!res.ok) throw new Error(`The write answered ${res.status}: ${await res.text()}`);
+      await res.arrayBuffer();
+      const change = heard.slice(from).find((h) => h.change.tables.length)?.change;
+      if (!change) throw new Error('The write was not announced.');
+      await Promise.all(Object.keys(reads).filter((model) => change.readModels === null || change.readModels.includes(model)).map((model) => get(reads[model])));
+      writes.push(performance.now() - start);
+      await checked(from);
     }
   } finally {
     stop();
@@ -174,7 +195,7 @@ async function largeEdits(root: string): Promise<{ editMs: number; checksMs: num
     await new Promise<void>((resolve) => server.close(() => resolve()));
     await closeStores(root);
   }
-  return { editMs: median(edits), checksMs: median(checks), reads: [...reread].sort().join(', ') };
+  return { editMs: median(edits), checksMs: median(checks), writeMs: median(writes), reads: [...reread].sort().join(', ') };
 }
 
 /** The steps of the large product's reload after one use case is retitled, slowest first. */
@@ -222,6 +243,7 @@ try {
   const edits = await largeEdits(large);
   judge('Large product, one edit visible', edits.editMs, LARGE_BUDGETS.editMs, `median of ${RUNS}; read again: ${edits.reads}`);
   judge("Large product, the checks' run announced", edits.checksMs, LARGE_BUDGETS.checksMs, `median of ${RUNS}, from the file's change`);
+  judge("Large product, one of the page's own writes visible", edits.writeMs, LARGE_BUDGETS.editMs, `median of ${RUNS}, from the request`);
   if (PROFILE) lines.push(`Steps of the large product's reload:\n${await largeReloadSteps(large)}`);
 } finally {
   rmSync(lathe, { recursive: true, force: true });

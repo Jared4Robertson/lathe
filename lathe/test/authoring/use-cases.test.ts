@@ -202,7 +202,8 @@ describe('requirements and tests', () => {
     expect(good.records.filter((r) => grouped.includes(r.kind)).every((r) => r.fields.group_name === undefined)).toBe(true);
     const root = await build(complete());
     const store = await openStore(root, { latheDataDir: null });
-    const ids = () => store.query<{ id: string }>('SELECT id FROM record_id ORDER BY id');
+    // The data built whole: a write holds its state without building it.
+    const ids = async () => (await store.whole((data) => data.query<{ id: string }>('SELECT id FROM record_id ORDER BY id')))?.value;
     const before = await ids();
     const changeOf: Record<string, string> = {
       uc_requirement: 'use-case change-uc-requirement',

@@ -3,6 +3,7 @@
 // table, its parent column and its fields come from the schema the declaration builds, not from code. One instance is
 // one record, whole; a record of another product kind under it is an instance of its own.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupOf } from '../../platform/data/grouped.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { KindDescription, SchemaDescription } from '../../platform/data/schema.ts';
 import { productKinds, startedRelations, valueColumns } from './declaration.ts';
@@ -35,19 +36,19 @@ export function extensionRecordTables(schema: SchemaDescription): string[] {
 /** The extension records in the data, each whole; only the one given, when given. */
 export function extensionRecordsFrom(schema: SchemaDescription, rows: (table: string) => Row[], only?: string): ExtensionRecord[] {
   const found: ExtensionRecord[] = [];
-  const packages = rows('package_use');
+  const packages = bySource(rows('package_use'), 'record_id', 'package');
   for (const kind of productKinds(schema)) {
     const own = rows(kind.name).filter((r) => only === undefined || r.id === only);
     if (!own.length) continue;
-    const relations = startedRelations(schema, kind.name).map((name) => ({ name, rows: rows(name) }));
+    const relations = startedRelations(schema, kind.name).map((name) => ({ name, targets: bySource(rows(name)) }));
     for (const row of own) {
       const id = String(row.id);
       const links: Record<string, string[]> = {};
       for (const relation of relations) {
-        const targets = relation.rows.filter((l) => l.source_id === id).map((l) => String(l.target_id)).sort();
+        const targets = groupOf(relation.targets, id);
         if (targets.length) links[relation.name] = targets;
       }
-      found.push({ root: id, kind: kind.name, row, links, packages: packages.filter((p) => p.record_id === id).map((p) => String(p.package)).sort() });
+      found.push({ root: id, kind: kind.name, row, links, packages: groupOf(packages, id) });
     }
   }
   return found;
