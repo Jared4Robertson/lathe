@@ -130,33 +130,17 @@ describe('the technical specification', () => {
     expect(gaps(ws)).toEqual(['built EX-LEND-DS01', 'built EX-LEND-UC01-R01']);
   });
 
-  it('LA-AUT-UC02-R06-T01 A repository that also persists another aggregate records it with its reason, listed as a recorded exception', async () => {
-    expect(schema.tables.repository_share).toMatchObject({ role: 'part', ownerColumn: 'repository_id' });
-    expect(requiredOf(schema, 'repository_share')).toEqual(['repository_id', 'aggregate_id', 'reason']);
-    const reason = 'One generic store persists every table.';
+  it('LA-AUT-UC02-R06-T01 A repository persists exactly one aggregate, and an aggregate no repository persists is a gap', async () => {
+    expect(Object.keys(schema.tables).filter((t) => t.startsWith('repository_'))).toEqual([]);
     const one = without(without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'stored_in', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
-    const shared = adding(one, { repository_share: [{ repository_id: 'EX-LEND-REPO01', aggregate_id: 'EX-LEND-A2', reason }] });
-    const ws = await loadData(shared);
-    expect(ws.exceptions).toEqual([{ repository: 'EX-LEND-REPO01', aggregate: 'EX-LEND-A2', reason }]);
-    expect(ws.problems).toEqual([]);
-    // The aggregate it also persists has a repository.
     expect(gaps(await loadData(one)).filter((g) => g.startsWith('aggregate-without-repository'))).toEqual(['aggregate-without-repository EX-LEND-A2']);
-    expect(gaps(ws).filter((g) => g.startsWith('aggregate-without-repository'))).toEqual([]);
-    // No reason is refused, and so is its own aggregate, or one another repository persists or records.
-    const share = shared.repository_share[0];
-    const { reason: _, ...unreasoned } = share;
-    expect((await refusals(withTable(one, 'repository_share', [unreasoned]))).map((p) => p.message)).toEqual(['repository_share.reason is required']);
-    expect(await refusals(withTable(one, 'repository_share', [{ ...share, aggregate_id: 'EX-LEND-A1' }]))).toEqual([
-      expect.objectContaining({ rule: 'repository-share-unpersisted', message: 'EX-LEND-REPO01 cannot also record EX-LEND-A1, the aggregate it persists' }),
+    // A second aggregate for one repository, or a second repository for one aggregate, is refused.
+    expect(await refusals(adding(one, { persists: [{ source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A2' }] }))).toEqual([
+      expect.objectContaining({ rule: 'unique', file: 'data/persists.jsonl', line: 2 }),
     ]);
-    expect(await refusals(withTable(complete(), 'repository_share', [share]))).toEqual([
-      expect.objectContaining({ rule: 'repository-share-unpersisted', message: 'EX-LEND-REPO01 cannot also record EX-LEND-A2, which EX-LEND-REPO02 persists: an aggregate has one repository' }),
+    expect(await refusals(adding(one, { repository: [{ id: 'EX-LEND-REPO03', title: 'LoanStore', domain_id: 'EX-LEND', file: 'src/loans.ts', description: 'Keeps loans a second time.' }], persists: [{ source_id: 'EX-LEND-REPO03', target_id: 'EX-LEND-A1' }] }))).toEqual([
+      expect.objectContaining({ rule: 'unique', file: 'data/persists.jsonl', message: expect.stringContaining('has the same target_id') }),
     ]);
-    const twice = adding(withTable(complete(), 'persists', [{ source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A1' }]), {
-      aggregate: [{ id: 'EX-LEND-A3', title: 'Shelf', domain_id: 'EX-LEND', identity: 'Shelf ID', description: 'A shelf the tools sit on.' }],
-      repository_share: [{ ...share, aggregate_id: 'EX-LEND-A3' }, { repository_id: 'EX-LEND-REPO02', aggregate_id: 'EX-LEND-A3', reason }],
-    });
-    expect(await refusals(twice)).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/repository_share.jsonl', line: 2 })]);
   });
 
   it("LA-AUT-UC17-R08-T01 A table stores its name, its storage and its keys, its columns following from its record's fields", async () => {

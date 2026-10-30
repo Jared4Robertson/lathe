@@ -1,6 +1,6 @@
 // Every stage's walk as levels (LA-V61-R49, LA-PAT-APP-UX-R21): each stage is a hierarchy, the Graph its tree, the ERD
 // product › domain region › aggregate area › entity, the Trace its tree. One walk moves over any of them:
-// - Out goes to the container, In to the first node inside it (Shift+Up and Shift+Down, or Shift+W and Shift+S);
+// - Out goes to the container, In to the first node inside it (Shift+Up and Shift+Down, Shift+W and Shift+S, or vim's Shift+K and Shift+J);
 // - an arrow moves among siblings, the same level in the same container, by the stage's own `across` (spatially on the
 //   ERD, by the layout's keys on the Graph and the Trace), and at the container's edge continues to the next container's
 //   first node at that level in reading order (Right and Down), or the previous container's last (Left and Up), so

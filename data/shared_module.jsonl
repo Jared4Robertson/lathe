@@ -1,4 +1,3 @@
-{"id":"LA-AUT-MOD01","title":"writers.ts","domain_id":"LA-AUT","file":"lathe/src/cli/writers.ts"}
 {"id":"LA-AUT-MOD10","title":"use-case/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/use-case/model.ts"}
 {"id":"LA-AUT-MOD11","title":"use-case/rules.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/use-case/rules.ts"}
 {"id":"LA-AUT-MOD12","title":"use-case/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/use-case/commands/index.ts"}
@@ -82,6 +81,7 @@
 {"id":"LA-PLT-MOD14","title":"lead.ts","domain_id":"LA-PLT","file":"lathe/src/lead.ts"}
 {"id":"LA-PLT-MOD20","title":"platform/commands","domain_id":"LA-PLT","file":"lathe/src/platform/commands"}
 {"id":"LA-PLT-MOD30","title":"platform/data","domain_id":"LA-PLT","file":"lathe/src/platform/data"}
+{"id":"LA-PLT-MOD31","title":"use-scroll-to-zoom.ts","domain_id":"LA-PLT","file":"app/src/platform/appearance/use-scroll-to-zoom.ts"}
 {"id":"LA-TRC-MOD01","title":"measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
 {"id":"LA-TRC-MOD02","title":"offer.ts","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}
 {"id":"LA-TRC-MOD03","title":"pattern-following/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/model.ts"}

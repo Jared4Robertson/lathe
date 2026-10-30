@@ -31,7 +31,6 @@
 {"id":"LA-AUT-EN34-DM","title":"SpecificationRow","entity_id":"LA-AUT-EN34","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN35-DM","title":"EventFieldRow","entity_id":"LA-AUT-EN35","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN36-DM","title":"CommandRow","entity_id":"LA-AUT-EN36","file":"lathe/src/platform/data/tables.ts"}
-{"id":"LA-AUT-EN37-DM","title":"CommandChangeRow","entity_id":"LA-AUT-EN37","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN38-DM","title":"ReadModelRow","entity_id":"LA-AUT-EN38","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN39-DM","title":"ReadModelFieldRow","entity_id":"LA-AUT-EN39","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-AUT-EN40-DM","title":"QueryRow","entity_id":"LA-AUT-EN40","file":"lathe/src/platform/data/tables.ts"}

@@ -42,13 +42,13 @@ describe('mergeData', () => {
     expect(result).toEqual({ text: withNew(1) + v(2), clashes: [], problems: [] });
   });
 
-  it('LA-AUT-SP03-T fails when one ID is added on both sides with different content', async () => {
+  it('LA-INT64-T01 fails when one ID is added on both sides with different content', async () => {
     const result = await mergeData(v(1), v(1) + v(2, 'Desk'), v(1) + v(2, 'Return desk'), view);
     expect(result.clashes).toEqual(['TL-V02 was added on both sides with different content']);
     expect(result.text).toBe(`${v(1)}<<<<<<< ours\n${v(2, 'Desk')}=======\n${v(2, 'Return desk')}>>>>>>> theirs\n`);
   });
 
-  it('LA-AUT-SP03-T fails when one row is changed on both sides, or removed on one and changed on the other', async () => {
+  it('LA-INT64-T01 fails when one row is changed on both sides, or removed on one and changed on the other', async () => {
     expect((await mergeData(v(1), v(1, 'Ours'), v(1, 'Theirs'), view)).clashes).toEqual(['TL-V01 was changed on both sides']);
     expect((await mergeData(v(1), '', v(1, 'Theirs'), view)).clashes).toEqual(['TL-V01 was removed on one side and changed on the other']);
   });

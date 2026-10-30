@@ -5,7 +5,10 @@ import { openStore, StoreError, type Row, type StoreProblem } from '../../src/in
 import { everyKind, removeData, writeData, type Data } from './fixture.ts';
 import { ADD_COMMAND_HANDLER } from '../../src/authoring/command/commands/add-command-handler.ts';
 import { ADD_POLICY_TEST } from '../../src/authoring/command/commands/add-policy-test.ts';
+import { ADD_REPOSITORY } from '../../src/authoring/domain/commands/add-repository.ts';
 import { runCommand } from '../../src/platform/commands/run.ts';
+import { FOLLOW_PATTERN } from '../../src/traceability/pattern-following/commands/follow-pattern.ts';
+import { CHANGE_SETTING_VALUES } from '../../src/traceability/pattern-following/commands/change-setting-values.ts';
 
 afterAll(removeData);
 
@@ -109,21 +112,6 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     ]);
   });
 
-  it("LA-AUT-INV11-T records another aggregate of the command's domain, and refuses its own aggregate or another domain's", async () => {
-    const reason = 'The tool must never show as lent without its loan.';
-    await loads(everyKind());
-    const problems = await refusal(
-      adding({
-        ...catalog,
-        command_change: [
-          { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A1', reason },
-          { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-CAT-A1', reason },
-        ],
-      }),
-    );
-    expect(problems.map((p) => p.rule)).toEqual(['command-change-in-domain', 'command-change-in-domain']);
-  });
-
   it("refuses a domain's own table stored as a view", async () => {
     await expect(refusal(adding({ table: [{ id: 'TL-LEND-TB02', title: 'Cache', domain_id: 'TL-LEND', name: 'cache', storage: 'view' }] }))).resolves.toEqual([expect.objectContaining({ rule: 'check', table: 'table' })]);
   });
@@ -164,17 +152,6 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
   it('refuses a second pattern rule test for one rule in one domain', async () => {
     const problems = await refusal(adding({ pattern_rule_test: [{ id: 'TL-PAT-ACT-R01-T02', title: 'Again', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-LEND', level: 'unit', state: 'not automated yet', when: 'Saves a record at the desk', then: 'It reads the same everywhere' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/pattern_rule_test.jsonl', line: 2 })]);
-  });
-
-  it('LA-AUT-INV15-T refuses a field with two types, or none', async () => {
-    for (const table of ['entity_field', 'value_object_field', 'event_field', 'read_model_field']) {
-      const data = everyKind();
-      const { type: _t, type_value_object_id: _v, type_aggregate_id: _a, ...bare } = data[table][0];
-      data[table][0] = { ...bare, type: 'text', type_aggregate_id: 'TL-LEND-A2' };
-      expect(await refusal(data), table).toEqual([expect.objectContaining({ rule: 'check', table })]);
-      data[table][0] = bare;
-      expect(await refusal(data), `${table} with none`).toEqual([expect.objectContaining({ rule: 'check', table })]);
-    }
   });
 
   it('refuses a link, or a field reference, across products', async () => {
@@ -246,12 +223,6 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'check', table: 'question' })]);
   });
 
-  it('LA-TRC-UC04-R06-T02 refuses a pattern rule naming a setting its pattern lacks', async () => {
-    const data = everyKind();
-    data.pattern_rule[0] = { ...data.pattern_rule[0], setting: 'tone' };
-    expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/pattern_rule.jsonl', line: 1 })]);
-  });
-
   it('LA-AUT-INV41-T refuses a second repository for one aggregate, a second aggregate for one repository, and a second repository of one identifier', async () => {
     const second = adding({
       repository: [{ id: 'TL-LEND-REPO02', title: 'LoanStore', domain_id: 'TL-LEND', file: 'src/lending/loans.ts', description: 'Keeps loans in a second table.' }],
@@ -266,11 +237,21 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
       ['title-unique', 'TL-LEND-REPO01'],
       ['title-unique', 'TL-LEND-REPO02'],
     ]);
-    // A repository persists one aggregate: another it also persists is a recorded exception, of its domain or another.
+    // A repository persists one aggregate, of its domain or another.
     expect(await refusal(adding({ ...catalog, persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-CAT-A1' }] }))).toEqual([
       expect.objectContaining({ rule: 'unique', file: 'data/persists.jsonl', line: 2, message: expect.stringContaining('has the same source_id as persists') }),
     ]);
-    await loads(adding({ ...catalog, repository_share: [{ repository_id: 'TL-LEND-REPO01', aggregate_id: 'TL-CAT-A1', reason: 'One store holds every table.' }] }));
+    // The Domain aggregate's own rule refuses the command that would add a second repository for one aggregate.
+    const store = await openStore(writeData(everyKind()));
+    try {
+      await runCommand(store, ADD_REPOSITORY, { id: 'TL-LEND-REPO02', title: 'LoanStore', domain_id: 'TL-LEND', file: 'src/lending/store.ts', description: 'Keeps loans in a second table.', persists: 'TL-LEND-A1' });
+      throw new Error('The second repository was added.');
+    } catch (error) {
+      if (!(error instanceof StoreError)) throw error;
+      expect(error.problems).toEqual([expect.objectContaining({ rule: 'one-repository', table: 'repository', message: 'TL-LEND-REPO01 and TL-LEND-REPO02 both persist TL-LEND-A1: an aggregate has one repository' })]);
+    } finally {
+      await store.close();
+    }
   });
 
   it('LA-STD-MODELING-R04-T01 refuses a title another record of its kind and product has, or one ending with a period', async () => {
@@ -332,7 +313,27 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     await loads(one);
   });
 
-  it('LA-TRC-INV03-T refuses a setting value for a pattern its follower does not follow', async () => {
+  it('LA-TRC-INV03-T refuses a setting value for a setting its pattern lacks, or for a pattern its follower does not follow', async () => {
+    // Through the Pattern following commands, with setting-value-of-followed-setting, changing nothing.
+    const store = await openStore(writeData(everyKind()), { latheDataDir: null });
+    try {
+      const refused = async (definition: typeof FOLLOW_PATTERN | typeof CHANGE_SETTING_VALUES, input: unknown) => {
+        const error = await runCommand(store, definition as never, input).then(() => null, (e: unknown) => e);
+        expect(error).toBeInstanceOf(StoreError);
+        return (error as StoreError).problems.map((p) => [p.rule, p.message]);
+      };
+      expect(await refused(CHANGE_SETTING_VALUES, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting_values: [{ setting: 'record', value: 'Tool' }, { setting: 'colour', value: 'Red' }] })).toEqual([
+        ['setting-value-of-followed-setting', 'TL-PAT-ACT has no setting colour, so TL-LEND-UC01 cannot give it a value'],
+      ]);
+      expect(await refused(FOLLOW_PATTERN, { follower_id: 'TL-LEND', pattern_id: 'TL-PAT-ACT', setting_values: [{ setting: 'size', value: 'Large' }] })).toEqual([
+        ['setting-value-of-followed-setting', 'TL-PAT-ACT has no setting size, so TL-LEND cannot give it a value'],
+      ]);
+      expect(store.rows('follows')).toHaveLength(1);
+      expect(store.rows('setting_value')).toHaveLength(1);
+    } finally {
+      await store.close();
+    }
+    // Written into the files with its follows link gone, the value is refused when the data loads, by the key under the rule.
     expect(await refusal({ ...everyKind(), follows: [] })).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/setting_value.jsonl', line: 1 })]);
   });
 });

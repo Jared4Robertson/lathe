@@ -25,31 +25,16 @@ export function productKindSql(
 ): { sql: string; problems: DeclarationProblem[] } {
   const problems: DeclarationProblem[] = [];
   const statements: string[] = [];
-  const taken = new Set(Object.keys(schema.tables));
   const declared = new Map(declarations.kinds.map((k) => [String(k.name), k]));
-  const kindNames = new Set([...Object.keys(schema.kinds), ...declared.keys()]);
 
   // Kinds, each after the product kind it sits under.
   const done = new Set<string>();
-  const add = (kind: Row, trail: string[]) => {
+  const add = (kind: Row) => {
     const name = String(kind.name);
     if (done.has(name)) return;
     const parent = String(kind.parent_kind);
-    if (trail.includes(name)) {
-      problems.push({ table: 'product_kind', row: kind, message: `Product kinds sit under each other in a cycle: ${[...trail, name].join(' -> ')}.` });
-      done.add(name);
-      return;
-    }
-    if (declared.has(parent) && parent !== name) add(declared.get(parent)!, [...trail, name]);
+    if (declared.has(parent) && parent !== name) add(declared.get(parent)!);
     done.add(name);
-    if (taken.has(name)) {
-      problems.push({ table: 'product_kind', row: kind, message: `The product kind ${name} has the name of a table Lathe already has; give it another name.` });
-      return;
-    }
-    if (!kindNames.has(parent) || parent === name) {
-      problems.push({ table: 'product_kind', row: kind, message: `The product kind ${name} sits under ${parent}, which is not a kind.` });
-      return;
-    }
     const parentColumn = `${parent}_id`;
     const fields = declarations.fields
       .filter((f) => f.kind === name)
@@ -91,49 +76,24 @@ export function productKindSql(
       `INSERT INTO meta_table VALUES (${literal(name)}, 'kind', NULL);`,
     );
     if (kind.obligation === true) statements.push(`INSERT INTO meta_supertype_member VALUES ('obligation', ${literal(name)});`);
+    if (kind.stage === 'technical-specification') statements.push(`INSERT INTO meta_supertype_member VALUES ('technical_record', ${literal(name)});`);
     if (kind.title_form) statements.push(`INSERT INTO meta_kind_title VALUES (${literal(name)}, ${literal(kind.title_form)});`);
-    taken.add(name);
   };
-  for (const kind of [...declarations.kinds].sort((a, b) => String(a.name).localeCompare(String(b.name)))) add(kind, []);
-  for (const field of declarations.fields) {
-    if (!declared.has(String(field.kind))) problems.push({ table: 'product_kind_field', row: field, message: `The field ${field.name} is of ${field.kind}, which is not a product kind.` });
-  }
+  for (const kind of [...declarations.kinds].sort((a, b) => String(a.name).localeCompare(String(b.name)))) add(kind);
 
   // Relations: a name Lathe has gains pairs; a new name gets a link table.
-  const supertypeOf = (table: string, kind: string) =>
-    table === 'record_id' || table === kind || (schema.supertypes[table]?.includes(kind) ?? false) || (table === 'obligation' && declared.get(kind)?.obligation === true);
   const byName = new Map<string, Row[]>();
   for (const r of declarations.relations) byName.set(String(r.name), [...(byName.get(String(r.name)) ?? []), r]);
   for (const [name, pairs] of [...byName].sort(([a], [b]) => a.localeCompare(b))) {
-    const bad = pairs.filter((p) => !kindNames.has(String(p.source_kind)) || (p.target_kind !== '*' && !kindNames.has(String(p.target_kind))));
-    for (const p of bad) problems.push({ table: 'product_relation', row: p, message: `The relation ${name} links ${p.source_kind} to ${p.target_kind}, and one of them is not a kind.` });
-    if (bad.length) continue;
     const pairSql = pairs.map(
       (p) => `INSERT INTO meta_relation_pair VALUES (${literal(name)}, ${literal(p.source_kind)}, ${literal(p.target_kind)}, ${literal(p.description)});`,
     );
     const existing = schema.relations[name];
     if (existing) {
-      const misfit = pairs.filter((p) => !supertypeOf(existing.sourceTable, String(p.source_kind)) || !supertypeOf(existing.targetTable, String(p.target_kind)));
-      for (const p of misfit) {
-        problems.push({
-          table: 'product_relation',
-          row: p,
-          message: `Lathe's relation ${name} links ${existing.sourceTable} to ${existing.targetTable}, so it cannot link ${p.source_kind} to ${p.target_kind}; give the relation a name of its own.`,
-        });
-      }
-      if (!misfit.length) statements.push(...pairSql);
-      continue;
-    }
-    if (taken.has(name)) {
-      problems.push({ table: 'product_relation', row: pairs[0], message: `The relation ${name} has the name of a table Lathe already has; give it another name.` });
+      statements.push(...pairSql);
       continue;
     }
     const first = pairs[0];
-    const differ = pairs.find((p) => p.role !== first.role || p.forward_label !== first.forward_label || p.reverse_label !== first.reverse_label);
-    if (differ) {
-      problems.push({ table: 'product_relation', row: differ, message: `The pairs of the relation ${name} give it different roles or labels; give every pair the same.` });
-      continue;
-    }
     const sources = new Set(pairs.map((p) => String(p.source_kind)));
     const targets = new Set(pairs.map((p) => String(p.target_kind)));
     const end = (kinds: Set<string>) => (kinds.size === 1 && !kinds.has('*') ? [...kinds][0] : 'record_id');
@@ -144,7 +104,6 @@ export function productKindSql(
       `INSERT INTO meta_table VALUES (${literal(name)}, 'link', NULL);`,
       ...pairSql,
     );
-    taken.add(name);
   }
   return { sql: statements.join('\n'), problems };
 }

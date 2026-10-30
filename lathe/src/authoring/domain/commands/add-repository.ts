@@ -36,7 +36,7 @@ export function addRepository(tx: Transaction, input: AddRepository): void {
   const domains = new DomainRepository(tx);
   const domain = domains.load(input.domain_id) ?? tx.refuse('missing', `there is no domain ${input.domain_id}`);
   const { persists, stored_in, meets = [], packages = [], ...row } = input;
-  domain.repositories.push({ row, persists: persists ?? null, storedIn: stored_in ?? null, meets, packages, shares: [] });
+  domain.repositories.push({ row, persists: persists ?? null, storedIn: stored_in ?? null, meets, packages });
   holdToRules(tx, domain);
   domains.save(domain);
 }

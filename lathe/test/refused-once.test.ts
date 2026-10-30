@@ -3,10 +3,26 @@
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
+import { ADD_CHECK } from '../src/checking/check/commands/add-check.ts';
+import { CHANGE_CHECK } from '../src/checking/check/commands/change-check.ts';
+import { REMOVE_CHECK } from '../src/checking/check/commands/remove-check.ts';
+import { productSettingRules } from '../src/checking/product-setting/rules.ts';
+import { CHANGE_SETTING_VALUES } from '../src/traceability/pattern-following/commands/change-setting-values.ts';
 import { LATHE_DATA_DIR, openStore, StoreError } from '../src/index.ts';
+import type { ReadView } from '../src/platform/data/rules.ts';
+import { InputError, type AnyCommand } from '../src/platform/commands/definition.ts';
+import { runCommand } from '../src/platform/commands/run.ts';
+import type { Store } from '../src/platform/data/store.ts';
 import { adding, build, changing, complete, refusals, removeData, type Data } from './helpers.ts';
 
 afterAll(removeData);
+
+/** The rules and messages a command is refused with; a failure when it is not refused. */
+async function commandRefusal(store: Store, definition: AnyCommand, input: unknown): Promise<[string, string][]> {
+  const error = await runCommand(store, definition, input).then(() => null, (e: unknown) => e);
+  if (!(error instanceof StoreError)) throw new Error(`${definition.name} was not refused`);
+  return error.problems.map((p) => [p.rule, p.message]);
+}
 
 /** The complete product with one use case test changed. */
 const test = (changes: Record<string, string | undefined>) => changing(complete(), 'use_case_test', (r) => r.id === 'EX-LEND-UC01-R01-T01', changes);
@@ -70,20 +86,30 @@ describe("a test's run by", () => {
 });
 
 describe('pattern settings and product kinds', () => {
-  it('LA-TRC-INV01-T A setting value gives a value or a not-applicable reason, never both, never neither, and never an empty reason', async () => {
-    const both = await refusals(changing(complete(), 'setting_value', () => true, { not_applicable: 'Adds nothing.' }));
-    const neither = await refusals(changing(complete(), 'setting_value', () => true, { value: undefined }));
-    for (const problems of [both, neither]) expect(problems).toEqual([expect.objectContaining({ rule: 'check', table: 'setting_value', file: 'data/setting_value.jsonl', line: 1 })]);
-    expect(await refusals(changing(complete(), 'setting_value', () => true, { value: undefined, not_applicable: '' }))).toEqual([
-      expect.objectContaining({ rule: 'column', message: expect.stringContaining('setting_value.not_applicable "" is empty') }),
+  it('LA-TRC-INV01-T A setting value gives a value, never none and never an empty one', async () => {
+    expect(await refusals(changing(complete(), 'setting_value', () => true, { value: undefined }))).toEqual([
+      expect.objectContaining({ table: 'setting_value', file: 'data/setting_value.jsonl', line: 1, message: expect.stringContaining('value') }),
     ]);
-    expect(await refusals(changing(complete(), 'setting_value', () => true, { value: undefined, not_applicable: 'Adds nothing.' }))).toEqual([]);
+    expect(await refusals(changing(complete(), 'setting_value', () => true, { value: '' }))).toEqual([
+      expect.objectContaining({ table: 'setting_value', file: 'data/setting_value.jsonl', line: 1 }),
+    ]);
+    expect(await refusals(complete())).toEqual([]);
+    // The Pattern following aggregate's command refuses a blank value at its input, and nothing changes.
+    const store = await openStore(await build(complete()));
+    try {
+      const before = store.rows('setting_value');
+      const blank = { follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting_values: [{ setting: 'record', value: '  ' }] };
+      await expect(runCommand(store, CHANGE_SETTING_VALUES, blank)).rejects.toThrow(InputError);
+      expect(store.rows('setting_value')).toEqual(before);
+    } finally {
+      await store.close();
+    }
   });
 
   it("LA-TRC-UC07-R06-T01 A product kind named like one of Lathe's tables is refused", async () => {
     const kind = { name: 'pattern_rule', product_id: 'EX', label: 'Rule', description: 'A rule of ours.', parent_kind: 'domain', obligation: true };
     expect(await refusals(adding(complete(), { product_kind: [kind] }))).toEqual([
-      expect.objectContaining({ rule: 'product-kind', message: 'The product kind pattern_rule has the name of a table Lathe already has; give it another name.' }),
+      expect.objectContaining({ rule: 'product-kind-declared', message: 'The product kind pattern_rule has the name of a table Lathe already has; give it another name.' }),
     ]);
   });
 });
@@ -111,8 +137,14 @@ describe('checks and product settings', () => {
     expect(await limit(2.5)).toEqual([expect.objectContaining({ rule: 'column', message: 'product_setting.max_children 2.5 is not a whole number' })]);
   });
 
-  it('LA-CHK-INV05-T A product has at most one settings row', async () => {
-    const two = adding(complete(), { product_setting: [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }, { product_id: 'EX', max_children: 4, max_entities_per_aggregate: 7 }] });
+  it('LA-CHK-INV05-T A product has at most one settings row: the Product setting rule refuses a second, and so does the key under it', async () => {
+    const rows = [{ product_id: 'EX', max_children: 3, max_entities_per_aggregate: 7 }, { product_id: 'EX', max_children: 4, max_entities_per_aggregate: 7 }, { product_id: 'OT', max_children: 4, max_entities_per_aggregate: 7 }];
+    const view = { rows: (table: string) => (table === 'product_setting' ? rows : []) } as unknown as ReadView;
+    expect(productSettingRules.check(view)).toEqual([
+      { rule: 'product-setting-one', table: 'product_setting', row: rows[1], message: 'product EX already has its settings row, so it cannot have a second: a product has one' },
+    ]);
+    // Written into the file, the second row is refused when the data loads, before the rule is reached.
+    const two = adding(complete(), { product_setting: rows.slice(0, 2) });
     expect(await refusals(two)).toEqual([expect.objectContaining({ rule: 'primary-key', file: 'data/product_setting.jsonl', line: 2, message: 'product_setting EX is already on line 1' })]);
   });
 
@@ -123,15 +155,12 @@ describe('checks and product settings', () => {
     try {
       const builtIn = store.rows('check').find((r) => r.name === 'too-many-children')!;
       expect(store.isBuiltIn(builtIn)).toBe(true);
-      const refused = async (write: Promise<unknown>) => {
-        const error = await write.then(() => null, (e: unknown) => e);
-        expect(error).toBeInstanceOf(StoreError);
-        return (error as StoreError).problems.map((p) => p.rule);
-      };
-      expect(await refused(store.set('check', { name: 'too-many-children' }, { severity: 'error' }))).toEqual(['built-in']);
-      expect(await refused(store.remove('check', { name: 'too-many-children' }))).toEqual(['built-in']);
+      // The Check aggregate's commands are refused by its rule check-read-only.
+      const readOnly = "check too-many-children is Lathe's own (lathe/data/check.jsonl), so it cannot change or be removed";
+      expect(await commandRefusal(store, CHANGE_CHECK, { name: 'too-many-children', severity: 'error' })).toEqual([['check-read-only', readOnly]]);
+      expect(await commandRefusal(store, REMOVE_CHECK, { name: 'too-many-children' })).toEqual([['check-read-only', readOnly]]);
       // A write of the product's own leaves them where they are, and writes none of them into the product's folder.
-      await store.add('check', check().check[0]);
+      await runCommand(store, ADD_CHECK, check().check[0]);
       expect(store.rows('check').filter((r) => store.isBuiltIn(r)).length).toBe(before.trim().split('\n').length);
     } finally {
       await store.close();

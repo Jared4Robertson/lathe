@@ -32,7 +32,6 @@
 {"source_id":"LA-AUT-RM43","target_id":"LA-AUT-A18"}
 {"source_id":"LA-AUT-RM43","target_id":"LA-AUT-A23"}
 {"source_id":"LA-AUT-RM43","target_id":"LA-AUT-A4"}
-{"source_id":"LA-AUT-SP03","target_id":"LA-AUT-A1"}
 {"source_id":"LA-AUT-SP09","target_id":"LA-AUT-A1"}
 {"source_id":"LA-CHK-RM01","target_id":"LA-CHK-A1"}
 {"source_id":"LA-CHK-RM10","target_id":"LA-CHK-A1"}
@@ -54,6 +53,4 @@
 {"source_id":"LA-TRC-RM04","target_id":"LA-TRC-A3"}
 {"source_id":"LA-TRC-RM10","target_id":"LA-TRC-A3"}
 {"source_id":"LA-TRC-SP01","target_id":"LA-TRC-A3"}
-{"source_id":"LA-TRC-SP02","target_id":"LA-TRC-A3"}
-{"source_id":"LA-TRC-SP03","target_id":"LA-TRC-A3"}
 {"source_id":"LA-TRC-SP04","target_id":"LA-TRC-A3"}

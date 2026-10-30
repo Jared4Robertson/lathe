@@ -14,17 +14,8 @@ beforeAll(async () => {
 /** A check row's tests, under its name. */
 const check = (name: string, body: () => void) => describe(name, body);
 
-check('has-crosses-aggregate', () => {
-  it('LA-AUT-INV25-T has_one or has_many to an entity of another aggregate is an error', async () => {
-    const ws = await loadData(adding(complete(), { has_many: [{ source_id: 'EX-LEND-EN01', target_id: 'EX-LEND-EN03' }] }));
-    expect(ofCheck(ws, 'has-crosses-aggregate')).toEqual([
-      expect.objectContaining({ severity: 'error', record: 'EX-LEND-EN01', message: expect.stringContaining('by a field typed by it') }),
-    ]);
-  });
-});
-
 check('repository-persists-nothing', () => {
-  it('LA-AUT-INV40-T a repository that persists no aggregate is an error, and its aggregate has no repository', async () => {
+  it('LA-AUT-UC02-R06-T03 a repository that persists no aggregate is an error until its link is written, and its aggregate has no repository', async () => {
     expect(ofCheck(clean, 'repository-persists-nothing')).toEqual([]);
     const ws = await loadData(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'));
     expect(ofCheck(ws, 'repository-persists-nothing')).toEqual([
@@ -40,14 +31,14 @@ check('repository-persists-nothing', () => {
 });
 
 check('entity-unreferenced', () => {
-  it("LA-AUT-INV28-T a child entity its root does not reach by has_one or has_many is a warning", async () => {
+  it("LA-AUT-UC10-R80-T01 a child entity its root does not reach by has_one or has_many is a warning", async () => {
     const ws = await loadData(without(complete(), 'has_one', () => true));
     expect(ofCheck(ws, 'entity-unreferenced')).toEqual([expect.objectContaining({ severity: 'warning', record: 'EX-LEND-EN02' })]);
   });
 });
 
 check('event-tense', () => {
-  it('LA-AUT-INV27-T a title with no past form as its last word or after its first is a warning', async () => {
+  it('LA-STD-MODELING-R07-T02 a title with no past form as its last word or after its first is a warning', async () => {
     const data = adding(complete(), {
       domain_event: [
         { id: 'EX-LEND-EV03', title: 'Return tool', aggregate_id: 'EX-LEND-A1', published: false, description: 'A tool came back.' },
@@ -61,7 +52,7 @@ check('event-tense', () => {
 });
 
 check('domain-named-for-technology', () => {
-  it('LA-AUT-INV26-T a domain whose title or code names a technology is a warning; one only described so is not', async () => {
+  it('LA-STD-MODELING-R05-T02 a domain whose title or code names a technology is a warning; one only described so is not', async () => {
     const data = adding(complete(), {
       domain: [
         { id: 'EX-WEB', title: 'Web app', product_id: 'EX', subdomain_type: 'generic', description: 'Pages members see.' },
@@ -227,10 +218,17 @@ check('title-breaks-convention', () => {
       'Use case EX-LEND-UC04 is titled "Approve an invoice in the member portal", which names an interface or mechanism ("member portal"); name a use case for one goal of its actor, verb first, such as "Borrow a tool", and leave the interface to its flows.',
     );
   });
+
+  it('LA-STD-MODELING-R03-T02 a use case titled with a CRUD verb over a record or data is a warning', async () => {
+    const found = await named([], ["Change a product's data", 'Edit a record', 'Update the data', "Change Lathe's schema with a migration"]);
+    expect(records(found)).toEqual(['EX-LEND-UC03', 'EX-LEND-UC04', 'EX-LEND-UC05']);
+    expect(found.every((p) => p.severity === 'warning')).toBe(true);
+    expect(found.map((p) => /uses the CRUD verb "(\w+)" over a record or data/.exec(p.message)?.[1])).toEqual(['change', 'edit', 'update']);
+  });
 });
 
 check('step-order', () => {
-  it('LA-AUT-INV18-T a path whose positions skip a number is reported once, on the first step after the gap', async () => {
+  it('LA-AUT-UC06-R80-T01 a path whose positions skip a number is reported once, on the first step after the gap', async () => {
     const data = adding(complete(), {
       flow_step: [
         { id: 'EX-LEND-UC01-FL01-S03', title: 'Refused', flow_id: 'EX-LEND-UC01-FL01', path: 'refused', position: 2 },

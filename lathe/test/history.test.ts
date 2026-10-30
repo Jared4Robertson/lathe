@@ -11,6 +11,7 @@ import type { HistoryAnswer } from '../src/server/contract.ts';
 import { closeStores, handleApi } from '../src/server/api.ts';
 import { HISTORY_PAGE, changesInDiff, firstColumnPattern, parseLog, recordTables, runGit } from '../src/server/history.ts';
 import { openStore, type Store } from '../src/platform/data/index.ts';
+import { run } from './helpers.ts';
 
 const temps: string[] = [];
 let repo = '';
@@ -38,15 +39,11 @@ const EXTRA = HISTORY_PAGE - 2;
 
 async function seed(root: string) {
   const s = await openStore(root);
-  await s.apply([
-    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example', description: 'A small product for writing notes.' } },
-    { op: 'add', table: 'role', row: { product_id: 'EX', name: 'Writer', description: 'Someone who writes notes.' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' } },
-    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' } },
-    { op: 'add', table: 'pattern', row: { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX', description: 'An action on one note.' } },
-    { op: 'add', table: 'pattern_setting', row: { pattern_id: 'EX-PAT-NOTE', position: 1, name: 'record', meaning: 'The record the action changes.' } },
-    { op: 'add', table: 'use_case', row: { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' } },
-  ]);
+  await run(s, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.', roles: [{ name: 'Writer', description: 'Someone who writes notes.' }] });
+  await run(s, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' });
+  await run(s, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
+  await run(s, 'pattern add-pattern', { id: 'EX-PAT-NOTE', title: 'A note action', product_id: 'EX', description: 'An action on one note.', settings: [{ name: 'record', meaning: 'The record the action changes.' }] });
+  await run(s, 'use-case add-use-case', { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' });
   return s;
 }
 
@@ -60,24 +57,20 @@ beforeAll(async () => {
   git(repo, 'init', '--quiet');
   git(repo, 'add', '.');
   git(repo, 'commit', '--quiet', '-m', 'Add the example product');
-  await store.set('use_case', UC, { title: 'Write a short note', goal: 'A writer keeps a thought.' });
+  await run(store, 'use-case change-use-case', { id: UC, title: 'Write a short note', goal: 'A writer keeps a thought.' });
   git(repo, 'commit', '--quiet', '-am', 'Say more about UC01');
-  await store.apply([
-    { op: 'link', relation: 'follows', source: UC, target: 'EX-PAT-NOTE' },
-    { op: 'add', table: 'setting_value', row: { follower_id: UC, pattern_id: 'EX-PAT-NOTE', setting: 'record', value: 'Note' } },
-  ]);
+  await run(store, 'pattern-following follow-pattern', { follower_id: UC, pattern_id: 'EX-PAT-NOTE', setting_values: [{ setting: 'record', value: 'Note' }] });
   git(repo, 'add', '.');
   git(repo, 'commit', '--quiet', '-m', 'Give UC01 its pattern');
   // A commit that changes only another record's rows is not in UC01's history.
-  await store.set('pattern', 'EX-PAT-NOTE', { description: 'What every note action does.' });
+  await run(store, 'pattern change-pattern', { id: 'EX-PAT-NOTE', description: 'What every note action does.' });
   git(repo, 'commit', '--quiet', '-am', 'Describe the pattern');
   for (let i = 1; i <= EXTRA; i++) {
-    await store.set('use_case', UC, { goal: `A writer keeps thought ${i}.` });
+    await run(store, 'use-case change-use-case', { id: UC, goal: `A writer keeps thought ${i}.` });
     git(repo, 'commit', '--quiet', '-am', `Goal ${i}`);
   }
   // Not committed: a change in the working tree, and a data file git does not know yet.
-  await store.set('use_case', UC, { goal: 'A writer keeps every thought.' });
-  await store.add('use_case_actor', { use_case_id: UC, position: 1, role_name: 'Writer' });
+  await run(store, 'use-case change-use-case', { id: UC, goal: 'A writer keeps every thought.', actors: ['Writer'] });
 }, 120_000);
 
 afterAll(async () => {

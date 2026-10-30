@@ -29,7 +29,7 @@ const coverage = (product: string, domain: string | null, gaps: CoverageGap[], p
   obligations: proofOnly.map((kind) => ({ kind, label: kind, total: 1, designed: 1, built: 1, proved: 0, not_automated: 0, proof_only: true })),
   tests: { automated: 0, manual: 0, not_automated: 0 },
   proved_by: {},
-  pattern_rules: {},
+  pattern_rules: [],
 });
 
 /** The store's data with a run of the checks that worked out these chains and this coverage. */

@@ -46,7 +46,7 @@ describe('packages', () => {
 
   it("LA-TRC-UC19-R03-T01 only a technical record names a package: the store refuses it on any other, and takes a tooling record", async () => {
     const refused = await refusals(adding(complete(), { package_use: [{ record_id: 'EX-LEND-UC01', package: 'nodemailer' }] }));
-    expect(refused).toEqual([expect.objectContaining({ rule: 'package-use-technical', table: 'package_use', message: expect.stringContaining('EX-LEND-UC01 is a use case, not a technical record') })]);
+    expect(refused).toEqual([expect.objectContaining({ rule: 'foreign-key', table: 'package_use', message: expect.stringContaining('names no technical_record') })]);
     // A name that is not a package name is refused by the table's own CHECK.
     expect(await refusals(naming('Not A Package'))).toEqual([expect.objectContaining({ table: 'package_use' })]);
     const withRecord = adding(complete(), {

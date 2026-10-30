@@ -5,8 +5,10 @@ that breaks the model cannot be saved. Each stored table is one file, `data/<tab
 per line, sorted by key. Every record has exactly one parent, a foreign key such as a UC requirement's
 `use_case_id`, except the kinds with no owner (value objects, specifications, views, integrations and UI
 components), which exist because other records use them. Other relationships are links, a row of their relation's
-table, and an ID is unique across every kind. Every write goes through the command layer (the CLI, the app and the
-plugin's tools), which validates it in one transaction and rewrites the lines it changed; git is the history.
+table, and an ID is unique across every kind. Every write is one command of the aggregate it changes, such as Add a
+flow step (`lathe use-case add-flow-step`, the plugin's `use_case_add_flow_step` tool, or
+`POST /api/use-case/add-flow-step` from the app): it checks the aggregate's rules in one transaction and rewrites the
+lines it changed, or is refused with every reason; git is the history. Each aggregate reads through its own queries.
 
 The model is drawn from domain-driven design, CQRS and event storming, in six stages: discovery (the business
 outcomes the product exists to achieve), the domain model, use cases on top of it, their interaction design, the
@@ -24,12 +26,6 @@ returning `severity`, `record` and `message` for each problem. An error means th
 something to look at. Lathe's own checks are in `lathe/data/check.jsonl`, loaded beside every product's data; a
 product adds its own as rows of its `data/check.jsonl` with its `product_id`. What the schema enforces is never a
 check: the store refuses it.
-
-**Recorded exceptions** are deliberate deviations recorded with their reason: a command that also changes another
-aggregate of its domain in the same transaction (a `command_change` row), or a repository that also persists an
-aggregate with no repository of its own (a `repository_share` row), such as one generic store. They are not
-problems: `lathe check` and the Checks panel list every one in a section of their own, with its command or
-repository, aggregate and reason, so each stays visible.
 
 **Coverage** counts every obligation as designed, built and proved, per domain and for the product outside every
 domain, and lists as gaps each obligation still short of one, and each record short of a minimum the schema leaves to
@@ -136,7 +132,7 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Persisted by ([`persists`](#relation-persists)), Read by ([`reads`](#relation-reads))
-- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`aggregate-too-large`](#check-aggregate-too-large)
+- **Checks:** [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
 <a id="table-aggregate"></a>
@@ -168,7 +164,7 @@ A record the domain keeps, with an identity: its aggregate's root or one of its 
 - **Links out:** Has many ([`has_many`](#relation-has_many)), Has one ([`has_one`](#relation-has_one))
 - **Links in:** Questions about this ([`about`](#relation-about)), Part of ([`has_many`](#relation-has_many)), Part of ([`has_one`](#relation-has_one))
 - **Parts:** [`entity_field`](#table-entity_field)
-- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large)
+- **Checks:** [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`entity-without-fields`](#gap-entity-without-fields), [`entity-without-data-model`](#gap-entity-without-data-model), [`entity-without-table`](#gap-entity-without-table)
 
 <a id="table-entity"></a>
@@ -425,7 +421,6 @@ A request to change exactly one aggregate: the one its entity belongs to. It sit
 - **ID:** `<P>-<D>-CMD<nn>`, such as `TL-LEND-CMD01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Checks ([`checks`](#relation-checks)), Raises ([`raises`](#relation-raises))
 - **Links in:** Questions about this ([`about`](#relation-about)), Invoked by ([`invokes`](#relation-invokes))
-- **Parts:** [`command_change`](#table-command_change)
 - **Gaps:** [`command-without-handler`](#gap-command-without-handler)
 
 <a id="table-command"></a>
@@ -440,21 +435,6 @@ A request to change exactly one aggregate: the one its entity belongs to. It sit
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(description) != '')`
-
-<a id="table-command_change"></a>
-
-#### `command_change`
-
-A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning.
-
-| Column | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `command_id` | VARCHAR → [`command`](#table-command) | yes | The command that also changes the aggregate. |
-| `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The other aggregate it changes in the same transaction: of the command's domain, never its own. |
-| `reason` | VARCHAR | yes | Why the change cannot follow through an event and a policy. |
-
-- **Key:** `command_id`, `aggregate_id`
-- **Rule:** `("trim"(reason) != '')`
 
 <a id="kind-read_model"></a>
 
@@ -688,17 +668,17 @@ A specification has no owner: it exists because commands check it and queries se
 
 An event a policy hears, whose aggregate is stored in a database table, whose event type is not delivered by outbox.
 
-An event a policy hears is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, since a lost reaction is a lost change. That is every event a policy hears whose aggregate is stored in a database table (an entity of the aggregate has a table whose storage is `table`), in its own domain or, when published, in another. An event inside one process with no transaction to join, such as one whose aggregate is kept in browser storage, a file or in memory and is heard in the same browser tab or process, is exempt. So is an event that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load: it may be delivered in process, since the next load rebuilds what a lost delivery missed. Its event type records the delivery; one a policy hears that is delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
+An event a policy hears, whose aggregate is stored in a database table (an entity of the aggregate has a table whose storage is `table`), in its own domain or, when published, in another, is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, since a lost reaction is a lost change. Its event type records the delivery; one delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. The rule reads the aggregate's storage because an outbox joins the database transaction that saves the aggregate. Give the event an event type delivered by outbox.
 
-<a id="check-has-crosses-aggregate"></a>
+<a id="check-term-used-unlinked"></a>
 
-### `has-crosses-aggregate`
+### `term-used-unlinked`
 
-**Error** · Lathe's · Kinds: [`entity`](#kind-entity), [`aggregate`](#kind-aggregate)
+**Warning** · Lathe's · Kinds: [`term`](#kind-term)
 
-A `has_one` or `has_many` link stays inside its aggregate.
+A term's meaning uses another term of its product by title without a builds_on link to it.
 
-These relations link an entity to its parts, and parts belong to their aggregate, so both ends sit in the same aggregate. Aggregates refer to each other by ID only: a field typed by the other aggregate. Type a field by the other aggregate instead, or move the part into the aggregate.
+Definitions build up, never in a circle (LA-STD-MODELING-R12): a term is defined only by plain words and terms below it, and names each one it uses with builds_on, so the store can refuse a loop. The check reads each meaning in lower case, with text in backticks left out as code, and looks for every other term of the product by title as a whole word, singular or plural (a title ending in a consonant and y also as -ies); a shorter title found only inside a longer term's title (Domain inside Domain event) does not count. It cannot tell a word used in another sense, so it is a warning. Link the term with builds_on to the term it uses, or say it in plain words.
 
 <a id="check-entity-unreferenced"></a>
 
@@ -708,7 +688,7 @@ These relations link an entity to its parts, and parts belong to their aggregate
 
 A child entity that its aggregate's root does not reach.
 
-Each child entity is a part of its aggregate's root, so a `has_one` or `has_many` reaches it from the root, directly or through other children of the same aggregate. Links that cross aggregates (has-crosses-aggregate) do not count. Link the child from the root or from another child with `has_one` or `has_many`.
+Each child entity is a part of its aggregate's root, so a `has_one` or `has_many` reaches it from the root, directly or through other children of the same aggregate. Link the child from the root or from another child with `has_one` or `has_many`.
 
 <a id="check-event-tense"></a>
 
@@ -760,16 +740,6 @@ A query whose title does not start with Get, List or Find.
 
 A query asks for data and changes nothing, so its title starts with the verb that says what comes back: Get for one thing, List for several, Find for a search, such as "Get a member's loans", "List overdue loans" or "Find a tool by name". A query titled like a command ("Check the workspace", "Export a theme") reads as a change. Retitle the query with Get, List or Find.
 
-<a id="check-term-used-unlinked"></a>
-
-### `term-used-unlinked`
-
-**Warning** · Lathe's · Kinds: [`term`](#kind-term)
-
-A term's meaning uses another term of its product by title without a builds_on link to it.
-
-Definitions build up, never in a circle (LA-STD-MODELING-R12): a term is defined only by plain words and terms below it, and names each one it uses with builds_on, so the store can refuse a loop. The check reads each meaning in lower case, with text in backticks left out as code, and looks for every other term of the product by title as a whole word, singular or plural (a title ending in a consonant and y also as -ies); a shorter title found only inside a longer term's title (Domain inside Domain event) does not count. It cannot tell a word used in another sense, so it is a warning. Link the term with builds_on to the term it uses, or say it in plain words.
-
 ### Coverage gaps: domain model
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -778,7 +748,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | --- | --- | --- |
 | <a id="gap-domain-without-aggregate"></a>`domain-without-aggregate` | [`domain`](#kind-domain), [`aggregate`](#kind-aggregate) | A domain with no aggregate. |
 | <a id="gap-aggregate-without-root"></a>`aggregate-without-root` | [`aggregate`](#kind-aggregate), [`entity`](#kind-entity) | An aggregate with no root entity. |
-| <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes, directly or through a recorded exception. |
+| <a id="gap-aggregate-without-command"></a>`aggregate-without-command` | [`aggregate`](#kind-aggregate), [`command`](#kind-command) | An aggregate no command changes. |
 | <a id="gap-entity-without-fields"></a>`entity-without-fields` | [`entity`](#kind-entity), `entity_field` | An entity with no fields. |
 | <a id="gap-value-object-without-fields"></a>`value-object-without-fields` | [`value_object`](#kind-value_object), `value_object_field` | A value object with no fields. |
 | <a id="gap-event-without-fields"></a>`event-without-fields` | [`domain_event`](#kind-domain_event), `event_field` | A domain event that carries no fields. |
@@ -957,12 +927,12 @@ One setting of a pattern, in order: what each follower decides.
 
 ### Pattern rule (`pattern_rule`)
 
-One rule of a pattern. Every domain that follows the pattern owes it, unless it names a setting all of that domain's followers mark Not applicable, or its applies-when condition is met by no follower there.
+One rule of a pattern. Every domain that follows the pattern owes it, with no exception: a rule that holds for only some followers belongs to their use cases, not to the pattern.
 
 - **Parents:** [`pattern`](#kind-pattern) (`pattern_id`)
 - **Children:** [`pattern_rule_test`](#kind-pattern_rule_test)
 - **Obligation:** yes: designed, built and proved
-  - **Designed:** Wherever it is owed: by each domain that follows its pattern, itself or through a use case, unless waived there by a setting.
+  - **Designed:** Wherever it is owed: by each domain that follows its pattern, itself or through a use case.
   - **Built:** Not asked: proof only.
   - **Proved:** Its pattern rule test naming the owing domain.
 - **ID:** `<pattern>-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`; it starts with its parent's ID
@@ -979,18 +949,11 @@ One rule of a pattern. Every domain that follows the pattern owes it, unless it 
 | `pattern_id` | VARCHAR → [`pattern`](#table-pattern) | yes | The pattern it belongs to. |
 | `statement` | VARCHAR | yes | The rule, stated with MUST, MUST NOT, SHOULD or MAY. |
 | `group_name` | VARCHAR | no | A short heading it is shown under among its siblings, such as Validation or Paging. |
-| `setting` | VARCHAR | no | A setting of its pattern the rule depends on: in a domain whose following use cases all mark it Not applicable, the rule does not apply. |
-| `applies_when_setting` | VARCHAR | no | The setting of its pattern its applies-when condition reads; the rule is waived in a domain where no follower gives that setting a value that meets it. |
-| `applies_when_negated` | BOOLEAN | no | false: the condition is <setting> is <value>; true: <setting> is not <value>. |
-| `applies_when_value` | VARCHAR | no | The value the condition compares with, trimmed and in any letter case. |
 | `notes` | VARCHAR | no | Longer notes on how the rule applies. |
 
 - **Key:** `id`
-- **Foreign key:** `(pattern_id, setting) -> pattern_setting (pattern_id, name)`
-- **Foreign key:** `(pattern_id, applies_when_setting) -> pattern_setting (pattern_id, name)`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("statement") != '')`
-- **Rule:** `(((applies_when_setting IS NULL) = (applies_when_negated IS NULL)) AND ((applies_when_setting IS NULL) = (applies_when_value IS NULL)))`
 
 ### Checks: use cases
 
@@ -1002,7 +965,7 @@ One rule of a pattern. Every domain that follows the pattern owes it, unless it 
 
 A use case that follows a pattern gives each of the pattern's settings.
 
-Each setting of the pattern (a pattern_setting row) needs a setting_value row from each use case that follows it: a value, or a reason it is not applicable. A domain that follows a pattern itself owes every rule and gives no settings. Give the missing setting a value, or say why it is not applicable.
+Each setting of the pattern (a pattern_setting row) needs a setting_value row from each use case that follows it: the value the use case gives it. A domain that follows a pattern itself owes every rule and gives no settings. Give the missing setting a value.
 
 <a id="check-pattern-not-followed"></a>
 
@@ -1032,7 +995,7 @@ A level that holds one record groups nothing. A capability with exactly one chil
 
 A capability or use case title that breaks its naming convention: an interface named in it, a capability starting with The or an -ing word, or a list.
 
-A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for one goal of its actor, verb first: verb and object, such as Borrow a tool or Approve an invoice, two to six words. Neither names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title. The check reads only the mechanical parts, in any letter case and as whole words: a use case or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; and either title that holds a list, a comma followed later by "and" or "or". Two goals joined by "and" with no comma are not read, nor is a use case title that does not start with a verb. Rename the capability or use case by the convention.
+A capability is named as a noun phrase for a lasting ability of the business, two to four words: subject and activity noun, such as Invoice management or Member registration, or a single noun when the area is clear on its own, such as Catalog or Lending. A use case is named for one goal of its actor, verb first: verb and object, such as Borrow a tool or Approve an invoice, two to six words. Neither names a screen, a tool or a technology: a use case happens through interfaces, with one flow each, so the interface belongs to its flows, not its title. The check reads only the mechanical parts, in any letter case and as whole words: a use case or capability title that holds one of its product's interface titles or the words command line, CLI, desktop app, web app, MCP, API, agent tools, command layer or page (or their plurals); a capability title of two or more words that starts with "The" or with an -ing word (a word of five or more letters ending in -ing, other than the few that are not verbs, such as thing, string and evening), so a single noun such as Lending passes; either title that holds a list, a comma followed later by "and" or "or"; and a use case title that starts with a CRUD verb (create, read, update, delete, change or edit) and holds the word record, records or data, since a use case names the domain's own verb for its goal (Borrow a tool, Model an aggregate), never a verb over a record or data. Two goals joined by "and" with no comma are not read, nor is a use case title that does not start with a verb. Rename the capability or use case by the convention.
 
 ### Coverage gaps: use cases
 
@@ -1420,7 +1383,7 @@ Where data actually lives: a database, a bucket, a folder of files, browser stor
 
 ### Repository (`repository`)
 
-Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage, in the one data store it names (stored_in). It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason.
+Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage, in the one data store it names (stored_in). It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
@@ -1429,7 +1392,6 @@ Loads and saves its aggregate, whole: the way command handlers reach the aggrega
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
 - **Links out:** Meets ([`meets`](#relation-meets)), Persists ([`persists`](#relation-persists)), Stored in ([`stored_in`](#relation-stored_in))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Parts:** [`repository_share`](#table-repository_share)
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest), [`repository-persists-nothing`](#check-repository-persists-nothing)
 - **Gaps:** [`stored-nowhere`](#gap-stored-nowhere)
 
@@ -1446,22 +1408,6 @@ Loads and saves its aggregate, whole: the way command handlers reach the aggrega
 - **Key:** `id`
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"(description) != '')`
-
-<a id="table-repository_share"></a>
-
-#### `repository_share`
-
-A recorded exception to one repository per aggregate: another aggregate the repository also persists, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning.
-
-| Column | Type | Required | Meaning |
-| --- | --- | --- | --- |
-| `repository_id` | VARCHAR → [`repository`](#table-repository) | yes | The repository that also persists the aggregate. |
-| `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | yes | The other aggregate it persists: never its own, and one no other repository persists. |
-| `reason` | VARCHAR | yes | Why the aggregate has no repository of its own. |
-
-- **Key:** `repository_id`, `aggregate_id`
-- **Unique:** `aggregate_id`
-- **Rule:** `("trim"(reason) != '')`
 
 <a id="kind-data_model"></a>
 
@@ -2091,7 +2037,7 @@ A package_use row says a technical record uses a package, so that every dependen
 
 A repository that persists no aggregate.
 
-A repository exists to load and save its aggregate, whole, and says which with its one persists link; other aggregates it also persists are recorded exceptions (repository_share rows). One that persists none is a leftover, or its link is missing. Link the aggregate it persists with persists, or remove it.
+A repository exists to load and save its aggregate, whole, and says which with its one persists link. One that persists none is a leftover, or its link is missing. Link the aggregate it persists with persists, or remove it.
 
 ### Coverage gaps: technical specification
 
@@ -2099,7 +2045,7 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 | Gap | Kinds | What it reports |
 | --- | --- | --- |
-| <a id="gap-aggregate-without-repository"></a>`aggregate-without-repository` | [`aggregate`](#kind-aggregate), [`repository`](#kind-repository) | An aggregate no repository persists, directly or through a recorded exception. |
+| <a id="gap-aggregate-without-repository"></a>`aggregate-without-repository` | [`aggregate`](#kind-aggregate), [`repository`](#kind-repository) | An aggregate no repository persists. |
 | <a id="gap-entity-without-data-model"></a>`entity-without-data-model` | [`entity`](#kind-entity), [`data_model`](#kind-data_model) | An entity with no data model. |
 | <a id="gap-entity-without-table"></a>`entity-without-table` | [`entity`](#kind-entity), [`table`](#kind-table) | An entity with no table. |
 | <a id="gap-value-object-without-value-type"></a>`value-object-without-value-type` | [`value_object`](#kind-value_object), [`value_type`](#kind-value_type) | A value object with no value type. |
@@ -2759,11 +2705,11 @@ A test's level says only how it runs, cheapest first: unit (in process, no stora
 
 ### `pattern-rule-test-outside-followers`
 
-**Error or warning** · Lathe's · Kinds: [`pattern_rule_test`](#kind-pattern_rule_test), [`pattern_rule`](#kind-pattern_rule), [`domain`](#kind-domain)
+**Error** · Lathe's · Kinds: [`pattern_rule_test`](#kind-pattern_rule_test), [`pattern_rule`](#kind-pattern_rule), [`domain`](#kind-domain)
 
-A pattern rule test names a domain that follows its pattern and owes its rule.
+A pattern rule test names a domain that follows its pattern.
 
-A pattern rule test proves its rule in one domain that follows the pattern: the domain itself follows it, or one of its use cases does. A test naming a domain that does not follow the pattern proves the rule where nothing owes it, an error. One naming a following domain where the rule is waived (every following use case there marks its setting not applicable, or no follower there meets its applies-when setting) counts for nothing, a warning. Name a domain that owes the rule, link the domain or its use case to the pattern with `follows`, or remove the test.
+A pattern rule test proves its rule in one domain that follows the pattern: the domain itself follows it, or one of its use cases does, and every such domain owes every rule of the pattern. A test naming a domain that does not follow the pattern proves the rule where nothing owes it. Name a domain that follows the pattern, link the domain or its use case to the pattern with `follows`, or remove the test.
 
 <a id="check-test-data-set-unused"></a>
 
@@ -3025,11 +2971,11 @@ A product's typed settings for its checks. A product without a row takes the def
 
 #### `package_use`
 
-A package a technical record uses: a dependency one of the product's package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a record of a kind in the technical specification may name one.
+A package a technical record uses: a dependency one of the product's package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a technical record names one: its record_id is one (technical_record).
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
-| `record_id` | VARCHAR → `record_id` | yes | The technical record that uses the package: an adapter, a UI component, an entry point, a tooling record, or a record of a product's own technical kind. |
+| `record_id` | VARCHAR → `technical_record` | yes | The technical record that uses the package: an adapter, a UI component, an entry point, a tooling record, or a record of a product's own technical kind. |
 | `package` | VARCHAR | yes | The package's name as package.json lists it, such as @duckdb/node-api. |
 
 - **Key:** `record_id`, `package`
@@ -3039,20 +2985,19 @@ A package a technical record uses: a dependency one of the product's package.jso
 
 #### `setting_value`
 
-The value a use case or domain gives one setting of a pattern it follows: a value, or Not applicable with the reason.
+The value a use case or domain gives one setting of a pattern it follows. A follower owes every rule of the pattern; a value such as No input is a value like any other, never a way out of a rule.
 
 | Column | Type | Required | Meaning |
 | --- | --- | --- | --- |
 | `follower_id` | VARCHAR | yes | The use case or domain that follows the pattern. |
 | `pattern_id` | VARCHAR | yes | The pattern it follows. |
 | `setting` | VARCHAR | yes | The setting, one of the pattern's. |
-| `value` | VARCHAR | no | The value it gives the setting. |
-| `not_applicable` | VARCHAR | no | Why the setting does not apply to it, in place of a value. |
+| `value` | VARCHAR | yes | The value it gives the setting. |
 
 - **Key:** `follower_id`, `pattern_id`, `setting`
 - **Foreign key:** `(follower_id, pattern_id) -> follows (source_id, target_id)`
 - **Foreign key:** `(pattern_id, setting) -> pattern_setting (pattern_id, name)`
-- **Rule:** `(("value" IS NULL) != (not_applicable IS NULL))`
+- **Rule:** `("trim"("value") != '')`
 
 ## Relations
 
@@ -3303,7 +3248,7 @@ The technical record follows the standard rule: it shows where the rule is appli
 
 ### `persists`
 
-The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository. Another aggregate a repository also persists is a recorded exception, a repository_share row.
+The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository.
 
 - **Reads:** Persists / Persisted by
 - **Role:** none
@@ -3473,7 +3418,7 @@ Coverage counts an obligation as proved once a test of it is automated or manual
 
 A record with more children of one kind than its product's max_children setting.
 
-The setting is the product's product_setting row (15 when it has none). A parent with that many children of one kind is missing a level between them, such as a capability or another aggregate. Children are counted per kind. Tests are exempt: they are read under what they prove. Children are also counted per group, read from the record_group view, since each group reads under its own heading: a flow's steps per path, since each path reads as its own list, and the records of every kind with a `group_name` (terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) per `group_name`; the ungrouped ones are one list. Paths and groups are compared trimmed and in any letter case. Add a level, or a group, and move the children into it.
+The setting is the product's product_setting row (15 when it has none). A parent with that many children of one kind is missing a level between them, such as a capability or another aggregate. It counts a parent's children of each kind of the five design stages, discovery to the technical specification, since those are read as lists under their parent; a test is read under what it proves. Children are also counted per group, read from the record_group view, since each group reads under its own heading: a flow's steps per path, since each path reads as its own list, and the records of every kind with a `group_name` (terms, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own kinds) per `group_name`; the ungrouped ones are one list. Paths and groups are compared trimmed and in any letter case. Add a level, or a group, and move the children into it.
 
 <a id="check-data-refused"></a>
 

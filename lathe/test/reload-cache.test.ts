@@ -2,7 +2,7 @@
 // a data file or migration it reads changes (LA-PLT-UC01-R03, LA-PLT-UC01-R04).
 import { afterAll, describe, expect, it } from 'vitest';
 import { buildReference, loadWorkspace, openStore, type LoadTimings } from '../src/index.ts';
-import { build, complete, removeData } from './helpers.ts';
+import { build, complete, removeData, run } from './helpers.ts';
 
 afterAll(removeData);
 
@@ -18,7 +18,7 @@ describe('reloading', () => {
 
     // One row changed through the store: the next load shows it, as a fresh load does.
     const store = await openStore(root);
-    await store.set('use_case', 'EX-LEND-UC01', { title: 'Borrow a tool for a week' });
+    await run(store, 'use-case change-use-case', { id: 'EX-LEND-UC01', title: 'Borrow a tool for a week' });
     await store.close();
     const reloaded = await loadWorkspace(root);
     expect(reloaded.records.find((r) => r.id === 'EX-LEND-UC01')?.title).toBe('Borrow a tool for a week');
@@ -30,7 +30,7 @@ describe('reloading', () => {
     const first = await buildReference(root);
     expect(await buildReference(root)).toBe(first);
     const store = await openStore(root);
-    await store.add('product_kind', { name: 'memo', product_id: 'EX', label: 'Memo', description: 'A short note.', parent_kind: 'domain', obligation: false });
+    await run(store, 'product declare-product-kind', { name: 'memo', product_id: 'EX', label: 'Memo', description: 'A short note.', parent_kind: 'domain', stage: 'use-cases', obligation: false });
     await store.close();
     const next = await buildReference(root);
     expect(next).not.toBe(first);

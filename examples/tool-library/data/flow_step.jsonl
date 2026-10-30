@@ -16,3 +16,4 @@
 {"id":"TL-LEND-UC05-FL01-S01","title":"A librarian marks a damaged tool as needing repair, with a note","flow_id":"TL-LEND-UC05-FL01","path":"main","position":1}
 {"id":"TL-LEND-UC05-FL01-S02","title":"The catalog shows the tool needing repair, and borrowing it is refused","flow_id":"TL-LEND-UC05-FL01","path":"main","position":2}
 {"id":"TL-LEND-UC06-FL01-S01","title":"Once fixed, the librarian marks the tool repaired, and it is available again","flow_id":"TL-LEND-UC06-FL01","path":"main","position":1}
+{"id":"TL-LEND-UC06-FL01-S02","title":"The catalog lists the tool as available, as the library showed it","flow_id":"TL-LEND-UC06-FL01","path":"main","position":2}

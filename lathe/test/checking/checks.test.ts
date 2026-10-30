@@ -2,7 +2,6 @@
 // problem, and changes one thing to break the rule. LA-STD-CODE-R05: each of the domain's check rows is tested here.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { Workspace } from '../../src/index.ts';
-import { checkText } from '../../src/cli/operations.ts';
 import { adding, changing, complete, loadData, ofCheck, removeData, without } from '../helpers.ts';
 
 afterAll(removeData);
@@ -97,43 +96,6 @@ describe('nothing uses it', () => {
   });
 });
 
-// A recorded exception is no check's problem: the workspace lists it apart, and the check's text prints it.
-describe('recorded exceptions', () => {
-  describe('recorded exceptions are listed apart', () => {
-    it("LA-CHK-UC01-R07-T01 a command's recorded exceptions are listed with their command, aggregate and reason, never as warnings", async () => {
-      const reason = 'The tool must never show as free while lent.';
-      const ws = await loadData(adding(complete(), { command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason }] }));
-      expect(ws.exceptions).toEqual([{ command: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A2', reason }]);
-      expect(ws.problems).toEqual([]);
-      expect(clean.exceptions).toEqual([]);
-      const text = checkText({ errors: 0, warnings: 0, problems: [], exceptions: ws.exceptions, products: [] });
-      expect(text).toBe(`Recorded exceptions (1):\n  EX-LEND-CMD01 also changes aggregate EX-LEND-A2 in the same transaction: ${reason}\n\n0 errors, 0 warnings.`);
-      expect(checkText({ errors: 0, warnings: 0, problems: [], exceptions: [], products: [] })).not.toContain('Recorded exceptions');
-    });
-
-    it("LA-CHK-UC01-R08-T01 a repository's recorded exceptions are listed with their repository, aggregate and reason, never as warnings", async () => {
-      const reason = 'One generic store persists every table.';
-      const one = without(without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'stored_in', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
-      const ws = await loadData(adding(one, {
-        command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as free while lent.' }],
-        repository_share: [{ repository_id: 'EX-LEND-REPO01', aggregate_id: 'EX-LEND-A2', reason }],
-      }));
-      expect(ws.exceptions).toEqual([
-        { command: 'EX-LEND-CMD01', aggregate: 'EX-LEND-A2', reason: 'The tool must never show as free while lent.' },
-        { repository: 'EX-LEND-REPO01', aggregate: 'EX-LEND-A2', reason },
-      ]);
-      expect(ws.problems).toEqual([]);
-      // The check's text, which lathe check and the MCP check tool print alike.
-      const text = checkText({ errors: 0, warnings: 0, problems: [], exceptions: ws.exceptions, products: [] });
-      expect(text).toBe(
-        'Recorded exceptions (2):\n' +
-          '  EX-LEND-CMD01 also changes aggregate EX-LEND-A2 in the same transaction: The tool must never show as free while lent.\n' +
-          `  EX-LEND-REPO01 also persists aggregate EX-LEND-A2: ${reason}\n\n0 errors, 0 warnings.`,
-      );
-    });
-  });
-});
-
 check('event-not-by-outbox', () => {
   it('LA-AUT-UC25-R03-T01 an event a policy hears not delivered by outbox is a warning; one that only feeds read models, published or not, may go in process', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
@@ -156,7 +118,7 @@ check('event-not-by-outbox', () => {
     ]);
   });
 
-  it('LA-AUT-UC25-R03-T01 an event a policy hears whose aggregate is in no database table, such as one kept in browser storage, a file or in memory, is exempt', async () => {
+  it('LA-AUT-UC25-R03-T01 the rule reads an event a policy hears only when its aggregate is stored in a database table, not in browser storage, a file or memory', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = without(data, 'table_key', (r) => r.table_id === 'EX-LEND-EN01-TB' || r.target_table_id === 'EX-LEND-EN01-TB');
     expect(ofCheck(await loadData(without(without(data, 'stored_in', (r) => r.source_id === 'EX-LEND-EN01-TB'), 'table', (r) => r.id === 'EX-LEND-EN01-TB')), 'event-not-by-outbox')).toEqual([]);

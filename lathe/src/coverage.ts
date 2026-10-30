@@ -17,7 +17,7 @@
 //   a UC requirement also rests on those specifications and domain services, and is built only while each of them is;
 // - proved: a test of it exists, automated or manual, at a level its test kind allows (ALLOWED_LEVELS), and an
 //   automated test's file exists and names the test's ID.
-// A pattern rule asks for proof only: it is owed by each domain that follows its pattern (pattern_rule_standing) and
+// A pattern rule asks for proof only: it is owed by each domain that follows its pattern (owed_pattern_rules) and
 // proved there by its pattern rule test naming that domain.
 //
 // Besides obligations, coverage reports the records short of a minimum, the "at least one" and "exactly one" rules
@@ -77,7 +77,7 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
   view_requirement: { designed: 'By construction, under its view.', built: 'Every UI component that builds it names a file that exists, and there is at least one.', proved: 'One of its view tests.' },
   api_requirement: { designed: 'By construction, under its endpoint.', built: "Its endpoint's handler names a file that exists.", proved: 'One of its endpoint tests.' },
   pattern_rule: {
-    designed: 'Wherever it is owed: by each domain that follows its pattern, itself or through a use case, unless waived there by a setting.',
+    designed: 'Wherever it is owed: by each domain that follows its pattern, itself or through a use case.',
     built: 'Not asked: proof only.',
     proved: 'Its pattern rule test naming the owing domain.',
   },
@@ -166,10 +166,10 @@ export const GAP_RULES: GapRule[] = [
     `SELECT d.id, 'Domain ' || d.id || ' has no aggregate.' AS message FROM domain d WHERE NOT EXISTS (SELECT 1 FROM aggregate a WHERE a.domain_id = d.id)`),
   gap('aggregate-without-root', 'domain-model', ['aggregate', 'entity'], 'An aggregate with no root entity.',
     `SELECT a.id, 'Aggregate ' || a.id || ' has no root entity.' AS message FROM aggregate a WHERE NOT EXISTS (SELECT 1 FROM entity e WHERE e.aggregate_id = a.id AND e.role = 'root')`),
-  // A command changes its own aggregate, and another of its domain through a recorded exception (command_change).
-  gap('aggregate-without-command', 'domain-model', ['aggregate', 'command'], 'An aggregate no command changes, directly or through a recorded exception.',
+  // A command changes its own aggregate only.
+  gap('aggregate-without-command', 'domain-model', ['aggregate', 'command'], 'An aggregate no command changes.',
     `SELECT a.id, 'Aggregate ' || a.id || ' has no command, so nothing changes it.' AS message FROM aggregate a
-WHERE NOT EXISTS (SELECT 1 FROM command c JOIN entity e ON e.id = c.entity_id WHERE e.aggregate_id = a.id) AND NOT EXISTS (SELECT 1 FROM command_change x WHERE x.aggregate_id = a.id)`),
+WHERE NOT EXISTS (SELECT 1 FROM command c JOIN entity e ON e.id = c.entity_id WHERE e.aggregate_id = a.id)`),
   gap('entity-without-fields', 'domain-model', ['entity', 'entity_field'], 'An entity with no fields.',
     `SELECT e.id, 'Entity ' || e.id || ' lists no fields.' AS message FROM entity e WHERE NOT EXISTS (SELECT 1 FROM entity_field f WHERE f.entity_id = e.id)`),
   gap('value-object-without-fields', 'domain-model', ['value_object', 'value_object_field'], 'A value object with no fields.',
@@ -217,10 +217,10 @@ WHERE NOT EXISTS (SELECT 1 FROM uc_requirement r WHERE r.use_case_id = u.id) AND
   // Every route the code serves has an endpoint or a view (trace/routes.ts).
   ...ROUTE_GAP_RULES,
   // Technical specification: one technical record per design record.
-  // An aggregate's one repository persists it, or persists it as a recorded exception (repository_share).
-  gap('aggregate-without-repository', 'technical-specification', ['aggregate', 'repository'], 'An aggregate no repository persists, directly or through a recorded exception.',
+  // An aggregate's one repository persists it.
+  gap('aggregate-without-repository', 'technical-specification', ['aggregate', 'repository'], 'An aggregate no repository persists.',
     `SELECT a.id, 'Aggregate ' || a.id || ' has no repository: none persists it.' AS message FROM aggregate a
-WHERE NOT EXISTS (SELECT 1 FROM persists p WHERE p.target_id = a.id) AND NOT EXISTS (SELECT 1 FROM repository_share x WHERE x.aggregate_id = a.id)`),
+WHERE NOT EXISTS (SELECT 1 FROM persists p WHERE p.target_id = a.id)`),
   missingImpl('entity-without-data-model', 'entity', 'Entity', 'data_model', 'entity_id', 'data model'),
   missingImpl('entity-without-table', 'entity', 'Entity', 'table', 'entity_id', 'table', ' AND r.in_root_table IS NULL'),
   missingImpl('value-object-without-value-type', 'value_object', 'Value object', 'value_type', 'value_object_id', 'value type'),
@@ -277,13 +277,9 @@ WHERE r.kind IN (${list(UNTRACED_KINDS)}) AND NOT EXISTS (SELECT 1 FROM trace_li
  * per load, so the checks and the coverage queries that read it share the work):
  * - test_run (id, kind, parent_id, domain_id, level, state, file, level_allowed, backed): every test with its run by;
  *   backed says an automated test's file exists and names the test's ID (true for any other state).
- * - pattern_rule_standing (domain, id, standing): each rule of each pattern a domain follows, and whether the domain
- *   owes it. A domain follows a pattern when the domain itself follows it or one of its use cases does; these are the
- *   pattern's followers there. A following domain owes each rule of the pattern ('owed'), except a rule whose setting
- *   every following use case there marks not applicable, when the domain does not follow the pattern itself
- *   ('not-applicable'), and a rule with an applies-when setting no follower there meets ('waived'). The one answer to
+ * - owed_pattern_rules (domain, id): the rules a domain owes. A domain follows a pattern when the domain itself follows
+ *   it or one of its use cases does, and then owes every rule of the pattern, with no exception. The one answer to
  *   "does this rule apply here", which coverage and the app read.
- * - owed_pattern_rules (domain, id): the rules a domain owes.
  * - obligation_impl (obligation_id, impl_id, via_id): the technical records that implement each obligation, each one of
  *   the specific records that build it (OBLIGATION_COVERAGE says which), never any code near it; built means every one
  *   names a file that exists, and there is at least one.
@@ -321,30 +317,13 @@ SELECT t.*, EXISTS (SELECT 1 FROM test_level_allowed a WHERE a.kind = t.kind AND
 FROM (${testRun}) t
 LEFT JOIN file_facts f ON f.record = t.id;
 
-CREATE OR REPLACE TABLE pattern_rule_standing AS
+CREATE OR REPLACE TABLE owed_pattern_rules AS
 WITH followers AS (
-  SELECT DISTINCT s.domain_id AS domain, f.target_id AS pattern, f.source_id AS follower, false AS by_domain
-  FROM follows f JOIN use_case u ON u.id = f.source_id JOIN record_scope s ON s.id = u.id
+  SELECT s.domain_id AS domain, f.target_id AS pattern FROM follows f JOIN use_case u ON u.id = f.source_id JOIN record_scope s ON s.id = u.id
   UNION
-  SELECT DISTINCT d.id AS domain, f.target_id AS pattern, f.source_id AS follower, true AS by_domain
-  FROM follows f JOIN domain d ON d.id = f.source_id
-),
-judged AS (
-  SELECT f.domain, r.id,
-    -- A domain that follows the pattern itself marks nothing not applicable: one such follower makes this false.
-    bool_and(NOT f.by_domain AND r.setting IS NOT NULL AND sv.not_applicable IS NOT NULL) AS not_applicable,
-    bool_or(r.applies_when_setting IS NULL
-            OR (wv.value IS NOT NULL AND ((lower(trim(wv.value)) = lower(trim(r.applies_when_value))) <> coalesce(r.applies_when_negated, false)))) AS meets
-  FROM pattern_rule r
-  JOIN followers f ON f.pattern = r.pattern_id
-  LEFT JOIN setting_value sv ON sv.follower_id = f.follower AND sv.pattern_id = r.pattern_id AND sv.setting = r.setting
-  LEFT JOIN setting_value wv ON wv.follower_id = f.follower AND wv.pattern_id = r.pattern_id AND wv.setting = r.applies_when_setting
-  GROUP BY f.domain, r.id
+  SELECT d.id AS domain, f.target_id AS pattern FROM follows f JOIN domain d ON d.id = f.source_id
 )
-SELECT domain, id, CASE WHEN not_applicable THEN 'not-applicable' WHEN NOT meets THEN 'waived' ELSE 'owed' END AS standing FROM judged;
-
-CREATE OR REPLACE VIEW owed_pattern_rules AS
-SELECT domain, id FROM pattern_rule_standing WHERE standing = 'owed';
+SELECT DISTINCT f.domain, r.id FROM pattern_rule r JOIN followers f ON f.pattern = r.pattern_id;
 
 CREATE OR REPLACE TABLE obligation_impl AS
 -- Each row also names via_id, the design record its chain reaches the technical record through (null: the obligation itself).
@@ -529,8 +508,8 @@ export const COVERAGE_TESTS_SQL = `SELECT product, domain, automated, manual, no
 /** One row per test that counts as an owed obligation's proof: (product, domain, id, test_id). */
 export const COVERAGE_PROOFS_SQL = `SELECT product, domain, id, test_id FROM coverage_proof ORDER BY product, domain NULLS LAST, id, test_id`;
 
-/** One row per rule of each pattern a domain follows, with its standing there: (product, domain, id, standing). */
-export const PATTERN_RULE_STANDING_SQL = `SELECT s.product_id AS product, p.domain, p.id, p.standing FROM pattern_rule_standing p JOIN record_scope s ON s.id = p.domain ORDER BY product, p.domain, p.id`;
+/** One row per rule a domain owes, of each pattern it follows: (product, domain, id). */
+export const OWED_PATTERN_RULES_SQL = `SELECT s.product_id AS product, p.domain, p.id FROM owed_pattern_rules p JOIN record_scope s ON s.id = p.domain ORDER BY product, p.domain, p.id`;
 
 /** Every link of every obligation's chain: (obligation_id, source_id, target_id, part), part design, build or tests. */
 export const TRACE_LINKS_SQL = `SELECT obligation_id, source_id, target_id, part FROM trace_link ORDER BY obligation_id, part, source_id, target_id`;

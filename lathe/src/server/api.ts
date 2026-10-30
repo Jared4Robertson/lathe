@@ -1,7 +1,6 @@
 // Lathe's HTTP API, shared by `lathe serve`, the desktop shell and the app's Vite dev server. Its shapes are in
 // contract.ts:
-//   GET  /api/spec                SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions and coverage
-//   POST /api/write               { commands } -> WriteAnswer: one transaction through the command layer of the product the commands name
+//   GET  /api/spec                SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, coverage and chains
 //   POST /api/<aggregate>/<command>   the command's input -> WriteAnswer: one aggregate command, such as /api/use-case/add-flow-step
 //   GET  /api/<aggregate>/<query>?<field>=<value>   the query's answer: one aggregate read, such as /api/use-case/get-use-case?id=<ID>
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
@@ -17,12 +16,11 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { loadConfig, productClash, workspaceProducts, type LatheConfig } from '../config.ts';
 import { buildReference, loadWorkspace } from '../index.ts';
-import { describeKey, rowKey, type Row } from '../platform/data/rows.ts';
+import type { Row } from '../platform/data/rows.ts';
 import type { SchemaDescription } from '../platform/data/schema.ts';
-import type { Command } from '../platform/data/generic-write.ts';
 import { formatProblem, StoreError } from '../platform/data/problems.ts';
 import { LATHE_DATA_DIR, openStore, type Store } from '../platform/data/store.ts';
-import type { ReadRefusal, RowChange, SpecData, WriteAnswer, WriteRequest } from './contract.ts';
+import type { ReadRefusal, SpecData, WriteAnswer } from './contract.ts';
 import { baseline, parseSince } from './baseline.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../commands.ts';
 import { flagValue, InputError, type AnyCommand, type AnyQuery } from '../platform/commands/definition.ts';
@@ -30,16 +28,14 @@ import { answerQuery, runCommand, runQuery } from '../platform/commands/run.ts';
 import type { CheckRun, ReadView } from '../platform/data/rules.ts';
 import { recordHistory } from './history.ts';
 
-/** The most a write's body may hold. */
+/** The most a command's body may hold. */
 export const WRITE_BODY_LIMIT = 1024 * 1024;
-/** The most commands one write may hold. */
-export const WRITE_COMMAND_LIMIT = 500;
 
 interface Opened {
   store: Store;
   /** The data folder's files as the store last read or wrote them. */
   signature: string;
-  /** The checks' problems, the recorded exceptions and coverage for this data, once worked out. */
+  /** The checks' problems, coverage and chains for this data, once worked out. */
   checks: Promise<Checked> | null;
   /** Requests on this root run one after another, so a write never races a reload. */
   queue: Promise<unknown>;
@@ -122,14 +118,14 @@ function send(res: ServerResponse, status: number, body: unknown, headers: Recor
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const storeMessage = (error: unknown) => (error instanceof StoreError ? error.problems.map(formatProblem).join('\n') : message(error));
 
-type Checked = Pick<SpecData, 'problems' | 'exceptions' | 'coverage' | 'chains'>;
+type Checked = Pick<SpecData, 'problems' | 'coverage' | 'chains'>;
 
 async function checksOf(root: string): Promise<Checked> {
   try {
     const workspace = await loadWorkspace(root);
-    return { problems: workspace.problems, exceptions: workspace.exceptions, coverage: workspace.coverage, chains: workspace.chains };
+    return { problems: workspace.problems, coverage: workspace.coverage, chains: workspace.chains };
   } catch (error) {
-    return { problems: [{ severity: 'error', check: 'engine', record: null, message: `The checks could not run: ${message(error)}` }], exceptions: [], coverage: [], chains: [] };
+    return { problems: [{ severity: 'error', check: 'engine', record: null, message: `The checks could not run: ${message(error)}` }], coverage: [], chains: [] };
   }
 }
 
@@ -199,49 +195,12 @@ async function specData(root: string): Promise<SpecData> {
     sources: read.map((r) => r.source),
     placements: Object.assign({}, ...read.map((r) => r.placements)),
     problems: read.flatMap((r) => r.checked.problems),
-    exceptions: read.flatMap((r) => r.checked.exceptions),
     coverage: read.flatMap((r) => r.checked.coverage),
     chains: read.flatMap((r) => r.checked.chains),
   };
 }
 
 // ---------- Writing ----------
-
-const isObject = (v: unknown): v is Record<string, unknown> => typeof v === 'object' && v !== null && !Array.isArray(v);
-const isText = (v: unknown): v is string => typeof v === 'string' && v.length > 0;
-const isKey = (v: unknown) => isText(v) || isObject(v);
-
-/** Why the body is not a write request, or null when it is one. */
-export function writeRequestProblem(body: unknown): string | null {
-  if (!isObject(body) || !Array.isArray(body.commands)) return 'A write is a JSON object { "commands": [...] }.';
-  const { commands } = body;
-  if (commands.length < 1 || commands.length > WRITE_COMMAND_LIMIT) return `A write holds 1 to ${WRITE_COMMAND_LIMIT} commands.`;
-  for (const [i, c] of commands.entries()) {
-    const at = `Command ${i + 1}`;
-    if (!isObject(c)) return `${at} is not an object.`;
-    switch (c.op) {
-      case 'add':
-        if (!isText(c.table) || !isObject(c.row)) return `${at}: add takes a table and a row.`;
-        break;
-      case 'set':
-        if (!isText(c.table) || !isKey(c.key) || !isObject(c.changes)) return `${at}: set takes a table, a key and changes.`;
-        break;
-      case 'move':
-        if (!isText(c.id) || !isText(c.parent)) return `${at}: move takes an id and a parent.`;
-        break;
-      case 'link':
-      case 'unlink':
-        if (!isText(c.relation) || !isText(c.source) || !isText(c.target)) return `${at}: ${c.op} takes a relation, a source and a target.`;
-        break;
-      case 'remove':
-        if (!isText(c.table) || !isKey(c.key)) return `${at}: remove takes a table and a key.`;
-        break;
-      default:
-        return `${at}: the op is one of add, set, move, link, unlink and remove.`;
-    }
-  }
-  return null;
-}
 
 /** Whether the request comes from another site: its Origin names another host, or the browser says so. */
 function crossSite(req: IncomingMessage): boolean {
@@ -277,50 +236,12 @@ function readBody(req: IncomingMessage, limit: number): Promise<string> {
   });
 }
 
-/** The rows of the tables a write changed, before and after, paired by primary key. */
-function rowChanges(store: Store, before: Map<string, Row[]>, tables: string[]): RowChange[] {
-  const changes: RowChange[] = [];
-  for (const name of tables) {
-    const table = store.schema.tables[name];
-    if (!table) continue;
-    const old = new Map((before.get(name) ?? []).map((r) => [rowKey(table, r), r]));
-    const now = new Map(store.rows(name).map((r) => [rowKey(table, r), r]));
-    for (const [key, row] of now) {
-      const was = old.get(key);
-      if (!was) changes.push({ table: name, key: describeKey(table, row), before: null, after: row });
-      else if (JSON.stringify(was) !== JSON.stringify(row)) changes.push({ table: name, key: describeKey(table, row), before: was, after: row });
-    }
-    for (const [key, row] of old) if (!now.has(key)) changes.push({ table: name, key: describeKey(table, row), before: row, after: null });
-  }
-  return changes;
-}
-
-/** The IDs and key values a command names, the record it changes first: what tells whose product it is. */
-function namedIds(command: Command): string[] {
-  const keyValues = (key: string | Record<string, unknown>) => (typeof key === 'string' ? [key] : Object.values(key).filter((v): v is string => typeof v === 'string'));
-  switch (command.op) {
-    case 'add': {
-      const { row } = command;
-      const ids = Object.entries(row).filter(([column]) => column === 'id' || column.endsWith('_id')).map(([, v]) => v);
-      return [row.id, ...ids].filter((v): v is string => typeof v === 'string');
-    }
-    case 'set':
-    case 'remove':
-      return keyValues(command.key);
-    case 'move':
-      return [command.id, command.parent];
-    case 'link':
-    case 'unlink':
-      return [command.source, command.target];
-  }
-}
-
 /**
- * The product root a write goes to: the one whose store holds a record, or a product whose ID starts one, the
- * commands name. A write naming none of them, such as a new product's, goes to the workspace's own folder; one naming
- * records of two products is refused.
+ * The product root a command or a read goes to: the one whose store holds the first record its input names, or whose
+ * product's ID starts it. One naming none of them, such as a new product's, goes to the workspace's own folder.
  */
-async function writeRoot(products: LatheConfig[], named: string[][]): Promise<{ root: string } | { refused: string }> {
+async function productRoot(products: LatheConfig[], ids: string[]): Promise<string> {
+  if (products.length === 1) return products[0].root;
   const known = await Promise.all(products.map((config) => withStore(config.root, async (opened) => ({
     root: config.root,
     has: (id: string) => opened.store.record(id) !== undefined,
@@ -328,36 +249,7 @@ async function writeRoot(products: LatheConfig[], named: string[][]): Promise<{ 
   }))));
   const ownerOf = (id: string) =>
     known.find((k) => k.has(id))?.root ?? known.find((k) => k.products.some((p) => id === p || id.startsWith(`${p}-`)))?.root;
-  const roots = new Set<string>();
-  for (const ids of named) {
-    const root = ids.map(ownerOf).find((r) => r !== undefined);
-    if (root) roots.add(root);
-  }
-  if (roots.size > 1) {
-    const folders = [...roots].map((r) => (r === products[0].root ? "the workspace's own folder" : fromWorkspace(products[0].root, r))).join(' and ');
-    return { refused: `A write changes one product: these commands name records in ${folders}. Send each product's commands as a write of its own.` };
-  }
-  return { root: [...roots][0] ?? products[0].root };
-}
-
-async function write(workspace: string, commands: Command[]): Promise<{ status: number; answer: WriteAnswer }> {
-  const products = workspaceProducts(workspace);
-  const routed = products.length === 1 ? { root: products[0].root } : await writeRoot(products, commands.map(namedIds));
-  if ('refused' in routed) return { status: 422, answer: { ok: false, error: routed.refused, problems: [] } };
-  const config = products.find((p) => p.root === routed.root)!;
-  return withStore(config.root, async (opened) => {
-    const { store } = opened;
-    const before = new Map(Object.keys(store.schema.tables).filter((t) => store.schema.tables[t].stored).map((t) => [t, store.rows(t)]));
-    try {
-      const result = await store.apply(commands);
-      opened.signature = storeSignature(config.dataDir);
-      opened.checks = null;
-      return { status: 200, answer: { ok: true, tables: result.tables, files: result.files, changes: rowChanges(store, before, result.tables) } };
-    } catch (error) {
-      if (error instanceof StoreError) return { status: 422, answer: { ok: false, error: error.message, problems: error.problems } };
-      throw error;
-    }
-  });
+  return ids.map(ownerOf).find((r) => r !== undefined) ?? products[0].root;
 }
 
 /** The IDs a command's input names, its own record's first: what tells whose product it is. */
@@ -371,9 +263,8 @@ function inputIds(input: Record<string, unknown>): string[] {
 /** Runs one aggregate command on the product its input names: 200 with what it changed, 400 or 422 on refusal. */
 async function runRoute(workspace: string, definition: AnyCommand, input: Record<string, unknown>): Promise<{ status: number; answer: WriteAnswer | { error: string } }> {
   const products = workspaceProducts(workspace);
-  const routed = products.length === 1 ? { root: products[0].root } : await writeRoot(products, [inputIds(input)]);
-  if ('refused' in routed) return { status: 422, answer: { ok: false, error: routed.refused, problems: [] } };
-  const config = products.find((p) => p.root === routed.root)!;
+  const root = await productRoot(products, inputIds(input));
+  const config = products.find((p) => p.root === root)!;
   return withStore(config.root, async (opened) => {
     try {
       const committed = await runCommand(opened.store, definition, input);
@@ -451,9 +342,7 @@ async function runRead(workspace: string, definition: AnyQuery, params: URLSearc
   const values = [...new Set(params.keys())].flatMap((name) => params.getAll(name));
   // A read that names no record, such as the list of the products, is of the whole workspace: every product's store.
   if (values.length === 0 && products.length > 1) return { status: 200, answer: answerQuery(await workspaceView(products), definition, {}) };
-  const routed = products.length === 1 ? { root: products[0].root } : await writeRoot(products, [values]);
-  if ('refused' in routed) return { status: 422, answer: { error: 'A read is of one product, and this one names records of several.' } satisfies ReadRefusal };
-  return withStore(routed.root, async (opened) => answerRead(opened.store, definition, params));
+  return withStore(await productRoot(products, values), async (opened) => answerRead(opened.store, definition, params));
 }
 
 // ---------- Routing ----------
@@ -467,29 +356,6 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
     if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
     try {
       send(res, 200, await specData(root), { 'cache-control': 'no-store' });
-    } catch (error) {
-      send(res, 500, { error: storeMessage(error) });
-    }
-    return true;
-  }
-  if (pathname === '/api/write') {
-    if (req.method !== 'POST') return (send(res, 405, { error: 'Method not allowed' }), true);
-    if (crossSite(req)) return (send(res, 403, { error: 'Writes come only from this server\'s own pages.' }), true);
-    if (!(req.headers['content-type'] ?? '').toLowerCase().startsWith('application/json')) {
-      return (send(res, 415, { error: 'A write is sent as application/json.' }), true);
-    }
-    let body: unknown;
-    try {
-      body = JSON.parse(await readBody(req, WRITE_BODY_LIMIT));
-    } catch (error) {
-      if (error instanceof BodyTooLarge) return (send(res, 413, { error: `A write holds at most ${WRITE_BODY_LIMIT} bytes.` }), true);
-      return (send(res, 400, { error: 'The body is not JSON.' }), true);
-    }
-    const problem = writeRequestProblem(body);
-    if (problem) return (send(res, 400, { error: problem }), true);
-    try {
-      const { status, answer } = await write(root, (body as WriteRequest).commands);
-      send(res, status, answer, { 'cache-control': 'no-store' });
     } catch (error) {
       send(res, 500, { error: storeMessage(error) });
     }

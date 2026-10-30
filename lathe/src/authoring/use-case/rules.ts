@@ -2,7 +2,7 @@
 // and every load and commit runs them over all data (useCaseRules, listed in AGGREGATE_RULES).
 import { beyondFirst, type AggregateRules, type ReadView, type RuleProblem } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
-import type { FlowRow, FlowTestRow } from '../../platform/data/tables.ts';
+import type { FlowRow, FlowStepRow, FlowTestRow } from '../../platform/data/tables.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
 import { USE_CASE_AGGREGATE, useCasesFrom, type UseCase } from './model.ts';
@@ -33,7 +33,7 @@ const VIEWLESS_INTERFACES = ['API', 'CLI', 'agent tools'];
 /**
  * Every rule the use case breaks (LA-AUT-INV100 one each, as useCaseOneEach says; LA-AUT-INV08 a step fulfills only
  * its own use case's requirements; LA-AUT-INV42 a flow's ID names its interface; LA-AUT-INV43 a step of an API, CLI or
- * agent tools flow happens in no view). The view gives what the use case names outside itself: its flows' interfaces and the requirements its steps fulfill.
+ * agent tools flow happens in no view; LA-AUT-INV18 each step on a path has its own position). The view gives what the use case names outside itself: its flows' interfaces and the requirements its steps fulfill.
  */
 export function useCaseProblems(useCase: UseCase, view: ReadView): RuleProblem[] {
   const problems: RuleProblem[] = [];
@@ -68,6 +68,22 @@ export function useCaseProblems(useCase: UseCase, view: ReadView): RuleProblem[]
       });
     }
   }
+  // LA-AUT-INV18: the steps on each path of a flow each have their own position; a path is compared trimmed and in any
+  // letter case, and steps on different paths may share a position.
+  const placed = new Map<string, FlowStepRow>();
+  for (const { row } of useCase.steps) {
+    const at = `${row.flow_id} ${row.path.trim().toLowerCase()} ${row.position}`;
+    const holder = placed.get(at);
+    if (holder === undefined) placed.set(at, row);
+    else {
+      problems.push({
+        rule: 'step-position',
+        table: 'flow_step',
+        row: row as unknown as Row,
+        message: `step ${holder.id} is at position ${row.position} of path ${holder.path.trim()} of ${row.flow_id}, so ${row.id} cannot be too: each step on a path has its own position`,
+      });
+    }
+  }
   problems.push(
     ...useCaseOneEach(
       useCase.flows,
@@ -96,5 +112,5 @@ export const useCaseRules: AggregateRules = {
 /** Refuses the command, with every reason, when the use case as it would be saved breaks one of its rules. */
 export function holdToRules(tx: Transaction, useCase: UseCase): void {
   const problems = useCaseProblems(useCase, tx);
-  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message, command: 0 })));
+  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message })));
 }

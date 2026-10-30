@@ -1,4 +1,4 @@
-// The wiki's first load leaves out React Flow and ELK (LA-PAT-APP-UX-R11), checked at the
+// The wiki's first load leaves out React Flow and ELK (LA-V61-R37, within LA-PAT-APP-UX-R11's budget), checked at the
 // source: no module that app/src/main.tsx reaches through static imports imports either. The graph,
 // the ERD view and the theme editor are loaded with import() when first used.
 import { existsSync, readFileSync } from 'node:fs';

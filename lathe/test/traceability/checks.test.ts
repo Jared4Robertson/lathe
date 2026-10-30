@@ -240,7 +240,7 @@ describe('coverage gaps as warnings', () => {
 });
 
 check('pattern-rule-test-outside-followers', () => {
-  it('LA-TRC-UC08-R02-T01 a pattern rule test naming a domain that does not follow the pattern is an error; one where the rule is waived is a warning', async () => {
+  it('LA-TRC-UC08-R02-T01 a pattern rule test naming a domain that does not follow the pattern is an error', async () => {
     let data = adding(complete(), { domain: [{ id: 'EX-SHOP', title: 'Shop', product_id: 'EX', subdomain_type: 'supporting', description: 'Selling spare parts.' }] });
     data = adding(data, { pattern_rule_test: [{ id: 'EX-PAT-ACT-R01-T02', title: 'In the shop', pattern_rule_id: 'EX-PAT-ACT-R01', domain_id: 'EX-SHOP', level: 'service', state: 'not automated yet', when: 'The clerk saves a sale.', then: 'The sale reads the same everywhere.' }] });
     const ws = await loadData(data);
@@ -250,16 +250,13 @@ check('pattern-rule-test-outside-followers', () => {
     // Once the domain follows the pattern itself, the test is in place.
     const following = adding(data, { follows: [{ source_id: 'EX-SHOP', target_id: 'EX-PAT-ACT' }] });
     expect(ofCheck(await loadData(following), 'pattern-rule-test-outside-followers')).toEqual([]);
-    // A rule waived in a following domain: its test there counts for nothing.
-    const waived = changing(complete(), 'pattern_rule', () => true, { applies_when_setting: 'record', applies_when_value: 'Loan', applies_when_negated: false });
-    expect(ofCheck(await loadData(waived), 'pattern-rule-test-outside-followers')).toEqual([
-      expect.objectContaining({ severity: 'warning', record: 'EX-PAT-ACT-R01-T01', message: expect.stringContaining('where the rule is not applicable or waived') }),
-    ]);
+    // Every following domain owes every rule, so no test in one counts for nothing.
+    expect(ofCheck(clean, 'pattern-rule-test-outside-followers')).toEqual([]);
   });
 });
 
 check('pattern-setting-missing', () => {
-  it("LA-TRC-INV04-T a use case that answers each setting of its pattern is in place; one that gives no value for a setting is an error naming it", async () => {
+  it("LA-TRC-UC07-R03-T02 a use case that answers each setting of its pattern is in place; one that gives no value for a setting is an error naming it", async () => {
     expect(ofCheck(clean, 'pattern-setting-missing')).toEqual([]);
     const ws = await loadData(without(complete(), 'setting_value', () => true));
     expect(ofCheck(ws, 'pattern-setting-missing')).toEqual([

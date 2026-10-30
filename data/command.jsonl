@@ -1,11 +1,3 @@
-{"id":"LA-AUT-CMD01","title":"Add a record","entity_id":"LA-AUT-EN01","description":"Adds a row to a kind, part, declaration or checking table, with its registry and supertype rows (`store.add`)."}
-{"id":"LA-AUT-CMD02","title":"Change a record","entity_id":"LA-AUT-EN01","description":"Changes or clears a record's columns; its key and parent columns stay (`store.set`)."}
-{"id":"LA-AUT-CMD03","title":"Move a record","entity_id":"LA-AUT-EN01","description":"Puts a record under a new parent of a kind it may sit under, with what sits inside it (`store.move`)."}
-{"id":"LA-AUT-CMD04","title":"Link two records","entity_id":"LA-AUT-EN01","description":"Links two records by a relation (`store.link`)."}
-{"id":"LA-AUT-CMD05","title":"Unlink two records","entity_id":"LA-AUT-EN01","description":"Removes a link between two records (`store.unlink`)."}
-{"id":"LA-AUT-CMD06","title":"Remove a record","entity_id":"LA-AUT-EN01","description":"Removes a record with its parts and the links it starts, refused while anything else references it (`store.remove`)."}
-{"id":"LA-AUT-CMD07","title":"Apply several changes as one","entity_id":"LA-AUT-EN01","description":"Applies several changes as one write, all or nothing (`store.apply`). Every writer's change goes through it or the single commands: the CLI, the MCP tools and `POST /api/write`."}
-{"id":"LA-AUT-CMD08","title":"Merge two branches' data","entity_id":"LA-AUT-EN01","description":"Merges two branches' versions of a data file row by row against their base, keeping both sides' rows (`mergeData`, `mergeDataFiles`)."}
 {"id":"LA-AUT-CMD100","title":"Add a use case","entity_id":"LA-AUT-EN11","description":"Adds a use case under a capability, with its actors in order, the main actor first."}
 {"id":"LA-AUT-CMD101","title":"Change a use case","entity_id":"LA-AUT-EN11","description":"Changes a use case's title, goal or notes, or its actors (the whole list, in order). Its capability changes only by Move a use case."}
 {"id":"LA-AUT-CMD102","title":"Move a use case","entity_id":"LA-AUT-EN11","description":"Moves a use case, with everything in it, under another capability of its domain."}
@@ -266,7 +258,7 @@
 {"id":"LA-PLT-CMD17","title":"Serve a product repo","entity_id":"LA-PLT-EN10","description":"Serves the built web app and the API for one product repo on a local port, telling open pages when the data changes, until it is stopped. Refused when the web app is not built."}
 {"id":"LA-PLT-CMD19","title":"Add a recent folder","entity_id":"LA-PLT-EN15","description":"Puts a folder first in the recent folders, listing it once however its path is spelled and keeping at most 10."}
 {"id":"LA-PLT-CMD20","title":"Clear the recent folders","entity_id":"LA-PLT-EN15","description":"Empties the recent folders, and the system's recent documents with them."}
-{"id":"LA-PLT-CMD21","title":"Set up a product repo","entity_id":"LA-PLT-EN16","description":"`lathe init`: writes `lathe.config.json` and adds the product's first record through the command layer."}
+{"id":"LA-PLT-CMD21","title":"Set up a product repo","entity_id":"LA-PLT-EN16","description":"`lathe init`: writes `lathe.config.json` and adds the product with the Product aggregate's own command, Add a product."}
 {"id":"LA-PLT-CMD22","title":"Opt out of window restoration","entity_id":"LA-PLT-EN08","description":"As the shell starts, tells macOS to keep no window state for Lathe, which reopens its own product windows."}
 {"id":"LA-PLT-CMD24","title":"Upgrade a product's data","entity_id":"LA-PLT-EN16","description":"`lathe upgrade`: runs the converters from the product's schema version to Lathe's on the raw rows of the data files, then raises the config's schema version once the converted data loads; lists what it could not convert."}
 {"id":"LA-PLT-CMD25","title":"Start the plugin's tools for a product repo","entity_id":"LA-PLT-EN16","description":"The plugin's MCP launcher: finds the product repo and its installed Lathe, starts its `lathe mcp`, and warns once when the plugin's skills were written for another major version."}
@@ -282,6 +274,7 @@
 {"id":"LA-PLT-CMD44","title":"Copy a record's ID","entity_id":"LA-PLT-EN08","description":"Copies the record's ID to the clipboard."}
 {"id":"LA-PLT-CMD45","title":"Show a record's menu","entity_id":"LA-PLT-EN08","description":"Opens the native menu of a record: open in a new tab, reveal its data file, open it in the editor, copy its ID."}
 {"id":"LA-PLT-CMD46","title":"Reveal a product folder","entity_id":"LA-PLT-EN08","description":"Shows a window's product folder in the system file manager, from its launch or error page."}
+{"id":"LA-PLT-CMD47","title":"Turn scroll to zoom on or off","entity_id":"LA-PLT-EN14","description":"Sets whether scroll zooms the Graph's, the ERD's and the Trace's cameras, Cmd or Ctrl with scroll panning them, or pans them as it does by default; for every tab and kept from one launch to the next."}
 {"id":"LA-TRC-CMD01","title":"Follow a pattern","entity_id":"LA-TRC-EN05","description":"Makes a domain or use case follow a pattern, with the value, or the reason it does not apply, it gives each of the pattern's settings."}
 {"id":"LA-TRC-CMD02","title":"Change the setting values","entity_id":"LA-TRC-EN06","description":"Gives a followed pattern's settings their values, or the reasons they do not apply: the list replaces the follower's values for that pattern."}
 {"id":"LA-TRC-CMD10","title":"Stop following a pattern","entity_id":"LA-TRC-EN05","description":"Ends a domain's or use case's following of a pattern, with the setting values it gave it."}

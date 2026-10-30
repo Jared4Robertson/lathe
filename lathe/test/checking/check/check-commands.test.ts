@@ -58,11 +58,12 @@ describe("LA-CHK-UC02-R50-T01 each Check command (LA-CHK-A1) changes one check r
   it("LA-PAT-AGGREGATE-COMMANDS-R02-T02 refuses a check named like one of Lathe's (LA-CHK-INV01) and any change or removal of Lathe's own (LA-CHK-INV02), naming lathe/data/check.jsonl and changing nothing", async () => {
     const store = await checkDataSet();
     const before = checkFile(store);
-    const added = await refusal(store, ADD_CHECK, { name: 'view-unused', product_id: 'TL', position: 3, severity: 'warning', summary: 'x.', explanation: 'x.', query: 'SELECT 1' });
-    expect(added.problems[0]).toMatchObject({ rule: 'primary-key', message: "check view-unused already exists as one of Lathe's own (lathe/data/check.jsonl); give the check a name of its own" });
-    expect((await refusal(store, ADD_CHECK, { name: 'tool-without-photo', product_id: 'TL', position: 3, severity: 'warning', summary: 'x.', explanation: 'x.', query: 'SELECT 1' })).problems[0].message).toBe('check tool-without-photo already exists');
-    expect((await refusal(store, CHANGE_CHECK, { name: 'view-unused', severity: 'warning' })).problems[0]).toMatchObject({ rule: 'built-in', message: "check view-unused is Lathe's own (lathe/data/check.jsonl), so it cannot change" });
-    expect((await refusal(store, REMOVE_CHECK, { name: 'view-unused' })).problems[0].rule).toBe('built-in');
+    const query = 'SELECT NULL AS record, NULL AS message WHERE false';
+    const added = await refusal(store, ADD_CHECK, { name: 'view-unused', product_id: 'TL', position: 3, severity: 'warning', summary: 'x.', explanation: 'x.', query });
+    expect(added.problems[0]).toMatchObject({ rule: 'check-name-own', message: "check view-unused already exists as one of Lathe's own (lathe/data/check.jsonl); give the check a name of its own" });
+    expect((await refusal(store, ADD_CHECK, { name: 'tool-without-photo', product_id: 'TL', position: 3, severity: 'warning', summary: 'x.', explanation: 'x.', query })).problems[0].message).toBe('check tool-without-photo already exists');
+    expect((await refusal(store, CHANGE_CHECK, { name: 'view-unused', severity: 'warning' })).problems[0]).toMatchObject({ rule: 'check-read-only', message: "check view-unused is Lathe's own (lathe/data/check.jsonl), so it cannot change or be removed" });
+    expect((await refusal(store, REMOVE_CHECK, { name: 'view-unused' })).problems[0].rule).toBe('check-read-only');
     await expect(runCommand(store, CHANGE_CHECK, { name: 'tool-without-photo', product_id: 'TL' })).rejects.toThrow(InputError);
     expect(checkFile(store)).toBe(before);
   });

@@ -1,4 +1,3 @@
-{"id":"LA-AUT-EP02-CL","title":"postWrite","endpoint_id":"LA-AUT-EP02","file":"app/src/edit/write.ts"}
 {"id":"LA-EXP-EP01-CL","title":"fetchHistory","endpoint_id":"LA-EXP-EP01","file":"app/src/views/history.ts"}
 {"id":"LA-EXP-EP02-CL","title":"fetchBaseline","endpoint_id":"LA-EXP-EP02","file":"app/src/changes/changes.ts"}
 {"id":"LA-PLT-EP02-CL","title":"onLatheEvent","endpoint_id":"LA-PLT-EP02","file":"app/src/events.ts"}

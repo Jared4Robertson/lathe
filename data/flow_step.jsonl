@@ -1,26 +1,3 @@
-{"id":"LA-AUT-UC01-FL03-S01","title":"The Agent follows the plugin's skills, which tell it to write through the lathe command or the tools, never by hand","flow_id":"LA-AUT-UC01-FL03","path":"main","position":1}
-{"id":"LA-AUT-UC01-FL03-S02","title":"The Agent or the Owner adds a record with its typed columns, parent and parts","flow_id":"LA-AUT-UC01-FL03","path":"main","position":2}
-{"id":"LA-AUT-UC01-FL03-S03","title":"They change a record's columns","flow_id":"LA-AUT-UC01-FL03","path":"main","position":3}
-{"id":"LA-AUT-UC01-FL03-S04","title":"The command layer refuses a write with every reason, and no data file changes","flow_id":"LA-AUT-UC01-FL03","path":"refused","position":1}
-{"id":"LA-AUT-UC01-FL03-S05","title":"The rows the write changed land in the data files, one line each, sorted, for review in git","flow_id":"LA-AUT-UC01-FL03","path":"main","position":4}
-{"id":"LA-AUT-UC01-FL03-S06","title":"They show the record to see what they wrote","flow_id":"LA-AUT-UC01-FL03","path":"main","position":5}
-{"id":"LA-AUT-UC01-FL03-S07","title":"They move a record under another parent","flow_id":"LA-AUT-UC01-FL03","path":"move","position":1}
-{"id":"LA-AUT-UC01-FL03-S08","title":"They link or unlink two records","flow_id":"LA-AUT-UC01-FL03","path":"link","position":1}
-{"id":"LA-AUT-UC01-FL03-S09","title":"...or unlink them","flow_id":"LA-AUT-UC01-FL03","path":"link","position":2}
-{"id":"LA-AUT-UC01-FL03-S10","title":"They remove a record with its parts","flow_id":"LA-AUT-UC01-FL03","path":"remove","position":1}
-{"id":"LA-AUT-UC01-FL03-S11","title":"They make several changes as one write","flow_id":"LA-AUT-UC01-FL03","path":"several","position":1}
-{"id":"LA-AUT-UC01-FL03-S12","title":"They list a kind's records, or those under a parent, with lathe list","flow_id":"LA-AUT-UC01-FL03","path":"list","position":1}
-{"id":"LA-AUT-UC01-FL03-S13","title":"The Owner's script hands a write its fields as JSON, on stdin or from a file, long text intact","flow_id":"LA-AUT-UC01-FL03","path":"json","position":1}
-{"id":"LA-AUT-UC01-FL04-S01","title":"The Agent follows the plugin's skills, which tell it to change data only through the tools","flow_id":"LA-AUT-UC01-FL04","path":"main","position":1}
-{"id":"LA-AUT-UC01-FL04-S02","title":"The Agent adds a record with add, its typed columns, parent and parts as the tool's input schema gives them","flow_id":"LA-AUT-UC01-FL04","path":"main","position":2}
-{"id":"LA-AUT-UC01-FL04-S03","title":"The Agent changes a record's columns with set","flow_id":"LA-AUT-UC01-FL04","path":"main","position":3}
-{"id":"LA-AUT-UC01-FL04-S04","title":"The command layer writes the rows the write changed into the data files, one line each, sorted, and the tool returns them","flow_id":"LA-AUT-UC01-FL04","path":"main","position":4}
-{"id":"LA-AUT-UC01-FL04-S05","title":"The Agent shows the record with show to see what it wrote","flow_id":"LA-AUT-UC01-FL04","path":"main","position":5}
-{"id":"LA-AUT-UC01-FL04-S06","title":"The tool returns a refused write with every reason, and no data file changes","flow_id":"LA-AUT-UC01-FL04","path":"refused","position":1}
-{"id":"LA-AUT-UC01-FL04-S07","title":"The Agent moves a record under another parent with move","flow_id":"LA-AUT-UC01-FL04","path":"move","position":1}
-{"id":"LA-AUT-UC01-FL04-S08","title":"The Agent links two records with link","flow_id":"LA-AUT-UC01-FL04","path":"link","position":1}
-{"id":"LA-AUT-UC01-FL04-S09","title":"The Agent unlinks them with unlink","flow_id":"LA-AUT-UC01-FL04","path":"link","position":2}
-{"id":"LA-AUT-UC01-FL04-S10","title":"The Agent removes a record with its parts with remove","flow_id":"LA-AUT-UC01-FL04","path":"remove","position":1}
 {"id":"LA-AUT-UC02-FL01-S01","title":"On its page, the Owner adds a domain for each business capability, with its subdomain type","flow_id":"LA-AUT-UC02-FL01","path":"main","position":1}
 {"id":"LA-AUT-UC02-FL01-S02","title":"On its page, the Owner adds the domain's capabilities in order and its glossary terms","flow_id":"LA-AUT-UC02-FL01","path":"main","position":2}
 {"id":"LA-AUT-UC02-FL01-S03","title":"On its page, the Owner moves each use case under its capability","flow_id":"LA-AUT-UC02-FL01","path":"main","position":3}
@@ -286,7 +263,7 @@
 {"id":"LA-CHK-UC01-FL03-S04","title":"The command exits with status 1 when there is an error, 0 otherwise","flow_id":"LA-CHK-UC01-FL03","path":"main","position":3}
 {"id":"LA-CHK-UC01-FL03-S05","title":"With --json, the command prints the whole workspace instead","flow_id":"LA-CHK-UC01-FL03","path":"json","position":1}
 {"id":"LA-CHK-UC01-FL04-S01","title":"The Agent calls the check tool on the product root","flow_id":"LA-CHK-UC01-FL04","path":"main","position":1}
-{"id":"LA-CHK-UC01-FL04-S02","title":"The check tool returns every error, then every warning, each naming its check and record, the recorded exceptions apart and the coverage, as the workspace's JSON","flow_id":"LA-CHK-UC01-FL04","path":"main","position":2}
+{"id":"LA-CHK-UC01-FL04-S02","title":"The check tool returns every error, then every warning, each naming its check and record, and the coverage, as the workspace's JSON","flow_id":"LA-CHK-UC01-FL04","path":"main","position":2}
 {"id":"LA-CHK-UC01-FL04-S03","title":"The check tool says the check failed when there is an error","flow_id":"LA-CHK-UC01-FL04","path":"main","position":3}
 {"id":"LA-CHK-UC01-FL04-S04","title":"The check tool returns data the store refuses as data-refused errors naming the file, the line and the rule","flow_id":"LA-CHK-UC01-FL04","path":"refused","position":1}
 {"id":"LA-CHK-UC02-FL03-S01","title":"The Agent adds the check with lathe check add-check: a name, a position, a severity, a summary, an explanation and one SELECT","flow_id":"LA-CHK-UC02-FL03","path":"main","position":1}
@@ -515,6 +492,7 @@
 {"id":"LA-PLT-UC07-FL01-S08","title":"They delete their copy, after being asked","flow_id":"LA-PLT-UC07-FL01","path":"alternate","position":2}
 {"id":"LA-PLT-UC07-FL01-S09","title":"They export it to share as a file","flow_id":"LA-PLT-UC07-FL01","path":"main","position":7}
 {"id":"LA-PLT-UC07-FL01-S10","title":"Someone else imports that file as a theme of their own","flow_id":"LA-PLT-UC07-FL01","path":"alternate","position":3}
+{"id":"LA-PLT-UC07-FL01-S11","title":"They turn Scroll to zoom on in Appearance, or from the palette, and scroll zooms every stage","flow_id":"LA-PLT-UC07-FL01","path":"alternate","position":4}
 {"id":"LA-PLT-UC07-FL02-S01","title":"In the desktop app, the Reader presses g then t and arrows through the themes, each shown on the whole app at once","flow_id":"LA-PLT-UC07-FL02","path":"main","position":1}
 {"id":"LA-PLT-UC07-FL02-S02","title":"The Reader keeps one with Enter, or puts back the one before with Escape","flow_id":"LA-PLT-UC07-FL02","path":"main","position":2}
 {"id":"LA-PLT-UC07-FL02-S03","title":"The Reader switches Light, Dark or System from the palette","flow_id":"LA-PLT-UC07-FL02","path":"main","position":3}
@@ -525,6 +503,7 @@
 {"id":"LA-PLT-UC07-FL02-S08","title":"The Reader deletes their copy, after being asked","flow_id":"LA-PLT-UC07-FL02","path":"alternate","position":2}
 {"id":"LA-PLT-UC07-FL02-S09","title":"The Reader exports it to share as a file","flow_id":"LA-PLT-UC07-FL02","path":"main","position":7}
 {"id":"LA-PLT-UC07-FL02-S10","title":"Another Reader imports that file as a theme of their own","flow_id":"LA-PLT-UC07-FL02","path":"alternate","position":3}
+{"id":"LA-PLT-UC07-FL02-S11","title":"The Reader turns Scroll to zoom on in Appearance, or from the palette, and scroll zooms every stage","flow_id":"LA-PLT-UC07-FL02","path":"alternate","position":4}
 {"id":"LA-PLT-UC08-FL01-S01","title":"On a phone the Reader opens Lathe: a compact top bar, the page filling the screen, text they can read","flow_id":"LA-PLT-UC08-FL01","path":"main","position":1}
 {"id":"LA-PLT-UC08-FL01-S02","title":"They tap search in the top bar, type a use case's ID and tap the result","flow_id":"LA-PLT-UC08-FL01","path":"main","position":2}
 {"id":"LA-PLT-UC08-FL01-S03","title":"The wiki fills the screen; they tap Graph in the page bar","flow_id":"LA-PLT-UC08-FL01","path":"main","position":3}
@@ -644,11 +623,10 @@
 {"id":"LA-TRC-UC03-FL04-S04","title":"The Agent gives a manual test the reason it is manual, and its procedure in given, when and then","flow_id":"LA-TRC-UC03-FL04","path":"manual","position":1}
 {"id":"LA-TRC-UC03-FL04-S05","title":"The check tool warns about the file a test not automated yet names until the file exists","flow_id":"LA-TRC-UC03-FL04","path":"not automated yet","position":1}
 {"id":"LA-TRC-UC03-FL04-S06","title":"The add tool refuses an unknown state or level, an automated test with no file, or a manual reason on a test that is not manual, with every reason","flow_id":"LA-TRC-UC03-FL04","path":"refused","position":1}
-{"id":"LA-TRC-UC04-FL03-S01","title":"The Owner writes the pattern's rules under the pattern, each naming the setting it depends on, if any","flow_id":"LA-TRC-UC04-FL03","path":"main","position":1}
-{"id":"LA-TRC-UC04-FL03-S02","title":"A rule naming a setting its pattern does not have is refused","flow_id":"LA-TRC-UC04-FL03","path":"refused","position":1}
+{"id":"LA-TRC-UC04-FL03-S01","title":"The Owner writes the pattern's rules under the pattern","flow_id":"LA-TRC-UC04-FL03","path":"main","position":1}
 {"id":"LA-TRC-UC04-FL03-S03","title":"A domain follows the pattern, itself or through its use cases","flow_id":"LA-TRC-UC04-FL03","path":"main","position":2}
 {"id":"LA-TRC-UC04-FL03-S04","title":"An Agent writes one pattern rule test per rule in each following domain, naming the domain","flow_id":"LA-TRC-UC04-FL03","path":"main","position":3}
-{"id":"LA-TRC-UC04-FL03-S05","title":"Lathe check counts each rule once in each domain that owes it, leaving out where it is not applicable or waived","flow_id":"LA-TRC-UC04-FL03","path":"main","position":4}
+{"id":"LA-TRC-UC04-FL03-S05","title":"Lathe check counts each rule once in each domain that follows the pattern","flow_id":"LA-TRC-UC04-FL03","path":"main","position":4}
 {"id":"LA-TRC-UC04-FL03-S06","title":"The gaps and not-proved warnings name each rule with the domain that still owes it","flow_id":"LA-TRC-UC04-FL03","path":"main","position":5}
 {"id":"LA-TRC-UC04-FL03-S07","title":"A pattern nobody follows is a warning, and an obligation outside every domain counts in the product's Shared coverage","flow_id":"LA-TRC-UC04-FL03","path":"main","position":6}
 {"id":"LA-TRC-UC05-FL03-S01","title":"The Agent writes the test's code, naming the test's own ID in its name","flow_id":"LA-TRC-UC05-FL03","path":"main","position":1}

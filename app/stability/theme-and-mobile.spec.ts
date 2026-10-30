@@ -2,11 +2,11 @@ import { expect, test } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, RECORD, SHELL } from './scenarios';
 
-// LA-V61-R35-T01: switching theme changes colors only. LA-V61-R36-T01: at phone width (375 px) the
+// LA-V61-R35-T01: switching to a theme that differs only in color (Midnight) changes colors only. LA-V61-R36-T01: at phone width (375 px) the
 // nav drawer, quick find and the wiki card's sheet open and close over the stage without moving it.
 
 test.describe('theme', () => {
-  test('LA-V61-R35-T01 switching theme moves nothing', async ({ page }) => {
+  test('LA-V61-R35-T01 switching to a color-only theme moves nothing', async ({ page }) => {
     await openPage(page, `${RECORD}?stage=graph`);
     await page.locator('.focus-stage .graph-flow .graph-box').first().waitFor({ state: 'attached' });
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
