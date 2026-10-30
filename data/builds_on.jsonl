@@ -142,6 +142,7 @@
 {"source_id":"LA-PLT-TM06","target_id":"LA-PLT-TM05"}
 {"source_id":"LA-PLT-TM08","target_id":"LA-PLT-TM07"}
 {"source_id":"LA-PLT-TM12","target_id":"LA-AUT-TM17"}
+{"source_id":"LA-PLT-TM12","target_id":"LA-AUT-TM24"}
 {"source_id":"LA-PLT-TM13","target_id":"LA-AUT-TM01"}
 {"source_id":"LA-PLT-TM13","target_id":"LA-PLT-TM14"}
 {"source_id":"LA-PLT-TM14","target_id":"LA-AUT-TM01"}

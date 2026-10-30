@@ -258,7 +258,7 @@
 {"id":"LA-CHK-UC01-FL03-S04","title":"The command exits with status 1 when there is an error, 0 otherwise","flow_id":"LA-CHK-UC01-FL03","path":"main","position":3}
 {"id":"LA-CHK-UC01-FL03-S05","title":"With --json, the command prints the whole workspace instead","flow_id":"LA-CHK-UC01-FL03","path":"json","position":1}
 {"id":"LA-CHK-UC01-FL04-S01","title":"The Agent calls the check tool on the product root","flow_id":"LA-CHK-UC01-FL04","path":"main","position":1}
-{"id":"LA-CHK-UC01-FL04-S02","title":"The check tool returns every error, then every warning, each naming its check and record, the recorded exceptions apart and the coverage, as the workspace's JSON","flow_id":"LA-CHK-UC01-FL04","path":"main","position":2}
+{"id":"LA-CHK-UC01-FL04-S02","title":"The check tool returns every error, then every warning, each naming its check and record, and the coverage, as the workspace's JSON","flow_id":"LA-CHK-UC01-FL04","path":"main","position":2}
 {"id":"LA-CHK-UC01-FL04-S03","title":"The check tool says the check failed when there is an error","flow_id":"LA-CHK-UC01-FL04","path":"main","position":3}
 {"id":"LA-CHK-UC01-FL04-S04","title":"The check tool returns data the store refuses as data-refused errors naming the file, the line and the rule","flow_id":"LA-CHK-UC01-FL04","path":"refused","position":1}
 {"id":"LA-CHK-UC02-FL03-S01","title":"The Agent adds the check with lathe check add-check: a name, a position, a severity, a summary, an explanation and one SELECT","flow_id":"LA-CHK-UC02-FL03","path":"main","position":1}

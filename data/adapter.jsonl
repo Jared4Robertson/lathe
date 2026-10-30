@@ -1,4 +1,4 @@
-{"id":"LA-INT01-AD","title":"serveMcp","integration_id":"LA-INT01","file":"lathe/src/cli/mcp.ts","description":"`lathe mcp`: the data commands as MCP tools over stdio, started for the project folder by `plugin/scripts/mcp-server.mjs`."}
+{"id":"LA-INT01-AD","title":"serveMcp","integration_id":"LA-INT01","file":"lathe/src/cli/mcp.ts","description":"`lathe mcp`: one MCP tool per aggregate command and query, and the check, over stdio, started for the project folder by `plugin/scripts/mcp-server.mjs`."}
 {"id":"LA-INT02-AD","title":"fileManager","integration_id":"LA-INT02","file":"desktop/src/main.ts","description":"Reveals a data file or a product folder in the system's file manager (`shell.showItemInFolder`), for Reveal a record's data file and Reveal a product folder."}
 {"id":"LA-INT03-AD","title":"editorLaunch","integration_id":"LA-INT03","file":"desktop/src/editor.ts","description":"The editor launch: `parseSettings`, `editorLaunch`."}
 {"id":"LA-INT04-AD","title":"runGit","integration_id":"LA-INT04","file":"lathe/src/server/history.ts","description":"`runGit`: runs git with `spawn` and an argument array to read a record's history."}

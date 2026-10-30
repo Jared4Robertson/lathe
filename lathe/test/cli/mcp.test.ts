@@ -23,7 +23,7 @@ const tool = (all: Tool[], name: string) => all.find((t) => t.name === name)!;
 type Schema = { properties: Record<string, Schema>; required?: string[]; enum?: unknown[]; type?: unknown; description?: string; oneOf?: unknown };
 
 describe('the tools', () => {
-  it('are the check, then one per aggregate command and query, each named for it, with no generic verb', async () => {
+  it('LA-INT01-T04 are the check, then one per aggregate command and query, each named for it, with no generic verb', async () => {
     const all = tools(await schemaOf(writeData(everyKind())));
     expect(all.map((t) => t.name)).toEqual(['check', ...[...ALL_COMMANDS, ...ALL_QUERIES].map(toolName)]);
     for (const verb of ['add', 'set', 'move', 'link', 'unlink', 'remove', 'show', 'list', 'next_id']) expect(all.map((t) => t.name)).not.toContain(verb);
@@ -33,7 +33,7 @@ describe('the tools', () => {
     expect(addView.properties.title.description).toBeTruthy();
   });
 
-  it('check reports the errors and warnings with a count, and each product\'s coverage with its gaps as lathe check --json gives it', async () => {
+  it('LA-INT01-T05 check reports the errors and warnings with a count, and each product\'s coverage with its gaps as lathe check --json gives it', async () => {
     const root = writeData(everyKind());
     const checked = await callTool(root, 'check', {});
     const [{ workspace }] = await loadProducts(root);
@@ -50,7 +50,7 @@ describe('the tools', () => {
     expect(checked.isError).toBe((checked.structuredContent!.errors as number) > 0);
   });
 
-  it('refuses an unknown tool', async () => {
+  it('LA-INT01-T06 refuses an unknown tool', async () => {
     const root = writeData(everyKind());
     expect(await callTool(root, 'format', {})).toMatchObject({ isError: true, content: [{ type: 'text', text: 'Refused; nothing changed: there is no tool format.' }] });
   });

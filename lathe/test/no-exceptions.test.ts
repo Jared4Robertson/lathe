@@ -28,7 +28,7 @@ const read = (file: string) => readFileSync(path.join(REPO, file), 'utf8');
 const EXCEPTION_NAME = /exception|waiv|exempt|deviation|applies_when|not_applicable|_share$|_change$|allow_dirty|skip/;
 
 /** Text that grants an exception to a rule, or teaches how to record one. */
-const EXCEPTION_TEXT = /\b(recorded exceptions?|deliberate deviations? (is|are) recorded|is exempt|are exempt|exempt from|waived( in| there| when)|applies[- ]when|not applicable|repository_share|command_change|--allow-dirty|--skip\b|--force\b)/i;
+const EXCEPTION_TEXT = /\b(recorded exceptions?|deliberate deviations? (is|are) recorded|is exempt|are exempt|exempt from|waived( in| there| when)|applies[- ]when|not applicable|\brepository_share\b|\bcommand_change\b|--allow-dirty|--skip\b|--force\b)/i;
 
 describe('LA-STD-PRINCIPLES-R03-T01 no kind, column, flag or check records an exception to a rule', () => {
   it('names no table or column of the schema for an exception, a waiver or an opt-out', () => {

@@ -31,6 +31,11 @@
 // its own kind loses the declaration (its product_kind and product_kind_field rows), and its records keep their ID,
 // title, domain and file, and an entry point its description. A field Lathe's kind has no column for goes, as a to-do;
 // an entry point without a description gets a stand-in that starts "To write:".
+//
+// And no rule has an exception: a command's recorded change of another aggregate (command_change), a repository's
+// recorded share of another (repository_share), a pattern rule's setting and applies-when condition, and a follower's
+// not-applicable reason for a setting are gone. Their rows go; a not-applicable reason becomes the setting's value, as
+// a value like any other. Changing the model so each rule holds everywhere is the to-do.
 import { ALLOWED_LEVELS } from '../src/coverage.ts';
 import type { Converter, RawData, UpgradeNotes } from '../src/upgrade.ts';
 
@@ -264,7 +269,7 @@ export function commandEntities(data: RawData, notes: UpgradeNotes): void {
     return { id, title, entity_id: root, ...rest };
   }));
   notes.changed(`Every command sits under the entity it changes: ${moved} moved from their aggregate to its root entity.`);
-  notes.todo('A command that changes a child entity (a flow step, a loan\'s return) moves under that entity: lathe move <command> --parent <entity>.');
+  notes.todo('A command that changes a child entity (a flow step, a loan\'s return) belongs under that entity: remove it and add it again under the entity with `lathe command add-command --entity_id <entity>`.');
 }
 
 /** The columns of Lathe's own entry point and tooling kinds, which a product declared as its own before schema 2. */
@@ -299,6 +304,35 @@ export function builtInKinds(data: RawData, notes: UpgradeNotes): void {
   notes.changed(`Entry points and tooling records are Lathe's own kinds now: the product's declarations of ${[...names].sort().join(' and ')} are gone.`);
 }
 
+/** The columns of a pattern rule that waived it, gone with every way out of a rule. */
+const WAIVER_COLUMNS = ['setting', 'applies_when_setting', 'applies_when_negated', 'applies_when_value'];
+
+/** Drops every recorded exception and waiver: no rule has one. */
+export function noExceptions(data: RawData, notes: UpgradeNotes): void {
+  const changes = data.read('command_change');
+  const shares = data.read('repository_share');
+  if (changes.length) data.write('command_change', []);
+  if (shares.length) data.write('repository_share', []);
+  if (changes.length || shares.length) {
+    notes.changed(`Recorded exceptions are gone: ${changes.length} command changes and ${shares.length} repository shares removed.`);
+    notes.todo(`Change the model so each command changes only its own aggregate (another aggregate reacts to its event through a policy, or the two are one aggregate), and each aggregate has a repository of its own: ${[...changes.map((c) => `${String(c.command_id)} changed ${String(c.aggregate_id)}`), ...shares.map((r) => `${String(r.repository_id)} persisted ${String(r.aggregate_id)}`)].join('; ')}.`);
+  }
+  const rules = data.read('pattern_rule');
+  const waived = rules.filter((r) => r.applies_when_setting !== undefined).map((r) => String(r.id));
+  if (rules.some((r) => WAIVER_COLUMNS.some((c) => r[c] !== undefined))) {
+    data.write('pattern_rule', rules.map((r) => Object.fromEntries(Object.entries(r).filter(([c]) => !WAIVER_COLUMNS.includes(c)))));
+    notes.changed('Every follower of a pattern owes every one of its rules: the rules\' settings and applies-when conditions are gone.');
+  }
+  if (waived.length) notes.todo(`A rule that holds for only some followers belongs to those use cases as their own requirement, not to the pattern: move ${waived.join(', ')}.`);
+  const values = data.read('setting_value');
+  const reasons = values.filter((v) => v.not_applicable !== undefined);
+  if (reasons.length) {
+    data.write('setting_value', values.map(({ not_applicable: reason, ...v }) => (reason === undefined ? v : { ...v, value: v.value ?? `Not applicable: ${String(reason)}` })));
+    notes.changed(`Each setting's not-applicable reason is its value now: ${reasons.length} given.`);
+    notes.todo(`A follower owes every rule of the pattern it follows; where one does not hold for it, it should not follow the pattern. Check each: ${reasons.map((v) => `${String(v.follower_id)} ${String(v.setting)}`).join(', ')}.`);
+  }
+}
+
 const converter: Converter = {
   files(data, notes) {
     builtInKinds(data, notes);
@@ -307,6 +341,7 @@ const converter: Converter = {
     flowInterfaces(data, notes);
     kindText(data, notes);
     commandEntities(data, notes);
+    noExceptions(data, notes);
   },
 };
 

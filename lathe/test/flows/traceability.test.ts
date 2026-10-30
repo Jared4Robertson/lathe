@@ -123,15 +123,15 @@ describe('Traceability flows from the command line', () => {
   it('LA-TRC-UC03-FL03-T record how a test is run', async () => {
     const tl = product();
     await tl.seed([...LENDING, add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'A member in debt is refused', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse a member who owes a fee.' }), add('uc_requirement', { id: 'TL-LEND-UC01-R03', title: 'The due date is set', use_case_id: 'TL-LEND-UC01', statement: 'The loan MUST be due two weeks after it opens.' })]);
-    const test = (requirement: string, run: Record<string, string>) =>
+    const addTest = (requirement: string, run: Record<string, string>) =>
       tl.command('use-case add-use-case-test', { id: `${requirement}-T01`, title: `${requirement} holds`, uc_requirement_id: requirement, ...run });
     // S01, S02: the test under what it proves, automated with the file that runs it.
     tl.write('test/loans.test.ts', "it('TL-LEND-UC01-R01-T01 a tool on loan is refused');\n");
-    test('TL-LEND-UC01-R01', { level: 'service', state: 'automated', file: 'test/loans.test.ts', when: 'A member borrows a tool that is on loan', then: 'The loan is refused' });
+    addTest('TL-LEND-UC01-R01', { level: 'service', state: 'automated', file: 'test/loans.test.ts', when: 'A member borrows a tool that is on loan', then: 'The loan is refused' });
     // S03: a manual test gives its reason and its procedure.
-    test('TL-LEND-UC01-R02', { level: 'browser', state: 'manual', manual_reason: 'Manual because the fee is read off the paper ledger.', when: 'A member who owes a fee borrows a tool', then: 'The librarian refuses the loan' });
+    addTest('TL-LEND-UC01-R02', { level: 'browser', state: 'manual', manual_reason: 'Manual because the fee is read off the paper ledger.', when: 'A member who owes a fee borrows a tool', then: 'The librarian refuses the loan' });
     // S04: a test not automated yet may name its file; until the file exists that is a warning.
-    test('TL-LEND-UC01-R03', { level: 'service', state: 'not automated yet', file: 'test/dates.test.ts', when: 'A loan opens', then: 'It is due in two weeks' });
+    addTest('TL-LEND-UC01-R03', { level: 'service', state: 'not automated yet', file: 'test/dates.test.ts', when: 'A loan opens', then: 'It is due in two weeks' });
     const ws = tl.workspace();
     expect(ws.problems.filter((p) => p.check === 'test-file-missing').map((p) => [p.severity, p.record])).toEqual([['warning', 'TL-LEND-UC01-R03-T01']]);
     expect(ws.coverage.find((c) => c.domain === 'TL-LEND')?.tests).toEqual({ automated: 1, manual: 1, not_automated: 1 });
