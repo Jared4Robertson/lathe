@@ -6,7 +6,7 @@
 // Why a fresh database: DuckDB checks a foreign key as each statement runs, even inside a transaction, so it refuses
 // to delete or re-key a row that another row references, even when the same transaction removes that reference
 // first. Building the new state afresh, parents before children, keeps every key real and every write atomic.
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { AGGREGATE_RULES } from '../../aggregate-rules.ts';
@@ -18,7 +18,8 @@ import { integrityQueries, recordScopeSql, storeViewsSql } from './integrity.ts'
 import { problemAt, StoreError, type Origin, type StoreProblem } from './problems.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import type { Located } from './references.ts';
-import type { ReadView } from './rules.ts';
+import { keysHold, ReadSets, trackedView } from './reads.ts';
+import type { AggregateRules, ReaderFactory, ReadView } from './rules.ts';
 import { describeKey, normalizeRow, rowKey, sortRows, type Row } from './rows.ts';
 import { applyMigrations, describeSchema, readMigrations, sqlName, type SchemaDescription } from './schema.ts';
 import { commit, DECLARATION_TABLES, Transaction, type Committed, type Tables, type TransactionHost } from './transaction.ts';
@@ -160,7 +161,35 @@ export async function openStore(root: string, options: StoreOptions = {}): Promi
   return store;
 }
 
-/** A product repo's data: the typed tables in DuckDB, kept in step with the data files. */
+/** What a reload changed: the tables whose rows it read again (every stored table when it loaded afresh). */
+export interface Reloaded {
+  /** The data files whose size or time changed, by path: read again, or gone. */
+  files: string[];
+  tables: string[];
+  /** Whether it loaded every file afresh: a product's kinds or relations changed, or a file of no table came or went. */
+  full: boolean;
+}
+
+/** A data folder the store reads: its files, how a problem names it, and whether its rows are Lathe's own. */
+interface Folder {
+  dir: string;
+  display: string;
+  builtIn: boolean;
+  files: string[];
+}
+
+/** The state last built whole in the database, with every key, check, integrity query and rule: what a refused full check goes back to. */
+interface Whole {
+  tables: Tables;
+  signatures: Map<string, string>;
+}
+
+/**
+ * A product repo's data: the typed tables, kept in step with the data files, and the database built from them. A
+ * load and a write build the state whole in the database before it becomes current. A reload of changed files reads
+ * only their tables and holds them to the keys and the rules that read them at once; the whole build (the database's
+ * checks, the integrity queries and every rule) then runs in the background, through whole().
+ */
 export class Store {
   readonly dataDir: string;
   /** Lathe's own data folder, loaded beside dataDir with read-only rows, or null. */
@@ -175,9 +204,28 @@ export class Store {
   private origins = new WeakMap<Row, Origin>();
   /** The rows loaded from latheDataDir, which no write changes or writes out. */
   private builtIn = new WeakSet<Row>();
+  /** Each table's rows sorted by key, by the map that holds them (a map is never changed once it is the current state's). */
+  private readonly sorted = new WeakMap<Map<string, Row>, Row[]>();
   private queue: Promise<unknown> = Promise.resolve();
   private closing: Promise<void> | undefined;
   private readonly steps: Record<string, number> | undefined;
+  /** Each data file as the tables hold it: its size and modification time, by its path. */
+  private signatures = new Map<string, string>();
+  /** Moved on whenever the current state changes: a whole build of an older one is not adopted. */
+  private generation = 0;
+  /** The state last built whole: the current one, unless a reload changed tables since. */
+  private builtWhole: Whole = { tables: new Map(), signatures: new Map() };
+  /** Whether the database holds the current state (false after a reload, until the next whole build or write). */
+  private built = true;
+  /** The data files as a reload last refused them, as one key, with the refusal. */
+  private refused: { key: string; error: StoreError } | undefined;
+  /** The whole builds in progress, which close waits for. */
+  private readonly building = new Set<Promise<unknown>>();
+  /** The tables each aggregate's rules read, and each reader's projection. */
+  private readonly ruleReads = new ReadSets<AggregateRules>();
+  private readonly readerReads = new ReadSets<ReaderFactory>();
+  /** Each read model's reader over the current state, made when a query first asks and kept until a table it read changes. */
+  private readonly readers = new Map<ReaderFactory, unknown>();
 
   constructor(instance: DuckDBInstance, connection: DuckDBConnection, baseSchema: SchemaDescription, dataDir: string, latheDataDir: string | null, steps?: Record<string, number>) {
     this.instance = instance;
@@ -199,6 +247,13 @@ export class Store {
     }
   }
 
+  // Runs the work after every write and reload before it, as the only one.
+  private serial<T>(work: () => Promise<T>): Promise<T> {
+    const run = this.queue.then(work);
+    this.queue = run.catch(() => undefined);
+    return run;
+  }
+
   /** Whether the row is one of Lathe's own, loaded from latheDataDir, and so read-only. */
   isBuiltIn(row: Row): boolean {
     return this.builtIn.has(row);
@@ -209,20 +264,29 @@ export class Store {
     return this.currentSchema;
   }
 
+  // The database is the current state's only after a load or a write; after a reload, whole() builds it.
+  private get database(): string {
+    if (!this.built) throw new Error('The store was reloaded in part, so its database is not built for the current data: run SQL through whole().');
+    return this.dataDb;
+  }
+
   /** A connection whose current database holds the current data. It follows every write. */
   get connection(): DuckDBConnection {
+    void this.database;
     return this.main;
   }
 
   /** A new connection on the current data, for queries run side by side; it reads the data as it was until the next write. */
   async connect(): Promise<DuckDBConnection> {
+    const database = this.database;
     const connection = await this.instance.connect();
-    await connection.run(`USE ${sqlName(this.dataDb)}`);
+    await connection.run(`USE ${sqlName(database)}`);
     return connection;
   }
 
   /** Runs a query on the current data and returns its rows as JSON values. */
   async query<T = Record<string, unknown>>(sql: string): Promise<T[]> {
+    void this.database;
     return (await this.main.runAndReadAll(sql)).getRowObjectsJson() as unknown as T[];
   }
 
@@ -230,7 +294,15 @@ export class Store {
   rows(table: string): Row[] {
     const description = this.currentSchema.tables[table];
     if (!description) throw new StoreError([{ rule: 'unknown-table', message: `there is no table ${table}` }]);
-    return sortRows(description, [...(this.tables.get(table)?.values() ?? [])]);
+    // Each table's rows are sorted once for the map that holds them, until a reload or a write replaces it.
+    const rows = this.tables.get(table);
+    if (!rows) return [];
+    let sorted = this.sorted.get(rows);
+    if (!sorted) {
+      sorted = sortRows(description, [...rows.values()]);
+      this.sorted.set(rows, sorted);
+    }
+    return [...sorted];
   }
 
   /** The record with this ID, with its kind, or undefined. */
@@ -247,10 +319,36 @@ export class Store {
     return this.origins.get(row);
   }
 
-  /** Waits for the write in progress, then drops the store's databases and closes its connection. A second call does nothing. */
+  /**
+   * The read model's reader over the current data: made by its factory the first time a query asks for it, then kept
+   * until a table its projection read changes (a reload, a write), so a change rebuilds only the projections it touches.
+   */
+  readerOf<D>(make: (view: ReadView) => D): D {
+    if (this.readers.has(make)) return this.readers.get(make) as D;
+    const reads = new Set<string>();
+    const reader = make(trackedView(this.currentSchema, this.tables, reads, (table) => this.rows(table)));
+    this.readerReads.add(make, reads);
+    this.readers.set(make, reader);
+    return reader;
+  }
+
+  /** Whether a change to these tables changes what the reader's read model answers: its projection read one, or never ran here. */
+  readerTouched(make: ReaderFactory, changed: ReadonlySet<string>): boolean {
+    return this.readerReads.touched(make, changed);
+  }
+
+  // Forgets the readers whose projections read a changed table (every reader, for 'all').
+  private forgetReaders(changed: Iterable<string> | 'all') {
+    if (changed === 'all') return this.readers.clear();
+    const tables = new Set(changed);
+    for (const make of [...this.readers.keys()]) if (this.readerReads.touched(make, tables)) this.readers.delete(make);
+  }
+
+  /** Waits for the write in progress and the whole builds, then drops the store's databases and closes its connection. A second call does nothing. */
   close(): Promise<void> {
     this.closing ??= (async () => {
       await this.queue;
+      while (this.building.size) await Promise.allSettled([...this.building]);
       try {
         await this.main.run(`USE ${BASE_DB}`);
         if (this.dataDb) await this.detach(this.dataDb);
@@ -264,55 +362,65 @@ export class Store {
 
   // Loading.
 
-  /** Reads every data file, Lathe's own folder's first and then the product's, and loads them. Called once, by openStore. */
-  async load(): Promise<void> {
+  // The data folders, Lathe's own first and then the product's, with their data files in order.
+  private folders(): Folder[] {
     const listed = (dir: string) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.jsonl')).sort() : []);
-    const folders = [
+    return [
       ...(this.latheDataDir ? [{ dir: this.latheDataDir, display: 'lathe/data', builtIn: true }] : []),
       { dir: this.dataDir, display: path.basename(this.dataDir), builtIn: false },
     ].map((f) => ({ ...f, files: listed(f.dir) }));
-    const problems: StoreProblem[] = [];
-    const tables: Tables = new Map();
-    const read = (schema: SchemaDescription, folder: (typeof folders)[number], file: string) => {
-      const name = file.slice(0, -'.jsonl'.length);
-      const table = schema.tables[name];
-      const display = `${folder.display}/${file}`;
-      if (!table?.stored) {
-        problems.push({ rule: 'unknown-table', file: display, line: 1, message: `${file} names no stored table; data files are named <table>.jsonl` });
+  }
+
+  // Reads one data file's rows into the table's map, each normalized, with its origin; a problem is added, not thrown.
+  private readFile(schema: SchemaDescription, folder: Folder, file: string, tables: Tables, problems: StoreProblem[]) {
+    const name = file.slice(0, -'.jsonl'.length);
+    const table = schema.tables[name];
+    const display = `${folder.display}/${file}`;
+    if (!table?.stored) {
+      problems.push({ rule: 'unknown-table', file: display, line: 1, message: `${file} names no stored table; data files are named <table>.jsonl` });
+      return;
+    }
+    // A table's rows from both folders share one map, so a key given in both is a duplicate.
+    const rows = tables.get(name) ?? new Map<string, Row>();
+    const lines = readFileSync(path.join(folder.dir, file), 'utf8').split('\n');
+    if (lines.at(-1) === '') lines.pop();
+    lines.forEach((text, index) => {
+      const line = index + 1;
+      let value: unknown;
+      try {
+        value = JSON.parse(text);
+      } catch (error) {
+        problems.push({ rule: 'json', file: display, line, table: name, message: `the line is not one JSON object: ${(error as Error).message}` });
         return;
       }
-      // A table's rows from both folders share one map, so a key given in both is a duplicate.
-      const rows = tables.get(name) ?? new Map<string, Row>();
-      const lines = readFileSync(path.join(folder.dir, file), 'utf8').split('\n');
-      if (lines.at(-1) === '') lines.pop();
-      lines.forEach((text, index) => {
-        const line = index + 1;
-        let value: unknown;
-        try {
-          value = JSON.parse(text);
-        } catch (error) {
-          problems.push({ rule: 'json', file: display, line, table: name, message: `the line is not one JSON object: ${(error as Error).message}` });
-          return;
-        }
-        const result = normalizeRow(table, value);
-        if ('problem' in result) {
-          problems.push({ rule: result.problem.includes('is required') ? 'required' : 'column', file: display, line, table: name, message: result.problem });
-          return;
-        }
-        const key = rowKey(table, result.row);
-        const earlier = rows.get(key);
-        if (earlier) {
-          const at = this.origins.get(earlier) as { file: string; line: number };
-          const where = at.file === display ? `line ${at.line}` : `${at.file}:${at.line}`;
-          problems.push({ rule: 'primary-key', file: display, line, table: name, key: describeKey(table, result.row), message: `${name} ${describeKey(table, result.row)} is already on ${where}` });
-          return;
-        }
-        rows.set(key, result.row);
-        this.origins.set(result.row, { file: display, line });
-        if (folder.builtIn) this.builtIn.add(result.row);
-      });
-      tables.set(name, rows);
-    };
+      const result = normalizeRow(table, value);
+      if ('problem' in result) {
+        problems.push({ rule: result.problem.includes('is required') ? 'required' : 'column', file: display, line, table: name, message: result.problem });
+        return;
+      }
+      const key = rowKey(table, result.row);
+      const earlier = rows.get(key);
+      if (earlier) {
+        const at = this.origins.get(earlier) as { file: string; line: number };
+        const where = at.file === display ? `line ${at.line}` : `${at.file}:${at.line}`;
+        problems.push({ rule: 'primary-key', file: display, line, table: name, key: describeKey(table, result.row), message: `${name} ${describeKey(table, result.row)} is already on ${where}` });
+        return;
+      }
+      rows.set(key, result.row);
+      this.origins.set(result.row, { file: display, line });
+      if (folder.builtIn) this.builtIn.add(result.row);
+    });
+    tables.set(name, rows);
+  }
+
+  /** Reads every data file, Lathe's own folder's first and then the product's, and loads them whole. Called by openStore, and by a reload that must start afresh. */
+  async load(): Promise<void> {
+    const folders = this.folders();
+    // The files' sizes and times are taken before they are read, so a file changed while it is read reads again.
+    const signatures = signaturesOf(folders);
+    const problems: StoreProblem[] = [];
+    const tables: Tables = new Map();
+    const read = (schema: SchemaDescription, folder: Folder, file: string) => this.readFile(schema, folder, file, tables, problems);
 
     // The declarations, with the products that declare them, are read first: the Product aggregate's rules judge them
     // before the schema is built from them.
@@ -333,7 +441,153 @@ export class Store {
     this.schemaDb = schemaDb;
     this.currentSchema = schema;
     this.tables = tables;
+    this.signatures = signatures;
+    this.becameWhole('all');
     await this.switchTo(dataDb);
+  }
+
+  // The current state was built whole (a load, a write): the database holds it, and a refused full check comes back to it.
+  private becameWhole(changed: Iterable<string> | 'all') {
+    this.generation++;
+    this.built = true;
+    this.builtWhole = { tables: this.tables, signatures: this.signatures };
+    this.forgetReaders(changed);
+  }
+
+  /**
+   * Reads the data files that changed since the tables were last read or written, and only their tables (LA-PLT-UC03-R03):
+   * a change set from one write, or a burst of them, is one reload. The changed tables are held at once to the keys
+   * (each row's foreign keys, every row pointing into them, their unique keys, every ID once across kinds) and to the
+   * rules of each aggregate that reads one of them; the database's checks, the integrity queries and every rule then
+   * run in the background (whole()). When anything is broken, the whole build runs at once and refuses with every
+   * problem, as a load from scratch would, and nothing changes. A changed declaration of the product's own kinds or
+   * relations, or a file of no table, loads every file afresh.
+   */
+  reload(): Promise<Reloaded> {
+    return this.serial(async () => {
+      const folders = this.folders();
+      const signatures = signaturesOf(folders);
+      const files = [...new Set([...signatures.keys(), ...this.signatures.keys()])].filter((file) => signatures.get(file) !== this.signatures.get(file));
+      if (!files.length) return { files, tables: [], full: false };
+      // Files that were refused as they are now are refused again without reading them.
+      const key = [...signatures].map(([file, signature]) => `${file}:${signature}`).join('\n');
+      if (this.refused?.key === key) throw this.refused.error;
+      try {
+        return await this.reloadFiles(folders, signatures, files);
+      } catch (error) {
+        if (error instanceof StoreError) this.refused = { key, error };
+        throw error;
+      }
+    });
+  }
+
+  // Reads the changed files' tables again (reload).
+  private async reloadFiles(folders: Folder[], signatures: Map<string, string>, files: string[]): Promise<Reloaded> {
+    const schema = this.currentSchema;
+    const names = new Set(files.map((file) => path.basename(file, '.jsonl')));
+    if ([...names].some((name) => !schema.tables[name]?.stored || (DECLARATION_TABLES as readonly string[]).includes(name))) {
+      await this.load();
+      return { files, tables: Object.values(this.currentSchema.tables).filter((t) => t.stored).map((t) => t.name).sort(), full: true };
+    }
+    // The changed tables, read again from both folders in the order a load reads them.
+    const problems: StoreProblem[] = [];
+    const read: Tables = new Map([...names].map((name) => [name, new Map<string, Row>()]));
+    await this.step('reload read files', () => {
+      for (const folder of folders) for (const file of folder.files) if (names.has(file.slice(0, -'.jsonl'.length))) this.readFile(schema, folder, file, read, problems);
+    });
+    if (problems.length) throw new StoreError(problems);
+    // A table whose rows and lines are the same as before (a file touched, or written back as it was) keeps its rows.
+    const next: Tables = new Map(this.tables);
+    const changed = new Set<string>();
+    for (const [name, rows] of read) {
+      if (sameRows(this.tables.get(name), rows, this.origins)) continue;
+      next.set(name, rows);
+      changed.add(name);
+    }
+    if (changed.size && !(await this.holds(schema, next, changed))) {
+      // Something is broken: the whole build names every problem, as a load from scratch does.
+      const dataDb = await this.buildData(this.schemaDb, schema, next, this.origins);
+      this.tables = next;
+      this.signatures = signatures;
+      this.becameWhole(changed);
+      await this.switchTo(dataDb);
+      return { files, tables: [...changed].sort(), full: false };
+    }
+    this.tables = next;
+    this.signatures = signatures;
+    if (changed.size) {
+      this.generation++;
+      this.built = false;
+      this.forgetReaders(changed);
+    }
+    return { files, tables: [...changed].sort(), full: false };
+  }
+
+  // Whether the changed tables keep every key and the rules of each aggregate that reads them (what a reload holds at once).
+  private async holds(schema: SchemaDescription, tables: Tables, changed: ReadonlySet<string>): Promise<boolean> {
+    const registered = await this.step('reload registry', () => ![...changed].some((t) => schema.kinds[t]) || !this.registry(schema, tables, this.origins).problems.length);
+    if (!registered || !(await this.step('reload keys', () => keysHold(schema, tables, changed)))) return false;
+    for (const rules of AGGREGATE_RULES) {
+      if (!this.ruleReads.touched(rules, changed)) continue;
+      const reads = new Set<string>();
+      const problems = await this.step(`reload rules of ${rules.aggregate}`, () => rules.check(trackedView(schema, tables, reads, (table) => [...(tables.get(table)?.values() ?? [])])));
+      this.ruleReads.add(rules, reads);
+      if (problems.length) return false;
+    }
+    return true;
+  }
+
+  /**
+   * Builds the current state whole in a database of its own (every key and check, the integrity queries and every
+   * aggregate's rules) and runs the work on a store that holds it, such as the check rows and coverage; then drops it.
+   * Answers null when the state changed while it was built (a newer reload or write; another whole build follows it).
+   * When the build refuses the current state, the store goes back to the state last built whole, so its files read
+   * again on the next reload, and the refusal is thrown: a load from scratch would refuse the same.
+   */
+  async whole<T>(work: (built: Store) => Promise<T>): Promise<{ value: T } | null> {
+    const run = (async () => {
+      const { generation, tables, currentSchema: schema, schemaDb, signatures } = this;
+      let dataDb: string;
+      try {
+        dataDb = await this.buildData(schemaDb, schema, tables, this.origins);
+      } catch (error) {
+        if (!(error instanceof StoreError)) throw error;
+        const current = await this.serial(async () => {
+          if (this.generation !== generation) return false;
+          // The files as they are refused: a reload of them as they are refuses again without building them.
+          this.refused = { key: [...signatures].map(([file, signature]) => `${file}:${signature}`).join('\n'), error };
+          this.tables = this.builtWhole.tables;
+          this.signatures = this.builtWhole.signatures;
+          // The database was left holding the state last built whole.
+          this.becameWhole('all');
+          return true;
+        });
+        if (current) throw error;
+        return null;
+      }
+      if (this.generation !== generation) {
+        await this.main.run(`DETACH DATABASE IF EXISTS ${sqlName(dataDb)}`).catch(() => undefined);
+        return null;
+      }
+      this.builtWhole = { tables, signatures };
+      live++;
+      const built = new Store(this.instance, await this.instance.connect(), this.baseSchema, this.dataDir, this.latheDataDir);
+      built.currentSchema = schema;
+      built.schemaDb = schemaDb;
+      built.tables = tables;
+      built.origins = this.origins;
+      built.builtIn = this.builtIn;
+      try {
+        await built.switchTo(dataDb);
+        return { value: await work(built) };
+      } finally {
+        await built.close();
+      }
+    })();
+    this.building.add(run);
+    const settled = () => this.building.delete(run);
+    run.then(settled, settled);
+    return run;
   }
 
   // The schema database: Lathe's migrations, copied from lathe_base, then the product's kinds and relations; or the
@@ -491,9 +745,12 @@ export class Store {
         }
       }
       // Every aggregate's rules, over all data.
-      const view = readView(schema, tables);
       for (const rules of AGGREGATE_RULES) {
-        for (const p of await this.step(`rules of ${rules.aggregate}`, () => rules.check(view))) {
+        const reads = new Set<string>();
+        const view = trackedView(schema, tables, reads, (table) => [...(tables.get(table)?.values() ?? [])]);
+        const found = await this.step(`rules of ${rules.aggregate}`, () => rules.check(view));
+        this.ruleReads.add(rules, reads);
+        for (const p of found) {
           // The row as the data holds it, so the problem names its file and line, or its command.
           const row = tables.get(p.table)?.get(rowKey(schema.tables[p.table], p.row)) ?? p.row;
           broken.push(problemAt(origins, row, { rule: p.rule, table: p.table, key: describeKey(schema.tables[p.table], row), message: p.message }));
@@ -632,13 +889,22 @@ export class Store {
    * refusal, from the work or the commit, changes nothing.
    */
   transact<T>(work: (tx: Transaction) => T | Promise<T>): Promise<{ value: T; committed: Committed }> {
-    const run = this.queue.then(async () => {
+    return this.serial(async () => {
       const tx = new Transaction(this.host());
       const value = await work(tx);
-      return { value, committed: await commit(tx) };
+      const schema = this.currentSchema;
+      const committed = await commit(tx);
+      // The files it wrote are as the tables hold them, so no reload reads them again.
+      const signatures = new Map(this.signatures);
+      for (const file of committed.files) {
+        const full = path.join(this.dataDir, file);
+        if (existsSync(full)) signatures.set(full, signatureOf(full));
+        else signatures.delete(full);
+      }
+      this.signatures = signatures;
+      this.becameWhole(this.currentSchema === schema ? committed.tables : 'all');
+      return { value, committed };
     });
-    this.queue = run.catch(() => undefined);
-    return run;
   }
 
   // What the store lends a transaction: its state as it is now, and how to build and adopt the next.
@@ -660,6 +926,32 @@ export class Store {
       },
     };
   }
+}
+
+/** A data file's size and modification time, as one string. */
+const signatureOf = (file: string): string => {
+  const info = statSync(file);
+  return `${info.size}:${info.mtimeMs}`;
+};
+
+/** Every data file of the folders, by its path, with its signature. */
+function signaturesOf(folders: Folder[]): Map<string, string> {
+  return new Map(folders.flatMap((folder) => folder.files.map((file) => {
+    const full = path.join(folder.dir, file);
+    return [full, signatureOf(full)] as const;
+  })));
+}
+
+/** Whether a table read again holds the same rows, each on the same line of the same file, as before. */
+function sameRows(before: Map<string, Row> | undefined, after: Map<string, Row>, origins: WeakMap<Row, Origin>): boolean {
+  if ((before?.size ?? 0) !== after.size) return false;
+  for (const [key, row] of after) {
+    const was = before!.get(key);
+    if (!was || JSON.stringify(was) !== JSON.stringify(row)) return false;
+    const [a, b] = [origins.get(was), origins.get(row)];
+    if (a?.file !== b?.file || a?.line !== b?.line) return false;
+  }
+  return true;
 }
 
 /** The tables as the aggregates' rules read them. */

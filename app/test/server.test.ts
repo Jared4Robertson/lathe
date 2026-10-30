@@ -8,6 +8,7 @@ import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { latheApi } from '../server/lathe';
 import * as realApi from '../../lathe/src/server/api.ts';
 import type { WriteAnswer } from '../../lathe/src/server/contract.ts';
+import type { DataChange } from '../../lathe/src/server/events.ts';
 import type { RecordSummaries } from '../../lathe/src/exploring/record-summaries/read-model.ts';
 import { openStore } from '../../lathe/src/platform/data/index.ts';
 import { ALL_COMMANDS } from '../../lathe/src/commands.ts';
@@ -145,7 +146,7 @@ describe('dev API plugin', () => {
     expect((await request(broken.middlewares[0], '/EX')).nextCalled).toBe(true);
   });
 
-  it('LA-PLT-UC03-R01-T01 The server sends spec:changed when a data file, or the package\'s own data or schema, change', async () => {
+  it('LA-PLT-UC03-R01-T01 The server reads a changed data file\'s table again and sends spec:changed naming it and the read models that read it; a change to the package\'s schema changes every read', async () => {
     const product = await mkdtemp(path.join(tmpdir(), 'lathe-app-watch-'));
     try {
       const data = path.join(product, 'data');
@@ -153,16 +154,33 @@ describe('dev API plugin', () => {
       await writeFile(path.join(product, 'lathe.config.json'), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
       const fake = await start(async () => realApi, product);
       expect(fake.watched).toEqual([data, path.join(engineDir, 'data'), path.join(engineDir, 'schema')]);
+      // The product's store is opened by a read; its checks' run is announced once it is ready.
+      const m = fake.middlewares[0];
+      expect((await request(m, '/api/meta-model/get-meta-model')).status).toBe(200);
+      const changes = () => fake.sent as { type: string; event: string; data: DataChange }[];
+      await vi.waitFor(() => expect(changes().some((c) => c.data.readModels?.includes('problems'))).toBe(true), { timeout: 10_000 });
       const change = (file: string) => {
         fake.sent.length = 0;
         for (const listener of fake.listeners) listener('change', file);
-        return fake.sent;
       };
-      expect(change(path.join(data, 'uc_requirement.jsonl'))).toEqual([{ type: 'custom', event: 'spec:changed' }]);
-      expect(change(path.join(engineDir, 'schema', '005-use-cases.sql'))).toEqual([{ type: 'custom', event: 'spec:changed' }]);
-      expect(change(path.join(product, 'data-old', 'x.jsonl'))).toEqual([]);
-      expect(change(path.join(product, 'README.md'))).toEqual([]);
+
+      await writeFile(path.join(data, 'product.jsonl'), `${JSON.stringify({ id: 'EX', title: 'Example', description: 'A product.' })}\n`);
+      change(path.join(data, 'product.jsonl'));
+      await vi.waitFor(() => expect(changes().length).toBeGreaterThan(0), { timeout: 10_000 });
+      const [first] = changes();
+      expect(first).toMatchObject({ type: 'custom', event: 'spec:changed', data: { tables: ['product'] } });
+      // The meta model read above reads no product, so it is not named.
+      expect(first.data.readModels).toContain('product');
+      expect(first.data.readModels).not.toContain('meta-model');
+
+      change(path.join(engineDir, 'schema', '005-use-cases.sql'));
+      expect(changes()).toEqual([{ type: 'custom', event: 'spec:changed', data: { tables: [], readModels: null } }]);
+      change(path.join(product, 'data-old', 'x.jsonl'));
+      change(path.join(product, 'README.md'));
+      await new Promise((resolve) => setTimeout(resolve, 200));
+      expect(changes()).toEqual([]);
     } finally {
+      await realApi.closeStores(product);
       await rm(product, { recursive: true, force: true });
     }
   });
