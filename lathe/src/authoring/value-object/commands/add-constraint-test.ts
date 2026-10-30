@@ -4,6 +4,8 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ConstraintTestRow } from '../../../platform/data/tables.ts';
 import { VALUE_OBJECT_SLICE } from '../model.ts';
 import { ValueObjectRepository } from '../repository.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
+import { valueObjectOneEach } from '../rules.ts';
 
 /** A new constraint test, with the test data sets it starts from. */
 export type AddConstraintTest = Pick<ConstraintTestRow, 'id' | 'title' | 'constraint_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'accepts' | 'refuses' | 'notes'> & { starts_from?: string[] };
@@ -39,9 +41,8 @@ export const ADD_CONSTRAINT_TEST: CommandDefinition<AddConstraintTest> = {
 export function addConstraintTest(tx: Transaction, input: AddConstraintTest): void {
   const valueObjects = new ValueObjectRepository(tx);
   const valueObject = valueObjects.loadHolding('constraint', input.constraint_id) ?? tx.refuse('missing', `there is no constraint ${input.constraint_id}`);
-  const existing = valueObject.constraintTests.find((t) => t.row.constraint_id === input.constraint_id);
-  if (existing) tx.refuse('exists', `${input.constraint_id} already has its test, ${existing.row.id}`);
   const { starts_from = [], ...row } = input;
+  refuseBroken(valueObjectOneEach([], [...valueObject.constraintTests.map((t) => t.row), row]));
   valueObject.constraintTests.push({ row, startsFrom: starts_from });
   valueObjects.save(valueObject);
 }

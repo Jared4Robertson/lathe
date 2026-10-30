@@ -22,7 +22,7 @@ describe('LA-V151-R01-T01 a UI component is read through the UI component aggreg
     const { requests } = await openApp('/P-UI01', { data: withPackage() });
     expect(await within(main()).findByText('The fixture\'s ui component Loan table.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/ui-component/get-ui-component?id=P-UI01');
-    expect(within(section('Traceability')).getByRole('link', { name: /P-V01/ })).toBeInTheDocument();
+    expect(within(section('Traceability')).getByRole('link', { name: /^P-V01Loan desk/ })).toBeInTheDocument();
     expect(within(section(/^Packages/)).getByText('react')).toBeInTheDocument();
   });
 

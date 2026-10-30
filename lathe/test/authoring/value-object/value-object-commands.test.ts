@@ -48,7 +48,7 @@ describe('LA-AUT-UC24-R50-T01 each Value object command (LA-AUT-A9) changes one 
   it('builds the data set with its own Add commands, and reads a value object whole by any record in it', async () => {
     const store = await valueObjectDataSet();
     const whole = runQuery(store, GET_VALUE_OBJECT, { id: 'TL-VO01-C01-T' }) as Whole;
-    expect(whole).toMatchObject({ valueObject: { id: 'TL-VO01' }, constraints: [{ id: 'TL-VO01-C01', test: { id: 'TL-VO01-C01-T', startsFrom: ['TL-LEND-TD01'] } }], valueType: { id: 'TL-VO01-VT', meets: ['TL-STD-CODE-R01'] } });
+    expect(whole).toMatchObject({ record: { id: 'TL-VO01-C01-T', kind: 'constraint_test' }, valueObject: { id: 'TL-VO01' }, product: 'TL', constraints: [{ constraint: { id: 'TL-VO01-C01' }, test: { test: { id: 'TL-VO01-C01-T' }, startsFrom: ['TL-LEND-TD01'] } }], valueType: { valueType: { id: 'TL-VO01-VT' }, meets: ['TL-STD-CODE-R01'] } });
     expect(whole.fields).toEqual([{ value_object_id: 'TL-VO01', position: 1, name: 'Address', meaning: 'The address as the member gives it.', type: 'text', required: true, example: 'ada@example.org' }]);
     expect(GET_VALUE_OBJECT.text(whole)).toContain('field 1: Address (text, required)');
     expect(runQuery(store, LIST_VALUE_OBJECTS, { product_id: 'TL' })).toEqual([{ id: 'TL-VO01', title: 'Email address' }]);
@@ -74,8 +74,8 @@ describe('LA-AUT-UC24-R50-T01 each Value object command (LA-AUT-A9) changes one 
   it("refuses a second value type or constraint test, an input that is not the command's, and a record that is not there, changing no file", async () => {
     const store = await valueObjectDataSet();
     const before = fileOf(store, 'value_object_field');
-    expect((await refusal(store, ADD_VALUE_TYPE, { id: 'TL-VO01-VT2', title: 'Email', value_object_id: 'TL-VO01' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-VO01 already has its value type, TL-VO01-VT' });
-    expect((await refusal(store, ADD_CONSTRAINT_TEST, { id: 'TL-VO01-C01-T2', title: 'again', constraint_id: 'TL-VO01-C01', level: 'unit', state: 'not automated yet', accepts: 'a@b', refuses: 'ab' })).problems[0].rule).toBe('exists');
+    expect((await refusal(store, ADD_VALUE_TYPE, { id: 'TL-VO01-VT2', title: 'Email', value_object_id: 'TL-VO01' })).problems[0]).toMatchObject({ rule: 'value-object-one-each', message: 'value object TL-VO01 already has its value type, so TL-VO01-VT2 cannot be a second: a value object has one' });
+    expect((await refusal(store, ADD_CONSTRAINT_TEST, { id: 'TL-VO01-C01-T2', title: 'again', constraint_id: 'TL-VO01-C01', level: 'unit', state: 'not automated yet', accepts: 'a@b', refuses: 'ab' })).problems[0].rule).toBe('value-object-one-each');
     await expect(runCommand(store, CHANGE_VALUE_OBJECT, { id: 'TL-VO01', fields: [{ name: 'Address', colour: 'red' }] })).rejects.toThrow(/an item takes name, meaning/);
     await expect(runCommand(store, CHANGE_CONSTRAINT, { id: 'TL-VO01-C01', value_object_id: 'TL-VO02' })).rejects.toThrow(/change-constraint takes no value_object_id/);
     expect((await refusal(store, CHANGE_VALUE_OBJECT, { id: 'TL-VO01', fields: [{ name: 'Address', meaning: 'x', required: true }] })).problems[0].rule).toBe('check');

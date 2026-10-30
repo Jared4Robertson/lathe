@@ -22,26 +22,26 @@ describe('an obligation\'s chain', () => {
   it('LA-V98-R02-T01 An obligation\'s chain holds what designs, builds and proves it, and the files they name, as the engine works it out', async () => {
     const served = indexOf(await servedByEngine(testWorkspace(), FILES));
     // A UC requirement: the step that fulfills it, its flow, where it happens and what it invokes; that command's
-    // handler and the UI component rendering that view, which build it as coverage counts; its test.
+    // handler, which builds it as coverage counts (a UI component rendering that view does not); its test.
     const req = traceChain(served, tracesOf(served, 'P'), 'P-D-UC01-R01')!;
     expect(req.design).toEqual(expect.arrayContaining(['P-D-UC01-FL01', 'P-D-UC01-FL01-S01', 'P-V01', 'P-D-CMD01']));
     expect(req.design).not.toContain('P-D-UC01-FL01-S02');
-    expect(req.build).toEqual(['P-D-CMD01-H', 'P-UI01']);
+    expect(req.build).toEqual(['P-D-CMD01-H']);
     expect(req.tests).toEqual(['P-D-UC01-R01-T01']);
-    expect(files('P-D-UC01-R01', served)).toEqual(['src/loans.ts', 'src/ui/LoanTable.tsx', 'test/lend.test.ts']);
+    expect(files('P-D-UC01-R01', served)).toEqual(['src/loans.ts', 'test/lend.test.ts']);
     expect(req.files.find((f) => f.path === 'src/loans.ts')!.namedBy).toEqual(['P-D-CMD01-H']);
     // Its links, each from the record nearer the obligation to the one it leads to: what the Trace stage draws its arrows from.
     expect(req.links.map(([a, b]) => `${a} > ${b}`).sort()).toEqual([
       'P-D-CMD01 > P-D-CMD01-H', 'P-D-CMD01-H > file:src/loans.ts', 'P-D-UC01-FL01 > P-D-UC01-FL01-S01', 'P-D-UC01-FL01-S01 > P-D-CMD01',
       'P-D-UC01-FL01-S01 > P-V01', 'P-D-UC01-R01 > P-D-UC01-FL01', 'P-D-UC01-R01 > P-D-UC01-R01-T01', 'P-D-UC01-R01-T01 > file:test/lend.test.ts',
-      'P-UI01 > file:src/ui/LoanTable.tsx', 'P-V01 > P-UI01',
     ]);
-    // An invariant: its aggregate, and what builds it as coverage counts: the table whose unique key enforces it.
+    // An invariant: its aggregate, and what builds it as coverage counts: its rule alone, never a table or data model.
     const inv = traceChain(index, tracesOf(index, 'P'), 'P-D-INV01')!;
     expect(inv.design).toEqual(['P-D-A3']);
-    expect(inv.build).toContain('P-D-EN03-TB');
-    expect(inv.build).not.toContain('P-D-REPO01');
-    expect(inv.links).toEqual(expect.arrayContaining([['P-D-INV01', 'P-D-A3'], ['P-D-INV01', 'P-D-EN03-TB']]));
+    expect(inv.build).toEqual(['P-D-INV01-RL']);
+    expect(inv.links).toEqual(expect.arrayContaining([['P-D-INV01', 'P-D-A3'], ['P-D-INV01', 'P-D-INV01-RL']]));
+    // A view requirement: the UI component that builds it.
+    expect(traceChain(index, tracesOf(index, 'P'), 'P-V01-R01')!.build).toEqual(['P-UI01']);
     expect(inv.tests).toEqual(['P-D-INV01-T']);
     // A constraint: its value object and the value object's value type.
     const con = traceChain(index, tracesOf(index, 'P'), 'P-VO01-C01')!;

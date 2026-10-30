@@ -4,7 +4,8 @@ import { AGGREGATE, EDITED, keepData, RECORD } from './scenarios';
 
 // Changing records in place, with nothing jumping (LA-PAT-APP-UX-R08): on the Use case page (its own editor, sending
 // the Use case aggregate's commands) and on the Domain, Test data set, Pattern, Standard, Product, Business outcome,
-// Entry point, Tooling, View, UI component, Check and Pattern pages and the Product page's Limits, opening a record's form, saving an edit, adding a child from its parent's page,
+// Entry point, Tooling, Table, Specification, Read model, Value object, View, UI component, Endpoint, Integration, Check and
+// Pattern pages and the Product page's Limits, opening a record's form, saving an edit, adding a child from its parent's page,
 // and asking to remove a record that is still referenced, which the command refuses inline; and on the page of a kind
 // whose aggregate has no editor yet, the record form generated from the schema. The form takes the place of the page's content,
 // so shifts inside the wiki card's scroll box are the change itself; the nav, the card's head and
@@ -134,6 +135,12 @@ test.describe('editing', () => {
     sendAForm(page, '/LA-PAT-RECORD-PAGE', 'Followers of LA-PAT-RECORD-PAGE', 'Follow', 'Follow LA-PAT-RECORD-PAGE', async (form) => {
       await form.getByRole('combobox', { name: /^Follower/ }).selectOption({ index: 1 });
     }, 'Follow'));
+  // The Table, Specification, Read model and Value object pages: each saves one field as its kind's Change command, with
+  // nothing jumping. Each is its aggregate's web-app flow test.
+  test('LA-AUT-UC17-FL01-T on the Table page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EN54-TB', /^title/, 'projections'));
+  test('LA-AUT-UC20-FL01-T on the Specification page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-SP03', /^title/, 'Data files clash in a merge'));
+  test('LA-AUT-UC21-FL01-T on the Read model page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-RM25', /^description/, 'A specification as the stability suite reads it.'));
+  test('LA-AUT-UC24-FL01-T on the Value object page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-VO01', /^description/, 'Names one record across the store, as the stability suite describes it.'));
 });
 
 /** Opens the page, opens a form from one of its toolbars, fills it and sends it, with nothing outside the card moving. */

@@ -31,6 +31,7 @@ function fieldsOf(index: SpecIndex, product: string, adding: boolean): FieldSpec
     { field: 'file', column: 'file', table: 'ui_component' },
     { field: 'description', column: 'description', table: 'ui_component', long: true },
     { field: 'renders', label: 'Renders', description: 'The views it renders, or part of.', many: choicesOf(index, product, 'view') },
+    { field: 'builds', label: 'Builds', description: 'The view requirements its code builds.', many: choicesOf(index, product, 'view_requirement') },
     { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choicesOf(index, product, 'standard_rule') },
     { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
   ];
@@ -58,7 +59,7 @@ export function UiComponentEditor({ index, page, children }: { index: SpecIndex;
   const product = index.byId.get(id)?.product ?? '';
   if (mode === 'change') {
     const specs = fieldsOf(index, product, false);
-    const current = { ...page.component, renders: page.renders, meets: page.meets, packages: page.packages } as Record<string, unknown>;
+    const current = { ...page.component, renders: page.renders, builds: page.builds, meets: page.meets, packages: page.packages } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
       const input = changeInput(index, withoutPackages(specs), draft, current, { id }, ['file']);
       const packages = packagesOf(draft);

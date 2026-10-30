@@ -14,7 +14,7 @@ CREATE TYPE table_role AS ENUM ('meta', 'registry', 'supertype', 'kind', 'part',
 -- The stages, in the order a product is modeled: links run from what is defined first to what is defined later.
 CREATE TYPE stage AS ENUM ('discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan');
 CREATE TYPE id_scope AS ENUM ('product', 'domain', 'parent');
-CREATE TYPE link_role AS ENUM ('design', 'proof');
+CREATE TYPE link_role AS ENUM ('design', 'build', 'proof');
 CREATE TYPE link_scope AS ENUM ('product', 'domain', 'aggregate');
 -- How a code-bound kind's titles are written: one identifier as in code, an invocation, or a kebab-case name.
 CREATE TYPE title_form AS ENUM ('identifier', 'invocation', 'kebab-case');
@@ -96,7 +96,7 @@ CREATE TABLE meta_relation (
 );
 COMMENT ON TABLE meta_relation IS 'Every relation: Lathe''s own and each product''s. Its links are rows of the table with the same name, (source_id, target_id), and its description is that table''s comment.';
 COMMENT ON COLUMN meta_relation.name IS 'The relation''s name, which is also its link table''s name, such as raises.';
-COMMENT ON COLUMN meta_relation.role IS 'What a link does for coverage: design (it designs the obligation it targets) or proof (it proves it); none otherwise.';
+COMMENT ON COLUMN meta_relation.role IS 'What a link does for coverage: design (it designs the obligation it targets), build (it builds it) or proof (it proves it); none otherwise.';
 COMMENT ON COLUMN meta_relation.scope IS 'What a link''s two ends must share: product (every link), domain, or aggregate.';
 COMMENT ON COLUMN meta_relation.forward_label IS 'The link read from its source, such as Raises.';
 COMMENT ON COLUMN meta_relation.reverse_label IS 'The link read from its target, such as Raised by.';

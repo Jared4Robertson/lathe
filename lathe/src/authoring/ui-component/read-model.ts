@@ -1,5 +1,5 @@
 // The UI component aggregate's read model (LA-AUT-RM35), shaped for its readers: the UI component page reads a UI
-// component whole (its row, the views it renders, the standard rules it meets and the packages it uses) with the
+// component whole (its row, the views it renders, the view requirements it builds, the standard rules it meets and the packages it uses) with the
 // record the page is about, a product's list reads each UI component's ID and title, and the editor's next ID reads
 // the IDs in use. The projection (uiComponentTableFrom) is the only code that reads the source rows and the only code
 // that writes the read model's table; the query handlers read that table only through the reader (reader.ts). Nothing
@@ -16,6 +16,8 @@ export interface UiComponentTree {
   component: UiComponentRow;
   /** The views it renders, or part of. */
   renders: string[];
+  /** The view requirements its code builds. */
+  builds: string[];
   /** The standard rules it meets. */
   meets: string[];
   /** The packages it uses. */
@@ -63,6 +65,7 @@ function linked(view: ReadView, table: string, by: string, other: string): (id: 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function uiComponentTableFrom(view: ReadView): UiComponentTable {
   const renders = linked(view, 'renders', 'source_id', 'target_id');
+  const builds = linked(view, 'builds', 'source_id', 'target_id');
   const meets = linked(view, 'meets', 'source_id', 'target_id');
   const packages = linked(view, 'package_use', 'record_id', 'package');
   const components = new Map<string, UiComponentTree>();
@@ -71,7 +74,7 @@ export function uiComponentTableFrom(view: ReadView): UiComponentTable {
   for (const component of view.rows('ui_component') as unknown as UiComponentRow[]) {
     const root = component.id;
     holding.set(root, { root, kind: 'ui_component' });
-    components.set(root, { component, renders: renders(root), meets: meets(root), packages: packages(root) });
+    components.set(root, { component, renders: renders(root), builds: builds(root), meets: meets(root), packages: packages(root) });
     products.get(root.replace(/-UI\d+$/, ''))?.push({ id: root, title: component.title });
   }
   for (const list of products.values()) list.sort(byId);

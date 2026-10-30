@@ -42,7 +42,7 @@ describe('LA-AUT-UC28-R50-T01 each UI component command (LA-AUT-A15) changes one
     expect(runQuery(store, GET_UI_COMPONENT, { id: 'TL-UI01' })).toEqual({
       record: { id: 'TL-UI01', kind: 'ui_component' },
       component: { id: 'TL-UI01', title: 'CatalogPage', file: 'src/catalog.tsx', description: 'Renders the catalog.' },
-      renders: ['TL-V01'], meets: ['TL-STD-CODE-R01'], packages: ['react'],
+      renders: ['TL-V01'], builds: [], meets: ['TL-STD-CODE-R01'], packages: ['react'],
     });
     expect(runQuery(store, LIST_UI_COMPONENTS, { product_id: 'TL' })).toEqual([{ id: 'TL-UI01', title: 'CatalogPage' }]);
     expect(runQuery(store, NEXT_UI_COMPONENT_ID, { product_id: 'TL' })).toBe('TL-UI02');

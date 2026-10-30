@@ -4,6 +4,7 @@
 import type { Coverage, Problem, TraceChain } from '../../types.ts';
 import type { Row } from './rows.ts';
 import type { SchemaDescription } from './schema.ts';
+import { StoreError } from './problems.ts';
 
 /**
  * What a run of the checks over the data found: every problem, coverage by domain, and each obligation's chain. It is
@@ -45,4 +46,25 @@ export interface AggregateRules {
   aggregate: string;
   /** Every row of the data that breaks one of the aggregate's rules. */
   check(view: ReadView): RuleProblem[];
+}
+
+/**
+ * The rows after the first of each key, in order: the extra ones a rule of "at most one each" refuses. A row whose key
+ * is null or undefined has no parent of that kind and is never extra.
+ */
+export function beyondFirst<R>(rows: readonly R[], keyOf: (row: R) => string | null | undefined): R[] {
+  const seen = new Set<string>();
+  const extra: R[] = [];
+  for (const row of rows) {
+    const key = keyOf(row);
+    if (key === null || key === undefined) continue;
+    if (seen.has(key)) extra.push(row);
+    else seen.add(key);
+  }
+  return extra;
+}
+
+/** Refuses the command with every problem its aggregate's rules found, when they found any. */
+export function refuseBroken(problems: readonly RuleProblem[]): void {
+  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message, command: 0 })));
 }

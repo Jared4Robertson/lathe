@@ -68,7 +68,7 @@ CREATE TABLE view_requirement (
   statement VARCHAR NOT NULL CHECK (trim(statement) <> ''),
   group_name VARCHAR
 );
-COMMENT ON TABLE view_requirement IS 'One rule a view must follow, such as what it shows while loading or a field''s limits.';
+COMMENT ON TABLE view_requirement IS 'One rule a view must follow, such as what it shows while loading or a field''s limits. The UI components whose code does what it says build it (builds).';
 COMMENT ON COLUMN view_requirement.id IS 'The requirement''s ID: its view''s ID and R<nn>, such as TL-V01-R01.';
 COMMENT ON COLUMN view_requirement.title IS 'The requirement in a few words.';
 COMMENT ON COLUMN view_requirement.view_id IS 'The view it belongs to.';
