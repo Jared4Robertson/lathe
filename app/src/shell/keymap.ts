@@ -22,7 +22,7 @@ export interface Command {
   /** The bindings off a Mac, when they differ (Ctrl+W closes the tab there, so Alt+W instead). */
   otherKeys?: string[];
   when: CommandContext;
-  /** Never matched from this table: handled by the component it belongs to, or by the stage walk (the plain arrows), and listed here so the sheet shows it. */
+  /** Never matched from this table: handled by the control it belongs to by the keys the ARIA practices give it (a tree's arrows, Enter on a graph box), listed here so the sheet shows it; its keys are fixed. */
   local?: boolean;
   /** Left to the browser (Alt+Left): listed, never intercepted. */
   browser?: boolean;
@@ -35,20 +35,27 @@ export const SPACE_KEYS = 9;
 export const spaceCommandId = (n: number) => `switchSpace${n}`;
 
 /**
- * The keys of each move of the stage walk (LA-V61-R49, views/levels.ts), from anywhere on the page: the plain arrows;
- * as a game's keys, W Up, A Left, S Down and D Right; as vim's, H Left, J Down, K Up and L Right; Shift+Up (Shift+W,
- * Shift+K) out to the container and Shift+Down (Shift+S, Shift+J) in to the first node inside it. The arrow comes first:
- * it is the key a move is shown by.
+ * The default keys of each move of the stage walk (LA-V61-R49, views/levels.ts), from anywhere on the page: the plain
+ * arrows; as a game's keys, W Up, A Left, S Down and D Right; as vim's, H Left, J Down, K Up and L Right; Shift+Up
+ * (Shift+W, Shift+K) out to the container and Shift+Down (Shift+S, Shift+J) in to the first node inside it. The arrow
+ * comes first: it is the key a move is shown by. A person can bind others (platform/key-bindings).
  */
 const WALK_KEYS: Readonly<Record<Move, readonly string[]>> = {
   left: ['ArrowLeft', 'A', 'H'], right: ['ArrowRight', 'D', 'L'], up: ['ArrowUp', 'W', 'K'], down: ['ArrowDown', 'S', 'J'],
   out: ['Shift+ArrowUp', 'Shift+W', 'Shift+K'], in: ['Shift+ArrowDown', 'Shift+S', 'Shift+J'],
 };
-/** The move a chord walks the stage by, or none. With Cmd, Ctrl or Alt held, or Shift with any other key, nothing: those keep their own meanings. */
-export const walkMove = (chord: string): Move | undefined => MOVES.find((m) => WALK_KEYS[m].includes(chord));
 /** Each move's keymap command, in the toolbar's order. */
 export const WALK_COMMANDS: Readonly<Record<Move, string>> = { left: 'walkLeft', right: 'walkRight', up: 'walkUp', down: 'walkDown', out: 'walkOut', in: 'walkIn' };
-const walk = (move: Move, title: string): Command => ({ id: WALK_COMMANDS[move], title, group: 'Graph', keys: [...WALK_KEYS[move]], when: 'graph', local: true });
+/**
+ * The move a chord walks the stage by in the keymap as bound, or none: the move whose command has the chord among its
+ * keys. A chord with Cmd, Ctrl or Alt, or Shift with another key, walks only when a person bound it so.
+ */
+export const walkMove = (chord: string, commands: readonly Command[], mac: boolean): Move | undefined =>
+  MOVES.find((m) => commands.find((c) => c.id === WALK_COMMANDS[m])?.keys.some((k) => normalizeBinding(k, mac) === chord));
+/** The plain letter a move is also walked by (A for Left), shown on its toolbar button; '' when it has none. */
+export const walkLetter = (move: Move, commands: readonly Command[], mac: boolean): string =>
+  commands.find((c) => c.id === WALK_COMMANDS[move])?.keys.map((k) => normalizeBinding(k, mac)).find((k) => /^[A-Z]$/.test(k)) ?? '';
+const walk = (move: Move, title: string): Command => ({ id: WALK_COMMANDS[move], title, group: 'Graph', keys: [...WALK_KEYS[move]], when: 'page' });
 
 export const COMMANDS: readonly Command[] = [
   // Navigate
@@ -110,7 +117,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
   { id: 'graphLayout', title: 'Tree or Nested layout: parents beside their children, or made of them as boxes', group: 'Graph', keys: ['v'], when: 'graph' },
   // The stage walk (WALK_KEYS), from anywhere but a control that uses arrows itself (usesArrows), by the commands layer's
-  // one handler (LA-V61-R49). Each move moves the stage's focus: the arrows among the siblings (on the Graph by its
+  // one handler (LA-V61-R49), never matched as a command (no handler registers for it). Each move moves the stage's focus: the arrows among the siblings (on the Graph by its
   // layout's keys, graph/steps.ts), Out and In between the levels. Tab steps through the boxes.
   walk('left', 'Step left'),
   walk('right', 'Step right'),
@@ -126,11 +133,22 @@ export const COMMANDS: readonly Command[] = [
 
 export const GROUPS: readonly CommandGroup[] = ['Navigate', 'View', 'Graph', 'Lists'];
 
-/** Browser essentials a binding may never take, on any platform. */
-export const RESERVED = ['Mod+W', 'Mod+T', 'Mod+L', 'Mod+R', 'Mod+N', 'Mod+Q', 'Mod+G', 'Tab', 'Shift+Tab', 'F5', 'F11'];
+/**
+ * The keys the browser or the operating system keeps, which a binding may never take, on any platform: close, open and
+ * reload a tab or window, the address bar, quit, hide and minimize, find next, the clipboard and undo, moving focus, and
+ * the function keys that reload and go full screen.
+ */
+export const RESERVED = [
+  'Mod+W', 'Mod+T', 'Mod+L', 'Mod+R', 'Mod+N', 'Mod+Q', 'Mod+H', 'Mod+M', 'Mod+G',
+  'Mod+C', 'Mod+V', 'Mod+X', 'Mod+A', 'Mod+Z', 'Mod+Shift+Z',
+  'Tab', 'Shift+Tab', 'F5', 'F11',
+];
 
-/** A command's own bindings on this platform, before overrides. */
+/** A command's own bindings on this platform, before a person's. */
 export const platformKeys = (c: Command, mac: boolean): string[] => (mac ? c.keys : c.otherKeys ?? c.keys);
+
+/** Whether a person may bind a command's keys: every command but those whose keys the browser (Alt+Left) or an ARIA control (a tree's arrows) owns. */
+export const customizable = (c: Command): boolean => !c.local && !c.browser;
 
 // ---------- Platform ----------
 
@@ -256,28 +274,41 @@ export function usesEnter(target: EventTarget | null): boolean {
 
 // ---------- A person's bindings ----------
 
-/** The table with a person's overrides applied; a binding that takes a browser essential is dropped. */
-export function resolveCommands(overrides: Record<string, string[]>, mac: boolean, commands: readonly Command[] = COMMANDS): Command[] {
+/** The table with a person's keys in place of the defaults (by command ID); a key the browser or OS keeps is dropped. */
+export function resolveCommands(bound: Readonly<Record<string, readonly string[]>>, mac: boolean, commands: readonly Command[] = COMMANDS): Command[] {
   const reserved = new Set(RESERVED.map((r) => normalizeBinding(r, mac)));
   return commands.map((c) => {
-    const keys = (overrides[c.id] ?? platformKeys(c, mac)).filter((k) => k.trim() && !reserved.has(normalizeBinding(k, mac)));
+    const keys = (bound[c.id] ?? platformKeys(c, mac)).filter((k) => k.trim() && !reserved.has(normalizeBinding(k, mac)));
     return { ...c, keys };
   });
 }
 
 /** Contexts that can be active at the same time: the same one, or either one global. */
-const overlap = (a: CommandContext, b: CommandContext) => a === b || a === 'global' || b === 'global';
+export const overlap = (a: CommandContext, b: CommandContext) => a === b || a === 'global' || b === 'global';
 
-/** Bindings used by two commands whose contexts can be active at the same time. */
-export function duplicateBindings(commands: readonly Command[], mac: boolean): string[] {
-  const clashes: string[] = [];
-  const all = commands.flatMap((c) => platformKeys(c, mac).map((k) => ({ c, b: normalizeBinding(k, mac) })));
-  all.forEach((x, i) => all.slice(i + 1).forEach((y) => {
-    if (x.b === y.b && x.c.id !== y.c.id && overlap(x.c.when, y.c.when)) clashes.push(`${x.b}: ${x.c.id} and ${y.c.id}`);
-    // A sequence must not start with a key that is a whole binding on its own.
-    if (overlap(x.c.when, y.c.when) && (x.b.startsWith(`${y.b} `) || y.b.startsWith(`${x.b} `))) clashes.push(`${x.b} / ${y.b}: ${x.c.id} and ${y.c.id}`);
+/** Two commands that take the same key, or a sequence and the key it starts with, in contexts active at the same time. */
+export interface Clash { binding: string; other: string; a: Command; b: Command }
+
+/** The other command that has the key, or a key it starts or that starts it, where the command applies too; none when the key is free for it. */
+export function holderOf(commands: readonly Command[], id: string, key: string, mac: boolean): Command | undefined {
+  const own = commands.find((c) => c.id === id);
+  const k = normalizeBinding(key, mac);
+  return commands.find((c) => c.id !== id && (!own || overlap(own.when, c.when)) && c.keys.some((x) => {
+    const b = normalizeBinding(x, mac);
+    return b === k || b.startsWith(`${k} `) || k.startsWith(`${b} `);
   }));
-  return clashes;
+}
+
+/** Every clash in a keymap as bound (each command's `keys`). */
+export function clashes(commands: readonly Command[], mac: boolean): Clash[] {
+  const found: Clash[] = [];
+  const all = commands.flatMap((c) => c.keys.map((k) => ({ c, b: normalizeBinding(k, mac) })));
+  all.forEach((x, i) => all.slice(i + 1).forEach((y) => {
+    if (x.c.id === y.c.id || !overlap(x.c.when, y.c.when)) return;
+    // The same key; or a sequence that starts with a key that is a whole binding on its own.
+    if (x.b === y.b || x.b.startsWith(`${y.b} `) || y.b.startsWith(`${x.b} `)) found.push({ binding: x.b, other: y.b, a: x.c, b: y.c });
+  }));
+  return found;
 }
 
 // ---------- Display ----------

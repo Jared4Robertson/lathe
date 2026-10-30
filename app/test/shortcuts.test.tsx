@@ -130,11 +130,110 @@ describe('keyboard shortcuts', () => {
     expect(active()).toBe(problems[problems.length - 1]);
   });
 
-  it('LA-V61-R10-T02 The shortcuts sheet says how to change the bindings in local storage', async () => {
+  /** Opens the shortcuts sheet on a use case's page, as ? does. */
+  const openSheet = async () => {
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     press(document.body, '?', 'Slash', { shiftKey: true });
-    expect(within(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).getByText(/lathe:keybindings/)).toBeInTheDocument();
+    return screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
+  };
+  const row = (sheet: HTMLElement, title: string) => within(sheet).getByRole('rowheader', { name: title }).closest('tr')!;
+  const keysIn = (tr: HTMLElement) => [...tr.querySelectorAll('.shortcut-key-list kbd')].map((k) => k.textContent);
+
+  it('LA-V61-R10-T02 In the shortcuts sheet a person changes a key, adds one, removes one, and resets the shortcut and then all', async () => {
+    const sheet = await openSheet();
+    const nav = row(sheet, 'Show or hide the navigation');
+    // Change Ctrl+B: the recorder takes the next key, and every hint follows at once.
+    fireEvent.click(within(nav).getByRole('button', { name: 'Change Ctrl+B of Show or hide the navigation' }));
+    const recorder = within(nav).getByRole('button', { name: 'Press a key for Show or hide the navigation, in place of Ctrl+B. Escape cancels.' });
+    await waitFor(() => expect(recorder).toHaveFocus());
+    fireEvent.keyDown(recorder, { key: 'j', code: 'KeyJ', ctrlKey: true });
+    expect(keysIn(row(sheet, 'Show or hide the navigation'))).toEqual(['Ctrl+J']);
+    await waitFor(() => expect(announcer()).toHaveTextContent('Show or hide the navigation: Ctrl+J'));
+    await waitFor(() => expect(within(row(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Add a key to Show or hide the navigation' })).toHaveFocus());
+    // Add a second key, then remove it.
+    fireEvent.click(within(row(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Add a key to Show or hide the navigation' }));
+    fireEvent.keyDown(within(sheet).getByRole('button', { name: 'Press a key for Show or hide the navigation. Escape cancels.' }), { key: 'n', code: 'KeyN', ctrlKey: true, altKey: true });
+    expect(keysIn(row(sheet, 'Show or hide the navigation'))).toEqual(['Ctrl+J', 'Ctrl+Alt+N']);
+    fireEvent.click(within(row(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Remove Ctrl+Alt+N from Show or hide the navigation' }));
+    expect(keysIn(row(sheet, 'Show or hide the navigation'))).toEqual(['Ctrl+J']);
+    // A changed shortcut shows Reset; Reset puts its own keys back.
+    expect(row(sheet, 'Show or hide the navigation')).toHaveAttribute('data-changed');
+    fireEvent.click(within(row(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Reset Show or hide the navigation' }));
+    expect(keysIn(row(sheet, 'Show or hide the navigation'))).toEqual(['Ctrl+B']);
+    expect(within(row(sheet, 'Show or hide the navigation')).queryByRole('button', { name: /^Reset/ })).toBeNull();
+    // Reset all asks first, then gives every shortcut its own keys again.
+    expect(within(sheet).getByRole('button', { name: 'Reset all' })).toBeDisabled();
+    fireEvent.click(within(row(sheet, 'Go home (all products)')).getByRole('button', { name: 'Remove g then h from Go home (all products)' }));
+    expect(within(row(sheet, 'Go home (all products)')).getByRole('alert')).toHaveTextContent('“Go home (all products)” would have no key.');
+    fireEvent.click(within(row(sheet, 'Go home (all products)')).getByRole('button', { name: 'Leave without a key' }));
+    expect(within(row(sheet, 'Go home (all products)')).getByText('No key')).toBeInTheDocument();
+    fireEvent.click(within(sheet).getByRole('button', { name: 'Reset all' }));
+    fireEvent.click(within(within(sheet).getByRole('alert')).getByRole('button', { name: 'Reset all' }));
+    expect(keysIn(row(sheet, 'Go home (all products)'))).toEqual(['g then h']);
+    expect(window.localStorage.getItem('lathe:keybindings')).toBe('{}');
+  });
+
+  it('LA-V61-R51-T01 A key another shortcut has shows at once, naming it, with Swap and Cancel', async () => {
+    const sheet = await openSheet();
+    fireEvent.click(within(row(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Change Ctrl+B of Show or hide the navigation' }));
+    fireEvent.keyDown(within(sheet).getByRole('button', { name: /^Press a key for Show or hide the navigation/ }), { key: 'M', code: 'KeyM', ctrlKey: true, shiftKey: true });
+    const offer = within(row(sheet, 'Show or hide the navigation')).getByRole('alert');
+    expect(offer).toHaveTextContent('Ctrl+Shift+M is already “Open Checks”.');
+    await waitFor(() => expect(within(offer).getByRole('button', { name: 'Swap' })).toHaveFocus());
+    // Cancel leaves both as they were.
+    fireEvent.click(within(offer).getByRole('button', { name: 'Cancel' }));
+    expect(keysIn(row(sheet, 'Show or hide the navigation'))).toEqual(['Ctrl+B']);
+    // Swap: the navigation takes Ctrl+Shift+M, Open Checks gets Ctrl+B.
+    fireEvent.click(within(row(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Change Ctrl+B of Show or hide the navigation' }));
+    fireEvent.keyDown(within(sheet).getByRole('button', { name: /^Press a key for Show or hide the navigation/ }), { key: 'M', code: 'KeyM', ctrlKey: true, shiftKey: true });
+    fireEvent.click(within(row(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Swap' }));
+    expect(keysIn(row(sheet, 'Show or hide the navigation'))).toEqual(['Ctrl+Shift+M']);
+    expect(keysIn(row(sheet, 'Open Checks'))).toEqual(['Ctrl+B']);
+    // A key the browser keeps is refused with its reason.
+    fireEvent.click(within(row(sheet, 'Open Checks')).getByRole('button', { name: 'Add a key to Open Checks' }));
+    fireEvent.keyDown(within(sheet).getByRole('button', { name: /^Press a key for Open Checks/ }), { key: 'w', code: 'KeyW', ctrlKey: true });
+    expect(within(row(sheet, 'Open Checks')).getByRole('alert')).toHaveTextContent('Ctrl+W belongs to the browser or the system, so "Open Checks" cannot take it.');
+  });
+
+  it('LA-V61-R52-T01 Recording a key works from the keyboard: Escape cancels without closing the sheet, and the key pressed reaches no command', async () => {
+    const sheet = await openSheet();
+    const add = within(row(sheet, 'Step left')).getByRole('button', { name: 'Add a key to Step left' });
+    fireEvent.click(add);
+    const recorder = within(sheet).getByRole('button', { name: 'Press a key for Step left. Escape cancels.' });
+    // Modifiers alone wait for the key; ? would open the sheet, Ctrl+B hide the navigation: here they are only recorded.
+    fireEvent.keyDown(recorder, { key: 'Shift', code: 'ShiftLeft', shiftKey: true });
+    expect(recorder).toBeInTheDocument();
+    fireEvent.keyDown(recorder, { key: 'Escape', code: 'Escape' });
+    expect(screen.getByRole('dialog', { name: 'Keyboard shortcuts' })).toBeInTheDocument();
+    expect(within(sheet).queryByRole('button', { name: /^Press a key/ })).toBeNull();
+    fireEvent.click(within(row(sheet, 'Step left')).getByRole('button', { name: 'Add a key to Step left' }));
+    fireEvent.keyDown(within(sheet).getByRole('button', { name: /^Press a key for Step left/ }), { key: 'y', code: 'KeyY' });
+    expect(keysIn(row(sheet, 'Step left'))).toEqual(['←', 'a', 'h', 'y']);
+    expect(nav()).not.toHaveClass('is-rail');
+    // The ARIA tree's own keys and the browser's are shown, fixed.
+    expect(within(row(sheet, 'Expand the row (or move into it)')).queryByRole('button', { name: /^Add a key/ })).toBeNull();
+    expect(row(sheet, 'Expand the row (or move into it)')).toHaveTextContent('Fixed');
+  });
+
+  it('LA-V61-R09-T04 A letter a person binds never fires while typing in a field, and does outside one', async () => {
+    const sheet = await openSheet();
+    fireEvent.click(within(row(sheet, 'Command palette')).getByRole('button', { name: 'Add a key to Command palette' }));
+    fireEvent.keyDown(within(sheet).getByRole('button', { name: /^Press a key for Command palette/ }), { key: 'u', code: 'KeyU' });
+    expect(keysIn(row(sheet, 'Command palette'))).toEqual(['Ctrl+Shift+P', 'u']);
+    fireEvent.keyDown(within(sheet).getByRole('searchbox'), { key: 'Escape' });
+    expect(screen.queryByRole('dialog')).toBeNull();
+    // In quick find's field, u is text.
+    press(document.body, 'p', 'KeyP', { ctrlKey: true });
+    const user = userEvent.setup();
+    await user.type(quickFind(), 'u');
+    expect(quickFind()).toHaveValue('u');
+    expect(screen.getByRole('dialog', { name: 'Quick find' })).toBeInTheDocument();
+    await user.keyboard('{Escape}');
+    // Outside one, u opens the palette.
+    act(() => (document.activeElement as HTMLElement | null)?.blur());
+    press(document.body, 'u', 'KeyU');
+    expect(screen.getByRole('dialog', { name: 'Command palette' })).toBeInTheDocument();
   });
 
   it('LA-V64-R01-T01 ? opens the shortcuts sheet and Ctrl+Shift+P the command palette, both searchable; the palette runs a command', async () => {

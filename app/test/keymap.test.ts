@@ -3,7 +3,7 @@ import {
   COMMANDS,
   GROUPS,
   RESERVED,
-  duplicateBindings,
+  clashes,
   eventChord,
   formatBinding,
   isMac,
@@ -17,9 +17,6 @@ import {
   usesEnter,
   walkMove,
 } from '../src/shell/keymap';
-import { OVERRIDES_KEY, overridesFrom } from '../src/platform/keymap/read-model';
-import { keymapReader } from '../src/platform/keymap/reader';
-import { listKeyboardCommands } from '../src/platform/keymap/queries';
 
 const key = (k: string, code: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey', boolean>> = {}) =>
   ({ key: k, code, ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, ...mods });
@@ -34,12 +31,13 @@ describe('the keymap', () => {
   });
 
   it('LA-VO61-C03-T No binding is used twice where both can apply, nor starts a sequence of its own', () => {
-    for (const mac of [true, false]) expect(duplicateBindings(COMMANDS, mac)).toEqual([]);
+    const said = (found: ReturnType<typeof clashes>) => found.map((c) => `${c.binding} / ${c.other}: ${c.a.id} and ${c.b.id}`);
+    for (const mac of [true, false]) expect(said(clashes(resolveCommands({}, mac), mac))).toEqual([]);
     // The check itself finds a clash, including a sequence that starts with a whole binding.
-    const clash = [...COMMANDS, { id: 'x', title: 'X', group: 'View' as const, keys: ['Mod+B'], when: 'page' as const }];
-    expect(duplicateBindings(clash, false)).toContain('Ctrl+B: toggleNav and x');
-    const prefix = [...COMMANDS, { id: 'y', title: 'Y', group: 'View' as const, keys: ['g'], when: 'global' as const }];
-    expect(duplicateBindings(prefix, false).some((d) => d.includes('goChecks and y') || d.includes('y and goChecks'))).toBe(true);
+    const clash = [...resolveCommands({}, false), { id: 'x', title: 'X', group: 'View' as const, keys: ['Mod+B'], when: 'page' as const }];
+    expect(said(clashes(clash, false))).toContain('Ctrl+B / Ctrl+B: toggleNav and x');
+    const prefix = [...resolveCommands({}, false), { id: 'y', title: 'Y', group: 'View' as const, keys: ['g'], when: 'global' as const }];
+    expect(said(clashes(prefix, false))).toContain('G C / G: goChecks and y');
   });
 
   it('LA-V61-R07-T01 Every command is one row of the keymap, with an id, a title, a group and its default keys', () => {
@@ -116,18 +114,6 @@ describe('the keymap', () => {
     expect(isSingleKey('Escape')).toBe(false);
   });
 
-  it('LA-V61-R10-T01 A person can override bindings in local storage; a binding that takes a browser essential is dropped', () => {
-    window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', quickOpen: ['Mod+W', 'Mod+O'], nope: 'Mod+Y', walkOut: 'X' }));
-    expect(overridesFrom(window.localStorage.getItem(OVERRIDES_KEY))).toEqual({ toggleNav: ['Mod+J'], quickOpen: ['Mod+W', 'Mod+O'] });
-    const commands = listKeyboardCommands(keymapReader(false));
-    expect(commands.find((c) => c.id === 'toggleNav')!.keys).toEqual(['Mod+J']);
-    expect(commands.find((c) => c.id === 'quickOpen')!.keys).toEqual(['Mod+O']);
-    expect(match(['Ctrl+J'], commands, false, all).command?.id).toBe('toggleNav');
-    window.localStorage.setItem(OVERRIDES_KEY, 'not json');
-    expect(overridesFrom(window.localStorage.getItem(OVERRIDES_KEY))).toEqual({});
-    expect(listKeyboardCommands(keymapReader(false)).find((c) => c.id === 'toggleNav')!.keys).toEqual(resolveCommands({}, false).find((c) => c.id === 'toggleNav')!.keys);
-  });
-
   const keysOn = (id: string, mac: boolean) => resolveCommands({}, mac).find((c) => c.id === id)!.keys;
 
   it('LA-V61-R08-T08 The stage switch has Ctrl+G, Ctrl+E and Ctrl+T on a Mac and Alt+G, Alt+E and Alt+T elsewhere, then Ctrl+1, 2 and 3; the wiki card Enter, and Ctrl+W on a Mac or Alt+W elsewhere', () => {
@@ -145,13 +131,13 @@ describe('the keymap', () => {
     expect(keysOn('stageTrace', false)).toEqual(['Alt+T', 'Ctrl+3']);
   });
 
-  it('LA-V61-R12-T02 A key means the platform\'s own key, and no platform is offered a browser key, even by an override', () => {
+  it('LA-V61-R12-T02 A key means the platform\'s own key, and no platform is offered a browser key, even by a person\'s binding', () => {
     // On a Mac, Ctrl is the Control key, so Ctrl+W is not Cmd+W.
     expect(match(['Ctrl+W'], resolveCommands({}, true), true, all).command?.id).toBe('toggleWikiCard');
     expect(match(['Meta+W'], resolveCommands({}, true), true, all).command).toBeUndefined();
     expect(match(['Alt+G'], resolveCommands({}, false), false, all).command?.id).toBe('stageGraph');
     expect(match(['Ctrl+G'], resolveCommands({}, false), false, all).command).toBeUndefined();
-    // Off a Mac, Ctrl+W (close the tab) and Ctrl+G (find next) are reserved: never offered, even by an override.
+    // Off a Mac, Ctrl+W (close the tab) and Ctrl+G (find next) are reserved: never offered, even by a person's binding.
     expect(resolveCommands({ toggleWikiCard: ['Ctrl+W'], stageGraph: ['Ctrl+G'] }, false).filter((c) => c.id === 'toggleWikiCard' || c.id === 'stageGraph').map((c) => c.keys)).toEqual([[], []]);
     for (const mac of [true, false]) {
       const reserved = new Set(RESERVED.map((r) => normalizeBinding(r, mac)));
@@ -197,35 +183,37 @@ describe('the keymap', () => {
     document.body.innerHTML = '';
   });
 
+  const walk = (chord: string) => walkMove(chord, resolveCommands({}, false), false);
+
   it('LA-V61-R49-T06 W, A, S and D, and vim\'s H, J, K and L, walk as the arrows, Shift+Up and Shift+Down (Shift+W or Shift+K, Shift+S or Shift+J) as Out and In, and the guard keeps them with every element that takes text', () => {
-    expect(walkMove(eventChord(key('w', 'KeyW')))).toBe('up');
-    expect(walkMove(eventChord(key('a', 'KeyA')))).toBe('left');
-    expect(walkMove(eventChord(key('s', 'KeyS')))).toBe('down');
-    expect(walkMove(eventChord(key('d', 'KeyD')))).toBe('right');
+    expect(walk(eventChord(key('w', 'KeyW')))).toBe('up');
+    expect(walk(eventChord(key('a', 'KeyA')))).toBe('left');
+    expect(walk(eventChord(key('s', 'KeyS')))).toBe('down');
+    expect(walk(eventChord(key('d', 'KeyD')))).toBe('right');
     // As vim's: H Left, J Down, K Up, L Right; Shift+K out and Shift+J in.
-    expect(walkMove(eventChord(key('h', 'KeyH')))).toBe('left');
-    expect(walkMove(eventChord(key('j', 'KeyJ')))).toBe('down');
-    expect(walkMove(eventChord(key('k', 'KeyK')))).toBe('up');
-    expect(walkMove(eventChord(key('l', 'KeyL')))).toBe('right');
-    expect(walkMove(eventChord(key('K', 'KeyK', { shiftKey: true })))).toBe('out');
-    expect(walkMove(eventChord(key('J', 'KeyJ', { shiftKey: true })))).toBe('in');
-    expect(walkMove(eventChord(key('H', 'KeyH', { shiftKey: true })))).toBeUndefined();
+    expect(walk(eventChord(key('h', 'KeyH')))).toBe('left');
+    expect(walk(eventChord(key('j', 'KeyJ')))).toBe('down');
+    expect(walk(eventChord(key('k', 'KeyK')))).toBe('up');
+    expect(walk(eventChord(key('l', 'KeyL')))).toBe('right');
+    expect(walk(eventChord(key('K', 'KeyK', { shiftKey: true })))).toBe('out');
+    expect(walk(eventChord(key('J', 'KeyJ', { shiftKey: true })))).toBe('in');
+    expect(walk(eventChord(key('H', 'KeyH', { shiftKey: true })))).toBeUndefined();
     // Caps Lock types a capital and still walks.
-    expect(walkMove(eventChord(key('W', 'KeyW')))).toBe('up');
-    expect(walkMove(eventChord(key('ArrowLeft', 'ArrowLeft')))).toBe('left');
+    expect(walk(eventChord(key('W', 'KeyW')))).toBe('up');
+    expect(walk(eventChord(key('ArrowLeft', 'ArrowLeft')))).toBe('left');
     // Shift with Up or Down, or with W or S, goes out and in.
-    expect(walkMove(eventChord(key('ArrowUp', 'ArrowUp', { shiftKey: true })))).toBe('out');
-    expect(walkMove(eventChord(key('ArrowDown', 'ArrowDown', { shiftKey: true })))).toBe('in');
-    expect(walkMove(eventChord(key('W', 'KeyW', { shiftKey: true })))).toBe('out');
-    expect(walkMove(eventChord(key('S', 'KeyS', { shiftKey: true })))).toBe('in');
+    expect(walk(eventChord(key('ArrowUp', 'ArrowUp', { shiftKey: true })))).toBe('out');
+    expect(walk(eventChord(key('ArrowDown', 'ArrowDown', { shiftKey: true })))).toBe('in');
+    expect(walk(eventChord(key('W', 'KeyW', { shiftKey: true })))).toBe('out');
+    expect(walk(eventChord(key('S', 'KeyS', { shiftKey: true })))).toBe('in');
     // With Ctrl, Cmd or Alt the key keeps its own meaning, and Shift with Left, Right, A or D adds nothing.
     for (const mods of [{ ctrlKey: true }, { metaKey: true }, { altKey: true }]) {
-      expect(walkMove(eventChord(key('w', 'KeyW', mods))), JSON.stringify(mods)).toBeUndefined();
-      expect(walkMove(eventChord(key('ArrowUp', 'ArrowUp', { ...mods, shiftKey: true }))), JSON.stringify(mods)).toBeUndefined();
+      expect(walk(eventChord(key('w', 'KeyW', mods))), JSON.stringify(mods)).toBeUndefined();
+      expect(walk(eventChord(key('ArrowUp', 'ArrowUp', { ...mods, shiftKey: true }))), JSON.stringify(mods)).toBeUndefined();
     }
-    expect(walkMove(eventChord(key('A', 'KeyA', { shiftKey: true })))).toBeUndefined();
-    expect(walkMove(eventChord(key('ArrowLeft', 'ArrowLeft', { shiftKey: true })))).toBeUndefined();
-    expect(walkMove(eventChord(key('q', 'KeyQ')))).toBeUndefined();
+    expect(walk(eventChord(key('A', 'KeyA', { shiftKey: true })))).toBeUndefined();
+    expect(walk(eventChord(key('ArrowLeft', 'ArrowLeft', { shiftKey: true })))).toBeUndefined();
+    expect(walk(eventChord(key('q', 'KeyQ')))).toBeUndefined();
     // The walk's rows list each move's arrow, then its letter.
     const step = (id: string) => COMMANDS.find((c) => c.id === id)!;
     expect(step('walkLeft').keys).toEqual(['ArrowLeft', 'A', 'H']);

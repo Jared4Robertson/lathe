@@ -189,6 +189,22 @@ const DESKTOP: State[] = [
     await page.keyboard.press('Control+/');
     await page.locator('.dialog-search').waitFor();
   } },
+  // Binding a key (LA-V61-R52): the recording control has focus, then a key another shortcut has offers Swap.
+  { name: 'the shortcuts sheet, recording a key', run: async (page) => {
+    await open(page, RECORD, '.header-strip h1');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Control+/');
+    await page.getByRole('button', { name: 'Change Ctrl+B of Show or hide the navigation' }).click();
+    await page.locator('.key-recorder').waitFor();
+  } },
+  { name: 'the shortcuts sheet, a key another shortcut has with Swap', run: async (page) => {
+    await open(page, RECORD, '.header-strip h1');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Control+/');
+    await page.getByRole('button', { name: 'Change Ctrl+B of Show or hide the navigation' }).click();
+    await page.keyboard.press('Control+Shift+m');
+    await page.locator('.shortcut-offer').waitFor();
+  } },
   // Each stage with the panels collapsed, and with them open under reduced transparency.
   ...STAGES.map((s): State => ({ name: `${s.name}, panels collapsed`, run: async (page) => { await open(page, s.url, s.ready); await collapsePanels(page); } })),
   ...STAGES.map((s): State => ({ name: `${s.name}, reduced transparency`, run: async (page) => { await reduceTransparency(page); await open(page, s.url, s.ready); } })),
