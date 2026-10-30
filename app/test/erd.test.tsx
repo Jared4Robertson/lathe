@@ -3,13 +3,14 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { endPath, erdFocus, type ErdMap, erdMap, erdStrength, lineGeometry, lineOffsets, scopeContents } from '../src/erd/erd';
+import { endPath, erdFocus, type ErdMap, erdStrength, lineGeometry, lineOffsets, scopeContents } from '../src/erd/erd';
 import { erdLayout, groupGraph, layoutErd, layoutRegion, readyErdLayout } from '../src/erd/layout';
 import { elkLayout } from '../src/elk';
 import { DRAW_IN_VIEW_PAST, erdKeyEntries, FIT_MARGIN, fitRects, framedRects, lineWords } from '../src/erd/ErdView';
 import { StageKey } from '../src/views/StageChrome';
 import { openApp } from './helpers';
 import { modelIndex, modelWorkspace } from './fixtures/model';
+import { erdOf } from './erd-of';
 
 // The ERD stage: one map of the whole product (each domain a region, its aggregates boundaries
 // around their entities), laid out once, that every focus navigates: the focus fades what lies
@@ -18,6 +19,8 @@ import { modelIndex, modelWorkspace } from './fixtures/model';
 
 const served = () => ({ data: modelWorkspace() });
 const index = () => modelIndex();
+/** The model product's map, as the ERD read answers it. */
+const modelMap = () => erdOf(modelWorkspace(), 'P');
 const modelPane = () => screen.getByRole('region', { name: 'ERD stage' });
 const box = (id: string) => modelPane().querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
 const boxesShown = () => waitFor(() => expect(modelPane().querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
@@ -38,8 +41,8 @@ describe('the ERD stage', () => {
     expect(erdFocus(i, 'P-D-EN03')).toEqual({ product: 'P', scope: 'P-D-A3', pick: 'P-D-EN03' });
     // Any other record: its domain in scope, its nearest entity or aggregate picked out when it has one; a table its entity.
     expect(erdFocus(i, 'P-D-UC01')).toEqual({ product: 'P', scope: 'P-D', pick: null });
-    expect(erdFocus(i, 'P-D-CMD01')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-A3' });
-    expect(erdFocus(i, 'P-D-CMD01-H')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-A3' });
+    expect(erdFocus(i, 'P-D-CMD01')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-EN03' });
+    expect(erdFocus(i, 'P-D-CMD01-H')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-EN03' });
     expect(erdFocus(i, 'P-D-EV02')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-A3' });
     expect(erdFocus(i, 'P-D-EN03-TB')).toEqual({ product: 'P', scope: 'P-D', pick: 'P-D-EN03' });
     // A group: its owner's. A Shared record and a product: the whole product.
@@ -49,15 +52,15 @@ describe('the ERD stage', () => {
     expect(erdFocus(i, 'P')).toEqual({ product: 'P', scope: 'P', pick: null });
     expect(erdFocus(i, 'NOPE')).toBeNull();
     // Every focus frames something on the one map.
-    const map = erdMap(i, 'P');
+    const map = modelMap();
     const rects = await layoutErd(map);
     for (const id of ['P', 'P-D-UC01', 'P-VO01', 'P-D-UC01-FL01', 'P-D-CMD01', 'P-D-EV01', 'P-D-PO01', 'P-D-RM01', 'P-D-QRY01', 'P-D-SP01']) {
       expect(framedRects(rects, map, erdFocus(i, id)!).length, id).toBeGreaterThan(0);
     }
-    // The product frames the whole map; a use case its domain's region; a command its aggregate.
+    // The product frames the whole map; a use case its domain's region; a command the entity it changes.
     expect(framedRects(rects, map, erdFocus(i, 'P')!)).toHaveLength(rects.size);
     expect(framedRects(rects, map, erdFocus(i, 'P-D-UC01')!)).toEqual([rects.get('P-D')]);
-    expect(framedRects(rects, map, erdFocus(i, 'P-D-CMD01')!)).toEqual([rects.get('P-D-A3')]);
+    expect(framedRects(rects, map, erdFocus(i, 'P-D-CMD01')!)).toEqual([rects.get('P-D-EN03')]);
 
     // The switch always offers the ERD: on a use case it draws the map, its domain in focus.
     await openApp('/P-D-UC01?stage=erd', served());
@@ -82,7 +85,7 @@ describe('the ERD stage', () => {
   it('LA-V94-R07-T01 Any other record frames its nearest entity or aggregate in its domain, a Shared record and the product the whole map', proveErdOnEveryFocus);
 
   const proveLaV94R02T01 = async () => {
-    const map = erdMap(index(), 'P');
+    const map = modelMap();
     const byId = new Map(map.boxes.map((b) => [b.id, b]));
     // Domains, aggregates and entities only: no command, event, policy, specification, read model or query.
     expect([...new Set(map.boxes.map((b) => b.kind))].sort()).toEqual(['aggregate', 'domain', 'entity']);
@@ -100,8 +103,7 @@ describe('the ERD stage', () => {
       'P-D-EN03|references|P-D-EN01': 'none-arrow dashed',
       'P-D-EN03|references|P-D-EN02': 'none-arrow dashed',
       'P-D-EN05|references|P-D-EN02': 'none-arrow dashed',
-      'P-D-EN06|references|P-D-EN01': 'none-arrow dashed',
-    });
+      'P-D-EN06|references|P-D-EN01': 'none-arrow dashed' });
     expect(map.lines.find((l) => l.id === 'P-D-EN02|references|P-E-EN01')).toMatchObject({ via: ['Member.Account'] });
     // A region lays out its aggregates along the references between them; the product its regions, along those between domains.
     const sizes = new Map<string, { width: number; height: number }>();
@@ -140,7 +142,7 @@ describe('the ERD stage', () => {
   it('LA-V94-R01-T01 The map draws each domain as a region around its aggregates, and a reference to another domain\'s aggregate between regions', proveLaV94R02T01);
 
   const proveLaV94R03T01 = async () => {
-    const map = erdMap(index(), 'P');
+    const map = modelMap();
     const strength = erdStrength(map, 'P-D-A3', LOOK);
     // The aggregate and its entities at full strength, the rest, its domain's region among them, faded back (the shared keptFade).
     expect(['P-D-A3', 'P-D-EN03', 'P-D-EN04', 'P-D-EN05'].map(strength)).toEqual([1, 1, 1, 1]);
@@ -151,8 +153,7 @@ describe('the ERD stage', () => {
       'P-D-EN03|has_many|P-D-EN05': 'one-many',
       'P-D-EN03|references|P-D-EN01': 'none-arrow dashed',
       'P-D-EN03|references|P-D-EN02': 'none-arrow dashed',
-      'P-D-EN05|references|P-D-EN02': 'none-arrow dashed',
-    });
+      'P-D-EN05|references|P-D-EN02': 'none-arrow dashed' });
     // A crow's foot has three prongs and a bar; one is two bars; an arrow one stroke.
     expect(endPath({ x: 0, y: 0 }, { x: 100, y: 0 }, 'many').match(/M/g)).toHaveLength(4);
     expect(endPath({ x: 0, y: 0 }, { x: 100, y: 0 }, 'one').match(/M/g)).toHaveLength(2);
@@ -194,8 +195,7 @@ describe('the ERD stage', () => {
     const map: ErdMap = {
       product: 'P',
       boxes: [box('D', 'domain'), ...SIZES.map(([id]) => box(id, 'aggregate', 'D'))],
-      lines: REFS.map(([s, t]) => ({ id: s + t, source: s, target: t, relation: 'references' as const, sourceEnd: 'none' as const, targetEnd: 'arrow' as const, dashed: true, via: [] })),
-    };
+      lines: REFS.map(([s, t]) => ({ id: s + t, source: s, target: t, relation: 'references' as const, sourceEnd: 'none' as const, targetEnd: 'arrow' as const, dashed: true, via: [] })) };
     const sizes = new Map(SIZES.map(([id, width, height]) => [id, { width, height }]));
     const shape = (n: { width?: number; height?: number }) => (n.width ?? 0) / (n.height ?? 1);
     const wrapped = await elkLayout(groupGraph(map, 'D', sizes, 'MULTI_EDGE'));
@@ -209,7 +209,7 @@ describe('the ERD stage', () => {
 
   it('LA-V94-R04-T01 An entity\'s focus keeps its aggregate at full strength, picks the entity out and frames it', async () => {
     const i = index();
-    const map = erdMap(i, 'P');
+    const map = modelMap();
     const rects = await layoutErd(map);
     expect(framedRects(rects, map, erdFocus(i, 'P-D-EN04')!)).toEqual([rects.get('P-D-EN04')]);
     expect(erdStrength(map, erdFocus(i, 'P-D-EN04')!.scope, LOOK)('P-D-EN03')).toBe(1);
@@ -229,7 +229,7 @@ describe('the ERD stage', () => {
     await boxesShown();
     const key = within(modelPane()).getByRole('region', { name: 'Key' });
     // The boxes, the pick and the fade, then the lines, each a sample and a word or two.
-    expect(within(key).getAllByRole('listitem').map((li) => li.querySelector('.stage-key-words')?.textContent)).toEqual(['Domain', 'Aggregate', 'Entity', 'Root entity', 'Picked out', 'Faded', 'Has one (1:1)', 'Has many (1:n)', 'Reference by ID']);
+    expect(within(key).getAllByRole('listitem').map((li) => li.querySelector('.stage-key-words')?.textContent)).toEqual(['Domain', 'Aggregate', 'Entity', 'Root entity', 'Picked out', 'Faded', 'Has one (1:1)', 'Has many (1:n)', 'Reference by ID', 'Scroll pans']);
     expect(key.querySelector('.erd-key-line.rel-references.is-dashed')).not.toBeNull();
     expect(key.querySelector('.erd-key-line.rel-has_many:not(.is-dashed)')).not.toBeNull();
     // The stage's key bar along the bottom, a floating panel the open space leaves room for.
@@ -249,7 +249,7 @@ describe('the ERD stage', () => {
   });
 
   it('LA-V94-R06-T01 A domain\'s focus fades the other domains\' regions, out of focus and out of the keyboard order, the fade easing on the shared motion', async () => {
-    const map = erdMap(index(), 'P');
+    const map = modelMap();
     const strength = erdStrength(map, 'P-D', LOOK);
     expect(map.boxes.filter((b) => strength(b.id) < 1).map((b) => b.id)).toEqual(['P-E', 'P-E-A1', 'P-E-EN01']);
     expect(CSS).toMatch(/\.erd-box\s*\{[^}]*opacity:\s*var\(--erd-strength, 1\)[^}]*opacity var\(--motion-speed\) var\(--motion-ease\)/);
@@ -263,7 +263,7 @@ describe('the ERD stage', () => {
   });
 
   it('LA-V94-R06-T02 The frame fits what it frames inside the margin at any canvas size and inside the open space, never zoomed in past 1', async () => {
-    const rects = await layoutErd(erdMap(index(), 'P'));
+    const rects = await layoutErd(modelMap());
     for (const framed of [[...rects.values()], [rects.get('P-D-A3')!], [rects.get('P-D-EN04')!]]) {
       for (const [width, height] of [[1200, 700], [600, 500], [320, 260]]) {
         const v = fitRects(framed, width, height);
@@ -286,19 +286,21 @@ describe('the ERD stage', () => {
     }
   });
 
+  let runs = 0;
   const proveOneMap = async () => {
-    const i = index();
-    const map = erdMap(i, 'P');
-    // One map and one layout per product and data change (the spec's index): asked again, the same ones.
-    expect(erdMap(i, 'P')).toBe(map);
-    const rects = await erdLayout(i, 'P');
-    expect(await erdLayout(i, 'P')).toBe(rects);
-    expect(readyErdLayout(i, 'P')).toBe(rects);
-    // New data (a new index) is laid out anew, once; the map's size decides whether it draws only what is in view.
-    const again = index();
-    expect(erdMap(again, 'P')).not.toBe(map);
-    expect(readyErdLayout(again, 'P')).toBeUndefined();
-    expect(await erdLayout(again, 'P')).toEqual(rects);
+    runs++;
+    const map = modelMap();
+    // One layout for what the map reads: asked again, the same one; a new answer of the ERD read that changes nothing it
+    // reads (new data elsewhere) reads it too, at once.
+    const rects = await erdLayout(map);
+    expect(await erdLayout(map)).toBe(rects);
+    expect(readyErdLayout(map)).toBe(rects);
+    expect(readyErdLayout(modelMap())).toBe(rects);
+    // An answer that changes what it reads (a box's title) is laid out anew, once; the map's size decides whether it draws only what is in view.
+    const fresh = modelMap();
+    const again = { ...fresh, boxes: fresh.boxes.map((b) => (b.id === 'P-D-EN05' ? { ...b, title: `${b.title} retitled ${runs}` } : b)) };
+    expect(readyErdLayout(again)).toBeUndefined();
+    expect((await erdLayout(again)).get('P-D-EN05')).toBeDefined();
     expect(map.boxes.length).toBeLessThanOrEqual(DRAW_IN_VIEW_PAST);
 
     await openApp('/P-D?stage=erd', served());
@@ -320,9 +322,9 @@ describe('the ERD stage', () => {
 
   it('LA-EXP-DS11-T01 The map draws exactly one line per relationship link and one per entity and aggregate it references', () => {
     const i = index();
-    const map = erdMap(i, 'P');
+    const map = modelMap();
     const entities = new Set(map.boxes.filter((b) => b.kind === 'entity').map((b) => b.id));
-    const links = i.workspace.links.filter((l) => ['has_one', 'has_many'].includes(l.relation) && entities.has(l.source));
+    const links = [...i.outgoing.values()].flat().filter((l) => ['has_one', 'has_many'].includes(l.relation) && entities.has(l.source));
     expect(links.length).toBe(2);
     for (const l of links) expect(map.lines.filter((x) => x.source === l.source && x.target === l.target && x.relation === l.relation)).toHaveLength(1);
     // Loan's two references to Member come from two entities: two lines; its Thing one line.
@@ -333,7 +335,7 @@ describe('the ERD stage', () => {
     const ref = map.lines.find((l) => l.id === 'P-D-EN05|references|P-D-EN02')!;
     const titles = new Map(map.boxes.map((b) => [b.id, b.title]));
     expect(lineWords(ref, 'References by ID', titles)).toEqual({ label: 'references by ID', title: 'Reminder references by ID Member (Reminder.Member)', hover: 'Reminder.Member' });
-    render(<StageKey entries={erdKeyEntries(map, erdFocus(i, 'P')!, i.workspace.relations)} />);
+    render(<StageKey entries={erdKeyEntries(map, erdFocus(i, 'P')!, i.meta.relations)} />);
     expect(screen.getByText('Reference by ID').closest('li')).toHaveAttribute('title', "A field holds the other aggregate's ID; the line points at its root.");
   });
 });

@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { entryState, navigate, noteInEntry } from '../router';
 import { desktopBridge } from '../shell/desktopChrome';
-import { isNumber, readPref, writePref } from '../shell/prefs';
-import type { SpecIndex } from '../specs/data';
-import { DEFAULT_STAGE, parseStage, pathOf, stageFromSearch, type FocusRoute, type StageName } from './address';
-import { readView, type PlaceView } from './place';
-import type { TabSet } from './tabs';
+import { isNumber, useAggregate } from '../shell/prefs';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { pathOf, stageFromSearch, type FocusRoute, type StageName } from './address';
+import type { PlaceView } from './place';
+import { updateView } from '../exploring/tab-set/commands/update-view';
+import type { TabSet } from '../exploring/tab-set/model';
+import { tabSetRepository } from '../exploring/tab-set/repository';
+import { runTabSetCommand } from '../exploring/tab-set/run';
 import { usePageTabs } from './useTabs';
 
 // The place the focus page shows (place.ts), the same to the page whichever host holds it:
@@ -48,12 +51,8 @@ export interface PlaceApi {
 
 // ---------- The stage an address names ----------
 
-export const STAGE_KEY = 'lathe:stage';
-const isString = (v: unknown): v is string => typeof v === 'string';
-/** The stage last chosen: what a place starts on when its address names none. */
-export const rememberedStage = (): StageName => parseStage(readPref<string>(STAGE_KEY, DEFAULT_STAGE, isString)) ?? DEFAULT_STAGE;
-/** Remembers the stage last chosen, for a place whose address names none. */
-export const rememberStage = (stage: StageName) => writePref(STAGE_KEY, stage);
+/** The stage last chosen (the Tab set's): what a place starts on when its address names none. */
+export const rememberedStage = (): StageName => tabSetRepository.load().stage;
 
 /** The stage of an address: the one it names, or else `fallback`. */
 export const stageOf = (address: string, fallback: StageName): StageName => stageFromSearch(searchOf(address)) ?? fallback;
@@ -99,28 +98,18 @@ export function useNewPlaceOpener(openNew: PlaceApi['openNew']) {
 // ---------- The place ----------
 
 /** The focus page's place: the active tab's in the desktop app, the browser tab's on the web. */
-export function usePlace(index: SpecIndex, route: FocusRoute, search: string): PlaceApi {
+export function usePlace(index: RecordIndex, route: FocusRoute, search: string): PlaceApi {
   // Whether the app runs in the desktop shell does not change while it runs.
   const [desktop] = useState(() => desktopBridge() !== null);
   return desktop ? usePageTabs(index, route, search) : useBrowserPlace(route, search);
 }
 
-const PLACE_KEY = 'lathe:place';
-const isAny = (_v: unknown): _v is unknown => true;
-/** The view last set: the web's one place's, or in the desktop app what a space's first tab starts with. */
-export const lastView = (): PlaceView => readView(readPref<unknown>(PLACE_KEY, null, isAny, 'session'));
-/** Keeps a view as the one last set. */
-export const keepView = (view: PlaceView) => writePref(PLACE_KEY, view, 'session');
-
 /** The web's one place: the browser tab's. */
 function useBrowserPlace(route: FocusRoute, search: string): PlaceApi {
   const address = pathOf(route) + search;
-  const [view, setStored] = useState<PlaceView>(lastView);
-  const setView = useCallback((change: (view: PlaceView) => PlaceView) => setStored((was) => {
-    const next = change(was);
-    if (next !== was) keepView(next);
-    return next;
-  }), []);
+  // The browser tab's one place keeps its view as the view last set (the Tab set's).
+  const { view } = useAggregate(tabSetRepository);
+  const setView = useCallback((change: (view: PlaceView) => PlaceView) => runTabSetCommand(updateView, { space: null, change }), []);
 
   // An address that names no stage (a link in the card, a tool opened over the stage) keeps the stage shown before.
   const stage = useRef<StageName>(stageFromSearch(search) ?? rememberedStage());

@@ -3,22 +3,39 @@ import type { Plate } from './plate';
 import { notchOf, type Mark, type Outline, type Shape } from './shapes';
 import { MARK_PATHS, SHAPE_PATHS } from './shape-icons';
 import { fontFor, type GraphFonts } from './fonts';
-import { onScreen } from './hit';
+import { TITLE_FONT } from './text';
+import { BLOCK_BELOW_PX } from './camera';
 import { stickyLabel, type ScreenBox } from './sticky';
 import { GHOST_MS, markPhase, type StageMarks } from '../changes/marks';
+import { rollupText, totalChanges, type Change } from '../changes/rollup';
 
 // The graph's canvas painter (LA-EXP-DS09, LA-EXP-DS10): each frame it draws what the camera
 // shows, in screen pixels, from the map's plates (plate.ts). Every point is placed by the camera in
 // double precision, relative to the camera's center, and drawn with no transform but the pixel
 // ratio, so a box deep in the map is as steady at a very deep zoom as at the top. Each line of a
 // label is drawn at its map size times the zoom, so text is crisp at any zoom whatever the map's
-// range; a line under TEXT_BAR_PX on screen is drawn as a faint bar where its glyphs would be.
+// range. Only what is on screen is drawn: a box, a bar or a line wholly outside the canvas (with a
+// margin) is passed over. A box whose title would be drawn under BLOCK_BELOW_PX is drawn as a plain
+// block, its fill and edge with no label, marks or decoration: its text cannot be read there.
 
 /** The camera as the painter places points: its center in the map, its zoom and the pane's size in CSS pixels. */
 export interface Camera { cx: number; cy: number; zoom: number; w: number; h: number }
 
-/** A label line smaller than this on screen, in CSS pixels, is drawn as a faint bar: it still shows where the label is and how long it is. */
-export const TEXT_BAR_PX = 2;
+/** The least strength a box is drawn at for its problem badges to be drawn: fainter, the badge's label cannot be read. */
+export const BADGE_LEAST_ALPHA = 0.5;
+/** Whether a box is drawn as a plain block at a zoom: its title under BLOCK_BELOW_PX on screen. */
+export const isBlock = (p: Pick<Plate, 'text'>, zoom: number) => p.text * TITLE_FONT * zoom < BLOCK_BELOW_PX;
+/** How far past the canvas's edges, in CSS pixels, a box, bar or line still counts as on screen: its stroke and ring reach that far. */
+const CULL_PX = 16;
+/** Whether a box, a bar or a line's bounds in the map is on the canvas through a camera, with the margin: what a frame draws. */
+export const onCanvas = (r: { x: number; y: number; w: number; h: number }, cam: Camera) => {
+  const left = (r.x - cam.cx) * cam.zoom + cam.w / 2;
+  const top = (r.y - cam.cy) * cam.zoom + cam.h / 2;
+  return meets(cam, left, top, left + r.w * cam.zoom, top + r.h * cam.zoom);
+};
+/** Whether a rectangle on the canvas, in its CSS pixels, meets the canvas with the margin. */
+const meets = (cam: Camera, left: number, top: number, right: number, bottom: number) =>
+  right >= -CULL_PX && left <= cam.w + CULL_PX && bottom >= -CULL_PX && top <= cam.h + CULL_PX;
 /** The least width on screen of the keyboard's focus ring and a tap's selection, and of the center's ring, in CSS pixels, so they always show. */
 const RING_MIN_PX = 2;
 const FOCUS_MIN_PX = 1.5;
@@ -37,13 +54,39 @@ export interface Line {
   points: [P, P];
   /** Its stroke's scale: its child's box scale for a parent line, 1 for an arrow. */
   scale: number;
+  /** The words drawn at its middle, at one size on screen: a Map's link line's relation ("Fulfills"). */
+  label?: string;
+  /** A link that leaves and enters upright, between boxes one above the other (the Map's); level otherwise. */
+  upright?: boolean;
+  /** The end its words sit by, a little way along it (the Map puts them by the focus, where its lines meet); its middle unless given. */
+  labelNear?: 'source' | 'target';
+}
+
+/** A link's curve in map units (its ends and its two control points), as it is drawn: leaving and entering level, or upright. */
+function curveOf(line: Line): [P, P, P, P] {
+  const [a, b] = line.points;
+  if (line.upright) {
+    const bend = Math.max(40, Math.abs(b.y - a.y) / 2) * (b.y >= a.y ? 1 : -1);
+    return [a, { x: a.x, y: a.y + bend }, { x: b.x, y: b.y - bend }, b];
+  }
+  const bend = Math.max(40, Math.abs(b.x - a.x) / 2) * (b.x >= a.x ? 1 : -1);
+  return [a, { x: a.x + bend, y: a.y }, { x: b.x - bend, y: b.y }, b];
+}
+
+/** The point `t` of the way along a cubic curve. */
+function pointOn([p0, p1, p2, p3]: [P, P, P, P], t: number): P {
+  const u = 1 - t;
+  return {
+    x: u * u * u * p0.x + 3 * u * u * t * p1.x + 3 * u * t * t * p2.x + t * t * t * p3.x,
+    y: u * u * u * p0.y + 3 * u * u * t * p1.y + 3 * u * t * t * p2.y + t * t * t * p3.y,
+  };
 }
 
 /** A bar standing for children too small to draw (LA-EXP-DS10), in map units, under its parent: the place it fades with. */
 export interface Bar { parent: string; x: number; y: number; w: number; h: number }
 
-/** What a frame draws, in draw order. */
-export interface Frame { plates: readonly Plate[]; bars: readonly Bar[]; lines: readonly Line[] }
+/** What a frame draws, in draw order: `wires`, when given, draws a stage's own lines in one go, after the bars and under the boxes (the Trace's links). */
+export interface Frame { plates: readonly Plate[]; bars: readonly Bar[]; lines: readonly Line[]; wires?: (ctx: CanvasRenderingContext2D, X: (x: number) => number, Y: (y: number) => number) => void }
 
 /** The states the frame shows: the focus, the box under the pointer, the keyboard's ring, a tap's selection, and the spotlight. */
 export interface PaintState {
@@ -136,16 +179,20 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
 
   // Bars, then lines, under the boxes.
   for (const b of frame.bars) {
+    if (!onCanvas(b, cam)) continue;
     ctx.globalAlpha = 0.6 * (state.lit ? lerp(1, look.spotlightDim, state.spot) : 1) * state.strength(b.parent);
     ctx.fillStyle = look.rule;
     ctx.beginPath();
     ctx.roundRect(X(b.x), Y(b.y), b.w * zoom, b.h * zoom, 4 * zoom);
     ctx.fill();
   }
-  for (const line of frame.lines) {
+  frame.wires?.(ctx, X, Y);
+  const drawLine = (line: Line, fade = 1) => {
+    const [a0, b0] = line.points;
+    if (!onCanvas({ x: Math.min(a0.x, b0.x), y: Math.min(a0.y, b0.y), w: Math.abs(b0.x - a0.x), h: Math.abs(b0.y - a0.y) }, cam)) return;
     const s = lineStroke(look, line);
     const lit = !state.lit || state.litLines?.has(line.id);
-    ctx.globalAlpha = (state.lit ? lerp(s.alpha, lit ? 1 : look.contextOpacity * look.spotlightDim, state.spot) : s.alpha) * lineStrength(line);
+    ctx.globalAlpha = (state.lit ? lerp(s.alpha, lit ? 1 : look.contextOpacity * look.spotlightDim, state.spot) : s.alpha) * lineStrength(line) * fade;
     ctx.strokeStyle = s.color;
     ctx.lineWidth = s.width * line.scale * zoom;
     ctx.setLineDash(s.dash.map((d) => d * zoom));
@@ -153,37 +200,52 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     ctx.beginPath();
     ctx.moveTo(X(a.x), Y(a.y));
     if (line.link) {
-      const bend = Math.max(40, Math.abs(b.x - a.x) / 2);
-      const dir = b.x >= a.x ? 1 : -1;
-      ctx.bezierCurveTo(X(a.x + dir * bend), Y(a.y), X(b.x - dir * bend), Y(b.y), X(b.x), Y(b.y));
+      const [, c1, c2] = curveOf(line);
+      ctx.bezierCurveTo(X(c1.x), Y(c1.y), X(c2.x), Y(c2.y), X(b.x), Y(b.y));
     } else {
       ctx.lineTo(X(b.x), Y(b.y));
     }
     ctx.stroke();
     ctx.setLineDash([]);
     if (line.link) {
-      // The arrow at its end, along the curve's last stretch, which is level.
-      const dir = b.x >= a.x ? 1 : -1;
+      // The arrow at its end, along the curve's last stretch, which is level (upright for an upright link).
       const len = 3.75 * line.scale * zoom;
       const half = 3 * line.scale * zoom;
       ctx.fillStyle = s.color;
       ctx.beginPath();
       ctx.moveTo(X(b.x), Y(b.y));
-      ctx.lineTo(X(b.x) - dir * len, Y(b.y) - half);
-      ctx.lineTo(X(b.x) - dir * len, Y(b.y) + half);
+      if (line.upright) {
+        const dir = b.y >= a.y ? 1 : -1;
+        ctx.lineTo(X(b.x) - half, Y(b.y) - dir * len);
+        ctx.lineTo(X(b.x) + half, Y(b.y) - dir * len);
+      } else {
+        const dir = b.x >= a.x ? 1 : -1;
+        ctx.lineTo(X(b.x) - dir * len, Y(b.y) - half);
+        ctx.lineTo(X(b.x) - dir * len, Y(b.y) + half);
+      }
       ctx.closePath();
       ctx.fill();
     }
-  }
+  };
+  // A Map's link lines (named ones) go over the boxes, so a line between two records in one area reads; the rest under them.
+  for (const line of frame.lines) if (!line.label) drawLine(line);
 
+  const areas: Plate[] = [];
   for (const p of frame.plates) {
-    if (!onScreen(p, cam)) continue;
+    if (!onCanvas(p, cam)) continue;
     const lit = !!state.lit?.has(p.place);
     ctx.globalAlpha = dim(lit) * strength(p.place, lit);
-    paintBox(ctx, p, cam, look, fonts, state, X, Y);
-    if (state.marks) paintMark(ctx, p, cam, look, state.marks, X, Y);
+    if (p.area) { paintArea(ctx, p, cam, look, state, X, Y); areas.push(p); } else paintBox(ctx, p, cam, look, fonts, state, X, Y);
+    if (state.marks) paintMark(ctx, p, cam, look, fonts, state.marks, state.open, X, Y);
   }
-  if (state.marks) paintGhosts(ctx, cam, look, state.marks, X, Y);
+  const named = frame.lines.filter((line) => line.label);
+  const words = named.length > 0 ? textBoxes(frame.plates, cam, X, Y) : [];
+  paintLinkLines(ctx, named, words, cam, drawLine);
+  ctx.globalAlpha = 1;
+  const areaWords = areas.length > 0 ? paintAreaLabels(ctx, areas, cam, look, fonts, state, X, Y, (p) => { const lit = !!state.lit?.has(p.place); return dim(lit) * strength(p.place, lit); }) : [];
+  paintLineLabels(ctx, named, look, fonts, state, X, Y, [...words, ...areaWords], (line) => lineStrength(line));
+  if (state.marks) paintGhosts(ctx, cam, look, fonts, state.marks, frame.plates, X, Y);
+  if (state.marks?.highlight) paintEdgeHints(ctx, cam, look, fonts, state.marks.highlight.boxes, frame.plates, state.open);
 
   ctx.globalAlpha = 1;
   paintVignette(ctx, dpr, cam, look);
@@ -329,6 +391,13 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
   outlinePath(ctx, p, p.outline, X, Y, zoom);
   ctx.fillStyle = colors.fill;
   ctx.fill();
+  if (isBlock(p, zoom)) {
+    // A plain block: its fill and its edge, no clip, label, marks or decoration.
+    ctx.lineWidth = Math.min(edgeWidth, 1);
+    ctx.strokeStyle = edge;
+    ctx.stroke();
+    return;
+  }
   ctx.save();
   // An edge lies inside its outline: clipped to it, at twice its width.
   ctx.clip();
@@ -366,38 +435,27 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     return;
   }
   for (const icon of p.icons) paintIcon(ctx, icon.draw, icon.name, X(icon.x), Y(icon.y), icon.w * zoom, icon.h * zoom, colors.edge, colors.fill);
-  for (const line of p.lines) {
-    const px = line.size * zoom;
+  const faces = lineFonts(p, zoom, fonts);
+  p.lines.forEach((line, i) => {
     const x = X(line.x);
     const top = Y(line.top);
-    const w = line.width * zoom;
-    const h = line.height * zoom;
-    if (x + w < 0 || x > cam.w || top + h < 0 || top > cam.h) continue;
-    const color = line.tone === 'ink' ? look.ink : look.muted;
-    if (px < TEXT_BAR_PX) {
-      const alpha = ctx.globalAlpha;
-      ctx.globalAlpha = alpha * 0.35;
-      ctx.fillStyle = color;
-      ctx.fillRect(x, top + h * 0.3, w, Math.max(0.5, h * 0.4));
-      ctx.globalAlpha = alpha;
-      continue;
-    }
-    const want = fontFor(fonts, line.face, px);
-    if (want !== font) { ctx.font = want; font = want; }
-    ctx.fillStyle = color;
+    if (!meets(cam, x, top, x + line.width * zoom, top + line.height * zoom)) return;
+    if (faces[i] !== font) { ctx.font = faces[i]; font = faces[i]; }
+    ctx.fillStyle = line.tone === 'ink' ? look.ink : look.muted;
     ctx.fillText(line.text, x, Y(line.baseline));
-  }
-  for (const b of p.badges) {
+  });
+  // A faded box's badge is not drawn: at its strength the pill's label (white on the badge's color) cannot be read, and
+  // a label-less pill is a mark that means nothing. It comes back with the box's strength.
+  for (const b of ctx.globalAlpha < BADGE_LEAST_ALPHA ? [] : p.badges) {
     const x = X(b.x);
     const y = Y(b.y);
     const w = b.w * zoom;
     const h = b.h * zoom;
-    if (x + w < 0 || x > cam.w || y + h < 0 || y > cam.h) continue;
+    if (!meets(cam, x, y, x + w, y + h)) continue;
     ctx.fillStyle = b.tone === 'error' ? look.error : look.warn;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, Math.min(8 * p.text * zoom, h / 2));
     ctx.fill();
-    if (b.size * zoom < TEXT_BAR_PX) continue;
     ctx.font = fontFor(fonts, 'badge', b.size * zoom);
     font = '';
     ctx.fillStyle = look.onMark;
@@ -409,20 +467,291 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
   }
 }
 
-/** The least size on screen, in CSS pixels, a box keeps its live mark's dot at. */
-const DOT_MIN_BOX_PX = 10;
+/** A Map's area's fill by what it is (LA-EXP-DS12): a district the sheet, a stage's neighborhood its stage's fill, a folder's area a lighter lot on it; the ground is the paper itself. */
+function areaFill(look: Look, p: Plate): { color: string; alpha: number } | null {
+  switch (p.area?.role) {
+    case 'district': return { color: look.sheet, alpha: 1 };
+    case 'neighborhood': return { color: stageColors(look, p.stage).fill, alpha: 0.6 };
+    case 'area': return { color: look.sheet, alpha: 0.75 };
+    default: return null;
+  }
+}
+
+/** A Map's area: its soft fill, no edge (an area, not a box); the focus, the pointer and the keyboard ring it as they ring a box. */
+function paintArea(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Look, state: PaintState, X: (x: number) => number, Y: (y: number) => number) {
+  const { zoom } = cam;
+  const fill = areaFill(look, p);
+  const base = ctx.globalAlpha;
+  if (fill) {
+    outlinePath(ctx, p, p.outline, X, Y, zoom);
+    ctx.globalAlpha = base * fill.alpha;
+    ctx.fillStyle = fill.color;
+    ctx.fill();
+    ctx.globalAlpha = base;
+  }
+  const ring = state.armed === p.id || state.ring === p.id ? look.steel : state.focus === p.id ? stageColors(look, p.stage).edge : state.hover === p.id ? look.hoverRing : null;
+  if (!ring) return;
+  outlinePath(ctx, p, p.outline, X, Y, zoom);
+  ctx.strokeStyle = ring;
+  ctx.lineWidth = Math.max(RING_MIN_PX, 3 * zoom);
+  ctx.stroke();
+}
+
+/** A Map's area's label size on screen, in CSS pixels, by what it is: fixed whatever the zoom, as a map labels its places. */
+export const AREA_LABEL_PX: Readonly<Record<Exclude<NonNullable<Plate['area']>['role'], 'ground'>, number>> = { district: 18, neighborhood: 14, area: 12.5 };
+/** The room an area's label keeps from its edges, in CSS pixels. */
+const AREA_LABEL_PAD = 10;
+/** The least a district is across on screen, in CSS pixels, to carry its name over it when it is too small to hold it. */
+const DISTRICT_BLOCK_PX = 12;
+
+/** The smallest an area's name is drawn, in CSS pixels: past it, it is cut with an ellipsis, then left out. */
+const AREA_LABEL_FLOOR_PX = 10;
+
+/** The words of a label that fit `room` pixels: the whole, or cut with an ellipsis; null when not even a letter and the ellipsis fit. */
+function fitWords(ctx: CanvasRenderingContext2D, text: string, room: number): string | null {
+  if (ctx.measureText(text).width <= room) return text;
+  for (let n = text.length - 1; n >= 1; n--) {
+    const cut = `${text.slice(0, n).trimEnd()}…`;
+    if (ctx.measureText(cut).width <= room) return cut;
+  }
+  return null;
+}
+
+/** An area's label fitted to `room` pixels wide: name and count at its size; else the name alone; else (a district's, `shrink`) the name smaller, down to the floor, else cut with an ellipsis at the floor. Another area's is left out where its name does not fit. */
+function fitAreaLabel(ctx: CanvasRenderingContext2D, fonts: GraphFonts, name: string, count: string, px: number, room: number, shrink: boolean): { name: string; count: string; px: number; nameW: number; w: number } | null {
+  const measure = (text: string, face: 'title' | 'meta', size: number) => { ctx.font = fontFor(fonts, face, size); return ctx.measureText(text).width; };
+  const nameW = measure(name, 'title', px);
+  const full = nameW + px * 0.6 + measure(count, 'meta', px * 0.8);
+  if (full <= room) return { name, count, px, nameW, w: full };
+  if (nameW <= room) return { name, count: '', px, nameW, w: nameW };
+  if (!shrink) return null;
+  const smaller = Math.max(AREA_LABEL_FLOOR_PX, (px * room) / nameW);
+  if (smaller < px && measure(name, 'title', smaller) <= room) return { name, count: '', px: smaller, nameW: measure(name, 'title', smaller), w: measure(name, 'title', smaller) };
+  ctx.font = fontFor(fonts, 'title', AREA_LABEL_FLOOR_PX);
+  const cut = fitWords(ctx, name, room);
+  if (!cut) return null;
+  const w = ctx.measureText(cut).width;
+  return { name: cut, count: '', px: AREA_LABEL_FLOOR_PX, nameW: w, w };
+}
 
 /**
- * A record's live mark (changes/marks.ts): a new one's soft glow, fading; a changed one's pulse in its own edge color,
- * a ring spreading out and fading; then each one's dot on its top right corner, which lasts.
+ * The Map's area labels (LA-EXP-DS12): each area's name, then its count of records, one line at one size on screen,
+ * over a halo of the paper, at its header's top left; an area whose top is out of view keeps its label at the top of
+ * what shows of it. A label always fits inside its area: where it does not, the count goes first, then a district's
+ * name shrinks to a floor, then it is cut with an ellipsis (another area's is left out); a district too small for its header names itself centered on
+ * its block, fitted the same way. No label is drawn over another (parents' first, then those kept in view), nor
+ * outside the open space. Returns where they were drawn, which the link lines' words keep clear of.
  */
-function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Look, marks: StageMarks, X: (x: number) => number, Y: (y: number) => number) {
+function paintAreaLabels(ctx: CanvasRenderingContext2D, areas: readonly Plate[], cam: Camera, look: Look, fonts: GraphFonts, state: PaintState, X: (x: number) => number, Y: (y: number) => number, alphaOf: (p: Plate) => number): ScreenBox[] {
+  const taken: ScreenBox[] = [];
+  const placed: { p: Plate; box: ScreenBox; name: string; count: string; px: number; pinned: boolean; nameW: number }[] = [];
+  for (const p of areas) {
+    const a = p.area!;
+    // The ground is the product itself, named in the header strip: it keeps the room for its districts' names.
+    if (a.role === 'ground') continue;
+    const px = AREA_LABEL_PX[a.role];
+    const left = Math.max(X(p.x), state.open.left);
+    const top = Math.max(Y(p.y), state.open.top);
+    const right = Math.min(X(p.x) + p.w * cam.zoom, state.open.right);
+    const bottom = Math.min(Y(p.y) + p.h * cam.zoom, state.open.bottom);
+    if (right <= left || bottom <= top) continue;
+    const pinned = left > X(p.x) || top > Y(p.y);
+    // Its header's top left, inside its padding.
+    const room = right - left - 2 * AREA_LABEL_PAD;
+    const fit = room > 0 ? fitAreaLabel(ctx, fonts, a.name, a.count, px, room, a.role === 'district') : null;
+    if (fit && bottom - top >= fit.px * 1.4 + 1.6 * AREA_LABEL_PAD) {
+      const at = { x: left + AREA_LABEL_PAD, y: top + AREA_LABEL_PAD * 0.6 };
+      placed.push({ p, box: { left: at.x - 2, top: at.y, right: at.x + fit.w + 2, bottom: at.y + fit.px * 1.4 }, name: fit.name, count: fit.count, px: fit.px, pinned, nameW: fit.nameW });
+      continue;
+    }
+    // Zoomed out past its header, a district is a labeled block: its name centered on it, inside it.
+    if (a.role !== 'district' || right - left < DISTRICT_BLOCK_PX || bottom - top < DISTRICT_BLOCK_PX) continue;
+    const small = fitAreaLabel(ctx, fonts, a.name, '', px, right - left - 4, true);
+    if (!small || small.px * 1.4 > bottom - top) continue;
+    const cx = (left + right) / 2;
+    const cy = (top + bottom) / 2;
+    const h = small.px * 1.4;
+    placed.push({ p, box: { left: cx - small.w / 2 - 2, top: cy - h / 2, right: cx + small.w / 2 + 2, bottom: cy + h / 2 }, name: small.name, count: '', px: small.px, pinned: true, nameW: small.nameW });
+  }
+  const order = [...placed.filter((l) => !l.pinned), ...placed.filter((l) => l.pinned)];
+  ctx.lineJoin = 'round';
+  for (const l of order) {
+    const { box } = l;
+    if (taken.some((t) => box.left < t.right && box.right > t.left && box.top < t.bottom && box.bottom > t.top)) continue;
+    taken.push(box);
+    ctx.globalAlpha = alphaOf(l.p);
+    const baseline = box.top + l.px * 1.05;
+    const halo = (text: string, x: number) => { ctx.strokeText(text, x, baseline); ctx.fillText(text, x, baseline); };
+    ctx.strokeStyle = look.paper;
+    ctx.lineWidth = 4;
+    ctx.font = fontFor(fonts, 'title', l.px);
+    ctx.fillStyle = look.ink;
+    halo(l.name, box.left + 2);
+    if (l.count) {
+      ctx.font = fontFor(fonts, 'meta', l.px * 0.8);
+      ctx.fillStyle = look.muted;
+      halo(l.count, box.left + 2 + l.nameW + l.px * 0.6);
+    }
+  }
+  ctx.lineJoin = 'miter';
+  ctx.globalAlpha = 1;
+  return taken;
+}
+
+/** A link line's words size on screen, in CSS pixels, and their padding on the paper. */
+const LINE_LABEL_PX = 10.5;
+const LINE_LABEL_PAD = 3;
+/** How faint a link line is where it crosses a box's words: a title is never struck through. */
+const LINE_OVER_TEXT = 0.12;
+
+/** The words of every box drawn, on screen: what link lines fade across and their names keep clear of. */
+const textBoxes = (plates: readonly Plate[], cam: Camera, X: (x: number) => number, Y: (y: number) => number): ScreenBox[] =>
+  plates.filter((p) => !p.area && !isBlock(p, cam.zoom) && onCanvas(p, cam)).map((p) => ({ left: X(p.label.x), top: Y(p.label.y), right: X(p.label.x) + p.label.w * cam.zoom, bottom: Y(p.label.y) + p.label.h * cam.zoom }));
+
+/** Clips to everything but some boxes (`outside`), or to the boxes alone. */
+function clipTo(ctx: CanvasRenderingContext2D, boxes: readonly ScreenBox[], cam: Camera, outside: boolean) {
+  ctx.beginPath();
+  if (outside) ctx.rect(-CULL_PX, -CULL_PX, cam.w + 2 * CULL_PX, cam.h + 2 * CULL_PX);
+  for (const b of boxes) ctx.rect(b.left, b.top, b.right - b.left, b.bottom - b.top);
+  ctx.clip(outside ? 'evenodd' : 'nonzero');
+}
+
+/**
+ * A Map's link lines, over the boxes (LA-EXP-DS12): at full strength between boxes, faded where they cross a box's
+ * words, so a title is never struck through.
+ */
+function paintLinkLines(ctx: CanvasRenderingContext2D, lines: readonly Line[], words: readonly ScreenBox[], cam: Camera, draw: (line: Line, fade?: number) => void) {
+  if (lines.length === 0) return;
+  ctx.save();
+  clipTo(ctx, words, cam, true);
+  for (const line of lines) draw(line);
+  ctx.restore();
+  if (words.length === 0) return;
+  ctx.save();
+  clipTo(ctx, words, cam, false);
+  for (const line of lines) draw(line, LINE_OVER_TEXT);
+  ctx.restore();
+}
+
+/**
+ * A Map's link lines' words (LA-EXP-DS12): each relation's name on the paper, at one size on screen, in free space along
+ * its line (between boxes, in a gutter), never over a box's words, an area's name or another line's; searched from the
+ * end its line names (the focus) outward. Lines of one relation meeting at one end share one name: "Fulfills ×2".
+ */
+function paintLineLabels(ctx: CanvasRenderingContext2D, lines: readonly Line[], look: Look, fonts: GraphFonts, state: PaintState, X: (x: number) => number, Y: (y: number) => number, keepClear: readonly ScreenBox[], alphaOf: (line: Line) => number) {
+  const groups = new Map<string, Line[]>();
+  for (const line of lines) {
+    if (!line.label) continue;
+    const key = line.labelNear ? `${line.labelNear === 'target' ? line.target : line.source}|${line.labelNear}|${line.label}` : line.id;
+    const group = groups.get(key);
+    if (group) group.push(line); else groups.set(key, [line]);
+  }
+  if (groups.size === 0) return;
+  ctx.font = fontFor(fonts, 'meta', LINE_LABEL_PX);
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  const taken: ScreenBox[] = [...keepClear];
+  const free = (b: ScreenBox) => b.left >= state.open.left && b.right <= state.open.right && b.top >= state.open.top && b.bottom <= state.open.bottom
+    && !taken.some((t) => b.left < t.right && b.right > t.left && b.top < t.bottom && b.bottom > t.top);
+  for (const group of groups.values()) {
+    const text = group.length > 1 ? `${group[0].label} ×${group.length}` : group[0].label!;
+    const width = ctx.measureText(text).width + 2 * LINE_LABEL_PAD;
+    const height = LINE_LABEL_PX + 2 * LINE_LABEL_PAD;
+    let spot: ScreenBox | null = null;
+    let owner: Line | null = null;
+    // Each line of the group, from its named end outward, until a place is free.
+    for (const line of group) {
+      const curve = curveOf(line);
+      const fromEnd = line.labelNear === 'target';
+      for (let k = 1; k < 40 && !spot; k++) {
+        const t = line.labelNear ? (fromEnd ? 1 - k / 40 : k / 40) : 0.5 + (k % 2 ? 1 : -1) * Math.floor(k / 2) / 40;
+        if (t <= 0 || t >= 1) continue;
+        const at = pointOn(curve, t);
+        const b = { left: X(at.x) - width / 2, top: Y(at.y) - height / 2, right: X(at.x) + width / 2, bottom: Y(at.y) + height / 2 };
+        if (free(b)) { spot = b; owner = line; }
+      }
+      if (spot) break;
+    }
+    if (!spot || !owner) continue;
+    taken.push(spot);
+    ctx.globalAlpha = alphaOf(owner);
+    ctx.fillStyle = look.paper;
+    ctx.beginPath();
+    ctx.roundRect(spot.left, spot.top, spot.right - spot.left, spot.bottom - spot.top, height / 2);
+    ctx.fill();
+    ctx.lineWidth = 1;
+    ctx.strokeStyle = look.linkEdge;
+    ctx.stroke();
+    ctx.fillStyle = look.linkEdge;
+    ctx.fillText(text, (spot.left + spot.right) / 2, (spot.top + spot.bottom) / 2 + 0.5);
+  }
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.globalAlpha = 1;
+}
+
+/**
+ * Each label line's font at a zoom, kept per box for the zoom it was last drawn at (the label's text layout on screen is
+ * fixed by its map size times the zoom): a pan, which keeps the zoom, draws every label with no font worked out again.
+ */
+const fontsAt = new WeakMap<Plate, { zoom: number; fonts: GraphFonts; faces: string[] }>();
+function lineFonts(p: Plate, zoom: number, fonts: GraphFonts): string[] {
+  const known = fontsAt.get(p);
+  if (known && known.zoom === zoom && known.fonts === fonts) return known.faces;
+  const faces = p.lines.map((line) => fontFor(fonts, line.face, line.size * zoom));
+  fontsAt.set(p, { zoom, fonts, faces });
+  return faces;
+}
+
+/** The least size on screen, in CSS pixels, a box keeps its live mark's dot at. */
+const DOT_MIN_BOX_PX = 10;
+/** The least size on screen a box has for its pill (New, Changed, Removed) or a container's roll-up: smaller, the dot, or the container above, says it. */
+const PILL_MIN_W_PX = 54;
+const PILL_MIN_H_PX = 22;
+/** A pill's text size, height and side padding in CSS pixels: fixed on screen, so it reads at any zoom. */
+const PILL_FONT_PX = 10;
+const PILL_H_PX = 15;
+const PILL_PAD_PX = 5;
+
+/** The words of a change on its pill. */
+const PILL_WORDS: Record<Change, string> = { added: 'New', changed: 'Changed', removed: 'Removed' };
+
+/** A change's color in the look. */
+const changeColor = (look: Look, change: Change) => (change === 'added' ? look.changeNew : change === 'changed' ? look.changeChanged : look.changeGone);
+
+/** A pill: rounded, filled, its text in `ink`; its left edge at `x`, centered on `y`; returns its right edge. */
+function pill(ctx: CanvasRenderingContext2D, fonts: GraphFonts, text: string, x: number, y: number, fill: string, ink: string, stroke?: string): number {
+  ctx.font = fontFor(fonts, 'badge', PILL_FONT_PX);
+  const w = ctx.measureText(text).width + 2 * PILL_PAD_PX;
+  ctx.beginPath();
+  ctx.roundRect(x, y - PILL_H_PX / 2, w, PILL_H_PX, PILL_H_PX / 2);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (stroke) { ctx.lineWidth = 1; ctx.strokeStyle = stroke; ctx.stroke(); }
+  ctx.fillStyle = ink;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + PILL_PAD_PX, y + 0.5);
+  ctx.textBaseline = 'alphabetic';
+  return x + w;
+}
+
+/**
+ * A record's marks (changes/marks.ts). The live ones: a new one's soft glow, fading; a changed one's pulse in its own edge
+ * color, a ring spreading out and fading; then each one's dot on its top right corner, which lasts. With Highlight
+ * changes on: a thick outline in the change's color and a light tint, and a pill on the top edge (New, Changed) where the
+ * box is big enough to read it, else the dot; and a container's roll-up ("3 new · 5 changed · 1 removed") beside it.
+ */
+function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Look, fonts: GraphFonts, marks: StageMarks, open: ScreenBox, X: (x: number) => number, Y: (y: number) => number) {
   const m = marks.mark(p.id);
-  if (!m || m.change === 'removed') return;
+  const hl = marks.highlight;
+  const kind: Change | undefined = hl ? hl.change(p.id) : m && m.change !== 'removed' ? m.change : undefined;
+  const roll = hl?.rolls.get(p.place);
+  if (!kind && !roll) return;
   const { zoom } = cam;
   const alpha = ctx.globalAlpha;
-  const phase = markPhase(marks, m);
-  if (phase !== null) {
+  const phase = m && m.change !== 'removed' ? markPhase(marks, m) : null;
+  if (phase !== null && m) {
     ctx.save();
     if (m.change === 'added') {
       ctx.globalAlpha = alpha * 0.7 * (1 - phase);
@@ -443,37 +772,184 @@ function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: L
   }
   const w = p.w * zoom;
   const h = p.h * zoom;
-  if (Math.min(w, h) < DOT_MIN_BOX_PX) return;
-  // On the box's top right corner, as a badge sits, and strong even on a faded box, so a change reads anywhere on the map.
-  const r = Math.max(3, Math.min(5, Math.min(w, h) / 8));
-  const cx = X(p.x + p.w);
-  const cy = Y(p.y);
-  ctx.globalAlpha = Math.max(alpha, 0.9);
-  ctx.fillStyle = look.sheet;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r + 1.5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = m.change === 'added' ? look.changeNew : look.changeChanged;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fill();
+  if (kind && hl && kind !== 'removed') {
+    // The thick outline and the light tint, in the change's color, over the box at full strength.
+    ctx.save();
+    ctx.globalAlpha = 1;
+    outlinePath(ctx, p, p.outline, X, Y, zoom, 0);
+    ctx.fillStyle = changeColor(look, kind);
+    ctx.globalAlpha = 0.12;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = changeColor(look, kind);
+    ctx.lineWidth = Math.max(2.5, 3.5 * p.scale * zoom);
+    ctx.stroke();
+    ctx.restore();
+  }
+  // On the part of its top edge in view: a box cut by the canvas's edge or a floating panel keeps its pill and roll-up on what shows.
+  const left = Math.max(X(p.x), open.left);
+  const right = Math.min(X(p.x) + w, open.right);
+  const cut = Y(p.y) < open.top + PILL_H_PX / 2;
+  const roomy = right - left >= PILL_MIN_W_PX && h >= PILL_MIN_H_PX;
+  let x = left + 6;
+  const y = cut ? open.top + PILL_H_PX / 2 + 3 : Y(p.y);
+  ctx.save();
+  ctx.globalAlpha = 1;
+  if (kind && hl && roomy) {
+    x = pill(ctx, fonts, PILL_WORDS[kind], x, y, changeColor(look, kind), look.onMark) + 4;
+  } else if (kind && Math.min(w, h) >= DOT_MIN_BOX_PX) {
+    // On the box's top right corner, as a badge sits, and strong even on a faded box, so a change reads anywhere on the map.
+    const r = Math.max(3, Math.min(5, Math.min(w, h) / 8));
+    const cx = X(p.x + p.w);
+    ctx.fillStyle = look.sheet;
+    ctx.beginPath();
+    ctx.arc(cx, y, r + 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = changeColor(look, kind);
+    ctx.beginPath();
+    ctx.arc(cx, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (roll && right - left >= PILL_MIN_W_PX && h >= PILL_MIN_H_PX) {
+    // What is under it: all three counts when they fit across the box, else how many changes in all, else nothing.
+    const full = rollupText(roll);
+    const total = `${totalChanges(roll)} ${totalChanges(roll) === 1 ? 'change' : 'changes'}`;
+    ctx.font = fontFor(fonts, 'badge', PILL_FONT_PX);
+    const room = right - x - 6;
+    const text = ctx.measureText(full).width + 2 * PILL_PAD_PX <= room ? full : ctx.measureText(total).width + 2 * PILL_PAD_PX <= room ? total : null;
+    if (text) pill(ctx, fonts, text, x, y, look.sheet, look.ink, look.ink);
+  }
+  ctx.restore();
 }
 
-/** Each removed record's ghost: its outline, dashed, where it was before the reload, fading out (none under reduced motion). */
-function paintGhosts(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, marks: StageMarks, X: (x: number) => number, Y: (y: number) => number) {
-  if (marks.reduced) return;
-  for (const g of marks.ghosts) {
-    const t = (marks.now - g.t) / GHOST_MS;
-    if (t < 0 || t >= 1) continue;
-    ctx.globalAlpha = 0.8 * (1 - t);
-    ctx.strokeStyle = look.changeGone;
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 4]);
+/**
+ * Each removed record's ghost: its outline, dashed, where it was before the reload. Fading out over a few seconds (none
+ * under reduced motion); with Highlight changes on, lasting, with its title and a Removed pill, until it is turned off.
+ */
+function paintGhosts(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, fonts: GraphFonts, marks: StageMarks, plates: readonly Plate[], X: (x: number) => number, Y: (y: number) => number) {
+  const lasting = marks.highlight !== null;
+  if (marks.reduced && !lasting) return;
+  const settled: { x: number; y: number; w: number; h: number }[] = [];
+  for (const own of marks.ghosts) {
+    const t = lasting ? 0 : (marks.now - own.t) / GHOST_MS;
+    let g = own;
+    if (lasting) {
+      // The map has moved on since the record went, so a box may lie where it was: the ghost steps down the column to the first room clear of every box and ghost.
+      const taken = (r: { x: number; y: number; w: number; h: number }) => plates.some((p) => p.x < r.x + r.w && p.x + p.w > r.x && p.y < r.y + r.h && p.y + p.h > r.y) || settled.some((o) => o.x < r.x + r.w && o.x + o.w > r.x && o.y < r.y + r.h && o.y + o.h > r.y);
+      for (let k = 0; k < 40 && taken(g); k++) g = { ...g, y: g.y + own.h * 1.15 };
+      settled.push(g);
+    }
+    if (t < 0 || t >= 1 || !onCanvas(g, cam)) continue;
+    const x = X(g.x);
+    const y = Y(g.y);
+    const w = g.w * cam.zoom;
+    const h = g.h * cam.zoom;
+    ctx.save();
+    ctx.globalAlpha = lasting ? 1 : 0.8 * (1 - t);
     ctx.beginPath();
-    ctx.roundRect(X(g.x), Y(g.y), g.w * cam.zoom, g.h * cam.zoom, 4 * cam.zoom);
+    ctx.roundRect(x, y, w, h, 4 * cam.zoom);
+    if (lasting) {
+      ctx.globalAlpha = 0.1;
+      ctx.fillStyle = look.changeGone;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = look.changeGone;
+    ctx.lineWidth = lasting ? 2.5 : 1.5;
+    ctx.setLineDash([5, 4]);
     ctx.stroke();
     ctx.setLineDash([]);
+    if (lasting && w >= PILL_MIN_W_PX && h >= PILL_MIN_H_PX) {
+      const title = marks.mark(g.id)?.title;
+      // The map has moved on since, so a box may lie where the ghost does: then the ghost shows no title over it.
+      const covered = plates.some((p) => p.x < g.x + g.w && p.x + p.w > g.x && p.y < g.y + g.h && p.y + p.h > g.y);
+      if (title && !covered && h >= 2 * PILL_H_PX) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x + 6, y, w - 12, h);
+        ctx.clip();
+        ctx.font = fontFor(fonts, 'title', 11);
+        ctx.fillStyle = look.ink;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(title, x + 8, y + h / 2);
+        ctx.restore();
+      }
+      pill(ctx, fonts, PILL_WORDS.removed, x + 6, y, look.changeGone, look.onMark);
+    }
+    ctx.restore();
   }
+}
+
+/** The edge hints' text: "4 changes →", a side's arrow. */
+const HINT_ARROWS = { left: '←', right: '→', up: '↑', down: '↓' } as const;
+type HintSide = keyof typeof HINT_ARROWS;
+
+/** How many of the changed boxes lie past each edge of the open canvas, by their centers (like graph/hints.tsx pastEdges, in the camera's terms). */
+export function changesPastEdges(boxes: readonly { x: number; y: number; w: number; h: number }[], cam: Camera, open: ScreenBox): Record<HintSide, number> {
+  const past = { left: 0, right: 0, up: 0, down: 0 };
+  for (const b of boxes) {
+    const x = (b.x + b.w / 2 - cam.cx) * cam.zoom + cam.w / 2;
+    const y = (b.y + b.h / 2 - cam.cy) * cam.zoom + cam.h / 2;
+    if (x < open.left) past.left++;
+    else if (x > open.right) past.right++;
+    if (y < open.top) past.up++;
+    else if (y > open.bottom) past.down++;
+  }
+  return past;
+}
+
+type Rect = { left: number; top: number; right: number; bottom: number };
+const hits = (a: Rect, b: Rect) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+/**
+ * At each edge of the open canvas, a chip counting the changed boxes past it ("4 changes →"), docked to that edge and slid
+ * along it to the nearest place clear of every drawn box, else of every label, so it never covers a box's text or pills; none for an
+ * edge with nothing past it.
+ */
+function paintEdgeHints(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, fonts: GraphFonts, boxes: readonly { x: number; y: number; w: number; h: number }[], plates: readonly Plate[], open: ScreenBox) {
+  if (boxes.length === 0) return;
+  const past = changesPastEdges(boxes, cam, open);
+  const sx = (x: number) => (x - cam.cx) * cam.zoom + cam.w / 2;
+  const sy = (y: number) => (y - cam.cy) * cam.zoom + cam.h / 2;
+  const bodies: Rect[] = [];
+  const labels: Rect[] = [];
+  for (const p of plates) {
+    bodies.push({ left: sx(p.x), top: sy(p.y), right: sx(p.x + p.w), bottom: sy(p.y + p.h) });
+    labels.push({ left: sx(p.label.x), top: sy(p.label.y), right: sx(p.label.x + p.label.w), bottom: sy(p.label.y + p.label.h) });
+    // Its top edge, where its pill and roll-up sit.
+    const edge = Math.max(sy(p.y), open.top + PILL_H_PX / 2 + 3);
+    const strip = { left: sx(p.x), top: edge - 10, right: sx(p.x + p.w), bottom: edge + 10 };
+    labels.push(strip);
+    bodies.push(strip);
+  }
+  const placed: Rect[] = [];
+  ctx.save();
+  ctx.globalAlpha = 1;
+  for (const side of Object.keys(HINT_ARROWS) as HintSide[]) {
+    const n = past[side];
+    if (n === 0) continue;
+    const text = `${n} ${n === 1 ? 'change' : 'changes'} ${HINT_ARROWS[side]}`;
+    ctx.font = fontFor(fonts, 'badge', PILL_FONT_PX + 1);
+    const w = ctx.measureText(text).width + 2 * PILL_PAD_PX + 4;
+    const h = PILL_H_PX;
+    const vertical = side === 'left' || side === 'right';
+    const lo = (vertical ? open.top : open.left) + 24;
+    const hi = (vertical ? open.bottom : open.right) - 24 - (vertical ? 0 : w);
+    const at = (t: number): Rect => {
+      const x = side === 'left' ? open.left + 4 : side === 'right' ? open.right - 4 - w : t;
+      const y = side === 'up' ? open.top + 4 : side === 'down' ? open.bottom - 4 - h : t - h / 2;
+      return { left: x, top: y, right: x + w, bottom: y + h };
+    };
+    // Candidates from the middle of the edge outwards.
+    const mid = (lo + hi) / 2;
+    const spots: number[] = [mid];
+    for (let d = 20; mid - d >= lo || mid + d <= hi; d += 20) { if (mid + d <= hi) spots.push(mid + d); if (mid - d >= lo) spots.push(mid - d); }
+    const clear = (r: Rect, against: Rect[]) => !against.some((o) => hits(r, o)) && !placed.some((o) => hits(r, o));
+    const rect = [bodies, labels].reduce<Rect | null>((found, against) => found ?? spots.map(at).find((r) => clear(r, against)) ?? null, null) ?? at(mid);
+    placed.push(rect);
+    pill(ctx, fonts, text, rect.left, (rect.top + rect.bottom) / 2, look.sheet, look.ink, look.changeChanged);
+  }
+  ctx.restore();
 }
 
 /** What a shape draws inside its outline (LA-V93-R06): a page's fold, a stack's front sheet, a flow's inner chevron, an aggregate's second border, a view's window bar, a layer's stripes. */

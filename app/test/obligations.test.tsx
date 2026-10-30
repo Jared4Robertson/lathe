@@ -1,13 +1,12 @@
-import { cleanup, render, screen, within } from '@testing-library/react';
+import type { ServedData } from './read-view';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, expect, it, vi } from 'vitest';
-import type { SpecData } from '../../lathe/src/server/contract';
-import { RecordContent } from '../src/specs/RecordContent';
+import { describe, expect, it } from 'vitest';
 import { productKindWorkspace } from './fixtures/product-kinds';
 import { facts, main, openApp, section as pageSection } from './helpers';
 // The Graph stage needs a ResizeObserver in jsdom.
 import './graph/setup';
-import { addRows, indexOf } from './fixtures/load';
+import { addRows } from './fixtures/load';
 
 /** A section of the page: in the wiki card on a focus page. */
 const section = (name: string | RegExp) => {
@@ -23,10 +22,9 @@ const section = (name: string | RegExp) => {
 // DM declares `security_control`, and DM-SHOP-EP01-SC01 is one.
 
 /** The workspace with a manual test of DM-SHOP-UC01-R02 beside the automated and the not automated yet ones. */
-function workspace(): SpecData {
+function workspace(): ServedData {
   return addRows(productKindWorkspace(), 'use_case_test', {
-    id: 'DM-SHOP-UC01-R02-T01', title: 'A person fills a basket to 50', uc_requirement_id: 'DM-SHOP-UC01-R02', level: 'browser', state: 'manual', manual_reason: 'A person fills the basket by hand.',
-  });
+    id: 'DM-SHOP-UC01-R02-T01', title: 'A person fills a basket to 50', uc_requirement_id: 'DM-SHOP-UC01-R02', level: 'browser', state: 'manual', manual_reason: 'A person fills the basket by hand.' });
 }
 const served = () => ({ data: workspace() });
 const card = (title: string) => within(section(/^Domains/)).getByText(title).closest('.card') as HTMLElement;
@@ -123,6 +121,8 @@ describe('obligation kinds and test states', () => {
 
     await openApp('/DM-SHOP-UC01-R02-T01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'A person fills a basket to 50' });
+    // A use case's records are read whole first (the Use case page).
+    await screen.findByRole('complementary', { name: 'Facts' });
     expect(field('State')).toHaveTextContent('manual');
     expect(screen.queryByRole('note')).toBeNull();
     const runBy = section(/^Run by/);
@@ -130,6 +130,8 @@ describe('obligation kinds and test states', () => {
 
     await openApp('/DM-SHOP-UC01-R01-T01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
+    // A use case's records are read whole first (the Use case page).
+    await screen.findByRole('complementary', { name: 'Facts' });
     expect(field('State')).toHaveTextContent('automated');
     expect(section(/^Run by/)).toHaveTextContent('test/basket.test.ts');
   });
@@ -137,7 +139,8 @@ describe('obligation kinds and test states', () => {
   it('LA-V92-R57-T02 An obligation\'s Traceability shows what designs it and what proves it, and names a gap', async () => {
     await openApp('/DM-SHOP-UC01-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
-    const trace = section(/^Traceability/);
+    // Traceability reads the record's own trace (get-record-trace), after the page.
+    const trace = (await within(main()).findByRole('heading', { name: /^Traceability/ })).closest('section') as HTMLElement;
     const designed = within(trace).getByRole('heading', { name: /^Designed by/ }).closest('section') as HTMLElement;
     expect(within(designed).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-CMD01', '/DM-SHOP-UC01-FL01', '/DM-SHOP-UC01-FL01-S01', '/DM-V01']);
     const built = within(trace).getByRole('heading', { name: /^Built by/ }).closest('section') as HTMLElement;
@@ -148,46 +151,14 @@ describe('obligation kinds and test states', () => {
     // A product's own obligation that coverage finds not designed and not proved says so, naming each gap.
     await openApp('/DM-SHOP-EP01-SC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Only the basket\'s shopper adds' });
-    const gaps = [...section(/^Traceability/).querySelectorAll('[data-gap]')].map((g) => g.getAttribute('data-gap'));
+    const gaps = [...((await within(main()).findByRole('heading', { name: /^Traceability/ })).closest('section') as HTMLElement).querySelectorAll('[data-gap]')].map((g) => g.getAttribute('data-gap'));
     expect(gaps).toEqual(['not-designed', 'not-proved']);
-  });
-
-  it('LA-V92-R52-T01 The record content takes a record ID and sends the links it follows to its host', async () => {
-    cleanup();
-    window.history.replaceState(null, '', '/graph/DM-SHOP-UC01-R01');
-    const index = indexOf(workspace());
-    const onNavigate = vi.fn();
-    const { container } = render(<RecordContent index={index} id="DM-SHOP-UC01-R01" onNavigate={onNavigate} />);
-    // It sizes itself by its own width (a CSS container), so it reads at half the screen.
-    expect(container.firstElementChild).toHaveClass('record-content');
-    expect(screen.getByRole('heading', { level: 1, name: 'The basket shows the new item' })).toBeInTheDocument();
-
-    const user = userEvent.setup();
-    const designed = screen.getByRole('heading', { name: /^Designed by/ }).closest('section') as HTMLElement;
-    const link = within(designed).getByRole('link', { name: /DM-SHOP-UC01-FL01-S01/ });
-    expect(link).toHaveAttribute('href', '/DM-SHOP-UC01-FL01-S01');
-    await user.click(link);
-    expect(onNavigate).toHaveBeenCalledWith('/DM-SHOP-UC01-FL01-S01');
-    expect(window.location.pathname).toBe('/graph/DM-SHOP-UC01-R01');
-
-    // Links in its facts (after the body) and in the header go through the host too.
-    onNavigate.mockClear();
-    await user.click(within(screen.getByRole('complementary', { name: 'Facts' })).getByRole('link', { name: /DM-SHOP-UC01-FL01-S01/ }));
-    expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP-UC01-FL01-S01');
-    await user.click(within(container.querySelector('.eyebrow') as HTMLElement).getByRole('link', { name: 'Shopping' }));
-    expect(onNavigate).toHaveBeenLastCalledWith('/DM-SHOP');
-    expect(window.location.pathname).toBe('/graph/DM-SHOP-UC01-R01');
-
-    // An unknown ID says so.
-    cleanup();
-    render(<RecordContent index={index} id="DM-NOPE" onNavigate={onNavigate} />);
-    expect(screen.getByText(/There's no record with the ID/)).toHaveTextContent('DM-NOPE');
   });
 });
 
 describe('tests by state and tests not automated yet', () => {
   /** The workspace with tests in every state: DM-SHOP has one automated, one manual and one not automated yet. */
-  const states = (): SpecData => {
+  const states = (): ServedData => {
     const ws = workspace();
     ws.coverage.find((c) => c.domain === 'DM-SHOP')!.tests = { automated: 1, manual: 1, not_automated: 1 };
     return ws;

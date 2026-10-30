@@ -50,10 +50,44 @@
 @keyframes change-ghost { from { opacity: 0.8; } to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .erd-change-flash, .erd-ghost { display: none; } }
 
-/* The marks in a stage's key. */
-.change-swatch { display: inline-block; width: 18px; height: 11px; box-sizing: border-box; border: 1.5px solid var(--g-structural); border-radius: 2px; background: var(--sheet); position: relative; vertical-align: middle; }
-.change-swatch:is(.is-added, .is-changed)::after { content: ''; position: absolute; top: -4px; right: -4px; width: 7px; height: 7px; border-radius: 50%; background: var(--change-changed); box-shadow: 0 0 0 1.5px var(--sheet); }
-.change-swatch.is-added { box-shadow: 0 0 6px var(--change-new); }
-.change-swatch.is-added::after { background: var(--change-new); }
-.change-swatch.is-removed { border-style: dashed; border-color: var(--change-gone); background: none; }
-.change-swatch.is-lens { opacity: 0.35; }
+/* The marks in a stage's key: each as the box it marks, in the change's color. */
+.change-swatch { display: inline-block; width: 18px; height: 11px; box-sizing: border-box; border: 2.5px solid var(--g-structural); border-radius: 2px; background: var(--sheet); vertical-align: middle; }
+.change-swatch.is-added { border-color: var(--change-new); background: color-mix(in srgb, var(--change-new) 14%, var(--sheet)); }
+.change-swatch.is-changed { border-color: var(--change-changed); background: color-mix(in srgb, var(--change-changed) 14%, var(--sheet)); }
+.change-swatch.is-removed { border: 2px dashed var(--change-gone); background: color-mix(in srgb, var(--change-gone) 10%, var(--sheet)); }
+.change-swatch.is-dimmed { border-width: 1.5px; opacity: 0.2; }
+
+/* Highlight changes (LA-EXP-UC15-R03): a pill on each changed box (New, Changed, Removed: words as well as color), a
+   container's roll-up beside it, a thick outline in the change's color and a light tint. The canvas stages draw the same
+   in graph/paint.ts; these are the ERD's, whose boxes are elements. The pills sit on the box's top edge, outside it. */
+.change-pills { position: absolute; top: -8px; left: 6px; z-index: 3; display: flex; gap: 4px; pointer-events: none; white-space: nowrap; }
+.change-pill { display: inline-block; height: 15px; padding: 0 6px; box-sizing: border-box; border-radius: 8px; font: 700 10px/15px var(--mono); color: var(--on-mark); background: var(--change-changed); }
+.change-pill.is-added { background: var(--change-new); }
+.change-pill.is-removed { background: var(--change-gone); }
+.change-pill.is-rollup { background: var(--sheet); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.erd-box.hl-added { --change-hl: var(--change-new); }
+.erd-box.hl-changed { --change-hl: var(--change-changed); }
+.erd-box.hl-removed { --change-hl: var(--change-gone); }
+.erd-box[class*="hl-"] { outline: 3px solid var(--change-hl); outline-offset: -1.5px; }
+.erd-box[class*="hl-"]::after { content: ''; position: absolute; inset: 0; border-radius: inherit; background: color-mix(in srgb, var(--change-hl) 12%, transparent); pointer-events: none; }
+.erd-box[class*="hl-"] { position: relative; }
+.erd-ghost.is-lasting { opacity: 1; animation: none; border-width: 2.5px; background: color-mix(in srgb, var(--change-gone) 10%, transparent); }
+.erd-ghost.is-lasting .change-pill { position: absolute; top: -8px; left: 6px; }
+@media (prefers-reduced-motion: reduce) { .erd-ghost.is-lasting { display: block; } }
+.erd-region-changes { font-weight: 600; }
+
+/* The change hints at the canvas's edges ("4 changes →"), clear of the focus's own, and the minimap's markers. */
+.graph-edge-hints.is-changes .graph-edge-hint { inline-size: auto; border-color: var(--change-changed); color: var(--ink); }
+.graph-edge-hints.is-changes .graph-edge-hint.is-up { top: 40px; }
+.graph-edge-hints.is-changes .graph-edge-hint.is-down { bottom: 40px; }
+.graph-edge-hints.is-changes .graph-edge-hint.is-left { top: calc(50% + 34px); }
+.graph-edge-hints.is-changes .graph-edge-hint.is-right { top: calc(50% + 34px); }
+.graph-minimap-change { stroke: var(--sheet); stroke-width: 1; vector-effect: non-scaling-stroke; fill: var(--change-changed); }
+.graph-minimap-change.is-added { fill: var(--change-new); }
+
+/* Each folder's, stage's and domain's changes in the nav: "+3 ~5 −1", each in its change's color, on a line under the row (so no name is cut), with the marks that tell them apart. */
+.nav-changes { --depth: 0; padding: 0 10px 2px calc(var(--nav-pad) + (var(--depth) + 1) * var(--nav-indent) + var(--nav-twistie)); font: 600 0.7rem var(--mono); line-height: 1.2; white-space: nowrap; }
+.nav-changes-marks { display: inline-flex; gap: 6px; }
+.nav-changes .is-added { color: var(--change-new); }
+.nav-changes .is-changed { color: var(--change-changed); }
+.nav-changes .is-removed { color: var(--change-gone); }

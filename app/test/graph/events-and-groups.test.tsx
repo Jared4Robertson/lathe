@@ -1,13 +1,13 @@
+import { recordIndexOf } from '../read-view';
 import './setup';
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { groupLabel, neighborhood } from '../../src/graph/model';
 import { shapeOf } from '../../src/graph/shapes';
 import { treeChildren, treeParent } from '../../src/graph/tree';
-import { SETTINGS_KEY, sessionSettings } from '../../src/graph/settings';
+import { SETTINGS_KEY, sessionSettingsRepository } from '../../src/exploring/session-settings/repository';
 import { readView } from '../../src/views/place';
 import { openApp } from '../helpers';
-import { indexOf } from '../fixtures/load';
 import { manyOfOneKindWorkspace, testIndex } from './workspace';
 
 // The graph's tree for domain events, technical records and tests, and the
@@ -18,7 +18,7 @@ describe('domain events in the graph', () => {
 
   it('LA-V93-R04-T02 A domain event is a flag in its stage\'s colors', () => {
     expect(shapeOf('domain_event').shape).toBe('flag');
-    expect(index.kinds.get('domain_event')?.stage).toBe('domain-model');
+    expect(index.meta.kinds.get('domain_event')?.stage).toBe('domain-model');
   });
 
   it('LA-V93-R28-T01 An aggregate\'s events sit under it in a "Domain events" group, and the graph draws no raises or hears link', () => {
@@ -55,36 +55,34 @@ describe('the rules the graph keeps', () => {
 
   it('LA-EXP-SP03-T A list splits by kind only when it holds more than one kind, whatever the focus, depth or filters', async () => {
     const index = testIndex();
-    // An aggregate's children of four kinds: a group per kind.
-    expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event', 'P-D-A3/command']);
+    // An aggregate's children of three kinds: a group per kind.
+    expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event']);
     // A use case with seven UC requirements and nothing else: they hang straight under it, no group.
-    const seven = indexOf(manyOfOneKindWorkspace());
+    const seven = recordIndexOf(manyOfOneKindWorkspace());
     const kids = treeChildren(seven, 'P-D-UC02');
     expect(kids.length).toBe(7);
     for (const id of kids) expect(seven.byId.get(id)?.kind).toBe('uc_requirement');
     // The answer is the children's alone: the focus, depth and filters frame it, never change it.
-    neighborhood(index, 'P-D-A3', 3, { hiddenKinds: new Set(['command']) });
-    expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event', 'P-D-A3/command']);
-    // The record page titles a list of one kind by that kind, and a mixed one "Children".
+    neighborhood(index, 'P-D-A3', 3, { hiddenKinds: new Set(['domain_event']) });
+    expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event']);
+    // The record page titles a list of one kind by that kind.
     await openApp('/DM-SHOP-EP01');
     expect(await screen.findByRole('heading', { name: /^API requirements/ })).toBeInTheDocument();
-    await openApp('/DM-SHOP-CMD01');
-    expect(await screen.findByRole('heading', { name: /^Children/ })).toBeInTheDocument();
   });
 
-  it('LA-VO92-C01-T A graph\'s depth is a whole number from 1 to 3, and its layout one of tree and nested', () => {
-    // The layout is the window's (graph/settings.ts); the depth is the place's (views/place.ts).
-    const stored = (layout: string) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, cardWidth: null, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
-    for (const layout of ['tree', 'nested'] as const) {
+  it('LA-VO92-C01-T A graph\'s depth is a whole number from 1 to 3, and its layout one of tree, nested and map', () => {
+    // The layout is the window's (exploring/session-settings); the depth is the place's (views/place.ts).
+    const stored = (layout: string) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, allLinks: false, cardWidth: null, chat: false, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
+    for (const layout of ['tree', 'nested', 'map'] as const) {
       stored(layout);
-      expect(sessionSettings().graph).toEqual({ layout, minimap: false });
+      expect(sessionSettingsRepository.load().graph).toEqual({ layout, minimap: false, allLinks: false });
     }
     for (const depth of [1, 2, 3]) expect(readView({ depth }).depth).toBe(depth);
     // Any other depth falls back to 1; any other layout, one the graph no longer has included, reads as Tree and keeps the rest.
     for (const depth of [0, 4, 2.5, -1, '2']) expect(readView({ depth }).depth).toBe(1);
     for (const layout of ['grid', 'voronoi']) {
       stored(layout);
-      expect(sessionSettings().graph).toEqual({ layout: 'tree', minimap: false });
+      expect(sessionSettingsRepository.load().graph).toEqual({ layout: 'tree', minimap: false, allLinks: false });
     }
   });
 

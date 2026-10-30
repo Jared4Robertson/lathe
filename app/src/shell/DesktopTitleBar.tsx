@@ -1,9 +1,9 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
-import { useLocation } from '../router';
+import { browserHistory, useLocation } from '../router';
 import { useRunCommand } from './commands';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { desktopBridge } from './desktopChrome';
 import { useDesktopErrorCount, useDesktopRecordMenu } from './desktopRecord';
 import { Tooltip } from './Tooltip';
@@ -99,13 +99,13 @@ function ArrowIcon({ direction }: { direction: 'left' | 'right' }) {
 }
 
 /** The bar, drawn only in the desktop app. `index` is the product's specs, for the Dock badge and the record menu. */
-export function DesktopTitleBar({ index = null }: { index?: SpecIndex | null }) {
+export function DesktopTitleBar({ index = null }: { index?: RecordIndex | null }) {
   const bridge = desktopBridge();
   if (!bridge) return null;
   return <TitleBar bridge={bridge} index={index} />;
 }
 
-function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: SpecIndex | null }) {
+function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: RecordIndex | null }) {
   const platform = bridge.platform;
   const fullScreen = useFullScreen(bridge);
   useDesktopErrorCount(index);
@@ -124,8 +124,8 @@ function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: SpecIndex | 
     return () => root.removeAttribute('data-title-bar');
   }, []);
 
-  const back = () => { if (!run('goBack')) window.history.back(); };
-  const forward = () => { if (!run('goForward')) window.history.forward(); };
+  const back = () => { if (!run('goBack')) browserHistory.back(); };
+  const forward = () => { if (!run('goForward')) browserHistory.forward(); };
 
   return (
     <header className={`desktop-title-bar ${platformClass(platform, fullScreen)}`} aria-label="Title bar">

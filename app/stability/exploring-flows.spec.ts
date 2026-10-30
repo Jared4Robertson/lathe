@@ -4,7 +4,7 @@ import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { openPage } from './measure';
 import { keepData } from './scenarios';
-import { clickBox, expectKeyWhole, focusDrawn, sceneOf, traceDrawn, traceLayout, traceSceneOf } from './scene';
+import { clickBox, expectKeyWhole, focusDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
 
 // Exploring's flow tests (LA-EXP-UC01-FL01 to UC13-FL01): one per flow, each walking its main path in
 // Chromium over the suite's copy of Lathe's data, as the Reader does. They prove the flow end to
@@ -221,28 +221,26 @@ test.describe('Exploring flows', () => {
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
     await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
-    // A requirement's Trace stage frames its box in the product's tree, its chain to its right: the step that fulfills it, with its flow and what it invokes, an arrow for each link.
-    await traceLayout(page, 'tree');
+    // A requirement's Trace stage frames its box in the All-at-once view: its use case to its left, what builds it to its
+    // right, its path lit; the step that fulfills it is in the table's chain under the canvas.
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
     await traceDrawn(page);
     const chain = await traceSceneOf(page, true);
-    const requirementKey = chain.boxes.find((b) => b.id === 'LA-EXP-UC03-R18')!.key;
-    const inChain = (id: string) => chain.boxes.find((b) => b.key === `${requirementKey}|${id}`);
-    for (const id of ['LA-EXP-UC03-FL01', 'LA-EXP-UC03-FL01-S01', 'LA-EXP-CMD01']) expect(inChain(id)?.strength, id).toBe(1);
-    expect((await traceSceneOf(page)).boxes.some((b) => b.id === 'LA-EXP-UC03-R18' && b.focus), 'the requirement is in view').toBe(true);
-    const idOf = new Map(chain.boxes.map((b) => [b.key, b.id]));
-    expect(chain.lines.filter((l) => l.link).map((l) => `${idOf.get(l.source)} > ${idOf.get(l.target)}`)).toEqual(expect.arrayContaining(['LA-EXP-UC03-FL01 > LA-EXP-UC03-FL01-S01', 'LA-EXP-UC03-FL01-S01 > LA-EXP-CMD01']));
+    expect(chain.boxes.find((b) => b.key === 'LA-EXP-UC03-R18')).toMatchObject({ focus: true, column: 2, strength: 1 });
+    expect(chain.lines.filter((l) => l.lit).map((l) => `${l.kind}:${l.from}>${l.to}`)).toContain('reaches:LA-EXP-UC03>LA-EXP-UC03-R18');
+    expect(chain.boxes.find((b) => b.key === 'LA-EXP-UC03')!.strength).toBe(1);
+    expect((await traceSceneOf(page)).boxes.some((b) => b.key === 'LA-EXP-UC03-R18' && b.focus), 'the requirement is in view').toBe(true);
     // From the keyboard, through the table under the canvas: the step's link, then Enter.
     const design = page.locator('.focus-stage .trace-access .trace-column').nth(1);
     await design.getByRole('link', { name: /LA-EXP-UC03-FL01-S01/ }).focus();
     await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-UC03-FL01-S01');
-    // The step's own page in the wiki card, shown again (Enter, from the page); the Trace stage's camera now frames its copy in the chain arrived in, the step as the focus.
+    // The step's own page in the wiki card, shown again (Enter, from the page); the step has no box in the view, so the table marks it in the rows that hold it.
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('Enter');
     await expect(page.locator(WIKI).getByRole('link', { name: /LA-EXP-CMD01/ }).first()).toBeVisible();
     await traceDrawn(page);
-    expect((await traceSceneOf(page, true)).boxes.filter((b) => b.focus).map((b) => b.id)).toContain('LA-EXP-UC03-FL01-S01');
+    expect((await traceSceneOf(page, true)).boxes.some((b) => b.focus)).toBe(false);
     await expect(page.locator('.focus-stage .trace-matrix [aria-current="page"]').first()).toContainText('LA-EXP-UC03-FL01-S01');
   });
 
@@ -293,16 +291,16 @@ test.describe('Exploring flows', () => {
     await expect(rail.locator('a.space-item')).toHaveCount(2);
     await expect(rail.locator('a.space-item[data-space="TL"]')).toBeVisible();
     // The same workspace with its own product alone: no rail, the product at the top of the nav.
-    await page.route('**/api/spec', async (route) => {
+    await page.route('**/api/product/list-products*', async (route) => {
       const answer = await route.fetch();
-      const spec = (await answer.json()) as { sources: unknown[] };
-      await route.fulfill({ response: answer, json: { ...spec, sources: spec.sources.slice(0, 1) } });
+      const products = (await answer.json()) as { id: string }[];
+      await route.fulfill({ response: answer, json: products.filter((p) => p.id === 'LA') });
     });
     await page.reload();
     await nav(page).getByRole('link', { name: 'Lathe', exact: true }).first().waitFor();
     await expect(page.locator('nav#nav .space-rail')).toHaveCount(0);
     await expect(nav(page).locator('.space-items a[href="/LA"] .space-mark')).toBeVisible();
-    await page.unroute('**/api/spec');
+    await page.unroute('**/api/product/list-products*');
   });
 
   test('LA-EXP-UC08-FL01-T read a product in stage folders: the nav\'s domains and stages, the open branch, capabilities in order, the domain page', async ({ page }) => {
@@ -454,15 +452,14 @@ test.describe('Exploring flows', () => {
   test('LA-EXP-UC13-FL01-T read a domain\'s endpoints and integrations: the domain\'s Interaction design, a command\'s endpoint, an integration\'s steps', async ({ page }) => {
     await openPage(page, '/LA-AUT');
     const wiki = page.locator(WIKI);
-    await expect(wiki.getByRole('list', { name: 'Endpoints' })).toContainText('POST · /api/write');
+    await expect(wiki.getByRole('list', { name: 'Endpoints' })).toContainText('POST · /api/use-case/change-use-case');
     await expect(wiki.getByRole('list', { name: 'Integrations' }).getByRole('listitem').first()).toBeVisible();
-    // The command and its endpoint, method and route; the endpoint's API requirements.
-    await page.goto('/LA-AUT-CMD07');
-    await expect(wiki.getByRole('link', { name: 'LA-AUT-EP02 POST /api/write' })).toBeVisible();
-    await expect(wiki).toContainText('POST · /api/write');
-    await wiki.getByRole('link', { name: 'LA-AUT-EP02 POST /api/write' }).click();
-    await page.waitForURL((u) => u.pathname === '/LA-AUT-EP02');
-    await expect(wiki.getByRole('link', { name: /^LA-AUT-EP02-R\d+/ }).first()).toBeVisible();
+    // The command and its endpoint, method and route.
+    await page.goto('/LA-AUT-CMD101');
+    await expect(wiki.getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' })).toBeVisible();
+    await expect(wiki).toContainText('POST · /api/use-case/change-use-case');
+    await wiki.getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' }).click();
+    await page.waitForURL((u) => u.pathname === '/LA-AUT-EP101');
     // An integration lists the steps that exchange with its system.
     await page.goto('/LA-INT04');
     await expect(wiki.getByRole('list', { name: 'Exchanged with by' }).getByRole('link').first()).toBeVisible();

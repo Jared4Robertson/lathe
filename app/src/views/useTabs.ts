@@ -1,158 +1,88 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { lastAddressMove, navigate, noteInEntry, type AddressMove } from '../router';
-import { readPref, writePref, isNumber } from '../shell/prefs';
-import { productOfPath } from '../shell/spaces';
-import type { SpecIndex } from '../specs/data';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { lastAddressMove, noteInEntry } from '../router';
+import { isNumber, useAggregate } from '../shell/prefs';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf, focusOf, isFocusPath, pathOf, type FocusRoute } from './address';
-import { copyCameras, forgetCameras } from './cameras';
-import { DEFAULT_VIEW, hereOf, notePlace, type PlaceView } from './place';
-import { currentTag, giveHistory, here, inStep, tagEntry, type EntryTag } from './tabHistory';
-import { activateTab, activeTab, closeTab, cycleTab, duplicateTab, emptyTabs, moveInTab, newTab, parseTabSet, replaceInTab, stepTab, updatePlace, updateView, type Tab, type TabSet } from './tabs';
-import { CARD_SCROLL, keepView, lastView, namingStage, rememberedStage, stageOf, withStageIn, type PlaceApi } from './usePlace';
+import { DEFAULT_VIEW, hereOf, type PlaceView } from './place';
+import { currentTag, inStep } from './tabHistory';
+import { CARD_SCROLL, namingStage, rememberedStage, stageOf, withStageIn, type PlaceApi } from './usePlace';
+import { activateTab } from '../exploring/tab-set/commands/activate-tab';
+import { closeTab } from '../exploring/tab-set/commands/close-tab';
+import { cycleTab } from '../exploring/tab-set/commands/cycle-tab';
+import { duplicateTab } from '../exploring/tab-set/commands/duplicate-tab';
+import { newTab } from '../exploring/tab-set/commands/new-tab';
+import { noteInTab } from '../exploring/tab-set/commands/note-in-tab';
+import { updateView } from '../exploring/tab-set/commands/update-view';
+import { activeTab, placeKeyOf, setOf, type Tab } from '../exploring/tab-set/model';
+import { arrive, onActiveTabChangedMoveAddress, onPageOpenedMoveActiveTab, type Arrival } from '../exploring/tab-set/policies';
+import { tabSetRepository } from '../exploring/tab-set/repository';
+import { runTabSetCommand } from '../exploring/tab-set/run';
 
-// The desktop app's tabs (tabs.ts), one tab set per space, kept for the window's session with each tab's place and
-// history, and the window's history kept in step with the active tab (tabHistory.ts, LA-PAT-APP-UX-R06):
-// - a move (a click, a step, a link, quick open) changes the active tab's place, whatever other tabs hold;
-// - Back and Forward step through the active tab's history;
-// - activating, opening, duplicating or closing a tab gives the window that tab's place and history.
-// The page shows the active tab's place, so a tab switched to shows at once, before the window's address catches up.
+// The desktop app's tabs (the Tab set aggregate, exploring/tab-set/), one tab set per space, kept for the window's
+// session with each tab's place and history, and the window's history kept in step with the active tab
+// (tabHistory.ts, LA-PAT-APP-UX-R06). The page shows the active tab's place, so a tab switched to shows at once, before
+// the window's address catches up. Arriving at an address is worked out while rendering, so no frame shows the tab
+// before, and saved once rendered (the policy When a page opens, move the active tab there).
 
-const TABS_KEY = 'lathe:tabs';
-const isAny = (_v: unknown): _v is unknown => true;
 const isAddress = (address: string) => isFocusPath(address.split(/[?#]/)[0]);
 
-function loadAll(): Record<string, TabSet> {
-  const raw = readPref<unknown>(TABS_KEY, null, isAny, 'session');
-  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
-  const out: Record<string, TabSet> = {};
-  for (const [space, value] of Object.entries(raw as Record<string, unknown>)) {
-    const set = parseTabSet(value, isAddress);
-    if (set) out[space] = set;
-  }
-  return out;
-}
-
-/** The window entry the window was last in step on: a push from it is the active tab's next entry. */
-let lastInStep: EntryTag | null = null;
-
-/**
- * The tab set after the window arrives at an address, and whether the window's entry needs only its tag:
- * - Back or Forward (or a load) onto an entry of one of the space's tabs: that tab, at that entry;
- * - the active tab's own address (a space opened again), or the window's history rewritten: as it is;
- * - a stage switched in place: the active tab's entry, changed;
- * - anything else (a move, a link opened): a move in the active tab, which names the stage it was on.
- */
-export function arrive(set: TabSet, space: string, address: string, move: AddressMove | 'load', tag: EntryTag | null, firstView: PlaceView): { set: TabSet; tagOnly: boolean } {
-  // Only Back and Forward, or a load, step a tab: a rewrite that lands on another tab's entry (the window catching up
-  // with a tab activated since) changes nothing, and the window is then given the active tab's history.
-  if (tag && tag.space === space && (move === 'pop' || move === 'load')) {
-    const tab = set.tabs.find((t) => t.key === tag.tab);
-    if (tab && tab.place.history[tag.at]?.address === address) return { set: activateTab(stepTab(set, tab.key, tag.at), tab.key), tagOnly: false };
-  }
-  const active = activeTab(set);
-  if (move === 'rewrite' || (active && hereOf(active.place).address === address)) return { set, tagOnly: false };
-  const stage = active ? stageOf(hereOf(active.place).address, rememberedStage()) : rememberedStage();
-  const to = namingStage(address, stage);
-  if (move === 'replace' && active) return { set: replaceInTab(set, to), tagOnly: true };
-  const wasInStep = !!active && !!lastInStep && lastInStep.space === space && lastInStep.tab === active.key && lastInStep.at === active.place.at;
-  return { set: moveInTab(set, to, active?.place.view ?? firstView), tagOnly: move === 'push' && wasInStep };
-}
-
-const cameraKeyOf = (space: string, tab: string) => `${space}/${tab}`;
-
-export function usePageTabs(index: SpecIndex, route: FocusRoute, search: string): PlaceApi {
+export function usePageTabs(index: RecordIndex, route: FocusRoute, search: string): PlaceApi {
   const page = pathOf(route);
-  const space = productOfPath(index, page) ?? index.byId.get(focusOf(route))?.product ?? '';
+  const space = index.byId.get(focusOf(route))?.product ?? index.product;
   const address = page + search;
-  const [all, setAll] = useState<Record<string, TabSet>>(loadAll);
-  const tagOnly = useRef(false);
+  const tabs = useAggregate(tabSetRepository);
+  const stored = setOf(tabs, space);
 
-  // Arriving at an address: adjusted while rendering, so no frame shows the tab before.
+  // Arriving at an address: worked out while rendering (pure, so a second render gives the same), saved after it.
   const arrival = `${space}\n${address}`;
-  const [synced, setSynced] = useState<string | null>(null);
-  if (synced !== arrival) {
-    setSynced(arrival);
-    const move = synced === null ? 'load' : lastAddressMove();
-    const tag = currentTag();
-    const was = all[space] ?? emptyTabs();
-    const next = arrive(was, space, address, move, tag, lastView());
-    tagOnly.current = next.tagOnly;
-    if (next.set !== was) setAll((prev) => ({ ...prev, [space]: next.set }));
+  const [arrived, setArrived] = useState<{ arrival: string; from: typeof stored; to: typeof stored; move: Arrival } | null>(null);
+  if (arrived?.arrival !== arrival) {
+    const move = arrived === null ? 'load' : lastAddressMove();
+    const next = arrive(stored, space, address, move, currentTag(), tabSetRepository.load().view);
+    setArrived({ arrival, from: stored, to: next.set, move: next });
   }
-  const set = all[space] ?? emptyTabs();
+  const pending = !!arrived && arrived.arrival === arrival && arrived.from === stored && arrived.to !== stored;
+  const set = pending ? arrived.to : stored;
+  useLayoutEffect(() => {
+    if (pending) onPageOpenedMoveActiveTab(arrived.move);
+  }, [pending, arrived]);
+
   const active: Tab = activeTab(set) ?? { key: '', place: { history: [{ address: namingStage(address, rememberedStage()), note: {} }], at: 0, view: DEFAULT_VIEW } };
   const shown = hereOf(active.place).address;
 
-  useEffect(() => { writePref(TABS_KEY, all, 'session'); }, [all]);
-
-  // The window follows the active tab: the address it stands on is tagged as the tab's entry, or, when it stands
-  // elsewhere, it is given the tab's history (tabHistory.ts).
+  // The window follows the active tab (Active tab changed).
   const latest = useRef({ space, active });
   latest.current = { space, active };
+  const tagOnly = !!arrived && arrived.arrival === arrival && arrived.move.tagOnly;
+  const tagOnlyDone = useRef<string | null>(null);
   // Each rewrite done is looked at again: the active tab may have changed while it ran.
   const [rewrites, setRewrites] = useState(0);
   useEffect(() => {
-    if (!active.key) return;
-    const tag = { space, tab: active.key, at: active.place.at };
-    if (inStep(space, active, shown)) { lastInStep = tag; return; }
-    if (tagOnly.current) {
-      tagOnly.current = false;
-      // An address that named no stage (a link in the card) names the tab's, in the same entry.
-      if (here() !== shown) navigate(shown, true);
-      tagEntry(tag);
-      lastInStep = tag;
-      return;
-    }
-    void giveHistory(() => {
-      const now = latest.current;
-      const at = hereOf(now.active.place).address;
-      return now.active.key && !inStep(now.space, now.active, at) ? { space: now.space, tab: now.active } : null;
-    }, (tag) => { lastInStep = tag; setRewrites((n) => n + 1); });
+    const once = tagOnly && tagOnlyDone.current !== arrival;
+    if (once) tagOnlyDone.current = arrival;
+    onActiveTabChangedMoveAddress(space, active, once, () => latest.current, () => setRewrites((n) => n + 1));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [space, active, shown, rewrites]);
 
-  const allRef = useRef(all);
-  allRef.current = all;
   const spaceRef = useRef(space);
   spaceRef.current = space;
-  /** Applies a change to this space's tab set. */
-  const change = useCallback((fn: (s: TabSet) => TabSet) => {
-    const sp = spaceRef.current;
-    const before = allRef.current[sp] ?? emptyTabs();
-    const after = fn(before);
-    if (after === before) return;
-    allRef.current = { ...allRef.current, [sp]: after };
-    setAll((prev) => ({ ...prev, [sp]: fn(prev[sp] ?? emptyTabs()) }));
-  }, []);
-
   const activeRef = useRef(active);
   activeRef.current = active;
   const stageNow = () => stageOf(hereOf(activeRef.current.place).address, rememberedStage());
   const home = () => withStageIn(addressOf(spaceRef.current), stageNow());
 
-  const activate = useCallback((key: string) => change((s) => activateTab(s, key)), [change]);
-  const close = useCallback((key: string) => {
-    forgetCameras(cameraKeyOf(spaceRef.current, key));
-    change((s) => closeTab(s, key, home()));
-  }, [change]);
-  const cycle = useCallback((step: number) => change((s) => cycleTab(s, step)), [change]);
+  const activate = useCallback((key: string) => runTabSetCommand(activateTab, { space: spaceRef.current, key }), []);
+  const close = useCallback((key: string) => runTabSetCommand(closeTab, { space: spaceRef.current, key, home: home() }), []);
+  const cycle = useCallback((step: number) => runTabSetCommand(cycleTab, { space: spaceRef.current, step }), []);
   const openNew = useCallback((to: string, background = false) => {
-    const view = activeRef.current.place.view;
-    change((s) => newTab(s, namingStage(to, stageNow()), view, { background }));
-  }, [change]);
+    runTabSetCommand(newTab, { space: spaceRef.current, address: namingStage(to, stageNow()), view: activeRef.current.place.view, background });
+  }, []);
   const openHome = useCallback(() => openNew(home()), [openNew]);
-  const duplicate = useCallback(() => change((s) => {
-    if (!s.active) return s;
-    const next = duplicateTab(s, s.active);
-    if (next.active) copyCameras(cameraKeyOf(spaceRef.current, s.active), cameraKeyOf(spaceRef.current, next.active));
-    return next;
-  }), [change]);
-  // The view last set is also what a space's first tab starts with.
-  const setView = useCallback((fn: (v: PlaceView) => PlaceView) => change((s) => {
-    if (!s.active) return s;
-    const next = updateView(s, s.active, fn);
-    if (next !== s) keepView(activeTab(next)!.place.view);
-    return next;
-  }), [change]);
+  const duplicate = useCallback(() => {
+    const key = setOf(tabSetRepository.load(), spaceRef.current).active;
+    if (key) runTabSetCommand(duplicateTab, { space: spaceRef.current, key });
+  }, []);
+  const setView = useCallback((change: (v: PlaceView) => PlaceView) => runTabSetCommand(updateView, { space: spaceRef.current, change }), []);
   const scroll = useCallback(() => {
     const top = hereOf(activeRef.current.place).note[CARD_SCROLL];
     return isNumber(top) ? top : 0;
@@ -160,9 +90,9 @@ export function usePageTabs(index: SpecIndex, route: FocusRoute, search: string)
   const setScroll = useCallback((top: number) => {
     const value = Math.max(0, Math.round(top));
     const tab = activeRef.current;
-    change((s) => (tab.key ? updatePlace(s, tab.key, (p) => notePlace(p, { [CARD_SCROLL]: value })) : s));
+    if (tab.key) runTabSetCommand(noteInTab, { space: spaceRef.current, key: tab.key, note: { [CARD_SCROLL]: value } });
     if (inStep(spaceRef.current, tab, hereOf(tab.place).address)) noteInEntry(CARD_SCROLL, value);
-  }, [change]);
+  }, []);
 
   // A link opened with Cmd or Ctrl held, or by the middle button, opens in a new tab (in the background for the
   // middle button), as in a browser; the page never leaves the app for it.
@@ -194,8 +124,8 @@ export function usePageTabs(index: SpecIndex, route: FocusRoute, search: string)
     return () => { document.removeEventListener('click', onClick, true); document.removeEventListener('auxclick', onAux, true); };
   }, [openNew]);
 
-  const tabs = useMemo(() => ({ set, activate, close, cycle, openHome, duplicate }), [set, activate, close, cycle, openHome, duplicate]);
+  const tabsApi = useMemo(() => ({ set, activate, close, cycle, openHome, duplicate }), [set, activate, close, cycle, openHome, duplicate]);
   return useMemo(() => ({
-    address: shown, stage: stageOf(shown, rememberedStage()), key: cameraKeyOf(space, active.key), view: active.place.view, setView, scroll, setScroll, openNew, tabs,
-  }), [shown, space, active, setView, scroll, setScroll, openNew, tabs]);
+    address: shown, stage: stageOf(shown, rememberedStage()), key: placeKeyOf(space, active.key), view: active.place.view, setView, scroll, setScroll, openNew, tabs: tabsApi,
+  }), [shown, space, active, setView, scroll, setScroll, openNew, tabsApi]);
 }

@@ -1,8 +1,7 @@
-{"id":"LA-AUT-DS01-SV","title":"idShapes","domain_service_id":"LA-AUT-DS01","file":"lathe/src/cli/operations.ts"}
 {"id":"LA-CHK-DS01-SV","title":"orderChecks","domain_service_id":"LA-CHK-DS01","file":"lathe/src/reference.ts"}
 {"id":"LA-EXP-DS01-SV","title":"spaceOf","domain_service_id":"LA-EXP-DS01","file":"app/src/shell/spaces.tsx"}
 {"id":"LA-EXP-DS02-SV","title":"productOfPath","domain_service_id":"LA-EXP-DS02","file":"app/src/shell/spaces.tsx"}
-{"id":"LA-EXP-DS03-SV","title":"folderPath","domain_service_id":"LA-EXP-DS03","file":"app/src/specs/folders.ts"}
+{"id":"LA-EXP-DS03-SV","title":"folderTreeTableFrom","domain_service_id":"LA-EXP-DS03","file":"lathe/src/exploring/folder-tree/read-model.ts"}
 {"id":"LA-EXP-DS04-SV","title":"treeOf","domain_service_id":"LA-EXP-DS04","file":"app/src/graph/tree.ts"}
 {"id":"LA-EXP-DS05-SV","title":"layoutTree","domain_service_id":"LA-EXP-DS05","file":"app/src/graph/map.ts"}
 {"id":"LA-EXP-DS06-SV","title":"labelLines","domain_service_id":"LA-EXP-DS06","file":"app/src/graph/text.ts"}
@@ -10,13 +9,14 @@
 {"id":"LA-EXP-DS09-SV","title":"frameOnMap","domain_service_id":"LA-EXP-DS09","file":"app/src/graph/camera.ts"}
 {"id":"LA-EXP-DS10-SV","title":"drawnFor","domain_service_id":"LA-EXP-DS10","file":"app/src/graph/camera.ts"}
 {"id":"LA-EXP-DS11-SV","title":"erdMap","domain_service_id":"LA-EXP-DS11","file":"app/src/erd/erd.ts"}
-{"id":"LA-EXP-DS12-SV","title":"formFields","domain_service_id":"LA-EXP-DS12","file":"app/src/edit/form.ts"}
+{"id":"LA-EXP-DS12-SV","title":"placeGround","domain_service_id":"LA-EXP-DS12","file":"app/src/graph/ground.ts"}
 {"id":"LA-PLT-DS01-SV","title":"formatBinding","domain_service_id":"LA-PLT-DS01","file":"app/src/shell/keymap.ts"}
 {"id":"LA-PLT-DS02-SV","title":"auditContrast","domain_service_id":"LA-PLT-DS02","file":"app/src/theme/audit.ts"}
-{"id":"LA-PLT-DS03-SV","title":"windowFor","domain_service_id":"LA-PLT-DS03","file":"desktop/src/windowState.ts"}
+{"id":"LA-PLT-DS03-SV","title":"windowFor","domain_service_id":"LA-PLT-DS03","file":"desktop/src/product-window/model.ts"}
 {"id":"LA-PLT-DS04-SV","title":"openOnLaunch","domain_service_id":"LA-PLT-DS04","file":"desktop/src/main.ts"}
 {"id":"LA-TRC-DS01-SV","title":"mentionsId","domain_service_id":"LA-TRC-DS01","file":"lathe/src/index.ts"}
 {"id":"LA-TRC-DS02-SV","title":"ALLOWED_LEVELS","domain_service_id":"LA-TRC-DS02","file":"lathe/src/coverage.ts"}
 {"id":"LA-TRC-DS03-SV","title":"sourceFiles","domain_service_id":"LA-TRC-DS03","file":"lathe/src/trace/source-files.ts"}
 {"id":"LA-TRC-DS04-SV","title":"normalRoute","domain_service_id":"LA-TRC-DS04","file":"lathe/src/trace/routes.ts"}
 {"id":"LA-TRC-DS05-SV","title":"readTestCases","domain_service_id":"LA-TRC-DS05","file":"lathe/src/trace/test-cases.ts"}
+{"id":"LA-TRC-DS06-SV","title":"servesOf","domain_service_id":"LA-TRC-DS06","file":"lathe/src/trace/serves.ts"}

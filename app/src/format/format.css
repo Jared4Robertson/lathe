@@ -6,7 +6,6 @@
 .format-page .format-facts { margin: 8px 0; }
 .format-page .field-list { margin: 8px 0; }
 .format-page .field-list li:target, .format-page .spec-section:target > .spec-section-head { background: var(--hover-bg); border-radius: 4px; }
-.format-page pre.record-header { margin: 8px 0 0; }
 
 .severity-tag { display: inline-block; font: 500 0.7rem var(--mono); padding: 1px 7px; border-radius: 999px; border: 1px solid var(--rule); color: var(--muted); }
 .severity-tag.error { color: var(--error); border-color: var(--error); }

@@ -1,8 +1,14 @@
-// The refusals of the domain model: what the schema's constraints and the validation queries refuse across columns and
+// The refusals of the domain model: what the schema's constraints, the integrity queries and the aggregates' rules refuse across columns and
 // tables. Each names the rule, the file and the line of the row that breaks it.
 import { afterAll, describe, expect, it } from 'vitest';
 import { openStore, StoreError, type Row, type StoreProblem } from '../../src/index.ts';
 import { everyKind, removeData, writeData, type Data } from './fixture.ts';
+import { ADD_COMMAND_HANDLER } from '../../src/authoring/command/commands/add-command-handler.ts';
+import { ADD_POLICY_TEST } from '../../src/authoring/command/commands/add-policy-test.ts';
+import { ADD_REPOSITORY } from '../../src/authoring/domain/commands/add-repository.ts';
+import { runCommand } from '../../src/platform/commands/run.ts';
+import { FOLLOW_PATTERN } from '../../src/traceability/pattern-following/commands/follow-pattern.ts';
+import { CHANGE_SETTING_VALUES } from '../../src/traceability/pattern-following/commands/change-setting-values.ts';
 
 afterAll(removeData);
 
@@ -57,17 +63,30 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(problems[0].message).toContain('cannot fulfill TL-LEND-UC02-R01, a requirement of TL-LEND-UC02');
   });
 
-  it("LA-AUT-SP10-T refuses a policy hearing another domain's unpublished event, and lets it hear a published one", async () => {
-    const data = adding(catalog);
-    data.hears = [{ source_id: 'TL-LEND-PO01', target_id: 'TL-CAT-EV01' }];
-    const problems = await refusal(data);
-    expect(problems).toEqual([expect.objectContaining({ rule: 'policy-hears-published', file: 'data/hears.jsonl', line: 1 })]);
-    expect(problems[0].message).toContain('an event of domain TL-CAT that is not published');
-    data.domain_event = data.domain_event.map((e) => (e.id === 'TL-CAT-EV01' ? { ...e, published: true } : e));
-    await loads(data);
+  it('LA-AUT-INV104-T refuses a second handler of a command and a second test of a policy from their commands, with command-one-each', async () => {
+    const store = await openStore(writeData(everyKind()), { latheDataDir: null });
+    try {
+      const refused = async (definition: Parameters<typeof runCommand>[1], input: unknown) => {
+        try {
+          await runCommand(store, definition, input);
+        } catch (error) {
+          if (error instanceof StoreError) return error.problems.map((p) => ({ rule: p.rule, message: p.message }));
+          throw error;
+        }
+        throw new Error('not refused');
+      };
+      expect(await refused(ADD_COMMAND_HANDLER, { id: 'TL-LEND-CMD01-H2', title: 'openLoanAgain', command_id: 'TL-LEND-CMD01', description: 'Saves it again.' })).toEqual([
+        { rule: 'command-one-each', message: 'command TL-LEND-CMD01 already has its command handler, so TL-LEND-CMD01-H2 cannot be a second: a command has one' },
+      ]);
+      expect(await refused(ADD_POLICY_TEST, { id: 'TL-LEND-PO01-T2', title: 'Again', policy_id: 'TL-LEND-PO01', level: 'integration', state: 'automated', file: 'test/policies.test.ts', when: 'Opens a loan', then: 'Expects a reminder' })).toEqual([
+        { rule: 'command-one-each', message: 'policy TL-LEND-PO01 already has its test, so TL-LEND-PO01-T2 cannot be a second: a policy has one' },
+      ]);
+    } finally {
+      await store.close();
+    }
   });
 
-  it('LA-AUT-INV10-T refuses a policy hearing two events', async () => {
+  it('LA-AUT-INV104-T refuses a policy hearing two events', async () => {
     const problems = await refusal(adding({ domain_event: [{ id: 'TL-LEND-EV02', title: 'Loan closed', aggregate_id: 'TL-LEND-A1', published: false, description: 'A tool came back.' }], hears: [{ source_id: 'TL-LEND-PO01', target_id: 'TL-LEND-EV02' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/hears.jsonl' })]);
   });
@@ -93,30 +112,8 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     ]);
   });
 
-  it("LA-AUT-INV11-T records another aggregate of the command's domain, and refuses its own aggregate or another domain's", async () => {
-    const reason = 'The tool must never show as lent without its loan.';
-    await loads(everyKind());
-    const problems = await refusal(
-      adding({
-        ...catalog,
-        command_change: [
-          { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-LEND-A1', reason },
-          { command_id: 'TL-LEND-CMD01', aggregate_id: 'TL-CAT-A1', reason },
-        ],
-      }),
-    );
-    expect(problems.map((p) => p.rule)).toEqual(['command-change-in-domain', 'command-change-in-domain']);
-  });
-
-  it("refuses a read model fed by another domain's unpublished event, and a domain's table stored as a view", async () => {
-    const problems = await refusal(
-      adding({
-        ...catalog,
-        fed_by: [{ source_id: 'TL-LEND-RM01', target_id: 'TL-CAT-EV01' }],
-      }),
-    );
-    expect(problems.map((p) => p.rule)).toEqual(['read-model-fed-by-published']);
-    await expect(refusal(adding({ table: [{ id: 'TL-LEND-TB02', title: 'Cache', domain_id: 'TL-LEND', name: 'cache', storage: 'view' }] }))).resolves.not.toEqual([]);
+  it("refuses a domain's own table stored as a view", async () => {
+    await expect(refusal(adding({ table: [{ id: 'TL-LEND-TB02', title: 'Cache', domain_id: 'TL-LEND', name: 'cache', storage: 'view' }] }))).resolves.toEqual([expect.objectContaining({ rule: 'check', table: 'table' })]);
   });
 
   it('refuses a query and its read model in different domains', async () => {
@@ -157,17 +154,6 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique', file: 'data/pattern_rule_test.jsonl', line: 2 })]);
   });
 
-  it('LA-AUT-INV15-T refuses a field with two types, or none', async () => {
-    for (const table of ['entity_field', 'value_object_field', 'event_field', 'read_model_field']) {
-      const data = everyKind();
-      const { type: _t, type_value_object_id: _v, type_aggregate_id: _a, ...bare } = data[table][0];
-      data[table][0] = { ...bare, type: 'text', type_aggregate_id: 'TL-LEND-A2' };
-      expect(await refusal(data), table).toEqual([expect.objectContaining({ rule: 'check', table })]);
-      data[table][0] = bare;
-      expect(await refusal(data), `${table} with none`).toEqual([expect.objectContaining({ rule: 'check', table })]);
-    }
-  });
-
   it('refuses a link, or a field reference, across products', async () => {
     const other: Data = {
       product: [{ id: 'LA', title: 'Lathe', description: 'A tool for writing specs.' }],
@@ -191,67 +177,9 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     // A link from it would cross products too, so the prefix rule is the one reported for a lone record.
   });
 
-  it("LA-AUT-SP06-T refuses an ID that does not start with its parent's or domain's ID", async () => {
+  it("LA-PLT-UC01-R13-T01 refuses an ID that does not start with its parent's or domain's ID", async () => {
     const problems = await refusal(adding({ uc_requirement: [{ id: 'TL-LEND-UC09-R01', title: 'Lost', use_case_id: 'TL-LEND-UC01', statement: 'x' }] }));
     expect(problems).toEqual([expect.objectContaining({ rule: 'id-prefix', message: 'TL-LEND-UC09-R01 is a UC requirement under TL-LEND-UC01, so its ID starts with TL-LEND-UC01-' })]);
-  });
-
-  it('LA-AUT-INV12-T refuses an aggregate with two roots, but not one with none', async () => {
-    const data = everyKind();
-    data.entity[1] = { id: 'TL-LEND-EN02', title: 'Return', aggregate_id: 'TL-LEND-A1', role: 'root', description: 'The tool coming back.' };
-    expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'aggregate-root', key: 'TL-LEND-A1' })]);
-    await loads(adding({ entity: [{ id: 'TL-LEND-EN03', title: 'Repair', aggregate_id: 'TL-LEND-A2', role: 'child', description: 'A repair made to a tool.' }] }));
-  });
-
-  it("LA-AUT-INV13-T refuses a table for an entity stored in its root's table, a root stored in a root table, and an entity's table that is a view or a materialized view", async () => {
-    const own = await refusal(adding({ table: [{ id: 'TL-LEND-EN02-TB', title: 'Returns', entity_id: 'TL-LEND-EN02', name: 'returns', storage: 'table' }] }));
-    expect(own).toEqual([expect.objectContaining({ rule: 'entity-table', key: 'TL-LEND-EN02-TB' })]);
-    const data = everyKind();
-    data.entity[0] = { ...data.entity[0], in_root_table: true };
-    expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'check', table: 'entity' })]);
-    const view = everyKind();
-    view.table[0] = { ...view.table[0], storage: 'view' };
-    expect(await refusal(view)).toEqual([expect.objectContaining({ rule: 'check', table: 'table' })]);
-    const kept = everyKind();
-    kept.table[0] = { ...kept.table[0], storage: 'materialized view' };
-    expect(await refusal(kept)).toEqual([expect.objectContaining({ rule: 'check', table: 'table' })]);
-    // An entity kept outside a database names its browser storage, file or memory, with no keys.
-    for (const storage of ['browser storage', 'file', 'in memory']) {
-      const outside = everyKind();
-      outside.table[0] = { ...outside.table[0], storage };
-      expect((await refusal(outside)).map((p) => p.rule), storage).toEqual(['key-outside-database', 'key-outside-database', 'key-outside-database']);
-      outside.table_key = outside.table_key.filter((k) => k.table_id !== 'TL-LEND-EN01-TB' && k.target_table_id !== 'TL-LEND-EN01-TB');
-      await loads(outside);
-    }
-  });
-
-  it("LA-AUT-INV14-T refuses a table's second primary key, a foreign key to another domain's table, a key of or to a table outside a database, and a key's misplaced parts", async () => {
-    const two = await refusal(adding({ table_key: [{ table_id: 'TL-LEND-EN01-TB', position: 3, type: 'primary', columns: ['tool_id'] }] }));
-    expect(two).toEqual([expect.objectContaining({ rule: 'one-primary-key', key: 'TL-LEND-EN01-TB' })]);
-    for (const storage of ['browser storage', 'file', 'in memory']) {
-      const kept = everyKind();
-      kept.table = kept.table.map((t) => (t.id === 'TL-LEND-RM01-TB' ? { ...t, storage } : t));
-      expect(await refusal(kept), storage).toEqual([expect.objectContaining({ rule: 'key-outside-database', table: 'table_key' })]);
-    }
-    const crossing = await refusal(
-      adding({
-        ...catalog,
-        entity: [{ id: 'TL-CAT-EN01', title: 'Listing', aggregate_id: 'TL-CAT-A1', role: 'root', description: 'The listing itself.' }],
-        table: [{ id: 'TL-CAT-EN01-TB', title: 'Listings', entity_id: 'TL-CAT-EN01', name: 'listings', storage: 'table' }],
-        table_key: [{ table_id: 'TL-CAT-EN01-TB', position: 1, type: 'foreign', columns: ['loan_id'], target_table_id: 'TL-LEND-EN01-TB' }],
-      }),
-    );
-    expect(crossing).toEqual([expect.objectContaining({ rule: 'foreign-key-crosses-domain', table: 'table_key' })]);
-    for (const bad of [
-      { type: 'index', columns: ['id'], condition: 'x IS NULL' },
-      { type: 'primary', columns: ['id'], invariant_id: 'TL-LEND-INV01' },
-      { type: 'foreign', columns: ['id'] },
-      { type: 'index', columns: ['id'], target_table_id: 'TL-LEND-RM01-TB' },
-    ] as Row[]) {
-      const data = everyKind();
-      data.table_key[0] = { table_id: 'TL-LEND-EN01-TB', position: 1, ...bad };
-      expect(await refusal(data), JSON.stringify(bad)).toEqual([expect.objectContaining({ rule: 'check', table: 'table_key' })]);
-    }
   });
 
   it('refuses a step invoking two operations, or happening in two views', async () => {
@@ -295,12 +223,6 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'check', table: 'question' })]);
   });
 
-  it('LA-TRC-UC04-R06-T02 refuses a pattern rule naming a setting its pattern lacks', async () => {
-    const data = everyKind();
-    data.pattern_rule[0] = { ...data.pattern_rule[0], setting: 'tone' };
-    expect(await refusal(data)).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/pattern_rule.jsonl', line: 1 })]);
-  });
-
   it('LA-AUT-INV41-T refuses a second repository for one aggregate, a second aggregate for one repository, and a second repository of one identifier', async () => {
     const second = adding({
       repository: [{ id: 'TL-LEND-REPO02', title: 'LoanStore', domain_id: 'TL-LEND', file: 'src/lending/loans.ts', description: 'Keeps loans in a second table.' }],
@@ -315,11 +237,21 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
       ['title-unique', 'TL-LEND-REPO01'],
       ['title-unique', 'TL-LEND-REPO02'],
     ]);
-    // A repository persists one aggregate: another it also persists is a recorded exception, of its domain or another.
+    // A repository persists one aggregate, of its domain or another.
     expect(await refusal(adding({ ...catalog, persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-CAT-A1' }] }))).toEqual([
       expect.objectContaining({ rule: 'unique', file: 'data/persists.jsonl', line: 2, message: expect.stringContaining('has the same source_id as persists') }),
     ]);
-    await loads(adding({ ...catalog, repository_share: [{ repository_id: 'TL-LEND-REPO01', aggregate_id: 'TL-CAT-A1', reason: 'One store holds every table.' }] }));
+    // The Domain aggregate's own rule refuses the command that would add a second repository for one aggregate.
+    const store = await openStore(writeData(everyKind()));
+    try {
+      await runCommand(store, ADD_REPOSITORY, { id: 'TL-LEND-REPO02', title: 'LoanStore', domain_id: 'TL-LEND', file: 'src/lending/store.ts', description: 'Keeps loans in a second table.', persists: 'TL-LEND-A1' });
+      throw new Error('The second repository was added.');
+    } catch (error) {
+      if (!(error instanceof StoreError)) throw error;
+      expect(error.problems).toEqual([expect.objectContaining({ rule: 'one-repository', table: 'repository', message: 'TL-LEND-REPO01 and TL-LEND-REPO02 both persist TL-LEND-A1: an aggregate has one repository' })]);
+    } finally {
+      await store.close();
+    }
   });
 
   it('LA-STD-MODELING-R04-T01 refuses a title another record of its kind and product has, or one ending with a period', async () => {
@@ -381,7 +313,27 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
     await loads(one);
   });
 
-  it('LA-TRC-INV03-T refuses a setting value for a pattern its follower does not follow', async () => {
+  it('LA-TRC-INV03-T refuses a setting value for a setting its pattern lacks, or for a pattern its follower does not follow', async () => {
+    // Through the Pattern following commands, with setting-value-of-followed-setting, changing nothing.
+    const store = await openStore(writeData(everyKind()), { latheDataDir: null });
+    try {
+      const refused = async (definition: typeof FOLLOW_PATTERN | typeof CHANGE_SETTING_VALUES, input: unknown) => {
+        const error = await runCommand(store, definition as never, input).then(() => null, (e: unknown) => e);
+        expect(error).toBeInstanceOf(StoreError);
+        return (error as StoreError).problems.map((p) => [p.rule, p.message]);
+      };
+      expect(await refused(CHANGE_SETTING_VALUES, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting_values: [{ setting: 'record', value: 'Tool' }, { setting: 'colour', value: 'Red' }] })).toEqual([
+        ['setting-value-of-followed-setting', 'TL-PAT-ACT has no setting colour, so TL-LEND-UC01 cannot give it a value'],
+      ]);
+      expect(await refused(FOLLOW_PATTERN, { follower_id: 'TL-LEND', pattern_id: 'TL-PAT-ACT', setting_values: [{ setting: 'size', value: 'Large' }] })).toEqual([
+        ['setting-value-of-followed-setting', 'TL-PAT-ACT has no setting size, so TL-LEND cannot give it a value'],
+      ]);
+      expect(store.rows('follows')).toHaveLength(1);
+      expect(store.rows('setting_value')).toHaveLength(1);
+    } finally {
+      await store.close();
+    }
+    // Written into the files with its follows link gone, the value is refused when the data loads, by the key under the rule.
     expect(await refusal({ ...everyKind(), follows: [] })).toEqual([expect.objectContaining({ rule: 'foreign-key', file: 'data/setting_value.jsonl', line: 1 })]);
   });
 });

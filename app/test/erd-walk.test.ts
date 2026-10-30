@@ -25,8 +25,7 @@ const MAP: ErdMap = {
     box('D2', 'domain'), box('A4', 'aggregate', 'D2'), box('E4', 'entity', 'A4'),
     box('D3', 'domain', undefined, true),
   ],
-  lines: [],
-};
+  lines: [] };
 const r = (x: number, y: number, width: number, height: number): Rect => ({ x, y, width, height });
 const RECTS = new Map<string, Rect>([
   ['D1', r(0, 0, 600, 400)], ['A1', r(20, 40, 260, 220)], ['E1', r(34, 80, 210, 60)], ['E2', r(34, 180, 210, 60)],

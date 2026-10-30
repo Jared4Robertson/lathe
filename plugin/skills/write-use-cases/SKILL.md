@@ -9,30 +9,39 @@ A use case is an actor's goal: who acts, what they want, and the rules the produ
 
 ## How you write
 
-The spec is typed data in the repo's `data/` folder, one table per kind. Change it only with Lathe's MCP tools, never by editing files: `add`, `set`, `move`, `link`, `unlink` and `remove` write; `show`, `list` and `next_id` read; `check` runs the checks. Each write is checked against the schema and refused, with its reasons, when it breaks the model; a refusal changes nothing, so fix the input and try again. Writes never commit: commit per task.
+The spec is typed data in the repo's `data/` folder, one table per kind. Change it only with Lathe's MCP tools, never by editing files. Every kind belongs to one aggregate of Lathe's own model, and each aggregate has its own tools, named for the aggregate and the command: `<aggregate>_add_<kind>`, `<aggregate>_change_<kind>` and `<aggregate>_remove_<kind>` for each kind it holds, a move where a record really moves (a use case to another capability); and its reads, `<aggregate>_get_<aggregate>` (it whole, by the ID of any record in it), `<aggregate>_list_<aggregate>s` (those under a parent) and `<aggregate>_next_id`. `check` runs the checks. Each command checks its aggregate's rules and is refused, with every reason, when it breaks them; a refusal changes nothing, so fix the input and try again. Writes never commit: commit per task.
 
-- The `add` tool's input schema lists every table with its columns, their types and what each means. In a shell, `lathe add <table> --help` prints the same (`npx lathe` in a product repo; `npm --prefix lathe run lathe -- <command> --root ..` in the Lathe repo). An Owner's script hands a write the tool's own JSON instead of flags, on stdin with `--json -` or from a file with `--json <file>`, so a long statement keeps its quotes and newlines.
-- Take each new record's ID from `next_id`, with the record it will sit under as `parent`. IDs are never reused or renumbered.
+- A record's parts (a use case's `actors`, a pattern's `settings`) and the links it starts (a capability's `serves`) are fields of its own add and change: on a change a list replaces the list. There are no tools that link or unlink.
+- Each tool's input schema lists its fields, with each column's type and meaning. In a shell the same commands are `lathe <aggregate> <command> --<field> <value>` (`lathe use-case add-use-case --help` prints its fields; `npx lathe` in a product repo, `npm --prefix lathe run lathe -- <aggregate> <command> --root ..` in the Lathe repo). An Owner's script hands a command the tool's own JSON instead of flags, on stdin with `--json -` or from a file with `--json <file>`, so a long statement keeps its quotes and newlines.
+- Take each new record's ID from its aggregate's `<aggregate>_next_id`, with the kind and the record it will sit under as `parent`. IDs are never reused or renumbered.
+
+The tools of this stage, by aggregate:
+
+| Aggregate | Its tools |
+| --- | --- |
+| Domain | `domain_add_capability` (with the outcomes it `serves`), `domain_change_capability`, `domain_remove_capability`; `domain_get_domain`, `domain_next_id` |
+| Use case | `use_case_add_use_case` (with its `actors`), `use_case_change_use_case`, `use_case_move_use_case`, `use_case_remove_use_case`; `use_case_add_uc_requirement`, `use_case_change_uc_requirement`, `use_case_remove_uc_requirement`; `use_case_get_use_case`, `use_case_list_use_cases`, `use_case_next_id` |
+| Product | `product_change_product` (with its `roles`); `product_get_product` |
+| Pattern | `pattern_add_pattern` (with its `settings`), `pattern_add_pattern_rule`; each with its change and remove tools; `pattern_get_pattern`, `pattern_list_patterns`, `pattern_next_id` |
+| Pattern following | `pattern_following_follow_pattern` (with its `setting_values`), `pattern_following_change_setting_values`, `pattern_following_stop_following_pattern` |
 
 ## Before you write
 
-1. `show` the domain and `list` its terms, commands and queries. Use the terms exactly; know which command or query each step of the use case will invoke.
-2. `list` the domain's capabilities and each one's use cases (`parent`: the capability), so a new use case does not repeat an old one.
-3. `list` the product's patterns and `show` the domain to see the patterns it follows.
+1. `domain_get_domain` for its terms, and `command_list_commands` and `read_model_list_read_models` for its commands and queries. Use the terms exactly; know which command or query each step of the use case will invoke.
+2. `domain_get_domain` lists the domain's capabilities; `use_case_list_use_cases` lists each one's use cases (`capability_id`), so a new use case does not repeat an old one.
+3. `pattern_list_patterns` for the product's patterns, and `domain_get_domain` for the patterns the domain follows.
 
 ## The records
 
 | Kind | Parent | ID | Holds |
 | --- | --- | --- | --- |
 | `capability` | the domain | `<P>-<D>-CAP<nn>` | `position`: its place in the domain, unique there. `description` (required): what it covers, in a sentence or two. Link: `serves` the business outcomes it serves (the `discover-outcomes` skill). |
-| `use_case` | a capability | `<P>-<D>-UC<nn>` | `goal` (required): what the actor wants to reach and from where they start, in a sentence or a short paragraph. `notes`: anything longer, such as the order of checks. Its actors are `use_case_actor` rows. Link: `follows` the patterns it shares. |
-| `use_case_actor` (part) | the use case | its `position` | `role_name`: one of the product's roles. |
+| `use_case` | a capability | `<P>-<D>-UC<nn>` | `goal` (required): what the actor wants to reach and from where they start, in a sentence or a short paragraph. `notes`: anything longer, such as the order of checks. `actors`: the product's roles that act in it, the main actor first. It follows the patterns it shares (Pattern following). |
 | `uc_requirement` | the use case | `<use case>-R<nn>` | Title: the rule in a few words. `statement`: the rule with MUST / MUST NOT / SHOULD / MAY. `group_name`: a heading once there are more than about 8. |
-| `role` (part) | the product | its `name` | `description` (required): who takes the role and what they do, in a sentence. |
-| `pattern` | the product | `<P>-PAT-<NAME>`, a name you choose | `description` (required): the shared behavior, in a paragraph. Its settings are `pattern_setting` rows and its rules `pattern_rule` records. |
-| `pattern_setting` (part) | the pattern | its `position` | `name`: lower case with underscores; `meaning`: what each follower decides. |
-| `pattern_rule` | the pattern | `<pattern>-R<nn>` | `statement`; `setting`, a setting it depends on; the applies-when columns (see Patterns). |
-| `setting_value` (part) | the follower | `pattern_id` and `setting` | `value`, or `not_applicable` with the reason. |
+| role (a part of the product) | the product | its `name` | `description` (required): who takes the role and what they do, in a sentence. |
+| `pattern` | the product | `<P>-PAT-<NAME>`, a name you choose | `description` (required): the shared behavior, in a paragraph. `settings`: what each follower decides, each a `name` (lower case with underscores) and its `meaning`. Its rules are `pattern_rule` records. |
+| `pattern_rule` | the pattern | `<pattern>-R<nn>` | `statement`: the rule, which every follower owes. A rule that holds for only some followers is their use cases' own requirement, not the pattern's. |
+| setting values (a part of following a pattern) | the follower | `setting` | The `value` the follower gives the setting. |
 
 ## Naming
 
@@ -45,7 +54,7 @@ Every record's `title` is in sentence case, with no trailing period, and unique 
 
 ## Capabilities
 
-Every use case sits in a capability: an ordered slice of its domain, such as 01 Catalog, 02 Lending. Add the domain's capabilities first, then each use case under the one it belongs to. Move a use case to another capability with `move`; its ID never changes. A capability with no use case, or one with a single use case, is a gap the check reports, and so is a capability that serves no business outcome.
+Every use case sits in a capability: an ordered slice of its domain, such as 01 Catalog, 02 Lending. Add the domain's capabilities first, then each use case under the one it belongs to. Move a use case to another capability with `use_case_move_use_case`; its ID never changes. A capability with no use case, or one with a single use case, is a gap the check reports, and so is a capability that serves no business outcome.
 
 ## Naming capabilities and use cases
 
@@ -72,7 +81,7 @@ Names follow two conventions (`LA-STD-MODELING-R02` and `R03`), and the `title-b
 
 ## Roles
 
-A use case's actors name roles, never people: Member or Librarian in the Tool Library; Owner, Reader or Agent in Lathe's own specs. `list` the `role` table with the product as `parent`; an actor must be one of them. If a new role is needed, `add` it with a description of what the role does. Write the same roles in prose: "the librarian", "the owner".
+A use case's actors name roles, never people: Member or Librarian in the Tool Library; Owner, Reader or Agent in Lathe's own specs. `product_get_product` lists the product's roles; an actor must be one of them. If a new role is needed, add it to the product's `roles` with `product_change_product` (the list replaces the list, so give every role), with a description of what the role does. Write the same roles in prose: "the librarian", "the owner".
 
 ## UC requirements
 
@@ -88,11 +97,11 @@ A UC requirement is one rule the use case must follow, stated at the level of th
 
 When two or more use cases would state the same rules, write those rules once as a pattern and let each use case follow it. A setting is what each use case decides differently, such as the record it saves. A pattern every use case applies the same way has no settings.
 
-- Link a follower with `follows` before its `setting_value` rows: a setting value needs the link. A use case that follows a pattern with settings gives every setting, as a `value` or as `not_applicable` with the reason.
-- When a pattern applies to a whole domain, link the **domain** with `follows`; its use cases need not follow it one by one.
+- A follower follows a pattern with `pattern_following_follow_pattern`, giving every setting its value in the same command.
+- When a pattern applies to a whole domain, the **domain** follows it; its use cases need not follow it one by one.
 - The use case's requirements do not restate the pattern's rules.
-- Every domain that follows the pattern, itself or through its use cases, owes each rule a pattern rule test in that domain (see `plan-tests`). A rule whose `setting` all of a domain's followers mark not applicable is not owed there.
-- A rule that holds only for some values of a setting says so with `applies_when_setting`, `applies_when_value` and `applies_when_negated` (false for "is", true for "is not"); give all three or none.
+- Every domain that follows the pattern, itself or through its use cases, owes each rule a pattern rule test in that domain (see `plan-tests`).
+- A pattern's rules hold for every follower. A rule that holds only for some of them is not the pattern's: write it as a UC requirement of those use cases, or as another pattern they follow.
 - A rule about how code is written, which you follow and cite rather than prove, is a standard rule (see `write-the-technical-spec`).
 
 ## Example: the Tool Library
@@ -100,37 +109,33 @@ When two or more use cases would state the same rules, write those rules once as
 A capability with the outcome it serves, a use case in it with its actor, and a UC requirement:
 
 ```
-add  { "capability": { "id": "TL-LEND-CAP03", "title": "Lending", "domain_id": "TL-LEND", "position": 3,
-       "description": "A member borrows a tool, and a librarian takes it back." } }
-add  { "use_case": { "id": "TL-LEND-UC03", "title": "Borrow a tool", "capability_id": "TL-LEND-CAP03",
+domain_add_capability { "id": "TL-LEND-CAP03", "title": "Lending", "domain_id": "TL-LEND", "position": 3,
+       "description": "A member borrows a tool, and a librarian takes it back.", "serves": ["TL-BO01"] }
+use_case_add_use_case { "id": "TL-LEND-UC03", "title": "Borrow a tool", "capability_id": "TL-LEND-CAP03",
        "goal": "A member borrows an available tool for the loan period.",
-       "notes": "The checks run in this order, and the first that fails is the reason given: unknown member, unknown tool, an overdue loan, the loan limit, the tool needing repair, the tool on loan." } }
-link { "source": "TL-LEND-CAP03", "relation": "serves", "target": "TL-BO01" }
-add  { "use_case_actor": { "use_case_id": "TL-LEND-UC03", "position": 1, "role_name": "Member" } }
-add  { "uc_requirement": { "id": "TL-LEND-UC03-R04", "title": "An unavailable tool is refused with the reason", "use_case_id": "TL-LEND-UC03",
-       "statement": "Borrowing MUST be refused when the tool is on loan or needs repair, and the member MUST be told which." } }
+       "notes": "The checks run in this order, and the first that fails is the reason given: unknown member, unknown tool, an overdue loan, the loan limit, the tool needing repair, the tool on loan.",
+       "actors": ["Member"] }
+use_case_add_uc_requirement { "id": "TL-LEND-UC03-R04", "title": "An unavailable tool is refused with the reason", "use_case_id": "TL-LEND-UC03",
+       "statement": "Borrowing MUST be refused when the tool is on loan or needs repair, and the member MUST be told which." }
 ```
 
 A pattern with a setting and a rule, and a use case that follows it:
 
 ```
-add  { "pattern": { "id": "TL-PAT-LIBRARIAN-ACTION", "title": "Librarian action", "product_id": "TL",
-       "description": "A librarian at the desk enters a few details, and the library saves one record and shows what it saved." } }
-add  { "pattern_setting": { "pattern_id": "TL-PAT-LIBRARIAN-ACTION", "position": 1, "name": "required_input",
-       "meaning": "What the librarian must enter for the action to go ahead." } }
-add  { "pattern_rule": { "id": "TL-PAT-LIBRARIAN-ACTION-R01", "title": "Missing input is refused", "pattern_id": "TL-PAT-LIBRARIAN-ACTION",
-       "setting": "required_input",
-       "statement": "When the librarian leaves out any of the required input, the library MUST refuse the action, say what is missing, and save nothing." } }
-link { "source": "TL-LEND-UC01", "relation": "follows", "target": "TL-PAT-LIBRARIAN-ACTION" }
-add  { "setting_value": { "follower_id": "TL-LEND-UC01", "pattern_id": "TL-PAT-LIBRARIAN-ACTION", "setting": "required_input",
-       "value": "The member's name and a valid email address." } }
+pattern_add_pattern { "id": "TL-PAT-LIBRARIAN-ACTION", "title": "Librarian action", "product_id": "TL",
+       "description": "A librarian at the desk enters a few details, and the library saves one record and shows what it saved.",
+       "settings": [ { "name": "required_input", "meaning": "What the librarian must enter for the action to go ahead." } ] }
+pattern_add_pattern_rule { "id": "TL-PAT-LIBRARIAN-ACTION-R01", "title": "Missing input is refused", "pattern_id": "TL-PAT-LIBRARIAN-ACTION",
+       "statement": "When the librarian leaves out any of the required input, the library MUST refuse the action, say what is missing, and save nothing." }
+pattern_following_follow_pattern { "follower_id": "TL-LEND-UC01", "pattern_id": "TL-PAT-LIBRARIAN-ACTION",
+       "setting_values": [ { "setting": "required_input", "value": "The member's name and a valid email address." } ] }
 ```
 
-To stop following a pattern, `remove` the setting values first, then `unlink`.
+To stop following a pattern, `pattern_following_stop_following_pattern` with the follower and the pattern: its setting values go with it.
 
 ## Rules
 
 - Every use case has at least one actor and one UC requirement, unless all its rules come from its patterns; the check reports what is missing.
 - A use case changes nothing itself: it names no aggregate and no event. What it changes follows from the commands its flows' steps invoke.
-- Something undecided is a `question` with an `owner` (a role, such as Owner), linked with `about` to the use case, never "TBD" in a requirement.
+- Something undecided is a question (`product_add_question`) with an `owner` (a role, such as Owner), `about` the use case, never "TBD" in a requirement.
 - Next, write each use case's flows, one per interface it happens through, with the `design-interactions` skill, then finish with `check-and-fix`.

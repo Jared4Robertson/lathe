@@ -15,13 +15,27 @@
 // And a repository sits under a domain and persists its one aggregate with a persists link: each repository moves
 // from under its aggregate to under that aggregate's domain, renamed <domain>-REPO<nn> (TL-LEND-A1-REPO becomes
 // TL-LEND-REPO01) wherever it is named, and persists its aggregate, one to one as before. Which records are one piece of
-// code persisting several aggregates only the Owner knows: recording those as one repository with recorded exceptions
-// (repository_share), and the IDs in code, are the to-dos.
+// code persisting several aggregates only the Owner knows: splitting that code into one repository per aggregate, and
+// the IDs in code, are the to-dos.
 //
 // And every kind's text is required or absent (LA-STD-MODELING-R10). The descriptions of flows, flow steps, data models,
 // value types, predicates, event types, services and tables go, and a test's Given opens its When. A lead or scenario
 // the schema now requires and a record lacks gets a stand-in that starts "To write:" and says what belongs there; writing
 // each from the code is a to-do.
+//
+// And a command sits under the entity it changes, not its aggregate: each command moves to its aggregate's root entity
+// (entity_id in place of aggregate_id). Which commands change a child entity only the Owner knows: moving those under
+// their entity is the to-do.
+//
+// And an entry point and a tooling record are Lathe's own kinds, under their domain: a product that declared either as
+// its own kind loses the declaration (its product_kind and product_kind_field rows), and its records keep their ID,
+// title, domain and file, and an entry point its description. A field Lathe's kind has no column for goes, as a to-do;
+// an entry point without a description gets a stand-in that starts "To write:".
+//
+// And no rule has an exception: a command's recorded change of another aggregate (command_change), a repository's
+// recorded share of another (repository_share), a pattern rule's setting and applies-when condition, and a follower's
+// not-applicable reason for a setting are gone. Their rows go; a not-applicable reason becomes the setting's value, as
+// a value like any other. Changing the model so each rule holds everywhere is the to-do.
 import { ALLOWED_LEVELS } from '../src/coverage.ts';
 import type { Converter, RawData, UpgradeNotes } from '../src/upgrade.ts';
 
@@ -106,7 +120,7 @@ function domainRepositories(data: RawData, notes: UpgradeNotes): void {
   data.write('repository', renamed.size ? rows.map(renameRow) : rows);
   data.write('persists', [...data.read('persists'), ...persists]);
   notes.changed(`Every repository sits under its aggregate's domain and persists its aggregate: ${renamed.size} renamed from <aggregate>-REPO to <domain>-REPO<nn>.`);
-  notes.todo('A repository persists one aggregate: where several records name one class that persists several aggregates, such as a generic store, keep the record of one, add a repository_share row with its reason for each other aggregate it persists, and remove the other records; or split the class into one repository per aggregate.');
+  notes.todo('A repository persists one aggregate: where several records name one class that persists several aggregates, such as a generic store, split the class into one repository per aggregate and name each record its own.');
   notes.todo('Rename the repository IDs your code names: <aggregate>-REPO is now <domain>-REPO<nn>.');
 }
 
@@ -237,12 +251,97 @@ function flowInterfaces(data: RawData, notes: UpgradeNotes): void {
   notes.todo('Rename the flow, step and flow test IDs your code names, such as a test file naming its flow test: <use case>-FL-T is now <use case>-FL01-T.');
 }
 
+/** Moves every command from under its aggregate to under that aggregate's root entity. */
+export function commandEntities(data: RawData, notes: UpgradeNotes): void {
+  const commands = data.read('command');
+  if (!commands.some((c) => c.aggregate_id !== undefined)) return;
+  const roots = new Map(data.read('entity').filter((e) => e.role === 'root').map((e) => [String(e.aggregate_id), String(e.id)]));
+  let moved = 0;
+  data.write('command', commands.map((command): Raw => {
+    if (command.aggregate_id === undefined) return command;
+    const { id, title, aggregate_id: aggregate, ...rest } = command;
+    const root = roots.get(String(aggregate));
+    if (!root) {
+      notes.todo(`Command ${String(id)} changes aggregate ${String(aggregate)}, which has no root entity: give the aggregate its root and put the command under the entity it changes (entity_id).`);
+      return command;
+    }
+    moved++;
+    return { id, title, entity_id: root, ...rest };
+  }));
+  notes.changed(`Every command sits under the entity it changes: ${moved} moved from their aggregate to its root entity.`);
+  notes.todo('A command that changes a child entity (a flow step, a loan\'s return) belongs under that entity: remove it and add it again under the entity with `lathe command add-command --entity_id <entity>`.');
+}
+
+/** The columns of Lathe's own entry point and tooling kinds, which a product declared as its own before schema 2. */
+const BUILT_IN_KINDS: Readonly<Record<string, readonly string[]>> = {
+  entry_point: ['id', 'title', 'domain_id', 'file', 'description'],
+  tooling: ['id', 'title', 'domain_id', 'file'],
+};
+
+/** Drops a product's own declarations of entry_point and tooling, and fits their records to Lathe's kinds. */
+export function builtInKinds(data: RawData, notes: UpgradeNotes): void {
+  const declared = data.read('product_kind').filter((k) => String(k.name) in BUILT_IN_KINDS);
+  if (!declared.length) return;
+  const names = new Set(declared.map((k) => String(k.name)));
+  data.write('product_kind', data.read('product_kind').filter((k) => !names.has(String(k.name))));
+  data.write('product_kind_field', data.read('product_kind_field').filter((f) => !names.has(String(f.kind))));
+  for (const kind of [...names].sort()) {
+    const columns = BUILT_IN_KINDS[kind];
+    const dropped = new Set<string>();
+    const written: string[] = [];
+    data.write(kind, data.read(kind).map((row): Raw => {
+      for (const column of Object.keys(row)) if (!columns.includes(column)) dropped.add(column);
+      const out = Object.fromEntries(columns.filter((c) => !blank(row[c])).map((c) => [c, row[c]]));
+      if (kind === 'entry_point' && blank(out.description)) {
+        out.description = 'To write: what it does at start-up.';
+        written.push(String(row.id));
+      }
+      return out;
+    }));
+    if (dropped.size) notes.todo(`${kind} records lost the fields Lathe's ${kind} has no column for (${[...dropped].sort().join(', ')}): write what they said into the record's ${kind === 'entry_point' ? 'description' : 'title or file'}, or into the code.`);
+    if (written.length) notes.todo(`Write each entry point's description, what it does at start-up, from its file (${written.join(', ')}).`);
+  }
+  notes.changed(`Entry points and tooling records are Lathe's own kinds now: the product's declarations of ${[...names].sort().join(' and ')} are gone.`);
+}
+
+/** The columns of a pattern rule that waived it, gone with every way out of a rule. */
+const WAIVER_COLUMNS = ['setting', 'applies_when_setting', 'applies_when_negated', 'applies_when_value'];
+
+/** Drops every recorded exception and waiver: no rule has one. */
+export function noExceptions(data: RawData, notes: UpgradeNotes): void {
+  const changes = data.read('command_change');
+  const shares = data.read('repository_share');
+  if (changes.length) data.write('command_change', []);
+  if (shares.length) data.write('repository_share', []);
+  if (changes.length || shares.length) {
+    notes.changed(`Recorded exceptions are gone: ${changes.length} command changes and ${shares.length} repository shares removed.`);
+    notes.todo(`Change the model so each command changes only its own aggregate (another aggregate reacts to its event through a policy, or the two are one aggregate), and each aggregate has a repository of its own: ${[...changes.map((c) => `${String(c.command_id)} changed ${String(c.aggregate_id)}`), ...shares.map((r) => `${String(r.repository_id)} persisted ${String(r.aggregate_id)}`)].join('; ')}.`);
+  }
+  const rules = data.read('pattern_rule');
+  const waived = rules.filter((r) => r.applies_when_setting !== undefined).map((r) => String(r.id));
+  if (rules.some((r) => WAIVER_COLUMNS.some((c) => r[c] !== undefined))) {
+    data.write('pattern_rule', rules.map((r) => Object.fromEntries(Object.entries(r).filter(([c]) => !WAIVER_COLUMNS.includes(c)))));
+    notes.changed('Every follower of a pattern owes every one of its rules: the rules\' settings and applies-when conditions are gone.');
+  }
+  if (waived.length) notes.todo(`A rule that holds for only some followers belongs to those use cases as their own requirement, not to the pattern: move ${waived.join(', ')}.`);
+  const values = data.read('setting_value');
+  const reasons = values.filter((v) => v.not_applicable !== undefined);
+  if (reasons.length) {
+    data.write('setting_value', values.map(({ not_applicable: reason, ...v }) => (reason === undefined ? v : { ...v, value: v.value ?? `Not applicable: ${String(reason)}` })));
+    notes.changed(`Each setting's not-applicable reason is its value now: ${reasons.length} given.`);
+    notes.todo(`A follower owes every rule of the pattern it follows; where one does not hold for it, it should not follow the pattern. Check each: ${reasons.map((v) => `${String(v.follower_id)} ${String(v.setting)}`).join(', ')}.`);
+  }
+}
+
 const converter: Converter = {
   files(data, notes) {
+    builtInKinds(data, notes);
     testLevels(data, notes);
     domainRepositories(data, notes);
     flowInterfaces(data, notes);
     kindText(data, notes);
+    commandEntities(data, notes);
+    noExceptions(data, notes);
   },
 };
 

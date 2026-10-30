@@ -4,12 +4,12 @@ import { resolve } from 'node:path';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { parseSpecRoute } from '../src/specs/data';
+import { parseSpecRoute } from '../src/views/spec-route';
 import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/address';
 import { CARD_GAP, CARD_GAP_Y, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
 import { settleWhenHidden } from '../src/views/WikiCard';
 import { NARROW_QUERY } from '../src/shell/useNarrow';
-import { SETTINGS_KEY } from '../src/graph/settings';
+import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { colorOf } from '../src/theme/audit';
 import { contrast, over } from '../src/theme/contrast';
 import { BUILT_IN_THEMES } from '../src/theme/theme';
@@ -76,7 +76,7 @@ describe('one address, one stage', () => {
     expect(await screen.findByRole('heading', { level: 1, name: 'Terms (1)' })).toBeInTheDocument();
   });
 
-  it('LA-EXP-INV03-T The stage a link names opens and becomes the remembered one; an address without one opens the last', async () => {
+  it('LA-V96-R34-T01 The stage a link names opens and becomes the remembered one; an address without one opens the last', async () => {
     await openApp('/P-D-UC01?stage=trace', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     expect(window.localStorage.getItem('lathe:stage')).toBe('"trace"');
@@ -154,8 +154,7 @@ describe('one address, one stage', () => {
       get matches() { return query === NARROW_QUERY && narrow; },
       media: query,
       addEventListener: (_: string, l: () => void) => { if (query === NARROW_QUERY) listeners.add(l); },
-      removeEventListener: (_: string, l: () => void) => { listeners.delete(l); },
-    }));
+      removeEventListener: (_: string, l: () => void) => { listeners.delete(l); } }));
     const flip = (to: boolean) => act(() => { narrow = to; for (const l of [...listeners]) l(); });
     await openApp('/P-D-UC01?stage=erd', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
@@ -169,7 +168,7 @@ describe('one address, one stage', () => {
     await waitFor(() => expect(after.style.getPropertyValue('--open-left')).toMatch(/^\d+px$/));
   });
 
-  it('LA-EXP-INV02-T Every part shows one focus: a node click moves the card, a card link moves the graph, Back moves them all, and graph settings survive', async () => {
+  it('LA-V96-R33-T01 Every part shows one focus: a node click moves the card, a card link moves the graph, Back moves them all, and graph settings survive', async () => {
     await openApp('/P-D-UC01?stage=graph', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     await waitFor(() => expect(isCenter('P-D-UC01')).toBe(true));
@@ -238,7 +237,7 @@ describe('one address, one stage', () => {
     }
   });
 
-  it('LA-V92-R20-T01 Lists on group pages stay at ten rows', async () => {
+  it('LA-PAT-RECORD-PAGE-R15-T01 Lists on group pages stay at ten rows', async () => {
     const w = testWorkspace();
     for (let i = 3; i <= 13; i++) {
       const id = `P-D-INV${String(i).padStart(2, '0')}`;

@@ -1,8 +1,8 @@
+import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
-import { indexOf } from '../fixtures/load';
 import { neighborhood, type Neighborhood } from '../../src/graph/model';
-import { graphMap } from '../../src/graph/map';
 import { groupedWorkspace, testIndex } from './workspace';
+import { graphMap } from './maps';
 
 // Columns follow the parent/child tree: in the one map a level is a column, so every sibling shares
 // one, and the framed picture (the records the graph frames at its depth) counts its columns the same way.
@@ -45,7 +45,7 @@ describe('graph columns by tree depth', () => {
   });
 
   it('LA-EXP-DS05-T08 LA-V93-R27-T02 A group sits in its own column between its parent and its members', () => {
-    const grouped = graphMap(indexOf(groupedWorkspace()), 'P');
+    const grouped = graphMap(recordIndexOf(groupedWorkspace()), 'P');
     const level = (id: string) => grouped.nodes.get(id)!.level;
     expect(level('P-D/domain-model/aggregate')).toBe(level('P-D/domain-model') + 1);
     expect(level('P-D-A4')).toBe(level('P-D/domain-model/aggregate') + 1);
@@ -56,14 +56,14 @@ describe('graph columns by tree depth', () => {
   });
 
   it('LA-EXP-DS05-T09 Within a column nodes follow their parent\'s place, then the nav\'s order, and keep it when the graph re-centers', async () => {
-    const grouped = indexOf(groupedWorkspace());
+    const grouped = recordIndexOf(groupedWorkspace());
     const n = neighborhood(grouped, 'P-D/domain-model/aggregate', 2);
     const row = rowOf(n);
-    // A1 before A4 (the nav's order); A1's groups before A4's, following their parents.
-    expect(row.get('P-D-A1')!).toBeLessThan(row.get('P-D-A4')!);
-    expect(row.get('P-D-A1/entity')!).toBeLessThan(row.get('P-D-A4/entity')!);
-    // A4's groups follow the schema's kind order: entities, then commands.
-    expect(row.get('P-D-A4/entity')!).toBeLessThan(row.get('P-D-A4/command')!);
+    // A2 before A4 (the nav's order); A2's groups before A4's, following their parents.
+    expect(row.get('P-D-A2')!).toBeLessThan(row.get('P-D-A4')!);
+    expect(row.get('P-D-A2/entity')!).toBeLessThan(row.get('P-D-A4/entity')!);
+    // A4's groups follow the schema's kind order: entities, then domain events.
+    expect(row.get('P-D-A4/entity')!).toBeLessThan(row.get('P-D-A4/domain_event')!);
     // The domain's stages and folders follow the nav: the five stages in order, each stage's folders in kind order.
     const domain = rowOf(neighborhood(grouped, 'P-D', 2));
     const stages = ['P-D/domain-model', 'P-D/use-cases', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan'];

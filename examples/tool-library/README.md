@@ -6,10 +6,10 @@ Due dates are dates (YYYY-MM-DD), counted in the library's time zone: a loan is 
 
 The specification is in [data/](data/), one JSON Lines file per table of Lathe's model. It has one domain, Lending (`TL-LEND`), modeled with DDD and CQRS:
 
-- **Domain model:** three aggregates (Member, Tool, Loan) with five entities; four value objects (`TL-VO01` Name to `TL-VO04` Note) and their constraints; six invariants (`TL-LEND-INV..`), four specifications (`TL-LEND-SP..`), six commands with the events they raise, the Catalog read model (worked out in memory on each request) and its query, one policy (a tool returned needing repair is taken out of lending), the Library calendar domain service and the glossary.
-- **Use cases:** five use cases under three capabilities, each with its UC requirements (`TL-LEND-UC0n-R0n`) and one flow, whose steps invoke the commands and the query over the HTTP API (the example has no UI, so it has no views).
-- **Interaction design:** seven endpoints (`TL-LEND-EP0n`), each under the command or query it exposes; the API's own rules (each body's fields, each error's status and code, what a success returns) are API requirements (`TL-LEND-EP0n-R0n`).
-- **Technical specification:** the aggregates' data models (classes that enforce their own invariants and specifications), one repository per aggregate, the tables, value types, predicates, event types, one handler per command, query and endpoint, the projections and services that implement them, each naming its file; the Tool Library's own Entry point kind for `src/server.ts`; its own Report kind for `src/outcomes.ts`, which measures the business outcomes; and its own Tooling kind for `tsconfig.json` and `vitest.config.ts`, which name the packages they use, so every package `package.json` lists is accounted for.
+- **Domain model:** three aggregates (Member, Tool, Loan) with five entities; four value objects (`TL-VO01` Name to `TL-VO04` Note) and their constraints; six invariants (`TL-LEND-INV..`), four specifications (`TL-LEND-SP..`), six commands with the events they raise, three read models (Catalog, Active loans and Outcome measures, each worked out in memory when read, through its one reader) and their queries, one policy (a tool returned needing repair is taken out of lending), the Library calendar domain service and the glossary.
+- **Use cases:** six use cases under three capabilities, each with its UC requirements (`TL-LEND-UC0n-R0n`) and one flow, whose steps invoke the commands and the queries over the HTTP API (the example has no UI, so it has no views).
+- **Interaction design:** eight endpoints (`TL-LEND-EP0n`), each under the command or query it exposes; the API's own rules (each body's fields, each error's status and code, what a success returns) are API requirements (`TL-LEND-EP0n-R0n`).
+- **Technical specification:** the aggregates' data models (classes that enforce their own invariants and specifications), one repository per aggregate, the tables, value types, predicates, event types, one handler per command, query and endpoint, the projections, readers and services that implement them, each naming its file; the Tool Library's own Entry point kind for `src/server.ts`; its own Report kind for `src/outcomes.ts`, which measures the business outcomes; and its own Tooling kind for `tsconfig.json` and `vitest.config.ts`, which name the packages they use, so every package `package.json` lists is accounted for.
 - **Test plan:** one test kind per thing tested. Every source file names its technical records, and every automated test's name starts with its test record ID, so Lathe can trace each obligation to code and tests.
 
 ## Events and eventual consistency
@@ -41,7 +41,7 @@ npm run typecheck   # tsc --noEmit
 - `test/outcomes.test.ts`: the outcome report (`TL-LEND-RP01`), over a month of loans made through the command handlers.
 - `test/body-limit.test.ts`: the 64 KB body limit (`TL-LEND-EP06-R03-T01`), over HTTP and over a raw socket that sends a body that never ends.
 
-The five flow tests (`TL-LEND-UC0n-FL01-T`, one per use case through the HTTP API, `TL-IF01`) are manual: they walk the curl steps below against a running server, and their records say why.
+The six flow tests (`TL-LEND-UC0n-FL01-T`, one per use case through the HTTP API, `TL-IF01`) are manual: they walk the curl steps below against a running server, and their records say why.
 
 ## Run
 
@@ -61,7 +61,7 @@ Stop it with Ctrl-C.
 DB=library.db npm run outcomes -- 2026-03   # one month, counted in TIME_ZONE
 ```
 
-The report (`TL-LEND-RP01`) prints, as JSON, each business outcome's measure for the month from the library's own records: loans opened per tool in the catalog (`TL-BO01`), the share of loans due that month returned late or still out and overdue (`TL-BO02`), loans opened on a tool that needed repair, from the damage and repair events the outbox keeps (`TL-BO03`), and the members who opened a loan in the 90 days to the month's end (`TL-BO04`). Each outcome links to it with `measured_by`.
+The report (`TL-LEND-RP01`) prints, as JSON, each business outcome's measure for the month from the library's own records: loans opened per tool in the catalog (`TL-BO01`), the share of loans due that month returned late or still out and overdue (`TL-BO02`), the repairs made that month and the median days from each tool's damage report to its repair, from the damage and repair events the outbox keeps (`TL-BO05`), and the members who opened a loan in the 90 days to the month's end (`TL-BO04`). Each outcome links to it with `measured_by`.
 
 ## API
 
@@ -74,6 +74,7 @@ The report (`TL-LEND-RP01`) prints, as JSON, each business outcome's measure for
 | TL-LEND-EP05 | POST | `/loans/{loanId}/return` | Return: `{ "condition": "good" \| "needs_repair", "note"? }`. Returns the loan with `late` (returned on a day after `dueDate`). |
 | TL-LEND-EP06 | POST | `/tools/{toolId}/damage` | Mark a tool as needing repair: `{ "note" }`. A tool that already needs repair is refused (409 `tool_already_damaged`). |
 | TL-LEND-EP07 | POST | `/tools/{toolId}/repair` | Mark a damaged tool repaired. |
+| TL-LEND-EP08 | GET | `/tools/{toolId}/loan` | Find the tool's active loan, with its member and `dueDate`. |
 
 Errors are JSON: `{ "error": "<code>", "message": "<sentence>" }`, for example `409 { "error": "member_overdue", … }`. The API requirements under each endpoint record give every status and code. A body over 64 KB, on any endpoint, gets 413 `body_too_large` and the connection is closed.
 
@@ -81,6 +82,7 @@ Errors are JSON: `{ "error": "<code>", "message": "<sentence>" }`, for example `
 curl -s -X POST localhost:5310/members -H 'content-type: application/json' -d '{"name":"Ada","email":"ada@example.org"}'
 curl -s -X POST localhost:5310/tools   -H 'content-type: application/json' -d '{"name":"Cordless drill"}'
 curl -s -X POST localhost:5310/loans   -H 'content-type: application/json' -d '{"memberId":1,"toolId":1}'
+curl -s localhost:5310/tools/1/loan
 curl -s -X POST localhost:5310/loans/1/return -H 'content-type: application/json' -d '{"condition":"good"}'
 curl -s -X POST localhost:5310/tools/1/damage -H 'content-type: application/json' -d '{"note":"Chuck wobbles"}'
 curl -s -X POST localhost:5310/tools/1/repair
@@ -101,8 +103,9 @@ curl -s -X POST localhost:5310/tools/1/repair
 | `src/member-commands.ts` | The command handler `registerMember` (`TL-LEND-CMD01-H`). |
 | `src/tool-commands.ts` | The command handlers `addTool`, `reportDamage` and `markToolRepaired` (`TL-LEND-CMD02-H` to `CMD04-H`). |
 | `src/loan-commands.ts` | The command handlers `borrowTool` and `returnTool` (`TL-LEND-CMD05-H`, `CMD06-H`). |
-| `src/catalog.ts` | The Catalog read model (`TL-LEND-RM01-TB`), its projection `catalogEntry` (`RM01-PJ`) and the query handler `listCatalog` (`TL-LEND-QRY01-H`). |
-| `src/router.ts` | The endpoint handlers `postMembers` to `postToolRepair` (`TL-LEND-EP01-H` to `EP07-H`). It opens the Lending domain over the database, subscribes the event handler and runs the relay once at start. |
+| `src/catalog.ts` | The Catalog read model (`TL-LEND-RM01-TB`), its projection `catalogEntry` (`RM01-PJ`), its reader `CatalogReader` (`RM01-RD`) and the query handler `listCatalog` (`TL-LEND-QRY01-H`). |
+| `src/active-loans.ts` | The Active loans read model (`TL-LEND-RM03-TB`), its projection `activeLoanEntry` (`RM03-PJ`), its reader `ActiveLoansReader` (`RM03-RD`) and the query handler `findLoan` (`TL-LEND-QRY03-H`). |
+| `src/router.ts` | The endpoint handlers `postMembers` to `getToolLoan` (`TL-LEND-EP01-H` to `EP08-H`). It opens the Lending domain over the database, subscribes the event handler and runs the relay once at start. |
 | `src/server.ts` | The entry point `TL-LEND-ENTRY01`. |
 | `src/outcome-measures.ts` | The service `measureOutcomes` (`TL-LEND-DS02-SV`) and the read model's table `OutcomeMeasures` (`TL-LEND-RM02-TB`). |
-| `src/outcomes.ts` | The projection `projectOutcomeMeasures` (`TL-LEND-RM02-PJ`), the query handler `getOutcomeMeasures` (`TL-LEND-QRY02-H`) and the report `printOutcomeReport` (`TL-LEND-RP01`). |
+| `src/outcomes.ts` | The projection `projectOutcomeMeasures` (`TL-LEND-RM02-PJ`), its reader `OutcomeMeasuresReader` (`RM02-RD`), the query handler `getOutcomeMeasures` (`TL-LEND-QRY02-H`) and the report `printOutcomeReport` (`TL-LEND-RP01`). |

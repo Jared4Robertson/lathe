@@ -16,6 +16,6 @@
     "app/server/lathe.ts",
     "app/src/views/address.ts",
     "app/src/theme/ThemeCommands.tsx",
-    "app/src/specs/data.ts"
+    "app/src/views/spec-route.ts"
   ]
 }

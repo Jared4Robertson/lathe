@@ -1,4 +1,4 @@
-import { gapsOf, kindLabel, type SpecIndex } from '../specs/data';
+import { gapsOf, kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { groupKindLabel, groupLabel, groupMarks, groupOwner } from './model';
 import { NODE_WIDTH, nodeShape, SHAPES, type Room, type Shape } from './shapes';
 
@@ -8,8 +8,8 @@ import { NODE_WIDTH, nodeShape, SHAPES, type Room, type Shape } from './shapes';
 // at most a fixed share of their box's size, at which every sibling's whole label fits its room
 // (`largestFit`). A long title wraps on whole words, never cut off or ended with an ellipsis.
 // Lines are broken here, with the text measure the canvas draws with (the label's faces, loaded,
-// measured by the canvas's own text metrics: fonts.ts), once when the map is built, so the map is
-// laid out once per spec load and the canvas draws exactly these lines (paint.ts).
+// measured by the canvas's own text metrics: fonts.ts), when the map is built (in the layout's worker,
+// with the same faces: layout.ts) or a box is first drawn, and the canvas draws exactly these lines (paint.ts).
 
 /** A label's font sizes and padding at text scale 1 (a leaf-wide level), in map units; the canvas draws them with these. */
 export const TITLE_FONT = 12.5;
@@ -67,12 +67,12 @@ export const metaWidth = (text: string, font = META_FONT) => current.em(text, 'm
 
 /**
  * Breaks a text into lines no wider than `width` by `measure`, greedily, only after a space, so no
- * word is cut. A word wider than a line on its own is the one exception: it breaks after one of
- * `breaks` (a hyphen in a title or an ID, a code identifier's punctuation in a title), with `camel` also
- * between the words of a camelCase identifier, and, if a part is still too wide, between characters. The
+ * word is cut. A word wider than a line on its own breaks after one of `breaks` (a code identifier's
+ * punctuation in a title), with `camel` also between the words of a camelCase identifier, and, if a part
+ * is still too wide, between characters; with `whole` it never breaks and stays on its own line. The
  * lines joined give the text back; a space ending a line is not measured.
  */
-export function wrapText(text: string, width: number, measure: (s: string) => number, breaks = '', camel = false): string[] {
+export function wrapText(text: string, width: number, measure: (s: string) => number, breaks = '', camel = false, whole = false): string[] {
   const fits = (s: string) => measure(s.trimEnd()) <= width;
   /** Greedy lines of some tokens; a line that is one token too wide is broken by `split`. */
   const greedy = (tokens: readonly string[], split: (token: string) => string[]): string[] => {
@@ -90,25 +90,19 @@ export function wrapText(text: string, width: number, measure: (s: string) => nu
   const at = breaks.replace(/[\]\\^-]/g, '\\$&');
   const parts = new RegExp(camel ? `[^${at}]*?(?:[${at}]+|[a-z0-9](?=[A-Z]))|[^${at}]+` : `[^${at}]*[${at}]+|[^${at}]+`, 'g');
   const byBreaks = (word: string) => greedy(word.match(parts) ?? [word], byChars);
-  return greedy(text.match(/\S+\s*|\s+/g) ?? [], at ? byBreaks : byChars);
+  return greedy(text.match(/\S+\s*|\s+/g) ?? [], whole ? (word) => [word] : at ? byBreaks : byChars);
 }
 
 /** What a box's label says: its title and its kind and ID line ("Use case · LA-EXP-UC03"; a group's "Stage · LA-EXP", "Aggregate folder · LA-EXP"). */
-export function labelLines(index: SpecIndex, id: string): { title: string; meta: string } {
+export function labelLines(index: RecordIndex, id: string): { title: string; meta: string } {
   const record = index.byId.get(id);
   if (record) return { title: record.title, meta: `${kindLabel(index, record.kind)} · ${id}` };
   return { title: groupLabel(index, id), meta: `${groupKindLabel(index, id)} · ${groupOwner(index, id)}` };
 }
 
-/** Whether a box shows the problem badge: it or, for a group, its members have problems or coverage gaps. */
-export const hasMarks = (index: SpecIndex, id: string) => {
-  const m = marksOf(index, id);
-  return m.errors + m.warnings + m.gaps.length > 0;
-};
-
 /** The marks of a node, records' and groups' (summed over the members), cached per index: a group's sum walks everything beneath it. */
-const marksCache = new WeakMap<SpecIndex, Map<string, { errors: number; warnings: number; gaps: string[] }>>();
-export function marksOf(index: SpecIndex, id: string) {
+const marksCache = new WeakMap<RecordIndex, Map<string, { errors: number; warnings: number; gaps: string[] }>>();
+export function marksOf(index: RecordIndex, id: string) {
   let cache = marksCache.get(index);
   if (!cache) { cache = new Map(); marksCache.set(index, cache); }
   const known = cache.get(id);
@@ -137,24 +131,29 @@ export interface WrappedLabel {
   pad?: number;
 }
 
-/** What a label keeps room for besides its padding: its shape's room (the Tree view), the marks before its kind and ID line, the problem badge. */
-interface LabelRoom { shape?: Shape; marks?: number; marked?: boolean; centered?: boolean }
+/**
+ * What a label keeps room for besides its padding: its shape's room (the Tree view) and the marks before its kind and ID line.
+ * The problem badge's room is always kept, whether the box has the badge now or not, so a badge appearing changes no
+ * label's text or size, nor its siblings' (LA-PAT-APP-UX-R22).
+ */
+interface LabelRoom { shape?: Shape; marks?: number; badge?: boolean; centered?: boolean }
 
 const NO_ROOM: Room = { l: 0, r: 0, t: 0, b: 0 };
 
-/** How much less a kind and ID line holds than a title: the marks before it, and the badge's room beside it (on both sides once centered). */
-const metaRoom = ({ marks = 0, marked = false, centered = false }: LabelRoom) => marks * MARK_ROOM + (marked ? (centered ? 2 : 1) * BADGE_ROOM : 0);
+/** How much less a kind and ID line holds than a title: the marks before it, and the badge's room beside it (on both sides once centered), kept always. */
+const metaRoom = ({ marks = 0, badge = true, centered = false }: LabelRoom) => marks * MARK_ROOM + (badge ? (centered ? 2 : 1) * BADGE_ROOM : 0);
 
 /**
  * A label broken into lines for a box `width` wide at text scale 1 (LA-EXP-DS06), less the padding,
  * its shape's room (LA-V93-R06), and beside the kind and ID line its marks and the badge's room. At a text scale `s`, a box `w` wide wraps its label at `w / s`.
  */
-export function wrapLabel(lines: { title: string; meta: string }, { shape, marks = 0, marked = false, centered = false, width = NODE_WIDTH }: LabelRoom & { width?: number } = {}): WrappedLabel {
+export function wrapLabel(lines: { title: string; meta: string }, { shape, marks = 0, badge = true, centered = false, width = NODE_WIDTH }: LabelRoom & { width?: number } = {}): WrappedLabel {
   const room = shape ? SHAPES[shape].room : NO_ROOM;
   const inner = width - 2 * LABEL_PAD - room.l - room.r;
   const label: WrappedLabel = {
     title: wrapText(lines.title, inner, (s) => titleWidth(s), TITLE_BREAKS, true),
-    meta: wrapText(lines.meta, inner - metaRoom({ marks, marked, centered }), (s) => metaWidth(s), '-'),
+    // The kind and ID line breaks only between words: an ID is never broken across lines (LA-EXP-DS06).
+    meta: wrapText(lines.meta, inner - metaRoom({ marks, badge, centered }), (s) => metaWidth(s), '', false, true),
   };
   const pad = room.t + room.b;
   return pad > 0 ? { ...label, pad } : label;
@@ -168,24 +167,28 @@ export const labelHeight = (label: WrappedLabel) => 2 * (LABEL_PAD_BLOCK + BORDE
 
 // ---------- A map's labels ----------
 
-/** What a box's label says, and what it keeps room for: its shape's room (the Tree view), the marks before its kind and ID line, the problem badge. */
-export interface MapLabel { title: string; meta: string; shape?: Shape; marks?: number; marked?: boolean }
+/**
+ * What a box's label says, and what it keeps room for: its shape's room (the Tree view) and the marks before its kind and
+ * ID line. A map's label always keeps the badge's room; only a label drawn where no badge sits beside it (a sticky label,
+ * laid out anew in a box's visible part: sticky.ts) is `badge: false`.
+ */
+export interface MapLabel { title: string; meta: string; shape?: Shape; marks?: number; badge?: false }
 
 /** A node's label in the Tree map: its kind's shape is its outline, so the label keeps its shape's room, and its kind's mark comes before its kind and ID line (LA-V93-R06). */
-export function treeLabel(index: SpecIndex, id: string): MapLabel {
+export function treeLabel(index: RecordIndex, id: string): MapLabel {
   const { shape, mark } = nodeShape(index, id);
-  return { ...labelLines(index, id), shape, marks: mark ? 1 : 0, marked: hasMarks(index, id) };
+  return { ...labelLines(index, id), shape, marks: mark ? 1 : 0 };
 }
 
-/** A node's label in the Nested map: its lines, its marks (its shape's and its kind's, LA-V93-R06) and whether it has the badge. */
-export function mapLabel(index: SpecIndex, id: string): MapLabel {
+/** A node's label in the Nested map: its lines and its marks (its shape's and its kind's, LA-V93-R06). */
+export function mapLabel(index: RecordIndex, id: string): MapLabel {
   const marks = nodeShape(index, id).mark ? 2 : 1;
-  return { ...labelLines(index, id), marks, marked: hasMarks(index, id) };
+  return { ...labelLines(index, id), marks };
 }
 
 /** A label's lines in a box `width` wide at text scale 1 (`wrapLabel`), centered or at the top left. */
 export const linesIn = (label: MapLabel, width: number, centered: boolean): WrappedLabel =>
-  wrapLabel(label, { shape: label.shape, marks: label.marks, marked: label.marked, centered, width });
+  wrapLabel(label, { shape: label.shape, marks: label.marks, badge: label.badge ?? true, centered, width });
 
 /** The narrowest box a label fits at text scale 1, no word broken: its widest word, its padding, its shape's room and the badge's. */
 export function narrowestWidth(label: MapLabel, centered: boolean): number {

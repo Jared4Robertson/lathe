@@ -3,12 +3,30 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest';
 import { GRAPH_LAYOUTS } from '../../src/graph/GraphPage';
 import { afterEach } from 'vitest';
-import { DEFAULT_CARD, DEFAULT_CHANGES, DEFAULT_CHAT, saveSessionSettings, sessionSettings, type GraphLook } from '../../src/graph/settings';
+import type { GraphLook } from '../../src/exploring/session-settings/model';
+import { sessionSettingsRepository } from '../../src/exploring/session-settings/repository';
+import { chooseGraphLayout } from '../../src/exploring/session-settings/commands/choose-graph-layout';
+import { showOrHideMinimap } from '../../src/exploring/session-settings/commands/show-or-hide-minimap';
 import { DEFAULT_VIEW } from '../../src/views/place';
-import { activateTab, closeTab, cycleTab, duplicateTab, emptyTabs, newTab, type TabSet } from '../../src/views/tabs';
-import { arrive } from '../../src/views/useTabs';
+import { activateTab as activate } from '../../src/exploring/tab-set/commands/activate-tab';
+import { closeTab as close } from '../../src/exploring/tab-set/commands/close-tab';
+import { cycleTab as cycle } from '../../src/exploring/tab-set/commands/cycle-tab';
+import { duplicateTab as duplicate } from '../../src/exploring/tab-set/commands/duplicate-tab';
+import { newTab as open } from '../../src/exploring/tab-set/commands/new-tab';
+import { emptyTabs, NO_TABS, type TabSet, type TabSets } from '../../src/exploring/tab-set/model';
+import { arrive } from '../../src/exploring/tab-set/policies';
 import { desktopBridgeStub, openApp, startAtDepth } from '../helpers';
 import { boxElement, graphHost } from './scene';
+
+// The Tab set's commands run on one space's set here, as in tabs.test.ts.
+const S = 'P';
+const on = <I,>(set: TabSet, command: (tabs: TabSets, input: I & { space: string }) => TabSets, input: I): TabSet =>
+  command({ ...NO_TABS, sets: { [S]: set } }, { ...input, space: S }).sets[S] ?? set;
+const newTab = (set: TabSet, address: string, view: typeof DEFAULT_VIEW) => on(set, open, { address, view });
+const duplicateTab = (set: TabSet, key: string) => on(set, duplicate, { key });
+const cycleTab = (set: TabSet, by: number) => on(set, cycle, { step: by });
+const activateTab = (set: TabSet, key: string) => on(set, activate, { key });
+const closeTab = (set: TabSet, key: string, home: string) => on(set, close, { key, home });
 import { testWorkspace } from './workspace';
 
 /** The arrow that takes each step in a layout (LA-V93-R19): Tree Left out and Right in, Nested Up out and Down in. */
@@ -25,8 +43,7 @@ const layoutGroup = () => within(screen.getByRole('group', { name: 'Layout' }));
 const drawn = () => ({
   layout: layoutGroup().getAllByRole('button').find((b) => b.getAttribute('aria-pressed') === 'true')?.textContent,
   depth: document.querySelector('.graph-depth:not(.graph-layout) button[aria-pressed="true"]')?.textContent,
-  minimap: (screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement).checked,
-});
+  minimap: (screen.getByRole('switch', { name: 'Minimap' }) as HTMLInputElement).checked });
 const strip = () => screen.getByRole('tablist', { name: 'Open pages' });
 const host = window as unknown as { latheDesktop?: LatheDesktop };
 afterEach(() => { delete host.latheDesktop; });
@@ -39,11 +56,12 @@ async function step(key: string) {
 }
 
 describe('moving through the graph keeps how it is drawn', () => {
-  it('LA-EXP-INV09-T Opening, activating, cycling and closing tabs never touch the window\'s settings; only the person\'s change does', () => {
-    const mine: GraphLook = { layout: 'nested', minimap: true };
-    saveSessionSettings({ graph: mine, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES });
+  it('LA-V96-R35-T01 Opening, activating, cycling and closing tabs never touch the window\'s settings; only the person\'s change does', () => {
+    const mine: GraphLook = { layout: 'nested', minimap: true, allLinks: false };
+    chooseGraphLayout({ layout: mine.layout });
+    showOrHideMinimap({ shown: mine.minimap });
     const unchanged = (set: TabSet) => {
-      expect(sessionSettings().graph).toEqual(mine);
+      expect(sessionSettingsRepository.load().graph).toEqual(mine);
       expect(set.tabs.flatMap((t) => Object.keys(t.place.view))).not.toContain('layout');
     };
     let set = arrive(emptyTabs(), 'P', '/P-D-UC01?stage=graph', 'load', null, DEFAULT_VIEW).set;
@@ -59,8 +77,8 @@ describe('moving through the graph keeps how it is drawn', () => {
     set = closeTab(set, set.active!, '/P?stage=graph');
     unchanged(set);
     // The person's own change is the only one.
-    saveSessionSettings({ graph: { ...mine, layout: 'tree' }, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES });
-    expect(sessionSettings().graph.layout).toBe('tree');
+    chooseGraphLayout({ layout: 'tree' });
+    expect(sessionSettingsRepository.load().graph.layout).toBe('tree');
   });
 
   for (const { layout, label } of GRAPH_LAYOUTS) {
@@ -110,7 +128,7 @@ describe('moving through the graph keeps how it is drawn', () => {
         await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
       });
       expect(drawn()).toEqual(set);
-      expect(sessionSettings().graph).toEqual({ layout, minimap: true });
+      expect(sessionSettingsRepository.load().graph).toEqual({ layout, minimap: true, allLinks: false });
 
       // The person's own change does change it: v steps to the next layout.
       fireEvent.keyDown(document.body, { key: 'v' });

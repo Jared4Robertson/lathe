@@ -1,9 +1,9 @@
+import type { ServedData } from '../read-view';
 import { fireResize } from './setup';
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { GraphView } from '../../src/graph/GraphPage';
-import { DEFAULT_GRAPH_SETTINGS } from '../../src/graph/settings';
-import type { SpecData } from '../../../lathe/src/server/contract';
+import { DEFAULT_GRAPH_SETTINGS } from '../../src/exploring/session-settings/model';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { marksOf } from '../../src/graph/text';
@@ -27,7 +27,7 @@ async function back() {
 }
 
 /** Opens a graph page at a depth (1 unless asked). */
-async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1) {
+async function showGraph(path: string, workspace: ServedData = testWorkspace(), depth = 1) {
   startAtDepth(depth);
   await openApp(path.includes('?') ? path : `${path}?stage=graph`, { data: workspace });
   await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
@@ -70,6 +70,30 @@ describe('graph page', () => {
     fireEvent.click(within(screen.getByRole('group', { name: 'Layout' })).getByRole('button', { name: 'Tree' }));
     await waitFor(() => expect(group()).not.toHaveClass('is-idle'));
     expect(screen.getByRole('group', { name: 'Depth' })).toBeInTheDocument();
+  });
+
+  it('LA-V93-R74-T01 Switching to the Map and back keeps the focus framed; the Map draws its focus\'s links as named lines, every leaf one size', async () => {
+    await showGraph('/P-D-UC01-R01');
+    const layout = within(screen.getByRole('group', { name: 'Layout' }));
+    expect(layout.getAllByRole('button').map((b) => b.textContent)).toEqual(['Tree', 'Nested', 'Map']);
+    fireEvent.click(layout.getByRole('button', { name: 'Map' }));
+    await waitFor(() => expect(graphHost()).toHaveAttribute('data-layout', 'map'));
+    expect(window.location.pathname).toBe('/P-D-UC01-R01');
+    await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
+    // At street level: a leaf's title at its own size.
+    // The glide from the Tree's framing lands there.
+    await waitFor(() => expect(scene().camera.zoom).toBe(1), { timeout: 4000 });
+    const leaves = scene().boxes.filter((b) => b.view === 'map' && !b.group && b.rect.width > 0);
+    expect(leaves.length).toBeGreaterThan(0);
+    // Its links are lines named by their relation; nothing nests it but its use case.
+    const own = scene().lines.filter((l) => l.source === 'P-D-UC01-R01' || l.target === 'P-D-UC01-R01');
+    expect(own.length).toBeGreaterThan(0);
+    expect(own.every((l) => l.link && l.style === 'link')).toBe(true);
+    // Back to the Tree: the same focus, framed.
+    fireEvent.click(layout.getByRole('button', { name: 'Tree' }));
+    await waitFor(() => expect(graphHost()).toHaveAttribute('data-layout', 'tree'));
+    expect(window.location.pathname).toBe('/P-D-UC01-R01');
+    await waitFor(() => expect(isCenter('P-D-UC01-R01')).toBe(true));
   });
 
   it('LA-V93-R10-T05 The graph opens at depth 1, framing the parent and the children, and depth 2 and 3 frame more levels below; only parent lines are drawn', async () => {
@@ -224,7 +248,7 @@ describe('graph groups on the page', () => {
     await waitFor(() => expect(groupNode('P-D/question')!.focus).toBe(true));
     // Its name and count: in its label (LA-EXP-DS10), and in its tooltip.
     expect(groupNode('P-D/question')!.lines.map((l) => l.text)).toContain('Open questions (1)');
-    expect(groupNode('P-D/question')!.lines.map((l) => l.text).join(' ')).toMatch(/^Open question folder · P-D/);
+    expect(groupNode('P-D/question')!.lines.map((l) => l.text).join(' ')).toMatch(/^Open question folder · +P-D/);
     expect(groupNode('P-D/question')!.tip).toBe('Open questions (1) (in P-D)');
     expect(document.querySelector('.graph-group-chevron')).toBeNull();
 

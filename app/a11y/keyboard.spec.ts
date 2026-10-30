@@ -392,7 +392,7 @@ test.describe('keyboard on a phone', () => {
 });
 
 test.describe('changing records by keyboard', () => {
-  test('LA-V92-R34-T01 edit a record with the keyboard, and focus comes back to its actions', async ({ page }) => {
+  test('LA-V61-R53-T01 edit a record with the keyboard, and focus comes back to its actions', async ({ page }) => {
     const restore = keepData();
     try {
       await open(page, EDITED);

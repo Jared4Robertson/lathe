@@ -1,8 +1,10 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it, vi } from 'vitest';
-import { DataFiles, findDataFile, parseRecordRequest, recordMenuTemplate, revealLabel } from '../src/records.ts';
+import { LOCAL_ACTION_CHANNELS } from '../src/launch.ts';
+import { DataFiles, findDataFile, parseRecordId, recordMenuTemplate, revealLabel } from '../src/records.ts';
 
 const temp = mkdtempSync(path.join(os.tmpdir(), 'lathe-records-'));
 afterAll(() => rmSync(temp, { recursive: true, force: true }));
@@ -12,31 +14,30 @@ function write(file: string, text: string) {
   writeFileSync(file, text);
 }
 
-describe('LA-AUT-UC15-R01-T01 The record actions take only a known action and a record ID, and find the data file themselves', () => {
-  it('accepts exactly { action, id } with a known action and a record ID', () => {
-    expect(parseRecordRequest({ action: 'reveal', id: 'SMK-ORD' })).toEqual({ action: 'reveal', id: 'SMK-ORD' });
-    for (const action of ['open-in-editor', 'copy-id', 'menu']) expect(parseRecordRequest({ action, id: 'LA-V71-R01' })).toEqual({ action, id: 'LA-V71-R01' });
+describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The record actions take only a record ID, each on its own channel, and find the data file themselves', () => {
+  it('accepts exactly { id } with a record ID, each action on its own channel', () => {
+    expect(parseRecordId({ id: 'SMK-ORD' })).toBe('SMK-ORD');
+    expect(parseRecordId({ id: 'LA-V71-R01' })).toBe('LA-V71-R01');
   });
 
-  it('refuses paths, unknown actions, odd IDs and extra keys', () => {
+  it('refuses paths, odd IDs and extra keys', () => {
     const refused: unknown[] = [
       null,
-      'reveal',
-      ['reveal', 'SMK'],
-      { action: 'reveal' },
-      { id: 'SMK' },
-      { action: 'delete', id: 'SMK' },
-      { action: 'reveal', id: '../../etc/passwd' },
-      { action: 'reveal', id: '/Users/person/.ssh/id_rsa' },
-      { action: 'reveal', id: 'smk-ord' },
-      { action: 'reveal', id: 'SMK--ORD' },
-      { action: 'reveal', id: 'SMK-ORD/requirement' },
-      { action: 'reveal', id: 'SMK ORD' },
-      { action: 'reveal', id: 42 },
-      { action: 'reveal', id: 'A'.repeat(200) },
-      { action: 'reveal', id: 'SMK', path: '/etc/hosts' },
+      'SMK',
+      ['SMK'],
+      {},
+      { action: 'reveal', id: 'SMK' },
+      { id: '../../etc/passwd' },
+      { id: '/Users/person/.ssh/id_rsa' },
+      { id: 'smk-ord' },
+      { id: 'SMK--ORD' },
+      { id: 'SMK-ORD/requirement' },
+      { id: 'SMK ORD' },
+      { id: 42 },
+      { id: 'A'.repeat(200) },
+      { id: 'SMK', path: '/etc/hosts' },
     ];
-    for (const input of refused) expect(parseRecordRequest(input), JSON.stringify(input)).toBeNull();
+    for (const input of refused) expect(parseRecordId(input), JSON.stringify(input)).toBeNull();
   });
 
   it('finds the data file whose row starts with the record\'s id, never a row that only names it, and finds it again when it changes', () => {
@@ -67,11 +68,11 @@ describe('LA-AUT-UC15-R01-T01 The record actions take only a known action and a 
   });
 
   it('offers reveal, open in the editor and copy ID in the native menu, the first two only for a record with a file', () => {
-    const actions = { openInNewTab: vi.fn(), reveal: vi.fn(), openInEditor: vi.fn(), copyId: vi.fn() };
+    const actions = { openInNewTab: vi.fn(), askClaude: vi.fn(), reveal: vi.fn(), openInEditor: vi.fn(), copyId: vi.fn() };
     const menu = recordMenuTemplate('SMK-ORD', true, 'VS Code', actions, 'darwin');
-    expect(menu.map((m) => m.label ?? m.type)).toEqual(['Open in New Tab', 'separator', 'Reveal Data File in Finder', 'Open in VS Code', 'separator', 'Copy ID “SMK-ORD”']);
+    expect(menu.map((m) => m.label ?? m.type)).toEqual(['Open in New Tab', 'Ask Claude About This', 'separator', 'Reveal Data File in Finder', 'Open in VS Code', 'separator', 'Copy ID “SMK-ORD”']);
     expect(menu.every((m) => m.enabled !== false)).toBe(true);
-    (menu[5].click as () => void)();
+    (menu[6].click as () => void)();
     expect(actions.copyId).toHaveBeenCalled();
     const missing = recordMenuTemplate('SMK-X', false, 'VS Code', actions, 'darwin');
     expect(missing.filter((m) => m.enabled === false).map((m) => m.label)).toEqual(['Reveal Data File in Finder', 'Open in VS Code']);
@@ -80,11 +81,34 @@ describe('LA-AUT-UC15-R01-T01 The record actions take only a known action and a 
   });
 
   it('LA-V96-R11-T04 The record\'s right-click menu offers Open in New Tab', () => {
-    const actions = { openInNewTab: vi.fn(), reveal: vi.fn(), openInEditor: vi.fn(), copyId: vi.fn() };
+    const actions = { openInNewTab: vi.fn(), askClaude: vi.fn(), reveal: vi.fn(), openInEditor: vi.fn(), copyId: vi.fn() };
     const menu = recordMenuTemplate('SMK-ORD', false, 'VS Code', actions, 'darwin');
     expect(menu[0]).toMatchObject({ label: 'Open in New Tab' });
     expect(menu[0].enabled).not.toBe(false);
     (menu[0].click as () => void)();
     expect(actions.openInNewTab).toHaveBeenCalled();
+  });
+
+  it('LA-PLT-UC22-R01-T02 The record\'s right-click menu offers Ask Claude About This, which attaches the record to the chat', () => {
+    const actions = { openInNewTab: vi.fn(), askClaude: vi.fn(), reveal: vi.fn(), openInEditor: vi.fn(), copyId: vi.fn() };
+    const menu = recordMenuTemplate('SMK-ORD', false, 'VS Code', actions, 'darwin');
+    expect(menu[1]).toMatchObject({ label: 'Ask Claude About This' });
+    (menu[1].click as () => void)();
+    expect(actions.askClaude).toHaveBeenCalled();
+  });
+});
+
+const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
+
+describe('LA-PAT-SHELL-ACTIONS-R01-T02 Each shell action has its own channel', () => {
+  it('sends each error page button on its command\'s channel', () => {
+    const preload = readFileSync(path.join(SRC, 'local-preload.cts'), 'utf8');
+    for (const [action, channel] of Object.entries(LOCAL_ACTION_CHANNELS)) expect(preload).toMatch(new RegExp(`'?${action}'?: '${channel}'`));
+  });
+
+  it('sends each record action on its own channel with { id } only', () => {
+    const preload = readFileSync(path.join(SRC, 'preload.cts'), 'utf8');
+    for (const channel of ['lathe:reveal-record', 'lathe:open-record-in-editor', 'lathe:copy-record-id', 'lathe:show-record-menu']) expect(preload).toContain(`recordAction('${channel}')`);
+    expect(preload).toContain('ipcRenderer.send(channel, { id })');
   });
 });

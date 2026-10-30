@@ -2,14 +2,16 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { renderMarkdown } from '../src/specs/Markdown';
-import { factsOf } from '../src/specs/RecordText';
-import { addRows, indexOf } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp } from './helpers';
+import { pageOf } from '../src/record/pages';
+import { recordIndexOf } from './read-view';
+import { productKindWorkspace } from './fixtures/product-kinds';
+import { patternWorkspace } from './fixtures/patterns';
 
-// The record page's wiki card shows its text fields, its parts (fields with their types, a table's
-// keys, a command's recorded exceptions), its Traceability, children and problems; its whole page
-// adds its facts after the body: its kind, its fields, its data file and line, and its links out and in.
+// The record page's wiki card shows its aggregate's page (its text, its parts such as fields with their types), its
+// Traceability, children and problems; its whole page adds its facts after the body: its kind, its stage, its data
+// file and line, and its links out and in.
 const card = () => screen.getByRole('region', { name: 'Wiki card' });
 const facts = () => within(card()).getByRole('complementary', { name: 'Facts' });
 /** A fact's value in the wiki card's Facts, by its name. */
@@ -40,7 +42,14 @@ const factLinks = () => [...facts().querySelectorAll('a')].map((a) => a.getAttri
 const rows = (table: Element) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent?.replace(/\s+/g, ' ').trim()));
 
 describe('record page', () => {
-  it('LA-V92-R13-T01 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
+  it('LA-V92-R77-T01 every one of Lathe\'s kinds has its aggregate\'s page, and a kind a product declares has the Extension record page', () => {
+    const { meta } = recordIndexOf(productKindWorkspace(), 'DM');
+    const lathe = meta.kindList.filter((k) => k.declared_by === null).map((k) => k.kind);
+    expect(lathe.filter((kind) => pageOf(meta, kind) === undefined)).toEqual([]);
+    expect(pageOf(meta, 'security_control')?.name).toBe('ExtensionRecordPage');
+  });
+
+  it('LA-PAT-RECORD-PAGE-R08-T01 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
     expanded();
     await openApp('/DM-SHOP-UC01');
     expect(await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' })).toBeInTheDocument();
@@ -49,7 +58,7 @@ describe('record page', () => {
     expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-use-cases)');
     expect(within(card()).getByText('A shopper adds an item.').closest('.markdown')).not.toBeNull();
     // The facts: its data file and line; its parent is the breadcrumb's last step.
-    expect(fact('Data file')).toHaveTextContent('data/use_case.jsonl:2');
+    expect(fact('Data file')).toHaveTextContent('use_case.jsonl:2');
     expect([...card().querySelector('.breadcrumb')!.querySelectorAll('a')].at(-1)).toHaveAttribute('href', '/DM-SHOP-CAP01');
 
     // The children are the wiki's: its UC requirements, and its flow listed by interface.
@@ -68,18 +77,20 @@ describe('record page', () => {
     expect((await screen.findByText('component tests')).tagName).toBe('STRONG');
   });
 
-  it('LA-V92-R14-T01 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
+  it('LA-PAT-RECORD-PAGE-R09-T01 The record page shows links out and links in, grouped and named by their labels, each clickable', async () => {
     expanded();
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
-    // A UC requirement is designed, built and proved by what its chain holds.
+    // A UC requirement is designed, built and proved by what its chain holds (its trace, read on its own).
+    await within(main()).findByRole('heading', { name: /^Traceability/ });
     expect(traceGroups()).toEqual({
       'Designed by': ['/DM-SHOP-CMD01', '/DM-SHOP-UC01-FL01', '/DM-SHOP-UC01-FL01-S01', '/DM-V01'],
       'Built by': ['/DM-SHOP-CMD01-H'],
-      'Proved by': ['/DM-SHOP-UC01-R01-T01'],
-    });
-    // In the facts, each a link: the kind to its page in the format reference, and the step that links in.
-    expect(factLinks()).toEqual(['/DM-SHOP-UC01-R01?page=format/kinds/uc_requirement', '/DM-SHOP-UC01-FL01-S01']);
+      'Proved by': ['/DM-SHOP-UC01-R01-T01'] });
+    // In the facts, each a link: the kind to its page in the format reference, the check that reports it serves no
+    // outcome (the demo shop has none), and the step that links in.
+    await within(facts()).findByText('Serves', { selector: 'dt' });
+    expect(factLinks()).toEqual(['/DM-SHOP-UC01-R01?page=format/kinds/uc_requirement', '/DM-SHOP-UC01-R01?page=format/checks/serves-no-outcome', '/DM-SHOP-UC01-FL01-S01']);
     expect(within(facts()).getByRole('heading', { name: 'Links in' })).toBeInTheDocument();
 
     // Follow it to the step, then see its links out by their labels.
@@ -90,12 +101,36 @@ describe('record page', () => {
     await waitFor(() => expect(traceGroups()).toMatchObject({
       Fulfills: ['/DM-SHOP-UC01-R01'],
       Invokes: ['/DM-SHOP-CMD01'],
-      'Happens in': ['/DM-V01'],
-    }));
+      'Happens in': ['/DM-V01'] }));
     expect(factLinks()).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-CMD01', '/DM-V01']));
   });
 
-  it('LA-V92-R15-T01 A record body is sanitized before it is shown', async () => {
+  it('LA-PAT-RECORD-PAGE-R09-T01 A use case\'s frame lists every link its record summary holds both ways, and its Problems count matches its list', async () => {
+    // A use case that follows a pattern (a link out), named by a step's flow (links in through its requirements are
+    // its requirements' own), with a problem of its own: the frame agrees with the reads one by one.
+    const data = patternWorkspace();
+    data.problems.push({ severity: 'warning', check: 'lone-child', record: 'DM-SHOP-UC01', message: 'DM-SHOP-UC01 has a lone child.' });
+    const index = recordIndexOf(data, 'DM');
+    const out = index.outgoing.get('DM-SHOP-UC01') ?? [];
+    const into = index.incoming.get('DM-SHOP-UC01') ?? [];
+    expect(out.length).toBeGreaterThan(0);
+    expanded();
+    await openApp('/DM-SHOP-UC01', { data });
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+    const linked = (heading: string) => {
+      const list = within(facts()).getByRole('heading', { name: heading }).nextElementSibling as HTMLElement;
+      return [...list.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+    };
+    await waitFor(() => expect(linked('Links out').sort()).toEqual(out.map((l) => `/${l.target}`).sort()));
+    if (into.length > 0) expect(linked('Links in').sort()).toEqual(into.map((l) => `/${l.source}`).sort());
+    else expect(within(facts()).getByText('Nothing links to this record.')).toBeInTheDocument();
+    // The Problems section's count is its list's length, and both are the problems the read gives the record.
+    const problems = section(/^Problems/);
+    await waitFor(() => expect(within(problems).getAllByRole('listitem')).toHaveLength(index.problemsFor.get('DM-SHOP-UC01')!.length));
+    expect(problems.querySelector('.section-count')).toHaveTextContent(String(index.problemsFor.get('DM-SHOP-UC01')!.length));
+  });
+
+  it('LA-PAT-RECORD-PAGE-R10-T01 A record body is sanitized before it is shown', async () => {
     await openApp('/DM-SHOP-CMD01-H');
     await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
     const body = main().querySelector('.markdown') as HTMLElement;
@@ -111,7 +146,7 @@ describe('record page', () => {
     expect(html).toContain('<p>hi</p>');
   });
 
-  it('LA-V92-R16-T01 The record page lists every problem about the record', async () => {
+  it('LA-PAT-RECORD-PAGE-R11-T01 The record page lists every problem about the record', async () => {
     await openApp('/DM-SHOP-UC01-R01-T01');
     await screen.findByRole('heading', { level: 1, name: 'Adding an item shows it' });
     const problems = within(section(/^Problems/)).getAllByRole('listitem');
@@ -124,7 +159,7 @@ describe('record page', () => {
     expect(within(section(/^Problems/)).getByText('No problems.')).toBeInTheDocument();
   });
 
-  it('LA-V92-R13-T01 A record\'s fields show their types: a basic type, a value object as a link, a reference to an aggregate with an arrow', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 A record\'s fields show their types: a basic type, a value object as a link, a reference to an aggregate with an arrow', async () => {
     await openApp('/P-D-EN03', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     const table = section(/^Fields/).querySelector('table')!;
@@ -144,43 +179,10 @@ describe('record page', () => {
     expect(rows(member)[2]).toEqual(['Account', 'The member\'s account.', '→ P-E-A1Account', 'no', '']);
   });
 
-  it('LA-V92-R13-T01 A table shows its keys: the primary key, a unique key with the invariant it enforces and its condition, a foreign key with its target', async () => {
-    await openApp('/P-D-EN03-TB', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'loans' });
-    const keys = section(/^Keys/);
-    expect(keys.querySelector('h2, h3')).toHaveTextContent(/^Keys\s*3$/);
-    expect(rows(keys.querySelector('table')!)).toEqual([
-      ['unnamed', 'primary', 'id', ''],
-      ['loans_one_open_per_thing', 'unique', 'thing_id', 'enforces P-D-INV01A thing is lent to one member at a timewhere returned_at IS NULL'],
-      ['unnamed', 'foreign', 'member_id', 'references P-D-EN02-TBmembers'],
-    ]);
-  });
 
-  it('LA-V92-R13-T01 A technical record shows the packages it uses as one fact', () => {
-    const index = indexOf(addRows(modelWorkspace(), 'package_use', { record_id: 'P-INT01-AD', package: 'nodemailer' }, { record_id: 'P-INT01-AD', package: '@scope/mjml' }));
-    const facts = factsOf(index, index.byId.get('P-INT01-AD')!);
-    expect(facts.filter((f) => f.column === null)).toEqual([{ column: null, label: 'packages', value: 'nodemailer, @scope/mjml' }]);
-  });
 
-  it('LA-V92-R13-T01 A command shows the other aggregates it also changes, each with its reason', async () => {
-    await openApp('/P-D-CMD02', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Return thing' });
-    const also = section(/^Also changes/);
-    expect(within(also).getByRole('link', { name: /P-D-A1/ })).toHaveAttribute('href', '/P-D-A1');
-    expect(also).toHaveTextContent('The thing must be lendable again in the same transaction as its return.');
-    expect(also).toHaveTextContent(/recorded exception/);
-  });
 
-  it('LA-V92-R13-T01 A repository shows the other aggregates it also persists, each with its reason', async () => {
-    await openApp('/P-D-REPO01', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'LoanRepository' });
-    const also = section(/^Also persists/);
-    expect(within(also).getByRole('link', { name: /P-D-A4/ })).toHaveAttribute('href', '/P-D-A4');
-    expect(also).toHaveTextContent('Shelves are stored with the loans that take things off them.');
-    expect(also).toHaveTextContent(/one repository per aggregate/);
-  });
-
-  it('LA-V92-R13-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner sits in its product, in no domain', async () => {
+  it('LA-PAT-RECORD-PAGE-R08-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner sits in its product, in no domain', async () => {
     await openApp('/DM-V01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'Basket page' });
     expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-interaction-design)');

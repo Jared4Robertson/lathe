@@ -5,7 +5,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { resolveAddress } from '../src/router';
-import { parseSpecRoute } from '../src/specs/data';
+import { parseSpecRoute } from '../src/views/spec-route';
 import { carryOverlays, closeTopmostHref, overlaysOf, pageHref, panelHref, withoutOverlays } from '../src/views/overlays';
 import { crowded, openWidth, STAGE_MIN, type CrowdPanel, type Room } from '../src/views/openSpace';
 import { checksPanel, openApp } from './helpers';
@@ -20,8 +20,7 @@ const stage = () => screen.getByRole('region', { name: /stage$/ });
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 const NONE = new Set<CrowdPanel>();
 const room = (width: number, patch: Partial<Room> = {}): Room => ({
-  width, inset: 8, nav: { open: true, width: 336, rail: 56 }, card: true, chat: null, tool: null, held: NONE, ...patch,
-});
+  width, inset: 8, nav: { open: true, width: 336, rail: 56 }, card: true, chat: null, tool: null, held: NONE, ...patch });
 
 describe('LA-PAT-APP-UX-R20 Nothing replaces the stage: tools open as panels over it', () => {
   it('LA-PAT-APP-UX-R20-T01 Every tool is an overlay in the address of the focus it is over, opened in order, closed topmost first, carried to a new focus, and counted in the open space', () => {

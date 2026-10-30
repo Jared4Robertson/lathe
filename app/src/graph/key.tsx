@@ -1,4 +1,6 @@
-import type { SpecIndex, Stage, StageRule } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { type MetaStage } from '../platform/meta-model/reads';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
 import type { KeyEntry } from '../views/StageChrome';
 import { BOX_LOOKS, type BoxLook } from './paint';
 import { BADGE_TONES } from './plate';
@@ -19,7 +21,7 @@ export interface GraphDrawn {
   shapes: ReadonlySet<Shape>;
   marks: ReadonlySet<Mark>;
   badges: ReadonlySet<Badge>;
-  layout: 'tree' | 'nested';
+  layout: 'tree' | 'nested' | 'map';
 }
 
 /** What each stage's color holds, in its tooltip. */
@@ -50,11 +52,11 @@ const BADGES: Readonly<Record<Badge, { sample: string; words: string; meaning: s
   gap: { sample: 'gap', words: 'Gap', meaning: 'Not designed or not proved (on a group: among its members)' },
 };
 
-const stageName = (stages: readonly StageRule[], stage: Stage) =>
+const stageName = (stages: readonly MetaStage[], stage: Stage) =>
   stages.find((s) => s.stage === stage)?.label ?? `${stage.charAt(0).toUpperCase()}${stage.slice(1).replaceAll('-', ' ')}`;
 
 /** The look's words and meaning: a stage's color, the structural colors, a group's outline or an open question's. */
-function lookEntry(look: BoxLook, stages: readonly StageRule[]): Pick<KeyEntry, 'words' | 'meaning'> {
+function lookEntry(look: BoxLook, stages: readonly MetaStage[]): Pick<KeyEntry, 'words' | 'meaning'> {
   if (look === 'stage-structural') return { words: 'Structural', meaning: 'Structural: the product and what has no stage' };
   if (look === 'stage-group') return { words: 'Group', meaning: 'A stage, folder or group, outlined in its stage\'s color (gray for open questions)' };
   if (look === 'kind-question') return { words: 'Open question', meaning: 'An open question, in the warning color (dashed in the Nested view)' };
@@ -64,7 +66,7 @@ function lookEntry(look: BoxLook, stages: readonly StageRule[]): Pick<KeyEntry, 
 }
 
 /** The Graph stage's key entries for what it draws: colors, the focus, shapes, marks, the layout's lines or boxes, then badges. */
-export function graphKeyEntries(drawn: GraphDrawn, stages: readonly StageRule[] = []): KeyEntry[] {
+export function graphKeyEntries(drawn: GraphDrawn, stages: readonly MetaStage[] = []): KeyEntry[] {
   const out: KeyEntry[] = [];
   for (const look of BOX_LOOKS) {
     if (drawn.looks.has(look)) out.push({ id: look, group: 'colors', sample: <span className={`graph-swatch ${look}`} />, ...lookEntry(look, stages) });
@@ -80,7 +82,12 @@ export function graphKeyEntries(drawn: GraphDrawn, stages: readonly StageRule[] 
   }
   if (drawn.layout === 'tree') out.push({ id: 'line', group: 'lines', sample: <span className="graph-line" />, words: 'Parent line', meaning: 'Parent to child: the tree, through stages, folders and groups' });
   if (drawn.layout === 'nested') out.push({ id: 'nested', group: 'lines', sample: <span className="graph-swatch stage-nested" />, words: 'Box in box', meaning: 'Nested view: a box holding its children below its name, as big as the records under it' });
-  out.push({ id: 'bar', group: 'lines', sample: <span className="graph-swatch stage-bar" />, words: 'Too small', meaning: 'A bar: children too small to draw at this zoom' });
+  if (drawn.layout === 'map') {
+    out.push({ id: 'district', group: 'lines', sample: <span className="graph-swatch stage-district" />, words: 'District', meaning: 'Map: a domain (or what the product shares) as an area, its stages left to right in it, their folders one under another, each named with its count of records' });
+    out.push({ id: 'composed', group: 'lines', sample: <span className="graph-swatch stage-nested" />, words: 'Part of', meaning: 'Map: a record inside another is part of it (an aggregate\'s entities, a use case\'s requirements and flows, every record\'s tests); every leaf record is one size' });
+    out.push({ id: 'link', group: 'lines', sample: <span className="graph-line is-link" />, words: 'Link', meaning: 'Map: the focus\'s and the selection\'s links as lines, named by their relation (All links, under Filters, draws every link in view)' });
+  }
+  if (drawn.layout !== 'map') out.push({ id: 'bar', group: 'lines', sample: <span className="graph-swatch stage-bar" />, words: 'Too small', meaning: 'A bar: children too small to draw at this zoom' });
   for (const badge of BADGE_TONES) {
     if (!drawn.badges.has(badge)) continue;
     const b = BADGES[badge];
@@ -94,7 +101,7 @@ export function graphKeyEntries(drawn: GraphDrawn, stages: readonly StageRule[] 
  * filters applied), each node by its look, shape, mark and badges. The rest of the map is the same kinds further off, so
  * the key stays short and says what is in front of the Reader.
  */
-export function graphDrawn(index: SpecIndex, graph: Neighborhood, layout: GraphDrawn['layout']): GraphDrawn {
+export function graphDrawn(index: RecordIndex, graph: Neighborhood, layout: GraphDrawn['layout']): GraphDrawn {
   const looks = new Set<BoxLook>();
   const shapes = new Set<Shape>();
   const marks = new Set<Mark>();

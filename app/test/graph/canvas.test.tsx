@@ -1,11 +1,11 @@
 import './setup';
 import { describe, expect, it } from 'vitest';
 import { waitFor } from '@testing-library/react';
-import { graphMap } from '../../src/graph/map';
-import { nestedMap } from '../../src/graph/nested';
 import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
-import { hitPlate, inPlate, inPolygon, onScreen } from '../../src/graph/hit';
-import { TEXT_BAR_PX } from '../../src/graph/paint';
+import { hitPlate, inPlate, inPolygon } from '../../src/graph/hit';
+import { BLOCK_BELOW_PX } from '../../src/graph/camera';
+import { BADGE_LEAST_ALPHA, onCanvas, paint, type PaintState } from '../../src/graph/paint';
+import { PLAIN_LOOK } from '../../src/graph/look';
 import { canvasMeasure, fontFor } from '../../src/graph/fonts';
 import { META_FONT, PLAIN_MEASURE, TITLE_FONT } from '../../src/graph/text';
 import type { NestedNode } from '../../src/graph/nested';
@@ -13,6 +13,7 @@ import type { PlacedMap } from '../../src/graph/map';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { boxElements, scene } from './scene';
+import { graphMap, nestedMap } from './maps';
 
 // The canvas renderer (LA-EXP-DS09, LA-EXP-DS10, LA-PAT-APP-UX-R12): every box's label placed once
 // in map units and drawn at its map size times the zoom, the pointer finding the box under it from
@@ -50,16 +51,16 @@ describe('text sizing', () => {
     }
   });
 
-  it('LA-EXP-DS06-T13 On the page, each drawn line\'s font is its map size times the zoom, and a line under TEXT_BAR_PX on screen is drawn as a bar', async () => {
+  it('LA-EXP-DS06-T13 On the page, each drawn line\'s font is its map size times the zoom, and a box whose title is under BLOCK_BELOW_PX on screen is a plain block', async () => {
     startAtDepth(3);
     await openApp('/P?stage=graph', { data: testWorkspace() });
     await waitFor(() => expect(boxElements().length).toBeGreaterThan(3));
     const s = scene();
     for (const box of s.boxes) {
+      expect(box.block).toBe(box.textScale * TITLE_FONT * s.camera.zoom < BLOCK_BELOW_PX);
       for (const line of box.lines) {
         const map = line.rect.height / s.camera.zoom / 1.4;
         expect(line.fontPx).toBeCloseTo(map * s.camera.zoom, 6);
-        expect(line.bar).toBe(line.fontPx < TEXT_BAR_PX);
         expect(line.font).toContain(`${line.fontPx}px`);
       }
     }
@@ -81,6 +82,28 @@ describe('text sizing', () => {
     // The plain measure: the same text always measures the same.
     expect(PLAIN_MEASURE.em('Lend a thing', 'title')).toBe(PLAIN_MEASURE.em('Lend a thing', 'title'));
     expect(PLAIN_MEASURE.em('LA-EXP', 'meta')).toBeCloseTo(6 * 0.6, 9);
+  });
+});
+
+describe('badges', () => {
+  it('LA-EXP-DS10-T08 A faded box draws no problem badge, whose label could not be read; a box at full strength draws it with its label', () => {
+    const map = graphMap(testIndex(), 'P');
+    const plate = platesOf(map).find((p) => p.badges.length > 0 && !p.group)!;
+    expect(plate).toBeDefined();
+    /** What a frame draws of the plate at a strength: each pill's rounded rectangle and each text, by their colors. */
+    const drawn = (strength: number) => {
+      const out: string[] = [];
+      const ctx = new Proxy({ globalAlpha: 1, fillStyle: '', canvas: { width: 2000, height: 2000 } } as Record<string, unknown>, {
+        get: (t, k) => (k in t ? t[k as string] : k === 'measureText' ? () => ({ width: 10 }) : k === 'fillText' ? (text: string) => out.push(`${String(t.fillStyle)}:${text}:${Number(t.globalAlpha).toFixed(2)}`) : () => undefined),
+        set: (t, k, v) => { t[k as string] = v; return true; },
+      }) as unknown as CanvasRenderingContext2D;
+      const state: PaintState = { focus: '', hover: null, ring: null, armed: null, lit: null, litLines: null, spot: 0, strength: () => strength, marks: null, open: { left: 0, top: 0, right: 2000, bottom: 2000 } };
+      const cam = { cx: plate.x + plate.w / 2, cy: plate.y + plate.h / 2, zoom: 1, w: 2000, h: 2000 };
+      paint(ctx, 1, cam, { plates: [plate], bars: [], lines: [] }, PLAIN_LOOK, { body: 'sans-serif', mono: 'monospace' }, state);
+      return out.filter((t) => plate.badges.some((b) => t.includes(`:${b.label}:`)));
+    };
+    expect(drawn(1)).toHaveLength(plate.badges.length);
+    expect(drawn(BADGE_LEAST_ALPHA - 0.3)).toEqual([]);
   });
 });
 
@@ -114,17 +137,22 @@ describe('hit testing', () => {
 });
 
 describe('culling', () => {
-  it('LA-EXP-DS10-T08 LA-V93-R07-T02 Only boxes on screen are drawn: a box is culled once it lies wholly past an edge of the pane', () => {
+  it('LA-EXP-DS10-T08 LA-V93-R07-T02 Only boxes, bars and lines on screen are drawn: one is culled once it lies wholly past an edge of the pane and its margin', () => {
     const cam = { cx: 500, cy: 400, zoom: 1, w: 1000, h: 800 };
-    expect(onScreen({ x: 10, y: 10, w: 50, h: 50 }, cam)).toBe(true);
-    expect(onScreen({ x: -60, y: 10, w: 50, h: 50 }, cam)).toBe(false);
-    expect(onScreen({ x: 990, y: 790, w: 50, h: 50 }, cam)).toBe(true);
-    expect(onScreen({ x: 1001, y: 10, w: 50, h: 50 }, cam)).toBe(false);
+    expect(onCanvas({ x: 10, y: 10, w: 50, h: 50 }, cam)).toBe(true);
+    // A box just past the left edge is still drawn (its edge and ring reach in); one past the margin is not.
+    expect(onCanvas({ x: -60, y: 10, w: 50, h: 50 }, cam)).toBe(true);
+    expect(onCanvas({ x: -80, y: 10, w: 50, h: 50 }, cam)).toBe(false);
+    expect(onCanvas({ x: 990, y: 790, w: 50, h: 50 }, cam)).toBe(true);
+    expect(onCanvas({ x: 1030, y: 10, w: 50, h: 50 }, cam)).toBe(false);
+    // A line is its bounds: a level line across the pane is drawn, one wholly below it is not.
+    expect(onCanvas({ x: -500, y: 400, w: 2000, h: 0 }, cam)).toBe(true);
+    expect(onCanvas({ x: -500, y: 900, w: 2000, h: 0 }, cam)).toBe(false);
     // Zoomed out four times about the same center, the same far box comes into view.
-    expect(onScreen({ x: 1600, y: 400, w: 50, h: 50 }, { ...cam, zoom: 0.25 })).toBe(true);
+    expect(onCanvas({ x: 1600, y: 400, w: 50, h: 50 }, { ...cam, zoom: 0.25 })).toBe(true);
     // Relative to the camera's center, a box deep in a very large map is placed as steadily as one near the origin.
     const deep = { cx: 1e7 + 0.5, cy: 1e7 + 0.5, zoom: 1e4, w: 1000, h: 800 };
-    expect(onScreen({ x: 1e7 + 0.49, y: 1e7 + 0.49, w: 0.02, h: 0.02 }, deep)).toBe(true);
-    expect(onScreen({ x: 1e7 + 0.6, y: 1e7 + 0.49, w: 0.02, h: 0.02 }, deep)).toBe(false);
+    expect(onCanvas({ x: 1e7 + 0.49, y: 1e7 + 0.49, w: 0.02, h: 0.02 }, deep)).toBe(true);
+    expect(onCanvas({ x: 1e7 + 0.6, y: 1e7 + 0.49, w: 0.02, h: 0.02 }, deep)).toBe(false);
   });
 });

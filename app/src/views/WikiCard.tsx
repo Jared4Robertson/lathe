@@ -2,7 +2,7 @@ import { forwardRef, memo, type CSSProperties, type ReactNode, type UIEvent } fr
 import { Breadcrumb } from '../shell/Breadcrumb';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
-import { Editable } from '../edit/Editing';
+import { pageOf } from '../record/pages';
 import { groupKindLabel, groupLabel, groupMembers, groupName, groupOwner, stageFor } from '../graph/model';
 import { treeGroup } from '../graph/tree';
 import { Link } from '../router';
@@ -11,13 +11,14 @@ import { kindPagePath, type FormatRoute } from '../format/reference';
 import { pageHref } from './overlays';
 import { HistorySection } from './RecordHistory';
 import { Tooltip } from '../shell/Tooltip';
-import { gapsOf, kindLabel, type Problem, type SpecIndex, type SpecRecord } from '../specs/data';
-import { foldedChildren } from '../specs/folders';
+import { kindLabel, type ListedProblem, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { foldedChildren } from '../exploring/folder-tree/folders';
 import { Markdown } from '../specs/Markdown';
-import { gapText, ProblemBadge, RecordLink, RecordTree, Section, listTitle } from '../specs/parts';
-import { RecordContent, RecordFacts } from '../specs/RecordContent';
-import { factsOf, leadOf } from '../specs/RecordText';
-import { DomainWiki, ProductWiki, problemsUnder } from '../specs/SpecPages';
+import { ProblemBadge, RecordTree, Section, listTitle } from '../specs/parts';
+import { RecordFacts } from '../specs/RecordContent';
+import { problemsUnder } from '../specs/SpecPages';
+import { ProductPage } from '../authoring/product/ProductPage';
+import { DomainPage } from '../authoring/domain/DomainPage';
 import { addressOf, focusOf, type FocusRoute } from './address';
 import { focusTrail } from './HeaderStrip';
 import { CardChanges } from '../changes/CardChanges';
@@ -51,7 +52,7 @@ export function settleWhenHidden(page: HTMLElement | null) {
 }
 
 export interface WikiCardProps {
-  index: SpecIndex;
+  index: RecordIndex;
   /** The page it shows: the focus, once settled. */
   route: FocusRoute;
   onScroll: (e: UIEvent<HTMLDivElement>) => void;
@@ -107,7 +108,7 @@ export const WikiCard = memo(forwardRef<HTMLDivElement, WikiCardProps>(function 
 }));
 
 interface FormatCardProps {
-  index: SpecIndex;
+  index: RecordIndex;
   focus: string;
   format: FormatRoute;
   onScroll: (e: UIEvent<HTMLDivElement>) => void;
@@ -148,10 +149,10 @@ const FormatCard = forwardRef<HTMLDivElement, FormatCardProps>(function FormatCa
 });
 
 /** The card's title: the box's kind line (the kind and the ID), the title and the problems. The page's h1 is the header strip's. */
-function CardTitle({ index, route }: { index: SpecIndex; route: FocusRoute }) {
+function CardTitle({ index, route }: { index: RecordIndex; route: FocusRoute }) {
   const focus = focusOf(route);
   const record = index.byId.get(focus);
-  let problems: Problem[];
+  let problems: ListedProblem[];
   if (route.page === 'product') problems = problemsUnder(index, 'product', focus);
   else if (route.page === 'domain') problems = problemsUnder(index, 'domain', focus);
   else if (record) problems = index.problemsFor.get(focus) ?? [];
@@ -170,18 +171,16 @@ function CardTitle({ index, route }: { index: SpecIndex; route: FocusRoute }) {
   );
 }
 
-/** At most this many key facts in the summary. */
-const SUMMARY_FACTS = 3;
 
 /**
  * The summary: the whole lead text and the key facts. Edit and Add stay in reach, as on the whole page.
  */
-function CardSummary({ index, route }: { index: SpecIndex; route: FocusRoute }) {
+function CardSummary({ index, route }: { index: RecordIndex; route: FocusRoute }) {
   const focus = focusOf(route);
   const record = index.byId.get(focus);
   if (!record) {
     const kind = treeGroup(index, focus)?.kind;
-    const description = kind ? index.kinds.get(kind)?.description : undefined;
+    const description = kind ? index.meta.kinds.get(kind)?.description : undefined;
     const members = groupMembers(index, focus);
     return (
       <div className="spec-body wiki-panel-summary">
@@ -190,38 +189,19 @@ function CardSummary({ index, route }: { index: SpecIndex; route: FocusRoute }) 
       </div>
     );
   }
-  const lead = leadOf(record);
-  return (
-    <Editable key={focus} index={index} id={focus}>
-      <div className="spec-body wiki-panel-summary">
-        {lead && <div className="wiki-panel-lead"><Markdown source={lead} /></div>}
-        <dl className="fields">
-          {keyFacts(index, record).map((f, i) => <div key={`${i}-${f.label}`}><dt>{f.label}</dt><dd>{f.value}</dd></div>)}
-        </dl>
-        <CardChanges index={index} id={focus} summary />
-      </div>
-    </Editable>
-  );
+  // Every kind's aggregate draws its own summary, with its own actions.
+  const Page = pageOf(index.meta, record.kind);
+  if (Page) return <Page key={focus} index={index} id={focus} summary after={<CardChanges index={index} id={focus} summary />} />;
+  return <NoPage kind={record.kind} />;
 }
 
-/** A record's key facts, at most SUMMARY_FACTS: its parent, an obligation's coverage, its kind's own short fields, then its children's count. */
-function keyFacts(index: SpecIndex, record: SpecRecord): { label: string; value: ReactNode }[] {
-  const out: { label: string; value: ReactNode }[] = [];
-  const parent = record.parent ? index.byId.get(record.parent) : undefined;
-  if (parent) out.push({ label: kindLabel(index, parent.kind), value: <RecordLink index={index} id={parent.id} /> });
-  if (index.chains.has(record.id)) {
-    const gaps = gapsOf(index, record.id);
-    out.push({ label: 'Coverage', value: gaps.length === 0 ? 'designed, built and proved' : gaps.map(gapText).join(', ') });
-  }
-  for (const f of factsOf(index, record)) out.push({ label: f.label, value: f.value });
-  const children = index.children.get(record.id) ?? [];
-  const facts = out.slice(0, children.length > 0 ? SUMMARY_FACTS - 1 : SUMMARY_FACTS);
-  if (children.length > 0) facts.push({ label: listTitle(index, children, 'Children'), value: children.length });
-  return facts;
+/** What the card says for a record of a kind no aggregate knows (a kind removed from the schema while its rows remain). */
+function NoPage({ kind }: { kind: string }) {
+  return <div className="spec-body placeholder"><p>No aggregate has a page for the kind <code>{kind}</code>.</p></div>;
 }
 
 /** The whole wiki page (More): a record's page ends with its History (LA-V96-R26), read only when asked. */
-function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) {
+function WikiContent({ index, route }: { index: RecordIndex; route: FocusRoute }) {
   if (route.page === 'group') return <GroupWiki index={index} gid={focusOf(route)} />;
   return (
     <>
@@ -231,32 +211,37 @@ function WikiContent({ index, route }: { index: SpecIndex; route: FocusRoute }) 
   );
 }
 
-function WikiPage({ index, route }: { index: SpecIndex; route: Exclude<FocusRoute, { page: 'group' }> }) {
+function WikiPage({ index, route }: { index: RecordIndex; route: Exclude<FocusRoute, { page: 'group' }> }) {
   switch (route.page) {
-    case 'product': return <Editable key={route.product} index={index} id={route.product}><ProductWiki index={index} id={route.product} /><OwnFacts index={index} id={route.product} /></Editable>;
-    case 'domain': return <Editable key={route.domain} index={index} id={route.domain}><DomainWiki index={index} id={route.domain} /><OwnFacts index={index} id={route.domain} /></Editable>;
-    case 'record': return <Editable key={route.id} index={index} id={route.id}><div className="spec-body"><RecordContent index={index} id={route.id} header={false} /></div></Editable>;
+    case 'product': return <ProductPage key={route.product} index={index} id={route.product} after={<OwnFacts index={index} id={route.product} />} />;
+    case 'domain': return <DomainPage key={route.domain} index={index} id={route.domain} after={<OwnFacts index={index} id={route.domain} />} />;
+    case 'record': {
+      // Every kind's aggregate draws its own page.
+      const kind = index.byId.get(route.id)?.kind ?? '';
+      const Page = pageOf(index.meta, kind);
+      return Page ? <Page key={route.id} index={index} id={route.id} /> : <NoPage kind={kind} />;
+    }
   }
 }
 
 /** A product's or a domain's facts after its page, as a record's follow its body (RecordContent): its kind, data file and links both ways. */
-function OwnFacts({ index, id }: { index: SpecIndex; id: string }) {
+function OwnFacts({ index, id }: { index: RecordIndex; id: string }) {
   const record = index.byId.get(id);
   if (!record) return null;
   return <div className="spec-body"><aside className="record-side" aria-label="Facts"><RecordFacts index={index} record={record} /></aside></div>;
 }
 
 /** A group's wiki page: its parent, its kind, and its members, each with its coverage marks and its own children folded. */
-function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
+function GroupWiki({ index, gid }: { index: RecordIndex; gid: string }) {
   const parent = groupOwner(index, gid);
   const kind = treeGroup(index, gid)?.kind;
   const members = groupMembers(index, gid);
   const parentRecord = index.byId.get(parent)!;
   const group = treeGroup(index, gid);
-  const stage = group?.role === 'stage' ? index.workspace.stages.find((s) => groupName(index, gid) === s.label) : undefined;
-  const description = kind ? index.kinds.get(kind)?.description : stage?.description;
+  const stage = group?.role === 'stage' ? index.meta.stages.find((s) => groupName(index, gid) === s.label) : undefined;
+  const description = kind ? index.meta.kinds.get(kind)?.description : stage?.description;
   // In a stage or its folders, a row folds only what is of its own stage, as in the nav; under a record, all its children.
-  const nested = group?.role === 'kind' && index.byId.has(parent) && parentRecord.kind !== 'product' && parentRecord.kind !== 'domain' ? undefined : (r: SpecRecord) => foldedChildren(index, r);
+  const nested = group?.role === 'kind' && index.byId.has(parent) && parentRecord.kind !== 'product' && parentRecord.kind !== 'domain' ? undefined : (r: RecordSummary) => foldedChildren(index, r);
   // A list of one kind is titled by that kind ("Use cases", "Commands"); a mixed one stays "Members".
   const membersTitle = listTitle(index, members, 'Members');
   const kinds = [...new Set(members.map((m) => m.kind))];
@@ -267,7 +252,7 @@ function GroupWiki({ index, gid }: { index: SpecIndex; gid: string }) {
       </p>
       {kind && (
         <dl className="fields">
-          <div><dt>Kind</dt><dd title={index.kinds.get(kind)?.description}><Link to={kindPagePath(kind)}>{kindLabel(index, kind)}</Link></dd></div>
+          <div><dt>Kind</dt><dd title={index.meta.kinds.get(kind)?.description}><Link to={kindPagePath(kind)}>{kindLabel(index, kind)}</Link></dd></div>
         </dl>
       )}
       {description && <Markdown source={description} />}

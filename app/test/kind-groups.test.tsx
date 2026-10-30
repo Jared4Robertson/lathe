@@ -1,16 +1,17 @@
 import './graph/setup';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { domainFolders } from '../src/specs/folders';
+import { ownerFolders } from '../src/exploring/folder-tree/folders';
 import { treeChildren, treeParent } from '../src/graph/tree';
 import { modelIndex, modelWorkspace } from './fixtures/model';
-import { facts, main, openApp, section, stageOf } from './helpers';
+import { main, openApp, section, stageOf } from './helpers';
 
 // How the nav, the domain, product and group pages and the record page read a domain by stage and
 // kind (LA-V90, LA-V91, LA-V92): a group that is a record links and one the app computes only
-// folds, the technical and test kinds in the plan's order, the records with no owner, and the
-// pages of an endpoint and an integration.
+// folds, the technical and test kinds in the plan's order, and the records with no owner. A command's endpoints are on
+// its own page (command-page.test.tsx), an endpoint's and an integration's on theirs (endpoint-page.test.tsx and
+// integration-page.test.tsx).
 
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 const panel = () => nav().querySelector<HTMLElement>('.space-items')!;
@@ -103,7 +104,7 @@ describe('groups by stage and kind', () => {
     expect(kindHeadings('Interaction design')).toEqual(['Flows1', 'Views1', 'Endpoints2', 'Integrations1']);
     expect(kindHeadings('Domain model')).toContain('Specifications1');
     expect(within(section(/^Views/)).getByRole('link', { name: /P-V01/ })).toBeInTheDocument();
-    const folders = domainFolders(modelIndex(), 'P-D').stages.flatMap((s) => s.folders);
+    const folders = ownerFolders(modelIndex(), 'P-D').stages.flatMap((s) => s.folders);
     expect(folders.find((f) => f.kind === 'specification')?.records.map((r) => r.id)).toEqual(['P-D-SP01']);
   });
 
@@ -111,12 +112,12 @@ describe('groups by stage and kind', () => {
     await openApp('/P-D', { data: modelWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     const kinds = kindHeadings('Technical specification').map((h) => h!.replace(/\d+$/, ''));
-    const order = ['Repositories', 'Data models', 'Tables', 'Value types', 'Predicates', 'Event types', 'Projections', 'Command handlers', 'Query handlers', 'Event handlers', 'Services', 'UI components', 'Endpoint handlers', 'Adapters'];
+    const order = ['Repositories', 'Data models', 'Tables', 'Value types', 'Rules', 'Predicates', 'Event types', 'Projections', 'Command handlers', 'Query handlers', 'Event handlers', 'Services', 'UI components', 'Endpoint handlers', 'Adapters'];
     expect(kinds.length).toBeGreaterThan(3);
     expect(kinds).toEqual(order.filter((k) => kinds.includes(k)));
-    // Each row says its file, and a table its name and storage.
+    // Each row says what it names in code: its file, or a table its name.
     expect(within(section(/^Repositories/)).getByText('src/loans.ts')).toBeInTheDocument();
-    expect(section(/^Tables/).textContent).toContain('loans · table');
+    expect(within(section(/^Tables/)).getAllByText('loans').length).toBeGreaterThan(0);
   });
 
   it("LA-V91-R07-T01 A domain's Test plan lists its tests by test kind in the plan's order, each with its run by", async () => {
@@ -151,7 +152,7 @@ describe('groups by stage and kind', () => {
 
   it('LA-V91-R09-T01 An endpoint sits in its domain\'s Interaction design and an integration in the one domain that uses it, by their stage', () => {
     const index = modelIndex();
-    const folders = domainFolders(index, 'P-D').stages;
+    const folders = ownerFolders(index, 'P-D').stages;
     const design = folders.find((s) => s.label === 'Interaction design')!;
     expect(design.folders.filter((f) => f.count > 0).map((f) => [f.kind, f.records.map((r) => r.id)])).toEqual([
       ['flow', ['P-D-UC01-FL01']], ['view', ['P-V01']], ['endpoint', ['P-D-EP01', 'P-D-EP02']], ['integration', ['P-INT01']],
@@ -160,28 +161,5 @@ describe('groups by stage and kind', () => {
     expect(treeParent(index, 'P-D-EP01')).toBe('P-D/interaction-design/endpoint');
     expect(treeParent(index, 'P-INT01')).toBe('P-D/interaction-design/integration');
     expect(treeChildren(index, 'P-D/interaction-design')).toContain('P-D/interaction-design/integration');
-  });
-
-  it("LA-V92-R27-T01 A command's page lists the endpoint that exposes it, with its method and route, and an endpoint's page its API requirements with their count", async () => {
-    await openApp('/DM-SHOP-CMD01');
-    await screen.findByRole('heading', { level: 1, name: 'Add item' });
-    const children = section(/^Children/);
-    const row = within(children).getByRole('link', { name: /DM-SHOP-EP01/ }).closest('li')!;
-    expect(row.textContent).toContain('POST · /basket/items');
-    await openApp('/DM-SHOP-EP01');
-    await screen.findByRole('heading', { level: 1, name: 'POST /basket/items' });
-    const requirements = section(/^API requirements/);
-    expect(within(main()).getByRole('heading', { name: /^API requirements/ })).toHaveTextContent('API requirements1');
-    expect(within(requirements).getByRole('link', { name: /DM-SHOP-EP01-R01/ })).toHaveAttribute('href', '/DM-SHOP-EP01-R01');
-  });
-
-  it("LA-V92-R28-T01 An integration's page lists the flow steps that exchange with it, with their count, and names its outside system", async () => {
-    await openApp('/P-INT01', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Mail' });
-    const exchanges = section(/^Exchanged with by/);
-    expect(within(main()).getByRole('heading', { name: /^Exchanged with by/ })).toHaveTextContent('Exchanged with by1');
-    expect(within(exchanges).getByRole('link', { name: /P-D-UC01-FL01-S02/ })).toHaveAttribute('href', '/P-D-UC01-FL01-S02');
-    // The outside system, among its facts in the wiki card.
-    await waitFor(() => expect(facts()).toHaveTextContent('The mail service'));
   });
 });

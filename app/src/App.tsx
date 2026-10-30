@@ -1,11 +1,12 @@
 import { ResizeHandle } from './components/ResizeHandle';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { navigate, setCarry, setPatchBase, useLocation } from './router';
-import { parseSpecRoute, useSpec, type SpecState } from './specs/data';
+import { browserHistory, navigate, setCarry, setPatchBase, useLocation } from './router';
+import { parseSpecRoute } from './views/spec-route';
+import { useDataState, useDataVersion } from './exploring/record-summaries/reads';
 import { formatPath } from './format/reference';
 import { SpecView } from './specs/SpecPages';
-import { postWrite, WriterProvider, type Writer } from './edit/write';
-import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
+import { postCommand, WriterProvider, type Writer } from './edit/write';
+import { CommandsProvider, useAnnounce, useCommand, useShortcutHint } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
 import { DesktopTitleBar } from './shell/DesktopTitleBar';
@@ -13,7 +14,11 @@ import { SpacesProvider, useSpaceState, type SpacesApi } from './shell/spaces';
 import { pageHeading, TopBar } from './shell/MobileBar';
 import { QuickOpen } from './shell/QuickOpen';
 import { useThemeColor } from './shell/themeColor';
-import { isBool, usePanelSize, usePref } from './shell/prefs';
+import { useAggregate } from './shell/prefs';
+import { PANEL_LIMITS } from './platform/panel/model';
+import { panelRepository } from './platform/panel/repository';
+import { resizePanel } from './platform/panel/commands/resize-panel';
+import { showOrHidePanel } from './platform/panel/commands/show-or-hide-panel';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage, StageBackdrop } from './views/FocusPage';
 import { ChecksPanel } from './views/ChecksPanel';
@@ -22,8 +27,14 @@ import { ChangesProvider } from './changes/ChangesProvider';
 import { ProductsPicker } from './views/ProductsPicker';
 import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost, type ToolPanel } from './views/overlays';
 import { ChatPanel } from './chat/ChatPanel';
-import { useAppRequests } from './chat/appRequests';
-import { CARD_MIN, CHAT_DEFAULT, useSessionSettings } from './graph/settings';
+import { useWindowVoice, VoiceContext } from './chat/voice/useVoice';
+import { pointedAt, useAppRequests } from './chat/appRequests';
+import { chatChips } from './chat/chips';
+import { takeMenuRecord } from './shell/desktopRecord';
+import { CARD_MIN, CHAT_DEFAULT } from './exploring/session-settings/model';
+import { useSessionSettings } from './exploring/session-settings/use-session-settings';
+import { showOrHideChat } from './exploring/session-settings/commands/show-or-hide-chat';
+import { resizeChat } from './exploring/session-settings/commands/resize-chat';
 import { CARD_GAP, CARD_GAP_Y, crowdedLabel, RoomContext, STAGE_MIN, useRoomState } from './views/openSpace';
 import { desktopBridge } from './shell/desktopChrome';
 import { addressOf, focusOf, HOME_PATH, isFocusRoute } from './views/address';
@@ -51,36 +62,38 @@ export default function App() {
   );
 }
 
-const NAV_KEY = 'lathe:nav-collapsed';
-/** The nav's width (the space rail and the panel), its limits, and below what a drag collapses it to the rail. */
-const NAV_WIDTH = { key: 'lathe:nav-width', fallback: 336, min: 256, max: 560, collapseBelow: 180 };
 /** The nav collapsed to its rail, in px. */
 const NAV_RAIL = 56;
 
 /** The app shell: the nav, the page for the address, and the commands that work everywhere. */
 function Shell() {
   const { path, search } = useLocation();
-  const spec = useSpec();
-  const { reload } = spec;
-  // Writes go through the server's command layer; the data is read again after one goes through.
+  // The data's version: every read follows it, and a write that went through or a change to the files moves it on.
+  const dataVersion = useDataVersion();
+  const { reload, mark } = dataVersion;
+  // Writes go through the aggregates' commands; after one goes through, the reads of the read models it changed read again.
   const writer = useMemo<Writer>(() => ({
-    write: async (commands) => {
-      const answer = await postWrite(commands);
-      if (answer.ok) await reload();
+    command: async (route, input) => {
+      const before = mark();
+      const answer = await postCommand(route, input);
+      if (answer.ok) await reload({ mark: before, tables: answer.tables });
       return answer;
     },
-  }), [reload]);
+  }), [reload, mark]);
+  const spaces = useSpaceState(dataVersion.version, path, search);
+  // Every page inside a space, and the nav, read the current space's own reads, never another product's.
+  const spec = useDataState(spaces.current?.id ?? null, dataVersion);
   const specRoute = parseSpecRoute(path, spec.index);
   // The tools open over the stage (views/overlays.ts): a panel, and a format page in the wiki card. None on the picker.
   const isHome = specRoute.page === 'specs';
   const overlays = overlaysOf(search);
   const tool = isHome ? null : overlays.panel;
   const announce = useAnnounce();
+  const definitionKey = useShortcutHint('goToDefinition');
 
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
   const narrow = useNarrow();
-  const [collapsed, setCollapsed] = usePref<boolean>(NAV_KEY, false, isBool);
-  const [navWidth, setNavWidth, resetNavWidth] = usePanelSize(NAV_WIDTH.key, NAV_WIDTH.fallback, NAV_WIDTH.min, NAV_WIDTH.max);
+  const { nav: { collapsed, width: navWidth } } = useAggregate(panelRepository);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -90,7 +103,7 @@ function Shell() {
   useEffect(() => { if (narrow && drawerOpen) setTimeout(() => navRef.current?.querySelector<HTMLElement>('.quick-find-button')?.focus(), 0); }, [narrow, drawerOpen]);
   // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Its open state and width are the session's setting.
   const chatBridge = narrow ? null : desktopBridge()?.chat ?? null;
-  const { chat, setChat } = useSessionSettings();
+  const { chat } = useSessionSettings();
   const chatShown = !!chatBridge && chat.open;
   // Panels never crowd the page (LA-PAT-APP-UX-R18): the nav collapses to its rail for space last,
   // after the page's wiki card; the Reader's own choice (`collapsed`) stays as set.
@@ -100,16 +113,13 @@ function Shell() {
   const navCollapsed = collapsed || navCrowded;
   /** Opens or collapses the nav as the Reader asks; one opened while collapsed for space is held open. */
   const setNavOpen = useCallback((open: boolean) => {
-    setCollapsed(!open);
+    showOrHidePanel({ panel: 'nav', shown: open });
     hold('nav', open);
-  }, [setCollapsed, hold]);
+  }, [hold]);
   const showNav = useCallback(() => {
     if (narrow) setDrawerOpen(true);
     else if (navCollapsed) setNavOpen(true);
   }, [narrow, navCollapsed, setNavOpen]);
-  const spaces = useSpaceState(spec.index, path, search);
-  // Every page inside a space, and the nav, read the current space's index, never the whole workspace.
-  const spaceSpec = useMemo((): SpecState => ({ ...spec, index: spaces.index }), [spec, spaces.index]);
 
   useCommand('toggleNav', () => {
     if (narrow) { if (drawerOpen) closeDrawer(); else setDrawerOpen(true); announce(drawerOpen ? 'Navigation closed' : 'Navigation opened'); return; }
@@ -131,8 +141,8 @@ function Shell() {
     showNav();
     setTimeout(() => (navRef.current?.querySelector<HTMLElement>('[aria-current="page"]') ?? navRef.current?.querySelector<HTMLElement>('.quick-find-button'))?.focus(), 0);
   });
-  useCommand('goBack', () => window.history.back());
-  useCommand('goForward', () => window.history.forward());
+  useCommand('goBack', () => browserHistory.back());
+  useCommand('goForward', () => browserHistory.forward());
   const space = spaces.current?.id ?? null;
   useCommand('openChecks', () => navigate(panelHref('checks')), !!space);
   useCommand('goChecks', () => navigate(panelHref('checks')), !!space);
@@ -143,16 +153,32 @@ function Shell() {
     const link = (document.activeElement as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
     const href = link?.getAttribute('href');
     if (href && href.startsWith('/')) navigate(href);
-    else announce('Focus a link first, then press F12 to open its record.');
+    else announce(definitionKey.text ? `Focus a link first, then press ${definitionKey.text} to open its record.` : 'Focus a link first, then go to its record.');
   });
   const chatInput = useRef<HTMLTextAreaElement>(null);
   const chatPanel = () => document.getElementById('chat-panel');
   useCommand('toggleChat', () => {
     // Open: focus the message box; open with focus elsewhere: focus it; with focus in it: hide it.
-    if (chatShown && chatPanel()?.contains(document.activeElement)) { setChat({ open: false }); announce('Chat hidden'); return; }
-    if (!chatShown) { setChat({ open: true }); announce('Chat shown'); }
+    if (chatShown && chatPanel()?.contains(document.activeElement)) { showOrHideChat({ shown: false }); announce('Chat hidden'); return; }
+    if (!chatShown) { showOrHideChat({ shown: true }); announce('Chat shown'); }
     setTimeout(() => chatInput.current?.focus(), 0);
   }, !!chatBridge);
+  // The chat's voice (LA-PLT-UC20): voice activation wakes the chat, hidden or not, and focuses its message box.
+  const wakeChat = useCallback(() => {
+    showOrHideChat({ shown: true });
+    setTimeout(() => chatInput.current?.focus(), 0);
+  }, []);
+  const voice = useWindowVoice(chatBridge ? desktopBridge()?.voice ?? null : null, wakeChat, announce);
+  useCommand('dictate', () => { wakeChat(); voice?.toggle(); }, !!voice);
+  // Point and ask (LA-PLT-UC22-R01): the box pointed at, or the one the native menu was opened on, is attached to the message.
+  const attach = (id: string | null) => {
+    if (!id) { announce('Select a box or focus a record first'); return; }
+    chatChips.add(id);
+    wakeChat();
+    announce(`Asking Claude about ${id}`);
+  };
+  useCommand('askClaude', () => attach(pointedAt(spec.index)), !!chatBridge);
+  useCommand('askClaudeAboutRecord', () => attach(takeMenuRecord()), !!chatBridge);
   useAppRequests(spec.index, spaces.current?.id ?? null);
   useCommand('nextProblem', () => stepProblem(1, announce));
   useCommand('previousProblem', () => stepProblem(-1, announce));
@@ -183,25 +209,25 @@ function Shell() {
 
   let page;
   if (focusRoute) {
-    page = <FocusPage spec={spaceSpec} route={focusRoute} search={search} />;
+    page = <FocusPage spec={spec} route={focusRoute} search={search} />;
   } else if (isHome) {
     // While the specs load, the empty map shows where the stage will be.
     page = (
       <main className="stage-page home-page" id="main">
         {spec.error && <p className="error">Couldn't load the specs: {spec.error}</p>}
-        <StageBackdrop index={spaces.index} focus={backdropRoute && isFocusRoute(backdropRoute) ? focusOf(backdropRoute) : null} />
+        <StageBackdrop index={spec.index} focus={backdropRoute && isFocusRoute(backdropRoute) ? focusOf(backdropRoute) : null} />
       </main>
     );
   } else {
     page = <SpecView spec={spec} />;
   }
 
-  const product = spaces.current && spaces.index ? spaces.index.byId.get(spaces.current.id) : undefined;
+  const product = spaces.current && spec.index ? spec.index.byId.get(spaces.current.id) : undefined;
   let toolPanel = null;
-  if (tool === 'checks' && spaces.index && product) {
-    toolPanel = <ChecksPanel index={spaces.index} product={product} focus={focusRoute ? focusOf(focusRoute) : null} sheet={narrow} onClose={closeTool} />;
-  } else if (tool === 'changes' && spaces.index && product) {
-    toolPanel = <ChangesPanel index={spaces.index} focus={focusRoute ? focusOf(focusRoute) : null} sheet={narrow} onClose={closeTool} />;
+  if (tool === 'checks' && spec.index && product) {
+    toolPanel = <ChecksPanel index={spec.index} product={product} focus={focusRoute ? focusOf(focusRoute) : null} sheet={narrow} onClose={closeTool} />;
+  } else if (tool === 'changes' && spec.index && product) {
+    toolPanel = <ChangesPanel index={spec.index} focus={focusRoute ? focusOf(focusRoute) : null} sheet={narrow} onClose={closeTool} />;
   } else if (tool === 'appearance') {
     toolPanel = <Suspense fallback={null}><AppearancePopover sheet={narrow} onClose={closeTool} /></Suspense>;
   } else if (tool === 'theme') {
@@ -214,7 +240,7 @@ function Shell() {
     <ChangesProvider index={spec.index} product={spaces.current?.id ?? null}>
     <RoomContext.Provider value={room}>
     <SpaceCommands spaces={spaces} />
-    <DesktopTitleBar index={spaces.index} />
+    <DesktopTitleBar index={spec.index} />
     <div
       className={`app${desktopBridge() ? ' has-tabs' : ''}${navCollapsed && !narrow ? ' nav-collapsed' : ''}${narrow ? ' is-narrow' : ''}${chatShown ? ' with-chat' : ''}`}
       style={{
@@ -223,24 +249,24 @@ function Shell() {
         ...(tool && !narrow ? { '--tool-space': `${TOOL_WIDTHS[tool] + 8}px` } : {}),
       } as CSSProperties}
       data-crowded={room.crowded.size > 0 ? [...room.crowded].join(' ') : undefined}
-      data-specs={spec.index ? 'ready' : spec.error ? 'error' : 'loading'}
+      data-specs={spec.error ? 'error' : spaces.read && (!spaces.current || spec.index) ? 'ready' : 'loading'}
     >
       <a href="#main" className="skip-link">Skip to the page</a>
       {narrow && (
         <TopBar
           ref={menuButton}
-          heading={pageHeading(spaces.index, path, search)}
+          heading={pageHeading(spec.index, path, search)}
           navOpen={drawerOpen}
           onMenu={() => setDrawerOpen(true)}
           onFind={() => openQuick('')}
         />
       )}
-      {quick && <QuickOpen index={spaces.index} seed={quick} onClose={closeQuick} />}
+      {quick && <QuickOpen index={spec.index} seed={quick} onClose={closeQuick} />}
       {narrow && drawerOpen && <div className="drawer-backdrop" onMouseDown={closeDrawer} />}
       {(!narrow || drawerOpen) && (
         <Nav
           ref={navRef}
-          spec={spaceSpec}
+          spec={spec}
           path={path}
           collapsed={navCollapsed}
           expandLabel={navCrowded ? crowdedLabel('nav') : undefined}
@@ -254,30 +280,33 @@ function Shell() {
         <ResizeHandle
           className="app-nav-handle"
           label="Resize the navigation"
-          value={navCollapsed ? NAV_WIDTH.min : navWidth}
-          min={NAV_WIDTH.min}
-          max={NAV_WIDTH.max}
+          value={navCollapsed ? PANEL_LIMITS.nav.min : navWidth}
+          min={PANEL_LIMITS.nav.min}
+          max={PANEL_LIMITS.nav.max}
           step={16}
           bigStep={64}
           valueAt={(x) => x - (navRef.current?.getBoundingClientRect().left ?? 0)}
-          onChange={(w) => { setNavWidth(w); if (navCollapsed) setNavOpen(true); }}
-          onReset={() => { resetNavWidth(); setNavOpen(true); }}
-          collapseBelow={NAV_WIDTH.collapseBelow}
+          onChange={(w) => { resizePanel({ panel: 'nav', width: w }); if (navCollapsed) setNavOpen(true); }}
+          onReset={() => { resizePanel({ panel: 'nav', width: null }); setNavOpen(true); }}
+          collapseBelow={PANEL_LIMITS.nav.collapseBelow}
           onCollapse={() => { if (!navCollapsed) setNavOpen(false); }}
         />
       )}
       {page}
-      {isHome && spec.index && <ProductsPicker index={spec.index} onClose={leaveHome} />}
+      {isHome && <ProductsPicker version={spec.version} onClose={leaveHome} />}
       {toolPanel}
       {chatShown && chatBridge && (
+        <VoiceContext.Provider value={voice}>
         <ChatPanel
           bridge={chatBridge}
           index={spec.index}
+          product={spaces.current?.id ?? null}
           width={chat.width}
-          onWidth={(width) => setChat({ width })}
-          onClose={() => { setChat({ open: false }); announce('Chat hidden'); }}
+          onWidth={(width) => resizeChat({ width })}
+          onClose={() => { showOrHideChat({ shown: false }); announce('Chat hidden'); }}
           input={chatInput}
         />
+        </VoiceContext.Provider>
       )}
     </div>
     </RoomContext.Provider>

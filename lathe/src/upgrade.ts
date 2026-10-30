@@ -1,17 +1,18 @@
 // `lathe upgrade`: moves a product's data forward, one way, from the schema version its lathe.config.json names to
 // this Lathe's (SCHEMA_VERSION). Each breaking schema change comes with a converter, upgrades/<from>-to-<to>.ts, whose
-// default export rewrites the data in two phases: `files` for what the new schema cannot load as it is (a renamed or
-// removed column, a moved table), on the raw rows of the data files; then `records`, through the store's command
-// layer, once the data loads. Every converter's files phase runs in order, then every records phase in order, and only
-// then is the config's schema raised. What a converter cannot convert it leaves as a to-do, never dropped. Nothing old
-// is kept or read afterwards (hard cutovers).
+// default export rewrites the raw rows of the data files (`files`): what the new schema cannot load as it is (a renamed
+// or removed column, a moved table, a required text a record lacks). Every converter runs in order; then the data must
+// load under the new schema, which runs every aggregate's rules, and only then is the config's schema raised. What a
+// converter cannot convert it leaves as a to-do, never dropped. Nothing old is kept or read afterwards (hard cutovers).
 import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { CONFIG_FILE, readConfig, SCHEMA_VERSION, schemaVersionMessage } from './config.ts';
-import { formatProblem, openStore, StoreError, type Store } from './store/store.ts';
-import { tableText } from './store/rows.ts';
+import { ProductRepoConfigRepository, type StoredConfig } from './platform/product-repo/repository.ts';
+import { readConfig, SCHEMA_VERSION, schemaVersionMessage } from './config.ts';
+import { formatProblem, StoreError } from './platform/data/problems.ts';
+import { openStore, type Store } from './platform/data/store.ts';
+import { tableText } from './platform/data/rows.ts';
 
 /** Where a converter says what it did, and what it could not do. */
 export interface UpgradeNotes {
@@ -31,10 +32,9 @@ export interface RawData {
   write(table: string, rows: Record<string, unknown>[]): void;
 }
 
-/** A converter's default export: the two phases, either of which may be left out. */
+/** A converter's default export: how it rewrites the raw rows. */
 export interface Converter {
-  files?: (data: RawData, notes: UpgradeNotes) => void | Promise<void>;
-  records?: (store: Store, notes: UpgradeNotes) => void | Promise<void>;
+  files: (data: RawData, notes: UpgradeNotes) => void | Promise<void>;
 }
 
 /** A converter with the versions its file name gives. */
@@ -74,7 +74,7 @@ export async function readConverters(dir = UPGRADES_DIR): Promise<ConverterStep[
     const to = Number(match[2]);
     if (to !== from + 1) throw new Error(`${path.join(dir, file)}: a converter moves the data forward one version, such as 1-to-2.ts.`);
     const module = (await import(/* @vite-ignore */ pathToFileURL(path.join(dir, file)).href)) as { default?: Converter };
-    if (!module.default || typeof module.default !== 'object') throw new Error(`${path.join(dir, file)}: a converter's default export holds its files and records phases.`);
+    if (!module.default || typeof module.default.files !== 'function') throw new Error(`${path.join(dir, file)}: a converter's default export holds its files function.`);
     steps.push({ from, to, name: `${from}-to-${to}`, converter: module.default });
   }
   return steps.sort((a, b) => a.from - b.from);
@@ -86,10 +86,10 @@ function dirtyTree(root: string): string | null {
   try {
     status = execFileSync('git', ['status', '--porcelain'], { cwd: root, encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
   } catch {
-    return `${root} is not in a git repository, so the upgrade could not be reviewed as one commit. Put it under git first, or pass --allow-dirty.`;
+    return `${root} is not in a git repository, so the upgrade could not be reviewed as one commit. Put it under git first.`;
   }
   if (!status.trim()) return null;
-  return `The git working tree has changes, so the upgrade would not be one reviewable commit. Commit or stash them first, or pass --allow-dirty:\n${status.trimEnd()}`;
+  return `The git working tree has changes, so the upgrade would not be one reviewable commit. Commit or stash them first:\n${status.trimEnd()}`;
 }
 
 function rawData(dataDir: string, touched: Set<string>): RawData {
@@ -109,20 +109,18 @@ function rawData(dataDir: string, touched: Set<string>): RawData {
 }
 
 /**
- * Upgrades the product at root to `target` (this Lathe's schema version) by the converters, in order. Refuses a dirty
- * git working tree unless allowDirty. Throws when there is nothing to upgrade from (the data is for a newer schema) or
- * a converter is missing.
+ * Upgrades the product at root to `target` (this Lathe's schema version) by the converters, in order. Refuses a git
+ * working tree with changes, or no git, so the upgrade is one reviewable commit. Throws when there is nothing to upgrade
+ * from (the data is for a newer schema) or a converter is missing.
  */
-export async function upgradeProduct(root: string, options: { allowDirty?: boolean; converters?: ConverterStep[]; target?: number } = {}): Promise<UpgradeResult> {
+export async function upgradeProduct(root: string, options: { converters?: ConverterStep[]; target?: number } = {}): Promise<UpgradeResult> {
   const config = readConfig(root);
   const target = options.target ?? SCHEMA_VERSION;
   const result: UpgradeResult = { from: config.schema, to: config.schema, steps: [], todos: [], done: true };
   if (config.schema === target) return result;
   if (config.schema > target) throw new Error(schemaVersionMessage(config.schema, target));
-  if (!options.allowDirty) {
-    const dirty = dirtyTree(config.root);
-    if (dirty) throw new Error(dirty);
-  }
+  const dirty = dirtyTree(config.root);
+  if (dirty) throw new Error(dirty);
   const available = options.converters ?? (await readConverters());
   const chain: ConverterStep[] = [];
   for (let at = config.schema; at < target; at++) {
@@ -138,12 +136,12 @@ export async function upgradeProduct(root: string, options: { allowDirty?: boole
   };
   const notes = new Map(chain.map((step) => [step.name, notesFor(step.name)]));
 
-  // The files phases, in order, on the raw rows.
+  // The converters, in order, on the raw rows.
   const touched = new Set<string>();
   const data = rawData(config.dataDir, touched);
-  for (const step of chain) await step.converter.files?.(data, notes.get(step.name)!);
+  for (const step of chain) await step.converter.files(data, notes.get(step.name)!);
 
-  // The records phases, in order, through the command layer, once the data loads.
+  // The converted data must load under the new schema, with every aggregate's rules.
   let store: Store;
   try {
     store = await openStore(config.root, { dataDir: config.dataDir });
@@ -160,15 +158,14 @@ export async function upgradeProduct(root: string, options: { allowDirty?: boole
       const rows = store.rows(table).filter((row) => !store.isBuiltIn(row));
       if (rows.length) writeFileSync(path.join(config.dataDir, `${table}.jsonl`), tableText(description, rows));
     }
-    for (const step of chain) await step.converter.records?.(store, notes.get(step.name)!);
   } finally {
     await store.close();
   }
 
   // Only now is the data for the new schema.
-  const file = path.join(config.root, CONFIG_FILE);
-  const written = existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>) : {};
+  const repository = new ProductRepoConfigRepository(config.root);
+  const written = { ...((repository.load() ?? {}) as StoredConfig) };
   delete written.schema;
-  writeFileSync(file, `${JSON.stringify({ schema: target, ...written }, null, 2)}\n`);
+  repository.save({ schema: target, ...written });
   return { ...result, to: target };
 }

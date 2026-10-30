@@ -14,7 +14,7 @@
 {"id":"LA-VO14","title":"Run by","description":"How a test runs: its level, its state, and the file that runs it or why it is manual. Fields: Level, State, File (optional), Manual reason (optional)."}
 {"id":"LA-VO15","title":"Kind field type","description":"The type of a product kind's field."}
 {"id":"LA-VO16","title":"Stage","description":"Where a kind is read and colored."}
-{"id":"LA-VO17","title":"Relation role","description":"Whether a relation designs or proves."}
+{"id":"LA-VO17","title":"Relation role","description":"Whether a relation designs, builds or proves."}
 {"id":"LA-VO18","title":"Group name","description":"A short heading a long list of requirements or rules is sorted under."}
 {"id":"LA-VO41","title":"Check name","description":"The name of a check, which its problems carry."}
 {"id":"LA-VO42","title":"Check severity","description":"What a check's problems are. An error means the data is broken; a warning means work is still to do."}
@@ -26,6 +26,6 @@
 {"id":"LA-VO65","title":"Window chrome","description":"The two colors a page sends for its window."}
 {"id":"LA-VO90","title":"App address","description":"A place in the app: a path and its stage query parameter."}
 {"id":"LA-VO91","title":"Page stage","description":"What a page or a place shows on its stage."}
-{"id":"LA-VO92","title":"Session settings","description":"How the graph is laid out and how wide the wiki card is, one for the browser session and shared by every place (LA-EXP-A6)."}
+{"id":"LA-VO92","title":"Session settings","description":"How the graph is laid out, whether its minimap shows and its Map draws all its links, and how wide the wiki card is, one for the browser session and shared by every place (LA-EXP-A6)."}
 {"id":"LA-VO93","title":"Entities limit","description":"The most entities an aggregate should hold."}
 {"id":"LA-VO94","title":"Place view","description":"How a place shows its focus, apart from its stage: its depth, kind filters and wiki card. Each place's own, kept per tab (LA-EXP-A5)."}

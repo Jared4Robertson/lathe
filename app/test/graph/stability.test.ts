@@ -1,0 +1,279 @@
+import { describe, expect, it } from 'vitest';
+import type { PlacedMap } from '../../src/graph/map';
+import { type MapLabel } from '../../src/graph/text';
+import { allGraph } from '../../src/trace/all';
+import { layOutGraph } from '../../src/trace/all-laid';
+import { addRows, removeRows, setRow } from '../fixtures/load';
+import { modelWorkspace } from '../fixtures/model';
+import { recordIndexOf, type ServedData } from '../read-view';
+import { traced } from '../trace/traces';
+import { delivered } from '../trace/deliveries';
+import { orderGraph } from '../../src/trace/delivery/delivery-order';
+import { layOutDelivery } from '../../src/trace/delivery/delivery-layout';
+import { cellKey, DELIVERY_STAGES } from '../../src/trace/delivery/delivery';
+import { graphMap, groundMap, layoutNested, layoutTree, nestedMap } from './maps';
+
+// A change moves only what it changed (LA-PAT-APP-UX-R22, LA-EXP-DS05, LA-EXP-DS07): adding, removing, renaming or
+// moving a record under a parent rearranges only that parent's region (for a move, the old and the new parent's), and
+// every other box keeps its exact place, size and text; siblings keep their order. Each layout is laid out before and
+// after each change, on the same rule the layout's worker runs.
+
+type Tree = Record<string, string[]>;
+
+/** A product with three domains, each with a few records, some of them with children of their own. */
+const BEFORE: Tree = {
+  p: ['d1', 'd2', 'd3'],
+  d1: ['a1', 'a2', 'a3'],
+  d2: ['b1', 'b2'],
+  d3: ['c1', 'c2', 'c3', 'c4'],
+  a1: ['a1.1', 'a1.2'],
+  a2: ['a2.1', 'a2.2', 'a2.3'],
+  b1: ['b1.1', 'b1.2'],
+  b2: ['b2.1', 'b2.2'],
+  c2: ['c2.1', 'c2.2'],
+};
+const TITLES: Record<string, string> = { a2: 'Aggregate with a longer title that wraps' };
+const labelOf = (titles: Record<string, string>) => (id: string): MapLabel => ({ title: titles[id] ?? `Record ${id}`, meta: `Aggregate · ${id}` });
+
+const layOut = { tree: layoutTree, nested: layoutNested } as const;
+type View = keyof typeof layOut;
+const mapOf = (view: View, tree: Tree, titles: Record<string, string> = TITLES): PlacedMap =>
+  layOut[view](['p'], (id) => tree[id] ?? [], labelOf(titles));
+
+/** Every node at or under `id` in a map. */
+function region(map: PlacedMap, id: string): Set<string> {
+  const out = new Set<string>();
+  const walk = (at: string) => { out.add(at); for (const c of map.nodes.get(at)?.children ?? []) walk(c); };
+  walk(id);
+  return out;
+}
+
+/** The boxes outside the changed parents' regions (each parent's own box counts as outside) that moved, resized or changed text. */
+function movedOutside(before: PlacedMap, after: PlacedMap, parents: readonly string[]): string[] {
+  const inside = new Set<string>();
+  for (const map of [before, after]) for (const p of parents) for (const id of region(map, p)) if (id !== p) inside.add(id);
+  const moved: string[] = [];
+  for (const [id, b] of before.nodes) {
+    if (inside.has(id)) continue;
+    const a = after.nodes.get(id);
+    if (!a || a.x !== b.x || a.y !== b.y || a.w !== b.w || a.h !== b.h || a.text !== b.text) moved.push(id);
+  }
+  return moved;
+}
+
+/** Each parent's children, top to bottom (Tree) or in reading order (Nested), as the map places them. */
+const placedOrder = (map: PlacedMap, parent: string) =>
+  [...(map.nodes.get(parent)?.children ?? [])].sort((a, b) => { const na = map.nodes.get(a)!; const nb = map.nodes.get(b)!; return na.y - nb.y || na.x - nb.x; });
+
+/** The siblings that were there before, in the order the map places them after: their order must be kept. */
+const keptOrder = (before: PlacedMap, after: PlacedMap, parent: string) => {
+  const was = placedOrder(before, parent);
+  return placedOrder(after, parent).filter((id) => was.includes(id));
+};
+
+const changed = (tree: Tree, edit: (t: Tree) => void): Tree => { const t = structuredClone(tree); edit(t); return t; };
+
+/** Each change to the tree: what it does, the parents whose regions it may rearrange, and the order it leaves them in. */
+const LOCAL: { name: string; tree?: (t: Tree) => void; titles?: Record<string, string>; parents: string[]; order?: Record<string, string[]> }[] = [
+  { name: 'adding a record moves only its parent\'s region, and puts it at its place among its siblings', tree: (t) => { t.d1 = ['a1', 'a1b', 'a2', 'a3']; }, parents: ['d1'], order: { d1: ['a1', 'a1b', 'a2', 'a3'] } },
+  { name: 'removing a record moves only its parent\'s region, and its siblings keep their order', tree: (t) => { t.c3 = []; t.d3 = ['c1', 'c2', 'c4']; }, parents: ['d3'], order: { d3: ['c1', 'c2', 'c4'] } },
+  { name: 'renaming a record moves only its parent\'s region, and nothing is re-sorted', titles: { a3: 'A record renamed to a title long enough to wrap onto several lines of its box' }, parents: ['d1'], order: { d1: ['a1', 'a2', 'a3'] } },
+  { name: 'moving a record moves only its old and its new parent\'s regions', tree: (t) => { t.a2 = ['a2.1', 'a2.3']; t.b2 = ['b2.1', 'a2.2', 'b2.2']; }, parents: ['a2', 'b2'], order: { a2: ['a2.1', 'a2.3'], b2: ['b2.1', 'a2.2', 'b2.2'] } },
+  { name: 'a change deep in the tree keeps every box of the other domains, and the changed parent\'s own box', tree: (t) => { t['a1.2'] = ['x1', 'x2']; }, parents: ['a1.2'] },
+];
+
+function staysLocal(view: View, change: (typeof LOCAL)[number]) {
+  const before = mapOf(view, BEFORE);
+  const after = mapOf(view, change.tree ? changed(BEFORE, change.tree) : BEFORE, { ...TITLES, ...change.titles });
+  expect(movedOutside(before, after, change.parents)).toEqual([]);
+  for (const [parent, order] of Object.entries(change.order ?? {})) expect(placedOrder(after, parent)).toEqual(order);
+}
+
+describe('LA-EXP-DS05-T16 the Tree layout keeps every box outside a change where it was', () => {
+  it.each(LOCAL)('$name', (change) => staysLocal('tree', change));
+});
+
+describe('LA-EXP-DS07-T04 the Nested layout keeps every box outside a change where it was', () => {
+  it.each(LOCAL)('$name', (change) => staysLocal('nested', change));
+});
+
+/** The boxes outside the changed parents' regions whose header band changed (the Nested map's), its siblings' insides with it. */
+function headerChangedOutside(before: PlacedMap, after: PlacedMap, parents: readonly string[]): string[] {
+  const inside = new Set(parents.flatMap((p) => [...region(before, p), ...region(after, p)]));
+  const header = (map: PlacedMap, id: string) => (map.nodes.get(id) as { header?: number } | undefined)?.header;
+  return [...before.nodes.keys()].filter((id) => !inside.has(id) && header(before, id) !== header(after, id));
+}
+
+describe.each([
+  ['tree', 'LA-EXP-DS05-T16'],
+  ['nested', 'LA-EXP-DS07-T04'],
+] as const)('%s: the layout keeps a change local even where a parent gains its first child or loses its last (%s)', (view: View, _test: string) => {
+  // Each sibling's text is fitted whether it has children or not (the Nested header band as if every sibling were a
+  // parent), so a record that becomes a parent, or stops being one, changes nothing of its siblings.
+  const before = mapOf(view, BEFORE);
+  it('a first child moves nothing outside its new parent', () => {
+    const after = mapOf(view, changed(BEFORE, (t) => { t.a3 = ['a3.1']; }));
+    expect(movedOutside(before, after, ['a3'])).toEqual([]);
+    expect(headerChangedOutside(before, after, ['a3'])).toEqual([]);
+  });
+  it('removing a last child moves nothing outside its parent', () => {
+    const after = mapOf(view, changed(BEFORE, (t) => { t.c2 = []; }));
+    expect(movedOutside(before, after, ['c2'])).toEqual([]);
+    expect(headerChangedOutside(before, after, ['c2'])).toEqual([]);
+  });
+  it('a first child under a sibling with the longest label keeps its siblings\' insides', () => {
+    const after = mapOf(view, changed(BEFORE, (t) => { t.a3 = ['a3.1']; }), { ...TITLES, a3: 'A record whose title is long enough to wrap onto several lines of its box' });
+    const was = mapOf(view, BEFORE, { ...TITLES, a3: 'A record whose title is long enough to wrap onto several lines of its box' });
+    expect(movedOutside(was, after, ['a3'])).toEqual([]);
+    expect(headerChangedOutside(was, after, ['a3'])).toEqual([]);
+  });
+});
+
+// ---------- On a product's own data: the Graph's Tree and Nested maps and the Trace's All-at-once view ----------
+
+/** The model product with a second use case of two requirements, and two outcomes its capability serves. */
+function product(): ServedData {
+  const data = modelWorkspace();
+  addRows(data, 'use_case', { id: 'P-D-UC02', title: 'Return a thing', capability_id: 'P-D-CAP01', goal: 'A member brings a thing back.' });
+  addRows(data, 'uc_requirement',
+    { id: 'P-D-UC02-R01', title: 'The return is recorded', use_case_id: 'P-D-UC02', statement: 'The return MUST be recorded.' },
+    { id: 'P-D-UC02-R02', title: 'A late return is noted', use_case_id: 'P-D-UC02', statement: 'A late return MUST be noted.' });
+  addRows(data, 'business_outcome',
+    { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans a month', target: 'Up a tenth' },
+    { id: 'P-BO02', title: 'Fewer lost things', product_id: 'P', statement: 'Fewer things go missing.', measure: 'Things lost a year', target: 'Down a half' });
+  return addRows(data, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' }, { source_id: 'P-D-CAP01', target_id: 'P-BO02' });
+}
+
+/**
+ * Each change a Reader or an Agent makes, with the records it changes. A requirement is removed as the command layer
+ * lets it be, after its test: two changes, each moving only its own parent's region.
+ */
+const CHANGES: { name: string; records: string[]; edit: (d: ServedData) => void }[] = [
+  { name: 'adding a requirement', records: ['P-D-UC01-R03'], edit: (d) => { addRows(d, 'uc_requirement', { id: 'P-D-UC01-R03', title: 'A lost thing is refused', use_case_id: 'P-D-UC01', statement: 'A lost thing MUST be refused.' }); } },
+  {
+    name: 'removing a requirement and its test', records: ['P-D-UC01-R02', 'P-D-UC01-R02-T01'], edit: (d) => {
+      removeRows(d, 'use_case_test', (r) => r.id === 'P-D-UC01-R02-T01');
+      removeRows(d, 'fulfills', (r) => r.target_id === 'P-D-UC01-R02');
+      removeRows(d, 'uc_requirement', (r) => r.id === 'P-D-UC01-R02');
+    },
+  },
+  { name: 'renaming an aggregate', records: ['P-D-A2'], edit: (d) => { setRow(d, 'aggregate', 'P-D-A2', { title: 'Member of the library, renamed to a title long enough to wrap' }); } },
+  { name: 'moving a requirement to another use case', records: ['P-D-UC01-R02'], edit: (d) => { setRow(d, 'uc_requirement', 'P-D-UC01-R02', { use_case_id: 'P-D-UC02' }); } },
+];
+
+/**
+ * What a change under some parents may move in the Map, a bottom-up layout (LA-EXP-DS12): each parent and every
+ * container above it (they grow), and what comes after each of them among its siblings (nudged), with all they hold.
+ */
+function nudged(maps: readonly PlacedMap[], parents: readonly string[]): string[] {
+  const out = new Set<string>();
+  for (const map of maps) for (const p of parents) {
+    for (let at: string | null = p; at !== null; at = map.nodes.get(at)?.parent ?? null) {
+      out.add(at);
+      const up = map.nodes.get(at)?.parent;
+      const siblings = up ? map.nodes.get(up)!.children : [];
+      for (const later of siblings.slice(siblings.indexOf(at) + 1)) out.add(later);
+    }
+  }
+  return [...out];
+}
+
+/** Whether a box has the same place and size in two maps. */
+const sameBox = (before: PlacedMap, after: PlacedMap, id: string) => {
+  const b = before.nodes.get(id)!;
+  const a = after.nodes.get(id);
+  return !!a && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+};
+
+/** The parents of every place the changed records have in the maps before and after: the changed regions. */
+const parentsOf = (maps: readonly PlacedMap[], records: readonly string[], idOf: (place: string) => string = (p) => p) =>
+  [...new Set(maps.flatMap((map) => [...map.nodes.values()].filter((n) => records.includes(idOf(n.id)) && n.parent !== null).map((n) => n.parent!)))];
+
+describe('LA-PAT-APP-UX-R22 a problem badge appearing moves nothing', () => {
+  // The badge's room is kept on every label, whether its box has the badge or not, so a record that gains a problem (an
+  // ancestor's group badge appearing with it) changes no box's text or size, on any map.
+  const withProblem = () => {
+    const d = product();
+    d.problems.push({ severity: 'error', check: 'dangling-link', record: 'P-D-A2', message: 'Aggregate P-D-A2 links to a missing record.' });
+    return d;
+  };
+  const same = (before: PlacedMap, after: PlacedMap) => expect(movedOutside(before, after, [])).toEqual([]);
+  it('LA-EXP-DS05-T16 on the Graph\'s Tree map', () => same(graphMap(recordIndexOf(product()), 'P'), graphMap(recordIndexOf(withProblem()), 'P')));
+  it('LA-EXP-DS07-T04 on the Graph\'s Nested map', () => {
+    const [before, after] = [nestedMap(recordIndexOf(product()), 'P'), nestedMap(recordIndexOf(withProblem()), 'P')];
+    same(before, after);
+    expect(headerChangedOutside(before, after, [])).toEqual([]);
+  });
+  it('LA-EXP-DS12-T04 on the Graph\'s Map', () => same(groundMap(recordIndexOf(product())), groundMap(recordIndexOf(withProblem()))));
+  it('LA-V98-R20-T02 on the Trace\'s Delivery view', () => {
+    const layOut = (d: ServedData) => { const { graph } = delivered(d); return layOutDelivery(graph, orderGraph(graph, null), { open: new Set(graph.rows.map((r) => cellKey(r.useCase, 'use-case'))), step: null }); };
+    const [before, after] = [layOut(product()), layOut(withProblem())];
+    expect([...after.places]).toEqual([...before.places]);
+  });
+  it('LA-V98-R12-T03 on the Trace\'s All-at-once view', () => {
+    const layOut = (d: ServedData) => { const { index, traces } = traced(d); return layOutGraph(allGraph(index, traces, 'P'), null); };
+    const [before, after] = [layOut(product()), layOut(withProblem())];
+    expect([...after.places]).toEqual([...before.places]);
+    expect(after.order).toEqual(before.order);
+  });
+});
+
+describe.each(CHANGES)('$name keeps every box outside its parent where it was', ({ records, edit }) => {
+  const changedData = () => { const d = product(); edit(d); return d; };
+
+  const onTheGraph = (view: View) => {
+    const layOut = (d: ServedData) => (view === 'tree' ? graphMap : nestedMap)(recordIndexOf(d), 'P');
+    const before = layOut(product());
+    const after = layOut(changedData());
+    const parents = parentsOf([before, after], records);
+    expect(parents.length).toBeGreaterThan(0);
+    expect(movedOutside(before, after, parents)).toEqual([]);
+    for (const p of parents) expect(keptOrder(before, after, p)).toEqual(placedOrder(before, p).filter((id) => after.nodes.get(p)?.children.includes(id)));
+  };
+  it('LA-EXP-DS05-T16 on the Graph\'s Tree map', () => onTheGraph('tree'));
+  it('LA-EXP-DS07-T04 on the Graph\'s Nested map', () => onTheGraph('nested'));
+  it('LA-EXP-DS12-T04 on the Graph\'s Map: only the changed containers grow and nudge what comes after them; nothing before moves', () => {
+    const before = groundMap(recordIndexOf(product()));
+    const after = groundMap(recordIndexOf(changedData()));
+    const parents = parentsOf([before, after], records);
+    expect(parents.length).toBeGreaterThan(0);
+    const may = new Set([before, after].flatMap((map) => nudged([before, after], parents).flatMap((id) => [...region(map, id)])));
+    expect([...before.nodes.keys()].filter((id) => !may.has(id) && !sameBox(before, after, id))).toEqual([]);
+    for (const p of parents) expect(keptOrder(before, after, p)).toEqual(placedOrder(before, p).filter((id) => after.nodes.get(p)?.children.includes(id)));
+  });
+
+  it('LA-V98-R12-T03 on the Trace\'s All-at-once view: every column keeps its order, the changed record in its place', () => {
+    const layOut = (d: ServedData, previous: ReturnType<typeof layOutGraph> | null) => { const { index, traces } = traced(d); return layOutGraph(allGraph(index, traces, 'P'), previous); };
+    const before = layOut(product(), null);
+    const after = layOut(changedData(), before);
+    // Each column's boxes kept in the order shown before; what the change adds goes in among them, what it removes is gone.
+    after.order.forEach((column, i) => {
+      const kept = new Set(column);
+      expect(column.filter((k) => before.places.has(k)), `column ${i}`).toEqual(before.order[i].filter((k) => kept.has(k)));
+    });
+    if (records.includes('P-D-UC01-R03')) expect(after.places.has('P-D-UC01-R03')).toBe(true);
+    if (records.includes('P-D-UC01-R02-T01')) expect(after.places.has('P-D-UC01-R02')).toBe(false);
+  });
+
+  it('LA-V98-R20-T02 on the Trace\'s Delivery view: the rows keep their order, a closed row its place, and an open one moves only the rows below it', () => {
+    const { graph: was } = delivered(product());
+    const { graph: now } = delivered(changedData());
+    const shown = orderGraph(was, null);
+    const order = orderGraph(now, shown);
+    expect(order.rows).toEqual(shown.rows);
+    // Every row closed: every box of every row keeps its place.
+    const closed = { open: new Set<string>(), step: null };
+    const [a, b] = [layOutDelivery(was, shown, closed), layOutDelivery(now, order, closed)];
+    expect([...b.rows]).toEqual([...a.rows]);
+    expect([...b.places]).toEqual([...a.places]);
+    // Every row open: the rows above the first changed row keep every box where it was.
+    const open = { open: new Set(now.rows.flatMap((r) => DELIVERY_STAGES.map((s) => cellKey(r.useCase, s)))), step: null };
+    const [c, d] = [layOutDelivery(was, shown, open), layOutDelivery(now, order, open)];
+    const changedRows = order.rows.filter((u) => JSON.stringify(was.rowOf.get(u)?.data) !== JSON.stringify(now.rowOf.get(u)?.data));
+    const first = Math.min(...changedRows.map((u) => order.rows.indexOf(u)));
+    for (const u of order.rows.slice(0, first)) {
+      expect(d.rows.get(u)).toEqual(c.rows.get(u));
+      for (const [key, p] of c.places) if (was.items.get(key)?.row === u) expect(d.places.get(key), key).toEqual(p);
+    }
+  });
+});

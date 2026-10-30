@@ -4,7 +4,7 @@ import { audit, LOOKS, useLook, type Finding } from './axe';
 import { withChat } from './chat';
 import { asDesktop } from '../stability/desktop';
 
-// LA-V61-R40-T01: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
+// LA-PAT-APP-UX-R10-T01: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
 // desktop and phone widths, in the Lathe theme's light and dark and in High contrast's
 // (LA-PAT-APP-UX-R10), each stage with its panels open and collapsed and under reduced transparency.
 // Each page or state in each look is one test, so a failure names both.
@@ -31,7 +31,7 @@ const STAGES = [
   { name: 'graph stage', url: `${RECORD}?stage=graph`, ready: '.focus-stage .graph-flow .graph-box' },
   { name: 'ERD stage', url: `${AGGREGATE}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'Trace stage, a chain', url: `${EDITED}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
-  { name: 'Trace stage, a domain\'s branch', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
+  { name: 'Trace stage, a domain (no box: the overview)', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
 ];
 
 /** Collapses the wiki card (Enter), so the stage has the whole window under the tab panel. */
@@ -61,18 +61,44 @@ const PAGES: State[] = [
   { name: 'domain page', url: DOMAIN, ready: '.header-strip h1' },
   { name: 'record page', url: RECORD, ready: '.header-strip h1' },
   { name: 'interface page', url: '/LA-IF03', ready: '.interface-flows' },
+  { name: 'business outcome page', url: '/LA-BO05', ready: '[data-aggregate="business-outcome"]' },
+  { name: 'extension record page', url: '/LA-AUT-MOD10', ready: '[data-aggregate="extension-record"]' },
+  { name: 'entry point page', url: '/LA-PLT-ENTRY01', ready: '[data-aggregate="entry-point"]' },
+  { name: 'tooling page', url: '/LA-AUT-TOOL01', ready: '[data-aggregate="tooling"]' },
+  // The Domain, Test data set, Pattern and Standard aggregates' own pages.
+  { name: 'capability page', url: '/LA-AUT-CAP02', ready: '[data-aggregate="domain"] .capability-use-cases' },
+  { name: 'test data set page', url: '/LA-AUT-TD30', ready: '[data-aggregate="test-data-set"] .record-lead' },
+  { name: 'pattern page', url: '/LA-PAT-RECORD-PAGE', ready: '[data-aggregate="pattern"] .pattern-rules' },
+  { name: 'standard page', url: '/LA-STD-CODE', ready: '[data-aggregate="standard"] .standard-rules' },
+  // The View and UI component aggregates' own pages.
+  { name: 'view page', url: '/LA-V150', ready: '[data-aggregate="view"] .view-requirements' },
+  { name: 'UI component page', url: '/LA-UI280', ready: '[data-aggregate="ui-component"] .traceability' },
+  // The Endpoint and Integration aggregates' own pages.
+  { name: 'endpoint page', url: '/LA-AUT-EP01', ready: '[data-aggregate="endpoint"] .endpoint-requirements' },
+  { name: 'integration page', url: '/LA-INT04', ready: '[data-aggregate="integration"] .integration-tests' },
+  // The Aggregate, Domain event and Command aggregates' own pages.
+  { name: 'aggregate page', url: '/LA-AUT-A6', ready: '[data-aggregate="aggregate"] .aggregate-entities' },
+  { name: 'domain event page', url: '/LA-AUT-EV03', ready: '[data-aggregate="domain-event"] .record-lead' },
+  { name: 'command page', url: '/LA-AUT-CMD210', ready: '[data-aggregate="command"] .command-endpoints' },
+  // The Table, Specification, Value object and Read model aggregates' own pages.
+  { name: 'table page', url: '/LA-AUT-EN54-TB', ready: '[data-aggregate="table"] .table-keys' },
+  { name: 'specification page', url: '/LA-AUT-SP03', ready: '[data-aggregate="specification"] .record-lead' },
+  { name: 'value object page', url: '/LA-VO01', ready: '[data-aggregate="value-object"] .entity-fields' },
+  { name: 'read model page', url: '/LA-AUT-RM25', ready: '[data-aggregate="read-model"] .read-model-queries' },
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
   { name: 'Trace stage, a flow step in the chains that hold it', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
   { name: 'Trace stage, an entity framed on its aggregate', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
-  { name: 'Trace stage, the product\'s whole tree', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
+  { name: 'Trace stage, the product all at once', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.
   { name: 'Checks panel', url: `${PRODUCT}?panel=checks`, ready: '.tool-panel.checks-panel .problems' },
   { name: 'Format page in the wiki card', url: `${PRODUCT}?page=format`, ready: '.wiki-panel.is-format h2' },
   { name: 'Kind page in the wiki card', url: `${RECORD}?page=format/kinds/use_case`, ready: '.wiki-panel.is-format h2' },
+  // The Check aggregate's own page: a product's own check, with its actions.
+  { name: 'Check page in the wiki card', url: `${PRODUCT}?page=format/checks/actor-not-a-role`, ready: '.wiki-panel.is-format [data-aggregate="check"]' },
   { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.tool-panel.appearance-popover .theme-rows' },
   { name: 'Products picker', url: '/', ready: '.dialog.products-picker h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));
@@ -94,7 +120,7 @@ PAGES.push({ name: 'Trace stage, gaps only', run: async (page: Page) => {
 // removal with the store's refusal shown inline. None of them writes anything that stays: the
 // forms are not sent, and the store refuses the removal.
 PAGES.push(
-  { name: 'the record form', run: async (page: Page) => {
+  { name: 'an aggregate\'s edit form', run: async (page: Page) => {
     await open(page, EDITED, '.header-strip h1');
     await page.getByRole('toolbar', { name: `Change ${EDITED.slice(1)}` }).getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('form').waitFor();
@@ -107,6 +133,26 @@ PAGES.push(
     await page.getByRole('form').getByRole('button', { name: 'Add UC requirement' }).click();
     await page.getByRole('form').getByRole('alert').waitFor();
   } },
+  { name: 'the pattern form, its settings as rows', run: async (page: Page) => {
+    await open(page, '/LA-PAT-RECORD-PAGE', '[data-aggregate="pattern"] .pattern-rules');
+    await page.getByRole('toolbar', { name: 'Change LA-PAT-RECORD-PAGE' }).getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('form').locator('.form-parts').waitFor();
+  } },
+  { name: 'the set limits form', run: async (page: Page) => {
+    await open(page, PRODUCT, '.product-limits .record-actions');
+    await page.getByRole('toolbar', { name: 'Change the limits of LA' }).getByRole('button', { name: 'Set limits' }).click();
+    await page.getByRole('form', { name: 'Set limits' }).waitFor();
+  } },
+  { name: 'the following\'s Follow form', run: async (page: Page) => {
+    await open(page, '/LA-PAT-RECORD-PAGE', '[data-aggregate="pattern"] .pattern-domain');
+    await page.getByRole('toolbar', { name: 'Followers of LA-PAT-RECORD-PAGE' }).getByRole('button', { name: 'Follow' }).click();
+    await page.getByRole('form', { name: 'Follow LA-PAT-RECORD-PAGE' }).waitFor();
+  } },
+  { name: 'the entity form, its fields as rows', run: async (page: Page) => {
+    await open(page, '/LA-AUT-EN11', '[data-aggregate="aggregate"] .entity-commands');
+    await page.getByRole('toolbar', { name: 'Change LA-AUT-EN11' }).getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('form').locator('.form-parts').waitFor();
+  } },
   { name: 'the remove question and its refusal', run: async (page: Page) => {
     await open(page, RECORD, '.header-strip h1');
     await page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` }).getByRole('button', { name: 'Remove' }).click();
@@ -115,8 +161,8 @@ PAGES.push(
     await panel.getByRole('alert').waitFor({ timeout: 20_000 });
   } },
 );
-// The graph in its Nested layout (LA-V93-R21): the same roles and names as the Tree layout.
-for (const layout of ['Nested'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
+// The graph in its Nested and Map layouts (LA-V93-R21, LA-V93-R74): the same roles and names as the Tree layout.
+for (const layout of ['Nested', 'Map'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
   await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
   await page.locator('.focus-stage .graph-layout button', { hasText: layout }).click();
   await page.locator(`.focus-stage .graph-flow[data-layout="${layout.toLowerCase()}"] .graph-box`).first().waitFor();
@@ -143,6 +189,22 @@ const DESKTOP: State[] = [
     await page.keyboard.press('Control+/');
     await page.locator('.dialog-search').waitFor();
   } },
+  // Binding a key (LA-V61-R52): the recording control has focus, then a key another shortcut has offers Swap.
+  { name: 'the shortcuts sheet, recording a key', run: async (page) => {
+    await open(page, RECORD, '.header-strip h1');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Control+/');
+    await page.getByRole('button', { name: 'Change Ctrl+B of Show or hide the navigation' }).click();
+    await page.locator('.key-recorder').waitFor();
+  } },
+  { name: 'the shortcuts sheet, a key another shortcut has with Swap', run: async (page) => {
+    await open(page, RECORD, '.header-strip h1');
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Control+/');
+    await page.getByRole('button', { name: 'Change Ctrl+B of Show or hide the navigation' }).click();
+    await page.keyboard.press('Control+Shift+m');
+    await page.locator('.shortcut-offer').waitFor();
+  } },
   // Each stage with the panels collapsed, and with them open under reduced transparency.
   ...STAGES.map((s): State => ({ name: `${s.name}, panels collapsed`, run: async (page) => { await open(page, s.url, s.ready); await collapsePanels(page); } })),
   ...STAGES.map((s): State => ({ name: `${s.name}, reduced transparency`, run: async (page) => { await reduceTransparency(page); await open(page, s.url, s.ready); } })),
@@ -158,6 +220,19 @@ const DESKTOP: State[] = [
     await open(page, RECORD, '.chat-log .chat-item');
     await page.locator('.chat-tool-row').first().click();
     await page.locator('.chat-tool-body').waitFor();
+  } },
+  { name: 'the chat, its permission mode menu open', run: async (page) => {
+    await withChat(page, RECORD.slice(1));
+    await open(page, RECORD, '.chat-log .chat-item');
+    await page.locator('.chat-mode-button').click();
+    await page.locator('.chat-mode-menu').waitFor();
+  } },
+  { name: 'the chat, the warning before Bypass, and its badge once on', run: async (page) => {
+    await withChat(page, RECORD.slice(1));
+    await open(page, RECORD, '.chat-log .chat-item');
+    await page.locator('.chat-mode-button').click();
+    await page.locator('.chat-mode-item.is-bypass').click();
+    await page.locator('.chat-bypass-warning').waitFor();
   } },
   { name: 'the chat, its session picker warning of a session open elsewhere', run: async (page) => {
     await withChat(page, RECORD.slice(1), 'picker');
@@ -215,7 +290,7 @@ const PHONE: State[] = [
   } },
 ];
 
-/** The records one axe run proves besides LA-V61-R40, each by the axe rules that check it. */
+/** The records one axe run proves besides LA-PAT-APP-UX-R10, each by the axe rules that check it. */
 const BY_RULE: { record: string; says: string; rules: string[] }[] = [
   { record: 'LA-V61-R44-T01', says: "a control's name holds its visible text", rules: ['label-content-name-mismatch'] },
   { record: 'LA-V61-R45-T01', says: 'no control sits inside another', rules: ['nested-interactive'] },
@@ -251,7 +326,7 @@ for (const look of LOOKS) {
   test.describe(`desktop at 1440 px in ${look.name}`, () => {
     test.beforeEach(({ page }) => useLook(page, look));
     for (const s of DESKTOP) {
-      test(`LA-V61-R40-T01 ${s.name} passes axe`, async ({ page }) => {
+      test(`LA-PAT-APP-UX-R10-T01 ${s.name} passes axe`, async ({ page }) => {
         await s.run(page);
         await auditAll(page, `${look.name}, desktop: ${s.name}`);
       });
@@ -262,7 +337,7 @@ for (const look of LOOKS) {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
     test.beforeEach(({ page }) => useLook(page, look));
     for (const s of PHONE) {
-      test(`LA-V61-R40-T01 ${s.name} passes axe`, async ({ page }) => {
+      test(`LA-PAT-APP-UX-R10-T01 ${s.name} passes axe`, async ({ page }) => {
         await s.run(page);
         await auditAll(page, `${look.name}, phone: ${s.name}`);
       });
@@ -270,7 +345,7 @@ for (const look of LOOKS) {
   });
 }
 
-// LA-V96-R28-T02: the Changes controls every stage shows, with the lens on, and the Changes panel over the stage, at
+// LA-V96-R28-T02: the Changes controls every stage shows, with Highlight changes on, and the Changes panel over the stage, at
 // desktop and phone widths in every look. The stability suite's data has nothing changed since its last commit, so the
 // panel shows its empty answer and the controls their count of none.
 for (const look of LOOKS) {
@@ -278,9 +353,9 @@ for (const look of LOOKS) {
     test.describe(`the Changes controls and panel, ${phone ? 'phone at 375 px' : 'desktop at 1440 px'} in ${look.name}`, () => {
       if (phone) test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
       test.beforeEach(({ page }) => useLook(page, look));
-      test('LA-V96-R28-T02 the Changes controls, the lens on and the Changes panel pass axe', async ({ page }) => {
+      test('LA-V96-R28-T02 the Changes controls, Highlight changes on and the Changes panel pass axe', async ({ page }) => {
         await open(page, `${RECORD}?stage=graph&panel=changes`, '.changes-panel .tool-panel-title, .tool-sheet.changes-panel');
-        await page.getByRole('group', { name: 'Changes' }).getByRole('button', { name: 'Changes lens' }).click();
+        await page.getByRole('group', { name: 'Changes' }).getByRole('button', { name: 'Highlight changes' }).click();
         await page.waitForTimeout(300);
         await auditAll(page, `${look.name}, ${phone ? 'phone' : 'desktop'}: the Changes controls and panel`);
       });

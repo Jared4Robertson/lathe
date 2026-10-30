@@ -1,10 +1,10 @@
 # The store's interfaces
 
-What the engine, the CLI and MCP tools, and the app build on: the schema in `lathe/schema/` and the store in `lathe/src/store/`, exported from `@jaredrob/lathe`. The model is concrete kinds from DDD, CQRS and event storming, each record with exactly one parent; `lathe/REFERENCE.md` describes every kind.
+What the engine, the CLI and MCP tools, and the app build on: the schema in `lathe/schema/` and the store in `lathe/src/platform/data/`, exported from `@jaredrob/lathe`. The model is concrete kinds from DDD, CQRS and event storming, each record with exactly one parent; `lathe/REFERENCE.md` describes every kind.
 
 ## How it fits together
 
-- **Schema.** `lathe/schema/NNN-name.sql`, applied in order: 001 meta (stages, kinds, parents, relations, supertypes), 002 registry and supertypes, 003 product (and discovery's business outcomes), 004 domain model, 005 use cases (and patterns), 006 interaction design, 007 technical specification (and standards), 008 test plan, 009 open questions, 010 links, 011 checking, 012 product kinds. There are no upgrade migrations: the database is rebuilt from the data files on every load, so a change to the model rewrites these files and the data with it. Every table has a `COMMENT`, every stored column too. `describeSchema` reads tables, columns, types, enums, keys, foreign keys, CHECKs and comments back from DuckDB, plus the `meta_*` rows. After a change, `npm --prefix lathe run schema` regenerates `lathe/src/store/tables.ts` (a test fails until it does).
+- **Schema.** `lathe/schema/NNN-name.sql`, applied in order: 001 meta (stages, kinds, parents, relations, supertypes), 002 registry and supertypes, 003 product (and discovery's business outcomes), 004 domain model, 005 use cases (and patterns), 006 interaction design, 007 technical specification (and standards), 008 test plan, 009 open questions, 010 links, 011 checking, 012 product kinds. There are no upgrade migrations: the database is rebuilt from the data files on every load, so a change to the model rewrites these files and the data with it. Every table has a `COMMENT`, every stored column too. `describeSchema` reads tables, columns, types, enums, keys, foreign keys, CHECKs and comments back from DuckDB, plus the `meta_*` rows. After a change, `npm --prefix lathe run schema` regenerates `lathe/src/platform/data/tables.ts` (a test fails until it does).
 - **Stages.** `meta_stage`, in order: `discovery`, `domain-model`, `use-cases`, `interaction-design`, `technical-specification`, `test-plan`. Each kind has a stage and a `position` (stage by stage, the plan's order within each); product and open question have no stage, product first and question last. Patterns sit in use cases, standards in the technical specification. Folders (`meta_section`) are gone: a kind's stage is its folder.
 - **Table roles** (`meta_table.role`): `kind` (one row per record, `id` a foreign key into `record_id`), `part` (rows owned by one record, removed with it; `owner_column` names it), `link` (one table per relation: `source_id`, `target_id`, primary key both), `declaration` (a product's kinds and relations), `checking` (`check`, `product_setting`), and the unstored `meta`, `registry`, `supertype` and `result` (`problem`).
 - **Data files.** `data/<table>.jsonl` for each stored table with rows (no file when empty; default folder `data/`, or `"data"` in `lathe.config.json`). Rows sorted by primary key (numbers as numbers, text by code point), columns in the table's order, columns without a value left out (never `null`), one JSON object per line, UTF-8, trailing newline. `record_id` and the supertypes are derived from the kind tables on load; they are never stored.
@@ -30,17 +30,18 @@ The full description, with every column's meaning, is `store.schema` at run time
 | domain-model | `invariant` | aggregate (aggregate_id) | statement | `<P>-<D>-INV<nn>` |
 | domain-model | `specification` | none | statement | `<P>-<D>-SP<nn>` |
 | domain-model | `domain_event` | aggregate (aggregate_id) | published (bool), description | `<P>-<D>-EV<nn>` |
-| domain-model | `command` | aggregate (aggregate_id) | description; part `command_change` (aggregate_id, reason): another aggregate of its domain it also changes in the same transaction, a recorded exception (`command-change-in-domain` refuses its own aggregate or another domain's), listed by the engine's `Workspace.exceptions`, never a problem | `<P>-<D>-CMD<nn>` |
+| domain-model | `command` | aggregate (aggregate_id) | description | `<P>-<D>-CMD<nn>` |
 | domain-model | `read_model` | domain (domain_id) | description | `<P>-<D>-RM<nn>` |
 | domain-model | `query` | read_model (read_model_id) | description | `<P>-<D>-QRY<nn>` |
 | domain-model | `policy` | command (command_id) | statement | `<P>-<D>-PO<nn>` |
 | domain-model | `domain_service` | domain (domain_id) | statement | `<P>-<D>-DS<nn>` |
+| domain-model | `storage_requirement` | aggregate (aggregate_id) or read_model (read_model_id), exactly one | statement | `<aggregate or read model>-SR<nn>` |
 | domain-model | `term` | domain (domain_id) | meaning, group_name? | `<P>-<D>-TM<nn>` |
 | use-cases | `capability` | domain (domain_id) | position (int), description | `<P>-<D>-CAP<nn>` |
 | use-cases | `use_case` | capability (capability_id) | goal, notes? | `<P>-<D>-UC<nn>` |
 | use-cases | `uc_requirement` | use_case (use_case_id) | statement, group_name? | `<use case>-R<nn>` |
 | use-cases | `pattern` | product (product_id) | description, notes? | `<P>-PAT-<name>` |
-| use-cases | `pattern_rule` | pattern (pattern_id) | statement, group_name?, setting?, applies_when_setting?, applies_when_negated? (bool), applies_when_value?, notes? | `<pattern>-R<nn>` |
+| use-cases | `pattern_rule` | pattern (pattern_id) | statement, group_name?, notes? | `<pattern>-R<nn>` |
 | interaction-design | `interface` | product (product_id) | kind (web app/API/CLI/agent tools/desktop/other), description | `<P>-IF<nn>` |
 | interaction-design | `flow` | use_case (use_case_id) | interface_id (the interface it goes through) | `<use case>-FL<nn>`, `<nn>` its interface's number |
 | interaction-design | `flow_step` | flow (flow_id) | path, position (int) | `<flow>-S<nn>` |
@@ -49,7 +50,8 @@ The full description, with every column's meaning, is `store.schema` at run time
 | interaction-design | `endpoint` | command (command_id) or query (query_id) | method (GET/POST/PUT/PATCH/DELETE/HEAD/OPTIONS), route, description, notes? | `<P>-<D>-EP<nn>` |
 | interaction-design | `api_requirement` | endpoint (endpoint_id) | statement, group_name? | `<endpoint>-R<nn>` |
 | interaction-design | `integration` | none | system?, description | `<P>-INT<nn>` |
-| technical-specification | `repository` | domain (domain_id) | file?, description; part `repository_share` (aggregate_id, reason): another aggregate it also persists, which has no repository of its own, a recorded exception (`repository-share-unpersisted` refuses one a repository persists) | `<domain>-REPO<nn>` |
+| technical-specification | `data_store` | product (product_id) or domain (domain_id), exactly one | kind (database/object store/file folder/file/browser storage/memory), description | `<P>-STORE<nn>` or `<P>-<D>-STORE<nn>` |
+| technical-specification | `repository` | domain (domain_id) | file?, description | `<domain>-REPO<nn>` |
 | technical-specification | `data_model` | entity (entity_id) | file? | `<entity>-DM` |
 | technical-specification | `table` | entity (entity_id) or read_model (read_model_id) | name, storage (table/view/materialized view/browser storage/file/in memory), file? | `<entity or read model>-TB` |
 | technical-specification | `value_type` | value_object (value_object_id) | file? | `<value object>-VT` |
@@ -71,6 +73,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | test-plan | `specification_test` | specification (specification_id) | run by, when, then, notes? | `<specification>-T` |
 | test-plan | `policy_test` | policy (policy_id) | run by, when, then, notes? | `<policy>-T` |
 | test-plan | `domain_service_test` | domain_service (domain_service_id) | run by, when, then, notes? | `<domain service>-T<nn>` |
+| test-plan | `storage_requirement_test` | storage_requirement (storage_requirement_id) | run by, when, then, notes? | `<storage requirement>-T<nn>` |
 | test-plan | `use_case_test` | uc_requirement (uc_requirement_id) | run by, when, then, notes? | `<UC requirement>-T<nn>` |
 | test-plan | `view_test` | view_requirement (view_requirement_id) | run by, when, then, notes? | `<view requirement>-T<nn>` |
 | test-plan | `endpoint_test` | api_requirement (api_requirement_id) | run by, when, then, notes? | `<API requirement>-T<nn>` |
@@ -92,7 +95,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `product_setting` (checking) | product_id | product_id, max_children (int), max_entities_per_aggregate (int) |
 | `read_model_field` (part) | read_model_id, position | read_model_id, position (int), name, meaning, type? (text/whole number/decimal/date/time/date and time/yes/no), type_value_object_id?, type_aggregate_id?, required (bool), column_name?, example? |
 | `role` (part) | product_id, name | product_id, name, description |
-| `setting_value` (part) | follower_id, pattern_id, setting | follower_id, pattern_id, setting, value?, not_applicable? |
+| `setting_value` (part) | follower_id, pattern_id, setting | follower_id, pattern_id, setting, value |
 | `table_key` (part) | table_id, position | table_id, position (int), type (primary/unique/foreign/index), columns (list), name?, invariant_id?, target_table_id?, condition? |
 | `use_case_actor` (part) | use_case_id, position | use_case_id, position (int), role_name |
 | `value_object_field` (part) | value_object_id, position | value_object_id, position (int), name, meaning, type? (text/whole number/decimal/date/time/date and time/yes/no), type_value_object_id?, type_aggregate_id?, required (bool), column_name?, example? |
@@ -111,8 +114,10 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `hears` (one per source) | product | policy | domain_event | policy→domain_event |
 | `invokes` (one per source) | product | flow_step | operation | flow_step→command, flow_step→query |
 | `measured_by` | product | business_outcome | record_id | 12 pairs: business_outcome→every test kind; a product adds its own kinds with a product_relation named measured_by |
-| `meets` | product | meets_source | standard_rule | 14 pairs: every member of meets_source (the technical kinds; a standard rule is proved by its standard rule tests) |
+| `meets` | product | technical_record | standard_rule | 14 pairs: every member of technical_record (the technical kinds; a standard rule is proved by its standard rule tests) |
 | `persists` (one per source, one per target) | product | repository | aggregate | repository→aggregate |
+| `stored_in` (one per source) | product | stored_in_source | data_store | repository→data_store, reader→data_store, table→data_store |
+| `provided_by` (one per source) | product | data_store | integration | data_store→integration |
 | `raises` | aggregate | command | domain_event | command→domain_event |
 | `reads` | domain | reads_source | aggregate | read_model→aggregate, specification→aggregate |
 | `renders` | product | ui_component | view | ui_component→view |
@@ -123,11 +128,12 @@ The full description, with every column's meaning, is `store.schema` at run time
 | Supertype | Members |
 | --- | --- |
 | `follows_source` | domain, use_case |
-| `meets_source` | adapter, command_handler, data_model, endpoint_handler, event_handler, event_type, predicate, projection, query_handler, repository, service, table, ui_component, value_type |
-| `obligation` | api_requirement, constraint, domain_service, invariant, pattern_rule, policy, specification, standard_rule, uc_requirement, view_requirement |
+| `technical_record` | adapter, command_handler, data_model, endpoint_handler, event_handler, event_type, predicate, projection, query_handler, repository, service, table, ui_component, value_type |
+| `obligation` | api_requirement, constraint, domain_service, invariant, pattern_rule, policy, specification, standard_rule, storage_requirement, uc_requirement, view_requirement |
+| `stored_in_source` | reader, repository, table |
 | `operation` | command, query |
 | `reads_source` | read_model, specification |
-| `test` | constraint_test, domain_service_test, endpoint_test, flow_test, integration_test, invariant_test, pattern_rule_test, policy_test, specification_test, standard_rule_test, use_case_test, view_test |
+| `test` | constraint_test, domain_service_test, storage_requirement_test, endpoint_test, flow_test, integration_test, invariant_test, pattern_rule_test, policy_test, specification_test, standard_rule_test, use_case_test, view_test |
 
 Notes on the tables:
 - **Fields.** `entity_field`, `value_object_field`, `event_field` and `read_model_field` share one shape. A field's type is exactly one of `type` (a basic type: text, whole number, decimal, date, time, date and time, yes/no), `type_value_object_id` or `type_aggregate_id` (a reference by ID; another domain's aggregate is allowed). `required` says whether every record gives it a value; `column_name` names its column when that differs from the field's name (Member ID in `id`). A name is unique in its owner, trimmed and in any letter case. An entity's value objects are the ones its fields are typed with: no link stores them twice.
@@ -169,7 +175,6 @@ store.dataDir: string
 store.rows(table: string): Row[]         // sorted by key
 store.record(id: string): { kind: string; row: Row } | undefined
 store.origin(row: Row): Origin | undefined          // { file, line } or { command }
-store.placements(): Promise<Record<string, { product: string | null; domain: string | null }>>   // each record with no owner, from record_scope (GET /api/spec serves it)
 store.isBuiltIn(row: Row): boolean                  // a row of lathe/data (Lathe's own checks), read-only
 store.query<T>(sql: string): Promise<T[]>           // on the current data
 store.connection: DuckDBConnection                  // follows every write
@@ -226,4 +231,4 @@ What a command does:
 - A `table` may sit under a domain (`domain_id`) for the domain's own infrastructure that implements no design record, such as its outbox: ID `<domain>-TB<nn>`, storage `table`. Exactly one of entity, read model and domain is given.
 - `fed_by` links a read model to a domain event it is kept current from: its own domain's, or another domain's published one (`read-model-fed-by-published` refuses an unpublished event of another domain). This is how a read model shows another domain's data.
 - `calls` may come from a read model too (its projection uses the domain service); its source is the `calls_source` supertype (command, query, read model).
-- A workspace: `products` in `lathe.config.json` lists other products' folders, each with its own config and data and its own store (`workspaceProducts`, `loadProducts`). `GET /api/spec` serves `SpecData.sources`, one per product folder (`{ dataDir, tables }`), under one schema joined from the products' (`joinSchemas`); `POST /api/write` goes to the store of the product its commands name.
+- A workspace: `products` in `lathe.config.json` lists other products' folders, each with its own config and data and its own store (`workspaceProducts`, `loadProducts`). A read that names no record (the products, the meta model) reads every product's store under one schema joined from the products' (`joinSchemas`), refusing two folders that hold the same product; a read or a command that names a record goes to the store of the product that holds it.

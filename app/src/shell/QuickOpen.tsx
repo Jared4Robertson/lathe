@@ -4,7 +4,7 @@ import { Icon } from '../components/icons';
 import { isGroup } from '../graph/model';
 import { navigate } from '../router';
 import { openInNewPlace } from '../views/usePlace';
-import type { SpecIndex } from '../specs/data';
+import { compareIds, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { KindBadge } from '../specs/parts';
 import { checkPagePath, kindPagePath, useFormat } from '../format/reference';
 import { addressOf } from '../views/address';
@@ -36,16 +36,16 @@ export interface FindItem {
   to: string;
 }
 
-export function findItems(index: SpecIndex | null, checks: readonly string[] = []): FindItem[] {
+export function findItems(index: RecordIndex | null, checks: readonly string[] = []): FindItem[] {
   const items: FindItem[] = [];
   if (index) {
-    for (const r of index.workspace.records) {
+    for (const r of index.byId.values()) {
       items.push({ key: r.id, id: r.id, title: r.title, kind: r.kind, to: addressOf(r.id) });
     }
-    for (const k of index.workspace.kinds) {
+    for (const k of index.meta.kindList) {
       items.push({ key: `kind:${k.kind}`, id: k.kind, title: `Kind: ${k.label}`, to: kindPagePath(k.kind) });
     }
-    for (const c of new Set([...checks, ...index.workspace.problems.map((p) => p.check)])) {
+    for (const c of new Set([...checks, ...[...index.problemsFor.values()].flat().map((p) => p.check)])) {
       items.push({ key: `check:${c}`, id: c, title: `Check: ${c}`, to: checkPagePath(c) });
     }
   }
@@ -69,7 +69,7 @@ export function rankItems(items: readonly FindItem[], query: string, limit = 8):
   return items
     .map((item) => ({ item, s: score(item) }))
     .filter((x) => x.s >= 0)
-    .sort((a, b) => a.s - b.s || a.item.id.localeCompare(b.item.id, 'en', { numeric: true }))
+    .sort((a, b) => a.s - b.s || compareIds(a.item.id, b.item.id))
     .slice(0, limit)
     .map((x) => x.item);
 }
@@ -85,7 +85,7 @@ const RECORDS_SHOWN = 20;
 const PREVIEW_REST_MS = 150;
 
 /** The places above a record as one short line, in the one breadcrumb's collapsed form: "Lathe › … › Reading". */
-export function trailText(index: SpecIndex, id: string): string {
+export function trailText(index: RecordIndex, id: string): string {
   const { first, hidden, last } = collapseCrumbs(focusTrail(index, id));
   return [...first.map((c) => c.label), ...(hidden.length ? ['…'] : []), ...last.map((c) => c.label)].join(' › ');
 }
@@ -99,7 +99,7 @@ export function commandItems(commands: readonly Command[], available: (id: strin
 
 export interface QuickOpenProps {
   /** The current space's index. */
-  index: SpecIndex | null;
+  index: RecordIndex | null;
   /** What the box holds as it opens, or as its shortcut is pressed again: "" for records, ">" for commands. */
   seed: { query: string; n: number };
   onClose: () => void;

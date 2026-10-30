@@ -2,10 +2,11 @@ import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type WheelEvent
 import { Icon } from '../components/icons';
 import { groupLabel, isGroup } from '../graph/model';
 import { Tooltip } from '../shell/Tooltip';
-import { parseSpecRoute, type SpecIndex } from '../specs/data';
+import { parseSpecRoute } from './spec-route';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { focusOf, isFocusRoute } from './address';
 import { hereOf } from './place';
-import type { Tab, TabSet } from './tabs';
+import type { Tab, TabSet } from '../exploring/tab-set/model';
 
 // The desktop app's tab strip, at the left of the page bar: one tab per place (tabs.ts), as a browser's tabs. A tab
 // shows the record its place is on, its ID in mono and its title, cut short, with both in full in its tooltip; a
@@ -17,7 +18,7 @@ export const TAB_PANEL_ID = 'tab-panel';
 export const tabId = (key: string) => `tab-${key}`;
 
 /** What a tab shows for the address its place is at: the ID (none for a group) and the title. */
-export function tabLabel(index: SpecIndex, address: string): { id?: string; title: string } {
+export function tabLabel(index: RecordIndex, address: string): { id?: string; title: string } {
   const page = address.split(/[?#]/)[0];
   const route = parseSpecRoute(page, index);
   if (!isFocusRoute(route)) return { title: page };
@@ -27,7 +28,7 @@ export function tabLabel(index: SpecIndex, address: string): { id?: string; titl
 }
 
 export interface TabStripProps {
-  index: SpecIndex;
+  index: RecordIndex;
   set: TabSet;
   onActivate: (key: string) => void;
   onClose: (key: string) => void;

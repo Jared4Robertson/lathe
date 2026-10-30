@@ -1,8 +1,8 @@
+import type { ServedData } from './read-view';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { Coverage } from '../../lathe/src/types';
-import type { SpecData } from '../../lathe/src/server/contract';
 import { LongList } from '../src/components/LongList';
 import { addRows } from './fixtures/load';
 import { gap, workspace as baseWorkspace } from './fixtures/workspace';
@@ -20,7 +20,7 @@ const pad = (n: number) => String(n).padStart(2, '0');
  * A product with 12 domains; its first domain has 12 capabilities (the first holding 12 use cases, the first of them
  * with 12 UC requirements), a specification 12 commands check, and 12 problems.
  */
-function bigWorkspace(): SpecData {
+function bigWorkspace(): ServedData {
   const ws = baseWorkspace();
   addRows(ws, 'product', { id: 'BG', title: 'Big product' });
   for (let d = 1; d <= 12; d++) addRows(ws, 'domain', { id: `BG-D${pad(d)}`, title: `Domain ${d}`, product_id: 'BG', subdomain_type: 'core' });
@@ -35,13 +35,13 @@ function bigWorkspace(): SpecData {
     addRows(ws, 'uc_requirement', { id: `BG-D01-UC01-R${pad(u)}`, title: `Requirement ${u}`, use_case_id: 'BG-D01-UC01', statement: `Requirement ${u} MUST hold.` });
   }
   ws.problems.push(...Array.from({ length: 12 }, (_, i) => ({ severity: 'warning' as const, check: 'not-proved', record: `BG-D01-UC01-R${pad(i + 1)}`, message: `No test proves UC requirement BG-D01-UC01-R${pad(i + 1)}.` })));
-  ws.coverage.push(...Array.from({ length: 12 }, (_, d): Coverage => ({ product: 'BG', domain: `BG-D${pad(d + 1)}`, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: {}, pattern_rules: {}, gaps: [] })));
+  ws.coverage.push(...Array.from({ length: 12 }, (_, d): Coverage => ({ product: 'BG', domain: `BG-D${pad(d + 1)}`, obligations: [], tests: { automated: 0, manual: 0, not_automated: 0 }, proved_by: {}, pattern_rules: [], gaps: [] })));
   ws.coverage.find((c) => c.domain === 'BG-D01')!.gaps = Array.from({ length: 12 }, (_, i) => gap(`BG-D01-UC01-R${pad(i + 1)}`, 'uc_requirement', 'proved'));
   return ws;
 }
 
 describe('long lists', () => {
-  it('LA-V92-R53-T01 A list of up to 10 items is plain; a longer one scrolls inside, with a search box, a count and a message when nothing matches', async () => {
+  it('LA-PAT-RECORD-PAGE-R17-T01 A list of up to 10 items is plain; a longer one scrolls inside, with a search box, a count and a message when nothing matches', async () => {
     const { unmount } = render(list(make(10)));
     expect(screen.getAllByRole('listitem')).toHaveLength(10);
     expect(screen.queryByRole('searchbox')).toBeNull();
@@ -82,7 +82,7 @@ describe('long lists', () => {
     expect(region).toHaveFocus();
   });
 
-  it('LA-V92-R53-T02 Every list in the spec pages stays at 10 rows and can be searched', async () => {
+  it('LA-PAT-RECORD-PAGE-R17-T01 Every list in the spec pages stays at 10 rows and can be searched', async () => {
     const served = { data: bigWorkspace() };
     const user = userEvent.setup();
 

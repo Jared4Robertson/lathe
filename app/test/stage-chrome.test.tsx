@@ -5,7 +5,7 @@ import { TOOLBAR_FORMS, TOOLBAR_TIERS } from '../src/views/StageChrome';
 import { graphDrawn, graphKeyEntries } from '../src/graph/key';
 import { NO_FILTERS, neighborhood } from '../src/graph/model';
 import { changesKeyEntries } from '../src/changes/ChangesKey';
-import { indexOf } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 import { modelWorkspace } from './fixtures/model';
 import { openApp } from './helpers';
 
@@ -36,11 +36,10 @@ function chrome() {
   return {
     order,
     camera: camera.map((c) => within(c as HTMLElement).getAllByRole('button').map((b) => b.getAttribute('aria-label'))),
-    reactFlowControls: stage().querySelectorAll('.react-flow__controls').length,
-  };
+    reactFlowControls: stage().querySelectorAll('.react-flow__controls').length };
 }
 
-const SHARED = ['steps: left right up down out in', 'frame', 'changes: lens follow open'];
+const SHARED = ['steps: left right up down out in', 'frame', 'changes: highlight follow open'];
 const CAMERA = [['Zoom in', 'Zoom out', 'Fit the whole map']];
 
 describe('one stage chrome', () => {
@@ -54,8 +53,9 @@ describe('one stage chrome', () => {
     fireEvent.click(stageButton('ERD'));
     await waitFor(() => expect(stage().querySelector('.react-flow__node')).not.toBeNull());
     const erd = chrome();
-    // The ERD has no controls of its own; React Flow's own buttons give way to the shared ones.
-    expect(erd.order).toEqual([...SHARED, 'end: -']);
+    // The ERD's own: Tidy up; React Flow's own buttons give way to the shared ones.
+    expect(erd.order).toEqual([...SHARED, 'own', 'end: -']);
+    expect(within(stage().querySelector<HTMLElement>('.stage-toolbar')!).getByRole('button', { name: 'Tidy up' })).toBeInTheDocument();
     expect(erd.camera).toEqual(CAMERA);
     expect(erd.reactFlowControls).toBe(0);
 
@@ -149,7 +149,7 @@ describe('the stage key bar', () => {
     expect(stage().querySelector('.stage-tools details.stage-key, .stage-tools [aria-label="Key"]')).toBeNull();
     // Each entry a sample and a word or two, its whole meaning in its tooltip.
     // Only what the graph draws around the focus: a capability, the use case and its requirements, in the use cases' color.
-    expect(entries()).toEqual(['stage-use-cases', 'focus', 'shape-slice', 'shape-stadium', 'shape-page', 'line', 'bar', 'badge-gap']);
+    expect(entries()).toEqual(['stage-use-cases', 'focus', 'shape-slice', 'shape-stadium', 'shape-page', 'line', 'bar', 'badge-gap', 'scroll']);
     const useCase = key().querySelector('[data-key-entry="shape-stadium"]')!;
     expect(useCase).toHaveTextContent('Use case');
     expect(useCase).toHaveAttribute('title', expect.stringMatching(/^Use case: a stadium$/));
@@ -162,20 +162,21 @@ describe('the stage key bar', () => {
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(stage().querySelector('.trace-flow[data-ready]')).not.toBeNull());
     expect(key()).toHaveAttribute('data-floating', 'bottom');
-    // The Trace's columns, its default layout (LA-V98-R13): the path to the focus and the counts.
-    expect(entries()).toEqual(expect.arrayContaining(['path', 'count', 'focus']));
-    // The Gaps only fade only while Gaps only is on.
-    expect(entries()).not.toContain('complete');
+    // The Trace's All-at-once view (LA-V98-R02): its columns, its links and the focus, its path lit and the rest faded.
+    expect(entries()).toEqual(expect.arrayContaining(['columns', 'link-reaches', 'focus', 'faded']));
+    // Every stage's bar ends with what scroll does: it pans, Scroll to zoom being off.
+    expect(entries().at(-1)).toBe('scroll');
+    expect(key().querySelector('[data-key-entry="scroll"]')).toHaveTextContent('Scroll pans');
   });
 
   it('LA-V96-R30-T01 A kind the filters hide leaves the Graph\'s key, and the live marks show only while there are any', () => {
-    const index = indexOf(modelWorkspace());
+    const index = recordIndexOf(modelWorkspace());
     const ids = (focus: string, hidden: string[]) => graphKeyEntries(graphDrawn(index, neighborhood(index, focus, 3, hidden.length ? { hiddenKinds: new Set(hidden) } : NO_FILTERS), 'tree')).map((e) => e.id);
     expect(ids('P-D-CAP01', [])).toContain('shape-stadium');
     expect(ids('P-D-CAP01', ['use_case'])).not.toContain('shape-stadium');
     // The focus is never hidden, so its entries stay.
     expect(ids('P-D-UC01', ['use_case'])).toContain('shape-stadium');
     expect(changesKeyEntries(new Set())).toEqual([]);
-    expect(changesKeyEntries(new Set(['is-changed', 'is-lens'])).map((e) => e.words)).toEqual(['Changed', 'Unchanged']);
+    expect(changesKeyEntries(new Set(['is-changed', 'is-dimmed'])).map((e) => e.words)).toEqual(['Changed', 'Unchanged']);
   });
 });

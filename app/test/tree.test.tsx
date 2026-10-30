@@ -20,14 +20,14 @@ describe('one level deep', () => {
     expect(toggle).toHaveAttribute('aria-expanded', 'false');
     expect(cap).toHaveTextContent('1 use case');
     expect(cap.querySelector('ul.nested')).toBeNull();
-    // An aggregate folds what sits under it in the domain model: its entities, invariant, event and command.
+    // An aggregate folds what sits under it in the domain model: its entities, invariant and event.
     const aggregates = section(/^Aggregates/);
-    expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('5 children');
+    expect(row(aggregates, 'DM-SHOP-A1')).toHaveTextContent('4 children');
 
-    // The button opens and closes it, showing the use case within with its actor.
+    // The button opens and closes it, showing the use case within with its title.
     fireEvent.click(toggle);
     expect(within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' })).toHaveAttribute('aria-expanded', 'true');
-    expect(row(cap, 'DM-SHOP-UC01')).toHaveTextContent('Shopper');
+    expect(row(cap, 'DM-SHOP-UC01')).toHaveTextContent('Add an item to the basket');
 
     // Left closes it (focus on the row), Right opens it, Right again moves into it, Left goes back up.
     const open = within(cap).getByRole('button', { name: 'Collapse DM-SHOP-CAP01' });
@@ -55,9 +55,9 @@ describe('one level deep', () => {
     expect(row(section(/^Aggregates/), 'DM-SHOP-A1').querySelector('ul.nested')).not.toBeNull();
     expect(row(stageOf('use-cases'), 'DM-SHOP-CAP01').querySelector('ul.nested')).not.toBeNull();
   };
-  it('LA-V92-R21-T01 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
-  it('LA-V92-R02-T01 Folded rows keep counts and marks and open by button, Expand all or arrow keys', proveLaV92R21T01);
-  it('LA-V92-R03-T01 Folded rows open by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
+  it('LA-PAT-RECORD-PAGE-R16-T01 Folded rows keep their counts and marks, open and close by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
+  it('LA-PAT-RECORD-PAGE-R02-T01 Folded rows keep counts and marks and open by button, Expand all or arrow keys', proveLaV92R21T01);
+  it('LA-PAT-RECORD-PAGE-R03-T01 Folded rows open by button, Expand all or arrow keys, and stay open while moving around', proveLaV92R21T01);
 
   const proveLaV92R21T02 = async () => {
     await openApp('/DM-SHOP');
@@ -81,6 +81,6 @@ describe('one level deep', () => {
     expect(within(domains).getByRole('link', { name: /DM-SHOP\s*Shopping/ })).toBeInTheDocument();
     expect(within(main()).queryByRole('link', { name: /^DM-SHOP-UC01(?!-)/ })).toBeNull();
   };
-  it('LA-V92-R21-T02 A product page lists its domains but none of their records', proveLaV92R21T02);
-  it('LA-V92-R02-T02 A record page\'s wiki lists its children one level deep', proveLaV92R21T02);
+  it('LA-PAT-RECORD-PAGE-R16-T01 A product page lists its domains but none of their records', proveLaV92R21T02);
+  it('LA-PAT-RECORD-PAGE-R02-T01 A record page\'s wiki lists its children one level deep', proveLaV92R21T02);
 });

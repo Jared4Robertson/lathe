@@ -26,22 +26,19 @@ const git = (root: string, ...args: string[]) => {
   return result.stdout;
 };
 
-// The next schema's converter, as Lathe would ship it in upgrades/: the files phase moves the renamed column on the
-// raw rows; the records phase writes through the store and leaves what it cannot judge as a to-do.
+// The next schema's converter, as Lathe would ship it in upgrades/: it moves the renamed column on the raw rows, gives
+// each product its color, and leaves what it cannot judge as a to-do.
 const CONVERTER = `
 export default {
   files(data, notes) {
     data.write('product', data.read('product').map(({ notes: delivery, ...row }) => (delivery === undefined ? row : { ...row, delivery })));
     notes.changed('product.notes is now product.delivery');
-  },
-  async records(store, notes) {
-    for (const row of store.rows('product')) {
-      if (!row.color) {
-        await store.set('product', row.id, { color: '#2E6A88' });
-        notes.changed(row.id + ' takes the color #2E6A88');
-      }
-      if (row.delivery) notes.todo(row.id + ': check that its delivery note reads well on its own');
-    }
+    data.write('product', data.read('product').map((row) => {
+      if (row.color) return row;
+      notes.changed(row.id + ' takes the color #2E6A88');
+      return { ...row, color: '#2E6A88' };
+    }));
+    for (const row of data.read('product')) if (row.delivery) notes.todo(row.id + ': check that its delivery note reads well on its own');
   },
 };
 `;
@@ -73,7 +70,7 @@ describe('moving a product to a new Lathe', () => {
     const root = temp('lathe-upgrade-');
     git(root, 'init', '-q');
     expect(run(now, root, 'init', '--name', 'Gadget Shop', '--prefix', 'GS').status).toBe(0);
-    expect(run(now, root, 'set', 'GS', '--notes', 'Ships every Friday.').status).toBe(0);
+    expect(run(now, root, 'product', 'change-product', '--id', 'GS', '--notes', 'Ships every Friday.').status).toBe(0);
     git(root, 'add', '.');
     git(root, 'commit', '-q', '-m', 'Set up Lathe');
 
@@ -81,7 +78,7 @@ describe('moving a product to a new Lathe', () => {
     const refused = run(next, root, 'check');
     expect(refused.status).toBe(2);
     expect(refused.stderr.trim()).toBe(`This product's data is for schema ${SCHEMA_VERSION}; this Lathe uses schema ${target}. Run \`npx lathe upgrade\` to move it forward.`);
-    expect(run(next, root, 'show', 'GS').stderr).toContain('Run `npx lathe upgrade` to move it forward.');
+    expect(run(next, root, 'product', 'get-product', '--id', 'GS').stderr).toContain('Run `npx lathe upgrade` to move it forward.');
 
     // S02: with work not committed, the upgrade refuses; once it is clean, it converts and says what changed.
     writeFileSync(path.join(root, 'draft.md'), 'Not committed yet.\n');
@@ -116,7 +113,7 @@ describe('moving a product to a new Lathe', () => {
     const checked = run(next, root, 'check');
     expect(checked.status).toBe(0);
     expect(checked.stdout).toContain('0 errors, 0 warnings.');
-    expect(run(next, root, 'show', 'GS').stdout).toContain('delivery: Ships every Friday.');
+    expect(readFileSync(path.join(root, 'data', 'product.jsonl'), 'utf8')).toContain('"delivery":"Ships every Friday."');
     git(root, 'commit', '-q', '-am', 'Upgrade to the next Lathe');
     expect(run(next, root, 'upgrade').stdout).toBe(`${root} is already at schema ${target}; there is nothing to upgrade.\n`);
 

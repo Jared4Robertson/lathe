@@ -1,4 +1,4 @@
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 
 // A shape for each kind (LA-V93-R06): a secondary cue, after the label, that keeps a box's
 // rectangular footprint so boxes still stack. In the Tree view a box's outline is its
@@ -64,7 +64,7 @@ export const SHAPES: Readonly<Record<Shape, ShapeSpec>> = {
   chevron: { name: 'a chevron', kinds: 'Flow step', room: { l: 6, r: 6, t: 0, b: 0 }, draw: 'clipped' },
   window: { name: 'a window with a top bar', kinds: 'View (an interface with a plug)', room: { l: 0, r: 0, t: 6, b: 0 }, draw: 'box' },
   port: { name: 'a box with a port notch on its left', kinds: 'Endpoint', room: { l: 2, r: 0, t: 0, b: 0 }, draw: 'clipped' },
-  component: { name: 'a box with component tabs', kinds: 'Technical records: repository, data model, value type, predicate, event type, projection, handlers, service, UI component, adapter', room: { l: 4, r: 0, t: 0, b: 0 }, draw: 'clipped' },
+  component: { name: 'a box with component tabs', kinds: 'Technical records: repository, data model, value type, predicate, event type, projection, reader, handlers, service, UI component, adapter, entry point, tooling', room: { l: 4, r: 0, t: 0, b: 0 }, draw: 'clipped' },
   stripes: { name: 'a striped box', kinds: 'Table', room: { l: 0, r: 0, t: 5, b: 5 }, draw: 'box' },
   shield: { name: 'a shield', kinds: 'Every kind of test', room: { l: 0, r: 0, t: 0, b: 6 }, draw: 'clipped' },
   diamond: { name: 'a diamond', kinds: 'Open question', room: { l: 14, r: 14, t: 2, b: 2 }, draw: 'clipped' },
@@ -102,6 +102,7 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   query: { shape: 'parallelogram', mark: 'lens' },
   policy: { shape: 'octagon', mark: 'gear' },
   domain_service: { shape: 'box', mark: 'gear' },
+  storage_requirement: { shape: 'page', mark: 'data' },
   term: { shape: 'box', mark: 'marker' },
   capability: { shape: 'slice' },
   use_case: { shape: 'stadium' },
@@ -116,13 +117,16 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   endpoint: { shape: 'port' },
   api_requirement: { shape: 'page' },
   integration: { shape: 'box', mark: 'port' },
+  data_store: { shape: 'stripes', mark: 'data' },
   repository: TECHNICAL,
   data_model: TECHNICAL,
   table: { shape: 'stripes' },
   value_type: TECHNICAL,
+  rule: TECHNICAL,
   predicate: TECHNICAL,
   event_type: TECHNICAL,
   projection: TECHNICAL,
+  reader: TECHNICAL,
   command_handler: TECHNICAL,
   query_handler: TECHNICAL,
   event_handler: TECHNICAL,
@@ -130,6 +134,8 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   ui_component: TECHNICAL,
   endpoint_handler: TECHNICAL,
   adapter: TECHNICAL,
+  entry_point: TECHNICAL,
+  tooling: TECHNICAL,
   standard: { shape: 'stack', mark: 'ruler' },
   standard_rule: { shape: 'octagon', mark: 'ruler' },
   test_data_set: { shape: 'box', mark: 'data' },
@@ -138,6 +144,7 @@ const KIND_SHAPES: Readonly<Record<string, KindShape>> = {
   specification_test: TEST,
   policy_test: TEST,
   domain_service_test: TEST,
+  storage_requirement_test: TEST,
   use_case_test: TEST,
   view_test: TEST,
   endpoint_test: TEST,
@@ -155,7 +162,7 @@ const FOLDER: KindShape = { shape: 'folder' };
 export const shapeOf = (kind: string, group = false): KindShape => (group ? FOLDER : KIND_SHAPES[kind] ?? PLAIN);
 
 /** A node's shape by its ID: a record's kind's, or a group's folder. */
-export function nodeShape(index: SpecIndex, id: string): KindShape {
+export function nodeShape(index: RecordIndex, id: string): KindShape {
   const record = index.byId.get(id);
   return record ? shapeOf(record.kind) : FOLDER;
 }

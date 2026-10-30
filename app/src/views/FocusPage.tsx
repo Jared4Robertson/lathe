@@ -3,14 +3,21 @@ import { lazy, Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRe
 import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { expandAllOnPage } from '../components/TreeList';
-import { CARD_MAX, CARD_MIN, DEFAULT_GRAPH_SETTINGS, useSessionSettings } from '../graph/settings';
+import { CARD_MAX, CARD_MIN, DEFAULT_GRAPH_SETTINGS } from '../exploring/session-settings/model';
+import { useSessionSettings } from '../exploring/session-settings/use-session-settings';
+import { chooseGraphLayout } from '../exploring/session-settings/commands/choose-graph-layout';
+import { showOrHideMinimap } from '../exploring/session-settings/commands/show-or-hide-minimap';
+import { showOrHideAllLinks } from '../exploring/session-settings/commands/show-or-hide-all-links';
+import { resizeWikiCard } from '../exploring/session-settings/commands/resize-wiki-card';
 import type { GraphSettings } from '../graph/GraphPage';
 import { isGroup } from '../graph/model';
 import { Link, navigate, onLeaveEntry } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { BottomSheet } from '../shell/BottomSheet';
 import { useNarrow } from '../shell/useNarrow';
-import { parseSpecRoute, type SpecIndex, type SpecState } from '../specs/data';
+import { parseSpecRoute } from './spec-route';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { type DataState } from '../exploring/record-summaries/reads';
 import { NotFound } from '../specs/SpecPages';
 import { addressOf, HOME_PATH, focusOf, isFocusRoute, pathOf, STAGE_LABELS, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
 import { HeaderStrip } from './HeaderStrip';
@@ -18,8 +25,11 @@ import { createOpenSpaceStore, usePageRoom, useOpenSpaceMeasure, useRoom } from 
 import { PageActions, PageBar, STAGE_COMMANDS } from './PageBar';
 import { createPeekStore } from './peek';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
-import { rememberedStage, rememberStage, useNewPlaceOpener, usePlace, withStageIn, type TabsApi } from './usePlace';
+import { rememberedStage, useNewPlaceOpener, usePlace, withStageIn, type TabsApi } from './usePlace';
 import { hereOf, type PlaceView } from './place';
+import { DEFAULT_TRACE_VIEW } from '../trace/views';
+import { runTabSetCommand } from '../exploring/tab-set/run';
+import { rememberStage } from '../exploring/tab-set/commands/remember-stage';
 import { takeMenuRecord } from '../shell/desktopRecord';
 import { usePreview } from './preview';
 import { WikiCard } from './WikiCard';
@@ -29,6 +39,7 @@ import { parseFormatPage } from '../format/reference';
 import { overlaysOf, pageHref } from './overlays';
 import { useChanges } from '../changes/changes';
 import { useLiveVersion } from '../changes/marks';
+import { useJumpChanges } from '../changes/jump';
 
 // One page for one thing (a record, a group, a product or a domain), at one address. One stage
 // fills the window behind everything: the Graph, the ERD (of a domain, an aggregate or an entity's
@@ -42,7 +53,7 @@ import { useLiveVersion } from '../changes/marks';
 //
 // The page shows one place (usePlace.ts): on the web the browser tab's, in the desktop app the active tab's (useTabs.ts),
 // each with its own stage, focus, camera, depth, filters, wiki card and history. How the graph is laid out, the
-// minimap and the wiki card's width are the window's, not a place's (graph/settings.ts).
+// minimap and the wiki card's width are the window's, not a place's (exploring/session-settings).
 
 const GraphView = lazy(() => import('../graph/GraphPage').then((m) => ({ default: m.GraphView })));
 const ErdView = lazy(() => import('../erd/ErdView').then((m) => ({ default: m.ErdView })));
@@ -57,7 +68,7 @@ export const CARD_SETTLE_MS = 180;
 
 // ---------- The page ----------
 
-export function FocusPage({ spec, route, search }: { spec: SpecState; route: FocusRoute; search: string }) {
+export function FocusPage({ spec, route, search }: { spec: DataState; route: FocusRoute; search: string }) {
   const { index } = spec;
   let body: ReactNode;
   if (!index) body = <div className="placeholder focus-missing panel"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading specs…'}</p></div>;
@@ -73,7 +84,7 @@ export function FocusPage({ spec, route, search }: { spec: SpecState; route: Foc
   );
 }
 
-function invalid(index: SpecIndex, route: FocusRoute): ReactNode | null {
+function invalid(index: RecordIndex, route: FocusRoute): ReactNode | null {
   if (route.page === 'product') {
     return index.byId.get(route.product)?.kind === 'product' ? null : <div className="focus-missing panel"><NotFound what="product" id={route.product} /></div>;
   }
@@ -110,7 +121,7 @@ function useSettled<T>(value: T, ms: number): T {
 }
 
 /** The route and query of the place's address; the window's own while the place's is not a focus page's. */
-function useShownRoute(index: SpecIndex, address: string, addressRoute: FocusRoute, addressSearch: string): { route: FocusRoute; search: string } {
+function useShownRoute(index: RecordIndex, address: string, addressRoute: FocusRoute, addressSearch: string): { route: FocusRoute; search: string } {
   return useMemo(() => {
     const q = address.indexOf('?');
     const path = q < 0 ? address : address.slice(0, q);
@@ -121,7 +132,7 @@ function useShownRoute(index: SpecIndex, address: string, addressRoute: FocusRou
   }, [index, address, addressRoute, addressSearch]);
 }
 
-function Focused({ index, route: addressRoute, search: addressSearch }: { index: SpecIndex; route: FocusRoute; search: string }) {
+function Focused({ index, route: addressRoute, search: addressSearch }: { index: RecordIndex; route: FocusRoute; search: string }) {
   // The place shown: the browser tab's on the web, the active tab's in the desktop app, whose address the window's follows.
   const place = usePlace(index, addressRoute, addressSearch);
   const { route, search } = useShownRoute(index, place.address, addressRoute, addressSearch);
@@ -144,13 +155,13 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   const setStage = useCallback((next: StageName) => {
     if (next === stage) return;
     // A phone's switch leaves the stage remembered for a wide screen alone.
-    if (!narrow) rememberStage(next);
+    if (!narrow) runTabSetCommand(rememberStage, { stage: next });
     navigate(withStageIn(place.address, next), true);
     announce(`${STAGE_LABELS[next]} stage`);
   }, [stage, narrow, place.address, announce]);
   // The stage a link names becomes the one remembered, for the first tab of a new session.
   const linked = stageFromSearch(search);
-  useEffect(() => { if (linked && !narrow) rememberStage(linked); }, [linked, narrow]);
+  useEffect(() => { if (linked && !narrow) runTabSetCommand(rememberStage, { stage: linked }); }, [linked, narrow]);
   // Focus lost with the stage it was on (a key switched the stage) lands on the new stage's button
   // in the switch. On a first load focus stays at the start, where Tab finds the skip link.
   const shownStage = useRef(stage);
@@ -173,18 +184,22 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   // How the graph is laid out, the minimap and the wiki card's width are the window's, whatever the place; the depth,
   // the kind filters and the card's open and expanded state are the place's (LA-V93-R72): moving through the stage
   // never changes either.
-  const { graph: look, setGraph, card, setCard } = useSessionSettings();
+  const { graph: look, card } = useSessionSettings();
   const { view, setView } = place;
   const filters = useMemo(() => ({ hiddenKinds: new Set(view.hiddenKinds) }), [view.hiddenKinds]);
   const settings = useMemo<GraphSettings>(() => ({ ...look, depth: view.depth, filters }), [look, view.depth, filters]);
   const onSettings = useCallback((next: GraphSettings) => {
-    setGraph({ layout: next.layout, minimap: next.minimap });
+    chooseGraphLayout({ layout: next.layout });
+    showOrHideMinimap({ shown: next.minimap });
+    showOrHideAllLinks({ shown: next.allLinks });
     setView((v) => {
       const kinds = [...next.filters.hiddenKinds];
       const same = next.depth === v.depth && kinds.length === v.hiddenKinds.length && kinds.every((k) => v.hiddenKinds.includes(k));
       return same ? v : { ...v, depth: next.depth, hiddenKinds: kinds };
     });
-  }, [setGraph, setView]);
+  }, [setView]);
+  // The Trace's view is the place's: each tab its own (LA-V98).
+  const setTraceView = useCallback((trace: PlaceView['trace']) => setView((v) => (v.trace === trace ? v : { ...v, trace })), [setView]);
   const setCardView = useCallback((patch: Partial<PlaceView['card']>) => setView((v) => (
     Object.entries(patch).every(([k, x]) => v.card[k as keyof PlaceView['card']] === x) ? v : { ...v, card: { ...v.card, ...patch } }
   )), [setView]);
@@ -214,8 +229,8 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   const cardExpanded = preview === null && view.card.expanded;
   // Made once per width, so the memoized card draws again only for a new page.
   const cardHandle = useMemo(() => (
-    <CardHandle width={card.width} onWidth={(width) => setCard({ width })} onReset={() => setCard({ width: null })} onCollapse={collapseCard} />
-  ), [card.width, setCard, collapseCard]);
+    <CardHandle width={card.width} onWidth={(width) => resizeWikiCard({ width })} onReset={() => resizeWikiCard({ width: null })} onCollapse={collapseCard} />
+  ), [card.width, collapseCard]);
   useEffect(() => { setSheet(false); }, [narrow]);
 
   // What the page shows, for Claude's app_focus tool in the desktop chat (LA-PLT-UC19-R06).
@@ -315,6 +330,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   useCommand('openRecordInNewTab', () => { const id = takeMenuRecord(); if (id) openNew(hrefFor(id)); }, !!tabs);
 
   useFollow(focus, onNavigate, stageEl);
+  useJumpChanges(index, focus, onNavigate);
 
   const content: Record<StageName, ReactNode> = {
     graph: (
@@ -329,7 +345,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
     ),
     trace: (
       <Suspense fallback={<p className="hint graph-loading">Loading the trace…</p>}>
-        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
+        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} view={view.trace} onView={setTraceView} />
       </Suspense>
     ),
   };
@@ -431,7 +447,7 @@ function useFollow(focus: string, onNavigate: (id: string) => void, stageEl: Ref
  * The stage behind the products picker (LA-V97): the last product's stage, on the stage last used, dimmed and out of
  * reach under the picker; or, with no product to show (a first launch), an empty map.
  */
-export function StageBackdrop({ index, focus }: { index: SpecIndex | null; focus: string | null }) {
+export function StageBackdrop({ index, focus }: { index: RecordIndex | null; focus: string | null }) {
   const [space] = useState(createOpenSpaceStore);
   const stageEl = useRef<HTMLDivElement>(null);
   const layout = useRef<HTMLDivElement>(null);
@@ -448,7 +464,7 @@ export function StageBackdrop({ index, focus }: { index: SpecIndex | null; focus
       <Suspense fallback={fallback}>
         {stage === 'graph' && <GraphView index={index} focus={shown} onNavigate={ignore} settings={settings} onSettingsChange={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
         {stage === 'erd' && <ErdView index={index} focus={shown} onNavigate={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
-        {stage === 'trace' && <TraceView index={index} focus={shown} onNavigate={ignore} hrefFor={addressOf} onPeek={peek.set} onCounts={ignore} space={space} />}
+        {stage === 'trace' && <TraceView index={index} focus={shown} onNavigate={ignore} hrefFor={addressOf} onPeek={peek.set} onCounts={ignore} space={space} view={DEFAULT_TRACE_VIEW} onView={ignore} />}
       </Suspense>
     );
   }
@@ -460,7 +476,7 @@ export function StageBackdrop({ index, focus }: { index: SpecIndex | null; focus
 }
 
 /** The route of the page the wiki card shows: the settled focus's, or the address's own once they agree. */
-function useCardRoute(index: SpecIndex, settled: string, route: FocusRoute): FocusRoute {
+function useCardRoute(index: RecordIndex, settled: string, route: FocusRoute): FocusRoute {
   const [last, setLast] = useState<{ focus: string; route: FocusRoute }>({ focus: focusOf(route), route });
   if (focusOf(route) === settled && (last.focus !== settled || last.route !== route)) {
     setLast({ focus: settled, route });
@@ -499,7 +515,7 @@ function CardHandle({ width, onWidth, onReset, onCollapse }: { width: number | n
 // ---------- The phone layout ----------
 
 interface PhoneLayoutProps {
-  index: SpecIndex;
+  index: RecordIndex;
   /** The desktop app's tabs, shown as the Open pages sheet; null on the web. */
   tabs: TabsApi | null;
   stage: StageName;

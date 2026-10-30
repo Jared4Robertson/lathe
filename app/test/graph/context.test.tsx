@@ -1,6 +1,7 @@
+import { recordIndexOf } from '../read-view';
+import type { ServedData } from '../read-view';
 import './setup';
-import type { SpecData } from '../../../lathe/src/server/contract';
-import { addRows, indexOf } from '../fixtures/load';
+import { addRows } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { graphSummary, keyboardOrder, type Box } from '../../src/graph/GraphPage';
@@ -8,7 +9,7 @@ import { graphLevels, graphTarget } from '../../src/graph/steps';
 import { groupLabel, groupMembers, isGraphNode, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { treeChildren, treeParent } from '../../src/graph/tree';
 import { labelLines } from '../../src/graph/text';
-import { domainFolders } from '../../src/specs/folders';
+import { ownerFolders } from '../../src/exploring/folder-tree/folders';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { boxElement, boxElements, drawnBox, graphHost, isCenter, scene } from './scene';
@@ -20,7 +21,7 @@ const ids = (n: Neighborhood) => n.nodes.map((x) => x.id).sort();
 const node = (id: string) => boxElement(id);
 const STAGES = ['P-D/domain-model', 'P-D/use-cases', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan'];
 
-async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1) {
+async function showGraph(path: string, workspace: ServedData = testWorkspace(), depth = 1) {
   startAtDepth(depth);
   await openApp(`${path}?stage=graph`, { data: workspace });
   await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
@@ -48,7 +49,7 @@ describe('the graph tree, its depth and its camera', () => {
 
   it('LA-EXP-DS04-T03 LA-V93-R23-T06 The graph\'s tree is the nav\'s: a domain\'s five stages, a folder per kind, the records that start a branch of each stage, and a product\'s own stages and domains', () => {
     const index = testIndex();
-    const { stages } = domainFolders(index, 'P-D');
+    const { stages } = ownerFolders(index, 'P-D');
     expect(treeChildren(index, 'P-D')).toEqual([...STAGES, 'P-D/question']);
     expect(groupLabel(index, 'P-D/technical-specification')).toBe(`Technical specification (${stages.find((s) => s.stage === 'technical-specification')!.count})`);
     expect(treeChildren(index, 'P-D/domain-model')).toEqual(stages.find((s) => s.stage === 'domain-model')!.folders.filter((f) => f.count > 0).map((f) => f.key));
@@ -69,11 +70,14 @@ describe('the graph tree, its depth and its camera', () => {
     expect(groupMembers(index, 'P-D/interaction-design/endpoint').map((r) => r.id)).toEqual(['P-D-EP01', 'P-D-EP02']);
     expect(treeChildren(index, 'P-D/technical-specification')).toEqual([
       'P-D/technical-specification/repository', 'P-D/technical-specification/data_model', 'P-D/technical-specification/table',
-      'P-D/technical-specification/command_handler', 'P-D/technical-specification/ui_component', 'P-D/technical-specification/endpoint_handler',
+      'P-D/technical-specification/rule', 'P-D/technical-specification/command_handler', 'P-D/technical-specification/ui_component', 'P-D/technical-specification/endpoint_handler',
       'P-D/technical-specification/adapter',
     ]);
-    // An aggregate's own stage folds under it, through a group per kind; a command's policy under the command.
-    expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event', 'P-D-A3/command']);
+    // An aggregate's own stage folds under it, through a group per kind; an entity's commands under the entity, and a
+    // command's policy under the command.
+    expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event']);
+    expect(treeChildren(index, 'P-D-EN03')).toEqual(['P-D-CMD01', 'P-D-CMD02']);
+    expect(treeParent(index, 'P-D-CMD01')).toBe('P-D-EN03');
     expect(treeChildren(index, 'P-D-CMD04')).toEqual(['P-D-PO01']);
     // The product: its Shared folder (its own stages: the value object both domains use, the product's interface), then its domains.
     expect(treeChildren(index, 'P')).toEqual(['P/shared', 'P-D', 'P-E']);
@@ -90,7 +94,7 @@ describe('the graph tree, its depth and its camera', () => {
     }
   });
 
-  it('LA-EXP-DS09-T09 LA-EXP-DS10-T03 Every drawn box shows its label, however small on screen, and is a keyboard stop; the summary counts the framed picture', async () => {
+  it('LA-EXP-DS09-T09 LA-EXP-DS10-T03 Every drawn box carries its label and is a keyboard stop; the summary counts the framed picture', async () => {
     // A use case with sixty requirements: framed from its domain, they are a few pixels tall each.
     const w = testWorkspace();
     for (let i = 3; i <= 60; i++) addRows(w, 'uc_requirement', { id: `P-D-UC01-R${String(i).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'P-D-UC01', statement: `Rule ${i} MUST hold.` });
@@ -115,9 +119,9 @@ describe('the graph tree, its depth and its camera', () => {
     ];
     expect(keyboardOrder(boxes)).toEqual(['a', 'c', 'b']);
     // The summary counts the framed picture: the domain, its parent and three levels below it.
-    const n = neighborhood(indexOf(w), 'P-D', 3);
+    const n = neighborhood(recordIndexOf(w), 'P-D', 3);
     await waitFor(() => expect(document.querySelector('.header-strip-counts')!.textContent).toBe(graphSummary(n)));
-    expect(graphSummary(n)).toBe('32 records · 26 groups · 57 links');
+    expect(graphSummary(n)).toBe('33 records · 27 groups · 59 links');
   });
 
   it('LA-V93-R20-T01 Filters have a Minimap switch, off by default and kept while walking, and the minimap is an overview of the whole map', async () => {
@@ -165,10 +169,10 @@ describe('the graph tree, its depth and its camera', () => {
 
     await showGraph('/P-D-UC01');
     const steps = within(screen.getByRole('group', { name: 'Walk the stage' }));
-    expect(steps.getByRole('button', { name: 'Step out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'ArrowLeft A');
-    expect(steps.getByRole('button', { name: 'Step to the next sibling' })).toHaveAttribute('aria-keyshortcuts', 'ArrowDown S');
-    expect(steps.getByRole('button', { name: 'Out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'Shift+ArrowUp Shift+W');
-    expect(steps.getByRole('button', { name: 'In to the first child' })).toHaveAttribute('aria-keyshortcuts', 'Shift+ArrowDown Shift+S');
+    expect(steps.getByRole('button', { name: 'Step out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'ArrowLeft A H');
+    expect(steps.getByRole('button', { name: 'Step to the next sibling' })).toHaveAttribute('aria-keyshortcuts', 'ArrowDown S J');
+    expect(steps.getByRole('button', { name: 'Out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'Shift+ArrowUp Shift+W Shift+K');
+    expect(steps.getByRole('button', { name: 'In to the first child' })).toHaveAttribute('aria-keyshortcuts', 'Shift+ArrowDown Shift+S Shift+J');
     // With a modifier held, nothing steps.
     fireEvent.keyDown(document.body, { key: 'ArrowDown', code: 'ArrowDown', altKey: true });
     expect(window.location.pathname).toBe('/P-D-UC01');
@@ -196,13 +200,13 @@ describe('the graph tree, its depth and its camera', () => {
   const NESTED_KEYS = { ArrowUp: 'out', ArrowDown: 'in', ArrowLeft: 'previous', ArrowRight: 'next' } as const;
   const ARROWS = {
     tree: { ArrowLeft: 'out', ArrowRight: 'in', ArrowUp: 'previous', ArrowDown: 'next' },
-    nested: NESTED_KEYS,
-  } as const;
+    nested: NESTED_KEYS } as const;
   const STEP_BUTTONS = { out: 'Step out to the parent', in: 'Step in to the first child', previous: 'Step to the previous sibling', next: 'Step to the next sibling' };
   const MARKS: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' };
   const MOVE_OF = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' } as const;
   // Each arrow's walking letter, which the step's keys name after it.
   const LETTERS: Record<string, string> = { ArrowLeft: 'A', ArrowRight: 'D', ArrowUp: 'W', ArrowDown: 'S' };
+  const VIM: Record<string, string> = { ArrowLeft: 'H', ArrowRight: 'L', ArrowUp: 'K', ArrowDown: 'J' };
 
   const VIEWS = { tree: 'Tree', nested: 'Nested' } as const;
   for (const layout of ['tree', 'nested'] as const) {
@@ -217,7 +221,7 @@ describe('the graph tree, its depth and its camera', () => {
       const arrows = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'] as const;
       expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([...arrows.map((k) => STEP_BUTTONS[ARROWS[layout][k]]), 'Out to the parent', 'In to the first child']);
       arrows.forEach((key, i) => {
-        expect(buttons[i], `${layout}: ${key}`).toHaveAttribute('aria-keyshortcuts', `${key} ${LETTERS[key]}`);
+        expect(buttons[i], `${layout}: ${key}`).toHaveAttribute('aria-keyshortcuts', `${key} ${LETTERS[key]} ${VIM[key]}`);
         expect(buttons[i], `${layout}: ${key}`).toHaveTextContent(`${MARKS[key]}${LETTERS[key]}`);
       });
       // Each arrow on the canvas steps where the mapping says, then Back returns to the stage.

@@ -1,12 +1,12 @@
+import type { ServedData } from './read-view';
 import './graph/setup';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import type { SpecData } from '../../lathe/src/server/contract';
 import { findItems, rankItems } from '../src/shell/QuickOpen';
 import { colorField, colorOf, iconField, monogramOf, productOfPath, spaceOf } from '../src/shell/spaces';
-import { spaceIndex } from '../src/specs/data';
-import { addRows, indexOf, setRow } from './fixtures/load';
+import { addRows, setRow } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 import { workspace } from './fixtures/workspace';
 import { modelWorkspace } from './fixtures/model';
 import { checksPanel, openApp } from './helpers';
@@ -21,7 +21,7 @@ const panel = () => nav().querySelector<HTMLElement>('.space-items')!;
 const announcer = () => screen.getByTestId('announcer');
 
 /** The fixture with an icon on Notebook, capabilities in Shopping, and a third product. */
-function spacesWorkspace(): SpecData {
+function spacesWorkspace(): ServedData {
   const ws = setRow(workspace(), 'product', 'NF', { icon: '📓', color: '#335577' });
   addRows(ws, 'capability',
     { id: 'DM-SHOP-CAP02', title: 'Paying for the basket', domain_id: 'DM-SHOP', position: 3 },
@@ -47,9 +47,9 @@ describe('product spaces', () => {
     expect(colorField('url(x)')).toBeNull();
     expect(colorOf('TL')).toBe(colorOf('TL'));
     expect(colorOf('TL')).not.toBe(colorOf('LA'));
-    const index = indexOf(spacesWorkspace());
-    expect(spaceOf(index.byId.get('NF')!).color).toBe('#335577');
-    expect(spaceOf(index.byId.get('DM')!).color).toBe(colorOf('DM'));
+    const nf = spacesWorkspace().sources[0].tables.product.find((p) => p.id === 'NF')!;
+    expect(spaceOf({ id: 'NF', title: 'Notebook', color: String(nf.color) }).color).toBe('#335577');
+    expect(spaceOf({ id: 'DM', title: 'Demo shop' }).color).toBe(colorOf('DM'));
   });
 
   it('LA-V90-R08-T01 The rail lists the products in order with their icons or monograms, and nothing above every product', async () => {
@@ -66,14 +66,16 @@ describe('product spaces', () => {
   });
 
   it('LA-EXP-DS02-T01 The current space is the product of the page, its Checks page included', () => {
-    const index = indexOf(spacesWorkspace());
-    expect(productOfPath(index, '/NF-NOTE')).toBe('NF');
-    expect(productOfPath(index, '/DM-SHOP-UC01-R01')).toBe('DM');
-    expect(productOfPath(index, '/DM-SHOP/use_case')).toBe('DM');
+    // The product an address's ID starts with, the longest one first.
+    const products = ['AB', 'DM', 'NF'];
+    expect(productOfPath(products, '/NF-NOTE')).toBe('NF');
+    expect(productOfPath(products, '/DM-SHOP-UC01-R01')).toBe('DM');
+    expect(productOfPath(products, '/DM-SHOP/use_case')).toBe('DM');
     // Checks opens over the page's stage (`?panel=checks`), so the page's product is the space.
-    expect(productOfPath(index, '/NF')).toBe('NF');
-    expect(productOfPath(index, '/format')).toBeNull();
-    expect(productOfPath(index, '/')).toBeNull();
+    expect(productOfPath(products, '/NF')).toBe('NF');
+    expect(productOfPath(['DM', 'DM-X'], '/DM-X-UC01')).toBe('DM-X');
+    expect(productOfPath(products, '/format')).toBeNull();
+    expect(productOfPath(products, '/')).toBeNull();
   });
 
   it('LA-V90-R09-T01 The current space is marked with aria-current and an accent bar', async () => {
@@ -165,7 +167,7 @@ describe('product spaces', () => {
     expect(window.location.pathname).toBe('/NF-NOTE');
   });
 
-  it('LA-EXP-INV04-T A space\'s last page is remembered for the session only', async () => {
+  it('LA-V90-R73-T01 A space\'s last page is remembered for the session only', async () => {
     await twoSpacesVisited();
     // Remembered for the session, not for ever.
     expect(JSON.parse(window.sessionStorage.getItem('lathe:space-pages')!)).toMatchObject({ DM: '/DM-SHOP-UC01', NF: '/NF-NOTE' });
@@ -208,8 +210,7 @@ describe('product spaces', () => {
   });
 
   it('LA-V64-R04-T01 Quick find searches the current space only', async () => {
-    const index = indexOf(spacesWorkspace());
-    const ranked = rankItems(findItems(spaceIndex(index, 'NF')), 'n', 50);
+    const ranked = rankItems(findItems(recordIndexOf(spacesWorkspace(), 'NF')), 'n', 50);
     expect(ranked.some((i) => i.id === 'NF-NOTE')).toBe(true);
     expect(ranked.filter((i) => /^[A-Z]/.test(i.id)).every((i) => i.id.startsWith('NF'))).toBe(true);
 

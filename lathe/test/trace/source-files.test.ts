@@ -61,9 +61,10 @@ describe('source file tracing', () => {
       product: [{ id: 'EX', title: 'Example', description: 'A small library that lends tools.' }],
       domain: [{ id: 'EX-LEND', title: 'Lending', product_id: 'EX', subdomain_type: 'core', description: 'Lending tools to members.' }],
       aggregate: [{ id: 'EX-LEND-A1', title: 'Loan', domain_id: 'EX-LEND', identity: 'Loan ID', description: 'One tool lent to one member.' }],
+      entity: [{ id: 'EX-LEND-EN01', title: 'Loan', aggregate_id: 'EX-LEND-A1', role: 'root', description: 'The loan itself.' }],
       repository: [{ id: 'EX-LEND-REPO01', title: 'Loans', domain_id: 'EX-LEND', file: 'src/lending', description: 'Keeps loans in the loans table.' }],
       persists: [{ source_id: 'EX-LEND-REPO01', target_id: 'EX-LEND-A1' }],
-      command: [{ id: 'EX-LEND-CMD01', title: 'Open a loan', aggregate_id: 'EX-LEND-A1', description: 'Lends a free tool to a member.' }],
+      command: [{ id: 'EX-LEND-CMD01', title: 'Open a loan', entity_id: 'EX-LEND-EN01', description: 'Lends a free tool to a member.' }],
       command_handler: [{ id: 'EX-LEND-CMD01-H', title: 'openLoan', command_id: 'EX-LEND-CMD01', file: './src/open.ts', description: 'Saves the loan in one transaction.' }],
     };
     const root = await build(data, { missing: ['src/lending'], files: { ...LEFT_OUT, 'src/lending/store.ts': '', 'src/helpers.ts': '', 'scripts/seed.js': '' } });

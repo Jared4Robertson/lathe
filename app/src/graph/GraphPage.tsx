@@ -1,6 +1,6 @@
 // The Graph stage of an address, /<id>?stage=graph (LA-V93).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
-import { type SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { Icon } from '../components/icons';
@@ -19,27 +19,37 @@ import {
 } from './model';
 import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
 import { StageCamera, StageKey, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
-import { DEFAULT_GRAPH_SETTINGS } from './settings';
-import { keepCamera, keptCamera } from '../views/cameras';
-import { graphMap, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
-import { nestedMap, type NestedMap, type NestedNode } from './nested';
+import { DEFAULT_GRAPH_SETTINGS } from '../exploring/session-settings/model';
+import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
+import { keptCamera } from '../exploring/tab-set/reads';
+import { runTabSetCommand } from '../exploring/tab-set/run';
+import { mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
+import { lastLayout, useLaidOut } from './layout';
+import { productInput } from './layout-input';
+import { type NestedMap, type NestedNode } from './nested';
+import { type GroundMap, type GroundNode } from './ground';
+import { treeParent } from './tree';
+import { linkLine, linksOf, MOST_LINKS } from './map-links';
 import { setTextMeasure, type TextMeasure } from './text';
-import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, frameRect, MAX_ZOOM, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
+import { BLOCK_BELOW_PX, CHILD_READ_PX, drawnFor, drawnKey, drawnNested, frameGround, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
+import { followBox, useMorph } from './morph';
 import { nodeShape } from './shapes';
 import { Button } from '../components/Button';
 import { pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
+import { keepLabel, labelStrip } from './sticky';
 import { focusStrength } from './fade';
-import { boxColors, paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type PaintState } from './paint';
+import { boxColors, isBlock, paint, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
 import { useChanges } from '../changes/changes';
 import { useChangesKey } from '../changes/ChangesKey';
-import { GHOST_MS, lensFade, marksMoving, useStageMarks } from '../changes/marks';
+import { rollupText } from '../changes/rollup';
+import { GHOST_MS, highlightFade, marksMoving, useLiveVersion, useStageMarks } from '../changes/marks';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
 // Clicking a record or a group focuses it (through onNavigate, so the host changes the address and
@@ -56,21 +66,27 @@ import { GHOST_MS, lensFade, marksMoving, useStageMarks } from '../changes/marks
 // the address, so it can sit in any pane. The focus page (app/src/views/FocusPage.tsx) hosts it in
 // the Graph stage and keeps its settings across pages.
 
-/** How the graph draws the tree (LA-V93-R21): Tree, parents beside their children; Nested, parents made of them as boxes. */
-export type GraphLayout = 'tree' | 'nested';
+/**
+ * How the graph draws the product (LA-V93-R21): Tree, parents beside their children; Nested, parents made of them as
+ * boxes; Map, domains as districts on the ground, records one size, links as lines (LA-V93-R74).
+ */
+export type GraphLayout = 'tree' | 'nested' | 'map';
 export const GRAPH_LAYOUTS: readonly { layout: GraphLayout; label: string; tip: string }[] = [
   { layout: 'tree', label: 'Tree', tip: 'Tree: each parent beside its children' },
   { layout: 'nested', label: 'Nested', tip: 'Nested: each parent a box made of its children' },
+  { layout: 'map', label: 'Map', tip: 'Map: domains as districts, every record one size, links as lines' },
 ];
 
-/** What the person set on the graph: the view, depth, kind filters and the minimap. */
+/** What the person set on the graph: the view, depth, kind filters, the minimap and the Map's links. */
 export interface GraphSettings {
-  /** Tree or Nested (LA-V93-R21). Tree by default. */
+  /** Tree, Nested or Map (LA-V93-R21). Tree by default. */
   layout: GraphLayout;
   depth: number;
   filters: Filters;
   /** The minimap in a corner of the canvas. Off by default. */
   minimap: boolean;
+  /** In the Map, every link between the records drawn as a line, not only the focus's and the selection's (LA-V93-R74). Off by default. */
+  allLinks: boolean;
 }
 /** "1 record", "2 records". */
 const count = (n: number, noun: string) => `${n} ${n === 1 ? noun : `${noun}s`}`;
@@ -89,7 +105,7 @@ export function graphSummary(graph: Neighborhood): string {
 }
 
 export interface GraphViewProps {
-  index: SpecIndex;
+  index: RecordIndex;
   /** A record ID, or a group's ID in the graph's tree. */
   focus: string;
   /** Called with a record or group ID when the person moves the focus there. */
@@ -106,7 +122,7 @@ export interface GraphViewProps {
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the camera frames the focus. */
   space?: OpenSpaceStore;
-  /** The place the graph shows (views/cameras.ts): its camera is kept as the place is left and taken back as it shows again. */
+  /** The place the graph shows (the Tab set's cameras, exploring/tab-set): its camera is kept as the place is left and taken back as it shows again. */
   cameraKey?: string;
   /** Opens a box in a new place (Cmd or Ctrl+click, or a middle-click for the background), when the host has places. */
   onOpenNew?: (id: string, background: boolean) => void;
@@ -115,7 +131,7 @@ export interface GraphViewProps {
 export function GraphView({ index, focus, onNavigate, settings: hosted, onSettingsChange, onPeek, onCounts, space, cameraKey, onOpenNew }: GraphViewProps) {
   const [own, setOwn] = useState<GraphSettings>(DEFAULT_GRAPH_SETTINGS);
   const settings = hosted ?? own;
-  const { layout, depth, filters, minimap } = settings;
+  const { layout, depth, filters, minimap, allLinks } = settings;
   const latest = useRef(settings);
   latest.current = settings;
   const update = useCallback((patch: Partial<GraphSettings>) => {
@@ -131,7 +147,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const valid = isGraphNode(index, focus);
   const drawn = useMemo(() => (valid ? graphDrawn(index, graph, layout) : null), [valid, index, graph, layout]);
   const changesKey = useChangesKey();
-  const keyEntries = useMemo(() => (drawn ? [...graphKeyEntries(drawn, index.workspace.stages), ...changesKey] : []), [drawn, index, changesKey]);
+  const keyEntries = useMemo(() => (drawn ? [...graphKeyEntries(drawn, index.meta.stages), ...changesKey] : []), [drawn, index, changesKey]);
   // Before paint, so the header strip's counts change in the same frame as the graph (LA-PAT-APP-UX-R08).
   useLayoutEffect(() => { onCounts?.(graphSummary(graph)); }, [graph, onCounts]);
 
@@ -162,7 +178,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
             </Tooltip>
           ))}
         </div>
-        <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} />
+        <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} allLinks={layout === 'map' ? allLinks : null} setAllLinks={(on) => update({ allLinks: on })} />
       </>
     ),
     // Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21).
@@ -190,7 +206,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
       <StageKey entries={keyEntries} beside={minimap ? 'minimap' : undefined} />
       <div className="graph-workspace">
         <div className="graph-canvas">
-          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} onPeek={onPeek} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} />
+          <GraphCanvas index={index} graph={graph} layout={layout} depth={depth} filters={filters} onNavigate={onNavigate} minimap={minimap} allLinks={allLinks} onPeek={onPeek} space={space} cameraKey={cameraKey} onOpenNew={onOpenNew} />
         </div>
       </div>
     </section>
@@ -198,14 +214,17 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
 }
 
 interface FilterProps {
-  index: SpecIndex;
+  index: RecordIndex;
   filters: Filters;
   setFilters: (f: Filters) => void;
   minimap: boolean;
   setMinimap: (on: boolean) => void;
+  /** All links, in the Map; null in the other layouts, which draw no links. */
+  allLinks: boolean | null;
+  setAllLinks: (on: boolean) => void;
 }
 
-function FilterControls({ index, filters, setFilters, minimap, setMinimap }: FilterProps) {
+function FilterControls({ index, filters, setFilters, minimap, setMinimap, allLinks, setAllLinks }: FilterProps) {
   const hidden = filters.hiddenKinds.size;
   const toggle = (set: ReadonlySet<string>, value: string) => {
     const next = new Set(set);
@@ -225,6 +244,12 @@ function FilterControls({ index, filters, setFilters, minimap, setMinimap }: Fil
             <input type="checkbox" role="switch" checked={minimap} onChange={(e) => setMinimap(e.target.checked)} />
             Minimap
           </label>
+          {allLinks !== null && (
+            <label>
+              <input type="checkbox" role="switch" checked={allLinks} onChange={(e) => setAllLinks(e.target.checked)} />
+              All links
+            </label>
+          )}
         </fieldset>
         {kindGroups(index).map((g) => g.kinds.length > 0 && (
           <fieldset key={g.stage || 'structural'}>
@@ -250,6 +275,13 @@ function FilterControls({ index, filters, setFilters, minimap, setMinimap }: Fil
   );
 }
 
+/** The node the Map frames for a focus: the focus, or for a group of the Tree's the Map does not draw (a kind group), the nearest node above it the Map has. A record not on the Map yet stays itself, so the camera waits for its layout. */
+function onGround(index: RecordIndex, map: PlacedMap, focus: string): string {
+  if (map.nodes.has(focus) || index.byId.has(focus)) return focus;
+  for (let at = treeParent(index, focus); at !== null; at = treeParent(index, at)) if (map.nodes.has(at)) return at;
+  return focus;
+}
+
 /** A box on the canvas with its place and size, in world coordinates. */
 export interface Box { id: string; x: number; y: number; w: number; h: number; text: number; parent: boolean }
 
@@ -267,7 +299,7 @@ export function keyboardOrder(boxes: readonly Pick<Box, 'id' | 'x' | 'y'>[], tre
  * The nodes hidden by the kind filters (LA-V93-R13): a node of a hidden kind and everything
  * beneath it. The focus and its ancestors are never hidden. The map keeps their places.
  */
-export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, focus: string): Set<string> {
+export function hiddenNodes(index: RecordIndex, map: PlacedMap, filters: Filters, focus: string): Set<string> {
   const hidden = new Set<string>();
   if (filters.hiddenKinds.size === 0) return hidden;
   const keep = new Set<string>();
@@ -308,12 +340,32 @@ function MapOverview({ map, focus, hidden, view }: { map: PlacedMap; focus: stri
       <svg role="img" aria-label="Minimap" width={W} height={H} viewBox={`${-pad} ${-pad} ${map.width + 2 * pad} ${map.height + 2 * pad}`} preserveAspectRatio="xMidYMid meet">
         {boxes.map((n) => shapeOf(n, 'graph-minimap-node'))}
         {f && shapeOf(f, 'graph-minimap-node is-focus')}
+        <MinimapChanges map={map} pad={pad} />
         <rect className="graph-minimap-view" x={vx} y={vy} width={vw} height={vh} vectorEffect="non-scaling-stroke" />
       </svg>
     </div>
   );
 }
 
+
+/** Highlight changes' markers on the minimap (LA-V93-R20): a dot at each changed record's box, in the change's color, big enough to see at any size. */
+function MinimapChanges({ map, pad }: { map: PlacedMap; pad: number }) {
+  const { highlight, byId, live } = useChanges();
+  const version = useLiveVersion();
+  const marks = useMemo(() => {
+    if (!highlight) return [];
+    const out: { id: string; change: string; x: number; y: number }[] = [];
+    const ids = new Set([...byId.keys(), ...live.all().map((m) => m.id)]);
+    for (const id of ids) {
+      const n = map.nodes.get(id);
+      const change = byId.get(id)?.change ?? live.get(id)?.change;
+      if (n && change && change !== 'removed') out.push({ id, change, x: n.x + n.w / 2, y: n.y + n.h / 2 });
+    }
+    return out;
+  }, [highlight, byId, live, map, version]);
+  const r = pad * 0.9;
+  return <>{marks.map((m) => <circle key={m.id} className={`graph-minimap-change is-${m.change}`} cx={m.x} cy={m.y} r={r} />)}</>;
+}
 
 /** No floating panels: the frame is the whole stage. */
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
@@ -339,6 +391,9 @@ export interface SceneBox {
   strength: number;
   /** Its live mark (changes/marks.ts): new or changed as the data reloaded, or null. */
   change: 'added' | 'changed' | null;
+  /** With Highlight changes on: its pill (New, Changed) and its container's roll-up, null for none (changes/marks.ts). */
+  pill: 'added' | 'changed' | null;
+  rollup: string | null;
   /** Its box in the map, and its text's and border's scales there: fixed by the map, never by the camera. */
   map: { x: number; y: number; w: number; h: number };
   textScale: number;
@@ -347,8 +402,10 @@ export interface SceneBox {
   /** Its outline's corners on screen, for a polygon. */
   polygon: [number, number][] | null;
   label: Rect;
-  /** Each line of its label: its text, face, font size in the map and on screen, the font it is drawn in, its place, whether it is drawn as a bar, and its width as the canvas measures it at its drawn font. */
-  lines: { text: string; face: string; mapPx: number; fontPx: number; font: string; rect: Rect; bar: boolean; drawnWidth: number }[];
+  /** Whether it is drawn as a plain block, its title under the readable size on screen (LA-EXP-DS10): then no line, icon or badge of it is drawn. */
+  block: boolean;
+  /** Each line of its label: its text, face, font size in the map and on screen, the font it is drawn in, its place, and its width as the canvas measures it at its drawn font. */
+  lines: { text: string; face: string; mapPx: number; fontPx: number; font: string; rect: Rect; drawnWidth: number }[];
   icons: { draw: string; name: string; rect: Rect }[];
   badges: { label: string; tone: string; rect: Rect }[];
   tip: string;
@@ -363,13 +420,16 @@ export interface Scene {
   moves: number;
   glides: number;
   canvas: Rect;
-  textBarPx: number;
+  /** The title size on screen, in CSS pixels, under which a box is drawn as a plain block. */
+  blockBelowPx: number;
   boxes: SceneBox[];
   bars: Rect[];
   lines: { id: string; source: string; target: string; style: string; link: boolean; lit: boolean | null; points: [number, number][] }[];
   spotlight: boolean;
   /** The removed records' ghosts drawn now, by ID. */
   ghosts: string[];
+  /** The last map laid out (layout.ts): on which thread, in how many milliseconds, and how many boxes. */
+  laidOut: ReturnType<typeof lastLayout>;
 }
 /** A camera as the scene reports it: to a hundredth of a pixel, and the zoom to nine significant digits. */
 export const roundCamera = (v: Viewport) => ({ x: Math.round(v.x * 100) / 100, y: Math.round(v.y * 100) / 100, zoom: Number(v.zoom.toPrecision(9)) });
@@ -405,27 +465,37 @@ function GraphCanvas(props: CanvasProps) {
 }
 
 interface CanvasProps {
-  index: SpecIndex;
+  index: RecordIndex;
   graph: Neighborhood;
   layout: GraphLayout;
   depth: number;
   filters: Filters;
   onNavigate: (id: string) => void;
   minimap: boolean;
+  allLinks: boolean;
   onPeek?: GraphViewProps['onPeek'];
   space?: OpenSpaceStore;
   cameraKey?: string;
   onOpenNew?: GraphViewProps['onOpenNew'];
 }
 
-function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
+/**
+ * The focus's own product's map (no other product's nodes are in it), in any layout (LA-V93-R21): the Tree map (map.ts),
+ * or the Nested map (nested.ts), under one camera. It is laid out off the main thread, and again only when what it reads
+ * changes (layout.ts); until a new one is ready, the one before stays on screen with the index it was laid out from.
+ */
+function GraphStage(props: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
+  const { index, graph, layout, measure, fonts } = props;
+  // The Map is always the product's ground; the Tree and Nested maps the focus's product's tree.
+  const root = useMemo(() => (layout === 'map' ? index.product : mapRootOf(index, graph.focus)), [index, graph.focus, layout]);
+  const input = useMemo(() => productInput(index, root, layout, measure.key), [index, root, layout, measure]);
+  const laid = useLaidOut<GraphMap | NestedMap | GroundMap, RecordIndex>(input, index, fonts);
+  if (!laid) return <div className="graph-flow" data-layout={layout} aria-busy="true" />;
+  return <GraphScene {...props} map={laid.map} mapIndex={laid.of} />;
+}
+
+function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, depth, filters, onNavigate, minimap, allLinks, onPeek, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number; map: GraphMap | NestedMap | GroundMap; mapIndex: RecordIndex }) {
   const focus = graph.focus;
-  // The focus's own product's map (no other product's nodes are in it), in any layout (LA-V93-R21): the Tree map (map.ts), or the Nested map (nested.ts), under one camera.
-  const root = useMemo(() => mapRootOf(index, focus), [index, focus]);
-  const map: GraphMap | NestedMap = useMemo(
-    () => (layout === 'nested' ? nestedMap(index, root) : graphMap(index, root)),
-    [index, root, layout, measure],
-  );
   const wrapper = useRef<SceneHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const layer = useRef<HTMLDivElement>(null);
@@ -437,8 +507,14 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   sizeRef.current = size;
 
   const hidden = useMemo(() => hiddenNodes(index, map, filters, focus), [index, map, filters, focus]);
+  /** The most the camera zooms in on this map: enough to read its smallest box (maxZoomFor). */
+  const maxZoom = useMemo(() => maxZoomFor(map), [map]);
   /** The focus: drawn whatever its size. */
   const always = useMemo(() => [focus], [focus]);
+  /** What a new layout moved glides from where it was (morph.ts, LA-PAT-APP-UX-R22). */
+  const morph = useMorph(map);
+  /** The box a first tap selected: the Map draws its links too. */
+  const armedRef = useRef<string | null>(null);
 
   // ---- The camera ----
   const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
@@ -481,7 +557,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     size,
     getViewport,
     setViewport,
-    zoom: { min: MIN_ZOOM, max: MAX_ZOOM },
+    zoom: { min: MIN_ZOOM, max: maxZoom },
     onGlide: (path) => { show(mergeDrawn([0, 0.25, 0.5, 0.75, 1].map((t) => drawnAt(path.at(t))))); moves.current.glides++; },
     onArrive: (target) => show(latestDrawnAt.current(target)),
     onGesture: () => follow(),
@@ -504,14 +580,34 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     return w < MIN_FRAME || h < MIN_FRAME ? { x: 0, y: 0, w: s.w, h: s.h } : { x: inset.left, y: inset.top, w, h };
   }, [insetKey]);
 
+  // ---- The plates (plate.ts): each box's outline and label, made once per map ----
+  const plates = useMemo(() => new Map<string, Plate>(), [map, index, measure]);
+  const plateFor = useCallback((id: string): Plate | null => {
+    const known = plates.get(id);
+    if (known) return known;
+    const n = map.nodes.get(id);
+    if (!n) return null;
+    const source: PlateSource = map.view === 'tree' ? { view: 'tree', node: n } : map.view === 'map' ? { view: 'map', node: n as GroundNode } : { view: 'nested', node: n as NestedNode };
+    const plate = plateOf(index, id, source);
+    plates.set(id, plate);
+    return plate;
+  }, [plates, map, index]);
+
   /** The camera that frames the focus: the focus and the levels the depth shows, in the frame. */
   const framing = useCallback((): Viewport | null => {
     // With a host that floats panels, never before their first measure: the first picture is framed once, in place.
-    if (!size || (space && !open)) return null;
+    // A focus the map shown does not hold yet (its new layout is still being made) leaves the camera where it is.
+    // The Map draws no kind group of the Tree's: a focus on one frames the nearest box above it that the Map has.
+    const framed = map.view === 'map' ? onGround(index, map, focus) : focus;
+    if (!size || (space && !open) || !map.nodes.has(framed)) return null;
     const box = frameBox(size);
-    const v = map.view !== 'tree' ? frameNested(map, focus, box.w, box.h) : frameOnMap(map, focus, depth, box.w, box.h);
-    return { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
-  }, [size, map, focus, depth, frameBox, space, open]);
+    // The focus is never left without its label: framed as a strip beside its children, the strip is as wide as its label
+    // needs to read; where its visible part cannot hold it, the camera moves to where it can.
+    const plate = plateFor(framed);
+    const v = map.view === 'map' ? frameGround(map, framed, box.w, box.h, maxZoom) : map.view === 'nested' ? frameNested(map, focus, box.w, box.h, maxZoom) : frameOnMap(map, focus, depth, box.w, box.h, maxZoom, plate ? labelStrip(plate, box.h, CHILD_READ_PX) : undefined);
+    const at = { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
+    return plate ? keepLabel(plate, at, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : at;
+  }, [size, map, focus, depth, frameBox, space, open, plateFor, index]);
 
   // Frame the focus whenever it, the depth, the stage's size or the open space changes: a glide,
   // except the first picture, a resize of the stage and a map that has just been laid out, which
@@ -522,7 +618,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   const fadeShift = useRef<{ from: string | null; to: string; start: number; duration: number }>({ from: null, to: focus, start: 0, duration: 0 });
   const framedEmpty = useRef(false);
 
-  // Each place keeps its camera (views/cameras.ts): as the place shown changes (another tab), the one left keeps where
+  // Each place keeps its camera (the Tab set's cameras, exploring/tab-set): as the place shown changes (another tab), the one left keeps where
   // its camera was, and the one shown takes its own back, at once, when it still frames the same focus, layout and depth.
   const framedNow = `${focus} ${layout} ${depth}`;
   const cameraPlace = useRef<{ key: string | undefined; framed: string }>({ key: cameraKey, framed: framedNow });
@@ -532,7 +628,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   useLayoutEffect(() => {
     const was = cameraPlace.current;
     if (was.key === cameraKey) { cameraPlace.current = { key: cameraKey, framed: framedNow }; return; }
-    if (was.key && sizeRef.current) keepCamera(was.key, 'graph', { framed: was.framed, view: view.current });
+    if (was.key && sizeRef.current) runTabSetCommand(keepCamera, { place: was.key, stage: 'graph', camera: { framed: was.framed, view: view.current } });
     cameraPlace.current = { key: cameraKey, framed: framedNow };
     const back = cameraKey ? keptCamera<Viewport>(cameraKey, 'graph', framedNow) : null;
     if (back && size) {
@@ -544,11 +640,26 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   });
   useEffect(() => () => {
     const { key, framed } = cameraPlace.current;
-    if (key && sizeRef.current) keepCamera(key, 'graph', { framed, view: view.current });
+    if (key && sizeRef.current) runTabSetCommand(keepCamera, { place: key, stage: 'graph', camera: { framed, view: view.current } });
   }, []);
+  /**
+   * What the camera last framed: the focus's box on its map, the depth, the stage's size and open space. New data that
+   * leaves all of them alone leaves the camera where it is; where it moved the focus, the camera glides with it (LA-PAT-APP-UX-R22).
+   */
+  const lastFramed = useRef<{ key: string; box: { x: number; y: number; w: number; h: number } } | null>(null);
+  const framedKey = size ? `${focus} ${depth} ${map.view} ${map.roots[0]} ${size.w}x${size.h} ${insetKey}` : '';
+  const rememberFraming = () => { const n = map.nodes.get(focus); lastFramed.current = n && size ? { key: framedKey, box: { x: n.x, y: n.y, w: n.w, h: n.h } } : null; };
   useLayoutEffect(() => {
-    if (skipFraming.current === framing) { skipFraming.current = null; return; }
+    if (skipFraming.current === framing) { skipFraming.current = null; rememberFraming(); return; }
     const kept = keptView.current;
+    const was = lastFramed.current;
+    const node = map.nodes.get(focus);
+    if (!kept && was && node && was.key === framedKey) {
+      const follow = followBox(view.current, was.box, node, { min: MIN_ZOOM, max: maxZoom });
+      rememberFraming();
+      if (follow) moveTo(follow, true);
+      return;
+    }
     const target = kept ?? framing();
     if (!target || !size || (kept && !framing())) return;
     keptView.current = null;
@@ -557,6 +668,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     if (fadeShift.current.to !== focus) fadeShift.current = { from: fadeShift.current.to, to: focus, start: performance.now(), duration };
     framedFor.current = size;
     framedEmpty.current = map.nodes.size === 0;
+    rememberFraming();
   }, [framing]);
   // What is drawn follows the filters at once.
   useEffect(() => { if (!gestures.gliding() && size) show(drawnAt(getViewport())); requestPaint(); }, [drawnAt]);
@@ -616,7 +728,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   /** The camera's Fit: the whole map in the frame. */
   const fitMap = () => {
     if (!size || map.nodes.size === 0) return;
-    moveTo(frameRect({ x: 0, y: 0, w: map.width, h: map.height }, frameBox(size), { pad: 24, read: MIN_ZOOM, max: MAX_ZOOM, min: MIN_ZOOM }), true);
+    moveTo(frameRect({ x: 0, y: 0, w: map.width, h: map.height }, frameBox(size), { pad: 24, read: MIN_ZOOM, max: maxZoom, min: MIN_ZOOM }), true);
     follow();
   };
 
@@ -624,26 +736,16 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   const look = useRef<Look>(PLAIN_LOOK);
   useLayoutEffect(() => { if (wrapper.current) look.current = readLook(wrapper.current); requestPaint(); }, [theme]);
 
-  const plates = useMemo(() => new Map<string, Plate>(), [map, index, measure]);
-  const plateFor = useCallback((id: string): Plate | null => {
-    const known = plates.get(id);
-    if (known) return known;
-    const n = map.nodes.get(id);
-    if (!n) return null;
-    const source: PlateSource = map.view === 'tree' ? { view: 'tree', node: n } : { view: 'nested', node: n as NestedNode };
-    const plate = plateOf(index, id, source);
-    plates.set(id, plate);
-    return plate;
-  }, [plates, map, index]);
 
   /** The boxes, bars and lines a camera shows, in draw order: in the Nested view a parent before its children, so each child lies over its parent (LA-EXP-DS09). */
   const frameAt = useCallback((v: Viewport): { plates: Plate[]; bars: Bar[]; lines: Line[] } => {
-    const ids = drawnAt(v).boxes.map((b) => b.id);
-    const shown = ids.map(plateFor).filter((p): p is Plate => p !== null);
-    if (map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode).order - (map.nodes.get(b.id) as NestedNode).order);
+    const drawn = drawnAt(v);
+    const now = performance.now();
+    const shown = drawn.boxes.map((b) => plateFor(b.id)).filter((p): p is Plate => p !== null).map((p) => morph.plate(p, now));
+    if (map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode | GroundNode).order - (map.nodes.get(b.id) as NestedNode | GroundNode).order);
     const bars: Bar[] = [];
     if (map.view === 'tree') {
-      for (const bar of drawnAt(v).bars) bars.push({ parent: bar.parent, x: bar.x, y: bar.y, w: bar.w, h: bar.h });
+      for (const bar of drawn.bars) bars.push({ parent: bar.parent, x: bar.x, y: bar.y, w: bar.w, h: bar.h });
     }
     const byId = new Map(shown.map((p) => [p.id, p]));
     const lines: Line[] = [];
@@ -657,8 +759,28 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         lines.push({ id: `${p.id}|${PARENT}|${b.id}`, source: p.id, target: b.id, style: 'structure', link: false, points: parentLine(p, b, shape(p.id), shape(b.id)), scale: b.text });
       }
     }
+    // The Map's links, as lines (LA-V93-R74): the focus's and the selection's; with All links, every link between the records drawn.
+    if (map.view === 'map') {
+      const has = (id: string) => map.nodes.has(id) && !hidden.has(id);
+      const parentOnMap = (id: string) => map.nodes.get(id)?.parent ?? null;
+      const ends = [focus, ...(armedRef.current ? [armedRef.current] : [])];
+      const records = allLinks ? shown.filter((p) => !p.area).map((p) => p.id) : [];
+      const drawnIds = new Set(records);
+      const links = [
+        ...linksOf(index, has, parentOnMap, ends),
+        ...linksOf(index, (id) => drawnIds.has(id), parentOnMap, records, MOST_LINKS),
+      ];
+      const boxOf = (id: string) => byId.get(id) ?? morph.box(id, now);
+      const seen = new Set<string>();
+      for (const link of links) {
+        const a = boxOf(link.source);
+        const b = boxOf(link.target);
+        const line = a && b ? linkLine(link, a, b, v.zoom, link.target === focus ? 'target' : link.source === focus ? 'source' : undefined) : null;
+        if (line && !seen.has(line.id)) { seen.add(line.id); lines.push(line); }
+      }
+    }
     return { plates: shown, bars, lines };
-  }, [drawnAt, plateFor, map, index]);
+  }, [drawnAt, plateFor, map, index, focus, allLinks, hidden]);
   const lastFrame = useRef<{ plates: Plate[]; bars: Bar[]; lines: Line[] } | null>(null);
   // What the last frame drew is stale once anything it was drawn from changes: the pointer then hit-tests a fresh frame.
   lastFrame.current = null;
@@ -685,14 +807,15 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     return at;
   };
   // The live marks (changes/marks.ts), the removed records' ghosts placed where the map drawn before had them; and the
-  // Changes lens, which fades everything unchanged from its baseline in place of the focus fade.
+  // Highlight changes, which fades everything unchanged from its baseline in place of the focus fade.
   const changes = useChanges();
   const placeOf = useCallback((id: string) => { const n = map.nodes.get(id); return n ? { x: n.x, y: n.y, w: n.w, h: n.h } : null; }, [map]);
-  const marks = useStageMarks(placeOf);
-  const lens = useMemo(() => (changes.lens ? lensFade(changes.byId, { get focusFade() { return look.current.focusFade; } }) : null), [changes.lens, changes.byId]);
-  /** How strongly each box is drawn now: the new focus's fade, eased in from the old one's over the camera's glide; with the lens on, the lens's. */
+  const tree = useMemo(() => ({ nodes: map.nodes }), [map]);
+  const marks = useStageMarks(placeOf, tree);
+  const dimmed = useMemo(() => (changes.highlight ? highlightFade(changes.byId) : null), [changes.highlight, changes.byId]);
+  /** How strongly each box is drawn now: the new focus's fade, eased in from the old one's over the camera's glide; with Highlight changes on, Highlight changes'. */
   const strengthNow = (): { at: (id: string) => number; done: boolean } => {
-    if (lens) return { at: lens, done: true };
+    if (dimmed) return { at: dimmed, done: true };
     const shift = fadeShift.current;
     const to = strengthOf(focus);
     const t = shift.from === null || shift.to !== focus || shift.duration <= 0 ? 1 : Math.min(1, (performance.now() - shift.start) / shift.duration);
@@ -725,7 +848,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
       host: wrapper.current, space, dpr, color: focusPlate ? boxColors(look.current, focusPlate).edge : look.current.ink,
       box: node ? { left: node.x * v.zoom + v.x, top: node.y * v.zoom + v.y, right: (node.x + node.w) * v.zoom + v.x, bottom: (node.y + node.h) * v.zoom + v.y } : null,
     });
-    if (!spot.done || !fade.done || marksMoving(live, frame.plates.map((p) => p.id))) requestPaint();
+    if (!spot.done || !fade.done || morph.moving(performance.now()) || marksMoving(live, frame.plates.map((p) => p.id))) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
   };
   // Every render may change what is drawn: the focus, the filters, the plates, the theme, a change landing.
@@ -774,11 +897,12 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   useEffect(() => () => spot(null), [focus]);
 
   /** Whether a box can be focused by a click: a record or a group, not the focus. */
-  const canOpen = useCallback((id: string) => id !== focus && isGraphNode(index, id), [focus, index]);
+  const canOpen = useCallback((id: string) => id !== focus && isGraphNode(pageIndex, id), [focus, pageIndex]);
   // By touch, a first tap selects a node and a second tap (or a tap on its card) opens it.
   const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus, onOpenNew);
   tap.current = tapToOpen;
   const armedPlate = tapToOpen.armed ? plateFor(tapToOpen.armed) : null;
+  armedRef.current = tapToOpen.armed;
   useEffect(() => { onPeek?.('selected', tapToOpen.armed); requestPaint(); }, [tapToOpen.armed, onPeek]);
 
   // ---- The keyboard's layer ----
@@ -823,7 +947,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     refocus.current = to;
     return true;
   }, []);
-  useGraphWalk(index, focus, layout, onNavigate, followFromBox);
+  useGraphWalk(pageIndex, focus, layout, onNavigate, followFromBox);
   // Enter focuses the box with keyboard focus; on the focus's own box it is left to the commands layer, where it shows or
   // collapses the wiki card (LA-V96-R19). Tab and Shift+Tab step through the boxes, as the page's own focus order.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -886,25 +1010,29 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         moves: moves.current.moves,
         glides: moves.current.glides,
         canvas: { left: r.left, top: r.top, width: s.w, height: s.h },
-        textBarPx: TEXT_BAR_PX,
+        blockBelowPx: BLOCK_BELOW_PX,
+        laidOut: lastLayout(),
         spotlight: sp.id !== null,
-        ghosts: ((live) => live.reduced ? [] : live.ghosts.filter((g) => live.now - g.t < GHOST_MS).map((g) => g.id))(marks.at(performance.now())),
+        ghosts: ((live) => live.reduced && !live.highlight ? [] : live.ghosts.filter((g) => live.highlight || live.now - g.t < GHOST_MS).map((g) => g.id))(marks.at(performance.now())),
         bars: frame.bars.map((b) => rect(b.x, b.y, b.w, b.h)),
         lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
         boxes: frame.plates.map((p) => ({
           id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, group: p.group,
           hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, strength: strength(p.id),
           change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(p.id)),
+          pill: ((c) => (c === 'added' || c === 'changed' ? c : null))(marks.highlight?.change(p.id)),
+          rollup: ((r) => (r ? rollupText(r) : null))(marks.highlight?.rolls.get(p.place)),
           map: { x: p.x, y: p.y, w: p.w, h: p.h }, textScale: p.text, boxScale: p.scale,
           rect: rect(p.x, p.y, p.w, p.h),
           polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,
           label: rect(p.label.x, p.label.y, p.label.w, p.label.h),
+          block: isBlock(p, v.zoom),
           lines: p.lines.map((l) => {
             const fontPx = l.size * v.zoom;
             const font = fontFor(fonts, l.face, fontPx);
             let drawnWidth = l.width * v.zoom;
-            if (measureCtx && fontPx >= TEXT_BAR_PX) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
-            return { text: l.text, face: l.face, mapPx: l.size, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), bar: fontPx < TEXT_BAR_PX, drawnWidth };
+            if (measureCtx && !isBlock(p, v.zoom)) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
+            return { text: l.text, face: l.face, mapPx: l.size, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), drawnWidth };
           }),
           icons: p.icons.map((i) => ({ draw: i.draw, name: i.name, rect: rect(i.x, i.y, i.w, i.h) })),
           badges: p.badges.map((b) => ({ label: b.label, tone: b.tone, rect: rect(b.x, b.y, b.w, b.h) })),
@@ -915,11 +1043,10 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     };
   });
 
-  const nested = layout !== 'tree';
   return (
     <div
       ref={wrapper}
-      className={`graph-flow${nested ? ' is-nested' : ''}`}
+      className={`graph-flow${layout === 'nested' ? ' is-nested' : layout === 'map' ? ' is-map' : ''}`}
       data-layout={layout}
       data-ready={size ? 'true' : undefined}
       tabIndex={-1}

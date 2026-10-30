@@ -4,8 +4,8 @@
 // own kinds, relations and checks); renderReference writes it as Markdown, by stage, as lathe/REFERENCE.md holds it
 // (`npm --prefix lathe run reference`).
 import { ALLOWED_LEVELS, GAP_RULES, OBLIGATION_COVERAGE } from './coverage.ts';
-import type { ColumnDescription, IdScope, KindDescription, SchemaDescription, Stage, TableDescription, TableRole } from './store/schema.ts';
-import type { Row } from './store/rows.ts';
+import type { ColumnDescription, IdScope, KindDescription, SchemaDescription, Stage, TableDescription, TableRole } from './platform/data/schema.ts';
+import type { Row } from './platform/data/rows.ts';
 
 export interface ColumnReference {
   name: string;
@@ -79,8 +79,8 @@ export interface KindReference {
 
 export interface RelationReference {
   relation: string;
-  /** 'design': its links design what they target; 'proof': they prove it; '' otherwise. */
-  role: 'design' | 'proof' | '';
+  /** 'design': its links design what they target; 'build': they build it; 'proof': they prove it; '' otherwise. */
+  role: 'design' | 'build' | 'proof' | '';
   /** The link read from the source: "Fulfills". */
   forward_label: string;
   /** The link read from the target: "Fulfilled by". */
@@ -275,8 +275,10 @@ that breaks the model cannot be saved. Each stored table is one file, \`data/<ta
 per line, sorted by key. Every record has exactly one parent, a foreign key such as a UC requirement's
 \`use_case_id\`, except the kinds with no owner (value objects, specifications, views, integrations and UI
 components), which exist because other records use them. Other relationships are links, a row of their relation's
-table, and an ID is unique across every kind. Every write goes through the command layer (the CLI, the app and the
-plugin's tools), which validates it in one transaction and rewrites the lines it changed; git is the history.
+table, and an ID is unique across every kind. Every write is one command of the aggregate it changes, such as Add a
+flow step (\`lathe use-case add-flow-step\`, the plugin's \`use_case_add_flow_step\` tool, or
+\`POST /api/use-case/add-flow-step\` from the app): it checks the aggregate's rules in one transaction and rewrites the
+lines it changed, or is refused with every reason; git is the history. Each aggregate reads through its own queries.
 
 The model is drawn from domain-driven design, CQRS and event storming, in six stages: discovery (the business
 outcomes the product exists to achieve), the domain model, use cases on top of it, their interaction design, the
@@ -294,12 +296,6 @@ returning \`severity\`, \`record\` and \`message\` for each problem. An error me
 something to look at. Lathe's own checks are in \`lathe/data/check.jsonl\`, loaded beside every product's data; a
 product adds its own as rows of its \`data/check.jsonl\` with its \`product_id\`. What the schema enforces is never a
 check: the store refuses it.
-
-**Recorded exceptions** are deliberate deviations recorded with their reason: a command that also changes another
-aggregate of its domain in the same transaction (a \`command_change\` row), or a repository that also persists an
-aggregate with no repository of its own (a \`repository_share\` row), such as one generic store. They are not
-problems: \`lathe check\` and the Checks panel list every one in a section of their own, with its command or
-repository, aggregate and reason, so each stays visible.
 
 **Coverage** counts every obligation as designed, built and proved, per domain and for the product outside every
 domain, and lists as gaps each obligation still short of one, and each record short of a minimum the schema leaves to

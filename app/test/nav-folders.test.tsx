@@ -2,15 +2,16 @@ import './graph/setup';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import type { KindDescription } from '../../lathe/src/store/schema';
-import { branchOf, domainFolders, folderPath, ownerFolders, productFolders } from '../src/specs/folders';
+import type { KindDescription } from '../../lathe/src/platform/data/schema';
+import { branchOf, ownerFolders, folderPath } from '../src/exploring/folder-tree/folders';
 import { treeChildren } from '../src/graph/tree';
 import { isGraphNode } from '../src/graph/model';
 import { workspace } from './fixtures/workspace';
 import { modelIndex } from './fixtures/model';
 import { patternWorkspace } from './fixtures/patterns';
 import { main, openApp, stageOf } from './helpers';
-import { addRows, indexOf } from './fixtures/load';
+import { addRows } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 
 // The side nav and the domain page read in the five stages: what the product shares in its own
 // stages (Shared), and in each domain its Domain model, Use cases, Interaction design, Technical
@@ -29,8 +30,7 @@ const head = (el: HTMLElement, name: RegExp) => within(el).getAllByRole('button'
 /** A product's own kind under the domain. */
 const ownKind = (name: string, label: string, stage: 'domain-model' | null): KindDescription => ({
   name, label, stage, obligation: false, idPattern: null, idExample: null, idScope: null, productId: 'DM', position: null, description: `A ${name}.`,
-  parents: [{ kind: 'domain', column: 'domain_id' }], supertypes: [], titleForm: null,
-});
+  parents: [{ kind: 'domain', column: 'domain_id' }], supertypes: [], titleForm: null });
 
 describe('folders by stage', () => {
   /** The space's page with Shopping unfolded into its stages. */
@@ -168,10 +168,22 @@ describe('folders by stage', () => {
     return w;
   };
 
+  it('LA-STD-MODELING-R12-T03 A domain\'s terms are listed bottom-up: each after the terms it builds on, otherwise by title', () => {
+    const w = workspace();
+    addRows(w, 'term',
+      { id: 'DM-SHOP-TM02', title: 'Apple', domain_id: 'DM-SHOP', meaning: 'Built on Zebra.' },
+      { id: 'DM-SHOP-TM03', title: 'Zebra', domain_id: 'DM-SHOP', meaning: 'Plain.' },
+      { id: 'DM-SHOP-TM04', title: 'Mango', domain_id: 'DM-SHOP', meaning: 'Plain.' });
+    addRows(w, 'builds_on', { source_id: 'DM-SHOP-TM02', target_id: 'DM-SHOP-TM03' });
+    const index = recordIndexOf(w);
+    const terms = ownerFolders(index, 'DM-SHOP').stages.flatMap((s) => s.folders).find((f) => f.kind === 'term')!.records;
+    expect(terms.map((r) => r.title)).toEqual(['Basket', 'Mango', 'Zebra', 'Apple']);
+  });
+
   it("LA-EXP-DS03-T03 A record is listed in its stage's folder when its parent is of another stage, and folds under its parent in the same stage", () => {
     const w = twoUseCases();
-    const index = indexOf(w);
-    const { stages, loose } = domainFolders(index, 'DM-SHOP');
+    const index = recordIndexOf(w);
+    const { stages, loose } = ownerFolders(index, 'DM-SHOP');
     const ids = Object.fromEntries(stages.flatMap((s) => s.folders).filter((f) => f.count > 0).map((f) => [f.kind, f.records.map((r) => r.id)]));
     expect(ids).toEqual({
       aggregate: ['DM-SHOP-A1'],
@@ -184,8 +196,7 @@ describe('folders by stage', () => {
       table: ['DM-SHOP-EN01-TB'],
       command_handler: ['DM-SHOP-CMD01-H'],
       invariant_test: ['DM-SHOP-INV01-T'],
-      use_case_test: ['DM-SHOP-UC01-R01-T01'],
-    });
+      use_case_test: ['DM-SHOP-UC01-R01-T01'] });
     expect(loose.map((f) => [f.label, f.records.map((r) => r.id)])).toEqual([['Open questions', ['DM-SHOP-Q01']]]);
     // A use case folds under its capability, in Use cases (which lists its capabilities itself, with no folder); a
     // command under its aggregate, in Domain model.
@@ -196,7 +207,7 @@ describe('folders by stage', () => {
     // In Shared: a constraint folds under its value object, which both domains use (Shared's Domain model holds only
     // value objects, so lists them itself); so does the view.
     expect(branchOf(index, 'DM-VO01-C01')).toEqual(['DM/shared', 'DM/domain-model']);
-    expect(productFolders(index, 'DM').stages.filter((s) => s.count > 0).map((s) => [s.label, s.folders.filter((f) => f.count > 0).map((f) => f.label)])).toEqual([
+    expect(ownerFolders(index, 'DM').stages.filter((s) => s.count > 0).map((s) => [s.label, s.folders.filter((f) => f.count > 0).map((f) => f.label)])).toEqual([
       ['Domain model', ['Value objects']],
       ['Interaction design', ['Interfaces', 'Views']],
     ]);
@@ -219,7 +230,7 @@ describe('folders by stage', () => {
   it('LA-EXP-DS03-T09 A record with no owner sits in the one domain that uses it, in its stage and folder, with what sits under it, and in Shared otherwise', () => {
     const index = modelIndex();
     // Only P-D's flow steps happen in the view and exchange with the integration, and the UI component renders that view.
-    const folders = domainFolders(index, 'P-D').stages.flatMap((s) => s.folders);
+    const folders = ownerFolders(index, 'P-D').stages.flatMap((s) => s.folders);
     const of = (kind: string) => folders.find((f) => f.kind === kind)?.records.map((r) => r.id);
     expect(of('view')).toEqual(['P-V01']);
     expect(of('integration')).toEqual(['P-INT01']);
@@ -230,7 +241,7 @@ describe('folders by stage', () => {
     expect(of('value_object')).toBeUndefined();
     expect(branchOf(index, 'P-VO01')).toEqual(['P/shared', 'P/domain-model']);
     expect(index.byId.get('P-VO01-C01')?.domain).toBeNull();
-    expect(productFolders(index, 'P').stages.flatMap((s) => s.folders).filter((f) => f.count > 0).map((f) => f.kind)).toEqual(['value_object', 'interface', 'value_type', 'constraint_test']);
+    expect(ownerFolders(index, 'P').stages.flatMap((s) => s.folders).filter((f) => f.count > 0).map((f) => f.kind)).toEqual(['value_object', 'interface', 'value_type', 'constraint_test']);
   });
 
   it("LA-EXP-DS03-T04 A product's own kind gets its folder in its stage, or after the stages when it has no stage; the path names its stage", () => {
@@ -239,8 +250,8 @@ describe('folders by stage', () => {
     w.schema.kinds.memo = ownKind('memo', 'Memo', null);
     addRows(w, 'risk', { id: 'DM-SHOP-RK01', title: 'Baskets get lost', domain_id: 'DM-SHOP' });
     addRows(w, 'memo', { id: 'DM-SHOP-M01', title: 'A note', domain_id: 'DM-SHOP' });
-    const index = indexOf(w);
-    const { stages, loose } = domainFolders(index, 'DM-SHOP');
+    const index = recordIndexOf(w);
+    const { stages, loose } = ownerFolders(index, 'DM-SHOP');
     expect(stages[0].folders.filter((f) => f.count > 0).map((f) => f.label)).toEqual(['Aggregates', 'Specifications', 'Read models', 'Terms', 'Risks']);
     expect(loose.map((f) => f.label)).toEqual(['Open questions', 'Memos']);
     expect(folderPath(index, 'use_case')).toEqual(['Use cases']);
@@ -256,7 +267,7 @@ describe('folders by stage', () => {
     await screen.findByRole('region', { name: 'Checks' });
   };
 
-  it('LA-EXP-INV05-T What is folded is remembered for the session only', async () => {
+  it('LA-V90-R74-T01 What is folded is remembered for the session only', async () => {
     await testPlanOpened();
     expect(list('Test plan of Shopping')).toBeInTheDocument();
     expect(window.localStorage.getItem('lathe:nav-folders')).toBeNull();
@@ -269,13 +280,13 @@ describe('folders by stage', () => {
 
   const proveLaPatAppUxR15 = async () => {
     // The folder model: a stage with one folder shows that folder's records directly; with two or more it keeps them.
-    const index = indexOf(patternWorkspace());
+    const index = recordIndexOf(patternWorkspace());
     const stage = (owner: string, name: string) => ownerFolders(index, owner).stages.find((s) => s.stage === name)!;
     expect(stage('DM-SHOP', 'use-cases').direct?.records.map((r) => r.id)).toEqual(['DM-SHOP-CAP01']);
     expect(stage('DM', 'use-cases').direct?.records.map((r) => r.id)).toEqual(['DM-PAT-AUDIT']);
     expect(stage('DM-SHOP', 'interaction-design').direct).toBeNull();
     // An empty one-folder stage is still a stage with no records.
-    expect(stage('NF-NOTE', 'use-cases')).toMatchObject({ count: 0, direct: { count: 0 } });
+    expect(ownerFolders(recordIndexOf(patternWorkspace(), 'NF'), 'NF-NOTE').stages.find((s) => s.stage === 'use-cases')).toMatchObject({ count: 0, direct: { count: 0 } });
 
     // The graph's tree: the stage holds the records, and the skipped folder is no group and has no address.
     expect(treeChildren(index, 'DM-SHOP/use-cases')).toEqual(['DM-SHOP-CAP01']);

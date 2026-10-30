@@ -35,13 +35,13 @@ export const BUDGETS = {
    * map, in ELK's worker, included. Every later focus reads that layout and only moves the camera.
    */
   erdMapFirstFrameMs: 1000,
-  /** The longest frame while dragging a product's whole Trace stage (LA-V98-R06): each frame draws only what is in view, at most 260 boxes. */
+  /** The longest frame while dragging a product's whole Trace stage (LA-V98-R06): each frame draws only what is in view, at most 260 boxes and the lines touching them. */
   traceDragFrameMs: 50,
   /**
-   * Main-thread work for the first frame of a product's Trace map (LA-V98-R06, LA-PAT-APP-UX-R19): the first switch to
+   * Main-thread work for the first frame of a product's Trace view (LA-V98-R06, LA-PAT-APP-UX-R19): the first switch to
    * the Trace stage, from the key press until its canvas is drawn and the page is quiet, which loads the stage's code,
-   * lays the whole product's map out (once per product and data change; about 150 ms for this repo's) and draws what
-   * the camera shows of it. Every switch after it reuses the map and is held to the stage switch budget.
+   * builds the product's All-at-once graph and lays it out in its worker (once per product and data change) and draws
+   * what the camera shows of it. Every switch after it reuses the layout and is held to the stage switch budget.
    */
   traceMapFirstFrameMs: 400,
   /**
@@ -50,6 +50,19 @@ export const BUDGETS = {
    * the Changes count) and the page is quiet. The reload itself (the new index, the redraw) is in it.
    */
   markChangesMs: 500,
+  /**
+   * Big maps (LA-PLT-UC09-R13), on the large product (LA-PLT-TD04, lathe/perf/large-product.ts, about ten times Lathe's records in one product): how
+   * many frames may take more than 20 ms (a dropped frame at 60 Hz) while panning and zooming the Graph, the ERD and the
+   * Trace, and while panning the Graph through a reload that lays its map out again. None: every frame within 16.7 ms.
+   */
+  bigMapSlowFrames: 0,
+  /** From the arrow walk's key press on the large product's Graph until the new focus is drawn and the camera frames it. */
+  bigMapFocusMs: 200,
+  /**
+   * The layout of the large product's Graph map (about 69,000 boxes) in the layout's worker, off the main thread: 2.6 s
+   * measured on the dev machine; the page stays on the map before it, and answers the camera, until it arrives.
+   */
+  bigMapLayoutMs: 4000,
 } as const;
 
 /** Above this one-minute load average the timings are measured and printed, but not judged (`not run (machine busy)`). */

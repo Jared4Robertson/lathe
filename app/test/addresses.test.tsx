@@ -12,8 +12,7 @@ describe('bare-ID addresses', () => {
     (window as unknown as { latheDesktop?: LatheDesktop }).latheDesktop = desktopBridgeStub();
     const tab = (key: string, address: string) => ({ key, place: { history: [{ address, note: {} }], at: 0, view: { depth: 1, hiddenKinds: [], card: { open: true, expanded: true } } } });
     window.sessionStorage.setItem('lathe:tabs', JSON.stringify({
-      DM: { active: 't1', tabs: [tab('t1', '/DM-SHOP-UC01'), tab('t2', '/specs/DM/DM-SHOP'), tab('t3', '/records/DM-SHOP/use_case'), tab('t4', '/DM-SHOP/use_case?stage=erd')] },
-    }));
+      DM: { active: 't1', tabs: [tab('t1', '/DM-SHOP-UC01'), tab('t2', '/specs/DM/DM-SHOP'), tab('t3', '/records/DM-SHOP/use_case'), tab('t4', '/DM-SHOP/use_case?stage=erd')] } }));
     window.sessionStorage.setItem('lathe:space-pages', JSON.stringify({ NF: '/specs/NF/NF-NOTE?stage=graph' }));
     try {
       await openApp('/DM-SHOP-UC01');

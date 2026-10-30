@@ -24,7 +24,7 @@ async function refusal(changed: Data): Promise<StoreProblem[]> {
   throw new Error('The data loaded, but it should have been refused.');
 }
 
-describe('LA-AUT-UC01-R01-T05 the fixture', () => {
+describe('LA-PLT-UC01-R06-T05 the fixture', () => {
   it('has a record of every kind, and a row of every stored table', () => {
     const stored = schema.loadOrder;
     expect(stored.filter((table) => !data[table]?.length)).toEqual([]);
@@ -45,14 +45,14 @@ describe.each(kinds)('the %s table', (kind) => {
   const file = `data/${kind}.jsonl`;
 
   // A product and the kinds with no owner sit under nothing; every other kind has one parent.
-  if (schema.kinds[kind].parents.length) it('LA-CHK-UC04-R08-T02 refuses a parent that does not exist', async () => {
+  if (schema.kinds[kind].parents.length) it('LA-PLT-UC01-R08-T02 refuses a parent that does not exist', async () => {
     const column = schema.kinds[kind].parents.map((p) => p.column).find((c) => row[c] !== undefined)!;
     const problems = await refusal(withTable(data, kind, [{ ...row, [column]: 'TL-NOPE' }, ...data[kind].slice(1)]));
     expect(problems).toContainEqual(expect.objectContaining({ rule: 'foreign-key', file, line: 1, table: kind }));
     expect(problems.find((p) => p.file === file)!.message).toContain('TL-NOPE');
   });
 
-  it('LA-AUT-SP04-T refuses an ID another record has, of any kind', async () => {
+  it('LA-PLT-UC01-R12-T02 refuses an ID another record has, of any kind', async () => {
     const other = kind === 'domain' ? 'TL' : 'TL-LEND';
     const problems = await refusal(withTable(data, kind, [...data[kind], { ...row, id: other }]));
     expect(problems).toEqual([expect.objectContaining({ rule: 'unique-id', key: other })]);
@@ -60,13 +60,13 @@ describe.each(kinds)('the %s table', (kind) => {
     expect(`${problems[0].file}:${problems[0].line} ${problems[0].message}`).toContain(`${file}:${data[kind].length + 1}`);
   });
 
-  it('LA-AUT-SP04-T refuses the same ID twice in its file', async () => {
+  it('LA-PLT-UC01-R12-T02 refuses the same ID twice in its file', async () => {
     const problems = await refusal(withTable(data, kind, [...data[kind], row]));
     expect(problems).toEqual([expect.objectContaining({ rule: 'primary-key', file, line: data[kind].length + 1 })]);
   });
 
   const enums = table.columns.filter((c) => c.kind === 'enum');
-  if (enums.length) it('LA-AUT-INV04-T refuses a value its enum does not have', async () => {
+  if (enums.length) it('LA-PAT-AGGREGATE-COMMANDS-R08-T01 refuses a value its enum does not have', async () => {
     for (const column of enums) {
       const problems = await refusal(withTable(data, kind, [{ ...row, [column.name]: 'bogus' }, ...data[kind].slice(1)]));
       expect(problems).toEqual([expect.objectContaining({ rule: 'column', file, line: 1 })]);
@@ -74,7 +74,7 @@ describe.each(kinds)('the %s table', (kind) => {
     }
   });
 
-  it('LA-AUT-INV04-T refuses a row without a required field', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R08-T01 refuses a row without a required field', async () => {
     const parents = new Set(schema.kinds[kind].parents.map((p) => p.column));
     const required = table.columns.filter((c) => c.required && c.name !== 'id' && !parents.has(c.name));
     for (const column of required) {
@@ -87,7 +87,7 @@ describe.each(kinds)('the %s table', (kind) => {
 });
 
 describe('loading files', () => {
-  it('LA-AUT-UC01-R01-T04 names the file and line of a line that is not JSON, a column the table lacks, and a file for no table', async () => {
+  it('LA-PLT-UC01-R06-T04 names the file and line of a line that is not JSON, a column the table lacks, and a file for no table', async () => {
     const root = writeData(data);
     const { writeFileSync, appendFileSync } = await import('node:fs');
     appendFileSync(`${root}/data/uc_requirement.jsonl`, '{"id": "TL-LEND-UC01-R02",\n');

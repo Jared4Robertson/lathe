@@ -3,14 +3,15 @@ import { LongList } from './LongList';
 import { Icon } from './icons';
 import { Button } from './Button';
 
-// A list of rows, each of which can hold one level of nested rows, folded by default.
+// A list of rows, each of which can hold nested rows, folded by default, and they in their turn.
 //
 // A wiki page shows one level below its own record; anything deeper sits under a disclosure
 // triangle on its row. The row keeps its count of nested items and its marks when folded, so
 // nothing hidden is forgotten. What is open is remembered for the session, across pages. A search
 // (the list's own, or one the page passes in) opens a row just for the match, without
-// remembering it. Right arrow opens a row, Left closes it or moves to its parent, as in a tree
-// view. Lists past ten rows scroll inside, as every LongList does.
+// remembering it, and opens a nested row in its turn when the match is deeper still. Right arrow
+// opens a row, Left closes it or moves to its parent, as in a tree view. Lists past ten rows
+// scroll inside, as every LongList does.
 
 const KEY = 'lathe:expanded';
 
@@ -66,14 +67,21 @@ export interface TreeListProps<T> {
   query?: string;
   /** Hide the Expand all / Collapse all control (lists of one). */
   bulk?: boolean;
+  /** The searches of the lists it is nested in, each applied as the page's search is. */
+  outer?: readonly string[];
 }
 
 const matchOf = (text: string, q: string) => !q || text.toLowerCase().includes(q);
 
-export function TreeList<T>({ items, nestedOf, renderRow, itemKey, searchText, countLabel, label, nestedLabel, className = 'record-list tree', query = '', bulk = true }: TreeListProps<T>) {
+/** A row's text with everything nested under it, at any depth, so a list's own search finds a row by what it holds. */
+function deepText<T>(item: T, nestedOf: (item: T) => readonly T[], searchText: (item: T) => string, depth = 0): string {
+  return [searchText(item), ...(depth < 8 ? nestedOf(item).map((n) => deepText(n, nestedOf, searchText, depth + 1)) : [])].join(' ');
+}
+
+export function TreeList<T>({ items, nestedOf, renderRow, itemKey, searchText, countLabel, label, nestedLabel, className = 'record-list tree', query = '', bulk = true, outer = [] }: TreeListProps<T>) {
   const opened = useSyncExternalStore(subscribe, snapshot, snapshot);
   const scope = useId();
-  const pageQ = query.trim().toLowerCase();
+  const pageQs = [query.trim().toLowerCase(), ...outer].filter(Boolean);
   const foldable = items.filter((i) => nestedOf(i).length > 0).map(itemKey);
   const foldableKey = foldable.join('\n');
 
@@ -82,9 +90,10 @@ export function TreeList<T>({ items, nestedOf, renderRow, itemKey, searchText, c
     return () => { mounted.delete(scope); };
   }, [scope, foldableKey]);
 
-  // With a page search, keep the rows that match or hold a match at any depth (a capability's use case's UC requirement).
-  const holds = (i: T, depth = 0): boolean => matchOf(searchText(i), pageQ) || (depth < 8 && nestedOf(i).some((n) => holds(n, depth + 1)));
-  const visible = pageQ ? items.filter((i) => holds(i)) : items;
+  // With a search, keep the rows that match or hold a match at any depth (an aggregate's entity's command).
+  const holds = (i: T, words: readonly string[], depth = 0): boolean =>
+    words.every((w) => matchOf(searchText(i), w)) || (depth < 8 && nestedOf(i).some((n) => holds(n, words, depth + 1)));
+  const visible = pageQs.length ? items.filter((i) => holds(i, pageQs)) : items;
   const allOpen = foldable.length > 0 && foldable.every((k) => opened.has(k));
 
   const onRowKey = (item: T, e: KeyboardEvent<HTMLLIElement>) => {
@@ -104,7 +113,8 @@ export function TreeList<T>({ items, nestedOf, renderRow, itemKey, searchText, c
     if (e.key === 'ArrowRight') {
       e.preventDefault();
       if (!opened.has(key)) setExpanded([key], true);
-      else row.querySelector<HTMLElement>('.tree-nested li a, .tree-nested li button')?.focus();
+      // To the first nested row's link: its own toggle, when it has one, comes before it.
+      else (row.querySelector<HTMLElement>('.tree-nested li a') ?? row.querySelector<HTMLElement>('.tree-nested li button'))?.focus();
     } else if (e.key === 'ArrowLeft' && opened.has(key)) {
       e.preventDefault();
       setExpanded([key], false);
@@ -125,15 +135,16 @@ export function TreeList<T>({ items, nestedOf, renderRow, itemKey, searchText, c
       className={className}
       items={visible}
       itemKey={itemKey}
-      searchText={(i) => [i, ...nestedOf(i)].map(searchText).join(' ')}
+      searchText={(i) => deepText(i, nestedOf, searchText)}
       itemClassName={() => 'tree-item'}
       tools={tools}
       onItemKeyDown={onRowKey}
       render={(item, listQ) => {
         const key = itemKey(item);
         const nested = nestedOf(item);
-        const q = [pageQ, listQ].filter(Boolean);
-        const nestedMatch = (n: T) => q.every((w) => matchOf(searchText(n), w));
+        const q = [...pageQs, listQ].filter(Boolean);
+        // A nested row that matches, or holds a match deeper down (opened in its turn).
+        const nestedMatch = (n: T) => holds(n, q);
         // A search opens the row just for the match (shown, not remembered).
         const revealed = q.length > 0 && nested.some(nestedMatch) && !q.every((w) => matchOf(searchText(item), w));
         const isOpen = opened.has(key) || revealed;
@@ -157,13 +168,18 @@ export function TreeList<T>({ items, nestedOf, renderRow, itemKey, searchText, c
             </div>
             {isOpen && nested.length > 0 && (
               <div className="tree-nested">
-                <LongList
+                <TreeList
                   label={nestedLabel(item)}
                   className="record-list nested"
                   items={shown}
                   itemKey={itemKey}
+                  nestedOf={nestedOf}
+                  renderRow={renderRow}
                   searchText={searchText}
-                  render={(n) => renderRow(n)}
+                  countLabel={countLabel}
+                  nestedLabel={nestedLabel}
+                  bulk={false}
+                  outer={revealed ? q : []}
                 />
               </div>
             )}
