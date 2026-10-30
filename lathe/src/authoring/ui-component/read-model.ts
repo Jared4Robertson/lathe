@@ -1,4 +1,4 @@
-// The UI component read model (LA-AUT-RM35): a UI component as its readers see it, with the views it renders, and the
+// The UI component read model (LA-AUT-RM35): a UI component as its readers see it, with the views it renders and the view requirements it builds, and the
 // UI components of a product in a list. Its projection builds them from the rows; it shares no type with the
 // aggregate.
 import type { ReadView } from '../../platform/data/rules.ts';
@@ -11,6 +11,8 @@ export interface UiComponentPage {
   description: string;
   /** The views it renders, or part of. */
   renders: string[];
+  /** The view requirements its code builds. */
+  builds: string[];
   meets: string[];
   packages: string[];
 }
@@ -38,11 +40,11 @@ export function uiComponentTableFrom(view: ReadView): UiComponentTable {
     for (const l of view.rows(table)) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
     return (id: string) => [...(found.get(id) ?? [])].sort();
   };
-  const [renders, meets, packages] = [linked('renders', 'source_id', 'target_id'), linked('meets', 'source_id', 'target_id'), linked('package_use', 'record_id', 'package')];
+  const [renders, builds, meets, packages] = [linked('renders', 'source_id', 'target_id'), linked('builds', 'source_id', 'target_id'), linked('meets', 'source_id', 'target_id'), linked('package_use', 'record_id', 'package')];
   const components = new Map<string, UiComponentPage>();
   for (const c of [...view.rows('ui_component')].sort((a, b) => String(a.id).localeCompare(String(b.id), 'en', { numeric: true }))) {
     const id = String(c.id);
-    components.set(id, { id, title: String(c.title), file: c.file === undefined ? null : String(c.file), description: String(c.description), renders: renders(id), meets: meets(id), packages: packages(id) });
+    components.set(id, { id, title: String(c.title), file: c.file === undefined ? null : String(c.file), description: String(c.description), renders: renders(id), builds: builds(id), meets: meets(id), packages: packages(id) });
   }
   return { components, kinds };
 }

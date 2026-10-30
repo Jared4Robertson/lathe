@@ -1,5 +1,5 @@
 // AggregateRepository (LA-AUT-REPO06): loads and saves the Aggregate aggregate whole, in its own tables only. A record
-// inside an aggregate (an entity, an invariant, a data model or an invariant test) is reached through the aggregate
+// inside an aggregate (an entity, an invariant, a data model, a rule or an invariant test) is reached through the aggregate
 // that holds it.
 import { AggregateRepository as Repository, type InstanceRows } from '../../platform/data/repository.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
@@ -23,7 +23,7 @@ export class AggregateRepository extends Repository<Aggregate> {
 
   /**
    * Loads the aggregate that holds the record of the kind with this ID: the aggregate itself, or the aggregate of the
-   * entity, invariant, data model or test, found up its parents inside the aggregate. Undefined when there is no such
+   * entity, invariant, data model, rule or test, found up its parents inside the aggregate. Undefined when there is no such
    * record.
    */
   loadHolding(kind: AggregateKind, id: string): Aggregate | undefined {

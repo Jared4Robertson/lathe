@@ -33,8 +33,6 @@ export const ADD_QUERY_HANDLER: CommandDefinition<AddQueryHandler> = {
 export function addQueryHandler(tx: Transaction, input: AddQueryHandler): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.loadHolding('query', input.query_id) ?? tx.refuse('missing', `there is no query ${input.query_id}`);
-  const existing = readModel.queryHandlers.find((h) => h.row.query_id === input.query_id);
-  if (existing) tx.refuse('exists', `${input.query_id} already has its query handler, ${existing.row.id}`);
   const { meets = [], packages = [], ...row } = input;
   readModel.queryHandlers.push({ row, meets, packages });
   holdToRules(tx, readModel);

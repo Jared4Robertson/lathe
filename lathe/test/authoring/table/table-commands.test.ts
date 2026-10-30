@@ -76,7 +76,7 @@ describe('LA-AUT-UC17-R50-T01 each Table command (LA-AUT-A18) changes one table 
     const store = await tableDataSet();
     expect((await runCommand(store, CHANGE_TABLE, { id: 'TL-LEND-TB01', keys: [primary], packages: ['kysely'] })).tables).toEqual(['package_use', 'table_key']);
     expect((await runCommand(store, CHANGE_TABLE, { id: 'TL-LEND-EN01-TB', file: null })).tables).toEqual(['table']);
-    expect((await runCommand(store, MOVE_TABLE, { id: 'TL-LEND-TB01', entity_id: 'TL-LEND-EN01' }).catch((e: StoreError) => e.problems[0].rule))).toBe('unique');
+    expect((await runCommand(store, MOVE_TABLE, { id: 'TL-LEND-TB01', entity_id: 'TL-LEND-EN01' }).catch((e: StoreError) => e.problems[0].rule))).toBe('one-table-each');
     const moved = await runCommand(store, MOVE_TABLE, { id: 'TL-CAT-EN01-TB', domain_id: 'TL-CAT' });
     expect(moved.tables).toEqual(['table']);
     expect(store.record('TL-CAT-EN01-TB')?.row).toMatchObject({ domain_id: 'TL-CAT' });

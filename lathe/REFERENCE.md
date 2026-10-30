@@ -302,13 +302,13 @@ A value object's own rule, checked when the value is created, such as an email a
 
 ### Invariant (`invariant`)
 
-A rule that holds for one aggregate on every change. Uniqueness across records (no two members share an email) is an invariant, enforced by a unique key of the table.
+A rule that holds for one aggregate on every change, enforced by its rule (rule) in the aggregate's code. Uniqueness across records (no two members share an email) is an invariant too, which a unique key of the table may back up.
 
 - **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`)
-- **Children:** [`invariant_test`](#kind-invariant_test)
+- **Children:** [`rule`](#kind-rule), [`invariant_test`](#kind-invariant_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its aggregate.
-  - **Built:** A data model of one of its aggregate's entities, or the table whose unique key names it, names a file that exists.
+  - **Built:** Its rule names a file that exists.
   - **Proved:** Its invariant test.
 - **ID:** `<P>-<D>-INV<nn>`, such as `TL-LEND-INV01`; it starts with its domain's ID
 - **Links out:** none
@@ -852,7 +852,7 @@ One rule a use case must follow, whatever the interface: a step of each of the u
 - **Children:** [`use_case_test`](#kind-use_case_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** A step of each of its use case's flows fulfills it: one flow per interface the use case happens through, and at least one.
-  - **Built:** Every record that carries out its fulfilling steps names a file that exists, and there is at least one: the handler of each command or query a step invokes, with the predicates and services of what that command or query checks, selects by or calls; each UI component of the view a step happens in; the adapter of each integration a step exchanges with, or a record of a product's own kind under that integration.
+  - **Built:** Every record that carries out its fulfilling steps names a file that exists, and there is at least one: the handler of each command or query a step invokes, with the predicates and services of what that command or query checks, selects by or calls; and the adapter of each integration a step exchanges with. It also rests on those specifications and domain services, and is built only while each of them is.
   - **Proved:** One of its use case tests.
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`; it starts with its parent's ID
 - **Links out:** none
@@ -1142,17 +1142,17 @@ A screen or page a person uses. It has no owner: it exists because flow steps ha
 
 ### View requirement (`view_requirement`)
 
-One rule a view must follow, such as what it shows while loading or a field's limits.
+One rule a view must follow, such as what it shows while loading or a field's limits. The UI components whose code does what it says build it (builds).
 
 - **Parents:** [`view`](#kind-view) (`view_id`)
 - **Children:** [`view_test`](#kind-view_test)
 - **Obligation:** yes: designed, built and proved
   - **Designed:** By construction, under its view.
-  - **Built:** Every UI component that renders its view names a file that exists, and there is at least one.
+  - **Built:** Every UI component that builds it names a file that exists, and there is at least one.
   - **Proved:** One of its view tests.
 - **ID:** `<view>-R<nn>`, such as `TL-V01-R01`; it starts with its parent's ID
 - **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about))
+- **Links in:** Questions about this ([`about`](#relation-about)), Built by ([`builds`](#relation-builds))
 - **Checks:** [`lone-child`](#check-lone-child)
 
 <a id="table-view_requirement"></a>
@@ -1519,6 +1519,33 @@ Its value object in code, which checks the value object's constraints when a val
 - **Unique:** `value_object_id`
 - **Rule:** `("trim"(title) != '')`
 
+<a id="kind-rule"></a>
+
+### Rule (`rule`)
+
+Enforces its invariant: the rule in its aggregate's code, run by the aggregate's commands before saving, which refuses a change that would break it. Lathe's own rules sit in each aggregate's rules.ts and also run over all data on every load. An invariant is built only through its rule.
+
+- **Parents:** [`invariant`](#kind-invariant) (`invariant_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<invariant>-RL`, such as `TL-LEND-INV01-RL`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
+- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-rule"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The rule's ID: its invariant's ID and RL, such as TL-LEND-INV01-RL. |
+| `title` | VARCHAR | yes | Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken. |
+| `invariant_id` | VARCHAR → [`invariant`](#table-invariant) | yes | The invariant it enforces; one rule each. |
+| `file` | VARCHAR | no | The file that holds its code, from the product root, such as its aggregate's rules.ts; it may not exist yet, and several records may share one file. |
+
+- **Key:** `id`
+- **Unique:** `invariant_id`
+- **Rule:** `("trim"(title) != '')`
+
 <a id="kind-predicate"></a>
 
 ### Predicate (`predicate`)
@@ -1757,13 +1784,13 @@ Its domain service in code. It never uses a repository or an outside system: its
 
 ### UI component (`ui_component`)
 
-A piece of the user interface that renders one or more views. It has no owner: it exists because views use it, and its product follows from its ID.
+A piece of the user interface that renders one or more views and builds the view requirements its code does (builds). It has no owner: it exists because views use it, and its product follows from its ID.
 
 - **Parents:** none (no owner: it exists because other records use it)
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<P>-UI<nn>`, such as `TL-UI01`; it starts with its product's ID
-- **Links out:** Meets ([`meets`](#relation-meets)), Renders ([`renders`](#relation-renders))
+- **Links out:** Builds ([`builds`](#relation-builds)), Meets ([`meets`](#relation-meets)), Renders ([`renders`](#relation-renders))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`ui-component-unused`](#check-ui-component-unused), [`view-route-not-in-file`](#check-view-route-not-in-file), [`package-not-in-manifest`](#check-package-not-in-manifest)
 
@@ -2833,7 +2860,7 @@ A pair of kinds a product lets a relation link. A new relation name gets its own
 | `source_kind` | VARCHAR | yes | The kind a link starts from. |
 | `target_kind` | VARCHAR | yes | The kind a link points at, or * for any record. |
 | `product_id` | VARCHAR → [`product`](#table-product) | yes | The product that declares it. |
-| `role` | ENUM('design', 'proof') | no | design or proof, for a new relation that counts toward coverage. A new relation's links stay inside one product. |
+| `role` | ENUM('design', 'build', 'proof') | no | design, build or proof, for a new relation that counts toward coverage: a design or build link's source builds its target once it names a file that exists, and a proof link's source proves it. A new relation's links stay inside one product. |
 | `forward_label` | VARCHAR | yes | The link read from its source. |
 | `reverse_label` | VARCHAR | yes | The link read from its target. |
 | `description` | VARCHAR | yes | What a link between these kinds means. |
@@ -2937,6 +2964,19 @@ The open question concerns the record.
 | From | To | Meaning |
 | --- | --- | --- |
 | [`question`](#kind-question) | any record | The open question concerns that record. |
+
+<a id="relation-builds"></a>
+
+### `builds`
+
+The UI component builds the view requirement: its code does what the requirement says. A view requirement is built only through the components that build it, never through any component that renders its view.
+
+- **Reads:** Builds / Built by
+- **Role:** build
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`ui_component`](#kind-ui_component) | [`view_requirement`](#kind-view_requirement) | The UI component's code does what the view requirement says. |
 
 <a id="relation-builds_on"></a>
 
@@ -3145,6 +3185,7 @@ The technical record follows the standard rule: it shows where the rule is appli
 | [`query_handler`](#kind-query_handler) | [`standard_rule`](#kind-standard_rule) | The query handler follows the standard rule. |
 | [`reader`](#kind-reader) | [`standard_rule`](#kind-standard_rule) | The reader follows the standard rule. |
 | [`repository`](#kind-repository) | [`standard_rule`](#kind-standard_rule) | The repository follows the standard rule. |
+| [`rule`](#kind-rule) | [`standard_rule`](#kind-standard_rule) | The rule follows the standard rule. |
 | [`service`](#kind-service) | [`standard_rule`](#kind-standard_rule) | The service follows the standard rule. |
 | [`table`](#kind-table) | [`standard_rule`](#kind-standard_rule) | The table follows the standard rule. |
 | [`tooling`](#kind-tooling) | [`standard_rule`](#kind-standard_rule) | The tooling record follows the standard rule. |
@@ -3276,7 +3317,7 @@ Coverage counts an obligation as designed once its implementation is specified: 
 
 An obligation not every file of what implements it exists for yet, as coverage counts it.
 
-Coverage counts an obligation as built once every technical record that implements it names a file that exists, and there is at least one: a constraint's value type, an invariant's data model (any one of its aggregate's) or the table whose unique key names it, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handlers with the predicates and services of what they check or call, or the UI components of the views its steps happen in, a view requirement's UI components, an API requirement's endpoint handler, a standard rule's meeting records. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write each file it names.
+Coverage counts an obligation as built once every one of the specific technical records that implement it names a file that exists, and there is at least one: a constraint's value type, an invariant's rule, a specification's predicate, a policy's event handler, a domain service's service, a UC requirement's command or query handlers (of what its fulfilling steps invoke) with the predicates and services of what they check, select by or call, and the adapter of each integration its steps exchange with, a view requirement's UI components that build it, an API requirement's endpoint handler, a standard rule's meeting records. Nothing else counts: no data model, unique key or UI component that only renders the view. A pattern rule asks for proof only. This warning names exactly the obligations coverage lists as not built. Add the technical record with its file, or write each file it names.
 
 <a id="check-not-proved"></a>
 
