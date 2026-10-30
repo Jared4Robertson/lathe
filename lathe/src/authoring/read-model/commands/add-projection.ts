@@ -35,7 +35,7 @@ export function addProjection(tx: Transaction, input: AddProjection): void {
   const readModels = new ReadModelRepository(tx);
   const readModel = readModels.load(input.read_model_id) ?? tx.refuse('missing', `there is no read model ${input.read_model_id}`);
   const { meets = [], packages = [], ...row } = input;
-  refuseBroken(readModelOneEach([...(readModel.projection ? [readModel.projection.row] : []), row], []));
+  refuseBroken(readModelOneEach([...(readModel.projection ? [readModel.projection.row] : []), row], [], []));
   readModel.projection = { row, meets, packages };
   holdToRules(tx, readModel);
   readModels.save(readModel);

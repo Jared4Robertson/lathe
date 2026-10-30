@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type RefObject } from 'react';
-import { CARD_MIN } from '../graph/settings';
+import { CARD_MIN } from '../exploring/session-settings/model';
 
 // The open space over the stage (LA-V96): the part of the stage no floating panel covers, where
 // the stage frames its focus. It is measured from the panels' own rectangles, never from widths

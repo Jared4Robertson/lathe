@@ -230,6 +230,28 @@
 {"id":"LA-AUT-UC30-FL03-S02","title":"They change a tooling record's file when it moves","flow_id":"LA-AUT-UC30-FL03","path":"main","position":2}
 {"id":"LA-AUT-UC30-FL04-S01","title":"Through its tool, the Agent adds a tooling record under its domain, titled as in code, naming its script or configuration","flow_id":"LA-AUT-UC30-FL04","path":"main","position":1}
 {"id":"LA-AUT-UC30-FL04-S02","title":"Through its tool, the Agent changes a tooling record's file when it moves","flow_id":"LA-AUT-UC30-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC31-FL03-S01","title":"They add a storage requirement under an aggregate","flow_id":"LA-AUT-UC31-FL03","path":"main","position":1}
+{"id":"LA-AUT-UC31-FL03-S02","title":"They add its storage requirement test","flow_id":"LA-AUT-UC31-FL03","path":"main","position":2}
+{"id":"LA-AUT-UC31-FL03-S03","title":"They remove a storage requirement whole","flow_id":"LA-AUT-UC31-FL03","path":"main","position":6}
+{"id":"LA-AUT-UC31-FL03-S04","title":"They change a storage requirement's statement","flow_id":"LA-AUT-UC31-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC31-FL03-S05","title":"They change its storage requirement test's state and file","flow_id":"LA-AUT-UC31-FL03","path":"main","position":4}
+{"id":"LA-AUT-UC31-FL03-S06","title":"They remove a storage requirement test","flow_id":"LA-AUT-UC31-FL03","path":"main","position":5}
+{"id":"LA-AUT-UC31-FL04-S01","title":"Through its tool, the Agent add a storage requirement under an aggregate","flow_id":"LA-AUT-UC31-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC31-FL04-S02","title":"Through its tool, the Agent add its storage requirement test","flow_id":"LA-AUT-UC31-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC31-FL04-S03","title":"Through its tool, the Agent remove a storage requirement whole","flow_id":"LA-AUT-UC31-FL04","path":"main","position":6}
+{"id":"LA-AUT-UC31-FL04-S04","title":"Through its tool, the Agent change a storage requirement's statement","flow_id":"LA-AUT-UC31-FL04","path":"main","position":3}
+{"id":"LA-AUT-UC31-FL04-S05","title":"Through its tool, the Agent change its storage requirement test's state and file","flow_id":"LA-AUT-UC31-FL04","path":"main","position":4}
+{"id":"LA-AUT-UC31-FL04-S06","title":"Through its tool, the Agent remove a storage requirement test","flow_id":"LA-AUT-UC31-FL04","path":"main","position":5}
+{"id":"LA-AUT-UC32-FL03-S01","title":"They add a data store under the product","flow_id":"LA-AUT-UC32-FL03","path":"main","position":1}
+{"id":"LA-AUT-UC32-FL03-S02","title":"They name it from a repository","flow_id":"LA-AUT-UC32-FL03","path":"main","position":2}
+{"id":"LA-AUT-UC32-FL03-S03","title":"They name it from a table","flow_id":"LA-AUT-UC32-FL03","path":"main","position":3}
+{"id":"LA-AUT-UC32-FL03-S04","title":"They remove a data store nothing is kept in","flow_id":"LA-AUT-UC32-FL03","path":"main","position":5}
+{"id":"LA-AUT-UC32-FL03-S05","title":"They change a data store's kind, description or the integration that reaches it","flow_id":"LA-AUT-UC32-FL03","path":"main","position":4}
+{"id":"LA-AUT-UC32-FL04-S01","title":"Through its tool, the Agent add a data store under the product","flow_id":"LA-AUT-UC32-FL04","path":"main","position":1}
+{"id":"LA-AUT-UC32-FL04-S02","title":"Through its tool, the Agent name it from a repository","flow_id":"LA-AUT-UC32-FL04","path":"main","position":2}
+{"id":"LA-AUT-UC32-FL04-S03","title":"Through its tool, the Agent name it from a table","flow_id":"LA-AUT-UC32-FL04","path":"main","position":3}
+{"id":"LA-AUT-UC32-FL04-S04","title":"Through its tool, the Agent remove a data store nothing is kept in","flow_id":"LA-AUT-UC32-FL04","path":"main","position":5}
+{"id":"LA-AUT-UC32-FL04-S05","title":"Through its tool, the Agent change a data store's kind, description or the integration that reaches it","flow_id":"LA-AUT-UC32-FL04","path":"main","position":4}
 {"id":"LA-CHK-UC01-FL03-S01","title":"The Agent runs lathe check on the product root","flow_id":"LA-CHK-UC01-FL03","path":"main","position":1}
 {"id":"LA-CHK-UC01-FL03-S02","title":"Data the store refuses becomes data-refused errors naming the file, the line and the rule, and nothing else is checked","flow_id":"LA-CHK-UC01-FL03","path":"refused","position":1}
 {"id":"LA-CHK-UC01-FL03-S03","title":"The command prints every error, then every warning, each naming its check and record, then one coverage line per domain and obligation kind","flow_id":"LA-CHK-UC01-FL03","path":"main","position":2}

@@ -35,13 +35,14 @@ export const SPACE_KEYS = 9;
 export const spaceCommandId = (n: number) => `switchSpace${n}`;
 
 /**
- * The keys of each move of the stage walk (LA-V61-R49, views/levels.ts), from anywhere on the page: the plain arrows and,
- * as a game's keys, W Up, A Left, S Down and D Right; Shift+Up (Shift+W) out to the container and Shift+Down (Shift+S)
- * in to the first node inside it. The arrow comes first: it is the key a move is shown by.
+ * The keys of each move of the stage walk (LA-V61-R49, views/levels.ts), from anywhere on the page: the plain arrows;
+ * as a game's keys, W Up, A Left, S Down and D Right; as vim's, H Left, J Down, K Up and L Right; Shift+Up (Shift+W,
+ * Shift+K) out to the container and Shift+Down (Shift+S, Shift+J) in to the first node inside it. The arrow comes first:
+ * it is the key a move is shown by.
  */
 const WALK_KEYS: Readonly<Record<Move, readonly string[]>> = {
-  left: ['ArrowLeft', 'A'], right: ['ArrowRight', 'D'], up: ['ArrowUp', 'W'], down: ['ArrowDown', 'S'],
-  out: ['Shift+ArrowUp', 'Shift+W'], in: ['Shift+ArrowDown', 'Shift+S'],
+  left: ['ArrowLeft', 'A', 'H'], right: ['ArrowRight', 'D', 'L'], up: ['ArrowUp', 'W', 'K'], down: ['ArrowDown', 'S', 'J'],
+  out: ['Shift+ArrowUp', 'Shift+W', 'Shift+K'], in: ['Shift+ArrowDown', 'Shift+S', 'Shift+J'],
 };
 /** The move a chord walks the stage by, or none. With Cmd, Ctrl or Alt held, or Shift with any other key, nothing: those keep their own meanings. */
 export const walkMove = (chord: string): Move | undefined => MOVES.find((m) => WALK_KEYS[m].includes(chord));
@@ -253,25 +254,7 @@ export function usesEnter(target: EventTarget | null): boolean {
   return el.closest(ENTER_CONTROLS) !== null;
 }
 
-// ---------- Overrides ----------
-
-export const OVERRIDES_KEY = 'lathe:keybindings';
-
-/** Reads `{ "commandId": "Mod+J" | ["Mod+J", "g j"] }` from local storage. Unknown commands and bad values are ignored. */
-export function readOverrides(): Record<string, string[]> {
-  try {
-    const raw: unknown = JSON.parse(window.localStorage.getItem(OVERRIDES_KEY) ?? '{}');
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return {};
-    const out: Record<string, string[]> = {};
-    for (const [id, value] of Object.entries(raw)) {
-      const keys = typeof value === 'string' ? [value] : Array.isArray(value) ? value.filter((v) => typeof v === 'string') : null;
-      if (keys && COMMANDS.some((c) => c.id === id && !c.local && !c.browser)) out[id] = keys;
-    }
-    return out;
-  } catch {
-    return {};
-  }
-}
+// ---------- A person's bindings ----------
 
 /** The table with a person's overrides applied; a binding that takes a browser essential is dropped. */
 export function resolveCommands(overrides: Record<string, string[]>, mac: boolean, commands: readonly Command[] = COMMANDS): Command[] {

@@ -1,6 +1,6 @@
 ---
 name: write-the-technical-spec
-description: Write or change a Lathe product's technical specification - the one technical record that implements each design record (repository, data model, table and its keys, value type, predicate, event type and its delivery, projection, reader, command, query and event handlers, service, endpoint handler, adapter, UI component), the files that hold them, and the product's standards. Use when recording where code lives and how it is stored, when adding a table, key or index, when deciding how an event is delivered, or when writing an engineering rule the code follows, in a repo with lathe.config.json.
+description: Write or change a Lathe product's technical specification - the one technical record that implements each design record (data store, repository, data model, table and its keys, value type, predicate, event type and its delivery, projection, reader, command, query and event handlers, service, endpoint handler, adapter, UI component), the files that hold them, and the product's standards. Use when recording where code lives and how it is stored, when adding a table, key or index, when deciding how an event is delivered, or when writing an engineering rule the code follows, in a repo with lathe.config.json.
 ---
 
 # Write the technical specification
@@ -25,6 +25,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 
 | Technical kind | Implements (its parent) | ID | Written with |
 | --- | --- | --- | --- |
+| `data_store` | the product or a domain: where data actually lives (`kind`: database, object store, file folder, file, browser storage or memory), titled by its name in code or config, with the integration that reaches it (`provided_by`) when someone else runs it | `<P>-STORE<nn>` or `<domain>-STORE<nn>` | `data_store_add_data_store` |
 | `repository` | a domain: loads and saves the one aggregate it `persists`, whole | `<domain>-REPO<nn>` | `domain_add_repository` |
 | `data_model` | an entity: its code, behavior and mapping to its table | `<entity>-DM` | `aggregate_add_data_model` |
 | `table` | an entity or a read model: its storage | `<entity or read model>-TB` | `table_add_table`, `table_move_table` |
@@ -45,6 +46,8 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `tooling` | a domain: a tool's configuration, such as the type checker's or the test runner's | `<domain>-TOOL<nn>` | `tooling_add_tooling` |
 
 Each has its change and remove tools beside its add.
+
+**Data stores.** Name each place the product's data actually lives as a data store: the database (its connection setting, such as `DATABASE_URL`), a bucket, the folder of files, the browser's local or session storage, or memory. Put it under the one domain that uses it, or under the product when several do. One that is a service someone else runs and the user must provide, such as a managed database or a bucket, names the integration that reaches it (`provided_by`); one the product owns outright, such as a local file or browser storage, names none. Every repository, reader and table names the one data store it is kept in (`stored_in` on its add or change); one that names none is a coverage gap (`stored-nowhere`), and so is a data store nothing is kept in (`data-store-unused`). A storage requirement (`model-a-domain`) is built only once its aggregate's repository, or its read model's reader, names a file that exists and its data store.
 
 A repository sits under its domain and names the one aggregate it `persists`: one repository per aggregate, and one aggregate per repository (a second either way is refused). A repository that persists none is an error (`repository-persists-nothing`). Write one record per repository in the code, named for its class, such as `LoanRepository`, with its methods in its description. Code that loads and saves several aggregates the same way, such as a generic store over uniform rows, is not one repository for them all: split it into one repository per aggregate, each loading and saving only its own aggregate's tables. A repository shared by several domains sits under the domain that holds what they share, such as a Platform domain.
 
@@ -99,15 +102,17 @@ Every package the product's `package.json` files list, dev dependencies included
 
 ## Example: the Tool Library
 
-The handler of Borrow a tool, the repository and data model of the Loan, and the event type of Tool returned with the event handler of the policy that hears it. Every Tool Library event goes by outbox: one path for all six keeps the code plain, and an event a later policy hears needs no change.
+The handler of Borrow a tool, the database the Lending domain keeps its data in, the repository and data model of the Loan, and the event type of Tool returned with the event handler of the policy that hears it. Every Tool Library event goes by outbox: one path for all six keeps the code plain, and an event a later policy hears needs no change.
 
 ```
 command_add_command_handler { "id": "TL-LEND-CMD05-H", "title": "borrowTool", "command_id": "TL-LEND-CMD05",
        "file": "src/loan-commands.ts",
        "description": "Checks the IDs, then in one transaction loads the member, the tool and their active loans through their repositories, and saves the new loan through LoanRepository.add. It saves LoanOpened to the outbox in that transaction and runs the relay once it commits." }
+data_store_add_data_store { "id": "TL-LEND-STORE01", "title": "DB", "domain_id": "TL-LEND", "kind": "database",
+       "description": "The Lending domain's SQLite database, at the file the DB environment variable names; in memory when it is not set." }
 domain_add_repository { "id": "TL-LEND-REPO03", "title": "LoanRepository", "domain_id": "TL-LEND", "file": "src/loan-repository.ts",
        "description": "Keeps each loan as a row of the loans table: add, get, activeForMember, activeForTool and save, each inside its command handler's transaction.",
-       "persists": "TL-LEND-A3" }
+       "persists": "TL-LEND-A3", "stored_in": "TL-LEND-STORE01" }
 aggregate_add_data_model { "id": "TL-LEND-EN04-DM", "title": "Loan", "entity_id": "TL-LEND-EN04", "file": "src/loan.ts" }
 aggregate_add_rule { "id": "TL-LEND-INV03-RL", "title": "tool_on_loan", "invariant_id": "TL-LEND-INV03", "file": "src/loan.ts" }
 domain_event_add_event_type { "id": "TL-LEND-EV06-ET", "title": "ToolReturned", "domain_event_id": "TL-LEND-EV06", "delivery": "outbox",
@@ -123,7 +128,8 @@ The loans table, with its primary key, a foreign key to the members table, and t
 table_add_table { "id": "TL-LEND-EN04-TB", "title": "loans", "entity_id": "TL-LEND-EN04", "name": "loans", "storage": "table", "file": "src/database.ts",
        "keys": [ { "type": "primary", "columns": ["id"] },
                  { "type": "foreign", "columns": ["member_id"], "target_table_id": "TL-LEND-EN01-TB" },
-                 { "type": "unique", "columns": ["tool_id"], "name": "loans_one_active_per_tool", "invariant_id": "TL-LEND-INV03", "condition": "returned_at IS NULL" } ] }
+                 { "type": "unique", "columns": ["tool_id"], "name": "loans_one_active_per_tool", "invariant_id": "TL-LEND-INV03", "condition": "returned_at IS NULL" } ],
+       "stored_in": "TL-LEND-STORE01" }
 ```
 
 A value type that checks its value object's constraints, and a standard rule a handler meets:

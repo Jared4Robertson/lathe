@@ -4,7 +4,7 @@ import { audit, LOOKS, useLook, type Finding } from './axe';
 import { withChat } from './chat';
 import { asDesktop } from '../stability/desktop';
 
-// LA-V61-R40-T01: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
+// LA-PAT-APP-UX-R10-T01: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
 // desktop and phone widths, in the Lathe theme's light and dark and in High contrast's
 // (LA-PAT-APP-UX-R10), each stage with its panels open and collapsed and under reduced transparency.
 // Each page or state in each look is one test, so a failure names both.
@@ -261,7 +261,7 @@ const PHONE: State[] = [
   } },
 ];
 
-/** The records one axe run proves besides LA-V61-R40, each by the axe rules that check it. */
+/** The records one axe run proves besides LA-PAT-APP-UX-R10, each by the axe rules that check it. */
 const BY_RULE: { record: string; says: string; rules: string[] }[] = [
   { record: 'LA-V61-R44-T01', says: "a control's name holds its visible text", rules: ['label-content-name-mismatch'] },
   { record: 'LA-V61-R45-T01', says: 'no control sits inside another', rules: ['nested-interactive'] },
@@ -297,7 +297,7 @@ for (const look of LOOKS) {
   test.describe(`desktop at 1440 px in ${look.name}`, () => {
     test.beforeEach(({ page }) => useLook(page, look));
     for (const s of DESKTOP) {
-      test(`LA-V61-R40-T01 ${s.name} passes axe`, async ({ page }) => {
+      test(`LA-PAT-APP-UX-R10-T01 ${s.name} passes axe`, async ({ page }) => {
         await s.run(page);
         await auditAll(page, `${look.name}, desktop: ${s.name}`);
       });
@@ -308,7 +308,7 @@ for (const look of LOOKS) {
     test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
     test.beforeEach(({ page }) => useLook(page, look));
     for (const s of PHONE) {
-      test(`LA-V61-R40-T01 ${s.name} passes axe`, async ({ page }) => {
+      test(`LA-PAT-APP-UX-R10-T01 ${s.name} passes axe`, async ({ page }) => {
         await s.run(page);
         await auditAll(page, `${look.name}, phone: ${s.name}`);
       });

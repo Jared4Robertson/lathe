@@ -4,6 +4,7 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ProductSettingRow } from '../../../platform/data/tables.ts';
 import { PRODUCT_SETTING_SLICE } from '../model.ts';
 import { ProductSettingRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 
 /** The product and both its limits. */
 export type SetLimits = ProductSettingRow;
@@ -29,5 +30,6 @@ export function setLimits(tx: Transaction, input: SetLimits): void {
   const settings = new ProductSettingRepository(tx);
   const setting = settings.load(input.product_id) ?? settings.create({ root: input.product_id, setting: input });
   setting.setting = input;
+  holdToRules(tx, setting);
   settings.save(setting);
 }

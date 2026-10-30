@@ -3,6 +3,7 @@ import { column, parts, type CommandDefinition } from '../../../platform/command
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { PATTERN_FOLLOWING_SLICE, valueRows, type SettingValueInput } from '../model.ts';
 import { PatternFollowingRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 
 /** The following and its setting values, the whole list. */
 export type ChangeSettingValues = { follower_id: string; pattern_id: string; setting_values: SettingValueInput[] };
@@ -28,5 +29,6 @@ export function changeSettingValues(tx: Transaction, input: ChangeSettingValues)
   const followings = new PatternFollowingRepository(tx);
   const following = followings.loadFollowing(input.follower_id, input.pattern_id) ?? tx.refuse('missing', `${input.follower_id} does not follow ${input.pattern_id}`);
   following.values = valueRows(input.follower_id, input.pattern_id, input.setting_values);
+  holdToRules(tx, following);
   followings.save(following);
 }

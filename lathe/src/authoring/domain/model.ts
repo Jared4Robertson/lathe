@@ -46,9 +46,10 @@ export interface Technical<T> {
   packages: string[];
 }
 
-/** A repository with the one aggregate it persists. */
+/** A repository with the one aggregate it persists and the data store it is stored in. */
 export interface Repository extends Technical<RepositoryRow> {
   persists: string | null;
+  storedIn: string | null;
 }
 
 /** A test with the test data sets it starts from. */
@@ -81,6 +82,7 @@ export const DOMAIN_TABLES = [
   'repository',
   'serves',
   'persists',
+  'stored_in',
   'meets',
   'package_use',
   'starts_from',
@@ -126,7 +128,7 @@ export function domainsFrom(rows: (table: string) => Row[], only?: string): Doma
   const serviceOf = new Map(domainServices.map((s) => [s.id, s.domain_id]));
   const services = (rows('service') as unknown as ServiceRow[]).filter((s) => serviceOf.has(s.domain_service_id));
   const tests = (rows('domain_service_test') as unknown as DomainServiceTestRow[]).filter((t) => serviceOf.has(t.domain_service_id));
-  const [serves, persists, meets, startsFrom, buildsOn] = ['serves', 'persists', 'meets', 'starts_from', 'builds_on'].map((table) => bySource(rows(table)));
+  const [serves, persists, storedIn, meets, startsFrom, buildsOn] = ['serves', 'persists', 'stored_in', 'meets', 'starts_from', 'builds_on'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
   const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) });
@@ -144,6 +146,7 @@ export function domainsFrom(rows: (table: string) => Row[], only?: string): Doma
       repositories: repositories.filter(own).map((row) => ({
         ...technical(row),
         persists: targets(persists, row.id)[0] ?? null,
+        storedIn: targets(storedIn, row.id)[0] ?? null,
       })),
     };
   });
@@ -165,6 +168,7 @@ export function domainRows(domain: Domain): Map<string, Row[]> {
     ['repository', domain.repositories.map((r) => asRow(r.row))],
     ['serves', domain.capabilities.flatMap((c) => links(c.row.id, c.serves))],
     ['persists', domain.repositories.flatMap((r) => links(r.row.id, [r.persists]))],
+    ['stored_in', domain.repositories.flatMap((r) => links(r.row.id, [r.storedIn]))],
     ['meets', technical.flatMap((t) => links(t.row.id, t.meets))],
     ['package_use', technical.flatMap((t) => t.packages.map((name) => ({ record_id: t.row.id, package: name })))],
     ['starts_from', domain.domainServiceTests.flatMap((t) => links(t.row.id, t.startsFrom))],

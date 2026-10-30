@@ -1,10 +1,12 @@
 // The engine's load: the Workspace contract, records with their scope, check rows run in order, product kinds, and
 // a load that reads the files afresh and writes nothing. Then the Tool Library, Lathe's worked example, checks clean.
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { LATHE_DATA_DIR, loadWorkspace, openStore, PACKAGE_DIR, tableText, type Row, type Workspace } from '../src/index.ts';
+import { ADD_CHECK } from '../src/checking/check/commands/add-check.ts';
+import { LATHE_DATA_DIR, loadWorkspace, openStore, PACKAGE_DIR, StoreError, tableText, type Row, type Workspace } from '../src/index.ts';
+import { runCommand } from '../src/platform/commands/run.ts';
 import { adding, build, complete, removeData, run } from './helpers.ts';
 
 const temps: string[] = [];
@@ -66,14 +68,14 @@ describe('checks', () => {
     const files = loaded.records.filter((r) => typeof r.fields.file === 'string').length;
     const tests = loaded.records.filter((r) => r.kind.endsWith('_test')).length;
     expect(loaded.problems).toHaveLength(1);
-    expect(loaded.problems[0].message).toBe(`${loaded.records.length} ${loaded.links.length} ${tests} ${files}/${files} 11 12`);
+    expect(loaded.problems[0].message).toBe(`${loaded.records.length} ${loaded.links.length} ${tests} ${files}/${files} 12 13`);
   });
 
   it('LA-CHK-UC02-R03-T01 Every check runs, in position order, even after one fails', async () => {
     const one = (name: string) => `SELECT NULL AS record, '${name} ran.' AS message`;
     const checks = await checksFolder([
       { name: 'first', query: one('first') },
-      { name: 'broken', query: 'SELECT * FROM no_such_table' },
+      { name: 'broken', query: 'SELECT NULL AS record, NULL AS message FROM no_such_table' },
       { name: 'third', query: one('third') },
     ]);
     const loaded = await loadWorkspace(root, { latheDataDir: checks });
@@ -99,6 +101,39 @@ describe('checks', () => {
         // Every kind a check names is one of Lathe's.
         for (const kind of (row.kinds as string[] | undefined) ?? []) expect(kinds.has(kind), `${String(row.name)}: ${kind}`).toBe(true);
       }
+    });
+
+    it("LA-CHK-INV04-T refuses a check whose query is not one SELECT returning record and message, or returns a severity its check's severity does not ask for, with check-query-select, changing no file", async () => {
+      const store = await openStore(await build(complete()));
+      const file = path.join(store.dataDir, 'check.jsonl');
+      const read = () => (existsSync(file) ? readFileSync(file, 'utf8') : null);
+      const before = read();
+      const add = async (query: string, severity = 'warning') => {
+        const error = await runCommand(store, ADD_CHECK, { name: 'house-rule', product_id: 'EX', position: 1, severity, summary: 'A house rule.', explanation: 'Made for this test. Fix what it reports.', query }).then(() => null, (e: unknown) => e);
+        expect(error, query).toBeInstanceOf(StoreError);
+        return (error as StoreError).problems.map((p) => [p.rule, p.message]);
+      };
+      try {
+        expect(await add('DELETE FROM domain')).toEqual([
+          ['check-query-select', "check house-rule's query starts with neither SELECT nor WITH; a check's query is one SELECT"],
+          ['check-query-select', "check house-rule's query returns no record or message; a check's query returns record and message"],
+        ]);
+        expect(await add("SELECT NULL AS record, 'a;b' AS message; DROP TABLE domain")).toEqual([
+          ['check-query-select', "check house-rule's query holds more than one statement; a check's query is one SELECT"],
+        ]);
+        expect(await add('SELECT NULL AS record WHERE false')).toEqual([
+          ['check-query-select', "check house-rule's query returns no message; a check's query returns record and message"],
+        ]);
+        expect(await add("SELECT 'warning' AS severity, NULL AS record, NULL AS message")).toEqual([
+          ['check-query-select', "check house-rule's query returns a severity, but the check's severity is warning; only an error_or_warning check returns one"],
+        ]);
+        expect(await add('SELECT NULL AS record, NULL AS message', 'error_or_warning')).toEqual([
+          ['check-query-select', "check house-rule's severity is error_or_warning, so its query returns each row's severity (AS severity)"],
+        ]);
+      } finally {
+        await store.close();
+      }
+      expect(read()).toBe(before);
     });
   });
 });

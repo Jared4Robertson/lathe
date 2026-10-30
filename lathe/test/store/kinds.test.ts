@@ -66,7 +66,7 @@ describe.each(kinds)('the %s table', (kind) => {
   });
 
   const enums = table.columns.filter((c) => c.kind === 'enum');
-  if (enums.length) it('LA-PLT-INV20-T refuses a value its enum does not have', async () => {
+  if (enums.length) it('LA-PAT-AGGREGATE-COMMANDS-R08-T01 refuses a value its enum does not have', async () => {
     for (const column of enums) {
       const problems = await refusal(withTable(data, kind, [{ ...row, [column.name]: 'bogus' }, ...data[kind].slice(1)]));
       expect(problems).toEqual([expect.objectContaining({ rule: 'column', file, line: 1 })]);
@@ -74,7 +74,7 @@ describe.each(kinds)('the %s table', (kind) => {
     }
   });
 
-  it('LA-PLT-INV20-T refuses a row without a required field', async () => {
+  it('LA-PAT-AGGREGATE-COMMANDS-R08-T01 refuses a row without a required field', async () => {
     const parents = new Set(schema.kinds[kind].parents.map((p) => p.column));
     const required = table.columns.filter((c) => c.required && c.name !== 'id' && !parents.has(c.name));
     for (const column of required) {

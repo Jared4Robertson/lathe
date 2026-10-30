@@ -1,10 +1,9 @@
 // `lathe init` (LA-PLT-CMD21): sets Lathe up in a product repo. It writes lathe.config.json, with this Lathe's schema
 // version and the data folder, when the repo has none, and then adds the product with the Product aggregate's own
 // command, Add a product (LA-AUT-CMD120).
-import { existsSync } from 'node:fs';
-import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { CONFIG_FILE, SCHEMA_VERSION } from '../config.ts';
+import { ProductRepoConfigRepository } from '../platform/product-repo/repository.ts';
 import { ADD_PRODUCT } from '../authoring/product/commands/add-product.ts';
 import { InputError } from '../platform/commands/definition.ts';
 import { runCommand } from '../platform/commands/run.ts';
@@ -22,9 +21,9 @@ export async function initProduct(root: string, name: string | undefined, prefix
   if (!/^[A-Z][A-Z0-9]*$/.test(id)) throw new InitError('--prefix must be capital letters and digits, starting with a letter, such as TL.');
 
   const written: string[] = [];
-  const configFile = path.join(root, CONFIG_FILE);
-  if (!existsSync(configFile)) {
-    await writeFile(configFile, `${JSON.stringify({ schema: SCHEMA_VERSION, data: 'data' }, null, 2)}\n`);
+  const config = new ProductRepoConfigRepository(root);
+  if (!config.exists()) {
+    config.save({ schema: SCHEMA_VERSION, data: 'data' });
     written.push(`Wrote ${CONFIG_FILE}`);
   }
   const store = await openStore(root);

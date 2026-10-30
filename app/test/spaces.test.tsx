@@ -165,7 +165,7 @@ describe('product spaces', () => {
     expect(window.location.pathname).toBe('/NF-NOTE');
   });
 
-  it('LA-EXP-INV04-T A space\'s last page is remembered for the session only', async () => {
+  it('LA-V90-R73-T01 A space\'s last page is remembered for the session only', async () => {
     await twoSpacesVisited();
     // Remembered for the session, not for ever.
     expect(JSON.parse(window.sessionStorage.getItem('lathe:space-pages')!)).toMatchObject({ DM: '/DM-SHOP-UC01', NF: '/NF-NOTE' });

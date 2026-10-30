@@ -6,7 +6,9 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ALLOWED_LEVELS, buildReference, GAP_RULES, LATHE_DATA_DIR, openStore, PACKAGE_DIR, renderReference, type Reference } from '../src/index.ts';
+import { ALLOWED_LEVELS, buildReference, GAP_RULES, LATHE_DATA_DIR, openStore, PACKAGE_DIR, renderReference, StoreError, type Reference } from '../src/index.ts';
+import { ADD_CHECK } from '../src/checking/check/commands/add-check.ts';
+import { runCommand } from '../src/platform/commands/run.ts';
 import { handleApi } from '../src/server/api.ts';
 import { everyKind } from './store/fixture.ts';
 import { adding, build, complete, refusals, removeData, withTable, writeData } from './helpers.ts';
@@ -57,6 +59,22 @@ describe('check rows', () => {
     }
   });
 
+  it('LA-CHK-INV03-T refuses a check whose summary is not one sentence with check-documented, changing nothing', async () => {
+    const store = await openStore(await build(complete()));
+    try {
+      const error = await runCommand(store, ADD_CHECK, {
+        name: 'house-rule', product_id: 'EX', position: 1, severity: 'warning', summary: 'A house rule. It says two things.', explanation: 'Made for this test. Fix what it reports.', query: 'SELECT NULL AS record, NULL AS message WHERE false',
+      }).then(() => null, (e: unknown) => e);
+      expect(error).toBeInstanceOf(StoreError);
+      expect((error as StoreError).problems.map((p) => [p.rule, p.message])).toEqual([
+        ['check-documented', "check house-rule's summary has 2 sentences; a check says what it reports in one"],
+      ]);
+      expect(store.rows('check').some((r) => r.name === 'house-rule')).toBe(false);
+    } finally {
+      await store.close();
+    }
+  });
+
   it('LA-CHK-INV03-T A check row is read as summary, explanation, severity, kinds and stage, and one without them is refused', async () => {
     expect(defaults.checks.find((c) => c.check === 'value-object-unused')).toEqual({
       check: 'value-object-unused',
@@ -95,7 +113,7 @@ describe('the reference', () => {
     expect(defaults.kinds.find((k) => k.kind === 'view')).toMatchObject({ parents: [], id_scope: 'product' });
     expect(defaults.kinds.find((k) => k.kind === 'endpoint')?.parents.map((p) => p.kind)).toEqual(['command', 'query']);
     // Obligations say what designs, builds and proves them; test kinds the levels they run at.
-    expect(defaults.kinds.filter((k) => k.obligation).map((k) => k.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
+    expect(defaults.kinds.filter((k) => k.obligation).map((k) => k.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'storage_requirement', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
     expect(defaults.kinds.filter((k) => k.obligation).every((k) => k.coverage !== null)).toBe(true);
     expect(defaults.kinds.find((k) => k.kind === 'uc_requirement')?.coverage?.designed).toBe("A step of each of its use case's flows fulfills it: one flow per interface the use case happens through, and at least one.");
     expect(Object.fromEntries(defaults.kinds.filter((k) => k.levels).map((k) => [k.kind, k.levels]))).toEqual(ALLOWED_LEVELS);
@@ -159,16 +177,6 @@ describe('the reference', () => {
 });
 
 describe('the schema documents itself', () => {
-  it('LA-AUT-INV24-T A product kind or relation without a description, or a check without its explanation, is refused', async () => {
-    const data = everyKind();
-    const kind = data.product_kind[0];
-    expect(await refusals(withTable(data, 'product_kind', [{ ...kind, description: ' ' }]))).toEqual([expect.objectContaining({ table: 'product_kind' })]);
-    const { description: _d, ...bare } = data.product_relation[0];
-    expect(await refusals(withTable(data, 'product_relation', [bare]))).toEqual([expect.objectContaining({ rule: 'required', table: 'product_relation' })]);
-    const check = data.check[0];
-    expect(await refusals(withTable(data, 'check', [{ ...check, explanation: '' }]))).toEqual([expect.objectContaining({ table: 'check' })]);
-  });
-
   it("LA-AUT-UC11-R06-T01 Lathe's stages, kinds, tables, checks and gaps are all documented, and a product's checks are held to the same rule", async () => {
     expect(defaults.stages.filter((s) => !s.description.trim())).toEqual([]);
     expect(defaults.kinds.filter((k) => k.description.trim() === '').map((k) => k.kind)).toEqual([]);
@@ -181,16 +189,8 @@ describe('the schema documents itself', () => {
 });
 
 describe('relation labels', () => {
-  it('LA-AUT-INV23-T A product relation without both labels is refused, and all of Lathe\'s are labeled', async () => {
-    const data = everyKind();
-    const [documents] = data.product_relation;
-    const { reverse_label: _r, ...noReverse } = documents;
-    expect(await refusals(withTable(data, 'product_relation', [noReverse]))).toEqual([expect.objectContaining({ rule: 'required', message: expect.stringContaining('reverse_label') })]);
-    expect(await refusals(withTable(data, 'product_relation', [{ ...documents, forward_label: '  ' }]))).toEqual([expect.objectContaining({ table: 'product_relation' })]);
-    expect(defaults.relations.filter((r) => !r.forward_label.trim() || !r.reverse_label.trim())).toEqual([]);
-  });
-
   it('LA-AUT-UC11-R07-T01 The reference reads each relation by its labels', () => {
+    expect(defaults.relations.filter((r) => !r.forward_label.trim() || !r.reverse_label.trim())).toEqual([]);
     expect(defaults.relations.find((r) => r.relation === 'fulfills')).toMatchObject({ forward_label: 'Fulfills', reverse_label: 'Fulfilled by' });
     const markdown = renderReference(defaults);
     expect(markdown).toContain('- **Reads:** Fulfills / Fulfilled by');

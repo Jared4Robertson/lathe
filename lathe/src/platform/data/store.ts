@@ -10,6 +10,7 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { AGGREGATE_RULES } from '../../aggregate-rules.ts';
+import { productRules } from '../../authoring/product/rules.ts';
 import { loadConfig, PACKAGE_DIR } from '../../config.ts';
 import { attachCached, baseKey, copyDatabase, productKey, writeCached } from './cache.ts';
 import { appendRows, insertRows } from './insert.ts';
@@ -358,6 +359,10 @@ export class Store {
     if (!declarations.kinds.length && !declarations.fields.length && !declarations.relations.length) {
       return { schemaDb: BASE_DB, schema: this.baseSchema };
     }
+    // The declarations are held to the Product aggregate's own rules (LA-AUT-INV22 to INV24) before any table is built
+    // from them; what is left to refuse here is only how a field becomes a column.
+    const broken = productRules.check(readView(this.baseSchema, tables)).filter((p) => (DECLARATION_TABLES as readonly string[]).includes(p.table));
+    if (broken.length) throw new StoreError(broken.map((p) => problemAt(origins, p.row, { rule: p.rule, table: p.table, message: p.message })));
     const { sql, problems } = productKindSql(this.baseSchema, declarations);
     if (problems.length) {
       throw new StoreError(problems.map((p: DeclarationProblem) => problemAt(origins, p.row, { rule: 'product-kind', table: p.table, message: p.message })));

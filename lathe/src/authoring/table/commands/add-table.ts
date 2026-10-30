@@ -1,5 +1,5 @@
-// Add a table (LA-AUT-CMD300): Adds a table under the one entity, read model or domain it stores, with its keys in order, the standard rules it meets and the packages it uses.
-import { column, ids, parts, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
+// Add a table (LA-AUT-CMD300): Adds a table under the one entity, read model or domain it stores, with its keys in order, the data store it is kept in, the standard rules it meets and the packages it uses.
+import { column, id, ids, parts, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { TableRow } from '../../../platform/data/tables.ts';
 import { KEY_COLUMNS, TABLE_SLICE, newTable, type TableKey } from '../model.ts';
@@ -7,14 +7,14 @@ import { TableRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
 /** A new table, under one parent, with its keys and the links it starts. */
-export type AddTable = Pick<TableRow, 'id' | 'title' | 'entity_id' | 'read_model_id' | 'domain_id' | 'name' | 'storage' | 'file'> & { keys?: TableKey[]; meets?: string[]; packages?: string[] };
+export type AddTable = Pick<TableRow, 'id' | 'title' | 'entity_id' | 'read_model_id' | 'domain_id' | 'name' | 'storage' | 'file'> & { keys?: TableKey[]; stored_in?: string; meets?: string[]; packages?: string[] };
 
 /** Add a table (LA-AUT-CMD300). */
 export const ADD_TABLE: CommandDefinition<AddTable> = {
   id: 'LA-AUT-CMD300',
   slice: TABLE_SLICE,
   name: 'add-table',
-  description: 'Adds a table under the one entity, read model or domain it stores, with its keys in order, the standard rules it meets and the packages it uses.',
+  description: 'Adds a table under the one entity, read model or domain it stores, with its keys in order, the data store it is kept in, the standard rules it meets and the packages it uses.',
   method: 'POST',
   route: '/api/table/add-table',
   input: {
@@ -27,6 +27,7 @@ export const ADD_TABLE: CommandDefinition<AddTable> = {
     storage: column('table', 'storage', 'required'),
     file: column('table', 'file', 'optional'),
     keys: parts('table_key', KEY_COLUMNS, 'Its keys in order: one primary at most, a unique key with the invariant it enforces (and a condition for a partial one), a foreign key with the table it points at, or an index. Only a table in a database has keys.', 'optional'),
+    stored_in: id('The data store it is kept in.', 'optional'),
     meets: ids('The standard rules it meets.', 'optional'),
     packages: texts("The packages it uses, by their names in the product's package.json files.", 'optional'),
   },
@@ -38,8 +39,8 @@ export function addTable(tx: Transaction, input: AddTable): void {
   const tables = new TableRepository(tx);
   const given = [input.entity_id, input.read_model_id, input.domain_id].filter((p) => p !== undefined).length;
   if (given !== 1) tx.refuse('parent', `table ${input.id} sits under exactly one entity, read model or domain; ${given} are given`);
-  const { keys = [], meets = [], packages = [], ...row } = input;
-  const table = tables.create(newTable(row, { keys, meets, packages }));
+  const { keys = [], stored_in, meets = [], packages = [], ...row } = input;
+  const table = tables.create(newTable(row, { keys, storedIn: stored_in ?? null, meets, packages }));
   holdToRules(tx, table);
   tables.save(table);
 }

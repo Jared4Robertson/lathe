@@ -39,25 +39,20 @@ export class DataFiles {
     return draftOf(this.tx).tables.get(table)?.get(rowKey(description, key));
   }
 
-  /** Puts the row in its table, in its normal form, in place of the row with its key. Lathe's own rows never change. */
+  /** Puts the row in its table, in its normal form, in place of the row with its key. */
   put(table: string, row: Row): void {
     const description = this.table(table);
     const result = normalizeRow(description, row);
     if ('problem' in result) this.tx.refuse(result.problem.includes('is required') ? 'required' : 'column', `${table}: ${result.problem}`);
     const normal = (result as { row: Row }).row;
-    const key = rowKey(description, normal);
-    const current = draftOf(this.tx).tables.get(table)?.get(key);
-    if (current && this.tx.isBuiltIn(current)) this.tx.refuse('built-in', `${table} ${describeKey(description, current)} is Lathe's own (lathe/data/${table}.jsonl), so it cannot change`);
-    editableTable(this.tx, table).set(key, normal);
+    editableTable(this.tx, table).set(rowKey(description, normal), normal);
   }
 
   /** Deletes the row with the row's key from its table. */
   delete(table: string, row: Row): void {
     const description = this.table(table);
     const key = rowKey(description, row);
-    const current = draftOf(this.tx).tables.get(table)?.get(key);
-    if (!current) return;
-    if (this.tx.isBuiltIn(current)) this.tx.refuse('built-in', `${table} ${describeKey(description, current)} is Lathe's own (lathe/data/${table}.jsonl), so it cannot be removed`);
+    if (!draftOf(this.tx).tables.get(table)?.has(key)) return;
     editableTable(this.tx, table).delete(key);
   }
 

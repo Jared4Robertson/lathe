@@ -67,6 +67,10 @@
 {"id":"LA-AUT-UC30-FL01","title":"Name a product's tooling in the web app","use_case_id":"LA-AUT-UC30","interface_id":"LA-IF01"}
 {"id":"LA-AUT-UC30-FL03","title":"Name a product's tooling through the CLI","use_case_id":"LA-AUT-UC30","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC30-FL04","title":"Name a product's tooling through the MCP tools","use_case_id":"LA-AUT-UC30","interface_id":"LA-IF04"}
+{"id":"LA-AUT-UC31-FL03","title":"Write a storage requirement with its tests through the CLI","use_case_id":"LA-AUT-UC31","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC31-FL04","title":"Write a storage requirement with its tests through the MCP tools","use_case_id":"LA-AUT-UC31","interface_id":"LA-IF04"}
+{"id":"LA-AUT-UC32-FL03","title":"Name where a product's data lives through the CLI","use_case_id":"LA-AUT-UC32","interface_id":"LA-IF03"}
+{"id":"LA-AUT-UC32-FL04","title":"Name where a product's data lives through the MCP tools","use_case_id":"LA-AUT-UC32","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC01-FL03","title":"Check the workspace through the CLI","use_case_id":"LA-CHK-UC01","interface_id":"LA-IF03"}
 {"id":"LA-CHK-UC01-FL04","title":"Check the workspace through the MCP tools","use_case_id":"LA-CHK-UC01","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC02-FL03","title":"Add a check through the CLI","use_case_id":"LA-CHK-UC02","interface_id":"LA-IF03"}

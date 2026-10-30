@@ -39,6 +39,10 @@ CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES technical_record (id),
 COMMENT ON TABLE meets IS 'The technical record follows the standard rule: it shows where the rule is applied, and designs it.';
 CREATE TABLE persists (source_id VARCHAR NOT NULL UNIQUE REFERENCES repository (id), target_id VARCHAR NOT NULL UNIQUE REFERENCES aggregate (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE persists IS 'The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository.';
+CREATE TABLE stored_in (source_id VARCHAR NOT NULL UNIQUE REFERENCES stored_in_source (id), target_id VARCHAR NOT NULL REFERENCES data_store (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE stored_in IS 'The repository, reader or table is kept in the data store: each names exactly one, where its data actually lives.';
+CREATE TABLE provided_by (source_id VARCHAR NOT NULL UNIQUE REFERENCES data_store (id), target_id VARCHAR NOT NULL REFERENCES integration (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE provided_by IS 'The data store is a service someone else runs, which the user must provide, reached through the integration: a managed database or a bucket. A store the product owns outright, such as a local file or browser storage, has none.';
 CREATE TABLE serves (source_id VARCHAR NOT NULL REFERENCES capability (id), target_id VARCHAR NOT NULL REFERENCES business_outcome (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE serves IS 'The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities.';
 CREATE TABLE measured_by (source_id VARCHAR NOT NULL REFERENCES business_outcome (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
@@ -69,6 +73,8 @@ INSERT INTO meta_relation VALUES
   ('follows', NULL, 'product', 'Follows', 'Followed by', NULL),
   ('meets', NULL, 'product', 'Meets', 'Met by', NULL),
   ('persists', NULL, 'product', 'Persists', 'Persisted by', NULL),
+  ('stored_in', NULL, 'product', 'Stored in', 'Stores', NULL),
+  ('provided_by', NULL, 'product', 'Provided by', 'Provides', NULL),
   ('serves', NULL, 'product', 'Serves', 'Served by', NULL),
   ('measured_by', NULL, 'product', 'Measured by', 'Measures', NULL),
   ('starts_from', NULL, 'product', 'Starts from', 'Starting point of', NULL),
@@ -116,12 +122,17 @@ INSERT INTO meta_relation_pair VALUES
   ('meets', 'entry_point', 'standard_rule', 'The entry point follows the standard rule.'),
   ('meets', 'tooling', 'standard_rule', 'The tooling record follows the standard rule.'),
   ('persists', 'repository', 'aggregate', 'The repository loads and saves the aggregate, whole.'),
+  ('stored_in', 'repository', 'data_store', 'The repository loads and saves its aggregate in the data store.'),
+  ('stored_in', 'reader', 'data_store', 'The reader reads its read model''s table in the data store.'),
+  ('stored_in', 'table', 'data_store', 'The table is kept in the data store.'),
+  ('provided_by', 'data_store', 'integration', 'The data store is a service someone else runs, reached through the integration.'),
   ('serves', 'capability', 'business_outcome', 'The capability serves the business outcome.'),
   ('measured_by', 'business_outcome', 'constraint_test', 'The business outcome is measured by the constraint test.'),
   ('measured_by', 'business_outcome', 'invariant_test', 'The business outcome is measured by the invariant test.'),
   ('measured_by', 'business_outcome', 'specification_test', 'The business outcome is measured by the specification test.'),
   ('measured_by', 'business_outcome', 'policy_test', 'The business outcome is measured by the policy test.'),
   ('measured_by', 'business_outcome', 'domain_service_test', 'The business outcome is measured by the domain service test.'),
+  ('measured_by', 'business_outcome', 'storage_requirement_test', 'The business outcome is measured by the storage requirement test.'),
   ('measured_by', 'business_outcome', 'use_case_test', 'The business outcome is measured by the use case test.'),
   ('measured_by', 'business_outcome', 'view_test', 'The business outcome is measured by the view test.'),
   ('measured_by', 'business_outcome', 'endpoint_test', 'The business outcome is measured by the endpoint test.'),
@@ -134,6 +145,7 @@ INSERT INTO meta_relation_pair VALUES
   ('starts_from', 'specification_test', 'test_data_set', 'The specification test starts from the test data set.'),
   ('starts_from', 'policy_test', 'test_data_set', 'The policy test starts from the test data set.'),
   ('starts_from', 'domain_service_test', 'test_data_set', 'The domain service test starts from the test data set.'),
+  ('starts_from', 'storage_requirement_test', 'test_data_set', 'The storage requirement test starts from the test data set.'),
   ('starts_from', 'use_case_test', 'test_data_set', 'The use case test starts from the test data set.'),
   ('starts_from', 'view_test', 'test_data_set', 'The view test starts from the test data set.'),
   ('starts_from', 'endpoint_test', 'test_data_set', 'The endpoint test starts from the test data set.'),
