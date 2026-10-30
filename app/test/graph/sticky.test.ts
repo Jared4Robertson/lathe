@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { plateOf } from '../../src/graph/plate';
 import { keepLabel, labelStrip, STICKY_READ_PX, stickyLabel, stickyRoom, type ScreenBox } from '../../src/graph/sticky';
 import { CHILD_READ_PX, FRAME_PADDING, frameOnMap, STRIP_MOST } from '../../src/graph/camera';
-import { LABEL_PAD, TITLE_FONT, textMeasure } from '../../src/graph/text';
+import { BORDER, LABEL_PAD, TITLE_FONT, textMeasure } from '../../src/graph/text';
 import { testIndex } from './workspace';
 import { graphMap, layoutTree } from './maps';
 
@@ -43,9 +43,9 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
     expect(title.map((l) => l.text).join('')).toBe(plate.title);
     expect(title[0].px).toBeLessThanOrEqual(own + 1e-9);
     expect(title[0].px).toBeGreaterThanOrEqual(STICKY_READ_PX);
-    // Centered in the visible part of its room: the label's content box and half its side padding (its shape keeps some
-    // of the box's right end).
-    const roomRight = X(plate.label.x + plate.label.w + (LABEL_PAD / 2) * plate.text);
+    // Centered in the visible part of its room: the label's content box and its side padding but twice a border (its
+    // shape keeps some of the box's right end).
+    const roomRight = X(plate.label.x + plate.label.w + (LABEL_PAD - 2 * BORDER) * plate.text);
     const lefts = s.lines.map((l) => l.x);
     const rights = s.lines.map((l) => l.x + m.em(l.text.trimEnd(), l.face) * l.px);
     expect((Math.min(...lefts) + Math.max(...rights)) / 2).toBeCloseTo((seen.left + roomRight) / 2, 0);
