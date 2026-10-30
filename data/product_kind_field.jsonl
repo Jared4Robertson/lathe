@@ -6,6 +6,8 @@
 {"kind":"cli_query","position":1,"name":"usage","type":"text","required":true,"description":"How it is called."}
 {"kind":"cli_query","position":2,"name":"mcp_tool","type":"text","required":false,"description":"The MCP tool that does the same, if any."}
 {"kind":"cli_query","position":3,"name":"file","type":"text","required":false,"description":"The code that runs it, from the repo root."}
+{"kind":"client_index","position":1,"name":"file","type":"text","required":true,"description":"The code that builds the index, from the repo root."}
+{"kind":"client_index","position":2,"name":"description","type":"text","required":true,"description":"What the index holds, what it is built from and when it is built again, in a sentence or two."}
 {"kind":"ipc_channel","position":1,"name":"file","type":"text","required":true,"description":"The code that declares the channel, from the repo root."}
 {"kind":"ipc_query","position":1,"name":"file","type":"text","required":true,"description":"The code that declares the channel, from the repo root."}
 {"kind":"plugin_hook","position":1,"name":"file","type":"text","required":true,"description":"The hook script, from the repo root."}
