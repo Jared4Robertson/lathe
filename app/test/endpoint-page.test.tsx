@@ -86,8 +86,7 @@ describe('LA-V152-R02-T01 the Endpoint editor writes only through the aggregate\
     const user = userEvent.setup();
     const { commands, writes } = await openApp('/P-D-CMD02', { data: modelWorkspace(), command: () => ({ answer: ok }) });
     const actions = await toolbar('P-D-CMD02');
-    await user.click(within(actions).getByRole('button', { name: 'Add…' }));
-    await user.click(within(actions).getByRole('button', { name: 'Endpoint' }));
+    await user.click(within(actions).getByRole('button', { name: 'Add endpoint' }));
     const form = screen.getByRole('form', { name: 'Add an endpoint' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('P-D-EP03'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'POST /returns');
