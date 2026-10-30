@@ -125,7 +125,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphDepthUp', title: 'More depth', group: 'Graph', keys: ['+', '='], when: 'graph' },
   { id: 'graphDepthDown', title: 'Less depth', group: 'Graph', keys: ['-'], when: 'graph' },
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
-  // The ERD's Tidy up (LA-V94-R09): new data keeps every box where it was, so the map is laid out afresh only on request.
+  // Tidy up (LA-PAT-APP-UX-R22), on the ERD, the Graph's Map and the Trace's views: new data keeps every box where it was, so the map is laid out afresh only on request.
   { id: 'stageTidy', title: 'Tidy up: lay the whole map out afresh', group: 'Graph', keys: ['t'], when: 'graph' },
   { id: 'graphLayout', title: 'Next layout: Tree, Nested or Map', group: 'Graph', keys: ['v'], when: 'graph' },
   // The stage walk (WALK_KEYS), from anywhere but a control that uses arrows itself (usesArrows), by the commands layer's

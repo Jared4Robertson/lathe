@@ -60,9 +60,10 @@ describe('one stage chrome', () => {
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(stage().querySelector('.trace-flow[data-ready]')).not.toBeNull());
     const trace = chrome();
-    // The Trace's own: Gaps only.
+    // The Trace's own: Gaps only, and Tidy up, the ERD's same button.
     expect(trace.order).toEqual([...SHARED, 'own', 'end: -']);
     expect(within(stage().querySelector<HTMLElement>('.stage-toolbar')!).getByRole('checkbox', { name: 'Gaps only' })).toBeInTheDocument();
+    expect(stage().querySelector('.stage-toolbar .stage-tidy')).not.toBeNull();
     expect(trace.camera).toEqual(CAMERA);
 
     // Each step button shows its arrow and letter, the same on every stage, and Out and In their names.

@@ -10,14 +10,14 @@ import type { ProductDelivery } from '../../../../lathe/src/traceability/deliver
 import { Button } from '../../components/Button';
 import type { RecordIndex } from '../../exploring/record-summaries/record-index';
 import { readState } from '../../record/page-parts';
-import { useStageWalk } from '../../shell/commands';
+import { useCommand, useStageWalk } from '../../shell/commands';
 import { Tooltip } from '../../shell/Tooltip';
 import { useNarrow } from '../../shell/useNarrow';
 import { useChangesKey } from '../../changes/ChangesKey';
 import { useDelivery } from '../../traceability/delivery/reads';
 import type { Move } from '../../views/levels';
 import type { OpenSpaceStore } from '../../views/openSpace';
-import { StageKey, StageToolbar } from '../../views/StageChrome';
+import { StageKey, StageToolbar, TidyUp } from '../../views/StageChrome';
 import { cellKey, DELIVERY_COLUMN_LABELS, DELIVERY_STAGES, deliveryGraph, everyStepKey, rowsOf, type DeliveryGraph, type DeliveryStage, type Openness } from './delivery';
 import { shownOrder } from './delivery-order';
 import { layOutDelivery } from './delivery-layout';
@@ -67,7 +67,9 @@ function DeliveryStage(props: DeliveryTraceProps & { delivery: ProductDelivery }
   const focusIsStep = index.byId.get(focus)?.kind === 'flow_step';
   if (focusIsStep && step !== focus) setStep(focus);
   const openness = useMemo<Openness>(() => ({ open, step: focusIsStep ? focus : step }), [open, step, focus, focusIsStep]);
+  // Tidy up (LA-PAT-APP-UX-R22): the rows ordered afresh, gaps closed, by the stage's shared command and button.
   const [tidy, setTidy] = useState(0);
+  useCommand('stageTidy', () => setTidy((t) => t + 1), !narrow);
   // The box the walk or a click stands on, for the focus it left there (a record may show in several boxes).
   const [walked, setWalked] = useState<{ focus: string; key: string } | null>(null);
   const at = walked?.focus === focus && graph.items.has(walked.key) ? walked.key : null;
@@ -146,16 +148,13 @@ function DeliveryStage(props: DeliveryTraceProps & { delivery: ProductDelivery }
           </Tooltip>
         ))}
       </div>
-      <Tooltip label="Tidy up: order the rows afresh to keep the lines from the outcomes short; a data change never reorders them on its own">
-        <Button onClick={() => setTidy((t) => t + 1)}>Tidy up</Button>
-      </Tooltip>
     </>
   );
   const toolbar = (
     <StageToolbar
       can={(move) => !narrow && targetOf(move) !== null}
       walkLabels={DELIVERY_WALK_LABELS}
-      own={(n) => ({ primary: props.viewSwitch(n), secondary })}
+      own={(n) => ({ primary: <>{props.viewSwitch(n)}{!narrow && <TidyUp />}</>, secondary })}
     />
   );
   const order = shownOrder(product)?.rows ?? graph.rows.map((r) => r.useCase);

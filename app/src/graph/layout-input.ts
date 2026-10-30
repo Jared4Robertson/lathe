@@ -82,7 +82,7 @@ export const probeOf = (m: TextMeasure): number[] => (['title', 'meta', 'badge']
 /** What the page sends the worker, and what it answers. */
 export type LayoutRequest =
   | { type: 'fonts'; fonts: GraphFonts; faces: FaceSource[] }
-  | { type: 'layout'; id: number; view: MapInput['view']; packed: string; roots: number[] };
+  | { type: 'layout'; id: number; view: MapInput['view']; packed: string; roots: number[]; kept: Float64Array | null };
 export type LayoutReply =
   | { type: 'ready'; measure: string; probe: number[] }
   | { type: 'laid'; id: number; boxes: Float64Array; width: number; height: number; ms: number };

@@ -5,7 +5,7 @@ import type { DeliveryOrder } from './delivery-order';
 // as tall as its tallest cell, every box one height, a cell's boxes stacked from its row's top, each child indented
 // under its parent. Top-down from fixed boxes: a row's place depends only on the rows above it and its own cells, so
 // opening a cell moves only its row's boxes and the rows below it, which glide (graph/morph.ts), and nothing beside it
-// changes width. The rows serving no outcome sit after the rest, under the mark "No outcome". Each outcome sits at the
+// changes width. A removed row's room stays empty until Tidy up (delivery-order.ts). The rows serving no outcome sit after the rest, under the mark "No outcome". Each outcome sits at the
 // median height of the rows it serves, never closer than a box to the one above it, in its order. Arithmetic only, on
 // the page: every box is one size and no text is measured, so it is worked out again at once when a cell opens.
 
@@ -51,6 +51,8 @@ export function layOutDelivery(graph: DeliveryGraph, order: DeliveryOrder, open:
   for (const u of order.rows) {
     const row = graph.rowOf.get(u);
     if (!row) continue;
+    // A removed row's room, kept until Tidy up (delivery-order.ts): a closed row's height each.
+    y += (order.roomBefore.get(u) ?? 0) * (ITEM_HEIGHT + ROW_GAP);
     if (outsideTop === null && row.data.outcomes.every((o) => !graph.items.has(`outcome/${o}`))) {
       y += y > 0 ? OUTSIDE_GAP : OUTSIDE_GAP - ROW_GAP;
       outsideTop = y;
