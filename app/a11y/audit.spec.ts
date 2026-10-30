@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from '../stability/test';
-import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD } from '../stability/scenarios';
+import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD, REFERENCED } from '../stability/scenarios';
 import { audit, LOOKS, useLook, type Finding } from './axe';
 import { withChat } from './chat';
 import { asDesktop } from '../stability/desktop';
@@ -164,10 +164,11 @@ PAGES.push(
     await page.getByRole('form').locator('.form-parts').waitFor();
   } },
   { name: 'the remove question and its refusal', run: async (page: Page) => {
-    await open(page, RECORD, '.header-strip h1');
-    await page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` }).getByRole('button', { name: 'Remove' }).click();
-    const panel = page.getByRole('region', { name: `Remove ${RECORD.slice(1)}?` });
-    await panel.getByRole('button', { name: `Remove ${RECORD.slice(1)}` }).click();
+    // A record others reference, so the removal is refused and the suite's data stays whole for the states after it.
+    await open(page, REFERENCED, '.header-strip h1');
+    await page.getByRole('toolbar', { name: `Change ${REFERENCED.slice(1)}` }).getByRole('button', { name: 'Remove' }).click();
+    const panel = page.getByRole('region', { name: `Remove ${REFERENCED.slice(1)}?` });
+    await panel.getByRole('button', { name: `Remove ${REFERENCED.slice(1)}` }).click();
     await panel.getByRole('alert').waitFor({ timeout: 20_000 });
   } },
 );

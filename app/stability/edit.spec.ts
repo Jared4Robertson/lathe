@@ -1,7 +1,7 @@
 import type { Locator, Page } from '@playwright/test';
 import { expect, test } from './test';
 import { expectStable, openPage, step } from './measure';
-import { EDITED, keepData, RECORD } from './scenarios';
+import { EDITED, keepData, RECORD, REFERENCED } from './scenarios';
 
 // Changing records in place, with nothing jumping (LA-PAT-APP-UX-R08): on the Use case page (its own editor, sending
 // the Use case aggregate's commands) and on the Domain, Test data set, Pattern, Standard, Product, Business outcome,
@@ -17,8 +17,6 @@ const NAV = 'nav#nav';
 const WIKI_BAR = '.wiki-panel-head';
 const STRIP = '.header-strip';
 const TITLE = '.wiki-panel-title';
-/** A use case others reference (pattern followings), so its removal is refused. */
-const REFERENCED = '/LA-AUT-UC02';
 const CONTENT = ['.wiki-panel-scroll'];
 /** What holds still while a form is sent: the title scrolls with the card's page, which the Reader scrolled to reach the button. */
 const SENDING = [NAV, WIKI_BAR, STRIP];
