@@ -262,3 +262,21 @@ check('step-without-endpoint', () => {
     ]);
   });
 });
+
+check('outcome-target-undated', () => {
+  it('LA-STD-MODELING-R13-T02 a business outcome whose target says no date is a warning; a year or a span from an event is a date', async () => {
+    expect(ofCheck(clean, 'outcome-target-undated')).toEqual([]);
+    const undated = await loadData(changing(complete(), 'business_outcome', () => true, { target: 'Two loans per tool per month.' }));
+    expect(ofCheck(undated, 'outcome-target-undated')).toEqual([
+      {
+        severity: 'warning',
+        check: 'outcome-target-undated',
+        record: 'EX-BO01',
+        message: 'Business outcome EX-BO01 gives its target with no date: say by when it is reached, such as within a year of opening or by 2027.',
+      },
+    ]);
+    for (const target of ['Two loans per tool per month by 2027.', 'Two loans per tool per month, by the end of the first year.']) {
+      expect(ofCheck(await loadData(changing(complete(), 'business_outcome', () => true, { target })), 'outcome-target-undated')).toEqual([]);
+    }
+  });
+});

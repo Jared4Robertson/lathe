@@ -108,6 +108,7 @@ const list = (items: readonly string[]) => items.map(sqlString).join(', ');
  * its describes' names), with test_case_id, each ID it or its describes name; test_level_allowed, the levels each test
  * kind allows (typed by the schema's test_level, so a level it does not know fails the load); source_file, each of
  * the product's source files and whether a technical record names it or a folder holding it (trace/source-files.ts);
+ * record_serves, each record a use case reaches with each outcome it serves through it (trace/serves.ts);
  * and package_facts, the packages the product's package.json files list (trace/packages.ts).
  */
 export const FACT_TABLES_SQL = `
@@ -116,6 +117,7 @@ CREATE OR REPLACE TABLE test_case (file VARCHAR NOT NULL, position INTEGER NOT N
 CREATE OR REPLACE TABLE test_case_id (file VARCHAR NOT NULL, position INTEGER NOT NULL, id VARCHAR NOT NULL);
 CREATE OR REPLACE TABLE test_level_allowed (kind VARCHAR NOT NULL, level test_level NOT NULL);
 CREATE OR REPLACE TABLE source_file (file VARCHAR NOT NULL, traced BOOLEAN NOT NULL);
+CREATE OR REPLACE TABLE record_serves (record VARCHAR NOT NULL, outcome VARCHAR NOT NULL);
 ${PACKAGE_FACTS_SQL}
 INSERT INTO test_level_allowed VALUES ${Object.entries(ALLOWED_LEVELS).flatMap(([kind, levels]) => levels.map((l) => `(${sqlString(kind)}, ${sqlString(l)})`)).join(', ')};`;
 

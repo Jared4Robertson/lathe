@@ -240,3 +240,7 @@
 {"read_model_id":"LA-TRC-RM11","position":4,"name":"Gaps","meaning":"What coverage reports it misses wherever it is owed, in the order designed, built, proved.","type":"text","required":false,"example":"proved"}
 {"read_model_id":"LA-TRC-RM11","position":5,"name":"Proof only","meaning":"Whether only proof is asked of its kind (a pattern rule), so its design and build are not owed.","type":"yes/no","required":true,"example":"false"}
 {"read_model_id":"LA-TRC-RM11","position":6,"name":"Untraced","meaning":"The records coverage reports untraced: of a kind a chain reaches, and reached by none.","type":"text","required":false,"example":"TL-LEND-CMD04"}
+{"read_model_id":"LA-TRC-RM12","position":1,"name":"Record","meaning":"The record.","type":"text","required":true,"example":"LA-AUT-A11"}
+{"read_model_id":"LA-TRC-RM12","position":2,"name":"Outcomes","meaning":"The business outcomes it serves, in ID order; none when no use case whose capability serves one reaches it.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM12","position":3,"name":"Use cases","meaning":"The use cases that reach it, through which it serves them.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM12","position":4,"name":"Serves none","meaning":"For a product: its aggregates, read models and obligations no outcome reaches.","type":"text","required":false}
