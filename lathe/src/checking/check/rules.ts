@@ -19,28 +19,27 @@ const codeOf = (query: string) => query.trim().replace(/'(?:[^']|'')*'/g, "''").
 export function checkProblems(check: Check, view: ReadView, isLathes: (row: Row) => boolean = () => false): RuleProblem[] {
   const problems: RuleProblem[] = [];
   const row = check.check;
-  const problem = (rule: string, message: string) => problems.push({ rule, table: 'check', row: row as unknown as Row, message });
+  const problem = ({ rule }: { rule: string }, message: string) => problems.push({ rule, table: 'check', row: row as unknown as Row, message });
   const name = check.root;
   if (!check.lathes && view.rows('check').some((other) => other.name === name && isLathes(other))) {
-    problem('check-name-own', `check ${name} already exists as one of Lathe's own (lathe/data/check.jsonl); give the check a name of its own`);
+    problem({ rule: 'check-name-own' }, `check ${name} already exists as one of Lathe's own (lathe/data/check.jsonl); give the check a name of its own`);
   }
-  if (check.lathes) problem('check-read-only', `check ${name} is Lathe's own (lathe/data/check.jsonl), so it cannot change or be removed`);
+  if (check.lathes) problem({ rule: 'check-read-only' }, `check ${name} is Lathe's own (lathe/data/check.jsonl), so it cannot change or be removed`);
   const sentences = String(row.summary ?? '').match(/[.!?](\s|$)/g)?.length ?? 0;
-  if (sentences !== 1) problem('check-documented', `check ${name}'s summary has ${sentences} sentences; a check says what it reports in one`);
+  if (sentences !== 1) problem({ rule: 'check-documented' }, `check ${name}'s summary has ${sentences} sentences; a check says what it reports in one`);
   for (const column of ['explanation', 'query'] as const) {
-    if (!String(row[column] ?? '').trim()) problem('check-documented', `check ${name} has no ${column}; a check gives its summary, explanation, severity and query`);
+    if (!String(row[column] ?? '').trim()) problem({ rule: 'check-documented' }, `check ${name} has no ${column}; a check gives its summary, explanation, severity and query`);
   }
   const query = String(row.query ?? '');
   if (query.trim()) {
     const code = codeOf(query);
-    if (!/^(SELECT|WITH)\b/i.test(code)) problem('check-query-select', `check ${name}'s query starts with neither SELECT nor WITH; a check's query is one SELECT`);
-    else if (code.includes(';')) problem('check-query-select', `check ${name}'s query holds more than one statement; a check's query is one SELECT`);
+    if (!/^(SELECT|WITH)\b/i.test(code)) problem({ rule: 'check-query-select' }, `check ${name}'s query starts with neither SELECT nor WITH; a check's query is one SELECT`);
+    else if (code.includes(';')) problem({ rule: 'check-query-select' }, `check ${name}'s query holds more than one statement; a check's query is one SELECT`);
     const missing = ['record', 'message'].filter((column) => !new RegExp(`\\b${column}\\b`).test(code));
-    if (missing.length) problem('check-query-select', `check ${name}'s query returns no ${missing.join(' or ')}; a check's query returns record and message`);
+    if (missing.length) problem({ rule: 'check-query-select' }, `check ${name}'s query returns no ${missing.join(' or ')}; a check's query returns record and message`);
     const returnsSeverity = /\bAS severity\b/.test(code);
     if (returnsSeverity !== (row.severity === 'error_or_warning')) {
-      problem(
-        'check-query-select',
+      problem({ rule: 'check-query-select' },
         returnsSeverity
           ? `check ${name}'s query returns a severity, but the check's severity is ${row.severity}; only an error_or_warning check returns one`
           : `check ${name}'s severity is error_or_warning, so its query returns each row's severity (AS severity)`,
