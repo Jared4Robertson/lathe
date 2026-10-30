@@ -11,9 +11,9 @@
 import { termsBottomUp } from '../../authoring/domain/read-model.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Stage } from '../../platform/data/schema.ts';
-import { inSpace, placeRecords, type Placed } from '../placement.ts';
+import { inSpace, placementOf, type Placed } from '../placement.ts';
 import { groupBy, groupOf } from '../../platform/data/grouped.ts';
-import { byRecordId } from '../../platform/data/ids.ts';
+import { byRecordId, idOrder } from '../../platform/data/ids.ts';
 import type { Row } from '../../platform/data/rows.ts';
 
 /** One record in its folder, with the records that fold under it. */
@@ -75,7 +75,7 @@ const CONTAINERS: ReadonlySet<string> = new Set(['product', 'domain']);
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
   const { schema } = view;
-  const placed = placeRecords(view);
+  const placed = placementOf(view);
   const rank = (k: string) => schema.kinds[k]?.position ?? Number.MAX_SAFE_INTEGER;
   const kinds = Object.keys(schema.kinds).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   const kindRank = new Map(kinds.map((k, i) => [k, i]));
@@ -85,10 +85,11 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
 
   const position = (r: Placed) => (typeof r.row.position === 'number' ? r.row.position : Infinity);
   const path = (r: Placed) => (typeof r.row.path === 'string' && r.row.path.trim() ? r.row.path.trim().toLowerCase() : 'main');
+  const order = idOrder(placed.keys());
   const pathRank = (a: Placed, b: Placed) => { const pa = path(a); const pb = path(b); return pa === pb ? 0 : pa === 'main' ? -1 : pb === 'main' ? 1 : pa.localeCompare(pb); };
   /** Kind by kind in the schema's order; within a kind by path, then position, then ID; terms bottom-up. */
   const sorted = (records: readonly Placed[]): Placed[] => {
-    const out = [...records].sort((a, b) => (kindRank.get(a.kind) ?? Infinity) - (kindRank.get(b.kind) ?? Infinity) || (a.kind === b.kind ? pathRank(a, b) || position(a) - position(b) : 0) || byRecordId(a, b));
+    const out = [...records].sort((a, b) => (kindRank.get(a.kind) ?? Infinity) - (kindRank.get(b.kind) ?? Infinity) || (a.kind === b.kind ? pathRank(a, b) || position(a) - position(b) : 0) || order.get(a.id)! - order.get(b.id)!);
     const first = out.findIndex((r) => r.kind === 'term');
     if (first === -1) return out;
     const terms = out.filter((r) => r.kind === 'term');

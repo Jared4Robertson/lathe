@@ -14,8 +14,8 @@
 // product's own, that has a file column) names it, or names a folder that holds it. Paths are compared from the repo
 // root, as records write them, after dropping a leading ./ and a trailing slash. It reads only names and the first
 // lines of each file; it never reads code for record IDs, which code needs not carry.
-import { existsSync, type Dirent } from 'node:fs';
-import { glob, open } from 'node:fs/promises';
+import { existsSync } from 'node:fs';
+import { open, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { CONFIG_FILE } from '../config.ts';
 
@@ -45,21 +45,38 @@ async function head(file: string): Promise<string> {
   }
 }
 
+/**
+ * Every file in the folder (from the root, '' for the root itself) and the folders under it, from the root, depth
+ * first in the order the folders list them. Links are not followed, as fs.glob does not follow them; a folder `skip`
+ * names (by its path from the root and its name) is left out with everything in it. One walk serves the globs
+ * (matching): fs.glob walks the tree again for each pattern, ten times slower.
+ */
+export async function walkFiles(root: string, skip: (folder: string, name: string) => boolean, from = ''): Promise<string[]> {
+  const entries = await readdir(path.join(root, from), { withFileTypes: true });
+  const found = await Promise.all(entries.map(async (entry): Promise<string[]> => {
+    const rel = from ? `${from}/${entry.name}` : entry.name;
+    if (entry.isDirectory()) return skip(rel, entry.name) ? [] : walkFiles(root, skip, rel);
+    return entry.isFile() ? [rel] : [];
+  }));
+  return found.flat();
+}
+
+/** The files that match one of the globs (from the root, as fs.glob reads them). */
+export function matching(files: readonly string[], globs: readonly string[]): string[] {
+  const patterns = globs.map((glob) => glob.replace(/^\.\//, ''));
+  return files.filter((file) => patterns.some((glob) => path.posix.matchesGlob(file, glob)));
+}
+
 /** The product's source files, from the root, sorted: what the source globs match, less what is left out. */
 export async function sourceFiles(root: string, source: readonly string[], tests: readonly string[]): Promise<string[]> {
   // One walk of the tree: a folder is skipped by its name, or when it holds its own config (another product).
-  const skip = (entry: Dirent) =>
-    entry.isDirectory() && (SKIPPED_FOLDERS.has(entry.name) || entry.name.startsWith('.') || existsSync(path.join(entry.parentPath, entry.name, CONFIG_FILE)));
+  const all = await walkFiles(root, (folder, name) => SKIPPED_FOLDERS.has(name) || name.startsWith('.') || existsSync(path.join(root, folder, CONFIG_FILE)));
   const isTest = (file: string) => tests.some((glob) => path.posix.matchesGlob(file, glob));
-  const found = new Set<string>();
-  for await (const entry of glob([...source], { cwd: root, exclude: skip, withFileTypes: true })) {
-    if (!entry.isFile()) continue;
-    const rel = normalizePath(path.relative(root, path.join(entry.parentPath, entry.name)));
+  const found = matching(all, source).filter((rel) => {
     const parts = rel.split('/');
-    if (parts.slice(0, -1).some((p) => TEST_FOLDERS.has(p)) || CONFIG_NAME.test(entry.name) || isTest(rel)) continue;
-    found.add(rel);
-  }
-  const files = await Promise.all([...found].map(async (rel) => {
+    return !(parts.slice(0, -1).some((p) => TEST_FOLDERS.has(p)) || CONFIG_NAME.test(parts[parts.length - 1]) || isTest(rel));
+  });
+  const files = await Promise.all(found.map(async (rel) => {
     try {
       return GENERATED(await head(path.join(root, rel))) ? null : rel;
     } catch {
