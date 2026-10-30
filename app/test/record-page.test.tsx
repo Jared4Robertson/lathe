@@ -87,8 +87,10 @@ describe('record page', () => {
       'Designed by': ['/DM-SHOP-CMD01', '/DM-SHOP-UC01-FL01', '/DM-SHOP-UC01-FL01-S01', '/DM-V01'],
       'Built by': ['/DM-SHOP-CMD01-H'],
       'Proved by': ['/DM-SHOP-UC01-R01-T01'] });
-    // In the facts, each a link: the kind to its page in the format reference, and the step that links in.
-    expect(factLinks()).toEqual(['/DM-SHOP-UC01-R01?page=format/kinds/uc_requirement', '/DM-SHOP-UC01-FL01-S01']);
+    // In the facts, each a link: the kind to its page in the format reference, the check that reports it serves no
+    // outcome (the demo shop has none), and the step that links in.
+    await within(facts()).findByText('Serves', { selector: 'dt' });
+    expect(factLinks()).toEqual(['/DM-SHOP-UC01-R01?page=format/kinds/uc_requirement', '/DM-SHOP-UC01-R01?page=format/checks/serves-no-outcome', '/DM-SHOP-UC01-FL01-S01']);
     expect(within(facts()).getByRole('heading', { name: 'Links in' })).toBeInTheDocument();
 
     // Follow it to the step, then see its links out by their labels.
