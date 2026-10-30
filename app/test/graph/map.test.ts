@@ -1,12 +1,12 @@
+import { recordIndexOf } from '../read-view';
 import { readdirSync, readFileSync } from 'node:fs';
-import { indexOf } from '../fixtures/load';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { COLUMN_GAP_SHARE, graphMap, groupWidth, layoutTree, MAP_SIZE, MAX_ASPECT, MAX_COLUMN_SHARE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, treeText, type GraphMap, type MapNode } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, MIN_ZOOM, viewRect } from '../../src/graph/camera';
 import { shapeOf, SHAPES } from '../../src/graph/shapes';
 import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK_ROOM, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
-import type { SpecIndex } from '../../src/specs/data';
+import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
 
 // The graph is one fixed map of its product's tree (LA-EXP-DS05), laid out top-down from the
@@ -15,8 +15,8 @@ import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } fr
 // column's width; the camera draws only what is in view and big enough to see (LA-EXP-DS10).
 
 /** The test workspaces' indexes, built once, so a map found by its index is the one the test laid out. */
-let built: SpecIndex[] | null = null;
-const indexes = (): SpecIndex[] => (built ??= [testIndex(), recordIndexOf(groupedWorkspace()), recordIndexOf(manyOfOneKindWorkspace())]);
+let built: RecordIndex[] | null = null;
+const indexes = (): RecordIndex[] => (built ??= [testIndex(), recordIndexOf(groupedWorkspace()), recordIndexOf(manyOfOneKindWorkspace())]);
 const maps = (): GraphMap[] => indexes().map((index) => graphMap(index, 'P'));
 
 /** A synthetic tree: `n` roots, each with `k` children, each with `k` leaves. */

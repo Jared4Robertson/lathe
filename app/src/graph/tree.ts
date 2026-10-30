@@ -1,5 +1,4 @@
-import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
-import { kindLabel } from '../exploring/record-summaries/record-index';
+import { kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { foldedChildren, ownerFolders, sharedKey, type Folder } from '../exploring/folder-tree/folders';
 import { plural } from '../plural';
 
@@ -7,7 +6,7 @@ import { plural } from '../plural';
 // its domains, then its open questions; a domain holds its stages, then the folders outside every
 // stage (open questions); a stage holds one folder per kind, or the records of its only folder itself; a folder holds the records that start a
 // branch of the stage, by the same folder model the nav, the domain page and the group pages read
-// (specs/folders.ts). Every stage and folder shown is a level of the tree, like a file explorer, and is a
+// (the Folder tree read, exploring/folder-tree/folders.ts). Every stage and folder shown is a level of the tree, like a file explorer, and is a
 // group node in the graph with an address of its own ("DM-SHOP/domain-model",
 // "DM-SHOP/domain-model/aggregate"). A record's children of its own stage fold under it, through one
 // group per kind when they are of more than one kind ("DM-SHOP-A1/command"); its children of a
@@ -109,7 +108,8 @@ export function treeOf(index: RecordIndex): Tree {
     for (const f of ownerFolders(index, ownerId).loose) addFolder(ownerId, f, ownerId, 'kind');
   };
 
-  for (const product of index.products) {
+  // The space's product: the index is one product's space.
+  for (const product of [index.byId.get(index.product)].filter((p): p is RecordSummary => !!p)) {
     visited.add(product.id);
     // What the product shares, its stages in one group (Shared), so the product splits its height between it and its
     // domains rather than among every stage and domain.
@@ -120,7 +120,7 @@ export function treeOf(index: RecordIndex): Tree {
       group(shared, { label: 'Shared', kind: null, count: own.reduce((n, s) => n + s.count, 0), members: own.flatMap((s) => s.folders.flatMap((f) => f.records)), owner: product.id, role: 'shared' });
       addStages(product.id, shared);
     }
-    for (const d of index.domainsOf.get(product.id) ?? []) {
+    for (const d of index.domains) {
       if (!add(product.id, d.id)) continue;
       visited.add(d.id);
       addStages(d.id);
@@ -129,7 +129,7 @@ export function treeOf(index: RecordIndex): Tree {
     addLoose(product.id);
   }
   // Anything no product reaches (a record whose parent is missing) hangs from its own parent, as stored.
-  for (const r of index.workspace.records) {
+  for (const r of index.byId.values()) {
     if (visited.has(r.id)) continue;
     if (r.parent && index.byId.has(r.parent) && !tree.parent.has(r.id)) add(r.parent, r.id);
     addRecord(r);

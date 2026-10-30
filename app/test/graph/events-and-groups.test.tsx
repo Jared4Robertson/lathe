@@ -1,3 +1,4 @@
+import { recordIndexOf } from '../read-view';
 import './setup';
 import { screen } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -7,7 +8,6 @@ import { treeChildren, treeParent } from '../../src/graph/tree';
 import { SETTINGS_KEY, sessionSettingsRepository } from '../../src/exploring/session-settings/repository';
 import { readView } from '../../src/views/place';
 import { openApp } from '../helpers';
-import { indexOf } from '../fixtures/load';
 import { manyOfOneKindWorkspace, testIndex } from './workspace';
 
 // The graph's tree for domain events, technical records and tests, and the
@@ -18,7 +18,7 @@ describe('domain events in the graph', () => {
 
   it('LA-V93-R04-T02 A domain event is a flag in its stage\'s colors', () => {
     expect(shapeOf('domain_event').shape).toBe('flag');
-    expect(index.kinds.get('domain_event')?.stage).toBe('domain-model');
+    expect(index.meta.kinds.get('domain_event')?.stage).toBe('domain-model');
   });
 
   it('LA-V93-R28-T01 An aggregate\'s events sit under it in a "Domain events" group, and the graph draws no raises or hears link', () => {

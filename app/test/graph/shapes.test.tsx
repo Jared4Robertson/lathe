@@ -1,5 +1,5 @@
+import { recordIndexOf } from '../read-view';
 import './setup';
-import { indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { cleanup, render, waitFor } from '@testing-library/react';
 import { graphKeyEntries } from '../../src/graph/key';
@@ -64,7 +64,7 @@ describe('a shape for each kind', () => {
 
   it('LA-V93-R12-T04 LA-V93-R06-T01 Every kind is drawn in its own shape, a group as a folder and a kind a product adds as a plain box, each shape keeping its label and badge clear of its notches and corners at every size, and the key shows every shape and mark', () => {
     // Every kind of the meta-model has the shape (and mark) the table gives it.
-    for (const { kind } of recordIndexOf(testWorkspace()).workspace.kinds) {
+    for (const { kind } of recordIndexOf(testWorkspace()).meta.kindList) {
       expect(TABLE[kind], `${kind} is in the table`).toBeDefined();
       expect(shapeOf(kind), kind).toEqual(TABLE[kind][1] ? { shape: TABLE[kind][0], mark: TABLE[kind][1] } : { shape: TABLE[kind][0] });
     }

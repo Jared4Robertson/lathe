@@ -1,5 +1,5 @@
+import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
-import { indexOf } from '../fixtures/load';
 import {
   childKinds,
   groupLabel,
