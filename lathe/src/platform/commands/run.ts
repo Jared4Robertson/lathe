@@ -14,19 +14,34 @@ export async function runCommand(store: Store, definition: AnyCommand, args: unk
   return committed;
 }
 
+/**
+ * Runs several commands as one write: each input checked against its command's fields before anything runs, then each
+ * handler in order in one transaction, and one commit. A refusal of any of them changes nothing; a change set from one
+ * write is one reload for every reader.
+ */
+export async function runCommands(store: Store, steps: readonly (readonly [AnyCommand, unknown])[]): Promise<Committed> {
+  const inputs = steps.map(([definition, args]) => [definition, parseInput(store.schema, definition, args)] as const);
+  const { committed } = await store.transact(async (tx) => {
+    for (const [definition, input] of inputs) await definition.handler(tx, input);
+  });
+  return committed;
+}
+
 /** Runs the query on the current data (a store's, or one with the checks' run) with the given arguments. */
 export function runQuery(view: ReadView, definition: AnyQuery, args: unknown): unknown {
   return answerQuery(view, definition, parseInput(view.schema, definition, args));
 }
 
 /**
- * The query's answer over the data: its handler is given its read model's reader, made over the data (injected). A
- * query that reads the checks' run, or a baseline, is refused over data that comes without one.
+ * The query's answer over the data: its handler is given its read model's reader, made over the data (injected), or
+ * the one its holder keeps for it (Store.readerOf). A query that reads the checks' run, or a baseline, is refused over
+ * data that comes without one.
  */
 export function answerQuery(view: ReadView, definition: AnyQuery, input: unknown): unknown {
   if (definition.checked && !view.checked) throw new Error(`${definition.id} reads the checks' run, and the data it was given comes without one: run the checks first.`);
   if (definition.baseline && !view.baseline) throw new Error(`${definition.id} reads the data at a baseline, and the data it was given comes without one: read the baseline first.`);
-  return definition.run(definition.reader(view) as never, input as never);
+  const reader = view.readerOf ? view.readerOf(definition.reader) : definition.reader(view);
+  return definition.run(reader as never, input as never);
 }
 
 /** What a command changed, one line per row, then the files it wrote. */
