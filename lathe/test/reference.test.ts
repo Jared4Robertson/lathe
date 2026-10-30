@@ -95,7 +95,7 @@ describe('the reference', () => {
     expect(defaults.kinds.find((k) => k.kind === 'view')).toMatchObject({ parents: [], id_scope: 'product' });
     expect(defaults.kinds.find((k) => k.kind === 'endpoint')?.parents.map((p) => p.kind)).toEqual(['command', 'query']);
     // Obligations say what designs, builds and proves them; test kinds the levels they run at.
-    expect(defaults.kinds.filter((k) => k.obligation).map((k) => k.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
+    expect(defaults.kinds.filter((k) => k.obligation).map((k) => k.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'storage_requirement', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
     expect(defaults.kinds.filter((k) => k.obligation).every((k) => k.coverage !== null)).toBe(true);
     expect(defaults.kinds.find((k) => k.kind === 'uc_requirement')?.coverage?.designed).toBe("A step of each of its use case's flows fulfills it: one flow per interface the use case happens through, and at least one.");
     expect(Object.fromEntries(defaults.kinds.filter((k) => k.levels).map((k) => [k.kind, k.levels]))).toEqual(ALLOWED_LEVELS);

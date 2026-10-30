@@ -425,6 +425,22 @@ export interface DataModelRow {
   file?: string;
 }
 
+/** Where data actually lives: a database, a bucket, a folder of files, browser storage or memory. Every repository, reader and table names the one it is stored in (stored_in). One that is a service someone else runs, which the user must provide, such as a managed database or a bucket, is reached through its integration (provided_by); one the product owns outright, such as a local file or browser storage, has none. */
+export interface DataStoreRow {
+  /** The data store's ID: its product's ID and STORE<nn>, or its domain's ID and STORE<nn>, such as TL-STORE01. */
+  id: string;
+  /** Its name in code or config, such as DATABASE_URL, dataDir or localStorage. */
+  title: string;
+  /** The product it sits under, when several of its domains use it; exactly one of product and domain is given. */
+  product_id?: string;
+  /** The domain it sits under, when one domain alone uses it; exactly one of product and domain is given. */
+  domain_id?: string;
+  /** database: a database server or file, such as PostgreSQL or SQLite; object store: a bucket of objects, such as S3; file folder: a folder of files the program reads and writes; file: one file the program reads and writes whole; browser storage: kept by the browser, such as local or session storage or its history; memory: kept only while the program runs, and rebuilt on each start. */
+  kind: "database" | "object store" | "file folder" | "file" | "browser storage" | "memory";
+  /** Where it is and what keeps it there, in a sentence or two: its location, who runs it and how it is reached. */
+  description: string;
+}
+
 /** An unchangeable record that something happened to an aggregate, named in the past tense (Loan opened), raised by its commands. What it carries are event_field rows. */
 export interface DomainEventRow {
   /** The event's ID, such as TL-LEND-EV01. */
@@ -967,7 +983,7 @@ export interface PatternRuleTestRow {
   notes?: string;
 }
 
-/** Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage. It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason. */
+/** Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage, in the one data store it names (stored_in). It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason. */
 export interface RepositoryRow {
   /** The repository's ID: its domain's ID and REPO<nn>, such as TL-LEND-REPO01. */
   id: string;
@@ -1113,6 +1129,12 @@ export interface ProjectionRow {
   description: string;
 }
 
+/** The data store is a service someone else runs, which the user must provide, reached through the integration: a managed database or a bucket. A store the product owns outright, such as a local file or browser storage, has none. */
+export interface ProvidedByRow {
+  source_id: string;
+  target_id: string;
+}
+
 /** Answers its query from its read model's table: an application service that changes nothing. */
 export interface QueryHandlerRow {
   /** The query handler's ID: its query's ID and H, such as TL-LEND-QRY01-H. */
@@ -1157,7 +1179,7 @@ export interface ReadModelFieldRow {
   example?: string;
 }
 
-/** Reads its read model's table for its query handlers: the way query handlers reach a read model's storage. It reads exactly one read model, its parent, and nothing else; a query handler reads only through its own read model's reader, and the projection alone fills the table it reads. */
+/** Reads its read model's table for its query handlers: the way query handlers reach a read model's storage, in the one data store it names (stored_in). It reads exactly one read model, its parent, and nothing else; a query handler reads only through its own read model's reader, and the projection alone fills the table it reads. */
 export interface ReaderRow {
   /** The reader's ID: its read model's ID and RD, such as TL-LEND-RM01-RD. */
   id: string;
@@ -1343,7 +1365,57 @@ export interface StartsFromRow {
   target_id: string;
 }
 
-/** Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables, or computed in memory on each load. */
+/** What the business needs kept of one aggregate or read model, its parent, and how well: whichever apply of durability (it survives a restart or a crash), atomicity (saved whole or not at all, such as a loan with its outbox event), retention and deletion (how long it is kept, and deleted on request), recovery (backups, and how much may be lost) and capacity (how much, how fast). It is built by its aggregate's repository, or its read model's reader, naming a file that exists and the data store it is stored in, and proved by its storage requirement tests. */
+export interface StorageRequirementRow {
+  /** The requirement's ID: its aggregate's or read model's ID and SR<nn>, such as TL-LEND-A1-SR01. */
+  id: string;
+  /** The requirement in a few words, such as A loan is saved with its outbox event. */
+  title: string;
+  /** The aggregate whose data it is about; exactly one of aggregate and read model is given. */
+  aggregate_id?: string;
+  /** The read model whose data it is about; exactly one of aggregate and read model is given. */
+  read_model_id?: string;
+  /** What must be kept and how well, stated with MUST, MUST NOT, SHOULD or MAY. */
+  statement: string;
+}
+
+/** Proves its storage requirement at the level that can observe it: a round trip, a restart, a failed save that leaves nothing behind, a deletion, a restore. */
+export interface StorageRequirementTestRow {
+  /** The test's ID: its storage requirement's ID and T<nn>, such as TL-LEND-A1-SR01-T01. */
+  id: string;
+  /** What the test shows, in a sentence. */
+  title: string;
+  /** The storage requirement it proves. */
+  storage_requirement_id: string;
+  /** How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. */
+  level: "unit" | "integration" | "service" | "system" | "browser";
+  /** automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. */
+  state: "automated" | "manual" | "not automated yet";
+  /** The file that runs it, from the product root; an automated test must name one. */
+  file?: string;
+  /** Why a person runs it rather than a file; a manual test must give one, and only a manual test. */
+  manual_reason?: string;
+  /** How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). */
+  size?: "volume" | "worst case";
+  /** Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. */
+  smoke?: boolean;
+  /** Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. */
+  external?: boolean;
+  /** What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). */
+  when: string;
+  /** What the test expects. */
+  then: string;
+  /** Longer notes on the test, such as when to run it. */
+  notes?: string;
+}
+
+/** The repository, reader or table is kept in the data store: each names exactly one, where its data actually lives. */
+export interface StoredInRow {
+  source_id: string;
+  target_id: string;
+}
+
+/** Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. It is kept in the one data store it names (stored_in). Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables, or computed in memory on each load. */
 export interface TableRow {
   /** The table's ID: its entity's or read model's ID and TB, such as TL-LEND-EN01-TB. */
   id: string;
@@ -1535,6 +1607,7 @@ export interface TableRows {
   constraint: ConstraintRow;
   constraint_test: ConstraintTestRow;
   data_model: DataModelRow;
+  data_store: DataStoreRow;
   domain_event: DomainEventRow;
   domain_service_test: DomainServiceTestRow;
   endpoint_handler: EndpointHandlerRow;
@@ -1581,6 +1654,7 @@ export interface TableRows {
   product_relation: ProductRelationRow;
   product_setting: ProductSettingRow;
   projection: ProjectionRow;
+  provided_by: ProvidedByRow;
   query_handler: QueryHandlerRow;
   raises: RaisesRow;
   read_model_field: ReadModelFieldRow;
@@ -1598,6 +1672,9 @@ export interface TableRows {
   standard_rule_test: StandardRuleTestRow;
   test_data_set: TestDataSetRow;
   starts_from: StartsFromRow;
+  storage_requirement: StorageRequirementRow;
+  storage_requirement_test: StorageRequirementTestRow;
+  stored_in: StoredInRow;
   table: TableRow;
   table_key: TableKeyRow;
   tooling: ToolingRow;
