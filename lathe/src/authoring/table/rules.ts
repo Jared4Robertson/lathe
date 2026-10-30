@@ -23,10 +23,11 @@ function domainOf(view: ReadView, table: TableRow): string | undefined {
 }
 
 /**
- * Every rule the table breaks (LA-AUT-INV13 an entity stored in its root's table has no table of its own; LA-AUT-INV14
- * a table has one primary key at most; LA-AUT-INV81 a foreign key points at a table of the same domain; LA-AUT-INV82
- * keys are asked only of a table in a database, and no foreign key points at one outside). The view gives what the
- * table names outside itself: its entity, and the tables its foreign keys point at.
+ * Every rule the table breaks (LA-AUT-INV106 an entity or read model has at most one table; LA-AUT-INV13 an entity
+ * stored in its root's table has no table of its own; LA-AUT-INV14 a table has one primary key at most; LA-AUT-INV81 a
+ * foreign key points at a table of the same domain; LA-AUT-INV82 keys are asked only of a table in a database, and no
+ * foreign key points at one outside). The view gives what the table names outside itself: its entity, the tables its
+ * foreign keys point at, and the other tables.
  */
 export function tableProblems(table: Table, view: ReadView): RuleProblem[] {
   const problems: RuleProblem[] = [];
@@ -56,6 +57,15 @@ export function tableProblems(table: Table, view: ReadView): RuleProblem[] {
       }
     }
   });
+  // LA-AUT-INV106: an entity or a read model has at most one table; the table is refused when another already stores it.
+  for (const column of ['entity_id', 'read_model_id'] as const) {
+    const parent = row[column];
+    if (!parent) continue;
+    const other = view.rows('table').find((t) => t[column] === parent && t.id !== row.id);
+    if (other) {
+      problems.push({ rule: 'one-table-each', table: 'table', row: tableRow, message: `${column === 'entity_id' ? 'entity' : 'read model'} ${parent} already has its table, ${String(other.id)}, so ${row.id} cannot be a second: ${column === 'entity_id' ? 'an entity' : 'a read model'} has one` });
+    }
+  }
   return problems;
 }
 

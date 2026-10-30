@@ -66,7 +66,7 @@ Gaps are the "at least one" and "exactly one" a later stage still owes: a capabi
 The obligations are constraints, invariants, specifications, policies, domain services, UC requirements, view requirements, API requirements, pattern rules and standard rules, and a product's own obligation kinds. Coverage counts each one, per domain:
 
 - **designed**: its implementation is specified. A UC requirement is designed once a step of each of its use case's flows fulfills it; the others once the technical record that implements them exists.
-- **built**: every technical record that implements it names a file that exists, and there is at least one. A UC requirement also needs the predicates and services of what its commands and queries check or call.
+- **built**: every one of the specific technical records that implement it names a file that exists, and there is at least one: an invariant's rule, a view requirement's UI components that `builds` it, a UC requirement's handlers of what its fulfilling steps invoke (with the predicates and services of what they check or call) and adapters of the integrations they exchange with. A data model, a unique key or a UI component that only renders the view builds nothing; when one is reported not built, add the record that really builds it (`aggregate_add_rule`, a `builds` list on `ui_component_change_ui_component`), or write the code.
 - **proved**: its tests exist at a level its kind allows, automated or manual. A test not automated yet is not proof. A standard rule is proved by its standard rule tests.
 
 ## Report

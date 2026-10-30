@@ -79,8 +79,8 @@ export interface KindReference {
 
 export interface RelationReference {
   relation: string;
-  /** 'design': its links design what they target; 'proof': they prove it; '' otherwise. */
-  role: 'design' | 'proof' | '';
+  /** 'design': its links design what they target; 'build': they build it; 'proof': they prove it; '' otherwise. */
+  role: 'design' | 'build' | 'proof' | '';
   /** The link read from the source: "Fulfills". */
   forward_label: string;
   /** The link read from the target: "Fulfilled by". */

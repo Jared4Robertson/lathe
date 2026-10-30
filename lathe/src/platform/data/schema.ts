@@ -144,7 +144,7 @@ export interface RelationPair {
 
 export interface RelationDescription {
   name: string;
-  role: 'design' | 'proof' | null;
+  role: 'design' | 'build' | 'proof' | null;
   /** What its two ends must share: product (every link), domain or aggregate. */
   scope: LinkScope;
   forwardLabel: string;
@@ -339,7 +339,7 @@ export async function describeSchema(connection: DuckDBConnection): Promise<Sche
     'SELECT * FROM meta_relation_pair ORDER BY relation, source_kind, target_kind',
   );
   const relations: Record<string, RelationDescription> = {};
-  for (const r of await rows<{ name: string; role: 'design' | 'proof' | null; scope: LinkScope; forward_label: string; reverse_label: string; product_id: string | null }>(
+  for (const r of await rows<{ name: string; role: 'design' | 'build' | 'proof' | null; scope: LinkScope; forward_label: string; reverse_label: string; product_id: string | null }>(
     connection,
     'SELECT * FROM meta_relation ORDER BY name',
   )) {
