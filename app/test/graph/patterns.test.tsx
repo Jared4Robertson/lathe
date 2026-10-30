@@ -1,5 +1,5 @@
+import { recordIndexOf } from '../read-view';
 import './setup';
-import { indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { neighborhood } from '../../src/graph/model';
 import { patternWorkspace } from '../fixtures/patterns';

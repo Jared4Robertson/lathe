@@ -1,5 +1,5 @@
+import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
-import { indexOf } from '../fixtures/load';
 import { neighborhood, type Neighborhood } from '../../src/graph/model';
 import { graphMap } from '../../src/graph/map';
 import { groupedWorkspace, testIndex } from './workspace';

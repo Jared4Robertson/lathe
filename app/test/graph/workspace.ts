@@ -1,5 +1,6 @@
+import { recordIndexOf } from '../read-view';
 import type { ServedData } from '../read-view';
-import { addRows, indexOf } from '../fixtures/load';
+import { addRows } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
 
 // The graph tests' workspace: the `model` fixture (fixtures/model.ts), product P with domains P-D and

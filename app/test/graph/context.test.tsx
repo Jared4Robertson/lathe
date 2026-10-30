@@ -1,6 +1,7 @@
+import { recordIndexOf } from '../read-view';
 import type { ServedData } from '../read-view';
 import './setup';
-import { addRows, indexOf } from '../fixtures/load';
+import { addRows } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { graphSummary, keyboardOrder, type Box } from '../../src/graph/GraphPage';
@@ -8,7 +9,7 @@ import { graphLevels, graphTarget } from '../../src/graph/steps';
 import { groupLabel, groupMembers, isGraphNode, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { treeChildren, treeParent } from '../../src/graph/tree';
 import { labelLines } from '../../src/graph/text';
-import { domainFolders } from '../../src/specs/folders';
+import { domainFolders } from '../../src/exploring/folder-tree/folders';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { boxElement, boxElements, drawnBox, graphHost, isCenter, scene } from './scene';
