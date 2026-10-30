@@ -202,7 +202,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     if (state.marks) paintMark(ctx, p, cam, look, fonts, state.marks, state.open, X, Y);
   }
   if (state.marks) paintGhosts(ctx, cam, look, fonts, state.marks, frame.plates, X, Y);
-  if (state.marks?.highlight) paintEdgeHints(ctx, cam, look, fonts, state.marks.highlight.boxes, state.open);
+  if (state.marks?.highlight) paintEdgeHints(ctx, cam, look, fonts, state.marks.highlight.boxes, frame.plates, state.open);
 
   ctx.globalAlpha = 1;
   paintVignette(ctx, dpr, cam, look);
@@ -561,8 +561,16 @@ function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: L
 function paintGhosts(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, fonts: GraphFonts, marks: StageMarks, plates: readonly Plate[], X: (x: number) => number, Y: (y: number) => number) {
   const lasting = marks.highlight !== null;
   if (marks.reduced && !lasting) return;
-  for (const g of marks.ghosts) {
-    const t = lasting ? 0 : (marks.now - g.t) / GHOST_MS;
+  const settled: { x: number; y: number; w: number; h: number }[] = [];
+  for (const own of marks.ghosts) {
+    const t = lasting ? 0 : (marks.now - own.t) / GHOST_MS;
+    let g = own;
+    if (lasting) {
+      // The map has moved on since the record went, so a box may lie where it was: the ghost steps down the column to the first room clear of every box and ghost.
+      const taken = (r: { x: number; y: number; w: number; h: number }) => plates.some((p) => p.x < r.x + r.w && p.x + p.w > r.x && p.y < r.y + r.h && p.y + p.h > r.y) || settled.some((o) => o.x < r.x + r.w && o.x + o.w > r.x && o.y < r.y + r.h && o.y + o.h > r.y);
+      for (let k = 0; k < 40 && taken(g); k++) g = { ...g, y: g.y + own.h * 1.15 };
+      settled.push(g);
+    }
     if (t < 0 || t >= 1 || !onCanvas(g, cam)) continue;
     const x = X(g.x);
     const y = Y(g.y);
@@ -622,10 +630,31 @@ export function changesPastEdges(boxes: readonly { x: number; y: number; w: numb
   return past;
 }
 
-/** At each edge of the open canvas, a chip counting the changed boxes past it ("4 changes →"); none for an edge with none. */
-function paintEdgeHints(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, fonts: GraphFonts, boxes: readonly { x: number; y: number; w: number; h: number }[], open: ScreenBox) {
+type Rect = { left: number; top: number; right: number; bottom: number };
+const hits = (a: Rect, b: Rect) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+/**
+ * At each edge of the open canvas, a chip counting the changed boxes past it ("4 changes →"), docked to that edge and slid
+ * along it to the nearest place clear of every drawn box, else of every label, so it never covers a box's text or pills; none for an
+ * edge with nothing past it.
+ */
+function paintEdgeHints(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, fonts: GraphFonts, boxes: readonly { x: number; y: number; w: number; h: number }[], plates: readonly Plate[], open: ScreenBox) {
   if (boxes.length === 0) return;
   const past = changesPastEdges(boxes, cam, open);
+  const sx = (x: number) => (x - cam.cx) * cam.zoom + cam.w / 2;
+  const sy = (y: number) => (y - cam.cy) * cam.zoom + cam.h / 2;
+  const bodies: Rect[] = [];
+  const labels: Rect[] = [];
+  for (const p of plates) {
+    bodies.push({ left: sx(p.x), top: sy(p.y), right: sx(p.x + p.w), bottom: sy(p.y + p.h) });
+    labels.push({ left: sx(p.label.x), top: sy(p.label.y), right: sx(p.label.x + p.label.w), bottom: sy(p.label.y + p.label.h) });
+    // Its top edge, where its pill and roll-up sit.
+    const edge = Math.max(sy(p.y), open.top + PILL_H_PX / 2 + 3);
+    const strip = { left: sx(p.x), top: edge - 10, right: sx(p.x + p.w), bottom: edge + 10 };
+    labels.push(strip);
+    bodies.push(strip);
+  }
+  const placed: Rect[] = [];
   ctx.save();
   ctx.globalAlpha = 1;
   for (const side of Object.keys(HINT_ARROWS) as HintSide[]) {
@@ -634,11 +663,23 @@ function paintEdgeHints(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, 
     const text = `${n} ${n === 1 ? 'change' : 'changes'} ${HINT_ARROWS[side]}`;
     ctx.font = fontFor(fonts, 'badge', PILL_FONT_PX + 1);
     const w = ctx.measureText(text).width + 2 * PILL_PAD_PX + 4;
-    const midX = (open.left + open.right) / 2;
-    const midY = (open.top + open.bottom) / 2;
-    const x = side === 'left' ? open.left + 8 : side === 'right' ? open.right - 8 - w : midX - w / 2;
-    const y = side === 'up' ? open.top + 14 : side === 'down' ? open.bottom - 14 : midY;
-    pill(ctx, fonts, text, x, y, look.sheet, look.ink, look.changeChanged);
+    const h = PILL_H_PX;
+    const vertical = side === 'left' || side === 'right';
+    const lo = (vertical ? open.top : open.left) + 24;
+    const hi = (vertical ? open.bottom : open.right) - 24 - (vertical ? 0 : w);
+    const at = (t: number): Rect => {
+      const x = side === 'left' ? open.left + 4 : side === 'right' ? open.right - 4 - w : t;
+      const y = side === 'up' ? open.top + 4 : side === 'down' ? open.bottom - 4 - h : t - h / 2;
+      return { left: x, top: y, right: x + w, bottom: y + h };
+    };
+    // Candidates from the middle of the edge outwards.
+    const mid = (lo + hi) / 2;
+    const spots: number[] = [mid];
+    for (let d = 20; mid - d >= lo || mid + d <= hi; d += 20) { if (mid + d <= hi) spots.push(mid + d); if (mid - d >= lo) spots.push(mid - d); }
+    const clear = (r: Rect, against: Rect[]) => !against.some((o) => hits(r, o)) && !placed.some((o) => hits(r, o));
+    const rect = [bodies, labels].reduce<Rect | null>((found, against) => found ?? spots.map(at).find((r) => clear(r, against)) ?? null, null) ?? at(mid);
+    placed.push(rect);
+    pill(ctx, fonts, text, rect.left, (rect.top + rect.bottom) / 2, look.sheet, look.ink, look.changeChanged);
   }
   ctx.restore();
 }

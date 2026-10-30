@@ -159,6 +159,25 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
     expect(await screen.findByText(/Previous change: Put item in basket, changed, 1 of 2/)).toBeInTheDocument();
   });
 
+  it('LA-EXP-UC15-R03-T02 A record removed that the baseline had leaves only its ghost; one new since the baseline and then removed leaves nothing', async () => {
+    startAtDepth(3);
+    // The page opens with CMD09 already added since the baseline (the fixture as committed has only CMD01).
+    const opened = await openApp('/DM-SHOP-A1', { data: agentEdits(), baseline: baselines() });
+    expect(opened).toBeDefined();
+    await screen.findByRole('group', { name: 'Changes' });
+    await waitFor(() => expect(drawnBox('DM-SHOP-CMD09')).toBeDefined());
+    fireEvent.click(within(tools()).getByRole('button', { name: 'Highlight changes' }));
+    await waitFor(() => expect(drawnBox('DM-SHOP-CMD09')?.pill).toBe('added'));
+    // It never existed at the baseline: removing it leaves no box and no ghost.
+    await land(withoutCommand(agentEdits(), 'DM-SHOP-CMD09'));
+    await waitFor(() => expect(drawnBox('DM-SHOP-CMD09')).toBeUndefined());
+    expect(scene().ghosts).not.toContain('DM-SHOP-CMD09');
+    // CMD01 did exist at the baseline: removing it leaves its ghost, and no other box.
+    await land(withoutCommand(withoutCommand(agentEdits(), 'DM-SHOP-CMD09'), 'DM-SHOP-CMD01'));
+    await waitFor(() => expect(scene().ghosts).toContain('DM-SHOP-CMD01'));
+    expect(drawnBox('DM-SHOP-CMD01')).toBeUndefined();
+  });
+
   it('LA-EXP-UC15-R04-T01 The diff in the wiki card: each changed field old → new; an added record new since the baseline', async () => {
     await openAt('/DM-SHOP-CMD01');
     await land(agentEdits());

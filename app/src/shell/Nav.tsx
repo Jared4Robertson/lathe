@@ -431,9 +431,9 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
                 >
                   <Link to={addressOf(domain.id)} aria-current={here(path, addressOf(domain.id))} title={domain.title}>
                     <span className="nav-label">{domain.title}</span>
-                    <NavChanges counts={rolled?.ofDomain(domain.id)} />
                   </Link>
                 </NavRow>
+                <NavChanges depth={0} counts={rolled?.ofDomain(domain.id)} />
                 {open && (
                   <ul className="nav-tree" id={bodyId} aria-label={`Folders of ${domain.title}`}>
                     {stageRows(stages, domain.title, 1)}
@@ -453,9 +453,10 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
               <li key={folder.key}>
                 <NavRow depth={0} selected={path === to}>
                   <Link to={to} aria-current={here(path, to)}>
-                    <span className="nav-label">{folder.label}</span> <NavChanges counts={rolled?.ofRecords(folder.records.map((r) => r.id))} /> <span className="nav-badge quiet">{folder.count}</span>
+                    <span className="nav-label">{folder.label}</span> <span className="nav-badge quiet">{folder.count}</span>
                   </Link>
                 </NavRow>
+                <NavChanges depth={0} counts={rolled?.ofRecords(folder.records.map((r) => r.id))} />
               </li>
             );
           })}
@@ -480,18 +481,18 @@ function NavRow({ depth, selected = false, holds = false, chevron, children }: {
   );
 }
 
-/** A row's changes with Highlight changes on: "+3 ~5 −1" in each change's color, with the words for a screen reader and the tooltip. */
-function NavChanges({ counts }: { counts: ChangeCounts | undefined }) {
+/** A row's changes with Highlight changes on: "+3 ~5 −1" in each change's color on a line under the row, so no label gives up room; the words are for a screen reader and the tooltip. */
+function NavChanges({ counts, depth }: { counts: ChangeCounts | undefined; depth: number }) {
   if (!counts) return null;
   return (
-    <span className="nav-changes" title={rollupText(counts)}>
+    <div className="nav-changes" style={{ '--depth': depth } as CSSProperties} title={rollupText(counts)}>
       <span className="sr-only">{rollupText(counts)}</span>
       <span aria-hidden="true" className="nav-changes-marks">
         {counts.added > 0 && <span className="is-added">+{counts.added}</span>}
         {counts.changed > 0 && <span className="is-changed">~{counts.changed}</span>}
         {counts.removed > 0 && <span className="is-removed">−{counts.removed}</span>}
       </span>
-    </span>
+    </div>
   );
 }
 
@@ -507,9 +508,9 @@ function NavFolder({ id, depth, label, count, changes, open, holds = false, onTo
         <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
         {stage && <StageMark stage={stage} />}
         <span className="nav-label">{label}</span>
-        <NavChanges counts={changes} />
         <span className="nav-badge quiet">{count}</span>
       </button>
+      <NavChanges depth={depth} counts={changes} />
       {open && <div id={bodyId} className="nav-folder-body">{children}</div>}
     </li>
   );

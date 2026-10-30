@@ -5,7 +5,7 @@ import { chooseChangesBaseline } from '../exploring/session-settings/commands/ch
 import { turnFollowOnOrOff } from '../exploring/session-settings/commands/turn-follow-on-or-off';
 import { markProductLookedAt } from '../exploring/session-settings/commands/mark-product-looked-at';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { ChangesContext, createLiveStore, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Since } from './changes';
+import { ChangesContext, createLiveStore, type RecordChange, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Since } from './changes';
 
 /** How long the note saying why Follow went off stays, in ms. */
 const FOLLOW_NOTE_MS = 6000;
@@ -18,13 +18,15 @@ export function ChangesProvider({ index, product, children }: { index: RecordInd
   const { changes: settings } = useSessionSettings();
   const [live] = useState(createLiveStore);
 
-  // The live changes: each reload against the data before it.
+  // The live changes: each reload against the data before it. A record the baseline lacks (new since it) that is then removed
+  // never existed at the baseline: it leaves no mark and no ghost, where one that did exist leaves its ghost.
+  const baselineChanges = useRef<ReadonlyMap<string, RecordChange>>(new Map());
   const before = useRef<RecordIndex | null>(null);
   useEffect(() => {
     const was = before.current;
     before.current = index;
     if (!was || !index || was === index) return;
-    live.note(reloadChanges(was, index), (id) => index.byId.get(id)?.product ?? was.byId.get(id)?.product ?? null);
+    live.note(reloadChanges(was, index).filter((c) => !(c.change === 'removed' && baselineChanges.current.get(c.id)?.change === 'added')), (id) => index.byId.get(id)?.product ?? was.byId.get(id)?.product ?? null);
   }, [index, live]);
 
   // The Reader looks at a product: the moment is kept as its "since I last looked", and its live marks go.
@@ -80,6 +82,7 @@ export function ChangesProvider({ index, product, children }: { index: RecordInd
   const current: Baseline = baseline.key === key ? baseline.value : { state: 'loading' };
   const changes = useMemo(() => (current.state === 'ok' ? current.changes : []), [current]);
   const byId = useMemo(() => new Map(changes.map((c) => [c.id, c])), [changes]);
+  baselineChanges.current = byId;
 
   const api = useMemo<ChangesApi>(() => ({
     product, highlight: settings.highlight, setHighlight, since: settings.since, setSince, follow: settings.follow, setFollow, followNote,
