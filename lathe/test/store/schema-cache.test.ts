@@ -60,7 +60,8 @@ function writeFileAt(dir: string, name: string): string {
 }
 
 const baseFile = (dir: string) => path.join(dir, `${baseKey(readMigrations())}.duckdb`);
-const files = (dir: string) => readdirSync(dir).sort();
+// The schema files; the validated-build stamps beside them are validated-build.test.ts's.
+const files = (dir: string) => readdirSync(dir).filter((f) => f.endsWith('.duckdb')).sort();
 const stamp = (file: string) => {
   const s = statSync(file);
   return `${s.ino} ${s.mtimeMs}`;

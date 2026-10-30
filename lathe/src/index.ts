@@ -383,6 +383,8 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
     if (timings) timings[phase] = Math.round((now - mark) * 10) / 10;
     mark = now;
   };
+  // The checks and coverage run SQL over the data.
+  await store.ensureDatabase();
   const steps = timings ? (timings.steps ??= {}) : undefined;
   const step = async <T,>(name: string, run: () => Promise<T>): Promise<T> => {
     const start = performance.now();
@@ -445,6 +447,11 @@ export async function loadWorkspace(root: string, options: LoadOptions = {}): Pr
     if (error instanceof StoreError) return refusedWorkspace(error);
     throw error;
   }
+  // The checks run SQL, so the database is built here, where the open is timed (a load of validated files skips it).
+  await store.ensureDatabase().catch(async (error) => {
+    await store.close();
+    throw error;
+  });
   if (timings) timings.open = Math.round((performance.now() - started) * 10) / 10;
   try {
     return await readWorkspace(store, config, timings);
