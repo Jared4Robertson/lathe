@@ -4,12 +4,7 @@
 {"read_model_id":"LA-AUT-RM01","position":4,"name":"Stages","meaning":"Each stage's position, label and description.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM01","position":5,"name":"Checks","meaning":"Each check's name, severity, summary, explanation and kinds, Lathe's, the engine's own and the product's.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM02","position":1,"name":"ID","meaning":"The record.","type_value_object_id":"LA-VO01","required":true}
-{"read_model_id":"LA-AUT-RM02","position":2,"name":"Kind","meaning":"Its kind.","type_value_object_id":"LA-VO06","required":true}
-{"read_model_id":"LA-AUT-RM02","position":3,"name":"Row","meaning":"Its columns.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM02","position":4,"name":"Parts","meaning":"Its part rows.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM02","position":5,"name":"Children","meaning":"The records under it.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM02","position":6,"name":"Links","meaning":"Its links out and in, by relation.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM02","position":7,"name":"Data file","meaning":"The data file that holds its row.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM02","position":2,"name":"Data file","meaning":"The data file that holds its row.","type":"text","required":false}
 {"read_model_id":"LA-AUT-RM11","position":1,"name":"Use case","meaning":"The use case's row: its ID, title, capability, goal and notes.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM11","position":2,"name":"Actors","meaning":"Its actors' roles, in order: the first is the main actor.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM11","position":3,"name":"Requirements","meaning":"Its UC requirements by ID, each with its use case tests (and the test data sets they start from) and the steps of its use case that fulfill it.","type":"text","required":true}
@@ -56,8 +51,7 @@
 {"read_model_id":"LA-AUT-RM28","position":3,"name":"Handler","meaning":"Its command handler, with the standard rules it meets and the packages it uses.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM28","position":4,"name":"Policies","meaning":"Its policies by ID, each with the event it hears, its event handler (with the standard rules it meets and the packages it uses) and its test (with the test data sets it starts from).","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM28","position":5,"name":"Endpoints","meaning":"The endpoints that expose it, by ID.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM28","position":6,"name":"Also changes","meaning":"The other aggregates it also changes in its transaction, each with its reason (its recorded exceptions).","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM28","position":7,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the command: the command, its handler, a policy, or a policy's event handler or test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM28","position":6,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the command: the command, its handler, a policy, or a policy's event handler or test.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM29","position":1,"name":"Value object","meaning":"The value object's row: its ID, title and description.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM29","position":2,"name":"Product","meaning":"The product its ID names.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM29","position":3,"name":"Fields","meaning":"Its fields in order, each with its type and whether it is required.","type":"text","required":true}

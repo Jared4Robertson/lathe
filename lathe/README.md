@@ -7,7 +7,8 @@ Lathe keeps a product's lifecycle (discovery, domain model, use cases, interacti
 ```sh
 npm install --save-dev /path/to/jaredrob-lathe-1.0.0.tgz   # until it is published
 npx lathe init --name "Tool Library" --prefix TL
-npx lathe add domain --id TL-LEND --title Lending --product_id TL
+npx lathe domain add-domain --id TL-LEND --title Lending --product_id TL --subdomain_type core \
+  --description "Lending tools to members and taking them back."
 npx lathe check
 npx lathe serve            # http://127.0.0.1:5330
 ```
@@ -51,19 +52,19 @@ Any other key, or a file that is not one JSON object, is refused when the config
 
 ## Changing the data
 
-Every change goes through the command layer, which validates it in one transaction (every key, rule and validation query) and only then rewrites the lines it changed. Nobody edits the files by hand.
+Every change is one command of the aggregate it changes, such as Add a flow step on the Use case aggregate: it loads the aggregate through its repository, holds it to the aggregate's rules, and saves it in one transaction (every key, rule and validation query), and only then rewrites the lines it changed. A refusal gives every reason, with the rule it broke, and changes nothing. Each aggregate reads through its own queries too, such as Get a use case. Nobody edits the files by hand.
 
-- **The CLI.** `lathe add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list` and `next-id`, with flags and help generated from the schema (`lathe add --help`, `lathe add uc_requirement --help`). A refusal prints every reason, with the rule it broke, and changes nothing. `--json` prints the result as JSON. A write takes its fields as JSON instead of flags with `--json -` (stdin) or `--json <file>`: the arguments of the MCP tool of the same name, such as `{"uc_requirement": {"id": ..., "statement": ...}}` for `add` or `{"source": ..., "relation": ..., "target": ...}` for `link`, or an array of them as one write, all or nothing. Text keeps its quotes, newlines and backticks, the validation and refusals are the flags', the result is JSON, and JSON given with field flags as well is bad usage.
-- **The app.** Each record page edits the record in place with a form generated from the schema.
-- **The Claude Code plugin.** Its MCP tools (`lathe mcp`) expose the same operations to an Agent.
-- **Code.** `openStore` gives the same command layer:
+- **The CLI.** `lathe <aggregate> <command>`, such as `lathe use-case add-flow-step`, with flags and help from the command's fields (`lathe use-case --help`, `lathe use-case add-flow-step --help`); its queries the same way, such as `lathe use-case get-use-case --id TL-LEND-UC01`. `--json` prints the result as JSON. A command takes its fields as JSON instead of flags with `--json -` (stdin) or `--json <file>`: the arguments of its MCP tool. Text keeps its quotes, newlines and backticks, the validation and refusals are the flags', and JSON given with field flags as well is bad usage.
+- **The app.** Each record's page has its aggregate's own editor, which sends its aggregate's commands to `POST /api/<aggregate>/<command>`.
+- **The Claude Code plugin.** Its MCP server (`lathe mcp`) has one tool per command and query, named `<aggregate>_<command>`, such as `use_case_add_flow_step`, and the `check` tool.
+- **Code.** `runCommand` runs one of `ALL_COMMANDS` on an open store:
 
 ```ts
-import { openStore } from '@jaredrob/lathe';
+import { ALL_COMMANDS, openStore, runCommand } from '@jaredrob/lathe';
 
+const addRequirement = ALL_COMMANDS.find((c) => c.slice.name === 'use-case' && c.name === 'add-uc-requirement')!;
 const store = await openStore('/path/to/repo');           // loads data/*.jsonl, or throws a StoreError naming file, line and rule
-await store.add('uc_requirement', { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
-await store.link('fulfills', 'TL-LEND-UC01-FL01-S01', 'TL-LEND-UC01-R02');
+await runCommand(store, addRequirement, { id: 'TL-LEND-UC01-R02', title: 'Member is known', use_case_id: 'TL-LEND-UC01', statement: 'The library MUST refuse an unknown member.' });
 const rows = await store.query('SELECT id, title FROM uc_requirement');
 await store.close();
 ```
@@ -81,24 +82,24 @@ The driver checks the merged table's own rules (columns, types, keys and checks)
 
 ## The command
 
-`lathe <command> [options]`. Every command takes `--root <dir>`, the product repo (default: the current folder). `lathe help` prints the usage, the data commands included.
+`lathe <command> [options]`. Every command takes `--root <dir>`, the product repo (default: the current folder). `lathe help` prints the usage, every aggregate's commands included.
 
 | Command | What it does |
 | --- | --- |
-| `init --name <name> --prefix <P>` | Writes `lathe.config.json` (if there is none) with this Lathe's schema version, and adds the product record to `data/product.jsonl` through the store. Both options are required; the prefix is capital letters and digits, starting with a letter. It stops if that product already exists. |
+| `init --name <name> --prefix <P>` | Writes `lathe.config.json` (if there is none) with this Lathe's schema version, and adds the product to `data/product.jsonl` with Add a product. Both options are required; the prefix is capital letters and digits, starting with a letter. It stops if that product already exists. |
 | `check [--json]` | Loads the data and checks it: the product's, then each product `products` lists, each from its own folder and reported on its own, with the counts of them all at the end. For each it prints the errors, then the warnings, then the coverage: for each domain, and for the product outside the domains, one line per obligation kind (designed, built and proved out of the total, and how many wait on a test not automated yet, with each gap), a line of test counts, and the records short of a minimum. Exits 1 on any error, data the store refuses included; warnings alone do not fail it. `--json` prints `{ products: [{ root, workspace }] }` instead, each product's folder and its whole `Workspace`. |
 | `upgrade` | Moves the data forward to this Lathe's schema version (see [Upgrading](#upgrading)). |
 | `serve [--port <n>]` | Serves the web app and its API at `http://127.0.0.1:<port>` (default 5330), for the product and each product `products` lists. Open pages reload when any of their data changes. |
 | `merge-data <base> <ours> <theirs> <path>` | Git's merge driver for the data files (see [The merge driver](#the-merge-driver)). |
-| `mcp` | Serves the data commands as MCP tools over stdio, for the Claude Code plugin. |
-| `add`, `set`, `move`, `link`, `unlink`, `remove`, `show`, `list`, `next-id` | The data commands (see [Changing the data](#changing-the-data)). |
+| `mcp` | Serves every aggregate's commands and queries, and the check, as MCP tools over stdio, for the Claude Code plugin. |
+| `<aggregate> <command>` | An aggregate's command or query, such as `use-case add-flow-step` (see [Changing the data](#changing-the-data)). |
 | `app focus`, `app open <id> [--stage graph\|erd\|trace]` | The MCP tools `app_focus` and `app_open` from a shell: what the Reader is looking at in the desktop app's window, and opening a record there. They work in the desktop app's chat, which gives its Claude Code the window's bridge (`LATHE_APP_BRIDGE`, `LATHE_APP_TOKEN`); with no window connected they are refused and exit 1. `--json` prints the result as JSON. |
 
 A usage mistake (a missing option, an unknown command, a bad port) exits 2.
 
 ## Upgrading
 
-Lathe's schema has a version: one whole number in [schema/version.json](schema/version.json), 1 for the first versioned schema, 2 since each flow goes through an interface and a test runs at one of five levels (converter `upgrades/1-to-2.ts`). A product's `lathe.config.json` names the version its data is for (none is 1). Every load (`lathe check`, the data commands, `lathe serve`, the MCP tools, `loadWorkspace` and `openStore`) stops on data for another version, with one message and nothing read: data for an older schema says to run `npx lathe upgrade`; data for a newer one says the product needs a newer Lathe.
+Lathe's schema has a version: one whole number in [schema/version.json](schema/version.json), 1 for the first versioned schema, 2 since each flow goes through an interface and a test runs at one of five levels (converter `upgrades/1-to-2.ts`). A product's `lathe.config.json` names the version its data is for (none is 1). Every load (`lathe check`, the aggregates' commands and queries, `lathe serve`, the MCP tools, `loadWorkspace` and `openStore`) stops on data for another version, with one message and nothing read: data for an older schema says to run `npx lathe upgrade`; data for a newer one says the product needs a newer Lathe.
 
 **Versions.** The package follows semantic versioning, and its major version tracks the schema: a breaking schema change (a table, column or rule that existing data may not pass, such as a renamed or removed column or a new required one) raises the schema version by one, adds a converter, and raises the major version. A new kind, an optional column or a new check is a minor version; a fix is a patch. Two releases with the same major version read the same data.
 
@@ -180,8 +181,7 @@ A query can read every typed table, the `record_parent`, `link` and `record_grou
 | `test_case_id` | `file`, `position`, `id`: each ID a test case, its describes or its `each` rows name |
 | `test_level_allowed` | `kind`, `level`: the run by levels each test kind allows |
 | `test_run` | `id`, `kind`, `parent_id`, `domain_id` (a pattern rule test's), `level`, `state`, `file`, `level_allowed`, `backed`: every test with its run by |
-| `pattern_rule_standing` | `domain`, `id`, `standing`: each rule of each pattern a domain follows, `owed`, `not-applicable` or `waived` there; the app reads it as `Coverage.pattern_rules` |
-| `owed_pattern_rules` | `domain`, `id`: each pattern rule a domain owes, as a follower of its pattern, unless not applicable or waived there |
+| `owed_pattern_rules` | `domain`, `id`: each pattern rule a domain owes: every rule of each pattern it follows, itself or through a use case; the app reads it as `Coverage.pattern_rules` |
 | `obligation_impl`, `obligation_proof` | the technical records that implement each obligation, and the tests that prove it |
 | `coverage_owed` | `product`, `domain`, `id`, `kind`: each obligation a domain, or the product outside the domains, owes |
 | `coverage_proof` | `product`, `domain`, `id`, `test_id`: the tests that count as an owed obligation's proof where it is owed (a pattern rule's naming the owing domain); the app reads them as `Coverage.proved_by` |

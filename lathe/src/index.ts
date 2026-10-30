@@ -26,6 +26,8 @@ export { loadConfig, readConfig, workspaceProducts, productClash, PACKAGE_DIR, C
 export { upgradeProduct, readConverters, UPGRADES_DIR, type Converter, type ConverterStep, type RawData, type UpgradeNotes, type UpgradeResult } from './upgrade.ts';
 // The database-first store: the schema, loading data/*.jsonl, the command layer and the merge driver.
 export * from './platform/data/index.ts';
+export { ALL_COMMANDS, ALL_QUERIES } from './commands.ts';
+export { runCommand } from './platform/commands/run.ts';
 
 export interface LoadOptions {
   /** The data folder, in place of the one lathe.config.json names. */
