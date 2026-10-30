@@ -55,6 +55,13 @@ import { PATTERN_FOLLOWING_COMMANDS } from './traceability/pattern-following/com
 import { PATTERN_FOLLOWING_QUERIES } from './traceability/pattern-following/queries.ts';
 import { PROBLEMS_QUERIES } from './checking/problems/queries.ts';
 import { TRACE_QUERIES } from './traceability/trace/queries.ts';
+import { COVERAGE_QUERIES } from './traceability/coverage/queries.ts';
+import { RECORD_TRACE_QUERIES } from './traceability/record-trace/queries.ts';
+import { META_MODEL_QUERIES } from './platform/meta-model/queries.ts';
+import { RECORD_SUMMARIES_QUERIES } from './exploring/record-summaries/queries.ts';
+import { FOLDER_TREE_QUERIES } from './exploring/folder-tree/queries.ts';
+import { ERD_QUERIES } from './exploring/erd/queries.ts';
+import { RECORD_CHANGES_QUERIES } from './exploring/record-changes/queries.ts';
 import type { AnyCommand, AnyQuery } from './platform/commands/definition.ts';
 
 export const ALL_COMMANDS: readonly AnyCommand[] = [
@@ -115,4 +122,11 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   ...PATTERN_FOLLOWING_QUERIES,
   ...PROBLEMS_QUERIES,
   ...TRACE_QUERIES,
+  ...COVERAGE_QUERIES,
+  ...RECORD_TRACE_QUERIES,
+  ...META_MODEL_QUERIES,
+  ...RECORD_SUMMARIES_QUERIES,
+  ...FOLDER_TREE_QUERIES,
+  ...ERD_QUERIES,
+  ...RECORD_CHANGES_QUERIES,
 ];

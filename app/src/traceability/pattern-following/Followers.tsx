@@ -24,14 +24,9 @@ function unread(read: Read<{ pattern: string }>, pattern: string) {
   return null;
 }
 
-/** A setting's cell: the value the follower gives it, why it does not apply, or that it is not given. */
+/** A setting's cell: the value the follower gives it, or that it is not given. */
 function SettingCell({ name, given }: { name: string; given: SettingLine | undefined }) {
-  const notApplicable = given?.notApplicable?.trim() || null;
-  return (
-    <td role="cell" data-label={name} className={notApplicable !== null ? 'setting-na' : undefined}>
-      {!given ? <span className="hint">not given</span> : given.notApplicable !== null ? `Not applicable: ${given.notApplicable}` : given.value ?? ''}
-    </td>
-  );
+  return <td role="cell" data-label={name}>{given ? given.value : <span className="hint">not given</span>}</td>;
 }
 
 /** One domain that follows the pattern: who follows it there with the values they give, and its standing per rule. */
@@ -74,7 +69,7 @@ function FollowingDomainSection({ index, page, d, setMode }: { index: RecordInde
               {page.rules.map(({ rule: { id } }) => (
                 <tr key={id}>
                   <th scope="row"><RecordLink index={index} id={id} /></th>
-                  <td data-label={`In ${domain}`}><RuleMark index={index} rule={id} pattern={patternId} domain={domain} /></td>
+                  <td data-label={`In ${domain}`}><RuleMark index={index} rule={id} domain={domain} /></td>
                 </tr>
               ))}
             </tbody>
@@ -129,7 +124,7 @@ export function OwedBy({ index, page, id }: { index: RecordIndex; page: PatternP
               {domains.map((d) => (
                 <tr key={d.domain}>
                   <th scope="row"><RecordLink index={index} id={d.domain} /></th>
-                  <td data-label="Status"><RuleMark index={index} rule={id} pattern={page.pattern.id} domain={d.domain} /></td>
+                  <td data-label="Status"><RuleMark index={index} rule={id} domain={d.domain} /></td>
                 </tr>
               ))}
             </tbody>

@@ -14,7 +14,7 @@ const scope = (product: string, domain: string | null, proved: number): Coverage
   product, domain,
   obligations: [{ kind: 'invariant', label: 'Invariant', total: 2, designed: 2, built: 1, proved, not_automated: 1, proof_only: false }],
   tests: { automated: proved, manual: 0, not_automated: 1 },
-  proved_by: {}, pattern_rules: {},
+  proved_by: {}, pattern_rules: [],
   gaps: [{ id: `${domain ?? product}-X`, kind: 'invariant', missing: 'proved', message: 'not proved' }],
 });
 

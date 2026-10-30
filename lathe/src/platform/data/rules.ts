@@ -2,6 +2,7 @@
 // handlers run them on the instance before saving, and every load and commit runs them over all data (through
 // AGGREGATE_RULES), for files changed by git or by hand.
 import type { Coverage, Problem, TraceChain } from '../../types.ts';
+import type { BaselineAnswer } from '../../server/contract.ts';
 import type { Row } from './rows.ts';
 import type { SchemaDescription } from './schema.ts';
 import { StoreError } from './problems.ts';
@@ -28,6 +29,12 @@ export interface ReadView {
    * the run (`checked`) is given it, and the query runner refuses such a query without it.
    */
   readonly checked?: CheckRun;
+  /**
+   * The data at a baseline commit, when the reader of it was given one: only a query whose definition says it reads a
+   * baseline (`baseline`) is given it, read from git for the commit its `since` names, and the query runner refuses
+   * such a query without it.
+   */
+  readonly baseline?: BaselineAnswer;
 }
 
 /** One row that breaks an aggregate's rule. */

@@ -1,12 +1,10 @@
 import type { Judgment, RecordTrace } from '../../../lathe/src/traceability/record-trace/read-model';
-import type { FollowingDomain } from '../../../lathe/src/traceability/pattern-following/read-model';
 import { byIdOrder, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 
 // Patterns and their rules, as the pages show them (lathe/REFERENCE.md). A domain follows a pattern when the domain
-// itself or any of its use cases `follows` it. Whether it owes each of the pattern's rules there, and what proves the
-// rule there, are the engine's answers: the rule's Record trace (LA-TRC-RM06) judges it in each domain that owes it.
-// A domain that follows the pattern and does not owe the rule has every following use case mark the rule's setting
-// Not applicable; the reasons are the followings' (Pattern following, LA-TRC-RM10). Pure logic, tested directly.
+// itself or any of its use cases `follows` it, and then owes every rule of the pattern there. What proves each rule
+// there is the engine's answer: the rule's Record trace (LA-TRC-RM06) judges it in each domain that owes it. Pure
+// logic, tested directly.
 
 /**
  * The patterns a domain follows, in pattern ID order: those the domain itself follows (`byDomain`, so every rule
@@ -32,19 +30,14 @@ export function patternsFollowedBy(index: RecordIndex, domainId: string): { patt
 /** A pattern's rules, in ID order. */
 export const rulesOf = (index: RecordIndex, patternId: string) => (index.children.get(patternId) ?? []).filter((r) => r.kind === 'pattern_rule');
 
-export type RuleStatus =
-  /** Not owed here: every following use case marks the rule's setting Not applicable, with these reasons. */
-  | { applies: false; setting: string; reasons: { useCase: string; reason: string }[] }
-  /** Owed here: the tests that count as its proof in the domain, and its tests there not automated yet. */
-  | { applies: true; provedBy: string[]; notAutomatedBy: string[] };
+/** A rule's standing in a domain that follows its pattern: the tests that count as its proof there, and its tests there not automated yet. */
+export interface RuleStatus {
+  provedBy: string[];
+  notAutomatedBy: string[];
+}
 
-/**
- * A rule's standing in a domain that follows its pattern: owed, with its proof there, when the rule's trace judges it
- * in the domain; otherwise not applicable, with each following use case's reason for its setting.
- */
-export function ruleStatus(trace: RecordTrace, domain: string, setting: string, following: FollowingDomain | undefined): RuleStatus {
+/** A rule's standing in a domain that follows its pattern, as the rule's trace judges it there (every rule of a followed pattern is owed). */
+export function ruleStatus(trace: RecordTrace, domain: string): RuleStatus {
   const judgment: Judgment | undefined = trace.judgments.find((j) => j.domain === domain);
-  if (judgment) return { applies: true, provedBy: judgment.provedBy, notAutomatedBy: judgment.notAutomatedBy };
-  const reasons = (following?.useCases ?? []).map((f) => ({ useCase: f.follower, reason: f.settings.find((s) => s.setting === setting)?.notApplicable?.trim() ?? '' }));
-  return { applies: false, setting, reasons };
+  return { provedBy: judgment?.provedBy ?? [], notAutomatedBy: judgment?.notAutomatedBy ?? [] };
 }
