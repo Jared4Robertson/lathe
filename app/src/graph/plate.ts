@@ -136,14 +136,14 @@ function badgesAt(marks: { errors: number; warnings: number; gaps: string[] }, r
 }
 
 /**
- * What a Trace stage node is when it is no record (a file, a gap, a link to a capability, the Untraced mark): its kind,
- * its words and its colors' role. It is drawn as a plain box, dashed when it is a gap or the mark.
+ * What a Trace stage box is when it is no record (a gap): its kind, its words and its colors' role. It is drawn as a
+ * plain box, dashed when it is a gap.
  */
 export interface PlainBox { kind: string; kindLabel: string; title: string; meta: string; stage: BoxStage; dashed: boolean }
 
 /**
- * Where a box comes from: a Tree map's node (the Graph's, or the Trace stage's, LA-V98, where `place` is its node's key
- * and `plain` says what a node that is no record is), or a Nested one.
+ * Where a box comes from: a Tree map's node (the Graph's, or a Trace stage box, LA-V98, where `place` is its key and
+ * `plain` says what a box that is no record is), or a Nested one.
  */
 export type PlateSource =
   | { view: 'tree'; node: MapNode; place?: string; plain?: PlainBox }
