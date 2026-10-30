@@ -5,7 +5,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { resolveAddress } from '../src/router';
-import { parseSpecRoute } from '../src/specs/data';
+import { parseSpecRoute } from '../src/views/spec-route';
 import { carryOverlays, closeTopmostHref, overlaysOf, pageHref, panelHref, withoutOverlays } from '../src/views/overlays';
 import { crowded, openWidth, STAGE_MIN, type CrowdPanel, type Room } from '../src/views/openSpace';
 import { checksPanel, openApp } from './helpers';

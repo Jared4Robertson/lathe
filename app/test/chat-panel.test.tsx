@@ -5,7 +5,8 @@ import { focusAnswer, openAnswer } from '../src/chat/appRequests';
 import { reloadChanges } from '../src/changes/changes';
 import { sessionDate } from '../src/chat/ChatPanel';
 import type { ChatBridge, ChatItem, ChatPatch, ChatSessions, ChatStatus, OpenChoice } from '../src/chat/types';
-import { indexOf, setRow } from './fixtures/load';
+import { setRow } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 import { workspace } from './fixtures/workspace';
 import { desktopBridgeStub, openApp, serve } from './helpers';
 
@@ -136,7 +137,7 @@ describe('LA-PLT-UC19-R03-T01 Tool calls are rows that expand, and a turn\'s cha
     expect(within(log()).getByRole('img', { name: 'done' })).toBeInTheDocument();
   });
 
-  it('shows the records a turn changed, field by field', async () => {
+  it('shows the records a turn changed', async () => {
     const { push } = fakeChat();
     await openApp('/DM-SHOP-UC01');
     const user: ChatItem = { kind: 'user', id: 'u1', text: 'Rename the command' };
@@ -149,13 +150,12 @@ describe('LA-PLT-UC19-R03-T01 Tool calls are rows that expand, and a turn\'s cha
     const block = changes.closest('details')!;
     expect(within(block).getByText('Changed')).toBeInTheDocument();
     expect(within(block).getByRole('link', { name: 'DM-SHOP-CMD01' })).toBeInTheDocument();
-    expect(block.querySelector('del')).toHaveTextContent('Add item');
-    expect(block.querySelector('ins')).toHaveTextContent('Put item in basket');
+    expect(block).toHaveTextContent('Put item in basket');
   });
 });
 
 describe('LA-PLT-UC19-R03-T01 Tool calls are rows that expand, and a turn\'s changed records show as diffs', () => {
-  it('finds records added, removed and changed, with their fields', () => {
+  it('finds records added, removed and changed, by their digests', () => {
     const before = workspace();
     const after = workspace();
     const commands = after.sources[0].tables.command;
@@ -165,8 +165,6 @@ describe('LA-PLT-UC19-R03-T01 Tool calls are rows that expand, and a turn\'s cha
     views[0] = { ...views[0], description: 'Changed.' };
     const diffs = reloadChanges(recordIndexOf(before), recordIndexOf(after));
     expect(diffs.map((d) => [d.id, d.change])).toEqual(expect.arrayContaining([['DM-SHOP-CMD01', 'removed'], ['DM-SHOP-CMD09', 'added'], [views[0].id, 'changed']]));
-    const was = before.sources[0].tables.view[0].description;
-    expect(diffs.find((d) => d.id === views[0].id)!.fields).toEqual([{ name: 'description', ...(was === undefined ? {} : { before: was }), after: 'Changed.' }]);
     const same = recordIndexOf(before);
     expect(reloadChanges(same, same)).toEqual([]);
   });

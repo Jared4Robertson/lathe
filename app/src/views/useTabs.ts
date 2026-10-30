@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { lastAddressMove, noteInEntry } from '../router';
 import { isNumber, useAggregate } from '../shell/prefs';
-import { productOfPath } from '../shell/spaces';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf, focusOf, isFocusPath, pathOf, type FocusRoute } from './address';
 import { DEFAULT_VIEW, hereOf, type PlaceView } from './place';
@@ -29,7 +28,7 @@ const isAddress = (address: string) => isFocusPath(address.split(/[?#]/)[0]);
 
 export function usePageTabs(index: RecordIndex, route: FocusRoute, search: string): PlaceApi {
   const page = pathOf(route);
-  const space = productOfPath(index, page) ?? index.byId.get(focusOf(route))?.product ?? '';
+  const space = index.byId.get(focusOf(route))?.product ?? index.product;
   const address = page + search;
   const tabs = useAggregate(tabSetRepository);
   const stored = setOf(tabs, space);

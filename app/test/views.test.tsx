@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import { parseSpecRoute } from '../src/specs/data';
+import { parseSpecRoute } from '../src/views/spec-route';
 import { addressOf, parseStage, stageFromSearch, withStage } from '../src/views/address';
 import { CARD_GAP, CARD_GAP_Y, frameInsets, openInsets, OPEN_GAP } from '../src/views/openSpace';
 import { settleWhenHidden } from '../src/views/WikiCard';

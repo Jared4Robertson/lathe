@@ -5,7 +5,7 @@ import { TOOLBAR_FORMS, TOOLBAR_TIERS } from '../src/views/StageChrome';
 import { graphDrawn, graphKeyEntries } from '../src/graph/key';
 import { NO_FILTERS, neighborhood } from '../src/graph/model';
 import { changesKeyEntries } from '../src/changes/ChangesKey';
-import { indexOf } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 import { modelWorkspace } from './fixtures/model';
 import { openApp } from './helpers';
 

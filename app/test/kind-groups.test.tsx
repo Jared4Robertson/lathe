@@ -2,7 +2,7 @@ import './graph/setup';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { domainFolders } from '../src/specs/folders';
+import { domainFolders } from '../src/exploring/folder-tree/folders';
 import { treeChildren, treeParent } from '../src/graph/tree';
 import { modelIndex, modelWorkspace } from './fixtures/model';
 import { main, openApp, section, stageOf } from './helpers';

@@ -1,20 +1,18 @@
 import { useEffect } from 'react';
-import { LongList } from '../components/LongList';
 import { useProblems } from '../checking/problems/reads';
 import { checkPagePath } from '../format/reference';
 import { readState } from '../record/page-parts';
 import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
-import { idText, ProblemList, RecordLink, Section } from '../specs/parts';
+import { ProblemList, Section } from '../specs/parts';
 import { ToolPanelFrame } from './ToolPanel';
 
 // The Checks panel (LA-V41), Tools › Checks: a tool over the stage (LA-PAT-APP-UX-R20), floating at the
 // left of the open space, at `?panel=checks` on whatever focus the stage shows. It lists the space's
-// problems by check, errors first, then the workspace's, then the recorded exceptions. A problem's
+// problems by check, errors first, then the workspace's. A problem's
 // row focuses its record on the stage, which the wiki card then shows, and the panel stays open to
 // work down the list, the row of the record in focus marked. A workspace problem names no record, so
 // its row opens its check's page in the wiki card. On a phone it is a bottom sheet. The problems are the
-// Problems read model's (list-problems, LA-CHK-QRY02), read again after every reload; the recorded
-// exceptions still come from the index.
+// Problems read model's (list-problems, LA-CHK-QRY02), read again after every reload.
 
 export interface ChecksPanelProps {
   /** The current space's index, so no other product's problems are in it. */
@@ -58,40 +56,8 @@ export function ChecksPanel({ index, product, focus, sheet, onClose }: ChecksPan
               ))}
             </Section>
           )}
-          {index.workspace.exceptions.length > 0 && <RecordedExceptions index={index} exceptions={index.workspace.exceptions} />}
         </div>
       )}
     </ToolPanelFrame>
-  );
-}
-
-/**
- * The recorded exceptions (LA-V41-R04): each command that also changes another aggregate of its
- * domain in the same transaction, and each repository that also persists another aggregate, with the
- * aggregate and the reason. They are deliberate deviations, not problems: listed in a section of
- * their own, never counted or marked as warnings.
- */
-function RecordedExceptions({ index, exceptions }: { index: RecordIndex; exceptions: RecordedException[] }) {
-  const items = exceptions.map((e) => ({ e, owner: exceptionOwner(e), key: `${exceptionOwner(e)} ${e.aggregate}` }));
-  return (
-    <Section level={3} title="Recorded exceptions" count={exceptions.length}>
-      <p className="hint">Deliberate deviations, each recorded with its reason: a command that also changes another aggregate in the same transaction, or a repository that also persists another aggregate. They are not problems.</p>
-      <LongList
-        label="Recorded exceptions"
-        className="record-list exceptions"
-        items={items}
-        itemKey={(item) => item.key}
-        searchText={({ e, owner }) => `${idText(index, owner)} ${idText(index, e.aggregate)} ${e.reason}`}
-        render={({ e, owner }) => (
-          <>
-            <RecordLink index={index} id={owner} showTitle={false} row />
-            <span className="exception-text">
-              {'command' in e ? 'also changes' : 'also persists'} <RecordLink index={index} id={e.aggregate} showTitle={false} />
-              {'command' in e ? ' in the same transaction' : ''}: {e.reason}
-            </span>
-          </>
-        )}
-      />
-    </Section>
   );
 }

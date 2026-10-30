@@ -3,14 +3,15 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import type { KindDescription } from '../../lathe/src/platform/data/schema';
-import { branchOf, domainFolders, folderPath, ownerFolders, productFolders } from '../src/specs/folders';
+import { branchOf, domainFolders, folderPath, ownerFolders, productFolders } from '../src/exploring/folder-tree/folders';
 import { treeChildren } from '../src/graph/tree';
 import { isGraphNode } from '../src/graph/model';
 import { workspace } from './fixtures/workspace';
 import { modelIndex } from './fixtures/model';
 import { patternWorkspace } from './fixtures/patterns';
 import { main, openApp, stageOf } from './helpers';
-import { addRows, indexOf } from './fixtures/load';
+import { addRows } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 
 // The side nav and the domain page read in the five stages: what the product shares in its own
 // stages (Shared), and in each domain its Domain model, Use cases, Interaction design, Technical
@@ -285,7 +286,7 @@ describe('folders by stage', () => {
     expect(stage('DM', 'use-cases').direct?.records.map((r) => r.id)).toEqual(['DM-PAT-AUDIT']);
     expect(stage('DM-SHOP', 'interaction-design').direct).toBeNull();
     // An empty one-folder stage is still a stage with no records.
-    expect(stage('NF-NOTE', 'use-cases')).toMatchObject({ count: 0, direct: { count: 0 } });
+    expect(ownerFolders(recordIndexOf(patternWorkspace(), 'NF'), 'NF-NOTE').stages.find((s) => s.stage === 'use-cases')).toMatchObject({ count: 0, direct: { count: 0 } });
 
     // The graph's tree: the stage holds the records, and the skipped folder is no group and has no address.
     expect(treeChildren(index, 'DM-SHOP/use-cases')).toEqual(['DM-SHOP-CAP01']);

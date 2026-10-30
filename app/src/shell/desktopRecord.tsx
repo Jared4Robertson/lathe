@@ -3,6 +3,7 @@ import { parseSpecRoute } from '../views/spec-route';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { focusOf, isFocusRoute } from '../views/address';
 import { desktopBridge } from './desktopChrome';
+import { useProblems } from '../checking/problems/reads';
 import { Button } from '../components/Button';
 import './desktopRecord.css';
 
@@ -37,10 +38,11 @@ export function recordIdAt(target: Element | null, pathname: string, known: (id:
   return null;
 }
 
-/** Sends the product's check errors to the Dock badge whenever the specs load or reload. */
+/** Sends the space's check errors, as its Checks panel counts them (list-problems), to the Dock badge whenever the data is read. */
 export function useDesktopErrorCount(index: RecordIndex | null) {
   const setErrorCount = desktopBridge()?.setErrorCount;
-  const count = index ? index.workspace.problems.filter((p) => p.severity === 'error').length : null;
+  const problems = useProblems(index?.product ?? '', index);
+  const count = index && problems.state === 'read' && problems.answer.product === index.product ? problems.answer.errors : null;
   useEffect(() => {
     if (setErrorCount && count !== null) setErrorCount(count);
   }, [setErrorCount, count]);

@@ -54,7 +54,7 @@ export interface StoredSettings {
 const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
 const isMark = (v: unknown): v is LookMark => {
   const m = v as LookMark;
-  return !!m && typeof m === 'object' && (m.commit === null || typeof m.commit === 'string') && typeof m.at === 'string' && !!m.delta && typeof m.delta === 'object';
+  return !!m && typeof m === 'object' && (m.commit === null || typeof m.commit === 'string') && typeof m.at === 'string' && !!m.digests && typeof m.digests === 'object';
 };
 /** Stored settings in today's form; anything else (an older form included) is dropped for the defaults. */
 const isStored = (v: unknown): v is StoredSettings => {

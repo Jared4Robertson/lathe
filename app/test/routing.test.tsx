@@ -1,8 +1,8 @@
 import { act, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { parseSpecRoute } from '../src/specs/data';
-import { indexOf } from './fixtures/load';
+import { parseSpecRoute } from '../src/views/spec-route';
+import { recordIndexOf } from './read-view';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
 
