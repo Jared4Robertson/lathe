@@ -4,6 +4,7 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ValueObjectRow } from '../../../platform/data/tables.ts';
 import { FIELD_COLUMNS, VALUE_OBJECT_SLICE, changed, type ValueObjectField } from '../model.ts';
 import { ValueObjectRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 
 /** The value object's changes: a column given is set; fields, when given, replace the list. */
 export type ChangeValueObject = Pick<ValueObjectRow, 'id'> & { title?: ValueObjectRow['title']; description?: ValueObjectRow['description']; fields?: ValueObjectField[] };
@@ -31,5 +32,6 @@ export function changeValueObject(tx: Transaction, input: ChangeValueObject): vo
   const valueObject = valueObjects.load(input.id) ?? tx.refuse('missing', `there is no value object ${input.id}`);
   valueObject.valueObject = changed(valueObject.valueObject, input, ['title', 'description']);
   if (input.fields) valueObject.fields = input.fields;
+  holdToRules(tx, valueObject);
   valueObjects.save(valueObject);
 }

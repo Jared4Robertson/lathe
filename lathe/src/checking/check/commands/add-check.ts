@@ -4,6 +4,7 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { CheckRow } from '../../../platform/data/tables.ts';
 import { CHECK_SLICE } from '../model.ts';
 import { CheckRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 
 /** A new check row. */
 export type AddCheck = Pick<CheckRow, 'name' | 'product_id' | 'position' | 'severity' | 'summary' | 'explanation' | 'query' | 'kinds'>;
@@ -29,12 +30,12 @@ export const ADD_CHECK: CommandDefinition<AddCheck> = {
   handler: addCheck,
 };
 
-/** Adds the check, new and whole; a name taken, by Lathe's own checks or the product's, is refused (LA-CHK-INV01). */
+/** Adds the check, new and whole: a name one of Lathe's own has is refused by its rules (LA-CHK-INV01), one the product's has as a key taken. */
 export function addCheck(tx: Transaction, input: AddCheck): void {
   const checks = new CheckRepository(tx);
   const taken = checks.load(input.name);
-  if (taken) {
-    tx.refuse('primary-key', checks.isLathes(taken) ? `check ${input.name} already exists as one of Lathe's own (lathe/data/check.jsonl); give the check a name of its own` : `check ${input.name} already exists`);
-  }
-  checks.save(checks.create({ root: input.name, check: input }));
+  if (taken && !taken.lathes) tx.refuse('primary-key', `check ${input.name} already exists`);
+  const check = checks.create({ root: input.name, check: input, lathes: false });
+  holdToRules(tx, check);
+  checks.save(check);
 }

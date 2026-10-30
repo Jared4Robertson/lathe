@@ -168,10 +168,10 @@ describe('the graph tree, its depth and its camera', () => {
 
     await showGraph('/P-D-UC01');
     const steps = within(screen.getByRole('group', { name: 'Walk the stage' }));
-    expect(steps.getByRole('button', { name: 'Step out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'ArrowLeft A');
-    expect(steps.getByRole('button', { name: 'Step to the next sibling' })).toHaveAttribute('aria-keyshortcuts', 'ArrowDown S');
-    expect(steps.getByRole('button', { name: 'Out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'Shift+ArrowUp Shift+W');
-    expect(steps.getByRole('button', { name: 'In to the first child' })).toHaveAttribute('aria-keyshortcuts', 'Shift+ArrowDown Shift+S');
+    expect(steps.getByRole('button', { name: 'Step out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'ArrowLeft A H');
+    expect(steps.getByRole('button', { name: 'Step to the next sibling' })).toHaveAttribute('aria-keyshortcuts', 'ArrowDown S J');
+    expect(steps.getByRole('button', { name: 'Out to the parent' })).toHaveAttribute('aria-keyshortcuts', 'Shift+ArrowUp Shift+W Shift+K');
+    expect(steps.getByRole('button', { name: 'In to the first child' })).toHaveAttribute('aria-keyshortcuts', 'Shift+ArrowDown Shift+S Shift+J');
     // With a modifier held, nothing steps.
     fireEvent.keyDown(document.body, { key: 'ArrowDown', code: 'ArrowDown', altKey: true });
     expect(window.location.pathname).toBe('/P-D-UC01');
@@ -206,6 +206,7 @@ describe('the graph tree, its depth and its camera', () => {
   const MOVE_OF = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' } as const;
   // Each arrow's walking letter, which the step's keys name after it.
   const LETTERS: Record<string, string> = { ArrowLeft: 'A', ArrowRight: 'D', ArrowUp: 'W', ArrowDown: 'S' };
+  const VIM: Record<string, string> = { ArrowLeft: 'H', ArrowRight: 'L', ArrowUp: 'K', ArrowDown: 'J' };
 
   const VIEWS = { tree: 'Tree', nested: 'Nested' } as const;
   for (const layout of ['tree', 'nested'] as const) {
@@ -220,7 +221,7 @@ describe('the graph tree, its depth and its camera', () => {
       const arrows = ['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'] as const;
       expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([...arrows.map((k) => STEP_BUTTONS[ARROWS[layout][k]]), 'Out to the parent', 'In to the first child']);
       arrows.forEach((key, i) => {
-        expect(buttons[i], `${layout}: ${key}`).toHaveAttribute('aria-keyshortcuts', `${key} ${LETTERS[key]}`);
+        expect(buttons[i], `${layout}: ${key}`).toHaveAttribute('aria-keyshortcuts', `${key} ${LETTERS[key]} ${VIM[key]}`);
         expect(buttons[i], `${layout}: ${key}`).toHaveTextContent(`${MARKS[key]}${LETTERS[key]}`);
       });
       // Each arrow on the canvas steps where the mapping says, then Back returns to the stage.
