@@ -8,12 +8,6 @@ import { byIdOrder, type RecordIndex, type RecordSummary } from '../exploring/re
 // A domain that follows the pattern and does not owe the rule has every following use case mark the rule's setting
 // Not applicable; the reasons are the followings' (Pattern following, LA-TRC-RM10). Pure logic, tested directly.
 
-/** How a domain follows a pattern: through these use cases, and (`byDomain`) itself. */
-export interface Followed {
-  useCases: readonly RecordSummary[];
-  byDomain: boolean;
-}
-
 /**
  * The patterns a domain follows, in pattern ID order: those the domain itself follows (`byDomain`, so every rule
  * applies) and those its use cases follow, each with them, from the links of the space's records.

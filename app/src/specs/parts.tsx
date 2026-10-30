@@ -1,10 +1,9 @@
 import { lowerLabel, plural as pluralOf } from '../plural';
-import { createContext, Fragment, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
+import { createContext, useContext, useState, type AnchorHTMLAttributes, type ReactNode } from 'react';
 import { Link } from '../router';
 import { checkPagePath } from '../format/reference';
 import { gapsOf, kindLabel, problemOrder, type ListedProblem, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
-import { groupRecords } from './groups';
 import { addressOf } from '../views/address';
 import { ActionsSlotContext } from '../components/ActionsSlot';
 import { LongList } from '../components/LongList';
@@ -115,34 +114,6 @@ export function Section({ title, titleTo, count, level = 2, className, children 
   );
 }
 
-/**
- * Records under their group headings (lathe/REFERENCE.md): the ungrouped ones first, without a
- * heading, then each group as a part of the page at `level`, in the order the groups first appear.
- * Records that name no group are drawn once, as they would be without groups.
- */
-export function Grouped<T extends RecordSummary>({ records, level, render }: { records: readonly T[]; level: SectionLevel; render: (records: T[], heading: string | null) => ReactNode }) {
-  return (
-    <>
-      {groupRecords(records).map((g) => (g.heading === null
-        ? <Fragment key="">{render(g.records, null)}</Fragment>
-        : <Section key={g.key} title={g.heading} count={g.records.length} level={level} className="record-group">{render(g.records, g.heading)}</Section>))}
-    </>
-  );
-}
-
-export function PageHeader({ eyebrow, title, id, children }: { eyebrow: ReactNode; title: string; id?: string; children?: ReactNode }) {
-  return (
-    <header className="spec-header">
-      <div>
-        <p className="eyebrow">{eyebrow}</p>
-        <h1>{title}</h1>
-        {id && <p className="record-id"><SpecLink to={addressOf(id)} className="record-link"><code>{id}</code></SpecLink></p>}
-      </div>
-      {children}
-    </header>
-  );
-}
-
 export function ProblemBadge({ problems }: { problems: ListedProblem[] }) {
   if (problems.length === 0) return null;
   const errors = problems.filter((p) => p.severity === 'error').length;
@@ -220,15 +191,18 @@ export const gapText = (missing: string) =>
   missing === 'designed' || missing === 'built' || missing === 'proved' ? `not ${missing}` : missing.replaceAll('-', ' ');
 
 
-/** One record as a list row: its link, its kind when asked, its test state, the patterns it follows, coverage marks and problems. */
+/** One record as a list row: its link, its kind when asked, a test's level and what it names in code, its test state, the patterns it follows, coverage marks and problems. */
 export function RecordRowBody({ index, record, showKind = false }: { index: RecordIndex; record: RecordSummary; showKind?: boolean }) {
   const isTest = isTestKind(index, record.kind);
+  // What it names in code (its file, or a table's name), after a test's level.
+  const fields = [record.level, record.names].filter((f): f is string => !!f);
   const gaps = gapsOf(index, record.id);
   return (
     <div className={`record-row ${isTest && notAutomatedYet(record) ? 'not-automated' : ''}`}>
       <RecordLink index={index} id={record.id} row />
       <span className="row-tags">
         {showKind && <small className="meta">{index.meta.kinds.get(record.kind)?.label ?? record.kind}</small>}
+        {fields.length > 0 && <small className="meta">{fields.join(' · ')}</small>}
         {isTest && <TestStateTag record={record} />}
         {(index.outgoing.get(record.id) ?? []).filter((l) => l.relation === 'follows').map((l) => (
           <span key={l.target} className="pattern-tag" title={`Follows the pattern ${l.target}`}>{index.byId.get(l.target)?.title ?? l.target}</span>

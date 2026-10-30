@@ -10,7 +10,7 @@ import { parseSpecRoute } from '../views/spec-route';
 import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { type DataState } from '../exploring/record-summaries/reads';
 import type { Stage } from '../../../lathe/src/platform/data/schema';
-import { branchOf, domainFolders, productFolders, sharedKey, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
+import { branchOf, ownerFolders, sharedKey, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
 import { recordText, StageMark } from '../specs/parts';
 import { useProblems } from '../checking/problems/reads';
 import { useRunCommand, useShortcutHint } from './commands';
@@ -327,7 +327,7 @@ function currentBranch(index: RecordIndex, path: string): string[] {
  */
 function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space: Space; path: string; reveal: boolean }) {
   const domains = index.product === space.id ? index.domains : [];
-  const own = productFolders(index, space.id);
+  const own = ownerFolders(index, space.id);
   const rows = useAggregate(navRowRepository);
   const isOpen = (key: string) => isFolderOpen(rows, key);
   const branch = currentBranch(index, path).join('\n');
@@ -411,7 +411,7 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
             const key = `domain:${domain.id}`;
             const open = isOpen(key);
             const bodyId = `nav-domain-${domain.id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
-            const { stages, loose } = open ? domainFolders(index, domain.id) : { stages: [], loose: [] };
+            const { stages, loose } = open ? ownerFolders(index, domain.id) : { stages: [], loose: [] };
             return (
               <>
                 <NavRow

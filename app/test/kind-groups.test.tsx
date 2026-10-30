@@ -2,7 +2,7 @@ import './graph/setup';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { domainFolders } from '../src/exploring/folder-tree/folders';
+import { ownerFolders } from '../src/exploring/folder-tree/folders';
 import { treeChildren, treeParent } from '../src/graph/tree';
 import { modelIndex, modelWorkspace } from './fixtures/model';
 import { main, openApp, section, stageOf } from './helpers';
@@ -104,7 +104,7 @@ describe('groups by stage and kind', () => {
     expect(kindHeadings('Interaction design')).toEqual(['Flows1', 'Views1', 'Endpoints2', 'Integrations1']);
     expect(kindHeadings('Domain model')).toContain('Specifications1');
     expect(within(section(/^Views/)).getByRole('link', { name: /P-V01/ })).toBeInTheDocument();
-    const folders = domainFolders(modelIndex(), 'P-D').stages.flatMap((s) => s.folders);
+    const folders = ownerFolders(modelIndex(), 'P-D').stages.flatMap((s) => s.folders);
     expect(folders.find((f) => f.kind === 'specification')?.records.map((r) => r.id)).toEqual(['P-D-SP01']);
   });
 
@@ -152,7 +152,7 @@ describe('groups by stage and kind', () => {
 
   it('LA-V91-R09-T01 An endpoint sits in its domain\'s Interaction design and an integration in the one domain that uses it, by their stage', () => {
     const index = modelIndex();
-    const folders = domainFolders(index, 'P-D').stages;
+    const folders = ownerFolders(index, 'P-D').stages;
     const design = folders.find((s) => s.label === 'Interaction design')!;
     expect(design.folders.filter((f) => f.count > 0).map((f) => [f.kind, f.records.map((r) => r.id)])).toEqual([
       ['flow', ['P-D-UC01-FL01']], ['view', ['P-V01']], ['endpoint', ['P-D-EP01', 'P-D-EP02']], ['integration', ['P-INT01']],

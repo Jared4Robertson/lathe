@@ -9,7 +9,7 @@ import { graphLevels, graphTarget } from '../../src/graph/steps';
 import { groupLabel, groupMembers, isGraphNode, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { treeChildren, treeParent } from '../../src/graph/tree';
 import { labelLines } from '../../src/graph/text';
-import { domainFolders } from '../../src/exploring/folder-tree/folders';
+import { ownerFolders } from '../../src/exploring/folder-tree/folders';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { boxElement, boxElements, drawnBox, graphHost, isCenter, scene } from './scene';
@@ -49,7 +49,7 @@ describe('the graph tree, its depth and its camera', () => {
 
   it('LA-EXP-DS04-T03 LA-V93-R23-T06 The graph\'s tree is the nav\'s: a domain\'s five stages, a folder per kind, the records that start a branch of each stage, and a product\'s own stages and domains', () => {
     const index = testIndex();
-    const { stages } = domainFolders(index, 'P-D');
+    const { stages } = ownerFolders(index, 'P-D');
     expect(treeChildren(index, 'P-D')).toEqual([...STAGES, 'P-D/question']);
     expect(groupLabel(index, 'P-D/technical-specification')).toBe(`Technical specification (${stages.find((s) => s.stage === 'technical-specification')!.count})`);
     expect(treeChildren(index, 'P-D/domain-model')).toEqual(stages.find((s) => s.stage === 'domain-model')!.folders.filter((f) => f.count > 0).map((f) => f.key));

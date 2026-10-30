@@ -11,6 +11,8 @@ import { answerQuery } from '../../lathe/src/platform/commands/run';
 import { StoreError } from '../../lathe/src/platform/data/problems';
 import { forgetReads } from '../src/record/read';
 import { readViewOf, type ServedData } from './read-view';
+import { referenceOf } from '../../lathe/src/reference';
+import { LIST_RECORD_CHANGES } from '../../lathe/src/exploring/record-changes/queries';
 
 /** One aggregate command the page sent: its route and its input. */
 export interface SentCommand {
@@ -21,7 +23,7 @@ export interface SentCommand {
 export interface Served {
   /** The data every query reads: the component-test workspace by default. */
   data?: ServedData;
-  /** What GET /api/baseline answers, by its query's `since` (commit, branch or a hash); by default a 404. */
+  /** The baseline the Record changes read is given, by its `since` (commit, branch or a hash); by default none. */
   baseline?: (since: string) => BaselineAnswer;
   /**
    * What an aggregate command (POST /api/<aggregate>/<command>) answers for its route and input; by default every one
@@ -43,13 +45,21 @@ export function serve(served: Served = {}): { requests: Requests; commands: Sent
     const url = typeof input === 'string' ? input : input instanceof URL ? input.pathname : input.url;
     requests.push(`${init?.method ?? 'GET'} ${url}`);
     const json = (body: unknown, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json' } });
-    if (url.startsWith('/api/baseline') && served.baseline) return json(served.baseline(new URLSearchParams(url.split('?')[1]).get('since') ?? ''));
+    // The Reference read: the schema's kinds, tables and relations, with the check rows.
+    if (url === '/api/reference') {
+      const { schema } = data;
+      const order = Object.keys(schema.kinds).sort((a, b) => (schema.kinds[a].position ?? Infinity) - (schema.kinds[b].position ?? Infinity) || a.localeCompare(b));
+      return json(referenceOf(schema, order, data.sources.flatMap((source) => source.tables.check ?? [])));
+    }
     // An aggregate's query, read by the query itself over the served data, as the server reads it.
     const [route, query = ''] = url.split('?');
     const read = ALL_QUERIES.find((q) => q.route === route);
     if (read && (init?.method ?? 'GET') === read.method) {
       try {
-        return json(answerQuery(readViewOf(data), read, Object.fromEntries(new URLSearchParams(query))));
+        const input = Object.fromEntries(new URLSearchParams(query));
+        // The Record changes read is given the baseline its `since` names, as the server reads it from git.
+        const baseline = read.route === LIST_RECORD_CHANGES.route ? served.baseline?.(input.since ?? '') : undefined;
+        return json(answerQuery({ ...readViewOf(data), ...(baseline ? { baseline } : {}) }, read, input));
       } catch (error) {
         if (error instanceof StoreError) return json({ error: error.message, problems: error.problems }, 422);
         if (error instanceof InputError) return json({ error: error.message }, 400);

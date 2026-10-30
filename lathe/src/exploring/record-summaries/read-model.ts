@@ -5,6 +5,7 @@
 // these: a page reads its record's fields through its aggregate's own query. The projection is the only code that reads
 // the source rows for the query and the only code that writes the read model's table.
 import type { ReadView } from '../../platform/data/rules.ts';
+import type { Row } from '../../platform/data/rows.ts';
 import { inSpace, placeRecords } from '../placement.ts';
 
 /** One record as a link to it, a list row and the page's frame read it. */
@@ -19,6 +20,10 @@ export interface RecordSummary {
   group: string | null;
   /** A test's state (automated, manual, not automated yet), or null for a record that is no test. */
   testState: string | null;
+  /** What it names in code: its file, or else its name (a table's); null for a record that names neither. */
+  names: string | null;
+  /** A test's level (unit, integration, end to end…), or null for a record that is no test. */
+  level: string | null;
   /** Its kind's data file in its product's data folder, such as use_case.jsonl, and its line there, from 1. */
   file: string;
   line: number;
@@ -46,6 +51,8 @@ export interface RecordSummaries {
 export interface RecordSummariesTable {
   products: Map<string, RecordSummaries>;
 }
+
+const textColumn = (value: unknown): string | null => (typeof value === 'string' && value.trim() !== '' ? value : null);
 
 const byId = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
 
@@ -78,6 +85,10 @@ export function recordSummariesTableFrom(view: ReadView): RecordSummariesTable {
       }
     }
   }
+  const stageOf = (kind: string) => schema.kinds[kind]?.stage ?? null;
+  // A test: a test-plan kind with a run by, whose state says how it runs.
+  const testState = (kind: string, row: Row): string | null =>
+    stageOf(kind) === 'test-plan' && schema.tables[kind]?.columns.some((c) => c.name === 'state' && c.required) ? textColumn(row.state) : null;
   const summaries: RecordSummary[] = [...placed.values()].map((r) => ({
     id: r.id,
     kind: r.kind,
@@ -86,7 +97,9 @@ export function recordSummariesTableFrom(view: ReadView): RecordSummariesTable {
     product: r.product,
     domain: r.domain,
     group: typeof r.row.group_name === 'string' && r.row.group_name.trim() !== '' ? r.row.group_name : null,
-    testState: typeof r.row.state === 'string' && schema.tables[r.kind]?.columns.some((c) => c.name === 'state') ? r.row.state : null,
+    testState: testState(r.kind, r.row),
+    names: textColumn(r.row.file) ?? (stageOf(r.kind) === 'technical-specification' ? textColumn(r.row.name) : null),
+    level: testState(r.kind, r.row) === null ? null : textColumn(r.row.level),
     file: `${r.kind}.jsonl`,
     line: r.line,
     digest: digestOf(JSON.stringify([r.row, owned.get(r.id) ?? []])),

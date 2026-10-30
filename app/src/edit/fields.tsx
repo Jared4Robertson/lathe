@@ -37,13 +37,6 @@ export function Refusal({ title, reasons, focusKey }: { title: string; reasons: 
 /** A refusal's problem as one line, in the rule's own words, without the file and line a loaded row would have. */
 export const problemText = (p: StoreProblem) => `${p.key ? `${p.key}: ` : ''}${p.message}`;
 
-/** A column's value as the text its input holds: '' for none, one line per item of a list. */
-export function columnText(value: Value | undefined): string {
-  if (value === undefined) return '';
-  if (Array.isArray(value)) return value.join('\n');
-  return String(value);
-}
-
 /**
  * The text of a column's input as the column's value, or undefined when it is empty: a whole number when it reads as
  * one, true or false, a list of its non-empty lines, or the text. A text that is not of the column's type is sent as it

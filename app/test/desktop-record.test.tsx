@@ -1,7 +1,6 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { recordIdAt } from '../src/shell/desktopRecord';
-import { recordIndexOf } from './read-view';
 import { desktopBridgeStub, facts, openApp } from './helpers';
 import { workspace } from './fixtures/workspace';
 

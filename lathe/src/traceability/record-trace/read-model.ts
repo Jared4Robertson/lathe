@@ -99,7 +99,8 @@ export function recordTraceTableFrom(view: ReadView): RecordTraceTable {
   const coverage = new Map((run?.coverage ?? []).map((c) => [c.domain ?? c.product, c]));
   const problems = new Map<string, Set<string>>();
   for (const p of run?.problems ?? []) if (p.record) problems.set(p.record, (problems.get(p.record) ?? new Set()).add(p.check));
-  const isTestKind = (kind: string) => schema.kinds[kind]?.stage === 'test-plan';
+  // A test: a test-plan kind with a run by (a test data set is in the test plan, and not a test).
+  const isTestKind = (kind: string) => schema.kinds[kind]?.stage === 'test-plan' && !!schema.tables[kind]?.columns.some((c) => c.name === 'state' && c.required);
   const relationLabel = (relation: string, from: 'out' | 'in') => {
     const r = schema.relations[relation];
     const words = from === 'out' ? r?.forwardLabel : r?.reverseLabel;

@@ -54,7 +54,7 @@ export interface MetaModel {
   kinds: MetaKind[];
   stages: MetaStage[];
   relations: MetaRelation[];
-  /** Each kind's and part table's columns, by table. */
+  /** Each table's columns, by table (every table but the link tables): a kind's, a part table's, a declaration's, a check's. */
   columns: Record<string, ColumnDescription[]>;
 }
 
@@ -100,7 +100,7 @@ export function metaModelTableFrom(view: ReadView): MetaModelTable {
   );
   const columns = Object.fromEntries(
     Object.values(schema.tables)
-      .filter((t) => t.role === 'kind' || t.role === 'part')
+      .filter((t) => t.role !== 'link')
       .map((t) => [t.name, t.columns]),
   );
   return { model: { kinds, stages, relations, columns } };
