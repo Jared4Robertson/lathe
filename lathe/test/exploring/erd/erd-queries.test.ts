@@ -38,7 +38,7 @@ async function data(): Promise<ReadView> {
   return { schema: store.schema, rows: (t) => store.rows(t), record: (id) => store.record(id) };
 }
 
-describe('LA-EXP-QRY10-T01 The ERD read gives a product\'s domains, aggregates with their entities (root first) and fields, and its lines, nothing of another product', () => {
+describe('LA-EXP-UC11-R10-T02 The ERD read gives a product\'s domains, aggregates with their entities (root first) and fields, and its lines, nothing of another product', () => {
   it('reads EX\'s map', async () => {
     const map = runQuery(await data(), GET_ERD, { product_id: 'EX' }) as ErdMap;
     expect(map.product).toBe('EX');

@@ -7,7 +7,7 @@ import { productKindWorkspace } from './fixtures/product-kinds';
 // record summaries (list-record-summaries), the meta model (get-meta-model), the folder tree, problems and coverage,
 // each answered by its own query over the served data.
 
-describe('the space\'s record index, from the record summaries and the meta model', () => {
+describe('LA-EXP-UC02-R08-T03 the space\'s record index, from the record summaries and the meta model', () => {
   it('reads a record per row of each kind table, with its one parent, and its product and domain up the chain', () => {
     const index = recordIndexOf(workspace(), 'DM');
     expect(index.byId.get('DM-SHOP-UC01')).toMatchObject({ kind: 'use_case', parent: 'DM-SHOP-CAP01', product: 'DM', domain: 'DM-SHOP', file: 'use_case.jsonl' });

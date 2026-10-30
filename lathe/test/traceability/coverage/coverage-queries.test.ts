@@ -18,7 +18,7 @@ const scope = (product: string, domain: string | null, proved: number): Coverage
   gaps: [{ id: `${domain ?? product}-X`, kind: 'invariant', missing: 'proved', message: 'not proved' }],
 });
 
-describe('LA-TRC-QRY01-T01 A product\'s coverage gives each scope\'s figures, tests by state and gaps, its own scope first, nothing of another product', () => {
+describe('LA-TRC-UC01-R01-T02 A product\'s coverage gives each scope\'s figures, tests by state and gaps, its own scope first, nothing of another product', () => {
   it('reads EX\'s scopes from the run', async () => {
     const store = await twoProducts();
     const view = { schema: store.schema, rows: (t: string) => store.rows(t), record: (id: string) => store.record(id), checked: { problems: [], chains: [], coverage: [scope('EX', 'EX-LEND', 1), scope('EX', null, 0), scope('NF', 'NF-NOTE', 2)] } };

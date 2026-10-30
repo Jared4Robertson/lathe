@@ -19,7 +19,7 @@ function tablesOf(store: Store, change: (tables: Record<string, Record<string, u
   return tables as Extract<BaselineAnswer, { state: 'ok' }>['tables'];
 }
 
-describe('LA-EXP-QRY13 What changed since a baseline is read per product, by record, from the rows now and the baseline', () => {
+describe('LA-EXP-UC15-R01-T02 What changed since a baseline is read per product, by record, from the rows now and the baseline', () => {
   it('lists each record added, removed and changed in the product, and nothing of another product', async () => {
     const store = await twoProducts();
     const tables = tablesOf(store, (t) => {

@@ -79,7 +79,7 @@
 {"id":"LA-AUT-EN96-DM","title":"RuleRow","entity_id":"LA-AUT-EN96","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-CHK-EN01-DM","title":"CheckRow","entity_id":"LA-CHK-EN01","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-CHK-EN03-DM","title":"ProductSettingRow","entity_id":"LA-CHK-EN03","file":"lathe/src/platform/data/tables.ts"}
-{"id":"LA-EXP-EN01-DM","title":"SpecRoute","entity_id":"LA-EXP-EN01","file":"app/src/specs/data.ts"}
+{"id":"LA-EXP-EN01-DM","title":"SpecRoute","entity_id":"LA-EXP-EN01","file":"app/src/views/spec-route.ts"}
 {"id":"LA-EXP-EN02-DM","title":"SpaceMemory","entity_id":"LA-EXP-EN02","file":"app/src/exploring/space/model.ts"}
 {"id":"LA-EXP-EN03-DM","title":"NavRows","entity_id":"LA-EXP-EN03","file":"app/src/exploring/nav-row/model.ts"}
 {"id":"LA-EXP-EN09-DM","title":"TabSet","entity_id":"LA-EXP-EN09","file":"app/src/exploring/tab-set/model.ts"}
