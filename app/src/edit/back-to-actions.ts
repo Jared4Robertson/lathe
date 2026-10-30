@@ -7,6 +7,8 @@ import type { RefObject } from 'react';
 
 /** How long a reload may take to draw the page anew after the form closes (a section that reads its own query, such as a pattern's followers, draws its actions only once read). */
 const RELOAD_MS = 10_000;
+/** How often it looks again while it watches. */
+const WATCH_MS = 50;
 
 /** Puts the focus back on the toolbar the form was opened from, in view: `label` its accessible name, `toolbar` the one drawn when the form opened, if the caller holds it. */
 export function backToActions(label: string, toolbar?: RefObject<HTMLElement | null>) {
@@ -16,7 +18,7 @@ export function backToActions(label: string, toolbar?: RefObject<HTMLElement | n
     const button = find()?.querySelector<HTMLElement>('button');
     if (!button) return;
     button.focus({ preventScroll: true });
-    button.scrollIntoView({ block: 'nearest' });
+    button.scrollIntoView?.({ block: 'nearest' });
     placed = button;
   };
   const until = performance.now() + RELOAD_MS;
@@ -31,7 +33,7 @@ export function backToActions(label: string, toolbar?: RefObject<HTMLElement | n
     // The Reader acted, or moved the focus elsewhere: leave it there.
     if (acted || (placed && active !== placed && active !== document.body && active !== null)) { end(); return; }
     if (!placed || !placed.isConnected || active !== placed) place();
-    if (performance.now() < until) requestAnimationFrame(watch);
+    if (performance.now() < until) setTimeout(watch, WATCH_MS);
     else end();
   };
   setTimeout(watch, 0);

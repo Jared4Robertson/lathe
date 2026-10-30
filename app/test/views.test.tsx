@@ -134,9 +134,10 @@ describe('one address, one stage', () => {
     const el = stageRegion('Graph');
     await waitFor(() => expect(el.style.getPropertyValue('--open-left')).toMatch(/^\d+px$/));
     for (const side of ['left', 'top', 'right', 'bottom']) expect(el.style.getPropertyValue(`--frame-${side}`)).toMatch(/^\d+px$/);
-    // The foot of the stage's tools at its top, on the stage's parent, where the wiki card beside the stage reads it.
-    expect(el.parentElement!.style.getPropertyValue('--tools-foot')).toBe(`${parseFloat(el.style.getPropertyValue('--frame-top')) - OPEN_GAP}px`);
+    // The foot of the stage's tools at its top, on the stage's parent, where the wiki card beside the stage reads it: written
+    // once the toolbar row is drawn, and kept while it is drawn anew.
     await waitFor(() => expect(el.querySelector('[data-stage-tools="top"]')).not.toBeNull());
+    await waitFor(() => expect(el.parentElement!.style.getPropertyValue('--tools-foot')).toBe(`${parseFloat(el.style.getPropertyValue('--frame-top')) - OPEN_GAP}px`));
     const css = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
     // Its room is the open space's width at the top, right of the nav and left of the chat (the card sits below its row).
     expect(el.querySelector('[data-stage-tools="top"]')!.parentElement).toHaveClass('stage-tools-room');
@@ -385,7 +386,8 @@ describe('one address, one stage', () => {
     const rule = (selector: string) => [...css.matchAll(new RegExp(`(?:^|\\n)${selector.replace(/[.[\]()]/g, '\\$&')} \\{([^}]*)\\}`, 'g'))].map((m) => m[1]).join(';');
     const panel = rule('.wiki-panel');
     // One spot: just under the stage's toolbar row (the measure's --tools-foot), never moved by the focus.
-    expect(panel).toMatch(/--card-top: calc\(var\(--tools-foot, calc\(var\(--below-strip\) - var\(--float-inset\)\)\) \+ var\(--card-gap-y\)\)/);
+    // Before the first measure, the fallback reserves the toolbar row (--tools-row), so the card never moves under it.
+    expect(panel).toMatch(/--card-top: calc\(var\(--tools-foot, calc\(var\(--below-strip\) \+ var\(--tools-row\)\)\) \+ var\(--card-gap-y\)\)/);
     expect(panel).toMatch(/top: var\(--card-top\)/);
     expect(panel).not.toMatch(/transition|bottom:/);
     expect(panel).toMatch(/right: calc\(var\(--chat-space\) - var\(--float-inset\) \+ var\(--card-gap\)\)/);
