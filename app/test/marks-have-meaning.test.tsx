@@ -18,8 +18,8 @@ import { changesKeyEntries, type ChangeMark } from '../src/changes/ChangesKey';
 import { StageKey, type KeyEntry } from '../src/views/StageChrome';
 import { modelWorkspace } from './fixtures/model';
 
-/** The live marks every stage draws, and the Changes lens's dimming: each in every stage's key (changes/ChangesKey.tsx). */
-const CHANGE_MARKS: ChangeMark[] = ['is-added', 'is-changed', 'is-removed', 'is-lens'];
+/** The live marks every stage draws, and Highlight changes's dimming: each in every stage's key (changes/ChangesKey.tsx). */
+const CHANGE_MARKS: ChangeMark[] = ['is-added', 'is-changed', 'is-removed', 'is-dimmed'];
 const CHANGES = changesKeyEntries(new Set(CHANGE_MARKS));
 /** The graph drawing every look, shape, mark and badge, in a layout. */
 const everything = (layout: GraphDrawn['layout']): GraphDrawn => ({
@@ -54,7 +54,7 @@ describe('LA-V93-R12-T06 the Graph view key', () => {
     for (const badge of BADGE_TONES) needs(`badge ${badge}`, `.graph-mark.${badge}`);
     // The one line the graph draws: parent to child.
     needs('the parent line', '.graph-line');
-    // The live marks (changes/marks.ts) and the Changes lens's dimming.
+    // The live marks (changes/marks.ts) and Highlight changes's dimming.
     for (const mark of CHANGE_MARKS) needs(`live mark ${mark}`, `.change-swatch.${mark}`);
     expect(missing).toEqual([]);
   });
@@ -100,7 +100,7 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
         if (box.root) needs('root badge', '.erd-root');
         if (strength(box.id) < 1) needs('faded box', '.erd-key-faded');
       }
-      // A box the data's reload added or changed (has-change is-added, is-changed), a removed one's ghost, the lens.
+      // A box the data's reload added or changed (has-change is-added, is-changed), a removed one's ghost, Highlight changes.
       for (const mark of CHANGE_MARKS) needs(`live mark ${mark}`, `.change-swatch.${mark}`);
       unmount();
     }

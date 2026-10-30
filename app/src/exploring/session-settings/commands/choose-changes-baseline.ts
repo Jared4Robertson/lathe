@@ -5,7 +5,7 @@ import { holdToRules } from '../rules';
 
 export interface ChooseChangesBaseline { since: Since }
 
-/** Keeps the baseline the Changes lens compares with; the same baseline changes nothing. */
+/** Keeps the baseline Highlight changes compares with; the same baseline changes nothing. */
 export function chooseChangesBaseline({ since }: ChooseChangesBaseline): void {
   const was = sessionSettingsRepository.load();
   if (was.changes.since === since) return;

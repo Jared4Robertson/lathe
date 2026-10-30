@@ -1,30 +1,32 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSessionSettings } from '../exploring/session-settings/use-session-settings';
-import { turnChangesLensOnOrOff } from '../exploring/session-settings/commands/turn-changes-lens-on-or-off';
+import { turnHighlightChangesOnOrOff } from '../exploring/session-settings/commands/turn-highlight-changes-on-or-off';
 import { chooseChangesBaseline } from '../exploring/session-settings/commands/choose-changes-baseline';
 import { turnFollowOnOrOff } from '../exploring/session-settings/commands/turn-follow-on-or-off';
 import { markProductLookedAt } from '../exploring/session-settings/commands/mark-product-looked-at';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { ChangesContext, createLiveStore, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Since } from './changes';
+import { ChangesContext, createLiveStore, type RecordChange, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Since } from './changes';
 
 /** How long the note saying why Follow went off stays, in ms. */
 const FOLLOW_NOTE_MS = 6000;
 
 /**
- * The changes of the product in view (changes.ts), for every part of the app: the stages' marks and lens, the wiki
+ * The changes of the product in view (changes.ts), for every part of the app: the stages' marks and Highlight changes, the wiki
  * card's Changes section and the Changes panel. `index` is the space's, as read; `product` the space's product.
  */
 export function ChangesProvider({ index, product, children }: { index: RecordIndex | null; product: string | null; children: ReactNode }) {
   const { changes: settings } = useSessionSettings();
   const [live] = useState(createLiveStore);
 
-  // The live changes: each reload against the data before it.
+  // The live changes: each reload against the data before it. A record the baseline lacks (new since it) that is then removed
+  // never existed at the baseline: it leaves no mark and no ghost, where one that did exist leaves its ghost.
+  const baselineChanges = useRef<ReadonlyMap<string, RecordChange>>(new Map());
   const before = useRef<RecordIndex | null>(null);
   useEffect(() => {
     const was = before.current;
     before.current = index;
     if (!was || !index || was === index) return;
-    live.note(reloadChanges(was, index), (id) => index.byId.get(id)?.product ?? was.byId.get(id)?.product ?? null);
+    live.note(reloadChanges(was, index).filter((c) => !(c.change === 'removed' && baselineChanges.current.get(c.id)?.change === 'added')), (id) => index.byId.get(id)?.product ?? was.byId.get(id)?.product ?? null);
   }, [index, live]);
 
   // The Reader looks at a product: the moment is kept as its "since I last looked", and its live marks go.
@@ -48,11 +50,11 @@ export function ChangesProvider({ index, product, children }: { index: RecordInd
     if (product && product !== left && !lookedRef.current[product]) look(product);
   }, [product, index, look]);
 
-  const setLens = useCallback((on: boolean) => {
-    // Dismissing the lens is looking at what it showed.
-    if (!on && settings.lens && product) look(product);
-    turnChangesLensOnOrOff({ on });
-  }, [settings.lens, product, look]);
+  const setHighlight = useCallback((on: boolean) => {
+    // Dismissing Highlight changes is looking at what it showed.
+    if (!on && settings.highlight && product) look(product);
+    turnHighlightChangesOnOrOff({ on });
+  }, [settings.highlight, product, look]);
   const setSince = useCallback((since: Since) => chooseChangesBaseline({ since }), []);
   const [followNote, setFollowNote] = useState<string | null>(null);
   const noteTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -80,11 +82,12 @@ export function ChangesProvider({ index, product, children }: { index: RecordInd
   const current: Baseline = baseline.key === key ? baseline.value : { state: 'loading' };
   const changes = useMemo(() => (current.state === 'ok' ? current.changes : []), [current]);
   const byId = useMemo(() => new Map(changes.map((c) => [c.id, c])), [changes]);
+  baselineChanges.current = byId;
 
   const api = useMemo<ChangesApi>(() => ({
-    product, lens: settings.lens, setLens, since: settings.since, setSince, follow: settings.follow, setFollow, followNote,
+    product, highlight: settings.highlight, setHighlight, since: settings.since, setSince, follow: settings.follow, setFollow, followNote,
     baseline: current, changes, byId, live,
-  }), [product, settings.lens, setLens, settings.since, setSince, settings.follow, setFollow, followNote, current, changes, byId, live]);
+  }), [product, settings.highlight, setHighlight, settings.since, setSince, settings.follow, setFollow, followNote, current, changes, byId, live]);
   return <ChangesContext.Provider value={api}>{children}</ChangesContext.Provider>;
 }
 

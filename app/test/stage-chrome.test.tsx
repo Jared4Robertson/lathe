@@ -39,7 +39,7 @@ function chrome() {
     reactFlowControls: stage().querySelectorAll('.react-flow__controls').length };
 }
 
-const SHARED = ['steps: left right up down out in', 'frame', 'changes: lens follow open'];
+const SHARED = ['steps: left right up down out in', 'frame', 'changes: highlight follow open'];
 const CAMERA = [['Zoom in', 'Zoom out', 'Fit the whole map']];
 
 describe('one stage chrome', () => {
@@ -177,6 +177,6 @@ describe('the stage key bar', () => {
     // The focus is never hidden, so its entries stay.
     expect(ids('P-D-UC01', ['use_case'])).toContain('shape-stadium');
     expect(changesKeyEntries(new Set())).toEqual([]);
-    expect(changesKeyEntries(new Set(['is-changed', 'is-lens'])).map((e) => e.words)).toEqual(['Changed', 'Unchanged']);
+    expect(changesKeyEntries(new Set(['is-changed', 'is-dimmed'])).map((e) => e.words)).toEqual(['Changed', 'Unchanged']);
   });
 });

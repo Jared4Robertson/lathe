@@ -97,10 +97,10 @@ body { background: var(--paper); color: var(--ink); font: var(--text-size)/var(-
   --change-before-bg: color-mix(in srgb, var(--spark) 16%, transparent);
   --change-after-ink: var(--steel);
   --change-before-ink: var(--error);
-  /* The live marks on every stage and the Changes panel's (app/src/changes): a new record, a changed one, a removed one's ghost. */
+  /* The marks on every stage and the Changes panel's (app/src/changes): a new record (green), a changed one (amber), a removed one (red); each with white or dark text on it (--on-mark). */
   --change-new: var(--g-use-cases);
-  --change-changed: var(--spark);
-  --change-gone: var(--muted);
+  --change-changed: var(--warn);
+  --change-gone: color-mix(in srgb, var(--error) 70%, #C0152B);
 }
 /* The app (LA-V96): the stage behind everything, the nav and the page's panels floating over it, inset from the window
    and each other by --float-inset. Nothing replaces the stage (LA-PAT-APP-UX-R20): a tool (Checks, Appearance, the theme
