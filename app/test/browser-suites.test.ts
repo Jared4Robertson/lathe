@@ -11,7 +11,7 @@ const app = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const files = ['stability', 'a11y', 'perf'].flatMap((dir) =>
   readdirSync(path.join(app, dir)).filter((f) => f.endsWith('.ts')).map((f) => `${dir}/${f}`));
 
-describe('the browser suites', () => {
+describe('LA-PAT-APP-CODE-R26-T01 the browser suites', () => {
   it('take test and expect only from stability/test.ts, which fails a test on any console error', () => {
     const own = files.filter((f) => f !== 'stability/test.ts' && /import \{[^}]*\b(test|expect)\b[^}]*\} from '@playwright\/test'/.test(readFileSync(path.join(app, f), 'utf8').replace(/import type \{[^}]*\}/g, '')));
     expect(own).toEqual([]);

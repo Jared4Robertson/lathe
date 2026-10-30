@@ -1,9 +1,10 @@
-import { cpSync, existsSync, mkdtempSync } from 'node:fs';
+import { mkdtempSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
+import { copyRepo } from './copy';
 
 // The stability suite (LA-PAT-APP-UX-R08, "Nothing jumps"): Playwright with Chromium only. It
 // starts the app's Vite dev server on a free port (never 5199, the Owner's own dev server) over a copy of
@@ -37,11 +38,8 @@ async function freePort(): Promise<number> {
 if (!process.env.STABILITY_PORT) process.env.STABILITY_PORT = String(await freePort());
 if (!process.env.STABILITY_ROOT) {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-stability-'));
-  // The data and config, and the product the config lists beside its own (its folder without its packages).
-  for (const part of ['data', 'lathe.config.json', 'examples/tool-library']) {
-    const from = path.join(repo, part);
-    if (existsSync(from)) cpSync(from, path.join(root, part), { recursive: true, filter: (file) => path.basename(file) !== 'node_modules' });
-  }
+  // The repo as it is: data, config, code and manifests, so the copy checks as the repo does (stability/copy.ts).
+  copyRepo(repo, root);
   process.env.STABILITY_ROOT = root;
 }
 const port = Number(process.env.STABILITY_PORT);
