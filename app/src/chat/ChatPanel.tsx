@@ -3,7 +3,7 @@ import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
 import { CHAT_DEFAULT, CHAT_MAX, CHAT_MIN } from '../exploring/session-settings/model';
-import { Link } from '../router';
+import { Link, useLocation } from '../router';
 import { useAnnounce } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
@@ -12,17 +12,23 @@ import { proseLinks } from '../specs/mentions';
 import { addressOf } from '../views/address';
 import { reloadChanges, type RecordChange } from '../changes/changes';
 import { CHANGE_LABEL, ChangeDetails } from '../changes/ChangeDetails';
-import type { ChatBridge, ChatItem, ChatSessions, OpenChoice, SessionSummary } from './types';
+import { focusContext, useViewChanges } from './appRequests';
+import { BypassWarning, ChatModeMenu, MODE_INFO } from './ChatMode';
+import type { ChatBridge, ChatItem, ChatMode, ChatSessions, LatheTools, OpenChoice, PromptAnswer, SessionSummary } from './types';
 import { useChat, type Turn } from './useChat';
 import './ChatPanel.css';
 
 // The chat panel (LA-PLT-UC19, LA-V99): the desktop app's conversation with the Owner's own Claude
 // Code, floating at the right over the stage as a frosted panel, so the stage frames its focus in
 // what the panel leaves (views/openSpace.ts). Its head names the session and opens the session
-// picker (resume, fork or start one), the help and the hide button; the log shows the conversation:
+// picker (resume, fork or start one), the help and the hide button (and a Bypass badge while Claude
+// may use every tool), and under them the Lathe tools the session has and the permission mode
+// (LA-V99-R03, ChatMode.tsx); the log shows the conversation:
 // the Owner's messages, Claude's answers as Markdown whose record IDs open the record on the stage,
 // each tool call as a row that expands to its input and result, each permission prompt with Allow
-// once and Deny, notices, and after each turn the records it changed, as diffs. The composer at its
+// once, Allow always in this chat and Deny, notices, and after each turn the records it changed, as
+// diffs. Above the composer a chip names what the Owner is looking at, sent with each message as
+// context (LA-PLT-UC19-R12) unless they remove it. The composer at its
 // foot sends a message (Enter; Shift+Enter for a new line) and becomes Stop while Claude works
 // (Escape stops too). Up and Down walk the messages in the log; Home and End go to its ends.
 // The shell runs the CLI (desktop/src/chatSession.ts); the panel only draws and asks.
@@ -31,6 +37,8 @@ export interface ChatPanelProps {
   bridge: ChatBridge;
   /** The whole workspace's specs: record links and diffs read them. */
   index: RecordIndex | null;
+  /** The product the window shows, for what the Owner is looking at. */
+  product: string | null;
   width: number | null;
   onWidth: (width: number | null) => void;
   onClose: () => void;
@@ -52,8 +60,13 @@ export function sessionDate(updated: number, now = Date.now()): string {
 
 const busy = (status: string) => status === 'running' || status === 'stopping';
 
-export function ChatPanel({ bridge, index, width, onWidth, onClose, input }: ChatPanelProps) {
-  const { view, send, answer, stop } = useChat(bridge, index);
+/** Why the chat cannot start a session yet, with the fix; null when it can (or cannot tell). */
+const blocked = (sessions: ChatSessions | null) => (sessions?.claude === null ? 'missing' : sessions?.signedIn === false ? 'signed-out' : null);
+
+type Answer = (id: string, reply: PromptAnswer) => Promise<boolean>;
+
+export function ChatPanel({ bridge, index, product, width, onWidth, onClose, input }: ChatPanelProps) {
+  const { view, send, answer, stop, setMode } = useChat(bridge, index);
   const announce = useAnnounce();
   const [picker, setPicker] = useState(false);
   const [help, setHelp] = useState(false);
@@ -87,9 +100,12 @@ export function ChatPanel({ bridge, index, width, onWidth, onClose, input }: Cha
   const submit = async () => {
     const text = draft.trim();
     if (!text || working) return;
+    if (!view.open && blocked(sessions)) { announce(blocked(sessions) === 'missing' ? 'Lathe could not find Claude Code.' : 'Claude Code is not signed in.'); return; }
     if (!view.open && !(await bridge.open({ mode: 'new' }))) { announce('Claude Code could not start.'); return; }
     setPicker(false);
-    if (await send(text)) setDraft('');
+    // What the Owner is looking at as they send, unless they removed the chip.
+    const focus = focusShown ? focusContext(index, window.location.pathname, product).context : null;
+    if (await send(text, focus)) setDraft('');
   };
   const onComposerKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void submit(); }
@@ -99,12 +115,29 @@ export function ChatPanel({ bridge, index, width, onWidth, onClose, input }: Cha
     if (e.key === 'Escape' && working && !e.defaultPrevented) { e.preventDefault(); void stop(); announce('Stopping'); }
   };
 
+  // The mode: the open chat's own, else the one the folder's next chat starts in. Bypass asks first.
+  const mode: ChatMode = view.mode ?? sessions?.mode ?? 'accept-reads';
+  const [confirmBypass, setConfirmBypass] = useState(false);
+  const chooseMode = async (next: ChatMode) => {
+    setConfirmBypass(false);
+    if (!(await setMode(next))) { announce('The mode can change once Claude has finished.'); return; }
+    announce(`${MODE_INFO[next].name} mode`);
+    if (!view.open) loadSessions();
+  };
+
+  // What the Owner is looking at, as the chip names it; removing it leaves it out until they look at something else.
+  const location = useLocation();
+  const viewChanges = useViewChanges();
+  const focusLabel = useMemo(() => focusContext(index, location.path, product).label, [index, location.path, product, viewChanges]);
+  const [focusDropped, setFocusDropped] = useState<string | null>(null);
+  const focusShown = focusDropped !== focusLabel;
+
   const current = sessions?.sessions.find((s) => s.id === view.sessionId);
   const title = view.open ? current?.title ?? (view.sessionId ? 'This session' : 'New session') : 'Claude';
   const rest = width ?? CHAT_DEFAULT;
 
   return (
-    <aside ref={panel} id="chat-panel" className="chat-panel" data-floating="right" aria-label="Chat with Claude" onKeyDown={onPanelKey}>
+    <aside ref={panel} id="chat-panel" className={`chat-panel is-${mode}`} data-floating="right" aria-label="Chat with Claude" onKeyDown={onPanelKey}>
       <ResizeHandle
         className="chat-handle"
         label="Resize the chat"
@@ -124,6 +157,7 @@ export function ChatPanel({ bridge, index, width, onWidth, onClose, input }: Cha
         <h2 className="chat-title">
           <Icon name="chat" size={16} />
           <span className="chat-title-text">{title}</span>
+          {mode === 'bypass' && <span className="chat-bypass-badge" title="Bypass: Claude uses every tool without asking">Bypass</span>}
         </h2>
         <div className="chat-head-actions">
           {view.open && (
@@ -152,19 +186,35 @@ export function ChatPanel({ bridge, index, width, onWidth, onClose, input }: Cha
           </Tooltip>
         </div>
       </div>
+      <div className="chat-context">
+        {view.open && view.lathe ? <LatheToolsNote lathe={view.lathe} /> : <span className="chat-tools hint">Lathe's tools load with a session</span>}
+        <ChatModeMenu mode={mode} disabled={working} onChoose={(next) => (next === 'bypass' ? setConfirmBypass(true) : void chooseMode(next))} />
+      </div>
+      {confirmBypass && <BypassWarning onConfirm={() => void chooseMode('bypass')} onCancel={() => setConfirmBypass(false)} />}
       {help && <ChatHelp />}
       {showPicker
-        ? <SessionPicker sessions={sessions} current={view.sessionId} busy={working} onChoose={(c) => void choose(c)} />
-        : <ChatLog items={view.items} turns={view.turns} index={index} answer={answer} />}
+        ? <SessionPicker sessions={sessions} current={view.sessionId} busy={working} onChoose={(c) => void choose(c)} onCheck={loadSessions} />
+        : <ChatLog items={view.items} turns={view.turns} index={index} answer={answer} viewOnly={mode === 'view-only'} />}
       <div className="chat-status" aria-live="polite">
         {working ? (view.status === 'stopping' ? 'Stopping…' : 'Claude is working…') : view.open && view.status === 'closed' ? 'Claude Code is not running; your next message starts it again.' : ''}
       </div>
+      {focusShown && (
+        <div className="chat-focus">
+          <span className="chat-focus-chip">
+            <Icon name="focus" size={14} />
+            <span className="chat-focus-label" title="Sent with your message, so Claude starts from it">{focusLabel}</span>
+            <button type="button" className="chat-focus-remove" aria-label={`Leave out: ${focusLabel}`} onClick={() => { setFocusDropped(focusLabel); input.current?.focus(); }}>
+              <Icon name="x" size={12} />
+            </button>
+          </span>
+        </div>
+      )}
       <form className="chat-compose" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
         <textarea
           ref={input}
           className="chat-input"
           aria-label="Message Claude"
-          placeholder={view.open ? 'Ask Claude…' : 'Ask Claude, in a new session…'}
+          placeholder={mode === 'view-only' ? (view.open ? 'Ask Claude, View only…' : 'Ask Claude, in a new View only session…') : view.open ? 'Ask Claude…' : 'Ask Claude, in a new session…'}
           rows={2}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
@@ -188,18 +238,27 @@ export function ChatPanel({ bridge, index, width, onWidth, onClose, input }: Cha
   );
 }
 
+/** The Lathe tools the open session has: how many and from which Lathe, still loading, or that they did not load (the log says why). */
+function LatheToolsNote({ lathe }: { lathe: LatheTools }) {
+  const version = lathe.version ? `Lathe ${lathe.version}` : 'Lathe';
+  if (lathe.status === 'counting') return <span className="chat-tools hint">Loading {version}'s tools…</span>;
+  if (lathe.status === 'failed') return <span className="chat-tools is-failed">{version}'s tools did not load</span>;
+  return <span className="chat-tools">{lathe.count === 1 ? '1 tool' : `${lathe.count} tools`} from {version}</span>;
+}
+
 /** What works in the chat, and what is not supported yet. */
 function ChatHelp() {
   return (
     <section id="chat-help" className="chat-help" aria-label="What the chat can do">
-      <p>This is your own Claude Code, working in this product's folder with your login, settings, skills, plugins and <code>CLAUDE.md</code>. Record IDs in its answers open the record on the stage; it can see what you are looking at and open records here.</p>
+      <p>This is your own Claude Code, working in this product's folder with your login, settings, skills, plugins and <code>CLAUDE.md</code>, and always with Lathe's own tools, from the Lathe this window runs, whether or not you installed its plugin. Record IDs in its answers open the record on the stage; it can see what you are looking at and open records here.</p>
+      <p>The mode under the head sets what Claude may do without asking: <strong>Ask</strong> (everything asks), <strong>Accept reads</strong> (reads run, everything else asks; the default), <strong>Auto</strong> (Claude Code's auto mode decides), <strong>Bypass</strong> (nothing asks) or <strong>View only</strong> (Claude only reads: Lathe's commands and Claude Code's tools that write files or run commands are taken away, and anything else that may change things is refused). A new chat in this folder starts in the mode the last one had. <strong>Allow always in this chat</strong> on a prompt lets that tool run for the rest of the chat.</p>
+      <p>Each message goes with what you are looking at (the chip above the message box), so Claude starts from it; remove the chip to leave it out.</p>
       <p>Slash commands go to Claude Code as text: those it runs without a dialog, such as <code>/compact</code> or a skill's own command, work.</p>
       <p>Not supported in the chat yet:</p>
       <ul>
         <li>Slash commands that open a dialog, such as <code>/model</code>, <code>/config</code> or <code>/resume</code> (use the session picker).</li>
         <li>Plan mode's approval of a plan.</li>
         <li>Claude's question cards with choices.</li>
-        <li>Permission rules (always allow): each prompt is allowed once or denied.</li>
       </ul>
     </section>
   );
@@ -207,20 +266,31 @@ function ChatHelp() {
 
 // ---------- The session picker ----------
 
-function SessionPicker({ sessions, current, busy, onChoose }: { sessions: ChatSessions | null; current: string | null; busy: boolean; onChoose: (choice: OpenChoice) => void }) {
+function SessionPicker({ sessions, current, busy, onChoose, onCheck }: { sessions: ChatSessions | null; current: string | null; busy: boolean; onChoose: (choice: OpenChoice) => void; onCheck: () => void }) {
   const [warning, setWarning] = useState<SessionSummary | null>(null);
   const resume = (s: SessionSummary) => (s.openElsewhere ? setWarning(s) : onChoose({ mode: 'resume', id: s.id }));
   return (
     <section id="chat-sessions" className="chat-sessions" aria-labelledby="chat-sessions-title">
       <div className="chat-sessions-head">
         <h3 id="chat-sessions-title" className="chat-section-title">Sessions in this folder</h3>
-        <Button variant="primary" icon="plus" disabled={busy || sessions?.claude === null} onClick={() => onChoose({ mode: 'new' })}>New session</Button>
+        <Button variant="primary" icon="plus" disabled={busy || !!blocked(sessions)} onClick={() => onChoose({ mode: 'new' })}>New session</Button>
       </div>
       {sessions === null && <p className="hint">Reading the sessions…</p>}
       {sessions?.claude === null && (
-        <p className="chat-missing" role="alert">
-          Lathe could not find Claude Code{sessions.configured ? ' where settings.json says it is' : ''}. Install it, or give its path as <code>claudePath</code> in Lathe's <code>settings.json</code> (File › Open Records In › Edit Settings File).
-        </p>
+        <div className="chat-missing" role="alert">
+          <p>
+            Lathe could not find Claude Code{sessions.configured ? ' where settings.json says it is' : ''}. Install it from <a href="https://claude.com/claude-code">claude.com/claude-code</a>, or give its path as <code>claudePath</code> in Lathe's <code>settings.json</code> (File › Open Records In › Edit Settings File).
+          </p>
+          <Button onClick={onCheck}>Check again</Button>
+        </div>
+      )}
+      {sessions?.claude && sessions.signedIn === false && (
+        <div className="chat-missing" role="alert">
+          <p>
+            Claude Code is not signed in, so it cannot answer yet. In a terminal, run <code>claude</code> and type <code>/login</code> (or run <code>claude auth login</code>), then check again.
+          </p>
+          <Button onClick={onCheck}>Check again</Button>
+        </div>
       )}
       {warning && (
         <div className="chat-warning" role="alert">
@@ -235,7 +305,7 @@ function SessionPicker({ sessions, current, busy, onChoose }: { sessions: ChatSe
           </div>
         </div>
       )}
-      {sessions && sessions.sessions.length === 0 && sessions.claude !== null && <p className="hint">No saved sessions in this folder yet.</p>}
+      {sessions && sessions.sessions.length === 0 && !blocked(sessions) && <p className="hint">No saved sessions in this folder yet.</p>}
       {sessions && sessions.sessions.length > 0 && (
         <ul className="chat-session-list">
           {sessions.sessions.map((s) => (
@@ -262,7 +332,7 @@ function SessionPicker({ sessions, current, busy, onChoose }: { sessions: ChatSe
 
 // ---------- The log ----------
 
-function ChatLog({ items, turns, index, answer }: { items: ChatItem[]; turns: Turn[]; index: RecordIndex | null; answer: (id: string, allow: boolean) => Promise<boolean> }) {
+function ChatLog({ items, turns, index, answer, viewOnly }: { items: ChatItem[]; turns: Turn[]; index: RecordIndex | null; answer: Answer; viewOnly: boolean }) {
   const log = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<string | null>(null);
   // The log stays at its foot while Claude writes, unless the Owner has scrolled up.
@@ -294,7 +364,13 @@ function ChatLog({ items, turns, index, answer }: { items: ChatItem[]; turns: Tu
 
   return (
     <div ref={log} className="chat-log" role="log" data-arrows="own" aria-label="Conversation" aria-live="off" onScroll={onScroll} onKeyDown={onKey}>
-      {items.length === 0 && <p className="hint chat-empty">Ask Claude about this product, or to change it. It works through Lathe's tools, and you see each change here.</p>}
+      {items.length === 0 && (
+        <p className="hint chat-empty">
+          {viewOnly
+            ? 'Ask Claude about this product. View only is on: it reads through Lathe\'s tools and changes nothing.'
+            : 'Ask Claude about this product, or to change it. It works through Lathe\'s tools, and you see each change here.'}
+        </p>
+      )}
       {items.map((item, n) => (
         <ItemWithChanges key={item.id} item={item} index={index} answer={answer} tabIndex={item.id === focusable ? 0 : -1} onFocus={setActive} turn={blocks.get(n)} />
       ))}
@@ -302,7 +378,7 @@ function ChatLog({ items, turns, index, answer }: { items: ChatItem[]; turns: Tu
   );
 }
 
-function ItemWithChanges({ item, index, answer, tabIndex, onFocus, turn }: { item: ChatItem; index: RecordIndex | null; answer: (id: string, allow: boolean) => Promise<boolean>; tabIndex: number; onFocus: (id: string) => void; turn?: Turn }) {
+function ItemWithChanges({ item, index, answer, tabIndex, onFocus, turn }: { item: ChatItem; index: RecordIndex | null; answer: Answer; tabIndex: number; onFocus: (id: string) => void; turn?: Turn }) {
   return (
     <>
       <ChatEntry item={item} index={index} answer={answer} tabIndex={tabIndex} onFocus={onFocus} />
@@ -313,7 +389,7 @@ function ItemWithChanges({ item, index, answer, tabIndex, onFocus, turn }: { ite
 
 const WHO: Record<ChatItem['kind'], string> = { user: 'You', assistant: 'Claude', tool: 'Tool call', permission: 'Permission', notice: 'Notice' };
 
-const ChatEntry = memo(function ChatEntry({ item, index, answer, tabIndex, onFocus }: { item: ChatItem; index: RecordIndex | null; answer: (id: string, allow: boolean) => Promise<boolean>; tabIndex: number; onFocus: (id: string) => void }) {
+const ChatEntry = memo(function ChatEntry({ item, index, answer, tabIndex, onFocus }: { item: ChatItem; index: RecordIndex | null; answer: Answer; tabIndex: number; onFocus: (id: string) => void }) {
   const common = { className: `chat-item is-${item.kind}`, 'data-item': item.id, tabIndex, onFocus: (e: { target: EventTarget; currentTarget: EventTarget }) => { if (e.target === e.currentTarget) onFocus(item.id); } };
   switch (item.kind) {
     case 'user':
@@ -364,13 +440,13 @@ function ToolRow({ item }: { item: Extract<ChatItem, { kind: 'tool' }> }) {
   );
 }
 
-const ANSWERED = { allowed: 'Allowed once', denied: 'Denied', canceled: 'Withdrawn: the turn ended first' } as const;
+const ANSWERED = { allowed: 'Allowed once', always: 'Allowed always in this chat', denied: 'Denied', refused: 'Refused: View only', canceled: 'Withdrawn: the turn ended first' } as const;
 
-function PermissionPrompt({ item, answer }: { item: Extract<ChatItem, { kind: 'permission' }>; answer: (id: string, allow: boolean) => Promise<boolean> }) {
+function PermissionPrompt({ item, answer }: { item: Extract<ChatItem, { kind: 'permission' }>; answer: Answer }) {
   const [sending, setSending] = useState(false);
-  const reply = async (allow: boolean) => {
+  const reply = async (choice: PromptAnswer) => {
     setSending(true);
-    await answer(item.id, allow);
+    await answer(item.id, choice);
     setSending(false);
   };
   return (
@@ -383,8 +459,9 @@ function PermissionPrompt({ item, answer }: { item: Extract<ChatItem, { kind: 'p
       </details>
       {item.answer === 'pending' ? (
         <div className="chat-permission-actions">
-          <Button variant="primary" disabled={sending} onClick={() => void reply(true)}>Allow once</Button>
-          <Button danger disabled={sending} onClick={() => void reply(false)}>Deny</Button>
+          <Button variant="primary" disabled={sending} onClick={() => void reply('once')}>Allow once</Button>
+          <Button disabled={sending} onClick={() => void reply('always')}>Allow always in this chat</Button>
+          <Button danger disabled={sending} onClick={() => void reply('deny')}>Deny</Button>
         </div>
       ) : (
         <p className="chat-permission-answer">{ANSWERED[item.answer]}</p>
