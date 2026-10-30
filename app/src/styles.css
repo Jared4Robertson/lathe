@@ -619,14 +619,16 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .shortcut-none, .shortcut-fixed { color: var(--muted); font-size: 0.75rem; }
 .button.key-recorder { min-height: 26px; padding: 2px 8px; border: 1px dashed var(--steel); background: var(--steel-bg); color: var(--steel); font: 500 0.75rem var(--mono); }
 .key-recorder-hint { color: var(--muted); font-weight: 400; }
-.shortcut-offer { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; margin-top: 6px; padding: 6px 8px; border-radius: 6px; background: var(--paper); border: 1px solid var(--rule); text-align: left; white-space: normal; font-size: 0.82rem; }
+.shortcut-table tr.shortcut-offer-row { border-top: 0; }
+.shortcut-table tr.shortcut-offer-row > td { padding: 0 0 6px; text-align: left; white-space: normal; }
+.shortcut-offer { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; background: var(--paper); border: 1px solid var(--rule); text-align: left; white-space: normal; font-size: 0.82rem; }
 .shortcut-offer > span { flex: 1 1 12em; }
 .shortcut-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
 .shortcut-foot .shortcut-note { flex: 1 1 18em; }
 /* On a phone a row's keys wrap under its name and the command's ID gives way, so nothing scrolls sideways. */
 @media (max-width: 600px) {
   .shortcut-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
-  .shortcut-table th { grid-column: 1 / -1; }
+  .shortcut-table th, .shortcut-table tr.shortcut-offer-row > td { grid-column: 1 / -1; }
   .shortcut-table td.cmd-id { display: none; }
   .shortcut-key-list { flex-wrap: wrap; justify-content: flex-start; }
   .shortcut-table td.shortcut-keys { text-align: left; }

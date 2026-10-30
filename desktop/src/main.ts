@@ -90,7 +90,7 @@ const userFile = (name: string) => () => path.join(app.getPath('userData'), name
 
 // The aggregates' repositories: the only code that reaches their storage.
 const productWindows = new ProductWindowRepository({ places: userFile('window-state.json'), chrome: userFile('chrome.json') });
-const appServers = new AppServerRepository();
+const appServers = new AppServerRepository({ ports: userFile('app-server-ports.json') });
 const recentFolders = new RecentFolderRepository(userFile('recent-folders.json'));
 const shellSettings = new ShellSettingsRepository(userFile('settings.json'));
 /** The open windows, by folder. */
@@ -299,11 +299,11 @@ async function specError(entry: OpenWindow): Promise<string> {
 }
 
 /** Starts a folder's server: serve() on the product's own installed Lathe or the bundled copy, or in development a dev server. */
-async function startServerFor(folder: string): Promise<RunningServer> {
+async function startServerFor(folder: string, port: number | undefined): Promise<RunningServer> {
   if (DEV) return { server: await startDev(REPO_ROOT, folder, log), lathe: 'Lathe from source' };
   // The product's own installed Lathe when it has one, else the app's bundled copy.
   const lathe = latheFor(folder, bundledServe());
-  return { server: await startServe(lathe.modulePath, folder), lathe: latheLabel(lathe) };
+  return { server: await startServe(lathe.modulePath, folder, port), lathe: latheLabel(lathe) };
 }
 
 /** Runs Start a window's app server for its folder, and loads the app under the launch view. */
@@ -313,7 +313,7 @@ async function serveWindow(folder: string): Promise<void> {
   const fresh = !appServers.load().running.has(folder);
   let running: RunningServer;
   try {
-    running = await startAppServer(appServers, { folder, start: () => startServerFor(folder) });
+    running = await startAppServer(appServers, { folder, start: (port) => startServerFor(folder, port) });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (SMOKE) return fail(message);

@@ -138,6 +138,8 @@ describe('keyboard shortcuts', () => {
     return screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
   };
   const row = (sheet: HTMLElement, title: string) => within(sheet).getByRole('rowheader', { name: title }).closest('tr')!;
+  /** The prompt a refusal shows, in its own row under the shortcut's. */
+  const offerOf = (sheet: HTMLElement, title: string) => within(row(sheet, title).nextElementSibling as HTMLElement).getByRole('alert');
   const keysIn = (tr: HTMLElement) => [...tr.querySelectorAll('.shortcut-key-list kbd')].map((k) => k.textContent);
 
   it('LA-V61-R10-T02 In the shortcuts sheet a person changes a key, adds one, removes one, and resets the shortcut and then all', async () => {
@@ -165,8 +167,8 @@ describe('keyboard shortcuts', () => {
     // Reset all asks first, then gives every shortcut its own keys again.
     expect(within(sheet).getByRole('button', { name: 'Reset all' })).toBeDisabled();
     fireEvent.click(within(row(sheet, 'Go home (all products)')).getByRole('button', { name: 'Remove g then h from Go home (all products)' }));
-    expect(within(row(sheet, 'Go home (all products)')).getByRole('alert')).toHaveTextContent('“Go home (all products)” would have no key.');
-    fireEvent.click(within(row(sheet, 'Go home (all products)')).getByRole('button', { name: 'Leave without a key' }));
+    expect(offerOf(sheet, 'Go home (all products)')).toHaveTextContent('“Go home (all products)” would have no key.');
+    fireEvent.click(within(offerOf(sheet, 'Go home (all products)')).getByRole('button', { name: 'Leave without a key' }));
     expect(within(row(sheet, 'Go home (all products)')).getByText('No key')).toBeInTheDocument();
     fireEvent.click(within(sheet).getByRole('button', { name: 'Reset all' }));
     fireEvent.click(within(within(sheet).getByRole('alert')).getByRole('button', { name: 'Reset all' }));
@@ -178,7 +180,7 @@ describe('keyboard shortcuts', () => {
     const sheet = await openSheet();
     fireEvent.click(within(row(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Change Ctrl+B of Show or hide the navigation' }));
     fireEvent.keyDown(within(sheet).getByRole('button', { name: /^Press a key for Show or hide the navigation/ }), { key: 'M', code: 'KeyM', ctrlKey: true, shiftKey: true });
-    const offer = within(row(sheet, 'Show or hide the navigation')).getByRole('alert');
+    const offer = offerOf(sheet, 'Show or hide the navigation');
     expect(offer).toHaveTextContent('Ctrl+Shift+M is already “Open Checks”.');
     await waitFor(() => expect(within(offer).getByRole('button', { name: 'Swap' })).toHaveFocus());
     // Cancel leaves both as they were.
@@ -187,13 +189,13 @@ describe('keyboard shortcuts', () => {
     // Swap: the navigation takes Ctrl+Shift+M, Open Checks gets Ctrl+B.
     fireEvent.click(within(row(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Change Ctrl+B of Show or hide the navigation' }));
     fireEvent.keyDown(within(sheet).getByRole('button', { name: /^Press a key for Show or hide the navigation/ }), { key: 'M', code: 'KeyM', ctrlKey: true, shiftKey: true });
-    fireEvent.click(within(row(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Swap' }));
+    fireEvent.click(within(offerOf(sheet, 'Show or hide the navigation')).getByRole('button', { name: 'Swap' }));
     expect(keysIn(row(sheet, 'Show or hide the navigation'))).toEqual(['Ctrl+Shift+M']);
     expect(keysIn(row(sheet, 'Open Checks'))).toEqual(['Ctrl+B']);
     // A key the browser keeps is refused with its reason.
     fireEvent.click(within(row(sheet, 'Open Checks')).getByRole('button', { name: 'Add a key to Open Checks' }));
     fireEvent.keyDown(within(sheet).getByRole('button', { name: /^Press a key for Open Checks/ }), { key: 'w', code: 'KeyW', ctrlKey: true });
-    expect(within(row(sheet, 'Open Checks')).getByRole('alert')).toHaveTextContent('Ctrl+W belongs to the browser or the system, so "Open Checks" cannot take it.');
+    expect(offerOf(sheet, 'Open Checks')).toHaveTextContent('Ctrl+W belongs to the browser or the system, so "Open Checks" cannot take it.');
   });
 
   it('LA-V61-R52-T01 Recording a key works from the keyboard: Escape cancels without closing the sheet, and the key pressed reaches no command', async () => {
