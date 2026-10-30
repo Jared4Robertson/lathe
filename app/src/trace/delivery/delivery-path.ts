@@ -32,7 +32,9 @@ function rowBoxes(graph: DeliveryGraph, row: Row): Map<string, string[]> {
   const walk = (key: string) => {
     const item = graph.items.get(key)!;
     add(key, key);
-    if (item.id && item.role !== 'hint') add(item.id, key);
+    // A step's heading over its chain is the step's second box: lit with it, never where its lines start or end.
+    if (item.id && item.role === 'heading') add(`heading:${item.id}`, key);
+    else if (item.id && item.role !== 'hint') add(item.id, key);
     for (const c of item.children) walk(c);
   };
   for (const cell of row.cells) if (cell) walk(cell);
@@ -62,7 +64,7 @@ export function litBy(graph: DeliveryGraph, laid: DeliveryLaid, focus: string, a
   let box: string | null = atItem && atItem.id === focus ? at : null;
   for (const row of rows) {
     const boxes = rowBoxes(graph, row);
-    const path = rowPath(row, [focus, ...(boxes.get(focus) ?? []).filter((k) => k !== focus)]);
+    const path = rowPath(row, [focus, ...[...(boxes.get(focus) ?? []), ...(boxes.get(`heading:${focus}`) ?? [])].filter((k) => k !== focus)]);
     const on = path?.ids ?? new Set([focus]);
     /**
      * A record's (or a box's) boxes that show; or, when none does, the boxes standing in for them that are on the path
@@ -76,10 +78,11 @@ export function litBy(graph: DeliveryGraph, laid: DeliveryLaid, focus: string, a
       const onPath = reps.filter((r) => on.has(r) || on.has(graph.items.get(r)!.id ?? ''));
       return onPath.length > 0 ? onPath : reps.slice(0, 1);
     };
-    box ??= shownOf(focus)[0] ?? null;
+    box ??= shownOf(focus)[0] ?? boxes.get(`heading:${focus}`)?.find((k) => shown.has(k)) ?? null;
     for (const k of on) {
       if (graph.items.has(`outcome/${k}`)) { keys.add(`outcome/${k}`); serves.add(`${k}>${row.useCase}`); continue; }
       for (const key of shownOf(k)) keys.add(key);
+      for (const key of boxes.get(`heading:${k}`) ?? []) if (shown.has(key)) keys.add(key);
     }
     // Each link from a box of its left end to a box of its right end in a column to the right, the nearest.
     for (const l of path?.links ?? []) {

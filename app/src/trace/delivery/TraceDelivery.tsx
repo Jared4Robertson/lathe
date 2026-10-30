@@ -249,14 +249,17 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
     let bottom = own.y + own.h;
     for (const r of lit.rows) { const band = laid.rows.get(r); if (band) { top = Math.min(top, band.y); bottom = Math.max(bottom, band.y + band.h); } }
     const tall = (head.h - 48) / Math.max(1, bottom - top);
-    const zoom = Math.max(ROW_ZOOM, Math.min(1, fits, tall));
+    // As large as reads, up to every column from the Use case column on fitting across.
+    const fromUseCase = laid.width - columnLeft(1);
+    const zoom = Math.max(ROW_ZOOM, Math.min(1, Math.max(fits, across / fromUseCase), tall));
     // Down: the row's top near the frame's top, the focus's box kept in the frame.
     let y = head.y + 24 - top * zoom;
     const atY = own.y * zoom + y;
     if (atY + own.h * zoom > head.y + head.h - 24) y -= atY + own.h * zoom - (head.y + head.h - 24);
-    // Across: every column when they fit, else from the column before the focus's.
+    // Across: every column when they fit, else from the column before the focus's (the Use case column's for a row's
+    // own boxes: the outcomes sit where their rows are, rarely beside this one).
     const column = graph.items.get(focusKey!)?.column ?? 0;
-    const x = laid.width * zoom <= across ? head.x + (head.w - laid.width * zoom) / 2 : head.x + 24 - columnLeft(Math.max(0, column - 1)) * zoom;
+    const x = laid.width * zoom <= across ? head.x + (head.w - laid.width * zoom) / 2 : head.x + 24 - columnLeft(column === 0 ? 0 : Math.max(1, column - 1)) * zoom;
     return { x, y, zoom };
   }, [size, laid, lit, focusKey, frameBox, space, openSpace, graph]);
 

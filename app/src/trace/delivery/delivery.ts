@@ -174,6 +174,7 @@ function build(index: RecordIndex, delivery: ProductDelivery): DeliveryGraph {
     for (const f of data.flows) {
       if (!known(f.id)) continue;
       const flow = record(designBox, f.id, { opens: innerKey(u, 'design', f.id) });
+      link(u, f.id);
       for (const s of f.steps) {
         if (!known(s.id)) continue;
         steps.push(s);
