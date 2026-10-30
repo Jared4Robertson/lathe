@@ -153,10 +153,26 @@ describe('columns and text', () => {
     const lines = { title: 'Walk the model as a graph', meta: 'Use case · LA-EXP-UC03' };
     expect(wrapLabel({ ...lines, title: `${lines.title} and on through every group in it` }).title.length).toBeGreaterThan(wrapLabel(lines).title.length);
     expect(wrapLabel(lines, { marked: true, centered: true }).meta).toEqual(['Use case · ', 'LA-EXP-UC03']);
+    // An ID is never broken across lines: too narrow a box keeps it whole on its own line (LA-EXP-DS06).
+    expect(wrapLabel(lines, { width: 2 * LABEL_PAD + metaWidth('LA-EXP') }).meta).toEqual(['Use ', 'case · ', 'LA-EXP-UC03']);
+    // With `whole` a word too wide for a line stays whole.
+    expect(wrapText('a well-formed step', 6, chars, '-', false, true)).toEqual(['a ', 'well-formed ', 'step']);
     expect(wrapLabel(lines).meta).toEqual(['Use case · LA-EXP-UC03']);
     expect(BADGE_ROOM).toBe(30);
     expect(labelHeight(wrapLabel(lines, { shape: 'hexagon', marked: true, centered: true }))).toBeGreaterThan(labelHeight(wrapLabel(lines)));
     expect(labelHeight(wrapLabel(lines, { shape: 'window' }))).toBe(labelHeight(wrapLabel(lines)) + SHAPES.window.room.t);
+  });
+
+  it('LA-EXP-DS06-T06 An ID is never broken across lines: a label fitted at its widest word, the ID, keeps it whole at every room', () => {
+    const label: MapLabel = { title: 'Record ID', meta: 'Value object · LA-V001', shape: 'box', marks: 1, marked: true };
+    for (let w = 20; w < 400; w += 0.37) {
+      for (const h of [80, 300]) {
+        const s = largestFit(label, true, w, h, 4);
+        if (s <= 0) continue;
+        const lines = wrapLabel(label, { shape: label.shape, marks: label.marks, marked: label.marked, centered: true, width: w / s });
+        expect(lines.meta.flatMap((l) => l.trim().split(/\s+/)), `w ${w}`).toContain('LA-V001');
+      }
+    }
   });
 
   it("LA-EXP-DS05-T12 A parent line runs level from the parent's right edge to the child's left edge, at the child's middle", () => {

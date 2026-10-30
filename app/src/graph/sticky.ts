@@ -1,11 +1,13 @@
 import type { Plate } from './plate';
-import { largestFit, linesIn, LINE_HEIGHT, META_FONT, textMeasure, TITLE_FONT, LABEL_PAD, LABEL_PAD_BLOCK, type Face, type MapLabel } from './text';
+import { largestFit, linesIn, LINE_HEIGHT, META_FONT, textMeasure, TITLE_FONT, LABEL_PAD_BLOCK, type Face, type MapLabel } from './text';
 
 // Sticky labels (LA-EXP-DS06): a box only partly inside the open space (cut by a floating panel, the nav or the wiki
 // card, or by the canvas's edge) draws its label within its visible part, as a sticky header stays in view: laid out
-// anew for that part's width, wrapped on whole words, at no larger a scale than its own, centered in the part. A label
-// that cannot fit there at the readable floor is not drawn at all, so no text is ever drawn half cut. A label wholly
-// in the open space is drawn as the map placed it.
+// anew for that part's width, wrapped on whole words, at no larger a scale than its own, centered in the part. Its room
+// is the label's content box, never the padding round it: the padding is where a box's edge, a focus's wider edge and a
+// shape's decoration (a stack's front sheet, a page's fold) are drawn, so a moved label always lies on the box's one
+// fill and never across the edge between it and a darker strip. A label that cannot fit there at the readable floor is
+// not drawn at all, so no text is ever drawn half cut. A label wholly in the open space is drawn as the map placed it.
 
 /** A rectangle on the canvas, in its CSS pixels. */
 export interface ScreenBox { left: number; top: number; right: number; bottom: number }
@@ -39,12 +41,9 @@ export function stickyLabel(p: Plate, zoom: number, X: (x: number) => number, Y:
   }
   const tol = 0.5;
   if (l0 >= open.left - tol && l1 <= open.right + tol && t0 >= open.top - tol && t1 <= open.bottom + tol) return PLACED;
-  // The label's room (its content box and the padding round it), cut to the open space.
+  // The label's room, its content box (inside the box's one fill), cut to the open space.
   const t = p.text;
-  const room = {
-    left: Math.max(X(p.label.x - LABEL_PAD * t), open.left), right: Math.min(X(p.label.x + p.label.w + LABEL_PAD * t), open.right),
-    top: Math.max(Y(p.label.y - LABEL_PAD_BLOCK * t), open.top), bottom: Math.min(Y(p.label.y + p.label.h + LABEL_PAD_BLOCK * t), open.bottom),
-  };
+  const room = stickyRoom(p, X, Y, open);
   const w = room.right - room.left;
   const h = room.bottom - room.top;
   if (w <= 0 || h <= 0) return HIDDEN;
@@ -63,11 +62,22 @@ export function stickyLabel(p: Plate, zoom: number, X: (x: number) => number, Y:
   return { kind: 'moved', lines: laid.lines.map((l) => ({ ...l, x: cx + l.x, baseline: cy + l.baseline })) };
 }
 
+/** The room a cut label is laid out in, on the canvas: the label's content box, inside the box's one fill, cut to the open space. */
+export function stickyRoom(p: Plate, X: (x: number) => number, Y: (y: number) => number, open: ScreenBox): ScreenBox {
+  return {
+    left: Math.max(X(p.label.x), open.left), right: Math.min(X(p.label.x + p.label.w), open.right),
+    top: Math.max(Y(p.label.y), open.top), bottom: Math.min(Y(p.label.y + p.label.h), open.bottom),
+  };
+}
+
 /** A label laid out in a room `w` by `h` on the canvas at a scale of at most `most`, its lines centered on the room's middle (0, 0). */
 function layOut(label: MapLabel, w: number, h: number, most: number): Sticky {
-  const s = largestFit(label, true, w, h, most);
+  // The room is a content box, but a label is fitted with its padding round it: the room is taken as that much larger on
+  // every side, by the block padding (the lesser), so its lines stay inside the room.
+  const pad = (s: number) => -LABEL_PAD_BLOCK * s;
+  const s = largestFit(label, true, w, h, most, pad);
   if (s * TITLE_FONT < STICKY_READ_PX) return HIDDEN;
-  const wrapped = linesIn(label, w / s, true);
+  const wrapped = linesIn(label, (w - 2 * pad(s)) / s, true);
   const m = textMeasure();
   const all = [
     ...wrapped.meta.map((text) => ({ text, face: 'meta' as Face, px: META_FONT * s, tone: 'muted' as const })),
