@@ -82,7 +82,7 @@
 {"id":"LA-PLT-MOD20","title":"platform/commands","domain_id":"LA-PLT","file":"lathe/src/platform/commands"}
 {"id":"LA-PLT-MOD30","title":"platform/data","domain_id":"LA-PLT","file":"lathe/src/platform/data"}
 {"id":"LA-PLT-MOD31","title":"use-scroll-to-zoom.ts","domain_id":"LA-PLT","file":"app/src/platform/appearance/use-scroll-to-zoom.ts"}
-{"id":"LA-PLT-MOD32","title":"chatLathe.ts","domain_id":"LA-PLT","file":"desktop/src/chatLathe.ts"}
+{"id":"LA-PLT-MOD32","title":"server/events.ts","domain_id":"LA-PLT","file":"lathe/src/server/events.ts"}
 {"id":"LA-TRC-MOD01","title":"measures.ts","domain_id":"LA-TRC","file":"lathe/src/trace/measures.ts"}
 {"id":"LA-TRC-MOD02","title":"offer.ts","domain_id":"LA-TRC","file":"app/src/trace/offer.ts"}
 {"id":"LA-TRC-MOD03","title":"pattern-following/model.ts","domain_id":"LA-TRC","file":"lathe/src/traceability/pattern-following/model.ts"}

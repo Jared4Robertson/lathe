@@ -3,11 +3,12 @@ import { describe, expect, it, vi } from 'vitest';
 import { setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { openApp, serve } from './helpers';
+import type { DataChange } from '../../lathe/src/server/events';
 
 // Capture the app's subscriptions to server events, so the test can send one.
-const listeners = vi.hoisted(() => new Map<string, Set<() => void>>());
+const listeners = vi.hoisted(() => new Map<string, Set<(change?: DataChange | null) => void>>());
 vi.mock('../src/events', () => ({
-  onLatheEvent: (event: string, callback: () => void) => {
+  onLatheEvent: (event: string, callback: (change?: DataChange | null) => void) => {
     if (!listeners.has(event)) listeners.set(event, new Set());
     listeners.get(event)!.add(callback);
     return () => listeners.get(event)!.delete(callback);
@@ -38,6 +39,32 @@ describe('reload on change', () => {
     ]));
     // The address and page stay the same; no manual refresh.
     expect(window.location.pathname).toBe('/DM-SHOP-CMD01-H');
+  });
+
+  it('LA-V61-R54-T01 A change naming read models reads again only their reads; the checks\' run, only the problems and coverage', async () => {
+    // The data an Agent's write leaves (sent here as a command, so the served data changes without a fresh stub).
+    const renamed = setRow(workspace(), 'command_handler', 'DM-SHOP-CMD01-H', { title: 'Basket store' });
+    const { requests } = await openApp('/DM-SHOP-CMD01-H', {
+      command: () => ({ answer: { ok: true, tables: ['command_handler'], files: [], changes: [] }, data: renamed }),
+      baseline: () => ({ state: 'no-repo', message: 'The folder is not in a git repository.' }),
+    });
+    await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
+    const hear = async (change: DataChange) => act(async () => { for (const callback of listeners.get('spec:changed') ?? []) callback(change); });
+    await fetch('/api/command/change-command-handler', { method: 'POST', body: JSON.stringify({ id: 'DM-SHOP-CMD01-H', title: 'Basket store' }) });
+
+    // The server names the command handler's table and the read models reading it: only their reads read again.
+    let from = requests.length;
+    await hear({ tables: ['command_handler'], readModels: ['command', 'record-summaries'] });
+    expect(await screen.findByRole('heading', { level: 1, name: 'Basket store' })).toBeInTheDocument();
+    expect(requests.slice(from)).toEqual(expect.arrayContaining(['GET /api/command/get-command?id=DM-SHOP-CMD01-H', 'GET /api/record-summaries/list-record-summaries?product_id=DM']));
+    const others = ['/api/meta-model/', '/api/folder-tree/', '/api/product/list-products', '/api/problems/', '/api/coverage/'];
+    expect(requests.slice(from).filter((r) => others.some((o) => r.includes(o)))).toEqual([]);
+
+    // The checks' run is ready: only its read models read again.
+    from = requests.length;
+    await hear({ tables: [], readModels: ['problems', 'coverage', 'trace', 'record-trace'] });
+    await vi.waitFor(() => expect(requests.slice(from)).toEqual(expect.arrayContaining(['GET /api/problems/list-problems?product_id=DM', 'GET /api/coverage/get-coverage?product_id=DM'])));
+    expect(requests.slice(from).filter((r) => !/\/api\/(problems|coverage|trace|record-trace)\//.test(r))).toEqual([]);
   });
 
   it('LA-V61-R01-T02 A reload the server refuses keeps the page on screen and says the specs could not be reloaded', async () => {
