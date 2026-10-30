@@ -1,6 +1,6 @@
 // The Record changes read (LA-EXP-RM07): what changed in a product's records since a baseline, answered from the read
 // model through its reader (reader.ts). The baseline is git's, so the server reads it for the query's `since` before
-// the query runs and gives it with the data (`ReadView.baseline`). Its handler never sees the data and changes
+// the query runs and gives it with the data (its definition says `baseline`). Its handler never sees the data and changes
 // nothing. This slice holds only the read, so it names its read model where an aggregate's slice names its aggregate.
 import { id, type AnyQuery, type QueryDefinition, type Slice } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
