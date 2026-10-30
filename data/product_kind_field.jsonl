@@ -7,6 +7,7 @@
 {"kind":"cli_query","position":2,"name":"mcp_tool","type":"text","required":false,"description":"The MCP tool that does the same, if any."}
 {"kind":"cli_query","position":3,"name":"file","type":"text","required":false,"description":"The code that runs it, from the repo root."}
 {"kind":"ipc_channel","position":1,"name":"file","type":"text","required":true,"description":"The code that declares the channel, from the repo root."}
+{"kind":"ipc_query","position":1,"name":"file","type":"text","required":true,"description":"The code that declares the channel, from the repo root."}
 {"kind":"plugin_hook","position":1,"name":"file","type":"text","required":true,"description":"The hook script, from the repo root."}
 {"kind":"shared_module","position":1,"name":"file","type":"text","required":true,"description":"The module, from the repo root."}
 {"kind":"skill","position":1,"name":"file","type":"text","required":true,"description":"The skill file, from the repo root."}

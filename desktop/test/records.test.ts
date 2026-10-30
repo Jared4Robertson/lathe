@@ -1,7 +1,9 @@
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it, vi } from 'vitest';
+import { LOCAL_ACTION_CHANNELS } from '../src/launch.ts';
 import { DataFiles, findDataFile, parseRecordId, recordMenuTemplate, revealLabel } from '../src/records.ts';
 
 const temp = mkdtempSync(path.join(os.tmpdir(), 'lathe-records-'));
@@ -85,5 +87,20 @@ describe('LA-PAT-RECORD-DATA-FILE-R01-T01 LA-PAT-SHELL-ACTIONS-R01-T02 The recor
     expect(menu[0].enabled).not.toBe(false);
     (menu[0].click as () => void)();
     expect(actions.openInNewTab).toHaveBeenCalled();
+  });
+});
+
+const SRC = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', 'src');
+
+describe('LA-PAT-SHELL-ACTIONS-R01-T02 Each shell action has its own channel', () => {
+  it('sends each error page button on its command\'s channel', () => {
+    const preload = readFileSync(path.join(SRC, 'local-preload.cts'), 'utf8');
+    for (const [action, channel] of Object.entries(LOCAL_ACTION_CHANNELS)) expect(preload).toMatch(new RegExp(`'?${action}'?: '${channel}'`));
+  });
+
+  it('sends each record action on its own channel with { id } only', () => {
+    const preload = readFileSync(path.join(SRC, 'preload.cts'), 'utf8');
+    for (const channel of ['lathe:reveal-record', 'lathe:open-record-in-editor', 'lathe:copy-record-id', 'lathe:show-record-menu']) expect(preload).toContain(`recordAction('${channel}')`);
+    expect(preload).toContain('ipcRenderer.send(channel, { id })');
   });
 });

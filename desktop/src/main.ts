@@ -541,6 +541,12 @@ function stopChat(entry: OpenWindow): Promise<void> {
 const ourClaudes = () => new Set([...openWindows().values()].map((e) => e.chat?.pid).filter((pid): pid is number => typeof pid === 'number'));
 
 /** The `claude` the chat runs, and the folder's saved sessions, for the panel's picker. */
+/** Get the window's chat (LA-PLT-QRY10): the whole chat as one patch, for a page that (re)loads; the next patches follow it. */
+function wholeChat(entry: OpenWindow) {
+  entry.chatSent = entry.chat?.state ?? null;
+  return entry.chat ? chatPatch(null, entry.chat.state) : null;
+}
+
 function chatSessions(entry: OpenWindow) {
   const settings = shellSettings.load();
   const claude = findClaude(settings.claudePath, os.homedir(), process.env.PATH);
@@ -797,9 +803,7 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   // A page that (re)loads asks for the whole chat.
   ipcMain.handle('lathe:chat-state', (event) => {
     const entry = fromPageCall(event);
-    if (!entry) return null;
-    entry.chatSent = entry.chat?.state ?? null;
-    return entry.chat ? chatPatch(null, entry.chat.state) : null;
+    return entry ? wholeChat(entry) : null;
   });
   // The page's answer to the app bridge's question (askPage), on the question's own channel.
   const answered = (channel: AskChannel) => (event: Electron.IpcMainEvent, input: unknown) => {
