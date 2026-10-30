@@ -282,6 +282,7 @@
 {"id":"LA-PLT-CMD44","title":"Copy a record's ID","entity_id":"LA-PLT-EN08","description":"Copies the record's ID to the clipboard."}
 {"id":"LA-PLT-CMD45","title":"Show a record's menu","entity_id":"LA-PLT-EN08","description":"Opens the native menu of a record: open in a new tab, reveal its data file, open it in the editor, copy its ID."}
 {"id":"LA-PLT-CMD46","title":"Reveal a product folder","entity_id":"LA-PLT-EN08","description":"Shows a window's product folder in the system file manager, from its launch or error page."}
+{"id":"LA-PLT-CMD47","title":"Turn scroll to zoom on or off","entity_id":"LA-PLT-EN14","description":"Sets whether scroll zooms the Graph's, the ERD's and the Trace's cameras, Cmd or Ctrl with scroll panning them, or pans them as it does by default; for every tab and kept from one launch to the next."}
 {"id":"LA-TRC-CMD01","title":"Follow a pattern","entity_id":"LA-TRC-EN05","description":"Makes a domain or use case follow a pattern, with the value, or the reason it does not apply, it gives each of the pattern's settings."}
 {"id":"LA-TRC-CMD02","title":"Change the setting values","entity_id":"LA-TRC-EN06","description":"Gives a followed pattern's settings their values, or the reasons they do not apply: the list replaces the follower's values for that pattern."}
 {"id":"LA-TRC-CMD10","title":"Stop following a pattern","entity_id":"LA-TRC-EN05","description":"Ends a domain's or use case's following of a pattern, with the setting values it gave it."}

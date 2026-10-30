@@ -149,7 +149,7 @@ describe('the stage key bar', () => {
     expect(stage().querySelector('.stage-tools details.stage-key, .stage-tools [aria-label="Key"]')).toBeNull();
     // Each entry a sample and a word or two, its whole meaning in its tooltip.
     // Only what the graph draws around the focus: a capability, the use case and its requirements, in the use cases' color.
-    expect(entries()).toEqual(['stage-use-cases', 'focus', 'shape-slice', 'shape-stadium', 'shape-page', 'line', 'bar', 'badge-gap']);
+    expect(entries()).toEqual(['stage-use-cases', 'focus', 'shape-slice', 'shape-stadium', 'shape-page', 'line', 'bar', 'badge-gap', 'scroll']);
     const useCase = key().querySelector('[data-key-entry="shape-stadium"]')!;
     expect(useCase).toHaveTextContent('Use case');
     expect(useCase).toHaveAttribute('title', expect.stringMatching(/^Use case: a stadium$/));
@@ -166,6 +166,9 @@ describe('the stage key bar', () => {
     expect(entries()).toEqual(expect.arrayContaining(['path', 'count', 'focus']));
     // The Gaps only fade only while Gaps only is on.
     expect(entries()).not.toContain('complete');
+    // Every stage's bar ends with what scroll does: it pans, Scroll to zoom being off.
+    expect(entries().at(-1)).toBe('scroll');
+    expect(key().querySelector('[data-key-entry="scroll"]')).toHaveTextContent('Scroll pans');
   });
 
   it('LA-V96-R30-T01 A kind the filters hide leaves the Graph\'s key, and the live marks show only while there are any', () => {

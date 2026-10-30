@@ -374,13 +374,13 @@ describe('LA-PLT-INV03-T the Appearance commands keep each change whole through 
 describe('LA-PLT-INV02-T The Appearance refuses a theme without its light and dark sets', () => {
   it('refuses it with its reason', () => {
     const noDark = { ...LATHE, id: 'custom-x', builtIn: false, dark: undefined } as unknown as typeof LATHE;
-    expect(() => holdToRules({ custom: [noDark], chosen: 'lathe', mode: 'system' })).toThrow('Theme "Lathe" lacks its light or dark set.');
+    expect(() => holdToRules({ custom: [noDark], chosen: 'lathe', mode: 'system', scrollToZoom: false })).toThrow('Theme "Lathe" lacks its light or dark set.');
   });
 });
 
 describe('LA-PLT-INV03-T The Appearance refuses a built-in kept as the person\'s own', () => {
   it('refuses it with its reason', () => {
-    expect(() => holdToRules({ custom: [{ ...LATHE }], chosen: 'lathe', mode: 'system' })).toThrow('Theme "Lathe" is a built-in, which is never changed.');
+    expect(() => holdToRules({ custom: [{ ...LATHE }], chosen: 'lathe', mode: 'system', scrollToZoom: false })).toThrow('Theme "Lathe" is a built-in, which is never changed.');
   });
 });
 
