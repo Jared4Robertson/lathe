@@ -936,10 +936,11 @@ a.row-link.row-link:focus-visible { outline: none; }
 /* On a phone the All-at-once view is one column at a time (AllList.tsx): the columns' names to pick one, the focus's own
    links by kind, then the column's rows. */
 .trace-col-tabs { display: flex; flex-wrap: wrap; gap: 4px; margin: 0 0 12px; }
-.trace-col-tabs > button { min-block-size: 36px; padding: 0 10px; border: 1px solid var(--rule); border-radius: 999px; background: var(--sheet); color: var(--ink); font: inherit; font-size: 0.85rem; cursor: pointer; }
+.trace-col-tabs > button { min-height: var(--touch-target); padding: 0 10px; border: 1px solid var(--rule); border-radius: 999px; background: var(--sheet); color: var(--ink); font: inherit; font-size: 0.85rem; cursor: pointer; }
+.trace-col-tabs > button:hover { border-color: var(--steel); }
 .trace-col-tabs > button[aria-pressed="true"] { border-color: var(--steel); background: var(--steel-bg); font-weight: 600; }
-.trace-col-focus { margin: 0 0 16px; display: grid; gap: 8px; }
-.trace-col-links { margin: 0; display: grid; gap: 8px; }
+.trace-col-focus { margin: 0 0 16px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
+.trace-col-links { margin: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; }
 .trace-col-links dt { font-size: 0.82rem; color: var(--muted); }
 .trace-col-links dd { margin: 4px 0 0 12px; }
 .trace-col-head { margin: 4px 0 8px; font-size: 1rem; }

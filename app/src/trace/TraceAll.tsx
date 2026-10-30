@@ -213,7 +213,7 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
 
   /**
    * The camera for the focus: every column across and its whole path's height, at a zoom its boxes read at, the focus
-   * always in the frame (a path taller than that shows the part about the focus); with no box
+   * always in the frame (a path taller or wider than that shows the part about the focus); with no box
    * (the product, or a record the view does not draw), the columns' tops across the frame's width.
    */
   const framing = useCallback((): Viewport | null => {
@@ -231,9 +231,11 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
     }
     let top = own.y;
     let bottom = own.y + own.h;
+    let left = own.x;
+    let right = own.x + own.w;
     for (const k of pathOf(graph, focusKey!).keys) {
       const p = laid.places.get(k);
-      if (p) { top = Math.min(top, p.y); bottom = Math.max(bottom, p.y + p.h); }
+      if (p) { top = Math.min(top, p.y); bottom = Math.max(bottom, p.y + p.h); left = Math.min(left, p.x); right = Math.max(right, p.x + p.w); }
     }
     // Every column across, the path's height when it fits at a zoom the path reads at (else as much of it as does).
     const v = frameRect({ x: 0, y: top, w: laid.width, h: bottom - top }, head, { pad: 24, read: PATH_ZOOM, max: 1, min: PATH_ZOOM });
@@ -241,8 +243,14 @@ function AllScene({ index, focus, graph, laid, gapsOnly, onNavigate, onPeek, spa
     const at = own.y * v.zoom + v.y;
     const room = { top: head.y + own.h * v.zoom, bottom: head.y + head.h - 2 * own.h * v.zoom };
     const y = at < room.top ? v.y + room.top - at : at > room.bottom ? v.y + room.bottom - at : v.y;
-    const right = (own.x + own.w) * v.zoom + v.x;
-    const x = right > head.x + head.w - 24 ? v.x + head.x + head.w - 24 - right : v.x;
+    // Across: every column when they fit; else the path's columns when they fit, centered; else as many of them as fit,
+    // the focus at the edge away from its path (a test at the right, an outcome at the left), or in the middle.
+    const across = head.w - 48;
+    const x = laid.width * v.zoom <= across ? v.x
+      : (right - left) * v.zoom <= across ? head.x + head.w / 2 - ((left + right) / 2) * v.zoom
+      : own.x + own.w >= right ? head.x + head.w - 24 - (own.x + own.w) * v.zoom
+      : own.x <= left ? head.x + 24 - own.x * v.zoom
+      : head.x + head.w / 2 - (own.x + own.w / 2) * v.zoom;
     return { x, y, zoom: v.zoom };
   }, [size, laid, graph, focusKey, frameBox, space, open]);
 
