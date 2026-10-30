@@ -1,8 +1,8 @@
+import { recordIndexOf } from './read-view';
 // LA-PAT-APP-CODE-R21: nothing outlives its purpose, and a mark that can't be explained can't ship.
 // Every mark the Graph or the ERD view can draw (a box's shape or fill, a badge, a line style) is
 // listed in that view's key, with words that say what it means.
 import './graph/setup';
-import { indexOf } from './fixtures/load';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { cleanup, render } from '@testing-library/react';
@@ -11,7 +11,8 @@ import { graphKeyEntries, type GraphDrawn } from '../src/graph/key';
 import { BOX_LOOKS } from '../src/graph/paint';
 import { BADGE_TONES } from '../src/graph/plate';
 import { MARKS, SHAPES, type Mark, type Shape } from '../src/graph/shapes';
-import { erdFocus, erdMap, erdStrength } from '../src/erd/erd';
+import { erdFocus, erdStrength } from '../src/erd/erd';
+import { erdOf } from './erd-of';
 import { erdKeyEntries } from '../src/erd/ErdView';
 import { changesKeyEntries, type ChangeMark } from '../src/changes/ChangesKey';
 import { StageKey, type KeyEntry } from '../src/views/StageChrome';
@@ -72,16 +73,17 @@ describe('LA-V94-R05-T02 the ERD view key', () => {
   });
 
   it('Every box, badge and line an ERD draws is in its key, with what it means', () => {
-    const index = recordIndexOf(modelWorkspace());
-    const focuses = index.workspace.records.filter((r) => ['product', 'domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
+    const data = modelWorkspace();
+    const index = recordIndexOf(data);
+    const focuses = [...index.byId.values()].filter((r) => ['product', 'domain', 'aggregate', 'entity'].includes(r.kind)).map((r) => r.id);
     const missing: string[] = [];
     let drawn = 0;
     for (const focus of focuses) {
       const at = erdFocus(index, focus);
       if (!at) continue;
-      const map = erdMap(index, at.product);
+      const map = erdOf(data, at.product);
       const strength = erdStrength(map, at.scope, { focusFade: 0.25 });
-      const { container, unmount } = bar([...erdKeyEntries(map, at, index.workspace.relations), ...CHANGES]);
+      const { container, unmount } = bar([...erdKeyEntries(map, at, index.meta.relations), ...CHANGES]);
       const needs = (what: string, selector: string) => {
         const el = container.querySelector(selector);
         if (!el || meaning(el) === '') missing.push(`${focus}: ${what} (${selector})`);

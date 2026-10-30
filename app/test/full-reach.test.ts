@@ -1,16 +1,16 @@
 // @vitest-environment node
 import { beforeAll, describe, expect, it } from 'vitest';
-import { indexOf } from './fixtures/load';
+import { type ServedData } from './read-view';
 import { repoData } from './fixtures/repo';
-import { spaceIndex, type SpecIndex } from '../src/specs/data';
+import { type RecordIndex } from '../src/exploring/record-summaries/record-index';
 import { graphMap } from '../src/graph/map';
 import { GRAPH_LAYOUTS } from '../src/graph/GraphPage';
 import { graphTarget } from '../src/graph/steps';
-import { erdMap } from '../src/erd/erd';
 import { erdLayout } from '../src/erd/layout';
 import { erdLevels } from '../src/erd/walk';
 import { traceMap } from '../src/trace/tree';
-import { tracesOf } from './trace/traces';
+import { traced, tracesOf } from './trace/traces';
+import { erdOf } from './erd-of';
 import { traceTarget } from '../src/trace/walk';
 import { MOVES, reachable } from '../src/views/levels';
 
@@ -20,8 +20,9 @@ import { MOVES, reachable } from '../src/views/levels';
 // the Trace's tree. A node it misses is named.
 
 const PRODUCT = 'LA';
-let index: SpecIndex;
-beforeAll(async () => { index = spaceIndex(recordIndexOf(await repoData({ chains: true })), PRODUCT); }, 120_000);
+let data: ServedData;
+let index: RecordIndex;
+beforeAll(async () => { data = await repoData({ chains: true }); index = traced(data, PRODUCT).index; }, 120_000);
 
 /** The nodes of `all` a walk misses, named. */
 const missed = (all: Iterable<string>, reached: ReadonlySet<string>) => [...all].filter((id) => !reached.has(id));
@@ -44,15 +45,15 @@ describe('every node is reachable by keyboard', () => {
   }, 60_000);
 
   it('LA-PAT-APP-UX-R21-T02 On the ERD, every region, aggregate area and entity is reached from the product', async () => {
-    const map = erdMap(index, PRODUCT);
-    const rects = await erdLayout(index, PRODUCT);
+    const map = erdOf(data, PRODUCT);
+    const rects = await erdLayout(map);
     expect(map.boxes.length).toBeGreaterThan(20);
     const seen = reachable(erdLevels(map, rects));
     expect(missed(map.boxes.map((b) => b.id), seen), 'unreachable').toEqual([]);
   }, 60_000);
 
   it('LA-PAT-APP-UX-R21-T02 On the Trace, every box of the tree is reached from the product', () => {
-    const map = traceMap(index, tracesOf(index, PRODUCT), PRODUCT);
+    const map = traceMap(index, tracesOf(data, PRODUCT), PRODUCT);
     expect(map.map.nodes.size).toBeGreaterThan(1000);
     const seen = new Set([map.product]);
     const queue = [map.product];
