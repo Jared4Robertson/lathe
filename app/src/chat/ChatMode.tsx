@@ -57,9 +57,8 @@ export function ChatModeMenu({ mode, disabled, onChoose }: { mode: ChatMode; dis
 
   return (
     <div className="chat-mode">
-      <button
+      <Button
         ref={button}
-        type="button"
         className={`chat-mode-button is-${mode}`}
         aria-haspopup="menu"
         aria-expanded={open}
@@ -70,13 +69,12 @@ export function ChatModeMenu({ mode, disabled, onChoose }: { mode: ChatMode; dis
       >
         <span className="chat-mode-name">{MODE_INFO[mode].name}</span>
         <Icon name="chevron-down" size={14} />
-      </button>
+      </Button>
       {open && (
         <div ref={menu} id={id} className="chat-mode-menu" role="menu" aria-label="Permission mode" onKeyDown={onKey}>
           {CHAT_MODES.map((m) => (
-            <button
+            <Button
               key={m}
-              type="button"
               role="menuitemradio"
               aria-checked={m === mode}
               data-mode={m}
@@ -90,7 +88,7 @@ export function ChatModeMenu({ mode, disabled, onChoose }: { mode: ChatMode; dis
                 <span className="chat-mode-item-name">{MODE_INFO[m].name}</span>
                 <span className="chat-mode-item-detail">{MODE_INFO[m].detail}</span>
               </span>
-            </button>
+            </Button>
           ))}
         </div>
       )}

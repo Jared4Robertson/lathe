@@ -203,9 +203,9 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
           <span className="chat-focus-chip">
             <Icon name="focus" size={14} />
             <span className="chat-focus-label" title="Sent with your message, so Claude starts from it">{focusLabel}</span>
-            <button type="button" className="chat-focus-remove" aria-label={`Leave out: ${focusLabel}`} onClick={() => { setFocusDropped(focusLabel); input.current?.focus(); }}>
+            <Button variant="icon" className="chat-focus-remove" label={`Leave out: ${focusLabel}`} onClick={() => { setFocusDropped(focusLabel); input.current?.focus(); }}>
               <Icon name="x" size={12} />
-            </button>
+            </Button>
           </span>
         </div>
       )}
