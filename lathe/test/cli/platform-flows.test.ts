@@ -254,7 +254,7 @@ describe('Platform flows', () => {
     git(root, 'commit', '-q', '-m', 'Lending');
 
     // The Owner saves an aggregate's editor: the page sends POST /api/aggregate/change-aggregate, and the open page hears
-    // spec:changed.
+    // spec:changed naming what changed.
     const { base } = await serveCli(root);
     const events = await fetch(`${base}/api/events`);
     const post = (route: string, body: string, headers: Record<string, string> = {}) =>
@@ -262,7 +262,8 @@ describe('Platform flows', () => {
     const saved = await post('/api/aggregate/change-aggregate', JSON.stringify({ id: 'TL-LEND-A1', description: 'One tool lent to one member.' }));
     expect(saved.status).toBe(200);
     expect((await saved.json()) as WriteAnswer).toMatchObject({ ok: true, tables: ['aggregate'] });
-    expect(await eventsUntil(events, 'data: spec:changed', 10_000)).toContain('data: spec:changed');
+    // The page hears the write's change, naming the table it wrote, before the write is answered.
+    expect(await eventsUntil(events, '"tables":["aggregate"]', 10_000)).toContain('event: spec:changed\ndata: {"tables":["aggregate"],');
     const reloaded = (await (await fetch(`${base}/api/aggregate/get-aggregate?id=TL-LEND-A1`)).json()) as { aggregate: { description: string } };
     expect(reloaded.aggregate.description).toBe('One tool lent to one member.');
 

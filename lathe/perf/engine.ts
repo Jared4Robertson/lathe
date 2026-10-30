@@ -1,34 +1,51 @@
-// LA-PLT-UC01-R03-T01 LA-PLT-UC01-R10-T01: the engine's performance budgets (LA-PLT-UC01-R03, LA-PLT-UC01-R10),
-// measured: `npm --prefix lathe run test:perf`.
+// LA-PLT-UC01-R03-T01 LA-PLT-UC01-R10-T01 LA-PLT-UC03-R05-T01: the engine's performance budgets (LA-PLT-UC01-R03,
+// LA-PLT-UC01-R10, LA-PLT-UC03-R05), measured: `npm --prefix lathe run test:perf`.
 //
 // - Loading Lathe's own spec (a cold load: the data files read and loaded with every key and rule, then checked)
 //   takes under 2 s.
-// - A live reload after one row changes takes under 500 ms.
+// - Loading it again after one row changes takes under 500 ms.
 // - A cold CLI command (`lathe use-case get-use-case --id <id>` on Lathe's spec, a fresh process with the schema cache in place) takes
 //   under 800 ms, from the process's start to its exit.
-// It also measures, without a budget, a synthetic product of about 10,000 records (Lathe's data copied six times
-// under other ID prefixes, in a temporary folder), and the reference.
+// - On the large product (lathe/perf/large-product.ts, about ten times Lathe's records), served as `lathe serve` serves
+//   it: one edit (a use case retitled by an Agent in another process) is visible, the server having read the changed
+//   file and the page having read again what the change names (the record summaries, the folder tree and the use
+//   case's page), in under 500 ms from the file's change; the checks' run in the background is announced within 4 s
+//   of the change; and a cold load with every check takes under 4 s.
+// It also measures the reference, without a budget.
 //
 // Timings mean nothing on a machine that is busy with other work, so when the one-minute load average is above
 // PERF_MAX_LOAD (12 by default) it still measures and prints, but judges nothing and exits 3 ("not run: machine
 // busy"). A budget is never loosened to make a busy run pass. Prints one line per measurement, with the load's
 // phases, and exits 1 when a budget is missed. With --profile it also prints the steps of Lathe's live reload (the
 // store's schema copy, reading the files, each table's insert, record_scope, each integrity query, each aggregate's rules, the commit, the
-// file facts, the coverage tables and each check), to find where the time goes.
+// file facts, the coverage tables and each check), and of the large product's reload, to find where the time goes.
 
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readdirSync, rmSync, symlinkSync } from 'node:fs';
+import { createServer } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { loadavg, tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildReference, CONFIG_FILE, loadWorkspace, openStore, SCHEMA_VERSION, sortRows, tableText, type LoadTimings, type Row } from '../src/index.ts';
+import { buildReference, loadWorkspace, openStore, type LoadTimings } from '../src/index.ts';
+import { closeEngine } from '../src/platform/data/store.ts';
 import { CHANGE_USE_CASE } from '../src/authoring/use-case/commands/change-use-case.ts';
 import { runCommand } from '../src/platform/commands/run.ts';
+import { closeStores, dataFilesChanged, handleApi, onDataChange } from '../src/server/api.ts';
+import type { DataChange } from '../src/server/events.ts';
+import { RELOAD_DELAY_MS } from '../src/server/serve.ts';
+import { LARGE_PRODUCT, largeProduct } from './large-product.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../..');
 
 export const ENGINE_BUDGETS = { loadMs: 2000, reloadMs: 500, cliMs: 800 } as const;
+/**
+ * The large product's budgets (LA-PLT-UC03-R05). The edit's is the Owner's. The others are set from measurements on the
+ * dev machine (2026-10-29): without its three slow parts (the term-used-unlinked check, the Use case rules and the
+ * record summaries' sort) a cold load with every check took about 2.5 s, and so did the checks' run.
+ */
+export const LARGE_BUDGETS = { editMs: 500, checksMs: 4000, loadMs: 4000 } as const;
 const MAX_LOAD = Number(process.env.PERF_MAX_LOAD ?? 12);
 const RUNS = 5;
 const PROFILE = process.argv.includes('--profile');
@@ -46,46 +63,6 @@ function copyOfRepo(): string {
     else symlinkSync(from, path.join(root, name));
   }
   return root;
-}
-
-/**
- * Lathe's data six times over, under the prefixes LB to LG: about 10,000 records. Its own checks are left out, and so
- * are LA's own kinds and relations (a kind's name is one key across products, so six products cannot each declare
- * it): their declarations, their records' tables and every row that names one of those records.
- */
-async function syntheticProduct(): Promise<{ root: string }> {
-  const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-10k-'));
-  const source = path.join(repo, 'data');
-  const schemaStore = await openStore(root, { dataDir: path.join(root, 'none'), latheDataDir: null });
-  const schema = schemaStore.schema;
-  await schemaStore.close();
-  const declarations = ['product_kind', 'product_kind_field', 'product_relation'];
-  const files = readdirSync(source).filter((f) => f.endsWith('.jsonl') && f !== 'check.jsonl');
-  const kept = files.filter((f) => schema.tables[f.slice(0, -'.jsonl'.length)] && !declarations.includes(f.slice(0, -'.jsonl'.length)));
-  // The IDs of the records of LA's own kinds, which no copy keeps.
-  const dropped = new Set(
-    files
-      .filter((f) => !schema.tables[f.slice(0, -'.jsonl'.length)])
-      .flatMap((f) => readFileSync(path.join(source, f), 'utf8').split('\n').filter(Boolean).map((line) => String(JSON.parse(line).id))),
-  );
-  const namesDropped = (row: Row) => Object.values(row).some((v) => typeof v === 'string' && dropped.has(v));
-  mkdirSync(path.join(root, 'data'));
-  // Its config names this Lathe's schema version, as the copied data is for it.
-  writeFileSync(path.join(root, CONFIG_FILE), `${JSON.stringify({ schema: SCHEMA_VERSION })}\n`);
-  for (const file of kept) {
-    const table = schema.tables[file.slice(0, -'.jsonl'.length)];
-    const own = readFileSync(path.join(source, file), 'utf8').split('\n').filter(Boolean).map((line) => JSON.parse(line) as Row).filter((row) => !namesDropped(row));
-    const text = own.map((row) => JSON.stringify(row)).join('\n');
-    const rows: Row[] = [];
-    for (const prefix of ['LB', 'LC', 'LD', 'LE', 'LF', 'LG']) {
-      const copied = text.replace(/(?<![A-Za-z0-9])LA(?![a-z0-9])/g, prefix);
-      for (const line of copied.split('\n').filter(Boolean)) rows.push(JSON.parse(line));
-    }
-    writeFileSync(path.join(root, 'data', file), tableText(table, sortRows(table, rows)));
-  }
-  // The code folders are linked, so a test's file resolves as it does in this repo.
-  for (const name of ['app', 'lathe', 'desktop', 'examples', 'plugin']) if (existsSync(path.join(repo, name))) symlinkSync(path.join(repo, name), path.join(root, name));
-  return { root };
 }
 
 async function timedLoad(root: string) {
@@ -136,6 +113,86 @@ function profile(t: Partial<LoadTimings>): string {
   return [...totals, ...slowest].join('\n');
 }
 
+/** A copy of the large product, to change, in a fresh folder. */
+function copyOfLarge(source: string): string {
+  const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-large-'));
+  cpSync(source, root, { recursive: true });
+  return root;
+}
+
+/**
+ * The large product served as `lathe serve` serves it, with a page open on a use case: an Agent in another process
+ * retitles a use case RUNS times. Each edit is timed from the file's change to the page having read again what the
+ * change names (the watcher's wait included), and the checks' run from the file's change to its announcement. Medians.
+ */
+async function largeEdits(root: string): Promise<{ editMs: number; checksMs: number; reads: string }> {
+  const server = createServer((req, res) => void handleApi(root, req, res, new URL(req.url ?? '/', 'http://localhost').pathname));
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
+  const heard: { at: number; change: DataChange }[] = [];
+  const stop = onDataChange(root, (change) => heard.push({ at: performance.now(), change }));
+  const get = async (route: string) => {
+    const res = await fetch(`${base}${route}`);
+    if (!res.ok) throw new Error(`${route} answered ${res.status}: ${await res.text()}`);
+    await res.arrayBuffer();
+  };
+  const useCase = `${LARGE_PRODUCT}-D001-UC01`;
+  // What the page reads, by read model: the space's reads and the use case's own page.
+  const reads: Record<string, string> = {
+    'meta-model': '/api/meta-model/get-meta-model',
+    'record-summaries': `/api/record-summaries/list-record-summaries?product_id=${LARGE_PRODUCT}`,
+    'folder-tree': `/api/folder-tree/get-folder-tree?product_id=${LARGE_PRODUCT}`,
+    'use-case': `/api/use-case/get-use-case?id=${useCase}`,
+    problems: `/api/problems/list-problems?product_id=${LARGE_PRODUCT}`,
+    coverage: `/api/coverage/get-coverage?product_id=${LARGE_PRODUCT}`,
+  };
+  const writer = await openStore(root);
+  const edits: number[] = [];
+  const checks: number[] = [];
+  const reread = new Set<string>();
+  try {
+    // The page opens: each read once (the problems wait for the first checks' run).
+    for (const route of Object.values(reads)) await get(route);
+    for (let i = 0; i < RUNS; i++) {
+      await runCommand(writer, CHANGE_USE_CASE, { id: useCase, title: `Retitled use case ${i}` });
+      const start = performance.now();
+      const from = heard.length;
+      await new Promise((resolve) => setTimeout(resolve, RELOAD_DELAY_MS));
+      await dataFilesChanged(root);
+      const change = heard.slice(from).find((h) => h.change.tables.length)?.change;
+      if (!change) throw new Error('The edit was not announced.');
+      const named = Object.keys(reads).filter((model) => change.readModels === null || change.readModels.includes(model));
+      for (const model of named) reread.add(model);
+      await Promise.all(named.map((model) => get(reads[model])));
+      edits.push(performance.now() - start);
+      while (!heard.slice(from).some((h) => h.change.readModels?.includes('problems'))) await new Promise((resolve) => setTimeout(resolve, 10));
+      checks.push(heard.slice(from).find((h) => h.change.readModels?.includes('problems'))!.at - start);
+    }
+  } finally {
+    stop();
+    await writer.close();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+    await closeStores(root);
+  }
+  return { editMs: median(edits), checksMs: median(checks), reads: [...reread].sort().join(', ') };
+}
+
+/** The steps of the large product's reload after one use case is retitled, slowest first. */
+async function largeReloadSteps(root: string): Promise<string> {
+  const steps: Record<string, number> = {};
+  const store = await openStore(root, { steps });
+  const writer = await openStore(root);
+  try {
+    await runCommand(writer, CHANGE_USE_CASE, { id: `${LARGE_PRODUCT}-D001-UC02`, title: 'Retitled for the profile' });
+    for (const name of Object.keys(steps)) delete steps[name];
+    await store.reload();
+  } finally {
+    await writer.close();
+    await store.close();
+  }
+  return Object.entries(steps).sort((a, b) => b[1] - a[1]).map(([n, ms]) => `  ${n.padEnd(48)} ${ms.toFixed(1).padStart(7)} ms`).join('\n');
+}
+
 const before = loadavg()[0];
 const busy = before > MAX_LOAD;
 const lines: string[] = [];
@@ -147,26 +204,29 @@ const judge = (name: string, ms: number, budget: number | null, detail: string) 
 };
 
 const lathe = copyOfRepo();
-const big = await syntheticProduct();
+const large = copyOfLarge(await largeProduct());
 try {
   const colds = [];
   for (let i = 0; i < 3; i++) colds.push(await timedLoad(lathe));
   const cold = colds.sort((a, b) => a.ms - b.ms)[1];
   judge(`Lathe's spec, cold load (${cold.records})`, cold.ms, ENGINE_BUDGETS.loadMs, phases(cold.timings));
   const live = await reload(lathe);
-  judge("Lathe's spec, live reload", live.ms, ENGINE_BUDGETS.reloadMs, phases(live.timings));
-  if (PROFILE) lines.push(`Steps of that reload (1 ms and over):\n${profile(live.timings)}`);
+  judge("Lathe's spec, loaded again after a change", live.ms, ENGINE_BUDGETS.reloadMs, phases(live.timings));
+  if (PROFILE) lines.push(`Steps of that load (1 ms and over):\n${profile(live.timings)}`);
   judge('A cold CLI command (lathe use-case get-use-case)', cliGetUseCase(lathe, 'LA-PLT-UC01'), ENGINE_BUDGETS.cliMs, `median of ${RUNS} fresh processes`);
   const refs: number[] = [];
   for (let i = 0; i < RUNS; i++) { const t = performance.now(); await buildReference(lathe); refs.push(performance.now() - t); }
   judge('Reference (first, then cached)', refs[0], null, `cached ${median(refs.slice(1)).toFixed(1)} ms`);
-  const bigCold = await timedLoad(big.root);
-  judge(`Synthetic product, cold load (${bigCold.records})`, bigCold.ms, null, phases(bigCold.timings));
-  const bigLive = await reload(big.root);
-  judge('Synthetic product, live reload', bigLive.ms, null, phases(bigLive.timings));
+  const largeCold = await timedLoad(large);
+  judge(`Large product, cold load (${largeCold.records})`, largeCold.ms, LARGE_BUDGETS.loadMs, phases(largeCold.timings));
+  const edits = await largeEdits(large);
+  judge('Large product, one edit visible', edits.editMs, LARGE_BUDGETS.editMs, `median of ${RUNS}; read again: ${edits.reads}`);
+  judge("Large product, the checks' run announced", edits.checksMs, LARGE_BUDGETS.checksMs, `median of ${RUNS}, from the file's change`);
+  if (PROFILE) lines.push(`Steps of the large product's reload:\n${await largeReloadSteps(large)}`);
 } finally {
   rmSync(lathe, { recursive: true, force: true });
-  rmSync(big.root, { recursive: true, force: true });
+  rmSync(large, { recursive: true, force: true });
+  await closeEngine();
 }
 
 const after = loadavg()[0];
