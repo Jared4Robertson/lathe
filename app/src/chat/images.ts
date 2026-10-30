@@ -1,6 +1,6 @@
 import type { ChatImage } from './types';
 
-// Images in a message (LA-PLT-UC19-R17): pasted into the message box, or the stage as it is drawn. They are held as base64
+// Images in a message (LA-PLT-UC22-R05): pasted into the message box, or the stage as it is drawn. They are held as base64
 // with a preview until the message goes; the shell checks what it is sent (desktop/src/chat.ts parseImages).
 
 export const MAX_IMAGES = 6;

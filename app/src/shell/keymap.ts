@@ -93,7 +93,7 @@ export const COMMANDS: readonly Command[] = [
   { id: 'toggleChat', title: 'Show the chat with Claude, or hide it', group: 'View', keys: ['Ctrl+Meta+I'], otherKeys: ['Ctrl+Alt+C'], when: 'global' },
   // Dictation in the chat (LA-PLT-UC20-R01), as VS Code's Start Dictation: listed only where the Mac recognizes speech on-device.
   { id: 'dictate', title: 'Dictate a message to Claude, or stop dictating', group: 'View', keys: ['Mod+Alt+V'], when: 'global', dynamic: true },
-  // Point and ask, and Claude's changes (LA-PLT-UC19-R13, R19): attach the box pointed at to the message; walk the last turn's changes on the stage.
+  // Point and ask, and Claude's changes (LA-PLT-UC22-R01, LA-PLT-UC21-R01): attach the box pointed at to the message; walk the last turn's changes on the stage.
   { id: 'askClaude', title: 'Ask Claude about this: attach the selected box, or the focused record, to the message', group: 'View', keys: ['Mod+Alt+K'], when: 'global', dynamic: true },
   { id: 'askClaudeAboutRecord', title: 'Ask Claude about the record', group: 'View', keys: [], when: 'global', dynamic: true },
   { id: 'reviewClaudeChanges', title: "Review Claude's changes: light the last turn's records on the stage and walk through them", group: 'View', keys: ['g r'], when: 'global', dynamic: true },

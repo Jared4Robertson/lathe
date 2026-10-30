@@ -1,4 +1,4 @@
-// The "/" list's skills and commands (LA-PLT-UC19-R14), read from the files Claude Code reads them from.
+// The "/" list's skills and commands (LA-PLT-UC22-R02), read from the files Claude Code reads them from.
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -13,7 +13,7 @@ function write(root: string, file: string, text: string) {
   writeFileSync(path.join(root, file), text);
 }
 
-describe('LA-PLT-UC19-R14-T03 typing / lists the skills and commands of the Owner, the folder, Lathe and the plugins, with one-line descriptions', () => {
+describe('LA-PLT-UC22-R02-T03 typing / lists the skills and commands of the Owner, the folder, Lathe and the plugins, with one-line descriptions', () => {
   it('reads a description from the frontmatter, cut to its first sentence', () => {
     expect(parseFrontmatter('---\nname: x\ndescription: Does a thing. Use it when asked.\n---\nBody')).toEqual({ name: 'x', description: 'Does a thing.' });
     expect(parseFrontmatter('---\ndescription: >\n  Folded over\n  two lines.\n---\n').description).toBe('Folded over two lines.');

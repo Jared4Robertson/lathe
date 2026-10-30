@@ -1,4 +1,4 @@
-// Capturing the stage for a message (LA-PLT-UC19-R17): the page's rectangle is checked, and the pixels come back as base64 PNG.
+// Capturing the stage for a message (LA-PLT-UC22-R05): the page's rectangle is checked, and the pixels come back as base64 PNG.
 import { describe, expect, it } from 'vitest';
 import { captureStage, parseRect } from '../src/chatCapture.ts';
 
@@ -9,7 +9,7 @@ const page = (empty: boolean, seen: unknown[] = []) => ({
   },
 }) as never;
 
-describe('LA-PLT-UC19-R17-T04 The shell captures the rectangle of the window the page names, as a PNG, and nothing else', () => {
+describe('LA-PLT-UC22-R05-T04 The shell captures the rectangle of the window the page names, as a PNG, and nothing else', () => {
   it('rounds a good rectangle and refuses one that is not finite, empty or larger than a screen', () => {
     expect(parseRect({ x: 10.4, y: 20.6, width: 300.2, height: 200 })).toEqual({ x: 10, y: 21, width: 300, height: 200 });
     expect(parseRect({ x: 0, y: 0, width: 0, height: 10 })).toBeNull();

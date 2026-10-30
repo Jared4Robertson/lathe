@@ -1,4 +1,4 @@
-// The skills and slash commands the chat's message box lists when the Owner types "/" (LA-PLT-UC19-R14): the ones
+// The skills and slash commands the chat's message box lists when the Owner types "/" (LA-PLT-UC22-R02): the ones
 // Claude Code would find for this folder, read from its files so the list needs no process: the Owner's skills and
 // commands, the folder's, those of the installed plugins, and the Lathe plugin every chat loads. Each is a name with
 // a one-line description from its frontmatter. Nothing here runs a skill; the message goes to Claude Code as text.

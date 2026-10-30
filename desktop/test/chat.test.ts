@@ -18,7 +18,7 @@ const READS = 'Read,Grep,Glob,mcp__plugin_lathe_lathe__check,mcp__plugin_lathe_l
 const ACCEPT_READS = ['--permission-mode', 'default', '--allowedTools', READS];
 
 describe('LA-PLT-UC19-R01-T02 The chat runs the CLI headless, with structured input and output', () => {
-  it('LA-PLT-UC19-R15-T02 passes the model and effort the Owner chose, and nothing when they left them to Claude Code', () => {
+  it('LA-PLT-UC22-R03-T02 passes the model and effort the Owner chose, and nothing when they left them to Claude Code', () => {
     const setup = { pluginDir: PLUGIN, mode: 'accept-reads' as const };
     expect(claudeArgs({}, setup)).not.toContain('--model');
     expect(claudeArgs({}, { ...setup, choice: { model: 'sonnet', effort: null } })).toEqual(expect.arrayContaining(['--model', 'sonnet']));
@@ -26,7 +26,7 @@ describe('LA-PLT-UC19-R01-T02 The chat runs the CLI headless, with structured in
     expect(claudeArgs({}, { ...setup, choice: { model: null, effort: 'max' } })).toEqual(expect.arrayContaining(['--effort', 'max']));
   });
 
-  it('LA-PLT-UC19-R17-T02 sends images before the text, and refuses images that are not base64 of a type the CLI takes', () => {
+  it('LA-PLT-UC22-R05-T02 sends images before the text, and refuses images that are not base64 of a type the CLI takes', () => {
     const content = JSON.parse(userLine('What is this?', null, [{ mediaType: 'image/png', data: 'iVBORw0KGgo=' }])).message.content;
     expect(content).toEqual([{ type: 'image', source: { type: 'base64', media_type: 'image/png', data: 'iVBORw0KGgo=' } }, { type: 'text', text: 'What is this?' }]);
     expect(parseImages([{ mediaType: 'image/png', data: 'iVBORw0KGgo=' }])).toHaveLength(1);
@@ -167,7 +167,11 @@ describe('LA-PLT-UC19-R03-T02 The CLI\'s stream becomes the chat\'s text, tool r
       { kind: 'tool', id: 't1', name: 'mcp__plugin_lathe_lathe__use_case_add_use_case', summary: 'TL-UC01', result: 'Added use_case TL-UC01', status: 'done' },
       { kind: 'tool', id: 't2', summary: 'false', result: 'exit 1', status: 'error' },
     ]);
-    expect(toolLabel('mcp__plugin_lathe_lathe__add')).toBe('lathe add');
+    expect(toolLabel('mcp__plugin_lathe_lathe__add')).toBe('Add');
+    expect(toolLabel('mcp__plugin_lathe_lathe__business_outcome_change_business_outcome')).toBe('Change business outcome');
+    expect(toolLabel('mcp__plugin_lathe_lathe__use_case_add_flow_step')).toBe('Add flow step');
+    expect(toolLabel('mcp__plugin_lathe_lathe__check')).toBe('Check');
+    expect(toolLabel('mcp__github__create_issue')).toBe('github create_issue');
     expect(toolLabel('Bash')).toBe('Bash');
     expect(toolSummary({ file_path: '/a/b.ts' })).toBe('/a/b.ts');
   });

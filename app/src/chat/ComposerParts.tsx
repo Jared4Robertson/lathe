@@ -5,8 +5,8 @@ import { chipLabel } from './chips';
 import type { Attachment } from './images';
 import type { ChatSkill, QueuedMessage } from './types';
 
-// The parts around the message box: the records the Owner pointed at (LA-PLT-UC19-R13), the images waiting to go (R17), the
-// messages queued while Claude works (R16) and the "/" list of skills (R14).
+// The parts around the message box: the records the Owner pointed at (LA-PLT-UC22-R01), the images waiting to go (UC22-R05), the
+// messages queued while Claude works (UC22-R04) and the "/" list of skills (UC22-R02).
 
 /** The records attached with "Ask Claude about this", one chip each, removable. */
 export function PointedChips({ ids, index, onRemove }: { ids: readonly string[]; index: RecordIndex | null; onRemove: (id: string) => void }) {

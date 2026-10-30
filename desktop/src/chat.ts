@@ -65,10 +65,10 @@ export const CHAT_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
 export type ChatEffort = (typeof CHAT_EFFORTS)[number];
 export const isChatEffort = (value: unknown): value is ChatEffort => typeof value === 'string' && (CHAT_EFFORTS as readonly string[]).includes(value);
 
-/** The model and effort a session runs with (LA-PLT-UC19-R15); null leaves the choice to Claude Code. */
+/** The model and effort a session runs with (LA-PLT-UC22-R03); null leaves the choice to Claude Code. */
 export interface ChatModelChoice { model: ChatModel | null; effort: ChatEffort | null }
 
-/** A message typed while Claude works, waiting its turn (LA-PLT-UC19-R16). */
+/** A message typed while Claude works, waiting its turn (LA-PLT-UC22-R04). */
 export interface QueuedMessage { id: string; text: string; images: number }
 
 export interface ChatState {
@@ -121,7 +121,7 @@ export interface ChatSetup {
   /** The folder of the Lathe plugin the session loads (chatLathe.ts). */
   pluginDir: string;
   mode: ChatMode;
-  /** The model and effort the Owner chose, if any (LA-PLT-UC19-R15). */
+  /** The model and effort the Owner chose, if any (LA-PLT-UC22-R03). */
   choice?: ChatModelChoice;
 }
 
@@ -241,7 +241,7 @@ export function userLine(text: string, focus: string | null = null, images: read
   return JSON.stringify({ type: 'user', session_id: '', message: { role: 'user', content: [...context, ...pictures, { type: 'text', text }] }, parent_tool_use_id: null });
 }
 
-/** An image sent with a message (LA-PLT-UC19-R17): pasted, or the stage as it is drawn. */
+/** An image sent with a message (LA-PLT-UC22-R05): pasted, or the stage as it is drawn. */
 export interface ChatImage { mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'; data: string }
 const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
 /** The most images a message carries, and the most base64 characters of one (about 5 MB of picture). */
@@ -273,8 +273,26 @@ export const interruptLine = (requestId: string) => JSON.stringify({ type: 'cont
 
 // ---------- Tools as rows ----------
 
-/** A tool's name as the row shows it: an MCP tool as its server and tool ("lathe add"), a built-in tool as it is. */
+/** The words that start a Lathe command or query's own name after its aggregate's, as the tool names them (use_case_add_flow_step). */
+const LATHE_VERBS = new Set(['add', 'change', 'remove', 'move', 'get', 'list', 'next', 'declare', 'set']);
+
+/**
+ * A tool's name as the row shows it: one of Lathe's own tools as the sentence it is ("Change business outcome",
+ * "Add flow step"), another MCP tool as its server and tool ("github create_issue"), a built-in tool as it is. The raw
+ * name stays in the row's detail.
+ */
 export function toolLabel(name: string): string {
+  const lathe = /^mcp__plugin_lathe_lathe__(.+)$/.exec(name);
+  if (lathe) {
+    const words = lathe[1].split('_').filter(Boolean);
+    const at = words.findIndex((w) => LATHE_VERBS.has(w));
+    if (at >= 0) {
+      const sentence = words.slice(at).join(' ');
+      return sentence.charAt(0).toUpperCase() + sentence.slice(1);
+    }
+    const plain = words.join(' ');
+    return plain.charAt(0).toUpperCase() + plain.slice(1);
+  }
   const mcp = /^mcp__(.+)__([^_].*)$/.exec(name);
   if (!mcp) return name;
   const server = mcp[1].split(/_+/).filter(Boolean).at(-1) ?? mcp[1];

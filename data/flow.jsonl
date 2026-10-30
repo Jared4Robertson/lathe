@@ -139,6 +139,8 @@
 {"id":"LA-PLT-UC18-FL04","title":"Start the plugin's tools in a product repo through the MCP tools","use_case_id":"LA-PLT-UC18","interface_id":"LA-IF04"}
 {"id":"LA-PLT-UC19-FL02","title":"Work with Claude beside the stage in the desktop app","use_case_id":"LA-PLT-UC19","interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC20-FL02","title":"Talk to Claude in the desktop app","use_case_id":"LA-PLT-UC20","interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC21-FL02","title":"Review and undo Claude's changes in the desktop app","use_case_id":"LA-PLT-UC21","interface_id":"LA-IF02"}
+{"id":"LA-PLT-UC22-FL02","title":"Compose a message with more than words in the desktop app","use_case_id":"LA-PLT-UC22","interface_id":"LA-IF02"}
 {"id":"LA-TRC-UC01-FL03","title":"See a domain's coverage through the CLI","use_case_id":"LA-TRC-UC01","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC02-FL03","title":"Count coverage by the meta-model through the CLI","use_case_id":"LA-TRC-UC02","interface_id":"LA-IF03"}
 {"id":"LA-TRC-UC03-FL03","title":"Record how a test is run through the CLI","use_case_id":"LA-TRC-UC03","interface_id":"LA-IF03"}

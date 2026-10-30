@@ -3,7 +3,7 @@ import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { CHAT_EFFORTS, CHAT_MODELS, type ChatEffort, type ChatModel, type ModelChoice } from './types';
 
-// The model and effort picker (LA-PLT-UC19-R15): one button under the chat's head naming the model and effort, opening a
+// The model and effort picker (LA-PLT-UC22-R03): one button under the chat's head naming the model and effort, opening a
 // menu of the models Claude Code takes and of the effort levels, each with "Default" to leave the choice to Claude Code.
 // Choosing starts the CLI again on the same session; it is not offered while Claude works.
 
