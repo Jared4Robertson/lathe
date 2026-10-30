@@ -1,5 +1,5 @@
 import type { Plate } from './plate';
-import { largestFit, linesIn, LINE_HEIGHT, META_FONT, textMeasure, TITLE_FONT, LABEL_PAD, LABEL_PAD_BLOCK, type Face, type MapLabel } from './text';
+import { BORDER, largestFit, linesIn, LINE_HEIGHT, META_FONT, textMeasure, TITLE_FONT, LABEL_PAD, LABEL_PAD_BLOCK, type Face, type MapLabel } from './text';
 
 // Sticky labels (LA-EXP-DS06): a box only partly inside the open space (cut by a floating panel, the nav or the wiki
 // card, or by the canvas's edge) draws its label within its visible part, as a sticky header stays in view: laid out
@@ -12,8 +12,11 @@ import { largestFit, linesIn, LINE_HEIGHT, META_FONT, textMeasure, TITLE_FONT, L
 /** A rectangle on the canvas, in its CSS pixels. */
 export interface ScreenBox { left: number; top: number; right: number; bottom: number }
 
-/** How much of a label's side padding, at its box's scale, its room takes in when it is cut: half of it. */
-const STICKY_SIDE = LABEL_PAD / 2;
+/**
+ * How much of a label's side padding, at its box's scale, its room takes in when it is cut: all but twice a border, which
+ * a focus's wider edge and a shape's decoration (a stack's front sheet) are drawn in.
+ */
+const STICKY_SIDE = LABEL_PAD - 2 * BORDER;
 
 /** The least size, in CSS pixels, a sticky label's title is drawn at: below it the label is not drawn. */
 export const STICKY_READ_PX = 9;
@@ -66,10 +69,10 @@ export function stickyLabel(p: Plate, zoom: number, X: (x: number) => number, Y:
 }
 
 /**
- * The room a cut label is laid out in, on the canvas: the label's content box with half its side padding (the box's one
- * fill, clear of its edge, a focus's wider edge and its shape's decoration), cut to the open space. A label laid out
- * there keeps its own side padding at its own scale, so it never meets the edge; a box drawn large keeps only half its
- * padding at its own large scale, so the strip a focus is framed as holds its label at a readable size (camera.ts
+ * The room a cut label is laid out in, on the canvas: the label's content box with its side padding but twice a border
+ * (the box's one fill, clear of its edge, a focus's wider edge and its shape's decoration), cut to the open space. A
+ * label laid out there keeps its own side padding at its own scale, so it never meets the edge; a box drawn large keeps
+ * no padding at its own large scale, so the strip a focus is framed as holds its label at a readable size (camera.ts
  * frameOnMap).
  */
 export function stickyRoom(p: Plate, X: (x: number) => number, Y: (y: number) => number, open: ScreenBox): ScreenBox {

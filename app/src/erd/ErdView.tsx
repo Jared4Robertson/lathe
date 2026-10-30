@@ -97,6 +97,9 @@ export const REGION_LABEL_BELOW = 0.6;
 
 interface Region { id: string; title: string; rect: Rect; strength: number }
 
+/** About how wide a region's name is drawn, in CSS pixels: the display face's bold at 0.8125rem and its padding (styles.css .erd-region-label). */
+const regionLabelWidth = (title: string) => title.length * 8.2 + 14;
+
 /**
  * Each domain's name at the top left of its region when the map is zoomed out (the overview's level
  * of detail), at one size on screen above everything drawn, so every region reads by name at any
@@ -105,13 +108,15 @@ interface Region { id: string; title: string; rect: Rect; strength: number }
 function RegionLabels({ regions }: { regions: readonly Region[] }) {
   const [x, y, zoom] = useStore((s) => s.transform);
   if (zoom >= REGION_LABEL_BELOW) return null;
+  // A name is shown only where its region holds it whole: a region too narrow on screen for its name shows none, so no
+  // name is cut or drawn over its neighbor's (LA-PAT-APP-UX-R12).
   return (
     <div className="erd-region-labels" aria-hidden="true">
-      {regions.map((r) => (
+      {regions.filter((r) => r.rect.width * zoom - 8 >= regionLabelWidth(r.title)).map((r) => (
         <span
           key={r.id}
           className="erd-region-label"
-          style={{ left: x + r.rect.x * zoom + 4, top: y + r.rect.y * zoom + 4, maxWidth: Math.max(140, r.rect.width * zoom - 8), opacity: r.strength }}
+          style={{ left: x + r.rect.x * zoom + 4, top: y + r.rect.y * zoom + 4, maxWidth: r.rect.width * zoom - 8, opacity: r.strength }}
         >
           {r.title}
         </span>
