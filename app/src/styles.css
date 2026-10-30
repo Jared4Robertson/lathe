@@ -397,7 +397,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
    the accessible ones), then groups fold into More at the right end (the Changes controls, then the stage's secondary
    controls), then the step letters drop and a stage shows its own controls narrower; the walk, Frame and
    the stage's primary controls stay in the row. In More every name shows again. */
-.stage-toolbar[data-names="hidden"] :is(.graph-depth-name, .graph-filters-name, .stage-frame-name, .stage-tidy-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.stage-toolbar[data-names="hidden"] :is(.graph-depth-name, .graph-filters-name, .stage-frame-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .stage-toolbar[data-names="hidden"] { gap: 6px; }
 .stage-toolbar[data-names="hidden"] .stage-step { padding-inline: 4px; }
 .stage-more { flex: none; }
