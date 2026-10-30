@@ -85,8 +85,9 @@
 .graph-minimap-change { stroke: var(--sheet); stroke-width: 1; vector-effect: non-scaling-stroke; fill: var(--change-changed); }
 .graph-minimap-change.is-added { fill: var(--change-new); }
 
-/* Each folder's, stage's and domain's changes in the nav: "+3 ~5 −1", each in its change's color, and the marks that tell them apart. */
-.nav-changes { display: inline-flex; gap: 4px; margin-left: 6px; font: 600 0.7rem var(--mono); white-space: nowrap; }
+/* Each folder's, stage's and domain's changes in the nav: "+3 ~5 −1", each in its change's color, on a line under the row (so no name is cut), with the marks that tell them apart. */
+.nav-changes { --depth: 0; padding: 0 10px 2px calc(var(--nav-pad) + (var(--depth) + 1) * var(--nav-indent) + var(--nav-twistie)); font: 600 0.7rem var(--mono); line-height: 1.2; white-space: nowrap; }
+.nav-changes-marks { display: inline-flex; gap: 6px; }
 .nav-changes .is-added { color: var(--change-new); }
 .nav-changes .is-changed { color: var(--change-changed); }
 .nav-changes .is-removed { color: var(--change-gone); }
