@@ -52,7 +52,7 @@ test.describe('Checking flows', () => {
       // S04: a check's code opens its page in the reference, in the wiki card over the stage.
       await main.getByRole('heading', { name: /^view-unused \d+$/, level: 3 }).getByRole('link').click();
       await page.waitForURL((u) => u.pathname === `/${ADDED}` && u.search === '?panel=checks&page=format/checks/view-unused');
-      await expect(page.locator('.wiki-panel h2')).toHaveText('view-unused');
+      await expect(page.locator('.wiki-panel-title h2')).toHaveText('view-unused');
       // Escape closes the topmost overlay first: the card's page, then the panel.
       await page.keyboard.press('Escape');
       await page.waitForURL((u) => u.search === '?panel=checks');

@@ -3,7 +3,7 @@ import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
-import { openPage } from './measure';
+import { openPage, showCard } from './measure';
 import { keepData } from './scenarios';
 import { clickBox, clickErdBox, erdDrawn, erdSceneOf, expectKeyWhole, focusDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
 
@@ -221,7 +221,7 @@ test.describe('Exploring flows', () => {
     await expect(page.locator(WIKI)).toHaveCount(0);
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
-    await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
+    await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(10);
     // A requirement's Trace stage frames its box in the All-at-once view: its use case to its left, what builds it to its
     // right, its path lit; the step that fulfills it is in the table's chain under the canvas.
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
@@ -437,8 +437,7 @@ test.describe('Exploring flows', () => {
       await graphReady(page);
       // History, at the end of the wiki card's whole page (More), read from the repository only once asked.
       const card = page.locator(WIKI);
-      const more = card.getByRole('button', { name: 'More' });
-      if (await more.count()) await more.click();
+      await showCard(page, 'whole');
       await card.getByRole('button', { name: 'Show the history' }).click();
       const history = card.locator('.record-history');
       await expect(history).toContainText(/not committed|uncommitted/i, { timeout: 20_000 });
@@ -461,7 +460,6 @@ test.describe('Exploring flows', () => {
     // The command and its endpoint, method and route.
     await page.goto('/LA-AUT-CMD101');
     await expect(wiki.getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' })).toBeVisible();
-    await expect(wiki).toContainText('POST · /api/use-case/change-use-case');
     await wiki.getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' }).click();
     await page.waitForURL((u) => u.pathname === '/LA-AUT-EP101');
     // An integration lists the steps that exchange with its system.

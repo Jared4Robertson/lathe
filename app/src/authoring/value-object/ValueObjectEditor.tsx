@@ -14,6 +14,7 @@ import { addressOf } from '../../views/address';
 import { sendValueObject, type ValueObjectCommands, type ValueObjectRoute } from './commands';
 import { useNextValueObjectId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Value object editor (LA-AUT-A9): the actions on a record of a value object, each sending one of the aggregate's
 // own commands, POST /api/value-object/<command>, and nothing else. Edit sends its kind's Change with only what changed
@@ -158,7 +159,7 @@ export function ValueObjectEditor({ index, page, children }: { index: RecordInde
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(toolbar, `Change ${id}`);
   };
   const product = page.product;
   if (mode.mode === 'change') {

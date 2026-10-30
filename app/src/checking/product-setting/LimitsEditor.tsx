@@ -7,6 +7,7 @@ import { useAnnounce } from '../../shell/commands';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { sendProductSetting, type ProductSettingCommands } from './commands';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Limits editor (LA-CHK-A2): Set limits, the Product setting aggregate's one command, POST
 // /api/product-setting/set-limits, and nothing else. The form starts at the limits the product has now (its own or the
@@ -27,7 +28,7 @@ export function LimitsEditor({ index, limits, children }: { index: RecordIndex; 
   if (!writer) return <>{children}</>;
   const back = () => {
     setOpen(false);
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(toolbar, `Change the limits of ${limits.product}`);
   };
   if (open) return <SetLimitsForm index={index} limits={limits} onDone={back} />;
   return (

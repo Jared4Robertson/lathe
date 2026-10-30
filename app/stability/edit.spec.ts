@@ -20,6 +20,22 @@ const TITLE = '.wiki-panel-title';
 /** A use case others reference (pattern followings), so its removal is refused. */
 const REFERENCED = '/LA-AUT-UC02';
 const CONTENT = ['.wiki-panel-scroll'];
+/** What holds still while a form is sent: the title scrolls with the card's page, which the Reader scrolled to reach the button. */
+const SENDING = [NAV, WIKI_BAR, STRIP];
+
+/**
+ * Sends a form by its button, as the Reader does: they scroll the card to the button first (their own scroll, not a
+ * jump), and once the form closes the card is back on the record's page at its top, the title where it was.
+ */
+async function send(page: Page, form: Locator, button: string, name: string) {
+  await form.getByRole('button', { name: button, exact: true }).scrollIntoViewIfNeeded();
+  const sent = await step(page, 'edit', name, { keys: SENDING, allow: CONTENT, settle: 1500 }, async () => {
+    await form.getByRole('button', { name: button, exact: true }).click();
+    await expect(form).toHaveCount(0, { timeout: 20_000 });
+  });
+  await expect.poll(() => page.locator(CONTENT[0]).evaluate((e) => e.scrollTop), { message: `${name}: the page is back at its top` }).toBe(0);
+  return sent;
+}
 test.describe('editing', () => {
   test('LA-AUT-UC06-FL01-T on the Use case page, open a requirement\'s form and save an edit', async ({ page }) => {
     const restore = keepData();
@@ -33,10 +49,7 @@ test.describe('editing', () => {
       expectStable(open);
       await form.getByRole('textbox', { name: /^group name/ }).fill('Stability');
       const save = await test.step('LA-V101-R02-T02 the Owner saves the change on the Use case page, as one Change command', () =>
-        step(page, 'edit', 'save the edit', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT, settle: 1500 }, async () => {
-          await form.getByRole('button', { name: 'Save' }).click();
-          await expect(form).toHaveCount(0, { timeout: 20_000 });
-        }));
+        send(page, form, 'Save', 'save the edit'));
       expectStable(save);
     } finally {
       restore();
@@ -75,7 +88,9 @@ test.describe('editing', () => {
         await panel.waitFor();
       });
       expectStable(ask);
-      const refused = await step(page, 'edit', 'the command refuses the removal', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT, settle: 1000 }, async () => {
+      // The question lists all the removal would take; the Reader scrolls to its button (their own scroll).
+      await panel.getByRole('button', { name: `Remove ${REFERENCED.slice(1)}` }).scrollIntoViewIfNeeded();
+      const refused = await step(page, 'edit', 'the command refuses the removal', { keys: SENDING, allow: CONTENT, settle: 1000 }, async () => {
         await panel.getByRole('button', { name: `Remove ${REFERENCED.slice(1)}` }).click();
         await panel.getByRole('alert').waitFor({ timeout: 20_000 });
       });
@@ -122,7 +137,7 @@ test.describe('editing', () => {
   // The Table, Specification, Read model and Value object pages: each saves one field as its kind's Change command, with
   // nothing jumping. Each is its aggregate's web-app flow test.
   test('LA-AUT-UC17-FL01-T on the Table page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-EN54-TB', /^title/, 'projections'));
-  test('LA-AUT-UC20-FL01-T on the Specification page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-SP03', /^title/, 'Data files clash in a merge'));
+  test('LA-AUT-UC20-FL01-T on the Specification page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-SP09', /^title/, 'Data files clash in a merge'));
   test('LA-AUT-UC21-FL01-T on the Read model page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-AUT-RM25', /^description/, 'A specification as the stability suite reads it.'));
   test('LA-AUT-UC24-FL01-T on the Value object page, open its form and save an edit', ({ page }) => saveAnEdit(page, '/LA-VO01', /^description/, 'Names one record across the store, as the stability suite describes it.'));
   // The Aggregate, Domain event and Command pages, likewise.
@@ -137,16 +152,15 @@ async function sendAForm(page: Page, address: string, toolbar: string, button: s
   try {
     await openPage(page, address);
     const form = page.getByRole('form', { name: formName });
+    // The toolbar may sit far down the page (a section's own); the Reader scrolls to it first (their own scroll).
+    await page.getByRole('toolbar', { name: toolbar }).getByRole('button', { name: button }).scrollIntoViewIfNeeded();
     const open = await step(page, 'edit', 'open the form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {
       await page.getByRole('toolbar', { name: toolbar }).getByRole('button', { name: button }).click();
       await form.waitFor();
     });
     expectStable(open);
     await fill(form);
-    const sent = await step(page, 'edit', 'send the form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT, settle: 1500 }, async () => {
-      await form.getByRole('button', { name: save, exact: true }).click();
-      await expect(form).toHaveCount(0, { timeout: 20_000 });
-    });
+    const sent = await send(page, form, save, 'send the form');
     expectStable(sent);
   } finally {
     restore();
@@ -165,10 +179,7 @@ async function saveAnEdit(page: Page, address: string, field: RegExp, value: str
     });
     expectStable(open);
     await form.getByRole('textbox', { name: field }).fill(value);
-    const save = await step(page, 'edit', 'save the edit', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT, settle: 1500 }, async () => {
-      await form.getByRole('button', { name: 'Save' }).click();
-      await expect(form).toHaveCount(0, { timeout: 20_000 });
-    });
+    const save = await send(page, form, 'Save', 'save the edit');
     expectStable(save);
   } finally {
     restore();

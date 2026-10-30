@@ -12,6 +12,7 @@ import { addressOf } from '../../views/address';
 import { sendTooling, type ToolingCommands } from './commands';
 import { useNextToolingId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Tooling editor (LA-AUT-A21): the actions on a tooling record, each sending one of the aggregate's own commands,
 // POST /api/tooling/<command>, and nothing else. Edit sends Change a tooling record with only what changed; Remove
@@ -49,7 +50,7 @@ export function ToolingEditor({ index, page, children }: { index: RecordIndex; p
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(toolbar, `Change ${tooling.id}`);
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, tooling.domain_id, false);

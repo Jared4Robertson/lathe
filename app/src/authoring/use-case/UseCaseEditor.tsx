@@ -13,6 +13,7 @@ import { addressOf } from '../../views/address';
 import { sendUseCase, type UseCaseCommands, type UseCaseRoute } from './commands';
 import { stepsOf, useNextId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Use case editor (LA-AUT-A11): the actions on a record of a use case, each sending one of the aggregate's own
 // commands, POST /api/use-case/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
@@ -61,7 +62,7 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: R
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(toolbar, `Change ${id}`);
   };
   const context: FormContext = { index, useCase, writer, onDone: back };
   if (mode.mode === 'change') return <div className="spec-body"><ChangeForm context={context} id={id} kind={kind} /></div>;

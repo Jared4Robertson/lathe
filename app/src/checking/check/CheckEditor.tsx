@@ -11,6 +11,7 @@ import { useSpaces } from '../../shell/spaces';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { sendCheck, type CheckCommands } from './commands';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Check editor (LA-CHK-A1): the actions on a product's own check, each sending one of the aggregate's own commands,
 // POST /api/check/<command>, and nothing else. Edit sends Change a check with only what changed; Remove asks first and
@@ -53,7 +54,7 @@ export function CheckEditor({ index, page, children }: { index: RecordIndex; pag
   if (!writer || page.product === null) return <>{children}</>;
   const back = () => {
     setMode('view');
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(toolbar, `Change ${name}`);
   };
   if (mode === 'change') {
     const specs = fieldsOf(false);

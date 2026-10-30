@@ -4,6 +4,7 @@ import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD } from '../stability/scenari
 import { audit, LOOKS, useLook, type Finding } from './axe';
 import { withChat } from './chat';
 import { asDesktop } from '../stability/desktop';
+import { showCard } from '../stability/measure';
 
 // LA-PAT-APP-UX-R10-T01: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
 // desktop and phone widths, in the Lathe theme's light and dark and in High contrast's
@@ -23,7 +24,7 @@ async function open(page: Page, url: string, ready: string) {
 interface State { name: string; run: (page: Page) => Promise<void> }
 
 /** A flow step some requirement's chain holds; an entity; a Shared record (in no domain). */
-const STEP = '/LA-EXP-UC12-FL01-S01';
+const STEP = '/LA-EXP-UC12-FL01-S03';
 const ENTITY = '/LA-EXP-EN01';
 const SHARED = '/LA-PAT-APP-UX';
 
@@ -83,7 +84,7 @@ const PAGES: State[] = [
   { name: 'command page', url: '/LA-AUT-CMD210', ready: '[data-aggregate="command"] .command-endpoints' },
   // The Table, Specification, Value object and Read model aggregates' own pages.
   { name: 'table page', url: '/LA-AUT-EN54-TB', ready: '[data-aggregate="table"] .table-keys' },
-  { name: 'specification page', url: '/LA-AUT-SP03', ready: '[data-aggregate="specification"] .record-lead' },
+  { name: 'specification page', url: '/LA-AUT-SP09', ready: '[data-aggregate="specification"] .record-lead' },
   { name: 'value object page', url: '/LA-VO01', ready: '[data-aggregate="value-object"] .entity-fields' },
   { name: 'read model page', url: '/LA-AUT-RM25', ready: '[data-aggregate="read-model"] .read-model-queries' },
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
@@ -250,11 +251,10 @@ const DESKTOP: State[] = [
     await box.dispatchEvent('click', { metaKey: true, button: 0 });
     await page.locator('.tab-strip [role="tab"]').nth(1).waitFor();
   } },
-  // The wiki card opens as its summary on every page above; More shows the whole page in place (LA-V96-R22).
-  { name: 'the wiki card expanded to the whole page', run: async (page) => {
+  // The wiki card shows its whole page on every page above (useLook reads whole cards); Less shows its summary (LA-V96-R22).
+  { name: 'the wiki card as its summary', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
-    await page.locator('.wiki-panel').getByRole('button', { name: 'More' }).click();
-    await page.locator('.wiki-panel.is-expanded').waitFor();
+    await showCard(page, 'summary');
   } },
   { name: 'a tooltip on keyboard focus', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');

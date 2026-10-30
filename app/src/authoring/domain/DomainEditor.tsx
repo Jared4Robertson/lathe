@@ -15,6 +15,7 @@ import { addressOf } from '../../views/address';
 import { sendDomain, type DomainCommands, type DomainRoute } from './commands';
 import { useNextDomainId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Domain editor (LA-AUT-A4): the actions on a record of a domain, each sending one of the aggregate's own commands,
 // POST /api/domain/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add opens an empty
@@ -231,7 +232,7 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(toolbar, `Change ${id}`);
   };
   const product = page.domain.product_id;
   if (mode.mode === 'change') {
