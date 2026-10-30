@@ -19,7 +19,7 @@ import {
 } from './model';
 import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
 import { StageCamera, StageKey, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
-import { DEFAULT_GRAPH_SETTINGS } from './settings';
+import { DEFAULT_GRAPH_SETTINGS } from '../exploring/session-settings/model';
 import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
 import { keptCamera } from '../exploring/tab-set/reads';
 import { runTabSetCommand } from '../exploring/tab-set/run';

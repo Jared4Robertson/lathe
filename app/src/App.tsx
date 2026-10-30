@@ -1,6 +1,6 @@
 import { ResizeHandle } from './components/ResizeHandle';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { navigate, setCarry, setPatchBase, useLocation } from './router';
+import { browserHistory, navigate, setCarry, setPatchBase, useLocation } from './router';
 import { parseSpecRoute, useSpec, type SpecState } from './specs/data';
 import { formatPath } from './format/reference';
 import { SpecView } from './specs/SpecPages';
@@ -139,8 +139,8 @@ function Shell() {
     showNav();
     setTimeout(() => (navRef.current?.querySelector<HTMLElement>('[aria-current="page"]') ?? navRef.current?.querySelector<HTMLElement>('.quick-find-button'))?.focus(), 0);
   });
-  useCommand('goBack', () => window.history.back());
-  useCommand('goForward', () => window.history.forward());
+  useCommand('goBack', () => browserHistory.back());
+  useCommand('goForward', () => browserHistory.forward());
   const space = spaces.current?.id ?? null;
   useCommand('openChecks', () => navigate(panelHref('checks')), !!space);
   useCommand('goChecks', () => navigate(panelHref('checks')), !!space);
