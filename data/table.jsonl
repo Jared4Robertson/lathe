@@ -158,6 +158,7 @@
 {"id":"LA-PLT-RM05-TB","title":"transcripts","read_model_id":"LA-PLT-RM05","name":"~/.claude/projects/<folder>/<session>.jsonl","storage":"file","file":"desktop/src/claudeSessions.ts"}
 {"id":"LA-PLT-RM06-TB","title":"shown","read_model_id":"LA-PLT-RM06","name":"shown","storage":"in memory","file":"app/src/chat/appRequests.ts"}
 {"id":"LA-PLT-RM08-TB","title":"MetaModelTable","read_model_id":"LA-PLT-RM08","name":"MetaModelTable","storage":"in memory","file":"lathe/src/platform/meta-model/read-model.ts"}
+{"id":"LA-PLT-RM10-TB","title":"skillFiles","read_model_id":"LA-PLT-RM10","name":"skills/<name>/SKILL.md and commands/<name>.md","storage":"file","file":"desktop/src/chatSkills.ts"}
 {"id":"LA-TRC-EN05-TB","title":"follows","entity_id":"LA-TRC-EN05","name":"follows","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-TRC-EN06-TB","title":"setting_value","entity_id":"LA-TRC-EN06","name":"setting_value","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-TRC-RM01-TB","title":"CoverageTable","read_model_id":"LA-TRC-RM01","name":"CoverageTable","storage":"in memory","file":"lathe/src/traceability/coverage/read-model.ts"}

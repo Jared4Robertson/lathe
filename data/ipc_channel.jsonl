@@ -15,3 +15,6 @@
 {"id":"LA-PLT-CMD59-IPC","title":"lathe:menu-keys","command_id":"LA-PLT-CMD59","file":"desktop/src/preload.cts"}
 {"id":"LA-PLT-CMD60-IPC","title":"lathe:chat-mode","command_id":"LA-PLT-CMD60","file":"desktop/src/preload.cts"}
 {"id":"LA-PLT-CMD64-IPC","title":"lathe:voice-listen","command_id":"LA-PLT-CMD64","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD65-IPC","title":"lathe:chat-model","command_id":"LA-PLT-CMD65","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD66-IPC","title":"lathe:chat-unqueue","command_id":"LA-PLT-CMD66","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD67-IPC","title":"lathe:chat-capture","command_id":"LA-PLT-CMD67","file":"desktop/src/preload.cts"}

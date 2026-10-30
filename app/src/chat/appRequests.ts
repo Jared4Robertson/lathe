@@ -50,6 +50,13 @@ const named = (index: RecordIndex | null, id: string | null): Named | null => {
   return r ? { id: r.id, kind: r.kind, title: r.title } : null;
 };
 
+/** The record the Owner points at: the box selected on the stage or in the wiki card, else the focused record; null where nothing is shown. */
+export function pointedAt(index: RecordIndex | null): string | null {
+  const view = shown?.() ?? null;
+  const id = view?.selected ?? view?.focus ?? null;
+  return id && index?.byId.has(id) ? id : null;
+}
+
 /** What the Reader is looking at, as app_focus gives it. */
 export function focusAnswer(index: RecordIndex | null, path: string, product: string | null) {
   const view = shown?.() ?? null;

@@ -11,7 +11,7 @@ import { spawn as nodeSpawn, type ChildProcessWithoutNullStreams } from 'node:ch
 import { createInterface } from 'node:readline';
 import {
   applyLine, claudeArgs, claudeEnv, decide, EMPTY_CHAT, interruptLine, NEW_CURSOR, permissionLine, userLine, withdrawPrompts,
-  type ChatItem, type ChatMode, type ChatSetup, type ChatState, type LatheTools, type StartOptions, type StreamCursor,
+  type ChatImage, type ChatItem, type ChatMode, type ChatModelChoice, type ChatSetup, type ChatState, type LatheTools, type StartOptions, type StreamCursor,
 } from './chat.ts';
 
 /** What counting a run's Lathe tools gives: the tools as the header shows them, and the names of those that only read. */
@@ -66,6 +66,8 @@ export class ChatSession {
   private latheReads = new Set<string>();
   /** The tools the Owner allowed always in this chat. */
   private always = new Set<string>();
+  /** Messages typed while Claude works, in order, each with the focus and images it was typed with. */
+  private queued = new Map<string, { text: string; focus: string | null; images: readonly ChatImage[] }>();
   private counter = 0;
   private stderr = '';
   private readonly spawn: Spawn;
@@ -73,7 +75,7 @@ export class ChatSession {
 
   constructor(options: ChatSessionOptions) {
     this.options = options;
-    this.state = { ...EMPTY_CHAT, mode: options.setup.mode };
+    this.state = { ...EMPTY_CHAT, mode: options.setup.mode, choice: options.setup.choice ?? EMPTY_CHAT.choice };
     this.spawn = options.spawn ?? ((command, args, o) => nodeSpawn(command, args, { ...o, stdio: ['pipe', 'pipe', 'pipe'] }));
   }
 
@@ -96,7 +98,8 @@ export class ChatSession {
     this.kill();
     this.cursor = NEW_CURSOR;
     this.start = start;
-    this.set({ ...this.state, sessionId: start.resume && !start.fork ? start.resume : null, status: 'idle', items: history });
+    this.queued.clear();
+    this.set({ ...this.state, sessionId: start.resume && !start.fork ? start.resume : null, status: 'idle', items: history, queue: [] });
     this.launch(start);
     this.count();
   }
@@ -131,10 +134,25 @@ export class ChatSession {
     return true;
   }
 
+  /**
+   * Chooses the model and effort (LA-PLT-UC22-R03): the CLI starts again on the same session with them, and the log says
+   * so. Refused while a turn is under way; the same choice again changes nothing.
+   */
+  setChoice(choice: ChatModelChoice): boolean {
+    if (this.state.status === 'running' || this.state.status === 'stopping') return false;
+    if (choice.model === this.state.choice.model && choice.effort === this.state.choice.effort) return true;
+    const running = !!this.child;
+    void this.kill();
+    const named = `${choice.model ?? 'the default model'}${choice.effort ? `, ${choice.effort} effort` : ''}`;
+    this.set({ ...this.state, choice, items: [...this.state.items, this.notice(`Claude now runs on ${named}.`, 'info')] });
+    if (running) this.launch(this.state.sessionId ? { resume: this.state.sessionId } : this.start);
+    return true;
+  }
+
   private launch(start: StartOptions) {
     let child: ChildProcessWithoutNullStreams;
     this.stderr = '';
-    const setup = { ...this.options.setup, mode: this.state.mode };
+    const setup = { ...this.options.setup, mode: this.state.mode, choice: this.state.choice };
     try {
       child = this.spawn(this.options.command, claudeArgs(start, setup), { cwd: this.options.cwd, env: claudeEnv(this.options.env, setup.mode) });
     } catch (error) {
@@ -156,8 +174,9 @@ export class ChatSession {
     if (this.child !== child) return;
     this.child = null;
     this.inputs.clear();
+    this.queued.clear();
     const items = withdrawPrompts(this.state.items).map((i) => (i.kind === 'assistant' && i.streaming ? { ...i, streaming: false } : i));
-    this.set({ ...this.state, status: 'closed', items: problem ? [...items, this.notice(problem, 'error')] : items });
+    this.set({ ...this.state, status: 'closed', queue: [], items: problem ? [...items, this.notice(problem, 'error')] : items });
   }
 
   private read(line: string) {
@@ -184,6 +203,7 @@ export class ChatSession {
     const next = applyLine(this.state, this.cursor, line);
     this.cursor = next.cursor;
     if (next.state !== this.state) this.set(next.state);
+    if (this.state.status === 'idle' && this.queued.size) this.sendNext();
   }
 
   /** Shows a prompt the mode refuses, refused, saying why, and tells the CLI. */
@@ -200,14 +220,48 @@ export class ChatSession {
     return true;
   }
 
-  /** Sends the Owner's message, with what they are looking at as context, starting the CLI again on the session when it has ended. */
-  send(text: string, focus: string | null = null): boolean {
+  /**
+   * Sends the Owner's message, with what they are looking at as context and any images, starting the CLI again on the
+   * session when it has ended. While Claude works the message is queued (LA-PLT-UC22-R04), and goes when the turn ends.
+   */
+  send(text: string, focus: string | null = null, images: readonly ChatImage[] = []): boolean {
     const message = text.trim();
-    if (!message || this.state.status === 'running' || this.state.status === 'stopping') return false;
+    if (!message) return false;
+    if (this.state.status === 'running' || this.state.status === 'stopping') {
+      this.queued.set(`q:${++this.counter}`, { text: message, focus, images });
+      this.set({ ...this.state, queue: this.queueList() });
+      return true;
+    }
+    return this.transmit(message, focus, images);
+  }
+
+  /** The queued messages, as the page lists them. */
+  private queueList() {
+    return [...this.queued].map(([id, m]) => ({ id, text: m.text, images: m.images.length }));
+  }
+
+  /** Takes a message out of the queue before it is sent. */
+  unqueue(id: string): boolean {
+    if (!this.queued.delete(id)) return false;
+    this.set({ ...this.state, queue: this.queueList() });
+    return true;
+  }
+
+  private transmit(message: string, focus: string | null, images: readonly ChatImage[]): boolean {
     if (!this.child) this.launch(this.state.sessionId ? { resume: this.state.sessionId } : {});
     if (!this.child) return false;
-    this.set({ ...this.state, status: 'running', items: [...this.state.items, { kind: 'user', id: `u:${++this.counter}`, text: message }] });
-    return this.write(userLine(message, focus));
+    this.set({ ...this.state, status: 'running', items: [...this.state.items, { kind: 'user', id: `u:${++this.counter}`, text: message, images: images.length }] });
+    return this.write(userLine(message, focus, images));
+  }
+
+  /** The turn ended: the next queued message goes, with the focus it was typed with. */
+  private sendNext() {
+    const first = this.queued.entries().next();
+    if (first.done) return;
+    const [id, m] = first.value;
+    this.queued.delete(id);
+    this.set({ ...this.state, queue: this.queueList() });
+    this.transmit(m.text, m.focus, m.images);
   }
 
   /** Answers a permission prompt: allow once, allow the tool always in this chat (its other waiting prompts too), or deny. */
@@ -255,6 +309,7 @@ export class ChatSession {
   /** Ends the CLI (the window closed, or the app quits); resolves once it has. */
   close(): Promise<void> {
     const ended = this.kill();
+    this.queued.clear();
     if (this.state.status !== 'closed') this.set({ ...this.state, status: 'closed', items: withdrawPrompts(this.state.items) });
     return ended;
   }

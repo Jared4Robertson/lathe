@@ -30,7 +30,7 @@
 // app/src/chat/types.ts, as the preload's are.
 
 export type ChatItem =
-  | { kind: 'user'; id: string; text: string }
+  | { kind: 'user'; id: string; text: string; images: number }
   | { kind: 'assistant'; id: string; text: string; streaming: boolean }
   | { kind: 'tool'; id: string; name: string; label: string; summary: string; input: string; result: string | null; status: 'running' | 'done' | 'error' }
   | { kind: 'permission'; id: string; tool: string; label: string; summary: string; input: string; reason: string | null; answer: PromptAnswer }
@@ -55,17 +55,37 @@ export type LatheTools =
   | { status: 'loaded'; version: string | null; count: number }
   | { status: 'failed'; version: string | null; problem: string };
 
+/** The models the picker offers, by the short name `--model` takes; null is Claude Code's own default. */
+export const CHAT_MODELS = ['opus', 'sonnet', 'haiku'] as const;
+export type ChatModel = (typeof CHAT_MODELS)[number];
+export const isChatModel = (value: unknown): value is ChatModel => typeof value === 'string' && (CHAT_MODELS as readonly string[]).includes(value);
+
+/** The effort levels the picker offers, as `--effort` takes them; null is Claude Code's own default. */
+export const CHAT_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+export type ChatEffort = (typeof CHAT_EFFORTS)[number];
+export const isChatEffort = (value: unknown): value is ChatEffort => typeof value === 'string' && (CHAT_EFFORTS as readonly string[]).includes(value);
+
+/** The model and effort a session runs with (LA-PLT-UC22-R03); null leaves the choice to Claude Code. */
+export interface ChatModelChoice { model: ChatModel | null; effort: ChatEffort | null }
+
+/** A message typed while Claude works, waiting its turn (LA-PLT-UC22-R04). */
+export interface QueuedMessage { id: string; text: string; images: number }
+
 export interface ChatState {
   /** The Claude Code session the chat continues, once the CLI has named it. */
   sessionId: string | null;
   status: ChatStatus;
   /** The permission mode the session runs in. */
   mode: ChatMode;
+  /** The model and effort the session runs with. */
+  choice: ChatModelChoice;
   lathe: LatheTools;
   items: ChatItem[];
+  /** The messages typed while Claude worked, sent in order as each turn ends. */
+  queue: QueuedMessage[];
 }
 
-export const EMPTY_CHAT: ChatState = { sessionId: null, status: 'closed', mode: DEFAULT_MODE, lathe: { status: 'counting', version: null }, items: [] };
+export const EMPTY_CHAT: ChatState = { sessionId: null, status: 'closed', mode: DEFAULT_MODE, choice: { model: null, effort: null }, lathe: { status: 'counting', version: null }, items: [], queue: [] };
 
 /** What the page is sent: the state's head, and the items changed since the last patch, by position. */
 export interface ChatPatch {
@@ -73,7 +93,9 @@ export interface ChatPatch {
   sessionId: string | null;
   status: ChatStatus;
   mode: ChatMode;
+  choice: ChatModelChoice;
   lathe: LatheTools;
+  queue: QueuedMessage[];
   /** Every item when reset; otherwise those new or changed, each with its position. */
   items: { at: number; item: ChatItem }[];
 }
@@ -82,7 +104,7 @@ export interface ChatPatch {
 export function chatPatch(before: ChatState | null, after: ChatState): ChatPatch {
   const reset = !before || after.items.length < before.items.length || after.items.slice(0, before.items.length).some((item, i) => item.id !== before.items[i].id);
   const items = after.items.flatMap((item, at) => (reset || before?.items[at] !== item ? [{ at, item }] : []));
-  return { reset, sessionId: after.sessionId, status: after.status, mode: after.mode, lathe: after.lathe, items };
+  return { reset, sessionId: after.sessionId, status: after.status, mode: after.mode, choice: after.choice, lathe: after.lathe, queue: after.queue, items };
 }
 
 // ---------- The CLI's arguments and input ----------
@@ -99,6 +121,8 @@ export interface ChatSetup {
   /** The folder of the Lathe plugin the session loads (chatLathe.ts). */
   pluginDir: string;
   mode: ChatMode;
+  /** The model and effort the Owner chose, if any (LA-PLT-UC22-R03). */
+  choice?: ChatModelChoice;
 }
 
 /**
@@ -148,9 +172,11 @@ function modeArgs(mode: ChatMode): string[] {
 }
 
 /** The CLI's arguments: headless, structured input and output, partial messages, permission prompts to the panel, Lathe's plugin, how to work beside the window, and the mode's flags. */
-export function claudeArgs({ resume, fork }: StartOptions, { pluginDir, mode }: ChatSetup): string[] {
+export function claudeArgs({ resume, fork }: StartOptions, { pluginDir, mode, choice }: ChatSetup): string[] {
   const prompt = mode === 'view-only' ? `${CHAT_PROMPT}\n\n${VIEW_ONLY_PROMPT}` : CHAT_PROMPT;
   const args = ['-p', '--input-format', 'stream-json', '--output-format', 'stream-json', '--verbose', '--include-partial-messages', '--permission-prompt-tool', 'stdio', '--plugin-dir', pluginDir, '--append-system-prompt', prompt, ...modeArgs(mode)];
+  if (choice?.model) args.push('--model', choice.model);
+  if (choice?.effort) args.push('--effort', choice.effort);
   if (resume) args.push('--resume', resume);
   if (resume && fork) args.push('--fork-session');
   return args;
@@ -209,9 +235,31 @@ export const focusBlock = (focus: string) => `<lathe-focus>\n${focus.slice(0, MA
  * The line that sends the Owner's message, as the Agent SDK writes it, with what they are looking at as a block of its
  * own before it. Slash commands go as text, alone; the CLI runs those it can headless.
  */
-export function userLine(text: string, focus: string | null = null): string {
+export function userLine(text: string, focus: string | null = null, images: readonly ChatImage[] = []): string {
   const context = focus && !text.trimStart().startsWith('/') ? [{ type: 'text', text: focusBlock(focus) }] : [];
-  return JSON.stringify({ type: 'user', session_id: '', message: { role: 'user', content: [...context, { type: 'text', text }] }, parent_tool_use_id: null });
+  const pictures = images.map((i) => ({ type: 'image', source: { type: 'base64', media_type: i.mediaType, data: i.data } }));
+  return JSON.stringify({ type: 'user', session_id: '', message: { role: 'user', content: [...context, ...pictures, { type: 'text', text }] }, parent_tool_use_id: null });
+}
+
+/** An image sent with a message (LA-PLT-UC22-R05): pasted, or the stage as it is drawn. */
+export interface ChatImage { mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'; data: string }
+const IMAGE_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp']);
+/** The most images a message carries, and the most base64 characters of one (about 5 MB of picture). */
+export const MAX_IMAGES = 6;
+export const MAX_IMAGE_CHARS = 7_000_000;
+
+/** The images the page sent, checked: base64 of a type the CLI takes, at most so many and so large; null when any is not. */
+export function parseImages(input: unknown): ChatImage[] | null {
+  if (input === undefined || input === null) return [];
+  if (!Array.isArray(input) || input.length > MAX_IMAGES) return null;
+  const out: ChatImage[] = [];
+  for (const item of input) {
+    if (!item || typeof item !== 'object') return null;
+    const { mediaType, data } = item as Record<string, unknown>;
+    if (typeof mediaType !== 'string' || !IMAGE_TYPES.has(mediaType) || typeof data !== 'string' || data.length > MAX_IMAGE_CHARS || !/^[A-Za-z0-9+/]+={0,2}$/.test(data)) return null;
+    out.push({ mediaType: mediaType as ChatImage['mediaType'], data });
+  }
+  return out;
 }
 
 /** The line that answers a permission prompt: allow with the tool's input unchanged, or deny, saying why. */
@@ -225,8 +273,26 @@ export const interruptLine = (requestId: string) => JSON.stringify({ type: 'cont
 
 // ---------- Tools as rows ----------
 
-/** A tool's name as the row shows it: an MCP tool as its server and tool ("lathe add"), a built-in tool as it is. */
+/** The words that start a Lathe command or query's own name after its aggregate's, as the tool names them (use_case_add_flow_step). */
+const LATHE_VERBS = new Set(['add', 'change', 'remove', 'move', 'get', 'list', 'next', 'declare', 'set']);
+
+/**
+ * A tool's name as the row shows it: one of Lathe's own tools as the sentence it is ("Change business outcome",
+ * "Add flow step"), another MCP tool as its server and tool ("github create_issue"), a built-in tool as it is. The raw
+ * name stays in the row's detail.
+ */
 export function toolLabel(name: string): string {
+  const lathe = /^mcp__plugin_lathe_lathe__(.+)$/.exec(name);
+  if (lathe) {
+    const words = lathe[1].split('_').filter(Boolean);
+    const at = words.findIndex((w) => LATHE_VERBS.has(w));
+    if (at >= 0) {
+      const sentence = words.slice(at).join(' ');
+      return sentence.charAt(0).toUpperCase() + sentence.slice(1);
+    }
+    const plain = words.join(' ');
+    return plain.charAt(0).toUpperCase() + plain.slice(1);
+  }
   const mcp = /^mcp__(.+)__([^_].*)$/.exec(name);
   if (!mcp) return name;
   const server = mcp[1].split(/_+/).filter(Boolean).at(-1) ?? mcp[1];
@@ -439,7 +505,7 @@ export function transcriptItems(lines: Iterable<string>): ChatItem[] {
     if (!message) continue;
     if (entry.type === 'user') {
       const text = promptText(message.content);
-      if (text) items = [...items, { kind: 'user', id: `u:saved:${n++}`, text }];
+      if (text) items = [...items, { kind: 'user', id: `u:saved:${n++}`, text, images: 0 }];
       else items = toolResults(items, message);
     } else if (entry.type === 'assistant') {
       items = assistantBlocks(items, message, false);
