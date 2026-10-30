@@ -172,7 +172,7 @@ describe('LA-V98-R20-T01 Opening a box moves only its row and the rows below it,
     expect([...after.rows.keys()]).toEqual([...before.rows.keys()]);
   });
 
-  it('keeps the order shown before on a data change, putting a new row in at its place, and orders afresh only on Tidy up', () => {
+  it('keeps every row shown before at its slot on a data change, a new row with no room near at the end of its section, and orders afresh only on Tidy up', () => {
     const { graph } = delivered(product());
     const shown = orderGraph(graph, null);
     const data = product();
@@ -180,6 +180,7 @@ describe('LA-V98-R20-T01 Opening a box moves only its row and the rows below it,
     const next = orderGraph(delivered(data).graph, shown);
     expect(next.rows.filter((u) => shown.rows.includes(u))).toEqual(shown.rows);
     expect(next.rows).toContain('P-D-UC04');
+    expect(next.rows.indexOf('P-D-UC04')).toBe(next.firstOutside - 1);
     expect(next.outcomes).toEqual(shown.outcomes);
   });
 });

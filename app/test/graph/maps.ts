@@ -3,7 +3,7 @@ import { assembleTree, placeTree, treeShape, type GraphMap } from '../../src/gra
 import { assembleNested, placeNested, type NestedMap } from '../../src/graph/nested';
 import { mapLabel, textMeasure, treeLabel, type MapLabel } from '../../src/graph/text';
 import { treeChildren } from '../../src/graph/tree';
-import { assembleGround, groundChildren, groundTree, placeGround, type GroundMap } from '../../src/graph/ground';
+import { assembleGround, groundChildren, groundTree, keptGround, placeGround, type GroundMap } from '../../src/graph/ground';
 
 // The maps the app lays out in the layout's worker (app/src/graph/layout.ts), laid out on the test's thread by the same
 // placeTree and placeNested: a tree given by its roots, children and labels, and a product's map from its index.
@@ -51,3 +51,12 @@ export const groundMap = (index: RecordIndex): GroundMap =>
     const roles = shape.ids.map((id) => tree.role.get(id) ?? 'record');
     return assembleGround(shape, (i) => labels[i], (i) => roles[i], placeGround(shape, (i) => labels[i], (i) => roles[i]));
   });
+
+/** A product's Map laid out after the Map before it, as the Graph lays out new data: every box kept where it was (no `previous`: Tidy up's). */
+export function groundMapAfter(index: RecordIndex, previous: GroundMap | null): GroundMap {
+  const tree = groundTree(index);
+  const shape = treeShape(tree.root ? [tree.root] : [], (id) => groundChildren(index, id));
+  const labels = shape.ids.map((id) => mapLabel(index, id));
+  const roles = shape.ids.map((id) => tree.role.get(id) ?? 'record');
+  return assembleGround(shape, (i) => labels[i], (i) => roles[i], placeGround(shape, (i) => labels[i], (i) => roles[i], previous ? keptGround(shape, previous) : null));
+}

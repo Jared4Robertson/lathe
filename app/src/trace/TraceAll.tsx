@@ -94,7 +94,7 @@ export interface TraceAllProps {
   focus: string;
   graph: AllGraph;
   gapsOnly: boolean;
-  /** A count the Tidy up button raises: the columns are ordered afresh once for each. */
+  /** A count Tidy up raises: the columns are laid out afresh once for each. */
   tidy: number;
   /** Opens a record. */
   onNavigate: (id: string) => void;

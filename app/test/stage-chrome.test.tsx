@@ -1,5 +1,7 @@
 import './graph/setup';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { TOOLBAR_FORMS, TOOLBAR_TIERS } from '../src/views/StageChrome';
 import { graphDrawn, graphKeyEntries } from '../src/graph/key';
@@ -55,14 +57,16 @@ describe('one stage chrome', () => {
     // The ERD's own: Tidy up; its camera's buttons are the shared ones, and no others.
     expect(erd.order).toEqual([...SHARED, 'own', 'end: -']);
     expect(within(stage().querySelector<HTMLElement>('.stage-toolbar')!).getByRole('button', { name: 'Tidy up' })).toBeInTheDocument();
+    expect(stage().querySelector('.stage-toolbar .stage-tidy .stage-tidy-name')?.textContent).toBe('Tidy up');
     expect(erd.camera).toEqual(CAMERA);
 
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(stage().querySelector('.trace-flow[data-ready]')).not.toBeNull());
     const trace = chrome();
-    // The Trace's own: Gaps only.
+    // The Trace's own: Gaps only, and Tidy up, the ERD's same button.
     expect(trace.order).toEqual([...SHARED, 'own', 'end: -']);
     expect(within(stage().querySelector<HTMLElement>('.stage-toolbar')!).getByRole('checkbox', { name: 'Gaps only' })).toBeInTheDocument();
+    expect(stage().querySelector('.stage-toolbar .stage-tidy .stage-tidy-name')?.textContent).toBe('Tidy up');
     expect(trace.camera).toEqual(CAMERA);
 
     // Each step button shows its arrow and letter, the same on every stage, and Out and In their names.
@@ -178,3 +182,14 @@ describe('the stage key bar', () => {
     expect(changesKeyEntries(new Set(['is-changed', 'is-dimmed'])).map((e) => e.words)).toEqual(['Changed', 'Unchanged']);
   });
 });
+
+describe('Tidy up reads as words', () => {
+  it('LA-PAT-APP-UX-R21-T01 Tidy up shows its label beside its icon at every toolbar tier: no rule hides its name', () => {
+    // Every rule that hides a control's name in a tighter tier must leave Tidy up's alone.
+    const css = readFileSync(join(__dirname, '..', 'src', 'styles.css'), 'utf8');
+    const hiding = [...css.matchAll(/([^{}]+)\{[^}]*clip: rect\(0 0 0 0\)[^}]*\}/g)].map((m) => m[1]);
+    expect(hiding.length).toBeGreaterThan(0);
+    for (const selector of hiding) expect(selector).not.toContain('stage-tidy');
+  });
+});
+

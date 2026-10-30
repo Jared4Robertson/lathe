@@ -100,7 +100,7 @@ export interface TraceDeliveryProps {
   at: string | null;
   /** Whether every row has a stage open (Expand all), by stage. */
   every: Readonly<Record<DeliveryStage, boolean>>;
-  /** A count the Tidy up button raises: the rows are ordered afresh once for each. */
+  /** A count Tidy up raises: the rows are ordered afresh, their rooms closed, once for each. */
   tidy: number;
   /** Opens or closes a box's children. */
   onToggle: (opens: string) => void;
