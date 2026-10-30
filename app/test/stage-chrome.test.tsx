@@ -162,10 +162,8 @@ describe('the stage key bar', () => {
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(stage().querySelector('.trace-flow[data-ready]')).not.toBeNull());
     expect(key()).toHaveAttribute('data-floating', 'bottom');
-    // The Trace's columns, its default layout (LA-V98-R13): the path to the focus and the counts.
-    expect(entries()).toEqual(expect.arrayContaining(['path', 'count', 'focus']));
-    // The Gaps only fade only while Gaps only is on.
-    expect(entries()).not.toContain('complete');
+    // The Trace's All-at-once view (LA-V98-R02): its columns, its links and the focus, its path lit and the rest faded.
+    expect(entries()).toEqual(expect.arrayContaining(['columns', 'link-reaches', 'focus', 'faded']));
     // Every stage's bar ends with what scroll does: it pans, Scroll to zoom being off.
     expect(entries().at(-1)).toBe('scroll');
     expect(key().querySelector('[data-key-entry="scroll"]')).toHaveTextContent('Scroll pans');

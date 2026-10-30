@@ -110,7 +110,6 @@ test.describe('big maps', () => {
   });
 
   test('LA-PLT-UC09-R13-T01 the Trace pans and zooms at 60 Hz on the large product', async ({ page }) => {
-    await page.addInitScript(() => window.sessionStorage.setItem('lathe:trace-layout', JSON.stringify('tree')));
     await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-flow[data-ready]');
     const { pan, zoom } = await panAndZoom(page, '.focus-stage .trace-flow canvas');
     await slow('big map: panning the Trace', pan);
