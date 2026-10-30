@@ -19,7 +19,7 @@
 {"id":"LA-AUT-TM30","title":"Endpoint","domain_id":"LA-AUT","meaning":"The route that exposes one command or query, with its API requirements and handler.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM31","title":"Integration","domain_id":"LA-AUT","meaning":"An outside system the product exchanges with, through its adapter.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM32","title":"UI component","domain_id":"LA-AUT","meaning":"The code that draws the views it renders, and does what the view requirements it is linked to say.","group_name":"Use cases and design"}
-{"id":"LA-AUT-TM33","title":"Business outcome","domain_id":"LA-AUT","meaning":"A measurable change the product exists to bring about, with its measure and target, which tests measure.","group_name":"Use cases and design"}
+{"id":"LA-AUT-TM33","title":"Business outcome","domain_id":"LA-AUT","meaning":"A measurable change in the world that the product exists to bring about, for the people who use it: stated with its measure and a target by a date, measured by its tests or records, or outside the code when they can't.","group_name":"Use cases and design"}
 {"id":"LA-AUT-TM34","title":"Test data set","domain_id":"LA-AUT","meaning":"The starting records, environment and accounts some tests need, made with its aggregate's own commands.","group_name":"Build and test"}
 {"id":"LA-AUT-TM35","title":"Table","domain_id":"LA-AUT","meaning":"Where an entity's or read model's rows, or a domain's links, are stored, with its storage and keys.","group_name":"Build and test"}
 {"id":"LA-AUT-TM36","title":"Extension record","domain_id":"LA-AUT","meaning":"A record of a kind a product declares for itself, held to its kind's declaration.","group_name":"Build and test"}
@@ -28,7 +28,7 @@
 {"id":"LA-AUT-TM39","title":"Entity","domain_id":"LA-AUT","meaning":"A thing the domain keeps track of, with an identity of its own; its fields are typed by a basic type, a value object or the ID of another cluster's root.","group_name":"Domain model"}
 {"id":"LA-AUT-TM40","title":"Invariant","domain_id":"LA-AUT","meaning":"A rule an aggregate always keeps, enforced by its rule before every save and shown to hold by its test.","group_name":"Domain model"}
 {"id":"LA-AUT-TM41","title":"Repository","domain_id":"LA-AUT","meaning":"The one way an aggregate is loaded and saved whole, one per aggregate.","group_name":"Domain model"}
-{"id":"LA-AUT-TM42","title":"Capability","domain_id":"LA-AUT","meaning":"A lasting ability of the business that groups a domain's use cases, in order, and serves business outcomes.","group_name":"Domain model"}
+{"id":"LA-AUT-TM42","title":"Capability","domain_id":"LA-AUT","meaning":"A lasting ability of the business that groups a domain's use cases, in order, and names the business outcomes it is for.","group_name":"Domain model"}
 {"id":"LA-AUT-TM43","title":"Policy","domain_id":"LA-AUT","meaning":"A reaction under the command it runs, which hears one event: when that happens, run this command.","group_name":"Domain model"}
 {"id":"LA-AUT-TM44","title":"Query","domain_id":"LA-AUT","meaning":"A question asked of one read model; it changes nothing.","group_name":"Domain model"}
 {"id":"LA-AUT-TM45","title":"UC requirement","domain_id":"LA-AUT","meaning":"One rule a use case must keep, stated with MUST, SHOULD or MAY, fulfilled by its flows' steps and shown to hold by its tests.","group_name":"Use cases and design"}
@@ -72,7 +72,7 @@
 {"id":"LA-PLT-TM06","title":"Color mode","domain_id":"LA-PLT","meaning":"System, Light or Dark: which of every theme's two sets shows."}
 {"id":"LA-PLT-TM07","title":"Product folder","domain_id":"LA-PLT","meaning":"A folder with a `lathe.config.json` or a `data/` folder, which Lathe opens."}
 {"id":"LA-PLT-TM08","title":"Product window","domain_id":"LA-PLT","meaning":"One desktop window showing one product folder."}
-{"id":"LA-PLT-TM09","title":"App server","domain_id":"LA-PLT","meaning":"What a window or `lathe serve` serves Lathe from."}
+{"id":"LA-PLT-TM09","title":"App server","domain_id":"LA-PLT","meaning":"What a window or `lathe serve` runs Lathe from."}
 {"id":"LA-PLT-TM12","title":"Refusal reason","domain_id":"LA-PLT","meaning":"One reason the store refused a command or a load: the rule broken and where."}
 {"id":"LA-PLT-TM13","title":"Record","domain_id":"LA-PLT","meaning":"One thing of a kind in a product's specs, kept as one row: an ID unique across every kind, a title, typed columns, and at most one other record it sits under.","group_name":"Data files"}
 {"id":"LA-PLT-TM14","title":"Kind","domain_id":"LA-PLT","meaning":"A sort of thing a product's specs describe, with its own columns and the shape of its IDs. Lathe has fifty; a product may declare more.","group_name":"Data files"}
@@ -91,3 +91,4 @@
 {"id":"LA-TRC-TM08","title":"Follower","domain_id":"LA-TRC","meaning":"A domain or use case that follows a pattern."}
 {"id":"LA-TRC-TM09","title":"Owed","domain_id":"LA-TRC","meaning":"A pattern rule a domain must prove for itself, because it follows the rule's pattern."}
 {"id":"LA-TRC-TM12","title":"Trace","domain_id":"LA-TRC","meaning":"The records that design, build and prove one obligation, and the files they name."}
+{"id":"LA-TRC-TM13","title":"Serves","domain_id":"LA-TRC","meaning":"What a record does for a business outcome when a use case whose capability is for that outcome reaches it: worked out from the records on every read, never written down. A capability serves the outcomes it names."}
