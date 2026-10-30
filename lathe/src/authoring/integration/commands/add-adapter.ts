@@ -4,6 +4,8 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { AdapterRow } from '../../../platform/data/tables.ts';
 import { INTEGRATION_SLICE } from '../model.ts';
 import { IntegrationRepository } from '../repository.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
+import { oneAdapter } from '../rules.ts';
 
 /** A new adapter, with the links it starts. */
 export type AddAdapter = Pick<AdapterRow, 'id' | 'title' | 'integration_id' | 'description' | 'file'> & { meets?: string[]; packages?: string[] };
@@ -32,8 +34,8 @@ export const ADD_ADAPTER: CommandDefinition<AddAdapter> = {
 export function addAdapter(tx: Transaction, input: AddAdapter): void {
   const integrations = new IntegrationRepository(tx);
   const integration = integrations.loadHolding('integration', input.integration_id) ?? tx.refuse('missing', `there is no integration ${input.integration_id}`);
-  if (integration.adapter) tx.refuse('exists', `${input.integration_id} already has its adapter, ${integration.adapter.row.id}`);
   const { meets = [], packages = [], ...row } = input;
+  refuseBroken(oneAdapter([...(integration.adapter ? [integration.adapter.row] : []), row]));
   integration.adapter = { row, meets, packages };
   integrations.save(integration);
 }

@@ -61,7 +61,7 @@ COMMENT ON COLUMN product_relation.name IS 'The relation''s name, in lower case 
 COMMENT ON COLUMN product_relation.source_kind IS 'The kind a link starts from.';
 COMMENT ON COLUMN product_relation.target_kind IS 'The kind a link points at, or * for any record.';
 COMMENT ON COLUMN product_relation.product_id IS 'The product that declares it.';
-COMMENT ON COLUMN product_relation.role IS 'design or proof, for a new relation that counts toward coverage. A new relation''s links stay inside one product.';
+COMMENT ON COLUMN product_relation.role IS 'design, build or proof, for a new relation that counts toward coverage: a design or build link''s source builds its target once it names a file that exists, and a proof link''s source proves it. A new relation''s links stay inside one product.';
 COMMENT ON COLUMN product_relation.forward_label IS 'The link read from its source.';
 COMMENT ON COLUMN product_relation.reverse_label IS 'The link read from its target.';
 COMMENT ON COLUMN product_relation.description IS 'What a link between these kinds means.';

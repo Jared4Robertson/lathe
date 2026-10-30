@@ -68,7 +68,7 @@ describe('LA-AUT-UC27-R50-T01 each Integration command (LA-AUT-A14) changes one 
     await expect(runCommand(store, ADD_INTEGRATION_TEST, { id: 'TL-INT02-T01', title: 'x', integration_id: 'TL-INT02', level: 'integration', state: 'manual' })).rejects.toThrow(new InputError('add-integration-test needs when'));
     await expect(runCommand(store, CHANGE_ADAPTER, { id: 'TL-INT01-AD', integration_id: 'TL-INT02' })).rejects.toThrow(/change-adapter takes no integration_id/);
     const before = fileOf(store, 'adapter');
-    expect((await refusal(store, ADD_ADAPTER, { id: 'TL-INT01-AD2', title: 'other', integration_id: 'TL-INT01', description: 'x' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-INT01 already has its adapter, TL-INT01-AD' });
+    expect((await refusal(store, ADD_ADAPTER, { id: 'TL-INT01-AD2', title: 'other', integration_id: 'TL-INT01', description: 'x' })).problems[0]).toMatchObject({ rule: 'one-adapter', message: 'integration TL-INT01 already has its adapter, so TL-INT01-AD2 cannot be a second: an integration has one' });
     expect((await refusal(store, ADD_ADAPTER, { id: 'TL-INT09-AD', title: 'x', integration_id: 'TL-INT09', description: 'x' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no integration TL-INT09' });
     expect(fileOf(store, 'adapter')).toBe(before);
   });

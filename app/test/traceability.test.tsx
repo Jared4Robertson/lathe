@@ -48,18 +48,20 @@ describe('traceability', () => {
     expect(judge(index, index.byId.get('DM-SHOP-UC01-R01')!, 'DM-SHOP').builtBy).toEqual(['DM-SHOP-CMD01-H']);
     cleanup();
 
-    // An invariant is designed by its aggregate and built by its entities' data models and the tables whose unique key enforces it.
+    // An invariant is designed by its aggregate and built only by its rule.
     const model = indexOf(modelWorkspace());
     trace = show(model, 'P-D-INV01');
     expect(groupTitles(trace)).toEqual(['Designed by', 'Built by', 'Proved by']);
     expect(groupIds(trace, 'Designed by')).toEqual(['P-D-A3']);
-    expect(groupIds(trace, 'Built by')).toEqual(['P-D-EN03-DM', 'P-D-EN03-TB']);
+    expect(groupIds(trace, 'Built by')).toEqual(['P-D-INV01-RL']);
     const marks = [...trace.querySelectorAll('[data-mark="built"]')].map((m) => [m.closest('.trace-row')?.querySelector('code')?.textContent, m.textContent]);
-    expect(marks).toEqual([['P-D-EN03-DM', 'built'], ['P-D-EN03-TB', 'not built']]);
+    expect(marks).toEqual([['P-D-INV01-RL', 'built']]);
     expect(groupIds(trace, 'Proved by')).toEqual(['P-D-INV01-T']);
-    // A list mixing kinds tags each row with its kind; a list of one kind does not.
-    expect(within(trace).getByText('Data model', { selector: 'small' })).toBeInTheDocument();
-    expect(within(trace).queryByText('Invariant test', { selector: 'small' })).toBeNull();
+    cleanup();
+    // A list mixing kinds tags each row with its kind (the UC requirement's Designed by); a list of one kind does not.
+    trace = show(index, 'DM-SHOP-UC01-R01');
+    expect(within(trace).getByText('Flow step', { selector: 'small' })).toBeInTheDocument();
+    expect(within(trace).queryByText('Command handler', { selector: 'small' })).toBeNull();
   });
 
   it('LA-V92-R57-T01 Gap callouts say not designed, not built and not proved (or not automated yet), agree with coverage, link to their check, and a pattern rule has one line per domain', () => {

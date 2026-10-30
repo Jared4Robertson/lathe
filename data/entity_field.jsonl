@@ -129,7 +129,7 @@
 {"entity_id":"LA-AUT-EN29","position":2,"name":"Source kind","meaning":"The kind a link starts from.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN29","position":3,"name":"Target kind","meaning":"The kind a link points at, or * for any record.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN29","position":4,"name":"Product","meaning":"The product that declares it.","type_value_object_id":"LA-VO01","required":true,"column_name":"product_id"}
-{"entity_id":"LA-AUT-EN29","position":5,"name":"Role","meaning":"design or proof, for a new relation that counts toward coverage. A new relation's links stay inside one product.","type_value_object_id":"LA-VO17","required":false}
+{"entity_id":"LA-AUT-EN29","position":5,"name":"Role","meaning":"design, build or proof, for a new relation that counts toward coverage. A new relation's links stay inside one product.","type_value_object_id":"LA-VO17","required":false}
 {"entity_id":"LA-AUT-EN29","position":6,"name":"Forward label","meaning":"The link read from its source.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN29","position":7,"name":"Reverse label","meaning":"The link read from its target.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN29","position":8,"name":"Description","meaning":"What a link between these kinds means.","type":"text","required":true}
@@ -422,6 +422,10 @@
 {"entity_id":"LA-AUT-EN90","position":3,"name":"Read model","meaning":"The read model it reads; one reader each.","type_value_object_id":"LA-VO01","required":true,"column_name":"read_model_id"}
 {"entity_id":"LA-AUT-EN90","position":4,"name":"File","meaning":"The file that holds its code, from the product root; it may not exist yet, and several records may share one file.","type":"text","required":false}
 {"entity_id":"LA-AUT-EN90","position":5,"name":"Description","meaning":"How it reads its read model's table: where the table is kept and how a query handler is given the reader, in a sentence or two.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN96","position":1,"name":"ID","meaning":"The rule's ID: its invariant's ID and RL, such as TL-LEND-INV01-RL.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN96","position":2,"name":"Title","meaning":"Its name in code, the name its refusal carries, such as step-fulfills-own-use-case.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN96","position":3,"name":"Invariant","meaning":"The invariant it enforces; one rule each.","type_value_object_id":"LA-VO01","required":true,"column_name":"invariant_id"}
+{"entity_id":"LA-AUT-EN96","position":4,"name":"File","meaning":"The file that holds its code, from the product root, such as its aggregate's rules.ts; it may not exist yet, and several records may share one file.","type":"text","required":false}
 {"entity_id":"LA-CHK-EN01","position":1,"name":"Name","meaning":"The check's name, the key of its row across Lathe's checks and every product's.","type_value_object_id":"LA-VO41","required":true,"example":"value-object-unused"}
 {"entity_id":"LA-CHK-EN01","position":2,"name":"Product","meaning":"The product a product's own check belongs to; none for Lathe's checks.","type_aggregate_id":"LA-AUT-A1","required":false,"column_name":"product_id","example":"LA"}
 {"entity_id":"LA-CHK-EN01","position":3,"name":"Position","meaning":"When it runs: Lathe's checks in position order, then each product's own.","type":"whole number","required":true,"example":"4"}

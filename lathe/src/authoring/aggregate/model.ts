@@ -1,10 +1,10 @@
 // The Aggregate aggregate (LA-AUT-A6): an aggregate with its entities (each with its fields and the entities it holds
 // by has_one and has_many), its entities' data models (with the standard rules they meet and the packages they use),
-// and its invariants with their tests. One instance is one aggregate, whole; it holds only the links its own records
+// and its invariants with the rule that enforces each (built the same way) and their tests. One instance is one aggregate, whole; it holds only the links its own records
 // start.
 import type { Slice } from '../../platform/commands/definition.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
-import type { AggregateRow, DataModelRow, EntityFieldRow, EntityRow, InvariantRow, InvariantTestRow } from '../../platform/data/tables.ts';
+import type { AggregateRow, DataModelRow, EntityFieldRow, EntityRow, InvariantRow, InvariantTestRow, RuleRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const AGGREGATE_AGGREGATE = 'LA-AUT-A6';
@@ -60,6 +60,8 @@ export interface Aggregate {
   entities: Entity[];
   invariants: InvariantRow[];
   dataModels: Built<DataModelRow>[];
+  /** The rule that enforces each invariant, one each. */
+  rules: Built<RuleRow>[];
   invariantTests: Tested<InvariantTestRow>[];
 }
 
@@ -70,6 +72,7 @@ export const AGGREGATE_TABLES = [
   'entity_field',
   'invariant',
   'data_model',
+  'rule',
   'invariant_test',
   'has_one',
   'has_many',
@@ -84,6 +87,7 @@ export const AGGREGATE_KINDS = {
   entity: 'aggregate_id',
   invariant: 'aggregate_id',
   data_model: 'entity_id',
+  rule: 'invariant_id',
   invariant_test: 'invariant_id',
 } as const;
 
@@ -91,7 +95,7 @@ export type AggregateKind = keyof typeof AGGREGATE_KINDS;
 
 /** A new aggregate, with nothing under it yet. */
 export function newAggregate(aggregate: AggregateRow): Aggregate {
-  return { root: aggregate.id, aggregate, entities: [], invariants: [], dataModels: [], invariantTests: [] };
+  return { root: aggregate.id, aggregate, entities: [], invariants: [], dataModels: [], rules: [], invariantTests: [] };
 }
 
 /** The entity's fields as rows, in the order given. */
@@ -126,6 +130,7 @@ export function aggregatesFrom(rows: (table: string) => Row[], only?: string): A
   const invariantIds = new Set(invariants.map((i) => i.id));
   const fields = (rows('entity_field') as unknown as EntityFieldRow[]).filter((f) => entityIds.has(f.entity_id)).sort((a, b) => a.position - b.position);
   const dataModels = (rows('data_model') as unknown as DataModelRow[]).filter((d) => entityIds.has(d.entity_id));
+  const rules = (rows('rule') as unknown as RuleRow[]).filter((r) => invariantIds.has(r.invariant_id));
   const invariantTests = (rows('invariant_test') as unknown as InvariantTestRow[]).filter((t) => invariantIds.has(t.invariant_id));
   const [hasOne, hasMany, meets, startsFrom] = ['has_one', 'has_many', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
   const packages = packagesOf(rows('package_use'));
@@ -141,6 +146,7 @@ export function aggregatesFrom(rows: (table: string) => Row[], only?: string): A
       entities: own.map((row) => ({ row, fields: fields.filter((f) => f.entity_id === row.id), hasOne: targets(hasOne, row.id), hasMany: targets(hasMany, row.id) })),
       invariants: ownInvariants,
       dataModels: dataModels.filter((d) => ownIds.has(d.entity_id)).map((row) => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) })),
+      rules: rules.filter((r) => ownInvariantIds.has(r.invariant_id)).map((row) => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) })),
       invariantTests: invariantTests.filter((t) => ownInvariantIds.has(t.invariant_id)).map((row) => ({ row, startsFrom: targets(startsFrom, row.id) })),
     };
   });
@@ -157,11 +163,12 @@ export function aggregateRows(aggregate: Aggregate): Map<string, Row[]> {
     ['entity_field', aggregate.entities.flatMap((e) => e.fields.map(asRow))],
     ['invariant', aggregate.invariants.map(asRow)],
     ['data_model', aggregate.dataModels.map((d) => asRow(d.row))],
+    ['rule', aggregate.rules.map((r) => asRow(r.row))],
     ['invariant_test', aggregate.invariantTests.map((t) => asRow(t.row))],
     ['has_one', aggregate.entities.flatMap((e) => links(e.row.id, e.hasOne))],
     ['has_many', aggregate.entities.flatMap((e) => links(e.row.id, e.hasMany))],
-    ['meets', aggregate.dataModels.flatMap((d) => links(d.row.id, d.meets))],
-    ['package_use', aggregate.dataModels.flatMap((d) => d.packages.map((p) => ({ record_id: d.row.id, package: p })))],
+    ['meets', [...aggregate.dataModels, ...aggregate.rules].flatMap((d) => links(d.row.id, d.meets))],
+    ['package_use', [...aggregate.dataModels, ...aggregate.rules].flatMap((d) => d.packages.map((p) => ({ record_id: d.row.id, package: p })))],
     ['starts_from', aggregate.invariantTests.flatMap((t) => links(t.row.id, t.startsFrom))],
   ]);
 }
@@ -172,6 +179,7 @@ export function kindInside(aggregate: Aggregate, id: string): AggregateKind | un
   if (aggregate.entities.some((e) => e.row.id === id)) return 'entity';
   if (aggregate.invariants.some((i) => i.id === id)) return 'invariant';
   if (aggregate.dataModels.some((d) => d.row.id === id)) return 'data_model';
+  if (aggregate.rules.some((r) => r.row.id === id)) return 'rule';
   if (aggregate.invariantTests.some((t) => t.row.id === id)) return 'invariant_test';
   return undefined;
 }
