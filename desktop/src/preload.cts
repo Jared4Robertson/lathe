@@ -15,7 +15,7 @@
 //                       checks the request and finds the data file itself, product-window/commands/);
 //   chat                the chat panel's Claude Code (LA-PLT-UC19): the folder's saved sessions, open one
 //                       (new, resumed or forked), send a message, answer a permission prompt, stop the
-//                       turn, choose the permission mode, and subscribe to the chat's patches (chat.ts);
+//                       turn, choose the permission mode, model and effort, list the skills, capture the stage, and subscribe to the chat's patches (chat.ts);
 //   voice               the chat's dictation (LA-PLT-UC20): whether this Mac can dictate on-device, ask to
 //                       listen or stop (the shell listens only while the window is in front), and subscribe to what
 //                       it hears (voice.ts);
@@ -118,7 +118,11 @@ contextBridge.exposeInMainWorld('latheDesktop', {
   chat: {
     sessions: () => ipcRenderer.invoke('lathe:chat-sessions'),
     open: (choice: unknown) => ipcRenderer.invoke('lathe:chat-open', choice),
-    send: (text: unknown, focus: unknown) => ipcRenderer.invoke('lathe:chat-send', { text, focus }),
+    send: (text: unknown, focus: unknown, images: unknown) => ipcRenderer.invoke('lathe:chat-send', { text, focus, images }),
+    setModel: (model: unknown, effort: unknown) => ipcRenderer.invoke('lathe:chat-model', { model, effort }),
+    unqueue: (id: unknown) => ipcRenderer.invoke('lathe:chat-unqueue', id),
+    skills: () => ipcRenderer.invoke('lathe:chat-skills'),
+    captureStage: (rect: unknown) => ipcRenderer.invoke('lathe:chat-capture', rect),
     answer: (id: unknown, answer: unknown) => ipcRenderer.invoke('lathe:chat-answer', { id, answer }),
     stop: () => ipcRenderer.invoke('lathe:chat-stop'),
     setMode: (mode: unknown) => ipcRenderer.invoke('lathe:chat-mode', mode),

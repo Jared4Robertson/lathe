@@ -184,3 +184,47 @@
 @media (prefers-reduced-motion: reduce) {
   .chat-voice-status.is-dictating .chat-voice-dot { animation: none; }
 }
+
+/* Point and ask, images, the queue, the "/" list, the model picker and the review bar (LA-PLT-UC19-R13..R18). */
+.chat-focus { flex-wrap: wrap; gap: 6px; }
+.chat-pointed { list-style: none; margin: 0; padding: 0; display: contents; }
+.chat-pointed-chip { background: var(--sheet); }
+.chat-attachments { flex: none; list-style: none; margin: 0; padding: 6px 12px 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.chat-attachment { position: relative; width: 56px; height: 56px; border: 1px solid var(--float-border); border-radius: 6px; overflow: hidden; background: var(--paper); }
+.chat-attachment img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.chat-attachment-remove.icon-button { position: absolute; top: 2px; right: 2px; min-width: 0; min-height: 0; width: 18px; height: 18px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: 50%; background: var(--sheet); color: var(--ink); cursor: pointer; }
+.chat-user-images { margin: 2px 0 0; font-size: 0.76rem; color: var(--muted); }
+
+.chat-queue { flex: none; margin: 6px 12px 0; padding: 4px 8px; border: 1px dashed var(--float-border); border-radius: 6px; font-size: 0.78rem; }
+.chat-queue-title { margin: 0; font-weight: 600; color: var(--muted); }
+.chat-queue-list { margin: 2px 0 0; padding-left: 18px; display: grid; gap: 2px; }
+.chat-queued { padding-left: 2px; }
+.chat-queued::marker { color: var(--muted); }
+.chat-queued { display: list-item; }
+.chat-queued-text { display: inline-block; max-width: calc(100% - 28px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; }
+.chat-queued-remove.icon-button { min-width: 0; min-height: 0; width: 20px; height: 20px; display: inline-flex; align-items: center; justify-content: center; vertical-align: middle; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.chat-queued-remove:hover { background: var(--hover-bg); color: var(--ink); }
+
+.chat-skills { flex: none; list-style: none; margin: 6px 12px 0; padding: 4px; max-height: 220px; overflow-y: auto; display: grid; gap: 1px; border: 1px solid var(--float-border); border-radius: 8px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; }
+.chat-skill { display: grid; gap: 1px; padding: 4px 8px; border-radius: 6px; cursor: pointer; }
+.chat-skill.is-active { background: var(--hover-bg); }
+.chat-skill-name { font-family: var(--mono); font-size: 0.78rem; font-weight: 600; }
+.chat-skill-description { color: var(--muted); font-size: 0.76rem; }
+.chat-skill-none { padding: 4px 8px; }
+
+.chat-model-heading { margin: 4px 8px 0; font: 600 0.7rem var(--body); text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); }
+.chat-model-menu { width: min(260px, calc(var(--chat-width, 400px) - 24px)); }
+.chat-context .chat-tools { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.chat-turn-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 4px 0; }
+.chat-review-start[aria-pressed="true"] { background: var(--steel-bg); border-color: var(--steel); }
+.chat-undone { font-size: 0.78rem; color: var(--muted); }
+.chat-undo-refused { flex-basis: 100%; padding: 6px 8px; border: 1px solid var(--error); border-radius: 6px; background: var(--sheet); }
+.chat-undo-refused p { margin: 0 0 2px; font-weight: 600; }
+.chat-undo-refused ul { margin: 0 0 6px; padding-left: 16px; }
+
+.chat-review { flex: none; margin: 6px 12px 0; padding: 6px 8px; border: 1px solid var(--steel); border-radius: 8px; background: var(--steel-bg); display: grid; gap: 4px; font-size: 0.8rem; max-height: 40vh; overflow-y: auto; }
+.chat-review-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.chat-review-count { color: var(--muted); font-size: 0.76rem; }
+.chat-review-what { margin: 0; min-width: 0; overflow-wrap: anywhere; }
+.chat-review-actions { display: flex; flex-wrap: wrap; gap: 6px; }

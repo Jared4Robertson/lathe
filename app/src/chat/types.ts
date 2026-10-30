@@ -3,7 +3,8 @@
 // what the shell sends as these types (window.latheDesktop.chat, typed in shell/commands.tsx).
 
 export type ChatItem =
-  | { kind: 'user'; id: string; text: string }
+  /** `images` counts the pictures sent with it. */
+  | { kind: 'user'; id: string; text: string; images: number }
   | { kind: 'assistant'; id: string; text: string; streaming: boolean }
   /** A tool call: `label` names it for the row ("lathe add"), `summary` is its input's one line. */
   | { kind: 'tool'; id: string; name: string; label: string; summary: string; input: string; result: string | null; status: 'running' | 'done' | 'error' }
@@ -17,6 +18,23 @@ export type ChatStatus = 'idle' | 'running' | 'stopping' | 'closed';
 /** The chat's permission modes, in the order the control lists them (desktop/src/chat.ts). */
 export const CHAT_MODES = ['ask', 'accept-reads', 'auto', 'bypass', 'view-only'] as const;
 export type ChatMode = (typeof CHAT_MODES)[number];
+
+/** The models the picker offers, by the alias Claude Code takes; null leaves the choice to Claude Code. */
+export const CHAT_MODELS = ['opus', 'sonnet', 'haiku'] as const;
+export type ChatModel = (typeof CHAT_MODELS)[number];
+export const CHAT_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
+export type ChatEffort = (typeof CHAT_EFFORTS)[number];
+/** The model and effort a session runs with. */
+export interface ModelChoice { model: ChatModel | null; effort: ChatEffort | null }
+
+/** A message typed while Claude works, waiting its turn. */
+export interface QueuedMessage { id: string; text: string; images: number }
+
+/** An image sent with a message: base64, with its type. */
+export interface ChatImage { mediaType: 'image/png' | 'image/jpeg' | 'image/gif' | 'image/webp'; data: string }
+
+/** A skill or slash command the "/" list shows. */
+export interface ChatSkill { name: string; description: string; kind: 'skill' | 'command' }
 
 /** The Owner's answer to a permission prompt. */
 export type PromptAnswer = 'once' | 'always' | 'deny';
@@ -33,7 +51,9 @@ export interface ChatPatch {
   status: ChatStatus;
   /** The permission mode the session runs in. */
   mode: ChatMode;
+  choice: ModelChoice;
   lathe: LatheTools;
+  queue: QueuedMessage[];
   items: { at: number; item: ChatItem }[];
 }
 
@@ -66,8 +86,16 @@ export type AppRequest = { kind: 'focus' } | { kind: 'open'; open: { id: string;
 export interface ChatBridge {
   sessions: () => Promise<ChatSessions | null>;
   open: (choice: OpenChoice) => Promise<boolean>;
-  /** Sends a message, with what the Owner is looking at as context (null: none). */
-  send: (text: string, focus: string | null) => Promise<boolean>;
+  /** Sends a message, with what the Owner is looking at as context (null: none) and any images; while Claude works it is queued. */
+  send: (text: string, focus: string | null, images: ChatImage[]) => Promise<boolean>;
+  /** Chooses the model and effort: the open chat starts again on its session; false when refused. */
+  setModel: (model: ChatModel | null, effort: ChatEffort | null) => Promise<boolean>;
+  /** Takes a queued message out of the queue. */
+  unqueue: (id: string) => Promise<boolean>;
+  /** The skills and slash commands Claude Code would find for this folder. */
+  skills: () => Promise<ChatSkill[]>;
+  /** The stage as drawn (a rectangle of the window, in CSS pixels), as base64 PNG; null when it cannot be captured. */
+  captureStage: (rect: { x: number; y: number; width: number; height: number }) => Promise<string | null>;
   answer: (id: string, answer: PromptAnswer) => Promise<boolean>;
   stop: () => Promise<boolean>;
   /** Chooses the permission mode: the open chat starts again on its session, and the folder keeps it; false when refused. */

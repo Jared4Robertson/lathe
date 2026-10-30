@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import type { ChatBridge, ChatItem, ChatMode, ChatPatch, ChatStatus, LatheTools, PromptAnswer } from './types';
+import { takeSnapshot } from './undo';
+import type { ChatBridge, ChatImage, ChatItem, ChatMode, ChatModel, ChatEffort, ChatPatch, ChatStatus, LatheTools, ModelChoice, PromptAnswer, QueuedMessage } from './types';
 
 // The window's chat as the page keeps it (LA-PLT-UC19): the items and status the shell sends as
 // patches, and the turns, each with the spec as it was when the turn began, so the panel can show
@@ -13,6 +14,10 @@ export interface Turn {
   before: RecordIndex;
   /** The spec when the next turn began; null for the last turn, which compares with the live spec. */
   after: RecordIndex | null;
+  /** The server's token for the product's rows as the turn began, for Undo (undo.ts); null when it could not keep them. */
+  snapshot: Promise<string | null>;
+  /** The product the turn worked in. */
+  product: string | null;
 }
 
 export interface ChatView {
@@ -24,11 +29,15 @@ export interface ChatView {
   open: boolean;
   /** The open chat's permission mode; null with none open. */
   mode: ChatMode | null;
+  /** The model and effort the open chat runs with. */
+  choice: ModelChoice;
+  /** The messages typed while Claude worked, sent in order. */
+  queue: QueuedMessage[];
   /** The Lathe tools the open chat has; null with none open. */
   lathe: LatheTools | null;
 }
 
-const EMPTY: ChatView = { sessionId: null, status: 'closed', items: [], turns: [], open: false, mode: null, lathe: null };
+const EMPTY: ChatView = { sessionId: null, status: 'closed', items: [], turns: [], open: false, mode: null, choice: { model: null, effort: null }, queue: [], lathe: null };
 
 /** Applies a patch to the items: a reset replaces them, otherwise each item lands at its position. */
 export function applyPatch(items: ChatItem[], patch: ChatPatch): ChatItem[] {
@@ -40,10 +49,12 @@ export function applyPatch(items: ChatItem[], patch: ChatPatch): ChatItem[] {
 
 const busy = (s: ChatStatus) => s === 'running' || s === 'stopping';
 
-export function useChat(bridge: ChatBridge, index: RecordIndex | null) {
+export function useChat(bridge: ChatBridge, index: RecordIndex | null, product: string | null) {
   const [view, setView] = useState<ChatView>(EMPTY);
   const indexRef = useRef(index);
   indexRef.current = index;
+  const productRef = useRef(product);
+  productRef.current = product;
 
   useEffect(() => bridge.onPatch((patch) => {
     setView((was) => {
@@ -53,15 +64,17 @@ export function useChat(bridge: ChatBridge, index: RecordIndex | null) {
       const now = indexRef.current;
       if (busy(patch.status) && !busy(was.status) && now) {
         const start = Math.max(0, items.findLastIndex((i) => i.kind === 'user'));
-        turns = [...turns.map((t, n) => (n === turns.length - 1 && t.after === null ? { ...t, after: now } : t)), { start, before: now, after: null }];
+        turns = [...turns.map((t, n) => (n === turns.length - 1 && t.after === null ? { ...t, after: now } : t)), { start, before: now, after: null, product: productRef.current, snapshot: productRef.current ? takeSnapshot(productRef.current) : Promise.resolve(null) }];
       }
-      return { sessionId: patch.sessionId, status: patch.status, items, turns, open: true, mode: patch.mode, lathe: patch.lathe };
+      return { sessionId: patch.sessionId, status: patch.status, items, turns, open: true, mode: patch.mode, choice: patch.choice, queue: patch.queue, lathe: patch.lathe };
     });
   }), [bridge]);
 
-  const send = useCallback((text: string, focus: string | null) => bridge.send(text, focus), [bridge]);
+  const send = useCallback((text: string, focus: string | null, images: ChatImage[]) => bridge.send(text, focus, images), [bridge]);
+  const unqueue = useCallback((id: string) => bridge.unqueue(id), [bridge]);
+  const setModel = useCallback((model: ChatModel | null, effort: ChatEffort | null) => bridge.setModel(model, effort), [bridge]);
   const answer = useCallback((id: string, reply: PromptAnswer) => bridge.answer(id, reply), [bridge]);
   const stop = useCallback(() => bridge.stop(), [bridge]);
   const setMode = useCallback((mode: ChatMode) => bridge.setMode(mode), [bridge]);
-  return { view, send, answer, stop, setMode };
+  return { view, send, answer, stop, setMode, setModel, unqueue };
 }

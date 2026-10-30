@@ -72,6 +72,8 @@ export function revealLabel(platform: NodeJS.Platform): string {
 }
 
 export interface RecordMenuActions {
+  /** Attaches the record to the chat's message (LA-PLT-UC19-R13). */
+  askClaude: () => void;
   /** Opens the record in a new tab of the app's (LA-V96-R11). */
   openInNewTab: () => void;
   reveal: () => void;
@@ -79,10 +81,11 @@ export interface RecordMenuActions {
   copyId: () => void;
 }
 
-/** The native right-click menu of a record: open it in a new tab, reveal and open its file (when it has one), then copy its ID. */
+/** The native right-click menu of a record: open it in a new tab, ask Claude about it, reveal and open its file (when it has one), then copy its ID. */
 export function recordMenuTemplate(id: string, hasFile: boolean, editorName: string, actions: RecordMenuActions, platform: NodeJS.Platform): MenuItemConstructorOptions[] {
   return [
     { label: 'Open in New Tab', click: actions.openInNewTab },
+    { label: 'Ask Claude About This', click: actions.askClaude },
     { type: 'separator' },
     { label: revealLabel(platform), enabled: hasFile, click: actions.reveal },
     { label: `Open in ${editorName}`, enabled: hasFile, click: actions.openInEditor },
