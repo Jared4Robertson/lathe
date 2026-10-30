@@ -41,6 +41,8 @@ git config merge.lathe-data.name "Lathe data files"
 git config merge.lathe-data.driver "node lathe/bin/lathe.ts merge-data %O %A %B %P"
 ```
 
+Git runs the driver from each worktree's own `lathe`, so install it there first (`npm ci --prefix lathe`). A driver that cannot start stops the merge and says the file was not merged; install, then run `git checkout -m <file>` to merge it row by row again. Never resolve such a file by taking a side or by git's line merge: that brings back rows the other side removed.
+
 The npm scripts run in `lathe/`, so `--root ..` names this repo. In a product repo, the same commands are `npx lathe check`, `npx lathe <aggregate> <command> ...` and `npx lathe serve`; the [package README](lathe/README.md) has every option.
 
 ## Upgrading

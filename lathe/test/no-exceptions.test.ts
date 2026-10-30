@@ -49,7 +49,7 @@ describe('LA-STD-PRINCIPLES-R03-T01 no kind, column, flag or check records an ex
   });
 
   it('gives the CLI, its commands and its tools no flag or field that skips a rule', () => {
-    const cli = read('lathe/bin/lathe.ts');
+    const cli = read('lathe/src/cli/main.ts');
     const options = [...(/options: \{([\s\S]*?)\n  \},/.exec(cli)?.[1] ?? '').matchAll(/^\s+([\w-]+):/gm)].map((m) => m[1]);
     expect(options).toContain('root');
     const fields = [...ALL_COMMANDS, ...ALL_QUERIES].flatMap((d) => Object.keys(d.input).map((field) => `${d.slice.name} ${d.name} --${field}`));
