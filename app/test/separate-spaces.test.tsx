@@ -3,12 +3,13 @@ import './graph/setup';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import { graphMap, mapRootOf } from '../src/graph/map';
+import { mapRootOf } from '../src/graph/map';
 import { addRows, setRow } from './fixtures/load';
 import { recordIndexOf } from './read-view';
 import { workspace } from './fixtures/workspace';
 import { facts, main, openApp } from './helpers';
 import { boxElement, drawnIds } from './graph/scene';
+import { graphMap } from './graph/maps';
 
 // Each product is a separate space: every view and count inside a space reads the
 // space's own index, so nothing of another product shows in it, even where the data names or links

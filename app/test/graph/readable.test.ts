@@ -3,8 +3,7 @@ import { recordIndexOf } from '../read-view';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { repoData } from '../fixtures/repo';
 import { drawnFor, drawnNested, FRAME_PADDING, frameFocus, frameNested, frameOnMap, maxZoomFor, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
-import { graphMap, treeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
-import { nestedMap } from '../../src/graph/nested';
+import { treeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
 import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
 import { treeOf } from '../../src/graph/tree';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
@@ -12,6 +11,7 @@ import type { ServedData } from '../read-view';
 import { siblingGroups } from './workspace';
 import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
 import type { NestedNode } from '../../src/graph/nested';
+import { graphMap, nestedMap } from './maps';
 
 /** The scene's check (the canvas draws a box's plate, plate.ts): every line of its label lies whole inside the box. */
 function plateOutside(p: Plate): string | null {

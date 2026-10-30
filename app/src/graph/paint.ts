@@ -3,7 +3,8 @@ import type { Plate } from './plate';
 import { notchOf, type Mark, type Outline, type Shape } from './shapes';
 import { MARK_PATHS, SHAPE_PATHS } from './shape-icons';
 import { fontFor, type GraphFonts } from './fonts';
-import { onScreen } from './hit';
+import { TITLE_FONT } from './text';
+import { BLOCK_BELOW_PX } from './camera';
 import { stickyLabel, type ScreenBox } from './sticky';
 import { GHOST_MS, markPhase, type StageMarks } from '../changes/marks';
 
@@ -12,13 +13,26 @@ import { GHOST_MS, markPhase, type StageMarks } from '../changes/marks';
 // double precision, relative to the camera's center, and drawn with no transform but the pixel
 // ratio, so a box deep in the map is as steady at a very deep zoom as at the top. Each line of a
 // label is drawn at its map size times the zoom, so text is crisp at any zoom whatever the map's
-// range; a line under TEXT_BAR_PX on screen is drawn as a faint bar where its glyphs would be.
+// range. Only what is on screen is drawn: a box, a bar or a line wholly outside the canvas (with a
+// margin) is passed over. A box whose title would be drawn under BLOCK_BELOW_PX is drawn as a plain
+// block, its fill and edge with no label, marks or decoration: its text cannot be read there.
 
 /** The camera as the painter places points: its center in the map, its zoom and the pane's size in CSS pixels. */
 export interface Camera { cx: number; cy: number; zoom: number; w: number; h: number }
 
-/** A label line smaller than this on screen, in CSS pixels, is drawn as a faint bar: it still shows where the label is and how long it is. */
-export const TEXT_BAR_PX = 2;
+/** Whether a box is drawn as a plain block at a zoom: its title under BLOCK_BELOW_PX on screen. */
+export const isBlock = (p: Pick<Plate, 'text'>, zoom: number) => p.text * TITLE_FONT * zoom < BLOCK_BELOW_PX;
+/** How far past the canvas's edges, in CSS pixels, a box, bar or line still counts as on screen: its stroke and ring reach that far. */
+const CULL_PX = 16;
+/** Whether a box, a bar or a line's bounds in the map is on the canvas through a camera, with the margin: what a frame draws. */
+export const onCanvas = (r: { x: number; y: number; w: number; h: number }, cam: Camera) => {
+  const left = (r.x - cam.cx) * cam.zoom + cam.w / 2;
+  const top = (r.y - cam.cy) * cam.zoom + cam.h / 2;
+  return meets(cam, left, top, left + r.w * cam.zoom, top + r.h * cam.zoom);
+};
+/** Whether a rectangle on the canvas, in its CSS pixels, meets the canvas with the margin. */
+const meets = (cam: Camera, left: number, top: number, right: number, bottom: number) =>
+  right >= -CULL_PX && left <= cam.w + CULL_PX && bottom >= -CULL_PX && top <= cam.h + CULL_PX;
 /** The least width on screen of the keyboard's focus ring and a tap's selection, and of the center's ring, in CSS pixels, so they always show. */
 const RING_MIN_PX = 2;
 const FOCUS_MIN_PX = 1.5;
@@ -136,6 +150,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
 
   // Bars, then lines, under the boxes.
   for (const b of frame.bars) {
+    if (!onCanvas(b, cam)) continue;
     ctx.globalAlpha = 0.6 * (state.lit ? lerp(1, look.spotlightDim, state.spot) : 1) * state.strength(b.parent);
     ctx.fillStyle = look.rule;
     ctx.beginPath();
@@ -143,6 +158,8 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     ctx.fill();
   }
   for (const line of frame.lines) {
+    const [a0, b0] = line.points;
+    if (!onCanvas({ x: Math.min(a0.x, b0.x), y: Math.min(a0.y, b0.y), w: Math.abs(b0.x - a0.x), h: Math.abs(b0.y - a0.y) }, cam)) continue;
     const s = lineStroke(look, line);
     const lit = !state.lit || state.litLines?.has(line.id);
     ctx.globalAlpha = (state.lit ? lerp(s.alpha, lit ? 1 : look.contextOpacity * look.spotlightDim, state.spot) : s.alpha) * lineStrength(line);
@@ -177,7 +194,7 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
   }
 
   for (const p of frame.plates) {
-    if (!onScreen(p, cam)) continue;
+    if (!onCanvas(p, cam)) continue;
     const lit = !!state.lit?.has(p.place);
     ctx.globalAlpha = dim(lit) * strength(p.place, lit);
     paintBox(ctx, p, cam, look, fonts, state, X, Y);
@@ -329,6 +346,13 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
   outlinePath(ctx, p, p.outline, X, Y, zoom);
   ctx.fillStyle = colors.fill;
   ctx.fill();
+  if (isBlock(p, zoom)) {
+    // A plain block: its fill and its edge, no clip, label, marks or decoration.
+    ctx.lineWidth = Math.min(edgeWidth, 1);
+    ctx.strokeStyle = edge;
+    ctx.stroke();
+    return;
+  }
   ctx.save();
   // An edge lies inside its outline: clipped to it, at twice its width.
   ctx.clip();
@@ -366,38 +390,25 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     return;
   }
   for (const icon of p.icons) paintIcon(ctx, icon.draw, icon.name, X(icon.x), Y(icon.y), icon.w * zoom, icon.h * zoom, colors.edge, colors.fill);
-  for (const line of p.lines) {
-    const px = line.size * zoom;
+  const faces = lineFonts(p, zoom, fonts);
+  p.lines.forEach((line, i) => {
     const x = X(line.x);
     const top = Y(line.top);
-    const w = line.width * zoom;
-    const h = line.height * zoom;
-    if (x + w < 0 || x > cam.w || top + h < 0 || top > cam.h) continue;
-    const color = line.tone === 'ink' ? look.ink : look.muted;
-    if (px < TEXT_BAR_PX) {
-      const alpha = ctx.globalAlpha;
-      ctx.globalAlpha = alpha * 0.35;
-      ctx.fillStyle = color;
-      ctx.fillRect(x, top + h * 0.3, w, Math.max(0.5, h * 0.4));
-      ctx.globalAlpha = alpha;
-      continue;
-    }
-    const want = fontFor(fonts, line.face, px);
-    if (want !== font) { ctx.font = want; font = want; }
-    ctx.fillStyle = color;
+    if (!meets(cam, x, top, x + line.width * zoom, top + line.height * zoom)) return;
+    if (faces[i] !== font) { ctx.font = faces[i]; font = faces[i]; }
+    ctx.fillStyle = line.tone === 'ink' ? look.ink : look.muted;
     ctx.fillText(line.text, x, Y(line.baseline));
-  }
+  });
   for (const b of p.badges) {
     const x = X(b.x);
     const y = Y(b.y);
     const w = b.w * zoom;
     const h = b.h * zoom;
-    if (x + w < 0 || x > cam.w || y + h < 0 || y > cam.h) continue;
+    if (!meets(cam, x, y, x + w, y + h)) continue;
     ctx.fillStyle = b.tone === 'error' ? look.error : look.warn;
     ctx.beginPath();
     ctx.roundRect(x, y, w, h, Math.min(8 * p.text * zoom, h / 2));
     ctx.fill();
-    if (b.size * zoom < TEXT_BAR_PX) continue;
     ctx.font = fontFor(fonts, 'badge', b.size * zoom);
     font = '';
     ctx.fillStyle = look.onMark;
@@ -407,6 +418,19 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     ctx.textAlign = 'left';
     ctx.textBaseline = 'alphabetic';
   }
+}
+
+/**
+ * Each label line's font at a zoom, kept per box for the zoom it was last drawn at (the label's text layout on screen is
+ * fixed by its map size times the zoom): a pan, which keeps the zoom, draws every label with no font worked out again.
+ */
+const fontsAt = new WeakMap<Plate, { zoom: number; fonts: GraphFonts; faces: string[] }>();
+function lineFonts(p: Plate, zoom: number, fonts: GraphFonts): string[] {
+  const known = fontsAt.get(p);
+  if (known && known.zoom === zoom && known.fonts === fonts) return known.faces;
+  const faces = p.lines.map((line) => fontFor(fonts, line.face, line.size * zoom));
+  fontsAt.set(p, { zoom, fonts, faces });
+  return faces;
 }
 
 /** The least size on screen, in CSS pixels, a box keeps its live mark's dot at. */

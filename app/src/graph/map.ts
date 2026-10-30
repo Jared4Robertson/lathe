@@ -1,10 +1,10 @@
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { BORDER, fitsAt, largestFit, linesIn, treeLabel, type MapLabel, type WrappedLabel, textMeasure } from './text';
+import { BORDER, fitsAt, largestFit, linesIn, type MapLabel, type WrappedLabel, textMeasure } from './text';
 import { outlineInset, type Shape } from './shapes';
-import { treeChildren, treeParent } from './tree';
+import { treeParent } from './tree';
 
 // The graph's one map per product (LA-EXP-DS05): the product's tree, the nav's (tree.ts), with the
-// product as its single root, laid out once per spec load as one icicle. Nothing of another product
+// product as its single root, laid out as one icicle, again only when what it reads changes. Nothing of another product
 // is in it: each product is a space of its own. Every node has one place and one size in it,
 // whatever is in focus: focusing anything moves the camera (camera.ts), never the map.
 //
@@ -27,7 +27,8 @@ import { treeChildren, treeParent } from './tree';
 // Map units are doubles, never rounded, so the deepest boxes keep their places however small they
 // are against the product.
 //
-// Pure and deterministic: the same index always gives the same map, and it is built once per index.
+// Pure and deterministic: the same shape and labels always give the same map. It is laid out in the layout's worker
+// (layout.ts), again only when what it reads changes; each box's lines are wrapped when it is first drawn.
 
 /**
  * The product's box in every layout: the Tree map's height, the Nested map's side, in map units.
@@ -115,94 +116,131 @@ export function mapRootOf(index: RecordIndex, id: string): string {
 }
 
 /**
- * Lays out a tree given by its roots, a children function and, for each node, its label (its ID
- * when not given) as an icicle (exported for tests).
+ * A tree's shape before it is laid out: every node in the walk's order from the roots (a parent before its children, a
+ * node reached twice keeping its first place), with its parent, its children and its depth. The layout's geometry
+ * (TreeGeometry) lists the nodes in this order, so the shape on one thread and the geometry from another fit together.
  */
-export function layoutTree(roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string) => MapLabel = (id) => ({ title: id, meta: '' })): GraphMap {
-  // Levels, by a walk from the roots; a node reached twice keeps its first place.
-  const parent = new Map<string, string | null>();
-  const level = new Map<string, number>();
-  const kids = new Map<string, string[]>();
-  const visit = (id: string, up: string | null, l: number) => {
-    parent.set(id, up);
-    level.set(id, l);
-    const own: string[] = [];
-    kids.set(id, own);
+export interface TreeShape {
+  roots: readonly string[];
+  ids: readonly string[];
+  /** Each node's parent's place in `ids`, -1 for a root. */
+  parents: Int32Array;
+  levels: Int32Array;
+  /** Each node's children, by their places in `ids`. */
+  children: readonly (readonly number[])[];
+}
+
+/** A tree's shape from its roots and a children function (exported for the layout's worker and tests). */
+export function treeShape(roots: readonly string[], childrenOf: (id: string) => readonly string[]): TreeShape {
+  const at = new Map<string, number>();
+  const ids: string[] = [];
+  const parents: number[] = [];
+  const levels: number[] = [];
+  const children: number[][] = [];
+  const visit = (id: string, up: number, l: number) => {
+    const i = ids.length;
+    at.set(id, i);
+    ids.push(id);
+    parents.push(up);
+    levels.push(l);
+    const own: number[] = [];
+    children.push(own);
     for (const c of childrenOf(id)) {
-      if (level.has(c)) continue;
-      own.push(c);
-      visit(c, id, l + 1);
+      if (at.has(c)) continue;
+      own.push(ids.length);
+      visit(c, i, l + 1);
     }
   };
   const top: string[] = [];
-  for (const r of roots) { if (!level.has(r)) { top.push(r); visit(r, null, 0); } }
+  for (const r of roots) { if (!at.has(r)) { top.push(r); visit(r, -1, 0); } }
+  return { roots: top, ids, parents: Int32Array.from(parents), levels: Int32Array.from(levels), children };
+}
 
-  // From the roots down: each group of siblings an equal part of its parent's height, a column of its own as wide as
-  // that height allows, sharing one text scale.
-  const nodes = new Map<string, MapNode>();
-  const byLevelIds: string[][] = [];
+/** Each node's box and text scale, in its shape's order: x, y, w, h and text, five numbers a node. */
+export interface TreeGeometry { boxes: Float64Array; width: number; height: number }
+
+/**
+ * A label's largest fit in a box one unit wide and `aspect` tall, at most `most`, kept per label and aspect: a box k times
+ * as large fits it at k times the scale (its border grows with its text), and boxes narrowed to MAX_ASPECT share one
+ * aspect, so a record repeated in many places, or many alike, is fitted once. A fit cut at its `most` is kept as what it
+ * fits at least. One cache serves every layout made with one text measure (its key in the cache's): the layout's
+ * worker keeps it from one layout to the next, so a new layout fits again only the labels and boxes that changed.
+ */
+export interface FitCache { measure: string; fits: Map<string, { at: number; exact: boolean }> }
+export const fitCache = (): FitCache => ({ measure: textMeasure().key, fits: new Map() });
+
+/**
+ * Lays out a tree's shape as an icicle (LA-EXP-DS06), each node's label given by `labelOf` (by its place in the shape):
+ * pure, the same shape and labels always giving the same geometry.
+ */
+export function placeTree(shape: TreeShape, labelOf: (i: number) => MapLabel, cache: FitCache = fitCache()): TreeGeometry {
+  if (cache.measure !== textMeasure().key) { cache.fits.clear(); cache.measure = textMeasure().key; }
+  const boxes = new Float64Array(shape.ids.length * 5);
   let right = 0;
-  // A label's largest fit in a box one unit wide and `aspect` tall, at most `most`, kept per label and aspect: a box k
-  // times as large fits it at k times the scale (its border grows with its text), and boxes narrowed to MAX_ASPECT share
-  // one aspect, so a record repeated in many places, or many alike, is fitted once. A fit cut at its `most` is kept as
-  // what it fits at least.
-  const fits = new Map<string, { at: number; exact: boolean }>();
   const unitFit = (label: MapLabel, aspect: number, most: number) => {
     const key = `${aspect}\u0000${label.shape ?? ''}\u0000${label.marks ?? 0}\u0000${label.marked ? 1 : 0}\u0000${label.meta}\u0000${label.title}`;
-    const known = fits.get(key);
+    const known = cache.fits.get(key);
     if (known && (known.exact || known.at >= most)) return Math.min(known.at, most);
     const at = largestFit(label, true, 1, aspect, most, (s) => BORDER * s);
-    fits.set(key, { at, exact: at < most });
+    cache.fits.set(key, { at, exact: at < most });
     return at;
   };
   /** Places siblings `h` tall each, a gap apart, in a column of their own after `after` (their parent's right edge), under a parent `parentWidth` wide. */
-  const place = (ids: readonly string[], l: number, after: number, parentWidth: number, y0: number, h: number, gap: number, up: string | null) => {
-    const w = up === null ? parentWidth : groupWidth(parentWidth, h);
-    const x = up === null ? after : after + COLUMN_GAP_SHARE * w;
+  const place = (ids: readonly number[], after: number, parentWidth: number, y0: number, h: number, gap: number, root: boolean) => {
+    const w = root ? parentWidth : groupWidth(parentWidth, h);
+    const x = root ? after : after + COLUMN_GAP_SHARE * w;
     right = Math.max(right, x + w);
     // Its border grows with its text (LA-EXP-DS06).
     const border = (s: number) => BORDER * s;
-    const labels = ids.map((id) => labelOf(id));
+    const labels = ids.map((i) => labelOf(i));
     // The smallest of the siblings' largest fits, at most their width's share: each sibling's fit capped at the smallest so
     // far, which a sibling that fits there answers at once. Scaled from one unit wide, it is settled just under itself
     // where rounding would wrap a sibling's label one more line.
     let text = Math.min(treeText(w), w * labels.reduce((most, label) => unitFit(label, h / w, most), treeText(w) / w));
     for (let step = 1e-12; text > 0 && step < 1e-3 && !labels.every((label) => fitsAt(label, true, w, h, text, border)); step *= 16) text *= 1 - step;
-    ids.forEach((id, i) => {
-      const y = y0 + i * (h + gap);
-      const own = kids.get(id)!;
-      const lines = linesIn(labels[i], text > 0 ? (w - 2 * border(text)) / text : Infinity, true);
-      nodes.set(id, { id, parent: up, children: own, level: l, x, y, w, h, text, lines, centered: true });
-      (byLevelIds[l] ??= []).push(id);
+    ids.forEach((i, k) => {
+      const y = y0 + k * (h + gap);
+      boxes.set([x, y, w, h, text], i * 5);
+      const own = shape.children[i];
       if (own.length === 0) return;
-      place(own, l + 1, x + w, w, y, partHeight(h, own.length), ROW_GAP_SHARE * (h / own.length), id);
+      place(own, x + w, w, y, partHeight(h, own.length), ROW_GAP_SHARE * (h / own.length), false);
     });
   };
-  if (top.length > 0) place(top, 0, 0, MAP_SIZE * ROOT_WIDTH, 0, MAP_SIZE, ROW_GAP_SHARE * MAP_SIZE, null);
-
-  const byLevel = byLevelIds.map((ids) => ids.map((id) => nodes.get(id)!).sort((a, b) => a.y - b.y));
-  return {
-    view: 'tree',
-    nodes,
-    roots: top,
-    byLevel,
-    width: right,
-    height: top.length === 0 ? 0 : top.length * MAP_SIZE + (top.length - 1) * ROW_GAP_SHARE * MAP_SIZE,
-  };
+  const tops = shape.roots.map((r) => shape.ids.indexOf(r));
+  if (tops.length > 0) place(tops, 0, MAP_SIZE * ROOT_WIDTH, 0, MAP_SIZE, ROW_GAP_SHARE * MAP_SIZE, true);
+  return { boxes, width: right, height: tops.length === 0 ? 0 : tops.length * MAP_SIZE + (tops.length - 1) * ROW_GAP_SHARE * MAP_SIZE };
 }
 
-const cache = new WeakMap<RecordIndex, Map<string, GraphMap>>();
+/**
+ * A Tree map's node: its box, its text scale and its label's lines, wrapped on whole words for its box at its scale when
+ * first read (only a drawn box's are), with the same measure the layout fitted them with.
+ */
+class TreeNode implements MapNode {
+  private wrapped: WrappedLabel | null = null;
+  readonly centered = true;
+  constructor(
+    readonly id: string, readonly parent: string | null, readonly children: readonly string[], readonly level: number,
+    readonly x: number, readonly y: number, readonly w: number, readonly h: number, readonly text: number, private readonly label: MapLabel,
+  ) {}
+  get lines(): WrappedLabel {
+    return (this.wrapped ??= linesIn(this.label, this.text > 0 ? (this.w - 2 * BORDER * this.text) / this.text : Infinity, true));
+  }
+}
 
-/** The map of one product (or of a tree no product reaches), from its root: built on first use, then read. */
-export function graphMap(index: RecordIndex, root: string): GraphMap {
-  let maps = cache.get(index);
-  if (!maps) { maps = new Map(); cache.set(index, maps); }
-  const key = `${textMeasure().key}|${root}`;
-  const known = maps.get(key);
-  if (known) return known;
-  const map = layoutTree([root], (id) => treeChildren(index, id), (id) => treeLabel(index, id));
-  maps.set(key, map);
-  return map;
+/** A Tree map from a tree's shape, its labels and its geometry (placeTree's, here or in the layout's worker). */
+export function assembleTree(shape: TreeShape, labelOf: (i: number) => MapLabel, geometry: TreeGeometry): GraphMap {
+  const nodes = new Map<string, MapNode>();
+  const byLevelNodes: MapNode[][] = [];
+  const { ids } = shape;
+  const { boxes } = geometry;
+  ids.forEach((id, i) => {
+    const up = shape.parents[i];
+    const b = i * 5;
+    const node = new TreeNode(id, up < 0 ? null : ids[up], shape.children[i].map((c) => ids[c]), shape.levels[i], boxes[b], boxes[b + 1], boxes[b + 2], boxes[b + 3], boxes[b + 4], labelOf(i));
+    nodes.set(id, node);
+    (byLevelNodes[node.level] ??= []).push(node);
+  });
+  return { view: 'tree', nodes, roots: shape.roots, byLevel: byLevelNodes.map((level) => level.sort((a, b) => a.y - b.y)), width: geometry.width, height: geometry.height };
 }
 
 type Rect = Pick<MapNode, 'x' | 'y' | 'w' | 'h'>;
