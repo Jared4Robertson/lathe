@@ -394,6 +394,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-steps { display: inline-flex; gap: 2px; flex: none; }
 .stage-step { gap: 3px; }
 .stage-step-letter { font: 600 0.68rem var(--mono); color: var(--muted); }
+.stage-step-letter::after { content: attr(data-letter); }
 .stage-frame, .stage-tidy { flex: none; }
 /* The toolbar's narrower forms (TOOLBAR_FORMS in StageChrome.tsx): the names beside the icons give way first (they stay
    the accessible ones), then groups fold into More at the right end (the Changes controls, then the stage's secondary

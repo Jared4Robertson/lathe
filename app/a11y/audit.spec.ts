@@ -14,10 +14,11 @@ import { showCard } from '../stability/measure';
 /** A group: a domain's Technical specification folder, at its parent, stage and folder. */
 const GROUP = '/LA-EXP/technical-specification';
 
-async function open(page: Page, url: string, ready: string) {
+/** Opens the page and waits for `ready`: drawn, or only attached when it is the Trace's table, which sits visually hidden under its canvas for the keyboard. */
+async function open(page: Page, url: string, ready: string, state: 'visible' | 'attached' = 'visible') {
   await page.goto(url);
   await page.locator('.app[data-specs="ready"]').first().waitFor();
-  await page.locator(ready).first().waitFor();
+  await page.locator(ready).first().waitFor({ state });
   await page.waitForTimeout(400);
 }
 
@@ -91,7 +92,7 @@ const PAGES: State[] = [
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
   { name: 'Trace stage, a flow step in the chains that hold it', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
-  { name: 'Trace stage, an entity framed on its aggregate', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
+  { name: 'Trace stage, an entity framed on its aggregate', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note', state: 'attached' as const },
   { name: 'Trace stage, the product all at once', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
@@ -103,13 +104,13 @@ const PAGES: State[] = [
   { name: 'Check page in the wiki card', url: `${PRODUCT}?page=format/checks/actor-not-a-role`, ready: '.wiki-panel.is-format [data-aggregate="check"]' },
   { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.tool-panel.appearance-popover .theme-rows' },
   { name: 'Products picker', url: '/', ready: '.dialog.products-picker h1' },
-].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));
+].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready, 'state' in p ? p.state : 'visible') }));
 // A design record nothing traces to: the untraced state, reached from the domain's Untraced list by the keyboard.
 PAGES.push({ name: 'Trace stage, an untraced record', run: async (page: Page) => {
-  await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-untraced');
+  await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-untraced', 'attached');
   await page.locator('.focus-stage .trace-untraced a').first().focus();
   await page.keyboard.press('Enter');
-  await page.locator('.focus-stage .trace-note.is-untraced').waitFor();
+  await page.locator('.focus-stage .trace-note.is-untraced').waitFor({ state: 'attached' });
   await page.waitForTimeout(400);
 } });
 // The Trace stage with only the branches that have a gap.
