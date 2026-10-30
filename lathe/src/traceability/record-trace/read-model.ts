@@ -8,6 +8,7 @@
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import { placeRecords, type Placed } from '../../exploring/placement.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 export type GapKind = 'not-designed' | 'not-built' | 'not-proved' | 'not-automated';
 
@@ -78,7 +79,7 @@ export interface RecordTraceTable {
   traceOf(id: string): RecordTrace | undefined;
 }
 
-const sortIds = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+const sortIds = (ids: Iterable<string>) => [...new Set(ids)].sort(compareIds);
 const str = (row: Row, column: string) => (typeof row[column] === 'string' ? (row[column] as string) : '');
 
 /** The projection: the read model's table over the rows and the checks' run (in memory; nothing keeps it). */

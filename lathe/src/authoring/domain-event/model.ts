@@ -2,6 +2,7 @@
 // (with the standard rules it meets and the packages it uses). One instance is one event, whole; it holds only the
 // links its own records start.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { DomainEventRow, EventFieldRow, EventTypeRow } from '../../platform/data/tables.ts';
 
@@ -66,29 +67,22 @@ export function newDomainEvent(event: DomainEventRow, fields: EventFieldInput[])
   return { root: event.id, event, fields: fieldRows(event.id, fields), eventType: null };
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[], source: string, target: string): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The domain events in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function domainEventsFrom(rows: (table: string) => Row[], only?: string): DomainEvent[] {
   const events = rows('domain_event').filter((r) => only === undefined || r.id === only) as unknown as DomainEventRow[];
   if (!events.length) return [];
   const ids = new Set(events.map((e) => e.id));
   const fields = (rows('event_field') as unknown as EventFieldRow[]).filter((f) => ids.has(f.domain_event_id)).sort((a, b) => a.position - b.position);
-  const types = (rows('event_type') as unknown as EventTypeRow[]).filter((t) => ids.has(t.domain_event_id));
+  const fieldsOf = groupBy(fields, (f) => f.domain_event_id);
+  const typesOf = groupBy((rows('event_type') as unknown as EventTypeRow[]).filter((t) => ids.has(t.domain_event_id)), (t) => t.domain_event_id);
   const meets = bySource(rows('meets'), 'source_id', 'target_id');
   const packages = bySource(rows('package_use'), 'record_id', 'package');
   return events.map((event) => {
-    const type = types.find((t) => t.domain_event_id === event.id);
+    const type = groupOf(typesOf, event.id)[0];
     return {
       root: event.id,
       event,
-      fields: fields.filter((f) => f.domain_event_id === event.id),
+      fields: groupOf(fieldsOf, event.id),
       eventType: type ? { row: type, meets: meets.get(type.id) ?? [], packages: packages.get(type.id) ?? [] } : null,
     };
   });

@@ -9,6 +9,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { FlowRow, FlowStepRow, FlowTestRow, UcRequirementRow, UseCaseRow, UseCaseTestRow } from '../../platform/data/tables.ts';
 import type { UseCaseKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A test as the page shows it: its row and the test data sets it starts from. */
 export interface TestOnPage<T> {
@@ -82,8 +83,6 @@ export interface UseCaseTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -103,7 +102,7 @@ const pathOf = (step: FlowStepRow) => step.path?.trim().toLowerCase() || 'main';
 /** The steps path by path: the main path first, then the others by name, each by position (a number), then by ID. */
 function pathsOf(steps: StepOnPage[]): PathOnPage[] {
   const byPath = new Map<string, StepOnPage[]>();
-  const ordered = [...steps].sort((a, b) => a.step.position - b.step.position || byId(a.step, b.step));
+  const ordered = [...steps].sort((a, b) => a.step.position - b.step.position || byRecordId(a.step, b.step));
   for (const s of ordered) byPath.set(pathOf(s.step), [...(byPath.get(pathOf(s.step)) ?? []), s]);
   return [...byPath.entries()]
     .sort(([a], [b]) => (a === 'main' ? -1 : b === 'main' ? 1 : a.localeCompare(b)))
@@ -127,16 +126,16 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
     const root = useCase.id;
     const hold = (id: string, kind: UseCaseKind) => holding.set(id, { root, kind });
     hold(root, 'use_case');
-    const ownFlows = [...(flows.get(root) ?? [])].sort((a, b) => a.interface_id.localeCompare(b.interface_id) || byId(a, b));
+    const ownFlows = [...(flows.get(root) ?? [])].sort((a, b) => a.interface_id.localeCompare(b.interface_id) || byRecordId(a, b));
     const ownSteps = ownFlows.flatMap((f) =>
       (steps.get(f.id) ?? []).map((step) => ({ step, invokes: invokes(step.id)[0] ?? null, happensIn: happensIn(step.id)[0] ?? null, fulfills: fulfills(step.id), exchangesWith: exchangesWith(step.id) })),
     );
     const tree: UseCaseTree = {
       useCase,
       actors: [...(actors.get(root) ?? [])].sort((a, b) => Number(a.position) - Number(b.position)).map((a) => String(a.role_name)),
-      requirements: [...(requirements.get(root) ?? [])].sort(byId).map((requirement) => ({
+      requirements: [...(requirements.get(root) ?? [])].sort(byRecordId).map((requirement) => ({
         requirement,
-        tests: [...(useCaseTests.get(requirement.id) ?? [])].sort(byId).map(tested),
+        tests: [...(useCaseTests.get(requirement.id) ?? [])].sort(byRecordId).map(tested),
         fulfilledBy: ownSteps.filter((s) => s.fulfills.includes(requirement.id)).map((s) => s.step.id).sort(),
       })),
       flows: ownFlows.map((flow) => {
@@ -161,7 +160,7 @@ export function useCaseTableFrom(view: ReadView): UseCaseTable {
   const capabilities = new Map(
     view.rows('capability').map((c) => [
       String(c.id),
-      { domain: String(c.domain_id), product: productOf.get(String(c.domain_id)) ?? '', useCases: (listed.get(String(c.id)) ?? []).map((u) => ({ id: u.id, title: u.title })).sort(byId) },
+      { domain: String(c.domain_id), product: productOf.get(String(c.domain_id)) ?? '', useCases: (listed.get(String(c.id)) ?? []).map((u) => ({ id: u.id, title: u.title })).sort(byRecordId) },
     ]),
   );
   const interfaces = new Map([...grouped<{ id: string }>(view.rows('interface'), 'product_id')].map(([product, rows]) => [product, rows.map((i) => i.id).sort()]));

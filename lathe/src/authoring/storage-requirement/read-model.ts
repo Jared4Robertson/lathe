@@ -9,6 +9,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { StorageRequirementRow, StorageRequirementTestRow } from '../../platform/data/tables.ts';
 import type { StorageRequirementKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** The aggregate or read model a storage requirement is about. */
 export interface StoredParent {
@@ -66,8 +67,6 @@ export interface StorageRequirementTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** A link table's other ends by one column, each list sorted. */
 function linked(rows: Row[], by: string, other: string): (id: string) => string[] {
   const found = new Map<string, string[]>();
@@ -103,7 +102,7 @@ export function storageRequirementTableFrom(view: ReadView): StorageRequirementT
     const root = requirement.id;
     const parentId = requirement.aggregate_id ?? requirement.read_model_id!;
     const parentKind = requirement.aggregate_id !== undefined ? 'aggregate' : 'read_model';
-    const tests = (testsOf.get(root) ?? []).sort((a, b) => byId(a.test, b.test));
+    const tests = (testsOf.get(root) ?? []).sort((a, b) => byRecordId(a.test, b.test));
     requirements.set(root, {
       requirement,
       parent: { id: parentId, kind: parentKind, title: titles.get(parentId) ?? parentId },
@@ -114,7 +113,7 @@ export function storageRequirementTableFrom(view: ReadView): StorageRequirementT
     for (const t of tests) holding.set(t.test.id, { root, kind: 'storage_requirement_test' });
     parents.get(parentId)?.push({ id: root, title: requirement.title });
   }
-  for (const list of parents.values()) list.sort(byId);
+  for (const list of parents.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { requirements, holding, parents, kinds };

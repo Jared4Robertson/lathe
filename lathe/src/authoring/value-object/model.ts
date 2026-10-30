@@ -3,6 +3,7 @@
 // rules it meets and the packages it uses). One instance is one value object, whole; it holds only the links its own
 // records start.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { ConstraintRow, ConstraintTestRow, ValueObjectFieldRow, ValueObjectRow, ValueTypeRow } from '../../platform/data/tables.ts';
 
@@ -76,14 +77,6 @@ export function newValueObject(valueObject: ValueObjectRow, fields: ValueObjectF
   return { root: valueObject.id, valueObject, fields, constraints: [], valueType: null, constraintTests: [] };
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[], source = 'source_id', target = 'target_id'): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The value objects in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function valueObjectsFrom(rows: (table: string) => Row[], only?: string): ValueObject[] {
   const valueObjects = rows('value_object').filter((r) => only === undefined || r.id === only) as unknown as ValueObjectRow[];
@@ -92,23 +85,23 @@ export function valueObjectsFrom(rows: (table: string) => Row[], only?: string):
   const fields = (rows('value_object_field') as unknown as ValueObjectFieldRow[]).filter((f) => ids.has(f.value_object_id));
   const constraints = (rows('constraint') as unknown as ConstraintRow[]).filter((c) => ids.has(c.value_object_id));
   const valueObjectOf = new Map(constraints.map((c) => [c.id, c.value_object_id]));
-  const valueTypes = (rows('value_type') as unknown as ValueTypeRow[]).filter((t) => ids.has(t.value_object_id));
-  const tests = (rows('constraint_test') as unknown as ConstraintTestRow[]).filter((t) => valueObjectOf.has(t.constraint_id));
+  const valueTypesOf = groupBy((rows('value_type') as unknown as ValueTypeRow[]).filter((t) => ids.has(t.value_object_id)), (t) => t.value_object_id);
+  const testsOf = groupBy((rows('constraint_test') as unknown as ConstraintTestRow[]).filter((t) => valueObjectOf.has(t.constraint_id)), (t) => valueObjectOf.get(t.constraint_id));
+  const fieldsOf = groupBy(fields, (f) => f.value_object_id);
+  const constraintsOf = groupBy(constraints, (c) => c.value_object_id);
   const [meets, startsFrom] = ['meets', 'starts_from'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
-  const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
   return valueObjects.map((valueObject) => {
-    const valueType = valueTypes.find((t) => t.value_object_id === valueObject.id);
+    const valueType = groupOf(valueTypesOf, valueObject.id)[0];
     return {
       root: valueObject.id,
       valueObject,
-      fields: fields
-        .filter((f) => f.value_object_id === valueObject.id)
+      fields: [...groupOf(fieldsOf, valueObject.id)]
         .sort((a, b) => a.position - b.position)
         .map(({ value_object_id: _owner, position: _at, ...field }) => field),
-      constraints: constraints.filter((c) => c.value_object_id === valueObject.id),
-      valueType: valueType ? { row: valueType, meets: targets(meets, valueType.id), packages: targets(packages, valueType.id) } : null,
-      constraintTests: tests.filter((t) => valueObjectOf.get(t.constraint_id) === valueObject.id).map((row) => ({ row, startsFrom: targets(startsFrom, row.id) })),
+      constraints: groupOf(constraintsOf, valueObject.id),
+      valueType: valueType ? { row: valueType, meets: groupOf(meets, valueType.id), packages: groupOf(packages, valueType.id) } : null,
+      constraintTests: groupOf(testsOf, valueObject.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
     };
   });
 }

@@ -5,6 +5,7 @@
 // standard rules it meets and the packages it uses). One instance is one read model, whole; it holds only the links its
 // own records start. Where it is stored is its table's, an aggregate of its own (A18).
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { ProjectionRow, QueryHandlerRow, QueryRow, ReadModelFieldRow, ReadModelRow, ReaderRow } from '../../platform/data/tables.ts';
 
@@ -88,14 +89,6 @@ export function newReadModel(readModel: ReadModelRow, parts: Pick<ReadModel, 'fi
   return { root: readModel.id, readModel, ...parts, queries: [], projection: null, reader: null, queryHandlers: [] };
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[], source = 'source_id', target = 'target_id'): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The read models in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function readModelsFrom(rows: (table: string) => Row[], only?: string): ReadModel[] {
   const readModels = rows('read_model').filter((r) => only === undefined || r.id === only) as unknown as ReadModelRow[];
@@ -104,30 +97,30 @@ export function readModelsFrom(rows: (table: string) => Row[], only?: string): R
   const fields = (rows('read_model_field') as unknown as ReadModelFieldRow[]).filter((f) => ids.has(f.read_model_id));
   const queries = (rows('query') as unknown as QueryRow[]).filter((q) => ids.has(q.read_model_id));
   const readModelOf = new Map(queries.map((q) => [q.id, q.read_model_id]));
-  const projections = (rows('projection') as unknown as ProjectionRow[]).filter((p) => ids.has(p.read_model_id));
-  const readers = (rows('reader') as unknown as ReaderRow[]).filter((r) => ids.has(r.read_model_id));
-  const handlers = (rows('query_handler') as unknown as QueryHandlerRow[]).filter((h) => readModelOf.has(h.query_id));
+  const projectionsOf = groupBy((rows('projection') as unknown as ProjectionRow[]).filter((p) => ids.has(p.read_model_id)), (p) => p.read_model_id);
+  const readersOf = groupBy((rows('reader') as unknown as ReaderRow[]).filter((r) => ids.has(r.read_model_id)), (r) => r.read_model_id);
+  const handlersOf = groupBy((rows('query_handler') as unknown as QueryHandlerRow[]).filter((h) => readModelOf.has(h.query_id)), (h) => readModelOf.get(h.query_id));
+  const fieldsOf = groupBy(fields, (f) => f.read_model_id);
+  const queriesOf = groupBy(queries, (q) => q.read_model_id);
   const [reads, calls, fedBy, selectsBy, meets, storedIn] = ['reads', 'calls', 'fed_by', 'selects_by', 'meets', 'stored_in'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
-  const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
-  const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) });
+  const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) });
   return readModels.map((readModel) => {
-    const projection = projections.find((p) => p.read_model_id === readModel.id);
-    const reader = readers.find((r) => r.read_model_id === readModel.id);
+    const projection = groupOf(projectionsOf, readModel.id)[0];
+    const reader = groupOf(readersOf, readModel.id)[0];
     return {
       root: readModel.id,
       readModel,
-      fields: fields
-        .filter((f) => f.read_model_id === readModel.id)
+      fields: [...groupOf(fieldsOf, readModel.id)]
         .sort((a, b) => a.position - b.position)
         .map(({ read_model_id: _owner, position: _at, ...field }) => field),
-      reads: targets(reads, readModel.id),
-      calls: targets(calls, readModel.id),
-      fedBy: targets(fedBy, readModel.id),
-      queries: queries.filter((q) => q.read_model_id === readModel.id).map((row) => ({ row, selectsBy: targets(selectsBy, row.id), calls: targets(calls, row.id) })),
+      reads: groupOf(reads, readModel.id),
+      calls: groupOf(calls, readModel.id),
+      fedBy: groupOf(fedBy, readModel.id),
+      queries: groupOf(queriesOf, readModel.id).map((row) => ({ row, selectsBy: groupOf(selectsBy, row.id), calls: groupOf(calls, row.id) })),
       projection: projection ? technical(projection) : null,
-      reader: reader ? { ...technical(reader), storedIn: targets(storedIn, reader.id)[0] ?? null } : null,
-      queryHandlers: handlers.filter((h) => readModelOf.get(h.query_id) === readModel.id).map(technical),
+      reader: reader ? { ...technical(reader), storedIn: groupOf(storedIn, reader.id)[0] ?? null } : null,
+      queryHandlers: groupOf(handlersOf, readModel.id).map(technical),
     };
   });
 }
