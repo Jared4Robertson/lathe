@@ -13,6 +13,7 @@ import { addressOf } from '../../views/address';
 import { sendExtensionRecord, type ExtensionRecordCommands } from './commands';
 import { useNextExtensionRecordId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Extension record editor (LA-AUT-A19): the actions on a record of a product's own kind, each sending one of the
 // aggregate's own commands, POST /api/extension-record/<command>, and nothing else. Its fields are its kind's
@@ -70,7 +71,7 @@ export function ExtensionRecordEditor({ index, page, children }: { index: Record
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(toolbar, `Change ${page.id}`);
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, page.kind, index.byId.get(page.id)?.product ?? null, false);

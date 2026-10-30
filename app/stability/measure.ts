@@ -192,6 +192,13 @@ export async function installProbes(page: Page, firstKeys: string[] = []) {
   await readWholeCards(page);
 }
 
+/** Shows the wiki card as its summary or its whole page (More and Less, LA-V96-R22), from whichever it shows now. */
+export async function showCard(page: Page, as: 'summary' | 'whole') {
+  const toggle = page.locator('.wiki-panel .wiki-panel-more').first();
+  if (((await toggle.getAttribute('aria-expanded')) === 'true') !== (as === 'whole')) await toggle.click();
+  await page.locator(as === 'whole' ? '.wiki-panel.is-expanded' : '.wiki-panel:not(.is-expanded)').first().waitFor();
+}
+
 /**
  * Opens the wiki card on its whole page (More), as a Reader who expanded it (it opens as a summary), so the stability and
  * accessibility suites reach every section of a record's page; a choice made in a scenario is kept.

@@ -12,6 +12,7 @@ import { addressOf } from '../../views/address';
 import { sendDataStore, type DataStoreCommands } from './commands';
 import { useNextDataStoreId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Data store editor (LA-AUT-A23): the actions on a data store, each sending one of the aggregate's own commands,
 // POST /api/data-store/<command>, and nothing else. Edit sends Change a data store with only what changed (the
@@ -47,7 +48,7 @@ export function DataStoreEditor({ index, page, children }: { index: RecordIndex;
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(toolbar, `Change ${store.id}`);
   };
   const product = index.byId.get(store.id)?.product ?? '';
   if (mode === 'change') {

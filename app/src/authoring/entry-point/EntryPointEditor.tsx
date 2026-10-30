@@ -12,6 +12,7 @@ import { addressOf } from '../../views/address';
 import { sendEntryPoint, type EntryPointCommands } from './commands';
 import { useNextEntryPointId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Entry point editor (LA-AUT-A20): the actions on an entry point, each sending one of the aggregate's own commands,
 // POST /api/entry-point/<command>, and nothing else. Edit sends Change an entry point with only what changed; Remove
@@ -51,7 +52,7 @@ export function EntryPointEditor({ index, page, children }: { index: RecordIndex
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(toolbar, `Change ${entryPoint.id}`);
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, entryPoint.domain_id, false);

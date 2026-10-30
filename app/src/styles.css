@@ -40,6 +40,8 @@
   --tab-width: 14rem;
   /* Touch (LA-PAT-APP-UX-R07): the least size of a target under a finger, and the radius of a sheet's top corners. */
   --touch-target: 44px; --sheet-radius: 14px;
+  /* The stage's toolbar row, one height on every stage, so the wiki card's top is known before the row is measured. */
+  --tools-row: 42px;
   /* The floating panels over the stage (LA-V96): their inset from the window and each other, their surfaces (the dense
      ones, the nav, the tab panel and the chat, nearer opaque than the wiki card), their blur and shadow,
      and the header strip's height. The surfaces are the sheet's color, so every theme sets them in light and dark. The
@@ -431,7 +433,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-key-sample { flex: none; display: inline-flex; align-items: center; line-height: 0; }
 /* What scroll does, the key bar's last entry on every stage (scrollKeyEntry): a mouse with its wheel. */
 .stage-key-scroll { flex: none; overflow: visible; fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linecap: round; }
-@media (pointer: coarse) { .focus-stage { --key-clear-left: calc(4px + var(--touch-target) + 6px + 8px); } }
+@media (pointer: coarse) { :root { --tools-row: calc(var(--touch-target) + 14px); } .focus-stage { --key-clear-left: calc(4px + var(--touch-target) + 6px + 8px); } }
 /* On a phone: a Key chip at the foot of the stage, opening the entries with their meanings as a sheet. */
 .stage-key-chip { position: absolute; z-index: 6; bottom: var(--stage-foot); left: 50%; translate: -50% 0; padding: 4px 12px; border: 1px solid var(--float-border); border-radius: 999px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; }
 .stage-key-sheet-list { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 4px 16px 16px; list-style: none; overflow-y: auto; scrollbar-gutter: stable; font-size: 0.85rem; }
@@ -1027,7 +1029,7 @@ a.row-link.row-link:focus-visible { outline: none; }
    scrolls inside, shorter leaves room below. The sheet's round corners, a border all round in the focused box's own color (its outline's, so the box, the
    leader line and the card read as one object) and a lifting shadow; its handle at its left edge. */
 .wiki-panel {
-  --card-top: calc(var(--tools-foot, calc(var(--below-strip) - var(--float-inset))) + var(--card-gap-y));
+  --card-top: calc(var(--tools-foot, calc(var(--below-strip) + var(--tools-row))) + var(--card-gap-y));
   position: absolute; z-index: 2; top: var(--card-top); right: calc(var(--chat-space) - var(--float-inset) + var(--card-gap));
   box-sizing: border-box; width: var(--card-width, clamp(var(--card-min), calc((100% - var(--nav-space)) / 3), 640px)); min-width: var(--card-min);
   max-width: calc(100% - var(--nav-space) - var(--tool-space, 0px) - var(--chat-space) - var(--stage-min) - var(--float-inset) - var(--card-gap));
@@ -1055,7 +1057,7 @@ a.row-link.row-link:focus-visible { outline: none; }
    whole stage while it fits there, whatever panels are open; when it is wider than that it stays inside the room, against
    the nav or the chat, rather than fold its walk away. */
 .stage-tools-room { position: absolute; z-index: 8; top: var(--open-top, 0px); left: var(--open-left, 0px); right: var(--chat-space, 0px); height: 0; container-type: inline-size; }
-.stage-tools[data-stage-tools="top"] { top: 0; left: 0; padding: 6px 10px; width: max-content; max-width: 100cqw; translate: clamp(0px, 50cqw + (var(--chat-space, 0px) - var(--open-left, 0px)) / 2 - 50%, 100cqw - 100%) 0; }
+.stage-tools[data-stage-tools="top"] { top: 0; left: 0; height: var(--tools-row); padding: 6px 10px; width: max-content; max-width: 100cqw; translate: clamp(0px, 50cqw + (var(--chat-space, 0px) - var(--open-left, 0px)) / 2 - 50%, 100cqw - 100%) 0; }
 /* The stages fill the stage; what they draw sits in the frame, the open space less their tools. */
 .focus-stage > :is(.graph-page, .erd-page, .trace-page), .focus-stage > .graph-page > .graph-workspace, .focus-stage .graph-workspace > .graph-canvas, .focus-stage .erd-page > :is(.erd-canvas, .erd-empty) { position: absolute; inset: 0; min-height: 0; }
 .focus-stage .stage-camera { left: calc(var(--frame-left, 0px) + 4px); bottom: var(--stage-foot); }

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { asDesktop } from './desktop';
-import { openPage } from './measure';
+import { openPage, showCard } from './measure';
 import { EDITED, keepData, RECORD } from './scenarios';
 import { boxOf, sceneOf } from './scene';
 
@@ -101,8 +101,7 @@ test.describe('watching the spec change', () => {
       await cards.nth(1).click();
       await page.waitForURL((u) => u.pathname === EDITED);
       const card = page.locator('.wiki-panel');
-      const more = card.getByRole('button', { name: 'More' });
-      if (await more.count()) await more.click();
+      await showCard(page, 'whole');
       const section = card.locator('.record-changes');
       await expect(section).toContainText('Changed since the last commit');
       await expect(section.locator('ins')).toContainText('Changed again while the Reader watched');

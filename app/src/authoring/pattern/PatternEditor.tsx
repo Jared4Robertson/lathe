@@ -13,6 +13,7 @@ import { addressOf } from '../../views/address';
 import { sendPattern, type PatternCommands, type PatternRoute } from './commands';
 import { useNextPatternId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Pattern editor (LA-AUT-A2): the actions on a record of a pattern, each sending one of the aggregate's own
 // commands, POST /api/pattern/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
@@ -143,7 +144,7 @@ export function PatternEditor({ index, page, children }: { index: RecordIndex; p
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(toolbar, `Change ${id}`);
   };
   const product = page.pattern.product_id;
   if (mode.mode === 'change') {

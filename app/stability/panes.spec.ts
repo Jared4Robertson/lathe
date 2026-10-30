@@ -1,6 +1,6 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
-import { expectStable, openPage, step } from './measure';
+import { expectStable, openPage, showCard, step } from './measure';
 import { AGGREGATE, RECORD, STAGE } from './scenarios';
 import { sceneOf } from './scene';
 
@@ -49,7 +49,7 @@ test.describe('the stage and its panels', () => {
     await openPage(page, `${AGGREGATE}?stage=erd`, STRIP);
     await page.locator(CARD).waitFor();
     // The narrow strip still names the focus: its title keeps room, the trail giving way first (LA-V96-R09).
-    expect((await page.locator('.header-strip h1').boundingBox())?.width ?? 0, 'the title is shown').toBeGreaterThan(40);
+    expect(await page.locator('.header-strip h1').evaluate((h) => h.clientWidth > 0 && h.scrollWidth <= h.clientWidth), 'the title is shown whole').toBe(true);
     const box = (sel: string) => page.locator(sel).first().boundingBox();
     const [nav, card, bar, stage] = await Promise.all([box(NAV), box(CARD), box(PAGE_BAR), box(STAGE)]);
     expect(card!.x, 'the card starts after the nav ends').toBeGreaterThanOrEqual(nav!.x + nav!.width);
@@ -72,7 +72,8 @@ test.describe('the stage and its panels', () => {
     for (const [width, expected] of [[1440, null], [1100, null], [960, 'card'], [1920, null]] as const) {
       await page.setViewportSize({ width, height: 900 });
       await expect.poll(crowded, { message: `collapsed for space at ${width} px` }).toBe(expected);
-      const card = await page.locator(CARD).boundingBox();
+      // A card collapsed for space is not drawn at all.
+      const card = (await page.locator(CARD).count()) ? await page.locator(CARD).boundingBox() : null;
       if (card) expect(card.width, `the card at ${width} px`).toBeGreaterThanOrEqual(359);
       const open = await openSpace(page);
       expect(open.right - open.left, `the open space at ${width} px`).toBeGreaterThanOrEqual(299);
@@ -153,11 +154,12 @@ test.describe('the stage and its panels', () => {
     await expectFocusInOpenSpace(page, 'with a wider card');
   });
 
+  // On the web the page's controls sit in the header strip, frosted with it; the desktop app's page bar is its own panel.
   test('LA-V96-R20-T02 the panels are frosted over the stage, and opaque under reduced transparency', async ({ page }) => {
     const looks = () => page.evaluate((sels) => sels.map((sel) => {
       const s = getComputedStyle(document.querySelector(sel)!);
       return { sel, filter: s.backdropFilter, background: s.backgroundColor };
-    }), ['nav#nav', '.page-bar-actions', '.header-strip', '.wiki-panel']);
+    }), ['nav#nav', '.header-strip', '.wiki-panel']);
     await openPage(page, `${RECORD}?stage=graph`);
     for (const l of await looks()) {
       expect(l.filter, `${l.sel} blurs the stage behind it`).toContain('blur');
@@ -176,6 +178,7 @@ test.describe('the stage and its panels', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPage(page, `${AGGREGATE}?stage=graph`, STRIP);
     await stageReady(page);
+    await showCard(page, 'summary');
     const where = () => page.evaluate((stage) => {
       const card = document.querySelector('.wiki-panel')!.getBoundingClientRect();
       const tools = document.querySelector(`${stage} [data-stage-tools="top"]`)?.getBoundingClientRect();
@@ -198,7 +201,7 @@ test.describe('the stage and its panels', () => {
     await page.waitForTimeout(600);
     expect(await where(), 'the card holds its spot and height across a new focus and a pan').toEqual(first);
     // Expanded: about 85% of the stage, kept above the foot by the card's gap.
-    await page.locator(CARD).getByRole('button', { name: 'More' }).click();
+    await showCard(page, 'whole');
     await expect.poll(async () => (await where()).height, { message: 'expanded, the card grows' }).toBeGreaterThan(first.height);
     const expanded = await where();
     expect(expanded.top, 'expanded, its top stays').toBe(first.top);
@@ -254,7 +257,7 @@ test.describe('a flow\'s steps in the wiki card', () => {
   test('LA-V101-R06-T02 in the 360 px wiki card, each step reads whole, stacked, and nothing scrolls sideways or is cut', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPage(page, '/LA-EXP-UC03-FL01?stage=graph', STRIP);
-    await page.locator(CARD).getByRole('button', { name: 'More' }).click();
+    await showCard(page, 'whole');
     const table = page.locator(`${CARD} table.flow-steps`).first();
     await table.waitFor();
     const sizes = await table.evaluate((el) => {
@@ -274,7 +277,7 @@ test.describe('a flow\'s steps in the wiki card', () => {
   test('LA-V101-R10-T02 in the 360 px wiki card, a use case\'s requirement rows read whole, stacked, and nothing is cut', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPage(page, '/LA-AUT-UC06?stage=graph', STRIP);
-    await page.locator(CARD).getByRole('button', { name: 'More' }).click();
+    await showCard(page, 'whole');
     const table = page.locator(`${CARD} table.trace-requirements`).first();
     await table.waitFor();
     const sizes = await table.evaluate((el) => {
