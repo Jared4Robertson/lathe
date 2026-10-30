@@ -57,7 +57,7 @@ export function stickyLabel(p: Plate, zoom: number, X: (x: number) => number, Y:
   const key = `${p.place}|${Math.round(w)}|${Math.round(h)}|${most.toPrecision(4)}`;
   let laid = known.get(key);
   if (!laid) {
-    laid = layOut({ title: p.title, meta: p.meta }, w, h, most);
+    laid = layOut({ title: p.title, meta: p.meta, badge: false }, w, h, most);
     if (known.size >= KNOWN_MAX) known.delete(known.keys().next().value!);
     known.set(key, laid);
   }
@@ -92,7 +92,7 @@ export function roomFor(p: Plate, zoom: number, height: number, px: number): num
   const least = px / TITLE_FONT;
   if (most < least || height <= 0) return null;
   const pad = (s: number) => -LABEL_PAD_BLOCK * s;
-  const label = { title: p.title, meta: p.meta };
+  const label: MapLabel = { title: p.title, meta: p.meta, badge: false };
   const fits = (w: number) => largestFit(label, true, w, height, most, pad) >= least * (1 - 1e-9);
   let high = Math.max(1, (p.label.w + 2 * STICKY_SIDE * p.text) * zoom);
   if (!fits(high)) return null;

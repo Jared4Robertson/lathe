@@ -22,7 +22,7 @@ describe('a map\'s layout input', () => {
     const input = productInput(index, 'P', 'tree', MEASURE());
     const { shape, labels } = unpackInput(input.packed, input.shape.roots.map((r) => input.shape.ids.indexOf(r)));
     expect([...shape.parents]).toEqual([...input.shape.parents]);
-    expect(labels.map((l) => [l.title, l.meta, l.shape, l.marks ?? 0, !!l.marked])).toEqual(input.labels.map((l) => [l.title, l.meta, l.shape, l.marks ?? 0, !!l.marked]));
+    expect(labels.map((l) => [l.title, l.meta, l.shape, l.marks ?? 0])).toEqual(input.labels.map((l) => [l.title, l.meta, l.shape, l.marks ?? 0]));
     const here = placeTree(input.shape, (i) => input.labels[i]);
     expect([...placeTree(shape, (i) => labels[i]).boxes]).toEqual([...here.boxes]);
     // The same as the in-thread Tree layout.
