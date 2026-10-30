@@ -37,6 +37,9 @@ const PATHS: Record<string, string[]> = {
   fork: ['M7 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0', 'M7 19m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0', 'M17 5m-2 0a2 2 0 1 0 4 0a2 2 0 1 0-4 0', 'M7 7v10', 'M17 7v2a3 3 0 0 1-3 3h-4a3 3 0 0 0-3 3'],
   // The chat's dictation (LA-PLT-UC20-R01).
   mic: ['M9 5a3 3 0 0 1 6 0v5a3 3 0 0 1-6 0z', 'M5 10a7 7 0 0 0 14 0', 'M8 21h8', 'M12 17v4'],
+  // The chat's images and Undo (LA-PLT-UC22-R05, LA-PLT-UC21-R02).
+  image: ['M4 5h16v14H4z', 'M8.5 10m-1.5 0a1.5 1.5 0 1 0 3 0a1.5 1.5 0 1 0-3 0', 'M20 16l-5-5l-8 8'],
+  undo: ['M9 14L4 9l5-5', 'M4 9h10a6 6 0 0 1 0 12h-3'],
   trash: ['M4 7h16', 'M10 11v6', 'M14 11v6', 'M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2l1-12', 'M9 7v-3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3'],
 };
 

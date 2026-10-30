@@ -173,6 +173,13 @@ export type LiveStore = ReturnType<typeof createLiveStore>;
 
 // ---------- What the page shares ----------
 
+/** Claude's changes under review (LA-EXP-UC15-R08): one turn's changed records, which Highlight changes then shows alone and the Next and Previous change keys walk. */
+export interface Review {
+  /** How the panel and the card name it: "Claude's changes, turn 3". */
+  label: string;
+  changes: readonly RecordChange[];
+}
+
 /** The changes the app shares (ChangesProvider in App.tsx): Highlight changes, its baseline's diff, Follow and the live store. */
 export interface ChangesApi {
   /** The product in view, or null on the picker. */
@@ -191,11 +198,14 @@ export interface ChangesApi {
   changes: readonly RecordChange[];
   byId: ReadonlyMap<string, RecordChange>;
   live: LiveStore;
+  /** The turn of Claude's being reviewed, whose changes replace the baseline's and the live marks while it lasts; null when none. */
+  review: Review | null;
+  setReview: (review: Review | null) => void;
 }
 
 const NONE: ChangesApi = {
   product: null, highlight: false, setHighlight: () => {}, since: 'commit', setSince: () => {}, follow: false, setFollow: () => {}, followNote: null,
-  baseline: { state: 'loading' }, changes: [], byId: new Map(), live: createLiveStore(),
+  baseline: { state: 'loading' }, changes: [], byId: new Map(), live: createLiveStore(), review: null, setReview: () => {},
 };
 export const ChangesContext = createContext<ChangesApi>(NONE);
 export const useChanges = () => useContext(ChangesContext);

@@ -5,7 +5,7 @@ import { chooseChangesBaseline } from '../exploring/session-settings/commands/ch
 import { turnFollowOnOrOff } from '../exploring/session-settings/commands/turn-follow-on-or-off';
 import { markProductLookedAt } from '../exploring/session-settings/commands/mark-product-looked-at';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { ChangesContext, createLiveStore, type RecordChange, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Since } from './changes';
+import { ChangesContext, createLiveStore, type RecordChange, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Review, type Since } from './changes';
 
 /** How long the note saying why Follow went off stays, in ms. */
 const FOLLOW_NOTE_MS = 6000;
@@ -84,10 +84,16 @@ export function ChangesProvider({ index, product, children }: { index: RecordInd
   const byId = useMemo(() => new Map(changes.map((c) => [c.id, c])), [changes]);
   baselineChanges.current = byId;
 
+  // Claude's changes under review replace the baseline's changes and the live marks, and light the stage whatever Highlight changes says.
+  const [review, setReview] = useState<Review | null>(null);
+  const [noLive] = useState(createLiveStore);
+  const reviewById = useMemo(() => new Map((review?.changes ?? []).map((c) => [c.id, c])), [review]);
+  const reviewBaseline = useMemo<Baseline | null>(() => review && { state: 'ok', changes: [...review.changes], label: "in Claude's turn", detail: review.label }, [review]);
+
   const api = useMemo<ChangesApi>(() => ({
-    product, highlight: settings.highlight, setHighlight, since: settings.since, setSince, follow: settings.follow, setFollow, followNote,
-    baseline: current, changes, byId, live,
-  }), [product, settings.highlight, setHighlight, settings.since, setSince, settings.follow, setFollow, followNote, current, changes, byId, live]);
+    product, highlight: review ? true : settings.highlight, setHighlight, since: settings.since, setSince, follow: settings.follow, setFollow, followNote,
+    baseline: reviewBaseline ?? current, changes: review ? review.changes : changes, byId: review ? reviewById : byId, live: review ? noLive : live, review, setReview,
+  }), [product, settings.highlight, setHighlight, settings.since, setSince, settings.follow, setFollow, followNote, current, changes, byId, live, review, reviewBaseline, reviewById, noLive]);
   return <ChangesContext.Provider value={api}>{children}</ChangesContext.Provider>;
 }
 
