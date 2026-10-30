@@ -8,8 +8,8 @@ import { NODE_WIDTH, nodeShape, SHAPES, type Room, type Shape } from './shapes';
 // at most a fixed share of their box's size, at which every sibling's whole label fits its room
 // (`largestFit`). A long title wraps on whole words, never cut off or ended with an ellipsis.
 // Lines are broken here, with the text measure the canvas draws with (the label's faces, loaded,
-// measured by the canvas's own text metrics: fonts.ts), once when the map is built, so the map is
-// laid out once per spec load and the canvas draws exactly these lines (paint.ts).
+// measured by the canvas's own text metrics: fonts.ts), when the map is built (in the layout's worker,
+// with the same faces: layout.ts) or a box is first drawn, and the canvas draws exactly these lines (paint.ts).
 
 /** A label's font sizes and padding at text scale 1 (a leaf-wide level), in map units; the canvas draws them with these. */
 export const TITLE_FONT = 12.5;

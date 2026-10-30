@@ -28,8 +28,8 @@ export function ColumnList({ index, map, focus, at, gapsOnly, hrefFor, onNavigat
   // The column shown: the focus's children, or its own column when it holds nothing; a mark that is no record (Untraced)
   // opens its column here without moving the focus.
   const [opened, setOpened] = useState<{ focus: string; owner: string } | null>(null);
-  const shown = opened?.focus === focus && map.map.nodes.has(opened.owner) ? opened.owner : holds(map, at) > 0 ? at : map.map.nodes.get(at)?.parent ?? map.product;
-  const node = map.map.nodes.get(shown)!;
+  const shown = opened?.focus === focus && map.tree.has(opened.owner) ? opened.owner : holds(map, at) > 0 ? at : map.tree.get(at)?.parent ?? map.product;
+  const node = map.tree.get(shown)!;
   const up = node.parent;
   const fade = useMemo(() => traceFade(map, null, gapsOnly, FADE), [map, gapsOnly]);
 

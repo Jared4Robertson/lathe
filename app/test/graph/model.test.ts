@@ -2,8 +2,8 @@ import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
 import { addRows } from '../fixtures/load';
 import { neighborhood, type Filters } from '../../src/graph/model';
-import { graphMap } from '../../src/graph/map';
 import { testIndex, testWorkspace } from './workspace';
+import { graphMap } from './maps';
 
 const ids = (n: { nodes: { id: string }[] }) => n.nodes.map((x) => x.id).sort();
 const filters = (kinds: string[] = []): Filters => ({ hiddenKinds: new Set(kinds) });

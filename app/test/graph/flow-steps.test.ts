@@ -3,8 +3,8 @@ import type { ServedData } from '../read-view';
 import { describe, expect, it } from 'vitest';
 import { addRows } from '../fixtures/load';
 import { isGraphNode, neighborhood, nodeParent } from '../../src/graph/model';
-import { graphMap } from '../../src/graph/map';
 import { testIndex, testWorkspace } from './workspace';
+import { graphMap } from './maps';
 
 // Flow steps in the graph: under their flow. A requirement's chain through its step is the Trace view's (test/trace).
 
