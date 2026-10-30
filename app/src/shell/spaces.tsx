@@ -1,11 +1,13 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, type ReactNode } from 'react';
 import { navigate } from '../router';
 import type { ProductSummary } from '../../../lathe/src/authoring/product/read-model';
 import { useProducts } from '../authoring/product/reads';
 import { parseSpecRoute, spaceIndex, type SpecIndex } from '../specs/data';
-import { addressOf, isFocusPath } from '../views/address';
+import { addressOf } from '../views/address';
 import { withoutOverlays } from '../views/overlays';
-import { usePref } from './prefs';
+import { onPageOpenedRememberPageInSpace } from '../exploring/space/policies';
+import { spaceRepository } from '../exploring/space/repository';
+import { useAggregate } from './prefs';
 
 // Spaces: each product is its own space, as a workspace is in Slack, Discord, Linear or Notion, and
 // the spaces are kept hard apart. The rail at the far left of the nav has one icon per product; the
@@ -83,11 +85,6 @@ export function productOfPath(index: SpecIndex | null, path: string): string | n
   }
 }
 
-const SPACE_KEY = 'lathe:space';
-const PAGES_KEY = 'lathe:space-pages';
-const isString = (v: unknown): v is string => typeof v === 'string';
-const isPages = (v: unknown): v is Record<string, string> => !!v && typeof v === 'object' && !Array.isArray(v) && Object.values(v).every(isString);
-
 export interface SpacesApi {
   /** Every product's space, in rail order (the products' ID order), as the Product aggregate lists them. */
   spaces: Space[];
@@ -118,28 +115,18 @@ export function useSpaceState(index: SpecIndex | null, path: string, search: str
   const products = useProducts(index);
   const listed = products.state === 'read' ? products.answer : null;
   const spaces = useMemo(() => (listed ?? []).map(spaceOf), [listed]);
-  const [chosen, setChosen] = usePref<string>(SPACE_KEY, '', isString);
-  const [stored, setPages] = usePref<Record<string, string>>(PAGES_KEY, {}, isPages, 'session');
-  // A saved page that is not a page of a space is dropped.
-  const pages = useMemo(() => Object.fromEntries(Object.entries(stored).filter(([, page]) => isFocusPath(page.split('?')[0]))), [stored]);
-  const pagesRef = useRef(pages);
-  pagesRef.current = pages;
+  // The spaces as kept (the Space aggregate): the one chosen last and each one's last page.
+  const { chosen, pages } = useAggregate(spaceRepository);
   const pageProduct = productOfPath(index, path);
 
-  useEffect(() => {
-    if (!pageProduct) return;
-    setChosen((c) => (c === pageProduct ? c : pageProduct));
-    const here = path + withoutOverlays(search);
-    setPages((p) => (p[pageProduct] === here ? p : { ...p, [pageProduct]: here }));
-  }, [pageProduct, path, search, setChosen, setPages]);
+  // Page opened (LA-EXP-EV01): the page becomes its space's last page.
+  useEffect(() => { onPageOpenedRememberPageInSpace(pageProduct, path + withoutOverlays(search)); }, [pageProduct, path, search]);
 
   const currentId = pageProduct ?? (spaces.some((s) => s.id === chosen) ? chosen : spaces[0]?.id ?? null);
   const current = spaces.find((s) => s.id === currentId) ?? null;
   const scoped = useMemo(() => (index && current ? spaceIndex(index, current.id) : index), [index, current?.id]);
-  const go = useCallback((id: string) => {
-    setChosen(id);
-    navigate(pagesRef.current[id] ?? addressOf(id));
-  }, [setChosen]);
+  // The page opened is remembered in its space (above), which also makes the space the one last chosen.
+  const go = useCallback((id: string) => { navigate(spaceRepository.load().pages[id] ?? addressOf(id)); }, []);
   const lastPage = useCallback((id: string) => pages[id], [pages]);
   const last = spaces.find((s) => s.id === (pageProduct ?? chosen)) ?? null;
   return useMemo(() => ({ spaces, read: listed !== null, current, index: scoped, onPage: !!pageProduct && pageProduct === current?.id, last, go, lastPage }), [spaces, listed, current, scoped, pageProduct, last, go, lastPage]);

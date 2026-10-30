@@ -2,7 +2,7 @@ import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { parseSettings } from '../src/editor.ts';
+import { parseSettings } from '../src/shell-settings/model.ts';
 import { findClaude, listSessions, projectDirName, runningSessions, sessionTitle, transcriptFile } from '../src/claudeSessions.ts';
 
 const home = mkdtempSync(path.join(os.tmpdir(), 'lathe-claude-home-'));

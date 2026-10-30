@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 import {
   COMMANDS,
   GROUPS,
-  OVERRIDES_KEY,
   RESERVED,
   duplicateBindings,
   eventChord,
@@ -13,12 +12,14 @@ import {
   match,
   normalizeBinding,
   platformKeys,
-  readOverrides,
   resolveCommands,
   usesArrows,
   usesEnter,
   walkMove,
 } from '../src/shell/keymap';
+import { OVERRIDES_KEY, overridesFrom } from '../src/platform/keymap/read-model';
+import { keymapReader } from '../src/platform/keymap/reader';
+import { listKeyboardCommands } from '../src/platform/keymap/queries';
 
 const key = (k: string, code: string, mods: Partial<Record<'ctrlKey' | 'altKey' | 'shiftKey' | 'metaKey', boolean>> = {}) =>
   ({ key: k, code, ctrlKey: false, altKey: false, shiftKey: false, metaKey: false, ...mods });
@@ -32,7 +33,7 @@ describe('the keymap', () => {
     }
   });
 
-  it('LA-PLT-INV01-T No binding is used twice where both can apply, nor starts a sequence of its own', () => {
+  it('LA-VO61-C03-T No binding is used twice where both can apply, nor starts a sequence of its own', () => {
     for (const mac of [true, false]) expect(duplicateBindings(COMMANDS, mac)).toEqual([]);
     // The check itself finds a clash, including a sequence that starts with a whole binding.
     const clash = [...COMMANDS, { id: 'x', title: 'X', group: 'View' as const, keys: ['Mod+B'], when: 'page' as const }];
@@ -117,14 +118,14 @@ describe('the keymap', () => {
 
   it('LA-V61-R10-T01 A person can override bindings in local storage; a binding that takes a browser essential is dropped', () => {
     window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', quickOpen: ['Mod+W', 'Mod+O'], nope: 'Mod+Y', walkOut: 'X' }));
-    const overrides = readOverrides();
-    expect(overrides).toEqual({ toggleNav: ['Mod+J'], quickOpen: ['Mod+W', 'Mod+O'] });
-    const commands = resolveCommands(overrides, false);
+    expect(overridesFrom(window.localStorage.getItem(OVERRIDES_KEY))).toEqual({ toggleNav: ['Mod+J'], quickOpen: ['Mod+W', 'Mod+O'] });
+    const commands = listKeyboardCommands(keymapReader(false));
     expect(commands.find((c) => c.id === 'toggleNav')!.keys).toEqual(['Mod+J']);
     expect(commands.find((c) => c.id === 'quickOpen')!.keys).toEqual(['Mod+O']);
     expect(match(['Ctrl+J'], commands, false, all).command?.id).toBe('toggleNav');
     window.localStorage.setItem(OVERRIDES_KEY, 'not json');
-    expect(readOverrides()).toEqual({});
+    expect(overridesFrom(window.localStorage.getItem(OVERRIDES_KEY))).toEqual({});
+    expect(listKeyboardCommands(keymapReader(false)).find((c) => c.id === 'toggleNav')!.keys).toEqual(resolveCommands({}, false).find((c) => c.id === 'toggleNav')!.keys);
   });
 
   const keysOn = (id: string, mac: boolean) => resolveCommands({}, mac).find((c) => c.id === id)!.keys;

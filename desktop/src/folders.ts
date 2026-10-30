@@ -1,12 +1,11 @@
-// Product folders: whether a folder can be opened, the names of the products in it, and the
-// recent folders list (File › Open Recent). Nothing here touches Electron, so it is unit-tested.
+// Product folders: whether a folder can be opened, the names of the products in it, and how a folder
+// reads to people. Nothing here touches Electron, so it is unit-tested. The recent folders are their own
+// aggregate (recent-folders/).
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
 export const CONFIG_FILE = 'lathe.config.json';
-/** How many folders File › Open Recent lists. */
-export const RECENT_LIMIT = 10;
 
 /** A folder that opens: its data folder, then the data folder of each other product its config lists under products. */
 export type FolderCheck = { ok: true; dataDirs: string[] } | { ok: false; message: string };
@@ -83,16 +82,4 @@ export function displayPath(folder: string, home = os.homedir()): string {
 export function windowTitle(folder: string, names: string[], home = os.homedir()): string {
   const where = displayPath(folder, home);
   return names.length ? `${names.join(', ')} — ${where}` : `${path.basename(folder)} — ${where}`;
-}
-
-/** The recent list with `folder` first, each folder once, at most RECENT_LIMIT long. */
-export function addRecent(list: readonly string[], folder: string, limit = RECENT_LIMIT): string[] {
-  const key = path.resolve(folder);
-  return [key, ...list.filter((f) => path.resolve(f) !== key)].slice(0, limit);
-}
-
-/** Reads a saved recent list, keeping only strings, each once, at most RECENT_LIMIT. */
-export function parseRecent(raw: unknown, limit = RECENT_LIMIT): string[] {
-  if (!Array.isArray(raw)) return [];
-  return raw.filter((f): f is string => typeof f === 'string' && f.length > 0).reduceRight<string[]>((list, f) => addRecent(list, f, limit), []);
 }

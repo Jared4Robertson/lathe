@@ -5,7 +5,7 @@ import { Tooltip } from '../shell/Tooltip';
 import { parseSpecRoute, type SpecIndex } from '../specs/data';
 import { focusOf, isFocusRoute } from './address';
 import { hereOf } from './place';
-import type { Tab, TabSet } from './tabs';
+import type { Tab, TabSet } from '../exploring/tab-set/model';
 
 // The desktop app's tab strip, at the left of the page bar: one tab per place (tabs.ts), as a browser's tabs. A tab
 // shows the record its place is on, its ID in mono and its title, cut short, with both in full in its tooltip; a

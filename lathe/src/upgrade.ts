@@ -8,7 +8,8 @@ import { execFileSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { CONFIG_FILE, readConfig, SCHEMA_VERSION, schemaVersionMessage } from './config.ts';
+import { ProductRepoConfigRepository, type StoredConfig } from './platform/product-repo/repository.ts';
+import { readConfig, SCHEMA_VERSION, schemaVersionMessage } from './config.ts';
 import { formatProblem, StoreError } from './platform/data/problems.ts';
 import { openStore, type Store } from './platform/data/store.ts';
 import { tableText } from './platform/data/rows.ts';
@@ -162,9 +163,9 @@ export async function upgradeProduct(root: string, options: { converters?: Conve
   }
 
   // Only now is the data for the new schema.
-  const file = path.join(config.root, CONFIG_FILE);
-  const written = existsSync(file) ? (JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>) : {};
+  const repository = new ProductRepoConfigRepository(config.root);
+  const written = { ...((repository.load() ?? {}) as StoredConfig) };
   delete written.schema;
-  writeFileSync(file, `${JSON.stringify({ schema: target, ...written }, null, 2)}\n`);
+  repository.save({ schema: target, ...written });
   return { ...result, to: target };
 }
