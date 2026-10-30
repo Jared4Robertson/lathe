@@ -58,7 +58,7 @@ describe('lathe add', () => {
 
   it('LA-AUT-UC01-R06-T04 takes a list column as the flag given once per item, and part rows by their columns', async () => {
     const root = writeData(everyKind());
-    expect((await lathe(root, 'add', 'check', '--name', 'my-check', '--position', '2', '--severity', 'warning', '--summary', 'S.', '--explanation', 'E.', '--query', 'SELECT 1', '--kinds', 'domain', '--kinds', 'view')).status).toBe(0);
+    expect((await lathe(root, 'add', 'check', '--name', 'my-check', '--position', '2', '--severity', 'warning', '--summary', 'S.', '--explanation', 'E.', '--query', 'SELECT NULL AS record, NULL AS message', '--kinds', 'domain', '--kinds', 'view')).status).toBe(0);
     expect(readFileSync(path.join(root, 'data', 'check.jsonl'), 'utf8')).toContain('"kinds":["domain","view"]');
     const field = await lathe(root, 'add', 'entity_field', '--entity_id', 'TL-LEND-EN01', '--position', '4', '--name', 'Due date', '--meaning', 'The last day of the loan.', '--type', 'date', '--required', 'true');
     expect(field.out).toBe(

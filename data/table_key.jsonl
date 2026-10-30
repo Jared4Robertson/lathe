@@ -58,7 +58,7 @@
 {"table_id":"LA-AUT-EN30-TB","position":2,"type":"foreign","columns":["domain_id"],"target_table_id":"LA-AUT-EN04-TB"}
 {"table_id":"LA-AUT-EN31-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN32-TB","position":1,"type":"primary","columns":["value_object_id","position"]}
-{"table_id":"LA-AUT-EN32-TB","position":2,"type":"unique","columns":["value_object_id","name"],"invariant_id":"LA-AUT-INV16"}
+{"table_id":"LA-AUT-EN32-TB","position":2,"type":"unique","columns":["value_object_id","name"],"invariant_id":"LA-AUT-INV181"}
 {"table_id":"LA-AUT-EN32-TB","position":3,"type":"foreign","columns":["value_object_id"],"target_table_id":"LA-AUT-EN31-TB"}
 {"table_id":"LA-AUT-EN32-TB","position":4,"type":"foreign","columns":["type_value_object_id"],"target_table_id":"LA-AUT-EN31-TB"}
 {"table_id":"LA-AUT-EN32-TB","position":5,"type":"foreign","columns":["type_aggregate_id"],"target_table_id":"LA-AUT-EN06-TB"}
@@ -66,7 +66,7 @@
 {"table_id":"LA-AUT-EN33-TB","position":2,"type":"foreign","columns":["value_object_id"],"target_table_id":"LA-AUT-EN31-TB"}
 {"table_id":"LA-AUT-EN34-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN35-TB","position":1,"type":"primary","columns":["domain_event_id","position"]}
-{"table_id":"LA-AUT-EN35-TB","position":2,"type":"unique","columns":["domain_event_id","name"],"invariant_id":"LA-AUT-INV16"}
+{"table_id":"LA-AUT-EN35-TB","position":2,"type":"unique","columns":["domain_event_id","name"],"invariant_id":"LA-AUT-INV183"}
 {"table_id":"LA-AUT-EN35-TB","position":3,"type":"foreign","columns":["domain_event_id"],"target_table_id":"LA-AUT-EN10-TB"}
 {"table_id":"LA-AUT-EN35-TB","position":4,"type":"foreign","columns":["type_value_object_id"],"target_table_id":"LA-AUT-EN31-TB"}
 {"table_id":"LA-AUT-EN35-TB","position":5,"type":"foreign","columns":["type_aggregate_id"],"target_table_id":"LA-AUT-EN06-TB"}
@@ -78,7 +78,7 @@
 {"table_id":"LA-AUT-EN38-TB","position":1,"type":"primary","columns":["id"]}
 {"table_id":"LA-AUT-EN38-TB","position":2,"type":"foreign","columns":["domain_id"],"target_table_id":"LA-AUT-EN04-TB"}
 {"table_id":"LA-AUT-EN39-TB","position":1,"type":"primary","columns":["read_model_id","position"]}
-{"table_id":"LA-AUT-EN39-TB","position":2,"type":"unique","columns":["read_model_id","name"],"invariant_id":"LA-AUT-INV16"}
+{"table_id":"LA-AUT-EN39-TB","position":2,"type":"unique","columns":["read_model_id","name"],"invariant_id":"LA-AUT-INV185"}
 {"table_id":"LA-AUT-EN39-TB","position":3,"type":"foreign","columns":["read_model_id"],"target_table_id":"LA-AUT-EN38-TB"}
 {"table_id":"LA-AUT-EN39-TB","position":4,"type":"foreign","columns":["type_value_object_id"],"target_table_id":"LA-AUT-EN31-TB"}
 {"table_id":"LA-AUT-EN39-TB","position":5,"type":"foreign","columns":["type_aggregate_id"],"target_table_id":"LA-AUT-EN06-TB"}
