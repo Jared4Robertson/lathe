@@ -17,13 +17,13 @@ const STRIP = '.header-strip';
 const TITLE = '.wiki-panel-title';
 const CONTENT = ['.wiki-panel-scroll'];
 /** A record of a kind whose aggregate has no editor of its own yet. */
-const GENERIC = '/LA-VO01';
+const GENERIC = '/LA-V92';
 
 test.describe('editing', () => {
   test('LA-EXP-UC14-FL01-T open the record form, save an edit', async ({ page }) => {
     const restore = keepData();
     try {
-      // A value object: its aggregate has no editor of its own yet, so its page shows the record form.
+      // A view: its aggregate has no editor of its own yet, so its page shows the record form.
       await openPage(page, GENERIC);
       const form = page.getByRole('form', { name: `Edit ${GENERIC.slice(1)}` });
       const open = await step(page, 'edit', 'open the form', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {

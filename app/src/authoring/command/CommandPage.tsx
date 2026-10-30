@@ -1,7 +1,8 @@
 import type { CommandPage as Command } from '../../../../lathe/src/authoring/command/read-model';
+import { plural } from '../../plural';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
-import type { SpecIndex } from '../../specs/data';
+import { kindLabel, type SpecIndex } from '../../specs/data';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
 import { RecordedExceptions } from '../../specs/RecordText';
@@ -16,6 +17,9 @@ import { useCommand } from './reads';
 // its test (the event it hears is in its Traceability); a handler its description; a policy test its scenario. What
 // every record's page holds around that (traceability, problems, facts and links) is the Record page's (RecordFrame).
 
+/** A list of one kind is titled by that kind's plural label (LA-V92-R09). */
+const titleOf = (index: SpecIndex, kind: string) => plural(kindLabel(index, kind));
+
 const policyOf = (page: Command, id: string) => page.policies.find((p) => p.policy.id === id || p.eventHandler?.handler.id === id || p.test?.test.id === id)!;
 
 /** What one record of the command shows on its page, by the kind it is in the command. */
@@ -26,9 +30,9 @@ function Content({ index, page }: { index: SpecIndex; page: Command }) {
       return (
         <>
           <Text index={index} id={id} source={page.command.description} field="description" />
-          <RowsSection index={index} title="Command handler" ids={page.handler ? [page.handler.handler.id] : []} label={`Handler of ${id}`} empty="No handler carries it out yet." />
-          <RowsSection index={index} title="Policies" ids={page.policies.map((p) => p.policy.id)} label={`Policies of ${id}`} empty="No policy sends it." />
-          <RowsSection index={index} title="Endpoints" ids={page.endpoints} label={`Endpoints of ${id}`} empty="No endpoint exposes it." className="command-endpoints" />
+          <RowsSection index={index} title={titleOf(index, 'command_handler')} ids={page.handler ? [page.handler.handler.id] : []} label={`${titleOf(index, 'command_handler')} of ${id}`} empty="No handler carries it out yet." />
+          <RowsSection index={index} title={titleOf(index, 'policy')} ids={page.policies.map((p) => p.policy.id)} label={`${titleOf(index, 'policy')} of ${id}`} empty="No policy sends it." />
+          <RowsSection index={index} title={titleOf(index, 'endpoint')} ids={page.endpoints} label={`${titleOf(index, 'endpoint')} of ${id}`} empty="No endpoint exposes it." className="command-endpoints" />
           {page.alsoChanges.length > 0 && (
             <RecordedExceptions index={index} rows={page.alsoChanges.map((c) => ({ aggregate_id: c.aggregate, reason: c.reason }))} owner={id} title="Also changes"
               hint="A recorded exception to one aggregate per command: each is changed in the same transaction, and the checks list it so it stays deliberate." />
@@ -42,8 +46,8 @@ function Content({ index, page }: { index: SpecIndex; page: Command }) {
       return (
         <>
           <Text index={index} id={id} source={p.policy.statement} field="statement" />
-          <RowsSection index={index} title="Event handler" ids={p.eventHandler ? [p.eventHandler.handler.id] : []} label={`Event handler of ${id}`} empty="No event handler carries it out yet." />
-          <RowsSection index={index} title="Policy test" ids={p.test ? [p.test.test.id] : []} label={`Test of ${id}`} empty="No test proves it yet." />
+          <RowsSection index={index} title={titleOf(index, 'event_handler')} ids={p.eventHandler ? [p.eventHandler.handler.id] : []} label={`${titleOf(index, 'event_handler')} of ${id}`} empty="No event handler carries it out yet." />
+          <RowsSection index={index} title={titleOf(index, 'policy_test')} ids={p.test ? [p.test.test.id] : []} label={`${titleOf(index, 'policy_test')} of ${id}`} empty="No test proves it yet." />
         </>
       );
     }

@@ -69,7 +69,7 @@ describe('the rules the graph keeps', () => {
     // The record page titles a list of one kind by that kind, and a mixed one "Children".
     await openApp('/DM-SHOP-EP01');
     expect(await screen.findByRole('heading', { name: /^API requirements/ })).toBeInTheDocument();
-    await openApp('/P-D-RM01', { data: modelWorkspace() });
+    await openApp('/P-D-EP01', { data: modelWorkspace() });
     expect(await screen.findByRole('heading', { name: /^Children/ })).toBeInTheDocument();
   });
 

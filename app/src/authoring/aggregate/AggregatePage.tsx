@@ -1,8 +1,9 @@
 import type { AggregatePage as Aggregate, EventOnPage } from '../../../../lathe/src/authoring/aggregate/read-model';
 import { LongList } from '../../components/LongList';
+import { plural } from '../../plural';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
-import type { Row, SpecIndex } from '../../specs/data';
+import { kindLabel, type Row, type SpecIndex } from '../../specs/data';
 import { linkLabel } from '../../specs/labels';
 import { ProblemBadge, RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
@@ -17,6 +18,9 @@ import { useAggregate } from './reads';
 // commands and tables; an invariant its statement and test; a data model its file and packages (its facts); an
 // invariant test its scenario. What every record's page holds around that (traceability, problems, facts and links)
 // is the Record page's (RecordFrame).
+
+/** A list of one kind is titled by that kind's plural label (LA-V92-R09). */
+const titleOf = (index: SpecIndex, kind: string) => plural(kindLabel(index, kind));
 
 const entityOf = (page: Aggregate, id: string) => page.entities.find((e) => e.entity.id === id)!;
 const invariantOf = (page: Aggregate, id: string) => page.invariants.find((i) => i.invariant.id === id)!;
@@ -46,8 +50,8 @@ function DomainEvents({ index, page }: { index: SpecIndex; page: Aggregate }) {
   const events = page.domainEvents;
   if (events.length === 0) return null;
   return (
-    <Section title="Domain events" count={events.length} className="domain-events">
-      <LongList label={`Domain events of ${page.aggregate.id}`} className="record-list domain-event-list" items={events} itemKey={(e) => e.event.id}
+    <Section title={titleOf(index, 'domain_event')} count={events.length} className="domain-events">
+      <LongList label={`${titleOf(index, 'domain_event')} of ${page.aggregate.id}`} className="record-list domain-event-list" items={events} itemKey={(e) => e.event.id}
         searchText={(e) => `${e.event.id} ${e.event.title}`} render={(e) => <EventRow index={index} row={e} />} />
     </Section>
   );
@@ -63,8 +67,8 @@ function Content({ index, page }: { index: SpecIndex; page: Aggregate }) {
         <>
           <Text index={index} id={id} source={aggregate.description} field="description" />
           <Text index={index} id={id} source={aggregate.identity} title="Identity" field="identity" />
-          <RowsSection index={index} title="Entities" ids={page.entities.map((e) => e.entity.id)} label={`Entities of ${id}`} empty="No entity yet: add its root entity." className="aggregate-entities" />
-          <RowsSection index={index} title="Invariants" ids={page.invariants.map((i) => i.invariant.id)} label={`Invariants of ${id}`} empty="No invariant yet." />
+          <RowsSection index={index} title={titleOf(index, 'entity')} ids={page.entities.map((e) => e.entity.id)} label={`${titleOf(index, 'entity')} of ${id}`} empty="No entity yet: add its root entity." className="aggregate-entities" />
+          <RowsSection index={index} title={titleOf(index, 'invariant')} ids={page.invariants.map((i) => i.invariant.id)} label={`${titleOf(index, 'invariant')} of ${id}`} empty="No invariant yet." />
           <DomainEvents index={index} page={page} />
           <Text index={index} id={id} source={aggregate.notes} title="Notes" field="notes" />
         </>
@@ -76,9 +80,9 @@ function Content({ index, page }: { index: SpecIndex; page: Aggregate }) {
         <>
           <Text index={index} id={id} source={e.entity.description} field="description" />
           {e.fields.length > 0 && <FieldsTable index={index} rows={e.fields as unknown as Row[]} owner={id} />}
-          <RowsSection index={index} title="Data model" ids={e.dataModel ? [e.dataModel.dataModel.id] : []} label={`Data model of ${id}`} empty="No data model yet." />
-          <RowsSection index={index} title="Commands" ids={e.commands} label={`Commands of ${id}`} empty="No command changes it yet." className="entity-commands" />
-          {e.tables.length > 0 && <RowsSection index={index} title="Tables" ids={e.tables} label={`Tables of ${id}`} empty="" />}
+          <RowsSection index={index} title={titleOf(index, 'data_model')} ids={e.dataModel ? [e.dataModel.dataModel.id] : []} label={`${titleOf(index, 'data_model')} of ${id}`} empty="No data model yet." />
+          <RowsSection index={index} title={titleOf(index, 'command')} ids={e.commands} label={`${titleOf(index, 'command')} of ${id}`} empty="No command changes it yet." className="entity-commands" />
+          {e.tables.length > 0 && <RowsSection index={index} title={titleOf(index, 'table')} ids={e.tables} label={`${titleOf(index, 'table')} of ${id}`} empty="" />}
         </>
       );
     }
@@ -87,7 +91,7 @@ function Content({ index, page }: { index: SpecIndex; page: Aggregate }) {
       return (
         <>
           <Text index={index} id={id} source={i.invariant.statement} field="statement" />
-          <RowsSection index={index} title="Invariant test" ids={i.test ? [i.test.test.id] : []} label={`Test of ${id}`} empty="No test proves it yet." />
+          <RowsSection index={index} title={titleOf(index, 'invariant_test')} ids={i.test ? [i.test.test.id] : []} label={`${titleOf(index, 'invariant_test')} of ${id}`} empty="No test proves it yet." />
         </>
       );
     }
