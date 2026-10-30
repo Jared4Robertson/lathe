@@ -235,7 +235,7 @@ describe('LA-PLT-UC19-R12-T03 A message goes with what the Owner is looking at',
   });
 });
 
-describe('LA-PLT-UC19-R16-T01 A message typed while Claude works is queued and sent in order', () => {
+describe('LA-PLT-UC22-R04-T01 A message typed while Claude works is queued and sent in order', () => {
   it('queues messages while a turn is under way, lists them, and sends each as the turn before it ends', async () => {
     const { chat, until } = session();
     chat.open({}, []);
@@ -253,7 +253,7 @@ describe('LA-PLT-UC19-R16-T01 A message typed while Claude works is queued and s
   });
 });
 
-describe('LA-PLT-UC19-R15-T01 The model and effort the Owner chooses are the CLI\'s flags, on the same session', () => {
+describe('LA-PLT-UC22-R03-T01 The model and effort the Owner chooses are the CLI\'s flags, on the same session', () => {
   it('starts the CLI again with --model and --effort, says so, and refuses while a turn is under way', async () => {
     const { chat, until } = session();
     chat.open({}, []);

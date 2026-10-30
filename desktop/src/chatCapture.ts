@@ -1,4 +1,4 @@
-// Capturing the stage for a message (LA-PLT-UC19-R17): the page names a rectangle of its window, the shell checks it and
+// Capturing the stage for a message (LA-PLT-UC22-R05): the page names a rectangle of its window, the shell checks it and
 // answers the pixels drawn there as a PNG (base64), so the Owner can send Claude the stage as it is. The page names only
 // a rectangle; nothing outside the window can be read.
 import type { WebContents } from 'electron';

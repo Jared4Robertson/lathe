@@ -1,4 +1,4 @@
-// Undo a turn (LA-PLT-UC19-R20): the plan made from the rows before a turn, the rows now and the order its commands
+// Undo a turn (LA-PLT-UC21-R02): the plan made from the rows before a turn, the rows now and the order its commands
 // touched the records in rolls the data back through the aggregates' own commands, in one write; what something since
 // depends on is refused with the reason, and nothing changes.
 import { afterEach, describe, expect, it } from 'vitest';
@@ -39,7 +39,7 @@ async function turn() {
   return { store, before: structuredClone(tablesOf(store)) };
 }
 
-describe('LA-PLT-UC19-R20-T03 LA-PLT-EP01-R01-T01 undoing a turn puts back what it removed, changes back what it changed and removes what it added, in one write', () => {
+describe('LA-PLT-UC21-R02-T03 LA-PLT-EP01-R01-T01 undoing a turn puts back what it removed, changes back what it changed and removes what it added, in one write', () => {
   it('rolls an added, a changed and a removed outcome back to the rows before the turn', async () => {
     const { store, before } = await turn();
     await runCommand(store, ADD_BUSINESS_OUTCOME, outcome('TL-BO03'));

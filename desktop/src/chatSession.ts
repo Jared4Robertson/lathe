@@ -135,7 +135,7 @@ export class ChatSession {
   }
 
   /**
-   * Chooses the model and effort (LA-PLT-UC19-R15): the CLI starts again on the same session with them, and the log says
+   * Chooses the model and effort (LA-PLT-UC22-R03): the CLI starts again on the same session with them, and the log says
    * so. Refused while a turn is under way; the same choice again changes nothing.
    */
   setChoice(choice: ChatModelChoice): boolean {
@@ -222,7 +222,7 @@ export class ChatSession {
 
   /**
    * Sends the Owner's message, with what they are looking at as context and any images, starting the CLI again on the
-   * session when it has ended. While Claude works the message is queued (LA-PLT-UC19-R16), and goes when the turn ends.
+   * session when it has ended. While Claude works the message is queued (LA-PLT-UC22-R04), and goes when the turn ends.
    */
   send(text: string, focus: string | null = null, images: readonly ChatImage[] = []): boolean {
     const message = text.trim();

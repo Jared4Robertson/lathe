@@ -301,11 +301,12 @@ describe('LA-V99-R03-T01 The chat\'s head shows the Lathe tools, the permission 
     const { push } = fakeChat();
     await openApp('/DM-SHOP-UC01');
     push([]);
-    expect(within(chat()).getByText('142 tools from Lathe 2.0.0')).toBeInTheDocument();
+    // The head says "142 Lathe tools"; which Lathe they come from is in its tooltip.
+    expect(within(chat()).getByText('142 Lathe tools')).toHaveAttribute('title', '142 tools from Lathe 2.0.0');
     push([], 'idle', 's-new', 'accept-reads', { status: 'counting', version: '2.0.0' });
-    expect(within(chat()).getByText("Loading Lathe 2.0.0's tools…")).toBeInTheDocument();
+    expect(within(chat()).getByText('Loading tools…')).toBeInTheDocument();
     push([], 'idle', 's-new', 'accept-reads', { status: 'failed', version: null, problem: 'No lathe.config.json.' });
-    expect(within(chat()).getByText("Lathe's tools did not load")).toBeInTheDocument();
+    expect(within(chat()).getByText('Lathe tools failed')).toBeInTheDocument();
   });
 
   it('chooses a mode from the menu by keyboard, and shows the open chat\'s mode', async () => {
@@ -514,7 +515,7 @@ describe('LA-V99-R04-T01 The mic button dictates into the message box; the Voice
   });
 });
 
-// ---------- Point and ask, review and undo, "/", the model, the queue and images (LA-PLT-UC19-R13..R18) ----------
+// ---------- Point and ask, review and undo, "/", the model, the queue and images (LA-PLT-UC22-R01..R18) ----------
 
 /** Answers the turn routes (snapshot, a turn's changes, undo) in front of the served fetch; the test says what undo answers. */
 function stubTurnRoutes(undo: { status: number; body: unknown } = { status: 200, body: { ok: true, tables: [], files: [], changes: [] } }) {
@@ -548,7 +549,7 @@ async function renameTurn(push: ReturnType<typeof fakeChat>['push']) {
   return done;
 }
 
-describe('LA-PLT-UC19-R13-T01 Ask Claude about this attaches the pointed-at record as a chip, sent as context', () => {
+describe('LA-PLT-UC22-R01-T01 Ask Claude about this attaches the pointed-at record as a chip, sent as context', () => {
   beforeEach(() => { chatDraft.write(''); chatChips.clear(); });
 
   it('attaches the focused record by its key, shows it as a chip with its title, and sends it with the message', async () => {
@@ -579,7 +580,7 @@ describe('LA-PLT-UC19-R13-T01 Ask Claude about this attaches the pointed-at reco
   });
 });
 
-describe('LA-PLT-UC19-R19-T01 After a turn that writes, its records can be put under review: lit on the stage and walked through with their diffs', () => {
+describe('LA-PLT-UC21-R01-T01 After a turn that writes, its records can be put under review: lit on the stage and walked through with their diffs', () => {
   it('starts the review from the turn\'s changes, shows the diff, and ends it with Done', async () => {
     const { push } = fakeChat();
     await openApp('/DM-SHOP-UC01');
@@ -599,7 +600,7 @@ describe('LA-PLT-UC19-R19-T01 After a turn that writes, its records can be put u
   });
 });
 
-describe('LA-PLT-UC19-R20-T01 A turn is undone in one click through the server, which refuses with its reasons what something since depends on', () => {
+describe('LA-PLT-UC21-R02-T01 A turn is undone in one click through the server, which refuses with its reasons what something since depends on', () => {
   it('asks the server to roll back to the turn\'s snapshot, naming the records Claude touched in order, and says it is undone', async () => {
     const { push } = fakeChat();
     await openApp('/DM-SHOP-UC01');
@@ -635,7 +636,7 @@ describe('LA-PLT-UC19-R20-T01 A turn is undone in one click through the server, 
   });
 });
 
-describe('LA-PLT-UC19-R18-T01 A record ID in Claude\'s reply focuses the stage, and Cmd or Ctrl+click opens it in a new tab', () => {
+describe('LA-PLT-UC21-R03-T01 A record ID in Claude\'s reply focuses the stage, and Cmd or Ctrl+click opens it in a new tab', () => {
   it('opens a mentioned record in a new place on a Cmd+click, and focuses it on a plain click', async () => {
     const { push } = fakeChat();
     await openApp('/DM-SHOP-UC01');
@@ -650,7 +651,7 @@ describe('LA-PLT-UC19-R18-T01 A record ID in Claude\'s reply focuses the stage, 
   });
 });
 
-describe('LA-PLT-UC19-R14-T01 Typing / lists the skills and slash commands with one-line descriptions', () => {
+describe('LA-PLT-UC22-R02-T01 Typing / lists the skills and slash commands with one-line descriptions', () => {
   beforeEach(() => chatDraft.write(''));
 
   it('lists them, narrows as the name is typed, and picks one by keyboard', async () => {
@@ -686,7 +687,7 @@ describe('LA-PLT-UC19-R14-T01 Typing / lists the skills and slash commands with 
   });
 });
 
-describe('LA-PLT-UC19-R15-T03 The header\'s picker chooses the model and effort', () => {
+describe('LA-PLT-UC22-R03-T03 The header\'s picker chooses the model and effort', () => {
   it('names the choice, opens a menu of models and efforts, and sends the choice; it is not offered while Claude works', async () => {
     const { push, models } = fakeChat();
     await openApp('/DM-SHOP-UC01');
@@ -702,7 +703,7 @@ describe('LA-PLT-UC19-R15-T03 The header\'s picker chooses the model and effort'
   });
 });
 
-describe('LA-PLT-UC19-R16-T02 A message typed while Claude works is queued, listed and sent in order; Stop is there while it works', () => {
+describe('LA-PLT-UC22-R04-T02 A message typed while Claude works is queued, listed and sent in order; Stop is there while it works', () => {
   beforeEach(() => chatDraft.write(''));
 
   it('sends with Enter while it works, lists what waits, and takes a message back out', async () => {
@@ -723,7 +724,7 @@ describe('LA-PLT-UC19-R16-T02 A message typed while Claude works is queued, list
   });
 });
 
-describe('LA-PLT-UC19-R17-T01 Images are pasted into a message, or the stage is sent as one', () => {
+describe('LA-PLT-UC22-R05-T01 Images are pasted into a message, or the stage is sent as one', () => {
   beforeEach(() => chatDraft.write(''));
 
   it('attaches a pasted image and the stage, and sends them with the message', async () => {
