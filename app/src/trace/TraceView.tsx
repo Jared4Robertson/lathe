@@ -51,6 +51,7 @@ import { readState } from '../record/page-parts';
 // untraced records and the Serves links, read again after every reload; titles and kinds are the index's.
 
 const TraceAll = lazy(() => import('./TraceAll').then((m) => ({ default: m.TraceAll })));
+const DeliveryTrace = lazy(() => import('./delivery/DeliveryTrace').then((m) => ({ default: m.DeliveryTrace })));
 
 export interface TraceViewProps {
   index: RecordIndex;
@@ -182,6 +183,13 @@ function walk(e: KeyboardEvent<HTMLElement>) {
 /** The Trace stage: one per product, so moving the focus within it keeps its map, its camera and its filter. */
 export function TraceView(props: TraceViewProps) {
   const product = mapRootOf(props.index, props.focus);
+  if (props.view === 'delivery') {
+    return (
+      <Suspense fallback={<section className="trace-page" aria-label="Trace" aria-busy="true" />}>
+        <DeliveryTrace key={product} {...props} product={product} viewSwitch={(narrow) => <ViewSwitch view={props.view} onChange={props.onView} narrow={narrow} />} />
+      </Suspense>
+    );
+  }
   return <ProductTrace key={product} {...props} product={product} />;
 }
 
@@ -227,8 +235,7 @@ function TraceStage(props: StageProps & { product: string }) {
     if (graph.nodes.get(to)!.role === 'record') { setWalked(null); if (to !== focus) props.onNavigate(to); } else setWalked({ focus, key: to });
     return allWords(index, graph, to);
   }, [targetOf, graph, focus, index, props.onNavigate]);
-  const allOn = view === 'all-at-once';
-  useStageWalk(walkMap, allOn);
+  useStageWalk(walkMap);
 
   // What the header strip says.
   const untraced = useMemo(() => (spec?.untracedOf ? untracedUnder(index, traces, spec.untracedOf) : []), [index, traces, spec]);
@@ -244,7 +251,7 @@ function TraceStage(props: StageProps & { product: string }) {
   }, [spec, index, traces, focus, total, page, untracedCount]);
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 
-  const drawn = !narrow && allOn;
+  const drawn = !narrow;
   // The key bar, while the view is drawn: what it draws, then the live marks.
   const changesKey = useChangesKey();
   const keyEntries = useMemo(() => (drawn ? [...allKeyEntries(index, graph, gapsOnly || graph.nodes.has(focus)), ...changesKey] : []), [drawn, index, graph, gapsOnly, focus, changesKey]);
@@ -255,7 +262,7 @@ function TraceStage(props: StageProps & { product: string }) {
       <span className="hint"> {page.drawn} of {page.matching} shown</span>
     </p>
   ) : null;
-  const filter = allOn && (total > 0 || graph.counts.obligations > 0) ? (
+  const filter = total > 0 || graph.counts.obligations > 0 ? (
     <label className="trace-filter">
       <input type="checkbox" checked={gapsOnly} onChange={(e) => { setGapsOnly(e.target.checked); setPaging({ focus, shown: TRACE_PAGE }); }} />
       Gaps only
@@ -268,7 +275,7 @@ function TraceStage(props: StageProps & { product: string }) {
   ) : null;
   const toolbar = (
     <StageToolbar
-      can={(move) => allOn && targetOf(move) !== null}
+      can={(move) => targetOf(move) !== null}
       walkLabels={ALL_WALK_LABELS}
       own={(n) => ({ primary: <><ViewSwitch view={view} onChange={props.onView} narrow={n} />{filter}</>, secondary: tidyUp })}
     />
@@ -277,13 +284,6 @@ function TraceStage(props: StageProps & { product: string }) {
     ? <TraceMatrix {...props} spec={spec} page={page} untraced={untraced} access more={more} />
     : <TraceChainCards {...props} access />;
 
-  if (!allOn) {
-    return (
-      <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
-        {toolbar}
-      </section>
-    );
-  }
   if (narrow) {
     return (
       <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
@@ -308,21 +308,15 @@ function TraceStage(props: StageProps & { product: string }) {
   );
 }
 
-/**
- * The All at once | Delivery switch (LA-V98), the place's own view (views.ts), each named in full in every toolbar.
- * Delivery is offered once its view is built (trace/delivery).
- */
+/** The All at once | Delivery switch (LA-V98), the place's own view (views.ts), each named in full in every toolbar. */
 function ViewSwitch({ view, onChange, narrow }: { view: TraceViewName; onChange: (view: TraceViewName) => void; narrow: boolean }) {
   return (
     <div className={`graph-depth graph-layout trace-views${narrow ? ' is-narrow' : ''}`} role="group" aria-label="Trace view">
-      {TRACE_VIEWS.map((v) => {
-        const built = v.view !== 'delivery';
-        return (
-          <Tooltip key={v.view} label={built ? v.tip : `${v.tip} (not built yet)`}>
-            <button type="button" aria-pressed={view === v.view} disabled={!built} onClick={() => onChange(v.view)}>{v.label}</button>
-          </Tooltip>
-        );
-      })}
+      {TRACE_VIEWS.map((v) => (
+        <Tooltip key={v.view} label={v.tip}>
+          <button type="button" aria-pressed={view === v.view} onClick={() => onChange(v.view)}>{v.label}</button>
+        </Tooltip>
+      ))}
     </div>
   );
 }

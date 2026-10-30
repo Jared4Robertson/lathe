@@ -7,7 +7,7 @@ import { installProbes, quiet, record, work } from './measure';
 import { GRAPH, sceneOf } from '../stability/scene';
 
 // LA-PLT-UC09-R13-T01: big maps stay smooth (LA-PLT-UC09-R13), on the large product (LA-PLT-TD04, lathe/perf/large-product.ts),
-// served by the perf server on its own port. The Graph, the ERD and the Trace are panned and zoomed at 60 Hz; the arrow
+// served by the perf server on its own port. The Graph, the ERD and the Trace (both its views) are panned and zoomed at 60 Hz; the arrow
 // walk frames a new focus within its budget; the Graph's map is laid out off the main thread within its budget; and
 // panning goes on at 60 Hz through a data change that lays the map out again.
 
@@ -114,5 +114,16 @@ test.describe('big maps', () => {
     const { pan, zoom } = await panAndZoom(page, '.focus-stage .trace-flow canvas');
     await slow('big map: panning the Trace', pan);
     await slow('big map: zooming the Trace', zoom);
+  });
+
+  test('LA-PLT-UC09-R13-T01 the Trace\'s Delivery view pans and zooms at 60 Hz on the large product, every row\'s Technical flow open', async ({ page }) => {
+    await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-flow[data-ready]');
+    await page.getByRole('group', { name: 'Trace view' }).getByRole('button', { name: 'Delivery' }).click();
+    await page.locator('.focus-stage .trace-flow[data-view="delivery"][data-ready]').waitFor({ state: 'attached', timeout: 120_000 });
+    await page.getByRole('group', { name: 'Expand all' }).getByRole('button', { name: 'Technical' }).click();
+    await quiet(page, 1500);
+    const { pan, zoom } = await panAndZoom(page, '.focus-stage .trace-flow[data-view="delivery"] canvas');
+    await slow('big map: panning the Delivery view', pan);
+    await slow('big map: zooming the Delivery view', zoom);
   });
 });

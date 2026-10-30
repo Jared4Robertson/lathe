@@ -251,3 +251,10 @@
 {"read_model_id":"LA-TRC-RM12","position":2,"name":"Outcomes","meaning":"The business outcomes it serves, in ID order; none when no use case whose capability serves one reaches it.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM12","position":3,"name":"Use cases","meaning":"The use cases that reach it, through which it serves them.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM12","position":4,"name":"Serves none","meaning":"For a product: its aggregates, read models and obligations no outcome reaches.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM13","position":1,"name":"Product","meaning":"The product whose space it is: its own use cases and those of no product.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-TRC-RM13","position":2,"name":"Use case","meaning":"A use case of the space: one row each.","type":"text","required":true,"example":"LA-AUT-UC06"}
+{"read_model_id":"LA-TRC-RM13","position":3,"name":"Outcomes","meaning":"The business outcomes its capability serves, in ID order.","type":"text","required":false,"example":"LA-BO06"}
+{"read_model_id":"LA-TRC-RM13","position":4,"name":"Requirements","meaning":"Its UC requirements, each with what coverage reports it misses and its tests.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM13","position":5,"name":"Flows","meaning":"Its flows, one per interface, each with its steps in path order (what each fulfills, its view, endpoints and integrations, and its technical chain) and its flow test.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM13","position":6,"name":"Lower obligations","meaning":"What its acceptance tests rest on: its steps' view and API requirements and its aggregates' invariants and storage requirements, each with its gaps and tests.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM13","position":7,"name":"Status","meaning":"Per stage: its flows and requirements not designed, its handlers and obligations not built, its tests and what is not proved.","type":"text","required":true,"example":"3 flows, all designed · 6 handlers, 2 not built · 20 tests, all proved"}
