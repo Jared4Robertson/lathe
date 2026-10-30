@@ -28,7 +28,7 @@ export function LimitsEditor({ index, limits, children }: { index: RecordIndex; 
   if (!writer) return <>{children}</>;
   const back = () => {
     setOpen(false);
-    backToActions(toolbar, `Change the limits of ${limits.product}`);
+    backToActions(`Change the limits of ${limits.product}`, toolbar);
   };
   if (open) return <SetLimitsForm index={index} limits={limits} onDone={back} />;
   return (

@@ -50,7 +50,7 @@ export function ToolingEditor({ index, page, children }: { index: RecordIndex; p
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    backToActions(toolbar, `Change ${tooling.id}`);
+    backToActions(`Change ${tooling.id}`, toolbar);
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, tooling.domain_id, false);

@@ -48,7 +48,7 @@ export function DataStoreEditor({ index, page, children }: { index: RecordIndex;
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    backToActions(toolbar, `Change ${store.id}`);
+    backToActions(`Change ${store.id}`, toolbar);
   };
   const product = index.byId.get(store.id)?.product ?? '';
   if (mode === 'change') {

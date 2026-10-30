@@ -52,7 +52,7 @@ export function UiComponentEditor({ index, page, children }: { index: RecordInde
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(id)?.product ?? '';
   if (mode === 'change') {

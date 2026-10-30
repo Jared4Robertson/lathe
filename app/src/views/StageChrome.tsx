@@ -270,7 +270,8 @@ function KeyChip({ entries }: { entries: readonly KeyEntry[] }) {
             <h2 className="sheet-title">Key</h2>
             <Button variant="icon" label="Close the key" onClick={close}><Icon name="x" /></Button>
           </div>
-          <ul className="stage-key-sheet-list" aria-label="Key">
+          {/* It scrolls when the key is long, so it takes focus and the arrows scroll it (WCAG 2.1.1). */}
+          <ul className="stage-key-sheet-list" aria-label="Key" tabIndex={0}>
             <KeyItems entries={entries} meanings />
           </ul>
         </BottomSheet>,

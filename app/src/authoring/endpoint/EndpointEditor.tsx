@@ -167,7 +167,7 @@ export function EndpointEditor({ index, page, children }: { index: RecordIndex; 
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(page.endpoint.id)?.product ?? undefined;
   if (mode.mode === 'change') {

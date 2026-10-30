@@ -65,7 +65,7 @@ export function TableEditor({ index, page, children }: { index: RecordIndex; pag
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    backToActions(toolbar, `Change ${table.id}`);
+    backToActions(`Change ${table.id}`, toolbar);
   };
   const product = index.byId.get(table.id)?.product ?? '';
   if (mode === 'change') {

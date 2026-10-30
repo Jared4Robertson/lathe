@@ -144,7 +144,7 @@ export function PatternEditor({ index, page, children }: { index: RecordIndex; p
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = page.pattern.product_id;
   if (mode.mode === 'change') {

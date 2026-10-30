@@ -93,7 +93,7 @@ export function DomainEventEditor({ index, page, children }: { index: RecordInde
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(page.event.id)?.product ?? '';
   if (mode.mode === 'change') {

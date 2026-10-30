@@ -71,7 +71,7 @@ export function ExtensionRecordEditor({ index, page, children }: { index: Record
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    backToActions(toolbar, `Change ${page.id}`);
+    backToActions(`Change ${page.id}`, toolbar);
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, page.kind, index.byId.get(page.id)?.product ?? null, false);

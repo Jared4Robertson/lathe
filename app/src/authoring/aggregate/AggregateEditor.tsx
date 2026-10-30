@@ -213,7 +213,7 @@ export function AggregateEditor({ index, page, children }: { index: RecordIndex;
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(page.aggregate.id)?.product ?? '';
   if (mode.mode === 'change') {

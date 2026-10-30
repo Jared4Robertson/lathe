@@ -47,7 +47,7 @@ export function TestDataSetEditor({ index, page, children }: { index: RecordInde
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    backToActions(toolbar, `Change ${set.id}`);
+    backToActions(`Change ${set.id}`, toolbar);
   };
   if (mode === 'change') {
     const specs = fieldsOf(false);
