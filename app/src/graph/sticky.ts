@@ -7,7 +7,8 @@ import { BORDER, largestFit, linesIn, LINE_HEIGHT, META_FONT, textMeasure, TITLE
 // is the label's content box, never the padding round it: the padding is where a box's edge, a focus's wider edge and a
 // shape's decoration (a stack's front sheet, a page's fold) are drawn, so a moved label always lies on the box's one
 // fill and never across the edge between it and a darker strip. A label that cannot fit there at the readable floor is
-// not drawn at all, so no text is ever drawn half cut. A label wholly in the open space is drawn as the map placed it.
+// drawn where the map placed it, cut by the edge like the box itself, so no box is ever drawn empty. A label wholly in
+// the open space is drawn as the map placed it.
 
 /** A rectangle on the canvas, in its CSS pixels. */
 export interface ScreenBox { left: number; top: number; right: number; bottom: number }
@@ -18,17 +19,17 @@ export interface ScreenBox { left: number; top: number; right: number; bottom: n
  */
 const STICKY_SIDE = LABEL_PAD - 2 * BORDER;
 
-/** The least size, in CSS pixels, a sticky label's title is drawn at: below it the label is not drawn. */
+/** The least size, in CSS pixels, a sticky label's title is drawn at: below it the label is drawn as placed, cut by the edge. */
 export const STICKY_READ_PX = 9;
 
 /** One line of a sticky label, on the canvas: its text, face, font size, left end and baseline, in CSS pixels. */
 export interface StickyLine { text: string; face: Face; px: number; x: number; baseline: number; tone: 'ink' | 'muted' }
 
-/** How a box's label is drawn: as the map placed it, laid out anew in its visible part, or not at all. */
-export type Sticky = { kind: 'placed' } | { kind: 'moved'; lines: StickyLine[] } | { kind: 'hidden' };
+/** How a box's label is drawn: as the map placed it, laid out anew in its visible part, or as placed and cut by the edge (it fits nowhere in the visible part). */
+export type Sticky = { kind: 'placed' } | { kind: 'moved'; lines: StickyLine[] } | { kind: 'cut' };
 
 const PLACED: Sticky = { kind: 'placed' };
-const HIDDEN: Sticky = { kind: 'hidden' };
+const CUT: Sticky = { kind: 'cut' };
 /** The layouts worked out lately, by box and room: a glide asks for the same ones frame after frame. */
 const known = new Map<string, Sticky>();
 const KNOWN_MAX = 400;
@@ -36,8 +37,8 @@ const KNOWN_MAX = 400;
 /**
  * How a box's label is drawn under a camera (`X`, `Y` place a map point on the canvas, `zoom` its scale) with `open`
  * the part of the canvas no panel covers: as placed when its lines lie wholly in it (or the box is wholly outside it),
- * else in the box's visible part (its title alone when its kind and ID line leaves no room for it), or hidden when its
- * title cannot fit there at STICKY_READ_PX.
+ * else in the box's visible part (its title alone when its kind and ID line leaves no room for it), or as placed, cut
+ * by the edge, when its title cannot fit there at STICKY_READ_PX.
  */
 export function stickyLabel(p: Plate, zoom: number, X: (x: number) => number, Y: (y: number) => number, open: ScreenBox): Sticky {
   if (p.lines.length === 0) return PLACED;
@@ -53,14 +54,14 @@ export function stickyLabel(p: Plate, zoom: number, X: (x: number) => number, Y:
   const room = stickyRoom(p, X, Y, open);
   const w = room.right - room.left;
   const h = room.bottom - room.top;
-  if (w <= 0 || h <= 0) return HIDDEN;
+  if (w <= 0 || h <= 0) return CUT;
   const most = t * zoom;
   const key = `${p.place}|${Math.round(w)}|${Math.round(h)}|${most.toPrecision(4)}`;
   let laid = known.get(key);
   if (!laid) {
     // Its kind and ID line goes first when the room cannot hold the whole label: every box keeps its title.
     laid = layOut({ title: p.title, meta: p.meta, badge: false }, w, h, most);
-    if (laid.kind === 'hidden' && p.meta !== '') laid = layOut({ title: p.title, meta: '', badge: false }, w, h, most);
+    if (laid.kind === 'cut' && p.meta !== '') laid = layOut({ title: p.title, meta: '', badge: false }, w, h, most);
     if (known.size >= KNOWN_MAX) known.delete(known.keys().next().value!);
     known.set(key, laid);
   }
@@ -90,7 +91,7 @@ function layOut(label: MapLabel, w: number, h: number, most: number): Sticky {
   // every side, by the block padding (the lesser), so its lines stay inside the room.
   const pad = (s: number) => -LABEL_PAD_BLOCK * s;
   const s = largestFit(label, true, w, h, most, pad);
-  if (s * TITLE_FONT < STICKY_READ_PX) return HIDDEN;
+  if (s * TITLE_FONT < STICKY_READ_PX) return CUT;
   const wrapped = linesIn(label, (w - 2 * pad(s)) / s, true);
   const m = textMeasure();
   const all = [
@@ -114,11 +115,11 @@ function layOut(label: MapLabel, w: number, h: number, most: number): Sticky {
  * camera as it is when the label is drawn under it, placed or moved; else moved right as little as it takes for the
  * box's visible part to hold the label at the readable floor; else, when no move up to most of the open space's width
  * does, moved so the box's middle is the open space's, where its label was placed. The zoom never changes, so the label
- * keeps its size and is never drawn half cut (LA-EXP-DS06).
+ * keeps its size and reads whole (LA-EXP-DS06).
  */
 export function keepLabel(p: Plate, v: { x: number; y: number; zoom: number }, open: ScreenBox): { x: number; y: number; zoom: number } {
   const { zoom } = v;
-  const drawnAt = (shift: number) => stickyLabel(p, zoom, (x) => v.x + shift + x * zoom, (y) => v.y + y * zoom, open).kind !== 'hidden';
+  const drawnAt = (shift: number) => stickyLabel(p, zoom, (x) => v.x + shift + x * zoom, (y) => v.y + y * zoom, open).kind !== 'cut';
   if (drawnAt(0)) return v;
   const most = (open.right - open.left) * 0.75;
   if (!drawnAt(most)) {
