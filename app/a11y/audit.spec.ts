@@ -36,12 +36,15 @@ const STEP = '/LA-EXP-UC12-FL01-S03';
 const ENTITY = '/LA-EXP-EN01';
 const SHARED = '/LA-PAT-APP-UX';
 
+/** The Trace drawn: its canvas (attached, as stability's traceDrawn), or on a phone its column-by-column list. */
+const TRACE = '.focus-stage :is(.trace-flow[data-ready], .trace-col-rows)';
+
 /** Each stage, with every panel open. */
 const STAGES = [
   { name: 'graph stage', url: `${RECORD}?stage=graph`, ready: '.focus-stage .graph-flow .graph-box' },
   { name: 'ERD stage', url: `${AGGREGATE}?stage=erd`, ready: '.focus-stage .erd-canvas' },
-  { name: 'Trace stage, a chain', url: `${EDITED}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]', state: 'attached' as const },
-  { name: 'Trace stage, a domain (no box: the overview)', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]', state: 'attached' as const },
+  { name: 'Trace stage, a chain', url: `${EDITED}?stage=trace`, ready: TRACE, state: 'attached' as const },
+  { name: 'Trace stage, a domain (no box: the overview)', url: `${DOMAIN}?stage=trace`, ready: TRACE, state: 'attached' as const },
 ];
 
 /** Collapses the wiki card (Enter), so the stage has the whole window under the tab panel. */
@@ -98,9 +101,9 @@ const PAGES: State[] = [
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
-  { name: 'Trace stage, a flow step in the chains that hold it', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]', state: 'attached' as const },
-  { name: 'Trace stage, an entity framed on its aggregate', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note', state: 'attached' as const },
-  { name: 'Trace stage, the product all at once', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]', state: 'attached' as const },
+  { name: 'Trace stage, a flow step in the chains that hold it', url: `${STEP}?stage=trace`, ready: TRACE, state: 'attached' as const },
+  { name: 'Trace stage, an entity framed on its aggregate', url: `${ENTITY}?stage=trace`, ready: TRACE, state: 'attached' as const },
+  { name: 'Trace stage, the product all at once', url: `${PRODUCT}?stage=trace`, ready: TRACE, state: 'attached' as const },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.
@@ -112,17 +115,9 @@ const PAGES: State[] = [
   { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.tool-panel.appearance-popover .theme-rows' },
   { name: 'Products picker', url: '/', ready: '.dialog.products-picker h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready, 'state' in p ? p.state : 'visible') }));
-// A design record nothing traces to: the untraced state, reached from the domain's Untraced list by the keyboard.
-PAGES.push({ name: 'Trace stage, an untraced record', run: async (page: Page) => {
-  await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-untraced', 'attached');
-  await page.locator('.focus-stage .trace-untraced a').first().focus();
-  await page.keyboard.press('Enter');
-  await page.locator('.focus-stage .trace-note.is-untraced').waitFor({ state: 'attached' });
-  await page.waitForTimeout(400);
-} });
 // The Trace stage with only the branches that have a gap.
 PAGES.push({ name: 'Trace stage, gaps only', run: async (page: Page) => {
-  await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-flow[data-ready]', 'attached');
+  await open(page, `${DOMAIN}?stage=trace`, TRACE, 'attached');
   await page.locator('.focus-stage').getByRole('checkbox', { name: 'Gaps only' }).check();
   await page.waitForTimeout(200);
 } });
@@ -183,6 +178,15 @@ for (const layout of ['Nested', 'Map'] as const) PAGES.push({ name: `graph, ${la
 /** On a wide screen: the stages with their panels collapsed and under reduced transparency, a deep breadcrumb's menu, and the overlays over a record page. */
 const DESKTOP: State[] = [
   ...PAGES,
+  // A design record nothing traces to: the untraced state, reached from the domain's Untraced list (the Trace's table
+  // under its canvas, which a phone's column list does not have) by the keyboard.
+  { name: 'Trace stage, an untraced record', run: async (page: Page) => {
+    await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-untraced', 'attached');
+    await page.locator('.focus-stage .trace-untraced a').first().focus();
+    await page.keyboard.press('Enter');
+    await page.locator('.focus-stage .trace-note.is-untraced').waitFor({ state: 'attached' });
+    await page.waitForTimeout(400);
+  } },
   { name: 'quick find', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
     await page.keyboard.press('Control+k');
