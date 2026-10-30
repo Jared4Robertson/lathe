@@ -141,9 +141,9 @@ test.describe('graph', () => {
       for (const b of s.boxes) {
         const r = b.rect;
         // Boxes wholly in the canvas and big enough on screen to read.
-        if (r.left < c.left || r.left + r.width > c.left + c.width || r.top < c.top || r.top + r.height > c.top + c.height || r.width < 60) continue;
+        if (r.left < c.left || r.left + r.width > c.left + c.width || r.top < c.top || r.top + r.height > c.top + c.height || r.width < 60 || b.block) continue;
         const parts = [
-          ...b.lines.filter((l) => !l.bar).map((l) => ({ what: l.text, left: l.rect.left, top: l.rect.top, right: l.rect.left + l.drawnWidth, bottom: l.rect.top + l.rect.height })),
+          ...b.lines.map((l) => ({ what: l.text, left: l.rect.left, top: l.rect.top, right: l.rect.left + l.drawnWidth, bottom: l.rect.top + l.rect.height })),
           ...b.badges.map((x) => ({ what: `badge ${x.label}`, left: x.rect.left, top: x.rect.top, right: x.rect.left + x.rect.width, bottom: x.rect.top + x.rect.height })),
         ];
         const e = 1.5;
@@ -402,7 +402,7 @@ async function labeledInView(page: Page, orFocus = false): Promise<{ id: string;
   const c = s.canvas;
   const order = orFocus ? [...s.boxes.filter((b) => !b.focus), ...s.boxes.filter((b) => b.focus)] : s.boxes.filter((b) => !b.focus);
   for (const b of order) {
-    if (!b.id.startsWith('LA-') || b.lines.every((l) => l.bar)) continue;
+    if (!b.id.startsWith('LA-') || b.block) continue;
     const r = b.label;
     const l = Math.max(r.left, c.left + 60); const rt = Math.min(r.left + r.width, c.left + c.width - 30);
     const t = Math.max(r.top, c.top + 20); const bt = Math.min(r.top + r.height, c.top + c.height - 30);

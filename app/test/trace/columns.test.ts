@@ -20,7 +20,7 @@ describe('the Trace stage\'s columns', () => {
     expect(columns.map((c) => c.chosen)).toEqual(['outside', 'P-D', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R01|P-D-UC01-FL01', step, null]);
     // The last column is the focus's children; each column holds its parent's children, in the tree's order.
     expect(columns.at(-1)!.keys.map((k) => map.nodes.get(k)!.id)).toEqual(['P-D-CMD01', 'P-V01']);
-    for (const c of columns) expect(c.keys).toEqual(map.map.nodes.get(c.parent)!.children);
+    for (const c of columns) expect(c.keys).toEqual(map.tree.get(c.parent)!.children);
     // A focus that holds nothing ends on its own column, chosen there.
     const leaf = traceColumns(map, 'P-D-UC01-R01|file:test/lend.test.ts');
     expect(leaf.at(-1)!.chosen).toBe('P-D-UC01-R01|file:test/lend.test.ts');
@@ -41,7 +41,7 @@ describe('the Trace stage\'s columns', () => {
     const { index, traces } = traced(modelWorkspace());
     const map = traceMap(index, traces, 'P');
     expect(holds(map, 'P-D-UC01')).toBe(2);
-    expect(holds(map, 'P-D-UC01-R01')).toBe(map.map.nodes.get('P-D-UC01-R01')!.children.length);
+    expect(holds(map, 'P-D-UC01-R01')).toBe(map.tree.get('P-D-UC01-R01')!.children.length);
     expect(holds(map, UNTRACED)).toBe(map.counts.untraced);
     expect(holds(map, 'P-D-UC01-R01|file:test/lend.test.ts')).toBe(0);
   });
@@ -78,6 +78,6 @@ describe('the Trace stage\'s columns', () => {
     const { index, traces } = traced(modelWorkspace());
     const map = traceMap(index, traces, 'P');
     const columns = traceColumns(map, 'P');
-    expect(columns).toEqual([{ parent: 'P', keys: map.map.nodes.get('P')!.children, chosen: null }]);
+    expect(columns).toEqual([{ parent: 'P', keys: map.tree.get('P')!.children, chosen: null }]);
   });
 });

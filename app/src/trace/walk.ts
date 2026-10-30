@@ -15,7 +15,7 @@ const levelsCache = new WeakMap<TraceMap, StageLevels>();
 export function traceLevels(map: TraceMap): StageLevels {
   const known = levelsCache.get(map);
   if (known) return known;
-  const node = (key: string) => map.map.nodes.get(key);
+  const node = (key: string) => map.tree.get(key);
   const levels: StageLevels = {
     root: map.product,
     parent: (key) => node(key)?.parent ?? null,

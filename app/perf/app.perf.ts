@@ -253,14 +253,18 @@ test.describe('performance', () => {
     await open(page, `${DOMAIN}?stage=graph`);
     await boxesDrawn(page);
     await quiet(page, 900);
-    // 50 records the graph draws, retitled in one write through the CLI, as an Agent writes; then put back.
-    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus).slice(0, 50);
+    // 50 records the graph draws, retitled in one write through their own commands, as an Agent writes; then put back.
+    // Records of kinds with a Change command that takes a title (perf/retitle.ts).
+    const retitle = path.resolve(here, 'retitle.ts');
+    const kinds = new Set(JSON.parse(execFileSync('node', [retitle, '--kinds'], { encoding: 'utf8' })) as string[]);
+    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus && kinds.has(b.kind)).slice(0, 50);
     expect(drawn.length, '50 records drawn').toBe(50);
     const root = process.env.PERF_ROOT!;
     const titleOf = (kind: string, id: string) => readFileSync(path.join(root, 'data', `${kind}.jsonl`), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as { id: string; title: string }).find((r) => r.id === id)!.title;
     const titles = drawn.map((b) => ({ kind: b.kind, id: b.id, title: titleOf(b.kind, b.id) }));
-    const write = (title: (was: string) => string) => execFileSync('node', [path.resolve(here, '../../lathe/bin/lathe.ts'), 'set', '--json', '-', '--root', root], {
-      input: JSON.stringify(titles.map((t) => ({ [t.kind]: { id: t.id, title: title(t.title) } }))), stdio: ['pipe', 'pipe', 'pipe'],
+    // One write of the 50, each through its own Change command, as an Agent writes (perf/retitle.ts).
+    const write = (title: (was: string) => string) => execFileSync('node', [retitle, '--root', root], {
+      input: JSON.stringify(titles.map((t) => ({ kind: t.kind, id: t.id, title: title(t.title) }))), stdio: ['pipe', 'pipe', 'pipe'],
     });
     const r = await work(page, async () => {
       write((was) => `${was} (changed)`);

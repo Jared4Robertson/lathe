@@ -2,8 +2,8 @@ import type { ElkNode } from 'elkjs/lib/elk-api';
 import { elkLayout } from '../elk';
 import { BOUNDARY_PAD, boxSize, type ErdBox, type ErdMap, type Rect } from './erd';
 
-// Lays out a product's ERD map with ELK's layered algorithm, once per answer of the ERD read (a new one comes with each
-// data change): the layout is cached by the answer (LA-PAT-APP-UX-R19), so every focus and stage switch on the same
+// Lays out a product's ERD map with ELK's layered algorithm, once for what it reads (a new answer of the ERD read that
+// changes no box, title, field count or line lays nothing out again): the layout is cached by that (LA-PAT-APP-UX-R19), so every focus and stage switch on the same
 // data reads the same places (LA-V94-R08).
 // Three passes, from the inside out. First each aggregate's boundary: its entities, the root first,
 // along their has one and has many lines, left to right or top to bottom, whichever comes nearer
@@ -128,26 +128,44 @@ export async function layoutErd(map: ErdMap): Promise<Map<string, Rect>> {
   return out;
 }
 
-// ---------- Once per answer ----------
+// ---------- Once per change to what it reads ----------
 
 interface Laying { promise: Promise<Map<string, Rect>>; rects?: Map<string, Rect> }
 
-/** Each map laid out (in ELK's worker), once per answer of the ERD read however many ask; its places kept once they arrive. */
-const laid = new WeakMap<ErdMap, Laying>();
+/**
+ * What a map's layout reads: each box's place in the tree, kind, title, root mark and fields (its size), and the lines'
+ * ends. Two answers that agree on it lay out alike, so new data that changes none of it (a reload of other tables, a
+ * description edited) lays nothing out again (LA-PAT-APP-UX-R19).
+ */
+const layoutKey = (map: ErdMap) => JSON.stringify([
+  map.boxes.map((b) => [b.id, b.parent ?? '', b.kind, b.title, b.root ? 1 : 0, b.empty ? 1 : 0, b.fields.length]),
+  map.lines.map((l) => [l.source, l.target]),
+]);
+
+/** Each map laid out (in ELK's worker), once for what it reads however many answers bring it; the latest few kept. */
+const laid = new Map<string, Laying>();
+const byAnswer = new WeakMap<ErdMap, Laying>();
+const KEEP = 4;
 
 function layingOut(map: ErdMap): Laying {
-  let laying = laid.get(map);
+  const known = byAnswer.get(map);
+  if (known) return known;
+  const key = layoutKey(map);
+  let laying = laid.get(key);
   if (!laying) {
     const next: Laying = { promise: layoutErd(map) };
-    next.promise.then((rects) => { next.rects = rects; }, () => {});
-    laid.set(map, next);
+    next.promise.then((rects) => { next.rects = rects; }, () => { laid.delete(key); });
     laying = next;
   }
+  laid.delete(key);
+  laid.set(key, laying);
+  if (laid.size > KEEP) laid.delete(laid.keys().next().value!);
+  byAnswer.set(map, laying);
   return laying;
 }
 
 /** A map's layout if it has arrived, so a stage switch on the same data draws the map framed at once. */
 export const readyErdLayout = (map: ErdMap): Map<string, Rect> | undefined => layingOut(map).rects;
 
-/** A map's layout: laid out once per answer (each data change), then read. */
+/** A map's layout: laid out once for what it reads, then read. */
 export const erdLayout = (map: ErdMap): Promise<Map<string, Rect>> => layingOut(map).promise;

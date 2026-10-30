@@ -94,7 +94,7 @@ describe('the graph tree, its depth and its camera', () => {
     }
   });
 
-  it('LA-EXP-DS09-T09 LA-EXP-DS10-T03 Every drawn box shows its label, however small on screen, and is a keyboard stop; the summary counts the framed picture', async () => {
+  it('LA-EXP-DS09-T09 LA-EXP-DS10-T03 Every drawn box carries its label and is a keyboard stop; the summary counts the framed picture', async () => {
     // A use case with sixty requirements: framed from its domain, they are a few pixels tall each.
     const w = testWorkspace();
     for (let i = 3; i <= 60; i++) addRows(w, 'uc_requirement', { id: `P-D-UC01-R${String(i).padStart(2, '0')}`, title: `Rule ${i}`, use_case_id: 'P-D-UC01', statement: `Rule ${i} MUST hold.` });

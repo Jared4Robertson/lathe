@@ -23,10 +23,12 @@ import { DEFAULT_GRAPH_SETTINGS } from '../exploring/session-settings/model';
 import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
 import { keptCamera } from '../exploring/tab-set/reads';
 import { runTabSetCommand } from '../exploring/tab-set/run';
-import { graphMap, mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
-import { nestedMap, type NestedMap, type NestedNode } from './nested';
+import { mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
+import { lastLayout, useLaidOut } from './layout';
+import { productInput } from './layout-input';
+import { type NestedMap, type NestedNode } from './nested';
 import { setTextMeasure, type TextMeasure } from './text';
-import { drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
+import { BLOCK_BELOW_PX, CHILD_READ_PX, drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
 import { nodeShape } from './shapes';
@@ -34,9 +36,9 @@ import { Button } from '../components/Button';
 import { pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from './look';
 import { plateName, plateOf, plateTip, type Plate, type PlateSource } from './plate';
-import { keepLabel } from './sticky';
+import { keepLabel, labelStrip } from './sticky';
 import { focusStrength } from './fade';
-import { boxColors, paint, TEXT_BAR_PX, type Bar, type Camera, type Line, type PaintState } from './paint';
+import { boxColors, isBlock, paint, type Bar, type Camera, type Line, type PaintState } from './paint';
 import { hitPlate } from './hit';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
@@ -350,8 +352,10 @@ export interface SceneBox {
   /** Its outline's corners on screen, for a polygon. */
   polygon: [number, number][] | null;
   label: Rect;
-  /** Each line of its label: its text, face, font size in the map and on screen, the font it is drawn in, its place, whether it is drawn as a bar, and its width as the canvas measures it at its drawn font. */
-  lines: { text: string; face: string; mapPx: number; fontPx: number; font: string; rect: Rect; bar: boolean; drawnWidth: number }[];
+  /** Whether it is drawn as a plain block, its title under the readable size on screen (LA-EXP-DS10): then no line, icon or badge of it is drawn. */
+  block: boolean;
+  /** Each line of its label: its text, face, font size in the map and on screen, the font it is drawn in, its place, and its width as the canvas measures it at its drawn font. */
+  lines: { text: string; face: string; mapPx: number; fontPx: number; font: string; rect: Rect; drawnWidth: number }[];
   icons: { draw: string; name: string; rect: Rect }[];
   badges: { label: string; tone: string; rect: Rect }[];
   tip: string;
@@ -366,13 +370,16 @@ export interface Scene {
   moves: number;
   glides: number;
   canvas: Rect;
-  textBarPx: number;
+  /** The title size on screen, in CSS pixels, under which a box is drawn as a plain block. */
+  blockBelowPx: number;
   boxes: SceneBox[];
   bars: Rect[];
   lines: { id: string; source: string; target: string; style: string; link: boolean; lit: boolean | null; points: [number, number][] }[];
   spotlight: boolean;
   /** The removed records' ghosts drawn now, by ID. */
   ghosts: string[];
+  /** The last map laid out (layout.ts): on which thread, in how many milliseconds, and how many boxes. */
+  laidOut: ReturnType<typeof lastLayout>;
 }
 /** A camera as the scene reports it: to a hundredth of a pixel, and the zoom to nine significant digits. */
 export const roundCamera = (v: Viewport) => ({ x: Math.round(v.x * 100) / 100, y: Math.round(v.y * 100) / 100, zoom: Number(v.zoom.toPrecision(9)) });
@@ -421,14 +428,22 @@ interface CanvasProps {
   onOpenNew?: GraphViewProps['onOpenNew'];
 }
 
-function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap, onPeek, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
+/**
+ * The focus's own product's map (no other product's nodes are in it), in any layout (LA-V93-R21): the Tree map (map.ts),
+ * or the Nested map (nested.ts), under one camera. It is laid out off the main thread, and again only when what it reads
+ * changes (layout.ts); until a new one is ready, the one before stays on screen with the index it was laid out from.
+ */
+function GraphStage(props: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
+  const { index, graph, layout, measure, fonts } = props;
+  const root = useMemo(() => mapRootOf(index, graph.focus), [index, graph.focus]);
+  const input = useMemo(() => productInput(index, root, layout, measure.key), [index, root, layout, measure]);
+  const laid = useLaidOut<GraphMap | NestedMap, RecordIndex>(input, index, fonts);
+  if (!laid) return <div className="graph-flow" data-layout={layout} aria-busy="true" />;
+  return <GraphScene {...props} map={laid.map} mapIndex={laid.of} />;
+}
+
+function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, depth, filters, onNavigate, minimap, onPeek, space, cameraKey, onOpenNew, measure, fonts, theme }: CanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number; map: GraphMap | NestedMap; mapIndex: RecordIndex }) {
   const focus = graph.focus;
-  // The focus's own product's map (no other product's nodes are in it), in any layout (LA-V93-R21): the Tree map (map.ts), or the Nested map (nested.ts), under one camera.
-  const root = useMemo(() => mapRootOf(index, focus), [index, focus]);
-  const map: GraphMap | NestedMap = useMemo(
-    () => (layout === 'nested' ? nestedMap(index, root) : graphMap(index, root)),
-    [index, root, layout, measure],
-  );
   const wrapper = useRef<SceneHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const layer = useRef<HTMLDivElement>(null);
@@ -525,12 +540,14 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   /** The camera that frames the focus: the focus and the levels the depth shows, in the frame. */
   const framing = useCallback((): Viewport | null => {
     // With a host that floats panels, never before their first measure: the first picture is framed once, in place.
-    if (!size || (space && !open)) return null;
+    // A focus the map shown does not hold yet (its new layout is still being made) leaves the camera where it is.
+    if (!size || (space && !open) || !map.nodes.has(focus)) return null;
     const box = frameBox(size);
-    const v = map.view !== 'tree' ? frameNested(map, focus, box.w, box.h, maxZoom) : frameOnMap(map, focus, depth, box.w, box.h, maxZoom);
-    const framed = { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
-    // The focus is never left without its label: where its visible part cannot hold it, the camera moves to where it can.
+    // The focus is never left without its label: framed as a strip beside its children, the strip is as wide as its label
+    // needs to read; where its visible part cannot hold it, the camera moves to where it can.
     const plate = plateFor(focus);
+    const v = map.view !== 'tree' ? frameNested(map, focus, box.w, box.h, maxZoom) : frameOnMap(map, focus, depth, box.w, box.h, maxZoom, plate ? labelStrip(plate, box.h, CHILD_READ_PX) : undefined);
+    const framed = { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
     return plate ? keepLabel(plate, framed, { left: box.x, top: box.y, right: box.x + box.w, bottom: box.y + box.h }) : framed;
   }, [size, map, focus, depth, frameBox, space, open, plateFor]);
 
@@ -648,12 +665,12 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
 
   /** The boxes, bars and lines a camera shows, in draw order: in the Nested view a parent before its children, so each child lies over its parent (LA-EXP-DS09). */
   const frameAt = useCallback((v: Viewport): { plates: Plate[]; bars: Bar[]; lines: Line[] } => {
-    const ids = drawnAt(v).boxes.map((b) => b.id);
-    const shown = ids.map(plateFor).filter((p): p is Plate => p !== null);
+    const drawn = drawnAt(v);
+    const shown = drawn.boxes.map((b) => plateFor(b.id)).filter((p): p is Plate => p !== null);
     if (map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode).order - (map.nodes.get(b.id) as NestedNode).order);
     const bars: Bar[] = [];
     if (map.view === 'tree') {
-      for (const bar of drawnAt(v).bars) bars.push({ parent: bar.parent, x: bar.x, y: bar.y, w: bar.w, h: bar.h });
+      for (const bar of drawn.bars) bars.push({ parent: bar.parent, x: bar.x, y: bar.y, w: bar.w, h: bar.h });
     }
     const byId = new Map(shown.map((p) => [p.id, p]));
     const lines: Line[] = [];
@@ -784,7 +801,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
   useEffect(() => () => spot(null), [focus]);
 
   /** Whether a box can be focused by a click: a record or a group, not the focus. */
-  const canOpen = useCallback((id: string) => id !== focus && isGraphNode(index, id), [focus, index]);
+  const canOpen = useCallback((id: string) => id !== focus && isGraphNode(pageIndex, id), [focus, pageIndex]);
   // By touch, a first tap selects a node and a second tap (or a tap on its card) opens it.
   const tapToOpen = useTapToOpen(onNavigate, canOpen, wrapper, focus, onOpenNew);
   tap.current = tapToOpen;
@@ -833,7 +850,7 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
     refocus.current = to;
     return true;
   }, []);
-  useGraphWalk(index, focus, layout, onNavigate, followFromBox);
+  useGraphWalk(pageIndex, focus, layout, onNavigate, followFromBox);
   // Enter focuses the box with keyboard focus; on the focus's own box it is left to the commands layer, where it shows or
   // collapses the wiki card (LA-V96-R19). Tab and Shift+Tab step through the boxes, as the page's own focus order.
   const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
@@ -896,7 +913,8 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
         moves: moves.current.moves,
         glides: moves.current.glides,
         canvas: { left: r.left, top: r.top, width: s.w, height: s.h },
-        textBarPx: TEXT_BAR_PX,
+        blockBelowPx: BLOCK_BELOW_PX,
+        laidOut: lastLayout(),
         spotlight: sp.id !== null,
         ghosts: ((live) => live.reduced ? [] : live.ghosts.filter((g) => live.now - g.t < GHOST_MS).map((g) => g.id))(marks.at(performance.now())),
         bars: frame.bars.map((b) => rect(b.x, b.y, b.w, b.h)),
@@ -909,12 +927,13 @@ function GraphStage({ index, graph, layout, depth, filters, onNavigate, minimap,
           rect: rect(p.x, p.y, p.w, p.h),
           polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,
           label: rect(p.label.x, p.label.y, p.label.w, p.label.h),
+          block: isBlock(p, v.zoom),
           lines: p.lines.map((l) => {
             const fontPx = l.size * v.zoom;
             const font = fontFor(fonts, l.face, fontPx);
             let drawnWidth = l.width * v.zoom;
-            if (measureCtx && fontPx >= TEXT_BAR_PX) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
-            return { text: l.text, face: l.face, mapPx: l.size, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), bar: fontPx < TEXT_BAR_PX, drawnWidth };
+            if (measureCtx && !isBlock(p, v.zoom)) { measureCtx.font = font; drawnWidth = measureCtx.measureText(l.text.trimEnd()).width; }
+            return { text: l.text, face: l.face, mapPx: l.size, fontPx, font, rect: rect(l.x, l.top, l.width, l.height), drawnWidth };
           }),
           icons: p.icons.map((i) => ({ draw: i.draw, name: i.name, rect: rect(i.x, i.y, i.w, i.h) })),
           badges: p.badges.map((b) => ({ label: b.label, tone: b.tone, rect: rect(b.x, b.y, b.w, b.h) })),
