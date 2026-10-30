@@ -42,7 +42,7 @@ describe('LA-V121-R02-T01 the Test data set editor writes only through the aggre
   it('Edit sends Change a test data set with only what changed; an emptied optional field is cleared with null', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withDataSet(), 'test_data_set', 'DM-SHOP-TD01', { reset: 'Drop and seed again.' });
-    const { commands, writes } = await openApp('/DM-SHOP-TD01', { data: withDataSet(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-SHOP-TD01', { data: withDataSet(), command: () => ({ answer: ok, data: changed() }) });
     const actions = await toolbar('DM-SHOP-TD01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -53,7 +53,6 @@ describe('LA-V121-R02-T01 the Test data set editor writes only through the aggre
     await user.clear(within(form).getByRole('textbox', { name: /^file/ }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/test-data-set/change-test-data-set', input: { id: 'DM-SHOP-TD01', reset: 'Drop and seed again.', file: null } }]));
-    expect(writes).toEqual([]);
     expect(await within(main()).findByText('Drop and seed again.')).toBeInTheDocument();
   });
 });

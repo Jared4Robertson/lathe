@@ -49,7 +49,7 @@ describe('LA-V110-R02-T01 the Business outcome editor writes only through the ag
   it('Edit sends Change a business outcome with only what changed, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withOutcomes(), 'business_outcome', 'DM-BO01', { target: 'Three in four within a quarter.' });
-    const { commands, writes } = await openApp('/DM-BO01', { data: withOutcomes(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-BO01', { data: withOutcomes(), command: () => ({ answer: ok, data: changed() }) });
     await within(main()).findByText('More of the baskets shoppers fill are checked out.');
     expect(within(toolbar('DM-BO01')).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(toolbar('DM-BO01')).getByRole('button', { name: 'Edit' }));
@@ -59,13 +59,12 @@ describe('LA-V110-R02-T01 the Business outcome editor writes only through the ag
     await user.type(target, 'Three in four within a quarter.');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/business-outcome/change-business-outcome', input: { id: 'DM-BO01', target: 'Three in four within a quarter.' } }]));
-    expect(writes).toEqual([]);
     expect(await within(main()).findByText('Three in four within a quarter.')).toBeInTheDocument();
   });
 
   it('adds an outcome from its product\'s page through the aggregate\'s own Add, with the next free ID', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM', { data: withOutcomes(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM', { data: withOutcomes(), command: () => ({ answer: ok }) });
     await screen.findByRole('toolbar', { name: 'Change DM' });
     await user.click(within(toolbar('DM')).getByRole('button', { name: 'Add…' }));
     await user.click(within(toolbar('DM')).getByRole('button', { name: 'Business outcome' }));
@@ -77,7 +76,6 @@ describe('LA-V110-R02-T01 the Business outcome editor writes only through the ag
     await user.type(within(form).getByRole('textbox', { name: /^target/ }), 'Under a minute.');
     await user.click(within(form).getByRole('button', { name: 'Add business outcome' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/business-outcome/add-business-outcome', input: { product_id: 'DM', id: 'DM-BO03', title: 'Faster checkout', statement: 'Shoppers check out faster.', measure: 'Median checkout time.', target: 'Under a minute.' } }]));
-    expect(writes).toEqual([]);
   });
 });
 

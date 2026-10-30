@@ -107,7 +107,7 @@ function FollowForm({ index, page, followers, onDone }: { index: RecordIndex; pa
   const announce = useAnnounce();
   const pattern = page.pattern.id;
   const following = new Set(followers);
-  const choices: Choice[] = index.workspace.records
+  const choices: Choice[] = [...index.byId.values()]
     .filter((r) => (r.kind === 'domain' || r.kind === 'use_case') && r.product === page.pattern.product_id && !following.has(r.id))
     .sort(byIdOrder)
     .map((r) => ({ id: r.id, title: r.title }));

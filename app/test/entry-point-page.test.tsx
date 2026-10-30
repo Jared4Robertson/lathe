@@ -42,7 +42,7 @@ describe('LA-V112-R02-T01 the Entry point editor writes only through the aggrega
   it('Edit sends Change an entry point with only what changed, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withEntryPoint(), 'entry_point', 'DM-SHOP-ENTRY01', { description: 'Opens the store, then serves the shop.' });
-    const { commands, writes } = await openApp('/DM-SHOP-ENTRY01', { data: withEntryPoint(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-SHOP-ENTRY01', { data: withEntryPoint(), command: () => ({ answer: ok, data: changed() }) });
     await within(main()).findByText('Opens the store and serves the shop.');
     expect(within(toolbar('DM-SHOP-ENTRY01')).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(toolbar('DM-SHOP-ENTRY01')).getByRole('button', { name: 'Edit' }));
@@ -53,7 +53,6 @@ describe('LA-V112-R02-T01 the Entry point editor writes only through the aggrega
     await user.type(within(form).getByRole('textbox', { name: /^packages/ }), '{Enter}zod');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/entry-point/change-entry-point', input: { id: 'DM-SHOP-ENTRY01', description: 'Opens the store, then serves the shop.', packages: ['express', 'zod'] } }]));
-    expect(writes).toEqual([]);
     expect(await within(main()).findByText('Opens the store, then serves the shop.')).toBeInTheDocument();
   });
 });

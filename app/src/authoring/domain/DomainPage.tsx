@@ -5,7 +5,6 @@ import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import { RecordedExceptions } from '../../specs/RecordText';
 import { DomainWiki } from '../../specs/SpecPages';
 import { DomainEditor } from './DomainEditor';
 import { useDomain } from './reads';
@@ -69,15 +68,7 @@ function Content({ index, page }: { index: RecordIndex; page: Domain }) {
     }
     case 'repository': {
       const r = repositoryOf(page, id);
-      return (
-        <>
-          <Text index={index} id={id} source={r.repository.description} field="description" />
-          {r.alsoPersists.length > 0 && (
-            <RecordedExceptions index={index} rows={r.alsoPersists.map((s) => ({ aggregate_id: s.aggregate, reason: s.reason }))} owner={id} title="Also persists"
-              hint="A recorded exception to one repository per aggregate: each has no repository of its own, and the checks list it so it stays deliberate." />
-          )}
-        </>
-      );
+      return <Text index={index} id={id} source={r.repository.description} field="description" />;
     }
   }
 }

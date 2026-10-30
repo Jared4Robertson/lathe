@@ -41,7 +41,7 @@ describe('LA-V03-R02-T01 a check is read through the Check aggregate\'s own quer
 describe('LA-V03-R03-T01 the Check editor writes only through the aggregate\'s own commands, one per change, and Lathe\'s checks are read-only', () => {
   it('Edit sends Change a check with only what changed; emptied kinds are cleared with null; no Move', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM?page=format/checks/domain-without-owner', { data: ownCheck(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM?page=format/checks/domain-without-owner', { data: ownCheck(), command: () => ({ answer: ok }) });
     const actions = await within(card()).findByRole('toolbar', { name: 'Change domain-without-owner' });
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -50,7 +50,6 @@ describe('LA-V03-R03-T01 the Check editor writes only through the aggregate\'s o
     await user.clear(within(form).getByRole('textbox', { name: /^kinds/ }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/check/change-check', input: { name: 'domain-without-owner', severity: 'error', kinds: null } }]));
-    expect(writes).toEqual([]);
   });
 
   it('Remove sends Remove a check and opens the format page', async () => {

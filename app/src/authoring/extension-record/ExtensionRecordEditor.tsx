@@ -22,13 +22,17 @@ import '../../edit/edit.css';
 // (AddExtensionRecordForm), with its kind. The aggregate has no Move. A refusal shows every reason the command gave,
 // keeps what was entered, and changes nothing.
 
-/** The kind's value columns (its title and declared fields, not its ID or parent), its parent column, and its relations. */
+/** The kind's value columns (its title and declared fields, not its ID or parent), and the relations it may start with the kinds each reaches, from the meta model. */
 function declarationOf(index: RecordIndex, kind: string) {
-  const { schema } = index.workspace;
-  const parent = schema.kinds[kind].parents[0].column;
-  const columns = schema.tables[kind].columns.filter((c) => c.name !== 'id' && c.name !== parent);
-  const relations = Object.values(schema.relations).filter((r) => r.pairs.some((p) => p.source === kind)).sort((a, b) => a.name.localeCompare(b.name));
-  return { parent, columns, relations };
+  const parent = index.meta.kinds.get(kind)?.parent_columns[0];
+  const columns = (index.meta.columns[kind] ?? []).filter((c) => c.name !== 'id' && c.name !== parent);
+  const relations = new Map<string, { name: string; forwardLabel: string; description: string; targets: string[] }>();
+  for (const r of index.meta.relations.filter((m) => m.source_kind === kind)) {
+    const known = relations.get(r.relation) ?? { name: r.relation, forwardLabel: r.forward_label, description: r.description, targets: [] };
+    known.targets.push(r.target_kind);
+    relations.set(r.relation, known);
+  }
+  return { columns, relations: [...relations.values()].sort((a, b) => a.name.localeCompare(b.name)) };
 }
 
 const LINK = 'link:';
@@ -38,21 +42,20 @@ function fieldsOf(index: RecordIndex, kind: string, product: string | null, addi
   const { columns, relations } = declarationOf(index, kind);
   const records = [...index.byId.values()].filter((r) => r.product === product);
   const choices = (relation: string): Choice[] => {
-    const targets = relations.find((r) => r.name === relation)!.pairs.filter((p) => p.source === kind).map((p) => p.target);
+    const targets = relations.find((r) => r.name === relation)!.targets;
     return records.filter((r) => targets.includes('*') || targets.includes(r.kind)).map((r) => ({ id: r.id, title: r.title }));
   };
   return [
     ...(adding ? [{ field: 'id', column: 'id', table: kind }] : []),
     ...columns.map((c): FieldSpec => ({ field: c.name, column: c.name, table: kind, long: c.kind === 'text' && c.name !== 'title' })),
-    ...relations.map((r): FieldSpec => ({ field: `${LINK}${r.name}`, label: r.forwardLabel.charAt(0).toUpperCase() + r.forwardLabel.slice(1), description: r.description ?? `The records it ${r.forwardLabel}.`, many: choices(r.name) })),
-    { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+    ...relations.map((r): FieldSpec => ({ field: `${LINK}${r.name}`, label: r.forwardLabel.charAt(0).toUpperCase() + r.forwardLabel.slice(1), description: r.description || `The records it ${r.forwardLabel}.`, many: choices(r.name) })),
+    { field: 'packages', label: 'Packages', description: 'The packages it uses.', texts: true },
   ];
 }
 
 const isValue = (s: FieldSpec) => !s.field.startsWith(LINK) && s.field !== 'packages';
 const isLink = (s: FieldSpec) => s.field.startsWith(LINK);
-/** The packages field's text as its list: one package per line. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
+const isPackages = (s: FieldSpec) => s.field === 'packages';
 const sortedSame = (a: readonly string[], b: readonly string[]) => JSON.stringify([...a].sort()) === JSON.stringify([...b].sort());
 
 type Mode = 'view' | 'change' | 'remove';
@@ -81,11 +84,9 @@ export function ExtensionRecordEditor({ index, page, children }: { index: Record
         const now = draft.ids[s.field] ?? [];
         if (!sortedSame(now, current[s.field] as string[])) links[s.field.slice(LINK.length)] = now;
       }
-      const packages = packagesOf(draft);
-      const input: Record<string, unknown> = { id: page.id };
+      const input: Record<string, unknown> = { id: page.id, ...changeInput(index, specs.filter(isPackages), draft, current, {}, []) };
       if (Object.keys(values).length > 0) input.values = values;
       if (Object.keys(links).length > 0) input.links = links;
-      if (!sortedSame(packages, page.packages)) input.packages = packages;
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await sendExtensionRecord(writer, '/api/extension-record/change-extension-record', input as unknown as ExtensionRecordCommands['/api/extension-record/change-extension-record']);
       if (answer.ok) { announce(`Saved ${page.id}`); back(); }
@@ -138,15 +139,13 @@ export function AddExtensionRecordForm({ index, parent, kind, onDone }: { index:
   const parentRecord = index.byId.get(parent);
   const product = parentRecord?.kind === 'product' ? parent : parentRecord?.product ?? null;
   const specs = fieldsOf(index, kind, product, true);
-  const label = lowerLabel(index.workspace.schema.kinds[kind]?.label ?? kind);
+  const label = lowerLabel(index.meta.kinds.get(kind)?.label ?? kind);
   const submit = async () => {
     const { id, ...values } = addInput(index, specs.filter(isValue), draft, {});
     const links: Record<string, string[]> = {};
     for (const s of specs.filter(isLink)) if ((draft.ids[s.field] ?? []).length > 0) links[s.field.slice(LINK.length)] = draft.ids[s.field];
-    const packages = packagesOf(draft);
-    const input: Record<string, unknown> = { kind, id, parent_id: parent, values };
+    const input: Record<string, unknown> = { kind, id, parent_id: parent, values, ...addInput(index, specs.filter(isPackages), draft, {}) };
     if (Object.keys(links).length > 0) input.links = links;
-    if (packages.length > 0) input.packages = packages;
     const answer = await sendExtensionRecord(writer, '/api/extension-record/add-extension-record', input as unknown as ExtensionRecordCommands['/api/extension-record/add-extension-record']);
     if (answer.ok) { announce(`Added ${String(id)}`); navigate(addressOf(String(id))); }
     return answer;

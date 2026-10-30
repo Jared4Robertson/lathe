@@ -5,7 +5,6 @@ import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import { RecordedExceptions } from '../../specs/RecordText';
 import { CommandEditor } from './CommandEditor';
 import { useCommand } from './reads';
 
@@ -33,10 +32,6 @@ function Content({ index, page }: { index: RecordIndex; page: Command }) {
           <RowsSection index={index} title={titleOf(index, 'command_handler')} ids={page.handler ? [page.handler.handler.id] : []} label={`${titleOf(index, 'command_handler')} of ${id}`} empty="No handler carries it out yet." />
           <RowsSection index={index} title={titleOf(index, 'policy')} ids={page.policies.map((p) => p.policy.id)} label={`${titleOf(index, 'policy')} of ${id}`} empty="No policy sends it." />
           <RowsSection index={index} title={titleOf(index, 'endpoint')} ids={page.endpoints} label={`${titleOf(index, 'endpoint')} of ${id}`} empty="No endpoint exposes it." className="command-endpoints" />
-          {page.alsoChanges.length > 0 && (
-            <RecordedExceptions index={index} rows={page.alsoChanges.map((c) => ({ aggregate_id: c.aggregate, reason: c.reason }))} owner={id} title="Also changes"
-              hint="A recorded exception to one aggregate per command: each is changed in the same transaction, and the checks list it so it stays deliberate." />
-          )}
         </>
       );
     case 'command_handler':

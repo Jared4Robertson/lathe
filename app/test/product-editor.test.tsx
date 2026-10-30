@@ -44,7 +44,7 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
   it('Edit sends Change a product with only what changed, and the product offers no Move or Remove', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(workspace(), 'product', 'DM', { notes: 'Ships within the country.' });
-    const { commands, writes } = await openApp('/DM', { command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM', { command: () => ({ answer: ok, data: changed() }) });
     await screen.findByRole('toolbar', { name: 'Change DM' });
     const buttons = within(toolbar('DM')).getAllByRole('button').map((b) => b.textContent);
     expect(buttons).not.toContain('Move');
@@ -54,7 +54,6 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     await user.type(within(form).getByRole('textbox', { name: /^notes/ }), 'Ships within the country.');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/product/change-product', input: { id: 'DM', notes: 'Ships within the country.' } }]));
-    expect(writes).toEqual([]);
   });
 
   it('adds an open question from the product\'s page with the next free ID, and moves it to a domain as its own command', async () => {

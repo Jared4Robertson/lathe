@@ -1,17 +1,20 @@
 import type { ServedData } from './read-view';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { textOf } from '../src/specs/data';
 import { answerQuery } from '../../lathe/src/platform/commands/run';
 import { LIST_FOLLOWERS } from '../../lathe/src/traceability/pattern-following/queries';
 import type { PatternFollowers } from '../../lathe/src/traceability/pattern-following/read-model';
-import { notApplicableReason, patternsFollowedBy, ruleStatus, rulesOf, settingValue, settingsOf } from '../src/specs/patterns';
+import { GET_PATTERN } from '../../lathe/src/authoring/pattern/queries';
+import type { PatternPage } from '../../lathe/src/authoring/pattern/read-model';
+import { GET_RECORD_TRACE } from '../../lathe/src/traceability/record-trace/queries';
+import type { RecordTrace } from '../../lathe/src/traceability/record-trace/read-model';
+import { patternsFollowedBy, ruleStatus, rulesOf } from '../src/specs/patterns';
 import { readViewOf } from './read-view';
-import { owingDomains } from '../src/specs/trace';
 import { expectStandingsAsEngine, servedByEngine } from './fixtures/engine';
 import { patternWorkspace, withStandings } from './fixtures/patterns';
 import { main, openApp, section } from './helpers';
-import { addRows, indexOf, removeRows } from './fixtures/load';
+import { addRows, removeRows } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 
 // Patterns in the app: the domain page's "Patterns we follow", a pattern's page and a pattern
 // rule's page, from a workspace where two domains follow one pattern: DM-SHOP itself and through
@@ -41,6 +44,16 @@ function payItself(): ServedData {
 }
 
 const index = () => recordIndexOf(twoDomains());
+
+/** A rule's trace, its setting and the pattern's following domain, as the rule's mark reads them, over the data. */
+function standingOf(data: ServedData, rule: string, domain: string) {
+  const view = readViewOf(data);
+  const trace = answerQuery(view, GET_RECORD_TRACE, { id: rule }) as RecordTrace;
+  const pattern = answerQuery(view, GET_PATTERN, { id: rule }) as PatternPage;
+  const followers = answerQuery(view, LIST_FOLLOWERS, { pattern_id: pattern.pattern.id }) as PatternFollowers;
+  const setting = pattern.rules.find((r) => r.rule.id === rule)?.rule.setting?.trim() ?? '';
+  return ruleStatus(trace, domain, setting, followers.domains.find((d) => d.domain === domain));
+}
 const rowOf = (scope: HTMLElement, id: string) => within(scope).getByRole('link', { name: new RegExp(`^${id}(?!-)`) }).closest('.record-row') as HTMLElement;
 
 /** A row's text without its actions' toolbar: the follower and the values it gives. */
@@ -55,33 +68,29 @@ describe('pattern logic', () => {
     expect(patternsFollowedBy(ix, 'NF-NOTE')).toEqual([]);
     const followers = answerQuery(readViewOf(twoDomains()), LIST_FOLLOWERS, { pattern_id: 'DM-PAT-AUDIT' }) as PatternFollowers;
     expect(followers.domains.map((d) => d.domain)).toEqual(['DM-PAY', 'DM-SHOP']);
-    expect(settingsOf(ix, ix.byId.get('DM-PAT-AUDIT')!)).toEqual(['retention', 'who']);
-    // A follower's setting_value rows: a value, or the reason the setting does not apply.
-    expect(settingValue(ix, 'DM-SHOP', 'DM-PAT-AUDIT', 'retention')).toEqual({ value: '1 year' });
-    expect(notApplicableReason(settingValue(ix, 'DM-PAY-UC01', 'DM-PAT-AUDIT', 'retention'))).toBe('Payments keep no records');
-    expect(notApplicableReason({ notApplicable: '  read only ' })).toBe('read only');
-    expect(notApplicableReason(settingValue(ix, 'DM-PAY-UC01', 'DM-PAT-AUDIT', 'who'))).toBeNull();
-    expect(notApplicableReason(settingValue(ix, 'DM-SHOP-UC01', 'DM-PAT-AUDIT', 'missing'))).toBeNull();
+    // A follower's settings: a value, or the reason the setting does not apply.
+    const settingsOf = (domain: string, follower: string) => {
+      const d = followers.domains.find((x) => x.domain === domain)!;
+      return [...(d.itself ? [d.itself] : []), ...d.useCases].find((f) => f.follower === follower)!.settings;
+    };
+    expect(settingsOf('DM-SHOP', 'DM-SHOP').find((v) => v.setting === 'retention')).toMatchObject({ value: '1 year', notApplicable: null });
+    expect(settingsOf('DM-PAY', 'DM-PAY-UC01').find((v) => v.setting === 'retention')).toMatchObject({ notApplicable: 'Payments keep no records' });
+    expect(settingsOf('DM-PAY', 'DM-PAY-UC01').find((v) => v.setting === 'who')).toMatchObject({ value: 'Shopper', notApplicable: null });
   });
 
   it('LA-V91-R54-T02 A rule is proved per domain, by its pattern rule tests that name that domain', () => {
-    const ix = index();
-    const r01 = ix.byId.get('DM-PAT-AUDIT-R01')!;
-    expect(ruleStatus(ix, r01, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0])).toEqual({ applies: true, provedBy: ['DM-PAT-AUDIT-R01-T01'], notAutomatedBy: [] });
+    expect(standingOf(twoDomains(), 'DM-PAT-AUDIT-R01', 'DM-SHOP')).toEqual({ applies: true, provedBy: ['DM-PAT-AUDIT-R01-T01'], notAutomatedBy: [] });
     // In DM-PAY only a test not automated yet is meant to prove it.
-    expect(ruleStatus(ix, r01, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0])).toEqual({ applies: true, provedBy: [], notAutomatedBy: ['DM-PAT-AUDIT-R01-T02'] });
+    expect(standingOf(twoDomains(), 'DM-PAT-AUDIT-R01', 'DM-PAY')).toEqual({ applies: true, provedBy: [], notAutomatedBy: ['DM-PAT-AUDIT-R01-T02'] });
   });
 
   it('LA-V91-R55-T01 A rule that names a setting every following use case marks Not applicable does not apply in that domain', () => {
-    const ix = index();
-    const r02 = ix.byId.get('DM-PAT-AUDIT-R02')!;
-    expect(ruleStatus(ix, r02, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0])).toEqual({
+    expect(standingOf(twoDomains(), 'DM-PAT-AUDIT-R02', 'DM-PAY')).toEqual({
       applies: false,
-      why: 'not-applicable',
       setting: 'retention',
       reasons: [{ useCase: 'DM-PAY-UC01', reason: 'Payments keep no records' }] });
     // DM-SHOP follows it itself, so the rule applies there.
-    expect(ruleStatus(ix, r02, 'DM-SHOP', patternsFollowedBy(ix, 'DM-SHOP')[0])).toMatchObject({ applies: true, provedBy: [] });
+    expect(standingOf(twoDomains(), 'DM-PAT-AUDIT-R02', 'DM-SHOP')).toMatchObject({ applies: true, provedBy: [] });
   });
 });
 
@@ -136,8 +145,7 @@ describe('Patterns we follow, on the domain page', () => {
     const ix = recordIndexOf(ws);
     expect(patternsFollowedBy(ix, 'DM-PAY').map((f) => [f.pattern.id, f.byDomain, f.useCases.length])).toEqual([['DM-PAT-AUDIT', true, 0]]);
     // A rule with a setting still applies: no use case of the domain can mark it not applicable.
-    const ruleWithSetting = ix.workspace.records.find((r) => r.parent === 'DM-PAT-AUDIT' && textOf(r.row, 'setting'))!;
-    expect(ruleStatus(ix, ruleWithSetting, 'DM-PAY', patternsFollowedBy(ix, 'DM-PAY')[0])).toMatchObject({ applies: true });
+    expect(standingOf(ws, 'DM-PAT-AUDIT-R02', 'DM-PAY')).toMatchObject({ applies: true });
     await openApp('/DM-PAY', { data: ws });
     await screen.findByRole('heading', { level: 1, name: 'Paying' });
     expect(rowOf(section(/^Patterns we follow/), 'DM-PAT-AUDIT')).toHaveTextContent('followed by the whole domain');
@@ -169,14 +177,14 @@ describe('Patterns we follow, on the domain page', () => {
   });
 
   it('LA-V91-R54-T07 Whether a rule applies in a domain is the engine\'s answer, on every page that shows it', async () => {
-    // Each workspace through the real engine: owed, not applicable through a use case's setting, waived by an
-    // applies-when condition, and a domain that follows the pattern itself.
-    const marks = { owed: /proved$/, 'not-applicable': /^not applicable$/, waived: /^Waived here/ };
+    // Each workspace through the real engine: owed, and not owed (not applicable) through a use case's setting or by the
+    // engine's standing, and a domain that follows the pattern itself.
+    const marks = { owed: /proved$/, 'not-applicable': /^not applicable$/, waived: /^not applicable$/ };
     for (const ws of [twoDomains(), payItself()]) {
       const data = await servedByEngine(ws);
       const ix = recordIndexOf(data);
       for (const followed of ['DM-PAY', 'DM-SHOP'].flatMap((domain) => patternsFollowedBy(ix, domain).filter((f) => f.pattern.id === 'DM-PAT-AUDIT').map((f) => ({ ...f, domain })))) {
-        const standings = ix.coverage.get(followed.domain)!.pattern_rules;
+        const standings = data.coverage.find((c) => c.domain === followed.domain)!.pattern_rules;
         await openApp(`/${followed.domain}`, { data });
         await screen.findByRole('heading', { level: 1, name: ix.byId.get(followed.domain)!.title });
         const patterns = section(/^Patterns we follow/);
@@ -185,9 +193,8 @@ describe('Patterns we follow, on the domain page', () => {
         for (const rule of rulesOf(ix, 'DM-PAT-AUDIT')) {
           const standing = standings[rule.id];
           expect(standing, `${rule.id} in ${followed.domain}`).toBeDefined();
-          const status = ruleStatus(ix, rule, followed.domain, followed);
-          expect(status.applies ? 'owed' : status.why).toBe(standing);
-          expect(owingDomains(ix, rule).includes(followed.domain)).toBe(standing === 'owed');
+          const status = standingOf(data, rule.id, followed.domain);
+          expect(status.applies).toBe(standing === 'owed');
           expect(within(rowOf(patterns, rule.id)).getAllByText(marks[standing]).length).toBeGreaterThan(0);
         }
       }
@@ -215,7 +222,7 @@ describe('pattern pages (the Pattern page, LA-V122)', () => {
     expect(within(section(/^Rules/)).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
       'DM-PAT-AUDIT-R01Each change is recorded',
       'DM-PAT-AUDIT-R02Records are kept setting retention',
-      'DM-PAT-AUDIT-R03The clerk is named applies when who is clerk',
+      'DM-PAT-AUDIT-R03The clerk is named',
     ]);
     // No separate Children list repeats the rules.
     expect(within(screen.getByRole('region', { name: 'Wiki card' })).queryByRole('heading', { name: /^Children/ })).toBeNull();
@@ -243,7 +250,7 @@ describe('pattern pages (the Pattern page, LA-V122)', () => {
     expect(statusOf('DM-SHOP', 'DM-PAT-AUDIT-R01')).not.toHaveTextContent('not proved');
     expect(statusOf('DM-PAY', 'DM-PAT-AUDIT-R01')).toHaveTextContent(/not proved\s*not automated yet/);
     expect(statusOf('DM-PAY', 'DM-PAT-AUDIT-R02')).toHaveTextContent('not applicable');
-    expect(statusOf('DM-PAY', 'DM-PAT-AUDIT-R03')).toHaveTextContent('Waived here: who is Shopper');
+    expect(statusOf('DM-PAY', 'DM-PAT-AUDIT-R03')).toHaveTextContent('not applicable');
   });
 
   it('LA-V122-R05-T01 A pattern rule page lists the domains that owe it, and a pattern nobody follows says so', async () => {

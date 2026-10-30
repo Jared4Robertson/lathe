@@ -34,7 +34,7 @@ describe('LA-V111-R02-T01 the Extension record editor writes only through the ag
   it('Edit sends Change an extension record with only the declared values that changed, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(productKindWorkspace(), 'security_control', ID, { statement: 'Only the basket\'s shopper MAY add to it.' });
-    const { commands, writes } = await openApp(`/${ID}`, { data: productKindWorkspace(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp(`/${ID}`, { data: productKindWorkspace(), command: () => ({ answer: ok, data: changed() }) });
     await within(main()).findByText('Only the shopper owning the basket MAY add to it.');
     expect(within(toolbar(ID)).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(toolbar(ID)).getByRole('button', { name: 'Edit' }));
@@ -45,7 +45,6 @@ describe('LA-V111-R02-T01 the Extension record editor writes only through the ag
     await user.type(statement, 'Only the basket\'s shopper MAY add to it.');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/extension-record/change-extension-record', input: { id: ID, values: { statement: 'Only the basket\'s shopper MAY add to it.' } } }]));
-    expect(writes).toEqual([]);
     expect(await within(main()).findByText('Only the basket\'s shopper MAY add to it.')).toBeInTheDocument();
   });
 });

@@ -6,8 +6,8 @@ import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, Refusal, problemText, type Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
-import { AddUnder } from '../../record/pages';
-import { addableKinds } from '../../edit/form';
+import { AddUnder, othersAddedUnder } from '../../record/pages';
+import { AddMenu } from '../../edit/AddMenu';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
@@ -121,6 +121,12 @@ const relationFields = (adding: boolean): FieldSpec[] => [
 
 // ---------- The editor ----------
 
+/** What a product's Add… offers, in reading order: its own open questions and interfaces, and every other aggregate's root added under it. */
+function addedUnderProduct(index: RecordIndex): string[] {
+  const kinds = new Set([...othersAddedUnder(index.meta, 'product'), 'question', 'interface']);
+  return index.meta.kindList.map((k) => k.kind).filter((k) => kinds.has(k));
+}
+
 /** A record of the product with its actions; a form or a remove question shows in place of its page. */
 export function ProductEditor({ index, page, id, kind, children }: {
   index: RecordIndex;
@@ -131,10 +137,8 @@ export function ProductEditor({ index, page, id, kind, children }: {
 }) {
   const writer = useWriter();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
-  const [adding, setAdding] = useState(false);
-  const [declaring, setDeclaring] = useState(false);
   const toolbar = useRef<HTMLDivElement>(null);
-  useEffect(() => { setMode({ mode: 'view' }); setAdding(false); setDeclaring(false); }, [id]);
+  useEffect(() => { setMode({ mode: 'view' }); }, [id]);
   if (!writer) return <>{children(null)}</>;
   const back = () => {
     setMode({ mode: 'view' });
@@ -172,25 +176,10 @@ export function ProductEditor({ index, page, id, kind, children }: {
         {kind === 'question' && <Button onClick={() => setMode({ mode: 'move' })}>Move</Button>}
         {kind === 'product' && (
           <>
-            <span className="record-add">
-              <Button icon="plus" aria-expanded={adding} aria-controls={`add-kinds-${id}`} onClick={() => { setAdding(!adding); setDeclaring(false); }}>Add…</Button>
-              {adding && (
-                <span id={`add-kinds-${id}`} className="record-add-kinds" role="group" aria-label={`Kinds to add under ${id}`}>
-                  {addableKinds(index.workspace.schema, 'product').map((k) => (
-                    <Button key={k} onClick={() => { setAdding(false); setMode({ mode: 'add', kind: k }); }}>{kindLabel(index, k)}</Button>
-                  ))}
-                </span>
-              )}
-            </span>
-            <span className="record-add">
-              <Button icon="plus" aria-expanded={declaring} aria-controls={`declare-${id}`} onClick={() => setDeclaring(!declaring)}>Declare…</Button>
-              {declaring && (
-                <span id={`declare-${id}`} className="record-add-kinds" role="group" aria-label={`Declarations to add to ${id}`}>
-                  <Button onClick={() => { setDeclaring(false); setMode({ mode: 'declare-kind' }); }}>Product kind</Button>
-                  <Button onClick={() => { setDeclaring(false); setMode({ mode: 'declare-relation' }); }}>Product relation</Button>
-                </span>
-              )}
-            </span>
+            <AddMenu id={id} choices={addedUnderProduct(index).map((k) => ({ key: k, label: kindLabel(index, k) }))}
+              onPick={(k) => setMode({ mode: 'add', kind: k })} />
+            <AddMenu id={id} title="Declare…" group="Declarations to add to" choices={[{ key: 'declare-kind', label: 'Product kind' }, { key: 'declare-relation', label: 'Product relation' }]}
+              onPick={(k) => setMode({ mode: k as 'declare-kind' | 'declare-relation' })} />
           </>
         )}
         {kind !== 'product' && <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>}

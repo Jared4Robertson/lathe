@@ -36,7 +36,7 @@ describe('LA-V151-R01-T01 a UI component is read through the UI component aggreg
 describe('LA-V151-R02-T01 the UI component editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a UI component with only what changed: an emptied file is cleared with null, the packages whole; no Move', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/P-UI01', { data: withPackage(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/P-UI01', { data: withPackage(), command: () => ({ answer: ok }) });
     const actions = await toolbar('P-UI01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -45,12 +45,11 @@ describe('LA-V151-R02-T01 the UI component editor writes only through the aggreg
     await user.type(within(form).getByRole('textbox', { name: /^packages/ }), '{enter}react-dom');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/ui-component/change-ui-component', input: { id: 'P-UI01', file: null, packages: ['react', 'react-dom'] } }]));
-    expect(writes).toEqual([]);
   });
 
   it('adds a UI component from its product\'s page through the aggregate\'s own Add, with the next free ID', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/P', { data: withPackage(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/P', { data: withPackage(), command: () => ({ answer: ok }) });
     const actions = await toolbar('P');
     await user.click(within(actions).getByRole('button', { name: 'Add…' }));
     await user.click(within(within(actions).getByRole('group', { name: 'Kinds to add under P' })).getByRole('button', { name: 'UI component' }));
@@ -60,7 +59,6 @@ describe('LA-V151-R02-T01 the UI component editor writes only through the aggreg
     await user.type(within(form).getByRole('textbox', { name: /^description/ }), 'Renders the form a loan is made with.');
     await user.click(within(form).getByRole('button', { name: 'Add UI component' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/ui-component/add-ui-component', input: { id: 'P-UI02', title: 'LoanForm', description: 'Renders the form a loan is made with.' } }]));
-    expect(writes).toEqual([]);
   });
 });
 

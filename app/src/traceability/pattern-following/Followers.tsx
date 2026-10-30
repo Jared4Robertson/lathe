@@ -5,8 +5,7 @@ import { Refusal, problemText } from '../../edit/fields';
 import type { Read } from '../../record/read';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink, Section, SpecLink } from '../../specs/parts';
-import { RuleMarks } from '../../specs/PatternParts';
-import { ruleStatus, type Followed } from '../../specs/patterns';
+import { RuleMark } from '../../specs/PatternParts';
 import { addressOf } from '../../views/address';
 import { FollowButton, FollowingForm, RowActions, type FollowingMode } from './FollowingEditor';
 import { useFollowers } from './reads';
@@ -15,13 +14,8 @@ import { useFollowers } from './reads';
 // and Owed by on a rule's, read through the Pattern following aggregate's own query (GET
 // /api/pattern-following/list-followers): each domain that follows the pattern, whether the domain itself does, and
 // each of its use cases that does, with the value (or the reason it does not apply) each gives each setting. Each
-// follower's row carries the following's editor (FollowingEditor). Each rule's standing in a domain is the coverage's,
-// read from the workspace's index (ruleStatus) until that read is its own.
-
-/** How a domain follows the pattern, as the rule standings read it: its following use cases and whether it does itself. */
-function followedOf(index: RecordIndex, d: FollowingDomain): Followed {
-  return { useCases: d.useCases.flatMap((f) => index.byId.get(f.follower) ?? []), byDomain: d.itself !== null };
-}
+// follower's row carries the following's editor (FollowingEditor). Each rule's standing in a domain is its trace's
+// judgment there (RuleMark, from get-record-trace).
 
 /** What a read shows until it answers for the pattern: its refusal, or that it is reading. */
 function unread(read: Read<{ pattern: string }>, pattern: string) {
@@ -47,7 +41,6 @@ function FollowingDomainSection({ index, page, d, setMode }: { index: RecordInde
   const record = index.byId.get(domain);
   // A domain that follows the pattern itself gives its settings on its own record, in the first row.
   const givers: FollowingPage[] = [...(d.itself ? [d.itself] : []), ...d.useCases];
-  const followed = followedOf(index, d);
   return (
     <section className="pattern-domain" aria-label={`Followed in ${domain}`}>
       <h3>
@@ -81,7 +74,7 @@ function FollowingDomainSection({ index, page, d, setMode }: { index: RecordInde
               {page.rules.map(({ rule: { id } }) => (
                 <tr key={id}>
                   <th scope="row"><RecordLink index={index} id={id} /></th>
-                  <td data-label={`In ${domain}`}>{index.byId.has(id) && <RuleMarks index={index} status={ruleStatus(index, index.byId.get(id)!, domain, followed)} />}</td>
+                  <td data-label={`In ${domain}`}><RuleMark index={index} rule={id} pattern={patternId} domain={domain} /></td>
                 </tr>
               ))}
             </tbody>
@@ -126,10 +119,9 @@ export function OwedBy({ index, page, id }: { index: RecordIndex; page: PatternP
   const read = useFollowers(page.pattern.id, index);
   const shown = unread(read, page.pattern.id);
   const domains = read.state === 'read' ? read.answer.domains : [];
-  const rule = index.byId.get(id);
   return (
     <Section title="Owed by" count={shown ? undefined : domains.length}>
-      {shown ?? (domains.length === 0 || !rule ? <p className="hint">No domain follows this rule's pattern.</p> : (
+      {shown ?? (domains.length === 0 ? <p className="hint">No domain follows this rule's pattern.</p> : (
         <div className="table-scroll table-stack">
           <table className="data-table pattern-rule-status">
             <thead><tr><th scope="col">Domain</th><th scope="col">Status</th></tr></thead>
@@ -137,7 +129,7 @@ export function OwedBy({ index, page, id }: { index: RecordIndex; page: PatternP
               {domains.map((d) => (
                 <tr key={d.domain}>
                   <th scope="row"><RecordLink index={index} id={d.domain} /></th>
-                  <td data-label="Status"><RuleMarks index={index} status={ruleStatus(index, rule, d.domain, followedOf(index, d))} /></td>
+                  <td data-label="Status"><RuleMark index={index} rule={id} pattern={page.pattern.id} domain={d.domain} /></td>
                 </tr>
               ))}
             </tbody>

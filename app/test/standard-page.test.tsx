@@ -36,7 +36,7 @@ describe('LA-V123-R02-T01 the Standard editor writes only through the aggregate\
   it('Edit sends Change a standard rule with only what changed; an emptied group is cleared with null; no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(standardWorkspace(), 'standard_rule', 'DM-STD-CODE-R01', { group_name: null });
-    const { commands, writes } = await openApp('/DM-STD-CODE-R01', { data: standardWorkspace(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-STD-CODE-R01', { data: standardWorkspace(), command: () => ({ answer: ok, data: changed() }) });
     const actions = await toolbar('DM-STD-CODE-R01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add standard rule test', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -44,7 +44,6 @@ describe('LA-V123-R02-T01 the Standard editor writes only through the aggregate\
     await user.clear(within(form).getByRole('textbox', { name: /^group name/ }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/standard/change-standard-rule', input: { id: 'DM-STD-CODE-R01', group_name: null } }]));
-    expect(writes).toEqual([]);
   });
 
   it('adds a rule under the standard with the next free ID, through Add a standard rule', async () => {

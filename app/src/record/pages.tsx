@@ -2,6 +2,11 @@ import type { ComponentType, ReactNode } from 'react';
 import type { AggregateKind } from '../../../lathe/src/authoring/aggregate/model';
 import type { CommandKind } from '../../../lathe/src/authoring/command/model';
 import type { MetaIndex } from '../platform/meta-model/reads';
+import type { StorageRequirementKind } from '../../../lathe/src/authoring/storage-requirement/model';
+import { AddStorageRequirementForm } from '../authoring/storage-requirement/StorageRequirementEditor';
+import { StorageRequirementPage } from '../authoring/storage-requirement/StorageRequirementPage';
+import { AddDataStoreForm } from '../authoring/data-store/DataStoreEditor';
+import { DataStorePage } from '../authoring/data-store/DataStorePage';
 import type { UseCaseKind } from '../../../lathe/src/authoring/use-case/model';
 import { AddBusinessOutcomeForm } from '../authoring/business-outcome/BusinessOutcomeEditor';
 import { BusinessOutcomePage } from '../authoring/business-outcome/BusinessOutcomePage';
@@ -59,7 +64,7 @@ import { type RecordIndex } from '../exploring/record-summaries/record-index';
 
 // The Record page's typed list of aggregate pages: each of Lathe's kinds names its aggregate's page (app/src/<domain>/
 // <aggregate>/), which reads the aggregate whole and changes it only through the aggregate's own commands. The list is
-// total over Lathe's kinds, so a kind with no page fails the typecheck. The Record page shell (the wiki card) finds a
+// total over Lathe's kinds: a test holds it to the schema's kinds, so a kind with no page fails. The Record page shell (the wiki card) finds a
 // kind's page here. Adding an aggregate's root from the page it sits under (a use
 // case from its capability's page) goes through its aggregate's own Add form, listed in ADDERS. A kind a product declares
 // as its own is the Extension record aggregate's, whatever its name: its page and Add form are that aggregate's, found
@@ -76,7 +81,7 @@ export interface AggregatePageProps {
 }
 
 /** The kinds with an aggregate page. */
-type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling' | SpecificationKind | ValueObjectKind | ReadModelKind | 'table' | AggregateKind | DomainEventKind | CommandKind | ViewKind | 'ui_component' | EndpointKind | IntegrationKind;
+type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling' | SpecificationKind | ValueObjectKind | ReadModelKind | 'table' | AggregateKind | DomainEventKind | CommandKind | ViewKind | 'ui_component' | EndpointKind | IntegrationKind | StorageRequirementKind | 'data_store';
 
 /** Each kind with its aggregate's page. */
 const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = {
@@ -143,12 +148,15 @@ const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = 
   reader: ReadModelPage,
   query_handler: ReadModelPage,
   table: TablePage,
+  storage_requirement: StorageRequirementPage,
+  storage_requirement_test: StorageRequirementPage,
+  data_store: DataStorePage,
 };
 
 /** Whether the kind is one a product declares as its own: a kind of the Extension record aggregate. */
 const declared = (meta: MetaIndex, kind: string) => (meta.kinds.get(kind)?.declared_by ?? null) !== null;
 
-/** The page of the kind's aggregate, or undefined while its aggregate has none. */
+/** The page of the kind's aggregate, or undefined for a kind the meta model does not know (a kind gone from the schema while its rows remain). */
 export function pageOf(meta: MetaIndex, kind: string): ComponentType<AggregatePageProps> | undefined {
   if (declared(meta, kind)) return ExtensionRecordPage;
   return Object.hasOwn(PAGES, kind) ? PAGES[kind as PagedKind] : undefined;
@@ -162,7 +170,7 @@ export interface AggregateAdderProps {
 }
 
 /** Each aggregate root added from the page of what it sits under, with its aggregate's Add form. */
-const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'question' | 'entry_point' | 'tooling' | 'specification' | 'value_object' | 'read_model' | 'table' | 'aggregate' | 'domain_event' | 'command' | 'view' | 'ui_component' | 'endpoint' | 'integration']: ComponentType<AggregateAdderProps> } = {
+const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'question' | 'entry_point' | 'tooling' | 'specification' | 'value_object' | 'read_model' | 'table' | 'aggregate' | 'domain_event' | 'command' | 'view' | 'ui_component' | 'endpoint' | 'integration' | 'storage_requirement' | 'data_store']: ComponentType<AggregateAdderProps> } = {
   use_case: AddUseCaseForm,
   domain: AddDomainForm,
   test_data_set: AddTestDataSetForm,
@@ -183,10 +191,24 @@ const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'patter
   value_object: AddValueObjectForm,
   read_model: AddReadModelForm,
   table: AddTableForm,
+  storage_requirement: AddStorageRequirementForm,
+  data_store: AddDataStoreForm,
 };
 
 /** The Extension record aggregate's Add form for each declared kind, made once per kind so a form keeps its draft. */
 const declaredAdders = new Map<string, ComponentType<AggregateAdderProps>>();
+
+/**
+ * The roots of other aggregates a record of this kind adds under it through their own Add form, in reading order: the
+ * kinds whose parents include it, and for a product or a domain the kinds with no owner whose IDs it scopes.
+ */
+export function othersAddedUnder(meta: MetaIndex, kind: string): string[] {
+  const scope = kind === 'product' ? 'product' : kind === 'domain' ? 'domain' : null;
+  return meta.kindList
+    .filter((k) => k.parent_kinds.includes(kind) || (scope !== null && k.parent_kinds.length === 0 && k.id_scope === scope))
+    .map((k) => k.kind)
+    .filter((k) => adderOf(meta, k) !== undefined);
+}
 
 /** Adds a record of the kind under the parent from another aggregate's page (such as a view from its product's page), through its aggregate's Add form. */
 export function AddUnder({ index, parent, kind, onDone }: AggregateAdderProps & { kind: string }) {

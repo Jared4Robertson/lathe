@@ -2,8 +2,6 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { renderMarkdown } from '../src/specs/Markdown';
-import { factsOf } from '../src/specs/RecordText';
-import { addRows, indexOf } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp } from './helpers';
 
@@ -143,20 +141,7 @@ describe('record page', () => {
   });
 
 
-  it('LA-PAT-RECORD-PAGE-R08-T01 A technical record shows the packages it uses as one fact', () => {
-    const index = recordIndexOf(addRows(modelWorkspace(), 'package_use', { record_id: 'P-INT01-AD', package: 'nodemailer' }, { record_id: 'P-INT01-AD', package: '@scope/mjml' }));
-    const facts = factsOf(index, index.byId.get('P-INT01-AD')!);
-    expect(facts.filter((f) => f.column === null)).toEqual([{ column: null, label: 'packages', value: 'nodemailer, @scope/mjml' }]);
-  });
 
-  it('LA-PAT-RECORD-PAGE-R08-T01 A command shows the other aggregates it also changes, each with its reason', async () => {
-    await openApp('/P-D-CMD02', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Return thing' });
-    const also = section(/^Also changes/);
-    expect(within(also).getByRole('link', { name: /P-D-A1/ })).toHaveAttribute('href', '/P-D-A1');
-    expect(also).toHaveTextContent('The thing must be lendable again in the same transaction as its return.');
-    expect(also).toHaveTextContent(/recorded exception/);
-  });
 
   it('LA-PAT-RECORD-PAGE-R08-T01 A repository shows the other aggregates it also persists, each with its reason', async () => {
     await openApp('/P-D-REPO01', { data: modelWorkspace() });

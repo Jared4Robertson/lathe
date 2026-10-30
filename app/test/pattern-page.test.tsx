@@ -36,7 +36,7 @@ describe('LA-V122-R01-T01 a pattern\'s records are read through the Pattern aggr
 describe('LA-V122-R02-T01 the Pattern editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a pattern with its settings, the whole list in order, and offers no Move', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM-PAT-AUDIT', { data: patternWorkspace(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM-PAT-AUDIT', { data: patternWorkspace(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-PAT-AUDIT');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add pattern rule', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -44,7 +44,6 @@ describe('LA-V122-R02-T01 the Pattern editor writes only through the aggregate\'
     await user.click(within(form).getByRole('button', { name: 'Remove Settings: row 2' }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/pattern/change-pattern', input: { id: 'DM-PAT-AUDIT', settings: [{ name: 'retention', meaning: 'How long records are kept.' }] } }]));
-    expect(writes).toEqual([]);
   });
 
   it('adds a rule test under a rule with the next free ID, naming the domain it proves the rule in', async () => {
