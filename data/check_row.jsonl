@@ -11,6 +11,7 @@
 {"id":"LA-AUT-CK12","title":"query-title-verb","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-AUT-CK13","title":"repository-persists-nothing","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-AUT-CK14","title":"term-used-unlinked","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
+{"id":"LA-AUT-CK15","title":"outcome-target-undated","domain_id":"LA-AUT","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK01","title":"too-many-children","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK02","title":"lone-child","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
 {"id":"LA-CHK-CK04","title":"test-level-not-allowed","domain_id":"LA-CHK","file":"lathe/data/check.jsonl"}
@@ -39,3 +40,4 @@
 {"id":"LA-TRC-CK15","title":"view-route-not-in-file","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK16","title":"table-schema-mismatch","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
 {"id":"LA-TRC-CK17","title":"test-case-unnamed","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}
+{"id":"LA-TRC-CK18","title":"serves-no-outcome","domain_id":"LA-TRC","file":"lathe/data/check.jsonl"}

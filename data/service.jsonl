@@ -18,3 +18,4 @@
 {"id":"LA-TRC-DS03-SV","title":"sourceFiles","domain_service_id":"LA-TRC-DS03","file":"lathe/src/trace/source-files.ts"}
 {"id":"LA-TRC-DS04-SV","title":"normalRoute","domain_service_id":"LA-TRC-DS04","file":"lathe/src/trace/routes.ts"}
 {"id":"LA-TRC-DS05-SV","title":"readTestCases","domain_service_id":"LA-TRC-DS05","file":"lathe/src/trace/test-cases.ts"}
+{"id":"LA-TRC-DS06-SV","title":"servesOf","domain_service_id":"LA-TRC-DS06","file":"lathe/src/trace/serves.ts"}

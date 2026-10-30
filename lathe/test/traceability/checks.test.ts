@@ -351,3 +351,26 @@ check('view-route-not-in-file', () => {
     }]);
   });
 });
+
+check('serves-no-outcome', () => {
+  it('LA-TRC-UC20-R02-T01 LA-STD-MODELING-R13-T01 an aggregate, read model or obligation no outcome reaches is a warning saying how to fix it', async () => {
+    expect(ofCheck(clean, 'serves-no-outcome')).toEqual([]);
+    // Lending serves no outcome: nothing it reaches serves one either.
+    const ws = await loadData(without(complete(), 'serves', () => true));
+    const found = ofCheck(ws, 'serves-no-outcome');
+    expect(found.every((p) => p.severity === 'warning')).toBe(true);
+    expect(records(found)).toEqual([
+      'EX-LEND-A1', 'EX-LEND-A1-SR01', 'EX-LEND-A2', 'EX-LEND-DS01', 'EX-LEND-EP01-R01', 'EX-LEND-INV01', 'EX-LEND-PO01', 'EX-LEND-RM01',
+      'EX-LEND-SP01', 'EX-LEND-UC01-R01', 'EX-LEND-UC02-R01', 'EX-PAT-ACT-R01', 'EX-STD-CODE-R01', 'EX-V01-R01', 'EX-VO01-C01',
+    ]);
+    expect(found.find((p) => p.record === 'EX-LEND-A2')!.message).toBe(
+      'Aggregate EX-LEND-A2 serves no outcome: no use case whose capability serves a business outcome reaches it. Write the use case that needs it, or remove it.',
+    );
+  });
+
+  it('LA-TRC-UC20-R02-T02 a record only an unreached use case would reach serves no outcome', async () => {
+    // No step invokes the query: its read model is reached by nothing else.
+    const ws = await loadData(without(complete(), 'invokes', (r) => r.target_id === 'EX-LEND-QRY01'));
+    expect(records(ofCheck(ws, 'serves-no-outcome'))).toEqual(['EX-LEND-RM01']);
+  });
+});

@@ -1,11 +1,21 @@
 ---
 name: discover-outcomes
-description: Write or change a Lathe product's business outcomes - the discovery stage, first in the order - each a measurable statement with its measure and target, and link the capabilities that serve them and what measures them. Use when starting a product's spec, asking what a product is for or how its success is measured, adding a capability, or closing the coverage gaps outcome-not-served, outcome-not-measured and capability-serves-no-outcome, in a repo with lathe.config.json.
+description: Write or change a Lathe product's business outcomes - the discovery stage, first in the order - each a measurable statement with its measure and target, and link the capabilities that serve them and what measures them. Use when starting a product's spec, asking what a product is for or how its success is measured, adding a capability, or closing the coverage gaps outcome-not-served, outcome-not-measured and capability-serves-no-outcome and the warnings serves-no-outcome and outcome-target-undated, in a repo with lathe.config.json.
 ---
 
 # Discover outcomes
 
 Discovery is the first stage: before the domain model, write down what the product exists to achieve, as a handful of **business outcomes**, each one measurable. Every capability then names the outcomes it serves, and every outcome names what measures it, so the trace runs from why to proof: outcome, capability, use case, code, test.
+
+## The test: would someone miss it?
+
+A business outcome is a measurable change in the world that the product exists to bring about, for the people who use it (LA-STD-MODELING-R13). Before you write one, ask: **if the product disappeared, would someone notice this outcome was lost?**
+
+- Yes, and you can say who and what they would lose: it is an outcome. "Members borrow the library's tools more often": members would notice.
+- No, it is a property of the product or of how it is built ("The code is tested", "Pages load fast", "The data is checked"): it is not an outcome. Write it as a standard rule or a pattern rule instead, and let it serve the outcomes it protects.
+- It has no measure, or its target has no date ("as many as possible", "two a month"): it is a wish until it says what is counted and by when (`outcome-target-undated` warns of a target with no date: give it a year, or a span from a known event such as "within a year of opening").
+
+Everything else in the product serves at least one outcome, and Lathe works that out for you: a record **serves** an outcome when a use case whose capability serves that outcome reaches it (its steps, what they invoke and what that changes, checks, calls and reads, the views and endpoints involved, the patterns it follows). You never type that link: each record's page shows it on its Serves line, and the Serves read's get-serves and list-serves tools give it. The `serves-no-outcome` warning names each aggregate, read model or obligation no outcome reaches: write the use case that needs it (with a step that invokes what reaches it), or remove it.
 
 ## How you write
 
@@ -30,7 +40,7 @@ The tools of this stage, by aggregate:
 | `product_id` | The product. An outcome sits under its product, never a domain: one outcome is usually served by capabilities of several domains. |
 | `statement` | The outcome in one sentence, as a change in the world the product brings about, stated so it can be measured: "Members borrow the library's tools more often." Not a feature ("Members can borrow tools"), and not a task. |
 | `measure` | What is counted to know whether it is reached, and how: "Loans opened per catalog tool per month." A measure someone can actually count, from the product's own data or its runs. |
-| `target` | The value of the measure that counts as reached, and by when: "Two per tool per month within a year of opening." |
+| `target` | The value of the measure that counts as reached, and by when: "Two per tool per month within a year of opening." A target with no date is warned of (`outcome-target-undated`). |
 | `measured_outside` | Only for an outcome nothing in the code can measure (adoption by other repos, sales): who counts what, and from where. Leave it out when a test or record can measure it. |
 | `notes` | Anything longer, such as where the measure's numbers come from. |
 
@@ -92,4 +102,4 @@ business_outcome_change_business_outcome { "id": "TL-BO02", "measured_by": ["TL-
 
 - Specs name roles (Owner, Reader, Agent, or a product's own, such as Librarian), never people.
 - Outcomes are the Owner's to decide: propose them from what the product's README and description say it is for, and ask the Owner when the purpose is unclear.
-- Finish with the `check-and-fix` skill: no `outcome-not-served`, `outcome-not-measured` or `capability-serves-no-outcome` gap should be left.
+- Finish with the `check-and-fix` skill: no `outcome-not-served`, `outcome-not-measured` or `capability-serves-no-outcome` gap, and no `outcome-target-undated` warning, should be left. A `serves-no-outcome` warning is closed later, by the use case that needs the record (`write-use-cases`), or by removing the record.

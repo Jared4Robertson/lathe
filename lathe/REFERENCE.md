@@ -53,6 +53,7 @@ A business outcome: a measurable change the product exists to bring about, which
 - **ID:** `<P>-BO<nn>`, such as `TL-BO01`; it starts with its parent's ID
 - **Links out:** Measured by ([`measured_by`](#relation-measured_by))
 - **Links in:** Questions about this ([`about`](#relation-about)), Served by ([`serves`](#relation-serves))
+- **Checks:** [`outcome-target-undated`](#check-outcome-target-undated)
 - **Gaps:** [`outcome-not-served`](#gap-outcome-not-served), [`outcome-not-measured`](#gap-outcome-not-measured)
 
 <a id="table-business_outcome"></a>
@@ -74,6 +75,18 @@ A business outcome: a measurable change the product exists to bring about, which
 - **Rule:** `("trim"(measure) != '')`
 - **Rule:** `("trim"("target") != '')`
 - **Rule:** `("trim"(measured_outside) != '')`
+
+### Checks: discovery
+
+<a id="check-outcome-target-undated"></a>
+
+### `outcome-target-undated`
+
+**Warning** · Lathe's · Kinds: [`business_outcome`](#kind-business_outcome)
+
+A business outcome whose target says no date by which it is reached.
+
+An outcome is a change someone would miss, with a measure and a target by a date (LA-STD-MODELING-R13): without a date the target can never be missed, so it measures nothing. The target says by when, as a year (by 2027) or a span from a known event (within six months of the first release, by the end of the first year). Give the target its date with the Business outcome's change command.
 
 ### Coverage gaps: discovery
 
@@ -132,7 +145,7 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Persisted by ([`persists`](#relation-persists)), Read by ([`reads`](#relation-reads))
-- **Checks:** [`aggregate-too-large`](#check-aggregate-too-large)
+- **Checks:** [`aggregate-too-large`](#check-aggregate-too-large), [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
 <a id="table-aggregate"></a>
@@ -280,6 +293,7 @@ A value object's own rule, checked when the value is created, such as an email a
 - **ID:** `<value object>-C<nn>`, such as `TL-VO01-C01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-constraint"></a>
 
@@ -309,6 +323,7 @@ A rule that holds for one aggregate on every change, enforced by its rule (rule)
 - **ID:** `<P>-<D>-INV<nn>`, such as `TL-LEND-INV01`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-invariant"></a>
 
@@ -338,7 +353,7 @@ A named predicate over one or more aggregates of one domain (Evans), such as Mem
 - **ID:** `<P>-<D>-SP<nn>`, such as `TL-LEND-SP01`; it starts with its domain's ID
 - **Links out:** Reads ([`reads`](#relation-reads))
 - **Links in:** Questions about this ([`about`](#relation-about)), Checked by ([`checks`](#relation-checks)), Selects for ([`selects_by`](#relation-selects_by))
-- **Checks:** [`specification-unused`](#check-specification-unused), [`specification-title-article`](#check-specification-title-article)
+- **Checks:** [`specification-unused`](#check-specification-unused), [`specification-title-article`](#check-specification-title-article), [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`specification-reads-nothing`](#gap-specification-reads-nothing)
 
 <a id="table-specification"></a>
@@ -449,6 +464,7 @@ A view of its domain's data shaped for reading, which reads one or more of the d
 - **Links out:** Calls ([`calls`](#relation-calls)), Fed by ([`fed_by`](#relation-fed_by)), Reads ([`reads`](#relation-reads))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`read_model_field`](#table-read_model_field)
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`read-model-without-fields`](#gap-read-model-without-fields), [`read-model-reads-nothing`](#gap-read-model-reads-nothing), [`read-model-without-query`](#gap-read-model-without-query), [`read-model-without-projection`](#gap-read-model-without-projection), [`read-model-without-reader`](#gap-read-model-without-reader), [`read-model-without-table`](#gap-read-model-without-table)
 
 <a id="table-read_model"></a>
@@ -533,7 +549,7 @@ Whenever an event, then a command (event storming). It belongs to the command it
 - **ID:** `<P>-<D>-PO<nn>`, such as `TL-LEND-PO01`; it starts with its domain's ID
 - **Links out:** Hears ([`hears`](#relation-hears))
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox)
+- **Checks:** [`event-not-by-outbox`](#check-event-not-by-outbox), [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`policy-hears-nothing`](#gap-policy-hears-nothing)
 
 <a id="table-policy"></a>
@@ -564,6 +580,7 @@ Domain logic that belongs to no single entity and is not a yes-or-no check, such
 - **ID:** `<P>-<D>-DS<nn>`, such as `TL-LEND-DS01`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Called by ([`calls`](#relation-calls))
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 - **Gaps:** [`domain-service-not-called`](#gap-domain-service-not-called)
 
 <a id="table-domain_service"></a>
@@ -594,6 +611,7 @@ What the business needs kept of one aggregate or read model, its parent, and how
 - **ID:** `<aggregate or read model>-SR<nn>`, such as `TL-LEND-A1-SR01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
+- **Checks:** [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-storage_requirement"></a>
 
@@ -740,6 +758,16 @@ A query whose title does not start with Get, List or Find.
 
 A query asks for data and changes nothing, so its title starts with the verb that says what comes back: Get for one thing, List for several, Find for a search, such as "Get a member's loans", "List overdue loans" or "Find a tool by name". A query titled like a command ("Check the workspace", "Export a theme") reads as a change. Retitle the query with Get, List or Find.
 
+<a id="check-serves-no-outcome"></a>
+
+### `serves-no-outcome`
+
+**Warning** · Lathe's · Kinds: [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`constraint`](#kind-constraint), [`invariant`](#kind-invariant), [`specification`](#kind-specification), [`policy`](#kind-policy), [`domain_service`](#kind-domain_service), [`storage_requirement`](#kind-storage_requirement), [`uc_requirement`](#kind-uc_requirement), [`view_requirement`](#kind-view_requirement), [`api_requirement`](#kind-api_requirement), [`pattern_rule`](#kind-pattern_rule), [`standard_rule`](#kind-standard_rule)
+
+An aggregate, read model or obligation no business outcome reaches: no use case whose capability serves an outcome reaches it.
+
+Everything in a product serves at least one business outcome (LA-STD-MODELING-R13). A record serves an outcome when a use case whose capability serves that outcome reaches it: through its steps, the commands and queries they invoke and what those change, check, call and read, the views they happen in, the endpoints that expose them, the integrations they exchange with and the patterns it follows (the Serves reach, LA-TRC-DS06, worked out on every load and never stored). An aggregate, read model or obligation none reaches is built for no one the product exists for: write the use case that needs it, with a step that invokes what reaches it, or remove it.
+
 ### Coverage gaps: domain model
 
 Each is reported in coverage, under the record that falls short, never as a problem.
@@ -858,7 +886,7 @@ One rule a use case must follow, whatever the interface: a step of each of the u
 - **ID:** `<use case>-R<nn>`, such as `TL-LEND-UC01-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Fulfilled by ([`fulfills`](#relation-fulfills))
-- **Checks:** [`lone-child`](#check-lone-child)
+- **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-uc_requirement"></a>
 
@@ -938,7 +966,7 @@ One rule of a pattern. Every domain that follows the pattern owes it, with no ex
 - **ID:** `<pattern>-R<nn>`, such as `TL-PAT-LIBRARIAN-ACTION-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`lone-child`](#check-lone-child)
+- **Checks:** [`pattern-rule-test-outside-followers`](#check-pattern-rule-test-outside-followers), [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-pattern_rule"></a>
 
@@ -1147,7 +1175,7 @@ One rule a view must follow, such as what it shows while loading or a field's li
 - **ID:** `<view>-R<nn>`, such as `TL-V01-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Built by ([`builds`](#relation-builds))
-- **Checks:** [`lone-child`](#check-lone-child)
+- **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-view_requirement"></a>
 
@@ -1213,7 +1241,7 @@ One rule an endpoint must follow, such as an error's response or a limit on its 
 - **ID:** `<endpoint>-R<nn>`, such as `TL-LEND-EP01-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about))
-- **Checks:** [`lone-child`](#check-lone-child)
+- **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-api_requirement"></a>
 
@@ -1971,7 +1999,7 @@ One rule of a standard. Technical records that follow it link to it with meets; 
 - **ID:** `<standard>-R<nn>`, such as `TL-STD-CODE-R01`; it starts with its parent's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Met by ([`meets`](#relation-meets))
-- **Checks:** [`lone-child`](#check-lone-child)
+- **Checks:** [`lone-child`](#check-lone-child), [`serves-no-outcome`](#check-serves-no-outcome)
 
 <a id="table-standard_rule"></a>
 

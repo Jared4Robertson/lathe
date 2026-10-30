@@ -712,3 +712,10 @@
 {"id":"LA-TRC-UC19-FL03-S02","title":"Lathe check reports each package no record names as one gap on the product, with the manifests that list it","flow_id":"LA-TRC-UC19-FL03","path":"main","position":2}
 {"id":"LA-TRC-UC19-FL03-S03","title":"The Agent names the package on the technical record that uses it; the store refuses it on any other record","flow_id":"LA-TRC-UC19-FL03","path":"main","position":3}
 {"id":"LA-TRC-UC19-FL03-S04","title":"Once the package leaves the manifest, the record that still names it is an error until the Agent removes the name","flow_id":"LA-TRC-UC19-FL03","path":"main","position":4}
+{"id":"LA-TRC-UC20-FL01-S01","title":"The Reader opens an aggregate's page","flow_id":"LA-TRC-UC20-FL01","path":"main","position":1}
+{"id":"LA-TRC-UC20-FL01-S02","title":"Its facts name the outcomes it serves, each a link","flow_id":"LA-TRC-UC20-FL01","path":"main","position":2}
+{"id":"LA-TRC-UC20-FL01-S03","title":"They follow an outcome to its page","flow_id":"LA-TRC-UC20-FL01","path":"main","position":3}
+{"id":"LA-TRC-UC20-FL01-S04","title":"They open Tools › Checks and read each serves-no-outcome warning","flow_id":"LA-TRC-UC20-FL01","path":"main","position":4}
+{"id":"LA-TRC-UC20-FL03-S01","title":"The Agent runs lathe serves get-serves for a record: its outcomes and the use cases it serves them through","flow_id":"LA-TRC-UC20-FL03","path":"main","position":1}
+{"id":"LA-TRC-UC20-FL03-S02","title":"They run lathe serves list-serves for the product: each record with its outcomes, then those serving none","flow_id":"LA-TRC-UC20-FL03","path":"main","position":2}
+{"id":"LA-TRC-UC20-FL03-S03","title":"They run lathe check: a serves-no-outcome warning for each record none reaches, saying how to fix it","flow_id":"LA-TRC-UC20-FL03","path":"main","position":3}

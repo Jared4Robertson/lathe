@@ -4,6 +4,7 @@ import { existsSync, readdirSync, statSync, type Dirent } from 'node:fs';
 import { glob, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
+import { servesOf } from './trace/serves.ts';
 import { COVERAGE_COUNTS_SQL, COVERAGE_GAPS_SQL, COVERAGE_PROOFS_SQL, COVERAGE_TESTS_SQL, OWED_PATTERN_RULES_SQL, coverageViewsSql, FACT_TABLES_SQL, TEST_KINDS, TRACE_FILES_SQL, TRACE_LINKS_SQL, TRACE_OBLIGATIONS_SQL } from './coverage.ts';
 import { CONFIG_FILE, loadConfig, productClash, workspaceProducts, type LatheConfig } from './config.ts';
 import { readPackageFacts } from './trace/packages.ts';
@@ -408,6 +409,8 @@ export async function readWorkspace(store: Store, config: Pick<LatheConfig, 'roo
   await connection.run(FACT_TABLES_SQL);
   await append(connection, 'file_facts', facts.map((f) => [f.record, f.kind, f.file, f.path, f.file_exists, f.contains_id]));
   await append(connection, 'source_file', sources.map((f) => [f.file, f.traced]));
+  const served = await step('serves', async () => servesOf({ schema: store.schema, rows: (table) => store.rows(table) }));
+  await append(connection, 'record_serves', [...served].flatMap(([record, s]) => s.outcomes.map((outcome) => [record, outcome])));
   await append(connection, 'test_case', cases.map((c) => [c.file, c.position, c.line, c.name]));
   await append(connection, 'test_case_id', cases.flatMap((c) => c.ids.map((id) => [c.file, c.position, id])));
   await writeRouteFacts(connection, routes);
