@@ -24,19 +24,19 @@ function withStore(): ServedData {
 }
 
 describe('the Data store page reads it through its own query, and its editor sends only the aggregate\'s commands', () => {
-  it('reads GET /api/data-store/get-data-store and shows its description, kind and where it sits', async () => {
+  it('LA-V155-R01-T01 reads GET /api/data-store/get-data-store and shows its description, kind and where it sits', async () => {
     const { requests } = await openApp('/DM-STORE01', { data: withStore() });
     expect(await within(main()).findByText('A PostgreSQL database the shop runs.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/data-store/get-data-store?id=DM-STORE01');
     expect(main()).toHaveTextContent('database');
   });
 
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
+  it('LA-V155-R01-T01 holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
     const routes: (keyof DataStoreCommands)[] = ['/api/data-store/add-data-store', '/api/data-store/change-data-store', '/api/data-store/remove-data-store'];
     expect([...routes].sort()).toEqual(DATA_STORE_COMMANDS.map((c) => c.route).sort());
   });
 
-  it('adds a data store from its domain\'s page through the aggregate\'s own Add, and Edit sends only what changed', async () => {
+  it('LA-V155-R02-T01 adds a data store from its domain\'s page through the aggregate\'s own Add, and Edit sends only what changed', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP', { data: withStore(), command: () => ({ answer: ok }) });
     await chooseAdd(user, await toolbar('DM-SHOP'), 'Data store');

@@ -1,9 +1,7 @@
 {"source_id":"LA-AUT-QRY04","target_id":"LA-AUT-DS01"}
 {"source_id":"LA-CHK-QRY01","target_id":"LA-CHK-DS01"}
 {"source_id":"LA-EXP-CMD02","target_id":"LA-EXP-DS02"}
-{"source_id":"LA-EXP-QRY02","target_id":"LA-EXP-DS02"}
 {"source_id":"LA-EXP-QRY05","target_id":"LA-EXP-DS03"}
-{"source_id":"LA-EXP-QRY06","target_id":"LA-EXP-DS03"}
 {"source_id":"LA-EXP-QRY08","target_id":"LA-EXP-DS09"}
 {"source_id":"LA-EXP-QRY08","target_id":"LA-EXP-DS10"}
 {"source_id":"LA-EXP-QRY10","target_id":"LA-EXP-DS11"}

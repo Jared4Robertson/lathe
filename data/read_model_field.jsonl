@@ -124,20 +124,20 @@
 {"read_model_id":"LA-CHK-RM10","position":3,"name":"Check","meaning":"Its place in the run order, severity, summary, explanation, query and kinds.","type":"text","required":true}
 {"read_model_id":"LA-CHK-RM11","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-CHK-RM11","position":2,"name":"Limits","meaning":"Its children limit and entities limit, and whether it set them or takes the defaults.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM01","position":1,"name":"Product","meaning":"The space's product.","type_aggregate_id":"LA-AUT-A1","required":true}
-{"read_model_id":"LA-EXP-RM01","position":2,"name":"Record","meaning":"A record's ID.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM01","position":3,"name":"Kind","meaning":"Its kind.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM01","position":4,"name":"Title","meaning":"Its title.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM01","position":5,"name":"Parent","meaning":"Its parent's ID.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM01","position":6,"name":"Problems","meaning":"How many problems name it.","type":"whole number","required":true}
-{"read_model_id":"LA-EXP-RM02","position":1,"name":"Product","meaning":"The product whose nav it is.","type_aggregate_id":"LA-AUT-A1","required":true}
-{"read_model_id":"LA-EXP-RM02","position":2,"name":"Domain","meaning":"The domain the row is in, or none in Shared.","type_aggregate_id":"LA-AUT-A1","required":false}
-{"read_model_id":"LA-EXP-RM02","position":3,"name":"Stage","meaning":"The stage the row is in.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM02","position":4,"name":"Row","meaning":"A record's ID, or a stage's or kind group's address.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM02","position":5,"name":"Parent row","meaning":"The row it sits in.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM02","position":6,"name":"Position","meaning":"Its place among its siblings.","type":"whole number","required":true}
-{"read_model_id":"LA-EXP-RM02","position":7,"name":"Label","meaning":"The name shown: a stage's own name, a kind group's plural label (`plural()`), a record's title.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM02","position":8,"name":"Count","meaning":"How many records it holds; an empty stage or kind group is not a row.","type":"whole number","required":true}
+{"read_model_id":"LA-EXP-RM01","position":1,"name":"Product","meaning":"The product whose space it is.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-EXP-RM01","position":2,"name":"Record","meaning":"A record's ID, kind, title and parent.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM01","position":3,"name":"Place","meaning":"The product and domain it sits in, as the records' scope places it.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM01","position":4,"name":"Group","meaning":"The heading it is listed under, or none.","type":"text","required":false}
+{"read_model_id":"LA-EXP-RM01","position":5,"name":"Test state","meaning":"A test's state and level, or none for a record that is no test.","type":"text","required":false}
+{"read_model_id":"LA-EXP-RM01","position":6,"name":"Names","meaning":"What it names in code: its file, or a table's name.","type":"text","required":false}
+{"read_model_id":"LA-EXP-RM01","position":7,"name":"Data file","meaning":"Its kind's data file and its line there.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM01","position":8,"name":"Digest","meaning":"A digest of its own row, the part rows it owns and the links it starts: it changes when they do.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM01","position":9,"name":"Links","meaning":"The links among the space's records: source, relation and target.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM02","position":1,"name":"Product","meaning":"The product whose tree it is.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-EXP-RM02","position":2,"name":"Owner","meaning":"Shared (the product) or a domain, with its title.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM02","position":3,"name":"Stage","meaning":"A stage of the owner, its folders and whether it shows its one folder directly.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM02","position":4,"name":"Folder","meaning":"One kind's folder: its key and the records that start a branch in it, in order.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM02","position":5,"name":"Entry","meaning":"A record in its folder: its ID, kind and title, and what folds under it.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM03","position":1,"name":"Product","meaning":"The product the map is of.","type_aggregate_id":"LA-AUT-A1","required":true}
 {"read_model_id":"LA-EXP-RM03","position":2,"name":"Layout","meaning":"`tree` or `nested`.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM03","position":3,"name":"Node","meaning":"A record's ID, or a stage's or kind group's address.","type":"text","required":true}
@@ -150,12 +150,9 @@
 {"read_model_id":"LA-EXP-RM03","position":10,"name":"Text scale","meaning":"Its label's scale, shared with its siblings (DS06).","type":"decimal","required":true}
 {"read_model_id":"LA-EXP-RM03","position":11,"name":"Label","meaning":"Its kind and ID line and its title, broken into lines.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM03","position":12,"name":"Count","meaning":"A kind group's or stage's number of members.","type":"whole number","required":false}
-{"read_model_id":"LA-EXP-RM04","position":1,"name":"Product","meaning":"The product the map is of.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM04","position":2,"name":"Item","meaning":"A box (a domain, an aggregate or an entity) or a line.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM04","position":3,"name":"From","meaning":"A line's start.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM04","position":4,"name":"To","meaning":"A line's end.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM04","position":5,"name":"Relation","meaning":"What a line stands for: `has_one`, `has_many` or a reference field.","type":"text","required":false}
-{"read_model_id":"LA-EXP-RM04","position":6,"name":"Parent","meaning":"The box a box sits in: an aggregate's domain, an entity's aggregate; none for a domain.","type":"text","required":false}
+{"read_model_id":"LA-EXP-RM04","position":1,"name":"Product","meaning":"The product the map is of.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-EXP-RM04","position":2,"name":"Box","meaning":"A domain, an aggregate or an entity: its title, the box it sits in, whether it is the root or empty, and an entity's fields with their types.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM04","position":3,"name":"Line","meaning":"A has-one, has-many or reference line: its source and target entity, its ends, and the fields a reference stands for.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM05","position":1,"name":"Record","meaning":"The record's ID.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM05","position":2,"name":"Commit","meaning":"The commit's hash, or `working` for changes not committed yet.","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM05","position":3,"name":"Date","meaning":"When it was committed.","type":"date and time","required":true}
@@ -167,12 +164,12 @@
 {"read_model_id":"LA-EXP-RM06","position":3,"name":"Color","meaning":"The icon's color (DS01).","type":"text","required":true}
 {"read_model_id":"LA-EXP-RM06","position":4,"name":"Place","meaning":"Its place in the rail, which Alt and its number opens (DS01).","type":"whole number","required":true}
 {"read_model_id":"LA-EXP-RM06","position":5,"name":"Domains","meaning":"How many domains it has, for the products page.","type":"whole number","required":true}
-{"read_model_id":"LA-EXP-RM07","position":1,"name":"Record","meaning":"The record's ID.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM07","position":2,"name":"Change","meaning":"Added, removed or changed.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM07","position":3,"name":"Fields","meaning":"Each changed column, its value before and after.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM07","position":4,"name":"Parts","meaning":"The part rows it owns, added, removed or changed.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM07","position":5,"name":"Links","meaning":"The links it starts, added and removed.","type":"text","required":true}
-{"read_model_id":"LA-EXP-RM07","position":6,"name":"Baseline","meaning":"What it is measured from: the last commit, where the branch left main, the Reader's last look, or the data before a reload or a chat turn.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-EXP-RM07","position":2,"name":"Baseline","meaning":"What it is measured from: its commit and subject, or why there is none.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":3,"name":"Record","meaning":"A record that differs: its ID, kind and title, and whether it was added, removed or changed.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":4,"name":"Fields","meaning":"Each changed column of its own row, its value before and after.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":5,"name":"Parts","meaning":"The part rows it owns, added, removed or changed.","type":"text","required":true}
+{"read_model_id":"LA-EXP-RM07","position":6,"name":"Links","meaning":"The links it starts, added and removed.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":1,"name":"Data folder","meaning":"Where the product's data files were read from, as `lathe.config.json` names it.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":2,"name":"Records","meaning":"Every record with its kind, columns, part rows, parent, product and domain.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM01","position":3,"name":"Links","meaning":"Every link, with its relation and both ends.","type":"text","required":true}
@@ -201,13 +198,15 @@
 {"read_model_id":"LA-PLT-RM06","position":3,"name":"Stage","meaning":"The stage shown: graph, erd or trace.","type":"text","required":false}
 {"read_model_id":"LA-PLT-RM06","position":4,"name":"Selected","meaning":"The record selected on the stage or in the wiki card, by ID, kind and title.","type":"text","required":false}
 {"read_model_id":"LA-PLT-RM06","position":5,"name":"Product","meaning":"The space's product.","type":"text","required":false}
-{"read_model_id":"LA-TRC-RM01","position":1,"name":"Domain","meaning":"The domain counted.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
-{"read_model_id":"LA-TRC-RM01","position":2,"name":"Obligation kind","meaning":"The obligation kind counted.","type":"text","required":true,"column_name":"kind","example":"invariant"}
-{"read_model_id":"LA-TRC-RM01","position":3,"name":"Total","meaning":"How many the domain owes.","type":"whole number","required":true,"example":"6"}
-{"read_model_id":"LA-TRC-RM01","position":4,"name":"Designed","meaning":"How many have their design specified (UC02-R02).","type":"whole number","required":true,"example":"6"}
-{"read_model_id":"LA-TRC-RM01","position":5,"name":"Built","meaning":"How many have every technical record of that design naming a file that exists.","type":"whole number","required":true,"example":"6"}
-{"read_model_id":"LA-TRC-RM01","position":6,"name":"Proved","meaning":"How many an automated or manual test proves, at a level its kind allows.","type":"whole number","required":true,"example":"6"}
-{"read_model_id":"LA-TRC-RM01","position":7,"name":"Not automated yet","meaning":"How many are not proved but have a test not automated yet.","type":"whole number","required":true,"column_name":"not_automated","example":"0"}
+{"read_model_id":"LA-PLT-RM08","position":1,"name":"Kind","meaning":"A kind: its label, stage, place in reading order, parent kinds and columns, whether it is an obligation, its ID scope and the product that declares it.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM08","position":2,"name":"Stage","meaning":"A stage with its label and description, in order.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM08","position":3,"name":"Relation","meaning":"A pair of kinds a relation may link, with its role and its words read from each end.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM08","position":4,"name":"Columns","meaning":"Each table's columns, as their fields' inputs take them.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM01","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-TRC-RM01","position":2,"name":"Domain","meaning":"The domain counted, or none for the product's records outside every domain.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM01","position":3,"name":"Obligation kind","meaning":"The obligation kind counted, with its total, designed, built, proved and not automated yet, and whether only proof is asked of it.","type":"text","required":true,"example":"invariant"}
+{"read_model_id":"LA-TRC-RM01","position":4,"name":"Tests","meaning":"The scope's tests by state: automated, manual, not automated yet.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM01","position":5,"name":"Gaps","meaning":"Each record's gap: an obligation not designed, built or proved, or a record short of a minimum.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM02","position":1,"name":"Domain","meaning":"The domain that owes the obligation.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
 {"read_model_id":"LA-TRC-RM02","position":2,"name":"Obligation","meaning":"The obligation's ID.","type":"text","required":true,"column_name":"id","example":"TL-LEND-EP06-R03"}
 {"read_model_id":"LA-TRC-RM02","position":3,"name":"Kind","meaning":"The obligation's kind.","type":"text","required":true,"example":"api_requirement"}
@@ -224,9 +223,11 @@
 {"read_model_id":"LA-TRC-RM05","position":3,"name":"Exists","meaning":"Whether the file exists.","type":"yes/no","required":true,"column_name":"file_exists","example":"yes"}
 {"read_model_id":"LA-TRC-RM05","position":4,"name":"Names its ID","meaning":"For a test, whether the file names the test's ID as a whole ID (DS01).","type":"yes/no","required":true,"column_name":"contains_id","example":"yes"}
 {"read_model_id":"LA-TRC-RM06","position":1,"name":"Record","meaning":"The record traced.","type":"text","required":true,"example":"TL-LEND-UC03-R02"}
-{"read_model_id":"LA-TRC-RM06","position":2,"name":"Group","meaning":"The group it falls in, by its label: Designed by, Built by (Met by, for a standard rule), Proved by, or a link's label.","type":"text","required":true,"example":"Proved by"}
-{"read_model_id":"LA-TRC-RM06","position":3,"name":"Linked record","meaning":"The record in the group.","type":"text","required":true,"example":"TL-LEND-UC03-R02-T01"}
-{"read_model_id":"LA-TRC-RM06","position":4,"name":"Mark","meaning":"built or not built for a build record; the state for a test.","type":"text","required":false,"example":"automated"}
+{"read_model_id":"LA-TRC-RM06","position":2,"name":"Chain","meaning":"For an obligation: Designed by, Built by (Met by, for a standard rule) and Proved by, and which build records are built.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM06","position":3,"name":"Judgment","meaning":"How each domain owing it stands on it: what designs, builds and proves it there, and its gaps.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM06","position":4,"name":"Requirements","meaning":"For a use case: its UC requirements, each with its group and its judgment.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM06","position":5,"name":"Run by","meaning":"For a test: what it proves, its level, state, file, size and markers.","type":"text","required":false}
+{"read_model_id":"LA-TRC-RM06","position":6,"name":"Links","meaning":"Its other links by direction and relation, with their words.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM07","position":1,"name":"Record","meaning":"The table record.","type":"text","required":true,"example":"LA-TRC-RM07-TB"}
 {"read_model_id":"LA-TRC-RM07","position":2,"name":"Name","meaning":"The table's name, as the spec gives it.","type":"text","required":true,"example":"table_facts"}
 {"read_model_id":"LA-TRC-RM07","position":3,"name":"File","meaning":"The file it names, from the product root.","type":"text","required":true,"example":"lathe/src/trace/tables.ts"}

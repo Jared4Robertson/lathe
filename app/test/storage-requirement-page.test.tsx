@@ -25,14 +25,14 @@ function withRequirement(): ServedData {
 }
 
 describe('the Storage requirement page reads it through its own query, and its editor sends only the aggregate\'s commands', () => {
-  it('reads GET /api/storage-requirement/get-storage-requirement and shows its statement, what it is about and its tests', async () => {
+  it('LA-V154-R01-T01 reads GET /api/storage-requirement/get-storage-requirement and shows its statement, what it is about and its tests', async () => {
     const { requests } = await openApp('/DM-SHOP-A1-SR01', { data: withRequirement() });
     expect(await within(main()).findByText('A basket MUST be saved whole, with its lines.')).toBeInTheDocument();
     expect(requests).toContain('GET /api/storage-requirement/get-storage-requirement?id=DM-SHOP-A1-SR01');
     expect(within(main()).getByRole('link', { name: /DM-SHOP-A1-SR01-T01/ })).toHaveAttribute('href', '/DM-SHOP-A1-SR01-T01');
   });
 
-  it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
+  it('LA-V154-R01-T01 holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
     const routes: (keyof StorageRequirementCommands)[] = [
       '/api/storage-requirement/add-storage-requirement', '/api/storage-requirement/change-storage-requirement', '/api/storage-requirement/remove-storage-requirement',
       '/api/storage-requirement/add-storage-requirement-test', '/api/storage-requirement/change-storage-requirement-test', '/api/storage-requirement/remove-storage-requirement-test',
@@ -40,7 +40,7 @@ describe('the Storage requirement page reads it through its own query, and its e
     expect([...routes].sort()).toEqual(STORAGE_REQUIREMENT_COMMANDS.map((c) => c.route).sort());
   });
 
-  it('adds a storage requirement from its aggregate\'s page through the aggregate\'s own Add', async () => {
+  it('LA-V154-R02-T01 adds a storage requirement from its aggregate\'s page through the aggregate\'s own Add', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-A1', { data: withRequirement(), command: () => ({ answer: ok }) });
     await chooseAdd(user, await toolbar('DM-SHOP-A1'), 'Storage requirement');
@@ -52,7 +52,7 @@ describe('the Storage requirement page reads it through its own query, and its e
     await waitFor(() => expect(commands).toEqual([{ route: '/api/storage-requirement/add-storage-requirement', input: { aggregate_id: 'DM-SHOP-A1', id: 'DM-SHOP-A1-SR02', title: 'A basket line is never half saved', statement: 'A basket line MUST be saved whole or not at all.' } }]));
   });
 
-  it('Edit sends Change a storage requirement with only what changed, and Remove says its tests go with it', async () => {
+  it('LA-V154-R02-T01 Edit sends Change a storage requirement with only what changed, and Remove says its tests go with it', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-A1-SR01', { data: withRequirement(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP-A1-SR01');

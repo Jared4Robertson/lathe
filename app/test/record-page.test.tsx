@@ -41,7 +41,7 @@ const factLinks = () => [...facts().querySelectorAll('a')].map((a) => a.getAttri
 const rows = (table: Element) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent?.replace(/\s+/g, ' ').trim()));
 
 describe('record page', () => {
-  it('every one of Lathe\'s kinds has its aggregate\'s page, and a kind a product declares has the Extension record page', () => {
+  it('LA-V92-R77-T01 every one of Lathe\'s kinds has its aggregate\'s page, and a kind a product declares has the Extension record page', () => {
     const { meta } = recordIndexOf(productKindWorkspace(), 'DM');
     const lathe = meta.kindList.filter((k) => k.declared_by === null).map((k) => k.kind);
     expect(lathe.filter((kind) => pageOf(meta, kind) === undefined)).toEqual([]);

@@ -69,8 +69,10 @@
 {"id":"LA-AUT-UC30-FL01","title":"Name a product's tooling in the web app","use_case_id":"LA-AUT-UC30","interface_id":"LA-IF01"}
 {"id":"LA-AUT-UC30-FL03","title":"Name a product's tooling through the CLI","use_case_id":"LA-AUT-UC30","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC30-FL04","title":"Name a product's tooling through the MCP tools","use_case_id":"LA-AUT-UC30","interface_id":"LA-IF04"}
+{"id":"LA-AUT-UC31-FL01","title":"Write a storage requirement with its tests in the web app","use_case_id":"LA-AUT-UC31","interface_id":"LA-IF01"}
 {"id":"LA-AUT-UC31-FL03","title":"Write a storage requirement with its tests through the CLI","use_case_id":"LA-AUT-UC31","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC31-FL04","title":"Write a storage requirement with its tests through the MCP tools","use_case_id":"LA-AUT-UC31","interface_id":"LA-IF04"}
+{"id":"LA-AUT-UC32-FL01","title":"Name where a product's data lives in the web app","use_case_id":"LA-AUT-UC32","interface_id":"LA-IF01"}
 {"id":"LA-AUT-UC32-FL03","title":"Name where a product's data lives through the CLI","use_case_id":"LA-AUT-UC32","interface_id":"LA-IF03"}
 {"id":"LA-AUT-UC32-FL04","title":"Name where a product's data lives through the MCP tools","use_case_id":"LA-AUT-UC32","interface_id":"LA-IF04"}
 {"id":"LA-CHK-UC01-FL03","title":"Check the workspace through the CLI","use_case_id":"LA-CHK-UC01","interface_id":"LA-IF03"}
@@ -110,8 +112,6 @@
 {"id":"LA-EXP-UC12-FL02","title":"Look up a record's history in the desktop app","use_case_id":"LA-EXP-UC12","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC13-FL01","title":"Read a domain's endpoints and integrations in the web app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC13-FL02","title":"Read a domain's endpoints and integrations in the desktop app","use_case_id":"LA-EXP-UC13","interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC14-FL01","title":"Fix a record while reading in the web app","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC14-FL02","title":"Fix a record while reading in the desktop app","use_case_id":"LA-EXP-UC14","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC15-FL01","title":"Watch the spec change in the web app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC15-FL02","title":"Watch the spec change in the desktop app","use_case_id":"LA-EXP-UC15","interface_id":"LA-IF02"}
 {"id":"LA-PLT-UC01-FL06","title":"Load the workspace through the package API","use_case_id":"LA-PLT-UC01","interface_id":"LA-IF06"}

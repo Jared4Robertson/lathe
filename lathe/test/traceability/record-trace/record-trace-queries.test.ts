@@ -39,7 +39,7 @@ async function data(run: Partial<CheckRun> = {}): Promise<ReadView> {
   };
 }
 
-describe('LA-TRC-QRY05-T01 A record\'s trace gives an obligation\'s chain and its standing where it is owed, a use case\'s requirements judged, a test\'s run by, and its other links', () => {
+describe('LA-TRC-UC14-R07-T02 A record\'s trace gives an obligation\'s chain and its standing where it is owed, a use case\'s requirements judged, a test\'s run by, and its other links', () => {
   it('reads an obligation: its chain, the built mark, and its standing in its domain as coverage says', async () => {
     const view = await data({
       chains: [{ obligation: 'EX-LEND-INV01', design: ['EX-LEND-A1'], build: ['EX-LEND-EN01'], tests: ['EX-LEND-INV01-T'], files: [], links: [] }],
@@ -61,7 +61,7 @@ describe('LA-TRC-QRY05-T01 A record\'s trace gives an obligation\'s chain and it
     expect(trace.links.flatMap((g) => g.ids)).not.toContain('EX-LEND-INV01-T');
   });
 
-  it('reads a use case\'s requirements, a test\'s run by, and a test data set as no test', async () => {
+  it('LA-TRC-UC14-R08-T01 LA-TRC-UC14-R10-T01 reads a use case\'s requirements, a test\'s run by, and a test data set as no test', async () => {
     const view = await data({ coverage: [coverage('EX', 'EX-LEND', {})] });
     const useCase = runQuery(view, GET_RECORD_TRACE, { id: 'EX-LEND-UC01' }) as RecordTrace;
     expect(useCase.requirements.map((r) => [r.id, r.group, r.judgment?.gaps.map((g) => g.kind)])).toEqual([['EX-LEND-UC01-R01', 'Lending', ['not-proved']]]);
