@@ -28,7 +28,9 @@ import { ProductsPicker } from './views/ProductsPicker';
 import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost, type ToolPanel } from './views/overlays';
 import { ChatPanel } from './chat/ChatPanel';
 import { useWindowVoice, VoiceContext } from './chat/voice/useVoice';
-import { useAppRequests } from './chat/appRequests';
+import { pointedAt, useAppRequests } from './chat/appRequests';
+import { chatChips } from './chat/chips';
+import { takeMenuRecord } from './shell/desktopRecord';
 import { CARD_MIN, CHAT_DEFAULT } from './exploring/session-settings/model';
 import { useSessionSettings } from './exploring/session-settings/use-session-settings';
 import { showOrHideChat } from './exploring/session-settings/commands/show-or-hide-chat';
@@ -168,6 +170,15 @@ function Shell() {
   }, []);
   const voice = useWindowVoice(chatBridge ? desktopBridge()?.voice ?? null : null, wakeChat, announce);
   useCommand('dictate', () => { wakeChat(); voice?.toggle(); }, !!voice);
+  // Point and ask (LA-PLT-UC19-R13): the box pointed at, or the one the native menu was opened on, is attached to the message.
+  const attach = (id: string | null) => {
+    if (!id) { announce('Select a box or focus a record first'); return; }
+    chatChips.add(id);
+    wakeChat();
+    announce(`Asking Claude about ${id}`);
+  };
+  useCommand('askClaude', () => attach(pointedAt(spec.index)), !!chatBridge);
+  useCommand('askClaudeAboutRecord', () => attach(takeMenuRecord()), !!chatBridge);
   useAppRequests(spec.index, spaces.current?.id ?? null);
   useCommand('nextProblem', () => stepProblem(1, announce));
   useCommand('previousProblem', () => stepProblem(-1, announce));
