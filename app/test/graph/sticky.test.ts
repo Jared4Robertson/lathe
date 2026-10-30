@@ -20,6 +20,21 @@ describe('LA-EXP-DS06-T14 a label the open space cuts is laid out in the box\'s 
   const box = { left: 0, top: 0, right: 900, bottom: node.h * zoom };
   const own = plate.text * zoom * TITLE_FONT;
 
+  it('keeps its title when the visible part cannot hold its kind and ID line too, and hides it only when the title cannot fit', () => {
+    // A panel over the box's right part and one over its lower part: the visible part shrinks from below.
+    const shown = (bottom: number) => stickyLabel(plate, zoom, X, Y, { left: -10, top: -10, right: 600, bottom });
+    const labelTop = Y(plate.label.y);
+    let titleOnly = false;
+    for (let bottom = Y(plate.label.y + plate.label.h); bottom > labelTop; bottom -= 1) {
+      const s = shown(bottom);
+      if (s.kind !== 'moved') continue;
+      if (s.lines.every((l) => l.face === 'title')) { titleOnly = true; expect(s.lines.length).toBeGreaterThan(0); }
+      else expect(s.lines.some((l) => l.face === 'title')).toBe(true);
+    }
+    expect(titleOnly).toBe(true);
+    expect(shown(labelTop + 2).kind).toBe('hidden');
+  });
+
   it('draws a label wholly in the open space as the map placed it', () => {
     expect(stickyLabel(plate, zoom, X, Y, { left: -10, top: -10, right: 2000, bottom: 2000 }).kind).toBe('placed');
   });

@@ -152,8 +152,9 @@ export function wrapLabel(lines: { title: string; meta: string }, { shape, marks
   const inner = width - 2 * LABEL_PAD - room.l - room.r;
   const label: WrappedLabel = {
     title: wrapText(lines.title, inner, (s) => titleWidth(s), TITLE_BREAKS, true),
-    // The kind and ID line breaks only between words: an ID is never broken across lines (LA-EXP-DS06).
-    meta: wrapText(lines.meta, inner - metaRoom({ marks, badge, centered }), (s) => metaWidth(s), '', false, true),
+    // The kind and ID line breaks only between words: an ID is never broken across lines (LA-EXP-DS06). A label with
+    // none (a cut label laid out by its title alone, sticky.ts) has no line for it.
+    meta: lines.meta === '' ? [] : wrapText(lines.meta, inner - metaRoom({ marks, badge, centered }), (s) => metaWidth(s), '', false, true),
   };
   const pad = room.t + room.b;
   return pad > 0 ? { ...label, pad } : label;
