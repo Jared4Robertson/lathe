@@ -11,8 +11,13 @@ import type { Row } from './rows.ts';
 import type { SchemaDescription, TableDescription } from './schema.ts';
 import type { Tables } from './transaction.ts';
 
-/** A view of the tables that notes each table read into `reads`. Rows come as `rowsOf` gives them. */
+/**
+ * A view of the tables that notes each table read into `reads`. Rows come as `rowsOf` gives them. A record looked up
+ * once is kept for the view's life: the tables it reads never change, and the lookup noted the kinds it looked in.
+ */
 export function trackedView(schema: SchemaDescription, tables: Tables, reads: Set<string>, rowsOf: (table: string) => Row[]): ReadView {
+  const kinds = Object.keys(schema.kinds);
+  const found = new Map<string, { kind: string; row: Row } | undefined>();
   return {
     schema,
     rows: (table) => {
@@ -20,12 +25,15 @@ export function trackedView(schema: SchemaDescription, tables: Tables, reads: Se
       return rowsOf(table);
     },
     record: (id) => {
-      for (const kind of Object.keys(schema.kinds)) {
+      if (found.has(id)) return found.get(id);
+      let record: { kind: string; row: Row } | undefined;
+      for (const kind of kinds) {
         reads.add(kind);
         const row = tables.get(kind)?.get(id);
-        if (row) return { kind, row };
+        if (row) { record = { kind, row }; break; }
       }
-      return undefined;
+      found.set(id, record);
+      return record;
     },
   };
 }

@@ -4,7 +4,7 @@ import { Icon } from '../components/icons';
 import { isGroup } from '../graph/model';
 import { navigate } from '../router';
 import { openInNewPlace } from '../views/usePlace';
-import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { compareIds, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { KindBadge } from '../specs/parts';
 import { checkPagePath, kindPagePath, useFormat } from '../format/reference';
 import { addressOf } from '../views/address';
@@ -69,7 +69,7 @@ export function rankItems(items: readonly FindItem[], query: string, limit = 8):
   return items
     .map((item) => ({ item, s: score(item) }))
     .filter((x) => x.s >= 0)
-    .sort((a, b) => a.s - b.s || a.item.id.localeCompare(b.item.id, 'en', { numeric: true }))
+    .sort((a, b) => a.s - b.s || compareIds(a.item.id, b.item.id))
     .slice(0, limit)
     .map((x) => x.item);
 }

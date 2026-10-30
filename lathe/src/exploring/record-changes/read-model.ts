@@ -9,7 +9,7 @@
 // query and the only code that writes the read model's table.
 import { recordChanges, type RecordChange, type Tables } from '../../changes.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
-import { inSpace, placeRecords } from '../placement.ts';
+import { inSpace, placementOf } from '../placement.ts';
 
 export type { RecordChange };
 
@@ -40,7 +40,7 @@ export function recordChangesTableFrom(view: ReadView): RecordChangesTable {
     : answer.state === 'ok'
       ? { state: 'ok', commit: answer.commit, short: answer.short, subject: answer.subject, date: answer.date, base: answer.base }
       : { state: 'none', message: answer.message };
-  const placed = placeRecords(view);
+  const placed = placementOf(view);
   const now: Tables = Object.fromEntries(Object.values(schema.tables).filter((t) => t.stored).map((t) => [t.name, view.rows(t.name)]));
   const all = answer?.state === 'ok' ? recordChanges(schema, answer.tables, now) : [];
   const products = new Map<string, ProductChanges>();

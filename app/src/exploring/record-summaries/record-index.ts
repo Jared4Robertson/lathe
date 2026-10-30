@@ -45,7 +45,7 @@ const push = <K, V>(map: Map<K, V[]>, key: K, value: V) => {
 const idCollator = new Intl.Collator('en', { numeric: true });
 
 /** Two IDs in ID order. */
-const compareIds = (a: string, b: string): number => idCollator.compare(a, b);
+export const compareIds = (a: string, b: string): number => idCollator.compare(a, b);
 
 export const byIdOrder = (a: { id: string }, b: { id: string }) => idCollator.compare(a.id, b.id);
 

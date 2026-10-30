@@ -6,7 +6,7 @@
 // (the serves-no-outcome check reports the same). The projection is the only code that reads the rows for the queries
 // and the only code that writes the read model's table; the query handlers read it only through the reader.
 import type { ReadView } from '../../platform/data/rules.ts';
-import { inSpace, placeRecords } from '../../exploring/placement.ts';
+import { inSpace, placementOf } from '../../exploring/placement.ts';
 import { servesOf } from '../../trace/serves.ts';
 import { compareIds } from '../../platform/data/ids.ts';
 
@@ -37,7 +37,7 @@ export interface ServesTable {
 /** The projection: the read model's table over the rows (in memory; nothing keeps it). */
 export function servesTableFrom(view: ReadView): ServesTable {
   const served = servesOf(view);
-  const placed = placeRecords(view);
+  const placed = placementOf(view);
   const records = new Map<string, RecordServes>();
   for (const id of placed.keys()) {
     const s = served.get(id);

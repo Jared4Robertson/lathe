@@ -6,8 +6,8 @@
 // the source rows for the query and the only code that writes the read model's table.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
-import { inSpace, placeRecords } from '../placement.ts';
-import { byRecordId } from '../../platform/data/ids.ts';
+import { inSpace, placementOf } from '../placement.ts';
+import { idOrder } from '../../platform/data/ids.ts';
 
 /** One record as a link to it, a list row and the page's frame read it. */
 export interface RecordSummary {
@@ -82,13 +82,29 @@ function digestOf(text: string): string {
   return (hash >>> 0).toString(16).padStart(8, '0');
 }
 
+/**
+ * The digest of each record's rows as last worked out, by its own row: a row is never changed once read, so while the
+ * record's row and the rows it owns are the same objects, its digest is the same (a reload builds again only the
+ * records whose rows it read again).
+ */
+const digests = new WeakMap<Row, { owned: readonly (readonly [string, Row])[]; digest: string }>();
+
+// A record's digest: of its row and the rows it owns, kept while they are the same objects.
+function recordDigest(row: Row, owned: readonly (readonly [string, Row])[]): string {
+  const known = digests.get(row);
+  if (known && known.owned.length === owned.length && known.owned.every(([table, r], at) => owned[at][0] === table && owned[at][1] === r)) return known.digest;
+  const digest = digestOf(JSON.stringify([row, owned]));
+  digests.set(row, { owned, digest });
+  return digest;
+}
+
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function recordSummariesTableFrom(view: ReadView): RecordSummariesTable {
   const { schema } = view;
-  const placed = placeRecords(view);
+  const placed = placementOf(view);
   // Each record's part rows and the links it starts, read once per table, for its digest; and every link.
-  const owned = new Map<string, unknown[]>();
-  const own = (id: string, value: unknown) => {
+  const owned = new Map<string, (readonly [string, Row])[]>();
+  const own = (id: string, value: readonly [string, Row]) => {
     const list = owned.get(id);
     if (list) list.push(value);
     else owned.set(id, [value]);
@@ -107,8 +123,8 @@ export function recordSummariesTableFrom(view: ReadView): RecordSummariesTable {
   }
   const stageOf = (kind: string) => schema.kinds[kind]?.stage ?? null;
   // A test: a test-plan kind with a run by, whose state says how it runs.
-  const testState = (kind: string, row: Row): string | null =>
-    stageOf(kind) === 'test-plan' && schema.tables[kind]?.columns.some((c) => c.name === 'state' && c.required) ? textColumn(row.state) : null;
+  const testKinds = new Set(Object.keys(schema.kinds).filter((kind) => stageOf(kind) === 'test-plan' && schema.tables[kind]?.columns.some((c) => c.name === 'state' && c.required)));
+  const testState = (kind: string, row: Row): string | null => (testKinds.has(kind) ? textColumn(row.state) : null);
   const summaries: RecordSummary[] = [...placed.values()].map((r) => ({
     id: r.id,
     kind: r.kind,
@@ -122,9 +138,10 @@ export function recordSummariesTableFrom(view: ReadView): RecordSummariesTable {
     level: testState(r.kind, r.row) === null ? null : textColumn(r.row.level),
     file: `${r.kind}.jsonl`,
     line: r.line,
-    digest: digestOf(JSON.stringify([r.row, owned.get(r.id) ?? []])),
+    digest: recordDigest(r.row, owned.get(r.id) ?? []),
   }));
-  summaries.sort(byRecordId);
+  const order = idOrder(summaries.map((r) => r.id));
+  summaries.sort((a, b) => order.get(a.id)! - order.get(b.id)!);
   const products = new Map<string, RecordSummaries>();
   for (const p of summaries.filter((r) => r.kind === 'product')) {
     const records = summaries.filter((r) => inSpace(placed.get(r.id)!, p.id));
