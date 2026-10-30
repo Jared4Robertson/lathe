@@ -7,6 +7,8 @@
 //                       process checks them, desktop/src/chrome.ts);
 //   onFullScreen        subscribes to the window entering and leaving full screen, called at once with
 //                       the current state (macOS hides the traffic lights there);
+//   setMenuKeys         sends each command's keys as the person bound them, by command ID, for the menu's key
+//                       labels (menu.ts);
 //   setErrorCount       sends the product's number of check errors, for the Dock badge (dock.ts);
 //   revealRecord, openRecordInEditor, copyRecordId, showRecordMenu
 //                       the record actions, each on its own channel, by record ID only (the main process
@@ -93,6 +95,9 @@ contextBridge.exposeInMainWorld('latheDesktop', {
     return () => {
       fullScreenListeners.delete(listener);
     };
+  },
+  setMenuKeys(keys: unknown) {
+    if (typeof keys === 'object' && keys !== null) ipcRenderer.send('lathe:menu-keys', keys);
   },
   setErrorCount(count: unknown) {
     if (typeof count === 'number') ipcRenderer.send('lathe:error-count', count);

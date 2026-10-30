@@ -8,6 +8,7 @@ import type { ChatState } from '../chat.ts';
 import type { ChatSession } from '../chatSession.ts';
 import type { Chrome, SavedChrome } from '../chrome.ts';
 import type { LaunchModel } from '../launch.ts';
+import type { MenuKeys } from '../menu.ts';
 import type { DataFiles } from '../records.ts';
 
 /** A window open on a product folder. Its server is the App server's (app-server/). */
@@ -22,6 +23,8 @@ export interface OpenWindow {
   launchSeen?: string;
   /** The product's check errors, as the page last reported them. */
   errors: number;
+  /** The keys the person bound in the page, as it last reported them, which the menu shows while the window has focus. */
+  menuKeys?: MenuKeys;
   dataFiles: DataFiles | null;
   /** Bumped on each launch, so an old watch stops. */
   launchRun: number;

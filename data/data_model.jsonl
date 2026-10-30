@@ -94,5 +94,7 @@
 {"id":"LA-PLT-EN15-DM","title":"RecentFolders","entity_id":"LA-PLT-EN15","file":"desktop/src/recent-folders/model.ts"}
 {"id":"LA-PLT-EN16-DM","title":"LatheConfig","entity_id":"LA-PLT-EN16","file":"lathe/src/config.ts"}
 {"id":"LA-PLT-EN20-DM","title":"Settings","entity_id":"LA-PLT-EN20","file":"desktop/src/shell-settings/model.ts"}
+{"id":"LA-PLT-EN24-DM","title":"KeyBindings","entity_id":"LA-PLT-EN24","file":"app/src/platform/key-bindings/model.ts"}
+{"id":"LA-PLT-EN25-DM","title":"ShortcutBinding","entity_id":"LA-PLT-EN25","file":"app/src/platform/key-bindings/model.ts"}
 {"id":"LA-TRC-EN05-DM","title":"FollowsRow","entity_id":"LA-TRC-EN05","file":"lathe/src/platform/data/tables.ts"}
 {"id":"LA-TRC-EN06-DM","title":"SettingValueRow","entity_id":"LA-TRC-EN06","file":"lathe/src/platform/data/tables.ts"}

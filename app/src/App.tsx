@@ -6,7 +6,7 @@ import { useDataState, useDataVersion } from './exploring/record-summaries/reads
 import { formatPath } from './format/reference';
 import { SpecView } from './specs/SpecPages';
 import { postCommand, WriterProvider, type Writer } from './edit/write';
-import { CommandsProvider, useAnnounce, useCommand } from './shell/commands';
+import { CommandsProvider, useAnnounce, useCommand, useShortcutHint } from './shell/commands';
 import { SPACE_KEYS, spaceCommandId } from './shell/keymap';
 import { Nav } from './shell/Nav';
 import { DesktopTitleBar } from './shell/DesktopTitleBar';
@@ -85,6 +85,7 @@ function Shell() {
   const overlays = overlaysOf(search);
   const tool = isHome ? null : overlays.panel;
   const announce = useAnnounce();
+  const definitionKey = useShortcutHint('goToDefinition');
 
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
   const narrow = useNarrow();
@@ -148,7 +149,7 @@ function Shell() {
     const link = (document.activeElement as HTMLElement | null)?.closest?.('a[href]') as HTMLAnchorElement | null;
     const href = link?.getAttribute('href');
     if (href && href.startsWith('/')) navigate(href);
-    else announce('Focus a link first, then press F12 to open its record.');
+    else announce(definitionKey.text ? `Focus a link first, then press ${definitionKey.text} to open its record.` : 'Focus a link first, then go to its record.');
   });
   const chatInput = useRef<HTMLTextAreaElement>(null);
   const chatPanel = () => document.getElementById('chat-panel');
