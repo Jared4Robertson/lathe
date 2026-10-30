@@ -15,8 +15,8 @@ import { useAggregate } from './reads';
 // aggregate read whole (GET /api/aggregate/get-aggregate) and changed only through its own commands (AggregateEditor).
 // The aggregate itself shows its description, identity, entities, invariants and the domain events that happen to it,
 // each event saying what raises it and how many policies hear it; an entity its description, fields, data model,
-// commands and tables; an invariant its statement and test; a data model its file and packages (its facts); an
-// invariant test its scenario. What every record's page holds around that (traceability, problems, facts and links)
+// commands and tables; an invariant its statement, rule and test; a data model and a rule their file and packages (their
+// facts); an invariant test its scenario. What every record's page holds around that (traceability, problems, facts and links)
 // is the Record page's (RecordFrame).
 
 /** A list of one kind is titled by that kind's plural label (LA-V92-R09). */
@@ -26,6 +26,7 @@ const entityOf = (page: Aggregate, id: string) => page.entities.find((e) => e.en
 const invariantOf = (page: Aggregate, id: string) => page.invariants.find((i) => i.invariant.id === id)!;
 const dataModelOf = (page: Aggregate, id: string) => page.entities.find((e) => e.dataModel?.dataModel.id === id)!;
 const testOf = (page: Aggregate, id: string) => page.invariants.find((i) => i.test?.test.id === id)!;
+const ruleOf = (page: Aggregate, id: string) => page.invariants.find((i) => i.rule?.rule.id === id)!;
 
 /** One domain event of the aggregate: a whole-row link to it saying whether it is published, what raises it and how many policies hear it, in the relations' own words. */
 function EventRow({ index, row }: { index: SpecIndex; row: EventOnPage }) {
@@ -91,12 +92,14 @@ function Content({ index, page }: { index: SpecIndex; page: Aggregate }) {
       return (
         <>
           <Text index={index} id={id} source={i.invariant.statement} field="statement" />
+          <RowsSection index={index} title={titleOf(index, 'rule')} ids={i.rule ? [i.rule.rule.id] : []} label={`${titleOf(index, 'rule')} of ${id}`} empty="No rule enforces it yet." />
           <RowsSection index={index} title={titleOf(index, 'invariant_test')} ids={i.test ? [i.test.test.id] : []} label={`${titleOf(index, 'invariant_test')} of ${id}`} empty="No test proves it yet." />
         </>
       );
     }
     case 'data_model':
-      // A data model is its file and the standard rules and packages it meets and uses: all in its facts and links.
+    case 'rule':
+      // A data model and a rule are their file and the standard rules and packages they meet and use: all in their facts and links.
       return null;
     case 'invariant_test': {
       const { test, startsFrom } = testOf(page, id).test!;
@@ -126,7 +129,25 @@ function summaryOf(index: SpecIndex, page: Aggregate): { lead?: string; facts: F
     }
     case 'invariant': {
       const i = invariantOf(page, id);
-      return { lead: i.invariant.statement, facts: [inAggregate, { label: 'Test', value: i.test ? <RecordLink index={index} id={i.test.test.id} /> : 'none yet' }] };
+      return {
+        lead: i.invariant.statement,
+        facts: [
+          inAggregate,
+          { label: 'Rule', value: i.rule ? <RecordLink index={index} id={i.rule.rule.id} /> : 'none yet' },
+          { label: 'Test', value: i.test ? <RecordLink index={index} id={i.test.test.id} /> : 'none yet' },
+        ],
+      };
+    }
+    case 'rule': {
+      const i = ruleOf(page, id);
+      const r = i.rule!;
+      return {
+        facts: [
+          { label: 'Enforces', value: <RecordLink index={index} id={i.invariant.id} /> },
+          ...(r.rule.file ? [{ label: 'File', value: <code>{r.rule.file}</code> }] : []),
+          ...(r.packages.length ? [{ label: 'Packages', value: r.packages.join(', ') }] : []),
+        ],
+      };
     }
     case 'data_model': {
       const e = dataModelOf(page, id);

@@ -73,8 +73,8 @@ describe('LA-AUT-UC12-R50-T01 each Command command (LA-AUT-A8) changes one comma
 
   it('refuses a second handler or event handler, an input that is not the command\'s, and a record that is not there', async () => {
     const store = await commandDataSet();
-    expect((await refusal(store, ADD_COMMAND_HANDLER, { id: 'TL-LEND-CMD01-H2', title: 'openLoanAgain', command_id: 'TL-LEND-CMD01', description: 'x' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-LEND-CMD01 already has its command handler, TL-LEND-CMD01-H' });
-    expect((await refusal(store, ADD_EVENT_HANDLER, { id: 'TL-LEND-PO01-H2', title: 'again', policy_id: 'TL-LEND-PO01', description: 'x' })).problems[0].rule).toBe('exists');
+    expect((await refusal(store, ADD_COMMAND_HANDLER, { id: 'TL-LEND-CMD01-H2', title: 'openLoanAgain', command_id: 'TL-LEND-CMD01', description: 'x' })).problems[0]).toMatchObject({ rule: 'command-one-each', message: 'command TL-LEND-CMD01 already has its command handler, so TL-LEND-CMD01-H2 cannot be a second: a command has one' });
+    expect((await refusal(store, ADD_EVENT_HANDLER, { id: 'TL-LEND-PO01-H2', title: 'again', policy_id: 'TL-LEND-PO01', description: 'x' })).problems[0].rule).toBe('command-one-each');
     await expect(runCommand(store, CHANGE_COMMAND, { id: 'TL-LEND-CMD01', entity_id: 'TL-LEND-EN01' })).rejects.toThrow(/change-command takes no entity_id/);
     await expect(runCommand(store, CHANGE_POLICY, { id: 'TL-LEND-PO01', hears: ['TL-LEND-EV01'] })).rejects.toThrow(/hears .* is not a record ID/);
     expect((await refusal(store, ADD_POLICY, { id: 'TL-LEND-PO02', title: 'x', command_id: 'TL-LEND-CMD09', statement: 'x' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no command TL-LEND-CMD09' });

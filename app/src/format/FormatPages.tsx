@@ -109,6 +109,9 @@ function missingPage(what: 'kind' | 'check', name: string): FormatPage {
 // ---------- Shared pieces ----------
 
 /** A kind as a clickable row: its name and label, leading to its page (LA-PAT-APP-UX "a row is one link"). */
+/** What a relation's role says of its links, as its rows read it. */
+const ROLE_WORDS: Record<Exclude<RelationReference['role'], ''>, string> = { design: 'designs its target', build: 'builds its target', proof: 'proves its target' };
+
 function KindRows({ reference, kinds, label, meta }: { reference: FormatReference; kinds: readonly string[]; label: string; meta?: (k: KindReference) => ReactNode }) {
   if (kinds.length === 0) return <p className="hint">None.</p>;
   return (
@@ -191,7 +194,7 @@ function RelationRows({ reference, relations, from, label }: { reference: Format
           </span>
           <small className="meta">
             <code>{r.relation}</code>
-            {r.role && <> · {r.role === 'design' ? 'designs its target' : 'proves its target'}</>}
+            {r.role && <> · {ROLE_WORDS[r.role]}</>}
             {r.description && <> · {r.description}</>}
           </small>
         </>
@@ -271,7 +274,7 @@ function AllRelations({ reference }: { reference: FormatReference }) {
           </span>
           <small className="meta">
             <code>{r.relation}</code> · read back: {relationWords(r, 'target')}
-            {r.role && <> · {r.role === 'design' ? 'designs its target' : 'proves its target'}</>}
+            {r.role && <> · {ROLE_WORDS[r.role]}</>}
             {r.description && <> · {r.description}</>}
           </small>
         </>

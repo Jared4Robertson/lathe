@@ -18,6 +18,9 @@ import type { RemoveDataModel } from '../../../../lathe/src/authoring/aggregate/
 import type { RemoveEntity } from '../../../../lathe/src/authoring/aggregate/commands/remove-entity';
 import type { RemoveInvariant } from '../../../../lathe/src/authoring/aggregate/commands/remove-invariant';
 import type { RemoveInvariantTest } from '../../../../lathe/src/authoring/aggregate/commands/remove-invariant-test';
+import type { AddRule } from '../../../../lathe/src/authoring/aggregate/commands/add-rule';
+import type { ChangeRule } from '../../../../lathe/src/authoring/aggregate/commands/change-rule';
+import type { RemoveRule } from '../../../../lathe/src/authoring/aggregate/commands/remove-rule';
 
 /** Each command's route, with its input. */
 export interface AggregateCommands {
@@ -36,6 +39,9 @@ export interface AggregateCommands {
   '/api/aggregate/remove-entity': RemoveEntity;
   '/api/aggregate/remove-invariant': RemoveInvariant;
   '/api/aggregate/remove-invariant-test': RemoveInvariantTest;
+  '/api/aggregate/add-rule': AddRule;
+  '/api/aggregate/change-rule': ChangeRule;
+  '/api/aggregate/remove-rule': RemoveRule;
 }
 
 export type AggregateRoute = keyof AggregateCommands;

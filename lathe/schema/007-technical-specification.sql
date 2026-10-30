@@ -52,6 +52,18 @@ COMMENT ON COLUMN value_type.title IS 'Its name in code, such as EmailAddress.';
 COMMENT ON COLUMN value_type.value_object_id IS 'The value object it implements; one value type each.';
 COMMENT ON COLUMN value_type.file IS 'The file that holds its code, from the product root; it may not exist yet, and several records may share one file.';
 
+CREATE TABLE rule (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  invariant_id VARCHAR NOT NULL UNIQUE REFERENCES invariant (id),
+  file VARCHAR
+);
+COMMENT ON TABLE rule IS 'Enforces its invariant: the rule in its aggregate''s code, run by the aggregate''s commands before saving, which refuses a change that would break it. Lathe''s own rules sit in each aggregate''s rules.ts and also run over all data on every load. An invariant is built only through its rule.';
+COMMENT ON COLUMN rule.id IS 'The rule''s ID: its invariant''s ID and RL, such as TL-LEND-INV01-RL.';
+COMMENT ON COLUMN rule.title IS 'Its name in code, the name its refusal carries, such as step-fulfills-own-use-case or email_taken.';
+COMMENT ON COLUMN rule.invariant_id IS 'The invariant it enforces; one rule each.';
+COMMENT ON COLUMN rule.file IS 'The file that holds its code, from the product root, such as its aggregate''s rules.ts; it may not exist yet, and several records may share one file.';
+
 CREATE TABLE predicate (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
   title VARCHAR NOT NULL CHECK (trim(title) <> ''),
@@ -272,7 +284,7 @@ CREATE TABLE ui_component (
   file VARCHAR,
   description VARCHAR NOT NULL CHECK (trim(description) <> '')
 );
-COMMENT ON TABLE ui_component IS 'A piece of the user interface that renders one or more views. It has no owner: it exists because views use it, and its product follows from its ID.';
+COMMENT ON TABLE ui_component IS 'A piece of the user interface that renders one or more views and builds the view requirements its code does (builds). It has no owner: it exists because views use it, and its product follows from its ID.';
 COMMENT ON COLUMN ui_component.id IS 'The UI component''s ID: the product prefix and UI<nn>, such as TL-UI01.';
 COMMENT ON COLUMN ui_component.title IS 'Its name in code, such as CatalogPage.';
 COMMENT ON COLUMN ui_component.file IS 'The file that holds its code, from the product root; it may not exist yet.';
@@ -308,26 +320,28 @@ INSERT INTO meta_kind VALUES
   ('repository', 'Repository', 'technical-specification', 30, false, '<domain>-REPO<nn>', 'TL-LEND-REPO01', 'parent', NULL),
   ('data_model', 'Data model', 'technical-specification', 31, false, '<entity>-DM', 'TL-LEND-EN01-DM', 'parent', NULL),
   ('value_type', 'Value type', 'technical-specification', 33, false, '<value object>-VT', 'TL-VO01-VT', 'parent', NULL),
-  ('predicate', 'Predicate', 'technical-specification', 34, false, '<specification>-PR', 'TL-LEND-SP01-PR', 'parent', NULL),
-  ('event_type', 'Event type', 'technical-specification', 35, false, '<domain event>-ET', 'TL-LEND-EV01-ET', 'parent', NULL),
-  ('projection', 'Projection', 'technical-specification', 36, false, '<read model>-PJ', 'TL-LEND-RM01-PJ', 'parent', NULL),
-  ('reader', 'Reader', 'technical-specification', 37, false, '<read model>-RD', 'TL-LEND-RM01-RD', 'parent', NULL),
-  ('command_handler', 'Command handler', 'technical-specification', 38, false, '<command>-H', 'TL-LEND-CMD01-H', 'parent', NULL),
-  ('query_handler', 'Query handler', 'technical-specification', 39, false, '<query>-H', 'TL-LEND-QRY01-H', 'parent', NULL),
-  ('event_handler', 'Event handler', 'technical-specification', 40, false, '<policy>-H', 'TL-LEND-PO01-H', 'parent', NULL),
-  ('service', 'Service', 'technical-specification', 41, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
-  ('endpoint_handler', 'Endpoint handler', 'technical-specification', 43, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
-  ('adapter', 'Adapter', 'technical-specification', 44, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
-  ('entry_point', 'Entry point', 'technical-specification', 45, false, '<domain>-ENTRY<nn>', 'TL-LEND-ENTRY01', 'parent', NULL),
-  ('tooling', 'Tooling', 'technical-specification', 46, false, '<domain>-TOOL<nn>', 'TL-LEND-TOOL01', 'parent', NULL),
+  ('rule', 'Rule', 'technical-specification', 34, false, '<invariant>-RL', 'TL-LEND-INV01-RL', 'parent', NULL),
+  ('predicate', 'Predicate', 'technical-specification', 35, false, '<specification>-PR', 'TL-LEND-SP01-PR', 'parent', NULL),
+  ('event_type', 'Event type', 'technical-specification', 36, false, '<domain event>-ET', 'TL-LEND-EV01-ET', 'parent', NULL),
+  ('projection', 'Projection', 'technical-specification', 37, false, '<read model>-PJ', 'TL-LEND-RM01-PJ', 'parent', NULL),
+  ('reader', 'Reader', 'technical-specification', 38, false, '<read model>-RD', 'TL-LEND-RM01-RD', 'parent', NULL),
+  ('command_handler', 'Command handler', 'technical-specification', 39, false, '<command>-H', 'TL-LEND-CMD01-H', 'parent', NULL),
+  ('query_handler', 'Query handler', 'technical-specification', 40, false, '<query>-H', 'TL-LEND-QRY01-H', 'parent', NULL),
+  ('event_handler', 'Event handler', 'technical-specification', 41, false, '<policy>-H', 'TL-LEND-PO01-H', 'parent', NULL),
+  ('service', 'Service', 'technical-specification', 42, false, '<domain service>-SV', 'TL-LEND-DS01-SV', 'parent', NULL),
+  ('endpoint_handler', 'Endpoint handler', 'technical-specification', 44, false, '<endpoint>-H', 'TL-LEND-EP01-H', 'parent', NULL),
+  ('adapter', 'Adapter', 'technical-specification', 45, false, '<integration>-AD', 'TL-INT01-AD', 'parent', NULL),
+  ('entry_point', 'Entry point', 'technical-specification', 46, false, '<domain>-ENTRY<nn>', 'TL-LEND-ENTRY01', 'parent', NULL),
+  ('tooling', 'Tooling', 'technical-specification', 47, false, '<domain>-TOOL<nn>', 'TL-LEND-TOOL01', 'parent', NULL),
   ('table', 'Table', 'technical-specification', 32, false, '<entity or read model>-TB, or <domain>-TB<nn>', 'TL-LEND-EN01-TB', 'parent', NULL),
-  ('ui_component', 'UI component', 'technical-specification', 42, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
-  ('standard', 'Standard', 'technical-specification', 47, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
-  ('standard_rule', 'Standard rule', 'technical-specification', 48, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
+  ('ui_component', 'UI component', 'technical-specification', 43, false, '<P>-UI<nn>', 'TL-UI01', 'product', NULL),
+  ('standard', 'Standard', 'technical-specification', 48, false, '<P>-STD-<name>', 'TL-STD-CODE', 'parent', NULL),
+  ('standard_rule', 'Standard rule', 'technical-specification', 49, true, '<standard>-R<nn>', 'TL-STD-CODE-R01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('repository', 'domain', 1, 'domain_id'),
   ('data_model', 'entity', 1, 'entity_id'),
   ('value_type', 'value_object', 1, 'value_object_id'),
+  ('rule', 'invariant', 1, 'invariant_id'),
   ('predicate', 'specification', 1, 'specification_id'),
   ('event_type', 'domain_event', 1, 'domain_event_id'),
   ('projection', 'read_model', 1, 'read_model_id'),
@@ -344,12 +358,12 @@ INSERT INTO meta_kind_parent VALUES
   ('standard', 'product', 1, 'product_id'),
   ('standard_rule', 'standard', 1, 'standard_id');
 INSERT INTO meta_kind_title VALUES
-  ('repository', 'identifier'), ('data_model', 'identifier'), ('value_type', 'identifier'), ('predicate', 'identifier'),
+  ('repository', 'identifier'), ('data_model', 'identifier'), ('value_type', 'identifier'), ('rule', 'identifier'), ('predicate', 'identifier'),
   ('event_type', 'identifier'), ('projection', 'identifier'), ('reader', 'identifier'), ('command_handler', 'identifier'), ('query_handler', 'identifier'),
   ('event_handler', 'identifier'), ('service', 'identifier'), ('endpoint_handler', 'identifier'), ('adapter', 'identifier'),
   ('entry_point', 'identifier'), ('tooling', 'identifier'), ('table', 'identifier');
 INSERT INTO meta_table VALUES
-  ('repository', 'kind', NULL), ('repository_share', 'part', 'repository_id'), ('data_model', 'kind', NULL), ('value_type', 'kind', NULL), ('predicate', 'kind', NULL), ('event_type', 'kind', NULL), ('projection', 'kind', NULL), ('reader', 'kind', NULL), ('command_handler', 'kind', NULL), ('query_handler', 'kind', NULL), ('event_handler', 'kind', NULL), ('service', 'kind', NULL), ('endpoint_handler', 'kind', NULL), ('adapter', 'kind', NULL),
+  ('repository', 'kind', NULL), ('repository_share', 'part', 'repository_id'), ('data_model', 'kind', NULL), ('value_type', 'kind', NULL), ('rule', 'kind', NULL), ('predicate', 'kind', NULL), ('event_type', 'kind', NULL), ('projection', 'kind', NULL), ('reader', 'kind', NULL), ('command_handler', 'kind', NULL), ('query_handler', 'kind', NULL), ('event_handler', 'kind', NULL), ('service', 'kind', NULL), ('endpoint_handler', 'kind', NULL), ('adapter', 'kind', NULL),
   ('entry_point', 'kind', NULL), ('tooling', 'kind', NULL),
   ('table', 'kind', NULL), ('table_key', 'part', 'table_id'), ('ui_component', 'kind', NULL), ('standard', 'kind', NULL), ('standard_rule', 'kind', NULL);
 

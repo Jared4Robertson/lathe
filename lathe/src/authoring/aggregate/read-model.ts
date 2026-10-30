@@ -1,13 +1,13 @@
 // The Aggregate aggregate's read model (LA-AUT-RM26), shaped for its readers: the Aggregate page reads an aggregate
 // whole (its entities, root first, each with its fields, the entities it holds, its data model, the commands that
-// change it and its tables; its invariants, each with its test; the domain events that happen to it, each with the
+// change it and its tables; its invariants, each with its rule and its test; the domain events that happen to it, each with the
 // commands that raise it and the policies that hear it) with the record the page is about, a domain's list reads each
 // aggregate's ID and title, and the editor's next ID reads the IDs in use. The projection (aggregateTableFrom) is the
 // only code that reads the source rows and the only code that writes the read model's table; the query handlers read
 // that table only through the reader (reader.ts). Nothing here is the aggregate's own instance type.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
-import type { AggregateRow, DataModelRow, DomainEventRow, EntityFieldRow, EntityRow, InvariantRow, InvariantTestRow } from '../../platform/data/tables.ts';
+import type { AggregateRow, DataModelRow, DomainEventRow, EntityFieldRow, EntityRow, InvariantRow, InvariantTestRow, RuleRow } from '../../platform/data/tables.ts';
 import type { AggregateKind } from './model.ts';
 
 /** A data model as the page shows it: its row, the standard rules it meets and the packages it uses. */
@@ -38,9 +38,17 @@ export interface InvariantTestOnPage {
   startsFrom: string[];
 }
 
-/** An invariant as the page shows it: its row and its test. */
+/** The rule that enforces an invariant, as the page shows it: its row, the standard rules it meets and the packages it uses. */
+export interface RuleOnPage {
+  rule: RuleRow;
+  meets: string[];
+  packages: string[];
+}
+
+/** An invariant as the page shows it: its row, the rule that enforces it and its test. */
 export interface InvariantOnPage {
   invariant: InvariantRow;
+  rule: RuleOnPage | null;
   test: InvariantTestOnPage | null;
 }
 
@@ -56,7 +64,7 @@ export interface AggregateTree {
   aggregate: AggregateRow;
   /** Its entities, the root first, then by ID. */
   entities: EntityOnPage[];
-  /** Its invariants, by ID. */
+  /** Its invariants, by ID, each with its rule and test. */
   invariants: InvariantOnPage[];
   /** The domain events that happen to it (the Domain event aggregate's roots), by ID. */
   domainEvents: EventOnPage[];
@@ -112,6 +120,7 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
   const commands = grouped<{ id: string }>(view.rows('command'), 'entity_id');
   const tables = grouped<{ id: string }>(view.rows('table'), 'entity_id');
   const invariants = grouped<InvariantRow>(view.rows('invariant'), 'aggregate_id');
+  const rules = grouped<RuleRow>(view.rows('rule'), 'invariant_id');
   const tests = grouped<InvariantTestRow>(view.rows('invariant_test'), 'invariant_id');
   const events = grouped<DomainEventRow>(view.rows('domain_event'), 'aggregate_id');
 
@@ -139,8 +148,13 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
           };
         }),
       invariants: [...(invariants.get(root) ?? [])].sort((a, b) => byId(a.id, b.id)).map((invariant) => {
+        const rule = (rules.get(invariant.id) ?? [])[0];
         const test = (tests.get(invariant.id) ?? [])[0];
-        return { invariant, test: test ? { test, startsFrom: startsFrom(test.id) } : null };
+        return {
+          invariant,
+          rule: rule ? { rule, meets: meets(rule.id), packages: packages(rule.id) } : null,
+          test: test ? { test, startsFrom: startsFrom(test.id) } : null,
+        };
       }),
       domainEvents: [...(events.get(root) ?? [])].sort((a, b) => byId(a.id, b.id)).map((e) => ({
         event: { id: e.id, title: e.title, published: e.published },
@@ -154,6 +168,7 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
     }
     for (const i of tree.invariants) {
       hold(i.invariant.id, 'invariant');
+      if (i.rule) hold(i.rule.rule.id, 'rule');
       if (i.test) hold(i.test.test.id, 'invariant_test');
     }
     aggregates.set(root, tree);

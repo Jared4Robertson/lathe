@@ -82,9 +82,9 @@ describe('LA-AUT-UC21-R50-T01 each Read model command (LA-AUT-A10) changes one r
   it("refuses a second projection or query handler, an input that is not the command's, and a record that is not there, changing no file", async () => {
     const store = await readModelDataSet();
     const before = fileOf(store, 'projection');
-    expect((await refusal(store, ADD_PROJECTION, { id: 'TL-LEND-RM01-PJ2', title: 'again', read_model_id: 'TL-LEND-RM01', description: 'x' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-LEND-RM01 already has its projection, TL-LEND-RM01-PJ' });
+    expect((await refusal(store, ADD_PROJECTION, { id: 'TL-LEND-RM01-PJ2', title: 'again', read_model_id: 'TL-LEND-RM01', description: 'x' })).problems[0]).toMatchObject({ rule: 'read-model-one-each', message: 'read model TL-LEND-RM01 already has its projection, so TL-LEND-RM01-PJ2 cannot be a second: a read model has one' });
+    expect((await refusal(store, ADD_QUERY_HANDLER, { id: 'TL-LEND-QRY01-H2', title: 'again', query_id: 'TL-LEND-QRY01', description: 'x' })).problems[0].rule).toBe('read-model-one-each');
     expect((await refusal(store, ADD_READER, { id: 'TL-LEND-RM01-RD2', title: 'again', read_model_id: 'TL-LEND-RM01', description: 'x' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-LEND-RM01 already has its reader, TL-LEND-RM01-RD' });
-    expect((await refusal(store, ADD_QUERY_HANDLER, { id: 'TL-LEND-QRY01-H2', title: 'again', query_id: 'TL-LEND-QRY01', description: 'x' })).problems[0].rule).toBe('exists');
     await expect(runCommand(store, CHANGE_READ_MODEL, { id: 'TL-LEND-RM01', domain_id: 'TL-CAT' })).rejects.toThrow(/change-read-model takes no domain_id/);
     expect((await refusal(store, ADD_READ_MODEL, { id: 'TL-SHOP-RM01', title: 'Shop', domain_id: 'TL-SHOP', description: 'x' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no domain TL-SHOP' });
     expect((await refusal(store, CHANGE_QUERY, { id: 'TL-LEND-QRY09', title: 'x' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no query TL-LEND-QRY09' });
