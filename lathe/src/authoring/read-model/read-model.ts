@@ -9,6 +9,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { ProjectionRow, QueryHandlerRow, QueryRow, ReadModelFieldRow, ReadModelRow, ReaderRow } from '../../platform/data/tables.ts';
 import type { ReadModelKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A piece of code as the page shows it: its row, the standard rules it meets and the packages it uses. */
 export interface CodeOnPage<T> {
@@ -64,8 +65,6 @@ export interface ReadModelTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -105,7 +104,7 @@ export function readModelTableFrom(view: ReadView): ReadModelTable {
       reads: reads(root),
       calls: calls(root),
       fedBy: fedBy(root),
-      queries: [...(queries.get(root) ?? [])].sort(byId).map((query) => ({ query, selectsBy: selectsBy(query.id), calls: calls(query.id), handler: code(handlers.get(query.id)) })),
+      queries: [...(queries.get(root) ?? [])].sort(byRecordId).map((query) => ({ query, selectsBy: selectsBy(query.id), calls: calls(query.id), handler: code(handlers.get(query.id)) })),
       projection: code(projections.get(root)),
       reader: code(readers.get(root)),
     };
@@ -119,7 +118,7 @@ export function readModelTableFrom(view: ReadView): ReadModelTable {
     if (tree.reader) holding.set(tree.reader.code.id, { root, kind: 'reader' });
     domains.get(readModel.domain_id)?.push({ id: root, title: readModel.title });
   }
-  for (const list of domains.values()) list.sort(byId);
+  for (const list of domains.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { readModels, holding, domains, kinds };

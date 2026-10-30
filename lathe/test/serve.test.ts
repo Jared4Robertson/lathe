@@ -11,7 +11,7 @@ import { run } from './helpers.ts';
 import { PACKAGE_DIR } from '../src/index.ts';
 import type { WriteAnswer } from '../src/server/contract.ts';
 import type { DataChange } from '../src/server/events.ts';
-import type { RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
+import { summariesIn, type RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
 import type { MetaModel } from '../src/platform/meta-model/read-model.ts';
 import { openStore, SCHEMA_DIR } from '../src/platform/data/index.ts';
 import { APP_DIR, serve, type LatheServer } from '../src/server/serve.ts';
@@ -109,8 +109,8 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     const meta = await fetch(`${BASE}/api/meta-model/get-meta-model`);
     expect(meta.status).toBe(200);
     expect(((await meta.json()) as MetaModel).kinds.some((k) => k.kind === 'use_case')).toBe(true);
-    const summaries = async () => (await (await fetch(`${BASE}/api/record-summaries/list-record-summaries?product_id=EX`)).json()) as RecordSummaries;
-    expect((await summaries()).records.filter((r) => r.kind === 'use_case').map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
+    const summaries = async () => summariesIn((await (await fetch(`${BASE}/api/record-summaries/list-record-summaries?product_id=EX`)).json()) as RecordSummaries);
+    expect((await summaries()).filter((r) => r.kind === 'use_case').map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
     expect((await fetch(`${BASE}/api/problems/list-problems?product_id=EX`)).status).toBe(200);
 
     const events = await fetch(`${BASE}/api/events`);
@@ -127,7 +127,7 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     expect(change.readModels).not.toContain('meta-model');
 
     // The next request sees the change: the store reads the files again when they change under it.
-    expect((await summaries()).records.find((r) => r.id === 'EX-NOTE-UC01')?.title).toBe('Write a long note');
+    expect((await summaries()).find((r) => r.id === 'EX-NOTE-UC01')?.title).toBe('Write a long note');
 
     // A command goes through the store and comes back as the rows it changed.
     const written = await fetch(`${BASE}/api/use-case/change-use-case`, {

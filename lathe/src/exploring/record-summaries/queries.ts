@@ -30,7 +30,7 @@ export const LIST_RECORD_SUMMARIES: QueryDefinition<{ product_id: string }, Reco
   text: (s) =>
     [
       `${s.product}: ${s.records.length} record${s.records.length === 1 ? '' : 's'} · ${s.links.length} link${s.links.length === 1 ? '' : 's'}`,
-      ...s.records.map((r) => `  ${r.id} ${r.kind} ${r.title}`),
+      ...s.records.map((values) => `  ${['id', 'kind', 'title'].map((column) => values[s.columns.indexOf(column as never)]).join(' ')}`),
     ].join('\n'),
 };
 

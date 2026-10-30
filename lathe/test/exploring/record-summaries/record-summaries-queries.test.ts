@@ -3,7 +3,7 @@
 // reader; no column of a record beyond its summary.
 import { afterEach, describe, expect, it } from 'vitest';
 import { LIST_RECORD_SUMMARIES } from '../../../src/exploring/record-summaries/queries.ts';
-import type { RecordSummaries } from '../../../src/exploring/record-summaries/read-model.ts';
+import { summariesIn, type RecordSummaries, type RecordSummary, type SummaryLink } from '../../../src/exploring/record-summaries/read-model.ts';
 import { runQuery } from '../../../src/platform/commands/run.ts';
 import { openStore, type Store } from '../../../src/platform/data/store.ts';
 import { StoreError } from '../../../src/platform/data/problems.ts';
@@ -21,10 +21,15 @@ const DATA: Data = {
   has_one: [],
 };
 
-async function summaries(data: Data, product: string): Promise<RecordSummaries> {
+/** The product's space, with its records as summaries. */
+async function summaries(data: Data, product: string): Promise<{ records: RecordSummary[]; links: SummaryLink[] }> {
   const store = await openStore(writeData(data));
   open.push(store);
-  return runQuery({ schema: store.schema, rows: (t) => store.rows(t), record: (id) => store.record(id) }, LIST_RECORD_SUMMARIES, { product_id: product }) as RecordSummaries;
+  const answer = runQuery({ schema: store.schema, rows: (t) => store.rows(t), record: (id) => store.record(id) }, LIST_RECORD_SUMMARIES, { product_id: product }) as RecordSummaries;
+  // Each record is its values in the order of the columns, which the answer names once.
+  expect(answer.columns).toEqual(['id', 'kind', 'title', 'parent', 'product', 'domain', 'group', 'testState', 'names', 'level', 'file', 'line', 'digest']);
+  expect(answer.records.every((values) => values.length === answer.columns.length)).toBe(true);
+  return { records: summariesIn(answer), links: answer.links };
 }
 
 describe('LA-EXP-UC02-R08-T02 The record summaries read places each record of a product\'s space, gives its file, line and digest, and the links among them', () => {

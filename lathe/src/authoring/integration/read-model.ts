@@ -8,6 +8,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { AdapterRow, IntegrationRow, IntegrationTestRow } from '../../platform/data/tables.ts';
 import type { IntegrationKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** An integration test as the page shows it: its row and the test data sets it starts from. */
 export interface IntegrationTestOnPage {
@@ -52,8 +53,6 @@ export interface IntegrationTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -86,7 +85,7 @@ export function integrationTableFrom(view: ReadView): IntegrationTable {
     const tree: IntegrationTree = {
       integration,
       adapter: adapter ? { adapter, meets: meets(adapter.id), packages: packages(adapter.id) } : null,
-      tests: [...(tests.get(root) ?? [])].sort(byId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
+      tests: [...(tests.get(root) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
     };
     if (adapter) holding.set(adapter.id, { root, kind: 'adapter' });
     for (const t of tree.tests) holding.set(t.test.id, { root, kind: 'integration_test' });
@@ -94,7 +93,7 @@ export function integrationTableFrom(view: ReadView): IntegrationTable {
     const product = productIds.find((p) => root.startsWith(`${p}-`));
     if (product) products.get(product)!.push({ id: integration.id, title: integration.title });
   }
-  for (const list of products.values()) list.sort(byId);
+  for (const list of products.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { integrations, holding, products, kinds };

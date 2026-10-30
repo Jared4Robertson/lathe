@@ -18,6 +18,7 @@ import { gatherTableFacts, TABLE_FACTS_SQL } from './trace/tables.ts';
 import type { Row } from './platform/data/rows.ts';
 import { gatherRouteFacts, writeRouteFacts } from './trace/routes.ts';
 import type { Coverage, CoverageGap, Kind, ObligationCoverage, Problem, RelationRule, SpecLink, SpecRecord, StageRule, TestCounts, TraceChain, Workspace } from './types.ts';
+import { compareIds } from './platform/data/ids.ts';
 
 export type * from './types.ts';
 export type * from './reference.ts';
@@ -259,7 +260,7 @@ async function computeCoverage(store: Store): Promise<Coverage[]> {
   const provedBy = (scope: { product: string; domain: string | null }) => {
     const by: Record<string, string[]> = {};
     for (const p of proofsBy.get(key(scope)) ?? []) (by[p.id] ??= []).push(p.test_id);
-    for (const ids of Object.values(by)) ids.sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+    for (const ids of Object.values(by)) ids.sort(compareIds);
     return by;
   };
   return tests.map((t) => ({
@@ -285,7 +286,7 @@ async function computeChains(store: Store, records: SpecRecord[], order: string[
   const kindOf = new Map(records.map((r) => [r.id, r.kind]));
   const rank = new Map(order.map((k, i) => [k, i]));
   const of = (id: string) => rank.get(kindOf.get(id) ?? '') ?? rank.size;
-  const sorted = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => of(a) - of(b) || a.localeCompare(b, 'en', { numeric: true }));
+  const sorted = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => of(a) - of(b) || compareIds(a, b));
   const fileOf = new Map(files.map((f) => [f.record, f.file]));
   const by = new Map<string, typeof links>();
   for (const l of links) by.set(l.obligation_id, [...(by.get(l.obligation_id) ?? []), l]);

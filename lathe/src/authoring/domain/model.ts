@@ -4,6 +4,7 @@
 // the standard rules they meet and the packages they use. One instance is one domain, whole; it holds only the links
 // its own records start.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
 
@@ -107,49 +108,37 @@ export function newDomain(domain: DomainRow): Domain {
   return { root: domain.id, domain, capabilities: [], terms: [], domainServices: [], services: [], domainServiceTests: [], repositories: [] };
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[], source = 'source_id', target = 'target_id'): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The domains in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function domainsFrom(rows: (table: string) => Row[], only?: string): Domain[] {
   const domains = rows('domain').filter((r) => only === undefined || r.id === only) as unknown as DomainRow[];
   if (!domains.length) return [];
   const ids = new Set(domains.map((d) => d.id));
-  const inDomain = <T extends { domain_id: string }>(table: string) => (rows(table) as unknown as T[]).filter((r) => ids.has(r.domain_id));
-  const capabilities = inDomain<CapabilityRow>('capability');
-  const terms = inDomain<TermRow>('term');
-  const domainServices = inDomain<DomainServiceRow>('domain_service');
-  const repositories = inDomain<RepositoryRow>('repository');
-  const serviceOf = new Map(domainServices.map((s) => [s.id, s.domain_id]));
-  const services = (rows('service') as unknown as ServiceRow[]).filter((s) => serviceOf.has(s.domain_service_id));
-  const tests = (rows('domain_service_test') as unknown as DomainServiceTestRow[]).filter((t) => serviceOf.has(t.domain_service_id));
+  // Each table's rows by the domain they sit in, grouped once.
+  const inDomain = <T extends { domain_id: string }>(table: string) => groupBy((rows(table) as unknown as T[]).filter((r) => ids.has(r.domain_id)), (r) => r.domain_id);
+  const capabilitiesOf = inDomain<CapabilityRow>('capability');
+  const termsOf = inDomain<TermRow>('term');
+  const domainServicesOf = inDomain<DomainServiceRow>('domain_service');
+  const repositoriesOf = inDomain<RepositoryRow>('repository');
+  const serviceOf = new Map([...domainServicesOf.values()].flat().map((s) => [s.id, s.domain_id]));
+  const servicesOf = groupBy((rows('service') as unknown as ServiceRow[]).filter((s) => serviceOf.has(s.domain_service_id)), (s) => serviceOf.get(s.domain_service_id));
+  const testsOf = groupBy((rows('domain_service_test') as unknown as DomainServiceTestRow[]).filter((t) => serviceOf.has(t.domain_service_id)), (t) => serviceOf.get(t.domain_service_id));
   const [serves, persists, storedIn, meets, startsFrom, buildsOn] = ['serves', 'persists', 'stored_in', 'meets', 'starts_from', 'builds_on'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
-  const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
-  const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) });
-  return domains.map((domain) => {
-    const own = (r: { domain_id: string }) => r.domain_id === domain.id;
-    const ownServices = (r: { domain_service_id: string }) => serviceOf.get(r.domain_service_id) === domain.id;
-    return {
-      root: domain.id,
-      domain,
-      capabilities: capabilities.filter(own).map((row) => ({ row, serves: targets(serves, row.id) })),
-      terms: terms.filter(own).map((row) => ({ row, buildsOn: targets(buildsOn, row.id) })),
-      domainServices: domainServices.filter(own),
-      services: services.filter(ownServices).map(technical),
-      domainServiceTests: tests.filter(ownServices).map((row) => ({ row, startsFrom: targets(startsFrom, row.id) })),
-      repositories: repositories.filter(own).map((row) => ({
-        ...technical(row),
-        persists: targets(persists, row.id)[0] ?? null,
-        storedIn: targets(storedIn, row.id)[0] ?? null,
-      })),
-    };
-  });
+  const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) });
+  return domains.map((domain) => ({
+    root: domain.id,
+    domain,
+    capabilities: groupOf(capabilitiesOf, domain.id).map((row) => ({ row, serves: groupOf(serves, row.id) })),
+    terms: groupOf(termsOf, domain.id).map((row) => ({ row, buildsOn: groupOf(buildsOn, row.id) })),
+    domainServices: groupOf(domainServicesOf, domain.id),
+    services: groupOf(servicesOf, domain.id).map(technical),
+    domainServiceTests: groupOf(testsOf, domain.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
+    repositories: groupOf(repositoriesOf, domain.id).map((row) => ({
+      ...technical(row),
+      persists: groupOf(persists, row.id)[0] ?? null,
+      storedIn: groupOf(storedIn, row.id)[0] ?? null,
+    })),
+  }));
 }
 
 const links = (source: string, ids: (string | null)[]): Row[] => ids.filter((id): id is string => id !== null).map((target) => ({ source_id: source, target_id: target }));

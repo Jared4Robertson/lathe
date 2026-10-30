@@ -31,6 +31,7 @@ import { setTextMeasure, type TextMeasure } from './text';
 import { BLOCK_BELOW_PX, CHILD_READ_PX, drawnFor, drawnKey, drawnNested, frameNested, frameOnMap, frameRect, maxZoomFor, mergeDrawn, MIN_ZOOM, type Drawn, type Viewport } from './camera';
 import { useCameraGestures } from './gestures';
 import { readMotion } from './motion';
+import { followBox, useMorph } from './morph';
 import { nodeShape } from './shapes';
 import { Button } from '../components/Button';
 import { pageMeasure, readGraphFonts, readyMeasure, fontFor, type GraphFonts } from './fonts';
@@ -459,6 +460,8 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   const maxZoom = useMemo(() => maxZoomFor(map), [map]);
   /** The focus: drawn whatever its size. */
   const always = useMemo(() => [focus], [focus]);
+  /** What a new layout moved glides from where it was (morph.ts, LA-PAT-APP-UX-R22). */
+  const morph = useMorph(map);
 
   // ---- The camera ----
   const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
@@ -584,9 +587,24 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     const { key, framed } = cameraPlace.current;
     if (key && sizeRef.current) runTabSetCommand(keepCamera, { place: key, stage: 'graph', camera: { framed, view: view.current } });
   }, []);
+  /**
+   * What the camera last framed: the focus's box on its map, the depth, the stage's size and open space. New data that
+   * leaves all of them alone leaves the camera where it is; where it moved the focus, the camera glides with it (LA-PAT-APP-UX-R22).
+   */
+  const lastFramed = useRef<{ key: string; box: { x: number; y: number; w: number; h: number } } | null>(null);
+  const framedKey = size ? `${focus} ${depth} ${map.view} ${map.roots[0]} ${size.w}x${size.h} ${insetKey}` : '';
+  const rememberFraming = () => { const n = map.nodes.get(focus); lastFramed.current = n && size ? { key: framedKey, box: { x: n.x, y: n.y, w: n.w, h: n.h } } : null; };
   useLayoutEffect(() => {
-    if (skipFraming.current === framing) { skipFraming.current = null; return; }
+    if (skipFraming.current === framing) { skipFraming.current = null; rememberFraming(); return; }
     const kept = keptView.current;
+    const was = lastFramed.current;
+    const node = map.nodes.get(focus);
+    if (!kept && was && node && was.key === framedKey) {
+      const follow = followBox(view.current, was.box, node, { min: MIN_ZOOM, max: maxZoom });
+      rememberFraming();
+      if (follow) moveTo(follow, true);
+      return;
+    }
     const target = kept ?? framing();
     if (!target || !size || (kept && !framing())) return;
     keptView.current = null;
@@ -595,6 +613,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     if (fadeShift.current.to !== focus) fadeShift.current = { from: fadeShift.current.to, to: focus, start: performance.now(), duration };
     framedFor.current = size;
     framedEmpty.current = map.nodes.size === 0;
+    rememberFraming();
   }, [framing]);
   // What is drawn follows the filters at once.
   useEffect(() => { if (!gestures.gliding() && size) show(drawnAt(getViewport())); requestPaint(); }, [drawnAt]);
@@ -666,7 +685,8 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
   /** The boxes, bars and lines a camera shows, in draw order: in the Nested view a parent before its children, so each child lies over its parent (LA-EXP-DS09). */
   const frameAt = useCallback((v: Viewport): { plates: Plate[]; bars: Bar[]; lines: Line[] } => {
     const drawn = drawnAt(v);
-    const shown = drawn.boxes.map((b) => plateFor(b.id)).filter((p): p is Plate => p !== null);
+    const now = performance.now();
+    const shown = drawn.boxes.map((b) => plateFor(b.id)).filter((p): p is Plate => p !== null).map((p) => morph.plate(p, now));
     if (map.view !== 'tree') shown.sort((a, b) => (map.nodes.get(a.id) as NestedNode).order - (map.nodes.get(b.id) as NestedNode).order);
     const bars: Bar[] = [];
     if (map.view === 'tree') {
@@ -752,7 +772,7 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
       host: wrapper.current, space, dpr, color: focusPlate ? boxColors(look.current, focusPlate).edge : look.current.ink,
       box: node ? { left: node.x * v.zoom + v.x, top: node.y * v.zoom + v.y, right: (node.x + node.w) * v.zoom + v.x, bottom: (node.y + node.h) * v.zoom + v.y } : null,
     });
-    if (!spot.done || !fade.done || marksMoving(live, frame.plates.map((p) => p.id))) requestPaint();
+    if (!spot.done || !fade.done || morph.moving(performance.now()) || marksMoving(live, frame.plates.map((p) => p.id))) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
   };
   // Every render may change what is drawn: the focus, the filters, the plates, the theme, a change landing.

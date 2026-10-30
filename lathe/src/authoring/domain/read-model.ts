@@ -10,6 +10,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
 import type { DomainKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A capability as the page shows it: its row, the business outcomes it serves, and its use cases by ID. */
 export interface CapabilityOnPage {
@@ -88,8 +89,6 @@ export interface DomainTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -109,7 +108,7 @@ function targets(view: ReadView, table: string, source = 'source_id', target = '
  * listed still orders through that term's own links. A loop (which the rules refuse) is broken at its lowest title.
  */
 export function termsBottomUp<T extends { id: string; title: string }>(terms: readonly T[], buildsOn: (id: string) => readonly string[]): T[] {
-  const byTitle = (a: T, b: T) => a.title.localeCompare(b.title, 'en') || byId(a, b);
+  const byTitle = (a: T, b: T) => a.title.localeCompare(b.title, 'en') || byRecordId(a, b);
   // The listed terms each one builds on, through any chain of links (listed or not).
   const listed = new Set(terms.map((t) => t.id));
   const below = (id: string): Set<string> => {
@@ -159,18 +158,18 @@ export function domainTableFrom(view: ReadView): DomainTable {
     const tree: DomainTree = {
       domain,
       capabilities: [...(capabilities.get(root) ?? [])]
-        .sort((a, b) => a.position - b.position || byId(a, b))
+        .sort((a, b) => a.position - b.position || byRecordId(a, b))
         .map((capability) => ({ capability, serves: serves(capability.id), useCases: (useCases.get(capability.id) ?? []).map((u) => u.id).sort() })),
       terms: termsBottomUp(terms.get(root) ?? [], buildsOn).map((term) => ({ term, buildsOn: buildsOn(term.id) })),
-      domainServices: [...(domainServices.get(root) ?? [])].sort(byId).map((domainService) => {
+      domainServices: [...(domainServices.get(root) ?? [])].sort(byRecordId).map((domainService) => {
         const service = (services.get(domainService.id) ?? [])[0];
         return {
           domainService,
           service: service ? { service, meets: meets(service.id), packages: packages(service.id) } : null,
-          tests: [...(tests.get(domainService.id) ?? [])].sort(byId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
+          tests: [...(tests.get(domainService.id) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
         };
       }),
-      repositories: [...(repositories.get(root) ?? [])].sort(byId).map((repository) => ({
+      repositories: [...(repositories.get(root) ?? [])].sort(byRecordId).map((repository) => ({
         repository,
         persists: persists(repository.id)[0] ?? null,
         meets: meets(repository.id),
@@ -188,7 +187,7 @@ export function domainTableFrom(view: ReadView): DomainTable {
     domains.set(root, tree);
     products.get(domain.product_id)?.push({ id: domain.id, title: domain.title });
   }
-  for (const list of products.values()) list.sort(byId);
+  for (const list of products.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { domains, holding, products, kinds };

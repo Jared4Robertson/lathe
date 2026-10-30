@@ -4,6 +4,7 @@
 // a minimum). Coverage is the checks' run's, not rows': the projection reads the run the query runner was given
 // (`ReadView.checked`). It is the only code that reads it for the query and the only code that writes the table.
 import type { ReadView } from '../../platform/data/rules.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 /** One obligation kind's figures in one scope. */
 export interface ObligationFigures {
@@ -61,6 +62,6 @@ export function coverageTableFrom(view: ReadView): CoverageTable {
       gaps: c.gaps.map((g) => ({ id: g.id, kind: g.kind, missing: g.missing, message: g.message })),
     });
   }
-  for (const p of products.values()) p.scopes.sort((a, b) => (a.domain === null ? -1 : b.domain === null ? 1 : a.domain.localeCompare(b.domain, 'en', { numeric: true })));
+  for (const p of products.values()) p.scopes.sort((a, b) => (a.domain === null ? -1 : b.domain === null ? 1 : compareIds(a.domain, b.domain)));
   return { products };
 }
