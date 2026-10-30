@@ -4,6 +4,7 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainEventRow } from '../../../platform/data/tables.ts';
 import { changed, DOMAIN_EVENT_SLICE, fieldRows, type EventFieldInput } from '../model.ts';
 import { DomainEventRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 
 /** The event's changes: a column given is set; fields, when given, replace the list. */
 export type ChangeDomainEvent = Pick<DomainEventRow, 'id'> & { title?: string; published?: boolean; description?: string; fields?: EventFieldInput[] };
@@ -32,5 +33,6 @@ export function changeDomainEvent(tx: Transaction, input: ChangeDomainEvent): vo
   const event = events.load(input.id) ?? tx.refuse('missing', `there is no domain event ${input.id}`);
   event.event = changed(event.event, input, ['title', 'published', 'description']);
   if (input.fields) event.fields = fieldRows(input.id, input.fields);
+  holdToRules(tx, event);
   events.save(event);
 }

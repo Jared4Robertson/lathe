@@ -174,7 +174,7 @@ export function everyKind(): Data {
     ],
     cli_command: [{ id: 'TL-LEND-CMD01-CLI', title: 'tl borrow', command_id: 'TL-LEND-CMD01', usage: 'tl borrow <tool>' }],
     documents: [{ source_id: 'TL-LEND-CMD01-CLI', target_id: 'TL-V01' }],
-    check: [{ name: 'duplicate-id', position: 1, severity: 'error', summary: 'An ID names one record.', explanation: 'Give each record its own ID.', query: 'SELECT 1 WHERE false', kinds: ['product'] }],
+    check: [{ name: 'duplicate-id', position: 1, severity: 'error', summary: 'An ID names one record.', explanation: 'Give each record its own ID.', query: 'SELECT NULL AS record, NULL AS message WHERE false', kinds: ['product'] }],
   };
 }
 
