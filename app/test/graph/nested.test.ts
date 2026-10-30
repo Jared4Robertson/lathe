@@ -1,10 +1,11 @@
 import { recordIndexOf } from '../read-view';
 import { describe, expect, it } from 'vitest';
-import { graphMap, MAP_SIZE, sizeText } from '../../src/graph/map';
+import { MAP_SIZE, sizeText } from '../../src/graph/map';
 import { BORDER, LABEL_PAD, labelHeight, largestFit, mapLabel, metaWidth, narrowestWidth, titleWidth, type MapLabel } from '../../src/graph/text';
-import { gridOf, HEADER_SHARE, layoutNested, NEST_GAP, NEST_PAD, nestedMap, type NestedMap, type NestedNode } from '../../src/graph/nested';
+import { gridOf, HEADER_SHARE, NEST_GAP, NEST_PAD, type NestedMap, type NestedNode } from '../../src/graph/nested';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
+import { graphMap, layoutNested, nestedMap } from './maps';
 
 // The Nested map (LA-EXP-DS07): the Tree map's tree as nested squares, laid out once, top-down from
 // the product's square by one rule (LA-EXP-DS06): siblings are the same size, with the same text.

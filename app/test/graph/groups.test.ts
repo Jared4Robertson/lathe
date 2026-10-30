@@ -12,11 +12,11 @@ import {
   pluralLabel,
   type Filters,
   type Neighborhood } from '../../src/graph/model';
-import { graphMap } from '../../src/graph/map';
 import { boxColors } from '../../src/graph/paint';
 import { PLAIN_LOOK } from '../../src/graph/look';
 import { addressOf } from '../../src/views/address';
 import { groupedWorkspace, testIndex } from './workspace';
+import { graphMap } from './maps';
 
 const ids = (n: Neighborhood) => n.nodes.map((x) => x.id).sort();
 const groups = (n: Neighborhood) => n.nodes.filter((x) => x.group).map((x) => x.id).sort();

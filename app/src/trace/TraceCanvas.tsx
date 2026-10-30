@@ -2,7 +2,8 @@
 // graph's renderer (paint.ts, plate.ts), camera (camera.ts), level of detail and pointer.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
-import { drawnFor, frameOnMap, frameRect, maxZoomFor, MIN_ZOOM, type Viewport } from '../graph/camera';
+import { CHILD_READ_PX, drawnFor, frameOnMap, frameRect, maxZoomFor, MIN_ZOOM, type Viewport } from '../graph/camera';
+import { labelStrip } from '../graph/sticky';
 import { fadeTween, faintest, type FadeLook } from '../graph/fade';
 import { pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
 import { hitPlate } from '../graph/hit';
@@ -21,7 +22,9 @@ import { useCommand } from '../shell/commands';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
 import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpace';
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
-import { copyInChain, lineKey, linesAt, traceFade, type TraceMap, type TraceNode } from './tree';
+import { copyInChain, lineKey, linesAt, traceFade, traceInput, type TraceMap, type TraceNode } from './tree';
+import { useLaidOut } from '../graph/layout';
+import type { GraphMap } from '../graph/map';
 import { useChanges } from '../changes/changes';
 import { lensFade, marksMoving, useStageMarks } from '../changes/marks';
 
@@ -98,20 +101,32 @@ export function TraceCanvas(props: TraceCanvasProps) {
   }, [fonts.body, fonts.mono]);
   if (!measure) return <div className="graph-flow trace-flow" aria-busy="true" />;
   setTextMeasure(measure);
-  return <TraceScene {...props} measure={measure} fonts={fonts} theme={theme} />;
+  return <TraceLaidOut {...props} measure={measure} fonts={fonts} theme={theme} />;
+}
+
+/**
+ * The map's boxes, laid out off the main thread as the Graph's Tree map, and again only when what it reads changes
+ * (graph/layout.ts); until a new layout is ready, the one before stays on screen with the Trace map it was laid out from.
+ */
+function TraceLaidOut(props: TraceCanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
+  const { map, index, measure, fonts } = props;
+  const input = useMemo(() => traceInput(map, index, measure.key), [map, index, measure]);
+  const laid = useLaidOut<GraphMap, { map: TraceMap; index: RecordIndex }>(input, useMemo(() => ({ map, index }), [map, index]), fonts);
+  if (!laid) return <div className="graph-flow trace-flow" aria-busy="true" />;
+  return <TraceScene {...props} map={laid.of.map} index={laid.of.index} laid={laid.map} />;
 }
 
 /** What one frame draws: the nodes in view as plates, bars for the runs too small to see, and the lines between the plates. */
 interface TraceFrame { plates: Plate[]; bars: Bar[]; lines: Line[] }
 
-function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: TraceCanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number }) {
+function TraceScene({ index, focus, map, laid, at, kept, gapsOnly, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: TraceCanvasProps & { measure: TextMeasure; fonts: GraphFonts; theme: number; laid: GraphMap }) {
   const wrapper = useRef<TraceHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const sizeRef = useRef(size);
   sizeRef.current = size;
   /** The most the camera zooms in: enough to read the map's smallest box. */
-  const maxZoom = useMemo(() => maxZoomFor(map.map), [map]);
+  const maxZoom = useMemo(() => maxZoomFor(laid), [laid]);
 
   // ---- The camera ----
   const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
@@ -146,13 +161,18 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     return w < MIN_FRAME || h < MIN_FRAME ? { x: 0, y: 0, w: s.w, h: s.h } : { x: inset.left, y: inset.top, w, h };
   }, [insetKey]);
 
+  /** The plates (made below, once per map), for the framing. */
+  const platesRef = useRef<(key: string) => Plate | null>(() => null);
   /** The camera that frames the focus's node and its children, as the Graph's Tree frames a focus (camera.ts frameOnMap). */
   const framing = useCallback((): Viewport | null => {
-    if (!size || (space && !open)) return null;
+    // A node the map shown does not hold yet (its new layout is still being made) leaves the camera where it is.
+    if (!size || (space && !open) || !laid.nodes.has(at)) return null;
     const box = frameBox(size);
-    const v = frameOnMap(map.map, at, FRAME_DEPTH, box.w, box.h, maxZoom);
+    // Framed as a strip beside its children, the focus's strip is as wide as its label needs to read (camera.ts frameOnMap).
+    const plate = platesRef.current(at);
+    const v = frameOnMap(laid, at, FRAME_DEPTH, box.w, box.h, maxZoom, plate ? labelStrip(plate, box.h, CHILD_READ_PX) : undefined);
     return { x: v.x + box.x, y: v.y + box.y, zoom: v.zoom };
-  }, [size, map, at, frameBox, space, open, maxZoom]);
+  }, [size, map, laid, at, frameBox, space, open, maxZoom]);
 
   // Frame the focus whenever its node, the stage's size or the open space changes: a glide, except the first picture (a
   // stage switch lands on the focus at once) and a resize. New data with the same focus leaves the camera where it is.
@@ -236,7 +256,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     ? faintest(traceFade(map, null, gapsOnly, fadeLook), lensFade(changes.byId, fadeLook, (place) => map.nodes.get(place)?.id ?? place))
     : traceFade(map, kept, gapsOnly, fadeLook)), [map, kept, gapsOnly, fadeLook, changes.lens, changes.byId]);
   // The live marks: each record's on every copy; a removed record's ghost on its first copy in the map drawn before.
-  const placeOf = useCallback((id: string) => { const k = map.copies.get(id)?.[0]; const n = k ? map.map.nodes.get(k) : undefined; return n ? { x: n.x, y: n.y, w: n.w, h: n.h } : null; }, [map]);
+  const placeOf = useCallback((id: string) => { const k = map.copies.get(id)?.[0]; const n = k ? laid.nodes.get(k) : undefined; return n ? { x: n.x, y: n.y, w: n.w, h: n.h } : null; }, [map, laid]);
   const marks = useStageMarks(placeOf);
   const tween = useMemo(() => fadeTween((t) => readMotion().ease(t)), []);
   useLayoutEffect(() => {
@@ -245,12 +265,12 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     requestPaint();
   }, [fade]);
 
-  const plates = useMemo(() => new Map<string, Plate>(), [map, index, fonts]);
+  const plates = useMemo(() => new Map<string, Plate>(), [map, laid, index, fonts]);
   const plateFor = useCallback((key: string): Plate | null => {
     const known = plates.get(key);
     if (known) return known;
     const n = map.nodes.get(key);
-    const node = map.map.nodes.get(key);
+    const node = laid.nodes.get(key);
     if (!n || !node) return null;
     const role = n.role === 'record' ? null : PLAIN[n.role];
     const plain: PlainBox | undefined = role ? {
@@ -260,23 +280,24 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     plates.set(key, plate);
     return plate;
   }, [plates, map, index]);
+  platesRef.current = plateFor;
 
   /** What a camera shows (camera.ts drawnFor, as the Graph's Tree): the nodes in view as plates, the runs too small as bars, and each drawn child's line from its drawn parent. */
   const frameAt = useCallback((v: Viewport, s: { w: number; h: number }, whole = false): TraceFrame => {
-    const keys = whole ? [...map.map.nodes.keys()] : null;
-    const drawn = keys ? { boxes: keys.map((id) => ({ id })), bars: [] } : drawnFor(map.map, v, s.w, s.h, [at]);
+    const keys = whole ? [...laid.nodes.keys()] : null;
+    const drawn = keys ? { boxes: keys.map((id) => ({ id })), bars: [] } : drawnFor(laid, v, s.w, s.h, [at]);
     const shown = drawn.boxes.map((b) => plateFor(b.id)).filter((p): p is Plate => p !== null);
     const byKey = new Map(shown.map((p) => [p.place, p]));
     const lines: Line[] = [];
     for (const b of shown) {
-      const up = map.map.nodes.get(b.place)?.parent;
+      const up = laid.nodes.get(b.place)?.parent;
       const p = up ? byKey.get(up) : undefined;
       if (!p) continue;
       const link = map.links.has(b.place);
       lines.push({ id: lineKey(p.place, b.place), source: p.place, target: b.place, style: link ? 'trace' : 'structure', link, points: parentLine(p, b, p.shape, b.shape), scale: b.text });
     }
     return { plates: shown, bars: drawn.bars.map((b) => ({ parent: b.parent, x: b.x, y: b.y, w: b.w, h: b.h })), lines };
-  }, [map, plateFor, at]);
+  }, [map, laid, plateFor, at]);
 
   // ---- The spotlight, the pointer, the keyboard's ring and a tap's selection ----
   const hover = useRef<string | null>(null);
@@ -309,7 +330,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     const cam: Camera = { cx: (s.w / 2 - v.x) / v.zoom, cy: (s.h / 2 - v.y) / v.zoom, zoom: v.zoom, w: s.w, h: s.h };
     paint(ctx.current, dpr, cam, frame, look.current, fonts, state);
     // The leader line to the wiki card (LA-V96-R24), under this camera, from the focus's node in its outline's color.
-    const n = map.nodes.get(at)?.id === focus ? map.map.nodes.get(at) : undefined;
+    const n = map.nodes.get(at)?.id === focus ? laid.nodes.get(at) : undefined;
     const p = n ? plateFor(at) : null;
     if (wrapper.current) drawLeaderLine(ctx.current, {
       host: wrapper.current, space, dpr, color: p ? boxColors(look.current, p).edge : look.current.ink,
@@ -361,7 +382,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     spot(id);
     requestPaint();
     const s = sizeRef.current;
-    const n = ringAt ? map.map.nodes.get(ringAt) : undefined;
+    const n = ringAt ? laid.nodes.get(ringAt) : undefined;
     if (!n || !s) return;
     const v = view.current;
     const frame = frameBox(s);
@@ -369,7 +390,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
     const top = n.y * v.zoom + v.y;
     const inside = left >= frame.x && left + n.w * v.zoom <= frame.x + frame.w && top >= frame.y && top + n.h * v.zoom <= frame.y + frame.h;
     if (inside) return;
-    const t = frameOnMap(map.map, ringAt!, 0, frame.w, frame.h, maxZoom);
+    const t = frameOnMap(laid, ringAt!, 0, frame.w, frame.h, maxZoom);
     moveTo({ x: t.x + frame.x, y: t.y + frame.y, zoom: t.zoom }, true);
   }, [ringAt]);
 
@@ -402,7 +423,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
   /** The camera's Fit: the whole map in the frame. */
   const fitMap = () => {
     if (!size) return;
-    moveTo(frameRect({ x: 0, y: 0, w: map.map.width, h: map.map.height }, frameBox(size), { pad: 24, read: MIN_ZOOM, max: maxZoom, min: MIN_ZOOM }), true);
+    moveTo(frameRect({ x: 0, y: 0, w: laid.width, h: laid.height }, frameBox(size), { pad: 24, read: MIN_ZOOM, max: maxZoom, min: MIN_ZOOM }), true);
   };
 
   // ---- The test hook: the drawn scene, in the page's pixels ----
@@ -428,7 +449,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
         boxes: frame.plates.map((p) => {
           const n = map.nodes.get(p.place)!;
           return {
-            key: p.place, id: p.id, role: n.role, parent: map.map.nodes.get(p.place)?.parent ?? null, opens: n.opens, focus: p.id === focus, hover: hover.current === p.id, ring: ring.current === p.id,
+            key: p.place, id: p.id, role: n.role, parent: laid.nodes.get(p.place)?.parent ?? null, opens: n.opens, focus: p.id === focus, hover: hover.current === p.id, ring: ring.current === p.id,
             lit: sp.id !== null && sp.lit ? sp.lit.has(p.place) : null, strength: strength(p.place), change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(p.id)),
             dashed: p.dashed, kind: p.kind, stage: p.stage, meta: p.lines.filter((l) => l.face === 'meta').map((l) => l.text).join(''), name: plateName(p, p.id === focus), textScale: p.text,
             rect: { left: r.left + p.x * v.zoom + v.x, top: r.top + p.y * v.zoom + v.y, width: p.w * v.zoom, height: p.h * v.zoom },

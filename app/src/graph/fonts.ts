@@ -2,8 +2,8 @@ import { PLAIN_MEASURE, type Face, type TextMeasure } from './text';
 
 // The faces the graph's canvas draws its text in, and the measure the maps are laid out with
 // (LA-EXP-DS06): the theme's body and mono stacks (`--body`, `--mono`), loaded before the first
-// layout, measured by the canvas's own text metrics. A map is laid out once per spec load and
-// faces, and the canvas draws its lines with the very faces they were measured in, so every line
+// layout, measured by the canvas's own text metrics. A map is laid out again only when what it
+// reads or its faces change (layout.ts), and the canvas draws its lines with the very faces they were measured in, so every line
 // fits its box at any zoom.
 
 /** Where a font is measured: at this size, then scaled, so a width is as exact as the face allows. */
@@ -30,8 +30,11 @@ export function readGraphFonts(): GraphFonts {
   return { body: read('--body', 'sans-serif'), mono: read('--mono', 'monospace') };
 }
 
+/** What a measure reads text with: a canvas's 2D context, the page's or the layout worker's offscreen one. */
+type Measurer = { font: string; measureText: (text: string) => TextMetrics };
+
 /** A measure over a canvas context, each width read once and kept (wrapping measures the same words and lines many times). */
-export function canvasMeasure(ctx: CanvasRenderingContext2D, fonts: GraphFonts): TextMeasure {
+export function canvasMeasure(ctx: Measurer, fonts: GraphFonts): TextMeasure {
   const widths = new Map<Face, Map<string, number>>(FACES.map((f) => [f, new Map()]));
   const metrics = new Map<Face, { ascent: number; descent: number }>();
   return {
@@ -59,8 +62,8 @@ export function canvasMeasure(ctx: CanvasRenderingContext2D, fonts: GraphFonts):
   };
 }
 
-/** Waits for a set of faces to load (or for the timeout: the measure then takes what is there). */
-async function loadFaces(set: FontFaceSet, fonts: GraphFonts) {
+/** Waits for a set of faces to load (or for the timeout: the measure then takes what is there): the page's, or the layout worker's. */
+export async function faceLoads(set: FontFaceSet, fonts: GraphFonts) {
   const loads = FACES.map((f) => set.load(fontFor(fonts, f, 16)).catch(() => []));
   await Promise.race([Promise.all(loads), new Promise((resolve) => setTimeout(resolve, LOAD_TIMEOUT_MS))]);
 }
@@ -88,10 +91,33 @@ export function pageMeasure(fonts: GraphFonts): Promise<TextMeasure> {
   }
   const promise = (async () => {
     await document.fonts.ready;
-    await loadFaces(document.fonts, fonts);
+    await faceLoads(document.fonts, fonts);
     return canvasMeasure(ctx, fonts);
   })();
   measures.set(key, promise);
   void promise.then((m) => ready.set(key, m));
   return promise;
+}
+
+/** One of the page's @font-face rules, as the layout's worker loads it: its family, its source with absolute URLs, and its descriptors. */
+export interface FaceSource { family: string; source: string; descriptors: FontFaceDescriptors }
+
+/** The page's @font-face rules (fonts.css), so the layout's worker measures text in the very faces the page draws it in. */
+export function pageFaces(): FaceSource[] {
+  const out: FaceSource[] = [];
+  for (const sheet of [...document.styleSheets]) {
+    let rules: CSSRuleList;
+    try { rules = sheet.cssRules; } catch { continue; }
+    for (const rule of [...rules]) {
+      if (!(rule instanceof CSSFontFaceRule)) continue;
+      const read = (name: string) => rule.style.getPropertyValue(name).trim();
+      const base = sheet.href ?? document.baseURI;
+      const source = read('src').replace(/url\((["']?)([^"')]+)\1\)/g, (_, q: string, url: string) => `url(${q}${new URL(url, base).href}${q})`);
+      const descriptors: FontFaceDescriptors = { style: read('font-style') || 'normal', weight: read('font-weight') || 'normal' };
+      const range = read('unicode-range');
+      if (range) descriptors.unicodeRange = range;
+      out.push({ family: read('font-family').replace(/^["']|["']$/g, ''), source, descriptors });
+    }
+  }
+  return out;
 }

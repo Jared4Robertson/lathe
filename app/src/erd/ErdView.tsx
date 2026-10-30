@@ -5,7 +5,7 @@ import { type MetaRelation } from '../platform/meta-model/reads';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { relationLabelOf } from '../specs/labels';
 import { useCameraGestures } from '../graph/gestures';
-import { frameRect, type Viewport } from '../graph/camera';
+import { BLOCK_BELOW_PX, frameRect, type Viewport } from '../graph/camera';
 import { PLAIN_LOOK, useThemeVersion } from '../graph/look';
 import type { FadeLook } from '../graph/fade';
 import { lowerLabel } from '../plural';
@@ -120,11 +120,30 @@ function RegionLabels({ regions }: { regions: readonly Region[] }) {
   );
 }
 
+/** A box's title on screen at zoom 1, in CSS pixels (styles.css .erd-box-head strong, 0.8125rem). */
+const TITLE_PX = 13;
+/**
+ * The level of detail (LA-V94-R08, as the graph's, paint.ts): below this zoom a box's title would be drawn under
+ * BLOCK_BELOW_PX, so each box is drawn as a plain block, its fill and edge with no text or fields, and the page holds a
+ * few elements per box instead of its whole field list.
+ */
+export const BLOCK_BELOW_ZOOM = BLOCK_BELOW_PX / TITLE_PX;
+
 function BoxView({ data }: NodeProps<BoxNode>) {
   const { box } = data;
   const faded = data.strength < 1;
   const { mark } = data;
-  const classes = ['erd-box', `erd-${box.kind}`, data.pick && 'is-highlight', data.focus && 'is-focus', faded && 'is-faded', mark && `has-change is-${mark.change}`].filter(Boolean).join(' ');
+  const block = useStore((s) => s.transform[2] < BLOCK_BELOW_ZOOM);
+  const classes = ['erd-box', `erd-${box.kind}`, data.pick && 'is-highlight', data.focus && 'is-focus', faded && 'is-faded', mark && `has-change is-${mark.change}`, block && 'is-block'].filter(Boolean).join(' ');
+  if (block) {
+    return (
+      <div className={classes} title={`${box.title} (${box.id})`} style={faded ? strengthStyle(data.strength) : undefined} data-change={mark?.change}>
+        {mark && <span className="erd-change-dot" aria-hidden="true" />}
+        <Handle type="target" position={Position.Left} className="erd-handle" isConnectable={false} />
+        <Handle type="source" position={Position.Right} className="erd-handle" isConnectable={false} />
+      </div>
+    );
+  }
   return (
     <div className={classes} title={`${box.title} (${box.id})`} style={faded ? strengthStyle(data.strength) : undefined} data-change={mark?.change}>
       {/* A new box's glow or a changed box's pulse, once as it lands (keyed by when, so a second change plays it again); the dot lasts. */}

@@ -212,7 +212,7 @@ function TraceStage(props: StageProps & { product: string }) {
   const [paging, setPaging] = useState({ focus, shown: TRACE_PAGE });
   const shown = paging.focus === focus ? paging.shown : TRACE_PAGE;
   const page = useMemo(() => (spec ? pageOf(spec.groups, gapsOnly, shown) : null), [spec, gapsOnly, shown]);
-  // The product's one map: laid out once per product and data change, whatever the focus or the filter. On a phone only
+  // The product's one map: worked out once per product and data change, whatever the focus or the filter. On a phone only
   // the columns draw it.
   const map = useMemo(() => (narrow && !columnsOn ? null : traceMap(index, traces, product)), [narrow, columnsOn, index, traces, product]);
   const [ringAt, setRing] = useState<{ focus: string; at: { id: string; chain: string | null } | null }>({ focus, at: null });
