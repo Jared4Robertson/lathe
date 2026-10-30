@@ -600,10 +600,10 @@ export class Store {
       } finally {
         for (const other of extra) other.closeSync();
       }
-    } catch (error) {
-      // A row its table's constraints refuse: the whole build names it.
-      if (error instanceof Error && /constraint/i.test(error.message)) return false;
-      throw error;
+    } catch {
+      // A row its table's constraints refuse, or anything else the database refuses: the whole build decides, and
+      // names every problem.
+      return false;
     } finally {
       await connection.run(`USE ${BASE_DB}; DETACH DATABASE IF EXISTS ${sqlName(overlay)}`).catch(() => undefined);
       connection.closeSync();
