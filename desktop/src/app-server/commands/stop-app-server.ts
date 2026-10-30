@@ -13,7 +13,7 @@ export function stopAppServer(servers: AppServerRepository, input: StopAppServer
   const stop = running.server.stop().catch((error: unknown) => log(`Lathe: a server did not stop cleanly: ${String(error)}`));
   const left = new Map(now.running);
   left.delete(input.folder);
-  servers.save({ running: left, stopping: new Set(now.stopping).add(stop) });
+  servers.save({ ...now, running: left, stopping: new Set(now.stopping).add(stop) });
   void stop.finally(() => {
     const after = servers.load();
     const stopping = new Set(after.stopping);

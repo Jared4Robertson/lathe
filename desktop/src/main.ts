@@ -20,6 +20,7 @@ import { copyRecordId } from './product-window/commands/copy-record-id.ts';
 import { openProductFolder } from './product-window/commands/open-product-folder.ts';
 import { openRecordDataFile } from './product-window/commands/open-record-data-file.ts';
 import { reportErrorCount } from './product-window/commands/report-error-count.ts';
+import { reportMenuKeys } from './product-window/commands/report-menu-keys.ts';
 import { revealProductFolder } from './product-window/commands/reveal-product-folder.ts';
 import { revealRecordDataFile } from './product-window/commands/reveal-record-data-file.ts';
 import { saveWindowPlace } from './product-window/commands/save-window-place.ts';
@@ -89,7 +90,7 @@ const userFile = (name: string) => () => path.join(app.getPath('userData'), name
 
 // The aggregates' repositories: the only code that reaches their storage.
 const productWindows = new ProductWindowRepository({ places: userFile('window-state.json'), chrome: userFile('chrome.json') });
-const appServers = new AppServerRepository();
+const appServers = new AppServerRepository({ ports: userFile('app-server-ports.json') });
 const recentFolders = new RecentFolderRepository(userFile('recent-folders.json'));
 const shellSettings = new ShellSettingsRepository(userFile('settings.json'));
 /** The open windows, by folder. */
@@ -124,6 +125,7 @@ function refreshMenu() {
         openRecent: (folder) => void openFolder(folder),
         clearRecent: clearRecentMenu,
         runCommand: (id) => sendCommand(BrowserWindow.getFocusedWindow(), id),
+        keys: menuKeysWindow()?.menuKeys,
         about: showAbout,
         settings: () => sendCommandId(focusedProductWindow(), 'openAppearance', []),
         settingsNow: shellSettings.load(),
@@ -146,6 +148,12 @@ function pickEditor(editor: Editor) {
   chooseEditor(shellSettings, { editor });
   refreshMenu();
 }
+
+/** The window whose keys the menu shows: the focused product window, or the one focused last. */
+const menuKeysWindow = () => {
+  const win = focusedProductWindow();
+  return win ? [...openWindows().values()].find((e) => e.win === win) : undefined;
+};
 
 /** The focused product window, or the one focused last while another (the About window) is in front. */
 function focusedProductWindow(): BrowserWindow | null {
@@ -291,11 +299,11 @@ async function specError(entry: OpenWindow): Promise<string> {
 }
 
 /** Starts a folder's server: serve() on the product's own installed Lathe or the bundled copy, or in development a dev server. */
-async function startServerFor(folder: string): Promise<RunningServer> {
+async function startServerFor(folder: string, port: number | undefined): Promise<RunningServer> {
   if (DEV) return { server: await startDev(REPO_ROOT, folder, log), lathe: 'Lathe from source' };
   // The product's own installed Lathe when it has one, else the app's bundled copy.
   const lathe = latheFor(folder, bundledServe());
-  return { server: await startServe(lathe.modulePath, folder), lathe: latheLabel(lathe) };
+  return { server: await startServe(lathe.modulePath, folder, port), lathe: latheLabel(lathe) };
 }
 
 /** Runs Start a window's app server for its folder, and loads the app under the launch view. */
@@ -305,7 +313,7 @@ async function serveWindow(folder: string): Promise<void> {
   const fresh = !appServers.load().running.has(folder);
   let running: RunningServer;
   try {
-    running = await startAppServer(appServers, { folder, start: () => startServerFor(folder) });
+    running = await startAppServer(appServers, { folder, start: (port) => startServerFor(folder, port) });
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (SMOKE) return fail(message);
@@ -408,6 +416,7 @@ async function openFolder(input: string) {
   win.on('focus', () => {
     lastFocused = win.id;
     updateBadge();
+    refreshMenu();
   });
   win.on('close', () => {
     clearTimeout(saveTimer);
@@ -751,6 +760,11 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   ipcMain.on('lathe:set-chrome', (event, input: unknown) => {
     const entry = fromPage(event);
     if (entry) setWindowChrome(productWindows, { folder: entry.folder, chrome: input, dark: dark(), platform: process.platform });
+  });
+  // The person's keys, for the menu's key labels: sent by a page as they change and as its window takes focus.
+  ipcMain.on('lathe:menu-keys', (event, input: unknown) => {
+    const entry = fromPage(event);
+    if (entry && reportMenuKeys(productWindows, { folder: entry.folder, keys: input }) && menuKeysWindow() === entry) refreshMenu();
   });
   // Report a window's error count, for the Dock badge.
   ipcMain.on('lathe:error-count', (event, input: unknown) => {

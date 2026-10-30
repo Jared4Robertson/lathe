@@ -95,5 +95,7 @@
 {"id":"LA-PLT-EN15","title":"Recent folders","aggregate_id":"LA-PLT-A9","role":"root","description":"The list of recent folders, one per shell."}
 {"id":"LA-PLT-EN16","title":"Product repo","aggregate_id":"LA-PLT-A10","role":"root","description":"A product repo: its root folder, the schema version its data is for, where its data files are, and the other products it shows as a workspace."}
 {"id":"LA-PLT-EN20","title":"Shell settings","aggregate_id":"LA-PLT-A11","role":"root","description":"The editor the shell opens data files in, its custom command, and where `claude` is."}
+{"id":"LA-PLT-EN24","title":"Key bindings","aggregate_id":"LA-PLT-A14","role":"root","description":"The person's key bindings: the shortcuts they changed, in the order first changed."}
+{"id":"LA-PLT-EN25","title":"Shortcut binding","aggregate_id":"LA-PLT-A14","role":"child","in_root_table":true,"description":"One shortcut whose keys the person changed: its keys now, or none when they left it without a key on purpose."}
 {"id":"LA-TRC-EN05","title":"Pattern following","aggregate_id":"LA-TRC-A3","role":"root","description":"A domain or use case that follows one pattern."}
 {"id":"LA-TRC-EN06","title":"Setting value","aggregate_id":"LA-TRC-A3","role":"child","description":"A `setting_value` row: the value a following use case, or a domain that follows the pattern itself, gives one of the pattern's settings."}
