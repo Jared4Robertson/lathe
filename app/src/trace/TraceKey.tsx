@@ -27,7 +27,7 @@ export function traceKeyEntries(index: RecordIndex, map: TraceMap, kept: Readonl
       const record = index.byId.get(node.id);
       if (record) stages.add(stageFor(index, node.id, record.kind));
     }
-    for (const child of map.map.nodes.get(key)?.children ?? []) {
+    for (const child of map.tree.get(key)?.children ?? []) {
       if (map.links.has(child)) links = true; else lines = true;
       queue.push(child);
     }
@@ -65,7 +65,7 @@ export function traceColumnKeyEntries(index: RecordIndex, map: TraceMap, columns
     for (const key of c.keys) {
       const node = map.nodes.get(key)!;
       roles.add(node.role);
-      if ((map.map.nodes.get(key)?.children.length ?? 0) > 0) counts = true;
+      if ((map.tree.get(key)?.children.length ?? 0) > 0) counts = true;
       const record = node.role === 'record' ? index.byId.get(node.id) : undefined;
       if (record) stages.add(stageFor(index, node.id, record.kind));
     }

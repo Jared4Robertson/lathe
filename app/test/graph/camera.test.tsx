@@ -2,14 +2,14 @@ import './setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, waitFor } from '@testing-library/react';
 import { CHILD_READ_PX, drawnNested, frameFocus, frameMap, frameNested, frameOnMap, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, PARENT_STRIP_MAX, viewRect, zoomPath } from '../../src/graph/camera';
-import { nestedMap } from '../../src/graph/nested';
-import { graphMap, layoutTree, MAX_ASPECT, type GraphMap } from '../../src/graph/map';
+import { MAX_ASPECT, type GraphMap } from '../../src/graph/map';
 import { TITLE_FONT } from '../../src/graph/text';
 import { MOTION_SPEED_MS } from '../../src/graph/motion';
 import { roundCamera } from '../../src/graph/GraphPage';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { boxElement, isCenter, scene } from './scene';
+import { graphMap, layoutTree, nestedMap } from './maps';
 
 // Focusing moves the camera, never the map (LA-EXP-DS09): the camera frames the focus and the
 // levels the depth shows below it, the parent kept at the left edge, in one smooth zoom and pan on

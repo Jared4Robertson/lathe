@@ -1,13 +1,12 @@
 import './setup';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, waitFor } from '@testing-library/react';
-import { graphMap } from '../../src/graph/map';
-import { nestedMap } from '../../src/graph/nested';
 import { PLAIN_LOOK } from '../../src/graph/look';
 import type { FadeMap } from '../../src/graph/fade';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { boxElement, isCenter, scene } from './scene';
+import { graphMap, nestedMap } from './maps';
 
 // The focus fade (LA-V93-R73, LA-EXP-DS09): in every layout the focus and everything under it are
 // drawn at full strength, the ancestors that contain it in Nested as a faint trail, and

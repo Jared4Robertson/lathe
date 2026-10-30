@@ -38,9 +38,16 @@ export interface Tree {
   groups: Map<string, TreeGroup>;
 }
 
+/** The schema's order of kinds, read once per index (a tree of thousands of records sorts kinds at each). */
+const ranksOf = new WeakMap<RecordIndex, (kind: string) => number>();
 const kindRank = (index: RecordIndex) => {
-  const ranks = new Map(index.meta.kindList.map((k, i) => [k.kind, i]));
-  return (kind: string) => ranks.get(kind) ?? ranks.size;
+  let rank = ranksOf.get(index);
+  if (!rank) {
+    const ranks = new Map(index.meta.kindList.map((k, i) => [k.kind, i]));
+    rank = (kind: string) => ranks.get(kind) ?? ranks.size;
+    ranksOf.set(index, rank);
+  }
+  return rank;
 };
 
 /** The kinds of some records, in the schema's order. */

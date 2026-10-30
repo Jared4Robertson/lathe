@@ -2,12 +2,13 @@ import { recordIndexOf } from '../read-view';
 import { readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { COLUMN_GAP_SHARE, graphMap, groupWidth, layoutTree, MAP_SIZE, MAX_ASPECT, MAX_COLUMN_SHARE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, treeText, type GraphMap, type MapNode } from '../../src/graph/map';
+import { COLUMN_GAP_SHARE, groupWidth, MAP_SIZE, MAX_ASPECT, MAX_COLUMN_SHARE, parentLine, ROOT_WIDTH, ROW_GAP_SHARE, treeText, type GraphMap, type MapNode } from '../../src/graph/map';
 import { drawnFor, frameOnMap, MAX_DRAWN, MIN_DRAWN, MIN_ZOOM, viewRect } from '../../src/graph/camera';
 import { shapeOf, SHAPES } from '../../src/graph/shapes';
 import { BADGE_ROOM, BORDER, LABEL_PAD, labelHeight, largestFit, metaWidth, MARK_ROOM, narrowestWidth, TITLE_FONT, titleWidth, treeLabel, wrapLabel, wrapText, type MapLabel } from '../../src/graph/text';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { groupedWorkspace, manyOfOneKindWorkspace, siblingGroups, testIndex } from './workspace';
+import { graphMap, layoutTree } from './maps';
 
 // The graph is one fixed map of its product's tree (LA-EXP-DS05), laid out top-down from the
 // product's fixed box by one rule (LA-EXP-DS06): siblings are the same size, with the same text.

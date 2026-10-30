@@ -4,7 +4,7 @@ import { keptFade, type Fade, type FadeLook } from '../graph/fade';
 import { useRead, type Read } from '../record/read';
 
 // The ERD stage's map: one entity-relationship diagram of a whole product, as the ERD read gives it (LA-EXP-RM04,
-// get-erd), laid out once per answer (layout.ts), that every focus navigates (LA-V94-R08).
+// get-erd), laid out once for what it reads (layout.ts), that every focus navigates (LA-V94-R08).
 //
 // - Each domain is a region; its aggregates are areas inside it, each a boundary around its entities
 //   (the root marked), each entity with its fields and their types. A domain with no aggregates, and
