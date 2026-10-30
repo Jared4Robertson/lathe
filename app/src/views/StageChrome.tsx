@@ -125,9 +125,10 @@ export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToo
         const letter = ARROW_MOVES.includes(move) ? walkLetter(move, keymap.commands, keymap.mac) : '';
         return (
           <Tooltip key={move} label={label} command={WALK_COMMANDS[move]}>
-            <Button className={`stage-step is-${move}`} aria-label={label} disabled={!can(move)} onClick={() => runWalk(move)}>
-              {/* An arrow is a picture of the move, so its name alone is read (LA-V61-R44); Out and In are words, and read. */}
-              {ARROW_MOVES.includes(move) ? <span aria-hidden="true">{mark}</span> : mark}{letter && form.letters && <span className="stage-step-letter" aria-hidden="true">{letter}</span>}
+            <Button className={`stage-step is-${move}`} aria-label={label} aria-keyshortcuts={letter || undefined} disabled={!can(move)} onClick={() => runWalk(move)}>
+              {/* An arrow is a picture of the move and its letter a key hint, drawn by the stylesheet, so the button's text is
+                  its name alone (LA-V61-R44) and the key is announced as its shortcut; Out and In are words, and read. */}
+              {ARROW_MOVES.includes(move) ? <span aria-hidden="true">{mark}</span> : mark}{letter && form.letters && <span className="stage-step-letter" data-letter={letter} aria-hidden="true" />}
             </Button>
           </Tooltip>
         );

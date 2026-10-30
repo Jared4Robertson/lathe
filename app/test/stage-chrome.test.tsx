@@ -9,6 +9,9 @@ import { recordIndexOf } from './read-view';
 import { modelWorkspace } from './fixtures/model';
 import { openApp } from './helpers';
 
+/** A step button as drawn: its text, then its key letter, which the stylesheet draws from data-letter. */
+const shown = (b: Element) => `${b.textContent}${b.querySelector('.stage-step-letter')?.getAttribute('data-letter') ?? ''}`;
+
 // One stage chrome (LA-PAT-APP-UX-R21): every stage has the same controls in the same places, from one component each
 // (views/StageChrome.tsx): the toolbar at the top of the open space, the shared controls first in a fixed order (the
 // Changes controls, changes/ChangesTools.tsx, among them), then the
@@ -66,8 +69,10 @@ describe('one stage chrome', () => {
     expect(trace.camera).toEqual(CAMERA);
 
     // Each step button shows its arrow and letter, the same on every stage, and Out and In their names.
-    const steps = [...stage().querySelectorAll('.stage-steps button')].map((b) => b.textContent);
+    const steps = [...stage().querySelectorAll('.stage-steps button')].map(shown);
     expect(steps).toEqual(['←A', '→D', '↑W', '↓S', 'Out', 'In']);
+    // The letter is the key, announced as the button's shortcut.
+    expect(stage().querySelector('.stage-steps .is-up')).toHaveAttribute('aria-keyshortcuts', 'W');
   });
 });
 
@@ -115,7 +120,7 @@ describe('the toolbar\'s fold order', () => {
       const more = toolbar.querySelector<HTMLElement>('.stage-more-body')!;
       const row = (el: Element) => toolbar.contains(el) && !more.contains(el);
       // In the row: the steps with their letters, Out, In, Frame, the layouts and the filters; More is at the end.
-      expect([...toolbar.querySelectorAll('.stage-steps button')].map((b) => b.textContent)).toEqual(['←A', '→D', '↑W', '↓S', 'Out', 'In']);
+      expect([...toolbar.querySelectorAll('.stage-steps button')].map(shown)).toEqual(['←A', '→D', '↑W', '↓S', 'Out', 'In']);
       for (const el of [toolbar.querySelector('.stage-steps')!, toolbar.querySelector('.stage-frame')!, toolbar.querySelector('.graph-layout')!, toolbar.querySelector('.graph-filters')!]) expect(row(el)).toBe(true);
       expect(toolbar.querySelector('.stage-toolbar-end > .stage-more')).not.toBeNull();
       // In More, in order: the Changes controls with the baseline picker, then depth.
