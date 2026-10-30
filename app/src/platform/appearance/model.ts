@@ -1,7 +1,8 @@
 import { BUILT_IN_THEMES, DEFAULT_THEME_ID, LATHE, parseTheme, type ModeChoice, type Theme } from '../../theme/theme';
 
-// Appearance (LA-PLT-A4): the person's own themes, the theme chosen and the Light, Dark or System choice. The built-in
-// themes are code (theme/theme.ts) and are never kept or changed: a person changes one only through a copy of their own.
+// Appearance (LA-PLT-A4): the person's own themes, the theme chosen, the Light, Dark or System choice, and whether scroll
+// zooms the stages' cameras (Scroll to zoom, graph/gestures.ts's wheelMove). The built-in themes are code (theme/theme.ts)
+// and are never kept or changed: a person changes one only through a copy of their own.
 
 export interface Appearance {
   /** The person's own themes, each a copy of a built-in or an imported file. */
@@ -9,6 +10,8 @@ export interface Appearance {
   /** The chosen theme's ID: a built-in's or one of `custom`. */
   chosen: string;
   mode: ModeChoice;
+  /** Scroll to zoom: on, scroll zooms the Graph's, the ERD's and the Trace's cameras and Cmd or Ctrl with scroll pans; off (the default), scroll pans. */
+  scrollToZoom: boolean;
 }
 
 /** Every theme there is: the built-ins first, then the person's own. */
@@ -30,13 +33,14 @@ export function customThemesFrom(value: unknown): Theme[] {
   });
 }
 
-/** The Appearance from its stored parts; a chosen theme that is gone reads as Lathe, an unknown mode as System. */
-export function appearanceFrom(custom: unknown, chosen: unknown, mode: unknown): Appearance {
+/** The Appearance from its stored parts; a chosen theme that is gone reads as Lathe, an unknown mode as System, Scroll to zoom anything but true as off. */
+export function appearanceFrom(custom: unknown, chosen: unknown, mode: unknown, scrollToZoom: unknown): Appearance {
   const themes = customThemesFrom(custom);
   const all = [...BUILT_IN_THEMES, ...themes];
   return {
     custom: themes,
     chosen: typeof chosen === 'string' && all.some((t) => t.id === chosen) ? chosen : DEFAULT_THEME_ID,
     mode: mode === 'light' || mode === 'dark' || mode === 'system' ? mode : 'system',
+    scrollToZoom: scrollToZoom === true,
   };
 }

@@ -9,6 +9,7 @@ import { BottomSheet } from '../shell/BottomSheet';
 import { useNarrow } from '../shell/useNarrow';
 import { MOVES, type Move } from './levels';
 import { ChangesTools } from '../changes/ChangesTools';
+import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 
 // One stage chrome (LA-PAT-APP-UX-R21): every stage (Graph, ERD, Trace) has the same controls in the same places, built
 // from these three components, so no stage can drift.
@@ -24,8 +25,8 @@ import { ChangesTools } from '../changes/ChangesTools';
 // - StageKey is the stage's key, a bar along the bottom of the open space on the camera's row, between the camera and
 //   the minimap: each thing the stage draws now (a color, a shape, a line, a mark) as a small sample and a word or two,
 //   its whole meaning in its tooltip. Each stage gives its own entries (graph/key.tsx, erd/erdKey.tsx,
-//   trace/TraceKey.tsx, and changes/ChangesKey.tsx's live marks on every stage). On a phone it is a Key chip that opens
-//   it as a sheet.
+//   trace/TraceKey.tsx, and changes/ChangesKey.tsx's live marks on every stage), and the bar ends with what scroll does
+//   on every stage (pans, or zooms with Scroll to zoom on). On a phone it is a Key chip that opens it as a sheet.
 
 /** The toolbar's groups: the walk's steps (with Out and In), Frame, the Changes controls, and the stage's primary and secondary controls. */
 type ToolbarGroup = 'steps' | 'frame' | 'changes' | 'primary' | 'secondary';
@@ -195,9 +196,27 @@ export interface KeyEntry {
   meaning: string;
 }
 
+/** The key bar's last entry: what scroll does on the stage now, by the person's Scroll to zoom (graph/gestures.ts's wheelMove). */
+export function scrollKeyEntry(scrollToZoom: boolean): KeyEntry {
+  return {
+    id: 'scroll',
+    group: 'scroll',
+    sample: (
+      <svg className="stage-key-scroll" width="10" height="14" viewBox="0 0 10 14" aria-hidden="true">
+        <rect x="0.75" y="0.75" width="8.5" height="12.5" rx="4.25" />
+        <path d="M5 3.5v3" />
+      </svg>
+    ),
+    words: scrollToZoom ? 'Scroll zooms' : 'Scroll pans',
+    meaning: scrollToZoom
+      ? 'Scroll zooms about the pointer; Cmd or Ctrl with scroll pans, Shift with scroll pans sideways, and a pinch zooms. Scroll to zoom is on, in Appearance.'
+      : 'Scroll pans; Shift with scroll pans sideways, and Cmd or Ctrl with scroll or a pinch zooms. Scroll to zoom is off, in Appearance.',
+  };
+}
+
 /**
  * The stage's key (LA-V96-R30): a frosted bar along the bottom of the open space, centered between the camera and the
- * minimap, holding only what the stage draws now. It counts as a floating panel at the bottom (`data-floating`), so the
+ * minimap, holding only what the stage draws now, then what scroll does. It counts as a floating panel at the bottom (`data-floating`), so the
  * camera frames above it. Too long for one row it wraps to as many rows as it needs, every entry whole, never cut or
  * scrolled out of sight; it takes focus as one named region, which never walks the stage. On a phone it is a Key chip
  * that opens the entries, with their meanings, as a sheet.
@@ -208,13 +227,14 @@ export function StageKey({ entries, beside }: { entries: readonly KeyEntry[]; be
   return phone ? <KeyChip entries={entries} /> : <KeyBar entries={entries} beside={beside} />;
 }
 
-/** `beside`: a minimap in the bottom right corner, which the bar keeps clear of. */
+/** `beside`: a minimap in the bottom right corner, which the bar keeps clear of. A phone has no wheel, so only the bar says what scroll does. */
 function KeyBar({ entries, beside }: { entries: readonly KeyEntry[]; beside?: 'minimap' }) {
+  const scrollToZoom = useScrollToZoom();
   return (
     <div className="stage-key-room" data-beside={beside}>
       <section className="stage-key" role="region" aria-label="Key" tabIndex={0} data-floating="bottom">
         <ul className="stage-key-list">
-          <KeyItems entries={entries} />
+          <KeyItems entries={[...entries, scrollKeyEntry(scrollToZoom)]} />
         </ul>
       </section>
     </div>

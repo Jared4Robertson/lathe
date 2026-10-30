@@ -40,6 +40,7 @@ const KEYS: Record<string, string> = {
   'lathe:themes': 'app/src/platform/appearance/repository.ts',
   'lathe:theme': 'app/src/platform/appearance/repository.ts',
   'lathe:color-mode': 'app/src/platform/appearance/repository.ts',
+  'lathe:scroll-to-zoom': 'app/src/platform/appearance/repository.ts',
   'lathe:theme-css': 'app/src/platform/appearance/repository.ts',
 };
 const CODE_KINDS = ['repository', 'command_handler', 'event_handler', 'query_handler', 'projection', 'reader', 'data_model', 'rule', 'adapter', 'value_type'];
