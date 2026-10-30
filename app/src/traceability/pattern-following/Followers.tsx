@@ -9,6 +9,7 @@ import { RuleMark } from '../../specs/PatternParts';
 import { addressOf } from '../../views/address';
 import { FollowButton, FollowingForm, RowActions, type FollowingMode } from './FollowingEditor';
 import { useFollowers } from './reads';
+import { backToActions } from '../../edit/back-to-actions';
 
 // A pattern's followers on the Pattern page (LA-TRC-A3's sections of LA-V122, /<id>): Followed by on the pattern's page
 // and Owed by on a rule's, read through the Pattern following aggregate's own query (GET
@@ -92,7 +93,7 @@ export function FollowedBy({ index, page }: { index: RecordIndex; page: PatternP
   const followers = domains.flatMap((d) => [...(d.itself ? [d.domain] : []), ...d.useCases.map((f) => f.follower)]);
   const done = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => box.current?.querySelector<HTMLElement>('.record-actions button')?.focus(), 0);
+    backToActions(box, `Followers of ${patternId}`);
   };
   return (
     <Section title="Followed by" count={shown ? undefined : domains.length}>
