@@ -110,3 +110,39 @@ export function layOutDelivery(graph: DeliveryGraph, order: DeliveryOrder, open:
   const bottom = Math.max(0, ...outcomes.map((o) => order.outcomeTops.get(o)! + ITEM_HEIGHT));
   return { order, rows, columns, places, outsideTop, width: columnLeft(4) + ITEM_WIDTH, height: Math.max(height, bottom) };
 }
+
+/**
+ * The places with the outcomes a row serves beside it (LA-V98-R22), pure: those shown slide to the row's height,
+ * stacked a box apart in their column's order, centered on the row's first line (its use case), never above the top;
+ * every other outcome keeps its place unless the stack covers it, when it steps aside just enough, up or down,
+ * whichever is nearer, pushing on the ones beyond it. No other box moves. With no row, or one serving no outcome shown,
+ * the laid view itself: each outcome at its own place.
+ */
+export function outcomesBeside(laid: DeliveryLaid, serves: readonly (readonly [string, string])[], row: string | null): DeliveryLaid {
+  const band = row ? laid.rows.get(row) : undefined;
+  if (!band) return laid;
+  const home = (key: string) => laid.places.get(key)!.y;
+  const served = new Set(serves.filter(([, u]) => u === row).map(([o]) => `outcome/${o}`));
+  const stack = laid.columns[0].filter((k) => served.has(k));
+  if (stack.length === 0) return laid;
+  const top = Math.max(0, band.y + ITEM_HEIGHT / 2 - (stack.length * PITCH - ITEM_GAP) / 2);
+  const end = top + stack.length * PITCH;
+  const tops = new Map<string, number>(stack.map((k, i) => [k, top + i * PITCH]));
+  // The others: those whose middle is above the stack's step up, the rest down, each just clear of the one before.
+  const others = laid.columns[0].filter((k) => !served.has(k));
+  const middle = (top + end - ITEM_GAP) / 2;
+  const up = others.filter((k) => home(k) + ITEM_HEIGHT / 2 < middle).reverse();
+  const down = others.filter((k) => home(k) + ITEM_HEIGHT / 2 >= middle);
+  // Up never goes above the top: what has no room there steps down instead, the farthest up first.
+  const packUp = () => { let ceiling = top; return up.map((k) => (ceiling = Math.min(home(k), ceiling - PITCH))); };
+  while (up.length > 0 && Math.min(...packUp()) < 0) down.unshift(up.pop()!);
+  packUp().forEach((y, i) => tops.set(up[i], y));
+  down.sort((a, b) => home(a) - home(b));
+  let floor = end;
+  for (const k of down) { const y = Math.max(home(k), floor); tops.set(k, y); floor = y + PITCH; }
+  const places = new Map(laid.places);
+  for (const [k, y] of tops) places.set(k, { ...laid.places.get(k)!, y });
+  const columns = [[...laid.columns[0]].sort((a, b) => tops.get(a)! - tops.get(b)!), ...laid.columns.slice(1)];
+  const bottom = Math.max(...[...tops.values()].map((y) => y + ITEM_HEIGHT));
+  return { ...laid, columns, places, height: Math.max(laid.height, bottom) };
+}
