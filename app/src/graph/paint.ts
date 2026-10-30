@@ -7,6 +7,7 @@ import { TITLE_FONT } from './text';
 import { BLOCK_BELOW_PX } from './camera';
 import { stickyLabel, type ScreenBox } from './sticky';
 import { GHOST_MS, markPhase, type StageMarks } from '../changes/marks';
+import { rollupText, totalChanges, type Change } from '../changes/rollup';
 
 // The graph's canvas painter (LA-EXP-DS09, LA-EXP-DS10): each frame it draws what the camera
 // shows, in screen pixels, from the map's plates (plate.ts). Every point is placed by the camera in
@@ -199,9 +200,10 @@ export function paint(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, f
     const lit = !!state.lit?.has(p.place);
     ctx.globalAlpha = dim(lit) * strength(p.place, lit);
     paintBox(ctx, p, cam, look, fonts, state, X, Y);
-    if (state.marks) paintMark(ctx, p, cam, look, state.marks, X, Y);
+    if (state.marks) paintMark(ctx, p, cam, look, fonts, state.marks, state.open, X, Y);
   }
-  if (state.marks) paintGhosts(ctx, cam, look, state.marks, X, Y);
+  if (state.marks) paintGhosts(ctx, cam, look, fonts, state.marks, frame.plates, X, Y);
+  if (state.marks?.highlight) paintEdgeHints(ctx, cam, look, fonts, state.marks.highlight.boxes, frame.plates, state.open);
 
   ctx.globalAlpha = 1;
   paintVignette(ctx, dpr, cam, look);
@@ -436,18 +438,53 @@ function lineFonts(p: Plate, zoom: number, fonts: GraphFonts): string[] {
 
 /** The least size on screen, in CSS pixels, a box keeps its live mark's dot at. */
 const DOT_MIN_BOX_PX = 10;
+/** The least size on screen a box has for its pill (New, Changed, Removed) or a container's roll-up: smaller, the dot, or the container above, says it. */
+const PILL_MIN_W_PX = 54;
+const PILL_MIN_H_PX = 22;
+/** A pill's text size, height and side padding in CSS pixels: fixed on screen, so it reads at any zoom. */
+const PILL_FONT_PX = 10;
+const PILL_H_PX = 15;
+const PILL_PAD_PX = 5;
+
+/** The words of a change on its pill. */
+const PILL_WORDS: Record<Change, string> = { added: 'New', changed: 'Changed', removed: 'Removed' };
+
+/** A change's color in the look. */
+const changeColor = (look: Look, change: Change) => (change === 'added' ? look.changeNew : change === 'changed' ? look.changeChanged : look.changeGone);
+
+/** A pill: rounded, filled, its text in `ink`; its left edge at `x`, centered on `y`; returns its right edge. */
+function pill(ctx: CanvasRenderingContext2D, fonts: GraphFonts, text: string, x: number, y: number, fill: string, ink: string, stroke?: string): number {
+  ctx.font = fontFor(fonts, 'badge', PILL_FONT_PX);
+  const w = ctx.measureText(text).width + 2 * PILL_PAD_PX;
+  ctx.beginPath();
+  ctx.roundRect(x, y - PILL_H_PX / 2, w, PILL_H_PX, PILL_H_PX / 2);
+  ctx.fillStyle = fill;
+  ctx.fill();
+  if (stroke) { ctx.lineWidth = 1; ctx.strokeStyle = stroke; ctx.stroke(); }
+  ctx.fillStyle = ink;
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(text, x + PILL_PAD_PX, y + 0.5);
+  ctx.textBaseline = 'alphabetic';
+  return x + w;
+}
 
 /**
- * A record's live mark (changes/marks.ts): a new one's soft glow, fading; a changed one's pulse in its own edge color,
- * a ring spreading out and fading; then each one's dot on its top right corner, which lasts.
+ * A record's marks (changes/marks.ts). The live ones: a new one's soft glow, fading; a changed one's pulse in its own edge
+ * color, a ring spreading out and fading; then each one's dot on its top right corner, which lasts. With Highlight
+ * changes on: a thick outline in the change's color and a light tint, and a pill on the top edge (New, Changed) where the
+ * box is big enough to read it, else the dot; and a container's roll-up ("3 new · 5 changed · 1 removed") beside it.
  */
-function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Look, marks: StageMarks, X: (x: number) => number, Y: (y: number) => number) {
+function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Look, fonts: GraphFonts, marks: StageMarks, open: ScreenBox, X: (x: number) => number, Y: (y: number) => number) {
   const m = marks.mark(p.id);
-  if (!m || m.change === 'removed') return;
+  const hl = marks.highlight;
+  const kind: Change | undefined = hl ? hl.change(p.id) : m && m.change !== 'removed' ? m.change : undefined;
+  const roll = hl?.rolls.get(p.place);
+  if (!kind && !roll) return;
   const { zoom } = cam;
   const alpha = ctx.globalAlpha;
-  const phase = markPhase(marks, m);
-  if (phase !== null) {
+  const phase = m && m.change !== 'removed' ? markPhase(marks, m) : null;
+  if (phase !== null && m) {
     ctx.save();
     if (m.change === 'added') {
       ctx.globalAlpha = alpha * 0.7 * (1 - phase);
@@ -468,37 +505,184 @@ function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: L
   }
   const w = p.w * zoom;
   const h = p.h * zoom;
-  if (Math.min(w, h) < DOT_MIN_BOX_PX) return;
-  // On the box's top right corner, as a badge sits, and strong even on a faded box, so a change reads anywhere on the map.
-  const r = Math.max(3, Math.min(5, Math.min(w, h) / 8));
-  const cx = X(p.x + p.w);
-  const cy = Y(p.y);
-  ctx.globalAlpha = Math.max(alpha, 0.9);
-  ctx.fillStyle = look.sheet;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r + 1.5, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.fillStyle = m.change === 'added' ? look.changeNew : look.changeChanged;
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.fill();
+  if (kind && hl && kind !== 'removed') {
+    // The thick outline and the light tint, in the change's color, over the box at full strength.
+    ctx.save();
+    ctx.globalAlpha = 1;
+    outlinePath(ctx, p, p.outline, X, Y, zoom, 0);
+    ctx.fillStyle = changeColor(look, kind);
+    ctx.globalAlpha = 0.12;
+    ctx.fill();
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = changeColor(look, kind);
+    ctx.lineWidth = Math.max(2.5, 3.5 * p.scale * zoom);
+    ctx.stroke();
+    ctx.restore();
+  }
+  // On the part of its top edge in view: a box cut by the canvas's edge or a floating panel keeps its pill and roll-up on what shows.
+  const left = Math.max(X(p.x), open.left);
+  const right = Math.min(X(p.x) + w, open.right);
+  const cut = Y(p.y) < open.top + PILL_H_PX / 2;
+  const roomy = right - left >= PILL_MIN_W_PX && h >= PILL_MIN_H_PX;
+  let x = left + 6;
+  const y = cut ? open.top + PILL_H_PX / 2 + 3 : Y(p.y);
+  ctx.save();
+  ctx.globalAlpha = 1;
+  if (kind && hl && roomy) {
+    x = pill(ctx, fonts, PILL_WORDS[kind], x, y, changeColor(look, kind), look.onMark) + 4;
+  } else if (kind && Math.min(w, h) >= DOT_MIN_BOX_PX) {
+    // On the box's top right corner, as a badge sits, and strong even on a faded box, so a change reads anywhere on the map.
+    const r = Math.max(3, Math.min(5, Math.min(w, h) / 8));
+    const cx = X(p.x + p.w);
+    ctx.fillStyle = look.sheet;
+    ctx.beginPath();
+    ctx.arc(cx, y, r + 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = changeColor(look, kind);
+    ctx.beginPath();
+    ctx.arc(cx, y, r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  if (roll && right - left >= PILL_MIN_W_PX && h >= PILL_MIN_H_PX) {
+    // What is under it: all three counts when they fit across the box, else how many changes in all, else nothing.
+    const full = rollupText(roll);
+    const total = `${totalChanges(roll)} ${totalChanges(roll) === 1 ? 'change' : 'changes'}`;
+    ctx.font = fontFor(fonts, 'badge', PILL_FONT_PX);
+    const room = right - x - 6;
+    const text = ctx.measureText(full).width + 2 * PILL_PAD_PX <= room ? full : ctx.measureText(total).width + 2 * PILL_PAD_PX <= room ? total : null;
+    if (text) pill(ctx, fonts, text, x, y, look.sheet, look.ink, look.ink);
+  }
+  ctx.restore();
 }
 
-/** Each removed record's ghost: its outline, dashed, where it was before the reload, fading out (none under reduced motion). */
-function paintGhosts(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, marks: StageMarks, X: (x: number) => number, Y: (y: number) => number) {
-  if (marks.reduced) return;
-  for (const g of marks.ghosts) {
-    const t = (marks.now - g.t) / GHOST_MS;
-    if (t < 0 || t >= 1) continue;
-    ctx.globalAlpha = 0.8 * (1 - t);
-    ctx.strokeStyle = look.changeGone;
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([5, 4]);
+/**
+ * Each removed record's ghost: its outline, dashed, where it was before the reload. Fading out over a few seconds (none
+ * under reduced motion); with Highlight changes on, lasting, with its title and a Removed pill, until it is turned off.
+ */
+function paintGhosts(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, fonts: GraphFonts, marks: StageMarks, plates: readonly Plate[], X: (x: number) => number, Y: (y: number) => number) {
+  const lasting = marks.highlight !== null;
+  if (marks.reduced && !lasting) return;
+  const settled: { x: number; y: number; w: number; h: number }[] = [];
+  for (const own of marks.ghosts) {
+    const t = lasting ? 0 : (marks.now - own.t) / GHOST_MS;
+    let g = own;
+    if (lasting) {
+      // The map has moved on since the record went, so a box may lie where it was: the ghost steps down the column to the first room clear of every box and ghost.
+      const taken = (r: { x: number; y: number; w: number; h: number }) => plates.some((p) => p.x < r.x + r.w && p.x + p.w > r.x && p.y < r.y + r.h && p.y + p.h > r.y) || settled.some((o) => o.x < r.x + r.w && o.x + o.w > r.x && o.y < r.y + r.h && o.y + o.h > r.y);
+      for (let k = 0; k < 40 && taken(g); k++) g = { ...g, y: g.y + own.h * 1.15 };
+      settled.push(g);
+    }
+    if (t < 0 || t >= 1 || !onCanvas(g, cam)) continue;
+    const x = X(g.x);
+    const y = Y(g.y);
+    const w = g.w * cam.zoom;
+    const h = g.h * cam.zoom;
+    ctx.save();
+    ctx.globalAlpha = lasting ? 1 : 0.8 * (1 - t);
     ctx.beginPath();
-    ctx.roundRect(X(g.x), Y(g.y), g.w * cam.zoom, g.h * cam.zoom, 4 * cam.zoom);
+    ctx.roundRect(x, y, w, h, 4 * cam.zoom);
+    if (lasting) {
+      ctx.globalAlpha = 0.1;
+      ctx.fillStyle = look.changeGone;
+      ctx.fill();
+      ctx.globalAlpha = 1;
+    }
+    ctx.strokeStyle = look.changeGone;
+    ctx.lineWidth = lasting ? 2.5 : 1.5;
+    ctx.setLineDash([5, 4]);
     ctx.stroke();
     ctx.setLineDash([]);
+    if (lasting && w >= PILL_MIN_W_PX && h >= PILL_MIN_H_PX) {
+      const title = marks.mark(g.id)?.title;
+      // The map has moved on since, so a box may lie where the ghost does: then the ghost shows no title over it.
+      const covered = plates.some((p) => p.x < g.x + g.w && p.x + p.w > g.x && p.y < g.y + g.h && p.y + p.h > g.y);
+      if (title && !covered && h >= 2 * PILL_H_PX) {
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x + 6, y, w - 12, h);
+        ctx.clip();
+        ctx.font = fontFor(fonts, 'title', 11);
+        ctx.fillStyle = look.ink;
+        ctx.textBaseline = 'middle';
+        ctx.fillText(title, x + 8, y + h / 2);
+        ctx.restore();
+      }
+      pill(ctx, fonts, PILL_WORDS.removed, x + 6, y, look.changeGone, look.onMark);
+    }
+    ctx.restore();
   }
+}
+
+/** The edge hints' text: "4 changes →", a side's arrow. */
+const HINT_ARROWS = { left: '←', right: '→', up: '↑', down: '↓' } as const;
+type HintSide = keyof typeof HINT_ARROWS;
+
+/** How many of the changed boxes lie past each edge of the open canvas, by their centers (like graph/hints.tsx pastEdges, in the camera's terms). */
+export function changesPastEdges(boxes: readonly { x: number; y: number; w: number; h: number }[], cam: Camera, open: ScreenBox): Record<HintSide, number> {
+  const past = { left: 0, right: 0, up: 0, down: 0 };
+  for (const b of boxes) {
+    const x = (b.x + b.w / 2 - cam.cx) * cam.zoom + cam.w / 2;
+    const y = (b.y + b.h / 2 - cam.cy) * cam.zoom + cam.h / 2;
+    if (x < open.left) past.left++;
+    else if (x > open.right) past.right++;
+    if (y < open.top) past.up++;
+    else if (y > open.bottom) past.down++;
+  }
+  return past;
+}
+
+type Rect = { left: number; top: number; right: number; bottom: number };
+const hits = (a: Rect, b: Rect) => a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+
+/**
+ * At each edge of the open canvas, a chip counting the changed boxes past it ("4 changes →"), docked to that edge and slid
+ * along it to the nearest place clear of every drawn box, else of every label, so it never covers a box's text or pills; none for an
+ * edge with nothing past it.
+ */
+function paintEdgeHints(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, fonts: GraphFonts, boxes: readonly { x: number; y: number; w: number; h: number }[], plates: readonly Plate[], open: ScreenBox) {
+  if (boxes.length === 0) return;
+  const past = changesPastEdges(boxes, cam, open);
+  const sx = (x: number) => (x - cam.cx) * cam.zoom + cam.w / 2;
+  const sy = (y: number) => (y - cam.cy) * cam.zoom + cam.h / 2;
+  const bodies: Rect[] = [];
+  const labels: Rect[] = [];
+  for (const p of plates) {
+    bodies.push({ left: sx(p.x), top: sy(p.y), right: sx(p.x + p.w), bottom: sy(p.y + p.h) });
+    labels.push({ left: sx(p.label.x), top: sy(p.label.y), right: sx(p.label.x + p.label.w), bottom: sy(p.label.y + p.label.h) });
+    // Its top edge, where its pill and roll-up sit.
+    const edge = Math.max(sy(p.y), open.top + PILL_H_PX / 2 + 3);
+    const strip = { left: sx(p.x), top: edge - 10, right: sx(p.x + p.w), bottom: edge + 10 };
+    labels.push(strip);
+    bodies.push(strip);
+  }
+  const placed: Rect[] = [];
+  ctx.save();
+  ctx.globalAlpha = 1;
+  for (const side of Object.keys(HINT_ARROWS) as HintSide[]) {
+    const n = past[side];
+    if (n === 0) continue;
+    const text = `${n} ${n === 1 ? 'change' : 'changes'} ${HINT_ARROWS[side]}`;
+    ctx.font = fontFor(fonts, 'badge', PILL_FONT_PX + 1);
+    const w = ctx.measureText(text).width + 2 * PILL_PAD_PX + 4;
+    const h = PILL_H_PX;
+    const vertical = side === 'left' || side === 'right';
+    const lo = (vertical ? open.top : open.left) + 24;
+    const hi = (vertical ? open.bottom : open.right) - 24 - (vertical ? 0 : w);
+    const at = (t: number): Rect => {
+      const x = side === 'left' ? open.left + 4 : side === 'right' ? open.right - 4 - w : t;
+      const y = side === 'up' ? open.top + 4 : side === 'down' ? open.bottom - 4 - h : t - h / 2;
+      return { left: x, top: y, right: x + w, bottom: y + h };
+    };
+    // Candidates from the middle of the edge outwards.
+    const mid = (lo + hi) / 2;
+    const spots: number[] = [mid];
+    for (let d = 20; mid - d >= lo || mid + d <= hi; d += 20) { if (mid + d <= hi) spots.push(mid + d); if (mid - d >= lo) spots.push(mid - d); }
+    const clear = (r: Rect, against: Rect[]) => !against.some((o) => hits(r, o)) && !placed.some((o) => hits(r, o));
+    const rect = [bodies, labels].reduce<Rect | null>((found, against) => found ?? spots.map(at).find((r) => clear(r, against)) ?? null, null) ?? at(mid);
+    placed.push(rect);
+    pill(ctx, fonts, text, rect.left, (rect.top + rect.bottom) / 2, look.sheet, look.ink, look.changeChanged);
+  }
+  ctx.restore();
 }
 
 /** What a shape draws inside its outline (LA-V93-R06): a page's fold, a stack's front sheet, a flow's inner chevron, an aggregate's second border, a view's window bar, a layer's stripes. */

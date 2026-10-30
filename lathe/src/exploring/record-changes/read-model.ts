@@ -1,4 +1,4 @@
-// The Record changes read model (LA-EXP-RM07), shaped for the Changes lens, the Changes panel and the wiki card's
+// The Record changes read model (LA-EXP-RM07), shaped for Highlight changes, the Changes panel and the wiki card's
 // Changes section: what changed in a product's records between a baseline and the data now, by record (lathe/src/
 // changes.ts, the one record diff Lathe has): each record added, removed or changed, with the columns of its own row
 // that changed, its part rows and the links it starts. The baseline is the data at a commit (the last one, where the

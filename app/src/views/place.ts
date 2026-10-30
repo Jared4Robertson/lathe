@@ -4,8 +4,8 @@ import { DEFAULT_TRACE_VIEW, isTraceView, type TraceViewName } from '../trace/vi
 // A place is where the Reader explores: one focus on one stage (both in its address), the camera over it, the
 // graph's depth and kind filters, the Trace's view, the wiki card's open and expanded state and scroll, and its own Back and Forward.
 // On the web a browser tab is one place (usePlace.ts); in the desktop app each of the app's tabs is one (tabs.ts).
-// How the Reader likes to see things (the appearance, the graph's layout and minimap, the card's width, the Changes
-// lens) is not a place's: it is the window's (graph/settings.ts).
+// How the Reader likes to see things (the appearance, the graph's layout and minimap, the card's width, Highlight
+// changes) is not a place's: it is the window's (graph/settings.ts).
 //
 // These are pure functions over a Place, so the web's one place and the desktop app's tabs share them.
 

@@ -1,4 +1,4 @@
-// Mark a product looked at (LA-EXP-CMD47): the moment the Reader dismisses the lens or leaves a product is kept as its "since I last looked".
+// Mark a product looked at (LA-EXP-CMD47): the moment the Reader dismisses Highlight changes or leaves a product is kept as its "since I last looked".
 import type { LookMark } from '../../../changes/changes';
 import { sessionSettingsRepository } from '../repository';
 import { holdToRules } from '../rules';

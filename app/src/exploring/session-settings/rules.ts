@@ -13,7 +13,7 @@ export function sessionSettingsProblems(settings: SessionSettings): RuleProblem[
   if (!within(settings.card.width, CARD_MIN, CARD_MAX)) problems.push({ rule: 'session-settings-known', message: `The wiki card's width ${settings.card.width} is outside ${CARD_MIN}–${CARD_MAX} px.` });
   if (!within(settings.chat.width, CHAT_MIN, CHAT_MAX)) problems.push({ rule: 'session-settings-known', message: `The chat's width ${settings.chat.width} is outside ${CHAT_MIN}–${CHAT_MAX} px.` });
   if (!LAYOUTS.includes(settings.graph.layout)) problems.push({ rule: 'session-settings-known', message: `The graph has no layout "${settings.graph.layout}".` });
-  if (!SINCES.includes(settings.changes.since)) problems.push({ rule: 'session-settings-known', message: `The Changes lens has no baseline "${settings.changes.since}".` });
+  if (!SINCES.includes(settings.changes.since)) problems.push({ rule: 'session-settings-known', message: `Highlight changes has no baseline "${settings.changes.since}".` });
   return problems;
 }
 
