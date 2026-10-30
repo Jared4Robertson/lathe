@@ -100,8 +100,8 @@ describe('business outcomes', () => {
     // The outcome's gap is the product's, outside every domain; the capability's is its domain's.
     expect(unlinked.coverage.find((c) => c.domain === null)?.gaps).toEqual([{ id: 'EX-BO01', kind: 'business_outcome', missing: 'outcome-not-served', message: 'Business outcome EX-BO01 is served by no capability.' }]);
     expect(unlinked.coverage.find((c) => c.domain === 'EX-LEND')?.gaps).toEqual([{ id: 'EX-LEND-CAP01', kind: 'capability', missing: 'capability-serves-no-outcome', message: 'Capability EX-LEND-CAP01 serves no business outcome.' }]);
-    // Gaps, never problems.
-    expect(unlinked.problems).toEqual([]);
+    // Gaps, never problems; with no outcome served, what the use cases reach serves none (serves-no-outcome, LA-TRC-UC20-R02).
+    expect(unlinked.problems.filter((p) => p.check !== 'serves-no-outcome')).toEqual([]);
   });
 });
 

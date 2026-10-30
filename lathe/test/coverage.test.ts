@@ -293,8 +293,8 @@ describe('LA-TRC-UC01-R05-T01 minimums', () => {
     expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-V01', kind: 'view', missing: 'view-without-ui-component', message: 'View SP-V01 is rendered by no UI component.' });
     expect(ws.coverage.find((c) => c.domain === 'SP-D')?.gaps).toContainEqual({ id: 'SP-D-UC01', kind: 'use_case', missing: 'use-case-without-flow', message: 'Use case SP-D-UC01 has no flow.' });
     expect(ws.coverage.find((c) => c.domain === 'SP-E')?.gaps).toEqual([{ id: 'SP-E', kind: 'domain', missing: 'domain-without-aggregate', message: 'Domain SP-E has no aggregate.' }]);
-    // Gaps are coverage, never problems.
-    expect(ws.problems.map((p) => p.check).sort()).toEqual(['not-built', 'not-built', 'not-built', 'not-proved', 'not-proved', 'not-proved', 'pattern-not-followed', 'value-object-unused']);
+    // Gaps are coverage, never problems; the sparse product serves no outcome, so what it holds is warned of apart (serves-no-outcome).
+    expect(ws.problems.filter((p) => p.check !== 'serves-no-outcome').map((p) => p.check).sort()).toEqual(['not-built', 'not-built', 'not-built', 'not-proved', 'not-proved', 'not-proved', 'outcome-target-undated', 'pattern-not-followed', 'value-object-unused']);
   });
 
   it('every gap rule has a unique name, a stage and a summary, and the complete product meets every minimum', () => {
