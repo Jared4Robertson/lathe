@@ -296,9 +296,9 @@ function paintVignette(ctx: CanvasRenderingContext2D, dpr: number, cam: Camera, 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-/** The dots behind the map, only while they are far enough apart to draw: a tile 24 map units square, placed by the camera. */
+/** The dots behind the map, only while they are far enough apart to draw: a tile 24 map units square, placed by the camera (the Graph's, the ERD's). */
 const dotTiles = new WeakMap<CanvasRenderingContext2D, { key: string; pattern: CanvasPattern | null }>();
-function paintDots(ctx: CanvasRenderingContext2D, cam: Camera, look: Look) {
+export function paintDots(ctx: CanvasRenderingContext2D, cam: Camera, look: Look) {
   if (cam.zoom < 0.25 || typeof DOMMatrix === 'undefined') return;
   const gap = 24 * cam.zoom;
   const key = `${look.rule}|${gap.toFixed(3)}`;
@@ -714,13 +714,13 @@ const PILL_H_PX = 15;
 const PILL_PAD_PX = 5;
 
 /** The words of a change on its pill. */
-const PILL_WORDS: Record<Change, string> = { added: 'New', changed: 'Changed', removed: 'Removed' };
+export const PILL_WORDS: Record<Change, string> = { added: 'New', changed: 'Changed', removed: 'Removed' };
 
 /** A change's color in the look. */
-const changeColor = (look: Look, change: Change) => (change === 'added' ? look.changeNew : change === 'changed' ? look.changeChanged : look.changeGone);
+export const changeColor = (look: Look, change: Change) => (change === 'added' ? look.changeNew : change === 'changed' ? look.changeChanged : look.changeGone);
 
 /** A pill: rounded, filled, its text in `ink`; its left edge at `x`, centered on `y`; returns its right edge. */
-function pill(ctx: CanvasRenderingContext2D, fonts: GraphFonts, text: string, x: number, y: number, fill: string, ink: string, stroke?: string): number {
+export function pill(ctx: CanvasRenderingContext2D, fonts: GraphFonts, text: string, x: number, y: number, fill: string, ink: string, stroke?: string): number {
   ctx.font = fontFor(fonts, 'badge', PILL_FONT_PX);
   const w = ctx.measureText(text).width + 2 * PILL_PAD_PX;
   ctx.beginPath();
@@ -826,7 +826,7 @@ function paintMark(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: L
  * Each removed record's ghost: its outline, dashed, where it was before the reload. Fading out over a few seconds (none
  * under reduced motion); with Highlight changes on, lasting, with its title and a Removed pill, until it is turned off.
  */
-function paintGhosts(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, fonts: GraphFonts, marks: StageMarks, plates: readonly Plate[], X: (x: number) => number, Y: (y: number) => number) {
+export function paintGhosts(ctx: CanvasRenderingContext2D, cam: Camera, look: Look, fonts: GraphFonts, marks: StageMarks, plates: readonly { x: number; y: number; w: number; h: number }[], X: (x: number) => number, Y: (y: number) => number) {
   const lasting = marks.highlight !== null;
   if (marks.reduced && !lasting) return;
   const settled: { x: number; y: number; w: number; h: number }[] = [];

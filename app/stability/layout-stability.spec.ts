@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { openPage } from './measure';
 import { keepData } from './scenarios';
-import { GRAPH, graphDrawn, sceneOf } from './scene';
+import { erdSceneOf, GRAPH, graphDrawn, sceneOf } from './scene';
 import type { SceneHost } from '../src/graph/GraphPage';
 import type { AllHost } from '../src/trace/TraceAll';
 
@@ -96,17 +96,21 @@ test.describe('the map stays where the Reader left it', () => {
   test('LA-PAT-APP-UX-R22-T01 Adding an entity on the ERD moves only its aggregate\'s boundary and what it pushes, and keeps the camera', async ({ page }) => {
     const restore = keepData();
     try {
-      // Every box's place inside its parent and its size (React Flow places a box from its parent's corner), and the camera.
-      const erdBoxes = () => page.evaluate(() => ({
-        camera: (document.querySelector('.erd-flow .react-flow__viewport') as HTMLElement).style.transform,
-        boxes: Object.fromEntries([...document.querySelectorAll<HTMLElement>('.erd-flow .react-flow__node')].map((n) => [n.dataset.id!, `${n.style.transform} ${n.style.width}x${n.style.height}`])),
-      }));
+      // Every box's place inside its parent and its size, and the camera.
+      const erdBoxes = async () => {
+        const s = await erdSceneOf(page, true);
+        const at = new Map(s.boxes.map((b) => [b.id, b.map]));
+        return {
+          camera: JSON.stringify(s.camera),
+          boxes: Object.fromEntries(s.boxes.map((b) => { const p = b.parent ? at.get(b.parent) : undefined; return [b.id, `${b.map.x - (p?.x ?? 0)},${b.map.y - (p?.y ?? 0)} ${b.map.width}x${b.map.height}`]; })),
+        };
+      };
       await openPage(page, '/LA-EXP-A5?stage=erd');
       await page.locator('.erd-flow[data-framed]').waitFor();
       await page.waitForTimeout(600);
       const before = await erdBoxes();
       lathe('aggregate', 'add-entity', '--id', 'LA-EXP-EN99', '--title', 'Pinned tab', '--aggregate_id', 'LA-EXP-A5', '--role', 'child', '--description', 'A tab kept open across sessions.');
-      await page.locator('.erd-flow .react-flow__node[data-id="LA-EXP-EN99"]').waitFor({ timeout: 20_000 });
+      await expect.poll(async () => (await erdSceneOf(page, true)).boxes.some((b) => b.id === 'LA-EXP-EN99'), { timeout: 20_000 }).toBe(true);
       await page.waitForTimeout(600);
       const after = await erdBoxes();
       expect(after.camera).toBe(before.camera);

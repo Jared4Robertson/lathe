@@ -1,6 +1,4 @@
 import './graph/setup';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { endPath, erdFocus, type ErdMap, erdStrength, lineGeometry, lineOffsets, scopeContents } from '../src/erd/erd';
@@ -11,6 +9,9 @@ import { StageKey } from '../src/views/StageChrome';
 import { openApp } from './helpers';
 import { modelIndex, modelWorkspace } from './fixtures/model';
 import { erdOf } from './erd-of';
+import { erdBox, erdDrawn, erdNode, erdPlaces, erdScene, hoverMapPoint } from './erd-scene';
+import { boxEdge, type ErdLook } from '../src/erd/paint';
+import { PLAIN_LOOK } from '../src/graph/look';
 
 // The ERD stage: one map of the whole product (each domain a region, its aggregates boundaries
 // around their entities), laid out once, that every focus navigates: the focus fades what lies
@@ -22,15 +23,16 @@ const index = () => modelIndex();
 /** The model product's map, as the ERD read answers it. */
 const modelMap = () => erdOf(modelWorkspace(), 'P');
 const modelPane = () => screen.getByRole('region', { name: 'ERD stage' });
-const box = (id: string) => modelPane().querySelector<HTMLElement>(`.react-flow__node[data-id="${id}"]`);
-const boxesShown = () => waitFor(() => expect(modelPane().querySelectorAll('.react-flow__node').length).toBeGreaterThan(0));
+const box = (id: string) => erdNode(id, modelPane());
+const drawn = (id: string) => erdBox(id, modelPane())!;
+const lineOf = (id: string) => erdScene(modelPane(), true).lines.find((l) => l.id === id)!;
+const boxesShown = () => waitFor(() => expect(erdDrawn(modelPane())).toBe(true));
 const stageButton = (name: string) => within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name });
-const CSS = readFileSync(resolve(process.cwd(), 'src/styles.css'), 'utf8');
 const LOOK = { focusFade: 0.25 };
 const ends = (lines: { id: string; sourceEnd: string; targetEnd: string; dashed: boolean }[]) =>
   Object.fromEntries(lines.map((l) => [l.id, `${l.sourceEnd}-${l.targetEnd}${l.dashed ? ' dashed' : ''}`]));
-/** Every box's place on the page, as React Flow draws it. */
-const places = () => Object.fromEntries([...modelPane().querySelectorAll<HTMLElement>('.react-flow__node')].map((n) => [n.dataset.id, `${n.style.transform} ${n.style.width}x${n.style.height}`]));
+/** Every box's place on the map, as the canvas draws it. */
+const places = () => erdPlaces(modelPane());
 
 describe('the ERD stage', () => {
   const proveErdOnEveryFocus = async () => {
@@ -124,19 +126,24 @@ describe('the ERD stage', () => {
     await openApp('/P?stage=erd', served());
     await screen.findAllByRole('heading', { level: 1 });
     await boxesShown();
-    expect(box('P-D')!.querySelector('.erd-box')).toHaveClass('erd-domain');
+    expect(drawn('P-D')).toMatchObject({ kind: 'domain', title: ['Domain'] });
     expect(box('P-D')).toHaveAttribute('aria-label', 'Domain Domain');
-    expect(box('P-E')).toHaveTextContent('Accounts');
-    expect(box('P-D-A3')!.querySelector('.erd-box')).toHaveClass('erd-aggregate');
+    expect(drawn('P-E').title).toEqual(['Accounts']);
+    expect(drawn('P-D-A3')).toMatchObject({ kind: 'aggregate', kindLine: 'Aggregate' });
     expect(box('P-D-EN03')).toHaveAttribute('aria-label', 'Entity Loan, root');
+    expect(drawn('P-D-EN03')).toMatchObject({ kind: 'entity', root: true });
+    expect(drawn('P-D-EN03').fields).toContainEqual({ name: 'Thing', type: '→ Thing' });
     expect(within(box('P-D-EN03')!).getByRole('list', { name: 'Fields of Loan' })).toHaveTextContent('Thing→ Thing');
-    expect(modelPane().querySelector('.erd-command, .erd-event, .erd-policy')).toBeNull();
-    await waitFor(() => expect(modelPane().querySelectorAll('.erd-line')).toHaveLength(map.lines.length));
-    expect(modelPane().querySelector('[data-line="P-D-EN03|references|P-D-EN02"]')).toHaveClass('is-dashed', 'has-hover-label');
-    expect(modelPane().querySelector('[data-line="P-D-EN03|references|P-D-EN02"] title')).toHaveTextContent('Loan references by ID Member (Loan.Member)');
-    expect(modelPane().querySelector('[data-line="P-D-EN03|has_many|P-D-EN05"] title')).toHaveTextContent('Loan has many Reminder');
+    expect(new Set(erdScene(modelPane(), true).boxes.map((b) => b.kind))).toEqual(new Set(['domain', 'aggregate', 'entity']));
+    expect(erdScene(modelPane(), true).lines).toHaveLength(map.lines.length);
+    expect(lineOf('P-D-EN03|references|P-D-EN02')).toMatchObject({ dashed: true, ends: 'none-arrow', title: 'Loan references by ID Member (Loan.Member)', label: null });
+    expect(lineOf('P-D-EN03|has_many|P-D-EN05')).toMatchObject({ dashed: false, ends: 'one-many', title: 'Loan has many Reminder' });
+    // A dashed reference shows its fields while the pointer is on it.
+    const ref = lineOf('P-D-EN03|references|P-D-EN02');
+    hoverMapPoint({ x: (ref.from.x + ref.to.x) / 2, y: (ref.from.y + ref.to.y) / 2 });
+    await waitFor(() => expect(lineOf('P-D-EN03|references|P-D-EN02')).toMatchObject({ hover: true, label: 'Loan.Member' }));
     // The product's focus fades nothing.
-    expect(modelPane().querySelector('.is-faded')).toBeNull();
+    expect(erdScene(modelPane(), true).boxes.filter((b) => b.strength < 1)).toEqual([]);
   };
   it('LA-V94-R02-T01 The map draws each aggregate as a boundary around its entities with their fields, has one and has many lines with crow\'s feet, and a dashed reference from an entity to another aggregate\'s root', proveLaV94R02T01);
   it('LA-V94-R01-T01 The map draws each domain as a region around its aggregates, and a reference to another domain\'s aggregate between regions', proveLaV94R02T01);
@@ -171,16 +178,15 @@ describe('the ERD stage', () => {
     await screen.findByRole('heading', { level: 1, name: 'Loan' });
     await boxesShown();
     const loan = box('P-D-EN03')!;
-    expect(within(loan).getByText('root')).toHaveClass('erd-root');
+    expect(drawn('P-D-EN03').root).toBe(true);
     const fields = within(within(loan).getByRole('list', { name: 'Fields of Loan' })).getAllByRole('listitem').map((li) => li.textContent);
     expect(fields).toEqual(['Loan IDwhole number', 'Thing→ Thing', 'Member→ Member', 'Due datedate']);
-    expect(box('P-D-A3')!.querySelector('.erd-box')).toHaveClass('is-highlight', 'is-focus');
-    expect(box('P-D-A1')!.querySelector('.erd-box')).toHaveClass('is-faded');
-    expect(box('P-D-A1')!.querySelector<HTMLElement>('.erd-box')!.style.getPropertyValue('--erd-strength')).toBe('0.25');
+    expect(drawn('P-D-EN03').fields).toEqual([{ name: 'Loan ID', type: 'whole number' }, { name: 'Thing', type: '→ Thing' }, { name: 'Member', type: '→ Member' }, { name: 'Due date', type: 'date' }]);
+    expect(drawn('P-D-A3')).toMatchObject({ pick: true, focus: true });
+    await waitFor(() => expect(drawn('P-D-A1').strength).toBe(0.25));
     // A line to a faded box fades with it.
-    await waitFor(() => expect(modelPane().querySelector('[data-line="P-D-EN03|references|P-D-EN01"]')).toHaveClass('is-faded'));
-    expect(modelPane().querySelector('[data-line="P-D-EN03|has_many|P-D-EN05"]')).toHaveAttribute('data-ends', 'one-many');
-    expect(modelPane().querySelector('[data-line="P-D-EN03|has_many|P-D-EN05"]')).not.toHaveClass('is-faded');
+    expect(lineOf('P-D-EN03|references|P-D-EN01').strength).toBe(0.25);
+    expect(lineOf('P-D-EN03|has_many|P-D-EN05')).toMatchObject({ ends: 'one-many', strength: 1 });
   };
   it('LA-V94-R03-T01 An aggregate\'s focus keeps its boundary, entities, fields and lines at full strength, its domain a trail, and fades the rest', proveLaV94R03T01);
   it('LA-V94-R01-T03 A large region is laid out to about the map\'s shape, its layers wrapped or its parts packed, whichever comes nearer', async () => {
@@ -217,9 +223,9 @@ describe('the ERD stage', () => {
     await openApp('/P-D-EN04?stage=erd', served());
     await screen.findByRole('heading', { level: 1, name: 'Return' });
     await boxesShown();
-    expect(box('P-D-EN04')!.querySelector('.erd-box')).toHaveClass('is-highlight', 'is-focus');
+    expect(drawn('P-D-EN04')).toMatchObject({ pick: true, focus: true });
     expect(box('P-D-EN04')).toHaveAttribute('aria-label', 'Entity Return (picked out)');
-    expect(box('P-D-EN03')!.querySelector('.erd-box')).not.toHaveClass('is-highlight');
+    expect(drawn('P-D-EN03').pick).toBe(false);
     expect(within(modelPane()).getByRole('region', { name: 'Key' })).toHaveTextContent('Picked out');
   });
 
@@ -240,19 +246,19 @@ describe('the ERD stage', () => {
     // Enter on a focused box goes to it too.
     fireEvent.keyDown(box('P-D-EN05')!, { key: 'Enter' });
     expect(window.location.pathname).toBe('/P-D-EN05');
-    // Hover (LA-PAT-APP-UX-R01) on the shared ring and speed, off under reduced motion.
-    expect(CSS).toMatch(/\.erd-box:not\(\.is-focus\):hover\s*\{[^}]*var\(--hover-ring\)/);
-    expect(CSS).toMatch(/\.erd-box\s*\{[^}]*transition:\s*box-shadow var\(--hover-speed\)/);
+    // Hover (LA-PAT-APP-UX-R01): the box under the pointer is drawn with the shared hover ring.
+    const reminder = drawn('P-D-EN03');
+    hoverMapPoint({ x: reminder.map.x + 4, y: reminder.map.y + 4 });
+    await waitFor(() => expect(drawn('P-D-EN03').hover).toBe(true));
     // Colors come from the domain model stage's tokens.
-    expect(CSS).toMatch(/\.erd-box\s*\{[^}]*var\(--g-domain-model\)/);
-    expect(CSS).toMatch(/\.erd-box\.erd-aggregate\s*\{[^}]*var\(--g-domain-model-bg\)/);
+    const look = { ...PLAIN_LOOK, regionFill: '#fff', radius: 4 } as ErdLook;
+    expect([boxEdge(look, 'entity'), boxEdge(look, 'aggregate'), boxEdge(look, 'domain')]).toEqual([look.domainModelEdge, look.domainModelEdge, look.muted]);
   });
 
   it('LA-V94-R06-T01 A domain\'s focus fades the other domains\' regions, out of focus and out of the keyboard order, the fade easing on the shared motion', async () => {
     const map = modelMap();
     const strength = erdStrength(map, 'P-D', LOOK);
     expect(map.boxes.filter((b) => strength(b.id) < 1).map((b) => b.id)).toEqual(['P-E', 'P-E-A1', 'P-E-EN01']);
-    expect(CSS).toMatch(/\.erd-box\s*\{[^}]*opacity:\s*var\(--erd-strength, 1\)[^}]*opacity var\(--motion-speed\) var\(--motion-ease\)/);
     await openApp('/P-D?stage=erd', served());
     await screen.findByRole('heading', { level: 1, name: 'Domain' });
     await boxesShown();
@@ -314,7 +320,7 @@ describe('the ERD stage', () => {
     expect(places()).toEqual(before);
     fireEvent.keyDown(box('P-D-EN05')!, { key: 'Enter' });
     await screen.findByRole('heading', { level: 1, name: 'Reminder' });
-    await waitFor(() => expect(box('P-D-EN05')!.querySelector('.erd-box')).toHaveClass('is-highlight'));
+    await waitFor(() => expect(drawn('P-D-EN05').pick).toBe(true));
     expect(places()).toEqual(before);
   };
   it('LA-V94-R08-T01 The map is laid out once: focusing two records moves no box and changes no size, and the layout is read again, never redone', proveOneMap);

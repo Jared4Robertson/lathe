@@ -1,6 +1,7 @@
 import { expect, type Page } from '@playwright/test';
 import type { Scene, SceneBox, SceneHost } from '../src/graph/GraphPage';
 import type { AllHost, AllScene } from '../src/trace/TraceAll';
+import type { ErdHost, ErdScene } from '../src/erd/ErdView';
 
 // The graph as its canvas draws it (LA-UI92), read through the canvas's test hook: every drawn
 // box with its place on screen and in the map, its label lines and their font sizes, its badges,
@@ -132,4 +133,28 @@ export async function expectKeyWhole(page: Page) {
     return out;
   });
   expect(cut, 'key entries cut').toEqual([]);
+}
+
+// The ERD as its canvas draws it (erd/paint.ts), read through the canvas's test hook; its boxes' keyboard layer
+// (`.erd-node`) carries focus, names and fields.
+
+export const ERD = '.focus-stage .erd-flow';
+
+/** What the ERD stage's canvas draws now; with `whole`, every box and line of its map. */
+export const erdSceneOf = (page: Page, whole = false): Promise<ErdScene> => page.evaluate(({ sel, whole }) => (document.querySelector(sel) as ErdHost).erdScene!(whole), { sel: ERD, whole });
+/** Waits for the ERD to draw its map, framed, then for the camera to settle. */
+export async function erdDrawn(page: Page, settle = 400) {
+  await page.locator(`${ERD}[data-framed][data-ready]`).first().waitFor({ state: 'attached' });
+  await page.waitForTimeout(settle);
+}
+/** A point on a drawn ERD box where the pointer finds it: just inside its top left corner (its head), clear of the boxes inside it. */
+export async function pointOnErdBox(page: Page, id: string): Promise<{ x: number; y: number } | null> {
+  const b = (await erdSceneOf(page)).boxes.find((x) => x.id === id);
+  return b ? { x: b.rect.left + Math.min(12, b.rect.width / 2), y: b.rect.top + Math.min(10, b.rect.height / 2) } : null;
+}
+/** Clicks a drawn ERD box with the mouse. */
+export async function clickErdBox(page: Page, id: string) {
+  const at = await pointOnErdBox(page, id);
+  expect(at, `${id} is drawn`).not.toBeNull();
+  await page.mouse.click(at!.x, at!.y);
 }

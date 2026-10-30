@@ -3,8 +3,6 @@ import { recordIndexOf } from './read-view';
 // Every mark the Graph or the ERD view can draw (a box's shape or fill, a badge, a line style) is
 // listed in that view's key, with words that say what it means.
 import './graph/setup';
-import { readFileSync } from 'node:fs';
-import path from 'node:path';
 import { cleanup, render } from '@testing-library/react';
 import { afterEach, describe, expect, it } from 'vitest';
 import { graphKeyEntries, type GraphDrawn } from '../src/graph/key';
@@ -26,10 +24,6 @@ const everything = (layout: GraphDrawn['layout']): GraphDrawn => ({
   looks: new Set(BOX_LOOKS), shapes: new Set(Object.keys(SHAPES) as Shape[]), marks: new Set(Object.keys(MARKS) as Mark[]), badges: new Set(BADGE_TONES), layout });
 /** A key bar of entries, each once. */
 const bar = (entries: KeyEntry[]) => render(<StageKey entries={[...new Map(entries.map((e) => [e.id, e])).values()]} />);
-const CSS = readFileSync(path.resolve(import.meta.dirname, '../src/styles.css'), 'utf8').replace(/\/\*[\s\S]*?\*\//g, ' ');
-/** The modifier classes a stylesheet gives an element class, as in `.erd-box.erd-aggregate`. */
-const modifiers = (base: string) =>
-  new Set([...CSS.matchAll(new RegExp(`\\.${base}((?:\\.[A-Za-z0-9_-]+)+)`, 'g'))].flatMap((m) => m[1].split('.').filter(Boolean)));
 /** The words beside a key's mark: what the entry says it means. */
 const meaning = (el: Element | null) => (el?.closest('li, tr')?.textContent ?? '').replace(/[!🟦⬜]|\bgap\b|\broot\b/g, '').trim();
 
@@ -61,17 +55,8 @@ describe('LA-V93-R12-T06 the Graph view key', () => {
 });
 
 describe('LA-V94-R05-T02 the ERD view key', () => {
-  // Box and line classes that answer the pointer or the keyboard, not marks with a meaning.
-  const INTERACTION = new Set(['is-focus', 'has-hover-label']);
-  // Every class the stylesheet gives a box or a line, and what in the ERD draws it, checked below: each box kind
-  // (erd-<kind>, explained by its swatch), the pick, dashes and fading.
-  const EXPLAINED = new Set(['erd-domain', 'erd-aggregate', 'erd-entity', 'is-highlight', 'is-dashed', 'is-faded', 'has-change', 'is-added', 'is-changed']);
-
-  it('Every mark a styled ERD box or line can carry is one the key test explains', () => {
-    const styled = [...modifiers('erd-box'), ...modifiers('erd-line')].filter((c) => !INTERACTION.has(c));
-    expect(styled.filter((c) => !EXPLAINED.has(c))).toEqual([]);
-  });
-
+  // The ERD is drawn on a canvas (erd/paint.ts): each kind of box, the root mark, the pick, the fade, each line's
+  // relation and dashes, and the live marks. Each one any focus draws must be in that focus's key.
   it('Every box, badge and line an ERD draws is in its key, with what it means', () => {
     const data = modelWorkspace();
     const index = recordIndexOf(data);
