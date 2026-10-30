@@ -69,14 +69,9 @@ test.describe('watching the spec change', () => {
       await expect(tools(page).getByRole('status')).toHaveText('Follow is off: you moved the camera.');
       await expect(tools(page).getByRole('button', { name: 'Follow' })).toHaveAttribute('aria-pressed', 'false');
 
-      // Highlight changes: everything unchanged dims, against each baseline.
+      // Highlight changes: everything unchanged dims against the baseline.
       await tools(page).getByRole('button', { name: 'Highlight changes' }).click();
       await expect.poll(async () => (await boxOf(page, ADDED))?.strength).toBe(1);
-      const picker = tools(page).getByRole('combobox', { name: 'Compared with' });
-      for (const since of ['branch', 'looked', 'commit']) {
-        await picker.selectOption(since);
-        await expect(picker).toHaveValue(since);
-      }
 
       // Every changed record carries its pill, and a container its roll-up of the records under it.
       await expect.poll(async () => (await boxOf(page, ADDED))?.pill).toBe('added');
@@ -94,6 +89,12 @@ test.describe('watching the spec change', () => {
       // The panel lists both, newest first, and a click focuses the requirement; its card shows the field old → new.
       await tools(page).getByRole('button', { name: /^Changes 2/ }).click();
       const panel = page.getByRole('region', { name: 'Changes' });
+      // The baseline, from the panel (the toolbar holds the picker only in its widest form).
+      const picker = panel.getByRole('combobox', { name: 'Compared with' });
+      for (const since of ['branch', 'looked', 'commit']) {
+        await picker.selectOption(since);
+        await expect(picker).toHaveValue(since);
+      }
       const cards = panel.getByRole('list', { name: 'Changed records' }).locator('.card-title');
       await expect(cards.first()).toContainText(ADDED);
       await expect(cards.nth(1)).toContainText(REQUIREMENT);

@@ -50,6 +50,6 @@ test.describe('the Delivery view stays where the Reader left it', () => {
     const lit = await sceneOf(page);
     expect(lit.boxes.find((b) => b.id === STEP && b.column === 2)).toMatchObject({ focus: true, lit: true });
     expect(lit.boxes.some((b) => b.column === 3 && b.lit && b.role === 'record')).toBe(true);
-    await expect(page.locator('.wiki-panel h1')).toContainText('flow\'s steps');
+    await expect(page.locator('.wiki-panel-title h2')).toContainText('flow\'s steps');
   });
 });

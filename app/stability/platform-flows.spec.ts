@@ -393,9 +393,9 @@ test.describe('Platform flows in the app', () => {
       await expect(page.locator(WIKI).getByRole('button', { name: 'Collapse all' }).first()).toBeVisible();
     }));
     // The Reader scrolls back to the top, where the steps below start.
-    await page.locator(`${WIKI} .pane-scroll`).evaluate((e) => e.scrollTo(0, 0));
+    await page.locator(`${WIKI} .wiki-panel-scroll`).evaluate((e) => e.scrollTo(0, 0));
     // The graph: change its depth; the canvas and its bars hold still.
-    const graphKeys = ['nav#nav', GRAPH_CANVAS, '.focus-stage .graph-tools'];
+    const graphKeys = ['nav#nav', GRAPH_CANVAS, '.focus-stage .stage-tools'];
     expectStable(await step(page, 'flow', 'graph depth', { keys: graphKeys, allow: ['.focus-stage .graph-flow'] }, async () => {
       await page.locator('.focus-stage .graph-flow').focus();
       const camera = await cameraOf(page);
