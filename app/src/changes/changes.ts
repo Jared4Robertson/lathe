@@ -3,6 +3,7 @@ import type { ProductChanges, RecordChange } from '../../../lathe/src/exploring/
 import type { ReadRefusal } from '../../../lathe/src/server/contract';
 import { readModelChanges } from '../record/read';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { rollupText } from './rollup';
 
 export type { RecordChange };
 
@@ -14,7 +15,7 @@ export type { RecordChange };
 // the next, each noted with when it landed: the stages mark them (marks.ts), Follow glides to them, and the Changes
 // panel puts them first.
 
-/** The baselines the Changes lens compares with. */
+/** The baselines Highlight changes compares with. */
 export type Since = 'commit' | 'branch' | 'looked';
 export const SINCES: readonly Since[] = ['commit', 'branch', 'looked'];
 /** Each baseline as the picker names it. */
@@ -53,7 +54,7 @@ export function reloadChanges(before: RecordIndex, after: RecordIndex): RecordCh
 
 // ---------- Baselines ----------
 
-/** What the lens compares with: the changes since the baseline and what names it, or why there is none. */
+/** What Highlight changes compares with: the changes since the baseline and what names it, or why there is none. */
 export type Baseline =
   | { state: 'loading' }
   | { state: 'none'; message: string }
@@ -172,12 +173,12 @@ export type LiveStore = ReturnType<typeof createLiveStore>;
 
 // ---------- What the page shares ----------
 
-/** The changes the app shares (ChangesProvider in App.tsx): the lens, its baseline's diff, Follow and the live store. */
+/** The changes the app shares (ChangesProvider in App.tsx): Highlight changes, its baseline's diff, Follow and the live store. */
 export interface ChangesApi {
   /** The product in view, or null on the picker. */
   product: string | null;
-  lens: boolean;
-  setLens: (on: boolean) => void;
+  highlight: boolean;
+  setHighlight: (on: boolean) => void;
   since: Since;
   setSince: (since: Since) => void;
   follow: boolean;
@@ -193,22 +194,20 @@ export interface ChangesApi {
 }
 
 const NONE: ChangesApi = {
-  product: null, lens: false, setLens: () => {}, since: 'commit', setSince: () => {}, follow: false, setFollow: () => {}, followNote: null,
+  product: null, highlight: false, setHighlight: () => {}, since: 'commit', setSince: () => {}, follow: false, setFollow: () => {}, followNote: null,
   baseline: { state: 'loading' }, changes: [], byId: new Map(), live: createLiveStore(),
 };
 export const ChangesContext = createContext<ChangesApi>(NONE);
 export const useChanges = () => useContext(ChangesContext);
 
-/** How many records changed, by change, for the panel's toggle and heading: "3 changed · 1 new · 1 removed". */
+/** How many records changed, by change, for the panel's toggle and heading: "1 new · 3 changed · 1 removed". */
 export function changeCounts(changes: readonly RecordChange[]) {
   const n = { added: 0, changed: 0, removed: 0 };
   for (const c of changes) n[c.change]++;
   return n;
 }
 export function countsText(changes: readonly RecordChange[]): string {
-  const n = changeCounts(changes);
-  const parts = [n.changed && `${n.changed} changed`, n.added && `${n.added} new`, n.removed && `${n.removed} removed`].filter(Boolean);
-  return parts.length ? parts.join(' · ') : 'No changes';
+  return rollupText(changeCounts(changes)) || 'No changes';
 }
 
 /** "just now", "4 min ago", "2 h ago". */

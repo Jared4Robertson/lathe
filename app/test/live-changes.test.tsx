@@ -10,7 +10,7 @@ import './graph/setup';
 import { drawnBox, scene } from './graph/scene';
 
 // Watching the spec change (LA-EXP-UC15): the data reloads as the server reports a change (an Agent through the CLI
-// or MCP, a git pull, the Reader), the stages mark what changed, and the Changes lens, the Changes panel and the wiki
+// or MCP, a git pull, the Reader), the stages mark what changed, and Highlight changes, the Changes panel and the wiki
 // card compare the data with a baseline the server reads from git (stood in for here by `baseline`).
 
 const listeners = vi.hoisted(() => new Map<string, Set<() => void>>());
@@ -82,13 +82,13 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
     await waitFor(() => expect(scene().ghosts).toContain('DM-SHOP-CMD01'));
   });
 
-  it('LA-EXP-UC15-R03-T01 The Changes lens dims everything unchanged, against the last commit, where the branch left main, or the moment the Reader last looked', async () => {
+  it('LA-EXP-UC15-R03-T01 Highlight changes dims everything unchanged, against the last commit, where the branch left main, or the moment the Reader last looked', async () => {
     const asked: string[] = [];
     await openAt('/DM-SHOP-CMD01', asked);
     await land(agentEdits(), asked);
     await waitFor(() => expect(count()).toHaveTextContent('2'));
-    fireEvent.click(within(tools()).getByRole('button', { name: 'Changes lens' }));
-    expect(within(tools()).getByRole('button', { name: 'Changes lens' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(tools()).getByRole('button', { name: 'Highlight changes' }));
+    expect(within(tools()).getByRole('button', { name: 'Highlight changes' })).toHaveAttribute('aria-pressed', 'true');
     await waitFor(() => expect(drawnBox('DM-SHOP-CMD01')?.strength).toBe(1));
     const unchanged = scene().boxes.filter((b) => !['DM-SHOP-CMD01', 'DM-SHOP-CMD09'].includes(b.id));
     expect(unchanged.length).toBeGreaterThan(0);
@@ -103,13 +103,60 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
     fireEvent.change(picker, { target: { value: 'looked' } });
     await waitFor(() => expect(asked).toContain(HEAD));
     await waitFor(() => expect(count()).toHaveTextContent('2'));
-    // Dismissing the lens is looking: nothing has changed since.
+    // Dismissing Highlight changes is looking: nothing has changed since.
     const before = settings().looked.DM.at;
-    fireEvent.click(within(tools()).getByRole('button', { name: 'Changes lens' }));
+    fireEvent.click(within(tools()).getByRole('button', { name: 'Highlight changes' }));
     await waitFor(() => expect(settings().looked.DM.at).not.toBe(before));
     await waitFor(() => expect(count()).toHaveTextContent('0'));
     // The look keeps each record's digest then, the new command among them.
     expect(Object.keys(settings().looked.DM.digests)).toEqual(expect.arrayContaining(['DM-SHOP-CMD01', 'DM-SHOP-CMD09']));
+  });
+
+  it('LA-EXP-UC15-R07-T02 With Highlight changes on, the Graph\'s boxes carry their pill and each container its roll-up, and the nav shows the counts', async () => {
+    startAtDepth(3);
+    await openAt('/DM-SHOP-A1');
+    await land(agentEdits());
+    await waitFor(() => expect(count()).toHaveTextContent('2'));
+    // Off: no pills and no roll-ups.
+    await waitFor(() => expect(drawnBox('DM-SHOP-CMD01')).toBeDefined());
+    expect(drawnBox('DM-SHOP-CMD01')!.pill).toBeNull();
+    expect(document.querySelector('.space-items .nav-changes')).toBeNull();
+    fireEvent.click(within(tools()).getByRole('button', { name: 'Highlight changes' }));
+    await waitFor(() => expect(drawnBox('DM-SHOP-CMD09')?.pill).toBe('added'));
+    expect(drawnBox('DM-SHOP-CMD01')!.pill).toBe('changed');
+    // The unchanged are dimmed to a fifth.
+    expect(drawnBox('DM-SHOP-A1')!.strength).toBeCloseTo(0.2);
+    // The container of both holds their roll-up; one that holds neither has none.
+    expect(drawnBox('DM-SHOP-EN01')!.rollup).toBe('1 new · 1 changed');
+    expect(drawnBox('DM-SHOP-A1')!.rollup).toBe('1 new · 1 changed');
+    expect(drawnBox('DM-SHOP-CMD01')!.rollup).toBeNull();
+    // The nav counts them beside the domain, with the words for a screen reader.
+    await waitFor(() => expect([...document.querySelectorAll('.space-items .nav-changes')].map((e) => e.getAttribute('title'))).toContain('1 new · 1 changed'));
+  });
+
+  it('LA-V96-R36-T01 The Graph\'s containers show their roll-ups, the nav its counts, and the minimap and the edge hints point to changes out of view', async () => {
+    startAtDepth(3);
+    await openAt('/DM-SHOP-A1');
+    await land(agentEdits());
+    await waitFor(() => expect(count()).toHaveTextContent('2'));
+    fireEvent.click(within(tools()).getByRole('button', { name: 'Highlight changes' }));
+    await waitFor(() => expect(drawnBox('DM-SHOP-EN01')?.rollup).toBe('1 new · 1 changed'));
+    await waitFor(() => expect([...document.querySelectorAll('.space-items .nav-changes')].map((e) => e.getAttribute('title'))).toContain('1 new · 1 changed'));
+  });
+
+  it('LA-EXP-UC15-R09-T02 ] and [ move the focus to the next and previous changed record and announce it', async () => {
+    await openAt('/DM-SHOP-A1');
+    await land(agentEdits());
+    await waitFor(() => expect(count()).toHaveTextContent('2'));
+    const press = (key: string) => fireEvent.keyDown(document.body, { key });
+    press(']');
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP-CMD01'));
+    expect(await screen.findByText(/Next change: Put item in basket, changed, 1 of 2/)).toBeInTheDocument();
+    press(']');
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP-CMD09'));
+    press('[');
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP-CMD01'));
+    expect(await screen.findByText(/Previous change: Put item in basket, changed, 1 of 2/)).toBeInTheDocument();
   });
 
   it('LA-EXP-UC15-R04-T01 The diff in the wiki card: each changed field old → new; an added record new since the baseline', async () => {
@@ -122,6 +169,23 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
     expect(section.querySelector('ins')).toHaveTextContent('Put item in basket');
     await act(async () => { window.history.pushState(null, '', '/DM-SHOP-CMD09'); window.dispatchEvent(new PopStateEvent('popstate')); });
     expect(await within(card()).findByText(/New since the last commit/)).toBeInTheDocument();
+  });
+
+  it('LA-EXP-UC15-R04-T02 The wiki card lists the links a changed record gained and lost, beside each field old → new', async () => {
+    await openAt('/DM-SHOP-CMD01');
+    const edited = setRow(workspace(), 'command', 'DM-SHOP-CMD01', { title: 'Put item in basket', description: 'Puts an item in the trolley.' });
+    const raises = edited.sources[0].tables.raises;
+    raises.splice(raises.findIndex((r) => r.source_id === 'DM-SHOP-CMD01'), 1, { source_id: 'DM-SHOP-CMD01', target_id: 'DM-PAY-EV01' });
+    await land(edited);
+    const section = (await within(card()).findByRole('heading', { name: 'Changes' })).closest('section')!;
+    // Each changed field, old → new.
+    const pairs = [...section.querySelectorAll('.change-fields > div')].map((row) => [row.querySelector('dt')?.textContent, row.querySelector('del')?.textContent, row.querySelector('ins')?.textContent]);
+    expect(pairs).toEqual([['title', 'Add item', 'Put item in basket'], ['description', 'Puts an item in the basket.', 'Puts an item in the trolley.']]);
+    // Each link added and removed, listed.
+    const links = within(section).getByRole('list', { name: 'Links added and removed' });
+    expect(within(links).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
+      expect.stringMatching(/^Added raises .*Payment taken/), expect.stringMatching(/^Removed raises .*Item added/),
+    ]);
   });
 
   it('LA-EXP-UC15-R05-T01 Follow glides to each change as it lands, and the Reader\'s own camera move or focus turns it off with a note', async () => {
@@ -181,7 +245,7 @@ describe('the stages and the card show the changes', () => {
     }
     expect(shown[1]).toEqual(shown[0]);
     expect(shown[2]).toEqual(shown[0]);
-    expect(within(tools()).getAllByRole('button').map((b) => b.textContent?.replace(/\d+$/, '').trim())).toEqual(['Changes lens', 'Follow', 'Changes']);
+    expect(within(tools()).getAllByRole('button').map((b) => b.textContent?.replace(/\d+$/, '').trim())).toEqual(['Highlight changes', 'Follow', 'Changes']);
   });
 
   it('LA-V96-R29-T01 Every stage marks the live changes: the ERD\'s boxes too, and only dots under reduced motion', async () => {
@@ -225,6 +289,6 @@ describe('LA-V100 the Changes panel', () => {
     expect(within(count()).getByLabelText('2 records changed')).toBeInTheDocument();
     fireEvent.click(count());
     expect(count()).toHaveAttribute('aria-expanded', 'true');
-    expect(panel()).toHaveTextContent('1 changed · 1 new');
+    expect(panel()).toHaveTextContent('1 new · 1 changed');
   });
 });
