@@ -2,6 +2,7 @@
 // each starts from). A view has no owner: its product follows from its ID. One instance is one view, whole; it holds
 // only the links its own records start.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { ViewRequirementRow, ViewRow, ViewTestRow } from '../../platform/data/tables.ts';
 
@@ -51,33 +52,22 @@ export function newView(view: ViewRow): View {
   return { root: view.id, view, requirements: [], tests: [] };
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[]): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l.source_id), [...(found.get(String(l.source_id)) ?? []), String(l.target_id)]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The views in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function viewsFrom(rows: (table: string) => Row[], only?: string): View[] {
   const views = rows('view').filter((r) => only === undefined || r.id === only) as unknown as ViewRow[];
   if (!views.length) return [];
   const ids = new Set(views.map((v) => v.id));
   const requirements = (rows('view_requirement') as unknown as ViewRequirementRow[]).filter((r) => ids.has(r.view_id));
-  const requirementIds = new Set(requirements.map((r) => r.id));
-  const tests = (rows('view_test') as unknown as ViewTestRow[]).filter((t) => requirementIds.has(t.view_requirement_id));
+  const viewOf = new Map(requirements.map((r) => [r.id, r.view_id]));
+  const requirementsOf = groupBy(requirements, (r) => r.view_id);
+  const testsOf = groupBy((rows('view_test') as unknown as ViewTestRow[]).filter((t) => viewOf.has(t.view_requirement_id)), (t) => viewOf.get(t.view_requirement_id));
   const startsFrom = bySource(rows('starts_from'));
-  return views.map((view) => {
-    const own = requirements.filter((r) => r.view_id === view.id);
-    const ownIds = new Set(own.map((r) => r.id));
-    return {
-      root: view.id,
-      view,
-      requirements: own,
-      tests: tests.filter((t) => ownIds.has(t.view_requirement_id)).map((row) => ({ row, startsFrom: startsFrom.get(row.id) ?? [] })),
-    };
-  });
+  return views.map((view) => ({
+    root: view.id,
+    view,
+    requirements: groupOf(requirementsOf, view.id),
+    tests: groupOf(testsOf, view.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
+  }));
 }
 
 /** The instance's rows, by table. */

@@ -3,6 +3,7 @@
 // test data sets it starts from). One instance is one specification, whole; it holds only the links its own records
 // start.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { PredicateRow, SpecificationRow, SpecificationTestRow } from '../../platform/data/tables.ts';
 
@@ -69,33 +70,24 @@ export function newSpecification(specification: SpecificationRow, reads: string[
   return { root: specification.id, specification, reads, predicate: null, test: null };
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[], source = 'source_id', target = 'target_id'): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The specifications in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function specificationsFrom(rows: (table: string) => Row[], only?: string): Specification[] {
   const specifications = rows('specification').filter((r) => only === undefined || r.id === only) as unknown as SpecificationRow[];
   if (!specifications.length) return [];
   const ids = new Set(specifications.map((s) => s.id));
-  const predicates = (rows('predicate') as unknown as PredicateRow[]).filter((p) => ids.has(p.specification_id));
-  const tests = (rows('specification_test') as unknown as SpecificationTestRow[]).filter((t) => ids.has(t.specification_id));
+  const predicatesOf = groupBy((rows('predicate') as unknown as PredicateRow[]).filter((p) => ids.has(p.specification_id)), (p) => p.specification_id);
+  const testsOf = groupBy((rows('specification_test') as unknown as SpecificationTestRow[]).filter((t) => ids.has(t.specification_id)), (t) => t.specification_id);
   const [reads, meets, startsFrom] = ['reads', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
-  const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
   return specifications.map((specification) => {
-    const predicate = predicates.find((p) => p.specification_id === specification.id);
-    const test = tests.find((t) => t.specification_id === specification.id);
+    const predicate = groupOf(predicatesOf, specification.id)[0];
+    const test = groupOf(testsOf, specification.id)[0];
     return {
       root: specification.id,
       specification,
-      reads: targets(reads, specification.id),
-      predicate: predicate ? { row: predicate, meets: targets(meets, predicate.id), packages: targets(packages, predicate.id) } : null,
-      test: test ? { row: test, startsFrom: targets(startsFrom, test.id) } : null,
+      reads: groupOf(reads, specification.id),
+      predicate: predicate ? { row: predicate, meets: groupOf(meets, predicate.id), packages: groupOf(packages, predicate.id) } : null,
+      test: test ? { row: test, startsFrom: groupOf(startsFrom, test.id) } : null,
     };
   });
 }

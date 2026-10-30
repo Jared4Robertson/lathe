@@ -98,17 +98,22 @@ check('term-used-unlinked', () => {
         term('EX-LEND-TM04', 'Late fee', 'Money owed for an Overdue loan, counted in `loan` days, kept in a toolbox.'),
         term('EX-LEND-TM05', 'Active loan', 'A loan not yet returned.'),
         term('EX-LEND-TM06', 'Borrower', 'Someone holding tools.'),
+        term('EX-LEND-TM07', 'Tool category', 'A group of tools of one kind.'),
+        term('EX-LEND-TM08', 'Shelf', 'Where the tool categories sit.'),
       ],
       builds_on: [{ source_id: 'EX-LEND-TM05', target_id: 'EX-LEND-TM01' }],
     });
     const found = ofCheck(await loadData(data), 'term-used-unlinked');
     // Loan's own meaning (One tool lent…) uses Tool; Overdue loan uses Loan; Late fee uses Overdue loan, but not Loan
-    // inside it, nor `loan` in code, nor tool inside toolbox; Active loan links Loan; Borrower uses Tools, plural.
+    // inside it, nor `loan` in code, nor tool inside toolbox; Active loan links Loan; Borrower uses Tools, plural; Tool
+    // category uses Tools; Shelf uses Tool categories (a title ending in y, as -ies), but not Tool inside it.
     expect(found.map((p) => `${p.record} ${/uses "(.*?)"/.exec(p.message)?.[1]}`)).toEqual([
       'EX-LEND-TM01 Tool',
       'EX-LEND-TM03 Loan',
       'EX-LEND-TM04 Overdue loan',
       'EX-LEND-TM06 Tool',
+      'EX-LEND-TM07 Tool',
+      'EX-LEND-TM08 Tool category',
     ]);
     expect(found.every((p) => p.severity === 'warning')).toBe(true);
     expect(found[1].message).toBe('Term EX-LEND-TM03 (Overdue loan) uses "Loan" in its meaning but does not build on EX-LEND-TM01: link it with builds_on, or say it in plain words.');

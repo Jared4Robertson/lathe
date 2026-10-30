@@ -2,6 +2,7 @@
 // domain services it calls, its handler, and the policies that send it, each with the event it hears, its event
 // handler and its test. One instance is one command, whole; it holds only the links its own records start.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { CommandHandlerRow, CommandRow, EventHandlerRow, PolicyRow, PolicyTestRow } from '../../platform/data/tables.ts';
 
@@ -94,14 +95,6 @@ export function newCommand(command: CommandRow, links: { raises: string[]; check
   return { root: command.id, command, ...links, handler: null, policies: [], eventHandlers: [], policyTests: [] };
 }
 
-// A link table's targets by source, each list sorted.
-function bySource(links: Row[], source = 'source_id', target = 'target_id'): Map<string, string[]> {
-  const found = new Map<string, string[]>();
-  for (const l of links) found.set(String(l[source]), [...(found.get(String(l[source])) ?? []), String(l[target])]);
-  for (const list of found.values()) list.sort();
-  return found;
-}
-
 /** The commands in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function commandsFrom(rows: (table: string) => Row[], only?: string): CommandInstance[] {
   const commands = rows('command').filter((r) => only === undefined || r.id === only) as unknown as CommandRow[];
@@ -110,26 +103,26 @@ export function commandsFrom(rows: (table: string) => Row[], only?: string): Com
   const handlers = (rows('command_handler') as unknown as CommandHandlerRow[]).filter((h) => ids.has(h.command_id));
   const policies = (rows('policy') as unknown as PolicyRow[]).filter((p) => ids.has(p.command_id));
   const policyIds = new Set(policies.map((p) => p.id));
-  const eventHandlers = (rows('event_handler') as unknown as EventHandlerRow[]).filter((h) => policyIds.has(h.policy_id));
-  const policyTests = (rows('policy_test') as unknown as PolicyTestRow[]).filter((t) => policyIds.has(t.policy_id));
+  const commandOf = new Map(policies.map((p) => [p.id, p.command_id]));
+  const handlersOf = groupBy(handlers, (h) => h.command_id);
+  const policiesOf = groupBy(policies, (p) => p.command_id);
+  const eventHandlersOf = groupBy((rows('event_handler') as unknown as EventHandlerRow[]).filter((h) => policyIds.has(h.policy_id)), (h) => commandOf.get(h.policy_id));
+  const policyTestsOf = groupBy((rows('policy_test') as unknown as PolicyTestRow[]).filter((t) => policyIds.has(t.policy_id)), (t) => commandOf.get(t.policy_id));
   const [raises, checks, calls, hears, meets, startsFrom] = ['raises', 'checks', 'calls', 'hears', 'meets', 'starts_from'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
-  const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
-  const built = <T extends { id: string }>(row: T): Built<T> => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) });
+  const built = <T extends { id: string }>(row: T): Built<T> => ({ row, meets: groupOf(meets, row.id), packages: groupOf(packages, row.id) });
   return commands.map((command) => {
-    const handler = handlers.find((h) => h.command_id === command.id);
-    const own = policies.filter((p) => p.command_id === command.id);
-    const ownIds = new Set(own.map((p) => p.id));
+    const handler = groupOf(handlersOf, command.id)[0];
     return {
       root: command.id,
       command,
-      raises: targets(raises, command.id),
-      checks: targets(checks, command.id),
-      calls: targets(calls, command.id),
+      raises: groupOf(raises, command.id),
+      checks: groupOf(checks, command.id),
+      calls: groupOf(calls, command.id),
       handler: handler ? built(handler) : null,
-      policies: own.map((row) => ({ row, hears: targets(hears, row.id)[0] ?? null })),
-      eventHandlers: eventHandlers.filter((h) => ownIds.has(h.policy_id)).map(built),
-      policyTests: policyTests.filter((t) => ownIds.has(t.policy_id)).map((row) => ({ row, startsFrom: targets(startsFrom, row.id) })),
+      policies: groupOf(policiesOf, command.id).map((row) => ({ row, hears: groupOf(hears, row.id)[0] ?? null })),
+      eventHandlers: groupOf(eventHandlersOf, command.id).map(built),
+      policyTests: groupOf(policyTestsOf, command.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
     };
   });
 }
