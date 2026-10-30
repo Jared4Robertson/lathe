@@ -16,6 +16,9 @@ import { focusContext, useViewChanges } from './appRequests';
 import { BypassWarning, ChatModeMenu, MODE_INFO } from './ChatMode';
 import type { ChatBridge, ChatItem, ChatMode, ChatSessions, LatheTools, OpenChoice, PromptAnswer, SessionSummary } from './types';
 import { useChat, type Turn } from './useChat';
+import { chatDraft, useChatDraft } from './draft';
+import { MicButton, VoiceIntro, VoiceMenu, VoiceStatus } from './voice/VoiceControls';
+import { useVoice } from './voice/useVoice';
 import './ChatPanel.css';
 
 // The chat panel (LA-PLT-UC19, LA-V99): the desktop app's conversation with the Owner's own Claude
@@ -31,6 +34,8 @@ import './ChatPanel.css';
 // context (LA-PLT-UC19-R12) unless they remove it. The composer at its
 // foot sends a message (Enter; Shift+Enter for a new line) and becomes Stop while Claude works
 // (Escape stops too). Up and Down walk the messages in the log; Home and End go to its ends.
+// Where the Mac can recognize speech on-device, the mic button dictates into the message box, and the Voice menu
+// under the head turns on voice activation and Quick mode (LA-PLT-UC20, voice/).
 // The shell runs the CLI (desktop/src/chatSession.ts); the panel only draws and asks.
 
 export interface ChatPanelProps {
@@ -71,7 +76,8 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
   const [picker, setPicker] = useState(false);
   const [help, setHelp] = useState(false);
   const [sessions, setSessions] = useState<ChatSessions | null>(null);
-  const [draft, setDraft] = useState('');
+  const draft = useChatDraft();
+  const voice = useVoice();
   const working = busy(view.status);
   const panel = useRef<HTMLElement>(null);
 
@@ -97,16 +103,29 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
   const pending = view.items.filter((i) => i.kind === 'permission' && i.answer === 'pending').length;
   useEffect(() => { if (pending) announce('Claude asks for permission'); }, [pending, announce]);
 
-  const submit = async () => {
-    const text = draft.trim();
-    if (!text || working) return;
-    if (!view.open && blocked(sessions)) { announce(blocked(sessions) === 'missing' ? 'Lathe could not find Claude Code.' : 'Claude Code is not signed in.'); return; }
-    if (!view.open && !(await bridge.open({ mode: 'new' }))) { announce('Claude Code could not start.'); return; }
+  // Sends a message: the draft, or what dictation hands over (which it has taken out of the box: it goes back if it
+  // cannot be sent).
+  const submitText = async (message: string) => {
+    const text = message.trim();
+    const putBack = () => { if (chatDraft.read() === '') chatDraft.write(message); };
+    if (!text) return;
+    if (working) { putBack(); announce('Claude is still working; your message waits in the box.'); return; }
+    if (!view.open && blocked(sessions)) { putBack(); announce(blocked(sessions) === 'missing' ? 'Lathe could not find Claude Code.' : 'Claude Code is not signed in.'); return; }
+    if (!view.open && !(await bridge.open({ mode: 'new' }))) { putBack(); announce('Claude Code could not start.'); return; }
     setPicker(false);
     // What the Owner is looking at as they send, unless they removed the chip.
     const focus = focusShown ? focusContext(index, window.location.pathname, product).context : null;
-    if (await send(text, focus)) setDraft('');
+    if (chatDraft.read() === message) chatDraft.write('');
+    if (!(await send(text, focus))) putBack();
   };
+  const submit = () => submitText(draft);
+  const submitRef = useRef(submitText);
+  submitRef.current = submitText;
+  useEffect(() => {
+    if (!voice) return;
+    voice.sendWith((text) => void submitRef.current(text));
+    return () => voice.sendWith(null);
+  }, [voice?.sendWith]);
   const onComposerKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void submit(); }
   };
@@ -188,7 +207,10 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
       </div>
       <div className="chat-context">
         {view.open && view.lathe ? <LatheToolsNote lathe={view.lathe} /> : <span className="chat-tools hint">Lathe's tools load with a session</span>}
-        <ChatModeMenu mode={mode} disabled={working} onChoose={(next) => (next === 'bypass' ? setConfirmBypass(true) : void chooseMode(next))} />
+        <div className="chat-context-controls">
+          {voice && <VoiceMenu voice={voice} />}
+          <ChatModeMenu mode={mode} disabled={working} onChoose={(next) => (next === 'bypass' ? setConfirmBypass(true) : void chooseMode(next))} />
+        </div>
       </div>
       {confirmBypass && <BypassWarning onConfirm={() => void chooseMode('bypass')} onCancel={() => setConfirmBypass(false)} />}
       {help && <ChatHelp />}
@@ -209,6 +231,8 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
           </span>
         </div>
       )}
+      {voice && <VoiceIntro voice={voice} />}
+      {voice && <VoiceStatus voice={voice} />}
       <form className="chat-compose" onSubmit={(e) => { e.preventDefault(); void submit(); }}>
         <textarea
           ref={input}
@@ -217,9 +241,10 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
           placeholder={mode === 'view-only' ? (view.open ? 'Ask Claude, View only…' : 'Ask Claude, in a new View only session…') : view.open ? 'Ask Claude…' : 'Ask Claude, in a new session…'}
           rows={2}
           value={draft}
-          onChange={(e) => setDraft(e.target.value)}
+          onChange={(e) => chatDraft.write(e.target.value)}
           onKeyDown={onComposerKey}
         />
+        {voice && <MicButton voice={voice} />}
         {working ? (
           <Tooltip label="Stop (Escape)" placement="left">
             <Button variant="icon" label="Stop" className="chat-stop" disabled={view.status === 'stopping'} onClick={() => { void stop(); announce('Stopping'); }}>
@@ -228,7 +253,8 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
           </Tooltip>
         ) : (
           <Tooltip label="Send (Enter)" placement="left">
-            <Button variant="icon" type="submit" label="Send" className="chat-send" disabled={!draft.trim()}>
+            <Button variant="icon" type="submit" label={voice?.view.countdown ? 'Send now (sending by itself; any key cancels)' : 'Send'} className={`chat-send${voice?.view.countdown ? ' is-counting' : ''}`} disabled={!draft.trim()}>
+              {voice?.view.countdown && <span key={voice.view.countdown.until} className="chat-send-countdown" aria-hidden="true" style={{ animationDuration: `${Math.max(0, voice.view.countdown.until - Date.now())}ms` }} />}
               <Icon name="send" size={16} />
             </Button>
           </Tooltip>
@@ -253,6 +279,7 @@ function ChatHelp() {
       <p>This is your own Claude Code, working in this product's folder with your login, settings, skills, plugins and <code>CLAUDE.md</code>, and always with Lathe's own tools, from the Lathe this window runs, whether or not you installed its plugin. Record IDs in its answers open the record on the stage; it can see what you are looking at and open records here.</p>
       <p>The mode under the head sets what Claude may do without asking: <strong>Ask</strong> (everything asks), <strong>Accept reads</strong> (reads run, everything else asks; the default), <strong>Auto</strong> (Claude Code's auto mode decides), <strong>Bypass</strong> (nothing asks) or <strong>View only</strong> (Claude only reads: Lathe's commands and Claude Code's tools that write files or run commands are taken away, and anything else that may change things is refused). A new chat in this folder starts in the mode the last one had. <strong>Allow always in this chat</strong> on a prompt lets that tool run for the rest of the chat.</p>
       <p>Each message goes with what you are looking at (the chip above the message box), so Claude starts from it; remove the chip to leave it out.</p>
+      <p>On a Mac with macOS 26 or later, the mic button dictates into the message box, with speech recognized on the Mac itself (nothing leaves it or is kept); edit the words, then send. Under <strong>Voice</strong>, <strong>voice activation</strong> listens, while this window is in front, for <q>Lathe</q> after a pause: the rest of what you say becomes the message. While dictating, a pause and then <q>Lathe, send</q>, <q>Lathe, cancel</q>, <q>Lathe, scratch that</q> or <q>Lathe, new line</q> is a command; anything else is text. <strong>Quick mode</strong> sends a dictated message by itself when you have finished.</p>
       <p>Slash commands go to Claude Code as text: those it runs without a dialog, such as <code>/compact</code> or a skill's own command, work.</p>
       <p>Not supported in the chat yet:</p>
       <ul>

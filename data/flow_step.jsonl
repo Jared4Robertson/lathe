@@ -634,6 +634,11 @@
 {"id":"LA-PLT-UC19-FL02-S13","title":"Before the first message, the empty chat says when Claude Code is not found or not signed in, with the fix","flow_id":"LA-PLT-UC19-FL02","path":"main","position":13}
 {"id":"LA-PLT-UC19-FL02-S14","title":"They choose a permission mode (Ask, Accept reads, Auto, Bypass after a warning, or View only); the session starts again in it, and the folder keeps it","flow_id":"LA-PLT-UC19-FL02","path":"main","position":14}
 {"id":"LA-PLT-UC19-FL02-S16","title":"Each message goes with what they are looking at, a chip they can remove; Claude starts from it, and uses the app tools for anything else about the window","flow_id":"LA-PLT-UC19-FL02","path":"main","position":15}
+{"id":"LA-PLT-UC20-FL02-S01","title":"The Owner dictates with the mic button or its key; the words appear in the message box as they speak, to edit and send","flow_id":"LA-PLT-UC20-FL02","path":"main","position":1}
+{"id":"LA-PLT-UC20-FL02-S02","title":"They turn on voice activation: \"Lathe\" after a pause wakes the chat while its window is in front; \"Lathe, send\", \"cancel\", \"scratch that\" and \"new line\" act on the draft","flow_id":"LA-PLT-UC20-FL02","path":"main","position":2}
+{"id":"LA-PLT-UC20-FL02-S03","title":"They turn on Quick mode: a dictated message sends by itself when they have finished, after a countdown any sound or key cancels","flow_id":"LA-PLT-UC20-FL02","path":"main","position":3}
+{"id":"LA-PLT-UC20-FL02-S04","title":"They choose the wake phrase, such as \"Hey Lathe\", and the commands' words","flow_id":"LA-PLT-UC20-FL02","path":"main","position":4}
+{"id":"LA-PLT-UC20-FL02-S05","title":"The chat offers the mic and the Voice menu only where the Mac can recognize speech on-device, and says why not elsewhere","flow_id":"LA-PLT-UC20-FL02","path":"main","position":5}
 {"id":"LA-TRC-UC01-FL03-S01","title":"The Owner runs lathe check and reads one coverage line per domain and obligation kind: designed, built, proved and not automated yet","flow_id":"LA-TRC-UC01-FL03","path":"main","position":1}
 {"id":"LA-TRC-UC01-FL03-S02","title":"Each gap names the obligation and what it lacks: its design, a built file or a test","flow_id":"LA-TRC-UC01-FL03","path":"main","position":2}
 {"id":"LA-TRC-UC01-FL03-S03","title":"The gaps are warnings, so the check still passes","flow_id":"LA-TRC-UC01-FL03","path":"main","position":3}

@@ -504,6 +504,13 @@
 {"entity_id":"LA-PLT-EN25","position":1,"name":"Shortcut","meaning":"The keymap command whose keys these are.","type":"text","required":true,"example":"toggleNav"}
 {"entity_id":"LA-PLT-EN25","position":2,"name":"Keys","meaning":"Its keys on this platform, the first one shown.","type_value_object_id":"LA-VO61","required":false,"example":"Meta+J"}
 {"entity_id":"LA-PLT-EN25","position":3,"name":"Unbound","meaning":"Left without a key on purpose.","type":"yes/no","required":true,"example":"no"}
+{"entity_id":"LA-PLT-EN26","position":1,"name":"Voice activation","meaning":"Whether the chat listens for the wake phrase while the window is in front.","type":"yes/no","required":true,"example":"no"}
+{"entity_id":"LA-PLT-EN26","position":2,"name":"Quick mode","meaning":"Whether a dictated message is sent by itself once the Owner has finished.","type":"yes/no","required":true,"example":"no"}
+{"entity_id":"LA-PLT-EN26","position":3,"name":"Wake phrase","meaning":"The words that wake the chat after a pause, and come before each command.","type":"text","required":true,"example":"Lathe"}
+{"entity_id":"LA-PLT-EN26","position":4,"name":"Send words","meaning":"The command words that send the message.","type":"text","required":true,"example":"send"}
+{"entity_id":"LA-PLT-EN26","position":5,"name":"Cancel words","meaning":"The command words that clear the message.","type":"text","required":true,"example":"cancel"}
+{"entity_id":"LA-PLT-EN26","position":6,"name":"Scratch words","meaning":"The command words that remove the last sentence.","type":"text","required":true,"example":"scratch that"}
+{"entity_id":"LA-PLT-EN26","position":7,"name":"New line words","meaning":"The command words that start a new paragraph.","type":"text","required":true,"example":"new line"}
 {"entity_id":"LA-TRC-EN05","position":1,"name":"Follower","meaning":"The ID of the domain or use case that follows the pattern.","type":"text","required":true,"column_name":"source_id","example":"TL-LEND-UC01"}
 {"entity_id":"LA-TRC-EN05","position":2,"name":"Pattern","meaning":"The pattern followed.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"target_id","example":"TL-PAT-LIBRARIAN-ACTION"}
 {"entity_id":"LA-TRC-EN06","position":1,"name":"Setting","meaning":"One of the pattern's settings (a `pattern_setting` name).","type":"text","required":true,"example":"required_input"}
