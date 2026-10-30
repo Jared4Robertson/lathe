@@ -1,5 +1,6 @@
 import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { linkLabel } from '../specs/labels';
+import { lowerLabel } from '../plural';
 import { PARENT } from './model';
 import type { Line } from './paint';
 
@@ -29,10 +30,10 @@ export function linksOf(index: RecordIndex, has: (id: string) => boolean, parent
     const record = index.byId.get(id);
     if (record?.parent && !within(id, record.parent)) {
       const up = index.byId.get(record.parent);
-      add({ source: id, target: record.parent, relation: PARENT, label: `In ${up ? kindLabel(index, up.kind).toLowerCase() : 'parent'}` });
+      add({ source: id, target: record.parent, relation: PARENT, label: `In ${up ? lowerLabel(kindLabel(index, up.kind)) : 'parent'}` });
     }
     for (const c of index.children.get(id) ?? []) {
-      if (!within(c.id, id)) add({ source: c.id, target: id, relation: PARENT, label: `In ${kindLabel(index, index.byId.get(id)?.kind ?? '').toLowerCase()}` });
+      if (!within(c.id, id)) add({ source: c.id, target: id, relation: PARENT, label: `In ${lowerLabel(kindLabel(index, index.byId.get(id)?.kind ?? ''))}` });
     }
   }
   return [...out.values()];
