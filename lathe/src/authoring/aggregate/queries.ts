@@ -25,10 +25,10 @@ export const GET_AGGREGATE: QueryDefinition<{ id: string }, AggregatePage, Aggre
   id: 'LA-AUT-QRY150',
   slice: AGGREGATE_SLICE,
   name: 'get-aggregate',
-  description: 'Reads an aggregate whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the aggregate\'s row, its entities (the root first) with their fields, the entities they hold, their data models, commands and tables, its invariants with their tests, and the domain events that happen to it with what raises and hears them.',
+  description: 'Reads an aggregate whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the aggregate\'s row, its entities (the root first) with their fields, the entities they hold, their data models, commands and tables, its invariants with their rules and tests, and the domain events that happen to it with what raises and hears them.',
   method: 'GET',
   route: '/api/aggregate/get-aggregate',
-  input: { id: id('The aggregate, or an entity, invariant, data model or invariant test in it.', 'required') },
+  input: { id: id('The aggregate, or an entity, invariant, data model, rule or invariant test in it.', 'required') },
   reader: aggregateReader,
   run: getAggregate,
   text: aggregateText,
@@ -62,13 +62,14 @@ const UNDER: Record<AggregateKind, string> = {
   entity: 'aggregate',
   invariant: 'aggregate',
   data_model: 'entity',
+  rule: 'invariant',
   invariant_test: 'invariant',
 };
 
 /**
  * The next free ID for a record of one of the aggregate's kinds under its parent: one past the highest in use. An
  * aggregate's, an entity's and an invariant's start with their domain's ID; an entity has one data model and an
- * invariant one test, whose IDs are their parent's with DM and T.
+ * invariant one rule and one test, whose IDs are their parent's with DM, RL and T.
  */
 export function nextAggregateId(reader: AggregateReader, input: { kind: string; parent: string }): string {
   if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Aggregate aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
@@ -88,6 +89,8 @@ export function nextAggregateId(reader: AggregateReader, input: { kind: string; 
       return onePast(reader, `${reader.domainOf(input.parent)}-INV`, 2);
     case 'data_model':
       return only(`${input.parent}-DM`);
+    case 'rule':
+      return only(`${input.parent}-RL`);
     case 'invariant_test':
       return only(`${input.parent}-T`);
   }
@@ -98,11 +101,11 @@ export const NEXT_AGGREGATE_ID: QueryDefinition<{ kind: string; parent: string }
   id: 'LA-AUT-QRY152',
   slice: AGGREGATE_SLICE,
   name: 'next-id',
-  description: 'The next free ID for an aggregate (under a domain), an entity or invariant (under an aggregate), a data model (under an entity) or an invariant test (under an invariant): one past the highest in use.',
+  description: 'The next free ID for an aggregate (under a domain), an entity or invariant (under an aggregate), a data model (under an entity), or a rule or invariant test (under an invariant): one past the highest in use.',
   method: 'GET',
   route: '/api/aggregate/next-id',
   input: {
-    kind: id('The kind: aggregate, entity, invariant, data_model or invariant_test.', 'required'),
+    kind: id('The kind: aggregate, entity, invariant, data_model, rule or invariant_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
   },
   reader: aggregateReader,
@@ -110,7 +113,7 @@ export const NEXT_AGGREGATE_ID: QueryDefinition<{ kind: string; parent: string }
   text: (next) => next,
 };
 
-/** An aggregate as text: its row, then each entity with its fields, links and data model, then each invariant and test, then its events. */
+/** An aggregate as text: its row, then each entity with its fields, links and data model, then each invariant with its rule and test, then its events. */
 function aggregateText(page: AggregatePage): string {
   const { aggregate: row } = page;
   const lines = [`Aggregate ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, `  identity: ${row.identity}`, `  description: ${row.description}`];
@@ -130,6 +133,11 @@ function aggregateText(page: AggregatePage): string {
   }
   for (const i of page.invariants) {
     lines.push(`Invariant ${i.invariant.id}: ${i.invariant.title}`);
+    const r = i.rule;
+    if (r) {
+      const extra = [...(r.rule.file ? [r.rule.file] : []), ...r.meets.map((x) => `meets ${x}`), ...r.packages.map((x) => `uses ${x}`)];
+      lines.push(`  rule ${r.rule.id}: ${r.rule.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
+    }
     if (i.test) lines.push(`  invariant test ${i.test.test.id}: ${i.test.test.title} (${i.test.test.state})`);
   }
   for (const e of page.domainEvents) lines.push(`Domain event ${e.event.id}: ${e.event.title}${e.raisedBy.length ? ` [raised by ${e.raisedBy.join(', ')}]` : ''}`);

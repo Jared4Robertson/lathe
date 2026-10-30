@@ -70,8 +70,8 @@ describe('LA-AUT-UC20-R50-T01 each Specification command (LA-AUT-A5) changes one
   it("refuses a second predicate or test, an input that is not the command's, and a record that is not there, changing no file", async () => {
     const store = await specificationDataSet();
     const before = fileOf(store, 'predicate');
-    expect((await refusal(store, ADD_PREDICATE, { id: 'TL-LEND-SP02-PR2', title: 'again', specification_id: 'TL-LEND-SP02' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-LEND-SP02 already has its predicate, TL-LEND-SP02-PR' });
-    expect((await refusal(store, ADD_SPECIFICATION_TEST, { id: 'TL-LEND-SP02-T2', title: 'again', specification_id: 'TL-LEND-SP02', level: 'unit', state: 'not automated yet', when: 'x', then: 'y' })).problems[0].rule).toBe('exists');
+    expect((await refusal(store, ADD_PREDICATE, { id: 'TL-LEND-SP02-PR2', title: 'again', specification_id: 'TL-LEND-SP02' })).problems[0]).toMatchObject({ rule: 'specification-one-each', message: 'specification TL-LEND-SP02 already has its predicate, so TL-LEND-SP02-PR2 cannot be a second: a specification has one' });
+    expect((await refusal(store, ADD_SPECIFICATION_TEST, { id: 'TL-LEND-SP02-T2', title: 'again', specification_id: 'TL-LEND-SP02', level: 'unit', state: 'not automated yet', when: 'x', then: 'y' })).problems[0].rule).toBe('specification-one-each');
     expect((await refusal(store, ADD_SPECIFICATION, { id: 'TL-LEND-SP02', title: 'Again', statement: 'Again.' })).problems[0].rule).toBe('primary-key');
     await expect(runCommand(store, CHANGE_PREDICATE, { id: 'TL-LEND-SP02-PR', specification_id: 'TL-LEND-SP01' })).rejects.toThrow(/change-predicate takes no specification_id/);
     await expect(runCommand(store, CHANGE_SPECIFICATION, { id: 'TL-LEND-SP02', reads: 'TL-LEND-A1' })).rejects.toThrow(/reads .* is not a list of record IDs/);

@@ -1,4 +1,4 @@
-// Remove an aggregate (LA-AUT-CMD212): Removes an aggregate whole: its entities and their fields, data models, invariants, tests and the links they start. Refused while anything outside it references what is in it.
+// Remove an aggregate (LA-AUT-CMD212): Removes an aggregate whole: its entities and their fields, data models, invariants with their rules, tests and the links they start. Refused while anything outside it references what is in it.
 import { column, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import { AGGREGATE_SLICE } from '../model.ts';
@@ -12,7 +12,7 @@ export const REMOVE_AGGREGATE: CommandDefinition<RemoveAggregate> = {
   id: 'LA-AUT-CMD212',
   slice: AGGREGATE_SLICE,
   name: 'remove-aggregate',
-  description: 'Removes an aggregate whole: its entities and their fields, data models, invariants, tests and the links they start. Refused while anything outside it references what is in it.',
+  description: 'Removes an aggregate whole: its entities and their fields, data models, invariants with their rules, tests and the links they start. Refused while anything outside it references what is in it.',
   method: 'POST',
   route: '/api/aggregate/remove-aggregate',
   input: {

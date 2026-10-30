@@ -219,9 +219,9 @@ describe("Authoring's value objects", () => {
     expect(await refusals(firstRow('product_kind', { stage: undefined }))).toEqual([]);
   });
 
-  it("LA-VO17-C01-T A relation's role other than design or proof is refused, and none is allowed", async () => {
-    expect(await refusals(firstRow('product_relation', { role: 'evidence' }))).toEqual(notOneOf('product_relation', 'role', 'evidence', ['design', 'proof']));
-    for (const role of ['design', 'proof']) expect(await refusals(firstRow('product_relation', { role })), role).toEqual([]);
+  it("LA-VO17-C01-T A relation's role other than design, build or proof is refused, and none is allowed", async () => {
+    expect(await refusals(firstRow('product_relation', { role: 'evidence' }))).toEqual(notOneOf('product_relation', 'role', 'evidence', ['design', 'build', 'proof']));
+    for (const role of ['design', 'build', 'proof']) expect(await refusals(firstRow('product_relation', { role })), role).toEqual([]);
     expect(await refusals(everyKind())).toEqual([]);
   });
 });

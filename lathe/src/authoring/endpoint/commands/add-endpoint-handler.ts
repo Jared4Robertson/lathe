@@ -4,6 +4,8 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { EndpointHandlerRow } from '../../../platform/data/tables.ts';
 import { ENDPOINT_SLICE } from '../model.ts';
 import { EndpointRepository } from '../repository.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
+import { oneEndpointHandler } from '../rules.ts';
 
 /** A new endpoint handler, with the links it starts. */
 export type AddEndpointHandler = Pick<EndpointHandlerRow, 'id' | 'title' | 'endpoint_id' | 'description' | 'file'> & { meets?: string[]; packages?: string[] };
@@ -32,8 +34,8 @@ export const ADD_ENDPOINT_HANDLER: CommandDefinition<AddEndpointHandler> = {
 export function addEndpointHandler(tx: Transaction, input: AddEndpointHandler): void {
   const endpoints = new EndpointRepository(tx);
   const endpoint = endpoints.loadHolding('endpoint', input.endpoint_id) ?? tx.refuse('missing', `there is no endpoint ${input.endpoint_id}`);
-  if (endpoint.handler) tx.refuse('exists', `${input.endpoint_id} already has its endpoint handler, ${endpoint.handler.row.id}`);
   const { meets = [], packages = [], ...row } = input;
+  refuseBroken(oneEndpointHandler([...(endpoint.handler ? [endpoint.handler.row] : []), row]));
   endpoint.handler = { row, meets, packages };
   endpoints.save(endpoint);
 }

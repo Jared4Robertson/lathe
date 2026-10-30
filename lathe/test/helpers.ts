@@ -245,6 +245,7 @@ export function complete(): Data {
       { table_id: 'EX-LEND-EN03-TB', position: 1, type: 'primary', columns: ['id'] },
     ],
     value_type: [{ id: 'EX-VO01-VT', title: 'EmailAddress', value_object_id: 'EX-VO01', file: 'src/email.ts' }],
+    rule: [{ id: 'EX-LEND-INV01-RL', title: 'tool-on-loan', invariant_id: 'EX-LEND-INV01', file: 'src/loans.ts' }],
     predicate: [{ id: 'EX-LEND-SP01-PR', title: 'isFree', specification_id: 'EX-LEND-SP01', file: 'src/loans.ts' }],
     event_type: [
       { id: 'EX-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'EX-LEND-EV01', delivery: 'outbox', file: 'src/events.ts' },
@@ -315,6 +316,7 @@ export function complete(): Data {
     ],
     exchanges_with: [{ source_id: 'EX-LEND-UC01-FL01-S02', target_id: 'EX-INT01' }],
     renders: [{ source_id: 'EX-UI01', target_id: 'EX-V01' }],
+    builds: [{ source_id: 'EX-UI01', target_id: 'EX-V01-R01' }],
     follows: [{ source_id: 'EX-LEND-UC02', target_id: 'EX-PAT-ACT' }],
     setting_value: [{ follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Tool' }],
     meets: [{ source_id: 'EX-LEND-CMD01-H', target_id: 'EX-STD-CODE-R01' }],

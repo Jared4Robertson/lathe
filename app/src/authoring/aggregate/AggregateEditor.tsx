@@ -20,7 +20,7 @@ import '../../edit/edit.css';
 // commands, POST /api/aggregate/<command>, and nothing else. Edit sends its kind's Change with only what changed (an
 // entity's fields as a list of rows, the entities it holds as lists of IDs); Add opens an empty form for a kind that
 // sits under the record in the aggregate (an entity or invariant under the aggregate, an entity's one data model, an
-// invariant's one test), with the next free ID read from the aggregate (next-id), and sends its Add; Remove says what
+// invariant's one rule and one test), with the next free ID read from the aggregate (next-id), and sends its Add; Remove says what
 // goes with the record and sends its Remove. The aggregate has no Move. Another aggregate's root that sits under an
 // aggregate or an entity (a domain event, a command) is added through that aggregate's own Add form, from the Record
 // page's list (adderOf). An aggregate is added from its domain's page (AddAggregateForm). A refusal shows every reason
@@ -34,6 +34,7 @@ const LABEL: Record<AggregateKind, string> = {
   entity: 'entity',
   invariant: 'invariant',
   data_model: 'data model',
+  rule: 'rule',
   invariant_test: 'invariant test',
 };
 
@@ -41,8 +42,9 @@ const LABEL: Record<AggregateKind, string> = {
 const ADDED_UNDER: Record<AggregateKind, Inside[]> = {
   aggregate: ['entity', 'invariant'],
   entity: ['data_model'],
-  invariant: ['invariant_test'],
+  invariant: ['rule', 'invariant_test'],
   data_model: [],
+  rule: [],
   invariant_test: [],
 };
 
@@ -87,6 +89,14 @@ function fieldsOf(index: SpecIndex, page: AggregatePage | null, product: string,
         { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
         { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files. The list replaces its packages.', table: 'package_use', columns: ['package'] },
       ];
+    case 'rule':
+      return [
+        ...id('rule'),
+        { field: 'title', column: 'title', table: 'rule' },
+        { field: 'file', column: 'file', table: 'rule' },
+        { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
+        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files. The list replaces its packages.', table: 'package_use', columns: ['package'] },
+      ];
     case 'invariant_test': {
       const table = 'invariant_test';
       return [
@@ -123,6 +133,10 @@ function currentOf(page: AggregatePage, kind: AggregateKind, id: string): Record
       const d = page.entities.find((e) => e.dataModel?.dataModel.id === id)!.dataModel!;
       return { ...d.dataModel, meets: d.meets, packages: d.packages.map((p) => ({ package: p })) };
     }
+    case 'rule': {
+      const r = page.invariants.find((i) => i.rule?.rule.id === id)!.rule!;
+      return { ...r.rule, meets: r.meets, packages: r.packages.map((p) => ({ package: p })) };
+    }
     case 'invariant_test': {
       const t = page.invariants.find((i) => i.test?.test.id === id)!.test!;
       return { ...t.test, starts_from: t.startsFrom };
@@ -142,6 +156,7 @@ const CHANGE: Record<AggregateKind, { route: AggregateRoute; clearable: readonly
   entity: { route: '/api/aggregate/change-entity', clearable: ['in_root_table'] },
   invariant: { route: '/api/aggregate/change-invariant', clearable: [] },
   data_model: { route: '/api/aggregate/change-data-model', clearable: ['file'] },
+  rule: { route: '/api/aggregate/change-rule', clearable: ['file'] },
   invariant_test: { route: '/api/aggregate/change-invariant-test', clearable: ['file', 'manual_reason', 'size', 'smoke', 'external', 'notes'] },
 };
 
@@ -151,6 +166,7 @@ const ADD: Record<AggregateKind, { route: AggregateRoute; parent: string }> = {
   entity: { route: '/api/aggregate/add-entity', parent: 'aggregate_id' },
   invariant: { route: '/api/aggregate/add-invariant', parent: 'aggregate_id' },
   data_model: { route: '/api/aggregate/add-data-model', parent: 'entity_id' },
+  rule: { route: '/api/aggregate/add-rule', parent: 'invariant_id' },
   invariant_test: { route: '/api/aggregate/add-invariant-test', parent: 'invariant_id' },
 };
 
@@ -160,6 +176,7 @@ const REMOVE: Record<AggregateKind, AggregateRoute> = {
   entity: '/api/aggregate/remove-entity',
   invariant: '/api/aggregate/remove-invariant',
   data_model: '/api/aggregate/remove-data-model',
+  rule: '/api/aggregate/remove-rule',
   invariant_test: '/api/aggregate/remove-invariant-test',
 };
 
@@ -169,7 +186,7 @@ const send = (writer: Writer, route: AggregateRoute, input: Record<string, unkno
 /** What goes with a record when it is removed, inside the aggregate: what sits under it. */
 function goesWith(page: AggregatePage, kind: AggregateKind, id: string): string[] {
   const ofEntity = (e: AggregatePage['entities'][number]) => (e.dataModel ? [e.dataModel.dataModel.id] : []);
-  const ofInvariant = (i: AggregatePage['invariants'][number]) => (i.test ? [i.test.test.id] : []);
+  const ofInvariant = (i: AggregatePage['invariants'][number]) => [...(i.rule ? [i.rule.rule.id] : []), ...(i.test ? [i.test.test.id] : [])];
   if (kind === 'aggregate') return [...page.entities.flatMap((e) => [e.entity.id, ...ofEntity(e)]), ...page.invariants.flatMap((i) => [i.invariant.id, ...ofInvariant(i)])];
   if (kind === 'entity') return ofEntity(page.entities.find((e) => e.entity.id === id)!);
   if (kind === 'invariant') return ofInvariant(page.invariants.find((i) => i.invariant.id === id)!);
@@ -181,6 +198,7 @@ function parentOf(page: AggregatePage, kind: AggregateKind, id: string): string 
   switch (kind) {
     case 'aggregate': return page.aggregate.domain_id;
     case 'data_model': return page.entities.find((e) => e.dataModel?.dataModel.id === id)!.entity.id;
+    case 'rule': return page.invariants.find((i) => i.rule?.rule.id === id)!.invariant.id;
     case 'invariant_test': return page.invariants.find((i) => i.test?.test.id === id)!.invariant.id;
     default: return page.aggregate.id;
   }
@@ -228,9 +246,10 @@ export function AggregateEditor({ index, page, children }: { index: SpecIndex; p
     const Adder = adderOf(index.workspace.schema, mode.kind)!;
     return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
   }
-  // An entity has one data model and an invariant one test: once it has it, there is nothing more to add of that kind.
+  // An entity has one data model and an invariant one rule and one test: once it has it, there is nothing more to add of that kind.
   const adds = ADDED_UNDER[kind].filter((k) =>
     (k !== 'data_model' || !page.entities.find((e) => e.entity.id === id)?.dataModel)
+    && (k !== 'rule' || !page.invariants.find((i) => i.invariant.id === id)?.rule)
     && (k !== 'invariant_test' || !page.invariants.find((i) => i.invariant.id === id)?.test));
   return (
     <>

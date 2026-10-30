@@ -43,9 +43,9 @@
 {"read_model_id":"LA-AUT-RM25","position":6,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the specification: the specification, its predicate or its test.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM26","position":1,"name":"Aggregate","meaning":"The aggregate's row: its ID, title, domain, description, identity and notes.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM26","position":2,"name":"Entities","meaning":"Its entities, the root first, then by ID: each with its fields in order, the entities it holds by has_one and has_many, its data model with the standard rules it meets and the packages it uses, and the commands and tables under it by ID.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM26","position":3,"name":"Invariants","meaning":"Its invariants by ID, each with its test and the test data sets the test starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM26","position":3,"name":"Invariants","meaning":"Its invariants by ID, each with its rule (with the standard rules it meets and the packages it uses), and its test with the test data sets the test starts from.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM26","position":4,"name":"Domain events","meaning":"The domain events that happen to it, by ID, each with whether it is published, the commands that raise it and the policies that hear it.","type":"text","required":true}
-{"read_model_id":"LA-AUT-RM26","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the aggregate: the aggregate, an entity, an invariant, a data model or an invariant test.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM26","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the aggregate: the aggregate, an entity, an invariant, a data model, a rule or an invariant test.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM27","position":1,"name":"Domain event","meaning":"The event's row: its ID, title, aggregate, whether it is published, and description.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM27","position":2,"name":"Fields","meaning":"The fields it carries, by position.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM27","position":3,"name":"Event type","meaning":"Its shape in code, with the standard rules it meets and the packages it uses, when it has one.","type":"text","required":true}
@@ -80,7 +80,7 @@
 {"read_model_id":"LA-AUT-RM34","position":2,"name":"Adapter","meaning":"Its adapter, with the standard rules it meets and the packages it uses.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM34","position":3,"name":"Tests","meaning":"Its integration tests, with the test data sets each starts from.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM35","position":1,"name":"UI component","meaning":"The UI component's ID, title, file and description.","type_value_object_id":"LA-VO01","required":true}
-{"read_model_id":"LA-AUT-RM35","position":2,"name":"Renders","meaning":"The views it renders, the standard rules it meets and the packages it uses.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM35","position":2,"name":"Renders","meaning":"The views it renders, the view requirements it builds, the standard rules it meets and the packages it uses.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM36","position":1,"name":"Outcome","meaning":"The outcome's row.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM36","position":2,"name":"Measured by","meaning":"The tests and records that measure it.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM36","position":3,"name":"Served by","meaning":"The capabilities that serve it.","type":"text","required":true}

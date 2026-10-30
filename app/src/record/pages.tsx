@@ -94,6 +94,7 @@ const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = 
   entity: AggregatePage,
   invariant: AggregatePage,
   data_model: AggregatePage,
+  rule: AggregatePage,
   invariant_test: AggregatePage,
   domain_event: DomainEventPage,
   event_type: DomainEventPage,

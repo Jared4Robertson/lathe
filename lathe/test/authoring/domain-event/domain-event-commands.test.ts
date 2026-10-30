@@ -67,7 +67,7 @@ describe('LA-AUT-UC25-R50-T01 each Domain event command (LA-AUT-A7) changes one 
   it('refuses a second event type, an input that is not the command\'s, and an event that is not there', async () => {
     const store = await domainEventDataSet();
     const second = await refusal(store, ADD_EVENT_TYPE, { id: 'TL-LEND-EV01-ET2', title: 'LoanOpenedAgain', domain_event_id: 'TL-LEND-EV01' });
-    expect(second.problems[0]).toMatchObject({ rule: 'exists', message: 'TL-LEND-EV01 already has its event type, TL-LEND-EV01-ET' });
+    expect(second.problems[0]).toMatchObject({ rule: 'one-event-type', message: 'domain event TL-LEND-EV01 already has its event type, so TL-LEND-EV01-ET2 cannot be a second: an event has one' });
     await expect(runCommand(store, CHANGE_DOMAIN_EVENT, { id: 'TL-LEND-EV01', aggregate_id: 'TL-LEND-A1' })).rejects.toThrow(/change-domain-event takes no aggregate_id/);
     await expect(runCommand(store, CHANGE_DOMAIN_EVENT, { id: 'TL-LEND-EV01', published: 'yes' })).rejects.toThrow(InputError);
     expect((await refusal(store, CHANGE_DOMAIN_EVENT, { id: 'TL-LEND-EV09', title: 'x' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no domain event TL-LEND-EV09' });

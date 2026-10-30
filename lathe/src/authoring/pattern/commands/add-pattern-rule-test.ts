@@ -4,6 +4,8 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleTestRow } from '../../../platform/data/tables.ts';
 import { PATTERN_SLICE } from '../model.ts';
 import { PatternRepository } from '../repository.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
+import { patternRuleTestPerDomain } from '../rules.ts';
 
 /** A new pattern rule test, with the test data sets it starts from. */
 export type AddPatternRuleTest = Pick<PatternRuleTestRow, 'id' | 'title' | 'pattern_rule_id' | 'domain_id' | 'level' | 'state' | 'file' | 'manual_reason' | 'size' | 'smoke' | 'external' | 'when' | 'then' | 'notes'> & { starts_from?: string[] };
@@ -42,5 +44,6 @@ export function addPatternRuleTest(tx: Transaction, input: AddPatternRuleTest): 
   const pattern = patterns.loadHolding('pattern_rule', input.pattern_rule_id) ?? tx.refuse('missing', `there is no pattern rule ${input.pattern_rule_id}`);
   const { starts_from = [], ...row } = input;
   pattern.ruleTests.push({ row, startsFrom: starts_from });
+  refuseBroken(patternRuleTestPerDomain(pattern.ruleTests.map((t) => t.row)));
   patterns.save(pattern);
 }

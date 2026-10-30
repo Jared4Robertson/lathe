@@ -44,9 +44,9 @@ describe('LA-V130-R01-T01 an aggregate\'s records are read through the Aggregate
 
   it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
     const routes: (keyof AggregateCommands)[] = [
-      '/api/aggregate/add-aggregate', '/api/aggregate/add-data-model', '/api/aggregate/add-entity', '/api/aggregate/add-invariant', '/api/aggregate/add-invariant-test',
-      '/api/aggregate/change-aggregate', '/api/aggregate/change-data-model', '/api/aggregate/change-entity', '/api/aggregate/change-invariant', '/api/aggregate/change-invariant-test',
-      '/api/aggregate/remove-aggregate', '/api/aggregate/remove-data-model', '/api/aggregate/remove-entity', '/api/aggregate/remove-invariant', '/api/aggregate/remove-invariant-test',
+      '/api/aggregate/add-aggregate', '/api/aggregate/add-data-model', '/api/aggregate/add-entity', '/api/aggregate/add-invariant', '/api/aggregate/add-invariant-test', '/api/aggregate/add-rule',
+      '/api/aggregate/change-aggregate', '/api/aggregate/change-data-model', '/api/aggregate/change-entity', '/api/aggregate/change-invariant', '/api/aggregate/change-invariant-test', '/api/aggregate/change-rule',
+      '/api/aggregate/remove-aggregate', '/api/aggregate/remove-data-model', '/api/aggregate/remove-entity', '/api/aggregate/remove-invariant', '/api/aggregate/remove-invariant-test', '/api/aggregate/remove-rule',
     ];
     expect([...routes].sort()).toEqual(AGGREGATE_COMMANDS.map((c) => c.route).sort());
   });
@@ -58,7 +58,8 @@ describe('LA-V130-R02-T01 the Aggregate editor writes only through the aggregate
     const changed = () => setRow(withModel(), 'invariant', 'DM-SHOP-INV01', { statement: 'A basket MUST NOT hold more than 40 items.' });
     const { commands, writes } = await openApp('/DM-SHOP-INV01', { data: withModel(), command: () => ({ answer: ok, data: changed() }) });
     const actions = await toolbar('DM-SHOP-INV01');
-    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
+    // It has its test, so only its rule can be added under it.
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add rule', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit DM-SHOP-INV01' });
     const statement = within(form).getByRole('textbox', { name: /^statement/ });
@@ -125,6 +126,18 @@ describe('LA-V130-R02-T01 the Aggregate editor writes only through the aggregate
     await user.type(within(form).getByRole('textbox', { name: /^identity/ }), 'Wish list ID');
     await user.click(within(form).getByRole('button', { name: 'Add aggregate' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/aggregate/add-aggregate', input: { domain_id: 'DM-SHOP', id: 'DM-SHOP-A2', title: 'Wish list', description: 'The goods a person means to buy later.', identity: 'Wish list ID' } }]));
+  });
+
+  it('Add sends Add a rule with the invariant\'s RL ID', async () => {
+    const user = userEvent.setup();
+    const { commands } = await openApp('/DM-SHOP-INV01', { data: withModel(), command: () => ({ answer: ok }) });
+    await user.click(within(await toolbar('DM-SHOP-INV01')).getByRole('button', { name: 'Add rule' }));
+    const form = screen.getByRole('form', { name: 'Add a rule' });
+    await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-INV01-RL'));
+    await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'basket-limit');
+    await user.type(within(form).getByRole('textbox', { name: /^file/ }), 'src/basket/rules.ts');
+    await user.click(within(form).getByRole('button', { name: 'Add rule' }));
+    await waitFor(() => expect(commands).toEqual([{ route: '/api/aggregate/add-rule', input: { invariant_id: 'DM-SHOP-INV01', id: 'DM-SHOP-INV01-RL', title: 'basket-limit', file: 'src/basket/rules.ts' } }]));
   });
 });
 

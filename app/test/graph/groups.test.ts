@@ -42,7 +42,7 @@ describe('graph groups', () => {
     expect(groupLabel(grouped, 'P-D-A4/domain_event')).toBe('Domain events (1)');
     expect(isGraphNode(index, 'P-D-EN03/command')).toBe(false);
     // Stages and folders are groups too.
-    expect(groupLabel(index, 'P-D/technical-specification')).toBe('Technical specification (9)');
+    expect(groupLabel(index, 'P-D/technical-specification')).toBe('Technical specification (10)');
     expect(groupLabel(index, 'P-D/technical-specification/table')).toBe('Tables (3)');
     expect(['question', 'invariant', 'domain'].map((k) => pluralLabel(index, k))).toEqual(['Open questions', 'Invariants', 'Domains']);
     expect(groupMembers(index, 'P-D/technical-specification/table').map((r) => r.id)).toEqual(['P-D-EN02-TB', 'P-D-EN03-TB', 'P-D-RM01-TB']);
