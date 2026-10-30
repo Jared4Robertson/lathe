@@ -8,7 +8,6 @@ import { SETTINGS_KEY, sessionSettings } from '../../src/graph/settings';
 import { readView } from '../../src/views/place';
 import { openApp } from '../helpers';
 import { indexOf } from '../fixtures/load';
-import { modelWorkspace } from '../fixtures/model';
 import { manyOfOneKindWorkspace, testIndex } from './workspace';
 
 // The graph's tree for domain events, technical records and tests, and the
@@ -66,11 +65,9 @@ describe('the rules the graph keeps', () => {
     // The answer is the children's alone: the focus, depth and filters frame it, never change it.
     neighborhood(index, 'P-D-A3', 3, { hiddenKinds: new Set(['domain_event']) });
     expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event']);
-    // The record page titles a list of one kind by that kind, and a mixed one "Children".
+    // The record page titles a list of one kind by that kind.
     await openApp('/DM-SHOP-EP01');
     expect(await screen.findByRole('heading', { name: /^API requirements/ })).toBeInTheDocument();
-    await openApp('/P-D-EP01', { data: modelWorkspace() });
-    expect(await screen.findByRole('heading', { name: /^Children/ })).toBeInTheDocument();
   });
 
   it('LA-VO92-C01-T A graph\'s depth is a whole number from 1 to 3, and its layout one of tree and nested', () => {

@@ -646,10 +646,10 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 /* Four columns keep room for their words; where they can't fit, the rows stack (.table-stack). */
 .data-table.trace-requirements { width: 100%; }
 @container (min-width: 64rem) { .data-table.trace-requirements > tbody > tr > th[scope="row"] { width: 17rem; } }
-/* So do a standard's rules and a pattern's settings and its use cases' settings, and the fields of an entity, a value
-   object, a domain event or a read model. */
-.data-table.standard-rules, .data-table.pattern-settings, .data-table.pattern-use-cases, .data-table.entity-fields { width: 100%; }
-@container (min-width: 64rem) { .data-table.standard-rules > tbody > tr > th[scope="row"] { width: 16rem; } }
+/* So do a standard's rules and a pattern's settings and its use cases' settings, the fields of an entity, a value
+   object, a domain event or a read model, and a view's and an endpoint's requirements. */
+.data-table.standard-rules, .data-table.view-requirements, .data-table.api-requirements, .data-table.pattern-settings, .data-table.pattern-use-cases, .data-table.entity-fields { width: 100%; }
+@container (min-width: 64rem) { .data-table:is(.standard-rules, .view-requirements, .api-requirements) > tbody > tr > th[scope="row"] { width: 16rem; } }
 .flow-path > h3 { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 4px; font-size: 0.9rem; }
 .rule-na-reasons { font-size: 0.8rem; color: var(--muted); }
 .data-table { border-collapse: collapse; font-size: 0.86rem; margin: 0 0 12px; }

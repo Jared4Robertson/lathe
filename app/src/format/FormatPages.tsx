@@ -1,4 +1,6 @@
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
+import { AddCheck } from '../checking/check/CheckEditor';
+import { CheckPage } from '../checking/check/CheckPage';
 import { LongList } from '../components/LongList';
 import { lowerLabel, plural } from '../plural';
 import { Link, useLocation } from '../router';
@@ -7,11 +9,10 @@ import { addressOf } from '../views/address';
 import { treeGroup } from '../graph/tree';
 import { byIdOrder, type Problem, type SpecIndex, type SpecRecord, type Stage } from '../specs/data';
 import { Markdown } from '../specs/Markdown';
-import { ProblemList, RecordLink, Section } from '../specs/parts';
+import { RecordLink, Section } from '../specs/parts';
 import {
   FIELDS_ANCHOR,
   ID_SCOPE_TEXT,
-  ORIGIN_TEXT,
   checkPagePath,
   checksOf,
   columnType,
@@ -38,7 +39,9 @@ import './format.css';
 // kinds by stage, the relations, and the checks by severity), a kind's page and a check's page. Each
 // opens in the wiki card over the stage, the whole page, the stage keeping its focus (views/overlays.ts):
 // a link to one is `?page=format/kinds/<kind>` on the current address. The pages read the schema and
-// the check rows served with the data, so a product's own kinds and checks show.
+// the check rows served with the data, so a product's own kinds and checks show; a check's page body is the Check
+// aggregate's own (checking/check/CheckPage.tsx), read through its query, and a product's checks are added from the
+// Checks here (AddCheck).
 
 interface PageProps {
   index: SpecIndex;
@@ -226,6 +229,7 @@ function homePage({ index, reference }: PageProps): FormatPage {
         </section>
         <section className="spec-section" id="checks" aria-labelledby="checks-heading">
           <header className="spec-section-head"><h2 id="checks-heading">Checks<span className="section-count">{reference.checks.length}</span></h2></header>
+          <AddCheck index={index} />
           <Section level={3} title="Errors" count={errors.length}><CheckRows index={index} checks={errors} label="Error checks" /></Section>
           <Section level={3} title="Warnings" count={warnings.length}><CheckRows index={index} checks={warnings} label="Warning checks" /></Section>
         </section>
@@ -412,28 +416,6 @@ function checkPage({ index, reference }: PageProps, check: CheckReference, probl
     eyebrow: <><Link to={formatPath}>Record format</Link> · Check · {check.severities.join(' or ')}</>,
     title: check.check,
     tags: <span className="row-tags"><SeverityTags check={check} /></span>,
-    body: (
-      <>
-        {check.summary ? <Markdown source={check.summary} /> : <p className="hint">The engine reports this itself: it has no row in the check table.</p>}
-        {check.explanation && <Markdown source={check.explanation} />}
-        <dl className="fields format-facts">
-          <div><dt>Severity</dt><dd><SeverityTags check={check} /></dd></div>
-          <div><dt>From</dt><dd>{ORIGIN_TEXT[check.origin]}</dd></div>
-        </dl>
-        {check.query && (
-          <Section title="Query">
-            <div className="markdown"><pre className="check-query" tabIndex={0}><code>{check.query}</code></pre></div>
-          </Section>
-        )}
-        {check.kinds.length > 0 && (
-          <Section title="Kinds it concerns" count={check.kinds.length}>
-            <KindRows reference={reference} kinds={check.kinds} label={`Kinds ${check.check} concerns`} />
-          </Section>
-        )}
-        <Section title="Problems now" count={problems.length}>
-          {problems.length === 0 ? <p className="hint">This check reports nothing now.</p> : <ProblemList index={index} problems={problems} showCheck={false} />}
-        </Section>
-      </>
-    ),
+    body: <CheckPage index={index} check={check} problems={problems} kindRows={(kinds) => <KindRows reference={reference} kinds={kinds} label={`Kinds ${check.check} concerns`} />} />,
   };
 }

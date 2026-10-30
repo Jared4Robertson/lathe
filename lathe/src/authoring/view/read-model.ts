@@ -1,39 +1,38 @@
-// The View read model (LA-AUT-RM32): a view as its readers see it, with its requirements, each holding its tests, and
-// the views of a product in a list. Its projection builds its table from the rows; it shares no type with the
-// aggregate.
+// The View aggregate's read model (LA-AUT-RM32), shaped for its readers: the View page reads a view whole (its
+// requirements by ID, each with its tests and the test data sets they start from) with the record the page is about, a
+// product's list reads each view's ID and title, and the editor's next ID reads the IDs in use. The projection
+// (viewTableFrom) is the only code that reads the source rows and the only code that writes the read model's table;
+// the query handlers read that table only through the reader (reader.ts). Nothing here is the aggregate's own
+// instance type.
 import type { ReadView } from '../../platform/data/rules.ts';
+import type { Row } from '../../platform/data/rows.ts';
+import type { ViewRequirementRow, ViewRow, ViewTestRow } from '../../platform/data/tables.ts';
+import type { ViewKind } from './model.ts';
 
-/** A view test, as a reader sees it. */
-export interface ViewTestLine {
-  id: string;
-  title: string;
-  level: string;
-  state: string;
-  file: string | null;
-  /** The test data sets it starts from. */
+/** A view test as the page shows it: its row and the test data sets it starts from. */
+export interface ViewTestOnPage {
+  test: ViewTestRow;
   startsFrom: string[];
 }
 
-/** A view requirement with its tests. */
-export interface ViewRequirementLine {
-  id: string;
-  title: string;
-  statement: string;
-  group: string | null;
-  tests: ViewTestLine[];
+/** A view requirement as the page shows it: its row and its tests by ID. */
+export interface ViewRequirementOnPage {
+  requirement: ViewRequirementRow;
+  tests: ViewTestOnPage[];
 }
 
-/** One view, whole. */
-export interface ViewPage {
-  id: string;
-  title: string;
-  route: string | null;
-  description: string;
-  notes: string | null;
-  requirements: ViewRequirementLine[];
+/** A view whole, as its page shows it: its row and its requirements by ID. */
+export interface ViewTree {
+  view: ViewRow;
+  requirements: ViewRequirementOnPage[];
 }
 
-/** A view in a list. */
+/** A view as its page reads it, with the record of it the page is about. */
+export interface ViewPage extends ViewTree {
+  record: { id: string; kind: ViewKind };
+}
+
+/** A view as a product's list reads it. */
 export interface ViewSummary {
   id: string;
   title: string;
@@ -41,55 +40,59 @@ export interface ViewSummary {
 
 /** The read model's table, kept in memory: what the reader reads, and all it reads. */
 export interface ViewTable {
-  /** Each view whole, by its ID, in ID order. */
-  views: Map<string, ViewPage>;
-  /** Each record inside a view: the view that holds it. */
-  holding: Map<string, string>;
+  /** Each view whole, by its ID. */
+  views: Map<string, ViewTree>;
+  /** Each record inside a view: the view that holds it and its kind there. */
+  holding: Map<string, { root: string; kind: ViewKind }>;
+  /** Each product's views, by ID; a product with none has an empty list. A view's product is its ID's prefix. */
+  products: Map<string, ViewSummary[]>;
   /** Every record ID in use, with its kind: what a next ID is one past, and what a refusal names. */
   kinds: Map<string, string>;
 }
 
-const text = (v: unknown): string | null => (v === undefined || v === null ? null : String(v));
 const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
+
+/** Rows by a column's value, each list in the table's order. */
+function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
+  const found = new Map<string, T[]>();
+  for (const r of rows) found.set(String(r[column]), [...(found.get(String(r[column])) ?? []), r as unknown as T]);
+  return found;
+}
+
+/** A link table's ends by one end, each list sorted. */
+function linked(view: ReadView, table: string, by: 'source_id' | 'target_id'): (id: string) => string[] {
+  const other = by === 'source_id' ? 'target_id' : 'source_id';
+  const found = grouped<Row>(view.rows(table), by);
+  return (id) => (found.get(id) ?? []).map((l) => String(l[other])).sort();
+}
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function viewTableFrom(view: ReadView): ViewTable {
-  const kinds = new Map<string, string>();
-  for (const kind of Object.keys(view.schema.kinds)) for (const r of view.rows(kind)) kinds.set(String(r.id), kind);
-  const startsFrom = view.rows('starts_from');
-  const tests = view.rows('view_test');
-  const requirements = view.rows('view_requirement');
-  const views = new Map<string, ViewPage>();
-  const holding = new Map<string, string>();
-  for (const v of [...view.rows('view')].sort((a, b) => byId({ id: String(a.id) }, { id: String(b.id) }))) {
-    const id = String(v.id);
-    holding.set(id, id);
-    const own = requirements.filter((r) => r.view_id === id);
-    views.set(id, {
-      id,
-      title: String(v.title),
-      route: text(v.route),
-      description: String(v.description),
-      notes: text(v.notes),
-      requirements: own
-        .map((r) => {
-          holding.set(String(r.id), id);
-          return {
-            id: String(r.id),
-            title: String(r.title),
-            statement: String(r.statement),
-            group: text(r.group_name),
-            tests: tests
-              .filter((t) => t.view_requirement_id === r.id)
-              .map((t) => {
-                holding.set(String(t.id), id);
-                return { id: String(t.id), title: String(t.title), level: String(t.level), state: String(t.state), file: text(t.file), startsFrom: startsFrom.filter((l) => l.source_id === t.id).map((l) => String(l.target_id)).sort() };
-              })
-              .sort(byId),
-          };
-        })
-        .sort(byId),
-    });
+  const startsFrom = linked(view, 'starts_from', 'source_id');
+  const requirements = grouped<ViewRequirementRow>(view.rows('view_requirement'), 'view_id');
+  const tests = grouped<ViewTestRow>(view.rows('view_test'), 'view_requirement_id');
+  const views = new Map<string, ViewTree>();
+  const holding = new Map<string, { root: string; kind: ViewKind }>();
+  const products = new Map<string, ViewSummary[]>(view.rows('product').map((p) => [String(p.id), []]));
+  for (const row of view.rows('view') as unknown as ViewRow[]) {
+    const root = row.id;
+    holding.set(root, { root, kind: 'view' });
+    const tree: ViewTree = {
+      view: row,
+      requirements: [...(requirements.get(root) ?? [])].sort(byId).map((requirement) => ({
+        requirement,
+        tests: [...(tests.get(requirement.id) ?? [])].sort(byId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
+      })),
+    };
+    for (const r of tree.requirements) {
+      holding.set(r.requirement.id, { root, kind: 'view_requirement' });
+      for (const t of r.tests) holding.set(t.test.id, { root, kind: 'view_test' });
+    }
+    views.set(root, tree);
+    products.get(root.replace(/-V\d+$/, ''))?.push({ id: root, title: row.title });
   }
-  return { views, holding, kinds };
+  for (const list of products.values()) list.sort(byId);
+  const kinds = new Map<string, string>();
+  for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
+  return { views, holding, products, kinds };
 }

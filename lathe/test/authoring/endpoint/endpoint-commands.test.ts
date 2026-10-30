@@ -51,11 +51,16 @@ describe('LA-AUT-UC26-R50-T01 each Endpoint command (LA-AUT-A13) changes one end
   it('builds the data set with its own Add commands, and reads an endpoint whole by any record in it', async () => {
     const store = await endpointDataSet();
     const page = runQuery(store, GET_ENDPOINT, { id: 'TL-LEND-EP01-H' }) as Page;
-    expect(page).toMatchObject({ id: 'TL-LEND-EP01', method: 'POST', route: '/loans', exposes: 'TL-LEND-CMD01', notes: null });
-    expect(page.handler).toEqual({ id: 'TL-LEND-EP01-H', title: 'postLoan', file: 'src/api.ts', description: 'Reads the request and runs Lend a tool.', meets: ['TL-STD-CODE-R01'], packages: [] });
-    expect(page.requirements[0].tests.map((t) => [t.id, t.startsFrom])).toEqual([['TL-LEND-EP01-R01-T01', ['TL-LEND-TD01']]]);
+    expect(page.record).toEqual({ id: 'TL-LEND-EP01-H', kind: 'endpoint_handler' });
+    expect(page.endpoint).toMatchObject({ id: 'TL-LEND-EP01', method: 'POST', route: '/loans', command_id: 'TL-LEND-CMD01' });
+    expect(page.endpoint.notes).toBeUndefined();
+    expect(page.handler).toEqual({ handler: { id: 'TL-LEND-EP01-H', title: 'postLoan', endpoint_id: 'TL-LEND-EP01', file: 'src/api.ts', description: 'Reads the request and runs Lend a tool.' }, meets: ['TL-STD-CODE-R01'], packages: [] });
+    expect(page.requirements.map((r) => [r.requirement.id, r.tests.map((t) => [t.test.id, t.startsFrom])])).toEqual([['TL-LEND-EP01-R01', [['TL-LEND-EP01-R01-T01', ['TL-LEND-TD01']]]]]);
+    expect((runQuery(store, GET_ENDPOINT, { id: 'TL-LEND-EP01-R01-T01' }) as Page).record).toEqual({ id: 'TL-LEND-EP01-R01-T01', kind: 'endpoint_test' });
+    expect(() => runQuery(store, GET_ENDPOINT, { id: 'TL-LEND-CMD01' })).toThrow(/TL-LEND-CMD01 is a command, not an endpoint or a record in one/);
     expect(runQuery(store, LIST_ENDPOINTS, { parent: 'TL-LEND-CMD01' })).toEqual([{ id: 'TL-LEND-EP01', title: 'POST /loans' }]);
     expect(runQuery(store, LIST_ENDPOINTS, { parent: 'TL-LEND-QRY01' })).toEqual([]);
+    expect(() => runQuery(store, LIST_ENDPOINTS, { parent: 'TL-LEND-EP01' })).toThrow(/there is no command or query TL-LEND-EP01/);
     expect(runQuery(store, NEXT_ENDPOINT_ID, { kind: 'endpoint', parent: 'TL-LEND-QRY01' })).toBe('TL-LEND-EP02');
     expect(runQuery(store, NEXT_ENDPOINT_ID, { kind: 'api_requirement', parent: 'TL-LEND-EP01' })).toBe('TL-LEND-EP01-R02');
     expect(runQuery(store, NEXT_ENDPOINT_ID, { kind: 'endpoint_test', parent: 'TL-LEND-EP01-R01' })).toBe('TL-LEND-EP01-R01-T02');

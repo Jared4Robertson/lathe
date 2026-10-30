@@ -1,16 +1,17 @@
 import './graph/setup';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { domainFolders } from '../src/specs/folders';
 import { treeChildren, treeParent } from '../src/graph/tree';
 import { modelIndex, modelWorkspace } from './fixtures/model';
-import { facts, main, openApp, section, stageOf } from './helpers';
+import { main, openApp, section, stageOf } from './helpers';
 
 // How the nav, the domain, product and group pages and the record page read a domain by stage and
 // kind (LA-V90, LA-V91, LA-V92): a group that is a record links and one the app computes only
-// folds, the technical and test kinds in the plan's order, the records with no owner, and the
-// pages of an endpoint and an integration.
+// folds, the technical and test kinds in the plan's order, and the records with no owner. A command's endpoints are on
+// its own page (command-page.test.tsx), an endpoint's and an integration's on theirs (endpoint-page.test.tsx and
+// integration-page.test.tsx).
 
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 const panel = () => nav().querySelector<HTMLElement>('.space-items')!;
@@ -160,23 +161,5 @@ describe('groups by stage and kind', () => {
     expect(treeParent(index, 'P-D-EP01')).toBe('P-D/interaction-design/endpoint');
     expect(treeParent(index, 'P-INT01')).toBe('P-D/interaction-design/integration');
     expect(treeChildren(index, 'P-D/interaction-design')).toContain('P-D/interaction-design/integration');
-  });
-
-  it("LA-V92-R27-T01 An endpoint's page lists its API requirements with their count", async () => {
-    await openApp('/DM-SHOP-EP01');
-    await screen.findByRole('heading', { level: 1, name: 'POST /basket/items' });
-    const requirements = section(/^API requirements/);
-    expect(within(main()).getByRole('heading', { name: /^API requirements/ })).toHaveTextContent('API requirements1');
-    expect(within(requirements).getByRole('link', { name: /DM-SHOP-EP01-R01/ })).toHaveAttribute('href', '/DM-SHOP-EP01-R01');
-  });
-
-  it("LA-V92-R28-T01 An integration's page lists the flow steps that exchange with it, with their count, and names its outside system", async () => {
-    await openApp('/P-INT01', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'Mail' });
-    const exchanges = section(/^Exchanged with by/);
-    expect(within(main()).getByRole('heading', { name: /^Exchanged with by/ })).toHaveTextContent('Exchanged with by1');
-    expect(within(exchanges).getByRole('link', { name: /P-D-UC01-FL01-S02/ })).toHaveAttribute('href', '/P-D-UC01-FL01-S02');
-    // The outside system, among its facts in the wiki card.
-    await waitFor(() => expect(facts()).toHaveTextContent('The mail service'));
   });
 });
