@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, GRAPH_CANVAS, GRAPH_TOOLS, ERD_CANVAS, RECORD } from './scenarios';
 import { boxOf, cameraOf, clickBox, clickErdBox, clippedLabels, erdDrawn, erdSceneOf, focusDrawn, GRAPH, graphDrawn, placesOf, pointOnBox, reachableBoxes, sceneOf } from './scene';

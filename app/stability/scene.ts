@@ -1,4 +1,5 @@
-import { expect, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect } from './test';
 import type { Scene, SceneBox, SceneHost } from '../src/graph/GraphPage';
 import type { AllHost, AllScene } from '../src/trace/TraceAll';
 import type { ErdHost, ErdScene } from '../src/erd/ErdView';

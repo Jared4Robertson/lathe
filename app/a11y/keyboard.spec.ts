@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from '../stability/test';
 import { DOMAIN, EDITED, keepData, PRODUCT, RECORD } from '../stability/scenarios';
 import { withChat } from './chat';
 

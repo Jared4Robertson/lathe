@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, RECORD, SHELL } from './scenarios';
 

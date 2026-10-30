@@ -1,6 +1,7 @@
 import { appendFileSync } from 'node:fs';
 import path from 'node:path';
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
+import { asDesktop } from './desktop';
 import { servedWorkspace } from './flows';
 import { openPage } from './measure';
 import { keepData, PRODUCT } from './scenarios';
@@ -16,21 +17,10 @@ const PANEL = '.tool-panel.checks-panel';
 const ADDED = 'LA-V990';
 
 /** The desktop shell's bridge, stood in for: it keeps each error count the page sends for the Dock badge. */
-function desktopBridge() {
+function keepCounts(bridge: LatheDesktop) {
   const counts: number[] = [];
   (window as unknown as { __counts: number[] }).__counts = counts;
-  (window as unknown as { latheDesktop: object }).latheDesktop = {
-    isDesktop: true,
-    platform: 'darwin',
-    onCommand: () => () => {},
-    setChrome: () => {},
-    onFullScreen: (listener: (full: boolean) => void) => { listener(false); return () => {}; },
-    setErrorCount: (count: number) => counts.push(count),
-    revealRecord: () => {},
-    openRecordInEditor: () => {},
-    copyRecordId: () => {},
-    showRecordMenu: () => {},
-  };
+  bridge.setErrorCount = (count) => { counts.push(count); };
 }
 
 test.describe('Checking flows', () => {
@@ -94,7 +84,7 @@ test.describe('Checking flows', () => {
       // S01: the product's Checks panel in the desktop app, its bridge stood in for, sends its error count to the Dock badge.
       const spec = await servedWorkspace();
       const errors = spec.problems.filter((p) => p.severity === 'error').length;
-      await page.addInitScript(desktopBridge);
+      await asDesktop(page, keepCounts);
       await openPage(page, CHECKS, PANEL);
       const main = page.locator(PANEL);
       const badge = () => page.evaluate(() => (window as unknown as { __counts: number[] }).__counts.at(-1));

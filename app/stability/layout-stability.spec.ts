@@ -1,7 +1,8 @@
 import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { openPage } from './measure';
 import { keepData } from './scenarios';
 import { erdSceneOf, GRAPH, graphDrawn, sceneOf } from './scene';

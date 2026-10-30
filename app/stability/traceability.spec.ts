@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { openPage } from './measure';
 import { rowsOf, servedWorkspace, testsText } from './flows';
 import { PRODUCT } from './scenarios';

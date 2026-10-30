@@ -1,4 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { createElement } from 'react';
+import { render } from '@testing-library/react';
+import { describe, expect, it, vi } from 'vitest';
 import { DEFAULT_VIEW, freshPlace, hereOf, MAX_HISTORY, movePlace, notePlace, readPlace, replacePlace, stepPlace, type PlaceView } from '../src/views/place';
 import { activateTab as activate } from '../src/exploring/tab-set/commands/activate-tab';
 import { closeTab as close } from '../src/exploring/tab-set/commands/close-tab';
@@ -10,7 +12,7 @@ import { replaceInTab as replace } from '../src/exploring/tab-set/commands/repla
 import { stepTab as step } from '../src/exploring/tab-set/commands/step-tab';
 import { updateView as changeView } from '../src/exploring/tab-set/commands/update-view';
 import { activeTab, emptyTabs, NO_TABS, parseTabSet, type TabSet, type TabSets } from '../src/exploring/tab-set/model';
-import { RuleBroken } from '../src/shell/prefs';
+import { RuleBroken, useAggregate } from '../src/shell/prefs';
 import { keepCamera } from '../src/exploring/tab-set/commands/keep-camera';
 import { rememberStage } from '../src/exploring/tab-set/commands/remember-stage';
 import { arrive, onPageOpenedMoveActiveTab } from '../src/exploring/tab-set/policies';
@@ -209,6 +211,23 @@ describe('LA-EXP-INV08-T the Tab set commands keep the tabs through TabSetReposi
     onPageOpenedMoveActiveTab(arrival);
     onPageOpenedMoveActiveTab(arrival);
     expect(sets().P.tabs).toHaveLength(1);
+  });
+});
+
+describe('the Tab set as a stable snapshot', () => {
+  it('reads a stale stored set once: the drop from storage does not make each load a new value, so React never warns', () => {
+    // A set of another form: the read drops it from storage too, which changes the stored text it is cached by.
+    window.sessionStorage.setItem('lathe:tabs', JSON.stringify({ P: { stale: true } }));
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const first = tabSetRepository.load();
+      expect(tabSetRepository.load()).toBe(first);
+      function Reader() { return createElement('span', null, String(Object.keys(useAggregate(tabSetRepository).sets).length)); }
+      render(createElement(Reader));
+      expect(errors.mock.calls.flat().join('\n')).not.toMatch(/getSnapshot/);
+    } finally {
+      errors.mockRestore();
+    }
   });
 });
 

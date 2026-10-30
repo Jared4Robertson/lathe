@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
 import { openPage } from './measure';
 import { RECORD } from './scenarios';
 

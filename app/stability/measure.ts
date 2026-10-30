@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 
 // What the stability suite measures in each step of a scenario (LA-PAT-APP-UX-R08):
 // - every layout shift, from a PerformanceObserver for `layout-shift`, including the ones the
