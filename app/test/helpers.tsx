@@ -5,7 +5,7 @@ import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
 import type { BaselineAnswer } from '../../lathe/src/server/contract';
 import type { Command } from '../../lathe/src/platform/data/generic-write';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
-import { SETTINGS_KEY } from '../src/graph/settings';
+import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { ALL_COMMANDS, ALL_QUERIES } from '../../lathe/src/commands';
 import { InputError } from '../../lathe/src/platform/commands/definition';
 import { answerQuery } from '../../lathe/src/platform/commands/run';

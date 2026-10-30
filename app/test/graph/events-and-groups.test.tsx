@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { groupLabel, neighborhood } from '../../src/graph/model';
 import { shapeOf } from '../../src/graph/shapes';
 import { treeChildren, treeParent } from '../../src/graph/tree';
-import { SETTINGS_KEY, sessionSettings } from '../../src/graph/settings';
+import { SETTINGS_KEY, sessionSettingsRepository } from '../../src/exploring/session-settings/repository';
 import { readView } from '../../src/views/place';
 import { openApp } from '../helpers';
 import { indexOf } from '../fixtures/load';
@@ -77,14 +77,14 @@ describe('the rules the graph keeps', () => {
     const stored = (layout: string) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, cardWidth: null, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
     for (const layout of ['tree', 'nested'] as const) {
       stored(layout);
-      expect(sessionSettings().graph).toEqual({ layout, minimap: false });
+      expect(sessionSettingsRepository.load().graph).toEqual({ layout, minimap: false });
     }
     for (const depth of [1, 2, 3]) expect(readView({ depth }).depth).toBe(depth);
     // Any other depth falls back to 1; any other layout, one the graph no longer has included, reads as Tree and keeps the rest.
     for (const depth of [0, 4, 2.5, -1, '2']) expect(readView({ depth }).depth).toBe(1);
     for (const layout of ['grid', 'voronoi']) {
       stored(layout);
-      expect(sessionSettings().graph).toEqual({ layout: 'tree', minimap: false });
+      expect(sessionSettingsRepository.load().graph).toEqual({ layout: 'tree', minimap: false });
     }
   });
 
