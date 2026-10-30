@@ -27,12 +27,14 @@ describe('LA-PLT-A2-SR01 a panel\'s size and whether it shows are kept in this b
   });
 });
 
-describe('LA-PLT-A4-SR01 the person\'s themes, chosen theme and color mode are kept in this browser', () => {
+describe('LA-PLT-A4-SR01 the person\'s themes, chosen theme, color mode and Scroll to zoom are kept in this browser', () => {
   it('LA-PLT-A4-SR01-T01 the themes and choices saved read back from local storage, and a blocked storage loses only the choice', () => {
     const appearance = new AppearanceRepository().load();
-    new AppearanceRepository().save({ ...appearance, mode: 'dark' });
+    expect(appearance.scrollToZoom).toBe(false);
+    new AppearanceRepository().save({ ...appearance, mode: 'dark', scrollToZoom: true });
     expect(window.localStorage.getItem(APPEARANCE_KEYS.mode)).toBe(JSON.stringify('dark'));
-    expect(new AppearanceRepository().load()).toMatchObject({ mode: 'dark' });
+    expect(window.localStorage.getItem(APPEARANCE_KEYS.scrollToZoom)).toBe('true');
+    expect(new AppearanceRepository().load()).toMatchObject({ mode: 'dark', scrollToZoom: true });
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('blocked'); });
     expect(() => new AppearanceRepository().save({ ...appearance, mode: 'light' })).not.toThrow();
   });

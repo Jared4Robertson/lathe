@@ -7,6 +7,8 @@ import { QuickPick } from './QuickPick';
 import { useThemes } from './ThemeProvider';
 import { MODE_CHOICES, MODE_LABELS, type ModeChoice, type Theme } from './theme';
 import { panelHref } from '../views/overlays';
+import { turnScrollToZoomOnOrOff } from '../platform/appearance/commands/turn-scroll-to-zoom-on-or-off';
+import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 
 /** A palette, drawn like the shared icons (app/src/components/icons.tsx): 24 x 24 lines, 2 px stroke. */
 export function PaletteIcon({ size = 16 }: { size?: number }) {
@@ -31,7 +33,7 @@ export function ThemeChip({ theme, mode }: { theme: Theme; mode: 'light' | 'dark
 /**
  * The theme commands: "Color theme" opens a quick pick that shows each theme as it is arrowed to,
  * keeping it on Enter and putting back the one before on Escape; "Light, dark or system" does the
- * same for the mode; and a command opens Appearance over the stage.
+ * same for the mode; a command opens Appearance over the stage; and one turns Scroll to zoom on or off.
  */
 export function ThemeCommands() {
   const { themes, active, mode, choose, setMode, preview } = useThemes();
@@ -41,6 +43,11 @@ export function ThemeCommands() {
   useCommand('chooseTheme', () => setOpen('theme'));
   useCommand('chooseColorMode', () => setOpen('mode'));
   useCommand('openAppearance', () => navigate(panelHref('appearance')));
+  const scrollToZoom = useScrollToZoom();
+  useCommand('toggleScrollToZoom', () => {
+    turnScrollToZoomOnOrOff({ on: !scrollToZoom });
+    announce(scrollToZoom ? 'Scroll to zoom off: scroll pans' : 'Scroll to zoom on: scroll zooms');
+  });
 
   const close = () => { preview(null); setOpen(null); };
   const shows = shownMode(mode);
