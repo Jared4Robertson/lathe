@@ -5,7 +5,7 @@ import type { DeliveryOrder } from './delivery-order';
 // as tall as its tallest cell, every box one height, a cell's boxes stacked from its row's top, each child indented
 // under its parent. Top-down from fixed boxes: a row's place depends only on the rows above it and its own cells, so
 // opening a cell moves only its row's boxes and the rows below it, which glide (graph/morph.ts), and nothing beside it
-// changes width. A removed row's room stays empty until Tidy up (delivery-order.ts). The rows serving no outcome sit after the rest, under the mark "No outcome". Each outcome sits at the
+// changes width. A removed row's room stays empty until Tidy up (delivery-order.ts), and an outcome keeps its top once placed. The rows serving no outcome sit after the rest, under the mark "No outcome". Each outcome sits at the
 // median height of the rows it serves, never closer than a box to the one above it, in its order. Arithmetic only, on
 // the page: every box is one size and no text is measured, so it is worked out again at once when a cell opens.
 
@@ -19,6 +19,8 @@ export const COLUMN_GAP = 88;
 /** The gap above the rows serving no outcome, which holds their mark. */
 export const OUTSIDE_GAP = 72;
 const PITCH = ITEM_HEIGHT + ITEM_GAP;
+/** How many boxes from where its rows would put it a new outcome looks for a free place, before it goes to the bottom of its column. */
+export const NEAR_OUTCOME_ROWS = 3;
 
 /** A column's left edge. */
 export const columnLeft = (column: number) => column * (ITEM_WIDTH + COLUMN_GAP);
@@ -74,18 +76,37 @@ export function layOutDelivery(graph: DeliveryGraph, order: DeliveryOrder, open:
   }
   const height = Math.max(0, y - ROW_GAP);
 
-  // The outcomes, each by the median middle of the rows it serves, in their order, a box apart.
+  // The outcomes. Each one laid out before keeps its top (the order's outcomeTops). In a fresh order (none kept) each
+  // goes by the median middle of the rows it serves, in its order, a box apart. A new one beside kept ones takes the
+  // nearest free place to that median within NEAR_OUTCOME_ROWS boxes, else the bottom of the column. Each top is kept
+  // in the order, so opening a row or new data moves no outcome until Tidy up.
   const servedRows = new Map<string, number[]>();
   for (const [o, u] of graph.serves) { const r = rows.get(u); if (r) (servedRows.get(o) ?? servedRows.set(o, []).get(o)!).push(r.y + ITEM_HEIGHT / 2); }
+  const shown = order.outcomes.filter((o) => graph.items.has(`outcome/${o}`));
+  const fresh = shown.every((o) => !order.outcomeTops.has(o));
+  const tops = shown.filter((o) => order.outcomeTops.has(o)).map((o) => order.outcomeTops.get(o)!);
   let at = -PITCH;
-  for (const o of order.outcomes) {
-    const key = `outcome/${o}`;
-    if (!graph.items.has(key)) continue;
+  for (const o of shown) {
     const mids = (servedRows.get(o) ?? []).sort((a, b) => a - b);
-    const want = mids.length > 0 ? mids[Math.floor((mids.length - 1) / 2)] - ITEM_HEIGHT / 2 : at + PITCH;
-    at = Math.max(want, at + PITCH, 0);
-    places.set(key, { x: columnLeft(0), y: at, w: ITEM_WIDTH, h: ITEM_HEIGHT });
-    columns[0].push(key);
+    const median = mids.length > 0 ? mids[Math.floor((mids.length - 1) / 2)] - ITEM_HEIGHT / 2 : null;
+    let y = order.outcomeTops.get(o);
+    if (y === undefined && fresh) at = y = Math.max(median ?? at + PITCH, at + PITCH, 0);
+    else if (y === undefined) {
+      const want = Math.max(0, median ?? Infinity);
+      const free = (v: number) => v >= 0 && tops.every((t) => Math.abs(t - v) >= PITCH - 1e-9);
+      const near = Number.isFinite(want)
+        ? [want, ...tops.flatMap((t) => [t - PITCH, t + PITCH])].filter((v) => Math.abs(v - want) <= NEAR_OUTCOME_ROWS * PITCH + 1e-9 && free(v)).sort((p, q) => Math.abs(p - want) - Math.abs(q - want) || p - q)[0]
+        : undefined;
+      y = near ?? (tops.length > 0 ? Math.max(...tops) + PITCH : 0);
+    }
+    tops.push(y);
+    order.outcomeTops.set(o, y);
   }
-  return { order, rows, columns, places, outsideTop, width: columnLeft(4) + ITEM_WIDTH, height: Math.max(height, at + ITEM_HEIGHT) };
+  const outcomes = [...shown].sort((a, b) => order.outcomeTops.get(a)! - order.outcomeTops.get(b)!);
+  for (const o of outcomes) {
+    places.set(`outcome/${o}`, { x: columnLeft(0), y: order.outcomeTops.get(o)!, w: ITEM_WIDTH, h: ITEM_HEIGHT });
+    columns[0].push(`outcome/${o}`);
+  }
+  const bottom = Math.max(0, ...outcomes.map((o) => order.outcomeTops.get(o)! + ITEM_HEIGHT));
+  return { order, rows, columns, places, outsideTop, width: columnLeft(4) + ITEM_WIDTH, height: Math.max(height, bottom) };
 }
