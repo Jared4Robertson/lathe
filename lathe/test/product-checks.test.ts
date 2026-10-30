@@ -1,9 +1,11 @@
 // A product's own checks: rows of its data/check.jsonl with its product_id, run after Lathe's built-in checks
 // (lathe/data/check.jsonl), against the same tables, and reporting only on records of their product.
-import { readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { ADD_CHECK } from '../src/checking/check/commands/add-check.ts';
 import { LATHE_DATA_DIR, loadWorkspace, openStore, StoreError, type Workspace } from '../src/index.ts';
+import { runCommand } from '../src/platform/commands/run.ts';
 import { adding, build, complete, loadData, ofCheck, removeData, writeData } from './helpers.ts';
 
 const latheChecks = readFileSync(path.join(LATHE_DATA_DIR, 'check.jsonl'), 'utf8')
@@ -24,7 +26,7 @@ const house = () =>
       // One unheard event per aggregate; it returns a check column of its own, which is ignored.
       row('every-event-heard', 1, `SELECT e.id AS record, 'house-rule' AS check, 'Domain event ' || e.id || ' is heard by no policy.' AS message
 FROM domain_event e WHERE NOT EXISTS (SELECT 1 FROM hears h WHERE h.target_id = e.id) ORDER BY record`),
-      row('broken', 2, 'SELECT * FROM no_such_table'),
+      row('broken', 2, 'SELECT NULL AS record, NULL AS message FROM no_such_table'),
       // A product's check reports only on its own product's records, and on none.
       row('every-domain', 3, "SELECT id AS record, 'Domain ' || id || '.' AS message FROM domain UNION ALL SELECT NULL, 'Workspace.' ORDER BY record NULLS LAST"),
     ],
@@ -66,18 +68,25 @@ describe("a product's own checks", () => {
     return { root, store: await openStore(root), check: row('view-unused', 1, "SELECT NULL AS record, 'THIS PRODUCT CHECK RAN' AS message") };
   };
 
-  it("LA-CHK-INV01-T A product check named like one of Lathe's checks is refused by the store, naming Lathe's file", async () => {
-    const { store, check } = await clashing();
-    const clash = store.add('check', { ...check, severity: 'error' });
+  it("LA-CHK-INV01-T A product check named like one of Lathe's checks is refused by its rule check-name-own, naming Lathe's file, and nothing changes", async () => {
+    const { root, store, check } = await clashing();
+    const file = path.join(root, 'data', 'check.jsonl');
+    const read = () => (existsSync(file) ? readFileSync(file, 'utf8') : null);
+    const before = read();
+    const clash = runCommand(store, ADD_CHECK, { ...check, severity: 'error' });
     await expect(clash).rejects.toThrow(StoreError);
-    await expect(clash).rejects.toMatchObject({ problems: [expect.objectContaining({ rule: 'primary-key', message: expect.stringContaining("one of Lathe's own (lathe/data/check.jsonl)") })] });
+    await expect(clash).rejects.toMatchObject({
+      problems: [expect.objectContaining({ rule: 'check-name-own', message: "check view-unused already exists as one of Lathe's own (lathe/data/check.jsonl); give the check a name of its own" })],
+    });
+    expect(store.rows('check').filter((r) => r.name === 'view-unused')).toHaveLength(1);
     await store.close();
+    expect(read()).toBe(before);
   });
 
   it("LA-CHK-UC05-R03-T01 A product check named like one of Lathe's checks never runs: written into the data file, it is refused when the data loads", async () => {
     const { root, store } = await clashing();
     await store.close();
-    writeFileSync(path.join(root, 'data', 'check.jsonl'), `${JSON.stringify(row('view-unused', 1, 'SELECT 1'))}\n`);
+    writeFileSync(path.join(root, 'data', 'check.jsonl'), `${JSON.stringify(row('view-unused', 1, 'SELECT NULL AS record, NULL AS message'))}\n`);
     const loaded = await loadWorkspace(root);
     expect(ofCheck(loaded, 'data-refused')).toEqual([expect.objectContaining({ severity: 'error', message: expect.stringContaining('check view-unused is already on lathe/data/check.jsonl') })]);
   });

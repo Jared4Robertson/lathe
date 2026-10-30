@@ -13,6 +13,7 @@ import { ADD_PATTERN_RULE_TEST } from '../../src/authoring/pattern/commands/add-
 import { ADD_TABLE } from '../../src/authoring/table/commands/add-table.ts';
 import { ADD_PROJECTION } from '../../src/authoring/read-model/commands/add-projection.ts';
 import { ADD_QUERY_HANDLER } from '../../src/authoring/read-model/commands/add-query-handler.ts';
+import { ADD_READER } from '../../src/authoring/read-model/commands/add-reader.ts';
 import { ADD_EVENT_TYPE } from '../../src/authoring/domain-event/commands/add-event-type.ts';
 import { ADD_ENDPOINT_HANDLER } from '../../src/authoring/endpoint/commands/add-endpoint-handler.ts';
 import { ADD_ADAPTER } from '../../src/authoring/integration/commands/add-adapter.ts';
@@ -109,11 +110,14 @@ describe('LA-AUT-INV106-T a second table of an entity or a read model is refused
   });
 });
 
-describe('LA-AUT-INV107-T a second projection of a read model, or a second handler of a query, is refused', () => {
+describe('LA-AUT-INV107-T a second projection or reader of a read model, or a second handler of a query, is refused', () => {
   it('refuses each with read-model-one-each', async () => {
     const on = await store();
     expect(await refused(on, ADD_PROJECTION, { id: 'TL-LEND-RM01-PJ2', title: 'byMember', read_model_id: 'TL-LEND-RM01', description: 'Another view.' })).toEqual([
       { rule: 'read-model-one-each', message: 'read model TL-LEND-RM01 already has its projection, so TL-LEND-RM01-PJ2 cannot be a second: a read model has one' },
+    ]);
+    expect(await refused(on, ADD_READER, { id: 'TL-LEND-RM01-RD2', title: 'LoanReaderAgain', read_model_id: 'TL-LEND-RM01', description: 'Another reader.' })).toEqual([
+      { rule: 'read-model-one-each', message: 'read model TL-LEND-RM01 already has its reader, so TL-LEND-RM01-RD2 cannot be a second: a read model has one' },
     ]);
     expect(await refused(on, ADD_QUERY_HANDLER, { id: 'TL-LEND-QRY01-H2', title: 'listTools', query_id: 'TL-LEND-QRY01', description: 'Selects again.' })).toEqual([
       { rule: 'read-model-one-each', message: 'query TL-LEND-QRY01 already has its query handler, so TL-LEND-QRY01-H2 cannot be a second: a query has one' },

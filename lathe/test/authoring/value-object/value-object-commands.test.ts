@@ -78,7 +78,7 @@ describe('LA-AUT-UC24-R50-T01 each Value object command (LA-AUT-A9) changes one 
     expect((await refusal(store, ADD_CONSTRAINT_TEST, { id: 'TL-VO01-C01-T2', title: 'again', constraint_id: 'TL-VO01-C01', level: 'unit', state: 'not automated yet', accepts: 'a@b', refuses: 'ab' })).problems[0].rule).toBe('value-object-one-each');
     await expect(runCommand(store, CHANGE_VALUE_OBJECT, { id: 'TL-VO01', fields: [{ name: 'Address', colour: 'red' }] })).rejects.toThrow(/an item takes name, meaning/);
     await expect(runCommand(store, CHANGE_CONSTRAINT, { id: 'TL-VO01-C01', value_object_id: 'TL-VO02' })).rejects.toThrow(/change-constraint takes no value_object_id/);
-    expect((await refusal(store, CHANGE_VALUE_OBJECT, { id: 'TL-VO01', fields: [{ name: 'Address', meaning: 'x', required: true }] })).problems[0].rule).toBe('check');
+    expect((await refusal(store, CHANGE_VALUE_OBJECT, { id: 'TL-VO01', fields: [{ name: 'Address', meaning: 'x', required: true }] })).problems[0].rule).toBe('value-object-field-one-type');
     expect((await refusal(store, REMOVE_CONSTRAINT, { id: 'TL-VO09-C01' })).problems[0]).toMatchObject({ rule: 'missing', message: 'there is no constraint TL-VO09-C01' });
     expect(fileOf(store, 'value_object_field')).toBe(before);
   });

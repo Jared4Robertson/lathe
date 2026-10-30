@@ -1,8 +1,10 @@
 // Coverage: every obligation designed, built and proved, per domain and for what the product shares, and the
 // records short of a minimum. Each case starts from the complete product, where everything is covered.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ALLOWED_LEVELS, GAP_RULES, type Workspace } from '../src/index.ts';
-import { adding, changing, complete, gaps, loadData, obligation, ofCheck, records, removeData, sparse, SPARSE_FILES, without, type Data } from './helpers.ts';
+import { CHANGE_SETTING_VALUES } from '../src/traceability/pattern-following/commands/change-setting-values.ts';
+import { ALLOWED_LEVELS, GAP_RULES, openStore, StoreError, type Workspace } from '../src/index.ts';
+import { runCommand } from '../src/platform/commands/run.ts';
+import { adding, build, changing, complete, gaps, loadData, obligation, ofCheck, records, removeData, sparse, SPARSE_FILES, without, type Data } from './helpers.ts';
 
 afterAll(removeData);
 
@@ -492,7 +494,23 @@ describe('pattern rules, domain by domain', () => {
     expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 2, proved: 1 });
   });
 
-  it('LA-TRC-INV02-T a follower of two patterns with a setting of the same name gives each its own value', async () => {
+  it("LA-TRC-INV02-T a setting takes one value from each follower: a second value of one setting is refused with setting-value-own-pattern, changing nothing", async () => {
+    const store = await openStore(await build(complete()));
+    try {
+      const error = await runCommand(store, CHANGE_SETTING_VALUES, {
+        follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting_values: [{ setting: 'record', value: 'Tool' }, { setting: 'record', value: 'Loan' }],
+      }).then(() => null, (e: unknown) => e);
+      expect(error).toBeInstanceOf(StoreError);
+      expect((error as StoreError).problems.map((p) => [p.rule, p.message])).toEqual([
+        ['setting-value-own-pattern', 'EX-LEND-UC02 gives setting record of EX-PAT-ACT a second value: a setting takes one value from each follower'],
+      ]);
+      expect(store.rows('setting_value')).toEqual([{ follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Tool' }]);
+    } finally {
+      await store.close();
+    }
+  });
+
+  it('LA-TRC-UC07-R03-T01 a follower of two patterns with a setting of the same name gives each its own value', async () => {
     const data = adding(complete(), {
       pattern: [{ id: 'EX-PAT-AUD', title: 'Audited action', product_id: 'EX', description: 'An action the audit log records.' }],
       pattern_setting: [{ pattern_id: 'EX-PAT-AUD', position: 1, name: 'record', meaning: 'The record audited.' }],

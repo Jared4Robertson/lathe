@@ -30,14 +30,21 @@ export interface Check {
   /** The check's name: the instance's root. */
   readonly root: string;
   check: CheckRow;
+  /** Whether it is one of Lathe's own, loaded from lathe/data/check.jsonl and so read-only. */
+  readonly lathes: boolean;
 }
 
 /** The tables the Check aggregate keeps its rows in. */
 export const CHECK_TABLES = ['check'] as const;
 
-/** The checks in the data, each whole; only the one named, when given. */
-export function checksFrom(rows: (table: string) => Row[], only?: string): Check[] {
-  return (rows('check') as unknown as CheckRow[]).filter((c) => only === undefined || c.name === only).map((check) => ({ root: check.name, check }));
+/**
+ * The checks in the data, each whole; only the one named, when given. `isLathes` says which rows are Lathe's own (the
+ * repository knows it from where each row was loaded; the data alone does not say, so none are by default).
+ */
+export function checksFrom(rows: (table: string) => Row[], only?: string, isLathes: (row: Row) => boolean = () => false): Check[] {
+  return (rows('check') as unknown as CheckRow[])
+    .filter((c) => only === undefined || c.name === only)
+    .map((check) => ({ root: check.name, check, lathes: isLathes(check as unknown as Row) }));
 }
 
 /** The instance's rows, by table. */
