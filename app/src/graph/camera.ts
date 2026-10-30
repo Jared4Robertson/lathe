@@ -1,5 +1,6 @@
 import { COLUMN_GAP_SHARE, MAX_COLUMN_SHARE, type GraphMap, type MapNode, type PlacedMap } from './map';
 import { TITLE_FONT } from './text';
+import type { GroundMap } from './ground';
 
 // The camera over the one map (LA-EXP-DS09). Focusing a node, by a click, the address, Back and
 // Forward, the step keys or the trail, moves the camera only: it frames the focus and the levels
@@ -426,6 +427,24 @@ export function frameNested(map: PlacedMap, focus: string, width: number, height
   if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: 1 };
   const zoom = Math.min(max, (width - 2 * FRAME_PADDING) / Math.max(1, node.w), (height - 2 * FRAME_PADDING) / Math.max(1, node.h));
   return { x: width / 2 - (node.x + node.w / 2) * zoom, y: height / 2 - (node.y + node.h / 2) * zoom, zoom };
+}
+
+/** The Map's street level (LA-EXP-DS12): the zoom at which every record's text reads at its own size, as the page's text does. */
+export const STREET_ZOOM = 1;
+
+/**
+ * The camera that frames a focus in the Map (LA-EXP-DS12): a record at street level, centered in the pane, or, when it
+ * is too big to show whole there (a use case with its flows), its top left corner at the frame's padding, so its name
+ * and its first records read; a district, neighborhood or area whole, zoomed out as far as it needs, never in past
+ * street level. The Map's walk, quick open and Frame all land here.
+ */
+export function frameGround(map: GroundMap, focus: string, width: number, height: number, max = MAX_ZOOM): Viewport {
+  const node = map.nodes.get(focus);
+  if (!node || width <= 0 || height <= 0) return { x: width / 2, y: height / 2, zoom: STREET_ZOOM };
+  const fit = Math.min((width - 2 * FRAME_PADDING) / Math.max(1, node.w), (height - 2 * FRAME_PADDING) / Math.max(1, node.h));
+  const zoom = Math.min(max, STREET_ZOOM, node.role === 'record' ? Infinity : fit);
+  const along = (start: number, size: number, room: number) => (size * zoom <= room - 2 * FRAME_PADDING ? room / 2 - (start + size / 2) * zoom : FRAME_PADDING - start * zoom);
+  return { x: along(node.x, node.w, width), y: along(node.y, node.h, height), zoom };
 }
 
 /**

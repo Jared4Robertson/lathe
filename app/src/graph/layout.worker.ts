@@ -2,6 +2,7 @@
 import { canvasMeasure, faceLoads, type FaceSource, type GraphFonts } from './fonts';
 import { fitCache, placeTree } from './map';
 import { placeNested } from './nested';
+import { placeGround } from './ground';
 import { setTextMeasure, textMeasure } from './text';
 import { probeOf, unpackInput, type LayoutReply, type LayoutRequest } from './layout-input';
 
@@ -32,7 +33,7 @@ self.onmessage = async (e: MessageEvent<LayoutRequest>) => {
     return;
   }
   const start = performance.now();
-  const { shape, labels } = unpackInput(message.packed, message.roots);
-  const geometry = message.view === 'tree' ? placeTree(shape, (i) => labels[i], fits) : placeNested(shape, (i) => labels[i]);
+  const { shape, labels, roles } = unpackInput(message.packed, message.roots);
+  const geometry = message.view === 'tree' ? placeTree(shape, (i) => labels[i], fits) : message.view === 'map' ? placeGround(shape, (i) => labels[i], (i) => roles[i]) : placeNested(shape, (i) => labels[i]);
   self.postMessage({ type: 'laid', id: message.id, boxes: geometry.boxes, width: geometry.width, height: geometry.height, ms: performance.now() - start } satisfies LayoutReply, [geometry.boxes.buffer]);
 };

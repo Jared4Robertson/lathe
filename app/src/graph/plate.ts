@@ -1,7 +1,9 @@
 import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
-import { groupKindLabel, stageFor, type BoxStage } from './model';
+import { groupKindLabel, groupName, stageFor, type BoxStage } from './model';
 import type { MapNode } from './map';
 import type { NestedNode } from './nested';
+import type { GroundNode } from './ground';
+import { countOf } from '../plural';
 import { treeGroup } from './tree';
 import { nodeShape, outlineOf, SHAPES, type Mark, type Outline, type Shape } from './shapes';
 import {
@@ -15,8 +17,8 @@ import {
 // (paint.ts), so a label keeps its size in the map and is crisp at any zoom. A plate is made once
 // per map and node, from the lines the map broke its label into.
 
-/** How a box is drawn: a Tree box in its kind's shape (the Graph's and the Trace stage's), or a Nested box. */
-export type PlateView = 'tree' | 'nested';
+/** How a box is drawn: a Tree box in its kind's shape (the Graph's and the Trace stage's), a Nested box, or a Map box or area. */
+export type PlateView = 'tree' | 'nested' | 'map';
 
 /** One line of a label, at its place in the map: its text as the map broke it (a space it ends with is not drawn), its left end and baseline, its font size, and its width in map units. */
 export interface PlateLine { text: string; face: Face; size: number; x: number; baseline: number; top: number; height: number; width: number; tone: 'ink' | 'muted' }
@@ -63,6 +65,11 @@ export interface Plate {
   lines: PlateLine[];
   icons: PlateIcon[];
   badges: PlateBadge[];
+  /**
+   * A Map's ground, district, neighborhood or area (ground.ts): drawn as a labeled area, not a box, its name and its count
+   * of records at one size on screen whatever the zoom (paint.ts), as a map labels its places; null for a box.
+   */
+  area: { role: 'ground' | 'district' | 'neighborhood' | 'area'; name: string; count: string } | null;
   /** The marks' counts, for the accessible description. */
   errors: number;
   warnings: number;
@@ -147,7 +154,11 @@ export interface PlainBox { kind: string; kindLabel: string; title: string; meta
  */
 export type PlateSource =
   | { view: 'tree'; node: MapNode; place?: string; plain?: PlainBox }
-  | { view: 'nested'; node: NestedNode };
+  | { view: 'nested'; node: NestedNode }
+  | { view: 'map'; node: GroundNode };
+
+/** The corner radius of a Map's area, in map units. */
+const AREA_RADIUS = 18;
 
 /** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DS06, LA-EXP-DS07, LA-V93-R06). */
 export function plateOf(index: RecordIndex, id: string, source: PlateSource): Plate {
@@ -164,8 +175,23 @@ export function plateOf(index: RecordIndex, id: string, source: PlateSource): Pl
     id, place: (source.view === 'tree' ? source.place : undefined) ?? id, kind,
     kindLabel: plain ? plain.kindLabel : record ? kindLabel(index, record.kind) : groupKindLabel(index, id), title: words.title, meta: words.meta,
     stage, group: !plain && !record, shape, view: source.view, x, y, w, h, text: t, ...marks,
-    dashed: plain ? plain.dashed : kind === 'question',
+    dashed: plain ? plain.dashed : kind === 'question', area: null,
   };
+
+  if (source.view === 'map' && source.node.role !== 'record') {
+    // A Map's area (LA-EXP-DS12): a soft rounded ground, its name and count drawn at one size on screen (paint.ts); its
+    // badges at its top right, at street level.
+    const n = source.node;
+    const role = n.role as 'ground' | 'district' | 'neighborhood' | 'area';
+    const r = Math.min(AREA_RADIUS, w / 2, h / 2);
+    const name = record ? record.title : groupName(index, id);
+    const badges = marked ? badgesAt(marks, x + w - BADGE.right, y + BADGE.top, 1) : [];
+    return {
+      ...base, scale: 1, outline: { kind: 'round', rx: r, ry: r }, edged: false, border: BORDER, decoration: null,
+      label: { x: x + LABEL_PAD, y, w: Math.max(0, w - 2 * LABEL_PAD), h: n.header }, lines: [], icons: [], badges,
+      area: { role, name, count: countOf(n.count, 'record') },
+    };
+  }
 
   if (source.view === 'tree') {
     // Its kind's shape is its outline (LA-V93-R06); a polygon's edge is drawn inside it, so it has no border to pad past.
@@ -185,7 +211,7 @@ export function plateOf(index: RecordIndex, id: string, source: PlateSource): Pl
     return { ...base, scale, outline, edged, border, decoration: shape, label: { x: box.left, y: box.top, w: box.right - box.left, h: box.bottom - box.top }, lines: placed.lines, icons: placed.icons, badges };
   }
 
-  // Nested (LA-EXP-DS07): its border grows with its text; its shape is a mark before its kind and ID line.
+  // Nested (LA-EXP-DS07) and a Map's record (LA-EXP-DS12): its border grows with its text; its shape is a mark before its kind and ID line.
   const n = source.node;
   const scale = Math.max(0.5, t);
   const border = BORDER * scale;

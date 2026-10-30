@@ -57,7 +57,7 @@ async function step(key: string) {
 
 describe('moving through the graph keeps how it is drawn', () => {
   it('LA-V96-R35-T01 Opening, activating, cycling and closing tabs never touch the window\'s settings; only the person\'s change does', () => {
-    const mine: GraphLook = { layout: 'nested', minimap: true };
+    const mine: GraphLook = { layout: 'nested', minimap: true, allLinks: false };
     chooseGraphLayout({ layout: mine.layout });
     showOrHideMinimap({ shown: mine.minimap });
     const unchanged = (set: TabSet) => {
@@ -128,7 +128,7 @@ describe('moving through the graph keeps how it is drawn', () => {
         await new Promise((resolve) => window.addEventListener('popstate', resolve, { once: true }));
       });
       expect(drawn()).toEqual(set);
-      expect(sessionSettingsRepository.load().graph).toEqual({ layout, minimap: true });
+      expect(sessionSettingsRepository.load().graph).toEqual({ layout, minimap: true, allLinks: false });
 
       // The person's own change does change it: v steps to the next layout.
       fireEvent.keyDown(document.body, { key: 'v' });

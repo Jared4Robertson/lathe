@@ -12,7 +12,7 @@ import { traced, tracesOf } from './trace/traces';
 import { erdOf } from './erd-of';
 import { allTarget } from '../src/trace/all-walk';
 import { MOVES, reachable } from '../src/views/levels';
-import { graphMap } from './graph/maps';
+import { graphMap, groundMap } from './graph/maps';
 
 // Every node is reachable by keyboard (LA-PAT-APP-UX-R21): on Lathe's own spec, a breadth-first search over every move
 // of the stage walk (the arrows, which W, A, S and D take too, and Out and In) from the product reaches every node each
@@ -29,9 +29,13 @@ const missed = (all: Iterable<string>, reached: ReadonlySet<string>) => [...all]
 
 describe('every node is reachable by keyboard', () => {
   it('LA-PAT-APP-UX-R21-T02 On the Graph, every box of the map is reached from the product in each layout', () => {
-    const drawn = [...graphMap(index, PRODUCT).nodes.keys()];
-    expect(drawn.length).toBeGreaterThan(1000);
+    const tree = [...graphMap(index, PRODUCT).nodes.keys()];
+    const ground = [...groundMap(index).nodes.keys()];
+    expect(tree.length).toBeGreaterThan(1000);
+    expect(ground.length).toBeGreaterThan(1000);
     for (const { layout } of GRAPH_LAYOUTS) {
+      // The Map draws its own tree (ground.ts): each layout's walk must reach every box that layout draws.
+      const drawn = layout === 'map' ? ground : tree;
       const seen = new Set([PRODUCT]);
       const queue = [PRODUCT];
       for (let i = 0; i < queue.length; i++) {

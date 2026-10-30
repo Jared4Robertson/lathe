@@ -3,7 +3,7 @@ import { NO_FILTERS } from '../../graph/model';
 import type { LookMark, Since } from '../../changes/changes';
 
 // Session settings (LA-EXP-A6): how the Reader likes to see things, for the window's session, shared by every tab and
-// every page (LA-V93-R72): the graph's layout and minimap, how wide the wiki card is, whether the desktop app's chat
+// every page (LA-V93-R72): the graph's layout, minimap and the Map's All links, how wide the wiki card is, whether the desktop app's chat
 // panel is open and how wide (LA-PLT-UC19), and Highlight changes (LA-EXP-UC15): whether it is on, the baseline it
 // compares with, whether Follow is on, and the moment the Reader last looked at each product. Where the Reader is (the
 // focus, the stage, the depth, the kind filters, the wiki card's open and expanded state) is not here: it is the
@@ -11,13 +11,13 @@ import type { LookMark, Since } from '../../changes/changes';
 // Kept apart from GraphPage.tsx, which is loaded with import() when the graph is first shown.
 
 /** The graph as a place starts it: the window's look with the least depth and no kind hidden (GraphView's own, with no host). */
-export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, filters: NO_FILTERS, minimap: false };
+export const DEFAULT_GRAPH_SETTINGS: GraphSettings = { layout: 'tree', depth: 1, filters: NO_FILTERS, minimap: false, allLinks: false };
 
-/** How the graph is drawn, the window's: its layout and whether the minimap shows. */
-export type GraphLook = Pick<GraphSettings, 'layout' | 'minimap'>;
-export const DEFAULT_GRAPH_LOOK: GraphLook = { layout: 'tree', minimap: false };
+/** How the graph is drawn, the window's: its layout, whether the minimap shows and whether the Map draws all its links. */
+export type GraphLook = Pick<GraphSettings, 'layout' | 'minimap' | 'allLinks'>;
+export const DEFAULT_GRAPH_LOOK: GraphLook = { layout: 'tree', minimap: false, allLinks: false };
 /** The layouts the graph has. */
-export const LAYOUTS: readonly GraphLayout[] = ['tree', 'nested'];
+export const LAYOUTS: readonly GraphLayout[] = ['tree', 'nested', 'map'];
 
 /** The wiki card's width in px (null: a third of the open space). Whether it is open or expanded is the place's. */
 export interface CardSettings { width: number | null }
@@ -46,7 +46,7 @@ export const DEFAULT_SESSION_SETTINGS: SessionSettings = { graph: DEFAULT_GRAPH_
 
 /** The settings as they are stored, flat. */
 export interface StoredSettings {
-  layout: GraphLayout; minimap: boolean;
+  layout: GraphLayout; minimap: boolean; allLinks: boolean;
   cardWidth: number | null; chat: boolean; chatWidth: number | null;
   highlight: boolean; since: Since; follow: boolean; looked: Record<string, LookMark>;
 }
@@ -61,7 +61,7 @@ const isStored = (v: unknown): v is StoredSettings => {
   if (!v || typeof v !== 'object') return false;
   const s = v as StoredSettings;
   return typeof s.layout === 'string'
-    && typeof s.minimap === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth))
+    && typeof s.minimap === 'boolean' && typeof s.allLinks === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth))
     && typeof s.chat === 'boolean' && (s.chatWidth === null || isNumber(s.chatWidth))
     && typeof s.highlight === 'boolean' && (s.since === 'commit' || s.since === 'branch' || s.since === 'looked') && typeof s.follow === 'boolean'
     && !!s.looked && typeof s.looked === 'object' && Object.values(s.looked).every(isMark);
@@ -77,7 +77,7 @@ export const chatWidthWithin = clamp(CHAT_MIN, CHAT_MAX);
 export function sessionSettingsFrom(stored: unknown): SessionSettings {
   if (!isStored(stored)) return DEFAULT_SESSION_SETTINGS;
   return {
-    graph: { layout: LAYOUTS.includes(stored.layout) ? stored.layout : DEFAULT_GRAPH_LOOK.layout, minimap: stored.minimap },
+    graph: { layout: LAYOUTS.includes(stored.layout) ? stored.layout : DEFAULT_GRAPH_LOOK.layout, minimap: stored.minimap, allLinks: stored.allLinks },
     card: { width: cardWidthWithin(stored.cardWidth) },
     chat: { open: stored.chat, width: chatWidthWithin(stored.chatWidth) },
     changes: { highlight: stored.highlight, since: stored.since, follow: stored.follow, looked: stored.looked },
@@ -86,7 +86,7 @@ export function sessionSettingsFrom(stored: unknown): SessionSettings {
 
 /** The settings in their stored form. */
 export const storedSettings = ({ graph, card, chat, changes }: SessionSettings): StoredSettings => ({
-  layout: graph.layout, minimap: graph.minimap,
+  layout: graph.layout, minimap: graph.minimap, allLinks: graph.allLinks,
   cardWidth: card.width, chat: chat.open, chatWidth: chat.width,
   highlight: changes.highlight, since: changes.since, follow: changes.follow, looked: changes.looked,
 });

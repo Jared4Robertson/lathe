@@ -11,6 +11,7 @@ import { useStageWalk } from '../shell/commands';
 import { levelMove, type Move, type StageLevels } from '../views/levels';
 import { groupKindLabel, groupName, groupOwner, isGraphNode, isGroup, nodeChildren, nodeParent } from './model';
 import { mapRootOf } from './map';
+import { groundChildren, groundParent, groundTree } from './ground';
 import type { GraphLayout } from './GraphPage';
 
 /** Whether a view draws children inside their parent (Nested), and so steps out and in by Up and Down. */
@@ -34,19 +35,26 @@ export function graphWalkLabels(layout: GraphLayout): Record<Move, string> {
 }
 
 const levelsCache = new WeakMap<RecordIndex, Map<string, StageLevels>>();
-/** The graph's tree under one product as levels: the product, its stages and domains, and down to every record, in the nav's order. */
-export function graphLevels(index: RecordIndex, root: string): StageLevels {
+/**
+ * The graph's tree under one product as levels: the product, its stages and domains, and down to every record, in the
+ * nav's order; in the Map, the Map's own tree (ground.ts): its districts, neighborhoods, areas and records, each record
+ * holding only its composition.
+ */
+export function graphLevels(index: RecordIndex, root: string, layout: GraphLayout = 'tree'): StageLevels {
   let byRoot = levelsCache.get(index);
   if (!byRoot) { byRoot = new Map(); levelsCache.set(index, byRoot); }
-  const known = byRoot.get(root);
+  const map = layout === 'map';
+  const key = `${map ? 'map' : 'tree'}|${root}`;
+  const known = byRoot.get(key);
   if (known) return known;
-  const children = (id: string) => nodeChildren(index, id).filter((c) => isGraphNode(index, c));
+  const parentOf = (id: string) => (map ? groundParent(index, id) : nodeParent(index, id));
+  const children = (id: string) => (map ? groundChildren(index, id) : nodeChildren(index, id)).filter((c) => isGraphNode(index, c));
   const levels: StageLevels = {
     root,
-    parent: (id) => (id === root ? null : nodeParent(index, id)),
+    parent: (id) => (id === root ? null : parentOf(id)),
     children,
     across: (id, direction) => {
-      const up = nodeParent(index, id);
+      const up = parentOf(id);
       if (up === null) return null;
       const siblings = children(up);
       const at = siblings.indexOf(id);
@@ -54,14 +62,16 @@ export function graphLevels(index: RecordIndex, root: string): StageLevels {
       return siblings[at + (direction === 'right' || direction === 'down' ? 1 : -1)] ?? null;
     },
   };
-  byRoot.set(root, levels);
+  byRoot.set(key, levels);
   return levels;
 }
 
 /** Where a move goes from a node in a view: by the view's keys, over its product's tree. */
 export function graphTarget(index: RecordIndex, focus: string, layout: GraphLayout, move: Move): string | null {
   if (!isGraphNode(index, focus)) return null;
-  const to = levelMove(graphLevels(index, mapRootOf(index, focus)), focus, graphMove(layout, move));
+  const root = layout === 'map' ? groundTree(index).root : mapRootOf(index, focus);
+  if (root === null || (layout === 'map' && focus !== root && groundParent(index, focus) === null)) return null;
+  const to = levelMove(graphLevels(index, root, layout), focus, graphMove(layout, move));
   return to && isGraphNode(index, to) ? to : null;
 }
 
