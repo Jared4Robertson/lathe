@@ -5,7 +5,7 @@ import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { relationLabelOf } from '../specs/labels';
 import { useCameraGestures } from '../graph/gestures';
 import { followBox, useMorph, type MorphMap } from '../graph/morph';
-import { frameRect, type Viewport } from '../graph/camera';
+import { frameRect, wholeIn, type Viewport } from '../graph/camera';
 import { onCanvas } from '../graph/paint';
 import { PLAIN_LOOK, useThemeVersion } from '../graph/look';
 import { fadeTween, type FadeLook } from '../graph/fade';
@@ -186,9 +186,13 @@ export function fitRects(rects: Iterable<Rect>, width: number, height: number, m
   const x = Math.min(...all.map((r) => r.x));
   const y = Math.min(...all.map((r) => r.y));
   const around = { x, y, w: Math.max(...all.map((r) => r.x + r.width)) - x, h: Math.max(...all.map((r) => r.y + r.height)) - y };
-  const frame = { x: margin.left, y: margin.top, w: Math.max(1, width - margin.left - margin.right), h: Math.max(1, height - margin.top - margin.bottom) };
-  return frameRect(around, frame, { pad: 0, read: MIN_ZOOM, max: 1, min: MIN_ZOOM });
+  return frameRect(around, marginFrame({ w: width, h: height }, margin), { pad: 0, read: MIN_ZOOM, max: 1, min: MIN_ZOOM });
 }
+
+/** The frame inside a margin of the stage, in screen pixels. */
+const marginFrame = (s: { w: number; h: number }, margin: typeof FIT_MARGIN) => ({ x: margin.left, y: margin.top, w: Math.max(1, s.w - margin.left - margin.right), h: Math.max(1, s.h - margin.top - margin.bottom) });
+/** A placed box as a map rectangle. */
+const rectBox = (r: Rect) => ({ x: r.x, y: r.y, w: r.width, h: r.height });
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 2;
@@ -488,7 +492,11 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
     if (!placed || placed.rects.size === 0 || !s || (space && !open)) return false;
     // An open space too small to frame anything in frames on the whole stage.
     const room = s.w - margin.left - margin.right >= MIN_FIT && s.h - margin.top - margin.bottom >= MIN_FIT;
-    const v = fitRects(framedRects(placed.rects, placed.map, at), s.w, s.h, room ? margin : FIT_MARGIN);
+    const m = room ? margin : FIT_MARGIN;
+    // The focused box always whole in the frame (LA-PAT-APP-UX-R23).
+    const fit = fitRects(framedRects(placed.rects, placed.map, at), s.w, s.h, m);
+    const own = placed.rects.get(at.pick ?? at.scope);
+    const v = own ? wholeIn(fit, rectBox(own), marginFrame(s, m), 0, MIN_ZOOM) : fit;
     gestures.moveTo(v, animate);
     // Marks the map framed, for the browser suites and the perf budget of its first frame.
     wrapper.current?.setAttribute('data-framed', '');
@@ -528,9 +536,10 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
     const was = followed.current;
     followed.current = now ? { id, rect: now } : null;
     if (!was || !now || was.id !== id || !fitted.current || framedFor.current !== frameKey) return;
-    const box = (r: Rect) => ({ x: r.x, y: r.y, w: r.width, h: r.height });
-    const v = followBox(view.current, box(was.rect), box(now), { min: MIN_ZOOM, max: MAX_ZOOM });
-    if (v) gestures.moveTo(v, true);
+    const v = followBox(view.current, rectBox(was.rect), rectBox(now), { min: MIN_ZOOM, max: MAX_ZOOM });
+    // Following the focus keeps it whole too (LA-PAT-APP-UX-R23).
+    const s = sizeRef.current;
+    if (v) gestures.moveTo(s ? wholeIn(v, rectBox(now), marginFrame(s, margin), 0, MIN_ZOOM) : v, true);
   }, [placed]);
   useLayoutEffect(() => {
     const key = frameKey;
