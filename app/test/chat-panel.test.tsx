@@ -1,10 +1,10 @@
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
-import { focusAnswer, openAnswer } from '../src/chat/appRequests';
+import { focusAnswer, focusContext, openAnswer } from '../src/chat/appRequests';
 import { reloadChanges } from '../src/changes/changes';
 import { sessionDate } from '../src/chat/ChatPanel';
-import type { ChatBridge, ChatItem, ChatPatch, ChatSessions, ChatStatus, OpenChoice } from '../src/chat/types';
+import type { ChatBridge, ChatItem, ChatMode, ChatPatch, ChatSessions, ChatStatus, LatheTools, OpenChoice, PromptAnswer } from '../src/chat/types';
 import { setRow } from './fixtures/load';
 import { recordIndexOf } from './read-view';
 import { workspace } from './fixtures/workspace';
@@ -26,6 +26,8 @@ const NOW = Date.now();
 const SESSIONS: ChatSessions = {
   claude: '/Users/person/.local/bin/claude',
   configured: false,
+  signedIn: true,
+  mode: 'accept-reads',
   current: null,
   sessions: [
     { id: 's-new', title: 'Model the basket', updated: NOW - 5 * 60_000, openElsewhere: null },
@@ -36,24 +38,27 @@ function fakeChat(sessions: ChatSessions = SESSIONS) {
   let listener: ((patch: ChatPatch) => void) | null = null;
   const opened: OpenChoice[] = [];
   const sent: string[] = [];
-  const answers: [string, boolean][] = [];
+  const focuses: (string | null)[] = [];
+  const answers: [string, PromptAnswer][] = [];
+  const modes: ChatMode[] = [];
   let stops = 0;
   const bridge: ChatBridge = {
     sessions: async () => sessions,
     open: async (choice) => { opened.push(choice); return true; },
-    send: async (text) => { sent.push(text); return true; },
-    answer: async (id, allow) => { answers.push([id, allow]); return true; },
+    send: async (text, focus) => { sent.push(text); focuses.push(focus); return true; },
+    answer: async (id, reply) => { answers.push([id, reply]); return true; },
     stop: async () => { stops++; return true; },
+    setMode: async (mode) => { modes.push(mode); return true; },
     onPatch: (l) => { listener = l; return () => { listener = null; }; } };
   host.latheDesktop = desktopBridgeStub({ chat: bridge });
   // The first patch is the whole chat; later ones carry every item, as changed in place.
   let first = true;
-  const push = (items: ChatItem[], status: ChatStatus = 'idle', sessionId = 's-new') => {
+  const push = (items: ChatItem[], status: ChatStatus = 'idle', sessionId = 's-new', mode: ChatMode = 'accept-reads', lathe: LatheTools = { status: 'loaded', version: '2.0.0', count: 142 }) => {
     const reset = first;
     first = false;
-    act(() => listener?.({ reset, sessionId, status, items: items.map((item, at) => ({ at, item })) }));
+    act(() => listener?.({ reset, sessionId, status, mode, lathe, items: items.map((item, at) => ({ at, item })) }));
   };
-  return { opened, sent, answers, stops: () => stops, push };
+  return { opened, sent, focuses, answers, modes, stops: () => stops, push };
 }
 
 const openChat = (open = true) =>
@@ -173,16 +178,16 @@ describe('LA-PLT-UC19-R03-T01 Tool calls are rows that expand, and a turn\'s cha
 describe('LA-PLT-UC19-R04-T02 The Owner answers a permission prompt in the chat and stops a turn', () => {
   const prompt = (answer: 'pending' | 'allowed'): ChatItem => ({ kind: 'permission', id: 'p1', tool: 'Bash', label: 'Bash', summary: 'touch notes.txt', input: '{}', reason: 'Changes files.', answer });
 
-  it('allows once or denies', async () => {
+  it('allows once, always in this chat, or denies', async () => {
     const { push, answers } = fakeChat();
     await openApp('/DM-SHOP-UC01');
     push([prompt('pending')], 'running');
     const ask = within(log()).getByRole('article', { name: 'Permission: Bash' });
     expect(ask).toHaveTextContent('Claude wants to use Bash: touch notes.txt');
     fireEvent.click(within(ask).getByRole('button', { name: 'Allow once' }));
-    await waitFor(() => expect(answers).toEqual([['p1', true]]));
+    await waitFor(() => expect(answers).toEqual([['p1', 'once']]));
     fireEvent.click(within(ask).getByRole('button', { name: 'Deny' }));
-    await waitFor(() => expect(answers).toEqual([['p1', true], ['p1', false]]));
+    await waitFor(() => expect(answers).toEqual([['p1', 'once'], ['p1', 'deny']]));
     push([prompt('allowed')], 'running');
     expect(within(log()).getByText('Allowed once')).toBeInTheDocument();
     expect(within(log()).queryByRole('button', { name: 'Allow once' })).toBeNull();
@@ -248,7 +253,7 @@ describe('LA-PLT-UC19-R05-T02 The picker resumes, forks or starts a session, and
   });
 
   it('says how to set it up when Claude Code is not found', async () => {
-    fakeChat({ claude: null, configured: false, current: null, sessions: [] });
+    fakeChat({ claude: null, configured: false, signedIn: null, mode: 'accept-reads', current: null, sessions: [] });
     await openApp('/DM-SHOP-UC01');
     expect(await within(chat()).findByText(/Lathe could not find Claude Code/)).toBeInTheDocument();
     expect(within(chat()).getByRole('button', { name: 'New session' })).toBeDisabled();
@@ -273,5 +278,121 @@ describe('LA-PLT-UC19-R06-T03 The page answers the app bridge: what the Reader i
     expect(answer).toEqual({ ok: true, message: 'Opened DM-SHOP-CMD01 (command): Add item, on the Graph stage.' });
     await waitFor(() => expect(window.location.pathname).toBe('/DM-SHOP-CMD01'));
     expect(openAnswer(index, { id: 'DM-NOPE', stage: null })).toEqual({ ok: false, message: "There is no record DM-NOPE in this window's specs." });
+  });
+});
+
+describe('LA-V99-R03-T01 The chat\'s head shows the Lathe tools, the permission mode and Bypass; the empty chat says when Claude Code cannot answer', () => {
+  it('shows how many Lathe tools the session has and from which Lathe, or that they are loading or did not load', async () => {
+    const { push } = fakeChat();
+    await openApp('/DM-SHOP-UC01');
+    push([]);
+    expect(within(chat()).getByText('142 tools from Lathe 2.0.0')).toBeInTheDocument();
+    push([], 'idle', 's-new', 'accept-reads', { status: 'counting', version: '2.0.0' });
+    expect(within(chat()).getByText("Loading Lathe 2.0.0's tools…")).toBeInTheDocument();
+    push([], 'idle', 's-new', 'accept-reads', { status: 'failed', version: null, problem: 'No lathe.config.json.' });
+    expect(within(chat()).getByText("Lathe's tools did not load")).toBeInTheDocument();
+  });
+
+  it('chooses a mode from the menu by keyboard, and shows the open chat\'s mode', async () => {
+    const { push, modes } = fakeChat();
+    await openApp('/DM-SHOP-UC01');
+    push([]);
+    const button = within(chat()).getByRole('button', { name: 'Permission mode: Accept reads' });
+    fireEvent.click(button);
+    const menu = within(chat()).getByRole('menu', { name: 'Permission mode' });
+    const items = within(menu).getAllByRole('menuitemradio');
+    expect(items.map((i) => i.textContent)).toEqual([
+      expect.stringMatching(/^Ask/), expect.stringMatching(/^Accept reads/), expect.stringMatching(/^Auto/), expect.stringMatching(/^Bypass/), expect.stringMatching(/^View only/),
+    ]);
+    expect(items[1]).toHaveAttribute('aria-checked', 'true');
+    await waitFor(() => expect(items[1]).toHaveFocus());
+    fireEvent.keyDown(menu, { key: 'End' });
+    await waitFor(() => expect(items[4]).toHaveFocus());
+    fireEvent.click(items[4]);
+    await waitFor(() => expect(modes).toEqual(['view-only']));
+    push([], 'idle', 's-new', 'view-only');
+    expect(within(chat()).getByRole('button', { name: 'Permission mode: View only' })).toBeInTheDocument();
+    expect(screen.getByRole('textbox', { name: 'Message Claude' })).toHaveAttribute('placeholder', 'Ask Claude, View only…');
+  });
+
+  it('warns before Bypass, and shows its badge while it is on', async () => {
+    const { push, modes } = fakeChat();
+    await openApp('/DM-SHOP-UC01');
+    push([]);
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Permission mode: Accept reads' }));
+    fireEvent.click(within(chat()).getByRole('menuitemradio', { name: /^Bypass/ }));
+    const warning = within(chat()).getByRole('alertdialog', { name: 'Turn on Bypass?' });
+    expect(warning).toHaveTextContent('Claude will use every tool without asking you');
+    expect(modes).toEqual([]);
+    fireEvent.click(within(warning).getByRole('button', { name: 'Cancel' }));
+    expect(within(chat()).queryByRole('alertdialog')).toBeNull();
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Permission mode: Accept reads' }));
+    fireEvent.click(within(chat()).getByRole('menuitemradio', { name: /^Bypass/ }));
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Turn on Bypass' }));
+    await waitFor(() => expect(modes).toEqual(['bypass']));
+    expect(within(chat()).queryByText('Bypass', { selector: '.chat-bypass-badge' })).toBeNull();
+    push([], 'idle', 's-new', 'bypass');
+    expect(within(chat()).getByText('Bypass', { selector: '.chat-bypass-badge' })).toBeInTheDocument();
+  });
+
+  it('says Claude Code is not signed in, with the fix, and starts no session', async () => {
+    const { opened, sent } = fakeChat({ ...SESSIONS, signedIn: false });
+    await openApp('/DM-SHOP-UC01');
+    const alert = await within(chat()).findByText(/Claude Code is not signed in/);
+    expect(alert).toHaveTextContent('run claude and type /login');
+    expect(within(chat()).getByRole('button', { name: 'New session' })).toBeDisabled();
+    const box = screen.getByRole('textbox', { name: 'Message Claude' });
+    fireEvent.change(box, { target: { value: 'Hello' } });
+    fireEvent.keyDown(box, { key: 'Enter' });
+    await new Promise((r) => setTimeout(r, 20));
+    expect(opened).toEqual([]);
+    expect(sent).toEqual([]);
+  });
+
+  it('says where to install Claude Code when it is not found', async () => {
+    fakeChat({ ...SESSIONS, claude: null, signedIn: null });
+    await openApp('/DM-SHOP-UC01');
+    await within(chat()).findByText(/Lathe could not find Claude Code/);
+    expect(within(chat()).getByRole('link', { name: 'claude.com/claude-code' })).toHaveAttribute('href', 'https://claude.com/claude-code');
+  });
+});
+
+describe('LA-PLT-UC19-R11-T03 A prompt offers Allow always in this chat', () => {
+  it('sends always, and shows the answer', async () => {
+    const { push, answers } = fakeChat();
+    await openApp('/DM-SHOP-UC01');
+    const prompt = (answer: 'pending' | 'always'): ChatItem => ({ kind: 'permission', id: 'p1', tool: 'Bash', label: 'Bash', summary: 'git status', input: '{}', reason: null, answer });
+    push([prompt('pending')], 'running');
+    fireEvent.click(within(log()).getByRole('button', { name: 'Allow always in this chat' }));
+    await waitFor(() => expect(answers).toEqual([['p1', 'always']]));
+    push([prompt('always')], 'running');
+    expect(within(log()).getByText('Allowed always in this chat')).toBeInTheDocument();
+  });
+});
+
+describe('LA-PLT-UC19-R12-T04 The chat knows where the Owner is: a chip above the message box, sent as context', () => {
+  it('names the focused record and stage, sends it with the message, and leaves it out once removed', async () => {
+    const { push, sent, focuses } = fakeChat();
+    await openApp('/DM-SHOP-UC01');
+    push([]);
+    const chip = await within(chat()).findByText('Viewing DM-SHOP-UC01 on the Graph');
+    expect(chip).toBeInTheDocument();
+    const box = screen.getByRole('textbox', { name: 'Message Claude' });
+    fireEvent.change(box, { target: { value: 'What does this need?' } });
+    fireEvent.keyDown(box, { key: 'Enter' });
+    await waitFor(() => expect(sent).toEqual(['What does this need?']));
+    expect(focuses[0]).toContain('Focused record: DM-SHOP-UC01 (use_case): Add an item to the basket');
+    expect(focuses[0]).toContain('Stage: Graph');
+    fireEvent.click(within(chat()).getByRole('button', { name: 'Leave out: Viewing DM-SHOP-UC01 on the Graph' }));
+    expect(within(chat()).queryByText('Viewing DM-SHOP-UC01 on the Graph')).toBeNull();
+    fireEvent.change(box, { target: { value: 'And now?' } });
+    fireEvent.keyDown(box, { key: 'Enter' });
+    await waitFor(() => expect(sent).toEqual(['What does this need?', 'And now?']));
+    expect(focuses[1]).toBeNull();
+  });
+
+  it('builds the chip and the context from what app_focus answers', () => {
+    const index = recordIndexOf(workspace());
+    expect(focusContext(index, '/', 'DM')).toEqual({ label: 'Viewing the products', context: 'Product: DM\nPage: /' });
   });
 });

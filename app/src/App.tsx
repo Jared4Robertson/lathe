@@ -280,6 +280,7 @@ function Shell() {
         <ChatPanel
           bridge={chatBridge}
           index={spec.index}
+          product={spaces.current?.id ?? null}
           width={chat.width}
           onWidth={(width) => resizeChat({ width })}
           onClose={() => { showOrHideChat({ shown: false }); announce('Chat hidden'); }}

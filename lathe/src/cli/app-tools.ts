@@ -24,8 +24,9 @@ export const APP_TOOLS = [
     name: 'app_focus',
     description:
       'What the Reader is looking at in the Lathe app window this chat runs in: the page, the focused record (its ID, kind and title), the stage (graph, erd or trace) and the record selected on the stage or in the wiki card, if any. ' +
-      'Use it to resolve "this", "here" or "the selected one". Works only while the window is open.',
+      'Use it to resolve "this", "here" or "the selected one", and for anything about the window, instead of searching the code. Works only while the window is open.',
     inputSchema: { type: 'object', properties: {}, additionalProperties: false },
+    annotations: { readOnlyHint: true },
   },
   {
     name: 'app_open',
@@ -41,6 +42,8 @@ export const APP_TOOLS = [
       required: ['id'],
       additionalProperties: false,
     },
+    // It changes what the window shows, never the spec.
+    annotations: { readOnlyHint: false },
   },
 ] as const;
 
