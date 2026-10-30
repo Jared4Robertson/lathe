@@ -239,7 +239,7 @@ describe("LA-AUT-INV22-T a product kind declared twice, named like a Lathe table
     ]);
   });
 
-  it("is refused on load before the schema is built; a kind of its own loads and leaves Lathe's kinds as they are", async () => {
+  it("is refused on load by the same rule, before the schema is built; a kind of its own loads and leaves Lathe's kinds as they are", async () => {
     const rule = { name: 'domain_note', product_id: 'TL', label: 'Domain note', description: 'A note on a domain.', parent_kind: 'domain', obligation: false };
     const own = await openStore(writeData(adding(everyKind(), { product_kind: [rule], domain_note: [{ id: 'TL-LEND-NOTE01', title: 'Lending hours', domain_id: 'TL-LEND' }] })), { latheDataDir: null });
     open.push(own);
@@ -257,14 +257,14 @@ describe("LA-AUT-INV22-T a product kind declared twice, named like a Lathe table
     expect(await declaring({ product_kind: [everyKind().product_kind[0]] })).toEqual([expect.objectContaining({ rule: 'primary-key', table: 'product_kind', file: 'data/product_kind.jsonl', line: 2 })]);
     for (const name of ['aggregate', 'record_id']) {
       expect(await declaring({ product_kind: [{ ...rule, name }] }), name).toEqual([
-        expect.objectContaining({ rule: 'product-kind', table: 'product_kind', line: 2, message: `The product kind ${name} has the name of a table Lathe already has; give it another name.` }),
+        expect.objectContaining({ rule: 'product-kind-declared', table: 'product_kind', line: 2, message: `The product kind ${name} has the name of a table Lathe already has; give it another name.` }),
       ]);
     }
     expect(await declaring({ product_kind: [{ ...rule, parent_kind: 'gadget' }] })).toEqual([
-      expect.objectContaining({ rule: 'product-kind', table: 'product_kind', message: 'The product kind domain_note sits under gadget, which is not a kind.' }),
+      expect.objectContaining({ rule: 'product-kind-declared', table: 'product_kind', message: 'The product kind domain_note sits under gadget, which is not a kind.' }),
     ]);
     expect(await declaring({ product_kind_field: [{ kind: 'aggregate', position: 1, name: 'owner', type: 'text', required: true, description: 'Who owns it.' }] })).toEqual([
-      expect.objectContaining({ rule: 'product-kind', table: 'product_kind_field', file: 'data/product_kind_field.jsonl', line: 2, message: 'The field owner is of aggregate, which is not a product kind.' }),
+      expect.objectContaining({ rule: 'product-kind-declared', table: 'product_kind_field', file: 'data/product_kind_field.jsonl', line: 2, message: 'The field owner is of aggregate, which is not a product kind.' }),
     ]);
   });
 });

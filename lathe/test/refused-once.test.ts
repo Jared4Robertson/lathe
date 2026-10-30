@@ -109,7 +109,7 @@ describe('pattern settings and product kinds', () => {
   it("LA-TRC-UC07-R06-T01 A product kind named like one of Lathe's tables is refused", async () => {
     const kind = { name: 'pattern_rule', product_id: 'EX', label: 'Rule', description: 'A rule of ours.', parent_kind: 'domain', obligation: true };
     expect(await refusals(adding(complete(), { product_kind: [kind] }))).toEqual([
-      expect.objectContaining({ rule: 'product-kind', message: 'The product kind pattern_rule has the name of a table Lathe already has; give it another name.' }),
+      expect.objectContaining({ rule: 'product-kind-declared', message: 'The product kind pattern_rule has the name of a table Lathe already has; give it another name.' }),
     ]);
   });
 });

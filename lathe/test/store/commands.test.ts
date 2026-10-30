@@ -227,7 +227,7 @@ describe('a command', () => {
       expect.objectContaining({ rule: 'column' }),
     ]);
     expect(await refusedBy(store, 'product declare-product-kind', { name: 'view', product_id: 'TL', label: 'View', description: 'Again.', parent_kind: 'domain', stage: 'use-cases', obligation: false })).toEqual([
-      expect.objectContaining({ rule: 'product-kind', message: expect.stringContaining('a table Lathe already has') }),
+      expect.objectContaining({ rule: 'product-kind-declared', message: expect.stringContaining('a table Lathe already has') }),
     ]);
     await store.close();
     const reopened = await openStore(root);

@@ -30,7 +30,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | domain-model | `invariant` | aggregate (aggregate_id) | statement | `<P>-<D>-INV<nn>` |
 | domain-model | `specification` | none | statement | `<P>-<D>-SP<nn>` |
 | domain-model | `domain_event` | aggregate (aggregate_id) | published (bool), description | `<P>-<D>-EV<nn>` |
-| domain-model | `command` | aggregate (aggregate_id) | description; part `command_change` (aggregate_id, reason): another aggregate of its domain it also changes in the same transaction, a recorded exception (`command-change-in-domain` refuses its own aggregate or another domain's), listed by the engine's `Workspace.exceptions`, never a problem | `<P>-<D>-CMD<nn>` |
+| domain-model | `command` | aggregate (aggregate_id) | description | `<P>-<D>-CMD<nn>` |
 | domain-model | `read_model` | domain (domain_id) | description | `<P>-<D>-RM<nn>` |
 | domain-model | `query` | read_model (read_model_id) | description | `<P>-<D>-QRY<nn>` |
 | domain-model | `policy` | command (command_id) | statement | `<P>-<D>-PO<nn>` |
@@ -41,7 +41,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | use-cases | `use_case` | capability (capability_id) | goal, notes? | `<P>-<D>-UC<nn>` |
 | use-cases | `uc_requirement` | use_case (use_case_id) | statement, group_name? | `<use case>-R<nn>` |
 | use-cases | `pattern` | product (product_id) | description, notes? | `<P>-PAT-<name>` |
-| use-cases | `pattern_rule` | pattern (pattern_id) | statement, group_name?, setting?, applies_when_setting?, applies_when_negated? (bool), applies_when_value?, notes? | `<pattern>-R<nn>` |
+| use-cases | `pattern_rule` | pattern (pattern_id) | statement, group_name?, notes? | `<pattern>-R<nn>` |
 | interaction-design | `interface` | product (product_id) | kind (web app/API/CLI/agent tools/desktop/other), description | `<P>-IF<nn>` |
 | interaction-design | `flow` | use_case (use_case_id) | interface_id (the interface it goes through) | `<use case>-FL<nn>`, `<nn>` its interface's number |
 | interaction-design | `flow_step` | flow (flow_id) | path, position (int) | `<flow>-S<nn>` |
@@ -51,7 +51,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | interaction-design | `api_requirement` | endpoint (endpoint_id) | statement, group_name? | `<endpoint>-R<nn>` |
 | interaction-design | `integration` | none | system?, description | `<P>-INT<nn>` |
 | technical-specification | `data_store` | product (product_id) or domain (domain_id), exactly one | kind (database/object store/file folder/file/browser storage/memory), description | `<P>-STORE<nn>` or `<P>-<D>-STORE<nn>` |
-| technical-specification | `repository` | domain (domain_id) | file?, description; part `repository_share` (aggregate_id, reason): another aggregate it also persists, which has no repository of its own, a recorded exception (`repository-share-unpersisted` refuses one a repository persists) | `<domain>-REPO<nn>` |
+| technical-specification | `repository` | domain (domain_id) | file?, description | `<domain>-REPO<nn>` |
 | technical-specification | `data_model` | entity (entity_id) | file? | `<entity>-DM` |
 | technical-specification | `table` | entity (entity_id) or read_model (read_model_id) | name, storage (table/view/materialized view/browser storage/file/in memory), file? | `<entity or read model>-TB` |
 | technical-specification | `value_type` | value_object (value_object_id) | file? | `<value object>-VT` |
@@ -95,7 +95,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `product_setting` (checking) | product_id | product_id, max_children (int), max_entities_per_aggregate (int) |
 | `read_model_field` (part) | read_model_id, position | read_model_id, position (int), name, meaning, type? (text/whole number/decimal/date/time/date and time/yes/no), type_value_object_id?, type_aggregate_id?, required (bool), column_name?, example? |
 | `role` (part) | product_id, name | product_id, name, description |
-| `setting_value` (part) | follower_id, pattern_id, setting | follower_id, pattern_id, setting, value?, not_applicable? |
+| `setting_value` (part) | follower_id, pattern_id, setting | follower_id, pattern_id, setting, value |
 | `table_key` (part) | table_id, position | table_id, position (int), type (primary/unique/foreign/index), columns (list), name?, invariant_id?, target_table_id?, condition? |
 | `use_case_actor` (part) | use_case_id, position | use_case_id, position (int), role_name |
 | `value_object_field` (part) | value_object_id, position | value_object_id, position (int), name, meaning, type? (text/whole number/decimal/date/time/date and time/yes/no), type_value_object_id?, type_aggregate_id?, required (bool), column_name?, example? |
@@ -114,7 +114,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | `hears` (one per source) | product | policy | domain_event | policy→domain_event |
 | `invokes` (one per source) | product | flow_step | operation | flow_step→command, flow_step→query |
 | `measured_by` | product | business_outcome | record_id | 12 pairs: business_outcome→every test kind; a product adds its own kinds with a product_relation named measured_by |
-| `meets` | product | meets_source | standard_rule | 14 pairs: every member of meets_source (the technical kinds; a standard rule is proved by its standard rule tests) |
+| `meets` | product | technical_record | standard_rule | 14 pairs: every member of technical_record (the technical kinds; a standard rule is proved by its standard rule tests) |
 | `persists` (one per source, one per target) | product | repository | aggregate | repository→aggregate |
 | `stored_in` (one per source) | product | stored_in_source | data_store | repository→data_store, reader→data_store, table→data_store |
 | `provided_by` (one per source) | product | data_store | integration | data_store→integration |
@@ -128,7 +128,7 @@ The full description, with every column's meaning, is `store.schema` at run time
 | Supertype | Members |
 | --- | --- |
 | `follows_source` | domain, use_case |
-| `meets_source` | adapter, command_handler, data_model, endpoint_handler, event_handler, event_type, predicate, projection, query_handler, repository, service, table, ui_component, value_type |
+| `technical_record` | adapter, command_handler, data_model, endpoint_handler, event_handler, event_type, predicate, projection, query_handler, repository, service, table, ui_component, value_type |
 | `obligation` | api_requirement, constraint, domain_service, invariant, pattern_rule, policy, specification, standard_rule, storage_requirement, uc_requirement, view_requirement |
 | `stored_in_source` | reader, repository, table |
 | `operation` | command, query |

@@ -248,7 +248,7 @@ describe('LA-STD-PRINCIPLES-R01-T01 refusals across tables: data that breaks the
       throw new Error('The second repository was added.');
     } catch (error) {
       if (!(error instanceof StoreError)) throw error;
-      expect(error.problems).toEqual([expect.objectContaining({ rule: 'one-repository', table: 'repository', message: 'TL-LEND-REPO02 cannot persist TL-LEND-A1, which TL-LEND-REPO01 persists: an aggregate has one repository' })]);
+      expect(error.problems).toEqual([expect.objectContaining({ rule: 'one-repository', table: 'repository', message: 'TL-LEND-REPO01 and TL-LEND-REPO02 both persist TL-LEND-A1: an aggregate has one repository' })]);
     } finally {
       await store.close();
     }
