@@ -22,6 +22,9 @@ import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 // - StageCamera sits in the bottom left corner of the frame: zoom in, zoom out and fit the whole map, the same buttons,
 //   look and tooltips on every stage. A minimap (the Graph's) sits in the bottom right corner and the edge hints (the
 //   ERD's) at the frame's edges, in their shared styles.
+// - TidyUp is the stage's Tidy up, the same button, command (`stageTidy`, `t`) and place, last of the stage's own
+//   primary controls, on every stage whose new data keeps every box where it was (LA-PAT-APP-UX-R22): the ERD, the
+//   Graph's Map and the Trace's views. The stage registers what it does with useCommand('stageTidy').
 // - StageKey is the stage's key, a bar along the bottom of the open space on the camera's row, between the camera and
 //   the minimap: each thing the stage draws now (a color, a shape, a line, a mark) as a small sample and a word or two,
 //   its whole meaning in its tooltip. Each stage gives its own entries (graph/key.tsx, erd/erdKey.tsx,
@@ -280,3 +283,15 @@ function KeyChip({ entries }: { entries: readonly KeyEntry[] }) {
 
 /** How much one step of the zoom buttons zooms, on every stage. */
 export const ZOOM_STEP = 1.2;
+
+/** The stage's Tidy up (LA-PAT-APP-UX-R22): lays the whole map out afresh, by the stage's `stageTidy` command. */
+export function TidyUp() {
+  const runCommand = useRunCommand();
+  return (
+    <Tooltip label="Tidy up: lay the whole map out afresh" command="stageTidy">
+      <Button className="stage-tidy" aria-label="Tidy up" onClick={() => runCommand('stageTidy')}>
+        <Icon name="tidy" size={14} /><span className="stage-tidy-name">Tidy up</span>
+      </Button>
+    </Tooltip>
+  );
+}

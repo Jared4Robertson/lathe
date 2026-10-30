@@ -18,13 +18,13 @@ import {
   type Neighborhood,
 } from './model';
 import { graphTarget, graphWalkLabels, useGraphWalk } from './steps';
-import { StageCamera, StageKey, StageToolbar, ZOOM_STEP } from '../views/StageChrome';
+import { StageCamera, StageKey, StageToolbar, TidyUp, ZOOM_STEP } from '../views/StageChrome';
 import { DEFAULT_GRAPH_SETTINGS } from '../exploring/session-settings/model';
 import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
 import { keptCamera } from '../exploring/tab-set/reads';
 import { runTabSetCommand } from '../exploring/tab-set/run';
 import { mapRootOf, parentLine, type GraphMap, type PlacedMap } from './map';
-import { lastLayout, useLaidOut } from './layout';
+import { lastLayout, tidyGround, useLaidOut } from './layout';
 import { productInput } from './layout-input';
 import { type NestedMap, type NestedNode } from './nested';
 import { type GroundMap, type GroundNode } from './ground';
@@ -166,7 +166,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
     );
   }
   // The shared stage toolbar (views/StageChrome.tsx): the steps, Out, In and Frame, the Changes controls, then the layout
-  // switch and the filters (primary, always in the row), and depth (secondary, folding into More). In the toolbar's
+  // switch, the filters and, in the Map, Tidy up (primary, always in the row), and depth (secondary, folding into More). In the toolbar's
   // narrow form the layouts show one letter each. The key is a bar along the bottom (StageKey).
   const tools = (narrow: boolean) => ({
     primary: (
@@ -179,6 +179,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
           ))}
         </div>
         <FilterControls index={index} filters={filters} setFilters={setFilters} minimap={minimap} setMinimap={(on) => update({ minimap: on })} allLinks={layout === 'map' ? allLinks : null} setAllLinks={(on) => update({ allLinks: on })} />
+        {layout === 'map' && <TidyUp />}
       </>
     ),
     // Depth is the Tree camera's alone: elsewhere the group keeps its slot, so nothing beside it moves, but is not shown or reachable (LA-PAT-APP-CODE-R21).
@@ -201,7 +202,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
         can={(move) => graphTarget(index, focus, layout, move) !== null}
         walkLabels={graphWalkLabels(layout)}
         own={tools}
-        measureKey={filters.hiddenKinds.size}
+        measureKey={`${layout}|${filters.hiddenKinds.size}`}
       />
       <StageKey entries={keyEntries} beside={minimap ? 'minimap' : undefined} />
       <div className="graph-workspace">
@@ -489,7 +490,11 @@ function GraphStage(props: CanvasProps & { measure: TextMeasure; fonts: GraphFon
   // The Map is always the product's ground; the Tree and Nested maps the focus's product's tree.
   const root = useMemo(() => (layout === 'map' ? index.product : mapRootOf(index, graph.focus)), [index, graph.focus, layout]);
   const input = useMemo(() => productInput(index, root, layout, measure.key), [index, root, layout, measure]);
-  const laid = useLaidOut<GraphMap | NestedMap | GroundMap, RecordIndex>(input, index, fonts);
+  // Tidy up (LA-PAT-APP-UX-R22): the Map laid out afresh, by the stage's shared command and button; every later change
+  // keeps its places from it. The Tree and Nested maps are laid out top-down, so they have nothing to tidy.
+  const [tidy, setTidy] = useState(0);
+  useCommand('stageTidy', () => { tidyGround(input); setTidy((t) => t + 1); }, layout === 'map');
+  const laid = useLaidOut<GraphMap | NestedMap | GroundMap, RecordIndex>(input, index, fonts, tidy);
   if (!laid) return <div className="graph-flow" data-layout={layout} aria-busy="true" />;
   return <GraphScene {...props} map={laid.map} mapIndex={laid.of} />;
 }

@@ -3,14 +3,18 @@
 //
 // Order: each column's boxes in an order that keeps linked boxes near (barycenter ordering): a box sits by the median
 // rank of the boxes it is linked to in the other columns, swept left to right and back a few times. The boxes under an
-// outcome come first, those under none after them. Layout stability (LA-STD P6): given the order shown before, every
-// box kept keeps its order, a new one is put in at its barycenter among them, and none is ordered afresh unless asked
-// (Tidy up).
+// outcome come first, those under none after them.
 //
 // Places: the tallest column is packed from the top; every other column, from the columns next to it already placed,
 // puts each box at the median height of the boxes it is linked to, never closer than a row to the box above it, so a box
 // sits beside what it links to. The boxes under no outcome are placed the same way below a gap, from one top line
 // shared by every column, under the mark "Not under an outcome".
+//
+// A change moves only what it changed (LA-PAT-APP-UX-R22): given the places shown before (`kept`), every box kept keeps
+// its exact place; a new one goes in the nearest free gap in its column beside what it links to, if one lies within a
+// few rows, else at the bottom of its column, its lines drawn to it; a removed one leaves its gap. Only when a new box at
+// the bottom of a column under an outcome reaches the boxes under none are those pushed down, all together, by as much
+// as it now overlaps them. Everything goes to its proper place only on Tidy up (no `kept`).
 
 /** A box's width and height, the gap between two rows and the room between two columns, where the links run, at zoom 1. */
 export const BOX_WIDTH = 272;
@@ -41,6 +45,8 @@ export interface LayoutInput {
   links: Int32Array;
   /** The order shown before, by box number, each column's boxes top to bottom; null orders afresh. */
   previous: number[][] | null;
+  /** The places shown before: each box's top (NaN for a box not shown before, or shown in another column or section) and the top of the boxes under no outcome; null (Tidy up) places afresh. */
+  kept?: { y: Float64Array; outsideTop: number | null } | null;
 }
 
 /** Where each box goes: each column's boxes top to bottom, each box's top, the top of the boxes under no outcome (null when there are none), and the whole height. */
@@ -171,8 +177,79 @@ export function placeColumns(input: LayoutInput, order: readonly (readonly numbe
   return { y, outsideTop, height };
 }
 
-/** The whole layout: the order (kept from `previous` when given), then the places. */
+/** How many rows from where it would sit beside what it links to a new box looks for a free gap, before it goes to the bottom of its column. */
+export const NEAR_ROWS = 3;
+
+/**
+ * Each box's top, keeping every box shown before at its place (`input.kept`): a new box in the nearest free gap of its
+ * column beside what it links to, within NEAR_ROWS rows, else at the bottom of its column in its section. New boxes are
+ * placed column by column in `order`, each by the boxes already placed. The boxes under no outcome move only when a
+ * new box under one now overlaps them, all by the same amount. The order returned is each column's boxes top to bottom.
+ */
+export function placeKept(input: LayoutInput, order: readonly (readonly number[])[]): LayoutResult {
+  const kept = input.kept!;
+  const n = input.columnOf.length;
+  const near = neighborsOf(n, input.links);
+  const y = new Float64Array(n);
+  const placed = new Uint8Array(n);
+  const isKept = (b: number) => Number.isFinite(kept.y[b]);
+  // The bottom of the boxes under an outcome as they were (what the boxes under none sat below).
+  let underEnd = 0;
+  for (let b = 0; b < n; b++) if (isKept(b) && input.under[b] === 1) underEnd = Math.max(underEnd, kept.y[b] + BOX_HEIGHT);
+  if (kept.outsideTop !== null) underEnd = Math.max(underEnd, kept.outsideTop - OUTSIDE_GAP);
+  for (let b = 0; b < n; b++) if (isKept(b)) { y[b] = kept.y[b]; placed[b] = 1; }
+
+  /** Places one section's new boxes between `top` and `bottom` (where a column's own bottom may run past). */
+  const section = (under: 0 | 1, top: number, bottom: number) => {
+    order.forEach((column, c) => {
+      const tops = column.filter((b) => placed[b] && input.under[b] === under).map((b) => y[b]);
+      for (const b of column) {
+        if (placed[b] || input.under[b] !== under) continue;
+        const values: [number, number][] = [];
+        for (const m of near[b]) if (placed[m] && input.under[m] === under && input.columnOf[m] !== c) values.push([y[m], 1 / near[m].length]);
+        const free = (at: number) => at >= top && at + BOX_HEIGHT <= bottom && tops.every((t) => Math.abs(t - at) >= PITCH - 1e-9);
+        let at: number | null = null;
+        if (values.length > 0) {
+          const want = Math.max(top, median(values));
+          // The nearest free place to `want`: itself, or a row's pitch off a box of the column.
+          const candidates = [want, ...tops.flatMap((t) => [t - PITCH, t + PITCH])]
+            .filter((v) => Math.abs(v - want) <= NEAR_ROWS * PITCH + 1e-9 && free(v))
+            .sort((p, q) => Math.abs(p - want) - Math.abs(q - want) || p - q);
+          at = candidates[0] ?? null;
+        } else if (tops.length === 0 && bottom - top >= BOX_HEIGHT) at = top;
+        // Else the bottom of its column in its section.
+        if (at === null) at = tops.length === 0 ? top : Math.max(...tops) + PITCH;
+        y[b] = at;
+        placed[b] = 1;
+        tops.push(at);
+      }
+    });
+    let end = top;
+    for (let b = 0; b < n; b++) if (input.under[b] === under) end = Math.max(end, y[b] + BOX_HEIGHT);
+    return end;
+  };
+
+  const end = Math.max(section(1, 0, underEnd), underEnd);
+  const anyOutside = order.some((c) => c.some((b) => input.under[b] === 0));
+  let outsideTop: number | null = null;
+  let height = end;
+  if (anyOutside) {
+    const wasTop = kept.outsideTop ?? end + OUTSIDE_GAP;
+    // A new box under an outcome that now reaches the boxes under none pushes them down together, by as much as it overlaps.
+    const shift = Math.max(0, end + OUTSIDE_GAP - wasTop);
+    for (let b = 0; b < n; b++) if (placed[b] && input.under[b] === 0) y[b] += shift;
+    outsideTop = wasTop + shift;
+    let outsideEnd = outsideTop;
+    for (let b = 0; b < n; b++) if (placed[b] && input.under[b] === 0) outsideEnd = Math.max(outsideEnd, y[b] + BOX_HEIGHT);
+    height = Math.max(end, section(0, outsideTop, outsideEnd));
+  }
+  const byTop = order.map((c) => [...c].sort((a, b) => input.under[b] - input.under[a] || y[a] - y[b]));
+  return { order: byTop, y, outsideTop, height };
+}
+
+/** The whole layout: the order (kept from `previous` when given), then the places (kept from `kept` when given). */
 export function layOutColumns(input: LayoutInput): LayoutResult {
   const order = orderColumns(input);
+  if (input.kept && input.kept.y.some((v) => Number.isFinite(v))) return placeKept(input, order);
   return { order, ...placeColumns(input, order) };
 }

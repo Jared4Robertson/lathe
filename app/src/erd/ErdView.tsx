@@ -22,11 +22,8 @@ import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
 import { keptCamera } from '../exploring/tab-set/reads';
 import { runTabSetCommand } from '../exploring/tab-set/run';
 import { useWalk } from '../graph/steps';
-import { useCommand, useRunCommand } from '../shell/commands';
-import { Tooltip } from '../shell/Tooltip';
-import { Button } from '../components/Button';
-import { Icon } from '../components/icons';
-import { StageCamera, StageKey, StageToolbar, ZOOM_STEP, type KeyEntry } from '../views/StageChrome';
+import { useCommand } from '../shell/commands';
+import { StageCamera, StageKey, StageToolbar, TidyUp, ZOOM_STEP, type KeyEntry } from '../views/StageChrome';
 import type { Move } from '../views/levels';
 import { erdTarget } from './walk';
 import { useChanges } from '../changes/changes';
@@ -141,18 +138,6 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space, cam
       <StageToolbar can={(move) => target(move) !== null} own={() => ({ primary: <TidyUp /> })} />
       <StageKey entries={keyEntries} />
     </section>
-  );
-}
-
-/** The toolbar's Tidy up (LA-V94-R09): the whole map laid out afresh, by its keymap command. */
-function TidyUp() {
-  const runCommand = useRunCommand();
-  return (
-    <Tooltip label="Tidy up: lay the whole map out afresh" command="stageTidy">
-      <Button className="stage-tidy" aria-label="Tidy up" onClick={() => runCommand('stageTidy')}>
-        <Icon name="tidy" size={14} /><span className="stage-tidy-name">Tidy up</span>
-      </Button>
-    </Tooltip>
   );
 }
 
