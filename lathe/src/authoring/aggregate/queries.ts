@@ -1,51 +1,46 @@
-// The Aggregate aggregate's own reads (read model LA-AUT-RM26): an aggregate whole, the aggregates of a domain, and the
-// next free ID for a record of one of its kinds. Each reads the current data and changes nothing.
+// The Aggregate aggregate's own reads, each answered from its read model (LA-AUT-RM26) through its reader (reader.ts),
+// which the query runner gives each handler: an aggregate whole as its page reads it, the aggregates of a domain, and
+// the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the aggregate's
+// model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
-import type { ReadView } from '../../platform/data/rules.ts';
-import { AGGREGATE_KINDS, AGGREGATE_SLICE, aggregatesFrom, type Aggregate, type AggregateKind } from './model.ts';
+import { AGGREGATE_SLICE, type AggregateKind } from './model.ts';
+import type { AggregatePage, AggregateSummary } from './read-model.ts';
+import { aggregateReader, type AggregateReader } from './reader.ts';
 
 const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
-/** The aggregate that holds the record: the aggregate itself, or one of its entities, invariants, data models or tests. */
-export function getAggregate(view: ReadView, input: { id: string }): Aggregate {
-  const record = view.record(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
-  if (!(record.kind in AGGREGATE_KINDS)) refuse('kind', `${input.id} is ${/^[aeiou]/.test(record.kind) ? 'an' : 'a'} ${record.kind}, not an aggregate or a record in one`);
-  let at = record;
-  while (at.kind !== 'aggregate') {
-    const column = AGGREGATE_KINDS[at.kind as Exclude<AggregateKind, 'aggregate'>];
-    at = view.record(String(at.row[column]))!;
-  }
-  return aggregatesFrom((table) => view.rows(table), String(at.row.id))[0];
+const article = (word: string) => (/^[aeiou]/.test(word) ? 'an' : 'a');
+
+/** The aggregate that holds the record, as its page reads it: the aggregate itself, or one of its entities, invariants, data models or tests. */
+export function getAggregate(reader: AggregateReader, input: { id: string }): AggregatePage {
+  const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
+  return reader.page(input.id) ?? refuse('kind', `${input.id} is ${article(kind)} ${kind}, not an aggregate or a record in one`);
 }
 
 /** GET an aggregate whole (LA-AUT-QRY150). */
-export const GET_AGGREGATE: QueryDefinition<{ id: string }, Aggregate> = {
+export const GET_AGGREGATE: QueryDefinition<{ id: string }, AggregatePage, AggregateReader> = {
   id: 'LA-AUT-QRY150',
   slice: AGGREGATE_SLICE,
   name: 'get-aggregate',
-  description: 'Reads an aggregate whole, by its ID or the ID of any record in it: its row, its entities with their fields and the entities they hold, their data models, and its invariants with their tests.',
+  description: 'Reads an aggregate whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the aggregate\'s row, its entities (the root first) with their fields, the entities they hold, their data models, commands and tables, its invariants with their rules and tests, and the domain events that happen to it with what raises and hears them.',
   method: 'GET',
   route: '/api/aggregate/get-aggregate',
-  input: { id: id('The aggregate, or an entity, invariant, data model or invariant test in it.', 'required') },
+  input: { id: id('The aggregate, or an entity, invariant, data model, rule or invariant test in it.', 'required') },
+  reader: aggregateReader,
   run: getAggregate,
   text: aggregateText,
 };
 
 /** The aggregates of a domain, by ID. */
-export function listAggregates(view: ReadView, input: { domain_id: string }): { id: string; title: string }[] {
-  if (view.record(input.domain_id)?.kind !== 'domain') refuse('missing', `there is no domain ${input.domain_id}`);
-  return view
-    .rows('aggregate')
-    .filter((a) => a.domain_id === input.domain_id)
-    .map((a) => ({ id: String(a.id), title: String(a.title) }))
-    .sort((a, b) => a.id.localeCompare(b.id, undefined, { numeric: true }));
+export function listAggregates(reader: AggregateReader, input: { domain_id: string }): AggregateSummary[] {
+  return reader.aggregatesOf(input.domain_id) ?? refuse('missing', `there is no domain ${input.domain_id}`);
 }
 
 /** List the aggregates of a domain (LA-AUT-QRY151). */
-export const LIST_AGGREGATES: QueryDefinition<{ domain_id: string }, { id: string; title: string }[]> = {
+export const LIST_AGGREGATES: QueryDefinition<{ domain_id: string }, AggregateSummary[], AggregateReader> = {
   id: 'LA-AUT-QRY151',
   slice: AGGREGATE_SLICE,
   name: 'list-aggregates',
@@ -53,20 +48,13 @@ export const LIST_AGGREGATES: QueryDefinition<{ domain_id: string }, { id: strin
   method: 'GET',
   route: '/api/aggregate/list-aggregates',
   input: { domain_id: id('The domain.', 'required') },
+  reader: aggregateReader,
   run: listAggregates,
   text: (rows) => (rows.length ? rows.map((r) => `${r.id}  ${r.title}`).join('\n') : 'No aggregates.'),
 };
 
-// One past the highest number in use after the prefix among the kind's records, padded to the width given.
-function onePast(view: ReadView, kind: string, prefix: string, width: number): string {
-  const shape = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(\\d+)$`);
-  let highest = 0;
-  for (const row of view.rows(kind)) {
-    const m = shape.exec(String(row.id));
-    if (m) highest = Math.max(highest, Number(m[1]));
-  }
-  return `${prefix}${String(highest + 1).padStart(width, '0')}`;
-}
+// One past the highest number in use after the prefix, padded to the width given.
+const onePast = (reader: AggregateReader, prefix: string, width: number): string => `${prefix}${String(reader.highestAfter(prefix) + 1).padStart(width, '0')}`;
 
 /** The kinds of the aggregate, each with the kind of record it sits under. */
 const UNDER: Record<AggregateKind, string> = {
@@ -83,22 +71,22 @@ const UNDER: Record<AggregateKind, string> = {
  * aggregate's, an entity's and an invariant's start with their domain's ID; an entity has one data model and an
  * invariant one rule and one test, whose IDs are their parent's with DM, RL and T.
  */
-export function nextAggregateId(view: ReadView, input: { kind: string; parent: string }): string {
+export function nextAggregateId(reader: AggregateReader, input: { kind: string; parent: string }): string {
   if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Aggregate aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
   const kind = input.kind as AggregateKind;
-  const parent = view.record(input.parent);
-  if (parent?.kind !== UNDER[kind]) refuse('parent', `${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind} sits under ${/^[aeiou]/.test(UNDER[kind]) ? 'an' : 'a'} ${UNDER[kind]}, and ${input.parent} is ${parent ? `a ${parent.kind}` : 'no record'}`);
+  const parentKind = reader.kindOf(input.parent);
+  if (parentKind !== UNDER[kind]) refuse('parent', `${article(kind)} ${kind} sits under ${article(UNDER[kind])} ${UNDER[kind]}, and ${input.parent} is ${parentKind ? `${article(parentKind)} ${parentKind}` : 'no record'}`);
   const only = (id: string) => {
-    if (view.record(id)) refuse('exists', `${input.parent} already has its ${kind.replace('_', ' ')}, ${id}`);
+    if (reader.kindOf(id)) refuse('exists', `${input.parent} already has its ${kind.replace('_', ' ')}, ${id}`);
     return id;
   };
   switch (kind) {
     case 'aggregate':
-      return onePast(view, 'aggregate', `${input.parent}-A`, 1);
+      return onePast(reader, `${input.parent}-A`, 1);
     case 'entity':
-      return onePast(view, 'entity', `${parent!.row.domain_id}-EN`, 2);
+      return onePast(reader, `${reader.domainOf(input.parent)}-EN`, 2);
     case 'invariant':
-      return onePast(view, 'invariant', `${parent!.row.domain_id}-INV`, 2);
+      return onePast(reader, `${reader.domainOf(input.parent)}-INV`, 2);
     case 'data_model':
       return only(`${input.parent}-DM`);
     case 'rule':
@@ -109,7 +97,7 @@ export function nextAggregateId(view: ReadView, input: { kind: string; parent: s
 }
 
 /** Get the next ID for a record of the Aggregate aggregate (LA-AUT-QRY152). */
-export const NEXT_AGGREGATE_ID: QueryDefinition<{ kind: string; parent: string }, string> = {
+export const NEXT_AGGREGATE_ID: QueryDefinition<{ kind: string; parent: string }, string, AggregateReader> = {
   id: 'LA-AUT-QRY152',
   slice: AGGREGATE_SLICE,
   name: 'next-id',
@@ -120,35 +108,39 @@ export const NEXT_AGGREGATE_ID: QueryDefinition<{ kind: string; parent: string }
     kind: id('The kind: aggregate, entity, invariant, data_model, rule or invariant_test.', 'required'),
     parent: id('The record it will sit under.', 'required'),
   },
+  reader: aggregateReader,
   run: nextAggregateId,
   text: (next) => next,
 };
 
-/** An aggregate as text: its row, then each entity with its fields, links and data model, then each invariant with its rule and test. */
-function aggregateText(aggregate: Aggregate): string {
-  const { aggregate: row } = aggregate;
+/** An aggregate as text: its row, then each entity with its fields, links and data model, then each invariant with its rule and test, then its events. */
+function aggregateText(page: AggregatePage): string {
+  const { aggregate: row } = page;
   const lines = [`Aggregate ${row.id}: ${row.title}`, `  domain: ${row.domain_id}`, `  identity: ${row.identity}`, `  description: ${row.description}`];
   if (row.notes) lines.push(`  notes: ${row.notes}`);
-  for (const e of aggregate.entities) {
+  for (const e of page.entities) {
     const links = [...e.hasOne.map((x) => `has one ${x}`), ...e.hasMany.map((x) => `has many ${x}`)];
-    lines.push(`Entity ${e.row.id}: ${e.row.title} (${e.row.role}${e.row.in_root_table ? ', in its root\'s table' : ''})${links.length ? ` [${links.join('; ')}]` : ''}`);
+    lines.push(`Entity ${e.entity.id}: ${e.entity.title} (${e.entity.role}${e.entity.in_root_table ? ', in its root\'s table' : ''})${links.length ? ` [${links.join('; ')}]` : ''}`);
     for (const f of e.fields) {
       const type = f.type ?? f.type_value_object_id ?? f.type_aggregate_id;
       lines.push(`  ${f.position}. ${f.name}: ${type}${f.required ? ', required' : ''}${f.column_name ? `, column ${f.column_name}` : ''}`);
     }
-    for (const d of aggregate.dataModels.filter((x) => x.row.entity_id === e.row.id)) {
-      const extra = [...(d.row.file ? [d.row.file] : []), ...d.meets.map((x) => `meets ${x}`), ...d.packages.map((x) => `uses ${x}`)];
-      lines.push(`  data model ${d.row.id}: ${d.row.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
+    const d = e.dataModel;
+    if (d) {
+      const extra = [...(d.dataModel.file ? [d.dataModel.file] : []), ...d.meets.map((x) => `meets ${x}`), ...d.packages.map((x) => `uses ${x}`)];
+      lines.push(`  data model ${d.dataModel.id}: ${d.dataModel.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
     }
   }
-  for (const i of aggregate.invariants) {
-    lines.push(`Invariant ${i.id}: ${i.title}`);
-    for (const r of aggregate.rules.filter((x) => x.row.invariant_id === i.id)) {
-      const extra = [...(r.row.file ? [r.row.file] : []), ...r.meets.map((x) => `meets ${x}`), ...r.packages.map((x) => `uses ${x}`)];
-      lines.push(`  rule ${r.row.id}: ${r.row.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
+  for (const i of page.invariants) {
+    lines.push(`Invariant ${i.invariant.id}: ${i.invariant.title}`);
+    const r = i.rule;
+    if (r) {
+      const extra = [...(r.rule.file ? [r.rule.file] : []), ...r.meets.map((x) => `meets ${x}`), ...r.packages.map((x) => `uses ${x}`)];
+      lines.push(`  rule ${r.rule.id}: ${r.rule.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
     }
-    for (const t of aggregate.invariantTests.filter((x) => x.row.invariant_id === i.id)) lines.push(`  invariant test ${t.row.id}: ${t.row.title} (${t.row.state})`);
+    if (i.test) lines.push(`  invariant test ${i.test.test.id}: ${i.test.test.title} (${i.test.test.state})`);
   }
+  for (const e of page.domainEvents) lines.push(`Domain event ${e.event.id}: ${e.event.title}${e.raisedBy.length ? ` [raised by ${e.raisedBy.join(', ')}]` : ''}`);
   return lines.join('\n');
 }
 
