@@ -6,7 +6,10 @@ import path from 'node:path';
 export const RECENT_LIMIT = 10;
 
 /** The recent folders, latest first. */
-export type RecentFolders = readonly string[];
+/** One recent folder: its full path. */
+export type RecentFolder = string;
+
+export type RecentFolders = readonly RecentFolder[];
 
 /** The recent list with `folder` first, each folder once, at most RECENT_LIMIT long. */
 export function addRecent(list: RecentFolders, folder: string, limit = RECENT_LIMIT): string[] {

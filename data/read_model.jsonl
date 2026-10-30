@@ -32,11 +32,12 @@
 {"id":"LA-EXP-RM06","title":"Spaces","domain_id":"LA-EXP","description":"Every product as a space in the rail, with its look and place."}
 {"id":"LA-EXP-RM07","title":"Record changes","domain_id":"LA-EXP","description":"What changed in a product's records between a baseline and the data now, by record, computed on each ask."}
 {"id":"LA-PLT-RM01","title":"Workspace","domain_id":"LA-PLT","description":"Every product's records, links, problems and coverage, as one load of the data files gives them: `Workspace` in `lathe/src/types.ts`. Filled from the data files whenever they change."}
-{"id":"LA-PLT-RM02","title":"Keymap","domain_id":"LA-PLT","description":"Every keyboard command with its bindings as the platform shows them, which every hint, the palette and the sheet read."}
+{"id":"LA-PLT-RM02","title":"Keymap","domain_id":"LA-PLT","description":"Every keyboard command with its bindings as the platform shows them, read from the keymap's configuration in code and the person's own bindings under `lathe:keybindings` (read only, never written), which every hint, the palette and the sheet read."}
 {"id":"LA-PLT-RM03","title":"Themes","domain_id":"LA-PLT","description":"Every theme, which one is in use and the color mode."}
 {"id":"LA-PLT-RM04","title":"Recent folders","domain_id":"LA-PLT","description":"The recent folders, latest first, as File › Open Recent and the Dock menu list them."}
 {"id":"LA-PLT-RM05","title":"Claude Code sessions","domain_id":"LA-PLT","description":"A folder's saved Claude Code sessions, from the CLI's own session store, each with its title, when it was last written, and whether another Claude client may have it open."}
 {"id":"LA-PLT-RM06","title":"Reader's view","domain_id":"LA-PLT","description":"What a window shows the Reader: its page, the focused record, the stage, the record selected on the stage or in the wiki card, and whether the wiki card is open."}
+{"id":"LA-PLT-RM07","title":"Window's chat","domain_id":"LA-PLT","description":"A product window's chat as the page draws it: its session, its status and its items, sent whole when the page loads and then as patches."}
 {"id":"LA-TRC-RM01","title":"Coverage","domain_id":"LA-TRC","description":"Per domain and obligation kind: how many obligations are designed, built, proved and not automated yet, out of the total; and per obligation, the tests that count as its proof there."}
 {"id":"LA-TRC-RM02","title":"Coverage gaps","domain_id":"LA-TRC","description":"Each obligation not designed, built or proved, with what it lacks."}
 {"id":"LA-TRC-RM03","title":"Tests by state","domain_id":"LA-TRC","description":"Each domain's tests by state: automated, manual and not automated yet."}
