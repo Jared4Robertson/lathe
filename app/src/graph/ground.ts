@@ -2,6 +2,7 @@ import { compareIds, type RecordIndex, type RecordSummary } from '../exploring/r
 import { foldedChildren, ownerFolders, sharedKey, type Folder } from '../exploring/folder-tree/folders';
 import { composes } from './composition';
 import type { MapNode, PlacedMap, TreeGeometry, TreeShape } from './map';
+import { keepPlaces, type Was } from './keep-places';
 import { LINE_HEIGHT, linesIn, META_FONT, TITLE_FONT, LABEL_PAD_BLOCK, BORDER, type MapLabel, type WrappedLabel } from './text';
 
 // The Graph's Map layout (LA-EXP-DS12), the third beside Tree and Nested, read as people read a map: the product is the
@@ -12,13 +13,14 @@ import { LINE_HEIGHT, linesIn, META_FONT, TITLE_FONT, LABEL_PAD_BLOCK, BORDER, t
 // as big as what it holds, packed in reading order. Everything else a record is joined to is a link, drawn as a line
 // when it is relevant (GraphPage.tsx).
 //
-// Sizes go bottom-up, so a change grows its container and nudges what comes after it: the records after it in its
-// area, the areas under it in its neighborhood, the neighborhoods right of it in its district, and the districts after
-// it on the ground only when its district's own size changes. Nothing before it moves, nor any district in another
-// row unless its row grows (LA-PAT-APP-UX-R22's deviation for a bottom-up layout). Text is the same size everywhere
-// at a given zoom: every record's text scale is 1, and the areas' labels keep one size on screen (paint.ts).
+// Sizes go bottom-up. A change moves only what it changed (LA-PAT-APP-UX-R22), as on the ERD: laid out after the
+// product's Map before (`kept`, keptGround), every container keeps its children where they were (keep-places.ts): a
+// new record goes in free room in its container, growing it only when there is none; a removed one leaves its room;
+// a container never shrinks; and one that grew pushes only the siblings it now overlaps. Only Tidy up lays the Map out
+// afresh, packed in reading order. Text is the same size everywhere at a given zoom: every record's text scale is 1,
+// and the areas' labels keep one size on screen (paint.ts).
 //
-// Pure and deterministic: the same tree always gives the same map. Laid out in the layout's worker (layout.ts).
+// Pure: the same tree, and the same Map before, always give the same map. Laid out in the layout's worker (layout.ts).
 
 /** What a node of the Map is: the product's ground, a district, a stage's neighborhood, a folder's area, or a record. */
 export type GroundRole = 'ground' | 'district' | 'neighborhood' | 'area' | 'record';
@@ -194,16 +196,63 @@ export function packShaped(sizes: readonly Size[], columns: number, gap: number)
 const rowOf = (n: number, gap: number) => n * LEAF_W + (n - 1) * gap;
 
 /**
- * Lays out the Map's tree (LA-EXP-DS12), each node's label by `labelOf` and what it is by `roleOf` (by its place in the
- * shape): bottom-up, every leaf record LEAF_W by LEAF_H, every container as big as what it holds. Pure: the same shape,
- * labels and roles always give the same geometry. Each node's five numbers are its x, y, width, height and header band.
+ * A place snapped to a thousandth of a map unit: a box kept where it was is placed again from its parent's corner, and
+ * snapping makes that sum land on the very place it had, however many changes it is kept through.
  */
-export function placeGround(shape: TreeShape, labelOf: (i: number) => MapLabel, roleOf: (i: number) => GroundRole): TreeGeometry {
+const snap = (v: number) => Math.round(v * 1000) / 1000;
+
+/** A container's inside's corner from its own: its padding across, its header band down. */
+const insetX = (role: GroundRole) => (role === 'record' ? RECORD_PAD : LEVEL[role].pad);
+/** The padding under a container's inside. */
+const insetBottom = (role: GroundRole) => (role === 'record' ? RECORD_PAD : LEVEL[role].pad);
+
+/**
+ * Each node's box in the Map before (`previous`), for the shape's nodes in order, five numbers each: its x and y from
+ * its parent's inside's corner (a root's from the map's), its width, height and header band; NaN for a node the Map
+ * before did not hold, or held under another parent. What placeGround keeps.
+ */
+export function keptGround(shape: TreeShape, previous: GroundMap): Float64Array {
+  const kept = new Float64Array(shape.ids.length * 5).fill(NaN);
+  shape.ids.forEach((id, i) => {
+    const was = previous.nodes.get(id);
+    const up = shape.parents[i] < 0 ? null : shape.ids[shape.parents[i]];
+    if (!was || was.parent !== up) return;
+    const parent = up === null ? null : previous.nodes.get(up)!;
+    const ox = parent ? parent.x + insetX(parent.role) : 0;
+    const oy = parent ? parent.y + parent.header : 0;
+    kept.set([snap(was.x - ox), snap(was.y - oy), was.w, was.h, was.header], i * 5);
+  });
+  return kept;
+}
+
+/**
+ * Lays out the Map's tree (LA-EXP-DS12), each node's label by `labelOf` and what it is by `roleOf` (by its place in the
+ * shape): bottom-up, every leaf record LEAF_W by LEAF_H, every container as big as what it holds, packed in reading
+ * order; or, with `kept` (keptGround's), every container's children kept where they were (keep-places.ts). Pure: the
+ * same shape, labels, roles and boxes before always give the same geometry. Each node's five numbers are its x, y,
+ * width, height and header band.
+ */
+export function placeGround(shape: TreeShape, labelOf: (i: number) => MapLabel, roleOf: (i: number) => GroundRole, kept: Float64Array | null = null): TreeGeometry {
   const boxes = new Float64Array(shape.ids.length * 5);
   const size: Size[] = new Array(shape.ids.length);
   const header = new Float64Array(shape.ids.length);
   /** Each node's children's places inside it, from its top left. */
   const inside: { x: number; y: number }[][] = new Array(shape.ids.length);
+
+  /** A node's box before, if kept: its place inside its parent, its size and its header band. */
+  const before = (i: number): (Was & { header: number }) | undefined => {
+    if (!kept || !Number.isFinite(kept[i * 5])) return undefined;
+    const b = i * 5;
+    return { x: kept[b], y: kept[b + 1], width: kept[b + 2], height: kept[b + 3], header: kept[b + 4] };
+  };
+  /** A container's children kept where they were, in the room they had; null to pack them afresh. */
+  const keptInside = (i: number, role: GroundRole, kids: readonly Size[], gap: number) => {
+    const was = before(i);
+    if (!was || (role === 'record' && was.header === 0)) return null;
+    const room = { width: was.width - 2 * insetX(role), height: was.height - was.header - insetBottom(role) };
+    const laid = keepPlaces(kids.map((k, n) => ({ id: String(shape.children[i][n]), width: k.w, height: k.h })), (c) => before(Number(c)), { gap, aspect: PACK_ASPECT, room, fill: true, beside: role === 'district' ? 'right' : 'shape' });
+    return laid && { at: laid.children.map((c) => ({ x: c.x, y: c.y })), w: laid.width, h: laid.height };
+  };
 
   /** A node's size, its children's sized first. */
   const measure = (i: number): Size => {
@@ -212,7 +261,7 @@ export function placeGround(shape: TreeShape, labelOf: (i: number) => MapLabel, 
     const role = roleOf(i);
     if (role === 'record') {
       if (own.length === 0) { header[i] = 0; inside[i] = []; return (size[i] = { w: LEAF_W, h: LEAF_H }); }
-      const packed = packShaped(kids, RECORD_COLUMNS, RECORD_GAP);
+      const packed = keptInside(i, role, kids, RECORD_GAP) ?? packShaped(kids, RECORD_COLUMNS, RECORD_GAP);
       const w = Math.max(LEAF_W, packed.w + 2 * RECORD_PAD);
       header[i] = recordHeader(labelOf(i), w);
       inside[i] = packed.at.map((p) => ({ x: RECORD_PAD + p.x, y: header[i] + p.y }));
@@ -222,20 +271,20 @@ export function placeGround(shape: TreeShape, labelOf: (i: number) => MapLabel, 
     // A ground in rows of districts; a district's neighborhoods left to right, in stage order; a neighborhood's areas and
     // an area's records (or a stage's with one folder) in rows, in reading order, kept about the screen's shape.
     const holdsRecords = own.length > 0 && own.every((c) => roleOf(c) === 'record');
-    const packed = role === 'ground'
+    const packed = keptInside(i, role, kids, holdsRecords ? RECORD_GAP : level.gap) ?? (role === 'ground'
       ? packGrid(kids, Math.max(1, Math.ceil(Math.sqrt(kids.length))), level.gap)
       : role === 'district'
         ? packRow(kids, level.gap)
         : holdsRecords
           ? packShaped(kids, AREA_COLUMNS, RECORD_GAP)
-          : packShaped(kids, 1, level.gap);
+          : packShaped(kids, 1, level.gap));
     header[i] = level.head;
     inside[i] = packed.at.map((p) => ({ x: level.pad + p.x, y: level.head + p.y }));
     return (size[i] = { w: Math.max(LEAF_W, packed.w) + 2 * level.pad, h: level.head + packed.h + level.pad });
   };
   /** Each node at its place, its children inside it. */
   const place = (i: number, x: number, y: number) => {
-    boxes.set([x, y, size[i].w, size[i].h, header[i]], i * 5);
+    boxes.set([snap(x), snap(y), size[i].w, size[i].h, header[i]], i * 5);
     shape.children[i].forEach((c, k) => place(c, x + inside[i][k].x, y + inside[i][k].y));
   };
   const tops = shape.roots.map((r) => shape.ids.indexOf(r));

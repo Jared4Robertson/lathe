@@ -1,5 +1,6 @@
-import { expect, test, type Page } from '@playwright/test';
-import { expectStable, openPage, step } from './measure';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
+import { expectStable, openPage, showCard, step } from './measure';
 import { AGGREGATE, RECORD, STAGE } from './scenarios';
 import { sceneOf } from './scene';
 
@@ -15,8 +16,8 @@ const PAGE_BAR = '.page-bar-actions';
 const STRIP = '.header-strip';
 const CARD = '.wiki-panel';
 const BOXES = `${STAGE} .graph-flow .graph-box`;
-/** What floats in the open space (the stage's tools, the camera's buttons, the minimap, the edge hints): it moves with the open space on purpose. */
-const MOVES_WITH_OPEN_SPACE = [`${STAGE} .stage-tools`, `${STAGE} .stage-camera`, `${STAGE} .graph-minimap`, `${STAGE} .graph-edge-hints`];
+/** What floats in the open space (the stage's tools, the camera's buttons, the minimap, the edge hints, the key bar centered along its foot, LA-V96-R30): it moves with the open space on purpose. */
+const MOVES_WITH_OPEN_SPACE = [`${STAGE} .stage-tools`, `${STAGE} .stage-camera`, `${STAGE} .graph-minimap`, `${STAGE} .graph-edge-hints`, `${STAGE} .stage-key-room`];
 
 /** The open space the panels leave over the stage, in the page's pixels, as the stage measured it. */
 async function openSpace(page: Page) {
@@ -28,14 +29,21 @@ async function openSpace(page: Page) {
   }, STAGE);
 }
 
-/** The focus's drawn box lies whole in the open space, so no panel covers it. */
+/**
+ * The focus's drawn box lies whole in the open space, so no panel covers it; or, when the camera frames its children's
+ * column (camera.ts frameChildren, their titles too small otherwise), the focus is the strip at the open space's left
+ * edge: its right part in the open space, whole top to bottom.
+ */
 async function expectFocusInOpenSpace(page: Page, what: string) {
   await expect.poll(async () => {
     const focus = (await sceneOf(page)).boxes.find((b) => b.focus);
     const open = await openSpace(page);
     if (!focus) return 'no focus drawn';
     const { left, top, width, height } = focus.rect;
-    const inside = left >= open.left - 1 && top >= open.top - 1 && left + width <= open.right + 1 && top + height <= open.bottom + 1;
+    const rows = top >= open.top - 1 && top + height <= open.bottom + 1;
+    const whole = left >= open.left - 1 && left + width <= open.right + 1;
+    const strip = left < open.left && left + width > open.left + 1 && left + width <= open.right + 1;
+    const inside = rows && (whole || strip);
     return inside ? 'inside' : `outside: ${JSON.stringify({ focus: focus.rect, open })}`;
   }, { message: `${what}: the focus sits in the open space`, timeout: 5000 }).toBe('inside');
 }
@@ -48,7 +56,7 @@ test.describe('the stage and its panels', () => {
     await openPage(page, `${AGGREGATE}?stage=erd`, STRIP);
     await page.locator(CARD).waitFor();
     // The narrow strip still names the focus: its title keeps room, the trail giving way first (LA-V96-R09).
-    expect((await page.locator('.header-strip h1').boundingBox())?.width ?? 0, 'the title is shown').toBeGreaterThan(40);
+    expect(await page.locator('.header-strip h1').evaluate((h) => h.clientWidth > 0 && h.scrollWidth <= h.clientWidth), 'the title is shown whole').toBe(true);
     const box = (sel: string) => page.locator(sel).first().boundingBox();
     const [nav, card, bar, stage] = await Promise.all([box(NAV), box(CARD), box(PAGE_BAR), box(STAGE)]);
     expect(card!.x, 'the card starts after the nav ends').toBeGreaterThanOrEqual(nav!.x + nav!.width);
@@ -71,7 +79,8 @@ test.describe('the stage and its panels', () => {
     for (const [width, expected] of [[1440, null], [1100, null], [960, 'card'], [1920, null]] as const) {
       await page.setViewportSize({ width, height: 900 });
       await expect.poll(crowded, { message: `collapsed for space at ${width} px` }).toBe(expected);
-      const card = await page.locator(CARD).boundingBox();
+      // A card collapsed for space is not drawn at all.
+      const card = (await page.locator(CARD).count()) ? await page.locator(CARD).boundingBox() : null;
       if (card) expect(card.width, `the card at ${width} px`).toBeGreaterThanOrEqual(359);
       const open = await openSpace(page);
       expect(open.right - open.left, `the open space at ${width} px`).toBeGreaterThanOrEqual(299);
@@ -152,11 +161,12 @@ test.describe('the stage and its panels', () => {
     await expectFocusInOpenSpace(page, 'with a wider card');
   });
 
+  // On the web the page's controls sit in the header strip, frosted with it; the desktop app's page bar is its own panel.
   test('LA-V96-R20-T02 the panels are frosted over the stage, and opaque under reduced transparency', async ({ page }) => {
     const looks = () => page.evaluate((sels) => sels.map((sel) => {
       const s = getComputedStyle(document.querySelector(sel)!);
       return { sel, filter: s.backdropFilter, background: s.backgroundColor };
-    }), ['nav#nav', '.page-bar-actions', '.header-strip', '.wiki-panel']);
+    }), ['nav#nav', '.header-strip', '.wiki-panel']);
     await openPage(page, `${RECORD}?stage=graph`);
     for (const l of await looks()) {
       expect(l.filter, `${l.sel} blurs the stage behind it`).toContain('blur');
@@ -175,6 +185,7 @@ test.describe('the stage and its panels', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPage(page, `${AGGREGATE}?stage=graph`, STRIP);
     await stageReady(page);
+    await showCard(page, 'summary');
     const where = () => page.evaluate((stage) => {
       const card = document.querySelector('.wiki-panel')!.getBoundingClientRect();
       const tools = document.querySelector(`${stage} [data-stage-tools="top"]`)?.getBoundingClientRect();
@@ -197,7 +208,7 @@ test.describe('the stage and its panels', () => {
     await page.waitForTimeout(600);
     expect(await where(), 'the card holds its spot and height across a new focus and a pan').toEqual(first);
     // Expanded: about 85% of the stage, kept above the foot by the card's gap.
-    await page.locator(CARD).getByRole('button', { name: 'More' }).click();
+    await showCard(page, 'whole');
     await expect.poll(async () => (await where()).height, { message: 'expanded, the card grows' }).toBeGreaterThan(first.height);
     const expanded = await where();
     expect(expanded.top, 'expanded, its top stays').toBe(first.top);
@@ -253,7 +264,7 @@ test.describe('a flow\'s steps in the wiki card', () => {
   test('LA-V101-R06-T02 in the 360 px wiki card, each step reads whole, stacked, and nothing scrolls sideways or is cut', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPage(page, '/LA-EXP-UC03-FL01?stage=graph', STRIP);
-    await page.locator(CARD).getByRole('button', { name: 'More' }).click();
+    await showCard(page, 'whole');
     const table = page.locator(`${CARD} table.flow-steps`).first();
     await table.waitFor();
     const sizes = await table.evaluate((el) => {
@@ -273,7 +284,7 @@ test.describe('a flow\'s steps in the wiki card', () => {
   test('LA-V101-R10-T02 in the 360 px wiki card, a use case\'s requirement rows read whole, stacked, and nothing is cut', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
     await openPage(page, '/LA-AUT-UC06?stage=graph', STRIP);
-    await page.locator(CARD).getByRole('button', { name: 'More' }).click();
+    await showCard(page, 'whole');
     const table = page.locator(`${CARD} table.trace-requirements`).first();
     await table.waitFor();
     const sizes = await table.evaluate((el) => {

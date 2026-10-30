@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ErdBox, ErdLine, ErdMap, Rect } from '../src/erd/erd';
-import { keepPlaces, layoutErd, readyErdLayout, erdLayout, tidyErdLayout } from '../src/erd/layout';
+import { layoutErd, readyErdLayout, erdLayout, tidyErdLayout } from '../src/erd/layout';
+import { keepPlaces } from '../src/graph/keep-places';
 import { morphFrom } from '../src/graph/morph';
 import { modelWorkspace } from './fixtures/model';
 import { erdOf } from './erd-of';
@@ -118,13 +119,13 @@ describe('LA-PAT-APP-UX-R22-T02 a change on the ERD moves only its aggregate\'s 
 
   it('keepPlaces keeps each box, pushes what a grown box overlaps, and puts a new box beside the rest', () => {
     const was: Record<string, Rect> = { a: { x: 0, y: 0, width: 100, height: 100 }, b: { x: 120, y: 0, width: 100, height: 100 }, c: { x: 0, y: 300, width: 100, height: 100 } };
-    const laid = keepPlaces([{ id: 'a', width: 150, height: 100 }, { id: 'b', width: 100, height: 100 }, { id: 'c', width: 100, height: 100 }, { id: 'n', width: 50, height: 50 }], (id) => was[id], 20)!;
+    const laid = keepPlaces([{ id: 'a', width: 150, height: 100 }, { id: 'b', width: 100, height: 100 }, { id: 'c', width: 100, height: 100 }, { id: 'n', width: 50, height: 50 }], (id) => was[id], { gap: 20, aspect: 1.6 })!;
     const at = Object.fromEntries((laid.children ?? []).map((c) => [c.id, { x: c.x, y: c.y }]));
     expect(at.a).toEqual({ x: 0, y: 0 });
     expect(at.b).toEqual({ x: 170, y: 0 });
     expect(at.c).toEqual({ x: 0, y: 300 });
     expect(at.n).toEqual({ x: 290, y: 0 });
-    expect(keepPlaces([{ id: 'z', width: 10, height: 10 }], () => undefined, 20)).toBeNull();
+    expect(keepPlaces([{ id: 'z', width: 10, height: 10 }], () => undefined, { gap: 20, aspect: 1.6 })).toBeNull();
   });
 
   it('a box and its lines glide on the shared morph (graph/morph.ts): from where it was drawn to its new place, a new box at its place', () => {

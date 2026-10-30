@@ -4,6 +4,7 @@ import App from '../src/App';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import type { BaselineAnswer } from '../../lathe/src/server/contract';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
+import { desktopStandIn } from './desktop-bridge';
 import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { ALL_COMMANDS, ALL_QUERIES } from '../../lathe/src/commands';
 import { InputError } from '../../lathe/src/platform/commands/definition';
@@ -119,34 +120,5 @@ export function startAtDepth(depth: number, layout: 'tree' | 'nested' | 'map' = 
 /** A record's facts (kind, fields, data file, links out and in), after its body in the wiki card's whole page. */
 export const facts = () => within(screen.getByRole('region', { name: 'Wiki card' })).getByRole('complementary', { name: 'Facts' });
 
-/** The desktop shell's bridge with every member a no-op, for a test to override what it watches. */
-export const desktopBridgeStub = (over: Partial<LatheDesktop> = {}): LatheDesktop => ({
-  isDesktop: true,
-  platform: 'darwin',
-  onCommand: () => () => {},
-  setChrome: () => {},
-  onFullScreen: () => () => {},
-  setMenuKeys: () => {},
-  setErrorCount: () => {},
-  revealRecord: () => {},
-  openRecordInEditor: () => {},
-  copyRecordId: () => {},
-  showRecordMenu: () => {},
-  chat: {
-    sessions: async () => ({ claude: null, configured: false, signedIn: null, mode: 'accept-reads', current: null, sessions: [] }),
-    open: async () => false,
-    send: async () => false,
-    answer: async () => false,
-    stop: async () => false,
-    setMode: async () => false,
-    setModel: async () => false,
-    unqueue: async () => false,
-    skills: async () => [],
-    captureStage: async () => null,
-    onPatch: () => () => {} },
-  voice: {
-    support: async () => ({ available: false, reason: 'Not in tests.', microphone: 'unknown', endOfTurn: false }),
-    listen: async () => 'unavailable',
-    onEvent: () => () => {} },
-  onAppRequest: () => () => {},
-  ...over });
+/** The desktop shell's bridge with every member a no-op (test/desktop-bridge.ts), for a test to override what it watches. */
+export const desktopBridgeStub = (over: Partial<LatheDesktop> = {}): LatheDesktop => ({ ...desktopStandIn(), ...over });

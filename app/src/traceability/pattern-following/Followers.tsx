@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { PatternPage } from '../../../../lathe/src/authoring/pattern/read-model';
 import type { FollowingDomain, FollowingPage, SettingLine } from '../../../../lathe/src/traceability/pattern-following/read-model';
 import { Refusal, problemText } from '../../edit/fields';
@@ -9,6 +9,7 @@ import { RuleMark } from '../../specs/PatternParts';
 import { addressOf } from '../../views/address';
 import { FollowButton, FollowingForm, RowActions, type FollowingMode } from './FollowingEditor';
 import { useFollowers } from './reads';
+import { backToActions } from '../../edit/back-to-actions';
 
 // A pattern's followers on the Pattern page (LA-TRC-A3's sections of LA-V122, /<id>): Followed by on the pattern's page
 // and Owed by on a rule's, read through the Pattern following aggregate's own query (GET
@@ -85,18 +86,17 @@ export function FollowedBy({ index, page }: { index: RecordIndex; page: PatternP
   const patternId = page.pattern.id;
   const read = useFollowers(patternId, index);
   const [mode, setMode] = useState<FollowingMode>({ mode: 'view' });
-  const box = useRef<HTMLDivElement>(null);
   useEffect(() => { setMode({ mode: 'view' }); }, [patternId]);
   const shown = unread(read, patternId);
   const domains = read.state === 'read' ? read.answer.domains : [];
   const followers = domains.flatMap((d) => [...(d.itself ? [d.domain] : []), ...d.useCases.map((f) => f.follower)]);
   const done = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => box.current?.querySelector<HTMLElement>('.record-actions button')?.focus(), 0);
+    backToActions(`Followers of ${patternId}`);
   };
   return (
     <Section title="Followed by" count={shown ? undefined : domains.length}>
-      <div ref={box}>
+      <div>
         {shown ?? (
           <>
             {domains.length === 0 && <p className="hint">No use case follows this pattern, so no domain owes its rules.</p>}

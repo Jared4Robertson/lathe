@@ -1,8 +1,10 @@
-import { expect, test, type Page } from '@playwright/test';
-import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD } from '../stability/scenarios';
+import type { Page } from '@playwright/test';
+import { expect, test } from '../stability/test';
+import { AGGREGATE, DOMAIN, EDITED, PRODUCT, RECORD, REFERENCED } from '../stability/scenarios';
 import { audit, LOOKS, useLook, type Finding } from './axe';
 import { withChat } from './chat';
 import { asDesktop } from '../stability/desktop';
+import { showCard } from '../stability/measure';
 
 // LA-PAT-APP-UX-R10-T01: every page and state the stability suite visits passes axe-core at WCAG 2.2 AA, at
 // desktop and phone widths, in the Lathe theme's light and dark and in High contrast's
@@ -12,26 +14,37 @@ import { asDesktop } from '../stability/desktop';
 /** A group: a domain's Technical specification folder, at its parent, stage and folder. */
 const GROUP = '/LA-EXP/technical-specification';
 
-async function open(page: Page, url: string, ready: string) {
+/** What only a record's page in the wiki card draws: on a phone the card is a sheet the Reader opens. */
+const inCard = (ready: string) => ready.startsWith('[data-aggregate=') || ready === '.interface-flows';
+
+/**
+ * Opens the page and waits for `ready`: drawn, or only attached when it is the Trace's table, which sits visually hidden
+ * under its canvas for the keyboard. On a phone, a record's page is read in the wiki card's sheet, opened as the Reader does.
+ */
+async function open(page: Page, url: string, ready: string, state: 'visible' | 'attached' = 'visible') {
   await page.goto(url);
   await page.locator('.app[data-specs="ready"]').first().waitFor();
-  await page.locator(ready).first().waitFor();
+  if (inCard(ready) && (page.viewportSize()?.width ?? 1440) < 768) await page.getByRole('button', { name: 'Show the wiki card' }).click();
+  await page.locator(ready).first().waitFor({ state });
   await page.waitForTimeout(400);
 }
 
 interface State { name: string; run: (page: Page) => Promise<void> }
 
 /** A flow step some requirement's chain holds; an entity; a Shared record (in no domain). */
-const STEP = '/LA-EXP-UC12-FL01-S01';
+const STEP = '/LA-EXP-UC12-FL01-S03';
 const ENTITY = '/LA-EXP-EN01';
 const SHARED = '/LA-PAT-APP-UX';
+
+/** The Trace drawn: its canvas (attached, as stability's traceDrawn), or on a phone its column-by-column list. */
+const TRACE = '.focus-stage :is(.trace-flow[data-ready], .trace-col-rows)';
 
 /** Each stage, with every panel open. */
 const STAGES = [
   { name: 'graph stage', url: `${RECORD}?stage=graph`, ready: '.focus-stage .graph-flow .graph-box' },
   { name: 'ERD stage', url: `${AGGREGATE}?stage=erd`, ready: '.focus-stage .erd-canvas' },
-  { name: 'Trace stage, a chain', url: `${EDITED}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
-  { name: 'Trace stage, a domain (no box: the overview)', url: `${DOMAIN}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
+  { name: 'Trace stage, a chain', url: `${EDITED}?stage=trace`, ready: TRACE, state: 'attached' as const },
+  { name: 'Trace stage, a domain (no box: the overview)', url: `${DOMAIN}?stage=trace`, ready: TRACE, state: 'attached' as const },
 ];
 
 /** Collapses the wiki card (Enter), so the stage has the whole window under the tab panel. */
@@ -82,37 +95,29 @@ const PAGES: State[] = [
   { name: 'command page', url: '/LA-AUT-CMD210', ready: '[data-aggregate="command"] .command-endpoints' },
   // The Table, Specification, Value object and Read model aggregates' own pages.
   { name: 'table page', url: '/LA-AUT-EN54-TB', ready: '[data-aggregate="table"] .table-keys' },
-  { name: 'specification page', url: '/LA-AUT-SP03', ready: '[data-aggregate="specification"] .record-lead' },
+  { name: 'specification page', url: '/LA-AUT-SP09', ready: '[data-aggregate="specification"] .record-lead' },
   { name: 'value object page', url: '/LA-VO01', ready: '[data-aggregate="value-object"] .entity-fields' },
   { name: 'read model page', url: '/LA-AUT-RM25', ready: '[data-aggregate="read-model"] .read-model-queries' },
   { name: 'group page', url: GROUP, ready: '.header-strip h1' },
   ...STAGES,
   // Every stage works on every focus (LA-PAT-APP-UX-R17): the shapes a stage takes outside its own kinds.
-  { name: 'Trace stage, a flow step in the chains that hold it', url: `${STEP}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
-  { name: 'Trace stage, an entity framed on its aggregate', url: `${ENTITY}?stage=trace`, ready: '.focus-stage .trace-note' },
-  { name: 'Trace stage, the product all at once', url: `${PRODUCT}?stage=trace`, ready: '.focus-stage .trace-flow[data-ready]' },
+  { name: 'Trace stage, a flow step in the chains that hold it', url: `${STEP}?stage=trace`, ready: TRACE, state: 'attached' as const },
+  { name: 'Trace stage, an entity framed on its aggregate', url: `${ENTITY}?stage=trace`, ready: TRACE, state: 'attached' as const },
+  { name: 'Trace stage, the product all at once', url: `${PRODUCT}?stage=trace`, ready: TRACE, state: 'attached' as const },
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.
-  { name: 'Checks panel', url: `${PRODUCT}?panel=checks`, ready: '.tool-panel.checks-panel .problems' },
+  { name: 'Checks panel', url: `${PRODUCT}?panel=checks`, ready: '.checks-panel .problems' },
   { name: 'Format page in the wiki card', url: `${PRODUCT}?page=format`, ready: '.wiki-panel.is-format h2' },
   { name: 'Kind page in the wiki card', url: `${RECORD}?page=format/kinds/use_case`, ready: '.wiki-panel.is-format h2' },
   // The Check aggregate's own page: a product's own check, with its actions.
   { name: 'Check page in the wiki card', url: `${PRODUCT}?page=format/checks/actor-not-a-role`, ready: '.wiki-panel.is-format [data-aggregate="check"]' },
-  { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.tool-panel.appearance-popover .theme-rows' },
+  { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.appearance-popover .theme-rows' },
   { name: 'Products picker', url: '/', ready: '.dialog.products-picker h1' },
-].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));
-// A design record nothing traces to: the untraced state, reached from the domain's Untraced list by the keyboard.
-PAGES.push({ name: 'Trace stage, an untraced record', run: async (page: Page) => {
-  await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-untraced');
-  await page.locator('.focus-stage .trace-untraced a').first().focus();
-  await page.keyboard.press('Enter');
-  await page.locator('.focus-stage .trace-note.is-untraced').waitFor();
-  await page.waitForTimeout(400);
-} });
+].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready, 'state' in p ? p.state : 'visible') }));
 // The Trace stage with only the branches that have a gap.
 PAGES.push({ name: 'Trace stage, gaps only', run: async (page: Page) => {
-  await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-flow[data-ready]');
+  await open(page, `${DOMAIN}?stage=trace`, TRACE, 'attached');
   await page.locator('.focus-stage').getByRole('checkbox', { name: 'Gaps only' }).check();
   await page.waitForTimeout(200);
 } });
@@ -121,12 +126,12 @@ PAGES.push({ name: 'Trace stage, gaps only', run: async (page: Page) => {
 // forms are not sent, and the store refuses the removal.
 PAGES.push(
   { name: 'an aggregate\'s edit form', run: async (page: Page) => {
-    await open(page, EDITED, '.header-strip h1');
+    await open(page, EDITED, '[data-aggregate="use-case"]');
     await page.getByRole('toolbar', { name: `Change ${EDITED.slice(1)}` }).getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('form').waitFor();
   } },
   { name: 'the add form, with its problems shown', run: async (page: Page) => {
-    await open(page, RECORD, '.header-strip h1');
+    await open(page, RECORD, '[data-aggregate="use-case"]');
     const actions = page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` });
     await actions.getByRole('button', { name: 'Add…' }).click();
     await actions.getByRole('group', { name: /Kinds to add/ }).getByRole('button', { name: 'UC requirement' }).click();
@@ -139,7 +144,7 @@ PAGES.push(
     await page.getByRole('form').locator('.form-parts').waitFor();
   } },
   { name: 'the set limits form', run: async (page: Page) => {
-    await open(page, PRODUCT, '.product-limits .record-actions');
+    await open(page, PRODUCT, '[data-aggregate="product"] .product-limits .record-actions');
     await page.getByRole('toolbar', { name: 'Change the limits of LA' }).getByRole('button', { name: 'Set limits' }).click();
     await page.getByRole('form', { name: 'Set limits' }).waitFor();
   } },
@@ -154,17 +159,21 @@ PAGES.push(
     await page.getByRole('form').locator('.form-parts').waitFor();
   } },
   { name: 'the remove question and its refusal', run: async (page: Page) => {
-    await open(page, RECORD, '.header-strip h1');
-    await page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` }).getByRole('button', { name: 'Remove' }).click();
-    const panel = page.getByRole('region', { name: `Remove ${RECORD.slice(1)}?` });
-    await panel.getByRole('button', { name: `Remove ${RECORD.slice(1)}` }).click();
+    // A record others reference, so the removal is refused and the suite's data stays whole for the states after it.
+    await open(page, REFERENCED, '[data-aggregate="use-case"]');
+    await page.getByRole('toolbar', { name: `Change ${REFERENCED.slice(1)}` }).getByRole('button', { name: 'Remove' }).click();
+    const panel = page.getByRole('region', { name: `Remove ${REFERENCED.slice(1)}?` });
+    await panel.getByRole('button', { name: `Remove ${REFERENCED.slice(1)}` }).click();
     await panel.getByRole('alert').waitFor({ timeout: 20_000 });
   } },
 );
 // The graph in its Nested and Map layouts (LA-V93-R21, LA-V93-R74): the same roles and names as the Tree layout.
 for (const layout of ['Nested', 'Map'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
   await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
-  await page.locator('.focus-stage .graph-layout button', { hasText: layout }).click();
+  // A narrow toolbar folds the layouts into its More menu.
+  const choice = page.locator('.focus-stage .graph-layout').getByRole('button', { name: layout, exact: true });
+  if (!(await choice.isVisible())) await page.locator('.focus-stage .stage-more > summary').click();
+  await choice.click();
   await page.locator(`.focus-stage .graph-flow[data-layout="${layout.toLowerCase()}"] .graph-box`).first().waitFor();
   await page.waitForTimeout(900);
 } });
@@ -172,6 +181,15 @@ for (const layout of ['Nested', 'Map'] as const) PAGES.push({ name: `graph, ${la
 /** On a wide screen: the stages with their panels collapsed and under reduced transparency, a deep breadcrumb's menu, and the overlays over a record page. */
 const DESKTOP: State[] = [
   ...PAGES,
+  // A design record nothing traces to: the untraced state, reached from the domain's Untraced list (the Trace's table
+  // under its canvas, which a phone's column list does not have) by the keyboard.
+  { name: 'Trace stage, an untraced record', run: async (page: Page) => {
+    await open(page, `${DOMAIN}?stage=trace`, '.focus-stage .trace-untraced', 'attached');
+    await page.locator('.focus-stage .trace-untraced a').first().focus();
+    await page.keyboard.press('Enter');
+    await page.locator('.focus-stage .trace-note.is-untraced').waitFor({ state: 'attached' });
+    await page.waitForTimeout(400);
+  } },
   { name: 'quick find', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
     await page.keyboard.press('Control+k');
@@ -206,8 +224,8 @@ const DESKTOP: State[] = [
     await page.locator('.shortcut-offer').waitFor();
   } },
   // Each stage with the panels collapsed, and with them open under reduced transparency.
-  ...STAGES.map((s): State => ({ name: `${s.name}, panels collapsed`, run: async (page) => { await open(page, s.url, s.ready); await collapsePanels(page); } })),
-  ...STAGES.map((s): State => ({ name: `${s.name}, reduced transparency`, run: async (page) => { await reduceTransparency(page); await open(page, s.url, s.ready); } })),
+  ...STAGES.map((s): State => ({ name: `${s.name}, panels collapsed`, run: async (page) => { await open(page, s.url, s.ready, 'state' in s ? s.state : 'visible'); await collapsePanels(page); } })),
+  ...STAGES.map((s): State => ({ name: `${s.name}, reduced transparency`, run: async (page) => { await reduceTransparency(page); await open(page, s.url, s.ready, 'state' in s ? s.state : 'visible'); } })),
   { name: 'a deep breadcrumb with its hidden levels open', run: async (page) => {
     await open(page, EDITED, '.header-strip .crumb-more-button');
     await page.locator('.header-strip .crumb-more-button').click();
@@ -224,13 +242,13 @@ const DESKTOP: State[] = [
   { name: 'the chat, its permission mode menu open', run: async (page) => {
     await withChat(page, RECORD.slice(1));
     await open(page, RECORD, '.chat-log .chat-item');
-    await page.locator('.chat-mode-button').click();
+    await page.getByRole('button', { name: /^Permission mode/ }).click();
     await page.locator('.chat-mode-menu').waitFor();
   } },
   { name: 'the chat, the warning before Bypass, and its badge once on', run: async (page) => {
     await withChat(page, RECORD.slice(1));
     await open(page, RECORD, '.chat-log .chat-item');
-    await page.locator('.chat-mode-button').click();
+    await page.getByRole('button', { name: /^Permission mode/ }).click();
     await page.locator('.chat-mode-item.is-bypass').click();
     await page.locator('.chat-bypass-warning').waitFor();
   } },
@@ -249,11 +267,10 @@ const DESKTOP: State[] = [
     await box.dispatchEvent('click', { metaKey: true, button: 0 });
     await page.locator('.tab-strip [role="tab"]').nth(1).waitFor();
   } },
-  // The wiki card opens as its summary on every page above; More shows the whole page in place (LA-V96-R22).
-  { name: 'the wiki card expanded to the whole page', run: async (page) => {
+  // The wiki card shows its whole page on every page above (useLook reads whole cards); Less shows its summary (LA-V96-R22).
+  { name: 'the wiki card as its summary', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
-    await page.locator('.wiki-panel').getByRole('button', { name: 'More' }).click();
-    await page.locator('.wiki-panel.is-expanded').waitFor();
+    await showCard(page, 'summary');
   } },
   { name: 'a tooltip on keyboard focus', run: async (page) => {
     await open(page, RECORD, '.header-strip h1');
@@ -354,8 +371,13 @@ for (const look of LOOKS) {
       if (phone) test.use({ viewport: { width: 375, height: 812 }, hasTouch: true, isMobile: true });
       test.beforeEach(({ page }) => useLook(page, look));
       test('LA-V96-R28-T02 the Changes controls, Highlight changes on and the Changes panel pass axe', async ({ page }) => {
+        // Highlight changes on first (a narrow toolbar folds it into More; a phone's panel is a sheet over the stage), then the panel.
+        await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box', 'attached');
+        const highlight = page.getByRole('group', { name: 'Changes' }).getByRole('button', { name: 'Highlight changes' });
+        if (!(await highlight.isVisible())) await page.locator('.focus-stage .stage-more > summary').click();
+        await highlight.click();
+        await expect(highlight).toHaveAttribute('aria-pressed', 'true');
         await open(page, `${RECORD}?stage=graph&panel=changes`, '.changes-panel .tool-panel-title, .tool-sheet.changes-panel');
-        await page.getByRole('group', { name: 'Changes' }).getByRole('button', { name: 'Highlight changes' }).click();
         await page.waitForTimeout(300);
         await auditAll(page, `${look.name}, ${phone ? 'phone' : 'desktop'}: the Changes controls and panel`);
       });

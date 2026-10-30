@@ -1,8 +1,9 @@
 import { execFileSync } from 'node:child_process';
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
-import { expect, test, type Page } from '@playwright/test';
-import { openPage } from './measure';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
+import { openPage, showCard } from './measure';
 import { keepData } from './scenarios';
 import { clickBox, clickErdBox, erdDrawn, erdSceneOf, expectKeyWhole, focusDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
 
@@ -44,12 +45,12 @@ test.describe('Exploring flows', () => {
     for (const stage of ['Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan']) {
       await expect(wiki.getByRole('heading', { level: 2, name: new RegExp(`^${stage} \\d+`) })).toBeVisible();
     }
-    await wiki.getByRole('searchbox', { name: 'Filter records' }).fill('Tab group');
+    await wiki.getByRole('searchbox', { name: 'Filter records' }).fill('Tab set');
     await expect(wiki.getByRole('list', { name: 'Aggregates' }).getByRole('listitem')).toHaveCount(1);
     await expect(wiki.getByText('Nothing matches.').first()).toBeVisible();
-    await wiki.getByRole('link', { name: 'LA-EXP-A5 Tab group' }).click();
+    await wiki.getByRole('link', { name: 'LA-EXP-A5 Tab set' }).click();
     await page.waitForURL((u) => u.pathname === '/LA-EXP-A5');
-    await expect(wikiTitle(page)).toHaveText('Tab group');
+    await expect(wikiTitle(page)).toHaveText('Tab set');
   });
 
   test('LA-EXP-UC02-FL01-T follow a record\'s links: its page, a link by its relation, a row anywhere', async ({ page }) => {
@@ -206,9 +207,9 @@ test.describe('Exploring flows', () => {
   test('LA-EXP-UC06-FL01-T read a flow step by step: its table, a step unfolded, the graph, a requirement traced to its step', async ({ page }) => {
     await openPage(page, '/LA-EXP-UC03-FL01');
     const steps = page.locator(WIKI).getByRole('table', { name: 'Steps of LA-EXP-UC03-FL01, in order' });
-    await expect(steps.getByRole('rowheader')).toHaveCount(9);
+    await expect(steps.getByRole('rowheader')).toHaveCount(10);
     await expect(steps.getByRole('rowheader').first()).toContainText('LA-EXP-UC03-FL01-S01');
-    await expect(steps.getByRole('rowheader').last()).toContainText('LA-EXP-UC03-FL01-S09');
+    await expect(steps.getByRole('rowheader').last()).toContainText('LA-EXP-UC03-FL01-S10');
     const unfold = steps.getByRole('button', { name: 'Expand LA-EXP-UC03-FL01-S01' });
     await unfold.click();
     await expect(steps.getByRole('button', { name: 'Collapse LA-EXP-UC03-FL01-S01' })).toHaveAttribute('aria-expanded', 'true');
@@ -220,7 +221,7 @@ test.describe('Exploring flows', () => {
     await expect(page.locator(WIKI)).toHaveCount(0);
     await graphReady(page);
     await focusDrawn(page, 'LA-EXP-UC03-FL01');
-    await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(9);
+    await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC03-FL01-S\d+$/.test(b.id)).length).toBe(10);
     // A requirement's Trace stage frames its box in the All-at-once view: its use case to its left, what builds it to its
     // right, its path lit; the step that fulfills it is in the table's chain under the canvas.
     await page.goto('/LA-EXP-UC03-R18?stage=trace');
@@ -352,9 +353,11 @@ test.describe('Exploring flows', () => {
     await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/LA-EXP/technical-specification');
     await graphReady(page);
-    expect((await sceneOf(page)).boxes.some((b) => b.id === 'LA-EXP/technical-specification/repository')).toBe(true);
     await expect(wikiTitle(page)).toHaveText(/^Technical specification/);
     await expect(page.locator('.header-strip .breadcrumb .crumb').last()).toContainText('Exploring');
+    // Its kinds are reached from it: In steps to its first kind's group (the focus is framed whole, its kinds beside it).
+    await page.getByRole('button', { name: 'In to the first child', exact: true }).click();
+    await page.waitForURL((u) => u.pathname.startsWith('/LA-EXP/technical-specification/'));
   });
 
   test('LA-EXP-UC10-FL01-T explore in browser tabs, each its own place: no tab strip, one entry per move, kept through a reload, Cmd+click a new browser tab', async ({ page, context }) => {
@@ -436,8 +439,7 @@ test.describe('Exploring flows', () => {
       await graphReady(page);
       // History, at the end of the wiki card's whole page (More), read from the repository only once asked.
       const card = page.locator(WIKI);
-      const more = card.getByRole('button', { name: 'More' });
-      if (await more.count()) await more.click();
+      await showCard(page, 'whole');
       await card.getByRole('button', { name: 'Show the history' }).click();
       const history = card.locator('.record-history');
       await expect(history).toContainText(/not committed|uncommitted/i, { timeout: 20_000 });
@@ -455,12 +457,11 @@ test.describe('Exploring flows', () => {
   test('LA-EXP-UC13-FL01-T read a domain\'s endpoints and integrations: the domain\'s Interaction design, a command\'s endpoint, an integration\'s steps', async ({ page }) => {
     await openPage(page, '/LA-AUT');
     const wiki = page.locator(WIKI);
-    await expect(wiki.getByRole('list', { name: 'Endpoints' })).toContainText('POST · /api/use-case/change-use-case');
+    await expect(wiki.getByRole('list', { name: 'Endpoints' }).getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' })).toBeVisible();
     await expect(wiki.getByRole('list', { name: 'Integrations' }).getByRole('listitem').first()).toBeVisible();
     // The command and its endpoint, method and route.
     await page.goto('/LA-AUT-CMD101');
     await expect(wiki.getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' })).toBeVisible();
-    await expect(wiki).toContainText('POST · /api/use-case/change-use-case');
     await wiki.getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' }).click();
     await page.waitForURL((u) => u.pathname === '/LA-AUT-EP101');
     // An integration lists the steps that exchange with its system.

@@ -65,10 +65,15 @@ export abstract class BrowserRepository<T> {
   /** Writes the aggregate whole. */
   protected abstract write(value: T): void;
 
-  /** The aggregate, whole. */
+  /**
+   * The aggregate, whole: the same value until its stored text changes, so it is a stable snapshot for
+   * useSyncExternalStore. A read may drop stale state from storage, so the text is taken again after it.
+   */
   readonly load = (): T => {
-    const stored = this.stored();
-    if (!this.#cached || this.#cached.stored !== stored) this.#cached = { stored, value: this.read() };
+    if (!this.#cached || this.#cached.stored !== this.stored()) {
+      const value = this.read();
+      this.#cached = { stored: this.stored(), value };
+    }
     return this.#cached.value;
   };
 

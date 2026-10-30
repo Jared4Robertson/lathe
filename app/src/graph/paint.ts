@@ -419,18 +419,16 @@ function paintBox(ctx: CanvasRenderingContext2D, p: Plate, cam: Camera, look: Lo
     ctx.stroke();
   }
 
-  // The label: its icons, its lines, its badges; a label the open space's edge cuts drawn in the box's visible part, or
-  // not at all (sticky.ts), its icons and badges with it.
+  // The label: its icons, its lines, its badges; a label the open space's edge cuts drawn in the box's visible part
+  // (sticky.ts), its icons and badges left out; one that cannot fit there drawn where the map placed it, cut by the edge.
   const sticky = stickyLabel(p, zoom, X, Y, state.open);
   let font = '';
-  if (sticky.kind !== 'placed') {
-    if (sticky.kind === 'moved') {
-      for (const line of sticky.lines) {
-        const want = fontFor(fonts, line.face, line.px);
-        if (want !== font) { ctx.font = want; font = want; }
-        ctx.fillStyle = line.tone === 'ink' ? look.ink : look.muted;
-        ctx.fillText(line.text, line.x, line.baseline);
-      }
+  if (sticky.kind === 'moved') {
+    for (const line of sticky.lines) {
+      const want = fontFor(fonts, line.face, line.px);
+      if (want !== font) { ctx.font = want; font = want; }
+      ctx.fillStyle = line.tone === 'ink' ? look.ink : look.muted;
+      ctx.fillText(line.text, line.x, line.baseline);
     }
     return;
   }

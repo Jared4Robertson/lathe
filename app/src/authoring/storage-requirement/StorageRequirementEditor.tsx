@@ -14,6 +14,7 @@ import { addressOf } from '../../views/address';
 import { sendStorageRequirement, type StorageRequirementCommands, type StorageRequirementRoute } from './commands';
 import { useNextStorageRequirementId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Storage requirement editor (LA-AUT-A22): the actions on a record of a storage requirement, each sending one of
 // the aggregate's own commands, POST /api/storage-requirement/<command>, and nothing else. Edit sends its kind's Change
@@ -89,7 +90,7 @@ export function StorageRequirementEditor({ index, page, children }: { index: Rec
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(page.requirement.id)?.product ?? '';
   if (mode.mode === 'change') {

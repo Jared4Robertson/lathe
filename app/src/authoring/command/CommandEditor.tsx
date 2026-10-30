@@ -15,6 +15,7 @@ import { addressOf } from '../../views/address';
 import { sendCommand, type CommandCommands, type CommandRoute } from './commands';
 import { useNextCommandId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Command editor (LA-AUT-A8): the actions on a record of a command, each sending one of the aggregate's own
 // commands, POST /api/command/<command>, and nothing else. Edit sends its kind's Change with only what changed (a
@@ -201,7 +202,7 @@ export function CommandEditor({ index, page, children }: { index: RecordIndex; p
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(`Change ${id}`, toolbar);
   };
   const place = placeOf(index, page.command.entity_id);
   if (mode.mode === 'change') {

@@ -35,21 +35,25 @@ export function panToward(view: { x: number; y: number; zoom: number }, side: Si
   return { x: view.x + (h.dx * width) / 2, y: view.y + (h.dy * height) / 2, zoom: view.zoom };
 }
 
-/** The chips for the counts past each edge: `noun` says what they are ("more"), `word` what they say beside the count ("4 changes →"); `onPan` moves the camera toward a side. */
-export function EdgeHintChips({ past, noun, word, onPan }: { past: Record<Side, number>; noun: string; word?: string; onPan: (side: Side) => void }) {
+/**
+ * The chips for the counts past each edge: `noun` says what they are ("more"), `word` what they say beside the count
+ * ("1 change ↓", "4 changes →"); `onPan` moves the camera toward a side. Each chip's name starts with the words it shows,
+ * the arrow aside (LA-PAT-APP-UX-R10).
+ */
+export function EdgeHintChips({ past, noun, word, onPan }: { past: Record<Side, number>; noun: string; word?: { one: string; many: string }; onPan: (side: Side) => void }) {
   return (
     <div className={word ? 'graph-edge-hints is-changes' : 'graph-edge-hints'}>
-      {HINTS.map((h) => past[h.side] > 0 && (
-        <Button
-          key={h.side}
-          className={`graph-edge-hint is-${h.side}`}
-          aria-label={`${past[h.side]} ${noun} ${past[h.side] === 1 ? 'box' : 'boxes'} ${h.label}: pan that way`}
-          title={`${past[h.side]} ${noun} ${h.label}`}
-          onClick={() => onPan(h.side)}
-        >
-          {past[h.side]} {word ? `${word} ` : ''}{h.mark}
-        </Button>
-      ))}
+      {HINTS.map((h) => {
+        const count = past[h.side];
+        if (count === 0) return null;
+        const shown = word ? `${count} ${count === 1 ? word.one : word.many}` : `${count}`;
+        const name = word ? `${shown} ${h.label}` : `${count} ${noun} ${count === 1 ? 'box' : 'boxes'} ${h.label}`;
+        return (
+          <Button key={h.side} className={`graph-edge-hint is-${h.side}`} aria-label={`${name}: pan that way`} title={name} onClick={() => onPan(h.side)}>
+            {shown} <span aria-hidden="true">{h.mark}</span>
+          </Button>
+        );
+      })}
     </div>
   );
 }

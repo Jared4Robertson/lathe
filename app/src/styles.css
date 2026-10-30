@@ -40,6 +40,8 @@
   --tab-width: 14rem;
   /* Touch (LA-PAT-APP-UX-R07): the least size of a target under a finger, and the radius of a sheet's top corners. */
   --touch-target: 44px; --sheet-radius: 14px;
+  /* The stage's toolbar row, one height on every stage, so the wiki card's top is known before the row is measured. */
+  --tools-row: 42px;
   /* The floating panels over the stage (LA-V96): their inset from the window and each other, their surfaces (the dense
      ones, the nav, the tab panel and the chat, nearer opaque than the wiki card), their blur and shadow,
      and the header strip's height. The surfaces are the sheet's color, so every theme sets them in light and dark. The
@@ -392,13 +394,16 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-steps { display: inline-flex; gap: 2px; flex: none; }
 .stage-step { gap: 3px; }
 .stage-step-letter { font: 600 0.68rem var(--mono); color: var(--muted); }
+.stage-step-letter::after { content: attr(data-letter); }
 .stage-frame, .stage-tidy { flex: none; }
 /* The toolbar's narrower forms (TOOLBAR_FORMS in StageChrome.tsx): the names beside the icons give way first (they stay
    the accessible ones), then groups fold into More at the right end (the Changes controls, then the stage's secondary
    controls), then the step letters drop and a stage shows its own controls narrower; the walk, Frame and
    the stage's primary controls stay in the row. In More every name shows again. */
-.stage-toolbar[data-names="hidden"] :is(.graph-depth-name, .graph-filters-name, .stage-frame-name, .stage-tidy-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.stage-toolbar[data-names="hidden"] :is(.graph-depth-name, .graph-filters-name, .stage-frame-name) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 .stage-toolbar[data-names="hidden"] { gap: 6px; }
+/* With its name hidden, an icon control still offers the 24 px target (WCAG 2.5.8). */
+.stage-toolbar[data-names="hidden"] :is(.stage-frame, .stage-tidy) { min-width: 24px; min-height: 24px; justify-content: center; }
 .stage-toolbar[data-names="hidden"] .stage-step { padding-inline: 4px; }
 .stage-more { flex: none; }
 .stage-more > summary { cursor: pointer; display: inline-flex; align-items: center; padding: 3px 4px; border-radius: 5px; list-style: none; }
@@ -431,7 +436,7 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .stage-key-sample { flex: none; display: inline-flex; align-items: center; line-height: 0; }
 /* What scroll does, the key bar's last entry on every stage (scrollKeyEntry): a mouse with its wheel. */
 .stage-key-scroll { flex: none; overflow: visible; fill: none; stroke: var(--ink); stroke-width: 1.5; stroke-linecap: round; }
-@media (pointer: coarse) { .focus-stage { --key-clear-left: calc(4px + var(--touch-target) + 6px + 8px); } }
+@media (pointer: coarse) { :root { --tools-row: calc(var(--touch-target) + 14px); } .focus-stage { --key-clear-left: calc(4px + var(--touch-target) + 6px + 8px); } }
 /* On a phone: a Key chip at the foot of the stage, opening the entries with their meanings as a sheet. */
 .stage-key-chip { position: absolute; z-index: 6; bottom: var(--stage-foot); left: 50%; translate: -50% 0; padding: 4px 12px; border: 1px solid var(--float-border); border-radius: 999px; background: var(--sheet); box-shadow: var(--float-shadow); font-size: 0.8rem; }
 .stage-key-sheet-list { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; gap: 10px; margin: 0; padding: 4px 16px 16px; list-style: none; overflow-y: auto; scrollbar-gutter: stable; font-size: 0.85rem; }
@@ -608,12 +613,13 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .shortcut-key-list { display: flex; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: 4px; }
 .shortcut-key { display: inline-flex; align-items: center; }
 .shortcut-key .button.shortcut-key-change { padding: 2px 3px; min-height: 26px; }
-.shortcut-key .icon-button.shortcut-key-remove { min-width: 22px; min-height: 22px; }
+.shortcut-key .icon-button.shortcut-key-remove { min-width: 24px; min-height: 24px; }
 .shortcut-table .button.shortcut-add, .shortcut-table .button.shortcut-reset { min-height: 26px; padding: 2px 8px; font-size: 0.78rem; }
 .shortcut-table td.shortcut-reset-cell { width: 1%; padding-left: 4px; }
 .shortcut-none, .shortcut-fixed { color: var(--muted); font-size: 0.75rem; }
 .button.key-recorder { min-height: 26px; padding: 2px 8px; border: 1px dashed var(--steel); background: var(--steel-bg); color: var(--steel); font: 500 0.75rem var(--mono); }
 .key-recorder-hint { color: var(--muted); font-weight: 400; }
+.key-recorder-hint::after { content: attr(data-hint); }
 .shortcut-table tr.shortcut-offer-row { border-top: 0; }
 .shortcut-table tr.shortcut-offer-row > td { padding: 0 0 6px; text-align: left; white-space: normal; }
 .shortcut-offer { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; background: var(--paper); border: 1px solid var(--rule); text-align: left; white-space: normal; font-size: 0.82rem; }
@@ -1027,7 +1033,7 @@ a.row-link.row-link:focus-visible { outline: none; }
    scrolls inside, shorter leaves room below. The sheet's round corners, a border all round in the focused box's own color (its outline's, so the box, the
    leader line and the card read as one object) and a lifting shadow; its handle at its left edge. */
 .wiki-panel {
-  --card-top: calc(var(--tools-foot, calc(var(--below-strip) - var(--float-inset))) + var(--card-gap-y));
+  --card-top: calc(var(--tools-foot, calc(var(--below-strip) + var(--tools-row))) + var(--card-gap-y));
   position: absolute; z-index: 2; top: var(--card-top); right: calc(var(--chat-space) - var(--float-inset) + var(--card-gap));
   box-sizing: border-box; width: var(--card-width, clamp(var(--card-min), calc((100% - var(--nav-space)) / 3), 640px)); min-width: var(--card-min);
   max-width: calc(100% - var(--nav-space) - var(--tool-space, 0px) - var(--chat-space) - var(--stage-min) - var(--float-inset) - var(--card-gap));
@@ -1055,7 +1061,7 @@ a.row-link.row-link:focus-visible { outline: none; }
    whole stage while it fits there, whatever panels are open; when it is wider than that it stays inside the room, against
    the nav or the chat, rather than fold its walk away. */
 .stage-tools-room { position: absolute; z-index: 8; top: var(--open-top, 0px); left: var(--open-left, 0px); right: var(--chat-space, 0px); height: 0; container-type: inline-size; }
-.stage-tools[data-stage-tools="top"] { top: 0; left: 0; padding: 6px 10px; width: max-content; max-width: 100cqw; translate: clamp(0px, 50cqw + (var(--chat-space, 0px) - var(--open-left, 0px)) / 2 - 50%, 100cqw - 100%) 0; }
+.stage-tools[data-stage-tools="top"] { top: 0; left: 0; height: var(--tools-row); padding: 6px 10px; width: max-content; max-width: 100cqw; translate: clamp(0px, 50cqw + (var(--chat-space, 0px) - var(--open-left, 0px)) / 2 - 50%, 100cqw - 100%) 0; }
 /* The stages fill the stage; what they draw sits in the frame, the open space less their tools. */
 .focus-stage > :is(.graph-page, .erd-page, .trace-page), .focus-stage > .graph-page > .graph-workspace, .focus-stage .graph-workspace > .graph-canvas, .focus-stage .erd-page > :is(.erd-canvas, .erd-empty) { position: absolute; inset: 0; min-height: 0; }
 .focus-stage .stage-camera { left: calc(var(--frame-left, 0px) + 4px); bottom: var(--stage-foot); }
@@ -1114,6 +1120,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .theme-row-text { flex: 1 1 auto; min-width: 0; display: grid; grid-template-columns: minmax(0, 1fr); }
 .theme-row-name { overflow-wrap: break-word; }
 .theme-row-state { color: var(--muted); font-size: 0.72rem; }
+.theme-row-state::after { content: attr(data-state); }
 .theme-row .theme-actions { flex: none; flex-wrap: nowrap; gap: 4px; }
 .theme-row .theme-actions > * { padding-block: 2px; font-size: 0.76rem; }
 

@@ -5,7 +5,7 @@
 // view, which draws children inside their parent, Up out, Down in, Left and Right across. Across goes on, past the last
 // sibling, to the next parent's first child at that level (levels.ts). The ERD stage walks its map through `useWalk`
 // (erd/walk.ts), the Trace stage its columns and links (trace/all-walk.ts).
-import { useCallback } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { useStageWalk } from '../shell/commands';
 import { levelMove, type Move, type StageLevels } from '../views/levels';
@@ -92,17 +92,36 @@ export function useGraphWalk(index: RecordIndex, focus: string, layout: GraphLay
   useWalk(index, focus, target, onNavigate, follow);
 }
 
+/** How long a move waits for the focus the move before it went to. */
+const WALK_WAIT_MS = 1000;
+
 /**
  * Registers a stage's walk by its own target: `target` says where a move goes from the focus, or null. The walk moves
- * the focus there, as a click does, and announces it unless `follow` takes keyboard focus there.
+ * the focus there, as a click does, and announces it unless `follow` takes keyboard focus there. A move pressed before
+ * the stage has drawn the focus the last one went to waits for it, so it goes from there and never from the focus before.
  */
 export function useWalk(index: RecordIndex, focus: string, target: (move: Move) => string | null, onNavigate: (id: string) => void, follow?: (to: string) => boolean) {
+  const going = useRef<{ to: string; at: number } | null>(null);
+  const waiting = useRef<Move[]>([]);
   const walk = useCallback((move: Move) => {
+    // A move that never lands (the address went elsewhere) holds the next one no longer than a moment.
+    if (going.current && going.current.to !== focus && performance.now() - going.current.at < WALK_WAIT_MS) {
+      waiting.current.push(move);
+      return null;
+    }
     const to = target(move);
+    going.current = to ? { to, at: performance.now() } : null;
     if (!to) return null;
     const followed = follow?.(to) ?? false;
     onNavigate(to);
     return followed ? null : stepName(index, to);
-  }, [index, target, onNavigate, follow]);
+  }, [index, focus, target, onNavigate, follow]);
+  // A new focus is drawn: the moves pressed meanwhile go from it, in order.
+  useEffect(() => {
+    if (!going.current) return;
+    going.current = null;
+    const next = waiting.current.shift();
+    if (next) walk(next);
+  }, [focus, walk]);
   useStageWalk(walk, isGraphNode(index, focus));
 }

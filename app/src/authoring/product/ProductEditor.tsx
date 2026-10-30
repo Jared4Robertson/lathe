@@ -15,6 +15,7 @@ import { addressOf } from '../../views/address';
 import { sendProduct, type ProductCommands, type ProductRoute } from './commands';
 import { useNextProductId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Product editor (LA-AUT-A1): the actions on a product, an open question or an interface, each sending one of the
 // aggregate's own commands, POST /api/product/<command>, and nothing else. On the product: Edit sends Change a product
@@ -142,7 +143,7 @@ export function ProductEditor({ index, page, id, kind, children }: {
   if (!writer) return <>{children(null)}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = page.product.id;
   const context = { index, page, writer, onDone: back };

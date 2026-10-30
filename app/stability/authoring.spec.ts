@@ -1,4 +1,5 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from './test';
+import { servedWorkspace } from './flows';
 import { openPage } from './measure';
 import { RECORD } from './scenarios';
 
@@ -6,11 +7,17 @@ import { RECORD } from './scenarios';
 // where they are, without leaving the workbench. The flows run from the command line are in
 // lathe/test/flows/authoring.test.ts.
 
-/** A record with a problem in the suite's copy of the data (its code is not served, so it is not built). */
-const WITH_PROBLEM = '/LA-TRC-UC10-R03';
+/** A UC requirement with a problem in the suite's copy of the data, as the data is now. */
+async function withProblem() {
+  const { problems } = await servedWorkspace();
+  const found = problems.find((p) => p.record !== null && /-UC\d+-R\d+$/.test(p.record));
+  if (!found) throw new Error('No UC requirement has a problem: the flow needs one to follow a problem to its check.');
+  return `/${found.record}`;
+}
 
 test.describe('Authoring flows', () => {
   test('LA-AUT-UC14-FL01-T look up a kind or check', async ({ page }) => {
+    const WITH_PROBLEM = await withProblem();
     // S01: the record format, from the command palette.
     await openPage(page, RECORD);
     await page.keyboard.press('Control+Shift+p');

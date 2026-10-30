@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, FOCUS, GRAPH_CANVAS, GRAPH_TOOLS, RECORD, SHELL } from './scenarios';
 import { reachableBoxes } from './scene';

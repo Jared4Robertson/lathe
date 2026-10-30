@@ -1,6 +1,7 @@
 import type { ElkNode } from 'elkjs/lib/elk-api';
 import { elkLayout } from '../elk';
 import { BOUNDARY_PAD, boxSize, type ErdBox, type ErdMap, type Rect } from './erd';
+import { keepPlaces } from '../graph/keep-places';
 
 // Lays out a product's ERD map with ELK's layered algorithm, once for what it reads (a new answer of the ERD read that
 // changes no box, title, field count or line lays nothing out again): the layout is cached by that (LA-PAT-APP-UX-R19), so every focus and stage switch on the same
@@ -15,7 +16,7 @@ import { BOUNDARY_PAD, boxSize, type ErdBox, type ErdMap, type Rect } from './er
 // data always gets the same picture.
 //
 // New data moves only what it changed (LA-PAT-APP-UX-R22): laid out after a layout of the same product, each region and
-// the product's top level keep their boxes where they were (`keepPlaces`). A boundary is laid out again inside only by
+// the product's top level keep their boxes where they were (graph/keep-places.ts, as the Graph's Map does). A boundary is laid out again inside only by
 // what it holds (ELK gives the same picture for the same inside); a box that grew pushes right or down only the boxes it
 // now overlaps, and those push theirs; a new box goes beside what is there; a removed one leaves its room. Only Tidy up
 // (`tidyErdLayout`) lays the whole map out afresh.
@@ -112,57 +113,6 @@ const around = (box: ErdBox, laid: ElkNode | null): Size => {
 const REGION_GAP = 20;
 const TOP_GAP = 40;
 
-interface Placed { id: string; x: number; y: number; width: number; height: number }
-
-const overlaps = (a: Omit<Placed, 'id'>, b: Omit<Placed, 'id'>, gap: number) =>
-  a.x < b.x + b.width + gap && b.x < a.x + a.width + gap && a.y < b.y + b.height + gap && b.y < a.y + a.height + gap;
-
-/**
- * Some siblings at their new sizes, placed where they were (`before`, each one's place inside its parent, or undefined
- * for a new one) as far as they can be (exported for tests): a box that grew keeps its place and pushes the boxes it now
- * overlaps, a gap included, right when it lay to their left and down otherwise, and they push theirs; every other box
- * keeps its exact place. A new box goes beside them all, below when they stand wider than the map's shape, else to the
- * right. Null when none of them was there before (the level is laid out afresh).
- */
-export function keepPlaces(boxes: readonly { id: string; width: number; height: number }[], before: (id: string) => Rect | undefined, gap: number): ElkNode | null {
-  const was = new Map(boxes.flatMap((b) => { const r = before(b.id); return r ? [[b.id, r] as const] : []; }));
-  if (was.size === 0) return null;
-  const byPlace = (a: { id: string }, b: { id: string }) => was.get(a.id)!.y - was.get(b.id)!.y || was.get(a.id)!.x - was.get(b.id)!.x;
-  const grew = (b: { id: string; width: number; height: number }) => { const r = was.get(b.id)!; return r.width !== b.width || r.height !== b.height; };
-  const kept = boxes.filter((b) => was.has(b.id));
-  // The boxes that changed size first, so they keep their places and push the others.
-  const order = [...kept.filter(grew).sort(byPlace), ...kept.filter((b) => !grew(b)).sort(byPlace)];
-  const placed: Placed[] = [];
-  /** Whether a box at `at` clashes with a placed one: overlaps it, or comes within the gap of it where it was not before. */
-  const clash = (p: Placed, at: Placed) => {
-    if (overlaps(p, at, 0)) return true;
-    if (!overlaps(p, at, gap)) return false;
-    const [a, b] = [was.get(p.id), was.get(at.id)];
-    return !(a && b && overlaps(a, b, gap));
-  };
-  const settle = (at: Placed) => {
-    for (let hit = placed.find((p) => clash(p, at)); hit; hit = placed.find((p) => clash(p, at))) {
-      const [a, b] = [was.get(hit.id), was.get(at.id)];
-      if (a && b && a.x + a.width <= b.x) at.x = hit.x + hit.width + gap;
-      else at.y = hit.y + hit.height + gap;
-    }
-    placed.push(at);
-  };
-  for (const b of order) { const r = was.get(b.id)!; settle({ id: b.id, x: r.x, y: r.y, width: b.width, height: b.height }); }
-  for (const b of boxes.filter((b) => !was.has(b.id))) {
-    const right = Math.max(...placed.map((p) => p.x + p.width));
-    const bottom = Math.max(...placed.map((p) => p.y + p.height));
-    settle(right / Math.max(1, bottom) > ASPECT ? { id: b.id, x: 0, y: bottom + gap, width: b.width, height: b.height } : { id: b.id, x: right + gap, y: 0, width: b.width, height: b.height });
-  }
-  const at = new Map(placed.map((p) => [p.id, p]));
-  return {
-    id: 'kept',
-    children: boxes.map((b) => at.get(b.id)!),
-    width: Math.max(0, ...placed.map((p) => p.x + p.width)),
-    height: Math.max(0, ...placed.map((p) => p.y + p.height)),
-  };
-}
-
 /** Where a box lay inside its parent in a layout before: its place from its parent's inside's corner (the map's for the top level). */
 function placeBefore(before: ReadonlyMap<string, Rect>, parent: string | undefined) {
   const p = parent ? before.get(parent) : undefined;
@@ -189,7 +139,7 @@ export async function layoutErd(map: ErdMap, before?: ReadonlyMap<string, Rect>)
   const kept = (group: string | undefined, gap: number) => {
     if (!before) return null;
     const members = map.boxes.filter((b) => b.parent === group).map((b) => ({ id: b.id, ...(sizes.get(b.id) ?? boxSize(b)) }));
-    return keepPlaces(members, placeBefore(before, group), gap);
+    return keepPlaces(members, placeBefore(before, group), { gap, aspect: ASPECT });
   };
   const domains = map.boxes.filter((b) => b.kind === 'domain');
   const laidDomains = await Promise.all(domains.map((d) => (d.empty ? Promise.resolve(null) : kept(d.id, REGION_GAP) ?? layoutRegion(map, d.id, sizes))));

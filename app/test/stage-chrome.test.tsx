@@ -1,5 +1,7 @@
 import './graph/setup';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
 import { TOOLBAR_FORMS, TOOLBAR_TIERS } from '../src/views/StageChrome';
 import { graphDrawn, graphKeyEntries } from '../src/graph/key';
@@ -8,6 +10,9 @@ import { changesKeyEntries } from '../src/changes/ChangesKey';
 import { recordIndexOf } from './read-view';
 import { modelWorkspace } from './fixtures/model';
 import { openApp } from './helpers';
+
+/** A step button as drawn: its text, then its key letter, which the stylesheet draws from data-letter. */
+const shown = (b: Element) => `${b.textContent}${b.querySelector('.stage-step-letter')?.getAttribute('data-letter') ?? ''}`;
 
 // One stage chrome (LA-PAT-APP-UX-R21): every stage has the same controls in the same places, from one component each
 // (views/StageChrome.tsx): the toolbar at the top of the open space, the shared controls first in a fixed order (the
@@ -55,19 +60,23 @@ describe('one stage chrome', () => {
     // The ERD's own: Tidy up; its camera's buttons are the shared ones, and no others.
     expect(erd.order).toEqual([...SHARED, 'own', 'end: -']);
     expect(within(stage().querySelector<HTMLElement>('.stage-toolbar')!).getByRole('button', { name: 'Tidy up' })).toBeInTheDocument();
+    expect(stage().querySelector('.stage-toolbar .stage-tidy .stage-tidy-name')?.textContent).toBe('Tidy up');
     expect(erd.camera).toEqual(CAMERA);
 
     fireEvent.click(stageButton('Trace'));
     await waitFor(() => expect(stage().querySelector('.trace-flow[data-ready]')).not.toBeNull());
     const trace = chrome();
-    // The Trace's own: Gaps only.
+    // The Trace's own: Gaps only, and Tidy up, the ERD's same button.
     expect(trace.order).toEqual([...SHARED, 'own', 'end: -']);
     expect(within(stage().querySelector<HTMLElement>('.stage-toolbar')!).getByRole('checkbox', { name: 'Gaps only' })).toBeInTheDocument();
+    expect(stage().querySelector('.stage-toolbar .stage-tidy .stage-tidy-name')?.textContent).toBe('Tidy up');
     expect(trace.camera).toEqual(CAMERA);
 
     // Each step button shows its arrow and letter, the same on every stage, and Out and In their names.
-    const steps = [...stage().querySelectorAll('.stage-steps button')].map((b) => b.textContent);
+    const steps = [...stage().querySelectorAll('.stage-steps button')].map(shown);
     expect(steps).toEqual(['←A', '→D', '↑W', '↓S', 'Out', 'In']);
+    // The letter is the key, announced as the button's shortcut.
+    expect(stage().querySelector('.stage-steps .is-up')?.getAttribute('aria-keyshortcuts')?.split(' ')).toContain('W');
   });
 });
 
@@ -115,7 +124,7 @@ describe('the toolbar\'s fold order', () => {
       const more = toolbar.querySelector<HTMLElement>('.stage-more-body')!;
       const row = (el: Element) => toolbar.contains(el) && !more.contains(el);
       // In the row: the steps with their letters, Out, In, Frame, the layouts and the filters; More is at the end.
-      expect([...toolbar.querySelectorAll('.stage-steps button')].map((b) => b.textContent)).toEqual(['←A', '→D', '↑W', '↓S', 'Out', 'In']);
+      expect([...toolbar.querySelectorAll('.stage-steps button')].map(shown)).toEqual(['←A', '→D', '↑W', '↓S', 'Out', 'In']);
       for (const el of [toolbar.querySelector('.stage-steps')!, toolbar.querySelector('.stage-frame')!, toolbar.querySelector('.graph-layout')!, toolbar.querySelector('.graph-filters')!]) expect(row(el)).toBe(true);
       expect(toolbar.querySelector('.stage-toolbar-end > .stage-more')).not.toBeNull();
       // In More, in order: the Changes controls with the baseline picker, then depth.
@@ -178,3 +187,14 @@ describe('the stage key bar', () => {
     expect(changesKeyEntries(new Set(['is-changed', 'is-dimmed'])).map((e) => e.words)).toEqual(['Changed', 'Unchanged']);
   });
 });
+
+describe('Tidy up reads as words', () => {
+  it('LA-PAT-APP-UX-R21-T01 Tidy up shows its label beside its icon at every toolbar tier: no rule hides its name', () => {
+    // Every rule that hides a control's name in a tighter tier must leave Tidy up's alone.
+    const css = readFileSync(join(__dirname, '..', 'src', 'styles.css'), 'utf8');
+    const hiding = [...css.matchAll(/([^{}]+)\{[^}]*clip: rect\(0 0 0 0\)[^}]*\}/g)].map((m) => m[1]);
+    expect(hiding.length).toBeGreaterThan(0);
+    for (const selector of hiding) expect(selector).not.toContain('stage-tidy');
+  });
+});
+

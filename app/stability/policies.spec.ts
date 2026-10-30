@@ -1,6 +1,7 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { asDesktop } from './desktop';
-import { openPage } from './measure';
+import { openPage, showCard } from './measure';
 import { RECORD } from './scenarios';
 
 // Exploring's policies in a real browser (LA-EXP-PO01 to PO03): what a page opened, or a tab
@@ -26,9 +27,10 @@ async function quickFind(page: Page, id: string) {
   await page.waitForURL((u) => u.pathname === `/${id}`);
 }
 
-/** Opens a box other than the focus in a new tab, by Cmd+click, and returns its ID. */
+/** Opens a record's box other than the focus in a new tab, by Cmd+click, and returns its ID. */
 async function openBoxInNewTab(page: Page): Promise<string> {
-  const box = page.locator('.focus-stage .graph-box:not(.is-focus)').first();
+  // A record's box (a group's tab is named by its title, not an ID).
+  const box = page.locator('.focus-stage .graph-box:not(.is-focus):not([data-id*="/"])').first();
   await box.waitFor({ state: 'attached' });
   const id = (await box.getAttribute('data-id'))!;
   await box.dispatchEvent('click', { metaKey: true, button: 0 });
@@ -39,6 +41,8 @@ async function openBoxInNewTab(page: Page): Promise<string> {
 /** Follows the first link in the wiki card to a record other than the one shown, and returns its ID. */
 async function followLink(page: Page): Promise<string> {
   const from = new URL(page.url()).pathname;
+  // A new tab's place opens its card as a summary; the links are on the whole page.
+  await showCard(page, 'whole');
   const links = page.locator('.wiki-panel .spec-body a.record-link[href^="/LA-"]');
   const target = await links.evaluateAll((all, here) => all.map((a) => a.getAttribute('href')!).find((h) => h !== here && !h.includes('?'))!, from);
   expect(target, `a link from ${from} to another record`).toBeTruthy();

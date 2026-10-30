@@ -1,5 +1,6 @@
 import { loadavg } from 'node:os';
-import { expect, test, type CDPSession, type Page } from '@playwright/test';
+import type { CDPSession, Page } from '@playwright/test';
+import { expect, test } from '../stability/test';
 import { MAX_LOAD } from './budgets';
 
 // How the performance suite measures (LA-PAT-APP-UX-R11):

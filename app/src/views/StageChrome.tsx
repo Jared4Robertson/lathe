@@ -22,6 +22,9 @@ import { useScrollToZoom } from '../platform/appearance/use-scroll-to-zoom';
 // - StageCamera sits in the bottom left corner of the frame: zoom in, zoom out and fit the whole map, the same buttons,
 //   look and tooltips on every stage. A minimap (the Graph's) sits in the bottom right corner and the edge hints (the
 //   ERD's) at the frame's edges, in their shared styles.
+// - TidyUp is the stage's Tidy up, the same button, command (`stageTidy`, `t`) and place, last of the stage's own
+//   primary controls, on every stage whose new data keeps every box where it was (LA-PAT-APP-UX-R22): the ERD, the
+//   Graph's Map and the Trace's views. The stage registers what it does with useCommand('stageTidy').
 // - StageKey is the stage's key, a bar along the bottom of the open space on the camera's row, between the camera and
 //   the minimap: each thing the stage draws now (a color, a shape, a line, a mark) as a small sample and a word or two,
 //   its whole meaning in its tooltip. Each stage gives its own entries (graph/key.tsx, erd/erdKey.tsx,
@@ -126,7 +129,9 @@ export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToo
         return (
           <Tooltip key={move} label={label} command={WALK_COMMANDS[move]}>
             <Button className={`stage-step is-${move}`} aria-label={label} disabled={!can(move)} onClick={() => runWalk(move)}>
-              {mark}{letter && form.letters && <span className="stage-step-letter" aria-hidden="true">{letter}</span>}
+              {/* An arrow is a picture of the move and its letter a key hint, drawn by the stylesheet, so the button's text is
+                  its name alone (LA-V61-R44) and the key is announced as its shortcut; Out and In are words, and read. */}
+              {ARROW_MOVES.includes(move) ? <span aria-hidden="true">{mark}</span> : mark}{letter && form.letters && <span className="stage-step-letter" data-letter={letter} aria-hidden="true" />}
             </Button>
           </Tooltip>
         );
@@ -268,7 +273,8 @@ function KeyChip({ entries }: { entries: readonly KeyEntry[] }) {
             <h2 className="sheet-title">Key</h2>
             <Button variant="icon" label="Close the key" onClick={close}><Icon name="x" /></Button>
           </div>
-          <ul className="stage-key-sheet-list" aria-label="Key">
+          {/* It scrolls when the key is long, so it takes focus and the arrows scroll it (WCAG 2.1.1). */}
+          <ul className="stage-key-sheet-list" aria-label="Key" tabIndex={0}>
             <KeyItems entries={entries} meanings />
           </ul>
         </BottomSheet>,
@@ -280,3 +286,15 @@ function KeyChip({ entries }: { entries: readonly KeyEntry[] }) {
 
 /** How much one step of the zoom buttons zooms, on every stage. */
 export const ZOOM_STEP = 1.2;
+
+/** The stage's Tidy up (LA-PAT-APP-UX-R22): lays the whole map out afresh, by the stage's `stageTidy` command. */
+export function TidyUp() {
+  const runCommand = useRunCommand();
+  return (
+    <Tooltip label="Tidy up: lay the whole map out afresh" command="stageTidy">
+      <Button className="stage-tidy" aria-label="Tidy up" onClick={() => runCommand('stageTidy')}>
+        <Icon name="tidy" size={14} /><span className="stage-tidy-name">Tidy up</span>
+      </Button>
+    </Tooltip>
+  );
+}
