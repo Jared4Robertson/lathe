@@ -6,7 +6,7 @@ import type { ProductCoverage } from '../../../../lathe/src/traceability/coverag
 import { onLatheEvent } from '../../events';
 import { indexMetaModel, type MetaModel } from '../../platform/meta-model/reads';
 import { readModelsChanged, useRead, useVersionedRead } from '../../record/read';
-import { buildRecordIndex, type RecordIndex } from './record-index';
+import { coverageOf, indexOf, problemsOf, recordsOf, type RecordIndex, type Records } from './record-index';
 
 // The data the app shows changes when a write goes through or the files change: each is a new version of the data,
 // and each read made for a version reads again for the next when its read model changed (record/read.ts `useRead`). The space's record index
@@ -35,17 +35,19 @@ export function useDataState(product: string | null, { version, reload, answered
   const problems = useRead<ProductProblems>('/api/problems/list-problems', input, version);
   const coverage = useRead<ProductCoverage>('/api/coverage/get-coverage', input, version);
   const metaIndex = useMemo(() => (meta.read.state === 'read' ? indexMetaModel(meta.read.answer) : null), [meta.read]);
+  // The index by layer, each worked out when its own read changed: the records by what changed since the last answer, the
+  // problems and the coverage on their own, so an answer for one never builds the others again.
+  const lastRecords = useRef<Records | null>(null);
+  const records = useMemo(() => {
+    if (!product || summaries.read.state !== 'read' || summaries.read.answer.product !== product) return null;
+    return (lastRecords.current = recordsOf(summaries.read.answer, lastRecords.current));
+  }, [product, summaries.read]);
+  const problemsFor = useMemo(() => problemsOf(problems.state === 'read' && problems.answer.product === product ? problems.answer : null), [product, problems]);
+  const covered = useMemo(() => coverageOf(product ?? '', coverage.state === 'read' && coverage.answer.product === product ? coverage.answer : null), [product, coverage]);
   const built = useMemo(() => {
-    if (!product || !metaIndex || summaries.read.state !== 'read' || summaries.read.answer.product !== product) return null;
-    if (folders.state !== 'read' || folders.answer.product !== product) return null;
-    return buildRecordIndex(
-      metaIndex,
-      summaries.read.answer,
-      folders.answer,
-      problems.state === 'read' && problems.answer.product === product ? problems.answer : null,
-      coverage.state === 'read' && coverage.answer.product === product ? coverage.answer : null,
-    );
-  }, [product, metaIndex, summaries.read, folders, problems, coverage]);
+    if (!records || !metaIndex || folders.state !== 'read' || folders.answer.product !== product) return null;
+    return indexOf(metaIndex, records, folders.answer, problemsFor, covered);
+  }, [product, records, metaIndex, folders, problemsFor, covered]);
   const refused = [meta.read, summaries.read, folders].find((r) => r.state === 'refused');
   const error = refused?.state === 'refused' ? refused.error : null;
   // A read refused on a reload (the files caught mid-write, or data the store refuses) keeps the space's last index on

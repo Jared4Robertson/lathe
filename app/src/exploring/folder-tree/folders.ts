@@ -1,4 +1,4 @@
-import type { FolderEntry, Folder as TreeFolder, OwnerFolders as TreeOwner } from '../../../../lathe/src/exploring/folder-tree/read-model';
+import type { FolderEntry, FolderTree, Folder as TreeFolder, OwnerFolders as TreeOwner } from '../../../../lathe/src/exploring/folder-tree/read-model';
 import type { Stage } from '../../../../lathe/src/platform/data/schema';
 import { plural } from '../../plural';
 import { kindLabel, type RecordIndex, type RecordSummary } from '../record-summaries/record-index';
@@ -36,17 +36,19 @@ export interface OwnerFolders {
   loose: Folder[];
 }
 
-/** The tree looked up: each owner's folders and each record's folded children, worked out once per index. */
+/** The tree looked up: each owner's folders and each record's folded children. */
 interface Looked {
   owners: Map<string, OwnerFolders>;
   folded: Map<string, RecordSummary[]>;
 }
 
-const cache = new WeakMap<RecordIndex, Looked>();
+// Worked out once per tree answer and the records and meta model it was looked up with: an index that differs only in
+// its problems or coverage shares it, so the nav does not look the whole tree up again for them.
+const cache = new WeakMap<FolderTree, { byId: RecordIndex['byId']; meta: RecordIndex['meta']; looked: Looked }>();
 
 function look(index: RecordIndex): Looked {
-  const known = cache.get(index);
-  if (known) return known;
+  const known = cache.get(index.folders);
+  if (known && known.byId === index.byId && known.meta === index.meta) return known.looked;
   const folded = new Map<string, RecordSummary[]>();
   const summaryOf = (e: FolderEntry): RecordSummary =>
     index.byId.get(e.id) ?? { id: e.id, kind: e.kind, title: e.title, parent: null, product: index.product, domain: null, group: null, testState: null, names: null, level: null, file: '', line: 0, digest: '' };
@@ -70,7 +72,7 @@ function look(index: RecordIndex): Looked {
   owners.set(index.folders.shared.owner, ownerOf(index.folders.shared));
   for (const d of index.folders.domains) owners.set(d.owner, ownerOf(d));
   const looked = { owners, folded };
-  cache.set(index, looked);
+  cache.set(index.folders, { byId: index.byId, meta: index.meta, looked });
   return looked;
 }
 
