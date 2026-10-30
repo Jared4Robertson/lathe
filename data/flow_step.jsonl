@@ -350,18 +350,20 @@
 {"id":"LA-EXP-UC03-FL01-S04","title":"They click a node: the camera glides to it, the map holds still, the address and the header strip follow","flow_id":"LA-EXP-UC03-FL01","path":"main","position":4}
 {"id":"LA-EXP-UC03-FL01-S05","title":"The wiki card shows the focused record's page","flow_id":"LA-EXP-UC03-FL01","path":"main","position":5}
 {"id":"LA-EXP-UC03-FL01-S06","title":"They filter kinds and switch the minimap on","flow_id":"LA-EXP-UC03-FL01","path":"main","position":6}
-{"id":"LA-EXP-UC03-FL01-S07","title":"They switch the layout to Nested","flow_id":"LA-EXP-UC03-FL01","path":"main","position":7}
+{"id":"LA-EXP-UC03-FL01-S07","title":"They switch the layout to Nested or Map","flow_id":"LA-EXP-UC03-FL01","path":"main","position":7}
 {"id":"LA-EXP-UC03-FL01-S08","title":"From the keyboard they move between nodes, step out, in and across, and Escape clears the filters","flow_id":"LA-EXP-UC03-FL01","path":"main","position":8}
 {"id":"LA-EXP-UC03-FL01-S09","title":"They open a node's record page","flow_id":"LA-EXP-UC03-FL01","path":"main","position":9}
+{"id":"LA-EXP-UC03-FL01-S10","title":"In the Map they turn All links on to see every link in view","flow_id":"LA-EXP-UC03-FL01","path":"main","position":10}
 {"id":"LA-EXP-UC03-FL02-S01","title":"In the desktop app, the Reader switches the page in hand to its Graph stage, never from the nav","flow_id":"LA-EXP-UC03-FL02","path":"main","position":1}
 {"id":"LA-EXP-UC03-FL02-S02","title":"In the desktop app, the graph frames the focus in the product's one map, at depth 1, its parent at the left","flow_id":"LA-EXP-UC03-FL02","path":"main","position":2}
 {"id":"LA-EXP-UC03-FL02-S03","title":"The graph shows each node with its stage, kind, problems and gaps, with a key, and spotlights what a hovered node joins","flow_id":"LA-EXP-UC03-FL02","path":"main","position":3}
 {"id":"LA-EXP-UC03-FL02-S04","title":"The Reader clicks a node: the camera glides to it, the map holds still, the address and the header strip follow","flow_id":"LA-EXP-UC03-FL02","path":"main","position":4}
 {"id":"LA-EXP-UC03-FL02-S05","title":"In the desktop app, the wiki card shows the focused record's page","flow_id":"LA-EXP-UC03-FL02","path":"main","position":5}
 {"id":"LA-EXP-UC03-FL02-S06","title":"The Reader filters kinds and switches the minimap on","flow_id":"LA-EXP-UC03-FL02","path":"main","position":6}
-{"id":"LA-EXP-UC03-FL02-S07","title":"The Reader switches the layout to Nested","flow_id":"LA-EXP-UC03-FL02","path":"main","position":7}
+{"id":"LA-EXP-UC03-FL02-S07","title":"The Reader switches the layout to Nested or Map","flow_id":"LA-EXP-UC03-FL02","path":"main","position":7}
 {"id":"LA-EXP-UC03-FL02-S08","title":"The Reader moves between nodes from the keyboard, steps out, in and across, and clears the filters with Escape","flow_id":"LA-EXP-UC03-FL02","path":"main","position":8}
 {"id":"LA-EXP-UC03-FL02-S09","title":"The Reader opens a node's record page","flow_id":"LA-EXP-UC03-FL02","path":"main","position":9}
+{"id":"LA-EXP-UC03-FL02-S10","title":"In the Map the Reader turns All links on to see every link in view","flow_id":"LA-EXP-UC03-FL02","path":"main","position":10}
 {"id":"LA-EXP-UC04-FL01-S01","title":"On a domain the graph shows its stages and kind groups as folders, each with its name, count and marks, in its own column","flow_id":"LA-EXP-UC04-FL01","path":"main","position":1}
 {"id":"LA-EXP-UC04-FL01-S02","title":"They click a group, which becomes the focus at its own address","flow_id":"LA-EXP-UC04-FL01","path":"main","position":2}
 {"id":"LA-EXP-UC04-FL01-S03","title":"Under an aggregate its events sit in a Domain events group, as spark flags","flow_id":"LA-EXP-UC04-FL01","path":"main","position":3}

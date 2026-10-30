@@ -68,6 +68,31 @@ test.describe('the map stays where the Reader left it', () => {
     }
   });
 
+  test('LA-V93-R74-T02 Adding a record on the Map grows its use case and nudges only what comes after it; the camera stays', async ({ page }) => {
+    const restore = keepData();
+    try {
+      await openPage(page, `/${USE_CASE}?stage=graph`);
+      await graphDrawn(page);
+      await page.locator('.graph-layout button', { hasText: 'Map' }).click();
+      await graphDrawn(page, 'map', 900);
+      const before = await graphBoxes(page);
+      addRequirement();
+      await page.waitForFunction(({ sel, id }) => !!(document.querySelector(sel) as SceneHost).graphScene?.().boxes.some((b) => b.id === id), { sel: GRAPH, id: ADDED }, { timeout: 20_000 });
+      await page.waitForTimeout(900);
+      const after = await graphBoxes(page);
+      expect(after.camera).toBe(before.camera);
+      // The use cases before it in its area, and all they hold, keep their places; its own requirements keep their order.
+      const number = (id: string) => Number(/^LA-EXP-UC(\d+)/.exec(id)?.[1] ?? NaN);
+      const now = new Map(after.boxes.map((b) => [b.key, b.rect]));
+      const earlier = before.boxes.filter((b) => number(b.key) < number(USE_CASE));
+      expect(earlier.filter((b) => now.get(b.key) !== b.rect).map((b) => b.key)).toEqual([]);
+      const requirements = (await sceneOf(page)).boxes.filter((b) => /^LA-EXP-UC15-R\d+$/.test(b.id)).sort((a, b) => a.map.y - b.map.y || a.map.x - b.map.x).map((b) => b.id);
+      expect(requirements).toEqual([...requirements].sort());
+    } finally {
+      restore();
+    }
+  });
+
   test('LA-PAT-APP-UX-R22-T01 Adding an entity on the ERD moves only its aggregate\'s boundary and what it pushes, and keeps the camera', async ({ page }) => {
     const restore = keepData();
     try {

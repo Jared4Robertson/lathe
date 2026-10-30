@@ -7,7 +7,7 @@ import { addRows, removeRows, setRow } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
 import { recordIndexOf, type ServedData } from '../read-view';
 import { traced } from '../trace/traces';
-import { graphMap, layoutNested, layoutTree, nestedMap } from './maps';
+import { graphMap, groundMap, layoutNested, layoutTree, nestedMap } from './maps';
 
 // A change moves only what it changed (LA-PAT-APP-UX-R22, LA-EXP-DS05, LA-EXP-DS07): adding, removing, renaming or
 // moving a record under a parent rearranges only that parent's region (for a move, the old and the new parent's), and
@@ -157,6 +157,30 @@ const CHANGES: { name: string; records: string[]; edit: (d: ServedData) => void 
   { name: 'moving a requirement to another use case', records: ['P-D-UC01-R02'], edit: (d) => { setRow(d, 'uc_requirement', 'P-D-UC01-R02', { use_case_id: 'P-D-UC02' }); } },
 ];
 
+/**
+ * What a change under some parents may move in the Map, a bottom-up layout (LA-EXP-DS12): each parent and every
+ * container above it (they grow), and what comes after each of them among its siblings (nudged), with all they hold.
+ */
+function nudged(maps: readonly PlacedMap[], parents: readonly string[]): string[] {
+  const out = new Set<string>();
+  for (const map of maps) for (const p of parents) {
+    for (let at: string | null = p; at !== null; at = map.nodes.get(at)?.parent ?? null) {
+      out.add(at);
+      const up = map.nodes.get(at)?.parent;
+      const siblings = up ? map.nodes.get(up)!.children : [];
+      for (const later of siblings.slice(siblings.indexOf(at) + 1)) out.add(later);
+    }
+  }
+  return [...out];
+}
+
+/** Whether a box has the same place and size in two maps. */
+const sameBox = (before: PlacedMap, after: PlacedMap, id: string) => {
+  const b = before.nodes.get(id)!;
+  const a = after.nodes.get(id);
+  return !!a && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+};
+
 /** The parents of every place the changed records have in the maps before and after: the changed regions. */
 const parentsOf = (maps: readonly PlacedMap[], records: readonly string[], idOf: (place: string) => string = (p) => p) =>
   [...new Set(maps.flatMap((map) => [...map.nodes.values()].filter((n) => records.includes(idOf(n.id)) && n.parent !== null).map((n) => n.parent!)))];
@@ -176,6 +200,7 @@ describe('LA-PAT-APP-UX-R22 a problem badge appearing moves nothing', () => {
     same(before, after);
     expect(headerChangedOutside(before, after, [])).toEqual([]);
   });
+  it('LA-EXP-DS12-T04 on the Graph\'s Map', () => same(groundMap(recordIndexOf(product())), groundMap(recordIndexOf(withProblem()))));
   it('LA-V98-R12-T03 on the Trace\'s All-at-once view', () => {
     const layOut = (d: ServedData) => { const { index, traces } = traced(d); return layOutGraph(allGraph(index, traces, 'P'), null); };
     const [before, after] = [layOut(product()), layOut(withProblem())];
@@ -198,6 +223,15 @@ describe.each(CHANGES)('$name keeps every box outside its parent where it was', 
   };
   it('LA-EXP-DS05-T16 on the Graph\'s Tree map', () => onTheGraph('tree'));
   it('LA-EXP-DS07-T04 on the Graph\'s Nested map', () => onTheGraph('nested'));
+  it('LA-EXP-DS12-T04 on the Graph\'s Map: only the changed containers grow and nudge what comes after them; nothing before moves', () => {
+    const before = groundMap(recordIndexOf(product()));
+    const after = groundMap(recordIndexOf(changedData()));
+    const parents = parentsOf([before, after], records);
+    expect(parents.length).toBeGreaterThan(0);
+    const may = new Set([before, after].flatMap((map) => nudged([before, after], parents).flatMap((id) => [...region(map, id)])));
+    expect([...before.nodes.keys()].filter((id) => !may.has(id) && !sameBox(before, after, id))).toEqual([]);
+    for (const p of parents) expect(keptOrder(before, after, p)).toEqual(placedOrder(before, p).filter((id) => after.nodes.get(p)?.children.includes(id)));
+  });
 
   it('LA-V98-R12-T03 on the Trace\'s All-at-once view: every column keeps its order, the changed record in its place', () => {
     const layOut = (d: ServedData, previous: ReturnType<typeof layOutGraph> | null) => { const { index, traces } = traced(d); return layOutGraph(allGraph(index, traces, 'P'), previous); };

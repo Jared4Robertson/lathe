@@ -3,17 +3,20 @@ import { treeShape, type TreeShape } from './map';
 import type { Shape } from './shapes';
 import { mapLabel, treeLabel, type Face, type MapLabel, type TextMeasure } from './text';
 import { treeChildren } from './tree';
+import { groundChildren, groundTree, roleCode, roleOfCode, type GroundRole } from './ground';
 import type { RecordIndex } from '../exploring/record-summaries/record-index';
 
 // What a map's layout reads (layout.ts), packed into one string: each node's parent and label, in its shape's order, with
 // the text measure's key. It is both the layout's key (two inputs with the same string lay out the same) and what the
 // layout's worker is sent, so a map is laid out again only when something it reads has changed, whatever reloaded.
 
-/** A map's layout input: its view, its shape, its labels, and its packed form. */
+/** A map's layout input: its view, its shape, its labels (and in the Map, what each node is), and its packed form. */
 export interface MapInput {
-  view: 'tree' | 'nested';
+  view: 'tree' | 'nested' | 'map';
   shape: TreeShape;
   labels: readonly MapLabel[];
+  /** Each node's role in the Map layout (ground.ts), in its shape's order; empty in the other layouts. */
+  roles: readonly GroundRole[];
   /** The packed input with the view and measure: the layout's key, and what the worker unpacks. */
   packed: string;
 }
@@ -21,44 +24,55 @@ export interface MapInput {
 const FIELD = '\u0000';
 const NODE = '\u0001';
 
-/** A map's input from its roots, children and labels, measured by `measure`. */
-export function mapInput(view: MapInput['view'], roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string) => MapLabel, measure: string): MapInput {
+/** A map's input from its roots, children and labels (and in the Map, each node's role), measured by `measure`. */
+export function mapInput(view: MapInput['view'], roots: readonly string[], childrenOf: (id: string) => readonly string[], labelOf: (id: string) => MapLabel, measure: string, roleOf?: (id: string) => GroundRole): MapInput {
   const shape = treeShape(roots, childrenOf);
   const labels = shape.ids.map((id) => labelOf(id));
+  const roles = roleOf ? shape.ids.map((id) => roleOf(id)) : [];
   const parts: string[] = [`${view}${FIELD}${measure}`];
-  labels.forEach((l, i) => parts.push(`${shape.parents[i]}${FIELD}${l.title}${FIELD}${l.meta}${FIELD}${l.shape ?? ''}${FIELD}${l.marks ?? 0}`));
-  return { view, shape, labels, packed: parts.join(NODE) };
+  labels.forEach((l, i) => parts.push(`${shape.parents[i]}${FIELD}${l.title}${FIELD}${l.meta}${FIELD}${l.shape ?? ''}${FIELD}${l.marks ?? 0}${FIELD}${roles.length > 0 ? roleCode(roles[i]) : ''}`));
+  return { view, shape, labels, roles, packed: parts.join(NODE) };
 }
 
 const products = new WeakMap<RecordIndex, Map<string, MapInput>>();
-/** A product's map's input (or a tree's no product reaches), from its root, in the Graph's Tree or Nested view: made once per index. */
+/**
+ * A product's map's input (or a tree's no product reaches), from its root, in the Graph's Tree or Nested view, or the
+ * product's Map (its ground, whatever the root): made once per index.
+ */
 export function productInput(index: RecordIndex, root: string, view: MapInput['view'], measure: string): MapInput {
   let known = products.get(index);
   if (!known) { known = new Map(); products.set(index, known); }
   const key = `${view}|${measure}|${root}`;
   let input = known.get(key);
   if (!input) {
-    input = mapInput(view, [root], (id) => treeChildren(index, id), (id) => (view === 'tree' ? treeLabel(index, id) : mapLabel(index, id)), measure);
+    if (view === 'map') {
+      const ground = groundTree(index);
+      input = mapInput(view, ground.root ? [ground.root] : [], (id) => groundChildren(index, id), (id) => mapLabel(index, id), measure, (id) => ground.role.get(id) ?? 'record');
+    } else {
+      input = mapInput(view, [root], (id) => treeChildren(index, id), (id) => (view === 'tree' ? treeLabel(index, id) : mapLabel(index, id)), measure);
+    }
     known.set(key, input);
   }
   return input;
 }
 
-/** The shape and labels a packed input holds (the worker's side): its nodes named by their places. */
-export function unpackInput(packed: string, roots: readonly number[]): { shape: TreeShape; labels: MapLabel[] } {
+/** The shape, labels and roles a packed input holds (the worker's side): its nodes named by their places. */
+export function unpackInput(packed: string, roots: readonly number[]): { shape: TreeShape; labels: MapLabel[]; roles: GroundRole[] } {
   const nodes = packed.split(NODE).slice(1);
   const parents = new Int32Array(nodes.length);
   const levels = new Int32Array(nodes.length);
   const children: number[][] = nodes.map(() => []);
+  const roles: GroundRole[] = [];
   const labels: MapLabel[] = nodes.map((node, i) => {
-    const [parent, title, meta, shape, marks] = node.split(FIELD);
+    const [parent, title, meta, shape, marks, role] = node.split(FIELD);
+    if (role) roles.push(roleOfCode(role));
     const up = Number(parent);
     parents[i] = up;
     if (up >= 0) { children[up].push(i); levels[i] = levels[up] + 1; }
     return { title, meta, ...(shape ? { shape: shape as Shape } : {}), marks: Number(marks) };
   });
   const ids = nodes.map((_, i) => String(i));
-  return { shape: { roots: roots.map(String), ids, parents, levels, children }, labels };
+  return { shape: { roots: roots.map(String), ids, parents, levels, children }, labels, roles };
 }
 
 /** Strings whose widths, in each face, tell two measures apart: the page's and the worker's must agree on them. */
