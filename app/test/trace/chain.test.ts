@@ -20,7 +20,7 @@ describe('an obligation\'s chain', () => {
   const index = testIndex();
 
   it('LA-V98-R02-T01 An obligation\'s chain holds what designs, builds and proves it, and the files they name, as the engine works it out', async () => {
-    const served = indexOf(await servedByEngine(testWorkspace(), FILES));
+    const served = recordIndexOf(await servedByEngine(testWorkspace(), FILES));
     // A UC requirement: the step that fulfills it, its flow, where it happens and what it invokes; that command's
     // handler, which builds it as coverage counts (a UI component rendering that view does not); its test.
     const req = traceChain(served, tracesOf(served, 'P'), 'P-D-UC01-R01')!;
@@ -49,7 +49,7 @@ describe('an obligation\'s chain', () => {
     expect(con.build).toEqual(['P-VO01-VT']);
     expect(files('P-VO01-C01', served)).toEqual(['src/name.ts', 'test/name.test.ts']);
     // A pattern rule: the tests that prove it, in every domain that follows its pattern.
-    const patterns = indexOf(patternWorkspace());
+    const patterns = recordIndexOf(patternWorkspace());
     const rule = traceChain(patterns, tracesOf(patterns, 'DM'), 'DM-PAT-AUDIT-R01')!;
     expect(rule.tests).toContain('DM-PAT-AUDIT-R01-T01');
     expect(rule.files.map((f) => f.path)).toContain('test/audit.test.ts');
@@ -66,11 +66,11 @@ describe('an obligation\'s chain', () => {
     // Whatever coverage reports, the row says, and nothing else: an empty column with no gap is none.
     const w = testWorkspace();
     w.coverage[0].gaps.push(gap('P-D-SP01', 'specification', 'built'), gap('P-D-SP01', 'specification', 'designed'));
-    const withGaps = indexOf(w);
+    const withGaps = recordIndexOf(w);
     const spec = traceChain(withGaps, tracesOf(withGaps, 'P'), 'P-D-SP01')!;
     expect(spec.gaps).toEqual(['design', 'build']);
     expect(spec.proofOnly).toBe(false);
-    const audit = indexOf(patternWorkspace());
+    const audit = recordIndexOf(patternWorkspace());
     const rule = traceChain(audit, tracesOf(audit, 'DM'), 'DM-PAT-AUDIT-R02')!;
     expect(rule.proofOnly).toBe(true);
     expect(rule.gaps).toEqual(['tests']);
@@ -112,7 +112,7 @@ describe('the matrix under a record or group', () => {
       { id: 'P-BO01', title: 'More things lent', product_id: 'P', statement: 'Members borrow more.', measure: 'Loans a month', target: 'Up a tenth' },
       { id: 'P-BO02', title: 'Fewer lost things', product_id: 'P', statement: 'Fewer things go missing.', measure: 'Things lost a year', target: 'Down a half' });
     addRows(data, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' });
-    const served = indexOf(data);
+    const served = recordIndexOf(data);
     const shape = traceShape(served, tracesOf(served, 'P'), 'P-BO01');
     expect(shape.shape).toBe('matrix');
     expect(shape.shape === 'matrix' && shape.groups.flatMap((g) => g.rows.map((r) => r.obligation))).toEqual(obligationsUnder(served, 'P-D-CAP01'));
@@ -123,7 +123,7 @@ describe('the matrix under a record or group', () => {
 
 describe('what no obligation reaches', () => {
   it('LA-V98-R07-T01 Untraced lists the records coverage reports untraced under the focus, by kind', async () => {
-    const index = indexOf(await servedByEngine(testWorkspace()));
+    const index = recordIndexOf(await servedByEngine(testWorkspace()));
     const of = (focus: string, i = index) => Object.fromEntries(untracedUnder(i, tracesOf(i, 'P'), focus).map((g) => [g.kind, g.ids]));
     // Under the domain: a step that fulfills nothing, the commands and the query no fulfilling step invokes, by kind in the schema's order.
     const domain = untracedUnder(index, tracesOf(index, 'P'), 'P-D');
@@ -140,6 +140,6 @@ describe('what no obligation reaches', () => {
     // Once the step fulfills a requirement, the engine no longer reports it.
     const w = testWorkspace();
     addRows(w, 'fulfills', { source_id: 'P-D-UC01-FL01-S02', target_id: 'P-D-UC01-R01' });
-    expect(of('P-D/interaction-design', indexOf(await servedByEngine(w)))).toEqual({});
+    expect(of('P-D/interaction-design', recordIndexOf(await servedByEngine(w)))).toEqual({});
   });
 });

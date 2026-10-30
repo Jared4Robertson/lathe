@@ -104,7 +104,7 @@ describe('side navigation', () => {
   });
 
   it('LA-V64-R03-T01 Quick find jumps to any record, domain or product by ID or title, with arrow keys and Enter', async () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     const items = findItems(index);
     expect(rankItems(items, 'dm-shop')[0].id).toBe('DM-SHOP');
     expect(rankItems(items, 'basket').map((i) => i.id)).toContain('DM-SHOP-A1');

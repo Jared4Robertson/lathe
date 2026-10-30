@@ -11,8 +11,7 @@ vi.mock('../src/events', () => ({
     if (!listeners.has(event)) listeners.set(event, new Set());
     listeners.get(event)!.add(callback);
     return () => listeners.get(event)!.delete(callback);
-  },
-}));
+  } }));
 
 describe('reload on change', () => {
   it('LA-V61-R01-T01 An open spec page reloads the data when the server reports spec:changed', async () => {

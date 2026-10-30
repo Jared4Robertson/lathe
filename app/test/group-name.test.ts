@@ -13,8 +13,7 @@ const requirement = (n: number, group?: string): SpecRecord => ({
   domain: 'TL-LEND',
   row: { id: `TL-LEND-UC01-R0${n}`, title: `Requirement ${n}`, use_case_id: 'TL-LEND-UC01', ...(group === undefined ? {} : { group_name: group }) },
   file: 'data/uc_requirement.jsonl',
-  line: n,
-});
+  line: n });
 
 describe('group names', () => {
   it('LA-VO18-C01-T Group names equal trimmed and in any letter case are one group; others are not', () => {

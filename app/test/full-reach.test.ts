@@ -21,7 +21,7 @@ import { MOVES, reachable } from '../src/views/levels';
 
 const PRODUCT = 'LA';
 let index: SpecIndex;
-beforeAll(async () => { index = spaceIndex(indexOf(await repoData({ chains: true })), PRODUCT); }, 120_000);
+beforeAll(async () => { index = spaceIndex(recordIndexOf(await repoData({ chains: true })), PRODUCT); }, 120_000);
 
 /** The nodes of `all` a walk misses, named. */
 const missed = (all: Iterable<string>, reached: ReadonlySet<string>) => [...all].filter((id) => !reached.has(id));

@@ -154,8 +154,7 @@ describe('one address, one stage', () => {
       get matches() { return query === NARROW_QUERY && narrow; },
       media: query,
       addEventListener: (_: string, l: () => void) => { if (query === NARROW_QUERY) listeners.add(l); },
-      removeEventListener: (_: string, l: () => void) => { listeners.delete(l); },
-    }));
+      removeEventListener: (_: string, l: () => void) => { listeners.delete(l); } }));
     const flip = (to: boolean) => act(() => { narrow = to; for (const l of [...listeners]) l(); });
     await openApp('/P-D-UC01?stage=erd', served());
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });

@@ -29,8 +29,7 @@ const head = (el: HTMLElement, name: RegExp) => within(el).getAllByRole('button'
 /** A product's own kind under the domain. */
 const ownKind = (name: string, label: string, stage: 'domain-model' | null): KindDescription => ({
   name, label, stage, obligation: false, idPattern: null, idExample: null, idScope: null, productId: 'DM', position: null, description: `A ${name}.`,
-  parents: [{ kind: 'domain', column: 'domain_id' }], supertypes: [], titleForm: null,
-});
+  parents: [{ kind: 'domain', column: 'domain_id' }], supertypes: [], titleForm: null });
 
 describe('folders by stage', () => {
   /** The space's page with Shopping unfolded into its stages. */
@@ -175,14 +174,14 @@ describe('folders by stage', () => {
       { id: 'DM-SHOP-TM03', title: 'Zebra', domain_id: 'DM-SHOP', meaning: 'Plain.' },
       { id: 'DM-SHOP-TM04', title: 'Mango', domain_id: 'DM-SHOP', meaning: 'Plain.' });
     addRows(w, 'builds_on', { source_id: 'DM-SHOP-TM02', target_id: 'DM-SHOP-TM03' });
-    const index = indexOf(w);
+    const index = recordIndexOf(w);
     const terms = domainFolders(index, 'DM-SHOP').stages.flatMap((s) => s.folders).find((f) => f.kind === 'term')!.records;
     expect(terms.map((r) => r.title)).toEqual(['Basket', 'Mango', 'Zebra', 'Apple']);
   });
 
   it("LA-EXP-DS03-T03 A record is listed in its stage's folder when its parent is of another stage, and folds under its parent in the same stage", () => {
     const w = twoUseCases();
-    const index = indexOf(w);
+    const index = recordIndexOf(w);
     const { stages, loose } = domainFolders(index, 'DM-SHOP');
     const ids = Object.fromEntries(stages.flatMap((s) => s.folders).filter((f) => f.count > 0).map((f) => [f.kind, f.records.map((r) => r.id)]));
     expect(ids).toEqual({
@@ -196,8 +195,7 @@ describe('folders by stage', () => {
       table: ['DM-SHOP-EN01-TB'],
       command_handler: ['DM-SHOP-CMD01-H'],
       invariant_test: ['DM-SHOP-INV01-T'],
-      use_case_test: ['DM-SHOP-UC01-R01-T01'],
-    });
+      use_case_test: ['DM-SHOP-UC01-R01-T01'] });
     expect(loose.map((f) => [f.label, f.records.map((r) => r.id)])).toEqual([['Open questions', ['DM-SHOP-Q01']]]);
     // A use case folds under its capability, in Use cases (which lists its capabilities itself, with no folder); a
     // command under its aggregate, in Domain model.
@@ -251,7 +249,7 @@ describe('folders by stage', () => {
     w.schema.kinds.memo = ownKind('memo', 'Memo', null);
     addRows(w, 'risk', { id: 'DM-SHOP-RK01', title: 'Baskets get lost', domain_id: 'DM-SHOP' });
     addRows(w, 'memo', { id: 'DM-SHOP-M01', title: 'A note', domain_id: 'DM-SHOP' });
-    const index = indexOf(w);
+    const index = recordIndexOf(w);
     const { stages, loose } = domainFolders(index, 'DM-SHOP');
     expect(stages[0].folders.filter((f) => f.count > 0).map((f) => f.label)).toEqual(['Aggregates', 'Specifications', 'Read models', 'Terms', 'Risks']);
     expect(loose.map((f) => f.label)).toEqual(['Open questions', 'Memos']);
@@ -281,7 +279,7 @@ describe('folders by stage', () => {
 
   const proveLaPatAppUxR15 = async () => {
     // The folder model: a stage with one folder shows that folder's records directly; with two or more it keeps them.
-    const index = indexOf(patternWorkspace());
+    const index = recordIndexOf(patternWorkspace());
     const stage = (owner: string, name: string) => ownerFolders(index, owner).stages.find((s) => s.stage === name)!;
     expect(stage('DM-SHOP', 'use-cases').direct?.records.map((r) => r.id)).toEqual(['DM-SHOP-CAP01']);
     expect(stage('DM', 'use-cases').direct?.records.map((r) => r.id)).toEqual(['DM-PAT-AUDIT']);

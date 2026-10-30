@@ -26,7 +26,7 @@ describe('the Trace stage\'s walk', () => {
   it('LA-V61-R49-T05 On the Trace stage the arrows walk the tree as the Graph\'s Tree: Left out, Right in, Up and Down across, a shared record keeping its copy', () => {
     const data = modelWorkspace();
     data.coverage[0].gaps.push(gap('P-D-SP01', 'specification', 'built'));
-    const index = indexOf(data);
+    const index = recordIndexOf(data);
     const map = traceMap(index, tracesOf(index, 'P'), 'P');
 
     // Right in to the first child, along the chain; Left back out; Out and In as Left and Right.

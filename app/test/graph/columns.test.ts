@@ -45,7 +45,7 @@ describe('graph columns by tree depth', () => {
   });
 
   it('LA-EXP-DS05-T08 LA-V93-R27-T02 A group sits in its own column between its parent and its members', () => {
-    const grouped = graphMap(indexOf(groupedWorkspace()), 'P');
+    const grouped = graphMap(recordIndexOf(groupedWorkspace()), 'P');
     const level = (id: string) => grouped.nodes.get(id)!.level;
     expect(level('P-D/domain-model/aggregate')).toBe(level('P-D/domain-model') + 1);
     expect(level('P-D-A4')).toBe(level('P-D/domain-model/aggregate') + 1);
@@ -56,7 +56,7 @@ describe('graph columns by tree depth', () => {
   });
 
   it('LA-EXP-DS05-T09 Within a column nodes follow their parent\'s place, then the nav\'s order, and keep it when the graph re-centers', async () => {
-    const grouped = indexOf(groupedWorkspace());
+    const grouped = recordIndexOf(groupedWorkspace());
     const n = neighborhood(grouped, 'P-D/domain-model/aggregate', 2);
     const row = rowOf(n);
     // A2 before A4 (the nav's order); A2's groups before A4's, following their parents.

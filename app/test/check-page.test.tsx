@@ -20,8 +20,7 @@ const card = () => screen.getByRole('region', { name: 'Wiki card' });
 function ownCheck(): ServedData {
   return addRows(workspace(), 'check', {
     name: 'domain-without-owner', product_id: 'DM', position: 1, severity: 'warning', summary: 'Every domain names its owner.',
-    explanation: 'Name the role that owns the domain.', query: "SELECT 'warning' AS severity, 'domain-without-owner' AS \"check\", id AS record, 'x' AS message FROM domain WHERE false", kinds: ['domain'],
-  });
+    explanation: 'Name the role that owns the domain.', query: "SELECT 'warning' AS severity, 'domain-without-owner' AS \"check\", id AS record, 'x' AS message FROM domain WHERE false", kinds: ['domain'] });
 }
 
 describe('LA-V03-R02-T01 a check is read through the Check aggregate\'s own query, never from the generic index', () => {
@@ -83,8 +82,7 @@ describe('LA-V03-R03-T01 the Check editor writes only through the aggregate\'s o
     await user.click(within(form).getByRole('button', { name: 'Add check' }));
     await waitFor(() => expect(commands).toEqual([{
       route: '/api/check/add-check',
-      input: { product_id: 'DM', name: 'use-case-without-goal', position: 2, severity: 'warning', summary: 'Every use case has a goal.', explanation: 'Write its goal.', query: 'SELECT 1' },
-    }]));
+      input: { product_id: 'DM', name: 'use-case-without-goal', position: 2, severity: 'warning', summary: 'Every use case has a goal.', explanation: 'Write its goal.', query: 'SELECT 1' } }]));
     await waitFor(() => expect(window.location.search).toBe('?page=format/checks/use-case-without-goal'));
   });
 });

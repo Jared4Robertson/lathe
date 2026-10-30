@@ -3,8 +3,7 @@ import { modelIndex } from '../fixtures/model';
 import { traceMap } from '../../src/trace/tree';
 import { tracesOf } from './traces';
 import {
-  BOX_HEIGHT, COLUMN_WIDTH, columnBoxes, columnHeight, columnLefts, columnScrolls, columnSizes, columnsView, COLUMNS_PAD, COMPACT_HEIGHT, COMPACT_WIDTH, holds, rowTop, traceColumns,
-} from '../../src/trace/columns';
+  BOX_HEIGHT, COLUMN_WIDTH, columnBoxes, columnHeight, columnLefts, columnScrolls, columnSizes, columnsView, COLUMNS_PAD, COMPACT_HEIGHT, COMPACT_WIDTH, holds, rowTop, traceColumns } from '../../src/trace/columns';
 import { UNTRACED } from '../../src/trace/top';
 
 // The Trace stage's column layout (app/src/trace/columns.ts): the product's tree as columns along the focus's path, the

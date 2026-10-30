@@ -19,8 +19,6 @@ export function productKindWorkspace(): ServedData {
           ...c.gaps,
           gap('DM-SHOP-EP01-SC01', 'security_control', 'designed'),
           gap('DM-SHOP-EP01-SC01', 'security_control', 'proved'),
-        ],
-      }
-      : c)),
-  });
+        ] }
+      : c)) });
 }

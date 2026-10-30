@@ -51,8 +51,11 @@ export function readViewOf(data: ServedData): ReadView {
 }
 
 
-/** A product's space index as the app builds it from its reads, each answered by its query over the served data. */
-export function recordIndexOf(data: ServedData, product: string): RecordIndex {
+/**
+ * A product's space index as the app builds it from its reads, each answered by its query over the served data; by
+ * default the space of the data's first product.
+ */
+export function recordIndexOf(data: ServedData, product = String(data.sources.flatMap((s) => s.tables.product ?? [])[0]?.id ?? '')): RecordIndex {
   const view = readViewOf(data);
   const ask = <R>(query: Parameters<typeof answerQuery>[1], input: Record<string, unknown>) => answerQuery(view, query, input) as R;
   return buildRecordIndex(

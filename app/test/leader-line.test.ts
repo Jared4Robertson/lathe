@@ -9,8 +9,7 @@ const OPEN: Box = { left: 300, top: 60, right: 760, bottom: 790 };
 const CARD = { x: 772, y: 120 };
 /** A map box of 100 by 40 at (200, 300), under a camera: screen = map * zoom + offset. */
 const under = (cam: { x: number; y: number; zoom: number }): Box => ({
-  left: 200 * cam.zoom + cam.x, top: 300 * cam.zoom + cam.y, right: 300 * cam.zoom + cam.x, bottom: 340 * cam.zoom + cam.y,
-});
+  left: 200 * cam.zoom + cam.x, top: 300 * cam.zoom + cam.y, right: 300 * cam.zoom + cam.x, bottom: 340 * cam.zoom + cam.y });
 
 describe('LA-V96-R24-T01 the leader line runs from the focused box\'s nearest edge to the card, level with its title, or stubs toward a box out of view', () => {
   it('joins the box\'s nearest edge to the card\'s inner edge at its title, and slants when they are not level', () => {

@@ -25,7 +25,7 @@ function crossingWorkspace(): ServedData {
 
 describe('separate spaces', () => {
   const proveLaExpSp01T = () => {
-    const index = indexOf(crossingWorkspace());
+    const index = recordIndexOf(crossingWorkspace());
     const dm = spaceIndex(index, 'DM');
     expect(spaceIndex(index, 'DM')).toBe(dm);
     expect(dm.products.map((p) => p.id)).toEqual(['DM']);
@@ -44,7 +44,7 @@ describe('separate spaces', () => {
   it("LA-V90-R15-T01 A space's index holds only its product's records, links, parts, coverage and problems", proveLaExpSp01T);
 
   const proveLaExpDs05T14 = async () => {
-    const index = indexOf(crossingWorkspace());
+    const index = recordIndexOf(crossingWorkspace());
     const dm = spaceIndex(index, 'DM');
     expect(mapRootOf(dm, 'DM-SHOP-UC01')).toBe('DM');
     const map = graphMap(dm, 'DM');

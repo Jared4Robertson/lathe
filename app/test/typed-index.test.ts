@@ -10,7 +10,7 @@ import { productKindWorkspace } from './fixtures/product-kinds';
 
 describe('LA-PLT-EP01-R01-T03 the index from typed rows', () => {
   it('reads a record per row of each kind table, with its one parent, and its product and domain up the chain', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     expect(index.byId.get('DM-SHOP-UC01')).toMatchObject({ kind: 'use_case', parent: 'DM-SHOP-CAP01', product: 'DM', domain: 'DM-SHOP', file: 'data/use_case.jsonl' });
     expect(index.byId.get('DM-SHOP-EP01')).toMatchObject({ parent: 'DM-SHOP-CMD01', product: 'DM', domain: 'DM-SHOP' });
     expect(index.byId.get('DM-SHOP-Q01')).toMatchObject({ parent: 'DM-SHOP', product: 'DM', domain: 'DM-SHOP' });
@@ -20,7 +20,7 @@ describe('LA-PLT-EP01-R01-T03 the index from typed rows', () => {
   });
 
   it('gives a kind with no owner its product from its ID, and a specification its domain too', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     expect(index.byId.get('DM-VO01')).toMatchObject({ kind: 'value_object', parent: null, product: 'DM', domain: null });
     expect(index.byId.get('DM-V01')).toMatchObject({ kind: 'view', parent: null, product: 'DM', domain: null });
     expect(index.byId.get('DM-SHOP-SP01')).toMatchObject({ kind: 'specification', parent: null, product: 'DM', domain: 'DM-SHOP' });
@@ -30,7 +30,7 @@ describe('LA-PLT-EP01-R01-T03 the index from typed rows', () => {
 
   it('keeps each row typed, and gives each record its file and line', () => {
     const data = workspace();
-    const index = indexOf(data);
+    const index = recordIndexOf(data);
     const req = index.byId.get('DM-SHOP-UC01-R01')!;
     expect(typeof req.row.statement).toBe('string');
     expect(textOf(req.row, 'statement')).toBe(String(req.row.statement));
@@ -40,18 +40,18 @@ describe('LA-PLT-EP01-R01-T03 the index from typed rows', () => {
   });
 
   it('reads each relation table as links, both ways', () => {
-    const index = indexOf(workspace());
+    const index = recordIndexOf(workspace());
     expect(index.outgoing.get('DM-SHOP-UC01-FL01-S01')!.map((l) => `${l.relation} ${l.target}`)).toContain('fulfills DM-SHOP-UC01-R01');
     expect(index.incoming.get('DM-SHOP-EV01')!.map((l) => `${l.relation} ${l.source}`)).toEqual(['raises DM-SHOP-CMD01']);
   });
 
   it('puts part rows under the record that owns them, in key order', () => {
-    const index = indexOf(modelWorkspace());
+    const index = recordIndexOf(modelWorkspace());
     const fields = partsOf(index, 'P-D-EN03', 'entity_field');
     expect(fields.map((f) => f.position)).toEqual([1, 2, 3, 4]);
     expect(fields.map((f) => f.name)).toEqual(['Loan ID', 'Thing', 'Member', 'Due date']);
     expect(partsOf(index, 'P-D-EN03-TB', 'table_key').map((k) => k.type)).toEqual(['primary', 'unique', 'foreign']);
-    const patterns = indexOf(patternWorkspace());
+    const patterns = recordIndexOf(patternWorkspace());
     expect(partsOf(patterns, 'DM-PAT-AUDIT', 'pattern_setting').map((s) => s.name)).toEqual(['retention', 'who']);
   });
 

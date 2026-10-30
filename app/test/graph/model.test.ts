@@ -100,10 +100,10 @@ describe('graph neighborhood', () => {
   it('LA-V93-R15-T03 Links never change the map or the framed picture: every box where it was without them', async () => {
     const w = testWorkspace();
     addRows(w, 'entity', { id: 'P-D-EN07', title: 'Tag', aggregate_id: 'P-D-A3', role: 'child' });
-    const before = indexOf(w);
+    const before = recordIndexOf(w);
     addRows(w, 'has_many', { source_id: 'P-D-EN03', target_id: 'P-D-EN07' });
     addRows(w, 'has_one', { source_id: 'P-D-EN07', target_id: 'P-D-EN03' });
-    const linked = indexOf(w);
+    const linked = recordIndexOf(w);
     // Neither link shapes the map: every box is where it was without them.
     const at = (ix: typeof linked) => [...graphMap(ix, 'P').nodes.values()].map((x) => [x.id, x.x, x.y]);
     expect(at(linked)).toEqual(at(before));

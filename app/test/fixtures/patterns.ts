@@ -18,16 +18,14 @@ export function patternWorkspace(): ServedData {
       obligations: [...c.obligations, obligation('pattern_rule', 'Pattern rule', 2, 2, 2, 1, 0, true)],
       proved_by: { ...c.proved_by, 'DM-PAT-AUDIT-R01': ['DM-PAT-AUDIT-R01-T01'] },
       pattern_rules: { 'DM-PAT-AUDIT-R01': 'owed', 'DM-PAT-AUDIT-R02': 'owed', 'DM-PAT-AUDIT-R03': 'waived' } as Record<string, PatternRuleStanding>,
-      gaps: [...c.gaps, gap('DM-PAT-AUDIT-R02', 'pattern_rule', 'proved')],
-    }
+      gaps: [...c.gaps, gap('DM-PAT-AUDIT-R02', 'pattern_rule', 'proved')] }
     : c));
   return fixture('patterns', {
     problems: [
       ...base.problems,
       { severity: 'warning', check: 'not-proved', record: 'DM-PAT-AUDIT-R02', message: 'DM-PAT-AUDIT-R02 is not proved in DM-SHOP.' },
     ],
-    coverage,
-  });
+    coverage });
 }
 
 /** Sets the standings of the pattern rules in a domain, as a test's variant of the workspace has them (rule IDs after DM-PAT-AUDIT-). */

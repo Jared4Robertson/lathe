@@ -25,8 +25,7 @@ function waiverWorkspace(): ServedData {
   setRow(ws, 'pattern_rule', 'DM-PAT-AUDIT-R03', { group_name: 'Keeping' });
   addRows(ws, 'pattern_rule', {
     id: 'DM-PAT-AUDIT-R04', title: 'The shopper is named', pattern_id: 'DM-PAT-AUDIT', statement: 'It MUST hold.',
-    group_name: 'keeping', applies_when_setting: 'who', applies_when_negated: true, applies_when_value: 'clerk',
-  });
+    group_name: 'keeping', applies_when_setting: 'who', applies_when_negated: true, applies_when_value: 'clerk' });
   withStandings(ws, 'DM-SHOP', { R01: 'owed', R02: 'owed', R03: 'owed', R04: 'waived' });
   return withStandings(ws, 'DM-PAY', { R01: 'owed', R02: 'owed', R03: 'waived', R04: 'owed' });
 }
@@ -42,7 +41,7 @@ function groupedWorkspace(): ServedData {
 
 describe('waivers by setting value', () => {
   it('LA-V91-R56-T01 A rule no follower meets shows as Waived here, with the value given, and the gaps leave it out', async () => {
-    const ix = indexOf(waiverWorkspace());
+    const ix = recordIndexOf(waiverWorkspace());
     const r03 = ix.byId.get('DM-PAT-AUDIT-R03')!;
     const r04 = ix.byId.get('DM-PAT-AUDIT-R04')!;
     expect(appliesWhenOf(r03)).toEqual({ setting: 'who', not: false, value: 'clerk' });
@@ -62,7 +61,7 @@ describe('waivers by setting value', () => {
     withStandings(ws, 'DM-PAY', { R01: 'owed', R02: 'owed', R03: 'owed', R04: 'owed' });
     // The hand-written standings of these workspaces are the engine's.
     for (const data of [waiverWorkspace(), ws]) await expectStandingsAsEngine(data);
-    const itself = indexOf(ws);
+    const itself = recordIndexOf(ws);
     const followed = patternsFollowedBy(itself, 'DM-PAY').find((f) => f.pattern.id === 'DM-PAT-AUDIT')!;
     expect(followed.byDomain).toBe(true);
     expect(ruleStatus(itself, itself.byId.get('DM-PAT-AUDIT-R03')!, 'DM-PAY', followed)).toMatchObject({ applies: true });
@@ -88,7 +87,7 @@ describe('waivers by setting value', () => {
 
 describe('groups', () => {
   it('LA-V92-R22-T01 UC requirements, pattern rules and standard rules read under their group headings, the ungrouped first', async () => {
-    const ix = indexOf(groupedWorkspace());
+    const ix = recordIndexOf(groupedWorkspace());
     const reqs = (ix.children.get('DM-SHOP-UC01') ?? []).filter((r) => r.kind === 'uc_requirement');
     expect(groupRecords(reqs).map((g) => [g.heading, g.records.map((r) => r.id)])).toEqual([
       [null, ['DM-SHOP-UC01-R01']],

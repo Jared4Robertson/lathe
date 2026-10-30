@@ -162,12 +162,10 @@ describe('the tab model', () => {
         { key: 't2', place: { history: [{ address: '/bad' }], at: 0 } },
         { key: 't3', place: 'nope' },
         'nope',
-      ],
-    };
+      ] };
     expect(parseTabSet(stored, isPage)).toEqual({
       active: 't1',
-      tabs: [{ key: 't1', place: { history: [{ address: '/A', note: { cardScroll: 12 } }, { address: '/C', note: {} }], at: 1, view: { depth: 1, hiddenKinds: ['x'], card: { open: false, expanded: false } } } }],
-    });
+      tabs: [{ key: 't1', place: { history: [{ address: '/A', note: { cardScroll: 12 } }, { address: '/C', note: {} }], at: 1, view: { depth: 1, hiddenKinds: ['x'], card: { open: false, expanded: false } } } }] });
     expect(parseTabSet({ tabs: [] }, isPage)).toBeNull();
     expect(parseTabSet('x', isPage)).toBeNull();
     expect(readPlace({ history: [{ address: '/bad' }], at: 0 }, isPage)).toBeNull();

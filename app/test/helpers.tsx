@@ -127,8 +127,6 @@ export const desktopBridgeStub = (over: Partial<LatheDesktop> = {}): LatheDeskto
     send: async () => false,
     answer: async () => false,
     stop: async () => false,
-    onPatch: () => () => {},
-  },
+    onPatch: () => () => {} },
   onAppRequest: () => () => {},
-  ...over,
-});
+  ...over });

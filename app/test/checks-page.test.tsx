@@ -19,8 +19,7 @@ describe('checks panel', () => {
     const groups = [...checksPanel().querySelectorAll('section')].map((s) => ({
       check: s.querySelector('h3, h4')?.firstChild?.textContent,
       severities: [...s.querySelectorAll('.severity')].map((e) => e.textContent),
-      records: [...s.querySelectorAll('li')].map((li) => li.querySelector('a')?.getAttribute('href') ?? li.querySelector('code')?.textContent),
-    }));
+      records: [...s.querySelectorAll('li')].map((li) => li.querySelector('a')?.getAttribute('href') ?? li.querySelector('code')?.textContent) }));
     expect(groups).toEqual([
       { check: 'test-file-missing', severities: ['error'], records: ['/DM-SHOP-UC01-R01-T01'] },
       { check: 'not-designed', severities: ['warning'], records: ['/DM-PAY-UC01-R01'] },

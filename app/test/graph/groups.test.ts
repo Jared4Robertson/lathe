@@ -11,8 +11,7 @@ import {
   PARENT,
   pluralLabel,
   type Filters,
-  type Neighborhood,
-} from '../../src/graph/model';
+  type Neighborhood } from '../../src/graph/model';
 import { graphMap } from '../../src/graph/map';
 import { boxColors } from '../../src/graph/paint';
 import { PLAIN_LOOK } from '../../src/graph/look';
@@ -28,7 +27,7 @@ const STAGES = ['P-D/domain-model', 'P-D/interaction-design', 'P-D/technical-spe
 
 describe('graph groups', () => {
   const index = testIndex();
-  const grouped = indexOf(groupedWorkspace());
+  const grouped = recordIndexOf(groupedWorkspace());
 
   it('LA-EXP-DS04-T01 LA-V93-R23-T01 A record with several kinds of child in its stage has a group per child kind, labeled with the plural and a count', () => {
     expect(childKinds(index, 'P-D')).toEqual(['aggregate', 'read_model', 'domain_service', 'term', 'capability', 'repository', 'question']);

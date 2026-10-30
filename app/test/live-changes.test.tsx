@@ -19,8 +19,7 @@ vi.mock('../src/events', () => ({
     if (!listeners.has(event)) listeners.set(event, new Set());
     listeners.get(event)!.add(callback);
     return () => listeners.get(event)!.delete(callback);
-  },
-}));
+  } }));
 
 const HEAD = 'a'.repeat(40);
 const BASE = 'b'.repeat(40);

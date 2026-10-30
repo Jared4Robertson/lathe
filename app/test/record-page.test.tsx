@@ -76,8 +76,7 @@ describe('record page', () => {
     expect(traceGroups()).toEqual({
       'Designed by': ['/DM-SHOP-CMD01', '/DM-SHOP-UC01-FL01', '/DM-SHOP-UC01-FL01-S01', '/DM-V01'],
       'Built by': ['/DM-SHOP-CMD01-H'],
-      'Proved by': ['/DM-SHOP-UC01-R01-T01'],
-    });
+      'Proved by': ['/DM-SHOP-UC01-R01-T01'] });
     // In the facts, each a link: the kind to its page in the format reference, and the step that links in.
     expect(factLinks()).toEqual(['/DM-SHOP-UC01-R01?page=format/kinds/uc_requirement', '/DM-SHOP-UC01-FL01-S01']);
     expect(within(facts()).getByRole('heading', { name: 'Links in' })).toBeInTheDocument();
@@ -90,8 +89,7 @@ describe('record page', () => {
     await waitFor(() => expect(traceGroups()).toMatchObject({
       Fulfills: ['/DM-SHOP-UC01-R01'],
       Invokes: ['/DM-SHOP-CMD01'],
-      'Happens in': ['/DM-V01'],
-    }));
+      'Happens in': ['/DM-V01'] }));
     expect(factLinks()).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-CMD01', '/DM-V01']));
   });
 
@@ -146,7 +144,7 @@ describe('record page', () => {
 
 
   it('LA-PAT-RECORD-PAGE-R08-T01 A technical record shows the packages it uses as one fact', () => {
-    const index = indexOf(addRows(modelWorkspace(), 'package_use', { record_id: 'P-INT01-AD', package: 'nodemailer' }, { record_id: 'P-INT01-AD', package: '@scope/mjml' }));
+    const index = recordIndexOf(addRows(modelWorkspace(), 'package_use', { record_id: 'P-INT01-AD', package: 'nodemailer' }, { record_id: 'P-INT01-AD', package: '@scope/mjml' }));
     const facts = factsOf(index, index.byId.get('P-INT01-AD')!);
     expect(facts.filter((f) => f.column === null)).toEqual([{ column: null, label: 'packages', value: 'nodemailer, @scope/mjml' }]);
   });

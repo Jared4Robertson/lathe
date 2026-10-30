@@ -31,7 +31,7 @@ describe('flow steps in the graph', () => {
   });
 
   it('LA-V93-R31-T02 LA-V101-R05-T02 A flow shows its steps directly, however many, and its flow test is listed in the test plan, not under it', () => {
-    const index = indexOf(flowWorkspace(6));
+    const index = recordIndexOf(flowWorkspace(6));
     expect(spine(neighborhood(index, 'P-D-UC01-FL01', 1))).toEqual(expect.arrayContaining(['P-D-UC01-FL01 > P-D-UC01-FL01-S01', 'P-D-UC01-FL01 > P-D-UC01-FL01-S06']));
     expect(isGraphNode(index, 'P-D-UC01-FL01/flow_step')).toBe(false);
     // The flow sits in Interaction design's Flows folder, its test in Test plan's.
