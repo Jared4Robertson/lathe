@@ -214,7 +214,7 @@ describe('LA-EXP-INV08-T the Tab set commands keep the tabs through TabSetReposi
   });
 });
 
-describe('the Tab set as a stable snapshot', () => {
+describe('LA-PAT-APP-CODE-R25-T01 the Tab set as a stable snapshot', () => {
   it('reads a stale stored set once: the drop from storage does not make each load a new value, so React never warns', () => {
     // A set of another form: the read drops it from storage too, which changes the stored text it is cached by.
     window.sessionStorage.setItem('lathe:tabs', JSON.stringify({ P: { stale: true } }));

@@ -1,9 +1,10 @@
-import { cpSync, existsSync, mkdtempSync } from 'node:fs';
+import { cpSync, mkdtempSync } from 'node:fs';
 import { createServer } from 'node:net';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
+import { copyRepo } from '../stability/copy';
 import { largeProduct } from '../../lathe/perf/large-product.ts';
 
 // The performance suite (LA-PAT-APP-UX-R11): Playwright with Chromium, one worker. It builds the app
@@ -35,11 +36,8 @@ async function freePort(): Promise<number> {
 if (!process.env.PERF_PORT) process.env.PERF_PORT = String(await freePort());
 if (!process.env.PERF_ROOT) {
   const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-data-'));
-  // The data and config, and the product the config lists beside its own (its folder without its packages).
-  for (const part of ['data', 'lathe.config.json', 'examples/tool-library']) {
-    const from = path.join(repo, part);
-    if (existsSync(from)) cpSync(from, path.join(root, part), { recursive: true, filter: (file) => path.basename(file) !== 'node_modules' });
-  }
+  // The repo as it is: data, config, code and manifests, so the copy checks as the repo does (stability/copy.ts).
+  copyRepo(repo, root);
   process.env.PERF_ROOT = root;
 }
 // The large product the big-map scenarios measure (big-maps.perf.ts), served from the same build on its own port.
