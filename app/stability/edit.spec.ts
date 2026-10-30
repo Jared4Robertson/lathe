@@ -25,18 +25,24 @@ const SENDING = [NAV, WIKI_BAR, STRIP];
 
 /**
  * Sends a form by its button, as the Reader does: they scroll the card to the button first (their own scroll, not a
- * jump), and once the form closes the card is back on the record's page at its top, the title where it was.
+ * jump), and once the form closes the focus is back on the actions that opened it (the record's own Change toolbar,
+ * or a section's), in view.
  */
-async function send(page: Page, form: Locator, button: string, name: string) {
+async function send(page: Page, form: Locator, button: string, name: string, actions: Locator) {
   await form.getByRole('button', { name: button, exact: true }).scrollIntoViewIfNeeded();
   const sent = await step(page, 'edit', name, { keys: SENDING, allow: CONTENT, settle: 1500 }, async () => {
     await form.getByRole('button', { name: button, exact: true }).click();
     await expect(form).toHaveCount(0, { timeout: 20_000 });
   });
-  await expect.poll(() => page.locator(CONTENT[0]).evaluate((e) => e.scrollTop), { message: `${name}: the page is back at its top` }).toBe(0);
+  const back = actions.getByRole('button').first();
+  await expect(back, `${name}: the focus is back on the actions that opened the form`).toBeFocused();
+  await expect(back, `${name}: those actions are in view`).toBeInViewport();
   return sent;
 }
 test.describe('editing', () => {
+  // Each scenario puts the served data back as it ends; the server reloads it a moment later. The next scenario starts
+  // after that reload, so its page never receives the previous one's restore while it is measured.
+  test.afterEach(async ({ page }) => { await page.waitForTimeout(1500); });
   test('LA-AUT-UC06-FL01-T on the Use case page, open a requirement\'s form and save an edit', async ({ page }) => {
     const restore = keepData();
     try {
@@ -49,7 +55,7 @@ test.describe('editing', () => {
       expectStable(open);
       await form.getByRole('textbox', { name: /^group name/ }).fill('Stability');
       const save = await test.step('LA-V101-R02-T02 the Owner saves the change on the Use case page, as one Change command', () =>
-        send(page, form, 'Save', 'save the edit'));
+        send(page, form, 'Save', 'save the edit', page.getByRole('toolbar', { name: `Change ${EDITED.slice(1)}` })));
       expectStable(save);
     } finally {
       restore();
@@ -160,7 +166,7 @@ async function sendAForm(page: Page, address: string, toolbar: string, button: s
     });
     expectStable(open);
     await fill(form);
-    const sent = await send(page, form, save, 'send the form');
+    const sent = await send(page, form, save, 'send the form', page.getByRole('toolbar', { name: toolbar }));
     expectStable(sent);
   } finally {
     restore();
@@ -179,7 +185,7 @@ async function saveAnEdit(page: Page, address: string, field: RegExp, value: str
     });
     expectStable(open);
     await form.getByRole('textbox', { name: field }).fill(value);
-    const save = await send(page, form, 'Save', 'save the edit');
+    const save = await send(page, form, 'Save', 'save the edit', page.getByRole('toolbar', { name: `Change ${name}` }));
     expectStable(save);
   } finally {
     restore();
