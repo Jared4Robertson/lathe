@@ -1,4 +1,4 @@
-// Change a repository (LA-AUT-CMD173): Changes a repository's title, file or description, the aggregate it persists (null clears it), or the standard rules it meets or packages it uses (each the whole list).
+// Change a repository (LA-AUT-CMD173): Changes a repository's title, file or description, the aggregate it persists or the data store it is stored in (null clears either), or the standard rules it meets or packages it uses (each the whole list).
 import { column, id, ids, texts, type CommandDefinition } from '../../../platform/commands/definition.ts';
 import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { RepositoryRow } from '../../../platform/data/tables.ts';
@@ -7,14 +7,14 @@ import { DomainRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
 /** The repository's changes: a column given is set, null clears an optional one or the aggregate it persists; a list given replaces the list. */
-export type ChangeRepository = Pick<RepositoryRow, 'id'> & { title?: RepositoryRow['title']; file?: RepositoryRow['file'] | null; description?: RepositoryRow['description']; persists?: string | null; meets?: string[]; packages?: string[] };
+export type ChangeRepository = Pick<RepositoryRow, 'id'> & { title?: RepositoryRow['title']; file?: RepositoryRow['file'] | null; description?: RepositoryRow['description']; persists?: string | null; stored_in?: string | null; meets?: string[]; packages?: string[] };
 
 /** Change a repository (LA-AUT-CMD173). */
 export const CHANGE_REPOSITORY: CommandDefinition<ChangeRepository> = {
   id: 'LA-AUT-CMD173',
   slice: DOMAIN_SLICE,
   name: 'change-repository',
-  description: "Changes a repository's title, file or description, the aggregate it persists (null clears it), or the standard rules it meets or packages it uses (each the whole list).",
+  description: "Changes a repository's title, file or description, the aggregate it persists or the data store it is stored in (null clears either), or the standard rules it meets or packages it uses (each the whole list).",
   method: 'POST',
   route: '/api/domain/change-repository',
   input: {
@@ -23,6 +23,7 @@ export const CHANGE_REPOSITORY: CommandDefinition<ChangeRepository> = {
     file: column('repository', 'file', 'clearable'),
     description: column('repository', 'description', 'optional'),
     persists: id('The aggregate it loads and saves, whole: one of its own domain.', 'clearable'),
+    stored_in: id('The data store it loads and saves its aggregate in.', 'clearable'),
     meets: ids('The standard rules it meets. Replaces the list.', 'optional'),
     packages: texts("The packages it uses, by their names in the product's package.json files. Replaces the list.", 'optional'),
   },
@@ -38,6 +39,7 @@ export function changeRepository(tx: Transaction, input: ChangeRepository): void
       ? {
           row: changed(r.row, input, ['title', 'file', 'description']),
           persists: input.persists === undefined ? r.persists : input.persists,
+          storedIn: input.stored_in === undefined ? r.storedIn : input.stored_in,
           meets: input.meets ?? r.meets,
           packages: input.packages ?? r.packages,
           shares: r.shares,

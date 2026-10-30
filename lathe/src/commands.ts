@@ -47,6 +47,10 @@ import { CHECK_COMMANDS } from './checking/check/commands/index.ts';
 import { CHECK_QUERIES } from './checking/check/queries.ts';
 import { PRODUCT_SETTING_COMMANDS } from './checking/product-setting/commands/index.ts';
 import { PRODUCT_SETTING_QUERIES } from './checking/product-setting/queries.ts';
+import { STORAGE_REQUIREMENT_COMMANDS } from './authoring/storage-requirement/commands/index.ts';
+import { STORAGE_REQUIREMENT_QUERIES } from './authoring/storage-requirement/queries.ts';
+import { DATA_STORE_COMMANDS } from './authoring/data-store/commands/index.ts';
+import { DATA_STORE_QUERIES } from './authoring/data-store/queries.ts';
 import { PATTERN_FOLLOWING_COMMANDS } from './traceability/pattern-following/commands/index.ts';
 import { PATTERN_FOLLOWING_QUERIES } from './traceability/pattern-following/queries.ts';
 import type { AnyCommand, AnyQuery } from './platform/commands/definition.ts';
@@ -73,6 +77,8 @@ export const ALL_COMMANDS: readonly AnyCommand[] = [
   ...ENDPOINT_COMMANDS,
   ...INTEGRATION_COMMANDS,
   ...UI_COMPONENT_COMMANDS,
+  ...STORAGE_REQUIREMENT_COMMANDS,
+  ...DATA_STORE_COMMANDS,
   ...CHECK_COMMANDS,
   ...PRODUCT_SETTING_COMMANDS,
   ...PATTERN_FOLLOWING_COMMANDS,
@@ -100,6 +106,8 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   ...ENDPOINT_QUERIES,
   ...INTEGRATION_QUERIES,
   ...UI_COMPONENT_QUERIES,
+  ...STORAGE_REQUIREMENT_QUERIES,
+  ...DATA_STORE_QUERIES,
   ...CHECK_QUERIES,
   ...PRODUCT_SETTING_QUERIES,
   ...PATTERN_FOLLOWING_QUERIES,

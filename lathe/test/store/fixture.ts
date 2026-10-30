@@ -45,6 +45,7 @@ export function everyKind(): Data {
     query: [{ id: 'TL-LEND-QRY01', title: 'List free tools', read_model_id: 'TL-LEND-RM01', description: 'The tools no active loan names.' }],
     policy: [{ id: 'TL-LEND-PO01', title: 'Remind on loan', command_id: 'TL-LEND-CMD01', statement: 'Whenever a loan is opened, the library MUST open its reminder.' }],
     domain_service: [{ id: 'TL-LEND-DS01', title: 'Late fee', domain_id: 'TL-LEND', statement: 'The fee MUST be a day rate times the days late.' }],
+    storage_requirement: [{ id: 'TL-LEND-A1-SR01', title: 'A loan is saved with its event', aggregate_id: 'TL-LEND-A1', statement: 'A loan MUST be saved with its outbox event, or neither.' }],
     term: [
       { id: 'TL-LEND-TM01', title: 'Loan', domain_id: 'TL-LEND', meaning: 'One tool lent to one member until it is returned.' },
       { id: 'TL-LEND-TM02', title: 'Overdue loan', domain_id: 'TL-LEND', meaning: 'A loan past its due date.' },
@@ -85,6 +86,9 @@ export function everyKind(): Data {
     // Technical specification.
     repository: [{ id: 'TL-LEND-REPO01', title: 'LoanRepository', domain_id: 'TL-LEND', file: 'src/lending/loans.ts', description: 'Keeps loans in the loans table.' }],
     persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-LEND-A1' }],
+    data_store: [{ id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database, run by a hosting service." }],
+    provided_by: [{ source_id: 'TL-STORE01', target_id: 'TL-INT01' }],
+    stored_in: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-STORE01' }],
     repository_share: [{ repository_id: 'TL-LEND-REPO01', aggregate_id: 'TL-LEND-A2', reason: 'Loans and tools are kept in one store.' }],
     data_model: [{ id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }],
     table: [
@@ -121,6 +125,7 @@ export function everyKind(): Data {
     invariant_test: [{ id: 'TL-LEND-INV01-T', title: 'A second loan is refused', invariant_id: 'TL-LEND-INV01', ...automated('test/loans.test.ts'), when: 'With a tool on loan, lends it again', then: 'It is refused' }],
     specification_test: [{ id: 'TL-LEND-SP01-T', title: 'Free tools', specification_id: 'TL-LEND-SP01', level: 'integration', state: 'not automated yet', when: 'Asks for free tools', then: 'Expects only the tool on no loan' }],
     policy_test: [{ id: 'TL-LEND-PO01-T', title: 'A reminder follows a loan', policy_id: 'TL-LEND-PO01', ...automated('test/policies.test.ts'), when: 'Opens a loan', then: 'Expects a reminder' }],
+    storage_requirement_test: [{ id: 'TL-LEND-A1-SR01-T01', title: 'A failed save leaves nothing', storage_requirement_id: 'TL-LEND-A1-SR01', ...automated('test/loans.test.ts'), level: 'integration', when: 'Opens a loan whose event cannot be written', then: 'Expects neither saved' }],
     domain_service_test: [{ id: 'TL-LEND-DS01-T01', title: 'Three days late', domain_service_id: 'TL-LEND-DS01', ...automated('test/fees.test.ts'), when: 'Works out the fee for three days late', then: 'Expects three day rates' }],
     use_case_test: [{ id: 'TL-LEND-UC01-R01-T01', title: 'A lent tool is refused', uc_requirement_id: 'TL-LEND-UC01-R01', level: 'system', state: 'automated', file: 'test/borrow.test.ts', when: 'Borrows a tool on loan', then: 'Expects a refusal' }],
     view_test: [{ id: 'TL-V01-R01-T01', title: 'Free tools come first', view_requirement_id: 'TL-V01-R01', level: 'browser', state: 'automated', file: 'e2e/catalog.spec.ts', when: 'Opens the catalog', then: 'Expects the free tools first' }],

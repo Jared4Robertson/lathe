@@ -124,14 +124,14 @@ COMMENT ON COLUMN integration.system IS 'The outside system, such as Stripe.';
 COMMENT ON COLUMN integration.description IS 'What the product exchanges with it, in a sentence or two.';
 
 INSERT INTO meta_kind VALUES
-  ('interface', 'Interface', 'interaction-design', 22, false, '<P>-IF<nn>', 'TL-IF01', 'parent', NULL),
-  ('flow', 'Flow', 'interaction-design', 23, false, '<use case>-FL<nn>', 'TL-LEND-UC01-FL01', 'parent', NULL),
-  ('flow_step', 'Flow step', 'interaction-design', 24, false, '<flow>-S<nn>', 'TL-LEND-UC01-FL01-S01', 'parent', NULL),
-  ('view', 'View', 'interaction-design', 25, false, '<P>-V<nn>', 'TL-V01', 'product', NULL),
-  ('view_requirement', 'View requirement', 'interaction-design', 26, true, '<view>-R<nn>', 'TL-V01-R01', 'parent', NULL),
-  ('endpoint', 'Endpoint', 'interaction-design', 27, false, '<P>-<D>-EP<nn>', 'TL-LEND-EP01', 'domain', NULL),
-  ('api_requirement', 'API requirement', 'interaction-design', 28, true, '<endpoint>-R<nn>', 'TL-LEND-EP01-R01', 'parent', NULL),
-  ('integration', 'Integration', 'interaction-design', 29, false, '<P>-INT<nn>', 'TL-INT01', 'product', NULL);
+  ('interface', 'Interface', 'interaction-design', 23, false, '<P>-IF<nn>', 'TL-IF01', 'parent', NULL),
+  ('flow', 'Flow', 'interaction-design', 24, false, '<use case>-FL<nn>', 'TL-LEND-UC01-FL01', 'parent', NULL),
+  ('flow_step', 'Flow step', 'interaction-design', 25, false, '<flow>-S<nn>', 'TL-LEND-UC01-FL01-S01', 'parent', NULL),
+  ('view', 'View', 'interaction-design', 26, false, '<P>-V<nn>', 'TL-V01', 'product', NULL),
+  ('view_requirement', 'View requirement', 'interaction-design', 27, true, '<view>-R<nn>', 'TL-V01-R01', 'parent', NULL),
+  ('endpoint', 'Endpoint', 'interaction-design', 28, false, '<P>-<D>-EP<nn>', 'TL-LEND-EP01', 'domain', NULL),
+  ('api_requirement', 'API requirement', 'interaction-design', 29, true, '<endpoint>-R<nn>', 'TL-LEND-EP01-R01', 'parent', NULL),
+  ('integration', 'Integration', 'interaction-design', 30, false, '<P>-INT<nn>', 'TL-INT01', 'product', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('interface', 'product', 1, 'product_id'),
   ('flow', 'use_case', 1, 'use_case_id'),

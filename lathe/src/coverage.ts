@@ -1,14 +1,16 @@
 // Coverage as views over the typed tables, and the facts the engine gathers from the code before the checks run.
 //
 // Every obligation (a member of the obligation supertype: constraints, invariants, specifications, policies, domain
-// services, UC requirements, view requirements, API requirements, pattern rules, standard rules and a product's own
-// obligation kinds) is counted as:
+// services, storage requirements, UC requirements, view requirements, API requirements, pattern rules, standard rules
+// and a product's own obligation kinds) is counted as:
 // - designed: its implementation is specified. A UC requirement is designed once a step of each of its use case's
 //   flows (one per interface) fulfills it, a standard rule once a technical record meets it, a product's own
 //   obligation once a design or build link targets it; the others by construction (DESIGNED_BY_CONSTRUCTION);
 // - built: every one of the specific technical records that implement it names a file that exists, and there is at
 //   least one; never any other code near it: an invariant's rule, a constraint's value type, a specification's
-//   predicate, a policy's event handler, a domain service's service, an API requirement's endpoint handler, the UI
+//   predicate, a policy's event handler, a domain service's service, a storage requirement's repository (its
+//   aggregate's) or reader (its read model's) once that names the data store it is stored in, an API requirement's
+//   endpoint handler, the UI
 //   components that build a view requirement, a standard rule's meeting records, a product's own obligation's design
 //   and build link sources, and for a UC requirement the handler of what a fulfilling step invokes or the adapter of an
 //   integration it exchanges with, with the predicates and services of what that handler checks, selects by or calls;
@@ -36,6 +38,7 @@ export const ALLOWED_LEVELS: Readonly<Record<string, readonly string[]>> = {
   specification_test: ['unit', 'integration'],
   policy_test: ['integration', 'service', 'system', 'browser'],
   domain_service_test: ['unit'],
+  storage_requirement_test: ['integration', 'service', 'system', 'browser'],
   use_case_test: ['service', 'system', 'browser'],
   view_test: ['unit', 'browser'],
   endpoint_test: ['service', 'system'],
@@ -60,6 +63,11 @@ export const OBLIGATION_COVERAGE: Readonly<Record<string, { designed: string; bu
   specification: { designed: 'By construction.', built: 'Its predicate names a file that exists.', proved: 'Its specification test.' },
   policy: { designed: 'By construction, under its command.', built: 'Its event handler names a file that exists.', proved: 'Its policy test.' },
   domain_service: { designed: 'By construction, under its domain.', built: 'Its service names a file that exists.', proved: 'One of its domain service tests.' },
+  storage_requirement: {
+    designed: 'By construction, under its aggregate or read model.',
+    built: "Its aggregate's repository, or its read model's reader, names a file that exists and the data store it is stored in.",
+    proved: 'One of its storage requirement tests.',
+  },
   uc_requirement: {
     designed: 'A step of each of its use case\'s flows fulfills it: one flow per interface the use case happens through, and at least one.',
     built:
@@ -88,7 +96,7 @@ const PROOF_ONLY = ['pattern_rule'];
  * domain or use case follows its pattern. A UC requirement, a standard rule and a product's own obligation are designed
  * by links.
  */
-const DESIGNED_BY_CONSTRUCTION = ['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'view_requirement', 'api_requirement', 'pattern_rule'];
+const DESIGNED_BY_CONSTRUCTION = ['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'storage_requirement', 'view_requirement', 'api_requirement', 'pattern_rule'];
 
 const list = (items: readonly string[]) => items.map(sqlString).join(', ');
 
@@ -224,6 +232,12 @@ WHERE NOT EXISTS (SELECT 1 FROM persists p WHERE p.target_id = a.id) AND NOT EXI
   missingImpl('query-without-handler', 'query', 'Query', 'query_handler', 'query_id', 'query handler'),
   missingImpl('endpoint-without-handler', 'endpoint', 'Endpoint', 'endpoint_handler', 'endpoint_id', 'endpoint handler'),
   missingImpl('integration-without-adapter', 'integration', 'Integration', 'adapter', 'integration_id', 'adapter'),
+  // Every repository, reader and table names the data store it is kept in, and every data store keeps something.
+  gap('stored-nowhere', 'technical-specification', ['repository', 'reader', 'table', 'data_store'], 'A repository, reader or table that names no data store.',
+    `SELECT s.id, k.label || ' ' || s.id || ' names no data store: nothing says where its data lives.' AS message FROM stored_in_source s JOIN meta_kind k ON k.name = s.kind
+WHERE NOT EXISTS (SELECT 1 FROM stored_in i WHERE i.source_id = s.id)`),
+  gap('data-store-unused', 'technical-specification', ['data_store', 'repository', 'reader', 'table'], 'A data store no repository, reader or table is stored in.',
+    `SELECT d.id, 'Data store ' || d.id || ' stores nothing: no repository, reader or table is stored in it.' AS message FROM data_store d WHERE NOT EXISTS (SELECT 1 FROM stored_in i WHERE i.target_id = d.id)`),
   gap('package-not-accounted-for', 'technical-specification', ['product', 'package_use'], 'A product whose package.json files list a package no record of it uses.', PACKAGE_GAP_SQL),
   // A table stored as a table names the file that creates it, which table-schema-mismatch reads (trace/tables.ts).
   gap('table-without-file', 'technical-specification', ['table'], 'A table stored in a database table that names no file creating it.',
@@ -341,6 +355,9 @@ UNION ALL SELECT invariant_id, id, NULL FROM rule
 UNION ALL SELECT specification_id, id, NULL FROM predicate
 UNION ALL SELECT policy_id, id, NULL FROM event_handler
 UNION ALL SELECT domain_service_id, id, NULL FROM service
+-- A storage requirement: its aggregate's repository, or its read model's reader, once it names its data store.
+UNION ALL SELECT s.id, p.source_id, s.aggregate_id FROM storage_requirement s JOIN persists p ON p.target_id = s.aggregate_id JOIN stored_in d ON d.source_id = p.source_id
+UNION ALL SELECT s.id, r.id, s.read_model_id FROM storage_requirement s JOIN reader r ON r.read_model_id = s.read_model_id JOIN stored_in d ON d.source_id = r.id
 -- A UC requirement: the handler of what a fulfilling step invokes, and the adapter of an integration it exchanges with.
 UNION ALL SELECT f.target_id, h.id, i.target_id FROM fulfills f JOIN invokes i ON i.source_id = f.source_id JOIN command_handler h ON h.command_id = i.target_id
 UNION ALL SELECT f.target_id, h.id, i.target_id FROM fulfills f JOIN invokes i ON i.source_id = f.source_id JOIN query_handler h ON h.query_id = i.target_id
@@ -393,9 +410,10 @@ SELECT *, state IN ('automated', 'manual') AND valid AS counts FROM proofs;
 -- Each obligation's chain, link by link, each from the record nearer the obligation to the one it leads to (part: the
 -- column of its target). Design: a UC requirement's fulfilling steps, their flows, the views they happen in, what they
 -- invoke and the integrations they exchange with; a constraint's value object, an invariant's aggregate, a policy's
--- command; the commands and queries that call a domain service; the commands that check a specification and the
--- queries that select by it. Build: what implements it (obligation_impl). Tests: its tests (obligation_proof),
--- counting or not.
+-- command, a storage requirement's aggregate or read model; the commands and queries that call a domain service; the
+-- commands that check a specification and the queries that select by it. Build: what implements it (obligation_impl),
+-- and for a storage requirement the data store its repository or reader is stored in. Tests: its tests
+-- (obligation_proof), counting or not.
 CREATE OR REPLACE TABLE trace_link AS
 SELECT DISTINCT * FROM (
   SELECT f.target_id AS obligation_id, f.target_id AS source_id, s.flow_id AS target_id, 'design' AS part FROM fulfills f JOIN flow_step s ON s.id = f.source_id
@@ -405,11 +423,13 @@ SELECT DISTINCT * FROM (
   UNION ALL SELECT f.target_id, f.source_id, x.target_id, 'design' FROM fulfills f JOIN exchanges_with x ON x.source_id = f.source_id
   UNION ALL SELECT id, id, value_object_id, 'design' FROM "constraint"
   UNION ALL SELECT id, id, aggregate_id, 'design' FROM invariant
+  UNION ALL SELECT id, id, coalesce(aggregate_id, read_model_id), 'design' FROM storage_requirement
   UNION ALL SELECT id, id, command_id, 'design' FROM policy
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM calls
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM checks
   UNION ALL SELECT target_id, target_id, source_id, 'design' FROM selects_by
   UNION ALL SELECT obligation_id, coalesce(via_id, obligation_id), impl_id, 'build' FROM obligation_impl
+  UNION ALL SELECT i.obligation_id, i.impl_id, d.target_id, 'build' FROM obligation_impl i JOIN storage_requirement s ON s.id = i.obligation_id JOIN stored_in d ON d.source_id = i.impl_id
   UNION ALL SELECT obligation_id, obligation_id, test_id, 'tests' FROM obligation_proof
 );
 

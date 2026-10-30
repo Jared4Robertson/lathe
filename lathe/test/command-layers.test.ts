@@ -174,6 +174,8 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
     'lathe/src/authoring/endpoint',
     'lathe/src/authoring/integration',
     'lathe/src/authoring/ui-component',
+    'lathe/src/authoring/storage-requirement',
+    'lathe/src/authoring/data-store',
     'lathe/src/checking/check',
     'lathe/src/checking/product-setting',
     'lathe/src/traceability/pattern-following',
