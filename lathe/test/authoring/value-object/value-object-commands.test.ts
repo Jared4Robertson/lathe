@@ -71,6 +71,21 @@ describe('LA-AUT-UC24-R50-T01 each Value object command (LA-AUT-A9) changes one 
     expect((await runCommand(store, CHANGE_CONSTRAINT_TEST, { id: 'TL-VO01-C01-T', refuses: 'a@b@c', starts_from: [] })).tables).toEqual(['constraint_test', 'starts_from']);
   });
 
+  it('changes the fields of a value object stored with gaps in their positions, leaving none behind', async () => {
+    // Parts stored at positions 1, 3 and 6: the change numbers its list from 1, and every stored part is replaced.
+    const field = (position: number, name: string) => ({ value_object_id: 'TL-VO02', position, name, meaning: `${name}.`, type: 'yes/no', required: true });
+    const store = await storeOn(domainModelBase({
+      value_object: [{ id: 'TL-VO02', title: 'Settings', description: 'How a member likes to see things.' }],
+      value_object_field: [field(1, 'Layout'), field(3, 'Minimap'), field(6, 'Width')],
+    }));
+    const fields = ['Layout', 'Minimap', 'All links', 'Width'].map((name) => ({ name, meaning: `${name}.`, type: 'yes/no', required: true }));
+    await runCommand(store, CHANGE_VALUE_OBJECT, { id: 'TL-VO02', fields });
+    expect(store.rows('value_object_field').map((f) => `${f.position} ${f.name}`)).toEqual(['1 Layout', '2 Minimap', '3 All links', '4 Width']);
+    // Removing it takes every stored part with it.
+    await runCommand(store, REMOVE_VALUE_OBJECT, { id: 'TL-VO02' });
+    expect(store.rows('value_object_field')).toEqual([]);
+  });
+
   it("refuses a second value type or constraint test, an input that is not the command's, and a record that is not there, changing no file", async () => {
     const store = await valueObjectDataSet();
     const before = fileOf(store, 'value_object_field');
