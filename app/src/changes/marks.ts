@@ -7,8 +7,8 @@ import { anchorOf, rollUps, type Change, type ChangeCounts } from './rollup';
 // The live marks every stage draws (LA-EXP-UC15-R02, LA-V96-R29): a record added as the data reloaded gets a soft glow that
 // fades and a lasting "new" dot; one changed, a brief pulse in its own color and then a lasting "changed" dot; one
 // removed, a ghost of its outline where it was, fading over a few seconds. Under reduced motion only the dots show:
-// no glow, pulse or ghost. The canvas stages (the Graph and the Trace) draw them through paint.ts; the ERD sets them
-// on its boxes as classes the stylesheet draws.
+// no glow, pulse or ghost. The canvas stages draw them: the Graph and the Trace through graph/paint.ts, the ERD through
+// erd/paint.ts.
 //
 // Highlight changes (LA-EXP-UC15-R03) is the same marks made plain and lasting: everything unchanged from the baseline
 // fades to HIGHLIGHT_DIM with the stages' one fade, each changed record carries a pill (New, Changed or Removed), a thick

@@ -7,7 +7,7 @@ import { indexMetaModel } from '../src/platform/meta-model/reads';
 import type { MetaModel } from '../src/platform/meta-model/reads';
 
 // The record index worked out by what changed (record-index.ts recordsOf, the Folder tree look-up) gives what building
-// it afresh gives, and keeps what did not change as it was (LA-PLT-UC03-R06).
+// it afresh gives, and keeps what did not change as it was (LA-STD-CODE-R09).
 
 const COLUMNS = ['id', 'kind', 'title', 'parent', 'product', 'domain', 'group', 'testState', 'names', 'level', 'file', 'line', 'digest'] as const;
 
@@ -45,7 +45,7 @@ const same = (a: Records, b: Records) => {
 };
 
 describe('the record index by what changed', () => {
-  it('LA-PLT-UC03-R06-T01 gives what a fresh build gives, over random change sets', () => {
+  it('LA-STD-CODE-R09-T01 gives what a fresh build gives, over random change sets', () => {
     for (let seed = 1; seed <= 40; seed++) {
       const next = random(seed);
       let { records, links } = space();
@@ -73,7 +73,7 @@ describe('the record index by what changed', () => {
     }
   });
 
-  it('LA-PLT-UC03-R06-T02 returns the very records when nothing changed, and reuses every record that did not', () => {
+  it('LA-STD-CODE-R09-T02 returns the very records when nothing changed, and reuses every record that did not', () => {
     const { records, links } = space();
     const first = recordsOf(answerOf(records, links), null);
     expect(recordsOf(answerOf(records.map((r) => ({ ...r })), links.map((l) => ({ ...l }))), first)).toBe(first);
@@ -86,7 +86,7 @@ describe('the record index by what changed', () => {
     expect(first.byId.get('P-D1-UC2')!.title).toBe('P-D1-UC2');
   });
 
-  it('LA-PLT-UC03-R06-T03 keeps the folder tree looked up for an index that differs only in its problems', () => {
+  it('LA-STD-CODE-R09-T03 keeps the folder tree looked up for an index that differs only in its problems', () => {
     const { records, links } = space();
     const meta = indexMetaModel({ stages: [], kinds: [], relations: [] } as unknown as MetaModel);
     const tree = { product: 'P', shared: { owner: 'P', stages: [], loose: [] }, domains: [] } as unknown as FolderTree;

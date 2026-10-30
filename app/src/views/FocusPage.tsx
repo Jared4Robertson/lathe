@@ -436,7 +436,7 @@ function useFollow(focus: string, onNavigate: (id: string) => void, stageEl: Ref
     const el = stageEl.current;
     if (!el || !follow) return;
     const moved = () => setFollow(false, 'Follow is off: you moved the camera.');
-    const pressed = (e: PointerEvent) => { if ((e.target as Element | null)?.closest?.('canvas, .react-flow__pane, .react-flow__node, .graph-controls, .react-flow__controls')) moved(); };
+    const pressed = (e: PointerEvent) => { if ((e.target as Element | null)?.closest?.('canvas, .graph-controls')) moved(); };
     el.addEventListener('wheel', moved, { passive: true });
     el.addEventListener('pointerdown', pressed);
     return () => { el.removeEventListener('wheel', moved); el.removeEventListener('pointerdown', pressed); };

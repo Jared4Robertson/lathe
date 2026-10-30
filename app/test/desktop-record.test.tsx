@@ -101,8 +101,7 @@ describe('desktop record actions', () => {
   it('LA-V92-R74-T01 finds the record under a graph node, a link to a record, product or domain page, or the page title', () => {
     const known = (id: string) => ['DM', 'DM-SHOP', 'DM-SHOP-UC01'].includes(id);
     document.body.innerHTML = `
-      <div class="react-flow__node" data-id="DM-SHOP-UC01"><span id="in-node">x</span></div>
-      <div class="react-flow__node" data-id="DM-SHOP/use_case"><span id="in-group">x</span></div>
+      <div class="erd-flow"><div class="erd-access"><div class="erd-node" data-id="DM-SHOP-UC01"><span id="in-node">x</span></div><div class="erd-node" data-id="DM-SHOP/use_case"><span id="in-group">x</span></div></div></div>
       <div class="graph-flow" id="graph"><canvas id="graph-canvas"></canvas><div class="graph-box" data-id="DM-SHOP"><span id="in-box">x</span></div></div>
       <a href="/DM-SHOP?stage=graph"><span id="in-domain">x</span></a>
       <a href="/NOPE"><span id="unknown">x</span></a>

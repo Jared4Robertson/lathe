@@ -101,7 +101,7 @@ test.describe('the stage and its panels', () => {
     const keys = [NAV, PAGE_BAR, STRIP, CARD, STAGE];
     const erd = await step(page, 'stage', 'switch to ERD (Ctrl+2)', { keys, allow: [STAGE, '.header-strip-counts'] }, async () => {
       await page.keyboard.press('Control+2');
-      await page.locator(`${STAGE} .erd-flow .react-flow__node`).first().waitFor();
+      await page.locator(`${STAGE} .erd-flow[data-ready] .erd-node`).first().waitFor({ state: 'attached' });
     });
     expectStable(erd);
     expect(new URL(page.url()).search).toBe('?stage=erd');

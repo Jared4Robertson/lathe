@@ -2,15 +2,15 @@
 // repository (data-files.ts) and nothing else, then the commit. The commit holds the new state to every key,
 // constraint and integrity query of the schema and every aggregate's rules over all data (the store builds it in a
 // fresh database, or holds only what the changed tables can break), and only when it passes makes it the current
-// state and rewrites the data files of the tables that changed.
+// state and rewrites the data files of the tables that changed, all or nothing (journal.ts).
 //
 // Only the store creates a transaction (Store.transact), one at a time; only data-files.ts changes its draft.
 import { existsSync, readFileSync } from 'node:fs';
-import { mkdir, rename, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import type { RowChange } from '../../server/contract.ts';
 import { describeKey, normalizeRow, rowKey, sortRows, tableText, type Row } from './rows.ts';
 import type { SchemaDescription, TableDescription } from './schema.ts';
+import { writeAll, type FileChange } from './journal.ts';
 import { StoreError, problemAt, type Origin, type StoreProblem } from './problems.ts';
 import type { ReadView } from './rules.ts';
 
@@ -113,8 +113,9 @@ export function editableTable(tx: Transaction, name: string): Map<string, Row> {
 }
 
 /**
- * Commits the transaction: holds the new state to every key, check and rule, then makes it current and rewrites the
- * files of the tables that changed. Nothing changes when anything is refused.
+ * Commits the transaction: holds the new state to every key, check and rule, then rewrites the files of the tables
+ * that changed, all or nothing, and makes it current. Nothing changes when anything is refused, or when the files
+ * cannot be written (a write a crash leaves is settled by the next load or reload).
  */
 export async function commit(tx: Transaction): Promise<Committed> {
   const draft = drafts.get(tx)!;
@@ -141,9 +142,9 @@ export async function commit(tx: Transaction): Promise<Committed> {
   }
   const before = host.tables;
   const dataDb = await host.build(schemaDb, schema, tables, origins, changed);
-  await host.adopt({ tables, schema, schemaDb, dataDb });
   const names = [...changed].sort();
   const files = await writeFiles(host.dataDir, schema, tables, host.builtIn, origins, names);
+  await host.adopt({ tables, schema, schemaDb, dataDb });
   return { tables: names, files, changes: rowChanges(schema, before, tables, names) };
 }
 
@@ -165,30 +166,25 @@ function rowChanges(schema: SchemaDescription, before: Tables, after: Tables, na
   return changes;
 }
 
-// Rewrites the files of the changed tables, each through a temporary file so a reader never sees half of one. An
-// empty table has no file, and Lathe's own rows are never written into the product's folder.
+// Rewrites the files of the changed tables in one all-or-nothing write (journal.ts); a file whose text is unchanged is
+// left as it is. An empty table has no file, and Lathe's own rows are never written into the product's folder.
 async function writeFiles(dataDir: string, schema: SchemaDescription, tables: Tables, builtIn: WeakSet<Row>, origins: WeakMap<Row, Origin>, changed: string[]): Promise<string[]> {
-  await mkdir(dataDir, { recursive: true });
-  const written: string[] = [];
+  const changes: FileChange[] = [];
   for (const name of changed) {
-    const file = path.join(dataDir, `${name}.jsonl`);
+    const file = `${name}.jsonl`;
+    const full = path.join(dataDir, file);
     const rows = [...(tables.get(name)?.values() ?? [])].filter((row) => !builtIn.has(row));
     const table: TableDescription | undefined = schema.tables[name];
     if (!rows.length || !table) {
-      if (existsSync(file)) {
-        await rm(file);
-        written.push(`${name}.jsonl`);
-      }
+      if (existsSync(full)) changes.push({ file, text: null });
       continue;
     }
     const text = tableText(table, rows);
-    const display = path.join(path.basename(dataDir), `${name}.jsonl`);
+    const display = path.join(path.basename(dataDir), file);
     sortRows(table, rows).forEach((row, index) => origins.set(row, { file: display, line: index + 1 }));
-    if (existsSync(file) && readFileSync(file, 'utf8') === text) continue;
-    const temporary = `${file}.${process.pid}.tmp`;
-    await writeFile(temporary, text);
-    await rename(temporary, file);
-    written.push(`${name}.jsonl`);
+    if (existsSync(full) && readFileSync(full, 'utf8') === text) continue;
+    changes.push({ file, text });
   }
-  return written;
+  await writeAll(dataDir, changes);
+  return changes.map((c) => c.file);
 }
