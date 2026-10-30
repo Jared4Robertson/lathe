@@ -993,8 +993,10 @@ a.row-link.row-link:focus-visible { outline: none; }
 .setting select, .setting input[type="text"] { font: inherit; font-size: 0.88rem; padding: 5px 8px; border: 1px solid var(--rule); border-radius: 6px; background: var(--sheet); color: var(--ink); }
 .setting input[type="range"] { accent-color: var(--steel); }
 /* A setting that is on or off (Appearance's Scroll to zoom): the checkbox as a switch, its name beside it. */
-.setting-switch { display: inline-flex; gap: 8px; align-items: center; font-size: 0.88rem; cursor: pointer; }
+.setting-switch { display: inline-flex; gap: 8px; align-items: center; justify-self: start; padding: 2px 6px 2px 2px; border-radius: 6px; font-size: 0.88rem; cursor: pointer; }
+.setting-switch:hover { background: var(--hover-bg); }
 .setting-switch input { width: 16px; height: 16px; margin: 0; accent-color: var(--steel); cursor: pointer; }
+.setting-switch input:hover { accent-color: var(--ink); }
 .field-problem { margin: 0; font-size: 0.78rem; color: var(--error); }
 .spec-page select:focus-visible, .color-text:focus-visible, .color-swatch:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
 /* ---------- End of themes ---------- */
@@ -1259,7 +1261,7 @@ a.row-link.row-link:focus-visible { outline: none; }
   .resize-handle { z-index: 5; margin-inline: calc((var(--panel-gap) - var(--touch-target)) / 2); }
   :is(.icon-button, .button, .rail-item, .menu a, .nav-row, .nav-chevron, .nav-folder-head, .nav-section-head,
     .graph-depth button, .graph-filters > summary, .trace-filter, .quick-find-button,
-    .palette-list li, .tab, .long-list-tools input, .quick-open-box input, .dialog-search, .segment, .file-button, .crumb-more-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
+    .palette-list li, .tab, .long-list-tools input, .quick-open-box input, .dialog-search, .segment, .setting-switch, .file-button, .crumb-more-button) { min-width: var(--touch-target); min-height: var(--touch-target); }
   .menu .rail-item { width: var(--touch-target); height: var(--touch-target); }
   .record-list.tree .tree-row, .record-list > li, .problems > li { min-height: var(--touch-target); box-sizing: border-box; }
   :is(.tree-toggle, .tab-close, .color-swatch) { position: relative; }
