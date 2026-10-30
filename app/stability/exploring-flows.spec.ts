@@ -4,7 +4,7 @@ import path from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { openPage } from './measure';
 import { keepData } from './scenarios';
-import { clickBox, expectKeyWhole, focusDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
+import { clickBox, clickErdBox, erdDrawn, erdSceneOf, expectKeyWhole, focusDrawn, sceneOf, traceDrawn, traceSceneOf } from './scene';
 
 // Exploring's flow tests (LA-EXP-UC01-FL01 to UC13-FL01): one per flow, each walking its main path in
 // Chromium over the suite's copy of Lathe's data, as the Reader does. They prove the flow end to
@@ -161,7 +161,7 @@ test.describe('Exploring flows', () => {
     // An address names its stage.
     await page.goto('/LA-EXP-A1?stage=erd');
     await expect(page.locator('.focus-stage')).toHaveAttribute('data-stage', 'erd');
-    await page.locator('.focus-stage .erd-flow .react-flow__node').first().waitFor();
+    await erdDrawn(page);
     await expect(page.locator(`${WIKI} .wiki-panel-title h2`)).toHaveText('Page');
     // Back to the graph; resize the wiki card from the keyboard, collapse it and bring it back.
     await page.keyboard.press('Control+1');
@@ -395,17 +395,20 @@ test.describe('Exploring flows', () => {
     await openPage(page, '/LA-EXP');
     await page.getByRole('group', { name: 'Stage' }).getByRole('button', { name: 'ERD' }).click();
     const model = page.getByRole('region', { name: /^ERD: / });
-    await expect(model.getByRole('group', { name: /^Aggregate / }).first()).toBeVisible();
+    await erdDrawn(page);
+    await expect(model.getByRole('group', { name: /^Aggregate / }).first()).toBeAttached();
     expect(await model.getByRole('group', { name: /^Aggregate / }).count()).toBeGreaterThanOrEqual(2);
-    await expect(model.getByRole('img', { name: /^Edge from / }).first()).toBeAttached();
+    await expect(model.getByRole('list', { name: 'Lines' }).getByRole('listitem').first()).toBeAttached();
     // An aggregate's box, by its head: its entities and fields.
-    await model.getByRole('group', { name: 'Aggregate Tab group' }).locator('.erd-box-head').first().click();
+    await clickErdBox(page, 'LA-EXP-A5');
     await page.waitForURL((u) => u.pathname === '/LA-EXP-A5');
-    await expect(model.getByRole('list', { name: /^Fields of / }).first()).toBeVisible();
+    await expect(model.getByRole('list', { name: /^Fields of / }).first()).toBeAttached();
     // On an entity, the same map picks it out, framed; what lies outside its aggregate faded and hidden from the keyboard.
-    await page.locator('.focus-stage .erd-flow .react-flow__node:not([aria-hidden]):not(:has(.is-focus))').filter({ has: page.getByRole('list', { name: /^Fields of / }) }).first().click();
+    await erdDrawn(page);
+    const entity = (await erdSceneOf(page)).boxes.find((b) => b.kind === 'entity' && !b.focus && b.strength === 1)!;
+    await clickErdBox(page, entity.id);
     await page.waitForURL((u) => /^\/LA-EXP-EN\d+$/.test(u.pathname));
-    await expect(page.locator('.focus-stage .react-flow__node .is-focus').first()).toBeVisible();
+    await expect.poll(async () => (await erdSceneOf(page)).boxes.some((b) => b.focus && b.pick)).toBe(true);
     // The key bar along the bottom, with the picked-out box and the faded ones.
     const key = page.locator('.focus-stage').getByRole('region', { name: 'Key' });
     await expect(key).toBeVisible();

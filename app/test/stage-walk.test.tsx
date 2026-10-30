@@ -50,7 +50,7 @@ describe('the stage walk', () => {
     // The ERD stage walks by the picture: from the use case, which picks out no box, its domain's region; Right to the
     // region beside it, Left back. Back in history to the use case for the next stage.
     fireEvent.click(stageButton('ERD'));
-    await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="erd"] .react-flow__node')).not.toBeNull());
+    await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="erd"] .erd-node')).not.toBeNull());
     press(document.body, 'ArrowLeft');
     await new Promise((r) => setTimeout(r, 50));
     expect(at()).toBe('/P-D-UC01');
@@ -123,7 +123,7 @@ describe('the walking letters', () => {
 
     // The ERD by the picture, as Right and Left: D to the region beside the use case's domain.
     fireEvent.click(stageButton('ERD'));
-    await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="erd"] .react-flow__node')).not.toBeNull());
+    await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="erd"] .erd-node')).not.toBeNull());
     letter(document.body, 'd');
     await waitFor(() => expect(at()).toBe('/P-E'));
     window.history.back();
@@ -165,7 +165,7 @@ describe('out and in', () => {
     // The ERD: from the use case, which picks out no box, its domain's region; In to its first aggregate area, Out back,
     // and Out again to the product.
     fireEvent.click(stageButton('ERD'));
-    await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="erd"] .react-flow__node')).not.toBeNull());
+    await waitFor(() => expect(document.querySelector('.focus-stage[data-stage="erd"] .erd-node')).not.toBeNull());
     shift('ArrowDown');
     await waitFor(() => expect(announcer()).toHaveTextContent(/^Aggregate /));
     expect(at()).not.toBe('/P-D-UC01');

@@ -1,7 +1,7 @@
 import { expect, test, type Page } from '@playwright/test';
 import { expectStable, openPage, step } from './measure';
 import { DOMAIN, GRAPH_CANVAS, GRAPH_TOOLS, ERD_CANVAS, RECORD } from './scenarios';
-import { boxOf, cameraOf, clickBox, clippedLabels, focusDrawn, GRAPH, graphDrawn, placesOf, pointOnBox, reachableBoxes, sceneOf } from './scene';
+import { boxOf, cameraOf, clickBox, clickErdBox, clippedLabels, erdDrawn, erdSceneOf, focusDrawn, GRAPH, graphDrawn, placesOf, pointOnBox, reachableBoxes, sceneOf } from './scene';
 import type { SceneHost } from '../src/graph/GraphPage';
 
 // LA-V61-R32-T01: re-centering the graph at depth 1, 2 and 3, and moving around the ERD. The camera
@@ -335,9 +335,8 @@ test.describe('graph', () => {
 
     // The ERD follows the same rule, the setting kept.
     await openPage(page, `${DOMAIN}?stage=erd`);
-    await page.locator('.erd-flow .react-flow__node').first().waitFor();
-    await page.waitForTimeout(500);
-    const erdZoom = () => page.locator('.erd-flow .react-flow__viewport').evaluate((el) => new DOMMatrixReadOnly(getComputedStyle(el).transform).a);
+    await erdDrawn(page, 500);
+    const erdZoom = async () => (await erdSceneOf(page)).camera.zoom;
     const pane = (await page.locator(ERD_CANVAS).boundingBox())!;
     await page.mouse.move(pane.x + pane.width / 2, pane.y + pane.height / 2);
     const zoomBefore = await erdZoom();
@@ -347,21 +346,21 @@ test.describe('graph', () => {
 
   test('LA-V61-R32-T01 move around the ERD', async ({ page }) => {
     await openPage(page, `${DOMAIN}?stage=erd`);
-    await page.locator('.erd-flow .react-flow__node').first().waitFor();
-    await page.waitForTimeout(500);
+    await erdDrawn(page, 500);
     const keys = ['.page-bar-actions', '.header-strip', '.focus-stage .stage-tools', ERD_CANVAS];
     // On the product's one map, the boxes in the domain's scope: an aggregate's boundary holds its entities, so its head is where the boundary itself takes a click.
-    const box = page.locator('.erd-flow .react-flow__node:not([aria-hidden]) .erd-aggregate .erd-box-head').first();
+    const aggregate = (await erdSceneOf(page)).boxes.find((b) => b.kind === 'aggregate' && b.strength === 1)!;
     const r = await step(page, 'graph', 'ERD: domain to aggregate', { keys, allow: ['.wiki-panel-scroll'] }, async () => {
-      await box.click();
+      await clickErdBox(page, aggregate.id);
       await page.waitForURL(/\/LA-[A-Z0-9]+-[A-Z0-9]+/);
-      await page.locator('.erd-flow .react-flow__node').first().waitFor();
+      await erdDrawn(page, 0);
     });
     expectStable(r);
-    const entity = page.locator('.erd-flow .react-flow__node:not([aria-hidden]):not(:has(.is-focus)):has(.erd-entity)').first();
+    await page.waitForTimeout(500);
+    const entity = (await erdSceneOf(page)).boxes.find((b) => b.kind === 'entity' && !b.focus && b.strength === 1)!;
     const before = new URL(page.url()).pathname;
     const e = await step(page, 'graph', 'ERD: aggregate to entity', { keys, allow: ['.wiki-panel-scroll'] }, async () => {
-      await entity.click();
+      await clickErdBox(page, entity.id);
       await page.waitForURL((u) => u.pathname !== before);
     });
     expectStable(e);

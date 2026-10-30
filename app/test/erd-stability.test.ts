@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { ErdBox, ErdLine, ErdMap, Rect } from '../src/erd/erd';
 import { keepPlaces, layoutErd, readyErdLayout, erdLayout, tidyErdLayout } from '../src/erd/layout';
-import { rectsAt } from '../src/erd/glide';
+import { morphFrom } from '../src/graph/morph';
 import { modelWorkspace } from './fixtures/model';
 import { erdOf } from './erd-of';
 
@@ -127,12 +127,11 @@ describe('LA-PAT-APP-UX-R22-T02 a change on the ERD moves only its aggregate\'s 
     expect(keepPlaces([{ id: 'z', width: 10, height: 10 }], () => undefined, 20)).toBeNull();
   });
 
-  it('a line glides with its boxes: drawn between where they are on the shared motion, landing on the new places', () => {
-    const from = new Map([['a', { x: 0, y: 0, width: 100, height: 50 }]]);
-    const to = new Map([['a', { x: 100, y: 40, width: 120, height: 50 }], ['b', { x: 0, y: 0, width: 10, height: 10 }]]);
-    const glide = { from, to, start: 0, duration: 100, ease: (t: number) => t };
-    expect(rectsAt(glide, 50).get('a')).toEqual({ x: 50, y: 20, width: 110, height: 50 });
-    expect(rectsAt(glide, 50).get('b')).toEqual(to.get('b'));
-    expect(rectsAt(glide, 100)).toBe(to);
+  it('a box and its lines glide on the shared morph (graph/morph.ts): from where it was drawn to its new place, a new box at its place', () => {
+    const at = (boxes: [string, number, number, number, number][]) => ({ view: 'erd', roots: ['P'], nodes: new Map(boxes.map(([id, x, y, w, h]) => [id, { x, y, w, h }])) });
+    const before = morphFrom(null, at([['a', 0, 0, 100, 50]]), 0, 100, (t) => t);
+    const after = morphFrom(before, at([['a', 100, 40, 120, 50], ['b', 0, 0, 10, 10]]), 0, 100, (t) => t);
+    expect(after.from.get('a')).toEqual({ x: 0, y: 0, w: 100, h: 50 });
+    expect(after.from.has('b')).toBe(false);
   });
 });

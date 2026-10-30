@@ -13,16 +13,15 @@ import './desktopRecord.css';
 // In a browser none of this is drawn or listened for, so the app is unchanged there.
 
 /**
- * The record a right-click is on: a graph box (on the graph's canvas, the box under the point, found
- * by its hit test; in its keyboard layer, the focused box), an ERD view node, a link to a record's
- * page, or the page's own title.
+ * The record a right-click is on: a box on a stage's canvas (the Graph's or the ERD's: the box under the point, found by
+ * its hit test; in its keyboard layer, the focused box), a link to a record's page, or the page's own title.
  */
 export function recordIdAt(target: Element | null, pathname: string, known: (id: string) => boolean, at?: { x: number; y: number }): string | null {
   if (!target) return null;
-  const canvas = target.closest<HTMLElement & { graphHit?: (x: number, y: number) => string | null }>('.graph-flow');
+  const canvas = target.closest<HTMLElement & { graphHit?: (x: number, y: number) => string | null }>('.graph-flow, .erd-flow');
   const hit = at && target.tagName === 'CANVAS' && canvas?.graphHit ? canvas.graphHit(at.x, at.y) : null;
   if (hit && known(hit)) return hit;
-  const node = target.closest('.react-flow__node[data-id], .graph-box[data-id]')?.getAttribute('data-id');
+  const node = target.closest('.graph-box[data-id], .erd-node[data-id]')?.getAttribute('data-id');
   if (node && known(node)) return node;
   const href = target.closest('a[href]')?.getAttribute('href');
   if (href?.startsWith('/')) {
