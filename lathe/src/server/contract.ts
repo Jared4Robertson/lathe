@@ -1,58 +1,15 @@
 // What the app's server answers, shared by the server (api.ts, history.ts) and the web app, which imports these
-// types only. The server reads each product's data through its own store and serves the typed rows as they are.
+// types only. The server reads each product's data through its own store; every read is a query's own answer.
 //
-//   GET  /api/spec               SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, the recorded exceptions, coverage and each obligation's chain
-//   POST /api/write              { commands: Command[] } -> WriteAnswer: one transaction through the command layer of the product the commands name
 //   POST /api/<aggregate>/<command>   the command's input -> WriteAnswer: one aggregate command, such as /api/use-case/add-flow-step
-//   GET  /api/<aggregate>/<query>?<field>=<value>   the query's answer, such as a UseCase for /api/use-case/get-use-case?id=<ID>; ReadRefusal otherwise
+//   GET  /api/<slice>/<query>?<field>=<value>   the query's answer, such as a UseCase for /api/use-case/get-use-case?id=<ID>; ReadRefusal otherwise
 //   GET  /api/history?id=<ID>    HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
-//   GET  /api/baseline?product=<ID>&since=<commit|branch|hash>   BaselineAnswer: the product's rows at a commit, for the record diff (../changes.ts)
-import type { Command } from '../platform/data/generic-write.ts';
 import type { StoreProblem } from '../platform/data/problems.ts';
 import type { Row, Value } from '../platform/data/rows.ts';
-import type { SchemaDescription } from '../platform/data/schema.ts';
-import type { Coverage, Problem, RecordedException, TraceChain } from '../types.ts';
 
 export type { Row, StoreProblem, Value };
 
-/**
- * GET /api/spec: every product the workspace shows (its own, then each its lathe.config.json lists under products),
- * each product's rows from its own folder, with one schema and the checks of them all.
- */
-export interface SpecData {
-  /** The schema of every product's data as one: Lathe's tables, and each product's own kinds and relations. */
-  schema: SchemaDescription;
-  /** Each product folder's rows: the workspace's own first, then the listed ones in their order. */
-  sources: SpecSource[];
-  /**
-   * Where each record with no owner sits, from the store's record_scope (Store.placements): its product, and its
-   * domain, the one that uses it (or a specification's, from its ID), or null when the product shares it. What sits
-   * under it follows it.
-   */
-  placements: Record<string, { product: string | null; domain: string | null }>;
-  /** What the checks found, each product checked in its own folder. */
-  problems: Problem[];
-  /** Every recorded exception (a command_change row): listed, never a problem. */
-  exceptions: RecordedException[];
-  coverage: Coverage[];
-  /** Every obligation's traceability chain, each product's worked out in its own folder. */
-  chains: TraceChain[];
-}
-
-/** One product folder's data. */
-export interface SpecSource {
-  /** Its data folder, relative to the workspace root and written with /, such as data or examples/tool-library/data. */
-  dataDir: string;
-  /** The rows of every stored table that has any, sorted by key, as the data files hold them. */
-  tables: Record<string, Row[]>;
-}
-
-/** POST /api/write takes this body. */
-export interface WriteRequest {
-  commands: Command[];
-}
-
-/** One row a write added, changed or removed: its table, its key as the store describes it, and the row before and after. */
+/** One row a command added, changed or removed: its table, its key as the store describes it, and the row before and after. */
 export interface RowChange {
   table: string;
   key: string;
@@ -60,7 +17,7 @@ export interface RowChange {
   after: Row | null;
 }
 
-/** What POST /api/write and each POST /api/<aggregate>/<command> answer: the changed rows (200), or the refusal with every reason (422). */
+/** What each POST /api/<aggregate>/<command> answers: the changed rows (200), or the refusal with every reason (422). */
 export type WriteAnswer =
   | { ok: true; tables: string[]; files: string[]; changes: RowChange[] }
   | { ok: false; error: string; problems: StoreProblem[] };
@@ -123,10 +80,10 @@ export type HistoryAnswer =
       more: boolean;
     };
 
-/** Which baseline GET /api/baseline is asked for: the last commit, the branch's start, or a commit the app noted earlier. */
+/** Which baseline the Record changes read (LA-EXP-QRY13) is given: the last commit, the branch's start, or a commit the app noted earlier. */
 export type BaselineSince = 'commit' | 'branch' | { commit: string };
 
-/** GET /api/baseline. */
+/** The product's rows at a baseline, read from git, which the server gives the Record changes read (`ReadView.baseline`). */
 export type BaselineAnswer =
   | {
       state: 'ok';

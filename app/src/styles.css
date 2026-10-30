@@ -247,7 +247,7 @@ code { font: 0.86em var(--mono); }
 .record-list > li.group { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
 .record-list.nested { margin-left: 18px; }
 .record-list.nested > li { background: var(--paper); }
-.record-list.gaps > li, .record-list.exceptions > li, .problems > li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.record-list.gaps > li, .problems > li { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
 .record-row { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; align-items: baseline; }
 .row-tags { display: flex; flex-wrap: wrap; gap: 6px; align-items: baseline; }
 .meta { color: var(--muted); font-size: 0.8rem; }
@@ -266,7 +266,7 @@ code { font: 0.86em var(--mono); }
 .severity { font: 500 0.7rem var(--mono); text-transform: uppercase; letter-spacing: 0.05em; }
 .problem.error .severity { color: var(--error); }
 .problem.warning .severity { color: var(--warn); }
-.problem-text, .exception-text { flex: 1; min-width: 200px; }
+.problem-text { flex: 1; min-width: 200px; }
 .check-name { color: var(--muted); font-size: 0.75rem; }
 
 .markdown { max-width: 72ch; }
@@ -294,8 +294,6 @@ code { font: 0.86em var(--mono); }
 .fields dt { color: var(--muted); }
 .fields dt::first-letter { text-transform: uppercase; }
 .fields dd { margin: 0; overflow-wrap: anywhere; }
-/* A recorded exception names an aggregate by its ID and title, too long for the label column: the reason goes under it. */
-.recorded-exceptions .fields > div { grid-template-columns: minmax(0, 1fr); gap: 2px; }
 .link-groups dt { font: 500 0.72rem var(--mono); color: var(--muted); }
 .link-groups dd { margin: 2px 0 0 8px; font-size: 0.88rem; }
 ul.plain { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; }
@@ -468,11 +466,6 @@ ul.plain li { display: block; padding: 0; border: 0; font-size: 0.88rem; }
 .record-row.not-automated > .record-link { font-style: italic; }
 .record-row.not-automated > .record-link > * { opacity: 0.65; }
 .not-automated-note { margin: 0; padding: 8px 12px; border: 1px dashed var(--muted); border-radius: 8px; color: var(--muted); font-size: 0.88rem; }
-/* The record content lays itself out by its own width, so it reads at half the screen beside the graph. */
-.record-content { container-type: inline-size; display: grid; grid-template-columns: minmax(0, 1fr); gap: 18px; min-width: 0; }
-@container (max-width: 760px) {
-  .record-content .spec-header { flex-wrap: wrap; }
-}
 /* Long lists: past 10 items, a search box and a box 10 rows high that scrolls (the height is measured; this is the fallback). */
 .long-list { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; min-width: 0; }
 .long-list-tools { display: flex; gap: 8px; align-items: center; }
@@ -658,7 +651,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .rule-mark.ok { color: var(--steel); border-color: var(--steel); background: var(--steel-bg); }
 .rule-mark.missing { color: var(--warn); border-color: var(--warn); }
 .rule-mark.not-automated { border-style: dashed; font-style: italic; color: var(--muted); }
-.rule-mark.na { color: var(--muted); border-style: dashed; }
 
 /* A record's Traceability section (LA-TRC-UC14). */
 .trace-gaps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin: 0 0 10px; }
@@ -679,13 +671,11 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .data-table.standard-rules, .data-table.view-requirements, .data-table.api-requirements, .data-table.pattern-settings, .data-table.pattern-use-cases, .data-table.entity-fields { width: 100%; }
 @container (min-width: 64rem) { .data-table:is(.standard-rules, .view-requirements, .api-requirements) > tbody > tr > th[scope="row"] { width: 16rem; } }
 .flow-path > h3 { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 4px; font-size: 0.9rem; }
-.rule-na-reasons { font-size: 0.8rem; color: var(--muted); }
 .data-table { border-collapse: collapse; font-size: 0.86rem; margin: 0 0 12px; }
 .data-table th, .data-table td { text-align: left; vertical-align: top; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--rule); }
 .data-table thead th { font-weight: 600; color: var(--muted); }
 .data-table tbody th { font-weight: 400; }
 .data-table tbody .group-row th { font-weight: 600; padding-top: 12px; }
-.data-table td.setting-na { color: var(--muted); font-style: italic; }
 .table-scroll { max-width: 100%; overflow-x: auto; }
 /* A table whose columns can't all fit lays each row out stacked instead, so nothing is drawn cut or squeezed to a word
    per line (LA-PAT-APP-UX-R18): the row's header on one line, each cell beneath at full width, a cell with a data-label
@@ -1139,7 +1129,7 @@ a.row-link.row-link:focus-visible { outline: none; }
 .tool-panel-scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; scrollbar-gutter: stable; }
 .tool-panel .spec-body { padding: 4px 14px 16px; }
 .tool-panel .spec-section-head h3, .tool-panel .spec-section-head h4 { font-size: 0.92rem; }
-.tool-panel :is(.problem-text, .exception-text) { min-width: 0; flex-basis: 100%; overflow-wrap: break-word; }
+.tool-panel .problem-text { min-width: 0; flex-basis: 100%; overflow-wrap: break-word; }
 .tool-panel li.problem.is-current { box-shadow: inset 3px 0 0 var(--steel); background: var(--steel-bg); }
 .tool-panel.is-sheet { position: static; height: 100%; border: 0; border-radius: 0; background: none; box-shadow: none; backdrop-filter: none; -webkit-backdrop-filter: none; }
 .tool-sheet .sheet-body { display: flex; flex-direction: column; min-height: 0; }

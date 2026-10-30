@@ -1,7 +1,7 @@
+import type { ServedData } from './read-view';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BaselineAnswer } from '../../lathe/src/server/contract';
-import type { SpecData } from '../../lathe/src/server/contract';
 import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -19,8 +19,7 @@ vi.mock('../src/events', () => ({
     if (!listeners.has(event)) listeners.set(event, new Set());
     listeners.get(event)!.add(callback);
     return () => listeners.get(event)!.delete(callback);
-  },
-}));
+  } }));
 
 const HEAD = 'a'.repeat(40);
 const BASE = 'b'.repeat(40);
@@ -35,21 +34,21 @@ function baselines(asked: string[] = []): NonNullable<Served['baseline']> {
 }
 
 /** The fixture with the command renamed and a new one beside it: what an Agent writes. */
-function agentEdits(data: SpecData = workspace()): SpecData {
+function agentEdits(data: ServedData = workspace()): ServedData {
   const next = setRow(data, 'command', 'DM-SHOP-CMD01', { title: 'Put item in basket' });
   next.sources[0].tables.command.push({ id: 'DM-SHOP-CMD09', title: 'Empty basket', entity_id: 'DM-SHOP-EN01' });
   return next;
 }
 
 /** The data without one command. */
-function withoutCommand(data: SpecData, id: string): SpecData {
+function withoutCommand(data: ServedData, id: string): ServedData {
   const commands = data.sources[0].tables.command;
   commands.splice(commands.findIndex((r) => r.id === id), 1);
   return data;
 }
 
 /** The server reports a change and serves the new data; the page reloads it. */
-async function land(data: SpecData, asked?: string[]) {
+async function land(data: ServedData, asked?: string[]) {
   serve({ data, baseline: baselines(asked) });
   await act(async () => { for (const callback of listeners.get('spec:changed') ?? []) callback(); });
 }
@@ -99,7 +98,7 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
     fireEvent.change(picker, { target: { value: 'branch' } });
     await waitFor(() => expect(asked).toContain('branch'));
     expect(settings().since).toBe('branch');
-    // Since I last looked: the moment the Reader entered the product, a commit and what differed from it then.
+    // Since I last looked: the moment the Reader entered the product, the commit it was on and each record's digest then.
     expect(settings().looked.DM).toMatchObject({ commit: HEAD });
     fireEvent.change(picker, { target: { value: 'looked' } });
     await waitFor(() => expect(asked).toContain(HEAD));
@@ -109,7 +108,8 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
     fireEvent.click(within(tools()).getByRole('button', { name: 'Changes lens' }));
     await waitFor(() => expect(settings().looked.DM.at).not.toBe(before));
     await waitFor(() => expect(count()).toHaveTextContent('0'));
-    expect(settings().looked.DM.delta.command.rows.map((r: { id: string }) => r.id).sort()).toEqual(['DM-SHOP-CMD01', 'DM-SHOP-CMD09']);
+    // The look keeps each record's digest then, the new command among them.
+    expect(Object.keys(settings().looked.DM.digests)).toEqual(expect.arrayContaining(['DM-SHOP-CMD01', 'DM-SHOP-CMD09']));
   });
 
   it('LA-EXP-UC15-R04-T01 The diff in the wiki card: each changed field old → new; an added record new since the baseline', async () => {

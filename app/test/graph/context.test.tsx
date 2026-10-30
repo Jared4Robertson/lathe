@@ -1,6 +1,7 @@
+import { recordIndexOf } from '../read-view';
+import type { ServedData } from '../read-view';
 import './setup';
-import type { SpecData } from '../../../lathe/src/server/contract';
-import { addRows, indexOf } from '../fixtures/load';
+import { addRows } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { graphSummary, keyboardOrder, type Box } from '../../src/graph/GraphPage';
@@ -8,7 +9,7 @@ import { graphLevels, graphTarget } from '../../src/graph/steps';
 import { groupLabel, groupMembers, isGraphNode, neighborhood, type Neighborhood } from '../../src/graph/model';
 import { treeChildren, treeParent } from '../../src/graph/tree';
 import { labelLines } from '../../src/graph/text';
-import { domainFolders } from '../../src/specs/folders';
+import { ownerFolders } from '../../src/exploring/folder-tree/folders';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { boxElement, boxElements, drawnBox, graphHost, isCenter, scene } from './scene';
@@ -20,7 +21,7 @@ const ids = (n: Neighborhood) => n.nodes.map((x) => x.id).sort();
 const node = (id: string) => boxElement(id);
 const STAGES = ['P-D/domain-model', 'P-D/use-cases', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan'];
 
-async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1) {
+async function showGraph(path: string, workspace: ServedData = testWorkspace(), depth = 1) {
   startAtDepth(depth);
   await openApp(`${path}?stage=graph`, { data: workspace });
   await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));
@@ -48,7 +49,7 @@ describe('the graph tree, its depth and its camera', () => {
 
   it('LA-EXP-DS04-T03 LA-V93-R23-T06 The graph\'s tree is the nav\'s: a domain\'s five stages, a folder per kind, the records that start a branch of each stage, and a product\'s own stages and domains', () => {
     const index = testIndex();
-    const { stages } = domainFolders(index, 'P-D');
+    const { stages } = ownerFolders(index, 'P-D');
     expect(treeChildren(index, 'P-D')).toEqual([...STAGES, 'P-D/question']);
     expect(groupLabel(index, 'P-D/technical-specification')).toBe(`Technical specification (${stages.find((s) => s.stage === 'technical-specification')!.count})`);
     expect(treeChildren(index, 'P-D/domain-model')).toEqual(stages.find((s) => s.stage === 'domain-model')!.folders.filter((f) => f.count > 0).map((f) => f.key));
@@ -118,7 +119,7 @@ describe('the graph tree, its depth and its camera', () => {
     ];
     expect(keyboardOrder(boxes)).toEqual(['a', 'c', 'b']);
     // The summary counts the framed picture: the domain, its parent and three levels below it.
-    const n = neighborhood(indexOf(w), 'P-D', 3);
+    const n = neighborhood(recordIndexOf(w), 'P-D', 3);
     await waitFor(() => expect(document.querySelector('.header-strip-counts')!.textContent).toBe(graphSummary(n)));
     expect(graphSummary(n)).toBe('33 records · 27 groups · 59 links');
   });
@@ -199,8 +200,7 @@ describe('the graph tree, its depth and its camera', () => {
   const NESTED_KEYS = { ArrowUp: 'out', ArrowDown: 'in', ArrowLeft: 'previous', ArrowRight: 'next' } as const;
   const ARROWS = {
     tree: { ArrowLeft: 'out', ArrowRight: 'in', ArrowUp: 'previous', ArrowDown: 'next' },
-    nested: NESTED_KEYS,
-  } as const;
+    nested: NESTED_KEYS } as const;
   const STEP_BUTTONS = { out: 'Step out to the parent', in: 'Step in to the first child', previous: 'Step to the previous sibling', next: 'Step to the next sibling' };
   const MARKS: Record<string, string> = { ArrowLeft: '←', ArrowRight: '→', ArrowUp: '↑', ArrowDown: '↓' };
   const MOVE_OF = { ArrowLeft: 'left', ArrowRight: 'right', ArrowUp: 'up', ArrowDown: 'down' } as const;

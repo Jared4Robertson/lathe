@@ -40,7 +40,7 @@ The tools of this stage, by aggregate:
 | `uc_requirement` | the use case | `<use case>-R<nn>` | Title: the rule in a few words. `statement`: the rule with MUST / MUST NOT / SHOULD / MAY. `group_name`: a heading once there are more than about 8. |
 | role (a part of the product) | the product | its `name` | `description` (required): who takes the role and what they do, in a sentence. |
 | `pattern` | the product | `<P>-PAT-<NAME>`, a name you choose | `description` (required): the shared behavior, in a paragraph. `settings`: what each follower decides, each a `name` (lower case with underscores) and its `meaning`. Its rules are `pattern_rule` records. |
-| `pattern_rule` | the pattern | `<pattern>-R<nn>` | `statement`; `setting`, a setting it depends on. |
+| `pattern_rule` | the pattern | `<pattern>-R<nn>` | `statement`: the rule, which every follower owes. A rule that holds for only some followers is their use cases' own requirement, not the pattern's. |
 | setting values (a part of following a pattern) | the follower | `setting` | The `value` the follower gives the setting. |
 
 ## Naming
@@ -126,7 +126,6 @@ pattern_add_pattern { "id": "TL-PAT-LIBRARIAN-ACTION", "title": "Librarian actio
        "description": "A librarian at the desk enters a few details, and the library saves one record and shows what it saved.",
        "settings": [ { "name": "required_input", "meaning": "What the librarian must enter for the action to go ahead." } ] }
 pattern_add_pattern_rule { "id": "TL-PAT-LIBRARIAN-ACTION-R01", "title": "Missing input is refused", "pattern_id": "TL-PAT-LIBRARIAN-ACTION",
-       "setting": "required_input",
        "statement": "When the librarian leaves out any of the required input, the library MUST refuse the action, say what is missing, and save nothing." }
 pattern_following_follow_pattern { "follower_id": "TL-LEND-UC01", "pattern_id": "TL-PAT-LIBRARIAN-ACTION",
        "setting_values": [ { "setting": "required_input", "value": "The member's name and a valid email address." } ] }

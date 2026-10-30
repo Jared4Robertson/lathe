@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { CHECK_COMMANDS } from '../../lathe/src/checking/check/commands/index';
 import type { CheckCommands } from '../src/checking/check/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
@@ -16,11 +17,10 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const card = () => screen.getByRole('region', { name: 'Wiki card' });
 
 /** The component-test workspace with a check of the product's own. */
-function ownCheck(): SpecData {
+function ownCheck(): ServedData {
   return addRows(workspace(), 'check', {
     name: 'domain-without-owner', product_id: 'DM', position: 1, severity: 'warning', summary: 'Every domain names its owner.',
-    explanation: 'Name the role that owns the domain.', query: "SELECT 'warning' AS severity, 'domain-without-owner' AS \"check\", id AS record, 'x' AS message FROM domain WHERE false", kinds: ['domain'],
-  });
+    explanation: 'Name the role that owns the domain.', query: "SELECT 'warning' AS severity, 'domain-without-owner' AS \"check\", id AS record, 'x' AS message FROM domain WHERE false", kinds: ['domain'] });
 }
 
 describe('LA-V03-R02-T01 a check is read through the Check aggregate\'s own query, never from the generic index', () => {
@@ -41,7 +41,7 @@ describe('LA-V03-R02-T01 a check is read through the Check aggregate\'s own quer
 describe('LA-V03-R03-T01 the Check editor writes only through the aggregate\'s own commands, one per change, and Lathe\'s checks are read-only', () => {
   it('Edit sends Change a check with only what changed; emptied kinds are cleared with null; no Move', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM?page=format/checks/domain-without-owner', { data: ownCheck(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM?page=format/checks/domain-without-owner', { data: ownCheck(), command: () => ({ answer: ok }) });
     const actions = await within(card()).findByRole('toolbar', { name: 'Change domain-without-owner' });
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -50,7 +50,6 @@ describe('LA-V03-R03-T01 the Check editor writes only through the aggregate\'s o
     await user.clear(within(form).getByRole('textbox', { name: /^kinds/ }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/check/change-check', input: { name: 'domain-without-owner', severity: 'error', kinds: null } }]));
-    expect(writes).toEqual([]);
   });
 
   it('Remove sends Remove a check and opens the format page', async () => {
@@ -82,8 +81,7 @@ describe('LA-V03-R03-T01 the Check editor writes only through the aggregate\'s o
     await user.click(within(form).getByRole('button', { name: 'Add check' }));
     await waitFor(() => expect(commands).toEqual([{
       route: '/api/check/add-check',
-      input: { product_id: 'DM', name: 'use-case-without-goal', position: 2, severity: 'warning', summary: 'Every use case has a goal.', explanation: 'Write its goal.', query: 'SELECT 1' },
-    }]));
+      input: { product_id: 'DM', name: 'use-case-without-goal', position: 2, severity: 'warning', summary: 'Every use case has a goal.', explanation: 'Write its goal.', query: 'SELECT 1' } }]));
     await waitFor(() => expect(window.location.search).toBe('?page=format/checks/use-case-without-goal'));
   });
 });

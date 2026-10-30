@@ -1,11 +1,15 @@
 import { useMemo } from 'react';
 import type { ColumnDescription } from '../../../lathe/src/platform/data/schema';
-import { kindOrder, partTablesOf, textOf, type SpecIndex, type Stage, type StageRule, type Workspace } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { type MetaStage } from '../platform/meta-model/reads';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
 import { pageHref } from '../views/overlays';
+import type { Reference } from '../../../lathe/src/reference';
+import type { ProductProblems } from '../../../lathe/src/checking/problems/read-model';
+import { useRead } from '../record/read';
 
 // The format reference in the app: every kind (its table and typed columns), relation, stage and
-// check of this space, read from the schema the server serves with the data and from the check
-// table's rows; and the links that open its pages, which open in the wiki card over the stage,
+// check of this space, read from the meta model and the Reference read (GET /api/reference); and the links that open its pages, which open in the wiki card over the stage,
 // the stage keeping its focus (`?page=format/kinds/use_case`, views/overlays.tsx).
 
 /** A format page: the format itself, a kind's page or a check's page. */
@@ -29,7 +33,6 @@ export function parseFormatPage(value: string | null): FormatRoute | null {
 /** The anchor of a kind page's columns, and of one column within it. */
 export const FIELDS_ANCHOR = 'fields';
 export const fieldAnchor = (field: string) => `field-${field}`;
-export const kindFieldPath = (kind: string, field?: string) => `${kindPagePath(kind)}#${field ? fieldAnchor(field) : FIELDS_ANCHOR}`;
 
 /** A kind as the reference describes it: its table's columns, where it sits, and its ID convention. */
 export interface KindReference {
@@ -80,8 +83,6 @@ export interface CheckReference {
   explanation: string;
   /** Lathe's own checks, the product's, or the engine itself (a problem whose check has no row). */
   origin: 'lathe' | 'product' | 'engine';
-  /** The query it runs, or '' for the engine's own. */
-  query: string;
   /** The kinds it concerns; empty when it concerns records of any kind. */
   kinds: string[];
 }
@@ -90,72 +91,71 @@ export interface FormatReference {
   kinds: KindReference[];
   relations: RelationReference[];
   /** The five stages, in order. */
-  stages: StageRule[];
+  stages: MetaStage[];
   /** The checks by their place, Lathe's before the product's, then the engine's own. */
   checks: CheckReference[];
 }
 
-const SEVERITIES: Record<string, Severity[]> = { error: ['error'], warning: ['warning'], error_or_warning: ['error', 'warning'] };
+const SEVERITIES: Record<Reference['checks'][number]['severity'], Severity[]> = { error: ['error'], warning: ['warning'], error_or_warning: ['error', 'warning'] };
 
-/** The reference for a workspace: its schema's kinds, relations and stages, and its check rows. */
-export function referenceOf(workspace: Workspace): FormatReference {
-  const { schema } = workspace;
-  const kinds: KindReference[] = workspace.kinds.map((k) => {
-    const described = schema.kinds[k.kind];
-    const table = schema.tables[k.kind];
+/**
+ * The format reference for a space: its kinds, relations and stages from the meta model (each kind's columns as its
+ * fields' inputs take them), and each kind's ID convention and part tables and every check from the Reference read
+ * (LA-AUT-RM01, GET /api/reference), which the schema and the check rows generate. A kind the Reference does not
+ * describe (another product folder's own kind) has no ID convention or part tables there.
+ */
+export function referenceOf(index: RecordIndex, reference: Reference, problems: readonly { check: string; severity: Severity }[]): FormatReference {
+  const described = new Map(reference.kinds.map((k) => [k.kind, k]));
+  const partsOf = (kind: string) => reference.tables
+    .filter((t) => t.role === 'part' && t.owner_column && t.columns.find((c) => c.name === t.owner_column)?.references === `${kind}.id`)
+    .map((t) => ({ table: t.name, description: t.description }));
+  const kinds: KindReference[] = index.meta.kindList.map((k) => {
+    const ref = described.get(k.kind);
     return {
       kind: k.kind,
       label: k.label,
       description: k.description,
       stage: k.stage,
       parent_kinds: k.parent_kinds,
-      child_kinds: workspace.kinds.filter((c) => c.parent_kinds.includes(k.kind)).map((c) => c.kind),
-      columns: table?.columns ?? [],
-      parts: partTablesOf(schema, k.kind).map((t) => ({ table: t, description: schema.tables[t].description ?? '' })),
+      child_kinds: index.meta.kindList.filter((c) => c.parent_kinds.includes(k.kind)).map((c) => c.kind),
+      columns: index.meta.columns[k.kind] ?? [],
+      parts: partsOf(k.kind),
       obligation: k.obligation,
-      id: described?.idPattern ? { pattern: described.idPattern, example: described.idExample ?? '' } : null,
+      id: ref?.id ?? null,
       idScope: k.id_scope,
-      product: described?.productId ?? null,
+      product: k.declared_by,
     };
   });
-  const rows = [...workspace.checks].sort((a, b) =>
-    (a.product_id === undefined ? 0 : 1) - (b.product_id === undefined ? 0 : 1) || Number(a.position) - Number(b.position));
-  const checks: CheckReference[] = rows.map((c) => {
-    const severities = SEVERITIES[textOf(c, 'severity')] ?? ['error'];
-    return {
-      check: textOf(c, 'name'),
-      severity: severities[0],
-      severities,
-      summary: textOf(c, 'summary'),
-      explanation: textOf(c, 'explanation'),
-      origin: c.product_id === undefined ? 'lathe' : 'product',
-      query: textOf(c, 'query'),
-      kinds: Array.isArray(c.kinds) ? [...c.kinds].sort(kindOrder(schema)) : [],
-    };
-  });
-  // A problem of a check with no row is the engine's own.
+  // The checks of the space: Lathe's, the engine's own, and the space's product's own.
+  const checks: CheckReference[] = reference.checks
+    .filter((c) => c.origin !== 'product' || c.product === index.product)
+    .map((c) => {
+      const severities = SEVERITIES[c.severity];
+      return { check: c.check, severity: severities[0], severities, summary: c.summary, explanation: c.explanation, origin: c.origin, kinds: c.kinds };
+    });
+  // A problem of a check the Reference does not know is the engine's own.
   const known = new Set(checks.map((c) => c.check));
   const engine = new Map<string, Set<Severity>>();
-  for (const p of workspace.problems) {
-    if (known.has(p.check)) continue;
-    engine.set(p.check, (engine.get(p.check) ?? new Set()).add(p.severity));
-  }
+  for (const p of problems) if (!known.has(p.check)) engine.set(p.check, (engine.get(p.check) ?? new Set()).add(p.severity));
   for (const [check, found] of [...engine].sort(([a], [b]) => a.localeCompare(b))) {
     const severities = (['error', 'warning'] as const).filter((s) => found.has(s));
-    checks.push({ check, severity: severities[0], severities, summary: '', explanation: '', origin: 'engine', query: '', kinds: [] });
+    checks.push({ check, severity: severities[0], severities, summary: '', explanation: '', origin: 'engine', kinds: [] });
   }
-  return {
-    kinds,
-    relations: workspace.relations.map((r) => ({ ...r })),
-    stages: workspace.stages,
-    checks,
-  };
+  return { kinds, relations: index.meta.relations.map((r) => ({ ...r })), stages: index.meta.stages, checks };
 }
 
-/** The format reference for the loaded data (the space's, when the index is a space's). */
-export function useFormat(index: SpecIndex | null): FormatReference | null {
-  const workspace = index?.workspace ?? null;
-  return useMemo(() => (workspace ? referenceOf(workspace) : null), [workspace]);
+/**
+ * The format reference for the space: the Reference read again whenever the data is, joined with the meta model and
+ * the space's problems (list-problems), whose checks with no row are the engine's own.
+ */
+export function useFormat(index: RecordIndex | null): FormatReference | null {
+  const read = useRead<Reference>('/api/reference', index ? {} : null, index);
+  const problems = useRead<ProductProblems>('/api/problems/list-problems', index ? { product_id: index.product } : null, index);
+  return useMemo(() => {
+    if (!index || read.state !== 'read') return null;
+    const found = problems.state === 'read' ? [...problems.answer.own, ...problems.answer.workspace].flatMap((g) => g.problems) : [];
+    return referenceOf(index, read.answer, found);
+  }, [index, read, problems]);
 }
 
 // ---------- Lookups ----------

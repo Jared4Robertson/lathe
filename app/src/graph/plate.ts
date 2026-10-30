@@ -1,4 +1,4 @@
-import { kindLabel, type SpecIndex } from '../specs/data';
+import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { groupKindLabel, stageFor, type BoxStage } from './model';
 import type { MapNode } from './map';
 import type { NestedNode } from './nested';
@@ -150,7 +150,7 @@ export type PlateSource =
   | { view: 'nested'; node: NestedNode };
 
 /** A box's plate: its outline, colors' roles, and its label placed in it (LA-EXP-DS06, LA-EXP-DS07, LA-V93-R06). */
-export function plateOf(index: SpecIndex, id: string, source: PlateSource): Plate {
+export function plateOf(index: RecordIndex, id: string, source: PlateSource): Plate {
   const { x, y, w, h, text: t } = source.node;
   const plain = source.view === 'tree' ? source.plain : undefined;
   const record = plain ? undefined : index.byId.get(id);

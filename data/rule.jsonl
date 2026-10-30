@@ -24,13 +24,12 @@
 {"id":"LA-AUT-INV183-RL","title":"event-field-name","invariant_id":"LA-AUT-INV183","file":"lathe/src/authoring/domain-event/rules.ts"}
 {"id":"LA-AUT-INV184-RL","title":"read-model-field-one-type","invariant_id":"LA-AUT-INV184","file":"lathe/src/authoring/read-model/rules.ts"}
 {"id":"LA-AUT-INV185-RL","title":"read-model-field-name","invariant_id":"LA-AUT-INV185","file":"lathe/src/authoring/read-model/rules.ts"}
-{"id":"LA-AUT-INV19-RL","title":"pattern-rule-setting","invariant_id":"LA-AUT-INV19","file":"lathe/src/authoring/pattern/rules.ts"}
 {"id":"LA-AUT-INV22-RL","title":"product-kind-declared","invariant_id":"LA-AUT-INV22","file":"lathe/src/authoring/product/rules.ts"}
 {"id":"LA-AUT-INV23-RL","title":"product-relation-own","invariant_id":"LA-AUT-INV23","file":"lathe/src/authoring/product/rules.ts"}
 {"id":"LA-AUT-INV24-RL","title":"product-declaration-described","invariant_id":"LA-AUT-INV24","file":"lathe/src/authoring/product/rules.ts"}
 {"id":"LA-AUT-INV25-RL","title":"has-crosses-aggregate","invariant_id":"LA-AUT-INV25","file":"lathe/src/authoring/aggregate/rules.ts"}
 {"id":"LA-AUT-INV40-RL","title":"repository-persists-one","invariant_id":"LA-AUT-INV40","file":"lathe/src/authoring/domain/rules.ts"}
-{"id":"LA-AUT-INV41-RL","title":"repository-share-unpersisted","invariant_id":"LA-AUT-INV41","file":"lathe/src/authoring/domain/rules.ts"}
+{"id":"LA-AUT-INV41-RL","title":"one-repository","invariant_id":"LA-AUT-INV41","file":"lathe/src/authoring/domain/rules.ts"}
 {"id":"LA-AUT-INV42-RL","title":"flow-id-interface","invariant_id":"LA-AUT-INV42","file":"lathe/src/authoring/use-case/rules.ts"}
 {"id":"LA-AUT-INV43-RL","title":"step-fits-interface","invariant_id":"LA-AUT-INV43","file":"lathe/src/authoring/use-case/rules.ts"}
 {"id":"LA-AUT-INV50-RL","title":"question-owner-role","invariant_id":"LA-AUT-INV50","file":"lathe/src/authoring/product/rules.ts"}
@@ -63,6 +62,6 @@
 {"id":"LA-PLT-INV41-RL","title":"key-not-kept-by-browser","invariant_id":"LA-PLT-INV41","file":"app/src/platform/key-bindings/rules.ts"}
 {"id":"LA-PLT-INV42-RL","title":"shortcut-keeps-a-key","invariant_id":"LA-PLT-INV42","file":"app/src/platform/key-bindings/rules.ts"}
 {"id":"LA-PLT-INV43-RL","title":"shortcut-can-be-bound","invariant_id":"LA-PLT-INV43","file":"app/src/platform/key-bindings/rules.ts"}
-{"id":"LA-TRC-INV01-RL","title":"setting-value-or-reason","invariant_id":"LA-TRC-INV01","file":"lathe/src/traceability/pattern-following/rules.ts"}
+{"id":"LA-TRC-INV01-RL","title":"setting-value-given","invariant_id":"LA-TRC-INV01","file":"lathe/src/traceability/pattern-following/rules.ts"}
 {"id":"LA-TRC-INV02-RL","title":"setting-value-own-pattern","invariant_id":"LA-TRC-INV02","file":"lathe/src/traceability/pattern-following/rules.ts"}
 {"id":"LA-TRC-INV03-RL","title":"setting-value-of-followed-setting","invariant_id":"LA-TRC-INV03","file":"lathe/src/traceability/pattern-following/rules.ts"}

@@ -36,13 +36,14 @@ describe('LA-AUT-UC05-R05-T02 each Pattern command (LA-AUT-A2) changes one patte
     const changed = await runCommand(store, CHANGE_PATTERN, { id: 'TL-PAT-ACT', settings: [{ name: 'actor', meaning: 'Who takes the action.' }, { name: 'record', meaning: 'The record the action saves.' }] });
     expect(changed.tables).toEqual(['pattern_setting']);
     expect(store.rows('pattern_setting').map((s) => `${s.position} ${s.name}`)).toEqual(['1 actor', '2 record']);
-    await runCommand(store, CHANGE_PATTERN_RULE, { id: 'TL-PAT-ACT-R01', setting: null, group_name: 'Saving' });
-    expect(store.record('TL-PAT-ACT-R01')?.row).not.toHaveProperty('setting');
+    await runCommand(store, CHANGE_PATTERN_RULE, { id: 'TL-PAT-ACT-R01', group_name: 'Saving' });
+    expect(store.record('TL-PAT-ACT-R01')?.row).toMatchObject({ group_name: 'Saving' });
+    await expect(runCommand(store, CHANGE_PATTERN_RULE, { id: 'TL-PAT-ACT-R01', setting: 'record' })).rejects.toThrow(InputError);
     const removed = await runCommand(store, REMOVE_PATTERN_RULE, { id: 'TL-PAT-ACT-R01' });
     expect(removed.changes.map((c) => c.table).sort()).toEqual(['pattern_rule', 'pattern_rule_test']);
   });
 
-  it('refuses dropping a setting a rule depends on, a pattern a follower follows, and a setting of another shape', async () => {
+  it('refuses dropping a setting a follower gives a value, a pattern a follower follows, and a setting of another shape', async () => {
     const store = await openStore(writeData(everyKind()), { latheDataDir: null });
     open.push(store);
     await expect(runCommand(store, CHANGE_PATTERN, { id: 'TL-PAT-ACT', settings: [{ name: 'record' }] })).rejects.toThrow(new InputError('settings [{"name":"record"}] has an item with no meaning'));

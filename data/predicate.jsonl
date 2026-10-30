@@ -1,11 +1,8 @@
-{"id":"LA-AUT-SP03-PR","title":"MergeResult.clashes","specification_id":"LA-AUT-SP03","file":"lathe/src/platform/data/merge.ts"}
 {"id":"LA-AUT-SP09-PR","title":"link-scope","specification_id":"LA-AUT-SP09","file":"lathe/src/platform/data/integrity.ts"}
-{"id":"LA-EXP-SP01-PR","title":"spaceIndex","specification_id":"LA-EXP-SP01","file":"app/src/specs/data.ts"}
+{"id":"LA-EXP-SP01-PR","title":"inSpace","specification_id":"LA-EXP-SP01","file":"lathe/src/exploring/placement.ts"}
 {"id":"LA-EXP-SP03-PR","title":"kindsOf","specification_id":"LA-EXP-SP03","file":"app/src/graph/tree.ts"}
 {"id":"LA-EXP-SP04-PR","title":"filterKind","specification_id":"LA-EXP-SP04","file":"app/src/graph/model.ts"}
 {"id":"LA-PLT-SP01-PR","title":"checkFolder","specification_id":"LA-PLT-SP01","file":"desktop/src/folders.ts"}
 {"id":"LA-PLT-SP02-PR","title":"chooseDevSource","specification_id":"LA-PLT-SP02","file":"desktop/src/devSource.ts"}
-{"id":"LA-TRC-SP01-PR","title":"pattern_rule_standing.followers","specification_id":"LA-TRC-SP01","file":"lathe/src/coverage.ts"}
-{"id":"LA-TRC-SP02-PR","title":"pattern_rule_standing.not_applicable","specification_id":"LA-TRC-SP02","file":"lathe/src/coverage.ts"}
-{"id":"LA-TRC-SP03-PR","title":"pattern_rule_standing.meets","specification_id":"LA-TRC-SP03","file":"lathe/src/coverage.ts"}
-{"id":"LA-TRC-SP04-PR","title":"pattern_rule_standing","specification_id":"LA-TRC-SP04","file":"lathe/src/coverage.ts"}
+{"id":"LA-TRC-SP01-PR","title":"followers","specification_id":"LA-TRC-SP01","file":"lathe/src/coverage.ts"}
+{"id":"LA-TRC-SP04-PR","title":"owed_pattern_rules","specification_id":"LA-TRC-SP04","file":"lathe/src/coverage.ts"}

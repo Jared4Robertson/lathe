@@ -4,22 +4,22 @@ import { turnChangesLensOnOrOff } from '../exploring/session-settings/commands/t
 import { chooseChangesBaseline } from '../exploring/session-settings/commands/choose-changes-baseline';
 import { turnFollowOnOrOff } from '../exploring/session-settings/commands/turn-follow-on-or-off';
 import { markProductLookedAt } from '../exploring/session-settings/commands/mark-product-looked-at';
-import type { SpecIndex } from '../specs/data';
-import { changesSince, ChangesContext, createLiveStore, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Since } from './changes';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { ChangesContext, createLiveStore, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Since } from './changes';
 
 /** How long the note saying why Follow went off stays, in ms. */
 const FOLLOW_NOTE_MS = 6000;
 
 /**
  * The changes of the product in view (changes.ts), for every part of the app: the stages' marks and lens, the wiki
- * card's Changes section and the Changes panel. `index` is the whole workspace's, as loaded; `product` the space's.
+ * card's Changes section and the Changes panel. `index` is the space's, as read; `product` the space's product.
  */
-export function ChangesProvider({ index, product, children }: { index: SpecIndex | null; product: string | null; children: ReactNode }) {
+export function ChangesProvider({ index, product, children }: { index: RecordIndex | null; product: string | null; children: ReactNode }) {
   const { changes: settings } = useSessionSettings();
   const [live] = useState(createLiveStore);
 
   // The live changes: each reload against the data before it.
-  const before = useRef<SpecIndex | null>(null);
+  const before = useRef<RecordIndex | null>(null);
   useEffect(() => {
     const was = before.current;
     before.current = index;
@@ -34,9 +34,7 @@ export function ChangesProvider({ index, product, children }: { index: SpecIndex
     const now = indexRef.current;
     if (!now) return;
     live.clear(at);
-    void markNow(now, at).then((mark) => {
-      if (mark) markProductLookedAt({ product: at, mark });
-    });
+    void markNow(now, at).then((mark) => markProductLookedAt({ product: at, mark }));
   }, [live]);
   const lookedRef = useRef(settings.looked);
   lookedRef.current = settings.looked;
@@ -66,23 +64,21 @@ export function ChangesProvider({ index, product, children }: { index: SpecIndex
     if (!on && note) noteTimer.current = setTimeout(() => setFollowNote(null), FOLLOW_NOTE_MS);
   }, []);
 
-  // The baseline's rows, read again with every reload (the last commit may have moved), and the diff against them.
+  // The changes since the baseline, read again with every reload (the data, and the last commit, may have moved).
   const mark = product ? settings.looked[product] : undefined;
   const [baseline, setBaseline] = useState<{ key: string; value: Baseline }>({ key: '', value: { state: 'loading' } });
   const key = `${product}|${settings.since}|${settings.since === 'looked' ? mark?.at ?? '' : ''}`;
-  const loads = useRef(0);
   useEffect(() => {
     if (!index || !product) return;
     let live = true;
-    const fresh = loads.current++ > 0;
-    loadBaseline(index, product, settings.since, mark, fresh).then(
+    loadBaseline(index, product, settings.since, mark).then(
       (value) => { if (live) setBaseline((b) => (b.key === key && sameBaseline(b.value, value) ? b : { key, value })); },
       (e) => { if (live) setBaseline({ key, value: { state: 'none', message: e instanceof Error ? e.message : String(e) } }); },
     );
     return () => { live = false; };
   }, [index, product, settings.since, mark, key]);
   const current: Baseline = baseline.key === key ? baseline.value : { state: 'loading' };
-  const changes = useMemo(() => (index && product && current.state === 'ok' ? changesSince(index, product, current.tables) : []), [index, product, current]);
+  const changes = useMemo(() => (current.state === 'ok' ? current.changes : []), [current]);
   const byId = useMemo(() => new Map(changes.map((c) => [c.id, c])), [changes]);
 
   const api = useMemo<ChangesApi>(() => ({
@@ -92,5 +88,5 @@ export function ChangesProvider({ index, product, children }: { index: SpecIndex
   return <ChangesContext.Provider value={api}>{children}</ChangesContext.Provider>;
 }
 
-/** The same baseline read again: the same rows object from the cache, so the diff is not worked out twice. */
-const sameBaseline = (a: Baseline, b: Baseline) => a.state === 'ok' && b.state === 'ok' ? a.tables === b.tables && a.label === b.label && a.detail === b.detail : a.state === b.state;
+/** The same changes read again, so the stages do not draw them twice. */
+const sameBaseline = (a: Baseline, b: Baseline) => a.state === 'ok' && b.state === 'ok' ? a.label === b.label && a.detail === b.detail && JSON.stringify(a.changes) === JSON.stringify(b.changes) : a.state === b.state;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { aboutLink, aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocalAction, REFERENCE_URL, REPO_URL, specErrorMessage } from '../src/launch.ts';
+import { aboutLink, aboutModel, errorModel, launchModel, launchStep, modelQuery, parseLocalAction, REFERENCE_URL, REPO_URL, serverErrorMessage } from '../src/launch.ts';
 
 const colors = { background: '#0A0F12', foreground: '#E2E8EA' };
 
@@ -24,9 +24,9 @@ describe('The launch view names the product, and the error page says what failed
   });
 
   it('LA-V69-R01-T01 reads the engine\'s message from the spec API\'s answer', () => {
-    expect(specErrorMessage(400, { error: 'data/use_case.jsonl:2: use_case.domain_id is required [required]' })).toBe('data/use_case.jsonl:2: use_case.domain_id is required [required]');
-    expect(specErrorMessage(500, null)).toBe('GET /api/spec answered 500.');
-    expect(specErrorMessage(400, { error: '  ' })).toBe('GET /api/spec answered 400.');
+    expect(serverErrorMessage(400, { error: 'data/use_case.jsonl:2: use_case.domain_id is required [required]' })).toBe('data/use_case.jsonl:2: use_case.domain_id is required [required]');
+    expect(serverErrorMessage(500, null)).toBe('GET /api/product/list-products answered 500.');
+    expect(serverErrorMessage(400, { error: '  ' })).toBe('GET /api/product/list-products answered 400.');
   });
 
   it('LA-V69-R02-T01 runs only a button the page shows', () => {

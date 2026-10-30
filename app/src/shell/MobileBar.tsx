@@ -1,7 +1,8 @@
 import { forwardRef } from 'react';
 import { Icon } from '../components/icons';
 import { groupLabel } from '../graph/model';
-import { parseSpecRoute, type SpecIndex } from '../specs/data';
+import { parseSpecRoute } from '../views/spec-route';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf, HOME_PATH, focusOf, isFocusRoute, stageFromSearch, withStage } from '../views/address';
 import { Breadcrumb } from './Breadcrumb';
 import { Button } from '../components/Button';
@@ -19,7 +20,7 @@ export interface Heading {
 const PRODUCTS = { to: HOME_PATH, label: 'Products' };
 
 /** The title of the page at an address, and the page one step up from it. */
-export function pageHeading(index: SpecIndex | null, path: string, search: string): Heading {
+export function pageHeading(index: RecordIndex | null, path: string, search: string): Heading {
   const route = parseSpecRoute(path, index);
   // Going up keeps the stage, as following any link does.
   const stage = stageFromSearch(search);

@@ -173,21 +173,6 @@ JOIN record_scope b ON b.id = l.target_id
 WHERE a.product_id IS DISTINCT FROM b.product_id`,
     },
     {
-      name: 'command-change-in-domain',
-      description: "A command's recorded extra aggregate is another aggregate of its own domain.",
-      sql: `
-SELECT 'command_change' AS table_name, c.command_id || chr(0) || c.aggregate_id AS row_key,
-       c.command_id || ' changes ' || own.id || ', so it cannot also record '
-       || CASE WHEN c.aggregate_id = own.id THEN 'that same aggregate' ELSE c.aggregate_id || ', an aggregate of another domain' END
-       AS message
-FROM command_change c
-JOIN command cmd ON cmd.id = c.command_id
-JOIN entity e ON e.id = cmd.entity_id
-JOIN aggregate own ON own.id = e.aggregate_id
-JOIN aggregate other ON other.id = c.aggregate_id
-WHERE c.aggregate_id = own.id OR other.domain_id <> own.domain_id`,
-    },
-    {
       name: 'id-prefix',
       description:
         "A record's ID starts with the ID of its scope and a hyphen (meta_kind.id_scope): its parent's, its domain's or its product's. A record with no owner takes its product, or its domain, from that prefix, which must name one; a domain-scoped record's ID names the domain its parent sits in, so a query and its read model, or an endpoint and its command, are of one domain.",
@@ -207,15 +192,6 @@ JOIN meta_kind k ON k.name = r.kind AND k.id_scope IS NOT NULL
 JOIN record_scope s ON s.id = r.id
 CROSS JOIN LATERAL (SELECT CASE k.id_scope WHEN 'parent' THEN r.parent_id WHEN 'domain' THEN s.domain_id ELSE s.product_id END AS expected) x
 WHERE x.expected IS NULL OR NOT starts_with(r.id, x.expected || '-')`,
-    },
-    {
-      name: 'package-use-technical',
-      description: 'Only a technical record, of a kind in the technical specification, names a package it uses (package_use).',
-      sql: `
-SELECT 'package_use' AS table_name, ${keyOf(schema, 'package_use', 'u')} AS row_key,
-       u.record_id || ' is a ' || lower(k.label) || ', not a technical record, so it cannot name package ' || u.package || '; name it on the adapter, tooling or other technical record that uses it' AS message
-FROM package_use u JOIN record_id r ON r.id = u.record_id JOIN meta_kind k ON k.name = r.kind
-WHERE k.stage IS DISTINCT FROM 'technical-specification'`,
     },
   ];
   // The relations of domain or aggregate scope, each read from its own link table: the scope is known per relation,

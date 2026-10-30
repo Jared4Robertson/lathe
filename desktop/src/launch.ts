@@ -120,8 +120,8 @@ export function launchStep(specs: unknown): 'wait' | 'ready' | 'error' {
   return specs === 'ready' ? 'ready' : specs === 'error' ? 'error' : 'wait';
 }
 
-/** The spec API's error message from its JSON body, or the status when it has none. */
-export function specErrorMessage(status: number, body: unknown): string {
+/** The app server's error message from its JSON body (its list of the products, the first read every page makes), or the status when it has none. */
+export function serverErrorMessage(status: number, body: unknown): string {
   const error = body && typeof body === 'object' ? (body as { error?: unknown }).error : undefined;
-  return typeof error === 'string' && error.trim() ? error.trim() : `GET /api/spec answered ${status}.`;
+  return typeof error === 'string' && error.trim() ? error.trim() : `GET /api/product/list-products answered ${status}.`;
 }

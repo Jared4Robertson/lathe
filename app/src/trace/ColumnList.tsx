@@ -2,13 +2,13 @@
 // box above it. A box that holds anything opens its column (a record by becoming the focus, as a click on the canvas does);
 // a file opens its first naming record in its chain; a gap opens nothing.
 import { useMemo, useState, type MouseEvent } from 'react';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { stageFor } from '../graph/model';
 import { holds } from './columns';
 import { copyInChain, nodeLabel, traceFade, type TraceMap, type TraceNode } from './tree';
 
 export interface ColumnListProps {
-  index: SpecIndex;
+  index: RecordIndex;
   map: TraceMap;
   focus: string;
   /** The node the focus stands on (tree.ts focusKey). */
@@ -22,7 +22,7 @@ export interface ColumnListProps {
 const FADE = { focusFade: 0.25 };
 
 /** A node's title: its words when it is no record, else its record's. */
-const titleOf = (index: SpecIndex, n: TraceNode) => n.words?.title ?? index.byId.get(n.id)?.title ?? n.id;
+const titleOf = (index: RecordIndex, n: TraceNode) => n.words?.title ?? index.byId.get(n.id)?.title ?? n.id;
 
 export function ColumnList({ index, map, focus, at, gapsOnly, hrefFor, onNavigate }: ColumnListProps) {
   // The column shown: the focus's children, or its own column when it holds nothing; a mark that is no record (Untraced)

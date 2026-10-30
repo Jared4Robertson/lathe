@@ -9,11 +9,8 @@ import { CHANGE_DOMAIN_EVENT } from '../../src/authoring/domain-event/commands/c
 import { CHANGE_READ_MODEL } from '../../src/authoring/read-model/commands/change-read-model.ts';
 import { ADD_CAPABILITY } from '../../src/authoring/domain/commands/add-capability.ts';
 import { ADD_FLOW_STEP } from '../../src/authoring/use-case/commands/add-flow-step.ts';
-import { ADD_PATTERN_RULE } from '../../src/authoring/pattern/commands/add-pattern-rule.ts';
 import { DECLARE_PRODUCT_KIND } from '../../src/authoring/product/commands/declare-product-kind.ts';
 import { DECLARE_PRODUCT_RELATION } from '../../src/authoring/product/commands/declare-product-relation.ts';
-import { patternProblems } from '../../src/authoring/pattern/rules.ts';
-import { patternsFrom } from '../../src/authoring/pattern/model.ts';
 import { productProblems } from '../../src/authoring/product/rules.ts';
 import { productsFrom } from '../../src/authoring/product/model.ts';
 import { repositoryPersistsOne } from '../../src/authoring/domain/rules.ts';
@@ -21,8 +18,7 @@ import type { AnyCommand } from '../../src/platform/commands/definition.ts';
 import { runCommand } from '../../src/platform/commands/run.ts';
 import { StoreError } from '../../src/platform/data/problems.ts';
 import { openStore, type Store } from '../../src/platform/data/store.ts';
-import { adding, changing, complete, refusals, withTable, writeData, type Data } from '../helpers.ts';
-import type { Row } from '../../src/platform/data/rows.ts';
+import { adding, complete, refusals, withTable, writeData, type Data } from '../helpers.ts';
 import { everyKind } from '../store/fixture.ts';
 
 const open: Store[] = [];
@@ -228,38 +224,6 @@ describe('LA-AUT-INV18-T a second step at a position of a path, compared trimmed
   });
 });
 
-describe("LA-AUT-INV19-T a pattern rule's setting its pattern lacks, or an applies-when given in part, is refused by pattern-rule-setting", () => {
-  it('refuses a rule on a setting the pattern does not have', async () => {
-    const on = await store();
-    expect(await refused(on, ADD_PATTERN_RULE, { id: 'TL-PAT-ACT-R02', title: 'A saved member reads the same', pattern_id: 'TL-PAT-ACT', statement: 'A saved member MUST read the same.', setting: 'member' }, 'pattern_rule')).toEqual([
-      { rule: 'pattern-rule-setting', message: 'pattern rule TL-PAT-ACT-R02 depends on setting member, which pattern TL-PAT-ACT does not have' },
-    ]);
-  });
-
-  it('refuses an applies-when condition given in part, or on a setting the pattern does not have', () => {
-    const data = everyKind();
-    const [pattern] = patternsFrom((table) => (table === 'pattern_rule'
-      ? [{ ...data.pattern_rule[0], applies_when_value: undefined }, { ...data.pattern_rule[0], id: 'TL-PAT-ACT-R02', applies_when_setting: 'member' }]
-      : (data[table] ?? [])) as never);
-    expect(patternProblems(pattern).map((p) => [p.rule, p.message])).toEqual([
-      ['pattern-rule-setting', 'pattern rule TL-PAT-ACT-R01 gives part of its applies-when condition: give its setting, whether it is negated and its value, or none of them'],
-      ['pattern-rule-setting', 'pattern rule TL-PAT-ACT-R02 applies when setting member, which pattern TL-PAT-ACT does not have'],
-    ]);
-  });
-
-  it('is refused on load by the foreign keys and check under it; a rule with neither setting nor condition loads', async () => {
-    const rule = (changes: Record<string, Row[string] | undefined>) => refusals(changing(everyKind(), 'pattern_rule', () => true, changes));
-    const lacking = await rule({ applies_when_setting: 'tone' });
-    expect(lacking).toEqual([expect.objectContaining({ rule: 'foreign-key', table: 'pattern_rule', file: 'data/pattern_rule.jsonl', line: 1 })]);
-    expect(lacking[0].message).toContain('applies_when_setting "tone"');
-    expect(await rule({ setting: 'tone' })).toEqual([expect.objectContaining({ rule: 'foreign-key', table: 'pattern_rule', message: expect.stringContaining('setting "tone"') })]);
-    for (const left of ['applies_when_setting', 'applies_when_negated', 'applies_when_value']) {
-      expect(await rule({ [left]: undefined }), left).toEqual([expect.objectContaining({ rule: 'check', table: 'pattern_rule', line: 1, message: expect.stringContaining('applies_when_setting IS NULL') })]);
-    }
-    expect(await rule({ setting: undefined, applies_when_setting: undefined, applies_when_negated: undefined, applies_when_value: undefined })).toEqual([]);
-  });
-});
-
 describe("LA-AUT-INV22-T a product kind declared twice, named like a Lathe table, or under no kind is refused by product-kind-declared", () => {
   it('refuses each', async () => {
     const on = await store();
@@ -275,7 +239,7 @@ describe("LA-AUT-INV22-T a product kind declared twice, named like a Lathe table
     ]);
   });
 
-  it("is refused on load before the schema is built; a kind of its own loads and leaves Lathe's kinds as they are", async () => {
+  it("is refused on load by the same rule, before the schema is built; a kind of its own loads and leaves Lathe's kinds as they are", async () => {
     const rule = { name: 'domain_note', product_id: 'TL', label: 'Domain note', description: 'A note on a domain.', parent_kind: 'domain', obligation: false };
     const own = await openStore(writeData(adding(everyKind(), { product_kind: [rule], domain_note: [{ id: 'TL-LEND-NOTE01', title: 'Lending hours', domain_id: 'TL-LEND' }] })), { latheDataDir: null });
     open.push(own);
@@ -293,14 +257,14 @@ describe("LA-AUT-INV22-T a product kind declared twice, named like a Lathe table
     expect(await declaring({ product_kind: [everyKind().product_kind[0]] })).toEqual([expect.objectContaining({ rule: 'primary-key', table: 'product_kind', file: 'data/product_kind.jsonl', line: 2 })]);
     for (const name of ['aggregate', 'record_id']) {
       expect(await declaring({ product_kind: [{ ...rule, name }] }), name).toEqual([
-        expect.objectContaining({ rule: 'product-kind', table: 'product_kind', line: 2, message: `The product kind ${name} has the name of a table Lathe already has; give it another name.` }),
+        expect.objectContaining({ rule: 'product-kind-declared', table: 'product_kind', line: 2, message: `The product kind ${name} has the name of a table Lathe already has; give it another name.` }),
       ]);
     }
     expect(await declaring({ product_kind: [{ ...rule, parent_kind: 'gadget' }] })).toEqual([
-      expect.objectContaining({ rule: 'product-kind', table: 'product_kind', message: 'The product kind domain_note sits under gadget, which is not a kind.' }),
+      expect.objectContaining({ rule: 'product-kind-declared', table: 'product_kind', message: 'The product kind domain_note sits under gadget, which is not a kind.' }),
     ]);
     expect(await declaring({ product_kind_field: [{ kind: 'aggregate', position: 1, name: 'owner', type: 'text', required: true, description: 'Who owns it.' }] })).toEqual([
-      expect.objectContaining({ rule: 'product-kind', table: 'product_kind_field', file: 'data/product_kind_field.jsonl', line: 2, message: 'The field owner is of aggregate, which is not a product kind.' }),
+      expect.objectContaining({ rule: 'product-kind-declared', table: 'product_kind_field', file: 'data/product_kind_field.jsonl', line: 2, message: 'The field owner is of aggregate, which is not a product kind.' }),
     ]);
   });
 });

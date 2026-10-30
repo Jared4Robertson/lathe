@@ -1,9 +1,11 @@
+import type { ServedData } from './read-view';
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { SPECIFICATION_COMMANDS } from '../../lathe/src/authoring/specification/commands/index';
 import type { SpecificationCommands } from '../src/authoring/specification/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
@@ -16,7 +18,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The model product with a predicate for P-D-SP01. */
-function withPredicate(): SpecData {
+function withPredicate(): ServedData {
   const w = modelWorkspace();
   addRows(w, 'predicate', { id: 'P-D-SP01-PR', title: 'isAtLoanLimit', specification_id: 'P-D-SP01', file: 'src/limits.ts' });
   return w;
@@ -52,7 +54,7 @@ describe('LA-V141-R04-T01 a specification shows its predicate and its test, or t
 describe('LA-V141-R02-T01 the Specification editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a specification with only what changed; Add offers only the test it has not got, with its one ID; no Move', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/P-D-SP01', { data: withPredicate(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/P-D-SP01', { data: withPredicate(), command: () => ({ answer: ok }) });
     const actions = await toolbar('P-D-SP01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add specification test', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -61,10 +63,9 @@ describe('LA-V141-R02-T01 the Specification editor writes only through the aggre
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/specification/change-specification', input: { id: 'P-D-SP01', statement: 'A member is at the limit with 3 open loans. Or more.' } }]));
 
-    await user.click(within(await toolbar('P-D-SP01')).getByRole('button', { name: 'Add specification test' }));
+    await chooseAdd(user, await toolbar('P-D-SP01'), 'Specification test');
     const add = screen.getByRole('form', { name: 'Add a specification test' });
     await waitFor(() => expect(within(add).getByRole('textbox', { name: /^ID/ })).toHaveValue('P-D-SP01-T'));
-    expect(writes).toEqual([]);
   });
 });
 
@@ -72,12 +73,12 @@ describe('LA-V141-R02-T02 a specification is added from its domain\'s page throu
   it('Add specification on the domain\'s page takes the next free ID and sends Add a specification', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-D', { data: withPredicate(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('P-D')).getByRole('button', { name: 'Add specification' }));
+    await chooseAdd(user, await toolbar('P-D'), 'Specification');
     const add = screen.getByRole('form', { name: 'Add a specification' });
     await waitFor(() => expect(within(add).getByRole('textbox', { name: /^ID/ })).toHaveValue('P-D-SP02'));
     await user.type(within(add).getByRole('textbox', { name: /^title/ }), 'Thing is lendable');
     await user.type(within(add).getByRole('textbox', { name: /^statement/ }), 'A thing is lendable while no loan of it is open.');
-    await user.click(within(add).getByRole('button', { name: 'Add specification' }));
+    await chooseAdd(user, add, 'Specification');
     await waitFor(() => expect(commands).toEqual([{ route: '/api/specification/add-specification', input: { id: 'P-D-SP02', title: 'Thing is lendable', statement: 'A thing is lendable while no loan of it is open.' } }]));
   });
 });

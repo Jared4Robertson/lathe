@@ -1,4 +1,6 @@
-import type { SpecIndex, Stage, StageRule } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { type MetaStage } from '../platform/meta-model/reads';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
 import type { KeyEntry } from '../views/StageChrome';
 import { BOX_LOOKS, type BoxLook } from './paint';
 import { BADGE_TONES } from './plate';
@@ -50,11 +52,11 @@ const BADGES: Readonly<Record<Badge, { sample: string; words: string; meaning: s
   gap: { sample: 'gap', words: 'Gap', meaning: 'Not designed or not proved (on a group: among its members)' },
 };
 
-const stageName = (stages: readonly StageRule[], stage: Stage) =>
+const stageName = (stages: readonly MetaStage[], stage: Stage) =>
   stages.find((s) => s.stage === stage)?.label ?? `${stage.charAt(0).toUpperCase()}${stage.slice(1).replaceAll('-', ' ')}`;
 
 /** The look's words and meaning: a stage's color, the structural colors, a group's outline or an open question's. */
-function lookEntry(look: BoxLook, stages: readonly StageRule[]): Pick<KeyEntry, 'words' | 'meaning'> {
+function lookEntry(look: BoxLook, stages: readonly MetaStage[]): Pick<KeyEntry, 'words' | 'meaning'> {
   if (look === 'stage-structural') return { words: 'Structural', meaning: 'Structural: the product and what has no stage' };
   if (look === 'stage-group') return { words: 'Group', meaning: 'A stage, folder or group, outlined in its stage\'s color (gray for open questions)' };
   if (look === 'kind-question') return { words: 'Open question', meaning: 'An open question, in the warning color (dashed in the Nested view)' };
@@ -64,7 +66,7 @@ function lookEntry(look: BoxLook, stages: readonly StageRule[]): Pick<KeyEntry, 
 }
 
 /** The Graph stage's key entries for what it draws: colors, the focus, shapes, marks, the layout's lines or boxes, then badges. */
-export function graphKeyEntries(drawn: GraphDrawn, stages: readonly StageRule[] = []): KeyEntry[] {
+export function graphKeyEntries(drawn: GraphDrawn, stages: readonly MetaStage[] = []): KeyEntry[] {
   const out: KeyEntry[] = [];
   for (const look of BOX_LOOKS) {
     if (drawn.looks.has(look)) out.push({ id: look, group: 'colors', sample: <span className={`graph-swatch ${look}`} />, ...lookEntry(look, stages) });
@@ -94,7 +96,7 @@ export function graphKeyEntries(drawn: GraphDrawn, stages: readonly StageRule[] 
  * filters applied), each node by its look, shape, mark and badges. The rest of the map is the same kinds further off, so
  * the key stays short and says what is in front of the Reader.
  */
-export function graphDrawn(index: SpecIndex, graph: Neighborhood, layout: GraphDrawn['layout']): GraphDrawn {
+export function graphDrawn(index: RecordIndex, graph: Neighborhood, layout: GraphDrawn['layout']): GraphDrawn {
   const looks = new Set<BoxLook>();
   const shapes = new Set<Shape>();
   const marks = new Set<Mark>();

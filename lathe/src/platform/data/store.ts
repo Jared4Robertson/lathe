@@ -10,26 +10,19 @@ import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { DuckDBInstance, type DuckDBConnection } from '@duckdb/node-api';
 import { AGGREGATE_RULES } from '../../aggregate-rules.ts';
+import { productRules } from '../../authoring/product/rules.ts';
 import { loadConfig, PACKAGE_DIR } from '../../config.ts';
 import { attachCached, baseKey, copyDatabase, productKey, writeCached } from './cache.ts';
-import { applyCommands, type Command } from './generic-write.ts';
 import { appendRows, insertRows } from './insert.ts';
 import { integrityQueries, recordScopeSql, storeViewsSql } from './integrity.ts';
 import { problemAt, StoreError, type Origin, type StoreProblem } from './problems.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import type { Located } from './references.ts';
 import type { ReadView } from './rules.ts';
-import { describeKey, normalizeRow, rowKey, sortRows, type Row, type Value } from './rows.ts';
+import { describeKey, normalizeRow, rowKey, sortRows, type Row } from './rows.ts';
 import { applyMigrations, describeSchema, readMigrations, sqlName, type SchemaDescription } from './schema.ts';
 import { commit, DECLARATION_TABLES, Transaction, type Committed, type Tables, type TransactionHost } from './transaction.ts';
 
-/** What a write through the generic layer changed. */
-export interface WriteResult {
-  /** The tables whose rows changed. */
-  tables: string[];
-  /** The data files written or removed, relative to the data folder. */
-  files: string[];
-}
 export interface StoreOptions {
   /** The data folder, in place of the one lathe.config.json names (default data/ at the root). */
   dataDir?: string;
@@ -233,18 +226,6 @@ export class Store {
     return (await this.main.runAndReadAll(sql)).getRowObjectsJson() as unknown as T[];
   }
 
-  /**
-   * Where each record with no owner sits, from record_scope: its product, and its domain (a specification's from its
-   * ID; a view's, integration's, UI component's or value object's the one domain that uses it), or null when shared.
-   * What sits under a record follows it, so a reader that walks the parents needs only these.
-   */
-  async placements(): Promise<Record<string, { product: string | null; domain: string | null }>> {
-    const rows = await this.query<{ id: string; product_id: string | null; domain_id: string | null }>(
-      "SELECT s.id, s.product_id, s.domain_id FROM record_scope s JOIN record_parent p ON p.id = s.id WHERE p.parent_id IS NULL AND p.kind <> 'product' ORDER BY s.id",
-    );
-    return Object.fromEntries(rows.map((r) => [r.id, { product: r.product_id, domain: r.domain_id }]));
-  }
-
   /** A table's rows, sorted by key. */
   rows(table: string): Row[] {
     const description = this.currentSchema.tables[table];
@@ -333,7 +314,9 @@ export class Store {
       tables.set(name, rows);
     };
 
-    const isDeclaration = (file: string) => (DECLARATION_TABLES as readonly string[]).includes(file.slice(0, -'.jsonl'.length));
+    // The declarations, with the products that declare them, are read first: the Product aggregate's rules judge them
+    // before the schema is built from them.
+    const isDeclaration = (file: string) => ([...DECLARATION_TABLES, 'product'] as readonly string[]).includes(file.slice(0, -'.jsonl'.length));
     await this.step('read declarations', () => {
       for (const folder of folders) for (const file of folder.files.filter(isDeclaration)) read(this.baseSchema, folder, file);
     });
@@ -366,6 +349,10 @@ export class Store {
     if (!declarations.kinds.length && !declarations.fields.length && !declarations.relations.length) {
       return { schemaDb: BASE_DB, schema: this.baseSchema };
     }
+    // The declarations are held to the Product aggregate's own rules (LA-AUT-INV22 to INV24) before any table is built
+    // from them; what is left to refuse here is only how a field becomes a column.
+    const broken = productRules.check(readView(this.baseSchema, tables)).filter((p) => (DECLARATION_TABLES as readonly string[]).includes(p.table));
+    if (broken.length) throw new StoreError(broken.map((p) => problemAt(origins, p.row, { rule: p.rule, table: p.table, message: p.message })));
     const { sql, problems } = productKindSql(this.baseSchema, declarations);
     if (problems.length) {
       throw new StoreError(problems.map((p: DeclarationProblem) => problemAt(origins, p.row, { rule: 'product-kind', table: p.table, message: p.message })));
@@ -672,44 +659,6 @@ export class Store {
         await this.switchTo(state.dataDb);
       },
     };
-  }
-
-  // The generic write API, replaced by each aggregate's own commands and deleted at the cutover.
-
-  /** Applies the commands together, in one transaction: all of them, or none. */
-  async apply(commands: Command[]): Promise<WriteResult> {
-    const { committed } = await this.transact((tx) => applyCommands(tx, commands));
-    return { tables: committed.tables, files: committed.files };
-  }
-
-  /** Adds a row: a record to its kind's table, or a part, declaration or checking row. */
-  add(table: string, row: Row): Promise<WriteResult> {
-    return this.apply([{ op: 'add', table, row }]);
-  }
-
-  /** Changes columns of a row; null clears one. */
-  set(table: string, key: string | Record<string, Value>, changes: Record<string, Value | null>): Promise<WriteResult> {
-    return this.apply([{ op: 'set', table, key, changes }]);
-  }
-
-  /** Moves a record under another parent. */
-  move(id: string, parent: string): Promise<WriteResult> {
-    return this.apply([{ op: 'move', id, parent }]);
-  }
-
-  /** Links source to target with the relation. */
-  link(relation: string, source: string, target: string): Promise<WriteResult> {
-    return this.apply([{ op: 'link', relation, source, target }]);
-  }
-
-  /** Removes the link. */
-  unlink(relation: string, source: string, target: string): Promise<WriteResult> {
-    return this.apply([{ op: 'unlink', relation, source, target }]);
-  }
-
-  /** Removes a row; a record goes with its parts and its own links, and is refused while anything else references it. */
-  remove(table: string, key: string | Record<string, Value>): Promise<WriteResult> {
-    return this.apply([{ op: 'remove', table, key }]);
   }
 }
 

@@ -2,10 +2,9 @@ import { Fragment } from 'react';
 import type { DomainPage as Domain } from '../../../../lathe/src/authoring/domain/read-model';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import { RecordedExceptions } from '../../specs/RecordText';
 import { DomainWiki } from '../../specs/SpecPages';
 import { DomainEditor } from './DomainEditor';
 import { useDomain } from './reads';
@@ -32,7 +31,7 @@ const technicalFacts = (file: string | undefined, packages: readonly string[]): 
 ];
 
 /** What one record of the domain shows on its page, by the kind it is in the domain (the domain itself has its wiki). */
-function Content({ index, page }: { index: SpecIndex; page: Domain }) {
+function Content({ index, page }: { index: RecordIndex; page: Domain }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'domain':
@@ -69,21 +68,13 @@ function Content({ index, page }: { index: SpecIndex; page: Domain }) {
     }
     case 'repository': {
       const r = repositoryOf(page, id);
-      return (
-        <>
-          <Text index={index} id={id} source={r.repository.description} field="description" />
-          {r.alsoPersists.length > 0 && (
-            <RecordedExceptions index={index} rows={r.alsoPersists.map((s) => ({ aggregate_id: s.aggregate, reason: s.reason }))} owner={id} title="Also persists"
-              hint="A recorded exception to one repository per aggregate: each has no repository of its own, and the checks list it so it stays deliberate." />
-          )}
-        </>
-      );
+      return <Text index={index} id={id} source={r.repository.description} field="description" />;
     }
   }
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Domain): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Domain): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const inDomain: Fact = { label: 'Domain', value: <RecordLink index={index} id={page.domain.id} /> };
@@ -137,7 +128,7 @@ export function DomainPage({ index, id, summary = false, after }: AggregatePageP
       {summary ? (
         <div className={body}><Summary {...summaryOf(index, page)} />{after}</div>
       ) : page.record.kind === 'domain' ? (
-        <div data-aggregate="domain"><DomainWiki index={index} id={id} />{after}</div>
+        <div data-aggregate="domain"><DomainWiki index={index} id={id} description={page.domain.description ?? ''} />{after}</div>
       ) : (
         <div className={body} data-aggregate="domain">
           <RecordFrame index={index} record={index.byId.get(id)!}><Content index={index} page={page} /></RecordFrame>

@@ -1,4 +1,4 @@
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { RecordLink } from '../specs/parts';
 import { valueText } from '../views/history';
 import { SINCE_LABELS, SINCES, useChanges, type RecordChange, type Since } from './changes';
@@ -24,7 +24,7 @@ function OldNew({ before, after }: { before?: unknown; after?: unknown }) {
 }
 
 /** A changed record's fields, parts and links, before and after. */
-export function ChangeDetails({ index, change }: { index: SpecIndex; change: RecordChange }) {
+export function ChangeDetails({ index, change }: { index: RecordIndex; change: RecordChange }) {
   if (change.change !== 'changed') return null;
   const { fields, parts, links } = change;
   return (

@@ -3,7 +3,8 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { openStore, type Command } from '../../src/index.ts';
+import { openStore, type Store } from '../../src/index.ts';
+import { run } from '../helpers.ts';
 import { everyKind, removeData, writeData } from './fixture.ts';
 
 afterAll(removeData);
@@ -11,48 +12,51 @@ afterAll(removeData);
 const files = (root: string) =>
   Object.fromEntries(readdirSync(path.join(root, 'data')).sort().map((f) => [f, readFileSync(path.join(root, 'data', f))]));
 
-// The fixture's rows as add and link commands, in the given table order and row order.
-function commands(reverse: boolean): Command[] {
-  const data = everyKind();
-  const declarations = ['product_kind', 'product_kind_field', 'product_relation'];
-  const out: Command[] = [];
-  for (const table of [...declarations, ...Object.keys(data).filter((t) => !declarations.includes(t))]) {
-    const rows = reverse ? [...data[table]].reverse() : data[table];
-    for (const row of rows) {
-      // Columns given in another order, to show the file's order is the table's.
-      const shuffled = reverse ? Object.fromEntries(Object.entries(row).reverse()) : row;
-      out.push('source_id' in row ? { op: 'link', relation: table, source: String(row.source_id), target: String(row.target_id) } : { op: 'add', table, row: shuffled });
-    }
+// Commands that add records to several tables (each record's links and parts with it), in the given order, each
+// input's fields given in that order too, so the files' order is shown to be the tables' own. Returns the files written.
+async function writeSome(store: Store, reverse: boolean): Promise<string[]> {
+  const steps: [string, Record<string, unknown>][] = [
+    ...[2, 3, 4].map((n): [string, Record<string, unknown>] => ['view add-view', { id: `TL-V0${n}`, title: `View ${n}`, description: 'A page of the desk app.', route: `/v${n}` }]),
+    ...[2, 3, 4].map((n): [string, Record<string, unknown>] => ['use-case add-uc-requirement', { id: `TL-LEND-UC01-R0${n}`, title: `Rule ${n}`, use_case_id: 'TL-LEND-UC01', statement: 'The library MUST do it.' }]),
+    ['value-object add-value-object', { id: 'TL-VO02', title: 'Postcode', description: 'Where a member lives.', fields: [{ name: 'Code', meaning: 'The code.', type: 'text', required: true }] }],
+    ['domain add-term', { id: 'TL-LEND-TM03', title: 'Return', domain_id: 'TL-LEND', meaning: 'A tool coming back.', builds_on: ['TL-LEND-TM01'] }],
+    ['domain add-term', { id: 'TL-LEND-TM04', title: 'Late return', domain_id: 'TL-LEND', meaning: 'A loan back after the due date.', builds_on: ['TL-LEND-TM02', 'TL-LEND-TM01'] }],
+  ];
+  const written = new Set<string>();
+  for (const [command, input] of reverse ? [...steps].reverse() : steps) {
+    const ordered = reverse ? Object.fromEntries(Object.entries(input).reverse()) : input;
+    for (const file of (await run(store, command, ordered)).files) written.add(file);
   }
-  return out;
+  return [...written].sort();
 }
 
 describe('data files', () => {
   it('LA-PLT-UC01-R07-T02 are the same bytes whatever order the rows were written in, and after a reload and a rewrite', async () => {
-    const first = writeData({});
+    const first = writeData(everyKind());
     const a = await openStore(first);
-    await a.apply(commands(false));
+    await writeSome(a, false);
     await a.close();
-    const second = writeData({});
+    const second = writeData(everyKind());
     const b = await openStore(second);
-    await b.apply(commands(true));
+    await writeSome(b, true);
     await b.close();
     expect(files(second)).toEqual(files(first));
 
     // Reload, change a row and change it back: every file is as it was.
     const before = files(first);
     const c = await openStore(first);
-    await c.set('view', 'TL-V01', { title: 'Changed' });
-    await c.set('view', 'TL-V01', { title: 'Catalog' });
+    await run(c, 'view change-view', { id: 'TL-V01', title: 'Changed' });
+    await run(c, 'view change-view', { id: 'TL-V01', title: 'Catalog' });
     await c.close();
     expect(files(first)).toEqual(before);
   });
 
   it('LA-PLT-UC01-R06-T02 hold one JSON object per line, sorted by key, columns in table order, with a trailing newline', async () => {
-    const root = writeData({});
+    const root = writeData(everyKind());
     const store = await openStore(root);
-    await store.apply(commands(true));
-    for (const [name, bytes] of Object.entries(files(root))) {
+    const written = await writeSome(store, true);
+    expect(written).toEqual(['builds_on.jsonl', 'term.jsonl', 'uc_requirement.jsonl', 'value_object.jsonl', 'value_object_field.jsonl', 'view.jsonl']);
+    for (const [name, bytes] of Object.entries(files(root)).filter(([f]) => written.includes(f))) {
       const text = bytes.toString('utf8');
       expect(text.endsWith('\n'), name).toBe(true);
       expect(text).not.toContain('\r');
@@ -82,11 +86,11 @@ describe('data files', () => {
   it('LA-PLT-UC01-R06-T03 keep text as UTF-8, and drop a table file when its last row goes', async () => {
     const root = writeData(everyKind());
     const store = await openStore(root);
-    await store.set('product', 'TL', { icon: '🧰', description: 'Café “quotes”, naïve' });
+    await run(store, 'product change-product', { id: 'TL', icon: '🧰', description: 'Café “quotes”, naïve' });
     expect(readFileSync(path.join(root, 'data', 'product.jsonl'), 'utf8')).toBe(
       '{"id":"TL","title":"Tool Library","description":"Café “quotes”, naïve","icon":"🧰"}\n',
     );
-    await store.unlink('meets', 'TL-LEND-CMD01-H', 'TL-STD-CODE-R01');
+    await run(store, 'command change-command-handler', { id: 'TL-LEND-CMD01-H', meets: [] });
     expect(readdirSync(path.join(root, 'data'))).not.toContain('meets.jsonl');
     await store.close();
   });

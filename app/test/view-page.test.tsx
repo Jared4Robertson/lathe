@@ -1,9 +1,11 @@
+import type { ServedData } from './read-view';
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { VIEW_COMMANDS } from '../../lathe/src/authoring/view/commands/index';
 import type { ViewCommands } from '../src/authoring/view/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
@@ -16,7 +18,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The component-test workspace with DM-V01's requirement proved by a test, and a second requirement under a group. */
-function withRequirements(): SpecData {
+function withRequirements(): ServedData {
   const data = addRows(workspace(), 'view_test', { id: 'DM-V01-R01-T01', title: 'The total shows', view_requirement_id: 'DM-V01-R01', level: 'browser', state: 'automated', file: 'test/basket.spec.ts', when: 'Opens the basket.', then: 'Expects the total.' });
   return addRows(data, 'view_requirement', { id: 'DM-V01-R02', title: 'Shows the shipping', view_id: 'DM-V01', statement: 'The basket page MUST show the shipping cost.', group_name: 'Costs' });
 }
@@ -42,7 +44,7 @@ describe('LA-V150-R04-T01 a view\'s page lists its requirements under their grou
   it('shows the route and the requirements table: the ungrouped first, then each group under its heading', async () => {
     await openApp('/DM-V01', { data: withRequirements() });
     const table = await within(main()).findByRole('table', { name: /The requirements of DM-V01/ });
-    expect(within(screen.getByRole('complementary', { name: 'Facts' })).getByText('/basket')).toBeInTheDocument();
+    expect(within(main()).getByText('/basket')).toBeInTheDocument();
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Requirement', 'Proved by']);
     const groups = table.querySelectorAll('tbody');
     expect(groups).toHaveLength(2);
@@ -57,7 +59,7 @@ describe('LA-V150-R02-T01 the View editor writes only through the aggregate\'s o
   it('Edit sends Change a view requirement with only what changed; an emptied group is cleared with null; no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withRequirements(), 'view_requirement', 'DM-V01-R02', { group_name: null });
-    const { commands, writes } = await openApp('/DM-V01-R02', { data: withRequirements(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-V01-R02', { data: withRequirements(), command: () => ({ answer: ok, data: changed() }) });
     const actions = await toolbar('DM-V01-R02');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add view test', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -65,13 +67,12 @@ describe('LA-V150-R02-T01 the View editor writes only through the aggregate\'s o
     await user.clear(within(form).getByRole('textbox', { name: /^group name/ }));
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/view/change-view-requirement', input: { id: 'DM-V01-R02', group_name: null } }]));
-    expect(writes).toEqual([]);
   });
 
   it('adds a requirement under the view with the next free ID, through Add a view requirement', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-V01', { data: withRequirements(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('DM-V01')).getByRole('button', { name: 'Add view requirement' }));
+    await chooseAdd(user, await toolbar('DM-V01'), 'View requirement');
     const form = screen.getByRole('form', { name: 'Add a view requirement' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-V01-R03'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Shows the tax');
@@ -82,7 +83,7 @@ describe('LA-V150-R02-T01 the View editor writes only through the aggregate\'s o
 
   it('adds a view from its product\'s page through the aggregate\'s own Add, with the next free ID and no parent', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM', { command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM', { command: () => ({ answer: ok }) });
     const actions = await toolbar('DM');
     await user.click(within(actions).getByRole('button', { name: 'Add…' }));
     await user.click(within(within(actions).getByRole('group', { name: 'Kinds to add under DM' })).getByRole('button', { name: 'View' }));
@@ -92,7 +93,6 @@ describe('LA-V150-R02-T01 the View editor writes only through the aggregate\'s o
     await user.type(within(form).getByRole('textbox', { name: /^description/ }), 'Shows the order before the shopper pays.');
     await user.click(within(form).getByRole('button', { name: 'Add view' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/view/add-view', input: { id: 'DM-V02', title: 'Checkout', description: 'Shows the order before the shopper pays.' } }]));
-    expect(writes).toEqual([]);
   });
 });
 

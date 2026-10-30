@@ -1,11 +1,9 @@
-import { Fragment } from 'react';
 import type { PatternPage as Pattern, PatternRuleOnPage } from '../../../../lathe/src/authoring/pattern/read-model';
 import type { PatternRuleRow } from '../../../../lathe/src/platform/data/tables';
 import type { AggregatePageProps } from '../../record/pages';
 import { Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink, Section } from '../../specs/parts';
-import { appliesWhenText, type AppliesWhen } from '../../specs/patterns';
 import { RecordFrame } from '../../specs/RecordContent';
 import { FollowedBy, FollowedInCount, OwedBy } from '../../traceability/pattern-following/Followers';
 import { PatternEditor } from './PatternEditor';
@@ -24,21 +22,6 @@ import { usePattern } from './reads';
 /** A pattern's followers have their own section, so its Traceability leaves them out. */
 const PATTERN_SKIP: ReadonlySet<string> = new Set(['in:follows']);
 
-/** A rule's applies-when condition, or null when it has none. */
-const conditionOf = (rule: PatternRuleRow): AppliesWhen | null =>
-  rule.applies_when_setting ? { setting: rule.applies_when_setting, not: rule.applies_when_negated === true, value: rule.applies_when_value ?? '' } : null;
-
-/** What a rule's row says of its setting and its condition: "setting audit", "applies when scope is not single". */
-function RuleTags({ rule }: { rule: PatternRuleRow }) {
-  const condition = conditionOf(rule);
-  return (
-    <>
-      {rule.setting && <small className="meta"> setting {rule.setting}</small>}
-      {condition && <small className="meta"> applies when {appliesWhenText(condition)}</small>}
-    </>
-  );
-}
-
 /** The rules under their groups: the ungrouped ones first, then each group in the order it first appears. */
 function groupsOf(rules: readonly PatternRuleOnPage[]): { heading: string | null; rules: PatternRuleOnPage[] }[] {
   const groups = new Map<string, { heading: string | null; rules: PatternRuleOnPage[] }>();
@@ -52,24 +35,20 @@ function groupsOf(rules: readonly PatternRuleOnPage[]): { heading: string | null
   return [...groups.entries()].sort(([a], [b]) => (a === '' ? -1 : b === '' ? 1 : 0)).map(([, g]) => g);
 }
 
-/** The settings table: each setting, what it means, and the rules that depend on it. */
-function Settings({ index, page }: { index: SpecIndex; page: Pattern }) {
+/** The settings table: each setting and what it means. */
+function Settings({ page }: { page: Pattern }) {
   return (
     <Section title="Settings" count={page.settings.length}>
       {page.settings.length === 0 ? <p className="hint">This pattern has no settings.</p> : (
         <div className="table-scroll table-stack"><table className="data-table pattern-settings" role="table">
-          <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Setting</th><th scope="col" role="columnheader">Meaning</th><th scope="col" role="columnheader">Rules that depend on it</th></tr></thead>
+          <thead role="rowgroup"><tr role="row"><th scope="col" role="columnheader">Setting</th><th scope="col" role="columnheader">Meaning</th></tr></thead>
           <tbody role="rowgroup">
-            {page.settings.map((s) => {
-              const dependent = page.rules.filter((r) => r.rule.setting?.trim() === s.name || r.rule.applies_when_setting === s.name);
-              return (
-                <tr key={s.name} role="row">
-                  <th scope="row" role="rowheader"><code>{s.name}</code></th>
-                  <td role="cell" data-label="Meaning">{s.meaning}</td>
-                  <td role="cell" data-label="Rules that depend on it">{dependent.length === 0 ? <span className="hint">None</span> : dependent.map((r, i) => <Fragment key={r.rule.id}>{i > 0 && ', '}<RecordLink index={index} id={r.rule.id} showTitle={false} /></Fragment>)}</td>
-                </tr>
-              );
-            })}
+            {page.settings.map((s) => (
+              <tr key={s.name} role="row">
+                <th scope="row" role="rowheader"><code>{s.name}</code></th>
+                <td role="cell" data-label="Meaning">{s.meaning}</td>
+              </tr>
+            ))}
           </tbody>
         </table></div>
       )}
@@ -78,13 +57,13 @@ function Settings({ index, page }: { index: SpecIndex; page: Pattern }) {
 }
 
 /** The rules under their group headings, each with its tags. */
-function Rules({ index, page }: { index: SpecIndex; page: Pattern }) {
+function Rules({ index, page }: { index: RecordIndex; page: Pattern }) {
   return (
     <Section title="Rules" count={page.rules.length}>
       {page.rules.length === 0 ? <p className="hint">No rules yet.</p> : groupsOf(page.rules).map((g) => {
         const list = (
           <ul className="record-list plain pattern-rules">
-            {g.rules.map((r) => <li key={r.rule.id}><RecordLink index={index} id={r.rule.id} row /><RuleTags rule={r.rule} /></li>)}
+            {g.rules.map((r) => <li key={r.rule.id}><RecordLink index={index} id={r.rule.id} row /></li>)}
           </ul>
         );
         return g.heading === null ? <div key="">{list}</div> : <Section key={g.heading} title={g.heading} count={g.rules.length} level={3} className="record-group">{list}</Section>;
@@ -96,18 +75,13 @@ function Rules({ index, page }: { index: SpecIndex; page: Pattern }) {
 const ruleOf = (page: Pattern, id: string) => page.rules.find((r) => r.rule.id === id)!;
 const testOf = (page: Pattern, id: string) => page.rules.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
 
-/** A rule's short facts: its group, its setting and its condition. */
+/** A rule's short facts: its group. */
 function ruleFacts(rule: PatternRuleRow): Fact[] {
-  const condition = conditionOf(rule);
-  return [
-    ...(rule.group_name ? [{ label: 'Group', value: rule.group_name }] : []),
-    ...(rule.setting ? [{ label: 'Setting', value: <code>{rule.setting}</code> }] : []),
-    ...(condition ? [{ label: 'Applies when', value: appliesWhenText(condition) }] : []),
-  ];
+  return rule.group_name ? [{ label: 'Group', value: rule.group_name }] : [];
 }
 
 /** What one record of the pattern shows on its page, by the kind it is in the pattern. */
-function Content({ index, page }: { index: SpecIndex; page: Pattern }) {
+function Content({ index, page }: { index: RecordIndex; page: Pattern }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'pattern':
@@ -115,7 +89,7 @@ function Content({ index, page }: { index: SpecIndex; page: Pattern }) {
         <>
           <Text index={index} id={id} source={page.pattern.description} field="description" />
           <Text index={index} id={id} source={page.pattern.notes} title="Notes" field="notes" />
-          <Settings index={index} page={page} />
+          <Settings page={page} />
           <Rules index={index} page={page} />
           <FollowedBy index={index} page={page} />
         </>
@@ -140,7 +114,7 @@ function Content({ index, page }: { index: SpecIndex; page: Pattern }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Pattern): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Pattern): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   switch (kind) {

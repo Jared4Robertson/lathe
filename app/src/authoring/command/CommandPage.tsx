@@ -2,10 +2,9 @@ import type { CommandPage as Command } from '../../../../lathe/src/authoring/com
 import { plural } from '../../plural';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
-import { kindLabel, type SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import { RecordedExceptions } from '../../specs/RecordText';
 import { CommandEditor } from './CommandEditor';
 import { useCommand } from './reads';
 
@@ -18,12 +17,12 @@ import { useCommand } from './reads';
 // every record's page holds around that (traceability, problems, facts and links) is the Record page's (RecordFrame).
 
 /** A list of one kind is titled by that kind's plural label (LA-V92-R09). */
-const titleOf = (index: SpecIndex, kind: string) => plural(kindLabel(index, kind));
+const titleOf = (index: RecordIndex, kind: string) => plural(kindLabel(index, kind));
 
 const policyOf = (page: Command, id: string) => page.policies.find((p) => p.policy.id === id || p.eventHandler?.handler.id === id || p.test?.test.id === id)!;
 
 /** What one record of the command shows on its page, by the kind it is in the command. */
-function Content({ index, page }: { index: SpecIndex; page: Command }) {
+function Content({ index, page }: { index: RecordIndex; page: Command }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'command':
@@ -33,10 +32,6 @@ function Content({ index, page }: { index: SpecIndex; page: Command }) {
           <RowsSection index={index} title={titleOf(index, 'command_handler')} ids={page.handler ? [page.handler.handler.id] : []} label={`${titleOf(index, 'command_handler')} of ${id}`} empty="No handler carries it out yet." />
           <RowsSection index={index} title={titleOf(index, 'policy')} ids={page.policies.map((p) => p.policy.id)} label={`${titleOf(index, 'policy')} of ${id}`} empty="No policy sends it." />
           <RowsSection index={index} title={titleOf(index, 'endpoint')} ids={page.endpoints} label={`${titleOf(index, 'endpoint')} of ${id}`} empty="No endpoint exposes it." className="command-endpoints" />
-          {page.alsoChanges.length > 0 && (
-            <RecordedExceptions index={index} rows={page.alsoChanges.map((c) => ({ aggregate_id: c.aggregate, reason: c.reason }))} owner={id} title="Also changes"
-              hint="A recorded exception to one aggregate per command: each is changed in the same transaction, and the checks list it so it stays deliberate." />
-          )}
         </>
       );
     case 'command_handler':
@@ -67,7 +62,7 @@ const technicalFacts = (file: string | undefined, packages: readonly string[]): 
 ];
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Command): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Command): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const ofCommand: Fact = { label: 'Command', value: <RecordLink index={index} id={page.command.id} /> };
   switch (kind) {

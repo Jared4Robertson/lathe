@@ -5,10 +5,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
+import { AddMenu } from '../../edit/AddMenu';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendValueObject, type ValueObjectCommands, type ValueObjectRoute } from './commands';
 import { useNextValueObjectId } from './reads';
@@ -31,11 +32,11 @@ const LABEL: Record<ValueObjectKind, string> = { value_object: 'value object', c
 const FIELD_COLUMNS = ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'];
 
 /** The records of the product of a kind, as choices. */
-const choices = (index: SpecIndex, product: string, kind: string): Choice[] =>
+const choices = (index: RecordIndex, product: string, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
-function fieldsOf(index: SpecIndex, product: string, kind: ValueObjectKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string, kind: ValueObjectKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'value_object':
@@ -53,7 +54,7 @@ function fieldsOf(index: SpecIndex, product: string, kind: ValueObjectKind, addi
         { field: 'title', column: 'title', table: 'value_type' },
         { field: 'file', column: 'file', table: 'value_type' },
         { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, 'standard_rule') },
-        { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
       ];
     case 'constraint_test': {
       const table = 'constraint_test';
@@ -76,10 +77,6 @@ function fieldsOf(index: SpecIndex, product: string, kind: ValueObjectKind, addi
   }
 }
 
-/** The packages field's text as its list: one package per line; a form without the field leaves it out. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 'packages');
-const hasPackages = (specs: FieldSpec[]) => specs.some((s) => s.field === 'packages');
 
 const constraintOf = (page: ValueObjectPage, id: string) => page.constraints.find((c) => c.constraint.id === id)!;
 const holdingTest = (page: ValueObjectPage, id: string) => page.constraints.find((c) => c.test?.test.id === id)!;
@@ -142,7 +139,7 @@ function goesWith(page: ValueObjectPage, kind: ValueObjectKind, id: string): str
 }
 
 /** The record a removed one's page gives way to: what it sits under (a value object, its product). */
-function parentOf(index: SpecIndex, page: ValueObjectPage, kind: ValueObjectKind, id: string): string {
+function parentOf(index: RecordIndex, page: ValueObjectPage, kind: ValueObjectKind, id: string): string {
   if (kind === 'value_object') return page.product || (index.byId.get(id)?.product ?? '');
   if (kind === 'constraint_test') return holdingTest(page, id).constraint.id;
   return page.valueObject.id;
@@ -151,7 +148,7 @@ function parentOf(index: SpecIndex, page: ValueObjectPage, kind: ValueObjectKind
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'remove' };
 
 /** A record of the value object with its actions; a form or the remove question shows in place of its page. */
-export function ValueObjectEditor({ index, page, children }: { index: SpecIndex; page: ValueObjectPage; children: ReactNode }) {
+export function ValueObjectEditor({ index, page, children }: { index: RecordIndex; page: ValueObjectPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -168,11 +165,7 @@ export function ValueObjectEditor({ index, page, children }: { index: SpecIndex;
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, withoutPackages(specs), draft, current, { id }, CHANGE[kind].clearable);
-      if (hasPackages(specs)) {
-        const packages = packagesOf(draft);
-        if (JSON.stringify([...packages].sort()) !== JSON.stringify([...((current.packages ?? []) as string[])].sort())) input.packages = packages;
-      }
+      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await send(writer, CHANGE[kind].route, input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
@@ -185,7 +178,7 @@ export function ValueObjectEditor({ index, page, children }: { index: SpecIndex;
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {addedUnder(page, kind, id).map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'add', kind: k })}>Add {LABEL[k]}</Button>)}
+        <AddMenu id={id} choices={addedUnder(page, kind, id).map((k) => ({ key: k, label: kindLabel(index, k) }))} onPick={(k) => setMode({ mode: 'add', kind: k as Inside })} />
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
@@ -199,7 +192,7 @@ export function ValueObjectEditor({ index, page, children }: { index: SpecIndex;
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -216,7 +209,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a kind under the record, its ID the next free one (or the one it takes), sent as that kind's Add. */
-function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; product: string; kind: Inside; parent: string; onDone: () => void }) {
+function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex; product: string; kind: Inside; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextValueObjectId(kind, parent, index);
@@ -226,9 +219,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
   }, [next]);
   const specs = fieldsOf(index, product, kind, true);
   const submit = async () => {
-    const input = addInput(index, withoutPackages(specs), draft, { [ADD[kind].parent]: parent });
-    const packages = packagesOf(draft);
-    if (hasPackages(specs) && packages.length > 0) input.packages = packages;
+    const input = addInput(index, specs, draft, { [ADD[kind].parent]: parent });
     const answer = await send(writer, ADD[kind].route, input);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
@@ -241,7 +232,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
 }
 
 /** Add a value object to a product (from the product's page): the aggregate's own Add, its ID the next free one. */
-export function AddValueObjectForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddValueObjectForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextValueObjectId('value_object', parent, index);

@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
-import { parseSpecRoute, type SpecIndex } from '../specs/data';
+import { parseSpecRoute } from '../views/spec-route';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { focusOf, isFocusRoute } from '../views/address';
 import { desktopBridge } from './desktopChrome';
+import { useProblems } from '../checking/problems/reads';
 import { Button } from '../components/Button';
 import './desktopRecord.css';
 
@@ -36,10 +38,11 @@ export function recordIdAt(target: Element | null, pathname: string, known: (id:
   return null;
 }
 
-/** Sends the product's check errors to the Dock badge whenever the specs load or reload. */
-export function useDesktopErrorCount(index: SpecIndex | null) {
+/** Sends the space's check errors, as its Checks panel counts them (list-problems), to the Dock badge whenever the data is read. */
+export function useDesktopErrorCount(index: RecordIndex | null) {
   const setErrorCount = desktopBridge()?.setErrorCount;
-  const count = index ? index.workspace.problems.filter((p) => p.severity === 'error').length : null;
+  const problems = useProblems(index?.product ?? null, index);
+  const count = index && problems.state === 'read' && problems.answer.product === index.product ? problems.answer.errors : null;
   useEffect(() => {
     if (setErrorCount && count !== null) setErrorCount(count);
   }, [setErrorCount, count]);
@@ -55,7 +58,7 @@ export function takeMenuRecord(): string | null {
 }
 
 /** A right-click on a record opens the shell's native record menu in place of the browser's. */
-export function useDesktopRecordMenu(index: SpecIndex | null) {
+export function useDesktopRecordMenu(index: RecordIndex | null) {
   const showRecordMenu = desktopBridge()?.showRecordMenu;
   useEffect(() => {
     if (!showRecordMenu || !index) return;

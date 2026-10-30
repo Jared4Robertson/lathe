@@ -3,7 +3,7 @@ import type { AggregatePageProps } from '../../record/pages';
 import { Summary, Text, readState, type Fact } from '../../record/page-parts';
 import { Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { UiComponentEditor } from './UiComponentEditor';
 import { useUiComponent } from './reads';
 
@@ -14,7 +14,7 @@ import { useUiComponent } from './reads';
 // is the Record page's (RecordFrame); its editor changes them all.
 
 /** The UI component's description and its packages. */
-function Content({ index, page }: { index: SpecIndex; page: UiComponent }) {
+function Content({ index, page }: { index: RecordIndex; page: UiComponent }) {
   const { component } = page;
   return (
     <>

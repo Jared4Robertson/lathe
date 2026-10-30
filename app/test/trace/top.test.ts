@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { addRows, indexOf } from '../fixtures/load';
+import { addRows } from '../fixtures/load';
+import { recordIndexOf } from '../read-view';
 import { modelWorkspace } from '../fixtures/model';
 import { OUTSIDE, traceTop, UNTRACED } from '../../src/trace/top';
 
@@ -17,7 +18,7 @@ function withTop() {
   addRows(data, 'serves', { source_id: 'P-D-CAP01', target_id: 'P-BO01' }, { source_id: 'P-D-CAP01', target_id: 'P-BO02' });
   addRows(data, 'pattern', { id: 'P-PAT-CALM', title: 'Calm', product_id: 'P' });
   addRows(data, 'pattern_rule', { id: 'P-PAT-CALM-R01', title: 'No shouting', pattern_id: 'P-PAT-CALM', statement: 'A message MUST NOT shout.' });
-  return indexOf(data);
+  return recordIndexOf(data);
 }
 
 describe('the top of the Trace stage\'s tree', () => {
@@ -50,7 +51,7 @@ describe('the top of the Trace stage\'s tree', () => {
   });
 
   it('LA-V98-R03-T06 A use case whose capability serves nothing sits under Not under an outcome, in its domain', () => {
-    const top = traceTop(indexOf(modelWorkspace()), 'P', false);
+    const top = traceTop(recordIndexOf(modelWorkspace()), 'P', false);
     expect(top.children.get('P')).toEqual([OUTSIDE]);
     expect(top.children.get('P-D')![0]).toBe('P-D-UC01');
     expect(top.children.get('P-D-UC01')).toEqual(['P-D-UC01-R01', 'P-D-UC01-R02']);

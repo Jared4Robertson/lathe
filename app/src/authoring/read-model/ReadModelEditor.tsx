@@ -5,11 +5,12 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
+import { AddMenu } from '../../edit/AddMenu';
 import { useWriter, type Writer } from '../../edit/write';
-import { adderOf } from '../../record/pages';
+import { adderOf, othersAddedUnder } from '../../record/pages';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendReadModel, type ReadModelCommands, type ReadModelRoute } from './commands';
 import { useNextReadModelId } from './reads';
@@ -34,11 +35,11 @@ const LABEL: Record<ReadModelKind, string> = { read_model: 'read model', query: 
 const FIELD_COLUMNS = ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'];
 
 /** The records of the domain of a kind, as choices. */
-const choices = (index: SpecIndex, domain: string, kind: string): Choice[] =>
+const choices = (index: RecordIndex, domain: string, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.domain === domain).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
-function fieldsOf(index: SpecIndex, domain: string, kind: ReadModelKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, domain: string, kind: ReadModelKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   const code = (table: Code): FieldSpec[] => [
     ...id(table),
@@ -46,7 +47,7 @@ function fieldsOf(index: SpecIndex, domain: string, kind: ReadModelKind, adding:
     { field: 'file', column: 'file', table },
     { field: 'description', column: 'description', table, long: true },
     { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: [...index.byId.values()].filter((r) => r.kind === 'standard_rule' && r.product === index.byId.get(domain)?.product).map((r) => ({ id: r.id, title: r.title })) },
-    { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+    { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
   ];
   switch (kind) {
     case 'read_model':
@@ -72,10 +73,6 @@ function fieldsOf(index: SpecIndex, domain: string, kind: ReadModelKind, adding:
   }
 }
 
-/** The packages field's text as its list: one package per line; a form without the field leaves it out. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 'packages');
-const hasPackages = (specs: FieldSpec[]) => specs.some((s) => s.field === 'packages');
 
 const queryOf = (page: ReadModelPage, id: string) => page.queries.find((q) => q.query.id === id)!;
 const holdingHandler = (page: ReadModelPage, id: string) => page.queries.find((q) => q.handler?.code.id === id)!;
@@ -154,10 +151,10 @@ function parentOf(page: ReadModelPage, kind: ReadModelKind, id: string): string 
   return page.readModel.id;
 }
 
-type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'table' } | { mode: 'remove' };
+type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'adopt'; kind: string } | { mode: 'remove' };
 
 /** A record of the read model with its actions; a form or the remove question shows in place of its page. */
-export function ReadModelEditor({ index, page, children }: { index: SpecIndex; page: ReadModelPage; children: ReactNode }) {
+export function ReadModelEditor({ index, page, children }: { index: RecordIndex; page: ReadModelPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -174,11 +171,7 @@ export function ReadModelEditor({ index, page, children }: { index: SpecIndex; p
     const specs = fieldsOf(index, domain, kind, false);
     const current = currentOf(page, kind, id);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, withoutPackages(specs), draft, current, { id }, CHANGE[kind].clearable);
-      if (hasPackages(specs)) {
-        const packages = packagesOf(draft);
-        if (JSON.stringify([...packages].sort()) !== JSON.stringify([...((current.packages ?? []) as string[])].sort())) input.packages = packages;
-      }
+      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await send(writer, CHANGE[kind].route, input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
@@ -187,16 +180,19 @@ export function ReadModelEditor({ index, page, children }: { index: SpecIndex; p
     return <div className="spec-body"><ChangeForm index={index} specs={specs} current={current} eyebrow={LABEL[kind]} id={id} submit={submit} onDone={back} /></div>;
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} domain={domain} kind={mode.kind} parent={id} onDone={back} /></div>;
-  // The table that stores the read model is the Table aggregate's, added through its own Add form.
-  const AddTable = kind === 'read_model' ? adderOf(index.workspace.schema, 'table') : undefined;
-  if (mode.mode === 'table' && AddTable) return <div className="spec-body"><AddTable index={index} parent={id} onDone={back} /></div>;
-  const stored = [...index.byId.values()].some((r) => r.kind === 'table' && r.parent === id);
+  // What other aggregates add under it (its table, its storage requirements) goes through their own Add forms.
+  if (mode.mode === 'adopt') {
+    const Adder = adderOf(index.meta, mode.kind)!;
+    return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
+  }
+  const own = addedUnder(page, kind, id);
+  const others = othersAddedUnder(index.meta, kind);
   return (
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {addedUnder(page, kind, id).map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'add', kind: k })}>Add {LABEL[k]}</Button>)}
-        {AddTable && !stored && <Button icon="plus" onClick={() => setMode({ mode: 'table' })}>Add table</Button>}
+        <AddMenu id={id} choices={[...own, ...others].map((k) => ({ key: k, label: kindLabel(index, k) }))}
+          onPick={(k) => setMode((own as readonly string[]).includes(k) ? { mode: 'add', kind: k as Inside } : { mode: 'adopt', kind: k })} />
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
@@ -210,7 +206,7 @@ export function ReadModelEditor({ index, page, children }: { index: SpecIndex; p
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -227,7 +223,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a kind under the record, its ID the next free one (or the one it takes), sent as that kind's Add. */
-function AddForm({ index, domain, kind, parent, onDone }: { index: SpecIndex; domain: string; kind: Inside; parent: string; onDone: () => void }) {
+function AddForm({ index, domain, kind, parent, onDone }: { index: RecordIndex; domain: string; kind: Inside; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextReadModelId(kind, parent, index);
@@ -237,9 +233,7 @@ function AddForm({ index, domain, kind, parent, onDone }: { index: SpecIndex; do
   }, [next]);
   const specs = fieldsOf(index, domain, kind, true);
   const submit = async () => {
-    const input = addInput(index, withoutPackages(specs), draft, { [ADD[kind].parent]: parent });
-    const packages = packagesOf(draft);
-    if (hasPackages(specs) && packages.length > 0) input.packages = packages;
+    const input = addInput(index, specs, draft, { [ADD[kind].parent]: parent });
     const answer = await send(writer, ADD[kind].route, input);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
@@ -252,7 +246,7 @@ function AddForm({ index, domain, kind, parent, onDone }: { index: SpecIndex; do
 }
 
 /** Add a read model to a domain (from the domain's page): the aggregate's own Add, its ID the next free one. */
-export function AddReadModelForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddReadModelForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextReadModelId('read_model', parent, index);

@@ -1,15 +1,17 @@
-// GET /api/baseline (LA-EXP-EP02): a product's rows at a baseline, read from git, against a temporary git repo made
-// here: at the last commit, where the branch left the default branch, and at a commit the app noted. The repo gets its
-// author from the environment and ignores the machine's own git config, so the test reads and writes no git config.
+// The Record changes read over HTTP (LA-EXP-QRY13, GET /api/record-changes/list-record-changes): what changed in a
+// product's records since a baseline the server reads from git for the query's `since`, against a temporary git repo
+// made here: since the last commit, since the branch left the default branch, and since a commit the app noted. The
+// repo gets its author from the environment and ignores the machine's own git config, so the test reads and writes no
+// git config.
 import { spawnSync } from 'node:child_process';
 import { rmSync } from 'node:fs';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { configuredRoot } from './store/fixture.ts';
-import { recordChanges } from '../src/changes.ts';
+import type { ProductChanges } from '../src/exploring/record-changes/read-model.ts';
 import { closeStores, handleApi } from '../src/server/api.ts';
-import type { BaselineAnswer } from '../src/server/contract.ts';
 import { openStore, type Store } from '../src/platform/data/index.ts';
+import { run } from './helpers.ts';
 
 const temps: string[] = [];
 let repo = '';
@@ -36,12 +38,10 @@ const UC = 'EX-NOTE-UC01';
 
 async function seed(root: string) {
   const s = await openStore(root);
-  await s.apply([
-    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example', description: 'A small product for writing notes.' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' } },
-    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' } },
-    { op: 'add', table: 'use_case', row: { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' } },
-  ]);
+  await run(s, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.' });
+  await run(s, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' });
+  await run(s, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
+  await run(s, 'use-case add-use-case', { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' });
   return s;
 }
 
@@ -58,9 +58,9 @@ beforeAll(async () => {
   first = git(repo, 'rev-parse', 'HEAD');
   // A branch off main with a commit of its own, then a change not committed yet.
   git(repo, 'checkout', '--quiet', '-b', 'notes');
-  await store.set('use_case', UC, { title: 'Write a short note' });
+  await run(store, 'use-case change-use-case', { id: UC, title: 'Write a short note' });
   git(repo, 'commit', '--quiet', '-am', 'Shorter');
-  await store.set('use_case', UC, { title: 'Write a very short note' });
+  await run(store, 'use-case change-use-case', { id: UC, title: 'Write a very short note' });
 }, 120_000);
 
 afterAll(async () => {
@@ -73,28 +73,32 @@ async function get(root: string, url: string) {
   let body = '';
   const res = { statusCode: 200, setHeader: () => {}, end: (chunk?: string) => { body = chunk ?? ''; } } as unknown as ServerResponse;
   const handled = await handleApi(root, { method: 'GET', url, headers: {} } as IncomingMessage, res, url.split('?')[0]);
-  return { handled, status: res.statusCode, body: JSON.parse(body) as BaselineAnswer & { error?: string } };
+  return { handled, status: res.statusCode, body: JSON.parse(body) as ProductChanges & { error?: string } };
 }
-const title = (answer: BaselineAnswer) => (answer.state === 'ok' ? answer.tables.use_case.find((r) => r.id === UC)?.title : undefined);
+const changes = async (root: string, since: string) => (await get(root, `/api/record-changes/list-record-changes?product_id=EX&since=${since}`)).body;
+/** The use case's title change since the baseline: [before, after], or undefined when it did not change. */
+const titleChange = (answer: ProductChanges) => {
+  const fields = answer.changes.find((c) => c.id === UC)?.fields ?? [];
+  const title = fields.find((f) => f.name === 'title');
+  return title ? [title.before, title.after] : undefined;
+};
 
-describe.skipIf(!hasGit)('baselines', () => {
-  it('LA-EXP-EP02-R01-T01 GET /api/baseline gives the product\'s rows at the last commit, where the branch left main, or a noted commit; says calmly when there is no git; refuses a bad request', async () => {
-    const commit = (await get(repo, '/api/baseline?product=EX&since=commit')).body;
-    expect(commit).toMatchObject({ state: 'ok', subject: 'Shorter', base: null });
-    expect(title(commit)).toBe('Write a short note');
-    const branch = (await get(repo, '/api/baseline?product=EX&since=branch')).body;
-    expect(branch).toMatchObject({ state: 'ok', commit: first, subject: 'Add the example product', base: 'main' });
-    expect(title(branch)).toBe('Write a note');
-    expect(title((await get(repo, `/api/baseline?product=EX&since=${first}`)).body)).toBe('Write a note');
+describe.skipIf(!hasGit)('changes since a baseline', () => {
+  it('LA-EXP-UC15-R01-T03 The Record changes read gives the records changed since the last commit, since the branch left main, or since a noted commit; says calmly when there is no git; refuses a bad request', async () => {
+    const commit = await changes(repo, 'commit');
+    expect(commit.baseline).toMatchObject({ state: 'ok', subject: 'Shorter', base: null });
+    // Since the last commit: the change not committed yet.
+    expect(commit.changes.filter((c) => c.kind === 'use_case')).toMatchObject([{ id: UC, change: 'changed', fields: [{ name: 'title', before: 'Write a short note', after: 'Write a very short note' }] }]);
+    const branch = await changes(repo, 'branch');
+    expect(branch.baseline).toMatchObject({ state: 'ok', commit: first, subject: 'Add the example product', base: 'main' });
+    expect(titleChange(branch)).toEqual(['Write a note', 'Write a very short note']);
+    expect(titleChange(await changes(repo, first))).toEqual(['Write a note', 'Write a very short note']);
 
-    // The diff against the last commit is the change not committed yet.
-    const changes = recordChanges(store.schema, commit.state === 'ok' ? commit.tables : {}, { use_case: store.rows('use_case') });
-    expect(changes.filter((c) => c.kind === 'use_case')).toMatchObject([{ id: UC, change: 'changed', fields: [{ name: 'title', before: 'Write a short note', after: 'Write a very short note' }] }]);
-
-    expect((await get(plain, '/api/baseline?product=EX&since=commit')).body).toMatchObject({ state: 'no-repo' });
-    expect((await get(repo, `/api/baseline?product=EX&since=${'0'.repeat(40)}`)).body).toMatchObject({ state: 'no-commit' });
-    expect((await get(repo, '/api/baseline?product=EX&since=yesterday')).status).toBe(400);
-    expect((await get(repo, '/api/baseline?since=commit')).status).toBe(400);
-    expect((await get(repo, '/api/baseline?product=NOPE&since=commit')).status).toBe(404);
+    expect((await changes(plain, 'commit')).baseline).toMatchObject({ state: 'none' });
+    expect((await changes(plain, 'commit')).changes).toEqual([]);
+    expect((await changes(repo, '0'.repeat(40))).baseline).toMatchObject({ state: 'none' });
+    expect((await get(repo, '/api/record-changes/list-record-changes?product_id=EX&since=yesterday')).status).toBe(400);
+    expect((await get(repo, '/api/record-changes/list-record-changes?since=commit')).status).toBe(400);
+    expect((await get(repo, '/api/record-changes/list-record-changes?product_id=NOPE&since=commit')).status).toBe(422);
   });
 });

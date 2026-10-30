@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardGrid } from '../shell/Card';
 import { lowerLabel } from '../plural';
-import { kindLabel, type SpecIndex } from '../specs/data';
+import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf } from '../views/address';
 import { ToolPanelFrame } from '../views/ToolPanel';
 import { CHANGE_LABEL, ChangeDetails, changeSummary, SincePicker } from './ChangeDetails';
@@ -19,7 +19,7 @@ const TICK_MS = 30_000;
 
 export interface ChangesPanelProps {
   /** The current space's index. */
-  index: SpecIndex;
+  index: RecordIndex;
   /** The record in focus on the stage, whose card is marked. */
   focus: string | null;
   sheet: boolean;
@@ -57,7 +57,7 @@ export function ChangesPanel({ index, focus, sheet, onClose }: ChangesPanelProps
   );
 }
 
-function ChangeCard({ index, change, current, when, now }: { index: SpecIndex; change: RecordChange; current: boolean; when: number | null; now: number }) {
+function ChangeCard({ index, change, current, when, now }: { index: RecordIndex; change: RecordChange; current: boolean; when: number | null; now: number }) {
   const [open, setOpen] = useState(false);
   const title = <><span className="changes-kind">{kindLabel(index, change.kind)}</span> <code>{change.id}</code> {change.title}</>;
   const what = (

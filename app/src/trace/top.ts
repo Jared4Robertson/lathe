@@ -1,4 +1,4 @@
-import { byIdOrder, type SpecIndex } from '../specs/data';
+import { byIdOrder, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { obligationsUnder } from './chain';
 import { isObligation } from './offer';
 
@@ -31,7 +31,7 @@ const STRUCTURE: ReadonlySet<string> = new Set(['product', 'domain']);
 const PARENT_KINDS = ['use_case', 'aggregate', 'view', 'endpoint', 'pattern'];
 
 /** An obligation's records from the top parent under its owner down to itself, and its owner (its domain, else its product). */
-export function pathOf(index: SpecIndex, obligation: string): { owner: string | null; path: string[] } {
+export function pathOf(index: RecordIndex, obligation: string): { owner: string | null; path: string[] } {
   const record = index.byId.get(obligation);
   if (!record) return { owner: null, path: [] };
   const owner = record.domain ?? record.product;
@@ -45,7 +45,7 @@ export function pathOf(index: SpecIndex, obligation: string): { owner: string | 
 }
 
 /** The outcomes a capability serves, in ID order. */
-const servesOf = (index: SpecIndex, capability: string) => (index.outgoing.get(capability) ?? [])
+const servesOf = (index: RecordIndex, capability: string) => (index.outgoing.get(capability) ?? [])
   .filter((l) => l.relation === 'serves' && index.byId.get(l.target)?.kind === 'business_outcome')
   .map((l) => l.target)
   .sort((a, b) => byIdOrder({ id: a }, { id: b }));
@@ -63,19 +63,19 @@ export interface TraceTop {
 }
 
 /** A product's Trace tree from the product down to each obligation. `untraced` says whether to end with the Untraced mark. */
-export function traceTop(index: SpecIndex, product: string, untraced: boolean): TraceTop {
+export function traceTop(index: RecordIndex, product: string, untraced: boolean): TraceTop {
   const children = new Map<string, string[]>();
   const ids = new Map<string, string>([[product, product]]);
   const obligations: { key: string; id: string }[] = [];
   const add = (parent: string, child: string) => { const list = children.get(parent); if (list) { if (!list.includes(child)) list.push(child); } else children.set(parent, [child]); };
-  const outcomes = index.workspace.records
+  const outcomes = [...index.byId.values()]
     .filter((r) => r.kind === 'business_outcome' && r.product === product)
     .map((r) => r.id)
     .sort((a, b) => byIdOrder({ id: a }, { id: b }));
   for (const o of outcomes) { ids.set(o, o); children.set(o, []); }
 
   // Not under an outcome: each owner's (a domain's, the product's) obligations and their parents, by ID.
-  const domains = (index.domainsOf.get(product) ?? []).map((d) => d.id);
+  const domains = index.domains.filter((d) => d.product === product).map((d) => d.id);
   const owned = new Map<string, string[]>([...domains.map((d) => [d, []] as [string, string[]]), [product, []]]);
   let outside = 0;
   for (const o of obligationsUnder(index, product)) {

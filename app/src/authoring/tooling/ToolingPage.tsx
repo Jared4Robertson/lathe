@@ -4,7 +4,7 @@ import { Refusal, problemText } from '../../edit/fields';
 import type { AggregatePageProps } from '../../record/pages';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { ToolingEditor } from './ToolingEditor';
 import { useTooling } from './reads';
 
@@ -30,7 +30,7 @@ function Content({ page }: { page: Tooling }) {
 }
 
 /** The tooling record's summary in the wiki card: a few key facts. */
-function Summary({ index, page }: { index: SpecIndex; page: Tooling }) {
+function Summary({ index, page }: { index: RecordIndex; page: Tooling }) {
   const facts: { label: string; value: ReactNode }[] = [
     { label: 'Domain', value: <RecordLink index={index} id={page.tooling.domain_id} /> },
     ...(page.tooling.file ? [{ label: 'File', value: <code>{page.tooling.file}</code> }] : []),

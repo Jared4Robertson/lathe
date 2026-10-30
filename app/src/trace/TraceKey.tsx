@@ -1,4 +1,5 @@
-import type { SpecIndex, Stage } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
 import type { KeyEntry } from '../views/StageChrome';
 import { stageFor } from '../graph/model';
 import type { TraceMap } from './tree';
@@ -11,7 +12,7 @@ import type { TraceColumn } from './columns';
 const STAGE_ORDER: readonly Stage[] = ['discovery', 'domain-model', 'use-cases', 'interaction-design', 'technical-specification', 'test-plan'];
 
 /** The Trace stage's key entries for its tree, the keys its focus keeps at full strength (null for all) and its filter. */
-export function traceKeyEntries(index: SpecIndex, map: TraceMap, kept: ReadonlySet<string> | null, gapsOnly: boolean): KeyEntry[] {
+export function traceKeyEntries(index: RecordIndex, map: TraceMap, kept: ReadonlySet<string> | null, gapsOnly: boolean): KeyEntry[] {
   const stages = new Set<string>();
   const roles = new Set<string>();
   let links = false;
@@ -34,7 +35,7 @@ export function traceKeyEntries(index: SpecIndex, map: TraceMap, kept: ReadonlyS
   const out: KeyEntry[] = [];
   for (const stage of STAGE_ORDER) {
     if (!stages.has(stage)) continue;
-    const name = index.workspace.stages.find((s) => s.stage === stage)?.label ?? stage;
+    const name = index.meta.stages.find((s) => s.stage === stage)?.label ?? stage;
     out.push({ id: `stage-${stage}`, group: 'colors', sample: <span className={`graph-swatch stage-${stage}`} />, words: name, meaning: `A record of the ${name.toLowerCase()} stage, in its color` });
   }
   if (stages.has('structural')) out.push({ id: 'stage-structural', group: 'colors', sample: <span className="graph-swatch stage-structural" />, words: 'Structural', meaning: 'A product or domain, in the structural colors' });
@@ -56,7 +57,7 @@ export function traceKeyEntries(index: SpecIndex, map: TraceMap, kept: ReadonlyS
 }
 
 /** The Trace stage's key entries for its columns (LA-V98-R13): the colors and boxes its columns hold, the path, the counts, the focus. */
-export function traceColumnKeyEntries(index: SpecIndex, map: TraceMap, columns: readonly TraceColumn[], gapsOnly: boolean): KeyEntry[] {
+export function traceColumnKeyEntries(index: RecordIndex, map: TraceMap, columns: readonly TraceColumn[], gapsOnly: boolean): KeyEntry[] {
   const stages = new Set<string>();
   const roles = new Set<string>();
   let counts = false;
@@ -72,7 +73,7 @@ export function traceColumnKeyEntries(index: SpecIndex, map: TraceMap, columns: 
   const out: KeyEntry[] = [];
   for (const stage of [...STAGE_ORDER, 'structural' as const]) {
     if (!stages.has(stage)) continue;
-    const name = stage === 'structural' ? 'Structural' : index.workspace.stages.find((s) => s.stage === stage)?.label ?? stage;
+    const name = stage === 'structural' ? 'Structural' : index.meta.stages.find((s) => s.stage === stage)?.label ?? stage;
     out.push({ id: `stage-${stage}`, group: 'colors', sample: <span className={`graph-swatch stage-${stage}`} />, words: name, meaning: stage === 'structural' ? 'A product or domain, in the structural colors' : `A record of the ${name.toLowerCase()} stage, in its color` });
   }
   if (roles.has('outside')) out.push({ id: 'outside', group: 'boxes', sample: <span className="graph-swatch stage-structural" />, words: 'Not under an outcome', meaning: 'After the outcomes: the obligations no business outcome reaches, by domain' });

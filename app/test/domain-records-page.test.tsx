@@ -1,9 +1,11 @@
+import type { ServedData } from './read-view';
+import { addChoices, chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { DOMAIN_COMMANDS } from '../../lathe/src/authoring/domain/commands/index';
 import type { DomainCommands } from '../src/authoring/domain/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
@@ -16,7 +18,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The demo shop with an outcome its capability serves, a domain service with its service and test, and a repository. */
-function withDomain(): SpecData {
+function withDomain(): ServedData {
   const w = workspace();
   addRows(w, 'business_outcome', { id: 'DM-BO01', title: 'More baskets checked out', product_id: 'DM', statement: 'More baskets are checked out.', measure: 'Baskets checked out each week.', target: 'Two in three.' });
   addRows(w, 'serves', { source_id: 'DM-SHOP-CAP01', target_id: 'DM-BO01' });
@@ -39,7 +41,7 @@ describe('LA-V120-R01-T01 a domain\'s records are read through the Domain aggreg
     expect([...useCases.querySelectorAll('a.row-link')].map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-UC01']);
   });
 
-  it('shows a domain service with its service and tests, and a repository with the aggregates it also persists', async () => {
+  it('shows a domain service with its service and tests, and a repository with its description', async () => {
     await openApp('/DM-SHOP-DS01', { data: withDomain() });
     expect(await within(main()).findByText('The total of a basket is the sum of its lines.')).toBeInTheDocument();
     const service = within(main()).getByRole('heading', { name: /^Service/ }).closest('section')!;
@@ -49,7 +51,7 @@ describe('LA-V120-R01-T01 a domain\'s records are read through the Domain aggreg
 
     await openApp('/DM-SHOP-REPO01', { data: withDomain() });
     expect(await within(main()).findByText('Loads and saves baskets.')).toBeInTheDocument();
-    expect(within(main()).getByRole('heading', { name: /^Also persists/ }).closest('section')).toHaveTextContent('Payments are kept with their baskets.');
+    expect(within(main()).queryByRole('heading', { name: /^Also persists/ })).toBeNull();
   });
 
   it('holds the app\'s list of the aggregate\'s commands to its definitions, one to one', () => {
@@ -66,7 +68,7 @@ describe('LA-V120-R02-T01 the Domain editor writes only through the aggregate\'s
   it('Edit sends Change a term with only what changed, and offers no Move', async () => {
     const user = userEvent.setup();
     const changed = () => setRow(withDomain(), 'term', 'DM-SHOP-TM01', { meaning: 'What a shopper fills before paying.' });
-    const { commands, writes } = await openApp('/DM-SHOP-TM01', { data: withDomain(), command: () => ({ answer: ok, data: changed() }) });
+    const { commands } = await openApp('/DM-SHOP-TM01', { data: withDomain(), command: () => ({ answer: ok, data: changed() }) });
     const actions = await toolbar('DM-SHOP-TM01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -76,31 +78,29 @@ describe('LA-V120-R02-T01 the Domain editor writes only through the aggregate\'s
     await user.type(meaning, 'What a shopper fills before paying.');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/domain/change-term', input: { id: 'DM-SHOP-TM01', meaning: 'What a shopper fills before paying.' } }]));
-    expect(writes).toEqual([]);
     expect(await within(main()).findByText('What a shopper fills before paying.')).toBeInTheDocument();
   });
 
   it('the domain\'s page offers Add for its own kinds and for an aggregate and a test data set, through the aggregates\' own Adds', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/DM-SHOP', { data: withDomain(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/DM-SHOP', { data: withDomain(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP');
-    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add capability', 'Add term', 'Add domain service', 'Add repository', 'Add aggregate', 'Add entry point', 'Add open question', 'Add read model', 'Add specification', 'Add table', 'Add test data set', 'Add tooling', 'Remove']);
-    await user.click(within(actions).getByRole('button', { name: 'Add repository' }));
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add…', 'Remove']);
+    expect(await addChoices(user, actions)).toEqual(['Capability', 'Term', 'Domain service', 'Repository', 'Aggregate', 'Specification', 'Read model', 'Data store', 'Table', 'Entry point', 'Tooling', 'Test data set', 'Open question']);
+    await chooseAdd(user, actions, 'Repository');
     const form = screen.getByRole('form', { name: 'Add a repository' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-REPO02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'LineRepository');
     await user.type(within(form).getByRole('textbox', { name: /^description/ }), 'Loads and saves lines.');
-    await user.click(within(form).getByRole('button', { name: 'Add to Packages' }));
-    await user.type(within(form).getByRole('textbox', { name: /^package 1/ }), 'duckdb');
+    await user.type(within(form).getByRole('textbox', { name: /^Packages/ }), 'duckdb');
     await user.click(within(form).getByRole('button', { name: 'Add repository' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/domain/add-repository', input: { domain_id: 'DM-SHOP', id: 'DM-SHOP-REPO02', title: 'LineRepository', description: 'Loads and saves lines.', packages: ['duckdb'] } }]));
-    expect(writes).toEqual([]);
   });
 
   it('adds a test data set from the domain\'s page through the Test data set aggregate\'s own Add', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP', { data: withDomain(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('DM-SHOP')).getByRole('button', { name: 'Add test data set' }));
+    await chooseAdd(user, await toolbar('DM-SHOP'), 'Test data set');
     const form = screen.getByRole('form', { name: 'Add a test data set' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-TD01'));
     for (const [name, text] of [['title', 'An empty basket'], ['environment', 'A fresh store.'], ['records', 'One shopper.'], ['prepare', 'Seed it.'], ['reset', 'Drop it.'], ['description', 'A shopper with nothing in the basket.']]) {

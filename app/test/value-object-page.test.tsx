@@ -1,3 +1,4 @@
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -47,7 +48,7 @@ describe('LA-V142-R04-T01 a value object shows its fields with their types, its 
 describe('LA-V142-R02-T01 the Value object editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a value object with only what changed; Add a constraint takes the next free ID; no Move', async () => {
     const user = userEvent.setup();
-    const { commands, writes } = await openApp('/P-VO01', { data: modelWorkspace(), command: () => ({ answer: ok }) });
+    const { commands } = await openApp('/P-VO01', { data: modelWorkspace(), command: () => ({ answer: ok }) });
     const actions = await toolbar('P-VO01');
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add constraint', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
@@ -56,14 +57,13 @@ describe('LA-V142-R02-T01 the Value object editor writes only through the aggreg
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/value-object/change-value-object', input: { id: 'P-VO01', description: 'What a thing or member is called. Never blank.' } }]));
 
-    await user.click(within(await toolbar('P-VO01')).getByRole('button', { name: 'Add constraint' }));
+    await chooseAdd(user, await toolbar('P-VO01'), 'Constraint');
     const add = screen.getByRole('form', { name: 'Add a constraint' });
     await waitFor(() => expect(within(add).getByRole('textbox', { name: /^ID/ })).toHaveValue('P-VO01-C02'));
     await user.type(within(add).getByRole('textbox', { name: /^title/ }), 'A name is short');
     await user.type(within(add).getByRole('textbox', { name: /^statement/ }), 'A name MUST be 80 characters at most.');
-    await user.click(within(add).getByRole('button', { name: 'Add constraint' }));
+    await chooseAdd(user, add, 'Constraint');
     await waitFor(() => expect(commands[1]).toEqual({ route: '/api/value-object/add-constraint', input: { value_object_id: 'P-VO01', id: 'P-VO01-C02', title: 'A name is short', statement: 'A name MUST be 80 characters at most.' } }));
-    expect(writes).toEqual([]);
   });
 });
 

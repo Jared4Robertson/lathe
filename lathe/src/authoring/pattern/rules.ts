@@ -19,32 +19,15 @@ export function patternRuleTestPerDomain(tests: readonly PatternRuleTestRow[]): 
   }));
 }
 
-/**
- * Every rule of the pattern that breaks LA-AUT-INV19: the setting it depends on and its applies-when setting are
- * settings of its pattern, and its applies-when condition is given whole (setting, negation and value) or not at all.
- */
+/** Every rule the pattern breaks: LA-AUT-INV105, one pattern rule test per rule and domain. */
 export function patternProblems(pattern: Pattern): RuleProblem[] {
-  const settings = new Set(pattern.settings.map((s) => s.name));
-  const problems: RuleProblem[] = [];
-  const broken = (rule: Pattern['rules'][number], message: string) =>
-    problems.push({ rule: 'pattern-rule-setting', table: 'pattern_rule', row: rule as unknown as Row, message: `pattern rule ${rule.id} ${message}` });
-  const given = (value: unknown) => value !== undefined && value !== null;
-  for (const rule of pattern.rules) {
-    if (given(rule.setting) && !settings.has(String(rule.setting))) broken(rule, `depends on setting ${String(rule.setting)}, which pattern ${pattern.root} does not have`);
-    const parts = [rule.applies_when_setting, rule.applies_when_negated, rule.applies_when_value].filter(given).length;
-    if (parts !== 0 && parts !== 3) broken(rule, 'gives part of its applies-when condition: give its setting, whether it is negated and its value, or none of them');
-    else if (given(rule.applies_when_setting) && !settings.has(String(rule.applies_when_setting))) broken(rule, `applies when setting ${String(rule.applies_when_setting)}, which pattern ${pattern.root} does not have`);
-  }
-  return problems;
+  return patternRuleTestPerDomain(pattern.ruleTests.map((t) => t.row));
 }
 
 /** The rules over all data: every pattern, whole, and each rule's tests. */
 export const patternRules: AggregateRules = {
   aggregate: PATTERN_AGGREGATE,
-  check: (view) => [
-    ...patternsFrom((table) => view.rows(table)).flatMap((pattern) => patternProblems(pattern)),
-    ...patternRuleTestPerDomain(view.rows('pattern_rule_test') as unknown as PatternRuleTestRow[]),
-  ],
+  check: (view) => patternsFrom((table) => view.rows(table)).flatMap((pattern) => patternProblems(pattern)),
 };
 
 /** Refuses the command, with every reason, when the pattern as it would be saved breaks one of its rules. */

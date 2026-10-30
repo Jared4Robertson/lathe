@@ -14,7 +14,9 @@ import { Link, navigate, onLeaveEntry } from '../router';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { BottomSheet } from '../shell/BottomSheet';
 import { useNarrow } from '../shell/useNarrow';
-import { parseSpecRoute, type SpecIndex, type SpecState } from '../specs/data';
+import { parseSpecRoute } from './spec-route';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { type DataState } from '../exploring/record-summaries/reads';
 import { NotFound } from '../specs/SpecPages';
 import { addressOf, HOME_PATH, focusOf, isFocusRoute, pathOf, STAGE_LABELS, stageFromSearch, withStage, type FocusRoute, type StageName } from './address';
 import { HeaderStrip } from './HeaderStrip';
@@ -63,7 +65,7 @@ export const CARD_SETTLE_MS = 180;
 
 // ---------- The page ----------
 
-export function FocusPage({ spec, route, search }: { spec: SpecState; route: FocusRoute; search: string }) {
+export function FocusPage({ spec, route, search }: { spec: DataState; route: FocusRoute; search: string }) {
   const { index } = spec;
   let body: ReactNode;
   if (!index) body = <div className="placeholder focus-missing panel"><p>{spec.error ? `Couldn't load the specs: ${spec.error}` : 'Loading specs…'}</p></div>;
@@ -79,7 +81,7 @@ export function FocusPage({ spec, route, search }: { spec: SpecState; route: Foc
   );
 }
 
-function invalid(index: SpecIndex, route: FocusRoute): ReactNode | null {
+function invalid(index: RecordIndex, route: FocusRoute): ReactNode | null {
   if (route.page === 'product') {
     return index.byId.get(route.product)?.kind === 'product' ? null : <div className="focus-missing panel"><NotFound what="product" id={route.product} /></div>;
   }
@@ -116,7 +118,7 @@ function useSettled<T>(value: T, ms: number): T {
 }
 
 /** The route and query of the place's address; the window's own while the place's is not a focus page's. */
-function useShownRoute(index: SpecIndex, address: string, addressRoute: FocusRoute, addressSearch: string): { route: FocusRoute; search: string } {
+function useShownRoute(index: RecordIndex, address: string, addressRoute: FocusRoute, addressSearch: string): { route: FocusRoute; search: string } {
   return useMemo(() => {
     const q = address.indexOf('?');
     const path = q < 0 ? address : address.slice(0, q);
@@ -127,7 +129,7 @@ function useShownRoute(index: SpecIndex, address: string, addressRoute: FocusRou
   }, [index, address, addressRoute, addressSearch]);
 }
 
-function Focused({ index, route: addressRoute, search: addressSearch }: { index: SpecIndex; route: FocusRoute; search: string }) {
+function Focused({ index, route: addressRoute, search: addressSearch }: { index: RecordIndex; route: FocusRoute; search: string }) {
   // The place shown: the browser tab's on the web, the active tab's in the desktop app, whose address the window's follows.
   const place = usePlace(index, addressRoute, addressSearch);
   const { route, search } = useShownRoute(index, place.address, addressRoute, addressSearch);
@@ -438,7 +440,7 @@ function useFollow(focus: string, onNavigate: (id: string) => void, stageEl: Ref
  * The stage behind the products picker (LA-V97): the last product's stage, on the stage last used, dimmed and out of
  * reach under the picker; or, with no product to show (a first launch), an empty map.
  */
-export function StageBackdrop({ index, focus }: { index: SpecIndex | null; focus: string | null }) {
+export function StageBackdrop({ index, focus }: { index: RecordIndex | null; focus: string | null }) {
   const [space] = useState(createOpenSpaceStore);
   const stageEl = useRef<HTMLDivElement>(null);
   const layout = useRef<HTMLDivElement>(null);
@@ -467,7 +469,7 @@ export function StageBackdrop({ index, focus }: { index: SpecIndex | null; focus
 }
 
 /** The route of the page the wiki card shows: the settled focus's, or the address's own once they agree. */
-function useCardRoute(index: SpecIndex, settled: string, route: FocusRoute): FocusRoute {
+function useCardRoute(index: RecordIndex, settled: string, route: FocusRoute): FocusRoute {
   const [last, setLast] = useState<{ focus: string; route: FocusRoute }>({ focus: focusOf(route), route });
   if (focusOf(route) === settled && (last.focus !== settled || last.route !== route)) {
     setLast({ focus: settled, route });
@@ -506,7 +508,7 @@ function CardHandle({ width, onWidth, onReset, onCollapse }: { width: number | n
 // ---------- The phone layout ----------
 
 interface PhoneLayoutProps {
-  index: SpecIndex;
+  index: RecordIndex;
   /** The desktop app's tabs, shown as the Open pages sheet; null on the web. */
   tabs: TabsApi | null;
   stage: StageName;

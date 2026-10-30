@@ -1,10 +1,10 @@
-import type { Row, SpecIndex, SpecRecord } from '../specs/data';
-import { textOf, byIdOrder, partsOf } from '../specs/data';
+import type { ErdBox, ErdEnd, ErdKind, ErdLine, ErdMap, ErdRelation } from '../../../lathe/src/exploring/erd/read-model';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { keptFade, type Fade, type FadeLook } from '../graph/fade';
-import { onePerData } from '../graph/one-map';
+import { useRead, type Read } from '../record/read';
 
-// The ERD stage's map, as plain data (no React): one entity-relationship diagram of a whole product,
-// laid out once per product and data change (layout.ts), that every focus navigates (LA-V94-R08).
+// The ERD stage's map: one entity-relationship diagram of a whole product, as the ERD read gives it (LA-EXP-RM04,
+// get-erd), laid out once per answer (layout.ts), that every focus navigates (LA-V94-R08).
 //
 // - Each domain is a region; its aggregates are areas inside it, each a boundary around its entities
 //   (the root marked), each entity with its fields and their types. A domain with no aggregates, and
@@ -16,15 +16,9 @@ import { onePerData } from '../graph/one-map';
 //   faded (the graph's focus fade), and a box to pick out; the camera frames that box, or the scope.
 //   Nothing on the map moves or changes size with the focus.
 
-/** A line end: exactly one (two bars), many (a crow's foot), none (a plain end) or an arrowhead (the aggregate a reference points at). */
-export type ErdEnd = 'one' | 'many' | 'none' | 'arrow';
-/** What a box is: a domain's region, an aggregate (a boundary around its entities) or an entity. */
-export type ErdKind = 'domain' | 'aggregate' | 'entity';
+export type { ErdBox, ErdEnd, ErdKind, ErdLine, ErdMap, ErdRelation };
 
-/** What a line stands for: a stored `has_one` or `has_many` link, or a field typed by another aggregate (`references`). */
-export type ErdRelation = 'has_one' | 'has_many' | 'references';
-
-/** The ends each line draws, at its source and its target. */
+/** The ends each line draws, at its source and its target: as the ERD read draws them, for the key's sample lines. */
 export const RELATION_ENDS: Record<ErdRelation, [ErdEnd, ErdEnd]> = {
   has_one: ['one', 'one'],
   has_many: ['one', 'many'],
@@ -36,102 +30,9 @@ export const LINE_WORDS: Partial<Record<ErdRelation, string>> = {
   references: 'references by ID',
 };
 
-export interface ErdField { field: string; kind: string }
-
-export interface ErdBox {
-  id: string;
-  kind: ErdKind;
-  title: string;
-  /** An entity that is its aggregate's root. */
-  root: boolean;
-  /** An entity's fields with their types (empty for a domain and an aggregate). */
-  fields: ErdField[];
-  /** The box it sits in: an entity's aggregate, an aggregate's domain; none for a domain. */
-  parent?: string;
-  /** A domain with no aggregates, or an aggregate with no entities: a closed box that says so. */
-  empty: boolean;
-}
-
-export interface ErdLine {
-  id: string;
-  source: string;
-  target: string;
-  relation: ErdRelation;
-  sourceEnd: ErdEnd;
-  targetEnd: ErdEnd;
-  dashed: boolean;
-  /** The fields a reference stands for ("Loan.Member"), for its tooltip and its hover label. */
-  via: string[];
-}
-
-/** A product's whole ERD: every domain's region with its aggregates and entities, and every line between them. */
-export interface ErdMap {
-  product: string;
-  boxes: ErdBox[];
-  lines: ErdLine[];
-}
-
-const isRootEntity = (r: SpecRecord) => textOf(r.row, 'role') === 'root';
-const childrenOfKind = (index: SpecIndex, id: string, kind: string) => (index.children.get(id) ?? []).filter((r) => r.kind === kind).sort(byIdOrder);
-const titleOf = (index: SpecIndex, id: string | null) => (id ? index.byId.get(id)?.title ?? id : '');
-const targets = (index: SpecIndex, id: string, relation: string) =>
-  (index.outgoing.get(id) ?? []).filter((l) => l.relation === relation).map((l) => index.byId.get(l.target)).filter((r): r is SpecRecord => !!r).sort(byIdOrder);
-
-/** An aggregate's entities: the root first, then the children, in ID order. */
-export function entitiesOf(index: SpecIndex, aggregate: string): SpecRecord[] {
-  return [...childrenOfKind(index, aggregate, 'entity')].sort((a, b) => Number(isRootEntity(b)) - Number(isRootEntity(a)) || byIdOrder(a, b));
-}
-
-/** A field's type in words: its basic type, its value object's title, or "→ Aggregate" for a reference. */
-export function fieldType(index: SpecIndex, field: Row): string {
-  const vo = textOf(field, 'type_value_object_id');
-  if (vo) return titleOf(index, vo);
-  const aggregate = textOf(field, 'type_aggregate_id');
-  if (aggregate) return `→ ${titleOf(index, aggregate)}`;
-  return textOf(field, 'type');
-}
-
-const fieldsOf = (index: SpecIndex, id: string): ErdField[] =>
-  partsOf(index, id, 'entity_field').map((f) => ({ field: textOf(f, 'name'), kind: fieldType(index, f) }));
-
-/** A product's map: built once per index, that is once per data change (graph/one-map.ts), then read. */
-export const erdMap = onePerData(buildMap);
-
-function buildMap(index: SpecIndex, productId: string): ErdMap {
-  const boxes = new Map<string, ErdBox>();
-  const lines = new Map<string, ErdLine>();
-  const domains = index.workspace.records.filter((r) => r.kind === 'domain' && r.product === productId).sort(byIdOrder);
-  for (const d of domains) {
-    const aggregates = childrenOfKind(index, d.id, 'aggregate');
-    boxes.set(d.id, { id: d.id, kind: 'domain', title: d.title, root: false, fields: [], empty: aggregates.length === 0 });
-    for (const a of aggregates) {
-      const entities = entitiesOf(index, a.id);
-      boxes.set(a.id, { id: a.id, kind: 'aggregate', title: a.title, root: false, fields: [], parent: d.id, empty: entities.length === 0 });
-      for (const e of entities) boxes.set(e.id, { id: e.id, kind: 'entity', title: e.title, root: isRootEntity(e), fields: fieldsOf(index, e.id), parent: a.id, empty: false });
-    }
-  }
-  const line = (source: string, relation: ErdRelation, target: string, via: string[] = []) => {
-    if (source === target || !boxes.has(source) || !boxes.has(target)) return;
-    const id = `${source}|${relation}|${target}`;
-    const known = lines.get(id);
-    if (known) { known.via.push(...via); return; }
-    const [sourceEnd, targetEnd] = RELATION_ENDS[relation];
-    lines.set(id, { id, source, target, relation, sourceEnd, targetEnd, dashed: relation === 'references', via: [...via] });
-  };
-  // Where a reference to an aggregate ends: at its root entity, or at its closed box when it has none.
-  const rootOf = new Map<string, string>();
-  for (const b of boxes.values()) if (b.kind === 'entity' && b.root && b.parent) rootOf.set(b.parent, b.id);
-  const entities = [...boxes.values()].filter((b) => b.kind === 'entity');
-  for (const e of entities) for (const relation of ['has_one', 'has_many'] as const) for (const t of targets(index, e.id, relation)) line(e.id, relation, t.id);
-  for (const e of entities) {
-    for (const f of partsOf(index, e.id, 'entity_field')) {
-      const target = textOf(f, 'type_aggregate_id');
-      if (!target || target === e.parent || !boxes.has(target)) continue;
-      line(e.id, 'references', rootOf.get(target) ?? target, [`${e.title}.${textOf(f, 'name')}`]);
-    }
-  }
-  return { product: productId, boxes: [...boxes.values()], lines: [...lines.values()] };
-}
+/** A product's map as the ERD read gives it (get-erd): read again whenever the data is (`version`). */
+export const useErd = (product: string | null, version: unknown): Read<ErdMap> =>
+  useRead<ErdMap>('/api/erd/get-erd', product ? { product_id: product } : null, version);
 
 /**
  * What a focus does on its product's map (LA-PAT-APP-UX-R17: every stage works on every focus).
@@ -144,7 +45,7 @@ function buildMap(index: SpecIndex, productId: string): ErdMap {
 export interface ErdFocus { product: string; scope: string; pick: string | null }
 
 /** A focus on its product's map, or null for an unknown focus or one in no product. */
-export function erdFocus(index: SpecIndex, focus: string): ErdFocus | null {
+export function erdFocus(index: RecordIndex, focus: string): ErdFocus | null {
   const slash = focus.indexOf('/');
   if (slash > 0) return erdFocus(index, focus.slice(0, slash));
   const record = index.byId.get(focus);
@@ -154,7 +55,7 @@ export function erdFocus(index: SpecIndex, focus: string): ErdFocus | null {
   if (record.kind === 'domain' || record.kind === 'aggregate') return { product, scope: record.id, pick: record.id };
   if (record.kind === 'entity' && record.parent) return { product, scope: record.parent, pick: record.id };
   let pick: string | null = null;
-  for (let at: SpecRecord | undefined = record; at; at = at.parent ? index.byId.get(at.parent) : undefined) {
+  for (let at: RecordSummary | undefined = record; at; at = at.parent ? index.byId.get(at.parent) : undefined) {
     if (at.kind === 'entity' || at.kind === 'aggregate') { pick = at.id; break; }
   }
   return { product, scope: record.domain ?? product, pick };

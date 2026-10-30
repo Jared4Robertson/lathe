@@ -6,9 +6,13 @@ import { LongList } from '../components/LongList';
 import { treeParent } from '../graph/tree';
 import { LatheLogo } from '../LatheLogo';
 import { Link, useLocation } from '../router';
-import { parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState, type Stage } from '../specs/data';
-import { branchOf, domainFolders, productFolders, sharedKey, type Folder, type StageFolders } from '../specs/folders';
+import { parseSpecRoute } from '../views/spec-route';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { type DataState } from '../exploring/record-summaries/reads';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
+import { branchOf, ownerFolders, sharedKey, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
 import { recordText, StageMark } from '../specs/parts';
+import { useProblems } from '../checking/problems/reads';
 import { useRunCommand, useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
 import { useAggregate } from './prefs';
@@ -45,7 +49,7 @@ import { overlaysOf, panelHref } from '../views/overlays';
 
 export interface NavProps {
   /** The specs as the current space sees them: its own index. */
-  spec: SpecState;
+  spec: DataState;
   path: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
@@ -128,18 +132,20 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
     reveal.current = null;
   });
 
-  const problems = index?.workspace.problems ?? [];
-  const errors = problems.filter((p) => p.severity === 'error').length;
-  const warnings = problems.length - errors;
+  // The space's counts as its Checks panel gives them (list-problems): its own problems and the workspace's.
+  const problemsRead = useProblems(index?.product ?? null, index);
+  const counted = index && problemsRead.state === 'read' && problemsRead.answer.product === index.product ? problemsRead.answer : null;
+  const errors = counted?.errors ?? 0;
+  const warnings = counted?.warnings ?? 0;
   const checkBadges = (
     <span className="nav-badges">
       {/* The words beside each count are for a screen reader, so the row's name holds what it shows (LA-V61-R44). */}
       {errors > 0 && <span className="nav-badge error" title={`${errors} error${errors === 1 ? '' : 's'}`}>{errors}{' '}<span className="sr-only">error{errors === 1 ? '' : 's'}</span></span>}{' '}
       {warnings > 0 && <span className="nav-badge warning" title={`${warnings} warning${warnings === 1 ? '' : 's'}`}>{warnings}{' '}<span className="sr-only">warning{warnings === 1 ? '' : 's'}</span></span>}
-      {problems.length === 0 && index && <span className="nav-badge">0{' '}<span className="sr-only">problems</span></span>}
+      {counted && errors + warnings === 0 && <span className="nav-badge">0{' '}<span className="sr-only">problems</span></span>}
     </span>
   );
-  const sourceNote = index ? <span>Data from <code>{index.workspace.dataDir}/</code></span> : <span>Loading the data…</span>;
+  const sourceNote = index ? <span>{index.byId.size} records in <code>{index.product}</code></span> : <span>Loading the data…</span>;
 
   const className = ['menu', 'panel', collapsed && !drawer ? 'is-rail' : '', drawer ? 'is-drawer' : '', drawer && drawerOpen ? 'is-open' : '', keyboard ? 'is-keyboard' : ''].filter(Boolean).join(' ');
 
@@ -291,7 +297,7 @@ function SpaceRail({ spaces, current, lastPage, loaded, top, bottom }: SpaceRail
 
 
 /** The nav rows open on the current page: the page's record's domain, stage and folder (or the product's folder). */
-function currentBranch(index: SpecIndex, path: string): string[] {
+function currentBranch(index: RecordIndex, path: string): string[] {
   const route = parseSpecRoute(path.split('?')[0], index);
   if (!route) return [];
   if (route.page === 'domain') return [`domain:${route.domain}`];
@@ -319,9 +325,9 @@ function currentBranch(index: SpecIndex, path: string): string[] {
  * own (remembered for the session) and shows its count, and the current page's branch opens itself.
  * A stage or folder with no records is left out. Names and order come from the schema's stages and kinds.
  */
-function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: Space; path: string; reveal: boolean }) {
-  const domains = index.domainsOf.get(space.id) ?? [];
-  const own = productFolders(index, space.id);
+function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space: Space; path: string; reveal: boolean }) {
+  const domains = index.product === space.id ? index.domains : [];
+  const own = ownerFolders(index, space.id);
   const rows = useAggregate(navRowRepository);
   const isOpen = (key: string) => isFolderOpen(rows, key);
   const branch = currentBranch(index, path).join('\n');
@@ -340,7 +346,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
     openNavBranch({ branch: branch.split('\n') });
   }, [branch, reveal]);
 
-  const recordRows = (records: SpecRecord[], label: string, depth: number) => (
+  const recordRows = (records: RecordSummary[], label: string, depth: number) => (
     <LongList
       label={label}
       className="nav-records"
@@ -405,7 +411,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
             const key = `domain:${domain.id}`;
             const open = isOpen(key);
             const bodyId = `nav-domain-${domain.id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
-            const { stages, loose } = open ? domainFolders(index, domain.id) : { stages: [], loose: [] };
+            const { stages, loose } = open ? ownerFolders(index, domain.id) : { stages: [], loose: [] };
             return (
               <>
                 <NavRow

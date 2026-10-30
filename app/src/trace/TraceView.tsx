@@ -4,7 +4,7 @@ import type { ProductTraces } from '../../../lathe/src/traceability/trace/read-m
 import { Button } from '../components/Button';
 import { mapRootOf } from '../graph/map';
 import { groupName, isGroup } from '../graph/model';
-import { kindLabel, type SpecIndex } from '../specs/data';
+import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { TRACE_COLUMN_LABELS, TRACE_COLUMNS, traceChain, traceShape, untracedUnder, type GapColumn, type TraceColumn, type TraceFile, type TraceGroup, type TraceRow } from './chain';
 import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
@@ -56,7 +56,7 @@ const TraceCanvas = lazy(() => import('./TraceCanvas').then((m) => ({ default: m
 const TraceColumns = lazy(() => import('./TraceColumns').then((m) => ({ default: m.TraceColumns })));
 
 export interface TraceViewProps {
-  index: SpecIndex;
+  index: RecordIndex;
   focus: string;
   onNavigate: (id: string) => void;
   hrefFor: (id: string) => string;
@@ -87,9 +87,9 @@ const count = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? on
 const itemsOf = (row: TraceRow, column: TraceColumn): number => (column === 'files' ? row.files.length : row[column].length);
 
 /** What a matrix shows, from the focus's shape: its groups, its label, its Untraced section's owner, its caption and its note. */
-interface MatrixSpec { groups: TraceGroup[]; label: string; untracedOf?: string; caption?: string; lead?: ReactNode; /** What the obligations are counted as, after their count: " under this outcome". */ under?: string }
+interface MatrixSpec { groups: TraceGroup[]; label: string; untracedOf?: string; caption?: string; lead?: ReactNode; /** What the obligations are counted as, after their count: " under this outcome". */ under?: string; /** What comes before the counts, for a record outside the chains: "Outside the chains · Loan: ". */ before?: string }
 
-function matrixSpec(index: SpecIndex, traces: ProductTraces, focus: string): MatrixSpec | null {
+function matrixSpec(index: RecordIndex, traces: ProductTraces, focus: string): MatrixSpec | null {
   const shape = traceShape(index, traces, focus);
   const nameOf = (id: string) => index.byId.get(id)?.title ?? (isGroup(index, id) ? groupName(index, id) : id);
   const name = nameOf(focus);
@@ -115,7 +115,8 @@ function matrixSpec(index: SpecIndex, traces: ProductTraces, focus: string): Mat
         groups: shape.groups,
         untracedOf: shape.scope ?? undefined,
         label: shape.scope ? `Traceability matrix of ${scopeName}` : `Trace of ${name}`,
-        caption: shape.untraced ? 'Untraced' : shape.scope ? `Outside the chains · matrix of ${scopeName}` : 'Outside the chains',
+        // Around a record outside the chains, what the scope it sits in holds, as an outcome's or a domain's matrix says it.
+        ...(shape.scope ? { before: `${shape.untraced ? 'Untraced' : 'Outside the chains'} · ${scopeName}: ` } : { caption: shape.untraced ? 'Untraced' : 'Outside the chains' }),
         lead: (
           <p className={`trace-note${shape.untraced ? ' is-untraced' : ''}`}>
             {shape.untraced ? 'Nothing traces to this record: it serves no requirement or rule.' : 'This record sits outside every chain: no requirement or rule names it.'}
@@ -270,7 +271,7 @@ function TraceStage(props: StageProps & { product: string }) {
       const gaps = row.gaps;
       return `${kindLabel(index, index.byId.get(focus)!.kind)} · ${TRACE_COLUMNS.map((c) => `${itemsOf(row, c)} ${TRACE_COLUMN_LABELS[c].toLowerCase()}`).join(' · ')}${gaps.length > 0 ? ` · ${count(gaps.length, 'gap')}` : ''}`;
     }
-    return spec.caption ?? `${count(total, 'obligation')}${spec.under ?? ''} · ${page!.withGaps} with gaps${spec.untracedOf ? ` · ${untracedCount} untraced` : ''}`;
+    return spec.caption ?? `${spec.before ?? ''}${count(total, 'obligation')}${spec.under ?? ''} · ${page!.withGaps} with gaps${spec.untracedOf ? ` · ${untracedCount} untraced` : ''}`;
   }, [spec, index, traces, focus, total, page, untracedCount]);
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 

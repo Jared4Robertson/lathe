@@ -60,11 +60,11 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     expect(crossing).toEqual([]);
   });
 
-  it('lets only the command runner start a transaction, and only data-files.ts and the generic write layer change its draft', () => {
+  it('lets only the command runner start a transaction, and only data-files.ts change its draft', () => {
     const transact = files.filter((f) => /\.transact\(/.test(f.text)).map((f) => f.file);
-    expect(transact).toEqual(['lathe/src/platform/commands/run.ts', 'lathe/src/platform/data/store.ts']);
-    const drafting = files.filter((f) => /\b(draftOf|editableTable|rebuildSchema)\b/.test(f.text) && f.file !== 'lathe/src/platform/data/transaction.ts').map((f) => f.file);
-    expect(drafting.sort()).toEqual(['lathe/src/platform/data/data-files.ts', 'lathe/src/platform/data/generic-write.ts']);
+    expect(transact).toEqual(['lathe/src/platform/commands/run.ts']);
+    const drafting = files.filter((f) => /\b(draftOf|editableTable)\b/.test(f.text) && f.file !== 'lathe/src/platform/data/transaction.ts').map((f) => f.file);
+    expect(drafting).toEqual(['lathe/src/platform/data/data-files.ts']);
   });
 
   it('LA-PAT-AGGREGATE-COMMANDS-R01-T01 LA-STD-PRINCIPLES-R02-T01 matches each command definition to its command, handler, endpoint and CLI records, one to one', () => {
@@ -90,11 +90,7 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
     const sliced = [...handlers.values()].filter((h) => typeof h.file === 'string' && /\/commands\/[^/]+\.ts$/.test(h.file) && h.file.startsWith('lathe/src/'));
     expect(sliced.filter((h) => !defined.has(String(h.command_id))).map((h) => h.id)).toEqual([]);
     const aggregates = new Set(ALL_COMMANDS.map((d) => d.slice.aggregate));
-    // The generic write layer's commands (LA-AUT-CMD01–08, handled in platform/data/store.ts and merge.ts) still sit on
-    // the Product aggregate's root until the cutover (step 3) deletes them and this line with them.
-    const generic = new Set(['lathe/src/platform/data/store.ts', 'lathe/src/platform/data/merge.ts']);
-    const own = (c: Record<string, unknown>) => !generic.has(String(handlers.get(c.id)?.file));
-    expect([...commands.values()].filter((c) => aggregates.has(String(aggregateOf.get(c.entity_id))) && !defined.has(String(c.id)) && own(c)).map((c) => c.id)).toEqual([]);
+    expect([...commands.values()].filter((c) => aggregates.has(String(aggregateOf.get(c.entity_id))) && !defined.has(String(c.id))).map((c) => c.id)).toEqual([]);
   });
 
   it('matches each query definition to its query, handler, CLI, endpoint and endpoint handler records, one to one', () => {
@@ -159,42 +155,10 @@ describe('LA-STD-MODELING-R09-T02 each rule record is a rule in its aggregate\'s
 });
 
 describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query handler or projection imports a repository or an aggregate\'s model, and a query handler reads only through its own read model\'s reader', () => {
-  // The slices whose reads are converted to their own read model and reader: each group adds its own line when its
-  // slice is converted, so nothing converted can regress while the rest still convert. The cutover removes this list
-  // and the checks then hold for every slice that has a queries.ts.
-  const READ_MODEL_SLICES: string[] = [
-    'lathe/src/authoring/use-case',
-    'lathe/src/authoring/product',
-    'lathe/src/authoring/business-outcome',
-    'lathe/src/authoring/extension-record',
-    'lathe/src/authoring/entry-point',
-    'lathe/src/authoring/tooling',
-    'lathe/src/authoring/domain',
-    'lathe/src/authoring/test-data-set',
-    'lathe/src/authoring/pattern',
-    'lathe/src/authoring/standard',
-    'lathe/src/authoring/aggregate',
-    'lathe/src/authoring/domain-event',
-    'lathe/src/authoring/command',
-    'lathe/src/authoring/specification',
-    'lathe/src/authoring/value-object',
-    'lathe/src/authoring/read-model',
-    'lathe/src/authoring/table',
-    'lathe/src/authoring/view',
-    'lathe/src/authoring/endpoint',
-    'lathe/src/authoring/integration',
-    'lathe/src/authoring/ui-component',
-    'lathe/src/authoring/storage-requirement',
-    'lathe/src/authoring/data-store',
-    'lathe/src/checking/check',
-    'lathe/src/checking/product-setting',
-    'lathe/src/traceability/pattern-following',
-    // Slices of reads alone, with no aggregate of their own and so no model.ts.
-    'lathe/src/checking/problems',
-    'lathe/src/traceability/trace',
-  ];
   const files = sources();
   const file = (name: string) => files.find((f) => f.file === name);
+  /** Every slice with queries: each folder under lathe/src that has a queries.ts. */
+  const SLICES = files.filter((f) => f.file.endsWith('/queries.ts')).map((f) => path.dirname(f.file)).sort();
   /** The names a file imports from a module, and those it imports as values (not `import type`). */
   const importsFrom = (text: string, module: string) => {
     const found = [...text.matchAll(new RegExp(`^import\\s(type\\s)?([^;]*?)from\\s+'${module.replace('.', '\\.')}'`, 'gms'))];
@@ -202,10 +166,10 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
     return { all: found.flatMap(names), values: found.filter((m) => !m[1]).flatMap((m) => [...m[2].replace(/\btype\s+\w+/g, '').matchAll(/\w+/g)].map((x) => x[0])) };
   };
 
-  it('lets a converted slice\'s queries.ts, read-model.ts and reader.ts import neither its repository nor its model type or row builder', () => {
-    const crossing = READ_MODEL_SLICES.flatMap((slice) => {
+  it('lets a slice\'s queries.ts, read-model.ts and reader.ts import neither its repository nor its model type or row builder', () => {
+    const crossing = SLICES.flatMap((slice) => {
       // The model's types (the instance type and its parts) and every function over them (the row builders); none for a
-      // slice of reads alone.
+      // slice of reads alone, which has no model.ts.
       const model = file(`${slice}/model.ts`) ?? { text: '' };
       const types = [...model.text.matchAll(/^export interface (\w+)/gm)].map((m) => m[1]);
       const mentions = (signature: string) => types.some((t) => new RegExp(`\\b${t}\\b`).test(signature));
@@ -223,8 +187,8 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
     expect(crossing).toEqual([]);
   });
 
-  it('lets a converted slice\'s query handlers read only through its reader, the reader only its read model\'s table, and only the projection the source rows', () => {
-    const crossing = READ_MODEL_SLICES.flatMap((slice) => {
+  it('lets a slice\'s query handlers read only through its reader, the reader only its read model\'s table, and only the projection the source rows', () => {
+    const crossing = SLICES.flatMap((slice) => {
       const queries = file(`${slice}/queries.ts`)!;
       const reader = file(`${slice}/reader.ts`)!;
       const readsData = (text: string) => /\.(rows|record)\(/.test(text);
@@ -244,9 +208,9 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
     expect(importers).toEqual([]);
   });
 
-  it('matches each converted read model to its one reader record: its file the slice\'s reader.ts, its title declared there', () => {
+  it('matches each read model to its one reader record: its file the slice\'s reader.ts, its title declared there', () => {
     const readers = data('reader');
-    for (const slice of READ_MODEL_SLICES) {
+    for (const slice of SLICES) {
       const handlers = data('query_handler').filter((h) => h.file === `${slice}/queries.ts`);
       const readModels = new Set(handlers.map((h) => data('query').find((q) => q.id === h.query_id)?.read_model_id));
       for (const readModel of readModels) {

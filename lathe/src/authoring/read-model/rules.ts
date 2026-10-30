@@ -101,5 +101,5 @@ export const readModelRules: AggregateRules = {
 /** Refuses the command, with every reason, when the read model as it would be saved breaks one of its rules. */
 export function holdToRules(tx: Transaction, readModel: ReadModel): void {
   const problems = readModelProblems(readModel, tx);
-  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message, command: 0 })));
+  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message })));
 }

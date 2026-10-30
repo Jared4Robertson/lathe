@@ -118,7 +118,7 @@ describe.skipIf(process.platform !== 'darwin')('The desktop app opens a product 
     expect(result.error).toBeUndefined();
   }, 120_000);
 
-  it('LA-PLT-PO01-T starts the window\'s own app server, which answers GET /api/spec', () => {
+  it('LA-PLT-PO01-T starts the window\'s own app server, which answers GET /api/product/list-products', () => {
     expect(result.url).toMatch(/^http:\/\/127\.0\.0\.1:\d+\/$/);
     expect(result.url).not.toContain(':5199');
     expect(result.apiSpecStatus).toBe(200);

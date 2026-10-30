@@ -5,10 +5,11 @@ import type { WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import type { Choice } from '../../edit/fields';
+import { AddMenu } from '../../edit/AddMenu';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendSpecification, type SpecificationCommands, type SpecificationRoute } from './commands';
 import { useNextSpecificationId } from './reads';
@@ -27,11 +28,11 @@ type Inside = Exclude<SpecificationKind, 'specification'>;
 const LABEL: Record<SpecificationKind, string> = { specification: 'specification', predicate: 'predicate', specification_test: 'specification test' };
 
 /** The records of the product of a kind, as choices. */
-const choices = (index: SpecIndex, product: string, kind: string): Choice[] =>
+const choices = (index: RecordIndex, product: string, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
-function fieldsOf(index: SpecIndex, product: string, kind: SpecificationKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string, kind: SpecificationKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'specification':
@@ -47,7 +48,7 @@ function fieldsOf(index: SpecIndex, product: string, kind: SpecificationKind, ad
         { field: 'title', column: 'title', table: 'predicate' },
         { field: 'file', column: 'file', table: 'predicate' },
         { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, 'standard_rule') },
-        { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+        { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files, one per line.', texts: true },
       ];
     case 'specification_test': {
       const table = 'specification_test';
@@ -70,10 +71,6 @@ function fieldsOf(index: SpecIndex, product: string, kind: SpecificationKind, ad
   }
 }
 
-/** The packages field's text as its list: one package per line; a form without the field leaves it out. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 'packages');
-const hasPackages = (specs: FieldSpec[]) => specs.some((s) => s.field === 'packages');
 
 /** The record's current values, by its input's field names: its row's columns and the links it starts. */
 function currentOf(page: SpecificationPage, kind: SpecificationKind): Record<string, unknown> {
@@ -111,27 +108,10 @@ const REMOVE: Record<SpecificationKind, SpecificationRoute> = {
 /** Sends a command whose input this form has built to its kind's shape: the route names the type it takes. */
 const send = (writer: Writer, route: SpecificationRoute, input: Record<string, unknown>): Promise<WriteAnswer> => sendSpecification(writer, route, input as unknown as SpecificationCommands[typeof route]);
 
-/** A Change input with the packages list when the form has it and it changed. */
-function changeWithPackages(index: SpecIndex, specs: FieldSpec[], draft: Draft, current: Record<string, unknown>, id: string, clearable: readonly string[]): Record<string, unknown> {
-  const input = changeInput(index, withoutPackages(specs), draft, current, { id }, clearable);
-  if (!hasPackages(specs)) return input;
-  const packages = packagesOf(draft);
-  if (JSON.stringify([...packages].sort()) !== JSON.stringify([...((current.packages ?? []) as string[])].sort())) input.packages = packages;
-  return input;
-}
-
-/** An Add input with the packages list when the form has it and it holds any. */
-function addWithPackages(index: SpecIndex, specs: FieldSpec[], draft: Draft, parent: Record<string, unknown>): Record<string, unknown> {
-  const input = addInput(index, withoutPackages(specs), draft, parent);
-  const packages = packagesOf(draft);
-  if (hasPackages(specs) && packages.length > 0) input.packages = packages;
-  return input;
-}
-
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'remove' };
 
 /** A record of the specification with its actions; a form or the remove question shows in place of its page. */
-export function SpecificationEditor({ index, page, children }: { index: SpecIndex; page: SpecificationPage; children: ReactNode }) {
+export function SpecificationEditor({ index, page, children }: { index: RecordIndex; page: SpecificationPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -148,7 +128,7 @@ export function SpecificationEditor({ index, page, children }: { index: SpecInde
     const specs = fieldsOf(index, product, kind, false);
     const current = currentOf(page, kind);
     const submit = async (draft: Draft) => {
-      const input = changeWithPackages(index, specs, draft, current, id, CHANGE[kind].clearable);
+      const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await send(writer, CHANGE[kind].route, input);
       if (answer.ok) { announce(`Saved ${id}`); back(); }
@@ -165,7 +145,7 @@ export function SpecificationEditor({ index, page, children }: { index: SpecInde
     <>
       <div className="record-actions" role="toolbar" aria-label={`Change ${id}`} ref={toolbar}>
         <Button icon="edit" onClick={() => setMode({ mode: 'change' })}>Edit</Button>
-        {adds.map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'add', kind: k })}>Add {LABEL[k]}</Button>)}
+        <AddMenu id={id} choices={adds.map((k) => ({ key: k, label: kindLabel(index, k) }))} onPick={(k) => setMode({ mode: 'add', kind: k as Inside })} />
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
       {mode.mode === 'remove' && (
@@ -179,7 +159,7 @@ export function SpecificationEditor({ index, page, children }: { index: SpecInde
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -196,7 +176,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for the predicate or the test under the specification, its ID the one it takes, sent as that kind's Add. */
-function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; product: string; kind: Inside; parent: string; onDone: () => void }) {
+function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex; product: string; kind: Inside; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextSpecificationId(kind, parent, index);
@@ -206,7 +186,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
   }, [next]);
   const specs = fieldsOf(index, product, kind, true);
   const submit = async () => {
-    const input = addWithPackages(index, specs, draft, { specification_id: parent });
+    const input = addInput(index, specs, draft, { specification_id: parent });
     const answer = await send(writer, ADD[kind], input);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;
@@ -219,7 +199,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
 }
 
 /** Add a specification to a domain (from the domain's page): the aggregate's own Add, its ID the next free one. */
-export function AddSpecificationForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddSpecificationForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextSpecificationId('specification', parent, index);

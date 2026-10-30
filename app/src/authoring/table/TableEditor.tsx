@@ -7,7 +7,7 @@ import { IdField, type Choice } from '../../edit/fields';
 import { useWriter } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendTable, type TableCommands } from './commands';
 import { useNextTableId } from './reads';
@@ -26,11 +26,11 @@ const KEY_COLUMNS = ['type', 'columns', 'name', 'invariant_id', 'target_table_id
 const PARENT_COLUMN: Record<string, 'entity_id' | 'read_model_id' | 'domain_id'> = { entity: 'entity_id', read_model: 'read_model_id', domain: 'domain_id' };
 
 /** The records of the product of these kinds, as choices. */
-const choices = (index: SpecIndex, product: string, kinds: readonly string[]): Choice[] =>
+const choices = (index: RecordIndex, product: string, kinds: readonly string[]): Choice[] =>
   [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
-/** The fields Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
-function fieldsOf(index: SpecIndex, product: string, adding: boolean): FieldSpec[] {
+/** The fields Add and Change take (Change leaves out the ID), in their input's order. */
+function fieldsOf(index: RecordIndex, product: string, adding: boolean): FieldSpec[] {
   return [
     ...(adding ? [{ field: 'id', column: 'id', table: 'table' }] : []),
     { field: 'title', column: 'title', table: 'table' },
@@ -39,18 +39,14 @@ function fieldsOf(index: SpecIndex, product: string, adding: boolean): FieldSpec
     { field: 'file', column: 'file', table: 'table' },
     { field: 'keys', label: 'Keys', description: 'Its keys and indexes, in order. The list replaces its keys.', table: 'table_key', columns: KEY_COLUMNS },
     { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
-    { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+    { field: 'packages', label: 'Packages', description: 'The packages it uses.', texts: true },
   ];
 }
 
-/** The packages field's text as its list: one package per line. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 'packages');
-
-/** The table's current values, by its input's field names: a key's columns one per line, as its input holds them. */
+/** The table's current values, by its input's field names. */
 const currentOf = (page: TablePage): Record<string, unknown> => ({
   ...page.table,
-  keys: page.keys.map((k) => ({ ...k, columns: k.columns.join('\n') })),
+  keys: page.keys,
   meets: page.meets,
   packages: page.packages,
 });
@@ -58,7 +54,7 @@ const currentOf = (page: TablePage): Record<string, unknown> => ({
 type Mode = 'view' | 'change' | 'move' | 'remove';
 
 /** The table with its actions; a form or the remove question shows in place of its page. */
-export function TableEditor({ index, page, children }: { index: SpecIndex; page: TablePage; children: ReactNode }) {
+export function TableEditor({ index, page, children }: { index: RecordIndex; page: TablePage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>('view');
@@ -75,9 +71,7 @@ export function TableEditor({ index, page, children }: { index: SpecIndex; page:
     const specs = fieldsOf(index, product, false);
     const current = currentOf(page);
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, withoutPackages(specs), draft, current, { id: table.id }, ['file']);
-      const packages = packagesOf(draft);
-      if (JSON.stringify([...packages].sort()) !== JSON.stringify(page.packages)) input.packages = packages;
+      const input = changeInput(index, specs, draft, current, { id: table.id }, ['file']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await sendTable(writer, '/api/table/change-table', input as unknown as TableCommands['/api/table/change-table']);
       if (answer.ok) { announce(`Saved ${table.id}`); back(); }
@@ -104,7 +98,7 @@ export function TableEditor({ index, page, children }: { index: SpecIndex; page:
 
 /** Edit: the table's Change, with only what changed. */
 function ChangeForm({ index, specs, current, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   id: string;
@@ -120,7 +114,7 @@ function ChangeForm({ index, specs, current, id, submit, onDone }: {
 }
 
 /** Move: the table to another entity, read model or domain of its product, as its own command. */
-function MoveForm({ index, page, product, onDone }: { index: SpecIndex; page: TablePage; product: string; onDone: () => void }) {
+function MoveForm({ index, page, product, onDone }: { index: RecordIndex; page: TablePage; product: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const formId = useId();
@@ -145,7 +139,7 @@ function MoveForm({ index, page, product, onDone }: { index: SpecIndex; page: Ta
 }
 
 /** Add a table under an entity, a read model or a domain (from its page): the aggregate's own Add, its ID the next free one. */
-export function AddTableForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddTableForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextTableId(parent, index);
@@ -155,9 +149,7 @@ export function AddTableForm({ index, parent, onDone }: { index: SpecIndex; pare
   }, [next]);
   const specs = fieldsOf(index, index.byId.get(parent)?.product ?? '', true);
   const submit = async () => {
-    const input = addInput(index, withoutPackages(specs), draft, { [PARENT_COLUMN[index.byId.get(parent)?.kind ?? ''] ?? 'domain_id']: parent });
-    const packages = packagesOf(draft);
-    if (packages.length > 0) input.packages = packages;
+    const input = addInput(index, specs, draft, { [PARENT_COLUMN[index.byId.get(parent)?.kind ?? ''] ?? 'domain_id']: parent });
     const answer = await sendTable(writer, '/api/table/add-table', input as unknown as TableCommands['/api/table/add-table']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;

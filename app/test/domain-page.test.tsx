@@ -50,18 +50,18 @@ describe('domain page', () => {
     // The read model folds its query.
     expect(within(section(/^Read models/)).getByRole('link', { name: /^DM-SHOP-RM01/ }).closest('li')).toHaveTextContent('1 query');
 
-    // Use cases: the capability folds its use case, a row naming its actor.
+    // Use cases: the capability folds its use case.
     const buying = within(stageOf('use-cases')).getByRole('link', { name: /^DM-SHOP-CAP01\s*Buying/ }).closest('li') as HTMLElement;
     expect(buying).toHaveTextContent('1 use case');
     await user.click(within(buying).getByRole('button', { name: 'Expand DM-SHOP-CAP01' }));
     const add = within(buying).getByRole('link', { name: /^DM-SHOP-UC01\s*Add/ }).closest('li') as HTMLElement;
-    expect(add).toHaveTextContent('Shopper');
+    expect(add).toHaveTextContent('Add an item to the basket');
 
-    // Interaction design, technical specification and test plan list what starts a branch of their stage, with its fields.
+    // Interaction design, technical specification and test plan list what starts a branch of their stage; a technical
+    // record with what it names in code, a test with its level and file.
     expect(ids(section(/^Flows/))).toEqual(['DM-SHOP-UC01-FL01']);
     expect(ids(section(/^Endpoints/))).toEqual(['DM-SHOP-EP01']);
-    expect(section(/^Endpoints/)).toHaveTextContent('POST · /basket/items');
-    expect(section(/^Tables/)).toHaveTextContent('baskets · table');
+    expect(section(/^Tables/)).toHaveTextContent('baskets');
     expect(ids(section(/^Command handlers/))).toEqual(['DM-SHOP-CMD01-H']);
     expect(section(/^Command handlers/)).toHaveTextContent('src/basket.ts');
     expect(ids(section(/^Use case tests/))).toEqual(['DM-SHOP-UC01-R01-T01']);

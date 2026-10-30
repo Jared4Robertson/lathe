@@ -6,9 +6,9 @@ import { Button } from '../../components/Button';
 import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
 import { IdField, Refusal, problemText, type Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
-import { AddUnder } from '../../edit/Editing';
-import { addableKinds } from '../../edit/form';
-import { kindLabel, type SpecIndex } from '../../specs/data';
+import { AddUnder, othersAddedUnder } from '../../record/pages';
+import { AddMenu } from '../../edit/AddMenu';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { addressOf } from '../../views/address';
@@ -67,7 +67,7 @@ const send = (writer: Writer, route: ProductRoute, input: Record<string, unknown
 // ---------- Fields ----------
 
 /** The records of the product, as what an open question may be about. */
-const productRecords = (index: SpecIndex, product: string): Choice[] =>
+const productRecords = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.product === product && r.id !== product).map((r) => ({ id: r.id, title: r.title }));
 
 const PRODUCT_FIELDS: FieldSpec[] = [
@@ -79,7 +79,7 @@ const PRODUCT_FIELDS: FieldSpec[] = [
   { field: 'roles', label: 'Roles', description: 'The roles people and agents take in the product, each with what they do. The list replaces the roles.', table: 'role', columns: ['name', 'description'] },
 ];
 
-const questionFields = (index: SpecIndex, product: string, adding: boolean): FieldSpec[] => [
+const questionFields = (index: RecordIndex, product: string, adding: boolean): FieldSpec[] => [
   ...(adding ? [{ field: 'id', column: 'id', table: 'question' }] : []),
   { field: 'title', column: 'title', table: 'question' },
   { field: 'owner', column: 'owner', table: 'question' },
@@ -121,9 +121,15 @@ const relationFields = (adding: boolean): FieldSpec[] => [
 
 // ---------- The editor ----------
 
+/** What a product's Add… offers, in reading order: its own open questions and interfaces, and every other aggregate's root added under it. */
+function addedUnderProduct(index: RecordIndex): string[] {
+  const kinds = new Set([...othersAddedUnder(index.meta, 'product'), 'question', 'interface']);
+  return index.meta.kindList.map((k) => k.kind).filter((k) => kinds.has(k));
+}
+
 /** A record of the product with its actions; a form or a remove question shows in place of its page. */
 export function ProductEditor({ index, page, id, kind, children }: {
-  index: SpecIndex;
+  index: RecordIndex;
   page: ProductPage;
   id: string;
   kind: ProductRecordKind;
@@ -131,10 +137,8 @@ export function ProductEditor({ index, page, id, kind, children }: {
 }) {
   const writer = useWriter();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
-  const [adding, setAdding] = useState(false);
-  const [declaring, setDeclaring] = useState(false);
   const toolbar = useRef<HTMLDivElement>(null);
-  useEffect(() => { setMode({ mode: 'view' }); setAdding(false); setDeclaring(false); }, [id]);
+  useEffect(() => { setMode({ mode: 'view' }); }, [id]);
   if (!writer) return <>{children(null)}</>;
   const back = () => {
     setMode({ mode: 'view' });
@@ -172,25 +176,10 @@ export function ProductEditor({ index, page, id, kind, children }: {
         {kind === 'question' && <Button onClick={() => setMode({ mode: 'move' })}>Move</Button>}
         {kind === 'product' && (
           <>
-            <span className="record-add">
-              <Button icon="plus" aria-expanded={adding} aria-controls={`add-kinds-${id}`} onClick={() => { setAdding(!adding); setDeclaring(false); }}>Add…</Button>
-              {adding && (
-                <span id={`add-kinds-${id}`} className="record-add-kinds" role="group" aria-label={`Kinds to add under ${id}`}>
-                  {addableKinds(index.workspace.schema, 'product').map((k) => (
-                    <Button key={k} onClick={() => { setAdding(false); setMode({ mode: 'add', kind: k }); }}>{kindLabel(index, k)}</Button>
-                  ))}
-                </span>
-              )}
-            </span>
-            <span className="record-add">
-              <Button icon="plus" aria-expanded={declaring} aria-controls={`declare-${id}`} onClick={() => setDeclaring(!declaring)}>Declare…</Button>
-              {declaring && (
-                <span id={`declare-${id}`} className="record-add-kinds" role="group" aria-label={`Declarations to add to ${id}`}>
-                  <Button onClick={() => { setDeclaring(false); setMode({ mode: 'declare-kind' }); }}>Product kind</Button>
-                  <Button onClick={() => { setDeclaring(false); setMode({ mode: 'declare-relation' }); }}>Product relation</Button>
-                </span>
-              )}
-            </span>
+            <AddMenu id={id} choices={addedUnderProduct(index).map((k) => ({ key: k, label: kindLabel(index, k) }))}
+              onPick={(k) => setMode({ mode: 'add', kind: k })} />
+            <AddMenu id={id} title="Declare…" group="Declarations to add to" choices={[{ key: 'declare-kind', label: 'Product kind' }, { key: 'declare-relation', label: 'Product relation' }]}
+              onPick={(k) => setMode({ mode: k as 'declare-kind' | 'declare-relation' })} />
           </>
         )}
         {kind !== 'product' && <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>}
@@ -214,7 +203,7 @@ export function ProductEditor({ index, page, id, kind, children }: {
 }
 
 interface FormContext {
-  index: SpecIndex;
+  index: RecordIndex;
   page: ProductPage;
   writer: Writer;
   onDone: () => void;
@@ -222,7 +211,7 @@ interface FormContext {
 
 /** A form over a draft of the given fields. */
 function DraftForm({ index, specs, initial, eyebrow, title, saveLabel, submit, onDone, update }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   initial: Draft;
   eyebrow: string;
@@ -401,7 +390,7 @@ function RemoveDeclaration({ title, what, remove, onCancel }: { title: string; w
  * Add an open question under a domain of the product (from the domain's page): the Product aggregate's own Add a
  * question, its ID the next free one under the domain. Under the product itself it is added from the product's page.
  */
-export function AddQuestionForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddQuestionForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const under = index.byId.get(parent);

@@ -11,15 +11,13 @@ const given = (text: string | null | undefined) => text !== null && text !== und
 
 const problem = ({ rule }: { rule: string }, value: SettingValueRow, message: string): RuleProblem => ({ rule, table: 'setting_value', row: value as unknown as Row, message });
 
-/** Every setting value that breaks LA-TRC-INV01: it gives a value or a reason it does not apply, never both or neither, and a reason is not blank. */
-function valueOrReason(values: readonly SettingValueRow[]): RuleProblem[] {
-  return values.flatMap((v) => {
-    const what = `${v.follower_id} gives setting ${v.setting} of ${v.pattern_id}`;
-    if (given(v.value) && given(v.not_applicable)) return [problem({ rule: 'setting-value-or-reason' }, v, `${what} both a value and a reason it does not apply; give one or the other`)];
-    if (!given(v.value) && !given(v.not_applicable)) return [problem({ rule: 'setting-value-or-reason' }, v, `${what} neither a value nor a reason it does not apply; give one or the other`)];
-    if (given(v.not_applicable) && !String(v.not_applicable).trim()) return [problem({ rule: 'setting-value-or-reason' }, v, `${what} an empty reason it does not apply; say why`)];
-    return [];
-  });
+/** Every setting value that breaks LA-TRC-INV01: it gives a value, and the value is not blank. */
+function valueGiven(values: readonly SettingValueRow[]): RuleProblem[] {
+  return values.flatMap((v) =>
+    given(v.value) && String(v.value).trim()
+      ? []
+      : [problem({ rule: 'setting-value-given' }, v, `${v.follower_id} gives setting ${v.setting} of ${v.pattern_id} no value; give it one`)],
+  );
 }
 
 /**
@@ -41,7 +39,7 @@ function ofFollowedSetting(values: readonly SettingValueRow[], view: ReadView, f
 }
 
 /**
- * Every rule the following breaks (LA-TRC-INV01 a value or a reason; LA-TRC-INV02 each followed pattern's settings
+ * Every rule the following breaks (LA-TRC-INV01 a value; LA-TRC-INV02 each followed pattern's settings
  * take their own values: every value names the following's own follower and pattern, one per setting; LA-TRC-INV03 a
  * value answers a setting of the pattern its follower follows). The view gives the pattern's settings and the follows
  * links.
@@ -57,7 +55,7 @@ export function patternFollowingProblems(following: PatternFollowing, view: Read
     }
     seen.add(v.setting);
   }
-  problems.push(...valueOrReason(following.values));
+  problems.push(...valueGiven(following.values));
   // A following's values are checked against the following itself: it is being saved, so it is followed.
   problems.push(...ofFollowedSetting(following.values, view, new Set([following.root])));
   return problems;
@@ -75,7 +73,7 @@ export const patternFollowingRules: AggregateRules = {
       ...followingsFrom((table) => view.rows(table)).flatMap((following) =>
         patternFollowingProblems(following, view).filter((p) => p.rule === 'setting-value-own-pattern'),
       ),
-      ...valueOrReason(values),
+      ...valueGiven(values),
       ...ofFollowedSetting(values, view, new Set(view.rows('follows').map((l) => followingOf(String(l.source_id), String(l.target_id))))),
     ];
   },

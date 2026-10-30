@@ -8,7 +8,7 @@
 // shows terms in, the app's included.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
-import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, RepositoryShareRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
+import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
 import type { DomainKind } from './model.ts';
 
 /** A capability as the page shows it: its row, the business outcomes it serves, and its use cases by ID. */
@@ -38,11 +38,10 @@ export interface DomainServiceOnPage {
   tests: DomainServiceTestOnPage[];
 }
 
-/** A repository as the page shows it: its row, the aggregate it persists (and the others it also persists, each with its reason), the standard rules it meets and the packages it uses. */
+/** A repository as the page shows it: its row, the one aggregate it persists, the standard rules it meets and the packages it uses. */
 export interface RepositoryOnPage {
   repository: RepositoryRow;
   persists: string | null;
-  alsoPersists: { aggregate: string; reason: string }[];
   meets: string[];
   packages: string[];
 }
@@ -149,7 +148,6 @@ export function domainTableFrom(view: ReadView): DomainTable {
   const services = grouped<ServiceRow>(view.rows('service'), 'domain_service_id');
   const tests = grouped<DomainServiceTestRow>(view.rows('domain_service_test'), 'domain_service_id');
   const repositories = grouped<RepositoryRow>(view.rows('repository'), 'domain_id');
-  const shares = grouped<RepositoryShareRow>(view.rows('repository_share'), 'repository_id');
 
   const domains = new Map<string, DomainTree>();
   const holding = new Map<string, { root: string; kind: DomainKind }>();
@@ -175,7 +173,6 @@ export function domainTableFrom(view: ReadView): DomainTable {
       repositories: [...(repositories.get(root) ?? [])].sort(byId).map((repository) => ({
         repository,
         persists: persists(repository.id)[0] ?? null,
-        alsoPersists: (shares.get(repository.id) ?? []).map((s) => ({ aggregate: s.aggregate_id, reason: s.reason })).sort((a, b) => a.aggregate.localeCompare(b.aggregate)),
         meets: meets(repository.id),
         packages: packages(repository.id),
       })),
