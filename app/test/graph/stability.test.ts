@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { PlacedMap } from '../../src/graph/map';
-import { textMeasure, type MapLabel } from '../../src/graph/text';
-import { traceInput, traceMap } from '../../src/trace/tree';
+import { type MapLabel } from '../../src/graph/text';
+import { allGraph } from '../../src/trace/all';
+import { layOutGraph } from '../../src/trace/all-laid';
 import { addRows, removeRows, setRow } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
 import { recordIndexOf, type ServedData } from '../read-view';
@@ -106,7 +107,7 @@ describe('LA-EXP-DS05-T16 the Tree layout keeps a change local even where a pare
   });
 });
 
-// ---------- On a product's own data: the Graph's Tree and Nested maps and the Trace's tree ----------
+// ---------- On a product's own data: the Graph's Tree and Nested maps and the Trace's All-at-once view ----------
 
 /** The model product with a second use case of two requirements, and two outcomes its capability serves. */
 function product(): ServedData {
@@ -157,17 +158,16 @@ describe.each(CHANGES)('$name keeps every box outside its parent where it was', 
   it('LA-EXP-DS05-T16 on the Graph\'s Tree map', () => onTheGraph('tree'));
   it('LA-EXP-DS07-T04 on the Graph\'s Nested map', () => onTheGraph('nested'));
 
-  it('LA-V98-R12-T02 on the Trace\'s tree', () => {
-    const layOut = (d: ServedData) => {
-      const { index, traces } = traced(d);
-      const m = traceMap(index, traces, 'P');
-      const input = traceInput(m, index, textMeasure().key);
-      return { map: layoutTree([m.product], (k) => m.tree.get(k)!.children, (k) => input.labels[input.shape.ids.indexOf(k)]), idOf: (k: string) => m.nodes.get(k)?.id ?? k };
-    };
-    const before = layOut(product());
-    const after = layOut(changedData());
-    const parents = [...new Set([...parentsOf([before.map], records, before.idOf), ...parentsOf([after.map], records, after.idOf)])];
-    expect(parents.length).toBeGreaterThan(0);
-    expect(movedOutside(before.map, after.map, parents)).toEqual([]);
+  it('LA-V98-R12-T03 on the Trace\'s All-at-once view: every column keeps its order, the changed record in its place', () => {
+    const layOut = (d: ServedData, previous: ReturnType<typeof layOutGraph> | null) => { const { index, traces } = traced(d); return layOutGraph(allGraph(index, traces, 'P'), previous); };
+    const before = layOut(product(), null);
+    const after = layOut(changedData(), before);
+    // Each column's boxes kept in the order shown before; what the change adds goes in among them, what it removes is gone.
+    after.order.forEach((column, i) => {
+      const kept = new Set(column);
+      expect(column.filter((k) => before.places.has(k)), `column ${i}`).toEqual(before.order[i].filter((k) => kept.has(k)));
+    });
+    if (records.includes('P-D-UC01-R03')) expect(after.places.has('P-D-UC01-R03')).toBe(true);
+    if (records.includes('P-D-UC01-R02-T01')) expect(after.places.has('P-D-UC01-R02')).toBe(false);
   });
 });

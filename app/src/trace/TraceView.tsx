@@ -10,34 +10,32 @@ import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
 import { useNarrow } from '../shell/useNarrow';
 import type { OpenSpaceStore } from '../views/openSpace';
-import { useCommand, useStageWalk } from '../shell/commands';
+import { useStageWalk } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
-import { graphWalkLabels } from '../graph/steps';
 import type { Move } from '../views/levels';
 import { StageKey, StageToolbar } from '../views/StageChrome';
-import { copyInChain, focusKey, keptFor, traceMap, type TraceMap } from './tree';
-import { traceColumnKeyEntries, traceKeyEntries } from './TraceKey';
-import { traceColumns } from './columns';
-import { ColumnList } from './ColumnList';
-import { TRACE_LAYOUTS, useTraceLayout, type TraceLayout } from './layout';
+import { allKeyEntries } from './TraceKey';
+import { AllList } from './AllList';
+import { allGraph } from './all';
+import { shownLayout } from './all-laid';
+import { ALL_WALK_LABELS, allTarget, allWords } from './all-walk';
+import { TRACE_PAGE, TRACE_VIEWS, type TraceViewName } from './views';
 import { useChangesKey } from '../changes/ChangesKey';
-import { nodeWords, traceTarget } from './walk';
 import { useTraces } from '../traceability/trace/reads';
 import { readState } from '../record/page-parts';
 
-// What the product owes and how far it has come, drawn on the canvas as the Graph's Tree is (TraceCanvas.tsx), one tree
-// per product (tree.ts, LA-PAT-APP-UX-R19): the product's outcomes with links to the capabilities serving them, its
-// domains with their obligations' parents side by side, each obligation's chain to the right, gaps as dashed boxes and
-// the Untraced records under a mark of their own. Focusing anything moves the camera to frame it and fades the rest;
-// Gaps only fades the complete branches; the map never changes with either. It works on every focus
-// (LA-PAT-APP-UX-R17), and the stage stays mounted while the focus moves within its product.
+// What the product owes and how far it has come. Its toolbar switches, per place, between two views (views.ts):
+// - All at once (TraceAll.tsx, all.ts): the product's whole trace in five fixed columns, Outcomes, Use cases,
+//   Obligations, Built by and Proved by, each record once with a line for each link between them; focusing a record
+//   lights its whole path and fades the rest, Gaps only keeps the obligations with a gap and their paths, and the walk
+//   goes up and down a column and along the links left and right. On a phone, one column at a time (AllList.tsx).
+// - Delivery (trace/delivery): one row per use case, from its outcome to its acceptance tests.
+// It works on every focus (LA-PAT-APP-UX-R17), and the stage stays mounted while the focus moves within its product.
 //
-// The table is its accessible layer and its phone form, listing what is under the focus, the way the
-// graph keeps a layer of its boxes for the keyboard and assistive technology: on a wide screen it is
-// visually hidden under the canvas, its links carrying keyboard focus (the canvas rings the box a focused link stands for and
-// brings it into view) and the arrow keys walking it; on a phone it is the stage. From anywhere else on the page the
-// arrow keys walk the tree itself by the Graph's Tree keys (walk.ts), the camera following. By the shape
-// chain.ts's traceShape gives the focus:
+// The table is the canvas's accessible layer, listing what is under the focus, the way the
+// graph keeps a layer of its boxes for the keyboard and assistive technology: visually hidden under the canvas, its links
+// carrying keyboard focus (the canvas rings the box a focused link stands for and brings it into view) and the arrow keys
+// walking it. By the shape chain.ts's traceShape gives the focus:
 // - an obligation: its chain, each column a list of cards;
 // - a record or group with obligations under it: a traceability matrix, one row per obligation
 //   grouped by its parent, each gap coverage reports visible in its cell, and under it the Untraced
@@ -47,13 +45,12 @@ import { readState } from '../record/page-parts';
 //   obligations below it, the record marked; any other record: that container's matrix, marked.
 // Every cell shows each record's ID and title and links to it; a file links to the record that
 // names it. Long matrices show a page of rows at a time. It never reads the address. Its toolbar is every stage's
-// (views/StageChrome.tsx), floating at the top of the open space (openSpace.ts) with its own "Gaps only" filter and its
-// key, which also says why it shows what it shows; what it holds is told to the header strip. Each obligation's chain,
-// its gaps and whether only proof is asked of it, and the untraced records, are the Trace read model's (list-traces,
-// LA-TRC-RM11), read again after every reload; the tree's structure, titles and kinds are the index's.
+// (views/StageChrome.tsx), floating at the top of the open space (openSpace.ts) with the view switch, its own "Gaps
+// only" filter and Tidy up, and its key; what it holds is told to the header strip. Everything it draws is the Trace
+// read model's (list-traces, LA-TRC-RM11): each obligation's chain, its gaps and whether only proof is asked of it, the
+// untraced records and the Serves links, read again after every reload; titles and kinds are the index's.
 
-const TraceCanvas = lazy(() => import('./TraceCanvas').then((m) => ({ default: m.TraceCanvas })));
-const TraceColumns = lazy(() => import('./TraceColumns').then((m) => ({ default: m.TraceColumns })));
+const TraceAll = lazy(() => import('./TraceAll').then((m) => ({ default: m.TraceAll })));
 
 export interface TraceViewProps {
   index: RecordIndex;
@@ -70,10 +67,10 @@ export interface TraceViewProps {
   cameraKey?: string;
   /** Opens a record in a new place (Cmd or Ctrl+click, or a middle-click for the background), when the host has places. */
   onOpenNew?: (id: string, background: boolean) => void;
+  /** The place's view (views.ts), and the switch's setter. */
+  view: TraceViewName;
+  onView: (view: TraceViewName) => void;
 }
-
-/** How many matrix rows show before "Show more". */
-export const TRACE_PAGE = 100;
 
 /** A gap coverage reports, in words, by its column. */
 const MISSING: Record<GapColumn, string> = { design: 'Not designed', build: 'Not built', tests: 'Not proved' };
@@ -200,66 +197,38 @@ function ProductTrace(props: TraceViewProps & { product: string }) {
 type StageProps = TraceViewProps & { traces: ProductTraces };
 
 function TraceStage(props: StageProps & { product: string }) {
-  const { index, focus, onCounts, product, traces } = props;
+  const { index, focus, onCounts, product, traces, view } = props;
   const narrow = useNarrow();
-  // The tree or the columns (LA-V98-R13): the window's preference, switched by the toolbar's control or v.
-  const [layout, setLayout] = useTraceLayout();
-  const columnsOn = layout === 'columns';
-  useCommand('graphLayout', () => setLayout(columnsOn ? 'tree' : 'columns'), true, 'Tree or Columns layout: the product\'s whole tree, or the path to the focus as columns');
   const spec = useMemo(() => matrixSpec(index, traces, focus), [index, traces, focus]);
   const [gapsOnly, setGapsOnly] = useState(false);
+  // Tidy up: each press orders the columns afresh once (layout stability keeps the order otherwise, all-layout.ts).
+  const [tidy, setTidy] = useState(0);
   // The table's page and the keyboard's ring are the focus's: a new focus starts them again.
   const [paging, setPaging] = useState({ focus, shown: TRACE_PAGE });
   const shown = paging.focus === focus ? paging.shown : TRACE_PAGE;
   const page = useMemo(() => (spec ? pageOf(spec.groups, gapsOnly, shown) : null), [spec, gapsOnly, shown]);
-  // The product's one map: worked out once per product and data change, whatever the focus or the filter. On a phone only
-  // the columns draw it.
-  const map = useMemo(() => (narrow && !columnsOn ? null : traceMap(index, traces, product)), [narrow, columnsOn, index, traces, product]);
+  // The product's All-at-once graph: worked out once per product and data change, whatever the focus or the filter.
+  const graph = useMemo(() => allGraph(index, traces, product), [index, traces, product]);
   const [ringAt, setRing] = useState<{ focus: string; at: { id: string; chain: string | null } | null }>({ focus, at: null });
-  // Where the walk or a click is on the tree (walk.ts), for the focus it left there: a node's key, so a record in several
-  // chains keeps the copy arrived on, and a node that is no record (a gap, a file, the branch, the mark) holds the ring.
-  const [walked, setWalked] = useState<{ focus: string; node: string } | null>(null);
-  const walkedNode = walked?.focus === focus ? walked.node : null;
-  const mapNow = useCallback((): TraceMap => map ?? traceMap(index, traces, product), [map, index, traces, product]);
-  /** The node the focus stands on, and the node the walk is on (the same, unless the walk is on a node that is no record). */
-  const at = useMemo(() => focusKey(mapNow(), index, focus, walkedNode), [mapNow, index, focus, walkedNode]);
-  const kept = useMemo(() => keptFor(mapNow(), focus, at), [mapNow, focus, at]);
-  const walkNode = walkedNode && map?.nodes.has(walkedNode) ? walkedNode : at;
-  // The keyboard's ring: the table's focused link (its copy in its row's chain), else the walk's node when it is no record.
-  const linkRing = ringAt.focus === focus ? ringAt.at : null;
-  const ring = linkRing && map
-    ? copyInChain(map, linkRing.id, linkRing.chain ? map.copies.get(linkRing.chain)?.[0] ?? null : null) ?? map.copies.get(linkRing.id)?.[0] ?? null
-    : map && map.nodes.get(walkNode)?.role !== 'record' ? walkNode : null;
-  // The stage walk moves over the tree from anywhere (walk.ts, LA-V61-R49), by the Graph's Tree keys. On a record the
-  // focus moves there, as a click does, and the camera follows; on a node that is no record the ring does. Each step is
-  // announced. The table under the canvas keeps its own arrows (walk). On a phone, where no map is drawn, they walk the
-  // same tree.
-  const targetOf = useCallback((move: Move): string | null => traceTarget(mapNow(), walkNode, move), [mapNow, walkNode]);
-  const go = useCallback((to: string) => {
-    const node = mapNow().nodes.get(to)!;
-    const next = node.role === 'record' ? node.id : focus;
-    setWalked({ focus: next, node: to });
-    if (next !== focus) props.onNavigate(next);
-    return nodeWords(index, mapNow(), node);
-  }, [mapNow, focus, index, props.onNavigate]);
-  const walkMap = useCallback((move: Move) => { const to = targetOf(move); return to ? go(to) : null; }, [targetOf, go]);
-  // Enter on a file the walk is on opens its first naming record, in the file's chain; the commands layer offers it a
-  // plain Enter outside a control that works Enter itself, before the wiki card's toggle.
-  const enter = useCallback(() => {
-    const m = mapNow();
-    const node = m.nodes.get(walkNode);
-    if (!node || node.role !== 'file' || !node.opens) return false;
-    const own = copyInChain(m, node.opens, node.chain);
-    setWalked(own ? { focus: node.opens, node: own } : null);
-    props.onNavigate(node.opens);
-    return true;
-  }, [mapNow, walkNode, props.onNavigate]);
-  useStageWalk(walkMap, true, enter);
-  /** A click on the canvas opens a record keeping the node it was opened from. */
-  const openFromCanvas = useCallback((id: string, from?: string) => {
-    setWalked(from ? { focus: id, node: from } : null);
-    props.onNavigate(id);
-  }, [props.onNavigate]);
+  // A gap the walk stands on, for the focus it left there: a gap is no record, so the focus stays and the ring moves.
+  const [walked, setWalked] = useState<{ focus: string; key: string } | null>(null);
+  const walkedKey = walked?.focus === focus && graph.nodes.has(walked.key) ? walked.key : null;
+  /** The box the walk is on: a gap it stands on, else the focus's own box (none for a record the view does not draw). */
+  const at = walkedKey ?? (graph.nodes.has(focus) ? focus : null);
+  // The keyboard's ring: the table's focused link (its record's box), else the walk's gap.
+  const linkRing = ringAt.focus === focus ? ringAt.at?.id ?? null : null;
+  const ring = linkRing && graph.nodes.has(linkRing) ? linkRing : walkedKey;
+  // The stage walk (all-walk.ts, LA-V61-R49): Up and Down within a column, Left and Right along the links. On a record
+  // the focus moves there, as a click does, and the camera follows; on a gap the ring does. Each step is announced.
+  const targetOf = useCallback((move: Move): string | null => allTarget(graph, shownLayout(product), at, move), [graph, product, at]);
+  const walkMap = useCallback((move: Move) => {
+    const to = targetOf(move);
+    if (!to) return null;
+    if (graph.nodes.get(to)!.role === 'record') { setWalked(null); if (to !== focus) props.onNavigate(to); } else setWalked({ focus, key: to });
+    return allWords(index, graph, to);
+  }, [targetOf, graph, focus, index, props.onNavigate]);
+  const allOn = view === 'all-at-once';
+  useStageWalk(walkMap, allOn);
 
   // What the header strip says.
   const untraced = useMemo(() => (spec?.untracedOf ? untracedUnder(index, traces, spec.untracedOf) : []), [index, traces, spec]);
@@ -275,12 +244,10 @@ function TraceStage(props: StageProps & { product: string }) {
   }, [spec, index, traces, focus, total, page, untracedCount]);
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 
-  const drawn = !narrow && map !== null;
-  // The key bar, while the map is drawn: what it draws, then the live marks.
+  const drawn = !narrow && allOn;
+  // The key bar, while the view is drawn: what it draws, then the live marks.
   const changesKey = useChangesKey();
-  const keyEntries = useMemo(() => (drawn && map
-    ? [...(columnsOn ? traceColumnKeyEntries(index, map, traceColumns(map, at), gapsOnly) : traceKeyEntries(index, map, kept, gapsOnly)), ...changesKey]
-    : []), [drawn, columnsOn, index, map, at, kept, gapsOnly, changesKey]);
+  const keyEntries = useMemo(() => (drawn ? [...allKeyEntries(index, graph, gapsOnly || graph.nodes.has(focus)), ...changesKey] : []), [drawn, index, graph, gapsOnly, focus, changesKey]);
   // Show more pages the table. Under the canvas, which draws every chain, it is for the keyboard alone, hidden with the table.
   const more = page && page.drawn < page.matching ? (
     <p className="trace-more">
@@ -288,31 +255,40 @@ function TraceStage(props: StageProps & { product: string }) {
       <span className="hint"> {page.drawn} of {page.matching} shown</span>
     </p>
   ) : null;
-  const filter = total > 0 || (drawn && map.counts.obligations > 0) ? (
+  const filter = allOn && (total > 0 || graph.counts.obligations > 0) ? (
     <label className="trace-filter">
       <input type="checkbox" checked={gapsOnly} onChange={(e) => { setGapsOnly(e.target.checked); setPaging({ focus, shown: TRACE_PAGE }); }} />
       Gaps only
     </label>
   ) : null;
+  const tidyUp = drawn ? (
+    <Tooltip label="Tidy up: order the columns afresh to keep linked boxes near; a data change never reorders them on its own">
+      <Button onClick={() => setTidy((t) => t + 1)}>Tidy up</Button>
+    </Tooltip>
+  ) : null;
+  const toolbar = (
+    <StageToolbar
+      can={(move) => allOn && targetOf(move) !== null}
+      walkLabels={ALL_WALK_LABELS}
+      own={(n) => ({ primary: <><ViewSwitch view={view} onChange={props.onView} narrow={n} />{filter}</>, secondary: tidyUp })}
+    />
+  );
   const table = spec && page
-    ? <TraceMatrix {...props} spec={spec} page={page} untraced={untraced} access={drawn} more={more} />
-    : <TraceChainCards {...props} access={drawn} />;
-  const layouts = (narrowTools: boolean) => <LayoutSwitch layout={layout} onChange={setLayout} narrow={narrowTools} />;
-  const toolbar = <StageToolbar can={(move) => targetOf(move) !== null} walkLabels={graphWalkLabels('tree')} own={(n) => ({ primary: <>{layouts(n)}{filter}</> })} />;
+    ? <TraceMatrix {...props} spec={spec} page={page} untraced={untraced} access more={more} />
+    : <TraceChainCards {...props} access />;
 
-  if (narrow && columnsOn && map) {
+  if (!allOn) {
     return (
       <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
         {toolbar}
-        <ColumnList index={index} map={map} focus={focus} at={at} gapsOnly={gapsOnly} hrefFor={props.hrefFor} onNavigate={openFromCanvas} />
       </section>
     );
   }
-  if (!drawn) {
+  if (narrow) {
     return (
       <section className="trace-page" aria-label="Trace" {...peekHandlers(props)}>
         {toolbar}
-        {table}
+        <AllList index={index} graph={graph} focus={focus} gapsOnly={gapsOnly} hrefFor={props.hrefFor} onNavigate={props.onNavigate} />
       </section>
     );
   }
@@ -323,9 +299,7 @@ function TraceStage(props: StageProps & { product: string }) {
       {toolbar}
       <StageKey entries={keyEntries} />
       <Suspense fallback={<div className="graph-flow trace-flow" aria-busy="true" />}>
-        {columnsOn
-          ? <TraceColumns index={index} focus={focus} map={map} at={at} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} cameraKey={props.cameraKey} onOpenNew={props.onOpenNew} />
-          : <TraceCanvas index={index} focus={focus} map={map} at={at} kept={kept} gapsOnly={gapsOnly} onNavigate={openFromCanvas} onPeek={props.onPeek} space={props.space} ring={ring} cameraKey={props.cameraKey} onOpenNew={props.onOpenNew} />}
+        <TraceAll index={index} focus={focus} graph={graph} gapsOnly={gapsOnly} tidy={tidy} onNavigate={props.onNavigate} onPeek={props.onPeek} space={props.space} ring={ring} cameraKey={props.cameraKey} onOpenNew={props.onOpenNew} />
       </Suspense>
       <div className="trace-access" data-arrows="own" onFocus={onFocus} onBlur={onBlur} onKeyDown={walk}>
         {table}
@@ -334,15 +308,21 @@ function TraceStage(props: StageProps & { product: string }) {
   );
 }
 
-/** The Tree | Columns control (LA-V98-R13), as the Graph's layout control; one letter each in the narrow toolbar. */
-function LayoutSwitch({ layout, onChange, narrow }: { layout: TraceLayout; onChange: (layout: TraceLayout) => void; narrow: boolean }) {
+/**
+ * The All at once | Delivery switch (LA-V98), the place's own view (views.ts), each named in full in every toolbar.
+ * Delivery is offered once its view is built (trace/delivery).
+ */
+function ViewSwitch({ view, onChange, narrow }: { view: TraceViewName; onChange: (view: TraceViewName) => void; narrow: boolean }) {
   return (
-    <div className={`graph-depth graph-layout trace-layout${narrow ? ' is-narrow' : ''}`} role="group" aria-label="Layout">
-      {TRACE_LAYOUTS.map((l) => (
-        <Tooltip key={l.layout} label={l.tip} command={l.layout !== layout ? 'graphLayout' : undefined}>
-          <button type="button" aria-pressed={layout === l.layout} aria-label={narrow ? l.label : undefined} onClick={() => onChange(l.layout)}>{narrow ? l.label[0] : l.label}</button>
-        </Tooltip>
-      ))}
+    <div className={`graph-depth graph-layout trace-views${narrow ? ' is-narrow' : ''}`} role="group" aria-label="Trace view">
+      {TRACE_VIEWS.map((v) => {
+        const built = v.view !== 'delivery';
+        return (
+          <Tooltip key={v.view} label={built ? v.tip : `${v.tip} (not built yet)`}>
+            <button type="button" aria-pressed={view === v.view} disabled={!built} onClick={() => onChange(v.view)}>{v.label}</button>
+          </Tooltip>
+        );
+      })}
     </div>
   );
 }
