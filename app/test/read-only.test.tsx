@@ -12,10 +12,10 @@ const PAGES = ['/', '/DM', '/NF', '/DM-SHOP', '/DM?panel=checks', '/DM?page=form
 const RECORD_ACTIONS = ['Edit', 'Add…', 'Move', 'Remove'];
 const isRecordAction = (button: HTMLButtonElement) => RECORD_ACTIONS.includes(button.textContent ?? '') || /^Add /.test(button.textContent ?? '');
 
-/** The aggregates' reads: GET /api/<aggregate>/<query>, each a query of an aggregate. */
+/** The reads: GET /api/<slice>/<query>, each a query of its own. */
 const QUERY_ROUTES = ALL_QUERIES.map((q) => `${q.method} ${q.route}`);
-/** What a page reads: the spec, its aggregate's reads, and the Changes baseline it compares the spec with (GET /api/baseline, LA-EXP-EP02). */
-const isRead = (r: string) => r === 'GET /api/spec' || r.startsWith('GET /api/baseline?') || QUERY_ROUTES.includes(r.split('?')[0]);
+/** What a page reads: only queries, and the Reference (GET /api/reference) for the format pages. */
+const isRead = (r: string) => r === 'GET /api/reference?' || QUERY_ROUTES.includes(r.split('?')[0]);
 
 // One test case per page, so each stays well within the time a test may take however many pages there are.
 describe('LA-V92-R08-T01 Pages only read until the person acts: the record actions are the only controls that lead to a write, and opening a page or searching it sends none', () => {

@@ -92,8 +92,8 @@
 {"id":"LA-EXP-UC03-FL02","title":"Walk the model as a graph in the desktop app","use_case_id":"LA-EXP-UC03","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC04-FL01","title":"Walk the graph through folder-like groups in the web app","use_case_id":"LA-EXP-UC04","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC04-FL02","title":"Walk the graph through folder-like groups in the desktop app","use_case_id":"LA-EXP-UC04","interface_id":"LA-IF02"}
-{"id":"LA-EXP-UC05-FL01","title":"Read a record several ways at once in the web app","use_case_id":"LA-EXP-UC05","interface_id":"LA-IF01"}
-{"id":"LA-EXP-UC05-FL02","title":"Read a record several ways at once in the desktop app","use_case_id":"LA-EXP-UC05","interface_id":"LA-IF02"}
+{"id":"LA-EXP-UC05-FL01","title":"Explore a record from several views at once in the web app","use_case_id":"LA-EXP-UC05","interface_id":"LA-IF01"}
+{"id":"LA-EXP-UC05-FL02","title":"Explore a record from several views at once in the desktop app","use_case_id":"LA-EXP-UC05","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC06-FL01","title":"Read a flow step by step in the web app","use_case_id":"LA-EXP-UC06","interface_id":"LA-IF01"}
 {"id":"LA-EXP-UC06-FL02","title":"Read a flow step by step in the desktop app","use_case_id":"LA-EXP-UC06","interface_id":"LA-IF02"}
 {"id":"LA-EXP-UC07-FL01","title":"Work in one product at a time in the web app","use_case_id":"LA-EXP-UC07","interface_id":"LA-IF01"}

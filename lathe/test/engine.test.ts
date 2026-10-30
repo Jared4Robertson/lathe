@@ -160,7 +160,7 @@ describe('loading', () => {
     const entity = ws.records.find((r) => r.id === 'EX-LEND-EN01')!;
     expect(entity.fields).toMatchObject({ aggregate_id: 'EX-LEND-A1', role: 'root' });
     expect(entity.parts.entity_field).toHaveLength(3);
-    // The result is plain JSON, as the app reads it from /api/spec.
+    // The result is plain JSON, as the server's checks' run keeps it.
     expect(JSON.parse(JSON.stringify(ws))).toEqual(ws);
   });
 

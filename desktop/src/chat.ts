@@ -92,17 +92,14 @@ const oneLine = (text: string) => {
   return line.length > 140 ? `${line.slice(0, 139)}…` : line;
 };
 
-/** The one line a tool row shows of its input: the command, the file, the pattern, a Lathe write's table and ID, or its first text. */
-export function toolSummary(name: string, input: unknown): string {
+/** The one line a tool row shows of its input: the command, the file, the pattern, the ID a Lathe command or query names, or its first text. */
+export function toolSummary(input: unknown): string {
   if (!input || typeof input !== 'object') return '';
   const fields = input as Record<string, unknown>;
   for (const key of SUMMARY_KEYS) if (typeof fields[key] === 'string' && fields[key]) return oneLine(fields[key] as string);
-  // A Lathe write names its table as the only property, with the row as its value (lathe/src/cli/mcp.ts).
+  // A Lathe tool is one aggregate's command or query (lathe/src/cli/mcp.ts): its input names its record by `id`, above,
+  // or by the record it sits under, such as `domain_id`.
   const entries = Object.entries(fields);
-  if (/lathe/.test(name) && entries.length === 1 && entries[0][1] && typeof entries[0][1] === 'object') {
-    const [table, row] = entries[0] as [string, Record<string, unknown>];
-    return oneLine(`${table} ${typeof row.id === 'string' ? row.id : Object.values(row).filter((v) => typeof v === 'string').join(' ')}`);
-  }
   const text = entries.find(([, v]) => typeof v === 'string');
   return text ? oneLine(String(text[1])) : '';
 }
@@ -163,7 +160,7 @@ function assistantBlocks(items: ChatItem[], message: Json, streamed: boolean): C
     } else if (block.type === 'tool_use' && typeof block.id === 'string') {
       const name = str(block.name) ?? 'tool';
       const existing = next.find((i) => i.id === block.id);
-      if (!existing) next = upsert(next, { kind: 'tool', id: block.id, name, label: toolLabel(name), summary: toolSummary(name, block.input), input: pretty(block.input), result: null, status: 'running' });
+      if (!existing) next = upsert(next, { kind: 'tool', id: block.id, name, label: toolLabel(name), summary: toolSummary(block.input), input: pretty(block.input), result: null, status: 'running' });
     }
   }
   // A streamed message's text is complete once the message is.
@@ -234,7 +231,7 @@ export function applyLine(state: ChatState, cursor: StreamCursor, line: string):
       if (request?.subtype !== 'can_use_tool' || !id) return same;
       const tool = str(request.tool_name) ?? 'tool';
       const reason = str(request.decision_reason) ?? str(request.description) ?? str(request.title);
-      const item: ChatItem = { kind: 'permission', id, tool, label: toolLabel(tool), summary: toolSummary(tool, request.input), input: pretty(request.input), reason, answer: 'pending' };
+      const item: ChatItem = { kind: 'permission', id, tool, label: toolLabel(tool), summary: toolSummary(request.input), input: pretty(request.input), reason, answer: 'pending' };
       return { state: { ...state, items: upsert(state.items, item) }, cursor };
     }
     case 'control_cancel_request': {

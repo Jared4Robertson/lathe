@@ -19,7 +19,7 @@
 // template or regular expression literal
 // - as the first argument of a method call such as `app.get('/tools', ...)` or `router.post(...)`: that method;
 // - as the value of a `path`, `pattern` or `route` key or attribute (`{ path: '/x' }`, `<Route path="/x">`), or
-//   compared with `===`, `==`, `!==` or `!=` (`pathname === '/api/spec'`): the method written as a string literal
+//   compared with `===`, `==`, `!==` or `!=` (`pathname === '/api/history'`): the method written as a string literal
 //   (`'GET'`, `method: 'POST'`) on the nearest line within two, or any method when there is none;
 // - assigned to a constant whose name ends in PATH or ROUTE (`const HOME_PATH = '/'`): any method.
 // It does not recognize a route built at run time (from parts, by a function, or matched by prefix with startsWith),

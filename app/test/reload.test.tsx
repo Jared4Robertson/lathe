@@ -36,7 +36,6 @@ describe('reload on change', () => {
       'GET /api/problems/list-problems?product_id=DM',
       'GET /api/coverage/get-coverage?product_id=DM',
     ]));
-    expect(after.requests.some((r) => r.startsWith('GET /api/spec'))).toBe(false);
     // The address and page stay the same; no manual refresh.
     expect(window.location.pathname).toBe('/DM-SHOP-CMD01-H');
   });

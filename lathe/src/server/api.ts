@@ -1,10 +1,9 @@
 // Lathe's HTTP API, shared by `lathe serve`, the desktop shell and the app's Vite dev server. Its shapes are in
 // contract.ts:
-//   GET  /api/spec                SpecData: the schema, each product folder's rows, where each record with no owner sits, and the checks' problems, coverage and chains
 //   POST /api/<aggregate>/<command>   the command's input -> WriteAnswer: one aggregate command, such as /api/use-case/add-flow-step
-//   GET  /api/<aggregate>/<query>?<field>=<value>   the query's answer: one aggregate read, such as /api/use-case/get-use-case?id=<ID>
+//   GET  /api/<slice>/<query>?<field>=<value>   the query's answer: one read, such as /api/use-case/get-use-case?id=<ID>; the
+//        Record changes read (list-record-changes) is given the product's rows at the commit its `since` names, from git
 //   GET  /api/history?id=<ID>     HistoryAnswer: the commits that changed the record's rows (&skip=<n> for older ones)
-//   GET  /api/baseline?product=<ID>&since=<commit|branch|hash>   BaselineAnswer: the product's rows at a commit, for the record diff (../changes.ts)
 //   GET  /api/reference           the workspace's own product's Reference (reference.ts): kinds, tables, relations, folders, checks
 //
 // The root is a workspace: its own product, and each other product its lathe.config.json lists under products, each
@@ -20,7 +19,7 @@ import type { Row } from '../platform/data/rows.ts';
 import type { SchemaDescription } from '../platform/data/schema.ts';
 import { formatProblem, StoreError } from '../platform/data/problems.ts';
 import { LATHE_DATA_DIR, openStore, type Store } from '../platform/data/store.ts';
-import type { ReadRefusal, SpecData, WriteAnswer } from './contract.ts';
+import type { ReadRefusal, WriteAnswer } from './contract.ts';
 import { baseline, parseSince } from './baseline.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../commands.ts';
 import { flagValue, InputError, type AnyCommand, type AnyQuery } from '../platform/commands/definition.ts';
@@ -36,7 +35,7 @@ interface Opened {
   /** The data folder's files as the store last read or wrote them. */
   signature: string;
   /** The checks' problems, coverage and chains for this data, once worked out. */
-  checks: Promise<Checked> | null;
+  checks: Promise<CheckRun> | null;
   /** Requests on this root run one after another, so a write never races a reload. */
   queue: Promise<unknown>;
 }
@@ -118,9 +117,7 @@ function send(res: ServerResponse, status: number, body: unknown, headers: Recor
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const storeMessage = (error: unknown) => (error instanceof StoreError ? error.problems.map(formatProblem).join('\n') : message(error));
 
-type Checked = Pick<SpecData, 'problems' | 'coverage' | 'chains'>;
-
-async function checksOf(root: string): Promise<Checked> {
+async function checksOf(root: string): Promise<CheckRun> {
   try {
     const workspace = await loadWorkspace(root);
     return { problems: workspace.problems, coverage: workspace.coverage, chains: workspace.chains };
@@ -170,34 +167,6 @@ export function joinSchemas(schemas: SchemaDescription[]): SchemaDescription {
     }
   }
   return joined;
-}
-
-/** A folder as the workspace names it: from its root, written with /. */
-const fromWorkspace = (workspace: string, dir: string) => path.relative(workspace, dir).split(path.sep).join('/') || '.';
-
-/** Every product the workspace shows, each from its own store, as one SpecData. */
-async function specData(root: string): Promise<SpecData> {
-  const products = workspaceProducts(root);
-  const read = await Promise.all(products.map((config) => withStore(config.root, async (opened) => {
-    opened.checks ??= checksOf(config.root);
-    return {
-      root: config.root,
-      schema: opened.store.schema,
-      source: { dataDir: fromWorkspace(products[0].root, config.dataDir), tables: tablesOf(opened.store) },
-      placements: await opened.store.placements(),
-      checked: await opened.checks,
-    };
-  })));
-  const clash = productClash(products[0].root, read.map((r) => ({ root: r.root, ids: (r.source.tables.product ?? []).map((p) => String(p.id)) })));
-  if (clash) throw new Error(clash);
-  return {
-    schema: joinSchemas(read.map((r) => r.schema)),
-    sources: read.map((r) => r.source),
-    placements: Object.assign({}, ...read.map((r) => r.placements)),
-    problems: read.flatMap((r) => r.checked.problems),
-    coverage: read.flatMap((r) => r.checked.coverage),
-    chains: read.flatMap((r) => r.checked.chains),
-  };
 }
 
 // ---------- Writing ----------
@@ -288,9 +257,12 @@ const QUERY_ROUTES = new Map(ALL_QUERIES.map((definition) => {
   return [definition.route, definition];
 }));
 
-/** Every product's store of the workspace read as one: their schemas joined, each table's rows from every store. */
+/** Every product's store of the workspace read as one: their schemas joined, each table's rows from every store; refused when two folders hold one product. */
 async function workspaceView(products: LatheConfig[]): Promise<ReadView> {
-  const read = await Promise.all(products.map((config) => withStore(config.root, async (opened) => ({ schema: opened.store.schema, tables: tablesOf(opened.store) }))));
+  const read = await Promise.all(products.map((config) => withStore(config.root, async (opened) => ({ root: config.root, schema: opened.store.schema, tables: tablesOf(opened.store) }))));
+  // One product in two folders is refused: a product's records live in its own folder only.
+  const clash = productClash(products[0].root, read.map((r) => ({ root: r.root, ids: (r.tables.product ?? []).map((p) => String(p.id)) })));
+  if (clash) throw new Error(clash);
   const rows = (table: string) => read.flatMap((r) => r.tables[table] ?? []);
   const schema = joinSchemas(read.map((r) => r.schema));
   let byId: Map<string, { kind: string; row: Row }> | null = null;
@@ -304,7 +276,7 @@ async function workspaceView(products: LatheConfig[]): Promise<ReadView> {
   };
 }
 
-/** Every product's checks' run, each the one the server keeps for its data, joined as GET /api/spec joins them. */
+/** Every product's checks' run, each the one the server keeps for its data, joined. */
 async function workspaceRun(products: LatheConfig[]): Promise<CheckRun> {
   const runs = await Promise.all(products.map((config) => withStore(config.root, async (opened) => (opened.checks ??= checksOf(config.root)))));
   return { problems: runs.flatMap((r) => r.problems), coverage: runs.flatMap((r) => r.coverage), chains: runs.flatMap((r) => r.chains) };
@@ -342,25 +314,33 @@ async function runRead(workspace: string, definition: AnyQuery, params: URLSearc
   const values = [...new Set(params.keys())].flatMap((name) => params.getAll(name));
   // A read that names no record, such as the list of the products, is of the whole workspace: every product's store.
   if (values.length === 0 && products.length > 1) return { status: 200, answer: answerQuery(await workspaceView(products), definition, {}) };
-  return withStore(await productRoot(products, values), async (opened) => answerRead(opened.store, definition, params));
+  const root = await productRoot(products, values);
+  if (definition.baseline) return readAtBaseline(products.find((p) => p.root === root)!, definition, params);
+  return withStore(root, async (opened) => answerRead(opened.store, definition, params));
+}
+
+/**
+ * A read of the data at a baseline (the Record changes read): the product's store with its rows at the commit the
+ * input's `since` names (the last commit, where the branch left the default branch, or a hash), read from git; 400 for
+ * any other `since`.
+ */
+async function readAtBaseline(config: LatheConfig, definition: AnyQuery, params: URLSearchParams): Promise<{ status: number; answer: unknown }> {
+  const since = parseSince(params.get('since'));
+  if (!since) return { status: 400, answer: { error: 'since is commit, branch or a commit hash.' } satisfies ReadRefusal };
+  return withStore(config.root, async (opened) => {
+    const at = await baseline(config.root, config.dataDir, opened.store.schema, since);
+    const { store } = opened;
+    return answerRead({ schema: store.schema, rows: (table) => store.rows(table), record: (id) => store.record(id), baseline: at }, definition, params);
+  });
 }
 
 // ---------- Routing ----------
 
 /**
  * Handles a request under /api. Returns false when the path is not an API path, so the caller can serve something
- * else. `pathname` is the full path, such as /api/spec.
+ * else. `pathname` is the full path, such as /api/use-case/get-use-case.
  */
 export async function handleApi(root: string, req: IncomingMessage, res: ServerResponse, pathname: string): Promise<boolean> {
-  if (pathname === '/api/spec') {
-    if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
-    try {
-      send(res, 200, await specData(root), { 'cache-control': 'no-store' });
-    } catch (error) {
-      send(res, 500, { error: storeMessage(error) });
-    }
-    return true;
-  }
   const routed = COMMAND_ROUTES.get(pathname);
   if (routed) {
     if (req.method !== routed.method) return (send(res, 405, { error: 'Method not allowed' }), true);
@@ -399,27 +379,6 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
     if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
     try {
       send(res, 200, await buildReference(loadConfig(root).root));
-    } catch (error) {
-      send(res, 500, { error: storeMessage(error) });
-    }
-    return true;
-  }
-  if (pathname === '/api/baseline') {
-    if (req.method !== 'GET') return (send(res, 405, { error: 'Method not allowed' }), true);
-    const query = new URL(req.url ?? '/', 'http://localhost').searchParams;
-    const product = (query.get('product') ?? '').trim();
-    const since = parseSince(query.get('since'));
-    if (!product) return (send(res, 400, { error: 'Give a product: /api/baseline?product=<ID>&since=commit.' }), true);
-    if (!since) return (send(res, 400, { error: 'since is commit, branch or a commit hash.' }), true);
-    try {
-      // The product's own folder: the first product root whose store holds the product.
-      let found: { config: LatheConfig; schema: SchemaDescription } | undefined;
-      for (const config of workspaceProducts(root)) {
-        found = await withStore(config.root, async (opened) => (opened.store.record(product)?.kind === 'product' ? { config, schema: opened.store.schema } : undefined));
-        if (found) break;
-      }
-      if (!found) return (send(res, 404, { error: `There's no product ${product}.` }), true);
-      send(res, 200, await baseline(found.config.root, found.config.dataDir, found.schema, since), { 'cache-control': 'no-store' });
     } catch (error) {
       send(res, 500, { error: storeMessage(error) });
     }

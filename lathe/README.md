@@ -161,7 +161,8 @@ The types are in [src/types.ts](src/types.ts) (`Workspace` and its parts: each r
 
 | Request | Answer |
 | --- | --- |
-| `GET /api/spec` | Every product the workspace shows (`SpecData`): one schema, each product folder's rows apart, and every product's problems and coverage. |
+| `GET /api/<slice>/<query>?<field>=<value>` | One query's own answer, such as `/api/use-case/get-use-case?id=<ID>`. Each aggregate has its reads (get it whole, list within its parent, next ID), and each stage of the app its own: the meta model (`/api/meta-model/get-meta-model`), a product's record summaries, folder tree, ERD, record changes since a baseline (`since=commit\|branch\|<hash>`), problems, coverage, traces and one record's trace. |
+| `POST /api/<aggregate>/<command>` | One aggregate command with its input; the changed rows, or the refusal with every reason. |
 | `GET /api/reference` | The `Reference`: stages, kinds, tables, relations, checks and coverage gaps. |
 | `GET /api/history?id=<ID>` | The commits that changed the record's row, newest first (`&commit=<hash>` for one commit's change of the row). |
 | `GET /api/events` | Server-sent events: `spec:changed` when a data file changes. |

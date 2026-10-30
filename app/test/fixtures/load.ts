@@ -7,7 +7,7 @@ import type { Row, Value } from '../../../lathe/src/server/contract';
 // it by fixtures/global-setup.ts, plus the problems, recorded exceptions and coverage the engine
 // would find, which each fixture module gives (no recorded exceptions unless it says so). A test may change a fixture's rows for its case with the helpers here.
 
-/** What the global setup loads of a fixture: what GET /api/spec serves, with the engine's chains but without the checks' findings (one source, data). */
+/** What the global setup loads of a fixture: its schema and rows (one source, data), with the engine's chains but without the checks' findings. */
 export type FixtureRows = Omit<ServedData, 'problems' | 'coverage'>;
 
 declare module 'vitest' {
@@ -16,7 +16,7 @@ declare module 'vitest' {
   }
 }
 
-/** A fixture's data with the engine's findings, as GET /api/spec would serve it: a fresh copy each time. */
+/** A fixture's data with the engine's findings, as the test server's queries read it: a fresh copy each time. */
 export function fixture(name: string, found: Pick<ServedData, 'problems' | 'coverage'>): ServedData {
   const rows = inject('fixtures')[name];
   if (!rows) throw new Error(`No fixture data folder ${name}.`);
