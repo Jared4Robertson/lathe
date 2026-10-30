@@ -6,14 +6,19 @@ import type { DeliveryGraph } from './delivery';
 // (delivery-order.worker.ts) by the All-at-once view's barycenter ordering (all-layout.ts orderColumns) over two
 // columns, the outcomes and the use cases, linked by serves: an outcome sits by the rows it serves and a row by its
 // outcomes, so the lines between them stay short. The rows serving an outcome come first, those serving none after
-// them. Layout stability (LA-PAT-APP-UX-R22): given the order shown before, every outcome and row kept keeps its order,
-// a new one goes in at its barycenter among them, and none is ordered afresh unless asked (Tidy up). It is worked out
+// them. A change moves only what it changed (LA-PAT-APP-UX-R22): given the order shown before, every outcome and row
+// kept keeps its order, a new outcome goes in at its barycenter among them, a removed row leaves its room (a closed
+// row's), and a new row takes the nearest such room within a few rows of its barycenter, else goes at the end of its
+// section; none is ordered afresh, nor any room closed, unless asked (Tidy up). It is worked out
 // again only when what it reads changes (the outcomes, the rows and their serves links: the input's key), never on a
 // reload that left them alone; while a new order is made, the one before stays on screen with the graph it was made
 // for. Where there is no worker (the unit tests, in jsdom), the same ordering runs on the page.
 
-/** An order: the outcomes top to bottom, and the rows. */
-export interface DeliveryOrder { key: string; outcomes: readonly string[]; rows: readonly string[] }
+/**
+ * An order: the outcomes top to bottom, the rows, how many removed rows' rooms lie before each row (none for most), and
+ * the place in `rows` of the first row serving no outcome (`rows.length` when none does).
+ */
+export interface DeliveryOrder { key: string; outcomes: readonly string[]; rows: readonly string[]; roomBefore: ReadonlyMap<string, number>; firstOutside: number }
 
 /** The ordering's input for a graph, numbered (outcomes first, then rows), with its key. */
 function inputOf(graph: DeliveryGraph, previous: DeliveryOrder | null): { input: LayoutInput; keys: string[]; key: string } {
@@ -36,12 +41,76 @@ function inputOf(graph: DeliveryGraph, previous: DeliveryOrder | null): { input:
   return { input: { columns: [outcomes, rows], columnOf, under, links, previous: was }, keys, key };
 }
 
-const orderOf = (key: string, keys: readonly string[], order: number[][]): DeliveryOrder => ({ key, outcomes: order[0].map((b) => keys[b]), rows: order[1].map((b) => keys[b]) });
+/** How many rows from its barycenter a new row looks for a removed row's room, before it goes at the end of its section. */
+export const NEAR_ROWS = 3;
+
+/** An order from the ordering's numbers: afresh, or keeping the rows shown before at their slots (`keptRows`). */
+function orderOf(key: string, keys: readonly string[], order: number[][], input: LayoutInput, previous: DeliveryOrder | null): DeliveryOrder {
+  const outcomes = order[0].map((b) => keys[b]);
+  const merged = order[1].map((b) => keys[b]);
+  const number = new Map(keys.map((k, i) => [k, i]));
+  const under = (u: string) => input.under[number.get(u)!] === 1;
+  if (!previous) return { key, outcomes, rows: merged, roomBefore: new Map(), firstOutside: firstOutsideOf(merged, under) };
+  return { key, outcomes, ...keptRows(previous, merged, under) };
+}
+
+const firstOutsideOf = (rows: readonly string[], under: (u: string) => boolean) => { const i = rows.findIndex((u) => !under(u)); return i < 0 ? rows.length : i; };
+
+/**
+ * The rows kept at their slots (exported for tests): every row shown before in the same section keeps its slot; a row
+ * gone (or moved to the other section) leaves an empty slot, its room; each new row, in the merged order, takes the
+ * empty slot of its section nearest the slot the merged order puts it at, within NEAR_ROWS, else a new slot at the end
+ * of its section. Empty slots at the very end are dropped.
+ */
+export function keptRows(previous: DeliveryOrder, merged: readonly string[], under: (u: string) => boolean): Pick<DeliveryOrder, 'rows' | 'roomBefore' | 'firstOutside'> {
+  const present = new Set(merged);
+  // The slots before: each row in turn, its room's empty slots before it; and whether each slot was under an outcome.
+  const slots: (string | null)[] = [];
+  const slotUnder: boolean[] = [];
+  previous.rows.forEach((u, i) => {
+    const wasUnder = i < previous.firstOutside;
+    for (let k = 0; k < (previous.roomBefore.get(u) ?? 0); k++) { slots.push(null); slotUnder.push(wasUnder); }
+    const kept = present.has(u) && under(u) === wasUnder;
+    slots.push(kept ? u : null);
+    slotUnder.push(wasUnder);
+  });
+  const placed = new Set(slots.filter((u): u is string => u !== null));
+  merged.forEach((u, i) => {
+    if (placed.has(u)) return;
+    const mine = under(u);
+    // Where the merged order puts it: just before the next row it keeps, else at the end of its section.
+    const nextKept = merged.slice(i + 1).find((v) => placed.has(v) && under(v) === mine);
+    let end = slotUnder.lastIndexOf(mine) + 1;
+    if (end === 0) end = mine ? 0 : slots.length;
+    const want = nextKept ? slots.indexOf(nextKept) : end;
+    let best = -1;
+    for (let s = 0; s < slots.length; s++) {
+      if (slots[s] !== null || slotUnder[s] !== mine || Math.abs(s - want) > NEAR_ROWS) continue;
+      if (best < 0 || Math.abs(s - want) < Math.abs(best - want)) best = s;
+    }
+    if (best >= 0) slots[best] = u;
+    else { slots.splice(end, 0, u); slotUnder.splice(end, 0, mine); }
+    placed.add(u);
+  });
+  while (slots.length > 0 && slots[slots.length - 1] === null) { slots.pop(); slotUnder.pop(); }
+  const rows: string[] = [];
+  const roomBefore = new Map<string, number>();
+  let empty = 0;
+  let firstOutside = -1;
+  slots.forEach((u, s) => {
+    if (u === null) { empty++; return; }
+    if (empty > 0) roomBefore.set(u, empty);
+    empty = 0;
+    if (firstOutside < 0 && !slotUnder[s]) firstOutside = rows.length;
+    rows.push(u);
+  });
+  return { rows, roomBefore, firstOutside: firstOutside < 0 ? rows.length : firstOutside };
+}
 
 /** A graph ordered on the page's thread, keeping the order before it (none orders afresh): the worker's rule, for tests. */
 export function orderGraph(graph: DeliveryGraph, previous: DeliveryOrder | null): DeliveryOrder {
   const { input, keys, key } = inputOf(graph, previous);
-  return orderOf(key, keys, orderColumns(input));
+  return orderOf(key, keys, orderColumns(input), input, previous);
 }
 
 /** Each product's last order, kept for the page's life: what a new one keeps. */
@@ -93,7 +162,7 @@ function ordered(graph: DeliveryGraph, tidy: boolean): DeliveryOrder | Promise<D
   const previous = tidy ? null : shown;
   const { input, keys, key } = inputOf(graph, previous);
   if (previous && previous.key === key) return previous;
-  const keep = (order: number[][]) => { const o = orderOf(key, keys, order); lastOf.set(graph.product, o); return o; };
+  const keep = (order: number[][]) => { const o = orderOf(key, keys, order, input, previous); lastOf.set(graph.product, o); return o; };
   const w = workerOf();
   if (!w) return keep(here(input));
   return new Promise((resolve) => {
@@ -108,7 +177,7 @@ export interface Ordered { order: DeliveryOrder; graph: DeliveryGraph }
 
 /**
  * The order for a graph: the graph's own once ordered; until then the one shown before, which stays on screen; null
- * before the first. `tidy` (a count the Tidy up button raises) orders afresh once.
+ * before the first. `tidy` (a count Tidy up raises) orders afresh once, closing every removed row's room.
  */
 export function useDeliveryOrder(graph: DeliveryGraph, tidy: number): Ordered | null {
   const [shown, setShown] = useState<{ graph: DeliveryGraph; tidy: number; order: DeliveryOrder } | null>(null);

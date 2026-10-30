@@ -3,6 +3,7 @@ import type { PlacedMap } from '../../src/graph/map';
 import { type MapLabel } from '../../src/graph/text';
 import { allGraph } from '../../src/trace/all';
 import { layOutGraph } from '../../src/trace/all-laid';
+import { BOX_HEIGHT, OUTSIDE_GAP, ROW_GAP } from '../../src/trace/all-layout';
 import { addRows, removeRows, setRow } from '../fixtures/load';
 import { modelWorkspace } from '../fixtures/model';
 import { recordIndexOf, type ServedData } from '../read-view';
@@ -11,7 +12,7 @@ import { delivered } from '../trace/deliveries';
 import { orderGraph } from '../../src/trace/delivery/delivery-order';
 import { layOutDelivery } from '../../src/trace/delivery/delivery-layout';
 import { cellKey, DELIVERY_STAGES } from '../../src/trace/delivery/delivery';
-import { graphMap, groundMap, layoutNested, layoutTree, nestedMap } from './maps';
+import { graphMap, groundMap, groundMapAfter, layoutNested, layoutTree, nestedMap } from './maps';
 
 // A change moves only what it changed (LA-PAT-APP-UX-R22, LA-EXP-DS05, LA-EXP-DS07): adding, removing, renaming or
 // moving a record under a parent rearranges only that parent's region (for a move, the old and the new parent's), and
@@ -161,29 +162,45 @@ const CHANGES: { name: string; records: string[]; edit: (d: ServedData) => void 
   { name: 'moving a requirement to another use case', records: ['P-D-UC01-R02'], edit: (d) => { setRow(d, 'uc_requirement', 'P-D-UC01-R02', { use_case_id: 'P-D-UC02' }); } },
 ];
 
-/**
- * What a change under some parents may move in the Map, a bottom-up layout (LA-EXP-DS12): each parent and every
- * container above it (they grow), and what comes after each of them among its siblings (nudged), with all they hold.
- */
-function nudged(maps: readonly PlacedMap[], parents: readonly string[]): string[] {
-  const out = new Set<string>();
-  for (const map of maps) for (const p of parents) {
-    for (let at: string | null = p; at !== null; at = map.nodes.get(at)?.parent ?? null) {
-      out.add(at);
-      const up = map.nodes.get(at)?.parent;
-      const siblings = up ? map.nodes.get(up)!.children : [];
-      for (const later of siblings.slice(siblings.indexOf(at) + 1)) out.add(later);
-    }
-  }
-  return [...out];
-}
+/** Every container above `id` in a map, and `id` itself. */
+const chainOf = (map: PlacedMap, id: string): string[] => { const out: string[] = []; for (let at: string | null = id; at !== null; at = map.nodes.get(at)?.parent ?? null) out.push(at); return out; };
 
-/** Whether a box has the same place and size in two maps. */
-const sameBox = (before: PlacedMap, after: PlacedMap, id: string) => {
-  const b = before.nodes.get(id)!;
-  const a = after.nodes.get(id);
-  return !!a && a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
+/** A box's place inside its parent (from its parent's corner) and its size. */
+const inParent = (map: PlacedMap, id: string) => {
+  const n = map.nodes.get(id)!;
+  const p = n.parent ? map.nodes.get(n.parent)! : { x: 0, y: 0 };
+  return { x: n.x - p.x, y: n.y - p.y, w: n.w, h: n.h };
 };
+
+const overlap = (a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+/**
+ * The Map's rule for a change (LA-PAT-APP-UX-R22, LA-EXP-DS12), as on the ERD: outside the changed parents, every box
+ * keeps its size, and its place inside its parent unless a sibling that grew or was pushed now covers where it was
+ * (each such box is reported); the changed parents and the containers above them never shrink; no two siblings overlap.
+ */
+function mapChange(before: PlacedMap, after: PlacedMap, parents: readonly string[]) {
+  const inside = new Set(parents.flatMap((p) => [...region(before, p), ...region(after, p)].filter((id) => id !== p)));
+  const chain = new Set(parents.flatMap((p) => [...chainOf(before, p), ...chainOf(after, p)]));
+  const shifted: string[] = [];
+  const resized: string[] = [];
+  for (const id of before.nodes.keys()) {
+    if (inside.has(id) || !after.nodes.has(id) || after.nodes.get(id)!.parent !== before.nodes.get(id)!.parent) continue;
+    const [b, a] = [inParent(before, id), inParent(after, id)];
+    if (chain.has(id)) { if (a.w < b.w || a.h < b.h) resized.push(id); } else if (a.w !== b.w || a.h !== b.h) resized.push(id);
+    if (a.x === b.x && a.y === b.y) continue;
+    // Pushed: a sibling now covers where it was.
+    const up = after.nodes.get(id)!.parent;
+    const siblings = up ? after.nodes.get(up)!.children.filter((c) => c !== id) : [];
+    if (!siblings.some((c) => before.nodes.has(c) && overlap(inParent(after, c), b))) shifted.push(id);
+  }
+  const overlapping: string[] = [];
+  for (const n of after.nodes.values()) {
+    const kids = n.children.map((c) => after.nodes.get(c)!);
+    kids.forEach((k, i) => kids.slice(i + 1).forEach((o) => { if (overlap(k, o)) overlapping.push(`${k.id}/${o.id}`); }));
+  }
+  return { shifted, resized, overlapping };
+}
 
 /** The parents of every place the changed records have in the maps before and after: the changed regions. */
 const parentsOf = (maps: readonly PlacedMap[], records: readonly string[], idOf: (place: string) => string = (p) => p) =>
@@ -232,27 +249,43 @@ describe.each(CHANGES)('$name keeps every box outside its parent where it was', 
   };
   it('LA-EXP-DS05-T16 on the Graph\'s Tree map', () => onTheGraph('tree'));
   it('LA-EXP-DS07-T04 on the Graph\'s Nested map', () => onTheGraph('nested'));
-  it('LA-EXP-DS12-T04 on the Graph\'s Map: only the changed containers grow and nudge what comes after them; nothing before moves', () => {
+  it('LA-EXP-DS12-T04 on the Graph\'s Map: every box outside the changed containers keeps its place unless a grown one now covers it, and Tidy up packs afresh', () => {
     const before = groundMap(recordIndexOf(product()));
-    const after = groundMap(recordIndexOf(changedData()));
+    const changedIndex = recordIndexOf(changedData());
+    const after = groundMapAfter(changedIndex, before);
     const parents = parentsOf([before, after], records);
     expect(parents.length).toBeGreaterThan(0);
-    const may = new Set([before, after].flatMap((map) => nudged([before, after], parents).flatMap((id) => [...region(map, id)])));
-    expect([...before.nodes.keys()].filter((id) => !may.has(id) && !sameBox(before, after, id))).toEqual([]);
-    for (const p of parents) expect(keptOrder(before, after, p)).toEqual(placedOrder(before, p).filter((id) => after.nodes.get(p)?.children.includes(id)));
+    expect(mapChange(before, after, parents)).toEqual({ shifted: [], resized: [], overlapping: [] });
+    // Laid out again on the same data, nothing moves; Tidy up gives the first layout's picture.
+    expect(movedOutside(after, groundMapAfter(changedIndex, after), [])).toEqual([]);
+    expect(movedOutside(groundMap(changedIndex), groundMapAfter(changedIndex, null), [])).toEqual([]);
   });
 
-  it('LA-V98-R12-T03 on the Trace\'s All-at-once view: every column keeps its order, the changed record in its place', () => {
+  it('LA-V98-R12-T03 on the Trace\'s All-at-once view: every box kept keeps its exact place, a new one in a free gap of its column, and Tidy up lays out afresh', () => {
     const layOut = (d: ServedData, previous: ReturnType<typeof layOutGraph> | null) => { const { index, traces } = traced(d); return layOutGraph(allGraph(index, traces, 'P'), previous); };
     const before = layOut(product(), null);
     const after = layOut(changedData(), before);
-    // Each column's boxes kept in the order shown before; what the change adds goes in among them, what it removes is gone.
+    // Every box shown before and after keeps its place; the boxes under no outcome move only together, and only as far
+    // as a new box under one now reaches into them.
+    const shift = (after.outsideTop ?? 0) - (before.outsideTop ?? 0);
+    const outside = (k: string) => before.outsideTop !== null && before.places.get(k)!.y >= before.outsideTop;
+    expect([...before.places].filter(([k, p]) => after.places.has(k) && after.places.get(k)!.y !== p.y + (outside(k) ? shift : 0)).map(([k]) => k)).toEqual([]);
+    if (shift !== 0) {
+      const added = [...after.places].filter(([k]) => !before.places.has(k) && (after.outsideTop === null || after.places.get(k)!.y < after.outsideTop));
+      expect(shift).toBe(Math.max(...added.map(([, p]) => p.y + BOX_HEIGHT)) + OUTSIDE_GAP - before.outsideTop!);
+    }
     after.order.forEach((column, i) => {
       const kept = new Set(column);
       expect(column.filter((k) => before.places.has(k)), `column ${i}`).toEqual(before.order[i].filter((k) => kept.has(k)));
+      // No two boxes of a column closer than a row.
+      const tops = column.map((k) => after.places.get(k)!.y).sort((a, b) => a - b);
+      tops.slice(1).forEach((t, j) => expect(t - tops[j], `column ${i}`).toBeGreaterThanOrEqual(BOX_HEIGHT + ROW_GAP - 1e-9));
     });
     if (records.includes('P-D-UC01-R03')) expect(after.places.has('P-D-UC01-R03')).toBe(true);
     if (records.includes('P-D-UC01-R02-T01')) expect(after.places.has('P-D-UC01-R02')).toBe(false);
+    // Tidy up: no layout before, the columns laid out afresh.
+    const { index, traces } = traced(changedData());
+    expect([...layOutGraph(allGraph(index, traces, 'P'), null).places]).toEqual([...layOut(changedData(), null).places]);
   });
 
   it('LA-V98-R20-T02 on the Trace\'s Delivery view: the rows keep their order, a closed row its place, and an open one moves only the rows below it', () => {
@@ -275,5 +308,50 @@ describe.each(CHANGES)('$name keeps every box outside its parent where it was', 
       expect(d.rows.get(u)).toEqual(c.rows.get(u));
       for (const [key, p] of c.places) if (was.items.get(key)?.row === u) expect(d.places.get(key), key).toEqual(p);
     }
+  });
+});
+
+describe('LA-EXP-DS12-T04 on the Graph\'s Map a removed record leaves its room and a new one takes free room first', () => {
+  it('a requirement removed leaves its room; one added after takes it, its use case no bigger, and nothing else moves', () => {
+    const first = groundMap(recordIndexOf(product()));
+    const less = product();
+    removeRows(less, 'use_case_test', (r) => r.id === 'P-D-UC01-R02-T01');
+    removeRows(less, 'fulfills', (r) => r.target_id === 'P-D-UC01-R02');
+    removeRows(less, 'uc_requirement', (r) => r.id === 'P-D-UC01-R02');
+    const removed = groundMapAfter(recordIndexOf(less), first);
+    // Only the removed ones are gone: every other box, their use case's too, keeps its place and size.
+    expect(movedOutside(first, removed, [])).toEqual(['P-D-UC01-R02', 'P-D-UC01-R02-T01']);
+    addRows(less, 'uc_requirement', { id: 'P-D-UC01-R03', title: 'A lost thing is refused', use_case_id: 'P-D-UC01', statement: 'A lost thing MUST be refused.' });
+    const added = groundMapAfter(recordIndexOf(less), removed);
+    expect(movedOutside(removed, added, [])).toEqual([]);
+    const [was, now] = [first.nodes.get('P-D-UC01-R02')!, added.nodes.get('P-D-UC01-R03')!];
+    expect([now.x, now.y]).toEqual([was.x, was.y]);
+    // Tidy up packs the Map afresh, closing the room.
+    expect(movedOutside(groundMap(recordIndexOf(less)), groundMapAfter(recordIndexOf(less), null), [])).toEqual([]);
+  });
+});
+
+describe('LA-V98-R20-T02 on the Trace\'s Delivery view a use case added or removed moves no other row', () => {
+  const closed = { open: new Set<string>(), step: null };
+  const rowsOf = (d: ServedData, previous: ReturnType<typeof orderGraph> | null) => { const { graph } = delivered(d); const order = orderGraph(graph, previous); return { order, laid: layOutDelivery(graph, order, closed) }; };
+  it('a removed use case leaves its row\'s room; a new one takes it when near, else goes at the end of its section; Tidy up closes the room', () => {
+    const first = rowsOf(product(), null);
+    const less = product();
+    removeRows(less, 'uc_requirement', (r) => r.use_case_id === 'P-D-UC02');
+    removeRows(less, 'use_case', (r) => r.id === 'P-D-UC02');
+    const removed = rowsOf(less, first.order);
+    for (const [u, band] of removed.laid.rows) expect(band, u).toEqual(first.laid.rows.get(u));
+    addRows(less, 'use_case', { id: 'P-D-UC09', title: 'Renew a loan', capability_id: 'P-D-CAP01', goal: 'A member keeps a thing longer.' });
+    const added = rowsOf(less, removed.order);
+    for (const [u, band] of removed.laid.rows) expect(added.laid.rows.get(u), u).toEqual(band);
+    expect(added.laid.rows.get('P-D-UC09')).toEqual(first.laid.rows.get('P-D-UC02'));
+    // A second new one finds no room: at the end of its section, every other row still.
+    addRows(less, 'use_case', { id: 'P-D-UC10', title: 'Reserve a thing', capability_id: 'P-D-CAP01', goal: 'A member holds a thing for later.' });
+    const more = rowsOf(less, added.order);
+    for (const [u, band] of added.laid.rows) expect(more.laid.rows.get(u), u).toEqual(band);
+    const ends = [...added.laid.rows.values()].map((b) => b.y + b.h);
+    expect(more.laid.rows.get('P-D-UC10')!.y).toBeGreaterThan(Math.max(...ends));
+    // Tidy up: ordered afresh, no room kept.
+    expect(orderGraph(delivered(less).graph, null).roomBefore.size).toBe(0);
   });
 });
