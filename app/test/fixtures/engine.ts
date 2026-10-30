@@ -43,8 +43,3 @@ export async function expectOwedRulesAsEngine(data: ServedData): Promise<void> {
     Object.fromEntries(coverage.filter((c) => c.domain !== null && c.pattern_rules.length > 0).map((c) => [c.domain, [...c.pattern_rules].sort()]));
   expect(owed(data.coverage)).toEqual(owed(ws.coverage));
 }
-
-/** The data with the engine's chains for its rows as a test changed them, its hand-written findings kept. */
-export async function withEngineChains(data: ServedData): Promise<ServedData> {
-  return { ...data, chains: (await throughEngine(data)).chains };
-}

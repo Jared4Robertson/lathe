@@ -1,7 +1,7 @@
 // The camera's gestures on a canvas, one way for every canvas stage (the Graph, GraphPage.tsx, and
-// the Trace stage, trace/TraceCanvas.tsx): a glide to a viewport with the shared motion, zoom about
+// the Trace stage, trace/TraceAll.tsx): a glide to a viewport with the shared motion, zoom about
 // a point within the stage's limits, and the pointer: hover, a tap, drag to pan, a pinch to zoom, and
-// the wheel by wheelMove, which the ERD (erd/ErdView.tsx) and the Trace's columns follow too: scroll pans
+// the wheel by wheelMove, which the ERD (erd/ErdView.tsx) follows too: scroll pans
 // and Cmd or Ctrl with scroll zooms (Figma's convention), or with Scroll to zoom on (the Appearance's,
 // LA-PLT-A4) scroll zooms and Cmd or Ctrl with scroll pans. A gesture during a glide takes over from it.
 // Each stage keeps its own camera (its viewport ref and paint) and says what follows a move through the callbacks.
