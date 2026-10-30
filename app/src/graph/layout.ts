@@ -6,8 +6,8 @@ import { assembleGround, placeGround, type GroundRole } from './ground';
 import { probeOf, type LayoutReply, type LayoutRequest, type MapInput } from './layout-input';
 import { textMeasure, type MapLabel } from './text';
 
-// Every map is laid out off the page's main thread (LA-PAT-APP-UX-R19, LA-PAT-APP-UX-R11): the Graph's Tree and Nested
-// maps and the Trace stage's, in the layout's worker (layout.worker.ts), and only when what the map reads has changed
+// Every map is laid out off the page's main thread (LA-PAT-APP-UX-R19, LA-PAT-APP-UX-R11): the Graph's Tree, Nested and
+// Map maps and the Trace stage's, in the layout's worker (layout.worker.ts), and only when what the map reads has changed
 // (layout-input.ts: its packed input is its key), never on a reload that left it alone. While a new layout is made, the
 // map before it stays on screen and answers the camera and the pointer; it is swapped for the new one when that arrives.
 // Where there is no worker (the unit tests, in jsdom), or the worker's measure does not match the page's (its faces did
