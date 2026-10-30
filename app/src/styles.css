@@ -651,7 +651,6 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .rule-mark.ok { color: var(--steel); border-color: var(--steel); background: var(--steel-bg); }
 .rule-mark.missing { color: var(--warn); border-color: var(--warn); }
 .rule-mark.not-automated { border-style: dashed; font-style: italic; color: var(--muted); }
-.rule-mark.na { color: var(--muted); border-style: dashed; }
 
 /* A record's Traceability section (LA-TRC-UC14). */
 .trace-gaps { display: grid; grid-template-columns: minmax(0, 1fr); gap: 4px; margin: 0 0 10px; }
@@ -672,13 +671,11 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .data-table.standard-rules, .data-table.view-requirements, .data-table.api-requirements, .data-table.pattern-settings, .data-table.pattern-use-cases, .data-table.entity-fields { width: 100%; }
 @container (min-width: 64rem) { .data-table:is(.standard-rules, .view-requirements, .api-requirements) > tbody > tr > th[scope="row"] { width: 16rem; } }
 .flow-path > h3 { display: flex; align-items: baseline; gap: 8px; margin: 10px 0 4px; font-size: 0.9rem; }
-.rule-na-reasons { font-size: 0.8rem; color: var(--muted); }
 .data-table { border-collapse: collapse; font-size: 0.86rem; margin: 0 0 12px; }
 .data-table th, .data-table td { text-align: left; vertical-align: top; padding: 4px 10px 4px 0; border-bottom: 1px solid var(--rule); }
 .data-table thead th { font-weight: 600; color: var(--muted); }
 .data-table tbody th { font-weight: 400; }
 .data-table tbody .group-row th { font-weight: 600; padding-top: 12px; }
-.data-table td.setting-na { color: var(--muted); font-style: italic; }
 .table-scroll { max-width: 100%; overflow-x: auto; }
 /* A table whose columns can't all fit lays each row out stacked instead, so nothing is drawn cut or squeezed to a word
    per line (LA-PAT-APP-UX-R18): the row's header on one line, each cell beneath at full width, a cell with a data-label

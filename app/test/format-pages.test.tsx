@@ -113,7 +113,8 @@ describe('format reference pages', () => {
 
   it('LA-V03-R01-T01 A check page shows its severity, explanation and query, and its problems now as clickable rows', async () => {
     await openPage('format/checks/not-proved', 'not-proved');
-    expect(within(card()).getByText('Every obligation is proved by a test.')).toBeInTheDocument();
+    // The check's own page reads it through the Check aggregate's query (get-check).
+    expect(await within(card()).findByText('Every obligation is proved by a test.')).toBeInTheDocument();
     expect(within(card()).getByText('Add a test under it.')).toBeInTheDocument();
     expect(section('Query').querySelector('pre')).toHaveTextContent(/^SELECT 'not-proved' AS "check"/);
     const problems = section(/^Problems now/);
@@ -141,7 +142,6 @@ describe('format reference pages', () => {
     await openApp('/DM-SHOP-EP01?stage=graph');
     await screen.findByRole('heading', { level: 1, name: 'POST /basket/items' });
     expect(within(facts()).getByRole('link', { name: 'Endpoint' })).toHaveAttribute('href', over('format/kinds/endpoint', '/DM-SHOP-EP01?stage=graph'));
-    expect(within(facts()).getByRole('link', { name: 'method' })).toHaveAttribute('href', `${over('format/kinds/endpoint', '/DM-SHOP-EP01?stage=graph')}#field-method`);
 
     // A problem's code on a record page, a domain page and the Checks page.
     await openApp('/DM-SHOP-INV01');
@@ -159,7 +159,7 @@ describe('format reference pages', () => {
     await screen.findByRole('heading', { level: 1, name: /^Flows/ });
     expect(within(card()).getByRole('link', { name: 'Flow' })).toHaveAttribute('href', over('format/kinds/flow', '/DM-SHOP/interaction-design/flow'));
   };
-  it('LA-PAT-RECORD-PAGE-R18-T01 The wiki card\'s kind, each problem code and each column label link to their format pages', proveLaV92R71T01);
+  it('LA-PAT-RECORD-PAGE-R18-T01 The wiki card\'s kind and each problem code link to their format pages', proveLaV92R71T01);
   it('LA-V41-R02-T01 Each problem code links to its check\'s page', proveLaV92R71T01);
 
   it('LA-V65-R71-T01 The record format is a palette command and a link in the shortcuts sheet, not a nav footer link', async () => {
@@ -200,8 +200,8 @@ describe('format reference pages', () => {
     const { requests } = await openApp('/DM?page=format');
     await within(await screen.findByRole('region', { name: 'Wiki card' })).findByRole('heading', { level: 2, name: 'Record format' });
     // The specific reads: the Reference, the meta model and the space's own reads, each a query of its own.
-    expect(requests).toEqual(expect.arrayContaining(['GET /api/reference?', 'GET /api/meta-model/get-meta-model?', 'GET /api/problems/list-problems?product_id=DM', 'GET /api/product/list-products?']));
-    expect(requests.filter((r) => r !== 'GET /api/reference?').every((r) => ALL_QUERIES.some((q) => r.split('?')[0] === `${q.method} ${q.route}`))).toBe(true);
+    expect(requests).toEqual(expect.arrayContaining(['GET /api/reference', 'GET /api/meta-model/get-meta-model', 'GET /api/problems/list-problems?product_id=DM', 'GET /api/product/list-products']));
+    expect(requests.filter((r) => r !== 'GET /api/reference').every((r) => ALL_QUERIES.some((q) => r.split('?')[0] === `${q.method} ${q.route}`))).toBe(true);
     expect(within(section(/^Checks\d/)).getByRole('link', { name: /^engine/ })).toHaveAttribute('href', over('format/checks/engine'));
     await openApp('/DM?page=format/checks/engine');
     expect(await screen.findByText(/The engine reports this itself/)).toBeInTheDocument();

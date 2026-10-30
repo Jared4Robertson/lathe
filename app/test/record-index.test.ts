@@ -29,7 +29,7 @@ describe('LA-EXP-UC02-R08-T03 the space\'s record index, from the record summari
   it('holds no column of a record beyond its summary, and gives each its data file and line', () => {
     const data = workspace();
     const req = recordIndexOf(data, 'DM').byId.get('DM-SHOP-UC01-R01')!;
-    expect(Object.keys(req).sort()).toEqual(['digest', 'domain', 'file', 'group', 'id', 'kind', 'line', 'parent', 'product', 'testState', 'title']);
+    expect(Object.keys(req).sort()).toEqual(['digest', 'domain', 'file', 'group', 'id', 'kind', 'level', 'line', 'names', 'parent', 'product', 'testState', 'title']);
     const rows = data.sources[0].tables.uc_requirement!;
     expect(req.line).toBe(rows.findIndex((r) => r.id === req.id) + 1);
   });

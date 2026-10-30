@@ -45,7 +45,7 @@ describe('groups', () => {
       expect.stringMatching(/^DM-SHOP-UC01-R02/), expect.stringMatching(/^DM-SHOP-UC01-R04/),
     ]);
     // The Traceability table: one body per group, headed by its name.
-    const table = within(main()).getByRole('table', { name: /How each UC requirement of DM-SHOP-UC01/ });
+    const table = await within(main()).findByRole('table', { name: /How each UC requirement of DM-SHOP-UC01/ });
     expect(within(table).getAllByRole('rowheader').filter((h) => h.getAttribute('scope') === 'rowgroup').map((h) => h.textContent)).toEqual(['Limits', 'Stock']);
 
     // A pattern's rules: the ungrouped first, then Keeping (written Keeping and keeping).

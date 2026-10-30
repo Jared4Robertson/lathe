@@ -29,8 +29,8 @@ describe('reload on change', () => {
     // lists, and the command's page its command through the aggregate's own query; never one dump of every table.
     expect(after.requests).toEqual(expect.arrayContaining([
       'GET /api/command/get-command?id=DM-SHOP-CMD01-H',
-      'GET /api/product/list-products?',
-      'GET /api/meta-model/get-meta-model?',
+      'GET /api/product/list-products',
+      'GET /api/meta-model/get-meta-model',
       'GET /api/record-summaries/list-record-summaries?product_id=DM',
       'GET /api/folder-tree/get-folder-tree?product_id=DM',
       'GET /api/problems/list-problems?product_id=DM',

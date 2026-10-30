@@ -90,11 +90,11 @@ describe('LA-V122-R07-T01 the following\'s editor writes only through the Patter
     expect(offered).not.toContain('NF-NOTE');
     await user.selectOptions(follower, 'DM-PAY');
     await user.type(within(form).getByRole('textbox', { name: 'value 1' }), '30 days');
-    await user.type(within(form).getByRole('textbox', { name: 'not applicable 2' }), 'Payments are anonymous.');
+    await user.type(within(form).getByRole('textbox', { name: 'value 2' }), 'Cashier');
     await user.click(within(form).getByRole('button', { name: 'Follow' }));
     await waitFor(() => expect(commands).toEqual([{
       route: '/api/pattern-following/follow-pattern',
-      input: { pattern_id: 'DM-PAT-AUDIT', follower_id: 'DM-PAY', setting_values: [{ setting: 'retention', value: '30 days' }, { setting: 'who', not_applicable: 'Payments are anonymous.' }] } }]));
+      input: { pattern_id: 'DM-PAT-AUDIT', follower_id: 'DM-PAY', setting_values: [{ setting: 'retention', value: '30 days' }, { setting: 'who', value: 'Cashier' }] } }]));
   });
 });
 

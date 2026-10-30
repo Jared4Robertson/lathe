@@ -115,9 +115,9 @@ describe('groups by stage and kind', () => {
     const order = ['Repositories', 'Data models', 'Tables', 'Value types', 'Rules', 'Predicates', 'Event types', 'Projections', 'Command handlers', 'Query handlers', 'Event handlers', 'Services', 'UI components', 'Endpoint handlers', 'Adapters'];
     expect(kinds.length).toBeGreaterThan(3);
     expect(kinds).toEqual(order.filter((k) => kinds.includes(k)));
-    // Each row says its file, and a table its name and storage.
+    // Each row says what it names in code: its file, or a table its name.
     expect(within(section(/^Repositories/)).getByText('src/loans.ts')).toBeInTheDocument();
-    expect(section(/^Tables/).textContent).toContain('loans · table');
+    expect(within(section(/^Tables/)).getAllByText('loans').length).toBeGreaterThan(0);
   });
 
   it("LA-V91-R07-T01 A domain's Test plan lists its tests by test kind in the plan's order, each with its run by", async () => {
