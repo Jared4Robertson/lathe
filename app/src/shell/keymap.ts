@@ -109,6 +109,8 @@ export const COMMANDS: readonly Command[] = [
   { id: 'chooseTheme', title: 'Color theme', group: 'View', keys: ['g t'], when: 'global' },
   { id: 'chooseColorMode', title: 'Light, dark or system', group: 'View', keys: [], when: 'global' },
   { id: 'openAppearance', title: 'Open Appearance settings', group: 'View', keys: [], when: 'global' },
+  // Scroll to zoom (the Appearance's): scroll zooms the stages and Cmd/Ctrl+scroll pans, or back to scroll panning.
+  { id: 'toggleScrollToZoom', title: 'Turn scroll to zoom on or off', group: 'View', keys: [], when: 'global' },
   // Graph
   // On a box that is not the focus, Enter focuses it; on the focus's own box it goes on to show or collapse the wiki card.
   { id: 'graphActivate', title: 'Focus the box with keyboard focus', group: 'Graph', keys: ['Enter'], when: 'graph', local: true },

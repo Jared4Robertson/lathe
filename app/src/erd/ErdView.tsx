@@ -3,7 +3,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, typ
 import { Background, Handle, Position, ReactFlow, ReactFlowProvider, useReactFlow, useStore, ViewportPortal, type Edge, type EdgeProps, type Node, type NodeProps } from '@xyflow/react';
 import type { RelationRule, SpecIndex } from '../specs/data';
 import { relationLabelOf } from '../specs/labels';
-import { useCameraGestures, wheelLatch } from '../graph/gestures';
+import { useCameraGestures } from '../graph/gestures';
 import { frameRect, type Viewport } from '../graph/camera';
 import { PLAIN_LOOK, useThemeVersion } from '../graph/look';
 import type { FadeLook } from '../graph/fade';
@@ -276,8 +276,6 @@ export function fitRects(rects: Iterable<Rect>, width: number, height: number, m
 
 const MIN_ZOOM = 0.05;
 const MAX_ZOOM = 2;
-/** Cmd or Ctrl held turns scroll into zoom (a pinch zooms either way). */
-const ZOOM_KEYS = ['Meta', 'Control'];
 
 /**
  * What the camera frames for a focus: its picked-out box (a domain's region, an aggregate's
@@ -383,9 +381,9 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
     return { nodes, edges };
   }, [placed, strength, at.pick, focus, relations, marks.version]);
 
-  // The camera: the shared glide (graph/gestures.ts), driving React Flow's viewport; React Flow keeps
-  // the pointer's drag, pinch and scroll, set to the shared convention (scroll pans, Cmd/Ctrl+scroll
-  // or a pinch zooms, graph/gestures.ts's wheelMove), and any of them takes over from a glide.
+  // The camera: the shared glide and wheel (graph/gestures.ts), driving React Flow's viewport; the wheel moves it by
+  // the shared rule (wheelMove, with the person's Scroll to zoom), and React Flow keeps the pointer's drag and a touch
+  // pinch. Any of them takes over from a glide.
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
   const noCanvas = useRef<HTMLCanvasElement>(null);
   const camera = useCameraGestures({
@@ -484,19 +482,21 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
     return () => observer.disconnect();
   }, []);
 
-  // A scroll keeps its move (graph/gestures.ts's wheelLatch): the rest of a stream whose Cmd or Ctrl changed never reaches React Flow.
+  // The wheel over the map moves the camera by the shared rule (graph/gestures.ts's wheel); React Flow is told to leave
+  // every wheel alone (noWheelClassName), so there is one rule on every stage.
+  const wheel = camera.wheel;
   useEffect(() => {
     const el = wrapper.current;
     if (!el) return;
-    const latch = wheelLatch();
     const onWheel = (e: WheelEvent) => {
-      if (latch(e, e.timeStamp) === 'move') return;
+      if (!(e.target instanceof Element) || !e.target.closest('.react-flow')) return;
       e.preventDefault();
-      e.stopPropagation();
+      const r = el.getBoundingClientRect();
+      wheel(e, { x: e.clientX - r.left, y: e.clientY - r.top });
     };
-    el.addEventListener('wheel', onWheel, { capture: true, passive: false });
-    return () => el.removeEventListener('wheel', onWheel, { capture: true });
-  }, []);
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [wheel]);
 
   // The edge hints count the boxes in focus past each edge: the innermost ones, each entity and each closed box.
   const centers = useMemo(() => {
@@ -551,9 +551,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
         onNodeMouseEnter={(_, n) => onPeek?.('hover', n.id)}
         onNodeMouseLeave={() => onPeek?.('hover', null)}
         onPaneClick={tap.clear}
-        panOnScroll
-        panOnScrollSpeed={1}
-        zoomActivationKeyCode={ZOOM_KEYS}
+        noWheelClassName="erd-flow"
         minZoom={MIN_ZOOM}
         maxZoom={MAX_ZOOM}
         proOptions={{ hideAttribution: true }}
