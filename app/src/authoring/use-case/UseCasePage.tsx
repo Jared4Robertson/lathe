@@ -57,7 +57,8 @@ function Requirements({ index, useCase }: { index: RecordIndex; useCase: UseCase
 /** An interface's name, with its kind when the name does not say it. */
 function InterfaceTag({ index, id }: { index: RecordIndex; id: string }) {
   const iface = useInterface(index, id);
-  if (!iface) return <small className="meta" data-meta="interface">{id}</small>;
+  // Its title from the space's summaries until the Product aggregate's list gives its kind.
+  if (!iface) return <small className="meta" data-meta="interface">{index.byId.get(id)?.title ?? id}</small>;
   return <small className="meta" data-meta="interface">{saysKind(iface) ? iface.title : `${iface.title} · ${iface.kind}`}</small>;
 }
 

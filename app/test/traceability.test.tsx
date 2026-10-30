@@ -92,8 +92,8 @@ describe('traceability', () => {
     // A pattern rule, per following domain, proved by its tests that name the domain; it needs no design.
     const patterns = patternWorkspace();
     expect(traceOf(patterns, 'DM-PAT-AUDIT-R01').judgments.map((j) => j.domain)).toEqual(['DM-SHOP']);
-    // R03 applies only when `who` is clerk, which DM-SHOP marks not applicable: no domain owes it.
-    expect(traceOf(patterns, 'DM-PAT-AUDIT-R03').judgments).toEqual([]);
+    // Every rule of a pattern a domain follows is owed there: R03 too.
+    expect(traceOf(patterns, 'DM-PAT-AUDIT-R03').judgments.map((j) => j.domain)).toEqual(['DM-SHOP']);
     expect(judged(patterns, 'DM-PAT-AUDIT-R01', 'DM-SHOP')).toMatchObject({ needsDesign: false, provedBy: ['DM-PAT-AUDIT-R01-T01'], gaps: [] });
     expect(judged(patterns, 'DM-PAT-AUDIT-R02', 'DM-SHOP').gaps.map((g) => [g.kind, g.check])).toEqual([['not-proved', 'not-proved']]);
     trace = await show(patterns, 'DM-PAT-AUDIT-R01');

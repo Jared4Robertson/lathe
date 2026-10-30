@@ -139,7 +139,8 @@ describe('obligation kinds and test states', () => {
   it('LA-V92-R57-T02 An obligation\'s Traceability shows what designs it and what proves it, and names a gap', async () => {
     await openApp('/DM-SHOP-UC01-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
-    const trace = section(/^Traceability/);
+    // Traceability reads the record's own trace (get-record-trace), after the page.
+    const trace = (await within(main()).findByRole('heading', { name: /^Traceability/ })).closest('section') as HTMLElement;
     const designed = within(trace).getByRole('heading', { name: /^Designed by/ }).closest('section') as HTMLElement;
     expect(within(designed).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-CMD01', '/DM-SHOP-UC01-FL01', '/DM-SHOP-UC01-FL01-S01', '/DM-V01']);
     const built = within(trace).getByRole('heading', { name: /^Built by/ }).closest('section') as HTMLElement;
@@ -150,7 +151,7 @@ describe('obligation kinds and test states', () => {
     // A product's own obligation that coverage finds not designed and not proved says so, naming each gap.
     await openApp('/DM-SHOP-EP01-SC01', served());
     await screen.findByRole('heading', { level: 1, name: 'Only the basket\'s shopper adds' });
-    const gaps = [...section(/^Traceability/).querySelectorAll('[data-gap]')].map((g) => g.getAttribute('data-gap'));
+    const gaps = [...((await within(main()).findByRole('heading', { name: /^Traceability/ })).closest('section') as HTMLElement).querySelectorAll('[data-gap]')].map((g) => g.getAttribute('data-gap'));
     expect(gaps).toEqual(['not-designed', 'not-proved']);
   });
 });

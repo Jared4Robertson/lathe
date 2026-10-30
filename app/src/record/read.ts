@@ -19,7 +19,7 @@ type Kept = { version: unknown; read: Read<unknown> };
 const known = new Map<string, Kept>();
 
 /** A query's address: its route and its input as the query string, such as /api/use-case/get-use-case?id=TL-LEND-UC01. */
-const queryAddress = (route: string, input: Record<string, string>) => `${route}?${new URLSearchParams(input).toString()}`;
+const queryAddress = (route: string, input: Record<string, string>) => { const query = new URLSearchParams(input).toString(); return query ? `${route}?${query}` : route; };
 
 /** Reads the query once; a refusal or a server that does not answer is a refused read, with its reasons. */
 async function readQuery<R>(address: string): Promise<Read<R>> {

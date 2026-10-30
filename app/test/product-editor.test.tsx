@@ -21,7 +21,7 @@ describe('LA-V51-R06-T01 the product\'s page and the nav read the products throu
     const { requests } = await openApp('/DM');
     await screen.findByRole('toolbar', { name: 'Change DM' });
     expect(requests).toContain('GET /api/product/get-product?id=DM');
-    expect(requests).toContain('GET /api/product/list-products?');
+    expect(requests).toContain('GET /api/product/list-products');
     expect(within(main()).getByRole('heading', { name: /^Roles/ })).toBeInTheDocument();
     expect(within(main()).getByRole('heading', { level: 2, name: /^Interfaces/ })).toBeInTheDocument();
     const nav = await openApp('/DM-Q01');

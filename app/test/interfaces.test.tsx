@@ -1,4 +1,4 @@
-import { screen, within } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { addressOf } from '../src/views/address';
 import { openApp, section } from './helpers';
@@ -21,8 +21,9 @@ describe('flows by interface', () => {
     await openApp(`${addressOf('DM-SHOP-UC01')}?stage=graph`, served());
     await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
     const rows = within(within(section(/^Flows by interface/)).getByRole('list', { name: 'Flows of DM-SHOP-UC01' })).getAllByRole('listitem');
-    // One row per flow, a whole-row link, with its interface's name, and its kind when the name does not say it.
-    expect(rows.map((r) => r.textContent)).toEqual(['DM-SHOP-UC01-FL01Add an item to the basket in the web appWeb app', 'DM-SHOP-UC01-FL02Add an item to the basket through the terminalTerminal · CLI']);
+    // One row per flow, a whole-row link, with its interface's name, and its kind when the name does not say it (from
+    // the Product aggregate's list of interfaces).
+    await waitFor(() => expect(rows.map((r) => r.textContent)).toEqual(['DM-SHOP-UC01-FL01Add an item to the basket in the web appWeb app', 'DM-SHOP-UC01-FL02Add an item to the basket through the terminalTerminal · CLI']));
     expect(within(rows[1]).getAllByRole('link')).toHaveLength(1);
     expect(within(rows[1]).getByRole('link')).toHaveAttribute('href', addressOf('DM-SHOP-UC01-FL02'));
 
