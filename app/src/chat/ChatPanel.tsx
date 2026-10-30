@@ -166,14 +166,14 @@ export function ChatPanel({ bridge, index, product, width, onWidth, onClose, inp
   const [slashClosed, setSlashClosed] = useState(false);
   useEffect(() => { setSlashAt(0); if (query === null) setSlashClosed(false); }, [query]);
   const listOpen = query !== null && !slashClosed && skills !== null;
-  const pick = (skill: ChatSkill) => { chatDraft.write(`/${skill.name} `); setSlashClosed(true); input.current?.focus(); };
+  const pick = (skill: ChatSkill) => { chatDraft.write('/' + skill.name + ' '); setSlashClosed(true); input.current?.focus(); };
   const onComposerKey = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     if (listOpen && !e.nativeEvent.isComposing) {
       const at = Math.min(slashAt, Math.max(0, matches.length - 1));
       if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); if (matches.length) setSlashAt((at + (e.key === 'ArrowDown' ? 1 : -1) + matches.length) % matches.length); return; }
       if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); setSlashClosed(true); return; }
       const chosen = matches[at];
-      if ((e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) && chosen && draft !== `/${chosen.name}`) { e.preventDefault(); pick(chosen); return; }
+      if ((e.key === 'Tab' || (e.key === 'Enter' && !e.shiftKey)) && chosen && draft !== '/' + chosen.name) { e.preventDefault(); pick(chosen); return; }
     }
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) { e.preventDefault(); void submit(); }
   };

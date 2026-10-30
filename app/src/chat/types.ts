@@ -19,7 +19,7 @@ export type ChatStatus = 'idle' | 'running' | 'stopping' | 'closed';
 export const CHAT_MODES = ['ask', 'accept-reads', 'auto', 'bypass', 'view-only'] as const;
 export type ChatMode = (typeof CHAT_MODES)[number];
 
-/** The models the picker offers, by the alias Claude Code takes; null leaves the choice to Claude Code. */
+/** The models the picker offers, by the short name Claude Code takes; null leaves the choice to Claude Code. */
 export const CHAT_MODELS = ['opus', 'sonnet', 'haiku'] as const;
 export type ChatModel = (typeof CHAT_MODELS)[number];
 export const CHAT_EFFORTS = ['low', 'medium', 'high', 'xhigh', 'max'] as const;
