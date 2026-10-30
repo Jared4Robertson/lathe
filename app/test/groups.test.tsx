@@ -2,7 +2,7 @@ import type { ServedData } from './read-view';
 import { screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { groupRecords } from '../src/specs/groups';
-import { patternWorkspace, withStandings } from './fixtures/patterns';
+import { patternWorkspace } from './fixtures/patterns';
 import { standardWorkspace } from './fixtures/standards';
 import { main, openApp, section } from './helpers';
 import { addRows, setRow } from './fixtures/load';
@@ -10,25 +10,16 @@ import { recordIndexOf } from './read-view';
 
 // Groups (group_name) in the app, on the pattern workspace, with DM-PAY following through DM-PAY-UC01 too.
 
-/** The pattern workspace with DM-PAY-UC01 following too, R04 (who is not clerk), and R03 and R04 grouped. */
-function waiverWorkspace(): ServedData {
+/** The pattern workspace with a fourth rule, and R03 and R04 grouped (written Keeping and keeping). */
+function keepingWorkspace(): ServedData {
   const ws = patternWorkspace();
-  addRows(ws, 'follows', { source_id: 'DM-PAY-UC01', target_id: 'DM-PAT-AUDIT' });
-  addRows(ws, 'setting_value',
-    { follower_id: 'DM-SHOP-UC01', pattern_id: 'DM-PAT-AUDIT', setting: 'who', value: 'CLERK ' },
-    { follower_id: 'DM-PAY-UC01', pattern_id: 'DM-PAT-AUDIT', setting: 'who', value: 'Shopper' },
-  );
   setRow(ws, 'pattern_rule', 'DM-PAT-AUDIT-R03', { group_name: 'Keeping' });
-  addRows(ws, 'pattern_rule', {
-    id: 'DM-PAT-AUDIT-R04', title: 'The shopper is named', pattern_id: 'DM-PAT-AUDIT', statement: 'It MUST hold.',
-    group_name: 'keeping', applies_when_setting: 'who', applies_when_negated: true, applies_when_value: 'clerk' });
-  withStandings(ws, 'DM-SHOP', { R01: 'owed', R02: 'owed', R03: 'owed', R04: 'waived' });
-  return withStandings(ws, 'DM-PAY', { R01: 'owed', R02: 'owed', R03: 'waived', R04: 'owed' });
+  return addRows(ws, 'pattern_rule', { id: 'DM-PAT-AUDIT-R04', title: 'The shopper is named', pattern_id: 'DM-PAT-AUDIT', statement: 'It MUST hold.', group_name: 'keeping' });
 }
 
 /** The pattern workspace with DM-SHOP-UC01's UC requirements in groups, after an ungrouped one. */
 function groupedWorkspace(): ServedData {
-  const ws = setRow(waiverWorkspace(), 'uc_requirement', 'DM-SHOP-UC01-R02', { group_name: 'Limits' });
+  const ws = setRow(keepingWorkspace(), 'uc_requirement', 'DM-SHOP-UC01-R02', { group_name: 'Limits' });
   return addRows(ws, 'uc_requirement',
     { id: 'DM-SHOP-UC01-R03', title: 'A sold-out item is refused', use_case_id: 'DM-SHOP-UC01', statement: 'A sold-out item MUST be refused.', group_name: 'Stock' },
     { id: 'DM-SHOP-UC01-R04', title: 'A basket holds at most fifty items', use_case_id: 'DM-SHOP-UC01', statement: 'A basket MUST hold at most fifty items.', group_name: ' limits' },
@@ -58,7 +49,7 @@ describe('groups', () => {
     expect(within(table).getAllByRole('rowheader').filter((h) => h.getAttribute('scope') === 'rowgroup').map((h) => h.textContent)).toEqual(['Limits', 'Stock']);
 
     // A pattern's rules: the ungrouped first, then Keeping (written Keeping and keeping).
-    await openApp('/DM-PAT-AUDIT', { data: waiverWorkspace() });
+    await openApp('/DM-PAT-AUDIT', { data: keepingWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Audited action' });
     const rules = section(/^Rules/);
     expect(within(rules).getAllByRole('heading').map((h) => h.textContent)).toEqual(['Rules4', 'Keeping2']);

@@ -1,4 +1,5 @@
 import type { ServedData } from './read-view';
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -59,7 +60,7 @@ describe('LA-V131-R02-T01 the Domain event editor writes only through the aggreg
   it('Add sends Add an event type with the event\'s one event type ID', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-EV01', { data: withPolicy(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('DM-SHOP-EV01')).getByRole('button', { name: 'Add event type' }));
+    await chooseAdd(user, await toolbar('DM-SHOP-EV01'), 'Event type');
     const form = screen.getByRole('form', { name: 'Add an event type' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-EV01-ET'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'ItemAdded');

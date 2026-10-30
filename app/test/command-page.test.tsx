@@ -1,4 +1,5 @@
 import type { ServedData } from './read-view';
+import { addChoices, chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -49,7 +50,8 @@ describe('LA-V132-R02-T01 the Command editor writes only through the aggregate\'
     const { commands } = await openApp('/DM-SHOP-CMD01', { data: withPolicy(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP-CMD01');
     // It has its handler, so a policy can be added under it, and an endpoint through the Endpoint aggregate's own Add.
-    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add policy', 'Add endpoint', 'Remove']);
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add…', 'Remove']);
+    expect(await addChoices(user, actions)).toEqual(['Policy', 'Endpoint']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit DM-SHOP-CMD01' });
     await user.click(within(form).getByRole('button', { name: 'Remove DM-SHOP-EV01 from Raises' }));
@@ -60,7 +62,7 @@ describe('LA-V132-R02-T01 the Command editor writes only through the aggregate\'
   it('adds a policy that hears an event, with the next free ID in its domain', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-CMD01', { data: withPolicy(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('DM-SHOP-CMD01')).getByRole('button', { name: 'Add policy' }));
+    await chooseAdd(user, await toolbar('DM-SHOP-CMD01'), 'Policy');
     const form = screen.getByRole('form', { name: 'Add a policy' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-PO02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Add when paid');
@@ -74,8 +76,9 @@ describe('LA-V132-R02-T01 the Command editor writes only through the aggregate\'
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-EN01', { data: withPolicy(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP-EN01');
-    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add data model', 'Add command', 'Add table', 'Remove']);
-    await user.click(within(actions).getByRole('button', { name: 'Add command' }));
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add…', 'Remove']);
+    expect(await addChoices(user, actions)).toEqual(['Data model', 'Command', 'Table']);
+    await chooseAdd(user, actions, 'Command');
     const form = screen.getByRole('form', { name: 'Add a command' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-CMD02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Empty the basket');
@@ -109,7 +112,7 @@ describe('LA-V132-R04-T01 a command lists its handler, its policies and the endp
     await screen.findByRole('heading', { level: 1, name: 'Add item' });
     const endpoints = await waitFor(() => section(/^Endpoints/));
     const row = within(endpoints).getByRole('link', { name: /DM-SHOP-EP01/ }).closest('li')!;
-    expect(row.textContent).toContain('POST · /basket/items');
+    expect(row.textContent).toContain('POST /basket/items');
     expect(within(section(/^Command handler/)).getByRole('link', { name: /DM-SHOP-CMD01-H/ })).toBeInTheDocument();
     expect(within(section(/^Policies/)).getByRole('link', { name: /DM-SHOP-PO01/ })).toBeInTheDocument();
   });

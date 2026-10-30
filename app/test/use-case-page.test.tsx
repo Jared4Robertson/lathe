@@ -1,4 +1,5 @@
 import type { ServedData } from './read-view';
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -69,7 +70,7 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     const added = (): ServedData => addRows(workspace(), 'flow_step', { id: 'DM-SHOP-UC01-FL01-S04', title: 'Shop saves the basket', flow_id: 'DM-SHOP-UC01-FL01', path: 'main', position: 3 });
     const { commands } = await openApp('/DM-SHOP-UC01-FL01', { command: () => ({ answer: ok, data: added() }) });
     await within(main()).findByRole('heading', { name: /^Steps/ });
-    await user.click(within(toolbar('DM-SHOP-UC01-FL01')).getByRole('button', { name: 'Add flow step' }));
+    await chooseAdd(user, toolbar('DM-SHOP-UC01-FL01'), 'Flow step');
     const form = screen.getByRole('form', { name: 'Add a flow step' });
     const id = within(form).getByRole('textbox', { name: /^ID/ });
     await waitFor(() => expect(id).toHaveValue('DM-SHOP-UC01-FL01-S04'));
@@ -99,7 +100,7 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await openApp('/DM-SHOP-UC01-FL01');
     const actions = await screen.findByRole('toolbar', { name: 'Change DM-SHOP-UC01-FL01' });
     expect(within(actions).queryByRole('button', { name: 'Move' })).toBeNull();
-    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Edit', 'Add flow step', 'Remove']));
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(expect.arrayContaining(['Edit', 'Add…', 'Remove']));
   });
 
   it('adds a use case from its capability\'s page through the aggregate\'s own Add', async () => {

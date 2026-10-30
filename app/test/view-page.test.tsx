@@ -1,4 +1,5 @@
 import type { ServedData } from './read-view';
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -43,7 +44,7 @@ describe('LA-V150-R04-T01 a view\'s page lists its requirements under their grou
   it('shows the route and the requirements table: the ungrouped first, then each group under its heading', async () => {
     await openApp('/DM-V01', { data: withRequirements() });
     const table = await within(main()).findByRole('table', { name: /The requirements of DM-V01/ });
-    expect(within(screen.getByRole('complementary', { name: 'Facts' })).getByText('/basket')).toBeInTheDocument();
+    expect(within(main()).getByText('/basket')).toBeInTheDocument();
     expect(within(table).getAllByRole('columnheader').map((h) => h.textContent)).toEqual(['Requirement', 'Proved by']);
     const groups = table.querySelectorAll('tbody');
     expect(groups).toHaveLength(2);
@@ -71,7 +72,7 @@ describe('LA-V150-R02-T01 the View editor writes only through the aggregate\'s o
   it('adds a requirement under the view with the next free ID, through Add a view requirement', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-V01', { data: withRequirements(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('DM-V01')).getByRole('button', { name: 'Add view requirement' }));
+    await chooseAdd(user, await toolbar('DM-V01'), 'View requirement');
     const form = screen.getByRole('form', { name: 'Add a view requirement' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-V01-R03'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Shows the tax');

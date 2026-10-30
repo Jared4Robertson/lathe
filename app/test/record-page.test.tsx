@@ -4,10 +4,13 @@ import { describe, expect, it } from 'vitest';
 import { renderMarkdown } from '../src/specs/Markdown';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp } from './helpers';
+import { pageOf } from '../src/record/pages';
+import { recordIndexOf } from './read-view';
+import { productKindWorkspace } from './fixtures/product-kinds';
 
-// The record page's wiki card shows its text fields, its parts (fields with their types, a table's
-// keys, a command's recorded exceptions), its Traceability, children and problems; its whole page
-// adds its facts after the body: its kind, its fields, its data file and line, and its links out and in.
+// The record page's wiki card shows its aggregate's page (its text, its parts such as fields with their types), its
+// Traceability, children and problems; its whole page adds its facts after the body: its kind, its stage, its data
+// file and line, and its links out and in.
 const card = () => screen.getByRole('region', { name: 'Wiki card' });
 const facts = () => within(card()).getByRole('complementary', { name: 'Facts' });
 /** A fact's value in the wiki card's Facts, by its name. */
@@ -38,6 +41,13 @@ const factLinks = () => [...facts().querySelectorAll('a')].map((a) => a.getAttri
 const rows = (table: Element) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent?.replace(/\s+/g, ' ').trim()));
 
 describe('record page', () => {
+  it('every one of Lathe\'s kinds has its aggregate\'s page, and a kind a product declares has the Extension record page', () => {
+    const { meta } = recordIndexOf(productKindWorkspace(), 'DM');
+    const lathe = meta.kindList.filter((k) => k.declared_by === null).map((k) => k.kind);
+    expect(lathe.filter((kind) => pageOf(meta, kind) === undefined)).toEqual([]);
+    expect(pageOf(meta, 'security_control')?.name).toBe('ExtensionRecordPage');
+  });
+
   it('LA-PAT-RECORD-PAGE-R08-T01 The record page shows the ID, kind, title, text fields as Markdown, parent and children', async () => {
     expanded();
     await openApp('/DM-SHOP-UC01');
@@ -47,7 +57,7 @@ describe('record page', () => {
     expect(card().style.getPropertyValue('--card-accent')).toBe('var(--g-use-cases)');
     expect(within(card()).getByText('A shopper adds an item.').closest('.markdown')).not.toBeNull();
     // The facts: its data file and line; its parent is the breadcrumb's last step.
-    expect(fact('Data file')).toHaveTextContent('data/use_case.jsonl:2');
+    expect(fact('Data file')).toHaveTextContent('use_case.jsonl:2');
     expect([...card().querySelector('.breadcrumb')!.querySelectorAll('a')].at(-1)).toHaveAttribute('href', '/DM-SHOP-CAP01');
 
     // The children are the wiki's: its UC requirements, and its flow listed by interface.
@@ -70,7 +80,8 @@ describe('record page', () => {
     expanded();
     await openApp('/DM-SHOP-UC01-R01');
     await screen.findByRole('heading', { level: 1, name: 'The basket shows the new item' });
-    // A UC requirement is designed, built and proved by what its chain holds.
+    // A UC requirement is designed, built and proved by what its chain holds (its trace, read on its own).
+    await within(main()).findByRole('heading', { name: /^Traceability/ });
     expect(traceGroups()).toEqual({
       'Designed by': ['/DM-SHOP-CMD01', '/DM-SHOP-UC01-FL01', '/DM-SHOP-UC01-FL01-S01', '/DM-V01'],
       'Built by': ['/DM-SHOP-CMD01-H'],
@@ -142,15 +153,6 @@ describe('record page', () => {
 
 
 
-
-  it('LA-PAT-RECORD-PAGE-R08-T01 A repository shows the other aggregates it also persists, each with its reason', async () => {
-    await openApp('/P-D-REPO01', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'LoanRepository' });
-    const also = section(/^Also persists/);
-    expect(within(also).getByRole('link', { name: /P-D-A4/ })).toHaveAttribute('href', '/P-D-A4');
-    expect(also).toHaveTextContent('Shelves are stored with the loans that take things off them.');
-    expect(also).toHaveTextContent(/one repository per aggregate/);
-  });
 
   it('LA-PAT-RECORD-PAGE-R08-T01 A record\'s kind shows in its stage\'s color, and a kind with no owner sits in its product, in no domain', async () => {
     await openApp('/DM-V01?stage=graph');

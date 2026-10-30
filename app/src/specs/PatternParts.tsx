@@ -55,6 +55,13 @@ export function RuleMark({ index, rule, pattern, domain }: { index: RecordIndex;
   return <RuleMarks index={index} status={ruleStatus(trace.answer, domain, setting, following)} />;
 }
 
+/** What a rule's row says of its setting ("setting retention"), read from its pattern; blank until it answers. */
+function RuleSetting({ index, rule, pattern }: { index: RecordIndex; rule: string; pattern: string }) {
+  const page = usePattern(pattern, index);
+  const setting = page.state === 'read' ? page.answer.rules.find((r) => r.rule.id === rule)?.rule.setting : undefined;
+  return setting ? <small className="meta"> setting {setting}</small> : null;
+}
+
 /**
  * The domain page's "Patterns we follow": each pattern the domain or its use cases follow, one row each, with its
  * rules folded under it, and per rule whether this domain proves it or marks it not applicable.
@@ -90,7 +97,10 @@ export function DomainPatterns({ index, domainId, query }: { index: RecordIndex;
         return (
           <div className="record-row pattern-rule-row">
             <RecordLink index={index} id={r.id} row />
-            <span className="row-tags"><RuleMark index={index} rule={r.id} pattern={r.parent ?? ''} domain={domainId} /></span>
+            <span className="row-tags">
+              <RuleSetting index={index} rule={r.id} pattern={r.parent ?? ''} />
+              <RuleMark index={index} rule={r.id} pattern={r.parent ?? ''} domain={domainId} />
+            </span>
           </div>
         );
       }}

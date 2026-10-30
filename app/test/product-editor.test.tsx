@@ -1,3 +1,4 @@
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -70,6 +71,8 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
     await user.click(within(form).getByRole('button', { name: 'Add open question' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/product/add-question', input: { product_id: 'DM', id: 'DM-Q02', title: 'Who answers the phone?', owner: 'Clerk', description: 'The desk or the owner.' } }]));
 
+    // The Add opens the new question's page once the data is read again.
+    await waitFor(() => expect(window.location.pathname).toBe('/DM-Q02'));
     await openApp('/DM-Q01', { command: () => ({ answer: ok }) }).then(async ({ commands: moved }) => {
       await screen.findByRole('toolbar', { name: 'Change DM-Q01' });
       await user.click(within(toolbar('DM-Q01')).getByRole('button', { name: 'Move' }));
@@ -83,7 +86,7 @@ describe('LA-V51-R07-T01 the Product editor writes only through the aggregate\'s
   it('adds an open question from a domain\'s page through the Product aggregate\'s own Add, under the domain', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP', { command: () => ({ answer: ok }) });
-    await user.click(within(await screen.findByRole('toolbar', { name: 'Change DM-SHOP' })).getByRole('button', { name: 'Add open question' }));
+    await chooseAdd(user, await screen.findByRole('toolbar', { name: 'Change DM-SHOP' }), 'Open question');
     const form = screen.getByRole('form', { name: 'Add an open question' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-Q02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Who restocks?');
