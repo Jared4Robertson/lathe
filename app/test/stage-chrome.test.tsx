@@ -72,7 +72,7 @@ describe('one stage chrome', () => {
     const steps = [...stage().querySelectorAll('.stage-steps button')].map(shown);
     expect(steps).toEqual(['←A', '→D', '↑W', '↓S', 'Out', 'In']);
     // The letter is the key, announced as the button's shortcut.
-    expect(stage().querySelector('.stage-steps .is-up')).toHaveAttribute('aria-keyshortcuts', 'W');
+    expect(stage().querySelector('.stage-steps .is-up')?.getAttribute('aria-keyshortcuts')?.split(' ')).toContain('W');
   });
 });
 

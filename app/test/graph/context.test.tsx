@@ -222,7 +222,9 @@ describe('the graph tree, its depth and its camera', () => {
       expect(buttons.map((b) => b.getAttribute('aria-label'))).toEqual([...arrows.map((k) => STEP_BUTTONS[ARROWS[layout][k]]), 'Out to the parent', 'In to the first child']);
       arrows.forEach((key, i) => {
         expect(buttons[i], `${layout}: ${key}`).toHaveAttribute('aria-keyshortcuts', `${key} ${LETTERS[key]} ${VIM[key]}`);
-        expect(buttons[i], `${layout}: ${key}`).toHaveTextContent(`${MARKS[key]}${LETTERS[key]}`);
+        // The letter is drawn by the stylesheet from data-letter, so the button's text is its name alone (LA-V61-R44).
+        expect(buttons[i], `${layout}: ${key}`).toHaveTextContent(MARKS[key]);
+        expect(buttons[i].querySelector('.stage-step-letter'), `${layout}: ${key}`).toHaveAttribute('data-letter', LETTERS[key]);
       });
       // Each arrow on the canvas steps where the mapping says, then Back returns to the stage.
       for (const [key, step] of Object.entries(ARROWS[layout])) {
