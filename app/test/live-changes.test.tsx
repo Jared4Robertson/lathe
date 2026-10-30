@@ -98,7 +98,7 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
     fireEvent.change(picker, { target: { value: 'branch' } });
     await waitFor(() => expect(asked).toContain('branch'));
     expect(settings().since).toBe('branch');
-    // Since I last looked: the moment the Reader entered the product, a commit and what differed from it then.
+    // Since I last looked: the moment the Reader entered the product, the commit it was on and each record's digest then.
     expect(settings().looked.DM).toMatchObject({ commit: HEAD });
     fireEvent.change(picker, { target: { value: 'looked' } });
     await waitFor(() => expect(asked).toContain(HEAD));
@@ -108,7 +108,8 @@ describe('LA-EXP-UC15 the Reader watches the spec change', () => {
     fireEvent.click(within(tools()).getByRole('button', { name: 'Changes lens' }));
     await waitFor(() => expect(settings().looked.DM.at).not.toBe(before));
     await waitFor(() => expect(count()).toHaveTextContent('0'));
-    expect(settings().looked.DM.delta.command.rows.map((r: { id: string }) => r.id).sort()).toEqual(['DM-SHOP-CMD01', 'DM-SHOP-CMD09']);
+    // The look keeps each record's digest then, the new command among them.
+    expect(Object.keys(settings().looked.DM.digests)).toEqual(expect.arrayContaining(['DM-SHOP-CMD01', 'DM-SHOP-CMD09']));
   });
 
   it('LA-EXP-UC15-R04-T01 The diff in the wiki card: each changed field old → new; an added record new since the baseline', async () => {

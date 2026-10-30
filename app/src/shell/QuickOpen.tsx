@@ -39,13 +39,13 @@ export interface FindItem {
 export function findItems(index: RecordIndex | null, checks: readonly string[] = []): FindItem[] {
   const items: FindItem[] = [];
   if (index) {
-    for (const r of index.workspace.records) {
+    for (const r of index.byId.values()) {
       items.push({ key: r.id, id: r.id, title: r.title, kind: r.kind, to: addressOf(r.id) });
     }
     for (const k of index.meta.kindList) {
       items.push({ key: `kind:${k.kind}`, id: k.kind, title: `Kind: ${k.label}`, to: kindPagePath(k.kind) });
     }
-    for (const c of new Set([...checks, ...index.workspace.problems.map((p) => p.check)])) {
+    for (const c of new Set([...checks, ...[...index.problemsFor.values()].flat().map((p) => p.check)])) {
       items.push({ key: `check:${c}`, id: c, title: `Check: ${c}`, to: checkPagePath(c) });
     }
   }

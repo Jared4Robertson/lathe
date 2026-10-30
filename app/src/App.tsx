@@ -272,7 +272,7 @@ function Shell() {
         />
       )}
       {page}
-      {isHome && spec.index && <ProductsPicker index={spec.index} onClose={leaveHome} />}
+      {isHome && <ProductsPicker version={spec.version} onClose={leaveHome} />}
       {toolPanel}
       {chatShown && chatBridge && (
         <ChatPanel

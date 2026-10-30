@@ -293,16 +293,16 @@ test.describe('Exploring flows', () => {
     await expect(rail.locator('a.space-item')).toHaveCount(2);
     await expect(rail.locator('a.space-item[data-space="TL"]')).toBeVisible();
     // The same workspace with its own product alone: no rail, the product at the top of the nav.
-    await page.route('**/api/spec', async (route) => {
+    await page.route('**/api/product/list-products*', async (route) => {
       const answer = await route.fetch();
-      const spec = (await answer.json()) as { sources: unknown[] };
-      await route.fulfill({ response: answer, json: { ...spec, sources: spec.sources.slice(0, 1) } });
+      const products = (await answer.json()) as { id: string }[];
+      await route.fulfill({ response: answer, json: products.filter((p) => p.id === 'LA') });
     });
     await page.reload();
     await nav(page).getByRole('link', { name: 'Lathe', exact: true }).first().waitFor();
     await expect(page.locator('nav#nav .space-rail')).toHaveCount(0);
     await expect(nav(page).locator('.space-items a[href="/LA"] .space-mark')).toBeVisible();
-    await page.unroute('**/api/spec');
+    await page.unroute('**/api/product/list-products*');
   });
 
   test('LA-EXP-UC08-FL01-T read a product in stage folders: the nav\'s domains and stages, the open branch, capabilities in order, the domain page', async ({ page }) => {
@@ -454,15 +454,14 @@ test.describe('Exploring flows', () => {
   test('LA-EXP-UC13-FL01-T read a domain\'s endpoints and integrations: the domain\'s Interaction design, a command\'s endpoint, an integration\'s steps', async ({ page }) => {
     await openPage(page, '/LA-AUT');
     const wiki = page.locator(WIKI);
-    await expect(wiki.getByRole('list', { name: 'Endpoints' })).toContainText('POST · /api/write');
+    await expect(wiki.getByRole('list', { name: 'Endpoints' })).toContainText('POST · /api/use-case/change-use-case');
     await expect(wiki.getByRole('list', { name: 'Integrations' }).getByRole('listitem').first()).toBeVisible();
-    // The command and its endpoint, method and route; the endpoint's API requirements.
-    await page.goto('/LA-AUT-CMD07');
-    await expect(wiki.getByRole('link', { name: 'LA-AUT-EP02 POST /api/write' })).toBeVisible();
-    await expect(wiki).toContainText('POST · /api/write');
-    await wiki.getByRole('link', { name: 'LA-AUT-EP02 POST /api/write' }).click();
-    await page.waitForURL((u) => u.pathname === '/LA-AUT-EP02');
-    await expect(wiki.getByRole('link', { name: /^LA-AUT-EP02-R\d+/ }).first()).toBeVisible();
+    // The command and its endpoint, method and route.
+    await page.goto('/LA-AUT-CMD101');
+    await expect(wiki.getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' })).toBeVisible();
+    await expect(wiki).toContainText('POST · /api/use-case/change-use-case');
+    await wiki.getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' }).click();
+    await page.waitForURL((u) => u.pathname === '/LA-AUT-EP101');
     // An integration lists the steps that exchange with its system.
     await page.goto('/LA-INT04');
     await expect(wiki.getByRole('list', { name: 'Exchanged with by' }).getByRole('link').first()).toBeVisible();

@@ -1,7 +1,6 @@
 // The wiki page of a domain, which the wiki card shows, and the stage sections a domain's and a product's pages share.
 import { useState, type ReactNode } from 'react';
 import { Link } from '../router';
-import { RecordText } from './RecordText';
 import { DomainPatterns } from './PatternParts';
 import { patternsFollowedBy } from './patterns';
 import { CoverageBars } from './ProductHealth';
@@ -12,13 +11,14 @@ import { ActionsSlotContext } from '../components/ActionsSlot';
 import { byIdOrder, kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { type DataState } from '../exploring/record-summaries/reads';
 import { HOME_PATH } from '../views/address';
+import { Prose } from './mentions';
 
 // The wiki content of a domain, which the wiki card (app/src/views) shows over the stage; and what an address that is
 // no page says.
 
 // ---------- Shared pieces ----------
 
-const recordsIn = (index: RecordIndex, predicate: (r: RecordSummary) => boolean) => index.workspace.records.filter(predicate).sort(byIdOrder);
+const recordsIn = (index: RecordIndex, predicate: (r: RecordSummary) => boolean) => [...index.byId.values()].filter(predicate).sort(byIdOrder);
 
 // ---------- Pages ----------
 
@@ -43,7 +43,7 @@ export function NotFound({ what, id }: { what: string; id?: string }) {
 
 /** The problems in a product's or a domain's records. */
 export const problemsUnder = (index: RecordIndex, key: 'product' | 'domain', id: string) =>
-  index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.[key] === id);
+  [...index.problemsFor].filter(([record]) => index.byId.get(record)?.[key] === id).flatMap(([, problems]) => problems);
 
 function QuestionList({ index, questions }: { index: RecordIndex; questions: RecordSummary[] }) {
   if (questions.length === 0) return <p className="hint">No open questions.</p>;
@@ -58,9 +58,8 @@ function QuestionList({ index, questions }: { index: RecordIndex; questions: Rec
         <>
           <RecordLink index={index} id={q.id} row />
           <small className="meta">
-            {textOf(q.row, 'owner') && <>owner {textOf(q.row, 'owner')}</>}
-            {(index.outgoing.get(q.id) ?? []).filter((l) => l.relation === 'about').map((l) => (
-              <span key={l.target}> · about <RecordLink index={index} id={l.target} showTitle={false} /></span>
+            {(index.outgoing.get(q.id) ?? []).filter((l) => l.relation === 'about').map((l, i) => (
+              <span key={l.target}>{i > 0 ? ' · ' : ''}about <RecordLink index={index} id={l.target} showTitle={false} /></span>
             ))}
           </small>
         </>
@@ -124,12 +123,11 @@ export function StageSections({ index, folders, query, level = 2 }: { index: Rec
 }
 
 /**
- * A domain's wiki, read in the same stages and folders as the side nav (StageSections), then the
- * patterns the domain follows, its open questions, coverage and problems.
+ * A domain's records, read in the same stages and folders as the side nav (StageSections), then the patterns the
+ * domain follows, its open questions, coverage and problems. The domain's own text is its page's (DomainPage).
  */
-export function DomainWiki({ index, id }: { index: RecordIndex; id: string }) {
+export function DomainWiki({ index, id, description = '' }: { index: RecordIndex; id: string; /** The domain's description, from its own read (DomainPage). */ description?: string }) {
   const [query, setQuery] = useState('');
-  const domain = index.byId.get(id)!;
   const q = query.trim().toLowerCase();
   const matches = (r: RecordSummary) => !q || recordText(r).toLowerCase().includes(q);
   const problems = problemsUnder(index, 'domain', id);
@@ -148,7 +146,7 @@ export function DomainWiki({ index, id }: { index: RecordIndex; id: string }) {
 
   return (
     <div className="spec-body">
-      <RecordText index={index} record={domain} />
+      {description.trim() && <div className="record-text"><div className="record-lead" data-field="description"><Prose index={index} source={description} self={id} /></div></div>}
       <div className="search">
         <label htmlFor="record-search">Filter records</label>
         <input id="record-search" type="search" value={query} placeholder="ID or title" onChange={(e) => setQuery(e.target.value)} />

@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { parseFormatPage } from '../src/format/reference';
 import { findItems, rankItems } from '../src/shell/QuickOpen';
-import { indexOf } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 import { workspace } from './fixtures/workspace';
 import { checksPanel, facts, openApp } from './helpers';
 // The Graph view needs a ResizeObserver in jsdom.
@@ -33,7 +33,7 @@ describe('format reference pages', () => {
     expect(screen.getByRole('region', { name: 'Graph stage' })).toBeInTheDocument();
     expect(window.location.pathname).toBe('/DM');
     expect(section(/^Kinds\d/)).toHaveTextContent(String(Object.keys(workspace().schema.kinds).length));
-    expect(section('How records are kept')).toHaveTextContent('Every table\'s rows are one file in data/');
+    expect(section('How records are kept')).toHaveTextContent('Every table\'s rows are one file in the product\'s data folder');
 
     const kinds = section(/^Kinds\d/);
     // The six stages in order, then the kinds outside them.
@@ -88,9 +88,8 @@ describe('format reference pages', () => {
     const example = section('Example');
     // The first use case by ID in the current space.
     expect(within(example).getByRole('link', { name: /DM-PAY-UC01/ })).toHaveAttribute('href', '/DM-PAY-UC01');
-    // Its row as its data file holds it.
-    expect(example).toHaveTextContent('on line 1 of data/use_case.jsonl');
-    expect(example.querySelector('pre')).toHaveTextContent('{"id":"DM-PAY-UC01","title":"Pay by card","capability_id":"DM-PAY-CAP01","goal":"A shopper pays for the basket by card."}');
+    // Where its row is in its data file.
+    expect(example).toHaveTextContent('on line 1 of use_case.jsonl');
 
     const records = section(/^Records/);
     expect(records).toHaveTextContent('2 use cases in Demo shop, under:');
@@ -199,10 +198,9 @@ describe('format reference pages', () => {
   it('LA-V02-R02-T01 The pages are built from the loaded data: a check with no row in the check table is the engine\'s own, listed without an explanation', async () => {
     const { requests } = await openApp('/DM?page=format');
     await within(await screen.findByRole('region', { name: 'Wiki card' })).findByRole('heading', { level: 2, name: 'Record format' });
-    // The spec, the products the nav lists (the Product aggregate's own read), and nothing else but the Changes baseline
-    // (GET /api/baseline), which this test's server does not serve.
-    expect(requests.filter((r) => !r.startsWith('GET /api/baseline?') && r !== 'GET /api/product/list-products?')).toEqual(['GET /api/spec']);
-    expect(requests).toContain('GET /api/product/list-products?');
+    // The specific reads: the Reference, the meta model and the space's own reads; never one dump of every table.
+    expect(requests).toEqual(expect.arrayContaining(['GET /api/reference?', 'GET /api/meta-model/get-meta-model?', 'GET /api/problems/list-problems?product_id=DM', 'GET /api/product/list-products?']));
+    expect(requests.some((r) => r.startsWith('GET /api/spec'))).toBe(false);
     expect(within(section(/^Checks\d/)).getByRole('link', { name: /^engine/ })).toHaveAttribute('href', over('format/checks/engine'));
     await openApp('/DM?page=format/checks/engine');
     expect(await screen.findByText(/The engine reports this itself/)).toBeInTheDocument();

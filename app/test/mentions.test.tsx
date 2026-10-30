@@ -5,7 +5,8 @@ import { linkMentions, renderMarkdown } from '../src/specs/Markdown';
 import { proseLinks } from '../src/specs/mentions';
 import { patternWorkspace } from './fixtures/patterns';
 import { facts, openApp } from './helpers';
-import { indexOf, setRow } from './fixtures/load';
+import { setRow } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 
 // Record IDs named in a text field become links: every ID-shaped token that is a record of the
 // space (other than the record itself), wherever it appears in the text but never inside code with
@@ -66,7 +67,8 @@ describe('record IDs in text fields', () => {
   const proveLaV92R18T03 = () => {
     const ix = recordIndexOf(withText());
     const uc = ix.byId.get('DM-SHOP-UC01')!;
-    const p = proseLinks(ix, `${String(uc.row.goal)} See DM-SHOP-UC01.`, uc.id);
+    const goal = withText().sources[0].tables.use_case.find((r) => r.id === uc.id)!.goal;
+    const p = proseLinks(ix, `${String(goal)} See DM-SHOP-UC01.`, uc.id);
     expect([...p.titles]).toEqual([['DM-PAT-AUDIT', 'Audited action'], ['DM-SHOP-INV01', 'A basket holds at most 50 items']]);
   };
   it('LA-PAT-RECORD-PAGE-R13-T01 Only the IDs of records are linked, never the record itself; an ID that is no record is not', proveLaV92R18T03);

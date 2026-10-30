@@ -1,17 +1,42 @@
-import type { ServedData } from '../test/read-view';
-// What the flow tests in the stability suite share: the served workspace, as the app reads it, so a
-// flow can check the page against the figures the engine worked out.
-import type { Page } from '@playwright/test';
+// What the flow tests in the stability suite share: the workspace the dev server reads, read here through each product's
+// own store with the engine's run over it (problems, coverage, chains), so a flow can check the page against the
+// figures the engine worked out. The app itself never reads rows: it reads each stage's and aggregate's own query.
+import path from 'node:path';
+import { loadConfig, readWorkspace } from '../../lathe/src/index';
+import { openStore } from '../../lathe/src/platform/data/index';
+import type { Row } from '../../lathe/src/server/contract';
+import type { Coverage, Problem, TraceChain } from '../../lathe/src/types';
 
-/** The workspace the dev server serves now (GET /api/spec). */
-export async function served(page: Page): Promise<ServedData> {
-  const answer = await page.request.get('/api/spec');
-  if (!answer.ok()) throw new Error(`GET /api/spec answered ${answer.status()}`);
-  return (await answer.json()) as ServedData;
+/** The workspace's rows and the engine's run over them. */
+export interface Served {
+  /** Each stored table's rows, every product folder's. */
+  tables: Record<string, Row[]>;
+  problems: Problem[];
+  coverage: Coverage[];
+  chains: TraceChain[];
+}
+
+/** The workspace the dev server reads now: this repo's products (Lathe's and the Tool Library's), each through its own store. */
+export async function servedWorkspace(): Promise<Served> {
+  const repo = path.resolve(import.meta.dirname, '../..');
+  const served: Served = { tables: {}, problems: [], coverage: [], chains: [] };
+  for (const root of [repo, path.join(repo, 'examples/tool-library')]) {
+    const store = await openStore(root);
+    try {
+      for (const table of store.schema.loadOrder) served.tables[table] = [...(served.tables[table] ?? []), ...store.rows(table)];
+      const run = await readWorkspace(store, loadConfig(root));
+      served.problems.push(...run.problems);
+      served.coverage.push(...run.coverage);
+      served.chains.push(...run.chains);
+    } finally {
+      await store.close();
+    }
+  }
+  return served;
 }
 
 /** The rows of one stored table, from every product folder. */
-export const rowsOf = (spec: ServedData, table: string) => spec.sources.flatMap((source) => source.tables[table] ?? []);
+export const rowsOf = (spec: Served, table: string) => spec.tables[table] ?? [];
 
 /** "12 automated, 1 manual, 2 not automated yet", as the app words a domain's tests by state. */
 export const testsText = (t: { automated: number; manual: number; not_automated: number }) => `${t.automated} automated, ${t.manual} manual, ${t.not_automated} not automated yet`;

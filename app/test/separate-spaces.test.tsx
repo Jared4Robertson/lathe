@@ -4,8 +4,8 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { graphMap, mapRootOf } from '../src/graph/map';
-import { spaceIndex } from '../src/specs/data';
-import { addRows, indexOf, setRow } from './fixtures/load';
+import { addRows, setRow } from './fixtures/load';
+import { recordIndexOf } from './read-view';
 import { workspace } from './fixtures/workspace';
 import { facts, main, openApp } from './helpers';
 import { boxElement, drawnIds } from './graph/scene';
@@ -25,27 +25,25 @@ function crossingWorkspace(): ServedData {
 
 describe('separate spaces', () => {
   const proveLaExpSp01T = () => {
-    const index = recordIndexOf(crossingWorkspace());
-    const dm = spaceIndex(index, 'DM');
-    expect(spaceIndex(index, 'DM')).toBe(dm);
-    expect(dm.products.map((p) => p.id)).toEqual(['DM']);
-    expect(dm.workspace.records.every((r) => r.product === 'DM' || r.product === null)).toBe(true);
+    const data = crossingWorkspace();
+    const dm = recordIndexOf(data, 'DM');
+    const records = [...dm.byId.values()];
+    expect(records.filter((r) => r.kind === 'product').map((p) => p.id)).toEqual(['DM']);
+    expect(records.every((r) => r.product === 'DM' || r.product === null)).toBe(true);
     expect(dm.byId.has('ZZ-LOOSE')).toBe(true);
     expect(dm.byId.has('NF-NOTE')).toBe(false);
-    expect(dm.workspace.links.some((l) => l.target === 'NF-NOTE' || l.source.startsWith('NF'))).toBe(false);
-    expect(dm.workspace.coverage.map((c) => c.domain ?? c.product).sort()).toEqual(['DM', 'DM-PAY', 'DM-SHOP']);
-    expect(dm.workspace.problems.map((p) => p.record)).not.toContain('NF-NOTE');
-    expect(dm.workspace.problems.some((p) => p.record === null)).toBe(true);
-    const nf = spaceIndex(index, 'NF');
-    expect(nf.workspace.records.some((r) => r.product === 'DM')).toBe(false);
-    expect(nf.workspace.problems.map((p) => p.record)).toEqual(expect.arrayContaining(['NF-NOTE', null]));
+    expect([...dm.outgoing.values()].flat().some((l) => l.target === 'NF-NOTE' || l.source.startsWith('NF'))).toBe(false);
+    expect([...dm.coverage.keys()].sort()).toEqual(['DM', 'DM-PAY', 'DM-SHOP']);
+    expect([...dm.problemsFor.keys()]).not.toContain('NF-NOTE');
+    const nf = recordIndexOf(data, 'NF');
+    expect([...nf.byId.values()].some((r) => r.product === 'DM')).toBe(false);
+    expect([...nf.problemsFor.keys()]).toContain('NF-NOTE');
   };
   it("LA-EXP-SP01-T A space's index holds only its product's records, links, parts, coverage and problems, and the records and problems of no product", proveLaExpSp01T);
   it("LA-V90-R15-T01 A space's index holds only its product's records, links, parts, coverage and problems", proveLaExpSp01T);
 
   const proveLaExpDs05T14 = async () => {
-    const index = recordIndexOf(crossingWorkspace());
-    const dm = spaceIndex(index, 'DM');
+    const dm = recordIndexOf(crossingWorkspace(), 'DM');
     expect(mapRootOf(dm, 'DM-SHOP-UC01')).toBe('DM');
     const map = graphMap(dm, 'DM');
     expect(map.roots).toEqual(['DM']);

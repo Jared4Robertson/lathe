@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { openPage } from './measure';
-import { rowsOf, served, testsText } from './flows';
+import { rowsOf, servedWorkspace, testsText } from './flows';
 import { PRODUCT } from './scenarios';
 import { expectKeyWhole, traceDrawn, traceLayout, traceSceneOf } from './scene';
 import type { ColumnScene, ColumnsHost } from '../src/trace/TraceColumns';
@@ -10,7 +10,7 @@ import { TITLE_FONT } from '../src/graph/text';
 // of this repo's data: the product's and the domains' coverage, the Trace stage, every
 // obligation kind and test state, the patterns a domain follows, tests by state, and what designs,
 // builds and proves a record. Each page is checked against the coverage the engine worked out
-// (GET /api/spec). The flows run from the command line are in lathe/test/flows/traceability.test.ts.
+// (read through the products' own stores). The flows run from the command line are in lathe/test/flows/traceability.test.ts.
 
 /** A domain with UC requirements, their flows, tests and gaps. */
 const TRC = 'LA-TRC';
@@ -22,7 +22,7 @@ const WIKI = '.wiki-panel';
 
 test.describe('Traceability flows', () => {
   test('LA-TRC-UC09-FL01-T see each domain\'s coverage and the product\'s summary', async ({ page }) => {
-    const spec = await served(page);
+    const spec = await servedWorkspace();
     await openPage(page, PRODUCT);
     const wiki = page.locator(WIKI);
     // S01: each domain card's coverage bars, as coverage counts them.
@@ -56,7 +56,7 @@ test.describe('Traceability flows', () => {
   test('LA-TRC-UC10-FL01-T trace obligations on the Trace stage', async ({ page }) => {
     // The tree's scenario (the columns' is LA-V98-R13-T07).
     await traceLayout(page, 'tree');
-    const spec = await served(page);
+    const spec = await servedWorkspace();
     // The chain: the steps that fulfill it, their flows, what they invoke and where they happen, the handlers of what
     // they invoke, the tests under it and the files those name.
     const steps = rowsOf(spec, 'fulfills').filter((l) => l.target_id === REQUIREMENT).map((l) => String(l.source_id));
@@ -153,7 +153,7 @@ test.describe('Traceability flows', () => {
   });
 
   test('LA-V98-R13-T07 the Trace stage as columns: the path to a requirement readable, the walk and a click moving along it, the tree a click away', async ({ page }) => {
-    const spec = await served(page);
+    const spec = await servedWorkspace();
     const useCase = String(rowsOf(spec, 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
     const capability = String(rowsOf(spec, 'use_case').find((u) => u.id === useCase)!.capability_id);
     // The first outcome the capability serves: the requirement's first place, under that outcome and its use case.
@@ -206,7 +206,7 @@ test.describe('Traceability flows', () => {
   });
 
   test('LA-TRC-UC11-FL01-T see every obligation kind and test state', async ({ page }) => {
-    const spec = await served(page);
+    const spec = await servedWorkspace();
     const coverage = spec.coverage.find((c) => c.domain === TRC)!;
     // S01: a product, then a domain, with one coverage group per obligation kind it has.
     await openPage(page, PRODUCT);
@@ -230,7 +230,7 @@ test.describe('Traceability flows', () => {
   });
 
   test('LA-TRC-UC12-FL01-T see the pattern rules a domain owes', async ({ page }) => {
-    const spec = await served(page);
+    const spec = await servedWorkspace();
     const followed = rowsOf(spec, 'follows').filter((l) => l.source_id === EXP).map((l) => String(l.target_id));
     expect(followed.length).toBeGreaterThan(0);
     const pattern = followed[0];
@@ -259,7 +259,7 @@ test.describe('Traceability flows', () => {
   });
 
   test('LA-TRC-UC13-FL01-T see tests by state with each domain\'s coverage', async ({ page }) => {
-    const spec = await served(page);
+    const spec = await servedWorkspace();
     const ofDomain = (id: string) => spec.coverage.find((c) => c.domain === id)!.tests;
     // S01: each domain card's tests by state.
     await openPage(page, PRODUCT);
@@ -278,7 +278,7 @@ test.describe('Traceability flows', () => {
   });
 
   test('LA-TRC-UC14-FL01-T trace a record', async ({ page }) => {
-    const spec = await served(page);
+    const spec = await servedWorkspace();
     // What designs and builds it is the engine's chain, the one the Trace stage draws.
     const chain = spec.chains.find((c) => c.obligation === REQUIREMENT)!;
     const tests = rowsOf(spec, 'use_case_test').filter((t) => t.uc_requirement_id === REQUIREMENT);
