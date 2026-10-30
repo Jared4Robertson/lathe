@@ -2,7 +2,7 @@ import { recordIndexOf } from '../read-view';
 // @vitest-environment node
 import { beforeAll, describe, expect, it } from 'vitest';
 import { repoData } from '../fixtures/repo';
-import { drawnFor, drawnNested, FRAME_PADDING, frameFocus, frameNested, frameOnMap, maxZoomFor, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
+import { drawnFor, drawnNested, FRAME_PADDING, frameGround, frameNested, frameOnMap, maxZoomFor, MIN_ZOOM, type Drawn, type Viewport } from '../../src/graph/camera';
 import { treeText, type GraphMap, type PlacedMap } from '../../src/graph/map';
 import { BORDER, labelHeight, labelLines, TITLE_FONT } from '../../src/graph/text';
 import { treeOf } from '../../src/graph/tree';
@@ -11,7 +11,7 @@ import type { ServedData } from '../read-view';
 import { siblingGroups } from './workspace';
 import { plateOf, type Plate, type PlateSource } from '../../src/graph/plate';
 import type { NestedNode } from '../../src/graph/nested';
-import { graphMap, nestedMap } from './maps';
+import { graphMap, groundMap, nestedMap } from './maps';
 
 /** The scene's check (the canvas draws a box's plate, plate.ts): every line of its label lies whole inside the box. */
 function plateOutside(p: Plate): string | null {
@@ -141,10 +141,8 @@ describe('every drawn box shows its name', () => {
           const v = layout.frame(map, n.id, 1, 770, 640);
           expect(v.zoom, `${layout.name} ${n.id}`).toBeLessThanOrEqual(maxZoomFor(map));
           expect(v.zoom, `${layout.name} ${n.id}`).toBeGreaterThanOrEqual(MIN_ZOOM);
-          if (layout.name === 'Tree' && (n.parent === null || n.children.length === 0 || n.text < treeText(n.w) * (1 - 1e-9) || frameFocus(map as GraphMap, n, 1, 770, 640).zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9))) continue;
-          // In the Tree, in its own frame: one whose children it would draw too small to read frames their column instead, larger (LA-EXP-DS09).
-          const own = layout.name === 'Tree' ? frameFocus(map as GraphMap, n, 1, 770, 640) : v;
-          (sizes.get(n.level) ?? sizes.set(n.level, []).get(n.level)!).push(n.text * own.zoom * TITLE_FONT);
+          if (layout.name === 'Tree' && (n.parent === null || n.children.length === 0 || n.text < treeText(n.w) * (1 - 1e-9) || v.zoom >= (640 - 2 * FRAME_PADDING) / n.h * (1 - 1e-9))) continue;
+          (sizes.get(n.level) ?? sizes.set(n.level, []).get(n.level)!).push(n.text * v.zoom * TITLE_FONT);
         }
         // The middle size, or the mean of the two middle ones when there is an even number (not the larger of them).
         const median = (xs: number[]) => {
@@ -165,5 +163,25 @@ describe('every drawn box shows its name', () => {
         expect(layout.frame(map, smallest.id, 1, 770, 640).zoom, `${layout.name} ${smallest.id}`).toBeLessThan(maxZoomFor(map));
       }
     }
+  }, 120_000);
+
+  it('LA-EXP-DS09-T16 In the Tree, Nested and Map layouts, every box of every product, framed as the focus at depths 1 to 3 in two panes, is whole on screen', () => {
+    const cut: string[] = [];
+    let frames = 0;
+    const check = (name: string, n: { id: string; x: number; y: number; w: number; h: number }, v: Viewport, w: number, h: number) => {
+      frames++;
+      const [x0, y0, x1, y1] = [n.x * v.zoom + v.x, n.y * v.zoom + v.y, (n.x + n.w) * v.zoom + v.x, (n.y + n.h) * v.zoom + v.y];
+      if (x0 < -0.5 || y0 < -0.5 || x1 > w + 0.5 || y1 > h + 0.5) cut.push(`${name} ${n.id} in ${w}x${h}: ${[x0, y0, x1, y1].map(Math.round).join(', ')}`);
+    };
+    for (const [product, index] of spaces) {
+      for (const layout of LAYOUTS) {
+        const map = layout.map(index, product);
+        for (const n of map.nodes.values()) for (const [w, h] of PANES) for (const depth of layout.name === 'Tree' ? DEPTHS : [1]) check(`${layout.name} depth ${depth}`, n, layout.frame(map, n.id, depth, w, h), w, h);
+      }
+      const ground = groundMap(index);
+      for (const n of ground.nodes.values()) for (const [w, h] of PANES) check('Map', n, frameGround(ground, n.id, w, h, maxZoomFor(ground)), w, h);
+    }
+    expect(frames).toBeGreaterThan(1000);
+    expect(cut.length, cut.slice(0, 20).join('\n')).toBe(0);
   }, 120_000);
 });

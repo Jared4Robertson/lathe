@@ -3,7 +3,7 @@
 // plate.ts) under the graph's camera gestures (gestures.ts).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
-import { frameRect, MIN_ZOOM, type Viewport } from '../../graph/camera';
+import { frameRect, MIN_ZOOM, wholeIn, type Viewport } from '../../graph/camera';
 import { faintest, fadeTween, keptFade, type FadeLook } from '../../graph/fade';
 import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../../graph/fonts';
 import { useCameraGestures } from '../../graph/gestures';
@@ -59,6 +59,8 @@ const MOST_TEXT = 1.5;
 const LEAST_TEXT = 1;
 /** The height of the columns' names at the top of the frame, in CSS pixels. */
 const HEAD_PX = 30;
+/** The frame below the columns' names: where the camera frames a box. */
+const belowHead = (box: { x: number; y: number; w: number; h: number }) => ({ ...box, y: box.y + HEAD_PX, h: Math.max(MIN_FRAME, box.h - HEAD_PX) });
 const HEAD_FONT = 12;
 /** The toggle at a box's right, in map units: its size, and the room its box's text leaves for it. */
 const TOGGLE = 18;
@@ -237,7 +239,7 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
   const framing = useCallback((): Viewport | null => {
     if (!size || (space && !openSpace)) return null;
     const box = frameBox(size);
-    const head = { ...box, y: box.y + HEAD_PX, h: Math.max(MIN_FRAME, box.h - HEAD_PX) };
+    const head = belowHead(box);
     const own = focusKey ? laid.places.get(focusKey) : undefined;
     const across = head.w - 48;
     const fits = Math.min(1, across / laid.width);
@@ -260,7 +262,8 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
     // own boxes: the outcomes sit where their rows are, rarely beside this one).
     const column = graph.items.get(focusKey!)?.column ?? 0;
     const x = laid.width * zoom <= across ? head.x + (head.w - laid.width * zoom) / 2 : head.x + 24 - columnLeft(column === 0 ? 0 : Math.max(1, column - 1)) * zoom;
-    return { x, y, zoom };
+    // The focused box always whole in the frame (LA-PAT-APP-UX-R23).
+    return wholeIn({ x, y, zoom }, own, head);
   }, [size, laid, lit, focusKey, frameBox, space, openSpace, graph]);
 
   // Each place keeps its camera (the Tab set's cameras, exploring/tab-set): taken back at once when it still frames the
@@ -335,7 +338,9 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
     const a = was.laid.places.get(focusKey);
     const b = laid.places.get(focusKey);
     const v = a && b ? followBox(view.current, a, b, { min: MIN_ZOOM, max: MAX_ZOOM }) : null;
-    if (v) moveTo(v, true);
+    // Following the focus keeps it whole too (LA-PAT-APP-UX-R23).
+    const s = sizeRef.current;
+    if (v && b) moveTo(s ? wholeIn(v, b, belowHead(frameBox(s))) : v, true);
   }, [laid]);
 
   // ---- The look, the fade and the plates ----
@@ -641,7 +646,7 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
   const fitAll = () => {
     if (!size) return;
     const box = frameBox(size);
-    moveTo(frameRect({ x: 0, y: 0, w: laid.width, h: laid.height }, { ...box, y: box.y + HEAD_PX, h: Math.max(MIN_FRAME, box.h - HEAD_PX) }, { pad: 24, read: MIN_ZOOM, max: 1, min: MIN_ZOOM }), true);
+    moveTo(frameRect({ x: 0, y: 0, w: laid.width, h: laid.height }, belowHead(box), { pad: 24, read: MIN_ZOOM, max: 1, min: MIN_ZOOM }), true);
   };
 
   // ---- The test hook: the drawn scene, in the page's pixels ----
