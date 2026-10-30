@@ -6,7 +6,7 @@ import { navigate } from '../router';
 import { useAnnounce } from '../shell/commands';
 import type { SpecIndex } from '../specs/data';
 import { RecordLink } from '../specs/parts';
-import { ColumnField, IdField, IdsField, PartsField, Refusal, columnValue, problemText, type Choice } from './fields';
+import { ColumnField, IdField, IdsField, PartsField, Refusal, TextsField, columnValue, problemText, textsValue, type Choice } from './fields';
 
 // The form an aggregate's editor sends one command from (LA-PAT-FIELD-INPUTS): its heading, its fields drawn from the
 // shared field inputs in the order the editor gives, Save and Cancel, and the command's refusal with every reason at its
@@ -61,7 +61,7 @@ export function CommandForm({ eyebrow, title, submit, saveLabel, onCancel, child
   );
 }
 
-/** A form's draft: each field's text (a list's items one per line), each list of IDs, and each list of part rows. */
+/** A form's draft: each field's text (a list of texts one per line), each list of IDs, and each list of part rows. */
 export interface Draft {
   text: Record<string, string>;
   ids: Record<string, string[]>;
@@ -70,9 +70,10 @@ export interface Draft {
 
 export const emptyDraft = (): Draft => ({ text: {}, ids: {}, parts: {} });
 
-/** One field of a form, by what it is: a column of a table, a record it names, a list of them, or a list of part rows. */
+/** One field of a form, by what it is: a column of a table, a list of texts, a record it names, a list of them, or a list of part rows. */
 export type FieldSpec =
   | { field: string; column: string; table: string; label?: string; long?: boolean; required?: boolean }
+  | { field: string; label: string; description: string; texts: true; required?: boolean }
   | { field: string; label: string; description: string; one: Choice[]; required?: boolean }
   | { field: string; label: string; description: string; many: Choice[] }
   | { field: string; label: string; description: string; table: string; columns: string[] };
@@ -112,6 +113,12 @@ export function Fields({ index, specs, draft, setDraft, first }: {
               onChange={(text) => setDraft((d) => ({ ...d, text: { ...d.text, [spec.field]: text } }))} />
           );
         }
+        if ('texts' in spec) {
+          return (
+            <TextsField key={spec.field} id={id} label={spec.label} description={spec.description} required={spec.required} inputRef={ref}
+              value={draft.text[spec.field] ?? ''} onChange={(text) => setDraft((d) => ({ ...d, text: { ...d.text, [spec.field]: text } }))} />
+          );
+        }
         if ('one' in spec) {
           return (
             <IdField key={spec.field} id={id} label={spec.label} description={spec.description} choices={spec.one} required={spec.required} inputRef={ref}
@@ -130,6 +137,12 @@ export function Fields({ index, specs, draft, setDraft, first }: {
 
 const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
+/** A stored value as the text its input holds: '' for none, a list's items one per line. */
+const cellText = (value: unknown): string => (value === undefined || value === null ? '' : Array.isArray(value) ? value.join('\n') : String(value));
+
+/** A part row's columns as the text their inputs hold, a list column one item per line. */
+const partText = (columns: readonly string[], row: Record<string, unknown>): Record<string, string> => Object.fromEntries(columns.map((c) => [c, cellText(row[c])]));
+
 /** A part row's text as its columns' values, each left out when empty. */
 function partValue(index: SpecIndex, spec: { table: string; columns: string[] }, row: Record<string, string>): Record<string, Value> {
   const out: Record<string, Value> = {};
@@ -140,23 +153,27 @@ function partValue(index: SpecIndex, spec: { table: string; columns: string[] },
   return out;
 }
 
-/** A field's value from the draft: the column's value, the ID it names, the list of IDs, or the part rows; undefined when empty. */
+/** A field's value from the draft: the column's value, the list of texts, the ID it names, the list of IDs, or the part rows; undefined when empty. */
 export function draftValue(index: SpecIndex, spec: FieldSpec, draft: Draft): Value | Record<string, Value>[] | undefined {
   if ('columns' in spec) return (draft.parts[spec.field] ?? []).map((row) => partValue(index, spec, row));
   if ('many' in spec) return draft.ids[spec.field] ?? [];
   const text = draft.text[spec.field] ?? '';
+  if ('texts' in spec) return textsValue(text);
   if ('column' in spec) return columnValue(columnOf(index, spec.table, spec.column), text);
   return text.trim() || undefined;
 }
 
-/** The draft of a record's current values, by field: each column's text, each list of IDs and each list of part rows. */
+/**
+ * The draft of a record's current values, by field: each column's text, each list of texts one item per line, each list
+ * of IDs and each list of part rows (a part row's list column one item per line too).
+ */
 export function draftOf(specs: FieldSpec[], current: Record<string, unknown>): Draft {
   const draft = emptyDraft();
   for (const spec of specs) {
     const value = current[spec.field];
-    if ('columns' in spec) draft.parts[spec.field] = ((value ?? []) as Record<string, unknown>[]).map((row) => Object.fromEntries(spec.columns.map((c) => [c, row[c] === undefined || row[c] === null ? '' : String(row[c])])));
+    if ('columns' in spec) draft.parts[spec.field] = ((value ?? []) as Record<string, unknown>[]).map((row) => partText(spec.columns, row));
     else if ('many' in spec) draft.ids[spec.field] = [...((value ?? []) as string[])];
-    else draft.text[spec.field] = value === undefined || value === null ? '' : Array.isArray(value) ? value.join('\n') : String(value);
+    else draft.text[spec.field] = cellText(value);
   }
   return draft;
 }
@@ -170,7 +187,9 @@ export function changeInput(index: SpecIndex, specs: FieldSpec[], draft: Draft, 
   for (const spec of specs) {
     const value = draftValue(index, spec, draft);
     // Part rows are compared by the columns the form shows, as their draft holds them.
-    const was = 'columns' in spec ? ((current[spec.field] ?? []) as Record<string, unknown>[]).map((row) => partValue(index, spec, Object.fromEntries(spec.columns.map((c) => [c, row[c] === undefined || row[c] === null ? '' : String(row[c])])))) : current[spec.field];
+    // A list of texts is compared in order, none held as an empty list.
+    const was = 'columns' in spec ? ((current[spec.field] ?? []) as Record<string, unknown>[]).map((row) => partValue(index, spec, partText(spec.columns, row)))
+      : 'texts' in spec ? current[spec.field] ?? [] : current[spec.field];
     if ('many' in spec ? same([...(value as string[])].sort(), [...((was ?? []) as string[])].sort()) : same(value, was)) continue;
     input[spec.field] = value ?? (clearable.includes(spec.field) ? null : '');
   }
