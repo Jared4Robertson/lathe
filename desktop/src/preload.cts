@@ -16,6 +16,9 @@
 //   chat                the chat panel's Claude Code (LA-PLT-UC19): the folder's saved sessions, open one
 //                       (new, resumed or forked), send a message, answer a permission prompt, stop the
 //                       turn, choose the permission mode, and subscribe to the chat's patches (chat.ts);
+//   voice               the chat's dictation (LA-PLT-UC20): whether this Mac can dictate on-device, ask to
+//                       listen or stop (the shell listens only while the window is in front), and subscribe to what
+//                       it hears (voice.ts);
 //   onAppRequest        answers the app bridge's questions (bridge.ts), each on its own channel: what the
 //                       Reader is looking at (lathe:ask-focus), and opening a record (lathe:ask-open), for
 //                       Lathe's MCP tools run by the chat's Claude Code.
@@ -53,6 +56,12 @@ let appRequestHandler: AppRequestHandler | null = null;
 
 ipcRenderer.on('lathe:chat', (_event, patch: unknown) => {
   for (const listener of patchListeners) listener(patch);
+});
+
+type VoiceListener = (event: unknown) => void;
+const voiceListeners = new Set<VoiceListener>();
+ipcRenderer.on('lathe:voice', (_event, voiceEvent: unknown) => {
+  for (const listener of voiceListeners) listener(voiceEvent);
 });
 
 // The app bridge's questions, each on its own channel, answered on the same channel with the question's id.
@@ -122,6 +131,17 @@ contextBridge.exposeInMainWorld('latheDesktop', {
       });
       return () => {
         patchListeners.delete(listener);
+      };
+    },
+  },
+  voice: {
+    support: () => ipcRenderer.invoke('lathe:voice-support'),
+    listen: (on: unknown) => ipcRenderer.invoke('lathe:voice-listen', on === true),
+    onEvent(listener: VoiceListener) {
+      if (typeof listener !== 'function') return () => {};
+      voiceListeners.add(listener);
+      return () => {
+        voiceListeners.delete(listener);
       };
     },
   },

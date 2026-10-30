@@ -11,8 +11,8 @@
 // it outlives a reload of this module in the dev server). When a data file changes, by a command or by anything else
 // (an editor, git, an Agent), the store reads only the changed files' tables again, and the server announces which
 // tables and read models changed (Data files changed, LA-PLT-EV06), so a page reads again only what changed. The check
-// rows and coverage run in the background on the data built whole, a burst of changes making one run, and are
-// announced when they are ready (LA-PLT-UC03-R03, R04).
+// rows and coverage run in the background on the data built whole, a burst of changes making one run, once the reads
+// the change sets off have answered, and are announced when they are ready (LA-PLT-UC03-R03, R04).
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { loadConfig, productClash, workspaceProducts, type LatheConfig } from '../config.ts';
 import { buildReference, readWorkspace } from '../index.ts';
@@ -42,10 +42,14 @@ interface Opened {
   /** The checks' run in progress, and whether the data changed again since it started. */
   checking: Promise<void> | null;
   again: boolean;
-  /** The timer that starts the next run once a burst of changes is over. */
+  /** The timer that starts the next run once a burst of changes is over and the requests have answered. */
   timer: NodeJS.Timeout | undefined;
+  /** When the first change the next run waits for was made, or null when no run waits. */
+  due: number | null;
   /** Requests on this root run one after another, so a write never races a reload. */
   queue: Promise<unknown>;
+  /** The requests queued or running on this root: the checks wait until there are none. */
+  pending: number;
 }
 
 const STORES_KEY = Symbol.for('lathe.server.stores');
@@ -59,6 +63,13 @@ const listeners: Map<string, Set<(change: DataChange) => void>> = ((globalThis a
 
 /** How long the checks wait after a change for the next one, so a burst of changes (a git pull, an Agent's writes) makes one run. */
 export const CHECKS_DELAY_MS = 150;
+
+/**
+ * The longest the checks wait for the server to be quiet after a change. The run holds the server's thread for most of
+ * its time, so it waits until the reads the change sets off (a page reading again what changed) have answered; but a
+ * stream of requests never puts it off for longer than this.
+ */
+export const CHECKS_MAX_WAIT_MS = 1000;
 
 /**
  * Hears every change to the data of the products the workspace at root shows (Data files changed, LA-PLT-EV06): the
@@ -95,7 +106,7 @@ function openedOf(root: string): Promise<Opened> {
   if (!pending) {
     pending = (async () => {
       const config = loadConfig(root);
-      const opened: Opened = { config, store: await openStore(root), refusal: null, run: null, checking: null, again: false, timer: undefined, queue: Promise.resolve() };
+      const opened: Opened = { config, store: await openStore(root), refusal: null, run: null, checking: null, again: false, timer: undefined, due: null, queue: Promise.resolve(), pending: 0 };
       startChecks(opened);
       return opened;
     })();
@@ -130,11 +141,23 @@ async function refresh(opened: Opened): Promise<void> {
   scheduleChecks(opened);
 }
 
-// Starts the checks once the changes stop coming for a moment.
+// Starts the checks once the changes stop coming for a moment and no request waits on the store.
 function scheduleChecks(opened: Opened) {
-  clearTimeout(opened.timer);
-  opened.timer = setTimeout(() => startChecks(opened), CHECKS_DELAY_MS);
-  opened.timer.unref?.();
+  opened.due ??= performance.now();
+  armChecks(opened);
+}
+
+// Sets the checks' timer for the store's state: CHECKS_DELAY_MS once no request is queued or running, or at once when
+// the run has waited CHECKS_MAX_WAIT_MS since the change.
+function armChecks(opened: Opened) {
+  if (opened.due === null) return;
+  if (performance.now() - opened.due >= CHECKS_MAX_WAIT_MS) {
+    opened.timer ??= setTimeout(() => startChecks(opened), 0);
+  } else {
+    clearTimeout(opened.timer);
+    opened.timer = opened.pending ? undefined : setTimeout(() => startChecks(opened), CHECKS_DELAY_MS);
+  }
+  opened.timer?.unref?.();
 }
 
 // Runs the checks on the data built whole, again while the data changed during a run, and announces each run that is
@@ -142,6 +165,7 @@ function scheduleChecks(opened: Opened) {
 function startChecks(opened: Opened) {
   clearTimeout(opened.timer);
   opened.timer = undefined;
+  opened.due = null;
   if (opened.checking) {
     opened.again = true;
     return;
@@ -166,13 +190,18 @@ function startChecks(opened: Opened) {
 }
 
 // Runs a task on the root's opened store, after every task before it, reading the data files again first when they
-// changed under it. Refused data refuses the task.
+// changed under it. Refused data refuses the task. The checks wait while it is queued or running.
 async function withStore<T>(root: string, task: (opened: Opened) => Promise<T>): Promise<T> {
   const opened = await openedOf(root);
+  opened.pending++;
+  armChecks(opened);
   const run = opened.queue.then(async () => {
     await refresh(opened);
     if (opened.refusal) throw opened.refusal;
     return task(opened);
+  }).finally(() => {
+    opened.pending--;
+    armChecks(opened);
   });
   opened.queue = run.catch(() => undefined);
   return run;

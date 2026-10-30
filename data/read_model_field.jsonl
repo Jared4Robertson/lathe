@@ -199,6 +199,10 @@
 {"read_model_id":"LA-PLT-RM08","position":2,"name":"Stage","meaning":"A stage with its label and description, in order.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM08","position":3,"name":"Relation","meaning":"A pair of kinds a relation may link, with its role and its words read from each end.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM08","position":4,"name":"Columns","meaning":"Each table's columns, as their fields' inputs take them.","type":"text","required":true}
+{"read_model_id":"LA-PLT-RM09","position":1,"name":"Available","meaning":"Whether the Mac can recognize speech on-device here.","type":"yes/no","required":true,"example":"yes"}
+{"read_model_id":"LA-PLT-RM09","position":2,"name":"Reason","meaning":"Why not, said to the Owner, when it cannot.","type":"text","required":false,"example":"On-device dictation needs macOS 26 or later."}
+{"read_model_id":"LA-PLT-RM09","position":3,"name":"Microphone","meaning":"macOS's answer for the microphone: granted, denied, restricted, not determined or unknown.","type":"text","required":true,"example":"not-determined"}
+{"read_model_id":"LA-PLT-RM09","position":4,"name":"End of turn","meaning":"Whether Quick mode can read the voice's pitch, or waits a fixed pause.","type":"yes/no","required":true,"example":"yes"}
 {"read_model_id":"LA-TRC-RM01","position":1,"name":"Product","meaning":"The product.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-TRC-RM01","position":2,"name":"Domain","meaning":"The domain counted, or none for the product's records outside every domain.","type":"text","required":false}
 {"read_model_id":"LA-TRC-RM01","position":3,"name":"Obligation kind","meaning":"The obligation kind counted, with its total, designed, built, proved and not automated yet, and whether only proof is asked of it.","type":"text","required":true,"example":"invariant"}

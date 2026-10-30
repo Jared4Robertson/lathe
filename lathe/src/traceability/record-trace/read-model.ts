@@ -7,7 +7,7 @@
 // the only code that reads them for the query and the only code that writes the read model's table.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
-import { placeRecords, type Placed } from '../../exploring/placement.ts';
+import { placementOf, type Placed } from '../../exploring/placement.ts';
 import { compareIds } from '../../platform/data/ids.ts';
 
 export type GapKind = 'not-designed' | 'not-built' | 'not-proved' | 'not-automated';
@@ -86,12 +86,12 @@ const str = (row: Row, column: string) => (typeof row[column] === 'string' ? (ro
 export function recordTraceTableFrom(view: ReadView): RecordTraceTable {
   const { schema } = view;
   const run = view.checked;
-  let placed: Map<string, Placed> | null = null;
+  let placed: ReadonlyMap<string, Placed> | null = null;
   let children: Map<string, Placed[]> | null = null;
   let links: { source: string; relation: string; target: string }[] | null = null;
   const load = () => {
     if (placed) return;
-    placed = placeRecords(view);
+    placed = placementOf(view);
     children = new Map();
     for (const r of placed.values()) if (r.parent) children.set(r.parent, [...(children.get(r.parent) ?? []), r]);
     links = Object.values(schema.tables).filter((t) => t.role === 'link').flatMap((t) => view.rows(t.name).map((row) => ({ source: String(row.source_id), relation: t.name, target: String(row.target_id) })));

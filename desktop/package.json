@@ -7,7 +7,7 @@
   "type": "module",
   "main": "out/main.js",
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc -p tsconfig.build.json && node scripts/speech.ts",
     "dev": "node scripts/dev.ts",
     "start": "npm --prefix ../lathe run build && npm run build && electron .",
     "pack": "npm --prefix ../lathe run build && npm run build && node scripts/stage-lathe.ts && electron-builder --mac --dir",
@@ -26,6 +26,7 @@
     },
     "files": [
       "out/**",
+      "!out/lathe-speech",
       "static/**",
       "package.json"
     ],
@@ -33,6 +34,10 @@
       {
         "from": "build/stage/node_modules",
         "to": "node_modules"
+      },
+      {
+        "from": "out/lathe-speech",
+        "to": "lathe-speech"
       }
     ],
     "npmRebuild": false,
@@ -53,7 +58,8 @@
               "public.folder"
             ]
           }
-        ]
+        ],
+        "NSMicrophoneUsageDescription": "Lathe listens while you dictate to Claude in the chat. Speech is recognized on this Mac; audio never leaves it."
       }
     },
     "dmg": {

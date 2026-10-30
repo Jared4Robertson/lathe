@@ -5,6 +5,7 @@ import { type MetaRelation } from '../platform/meta-model/reads';
 import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { relationLabelOf } from '../specs/labels';
 import { useCameraGestures } from '../graph/gestures';
+import { followBox } from '../graph/morph';
 import { BLOCK_BELOW_PX, frameRect, type Viewport } from '../graph/camera';
 import { PLAIN_LOOK, useThemeVersion } from '../graph/look';
 import type { FadeLook } from '../graph/fade';
@@ -484,6 +485,21 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
     fitted.current = true;
     framedFor.current = frameKey;
   }, [framed, frameKey, placed, cameraKey]);
+  // New data leaves the camera where it is (the frame key holds no layout), unless the new layout moved the box it
+  // frames, when the camera glides with that box; the boxes glide to their new places on the shared motion (styles.css,
+  // LA-PAT-APP-UX-R22).
+  const followed = useRef<{ id: string; rect: Rect } | null>(null);
+  useLayoutEffect(() => {
+    if (!placed) return;
+    const id = at.pick ?? at.scope;
+    const now = placed.rects.get(id);
+    const was = followed.current;
+    followed.current = now ? { id, rect: now } : null;
+    if (!was || !now || was.id !== id || !fitted.current || framedFor.current !== frameKey) return;
+    const box = (r: Rect) => ({ x: r.x, y: r.y, w: r.width, h: r.height });
+    const v = followBox(getViewport(), box(was.rect), box(now), { min: MIN_ZOOM, max: MAX_ZOOM });
+    if (v) camera.moveTo(v, true);
+  }, [placed]);
   useLayoutEffect(() => {
     const key = frameKey;
     if (framedFor.current === key) return;

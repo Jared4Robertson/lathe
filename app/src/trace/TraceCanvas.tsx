@@ -10,6 +10,7 @@ import { hitPlate } from '../graph/hit';
 import { PLAIN_LOOK, readLook, useThemeVersion, type Look } from '../graph/look';
 import { parentLine } from '../graph/map';
 import { readMotion } from '../graph/motion';
+import { followBox, useMorph } from '../graph/morph';
 import { boxColors, GAP_KIND, paint, type Bar, type Camera, type Line, type PaintState } from '../graph/paint';
 import { plateName, plateOf, plateTip, type Plate, type PlainBox } from '../graph/plate';
 import { setTextMeasure, type TextMeasure } from '../graph/text';
@@ -127,6 +128,8 @@ function TraceScene({ index, focus, map, laid, at, kept, gapsOnly, onNavigate, o
   sizeRef.current = size;
   /** The most the camera zooms in: enough to read the map's smallest box. */
   const maxZoom = useMemo(() => maxZoomFor(laid), [laid]);
+  /** What a new layout moved glides from where it was (graph/morph.ts, LA-PAT-APP-UX-R22). */
+  const morph = useMorph(laid);
 
   // ---- The camera ----
   const view = useRef<Viewport>({ x: 0, y: 0, zoom: 1 });
@@ -175,8 +178,11 @@ function TraceScene({ index, focus, map, laid, at, kept, gapsOnly, onNavigate, o
   }, [size, map, laid, at, frameBox, space, open, maxZoom]);
 
   // Frame the focus whenever its node, the stage's size or the open space changes: a glide, except the first picture (a
-  // stage switch lands on the focus at once) and a resize. New data with the same focus leaves the camera where it is.
-  const framed = useRef<{ w: number; h: number; at: string; focus: string; map: TraceMap } | null>(null);
+  // stage switch lands on the focus at once) and a resize. New data with the same focus leaves the camera where it is, or
+  // glides it with the focus's box where the new layout moved that (LA-PAT-APP-UX-R22).
+  type Framed = { w: number; h: number; at: string; focus: string; map: TraceMap; box: { x: number; y: number; w: number; h: number } | null };
+  const framed = useRef<Framed | null>(null);
+  const boxOf = (key: string) => { const n = laid.nodes.get(key); return n ? { x: n.x, y: n.y, w: n.w, h: n.h } : null; };
   /** How long the glide to a new focus takes, for the fade to follow it. */
   const glideMs = useRef<number | null>(null);
 
@@ -195,7 +201,7 @@ function TraceScene({ index, focus, map, laid, at, kept, gapsOnly, onNavigate, o
     const back = cameraKey ? keptCamera<Viewport>(cameraKey, 'trace', framedNow) : null;
     if (back && size) {
       moveTo(back, false);
-      framed.current = { w: size.w, h: size.h, at, focus, map };
+      framed.current = { w: size.w, h: size.h, at, focus, map, box: boxOf(at) };
       skipFraming.current = framing;
     } else keptView.current = back;
   });
@@ -210,9 +216,14 @@ function TraceScene({ index, focus, map, laid, at, kept, gapsOnly, onNavigate, o
     if (!target || !size || (kept && !framing())) return;
     keptView.current = null;
     const was = framed.current;
-    framed.current = { w: size.w, h: size.h, at, focus, map };
+    const box = boxOf(at);
+    framed.current = { w: size.w, h: size.h, at, focus, map, box };
     const resized = was !== null && (was.w !== size.w || was.h !== size.h);
-    if (was && !resized && was.focus === focus && was.map !== map) return;
+    if (was && !resized && was.focus === focus && was.map !== map) {
+      const follow = was.at === at && was.box && box ? followBox(view.current, was.box, box, { min: MIN_ZOOM, max: maxZoom }) : null;
+      if (follow) moveTo(follow, true);
+      return;
+    }
     const ms = moveTo(target, !kept && was !== null && !resized);
     if (!was || was.at !== at) glideMs.current = ms;
   }, [framing]);
@@ -287,7 +298,8 @@ function TraceScene({ index, focus, map, laid, at, kept, gapsOnly, onNavigate, o
   const frameAt = useCallback((v: Viewport, s: { w: number; h: number }, whole = false): TraceFrame => {
     const keys = whole ? [...laid.nodes.keys()] : null;
     const drawn = keys ? { boxes: keys.map((id) => ({ id })), bars: [] } : drawnFor(laid, v, s.w, s.h, [at]);
-    const shown = drawn.boxes.map((b) => plateFor(b.id)).filter((p): p is Plate => p !== null);
+    const now = performance.now();
+    const shown = drawn.boxes.map((b) => plateFor(b.id)).filter((p): p is Plate => p !== null).map((p) => morph.plate(p, now));
     const byKey = new Map(shown.map((p) => [p.place, p]));
     const lines: Line[] = [];
     for (const b of shown) {
@@ -337,7 +349,7 @@ function TraceScene({ index, focus, map, laid, at, kept, gapsOnly, onNavigate, o
       host: wrapper.current, space, dpr, color: p ? boxColors(look.current, p).edge : look.current.ink,
       box: n ? { left: n.x * v.zoom + v.x, top: n.y * v.zoom + v.y, right: (n.x + n.w) * v.zoom + v.x, bottom: (n.y + n.h) * v.zoom + v.y } : null,
     });
-    if (!spot.done || !faded.done || marksMoving(live, frame.plates.map((x) => x.id))) requestPaint();
+    if (!spot.done || !faded.done || morph.moving(performance.now()) || marksMoving(live, frame.plates.map((x) => x.id))) requestPaint();
     else if (sp.to === 0 && sp.lit) { sp.lit = null; sp.litLines = null; }
   };
   useEffect(() => { requestPaint(); });
