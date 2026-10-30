@@ -27,6 +27,7 @@ import { ChangesProvider } from './changes/ChangesProvider';
 import { ProductsPicker } from './views/ProductsPicker';
 import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost, type ToolPanel } from './views/overlays';
 import { ChatPanel } from './chat/ChatPanel';
+import { useWindowVoice, VoiceContext } from './chat/voice/useVoice';
 import { useAppRequests } from './chat/appRequests';
 import { CARD_MIN, CHAT_DEFAULT } from './exploring/session-settings/model';
 import { useSessionSettings } from './exploring/session-settings/use-session-settings';
@@ -160,6 +161,13 @@ function Shell() {
     if (!chatShown) { showOrHideChat({ shown: true }); announce('Chat shown'); }
     setTimeout(() => chatInput.current?.focus(), 0);
   }, !!chatBridge);
+  // The chat's voice (LA-PLT-UC20): voice activation wakes the chat, hidden or not, and focuses its message box.
+  const wakeChat = useCallback(() => {
+    showOrHideChat({ shown: true });
+    setTimeout(() => chatInput.current?.focus(), 0);
+  }, []);
+  const voice = useWindowVoice(chatBridge ? desktopBridge()?.voice ?? null : null, wakeChat, announce);
+  useCommand('dictate', () => { wakeChat(); voice?.toggle(); }, !!voice);
   useAppRequests(spec.index, spaces.current?.id ?? null);
   useCommand('nextProblem', () => stepProblem(1, announce));
   useCommand('previousProblem', () => stepProblem(-1, announce));
@@ -277,6 +285,7 @@ function Shell() {
       {isHome && <ProductsPicker version={spec.version} onClose={leaveHome} />}
       {toolPanel}
       {chatShown && chatBridge && (
+        <VoiceContext.Provider value={voice}>
         <ChatPanel
           bridge={chatBridge}
           index={spec.index}
@@ -286,6 +295,7 @@ function Shell() {
           onClose={() => { showOrHideChat({ shown: false }); announce('Chat hidden'); }}
           input={chatInput}
         />
+        </VoiceContext.Provider>
       )}
     </div>
     </RoomContext.Provider>

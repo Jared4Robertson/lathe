@@ -356,6 +356,10 @@
 {"source_id":"LA-PLT-UC19-FL02-S13","target_id":"LA-V99"}
 {"source_id":"LA-PLT-UC19-FL02-S14","target_id":"LA-V99"}
 {"source_id":"LA-PLT-UC19-FL02-S16","target_id":"LA-V99"}
+{"source_id":"LA-PLT-UC20-FL02-S01","target_id":"LA-V99"}
+{"source_id":"LA-PLT-UC20-FL02-S02","target_id":"LA-V99"}
+{"source_id":"LA-PLT-UC20-FL02-S03","target_id":"LA-V99"}
+{"source_id":"LA-PLT-UC20-FL02-S04","target_id":"LA-V99"}
 {"source_id":"LA-TRC-UC09-FL01-S01","target_id":"LA-V51"}
 {"source_id":"LA-TRC-UC09-FL01-S02","target_id":"LA-V51"}
 {"source_id":"LA-TRC-UC09-FL01-S03","target_id":"LA-V51"}

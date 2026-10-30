@@ -11,6 +11,7 @@ import type { Chrome, SavedChrome } from '../chrome.ts';
 import type { LaunchModel } from '../launch.ts';
 import type { MenuKeys } from '../menu.ts';
 import type { DataFiles } from '../records.ts';
+import type { VoiceListener } from '../voice.ts';
 
 /** A window open on a product folder. Its server is the App server's (app-server/). */
 export interface OpenWindow {
@@ -36,6 +37,8 @@ export interface OpenWindow {
   /** The chat state the page last got, and the timer that sends the next patch. */
   chatSent: ChatState | null;
   chatTimer?: NodeJS.Timeout;
+  /** The window's listening for the chat's voice, once the page has asked (voice.ts). */
+  voice?: VoiceListener;
 }
 
 /** The whole aggregate: the open windows by folder, the saved places by folder, the saved chrome, and the chat modes by folder. */
