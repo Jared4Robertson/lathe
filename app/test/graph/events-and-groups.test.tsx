@@ -8,6 +8,7 @@ import { SETTINGS_KEY, sessionSettingsRepository } from '../../src/exploring/ses
 import { readView } from '../../src/views/place';
 import { openApp } from '../helpers';
 import { indexOf } from '../fixtures/load';
+import { modelWorkspace } from '../fixtures/model';
 import { manyOfOneKindWorkspace, testIndex } from './workspace';
 
 // The graph's tree for domain events, technical records and tests, and the
@@ -68,7 +69,7 @@ describe('the rules the graph keeps', () => {
     // The record page titles a list of one kind by that kind, and a mixed one "Children".
     await openApp('/DM-SHOP-EP01');
     expect(await screen.findByRole('heading', { name: /^API requirements/ })).toBeInTheDocument();
-    await openApp('/DM-SHOP-CMD01');
+    await openApp('/P-D-EP01', { data: modelWorkspace() });
     expect(await screen.findByRole('heading', { name: /^Children/ })).toBeInTheDocument();
   });
 
