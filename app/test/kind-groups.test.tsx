@@ -9,9 +9,9 @@ import { main, openApp, section, stageOf } from './helpers';
 
 // How the nav, the domain, product and group pages and the record page read a domain by stage and
 // kind (LA-V90, LA-V91, LA-V92): a group that is a record links and one the app computes only
-// folds, the technical and test kinds in the plan's order, the records with no owner, and a
-// command's endpoint. An endpoint's and an integration's own pages are in endpoint-page.test.tsx and
-// integration-page.test.tsx.
+// folds, the technical and test kinds in the plan's order, and the records with no owner. A command's endpoints are on
+// its own page (command-page.test.tsx), an endpoint's and an integration's on theirs (endpoint-page.test.tsx and
+// integration-page.test.tsx).
 
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 const panel = () => nav().querySelector<HTMLElement>('.space-items')!;
@@ -161,13 +161,5 @@ describe('groups by stage and kind', () => {
     expect(treeParent(index, 'P-D-EP01')).toBe('P-D/interaction-design/endpoint');
     expect(treeParent(index, 'P-INT01')).toBe('P-D/interaction-design/integration');
     expect(treeChildren(index, 'P-D/interaction-design')).toContain('P-D/interaction-design/integration');
-  });
-
-  it("LA-V92-R27-T01 A command's page lists the endpoint that exposes it, with its method and route", async () => {
-    await openApp('/DM-SHOP-CMD01');
-    await screen.findByRole('heading', { level: 1, name: 'Add item' });
-    const children = section(/^Children/);
-    const row = within(children).getByRole('link', { name: /DM-SHOP-EP01/ }).closest('li')!;
-    expect(row.textContent).toContain('POST · /basket/items');
   });
 });

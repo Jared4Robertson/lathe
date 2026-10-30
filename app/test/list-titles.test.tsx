@@ -1,6 +1,7 @@
 import './graph/setup';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
+import { modelWorkspace } from './fixtures/model';
 import { workspace } from './fixtures/workspace';
 import { facts, openApp } from './helpers';
 
@@ -31,13 +32,13 @@ describe('list titles', () => {
     fireEvent.click(within(wiki()).getByRole('button', { name: 'Expand DM-SHOP-CAP01' }));
     expect(within(wiki()).getByRole('list', { name: 'Use cases of DM-SHOP-CAP01' })).toBeInTheDocument();
 
-    // Children of several kinds stay "Children", each row tagged by its kind: a command's handler and endpoint.
-    await openApp('/DM-SHOP-CMD01');
-    await screen.findByRole('heading', { level: 1, name: 'Add item' });
+    // Children of several kinds stay "Children", each row tagged by its kind: an endpoint's handler and API requirement.
+    await openApp('/P-D-EP01', { data: modelWorkspace() });
+    await screen.findByRole('heading', { level: 1, name: 'POST /loans' });
     expect(within(wiki()).getByRole('heading', { level: 2, name: /^Children/ })).toHaveTextContent('Children2');
-    const mixed = within(wiki()).getByRole('list', { name: 'Children of DM-SHOP-CMD01' });
-    expect(within(mixed).getByText('Command handler', { selector: 'small' })).toBeInTheDocument();
-    expect(within(mixed).getByText('Endpoint', { selector: 'small' })).toBeInTheDocument();
+    const mixed = within(wiki()).getByRole('list', { name: 'Children of P-D-EP01' });
+    expect(within(mixed).getByText('Endpoint handler', { selector: 'small' })).toBeInTheDocument();
+    expect(within(mixed).getByText('API requirement', { selector: 'small' })).toBeInTheDocument();
     noListInFacts(/^Children/);
 
     // A group's members are titled by their kind, in the wiki only.
