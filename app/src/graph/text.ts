@@ -67,12 +67,12 @@ export const metaWidth = (text: string, font = META_FONT) => current.em(text, 'm
 
 /**
  * Breaks a text into lines no wider than `width` by `measure`, greedily, only after a space, so no
- * word is cut. A word wider than a line on its own is the one exception: it breaks after one of
- * `breaks` (a hyphen in a title or an ID, a code identifier's punctuation in a title), with `camel` also
- * between the words of a camelCase identifier, and, if a part is still too wide, between characters. The
+ * word is cut. A word wider than a line on its own breaks after one of `breaks` (a code identifier's
+ * punctuation in a title), with `camel` also between the words of a camelCase identifier, and, if a part
+ * is still too wide, between characters; with `whole` it never breaks and stays on its own line. The
  * lines joined give the text back; a space ending a line is not measured.
  */
-export function wrapText(text: string, width: number, measure: (s: string) => number, breaks = '', camel = false): string[] {
+export function wrapText(text: string, width: number, measure: (s: string) => number, breaks = '', camel = false, whole = false): string[] {
   const fits = (s: string) => measure(s.trimEnd()) <= width;
   /** Greedy lines of some tokens; a line that is one token too wide is broken by `split`. */
   const greedy = (tokens: readonly string[], split: (token: string) => string[]): string[] => {
@@ -90,7 +90,7 @@ export function wrapText(text: string, width: number, measure: (s: string) => nu
   const at = breaks.replace(/[\]\\^-]/g, '\\$&');
   const parts = new RegExp(camel ? `[^${at}]*?(?:[${at}]+|[a-z0-9](?=[A-Z]))|[^${at}]+` : `[^${at}]*[${at}]+|[^${at}]+`, 'g');
   const byBreaks = (word: string) => greedy(word.match(parts) ?? [word], byChars);
-  return greedy(text.match(/\S+\s*|\s+/g) ?? [], at ? byBreaks : byChars);
+  return greedy(text.match(/\S+\s*|\s+/g) ?? [], whole ? (word) => [word] : at ? byBreaks : byChars);
 }
 
 /** What a box's label says: its title and its kind and ID line ("Use case · LA-EXP-UC03"; a group's "Stage · LA-EXP", "Aggregate folder · LA-EXP"). */
@@ -154,7 +154,8 @@ export function wrapLabel(lines: { title: string; meta: string }, { shape, marks
   const inner = width - 2 * LABEL_PAD - room.l - room.r;
   const label: WrappedLabel = {
     title: wrapText(lines.title, inner, (s) => titleWidth(s), TITLE_BREAKS, true),
-    meta: wrapText(lines.meta, inner - metaRoom({ marks, marked, centered }), (s) => metaWidth(s), '-'),
+    // The kind and ID line breaks only between words: an ID is never broken across lines (LA-EXP-DS06).
+    meta: wrapText(lines.meta, inner - metaRoom({ marks, marked, centered }), (s) => metaWidth(s), '', false, true),
   };
   const pad = room.t + room.b;
   return pad > 0 ? { ...label, pad } : label;
