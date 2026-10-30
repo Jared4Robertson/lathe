@@ -151,6 +151,7 @@
 {"id":"LA-PLT-EN20-TB","title":"settings.json","entity_id":"LA-PLT-EN20","name":"settings.json","storage":"file","file":"desktop/src/shell-settings/repository.ts"}
 {"id":"LA-PLT-EN24-TB","title":"lathe:keybindings","entity_id":"LA-PLT-EN24","name":"lathe:keybindings","storage":"browser storage","file":"app/src/platform/key-bindings/repository.ts"}
 {"id":"LA-PLT-EN26-TB","title":"lathe:voice","entity_id":"LA-PLT-EN26","name":"lathe:voice","storage":"browser storage","file":"app/src/platform/voice-settings/repository.ts"}
+{"id":"LA-PLT-EN27-TB","title":"chat-modes.json","entity_id":"LA-PLT-EN27","name":"chat-modes.json","storage":"file","file":"desktop/src/window-chat/repository.ts"}
 {"id":"LA-PLT-RM01-TB","title":"Workspace","read_model_id":"LA-PLT-RM01","name":"Workspace","storage":"in memory","file":"lathe/src/types.ts"}
 {"id":"LA-PLT-RM02-TB","title":"KeymapTable","read_model_id":"LA-PLT-RM02","name":"KeymapTable","storage":"in memory","file":"app/src/platform/key-bindings/read-model.ts"}
 {"id":"LA-PLT-RM03-TB","title":"ThemesTable","read_model_id":"LA-PLT-RM03","name":"ThemesTable","storage":"in memory","file":"app/src/platform/appearance/read-model.ts"}
