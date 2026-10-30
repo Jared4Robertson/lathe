@@ -47,8 +47,8 @@ describe('LA-V132-R02-T01 the Command editor writes only through the aggregate\'
     const user = userEvent.setup();
     const { commands, writes } = await openApp('/DM-SHOP-CMD01', { data: withPolicy(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP-CMD01');
-    // It has its handler, so only a policy can be added under it.
-    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add policy', 'Remove']);
+    // It has its handler, so a policy can be added under it, and an endpoint through the Endpoint aggregate's own Add.
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add policy', 'Add endpoint', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit DM-SHOP-CMD01' });
     await user.click(within(form).getByRole('button', { name: 'Remove DM-SHOP-EV01 from Raises' }));
