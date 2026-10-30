@@ -25,12 +25,14 @@
 // It does not recognize a route built at run time (from parts, by a function, or matched by prefix with startsWith),
 // a route table in a configuration file, a framework's file-system routes (a pages/ or app/ folder) or a
 // language whose strings and comments are not written as JavaScript's are.
-import { glob, readdir, readFile, stat } from 'node:fs/promises';
+import { glob, readFile, stat } from 'node:fs/promises';
 import path from 'node:path';
 import type { DuckDBConnection } from '@duckdb/node-api';
 import { otherProductHolds, type LatheConfig } from '../config.ts';
 import type { GapRule } from '../coverage.ts';
 import type { Store } from '../platform/data/store.ts';
+import { keptByText } from '../platform/data/kept-by-text.ts';
+import { walkFiles } from './source-files.ts';
 
 /** The HTTP methods an endpoint may have, in capitals. */
 const HTTP_METHODS = ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'] as const;
@@ -214,8 +216,11 @@ export interface ServedRoute {
   line: number;
 }
 
-/** The routes a file's code serves (see the head of this file for the patterns), each once per method. */
-export function servedRoutes(text: string): ServedRoute[] {
+/** The routes a file's code serves (see the head of this file for the patterns), each once per method (kept by the text: nothing changes them). */
+export const servedRoutes: (text: string) => readonly ServedRoute[] = keptByText(readServedRoutes);
+
+// The routes a file's code serves (servedRoutes).
+function readServedRoutes(text: string): ServedRoute[] {
   const { tokens, code } = tokenize(text);
   const lineStarts = [0];
   for (let k = 0; k < text.length; k++) if (text[k] === '\n') lineStarts.push(k + 1);
@@ -259,7 +264,10 @@ interface Named {
   methods: Set<string>[];
 }
 
-function namedIn(text: string): Named {
+// What a file names (kept by the text: nothing changes it).
+const namedIn = keptByText(readNamed);
+
+function readNamed(text: string): Named {
   // Only a regular expression that matches a path needs the text tokenized: one holds an escaped slash.
   return { mentions: mentionedRoutes(text, text.includes('\\/') ? tokenize(text).tokens : []), methods: methodsByLine(text) };
 }
@@ -315,18 +323,6 @@ WHERE NOT EXISTS (SELECT 1 FROM route_facts r WHERE r.normal = s.normal
   AND ((r.kind = 'endpoint' AND (s.method IS NULL OR r.method = s.method)) OR (r.kind = 'view' AND (s.method IS NULL OR s.method = 'GET'))))`,
 }];
 
-// Every file under a folder, from the product root, leaving out dependencies and version control.
-async function filesUnder(root: string, folder: string): Promise<string[]> {
-  const found: string[] = [];
-  for (const entry of await readdir(path.join(root, folder), { withFileTypes: true })) {
-    if (entry.name === 'node_modules' || entry.name === '.git') continue;
-    const rel = path.join(folder, entry.name);
-    if (entry.isDirectory()) found.push(...(await filesUnder(root, rel)));
-    else if (entry.isFile()) found.push(rel);
-  }
-  return found;
-}
-
 /**
  * Reads what the route checks need from the code: each endpoint's and view's route against the files of what
  * implements it, and the routes served in the endpoint handlers' files and the router files the config names.
@@ -343,7 +339,7 @@ export async function gatherRouteFacts({ root, routers }: Pick<LatheConfig, 'roo
         if (rel.startsWith('..') || path.isAbsolute(rel)) return { files: [], texts: [] };
         try {
           const info = await stat(resolved);
-          const files = info.isFile() ? [rel] : info.isDirectory() ? await filesUnder(root, rel) : [];
+          const files = info.isFile() ? [rel] : info.isDirectory() ? await walkFiles(root, (_, name) => name === 'node_modules' || name === '.git', rel) : [];
           return { files, texts: await Promise.all(files.map((f) => readFile(path.join(root, f), 'utf8'))) };
         } catch {
           return { files: [], texts: [] };

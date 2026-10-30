@@ -1,7 +1,7 @@
 import { Fragment } from 'react';
 import { LongList } from '../components/LongList';
 import { checkPagePath } from '../format/reference';
-import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { compareIds, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { groupRecords } from './groups';
 import { RecordLink, RecordRowBody, Section, SpecLink, TestStateTag, idText } from './parts';
 import type { GapKind, Judgment, RunBy, TraceGap } from '../../../lathe/src/traceability/record-trace/read-model';
@@ -15,7 +15,7 @@ interface TraceGroup {
   ids: string[];
 }
 
-const sortIds = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+const sortIds = (ids: Iterable<string>) => [...new Set(ids)].sort(compareIds);
 
 /**
  * The section's lists: an obligation's chain, then the links into it and out of it to what the chain does not hold; a
