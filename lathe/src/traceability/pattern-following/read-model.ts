@@ -7,6 +7,7 @@
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { CapabilityRow, SettingValueRow, UseCaseRow } from '../../platform/data/tables.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 /** The value a follower gives one setting. */
 export interface SettingLine {
@@ -45,8 +46,6 @@ export interface FollowingTable {
   /** Each pattern's followers by domain, in ID order; a pattern nobody follows has an empty list. */
   patterns: Map<string, FollowingDomain[]>;
 }
-
-const byId = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
 
 /** Rows by the values of their columns, each list in the table's order. */
 function grouped<T>(rows: Row[], ...columns: string[]): Map<string, T[]> {
@@ -95,7 +94,7 @@ export function followingTableFrom(view: ReadView): FollowingTable {
     patterns: new Map(
       [...patterns].map(([pattern, byDomain]) => [
         pattern,
-        [...byDomain.values()].sort((a, b) => byId(a.domain, b.domain)).map((d) => ({ ...d, useCases: d.useCases.sort((a, b) => byId(a.follower, b.follower)) })),
+        [...byDomain.values()].sort((a, b) => compareIds(a.domain, b.domain)).map((d) => ({ ...d, useCases: d.useCases.sort((a, b) => compareIds(a.follower, b.follower)) })),
       ]),
     ),
   };

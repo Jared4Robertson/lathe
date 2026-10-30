@@ -8,6 +8,7 @@
 import type { ReadView } from '../../platform/data/rules.ts';
 import { inSpace, placeRecords } from '../../exploring/placement.ts';
 import { servesOf } from '../../trace/serves.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 /** What one record serves. */
 export interface RecordServes {
@@ -33,8 +34,6 @@ export interface ServesTable {
   products: Map<string, ProductServes>;
 }
 
-const byId = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
-
 /** The projection: the read model's table over the rows (in memory; nothing keeps it). */
 export function servesTableFrom(view: ReadView): ServesTable {
   const served = servesOf(view);
@@ -50,8 +49,8 @@ export function servesTableFrom(view: ReadView): ServesTable {
     const space = [...placed.values()].filter((r) => inSpace(r, product));
     products.set(product, {
       product,
-      served: space.filter((r) => served.has(r.id)).map((r) => records.get(r.id)!).sort((a, b) => byId(a.id, b.id)),
-      unserved: space.filter((r) => owes(r.kind) && !served.has(r.id)).map((r) => r.id).sort(byId),
+      served: space.filter((r) => served.has(r.id)).map((r) => records.get(r.id)!).sort((a, b) => compareIds(a.id, b.id)),
+      unserved: space.filter((r) => owes(r.kind) && !served.has(r.id)).map((r) => r.id).sort(compareIds),
     });
   }
   return { records, products };

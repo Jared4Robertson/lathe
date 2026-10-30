@@ -6,6 +6,7 @@
 // is the aggregate's own instance type.
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { DataStoreRow } from '../../platform/data/tables.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A record a data store page names: its ID, kind and title. */
 export interface NamedRecord {
@@ -42,8 +43,6 @@ export interface DataStoreTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function dataStoreTableFrom(view: ReadView): DataStoreTable {
   const named = new Map<string, NamedRecord>();
@@ -67,13 +66,13 @@ export function dataStoreTableFrom(view: ReadView): DataStoreTable {
       store,
       parent: named.get(parentId) ?? { id: parentId, kind: store.product_id ? 'product' : 'domain', title: parentId },
       providedBy: provider === undefined ? null : (named.get(provider) ?? { id: provider, kind: 'integration', title: provider }),
-      stores: (storedHere.get(store.id) ?? []).sort(byId),
+      stores: (storedHere.get(store.id) ?? []).sort(byRecordId),
     });
     const summary = { id: store.id, title: store.title, kind: store.kind };
     parents.get(parentId)?.push(summary);
     if (store.domain_id) parents.get(productOf.get(store.domain_id) ?? '')?.push(summary);
   }
-  for (const list of parents.values()) list.sort(byId);
+  for (const list of parents.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { pages, parents, kinds };
