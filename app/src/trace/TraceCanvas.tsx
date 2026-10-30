@@ -13,7 +13,9 @@ import { boxColors, GAP_KIND, paint, type Bar, type Camera, type Line, type Pain
 import { plateName, plateOf, plateTip, type Plate, type PlainBox } from '../graph/plate';
 import { setTextMeasure, type TextMeasure } from '../graph/text';
 import { TapCard, useTapToOpen } from '../graph/touch';
-import { keepCamera, keptCamera } from '../views/cameras';
+import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
+import { keptCamera } from '../exploring/tab-set/reads';
+import { runTabSetCommand } from '../exploring/tab-set/run';
 import { useCameraGestures } from '../graph/gestures';
 import { useCommand } from '../shell/commands';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
@@ -78,7 +80,7 @@ export interface TraceCanvasProps {
   space?: OpenSpaceStore;
   /** The node the keyboard is on (the table's focused link, or the walk's node that is no record), drawn with the focus ring and brought into view; null for none. */
   ring: string | null;
-  /** The place shown (views/cameras.ts), whose camera is kept and taken back. */
+  /** The place shown (the Tab set's cameras, exploring/tab-set), whose camera is kept and taken back. */
   cameraKey?: string;
   /** Opens a record in a new place, when the host has places. */
   onOpenNew?: (id: string, background: boolean) => void;
@@ -158,7 +160,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
   /** How long the glide to a new focus takes, for the fade to follow it. */
   const glideMs = useRef<number | null>(null);
 
-  // Each place keeps its camera (views/cameras.ts): as the place shown changes (another tab), the one left keeps where
+  // Each place keeps its camera (the Tab set's cameras, exploring/tab-set): as the place shown changes (another tab), the one left keeps where
   // its camera was, and the one shown takes its own back, at once, when it still frames the same node.
   const framedNow = `${focus} ${at}`;
   const cameraPlace = useRef<{ key: string | undefined; framed: string }>({ key: cameraKey, framed: framedNow });
@@ -168,7 +170,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
   useLayoutEffect(() => {
     const was = cameraPlace.current;
     if (was.key === cameraKey) { cameraPlace.current = { key: cameraKey, framed: framedNow }; return; }
-    if (was.key && sizeRef.current) keepCamera(was.key, 'trace', { framed: was.framed, view: view.current });
+    if (was.key && sizeRef.current) runTabSetCommand(keepCamera, { place: was.key, stage: 'trace', camera: { framed: was.framed, view: view.current } });
     cameraPlace.current = { key: cameraKey, framed: framedNow };
     const back = cameraKey ? keptCamera<Viewport>(cameraKey, 'trace', framedNow) : null;
     if (back && size) {
@@ -179,7 +181,7 @@ function TraceScene({ index, focus, map, at, kept, gapsOnly, onNavigate, onPeek,
   });
   useEffect(() => () => {
     const { key, framed: what } = cameraPlace.current;
-    if (key && sizeRef.current) keepCamera(key, 'trace', { framed: what, view: view.current });
+    if (key && sizeRef.current) runTabSetCommand(keepCamera, { place: key, stage: 'trace', camera: { framed: what, view: view.current } });
   }, []);
   useLayoutEffect(() => {
     if (skipFraming.current === framing) { skipFraming.current = null; return; }

@@ -14,7 +14,9 @@ import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
 import { ErdLeader } from './leader';
 import { useOpenSpace, type OpenSpaceStore } from '../views/openSpace';
-import { keepCamera, keptCamera } from '../views/cameras';
+import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
+import { keptCamera } from '../exploring/tab-set/reads';
+import { runTabSetCommand } from '../exploring/tab-set/run';
 import { useWalk } from '../graph/steps';
 import { useCommand } from '../shell/commands';
 import { StageCamera, StageKey, StageToolbar, ZOOM_STEP, type KeyEntry } from '../views/StageChrome';
@@ -56,7 +58,7 @@ export interface ErdViewProps {
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the focus is framed. */
   space?: OpenSpaceStore;
-  /** The place the ERD shows (views/cameras.ts): its camera is kept as the place is left and taken back as it shows again. */
+  /** The place the ERD shows (the Tab set's cameras, exploring/tab-set): its camera is kept as the place is left and taken back as it shows again. */
   cameraKey?: string;
   /** Opens a box in a new place (Cmd or Ctrl+click, or a middle-click for the background), when the host has places. */
   onOpenNew?: (id: string, background: boolean) => void;
@@ -417,7 +419,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
   // Before paint (LA-PAT-APP-UX-R08): the first picture appears already framed, never drawn at the
   // default viewport and then moved; each focus after it, and each change of the open space, glides
   // there from the view before.
-  // Each place keeps its camera (views/cameras.ts): as the place shown changes (another tab), the one left keeps where
+  // Each place keeps its camera (the Tab set's cameras, exploring/tab-set): as the place shown changes (another tab), the one left keeps where
   // its camera was, and the one shown takes its own back, at once, when it still frames the same scope.
   const framedFor = useRef('');
   const framed = `${at.pick ?? at.scope}`;
@@ -426,7 +428,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
   useLayoutEffect(() => {
     const was = cameraPlace.current;
     if (was.key !== cameraKey) {
-      if (was.key && fitted.current) keepCamera(was.key, 'erd', { framed: was.framed, view: getViewport() });
+      if (was.key && fitted.current) runTabSetCommand(keepCamera, { place: was.key, stage: 'erd', camera: { framed: was.framed, view: getViewport() } });
       cameraPlace.current = { key: cameraKey, framed, restore: true };
     }
     cameraPlace.current.framed = framed;
@@ -446,7 +448,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
   }, [frameKey, frameFocus]);
   useEffect(() => () => {
     const { key, framed } = cameraPlace.current;
-    if (key && fitted.current) keepCamera(key, 'erd', { framed, view: getViewport() });
+    if (key && fitted.current) runTabSetCommand(keepCamera, { place: key, stage: 'erd', camera: { framed, view: getViewport() } });
   }, []);
   // `.` and the toolbar's Frame frame the focus again, as on every stage; the camera's buttons zoom about the frame's
   // middle and fit the whole map.

@@ -9,7 +9,8 @@ const submenu = (item: Item | undefined) => (item?.submenu ?? []) as Item[];
 /** Every item of a menu, its submenus' items included. */
 const flat = (items: Item[]): Item[] => items.flatMap((m) => [m, ...flat(submenu(m))]);
 
-function template(mac: boolean, recent: string[] = []) {
+function template(mac: boolean, folders: string[] = []) {
+  const recent = folders.map((folder) => ({ folder, label: folder }));
   const actions = { recent, openFolder: vi.fn(), openRecent: vi.fn(), clearRecent: vi.fn(), runCommand: vi.fn() };
   return { actions, menu: menuTemplate(actions, mac) };
 }

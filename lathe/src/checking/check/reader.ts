@@ -26,8 +26,7 @@ export class InMemoryCheckReader implements CheckReader {
   }
 
   checksOn(product: string): CheckSummary[] | undefined {
-    if (!this.table.products.has(product)) return undefined;
-    return [...this.table.checks.values()].filter((c) => c.product === null || c.product === product).map((c) => ({ name: c.name, product: c.product, severity: c.severity, summary: c.summary }));
+    return this.table.products.get(product);
   }
 }
 

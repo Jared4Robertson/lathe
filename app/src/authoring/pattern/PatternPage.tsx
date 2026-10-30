@@ -4,11 +4,10 @@ import type { PatternRuleRow } from '../../../../lathe/src/platform/data/tables'
 import type { AggregatePageProps } from '../../record/pages';
 import { Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
 import type { SpecIndex } from '../../specs/data';
-import { RecordLink, Section, SpecLink } from '../../specs/parts';
-import { RuleMarks } from '../../specs/PatternParts';
-import { appliesWhenText, followingDomains, notApplicableReason, ruleStatus, settingText, settingValue, type AppliesWhen } from '../../specs/patterns';
+import { RecordLink, Section } from '../../specs/parts';
+import { appliesWhenText, type AppliesWhen } from '../../specs/patterns';
 import { RecordFrame } from '../../specs/RecordContent';
-import { addressOf } from '../../views/address';
+import { FollowedBy, FollowedInCount, OwedBy } from '../../traceability/pattern-following/Followers';
 import { PatternEditor } from './PatternEditor';
 import { usePattern } from './reads';
 
@@ -17,9 +16,10 @@ import { usePattern } from './reads';
 // its description and notes, its settings (each with what it means and the rules that depend on it), its rules under
 // their groups, and the domains that follow it with each one's settings and status per rule; a pattern rule its
 // statement, its setting and condition, and the domains that owe it; a pattern rule test its domain and scenario. Who
-// follows the pattern, the values they give and each rule's standing are Pattern following's and the coverage's, read
-// from the workspace's index until those reads are their own. What every record's page holds around that is the
-// Record page's (RecordFrame).
+// follows the pattern and the values they give are Pattern following's, its Followed by and Owed by
+// (traceability/pattern-following/Followers.tsx), read through its own query, with the following's editor; each rule's
+// standing is the coverage's, from the workspace's index. What every record's page holds around that is the Record
+// page's (RecordFrame).
 
 /** A pattern's followers have their own section, so its Traceability leaves them out. */
 const PATTERN_SKIP: ReadonlySet<string> = new Set(['in:follows']);
@@ -93,86 +93,6 @@ function Rules({ index, page }: { index: SpecIndex; page: Pattern }) {
   );
 }
 
-/** Each domain that follows the pattern: who follows it there, the values they give, and the domain's status per rule. */
-function FollowedBy({ index, page }: { index: SpecIndex; page: Pattern }) {
-  const patternId = page.pattern.id;
-  const domains = followingDomains(index, patternId);
-  return (
-    <Section title="Followed by" count={domains.length}>
-      {domains.length === 0 && <p className="hint">No use case follows this pattern, so no domain owes its rules.</p>}
-      {domains.map((followed) => {
-        const { domain, useCases } = followed;
-        const d = index.byId.get(domain);
-        // A domain that follows the pattern itself gives its settings on its own record, in the first row.
-        const givers = [...(followed.byDomain && d ? [d] : []), ...useCases];
-        return (
-          <section key={domain} className="pattern-domain" aria-label={`Followed in ${domain}`}>
-            <h3>
-              {d?.product ? <SpecLink to={addressOf(domain)} className="record-link"><code>{domain}</code> <span>{d.title}</span></SpecLink> : <SpecLink to={addressOf(domain)}><code>{domain}</code></SpecLink>}
-            </h3>
-            <div className="table-scroll table-stack">
-              <table className="data-table pattern-use-cases" role="table">
-                <caption className="sr-only">Use cases in {domain} that follow {patternId}, with their settings</caption>
-                <thead role="rowgroup">
-                  <tr role="row"><th scope="col" role="columnheader">Use case</th>{page.settings.map((s) => <th key={s.name} scope="col" role="columnheader"><code>{s.name}</code></th>)}</tr>
-                </thead>
-                <tbody role="rowgroup">
-                  {givers.map((uc) => (
-                    <tr key={uc.id} role="row">
-                      <th scope="row" role="rowheader">{uc.kind === 'domain' ? <>The whole domain</> : <RecordLink index={index} id={uc.id} />}</th>
-                      {page.settings.map((s) => {
-                        const given = settingValue(index, uc.id, patternId, s.name);
-                        return <td key={s.name} role="cell" data-label={s.name} className={notApplicableReason(given) !== null ? 'setting-na' : undefined}>{given ? settingText(given) : <span className="hint">not given</span>}</td>;
-                      })}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {page.rules.length > 0 && (
-              <table className="data-table pattern-rule-status">
-                <caption className="sr-only">How {domain} proves each rule of {patternId}</caption>
-                <thead><tr><th scope="col">Rule</th><th scope="col">In {domain}</th></tr></thead>
-                <tbody>
-                  {page.rules.map((r) => (
-                    <tr key={r.rule.id}>
-                      <th scope="row"><RecordLink index={index} id={r.rule.id} /></th>
-                      <td>{index.byId.has(r.rule.id) && <RuleMarks index={index} status={ruleStatus(index, index.byId.get(r.rule.id)!, domain, followed)} />}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            )}
-          </section>
-        );
-      })}
-    </Section>
-  );
-}
-
-/** The domains that owe a rule, each with its standing for it. */
-function OwedBy({ index, page, id }: { index: SpecIndex; page: Pattern; id: string }) {
-  const domains = followingDomains(index, page.pattern.id);
-  const rule = index.byId.get(id);
-  return (
-    <Section title="Owed by" count={domains.length}>
-      {domains.length === 0 || !rule ? <p className="hint">No domain follows this rule's pattern.</p> : (
-        <table className="data-table pattern-rule-status">
-          <thead><tr><th scope="col">Domain</th><th scope="col">Status</th></tr></thead>
-          <tbody>
-            {domains.map((followed) => (
-              <tr key={followed.domain}>
-                <th scope="row"><RecordLink index={index} id={followed.domain} /></th>
-                <td><RuleMarks index={index} status={ruleStatus(index, rule, followed.domain, followed)} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
-    </Section>
-  );
-}
-
 const ruleOf = (page: Pattern, id: string) => page.rules.find((r) => r.rule.id === id)!;
 const testOf = (page: Pattern, id: string) => page.rules.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
 
@@ -230,7 +150,7 @@ function summaryOf(index: SpecIndex, page: Pattern): { lead?: string; facts: Fac
         facts: [
           { label: 'Product', value: <RecordLink index={index} id={page.pattern.product_id} /> },
           { label: 'Holds', value: `${count(page.settings.length, 'setting', 'settings')}, ${count(page.rules.length, 'rule', 'rules')}` },
-          { label: 'Followed in', value: count(followingDomains(index, page.pattern.id).length, 'domain', 'domains') },
+          { label: 'Followed in', value: <FollowedInCount index={index} pattern={page.pattern.id} /> },
         ],
       };
     case 'pattern_rule': {

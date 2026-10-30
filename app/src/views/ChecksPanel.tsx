@@ -1,7 +1,9 @@
 import { useEffect } from 'react';
 import { LongList } from '../components/LongList';
+import { useProblems } from '../checking/problems/reads';
 import { checkPagePath } from '../format/reference';
-import { exceptionOwner, isWorkspaceProblem, problemOrder, type Problem, type RecordedException, type SpecIndex, type SpecRecord } from '../specs/data';
+import { readState } from '../record/page-parts';
+import { exceptionOwner, type RecordedException, type SpecIndex, type SpecRecord } from '../specs/data';
 import { idText, ProblemList, RecordLink, Section } from '../specs/parts';
 import { ToolPanelFrame } from './ToolPanel';
 
@@ -10,14 +12,9 @@ import { ToolPanelFrame } from './ToolPanel';
 // problems by check, errors first, then the workspace's, then the recorded exceptions. A problem's
 // row focuses its record on the stage, which the wiki card then shows, and the panel stays open to
 // work down the list, the row of the record in focus marked. A workspace problem names no record, so
-// its row opens its check's page in the wiki card. On a phone it is a bottom sheet.
-
-/** Problems by check, in the order of their first problem (errors first). */
-function byCheck(problems: Problem[]): [string, Problem[]][] {
-  const groups = new Map<string, Problem[]>();
-  for (const p of [...problems].sort(problemOrder)) groups.set(p.check, [...(groups.get(p.check) ?? []), p]);
-  return [...groups.entries()];
-}
+// its row opens its check's page in the wiki card. On a phone it is a bottom sheet. The problems are the
+// Problems read model's (list-problems, LA-CHK-QRY02), read again after every reload; the recorded
+// exceptions still come from the index.
 
 export interface ChecksPanelProps {
   /** The current space's index, so no other product's problems are in it. */
@@ -30,38 +27,40 @@ export interface ChecksPanelProps {
 }
 
 export function ChecksPanel({ index, product, focus, sheet, onClose }: ChecksPanelProps) {
-  const all = index.workspace.problems;
-  const workspace = all.filter((p) => isWorkspaceProblem(index, p));
-  const own = all.filter((p) => !isWorkspaceProblem(index, p));
-  const errors = all.filter((p) => p.severity === 'error').length;
+  const read = readState(index, product.id, useProblems(product.id, index), (answer) => answer.product === product.id, false);
+  const problems = 'answer' in read ? read.answer : null;
   // The row of the record in focus scrolls into view, so working down the list never loses the place.
-  useEffect(() => { document.querySelector('.checks-panel li.problem.is-current')?.scrollIntoView?.({ block: 'nearest' }); }, [focus]);
-  const counts = (
-    <p className={`checks ${errors ? 'failed' : 'ok'}`}>
-      {errors} error{errors === 1 ? '' : 's'} · {all.length - errors} warning{all.length - errors === 1 ? '' : 's'}
+  useEffect(() => { document.querySelector('.checks-panel li.problem.is-current')?.scrollIntoView?.({ block: 'nearest' }); }, [focus, problems]);
+  const counts = problems && (
+    <p className={`checks ${problems.errors ? 'failed' : 'ok'}`}>
+      {problems.errors} error{problems.errors === 1 ? '' : 's'} · {problems.warnings} warning{problems.warnings === 1 ? '' : 's'}
     </p>
   );
+  const workspace = problems?.workspace.reduce((n, g) => n + g.problems.length, 0) ?? 0;
   return (
     <ToolPanelFrame label="Checks" head={counts} className="checks-panel" sheet={sheet} onClose={onClose}>
-      <div className="spec-body">
-        {all.length === 0 && <p className="hint">Every check passed in {product.title}.</p>}
-        {byCheck(own).map(([check, group]) => (
-          <Section key={check} level={3} title={check} titleTo={checkPagePath(check)} count={group.length}>
-            <ProblemList index={index} problems={group} showCheck={false} current={focus} />
-          </Section>
-        ))}
-        {workspace.length > 0 && (
-          <Section level={3} title="Workspace" count={workspace.length}>
-            <p className="hint">Problems that belong to no product, such as in the meta-model or the config. Every space shows them.</p>
-            {byCheck(workspace).map(([check, group]) => (
-              <Section key={check} level={4} title={check} titleTo={checkPagePath(check)} count={group.length}>
-                <ProblemList index={index} problems={group} showCheck={false} current={focus} />
-              </Section>
-            ))}
-          </Section>
-        )}
-        {index.workspace.exceptions.length > 0 && <RecordedExceptions index={index} exceptions={index.workspace.exceptions} />}
-      </div>
+      {'shown' in read ? read.shown : null}
+      {problems && (
+        <div className="spec-body">
+          {problems.errors + problems.warnings === 0 && <p className="hint">Every check passed in {product.title}.</p>}
+          {problems.own.map(({ check, problems: group }) => (
+            <Section key={check} level={3} title={check} titleTo={checkPagePath(check)} count={group.length}>
+              <ProblemList index={index} problems={group} showCheck={false} current={focus} />
+            </Section>
+          ))}
+          {workspace > 0 && (
+            <Section level={3} title="Workspace" count={workspace}>
+              <p className="hint">Problems that belong to no product, such as in the meta-model or the config. Every space shows them.</p>
+              {problems.workspace.map(({ check, problems: group }) => (
+                <Section key={check} level={4} title={check} titleTo={checkPagePath(check)} count={group.length}>
+                  <ProblemList index={index} problems={group} showCheck={false} current={focus} />
+                </Section>
+              ))}
+            </Section>
+          )}
+          {index.workspace.exceptions.length > 0 && <RecordedExceptions index={index} exceptions={index.workspace.exceptions} />}
+        </div>
+      )}
     </ToolPanelFrame>
   );
 }

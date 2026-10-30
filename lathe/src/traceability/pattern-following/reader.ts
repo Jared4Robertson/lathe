@@ -3,7 +3,7 @@
 // reader each query's definition makes (`reader`), so keeping the read model elsewhere is a new implementation of this
 // interface and nothing more. Today's implementation reads the projection's table, kept in memory and built on each read.
 import type { ReadView } from '../../platform/data/rules.ts';
-import { followingTableFrom, type FollowingPage, type FollowingTable } from './read-model.ts';
+import { followingTableFrom, type FollowingPage, type FollowingTable, type PatternFollowers } from './read-model.ts';
 
 /** What the Pattern following queries read, and all they read. */
 export interface FollowingReader {
@@ -11,6 +11,8 @@ export interface FollowingReader {
   following(follower: string, pattern: string): FollowingPage | undefined;
   /** The patterns the domain or use case follows, by ID; undefined when there is no such domain or use case. */
   patternsOf(follower: string): string[] | undefined;
+  /** The pattern's followers by domain; undefined when there is no such pattern. */
+  followersOf(pattern: string): PatternFollowers | undefined;
 }
 
 /** The reader over the read model's table in memory. */
@@ -28,6 +30,11 @@ export class InMemoryFollowingReader implements FollowingReader {
   patternsOf(follower: string): string[] | undefined {
     if (!this.table.followers.has(follower)) return undefined;
     return [...(this.table.followings.get(follower)?.keys() ?? [])].sort();
+  }
+
+  followersOf(pattern: string): PatternFollowers | undefined {
+    const domains = this.table.patterns.get(pattern);
+    return domains && { pattern, domains };
   }
 }
 

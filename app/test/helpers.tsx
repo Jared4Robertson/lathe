@@ -5,29 +5,13 @@ import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
 import type { BaselineAnswer } from '../../lathe/src/server/contract';
 import type { Command } from '../../lathe/src/platform/data/generic-write';
 import { workspace as fixtureWorkspace } from './fixtures/workspace';
-import { SETTINGS_KEY } from '../src/graph/settings';
+import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { ALL_COMMANDS, ALL_QUERIES } from '../../lathe/src/commands';
 import { InputError } from '../../lathe/src/platform/commands/definition';
 import { answerQuery } from '../../lathe/src/platform/commands/run';
 import { StoreError } from '../../lathe/src/platform/data/problems';
-import type { ReadView } from '../../lathe/src/platform/data/rules';
 import { forgetReads } from '../src/record/read';
-
-/** The served data as the aggregates' queries read it: each table's rows over every product folder, and each record by its ID. */
-export function readViewOf(data: SpecData): ReadView {
-  const rows = (table: string) => data.sources.flatMap((source) => source.tables[table] ?? []);
-  let byId: Map<string, { kind: string; row: Row }> | null = null;
-  return {
-    schema: data.schema,
-    rows,
-    record: (id) => {
-      byId ??= new Map(Object.keys(data.schema.kinds).flatMap((kind) => rows(kind).map((row) => [String(row.id), { kind, row }] as const)));
-      return byId.get(id);
-    },
-  };
-}
-
-type Row = import('../../lathe/src/server/contract').Row;
+import { readViewOf } from './read-view';
 
 /** One aggregate command the page sent: its route and its input. */
 export interface SentCommand {

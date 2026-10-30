@@ -53,6 +53,8 @@ import { DATA_STORE_COMMANDS } from './authoring/data-store/commands/index.ts';
 import { DATA_STORE_QUERIES } from './authoring/data-store/queries.ts';
 import { PATTERN_FOLLOWING_COMMANDS } from './traceability/pattern-following/commands/index.ts';
 import { PATTERN_FOLLOWING_QUERIES } from './traceability/pattern-following/queries.ts';
+import { PROBLEMS_QUERIES } from './checking/problems/queries.ts';
+import { TRACE_QUERIES } from './traceability/trace/queries.ts';
 import type { AnyCommand, AnyQuery } from './platform/commands/definition.ts';
 
 export const ALL_COMMANDS: readonly AnyCommand[] = [
@@ -111,4 +113,6 @@ export const ALL_QUERIES: readonly AnyQuery[] = [
   ...CHECK_QUERIES,
   ...PRODUCT_SETTING_QUERIES,
   ...PATTERN_FOLLOWING_QUERIES,
+  ...PROBLEMS_QUERIES,
+  ...TRACE_QUERIES,
 ];

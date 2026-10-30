@@ -54,41 +54,10 @@ export const settingsOf = (index: SpecIndex, pattern: SpecRecord) => partsOf(ind
 export const rulesOf = (index: SpecIndex, patternId: string) =>
   (index.children.get(patternId) ?? []).filter((r) => r.kind === 'pattern_rule');
 
-/** The use cases that follow a pattern, in ID order. */
-export function followersOf(index: SpecIndex, patternId: string): SpecRecord[] {
-  return (index.incoming.get(patternId) ?? [])
-    .filter((l) => l.relation === 'follows')
-    .map((l) => index.byId.get(l.source))
-    .filter((r): r is SpecRecord => !!r && r.kind === 'use_case')
-    .sort(byIdOrder);
-}
-
 /** How a domain follows a pattern: through these use cases, and (`byDomain`) itself. */
 export interface Followed {
   useCases: readonly SpecRecord[];
   byDomain: boolean;
-}
-
-/**
- * The domains that follow a pattern, each with its following use cases and whether the domain itself
- * follows it, in domain ID order.
- */
-export function followingDomains(index: SpecIndex, patternId: string): ({ domain: string; useCases: SpecRecord[] } & Followed)[] {
-  const byDomain = new Map<string, SpecRecord[]>();
-  const itself = new Set<string>();
-  for (const l of index.incoming.get(patternId) ?? []) {
-    if (l.relation === 'follows' && index.byId.get(l.source)?.kind === 'domain') {
-      itself.add(l.source);
-      if (!byDomain.has(l.source)) byDomain.set(l.source, []);
-    }
-  }
-  for (const uc of followersOf(index, patternId)) {
-    if (!uc.domain) continue;
-    byDomain.set(uc.domain, [...(byDomain.get(uc.domain) ?? []), uc]);
-  }
-  return [...byDomain.entries()]
-    .sort(([a], [b]) => a.localeCompare(b, 'en', { numeric: true }))
-    .map(([domain, useCases]) => ({ domain, useCases, byDomain: itself.has(domain) }));
 }
 
 /**

@@ -9,10 +9,10 @@ import { integrationTableFrom, type IntegrationPage, type IntegrationSummary, ty
 export interface IntegrationReader {
   /** The kind of the record with this ID, of any kind, or undefined when no record has it. */
   kindOf(id: string): string | undefined;
-  /** The page of the integration that holds the record, or undefined when no integration holds it. */
+  /** The page of a record inside an integration, or undefined when no integration holds it. */
   page(id: string): IntegrationPage | undefined;
-  /** A product's integrations, by ID. */
-  integrationsOf(product: string): IntegrationSummary[];
+  /** A product's integrations, by ID, or undefined when there is no such product. */
+  integrationsOf(productId: string): IntegrationSummary[] | undefined;
   /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
   highestAfter(prefix: string): number;
 }
@@ -30,12 +30,12 @@ export class InMemoryIntegrationReader implements IntegrationReader {
   }
 
   page(id: string): IntegrationPage | undefined {
-    const root = this.table.holding.get(id);
-    return root === undefined ? undefined : this.table.integrations.get(root);
+    const holding = this.table.holding.get(id);
+    return holding && { record: { id, kind: holding.kind }, ...this.table.integrations.get(holding.root)! };
   }
 
-  integrationsOf(product: string): IntegrationSummary[] {
-    return [...this.table.integrations.values()].filter((i) => i.id.startsWith(`${product}-`)).map((i) => ({ id: i.id, title: i.title }));
+  integrationsOf(productId: string): IntegrationSummary[] | undefined {
+    return this.table.products.get(productId);
   }
 
   highestAfter(prefix: string): number {

@@ -2,7 +2,7 @@ import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import type { SpecData } from '../../lathe/src/server/contract';
 import { groupRecords } from '../src/specs/groups';
-import { appliesWhenOf, followingDomains, patternsFollowedBy, ruleStatus } from '../src/specs/patterns';
+import { appliesWhenOf, patternsFollowedBy, ruleStatus } from '../src/specs/patterns';
 import { owingDomains } from '../src/specs/trace';
 import { expectStandingsAsEngine } from './fixtures/engine';
 import { patternWorkspace, withStandings } from './fixtures/patterns';
@@ -63,7 +63,7 @@ describe('waivers by setting value', () => {
     // The hand-written standings of these workspaces are the engine's.
     for (const data of [waiverWorkspace(), ws]) await expectStandingsAsEngine(data);
     const itself = indexOf(ws);
-    const followed = followingDomains(itself, 'DM-PAT-AUDIT').find((d) => d.domain === 'DM-PAY')!;
+    const followed = patternsFollowedBy(itself, 'DM-PAY').find((f) => f.pattern.id === 'DM-PAT-AUDIT')!;
     expect(followed.byDomain).toBe(true);
     expect(ruleStatus(itself, itself.byId.get('DM-PAT-AUDIT-R03')!, 'DM-PAY', followed)).toMatchObject({ applies: true });
 
@@ -78,6 +78,7 @@ describe('waivers by setting value', () => {
 
     await openApp('/DM-PAT-AUDIT-R03', { data: waiverWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'The clerk is named' });
+    await within(main()).findByRole('heading', { name: /^(Followed|Owed) by\d/ });
     const owed = section(/^Owed by/);
     expect(within(owed).getByText('Waived here: who is Shopper')).toBeInTheDocument();
     const gaps = within(main()).getByRole('list', { name: 'DM-PAT-AUDIT-R03 by domain' });

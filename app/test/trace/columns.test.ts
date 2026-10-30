@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { modelIndex } from '../fixtures/model';
 import { traceMap } from '../../src/trace/tree';
+import { tracesOf } from './traces';
 import {
   BOX_HEIGHT, COLUMN_WIDTH, columnBoxes, columnHeight, columnLefts, columnScrolls, columnSizes, columnsView, COLUMNS_PAD, COMPACT_HEIGHT, COMPACT_WIDTH, holds, rowTop, traceColumns,
 } from '../../src/trace/columns';
@@ -12,7 +13,8 @@ import { UNTRACED } from '../../src/trace/top';
 
 describe('the Trace stage\'s columns', () => {
   it('LA-V98-R13-T01 A focus deep in a chain: a column for each box on its path down to its children, the box on the path chosen in each, the columns above its parent\'s compact', () => {
-    const map = traceMap(modelIndex(), 'P');
+    const index = modelIndex();
+    const map = traceMap(index, tracesOf(index, 'P'), 'P');
     const step = 'P-D-UC01-R01|P-D-UC01-FL01-S01';
     const columns = traceColumns(map, step);
     expect(columns.map((c) => c.parent)).toEqual(['P', 'outside', 'P-D', 'P-D-UC01', 'P-D-UC01-R01', 'P-D-UC01-R01|P-D-UC01-FL01', step]);
@@ -37,7 +39,8 @@ describe('the Trace stage\'s columns', () => {
   });
 
   it('LA-V98-R13-T02 A box\'s count is how many boxes it holds', () => {
-    const map = traceMap(modelIndex(), 'P');
+    const index = modelIndex();
+    const map = traceMap(index, tracesOf(index, 'P'), 'P');
     expect(holds(map, 'P-D-UC01')).toBe(2);
     expect(holds(map, 'P-D-UC01-R01')).toBe(map.map.nodes.get('P-D-UC01-R01')!.children.length);
     expect(holds(map, UNTRACED)).toBe(map.counts.untraced);
@@ -73,7 +76,8 @@ describe('the Trace stage\'s columns', () => {
   });
 
   it('LA-V98-R13-T04 Focusing the product shows its children only', () => {
-    const map = traceMap(modelIndex(), 'P');
+    const index = modelIndex();
+    const map = traceMap(index, tracesOf(index, 'P'), 'P');
     const columns = traceColumns(map, 'P');
     expect(columns).toEqual([{ parent: 'P', keys: map.map.nodes.get('P')!.children, chosen: null }]);
   });

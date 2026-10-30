@@ -27,8 +27,8 @@ describe('reload on change', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Basket store' })).toBeInTheDocument();
     // The spec again, and the products the nav lists and the Changes baseline read again with it (GET /api/baseline, its
-    // last commit may have moved).
-    expect(after.requests.filter((r) => !r.startsWith('GET /api/baseline?'))).toEqual(['GET /api/spec', 'GET /api/product/list-products?']);
+    // last commit may have moved); the command's page reads its command again through the aggregate's own query.
+    expect(after.requests.filter((r) => !r.startsWith('GET /api/baseline?')).sort()).toEqual(['GET /api/command/get-command?id=DM-SHOP-CMD01-H', 'GET /api/product/list-products?', 'GET /api/spec']);
     // The address and page stay the same; no manual refresh.
     expect(window.location.pathname).toBe('/DM-SHOP-CMD01-H');
   });
