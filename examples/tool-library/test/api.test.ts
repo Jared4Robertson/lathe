@@ -104,6 +104,11 @@ describe('TL-LEND-UC02 Add a tool', () => {
     expect(await catalog()).toEqual([]);
   });
 
+  it('TL-LEND-UC02-R03-T01 An added tool reads the same in the catalog', async () => {
+    const added = await api.call('POST', '/tools', { name: ' Ladder ', description: '3 m' });
+    expect(await catalog()).toEqual([added.body]);
+  });
+
   it('TL-LEND-EP02-R01-T01 A tool body without a name gives 400 invalid_request', async () => {
     for (const body of [{ description: 'No name' }, { name: '   ' }]) {
       const res = await api.call('POST', '/tools', body);
@@ -368,6 +373,12 @@ describe('TL-LEND-UC05 Report damage', () => {
     expect(await entryOf(t)).toMatchObject({ condition: 'needs_repair', damageNote: 'Cord frayed', status: 'needs_repair' });
   });
 
+  it('TL-LEND-UC05-R04-T01 A tool after damage is reported reads the same in the catalog', async () => {
+    const added = await api.call('POST', '/tools', { name: ' Ladder ', description: '3 m' });
+    const damaged = await api.call('POST', `/tools/${added.body.id}/damage`, { note: 'Bent rung' });
+    expect(await entryOf(added.body.id)).toEqual(damaged.body);
+  });
+
   it('TL-LEND-EP06-R01-T01 A damage report without a note gives 400, and for an unknown tool 404', async () => {
     const { noNote, unknown } = await reportDamage();
     expect(noNote).toMatchObject({ status: 400, body: { error: 'invalid_request' } });
@@ -395,6 +406,13 @@ describe('TL-LEND-UC05 Report damage', () => {
     expect(notDamaged.body.message).toMatch(/not marked as needing repair/);
     expect(await entryOf(t)).toMatchObject({ condition: 'good', damageNote: null, status: 'available' });
     expect((await borrow(await member(), t)).status).toBe(201);
+  });
+
+  it('TL-LEND-UC06-R02-T01 A repaired tool reads the same in the catalog', async () => {
+    const added = await api.call('POST', '/tools', { name: ' Ladder ', description: '3 m' });
+    await api.call('POST', `/tools/${added.body.id}/damage`, { note: 'Bent rung' });
+    const repaired = await api.call('POST', `/tools/${added.body.id}/repair`);
+    expect(await entryOf(added.body.id)).toEqual(repaired.body);
   });
 
   it('TL-LEND-EP07-R01-T01 Repairing an unknown tool gives 404, and a good tool 409 tool_not_damaged', async () => {
@@ -445,7 +463,7 @@ describe('TL-LEND-UC05 Report damage', () => {
 });
 
 // The Librarian action pattern's rules, proved in TL-LEND for every use case that follows it:
-// UC01 register a member, UC02 add a tool, UC04 return a tool, UC05 report damage.
+// UC01 register a member, UC02 add a tool, UC04 return a tool, UC05 report damage, UC06 mark a tool repaired.
 describe('TL-PAT-LIBRARIAN-ACTION Librarian action', () => {
   it('TL-PAT-LIBRARIAN-ACTION-R01-T01 Each librarian action missing its required input is refused, says what is missing, and saves nothing', async () => {
     // TL-LEND-UC01: no name. The email stays free, so nothing was saved.
@@ -502,15 +520,5 @@ describe('TL-PAT-LIBRARIAN-ACTION Librarian action', () => {
     expect(returned.body).toMatchObject({ id: loan.id, returnCondition: 'needs_repair', returnNote: 'Jaw loose', late: false });
     expect((await api.call('POST', `/loans/${loan.id}/return`, { condition: 'good' })).body.error).toBe('already_returned');
     expect(await entryOf(t)).toMatchObject({ condition: 'needs_repair', damageNote: 'Jaw loose' });
-  });
-
-  it('TL-PAT-LIBRARIAN-ACTION-R03-T01 A tool saved by a librarian action reads the same in the catalog', async () => {
-    // TL-LEND-UC02: the tool shown is the catalog entry.
-    const added = await api.call('POST', '/tools', { name: ' Ladder ', description: '3 m' });
-    expect(await catalog()).toEqual([added.body]);
-
-    // TL-LEND-UC05: the entry shown after reporting damage is the catalog entry.
-    const damaged = await api.call('POST', `/tools/${added.body.id}/damage`, { note: 'Bent rung' });
-    expect(await entryOf(added.body.id)).toEqual(damaged.body);
   });
 });
