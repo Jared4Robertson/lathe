@@ -1,7 +1,8 @@
 import { isNumber } from '../shell/prefs';
+import { DEFAULT_TRACE_VIEW, isTraceView, type TraceViewName } from '../trace/views';
 
 // A place is where the Reader explores: one focus on one stage (both in its address), the camera over it, the
-// graph's depth and kind filters, the wiki card's open and expanded state and scroll, and its own Back and Forward.
+// graph's depth and kind filters, the Trace's view, the wiki card's open and expanded state and scroll, and its own Back and Forward.
 // On the web a browser tab is one place (usePlace.ts); in the desktop app each of the app's tabs is one (tabs.ts).
 // How the Reader likes to see things (the appearance, the graph's layout and minimap, the card's width, Highlight
 // changes) is not a place's: it is the window's (graph/settings.ts).
@@ -14,10 +15,12 @@ export interface Entry {
   note: Record<string, unknown>;
 }
 
-/** What a place keeps besides its address: the graph's depth and hidden kinds, and the wiki card's open and expanded state. */
+/** What a place keeps besides its address: the graph's depth and hidden kinds, the Trace's view, and the wiki card's open and expanded state. */
 export interface PlaceView {
   depth: number;
   hiddenKinds: string[];
+  /** The Trace stage's view: All at once or Delivery (trace/views.ts). */
+  trace: TraceViewName;
   card: { open: boolean; expanded: boolean };
 }
 
@@ -32,7 +35,7 @@ export interface Place {
 /** The most entries a place's history keeps: the oldest are dropped past it. */
 export const MAX_HISTORY = 50;
 
-export const DEFAULT_VIEW: PlaceView = { depth: 1, hiddenKinds: [], card: { open: true, expanded: false } };
+export const DEFAULT_VIEW: PlaceView = { depth: 1, hiddenKinds: [], trace: DEFAULT_TRACE_VIEW, card: { open: true, expanded: false } };
 
 /** A place at an address, with a fresh history. */
 export const freshPlace = (address: string, view: PlaceView): Place => ({ history: [{ address, note: {} }], at: 0, view });
@@ -82,6 +85,7 @@ export function readView(value: unknown): PlaceView {
   return {
     depth: isNumber(v.depth) && [1, 2, 3].includes(v.depth) ? v.depth : DEFAULT_VIEW.depth,
     hiddenKinds: Array.isArray(v.hiddenKinds) ? v.hiddenKinds.filter(isString) : [],
+    trace: isTraceView(v.trace) ? v.trace : DEFAULT_TRACE_VIEW,
     card: { open: typeof card.open === 'boolean' ? card.open : true, expanded: card.expanded === true },
   };
 }
