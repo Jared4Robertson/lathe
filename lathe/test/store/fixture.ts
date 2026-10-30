@@ -86,7 +86,7 @@ export function everyKind(): Data {
     // Technical specification.
     repository: [{ id: 'TL-LEND-REPO01', title: 'LoanRepository', domain_id: 'TL-LEND', file: 'src/lending/loans.ts', description: 'Keeps loans in the loans table.' }],
     persists: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-LEND-A1' }],
-    data_store: [{ id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database, run by a hosting service." }],
+    data_store: [{ id: 'TL-STORE01', title: 'DATABASE_URL', product_id: 'TL', kind: 'database', description: "The library's database, run by the service that also sends its mail." }],
     provided_by: [{ source_id: 'TL-STORE01', target_id: 'TL-INT01' }],
     stored_in: [{ source_id: 'TL-LEND-REPO01', target_id: 'TL-STORE01' }],
     repository_share: [{ repository_id: 'TL-LEND-REPO01', aggregate_id: 'TL-LEND-A2', reason: 'Loans and tools are kept in one store.' }],

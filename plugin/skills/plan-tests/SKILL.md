@@ -24,6 +24,7 @@ The spec is typed data in the repo's `data/` folder, one table per kind. Change 
 | `specification_test` | a specification | exactly one | `<specification>-T` | unit, integration | `specification_add_specification_test` |
 | `policy_test` | a policy | exactly one | `<policy>-T` | integration, service, system, browser | `command_add_policy_test` |
 | `domain_service_test` | a domain service | at least one | `<domain service>-T<nn>` | unit | `domain_add_domain_service_test` |
+| `storage_requirement_test` | a storage requirement | at least one | `<storage requirement>-T<nn>` | integration, service, system, browser | `storage_requirement_add_storage_requirement_test` |
 | `use_case_test` | a UC requirement | at least one | `<UC requirement>-T<nn>` | service, system, browser | `use_case_add_use_case_test` |
 | `view_test` | a view requirement | at least one | `<view requirement>-T<nn>` | unit, browser | `view_add_view_test` |
 | `endpoint_test` | an API requirement | at least one | `<API requirement>-T<nn>` | service, system | `endpoint_add_endpoint_test` |

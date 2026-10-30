@@ -41,7 +41,9 @@ describe('Storage flows through the CLI', () => {
     const named = tl.workspace();
     expect([...gapsOf(named, 'TL-LEND'), ...gapsOf(named, null)].filter((g) => /stored-nowhere|data-store-unused/.test(g))).toEqual([]);
     expect(tl.run('data-store', 'get-data-store', '--id', 'TL-STORE01')).toContain('Stores repository TL-LEND-REPO01: LoanRepository');
-    // S03: a store with something stored in it stays.
+    // S05: its description changes; S04: a store with something stored in it stays.
+    tl.run('data-store', 'change-data-store', '--id', 'TL-STORE01', '--description', "The library's PostgreSQL database, run by its host.");
+    expect(tl.run('data-store', 'get-data-store', '--id', 'TL-STORE01')).toContain('run by its host');
     expect(tl.refused('data-store', 'remove-data-store', '--id', 'TL-STORE01')).toContain('TL-LEND-REPO01 stored in TL-STORE01');
   });
 
@@ -60,6 +62,14 @@ describe('Storage flows through the CLI', () => {
     tl.write('test/loans.test.ts', "it('TL-LEND-A1-SR01-T01 a failed save leaves nothing behind');\n");
     expect(gapsOf(tl.workspace(), 'TL-LEND').filter((g) => g.endsWith('TL-LEND-A1-SR01'))).toEqual([]);
     expect(tl.run('storage-requirement', 'get-storage-requirement', '--id', 'TL-LEND-A1-SR01')).toContain('built by: TL-LEND-REPO01 LoanRepository (src/loans.ts), stored in TL-STORE01 DATABASE_URL');
+    // S04, S05: its statement and its test change; S06: the test goes, and the requirement is not proved again.
+    tl.run('storage-requirement', 'change-storage-requirement', '--id', 'TL-LEND-A1-SR01', '--statement', 'A loan MUST be saved with its outbox event, or neither, and survive a restart.');
+    tl.run('storage-requirement', 'change-storage-requirement-test', '--id', 'TL-LEND-A1-SR01-T01', '--level', 'service');
+    tl.run('storage-requirement', 'remove-storage-requirement-test', '--id', 'TL-LEND-A1-SR01-T01');
+    expect(gapsOf(tl.workspace(), 'TL-LEND')).toContain('proved TL-LEND-A1-SR01');
+    // S03: the requirement goes whole.
+    tl.run('storage-requirement', 'remove-storage-requirement', '--id', 'TL-LEND-A1-SR01');
+    expect(gapsOf(tl.workspace(), 'TL-LEND').filter((g) => g.endsWith('TL-LEND-A1-SR01'))).toEqual([]);
   });
 });
 
@@ -80,6 +90,7 @@ describe('Storage flows through the MCP tools', () => {
       await ok('domain_change_repository', { id: 'TL-LEND-REPO01', stored_in: 'TL-STORE01' });
       await ok('table_change_table', { id: 'TL-LEND-EN01-TB', stored_in: 'TL-STORE01' });
       expect(await ok('data_store_get_data_store', { id: 'TL-STORE01' })).toContain('Stores table TL-LEND-EN01-TB: Loans');
+      await ok('data_store_change_data_store', { id: 'TL-STORE01', kind: 'database', description: "The library's database, run by its host." });
       expect((await server.call('data_store_remove_data_store', { id: 'TL-STORE01' })).result!.isError).toBe(true);
     } finally {
       await server.close();
@@ -101,6 +112,11 @@ describe('Storage flows through the MCP tools', () => {
       await ok('storage_requirement_add_storage_requirement', KEPT);
       await ok('storage_requirement_add_storage_requirement_test', KEPT_TEST);
       expect(await ok('storage_requirement_get_storage_requirement', { id: 'TL-LEND-A1-SR01-T01' })).toContain('Storage requirement test TL-LEND-A1-SR01-T01: A failed save leaves nothing behind (integration, automated)');
+      // S04, S05, S06 and S03: change the statement and the test, remove the test, then the requirement whole.
+      await ok('storage_requirement_change_storage_requirement', { id: 'TL-LEND-A1-SR01', statement: 'A loan MUST be saved with its outbox event, or neither, and survive a restart.' });
+      await ok('storage_requirement_change_storage_requirement_test', { id: 'TL-LEND-A1-SR01-T01', level: 'service' });
+      await ok('storage_requirement_remove_storage_requirement_test', { id: 'TL-LEND-A1-SR01-T01' });
+      await ok('storage_requirement_remove_storage_requirement', { id: 'TL-LEND-A1-SR01' });
     } finally {
       await server.close();
     }

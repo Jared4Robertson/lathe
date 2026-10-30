@@ -104,7 +104,7 @@ describe('LA-AUT-UC32-R50-T01 each Data store command (LA-AUT-A23) changes one d
   });
 });
 
-describe('LA-STD-CODE-R07-T71 a data store is removed with the link it starts, refused while anything is stored in it', () => {
+describe('LA-STD-CODE-R07-T71 a data store nothing is stored in is removed with the link it starts', () => {
   it('removes a data store nothing is stored in, with its provider link', async () => {
     const store = await dataStoreDataSet();
     await runCommand(store, CHANGE_REPOSITORY, { id: 'TL-LEND-REPO01', stored_in: null });

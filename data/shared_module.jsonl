@@ -48,6 +48,10 @@
 {"id":"LA-AUT-MOD65","title":"integration/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/integration/commands/index.ts"}
 {"id":"LA-AUT-MOD66","title":"ui-component/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/ui-component/model.ts"}
 {"id":"LA-AUT-MOD67","title":"ui-component/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/ui-component/commands/index.ts"}
+{"id":"LA-AUT-MOD80","title":"storage-requirement/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/storage-requirement/model.ts"}
+{"id":"LA-AUT-MOD81","title":"storage-requirement/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/storage-requirement/commands/index.ts"}
+{"id":"LA-AUT-MOD82","title":"data-store/model.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/data-store/model.ts"}
+{"id":"LA-AUT-MOD83","title":"data-store/commands/index.ts","domain_id":"LA-AUT","file":"lathe/src/authoring/data-store/commands/index.ts"}
 {"id":"LA-CHK-MOD01","title":"check/model.ts","domain_id":"LA-CHK","file":"lathe/src/checking/check/model.ts"}
 {"id":"LA-CHK-MOD02","title":"check/commands/index.ts","domain_id":"LA-CHK","file":"lathe/src/checking/check/commands/index.ts"}
 {"id":"LA-CHK-MOD03","title":"product-setting/model.ts","domain_id":"LA-CHK","file":"lathe/src/checking/product-setting/model.ts"}
