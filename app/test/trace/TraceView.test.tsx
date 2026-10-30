@@ -290,7 +290,13 @@ describe('the Trace stage', () => {
   it('LA-V98-R11-T01 Scroll pans, Cmd/Ctrl+scroll zooms and a drag pans the trace\'s camera, and . frames the focus again with a glide, as on the graph', async () => {
     await openApp('/P-D-UC01?stage=trace', served());
     const host = await canvasHost();
-    const framed = (await drawn()).camera;
+    // The camera at rest once the trace's read is drawn and framed: two reads apart give the same camera.
+    const framed = await waitFor(async () => {
+      const before = (await drawn()).camera;
+      await new Promise((r) => setTimeout(r, 50));
+      expect((await drawn()).camera).toEqual(before);
+      return before;
+    }, { timeout: 3000 });
     const canvas = host.querySelector('canvas')!;
     // Scroll pans, by the pixels it scrolled; Cmd or Ctrl with scroll zooms.
     fireEvent.wheel(canvas, { deltaY: 40, clientX: 200, clientY: 200 });

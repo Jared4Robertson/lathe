@@ -258,6 +258,6 @@ describe('pattern pages (the Pattern page, LA-V122)', () => {
     removeRows(ws, 'pattern_rule_test', () => true);
     await openApp('/DM-PAT-AUDIT', { data: ws });
     await screen.findByRole('heading', { level: 1, name: 'Audited action' });
-    expect(within(section(/^Followed by/)).getByText(/No use case follows this pattern/)).toBeInTheDocument();
+    expect(await within(section(/^Followed by/)).findByText(/No use case follows this pattern/)).toBeInTheDocument();
   });
 });
