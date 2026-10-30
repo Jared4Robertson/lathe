@@ -14,6 +14,7 @@ import { productRules } from '../../authoring/product/rules.ts';
 import { loadConfig, PACKAGE_DIR } from '../../config.ts';
 import { attachCached, baseKey, copyDatabase, isValidated, markValidated, productKey, validatedKey, writeCached } from './cache.ts';
 import { appendRows, insertRows } from './insert.ts';
+import { settleWrite, type Settled } from './journal.ts';
 import { integrityQueries, recordScopeColumns, recordScopeSql, storeViewsSql } from './integrity.ts';
 import { problemAt, StoreError, type Origin, type StoreProblem } from './problems.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
@@ -221,6 +222,8 @@ export class Store {
   private built = true;
   /** The data files as a reload last refused them, as one key, with the refusal. */
   private refused: { key: string; error: StoreError } | undefined;
+  /** What each load or reload that found a write a crash had left did with it (journal.ts), oldest first. */
+  readonly settled: Settled[] = [];
   /** The whole builds in progress, which close waits for. */
   private readonly building = new Set<Promise<unknown>>();
   /** The tables each aggregate's rules read, and each reader's projection. */
@@ -375,6 +378,14 @@ export class Store {
 
   // Loading.
 
+  // Settles a write a crash left in the product's data folder (journal.ts) before its files are read, and says what it did.
+  private async settle() {
+    const settled = await settleWrite(this.dataDir);
+    if (!settled) return;
+    this.settled.push(settled);
+    console.warn(`lathe: ${settled.message}`);
+  }
+
   // The data folders, Lathe's own first and then the product's, with their data files in order.
   private folders(): Folder[] {
     const listed = (dir: string) => (existsSync(dir) ? readdirSync(dir).filter((f) => f.endsWith('.jsonl')).sort() : []);
@@ -433,6 +444,7 @@ export class Store {
    * their database only when SQL first needs it (ensureDatabase()). Any other files are built whole, and stamped when they pass.
    */
   async load(): Promise<void> {
+    await this.settle();
     const folders = this.folders();
     // The files' sizes and times are taken before they are read, so a file changed while it is read reads again.
     const signatures = signaturesOf(folders);
@@ -514,6 +526,7 @@ export class Store {
    */
   reload(): Promise<Reloaded> {
     return this.serial(async () => {
+      await this.settle();
       const folders = this.folders();
       const signatures = signaturesOf(folders);
       const files = [...new Set([...signatures.keys(), ...this.signatures.keys()])].filter((file) => signatures.get(file) !== this.signatures.get(file));
