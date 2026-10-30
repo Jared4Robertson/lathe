@@ -25,20 +25,16 @@ function standardRules(index: SpecIndex, domain: string): Choice[] {
   return [...index.byId.values()].filter((r) => r.kind === 'standard_rule' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
-/** The fields Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
+/** The fields Add and Change take (Change leaves out the ID), in their input's order. */
 function fieldsOf(index: SpecIndex, domain: string, adding: boolean): FieldSpec[] {
   return [
     ...(adding ? [{ field: 'id', column: 'id', table: 'tooling' }] : []),
     { field: 'title', column: 'title', table: 'tooling' },
     { field: 'file', column: 'file', table: 'tooling' },
-    { field: 'packages', column: 'package', table: 'package_use', label: 'packages', long: true, required: false },
+    { field: 'packages', label: 'Packages', description: 'The packages it uses.', texts: true },
     { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: standardRules(index, domain) },
   ];
 }
-
-/** The packages field's text as its list: one package per line. */
-const packagesOf = (draft: Draft) => (draft.text.packages ?? '').split('\n').map((l) => l.trim()).filter(Boolean);
-const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 'packages');
 
 type Mode = 'view' | 'change' | 'remove';
 
@@ -59,9 +55,7 @@ export function ToolingEditor({ index, page, children }: { index: SpecIndex; pag
     const specs = fieldsOf(index, tooling.domain_id, false);
     const current = { ...tooling, packages: page.packages, meets: page.meets } as Record<string, unknown>;
     const submit = async (draft: Draft) => {
-      const input = changeInput(index, withoutPackages(specs), draft, current, { id: tooling.id }, ['file']);
-      const packages = packagesOf(draft);
-      if (JSON.stringify([...packages].sort()) !== JSON.stringify(page.packages)) input.packages = packages;
+      const input = changeInput(index, specs, draft, current, { id: tooling.id }, ['file']);
       if (Object.keys(input).length === 1) { announce('Nothing changed'); back(); return null; }
       const answer = await sendTooling(writer, '/api/tooling/change-tooling', input as unknown as ToolingCommands['/api/tooling/change-tooling']);
       if (answer.ok) { announce(`Saved ${tooling.id}`); back(); }
@@ -112,9 +106,7 @@ export function AddToolingForm({ index, parent, onDone }: { index: SpecIndex; pa
   }, [next]);
   const specs = fieldsOf(index, parent, true);
   const submit = async () => {
-    const input = addInput(index, withoutPackages(specs), draft, { domain_id: parent });
-    const packages = packagesOf(draft);
-    if (packages.length > 0) input.packages = packages;
+    const input = addInput(index, specs, draft, { domain_id: parent });
     const answer = await sendTooling(writer, '/api/tooling/add-tooling', input as unknown as ToolingCommands['/api/tooling/add-tooling']);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;

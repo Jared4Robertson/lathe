@@ -115,7 +115,7 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-UC02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Empty the basket');
     await user.type(within(form).getByRole('textbox', { name: /^goal/ }), 'A shopper empties the basket.');
-    await user.type(within(form).getByRole('textbox', { name: /^role name/ }), 'Shopper');
+    await user.type(within(form).getByRole('textbox', { name: /^Actors/ }), 'Shopper');
     await user.click(within(form).getByRole('button', { name: 'Add use case' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/use-case/add-use-case', input: { capability_id: 'DM-SHOP-CAP01', id: 'DM-SHOP-UC02', title: 'Empty the basket', goal: 'A shopper empties the basket.', actors: ['Shopper'] } }]));
     expect(writes).toEqual([]);

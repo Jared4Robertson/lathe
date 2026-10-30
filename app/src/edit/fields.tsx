@@ -58,7 +58,7 @@ export function columnValue(column: ColumnDescription, text: string): Value | un
     case 'boolean':
       return trimmed === 'true' ? true : trimmed === 'false' ? false : trimmed;
     case 'text_list':
-      return text.split('\n').map((line) => line.trim()).filter(Boolean);
+      return textsValue(text);
     default:
       return text;
   }
@@ -123,6 +123,28 @@ export function ColumnField({ id, column, label, value, onChange, long = false, 
     </FieldRow>
   );
 }
+
+/** A field holding a list of texts, one per line (a use case's actors, a record's packages); its column is the command's own list. */
+export function TextsField({ id, label, description, value, onChange, required = false, error, inputRef }: {
+  id: string;
+  label: string;
+  description: string;
+  value: string;
+  onChange: (text: string) => void;
+  required?: boolean;
+  error?: string;
+  inputRef?: Ref<HTMLInputElement & HTMLTextAreaElement & HTMLSelectElement>;
+}) {
+  const help = `${description}${description ? ' ' : ''}One per line.`;
+  return (
+    <FieldRow id={id} label={label} required={required} description={help} error={error}>
+      <textarea {...common(id, required, error, true)} ref={inputRef} value={value} rows={4} onChange={(e) => onChange(e.target.value)} />
+    </FieldRow>
+  );
+}
+
+/** A list-of-texts field's text as its list: its non-empty lines, trimmed, in order. */
+export const textsValue = (text: string): string[] => text.split('\n').map((line) => line.trim()).filter(Boolean);
 
 /** A record the field may name: its ID and title. */
 export interface Choice {

@@ -1,15 +1,13 @@
-import { useEffect, useId, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import type { UseCaseKind } from '../../../../lathe/src/authoring/use-case/model';
 import type { StepOnPage, TestOnPage, UseCasePage } from '../../../../lathe/src/authoring/use-case/read-model';
-import type { ColumnDescription } from '../../../../lathe/src/platform/data/schema';
-import type { StoreProblem, Value, WriteAnswer } from '../../../../lathe/src/server/contract';
 import { Button } from '../../components/Button';
-import { ColumnField, IdField, IdsField, Refusal, columnText, columnValue, problemText, type Choice } from '../../edit/fields';
+import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, RemoveQuestion, type Draft, type FieldSpec } from '../../edit/command-form';
+import { IdField, type Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import type { SpecIndex } from '../../specs/data';
-import { RecordLink } from '../../specs/parts';
 import { addressOf } from '../../views/address';
 import { sendUseCase, type UseCaseCommands, type UseCaseRoute } from './commands';
 import { stepsOf, useNextId } from './reads';
@@ -20,8 +18,8 @@ import '../../edit/edit.css';
 // opens an empty form for a kind that sits under the record in the use case, with the next free ID read from the
 // aggregate (next-id), and sends its Add; Move, offered only for a kind the aggregate has a Move command for (a use
 // case: Move a use case, to another capability), sends that command; Remove
-// says what goes with the record and sends its Remove. Each form is built from the shared field inputs, its fields
-// those of its command's input. A refusal shows every reason the command gave, in its own words, keeps what was
+// says what goes with the record and sends its Remove. Each form is the shared command form (edit/command-form.tsx),
+// its fields those of its command's input. A refusal shows every reason the command gave, in its own words, keeps what was
 // entered, and changes nothing.
 
 /** A kind's label in a sentence. */
@@ -78,7 +76,10 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: S
         {addable.map((k) => <Button key={k} icon="plus" onClick={() => setMode({ mode: 'add', kind: k })}>Add {LABEL[k]}</Button>)}
         <Button icon="trash" danger onClick={() => setMode({ mode: 'remove' })} aria-expanded={mode.mode === 'remove'}>Remove</Button>
       </div>
-      {mode.mode === 'remove' && <RemovePanel context={context} id={id} kind={kind} />}
+      {mode.mode === 'remove' && (
+        <RemoveQuestion index={index} id={id} label={LABEL[kind]} goes={goesWith(useCase, kind, id)} then={addressOf(parentOf(useCase, kind, id))} onCancel={back}
+          remove={() => sendUseCase(writer, REMOVE[kind], { id })} />
+      )}
       {children}
     </>
   );
@@ -93,111 +94,14 @@ interface FormContext {
   onDone: () => void;
 }
 
-/** A form's draft: each field's text (a list's items one per line), and each list of IDs. */
-interface Draft {
-  text: Record<string, string>;
-  ids: Record<string, string[]>;
-}
-
-/** The column of one of the aggregate's tables, as the schema describes it. */
-function columnOf(index: SpecIndex, table: string, name: string): ColumnDescription {
-  const found = index.workspace.schema.tables[table]?.columns.find((c) => c.name === name);
-  return found ?? { name, sqlType: 'VARCHAR', kind: 'text', required: false, description: null };
-}
-
 /** The records of the use case's product of one kind, as choices: what a field of the use case may name. */
 function productChoices(index: SpecIndex, useCase: UseCasePage, kinds: readonly string[]): Choice[] {
   const product = index.byId.get(useCase.useCase.id)?.product;
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
-/** A form that sends one command: its heading, its fields, Save and Cancel, and the refusal when it is refused. */
-function CommandForm({ eyebrow, title, submit, saveLabel, onCancel, children }: {
-  eyebrow: string;
-  title: string;
-  submit: () => Promise<WriteAnswer | null>;
-  saveLabel: string;
-  onCancel: () => void;
-  children: (first: React.RefObject<HTMLInputElement & HTMLTextAreaElement & HTMLSelectElement | null>) => ReactNode;
-}) {
-  const formId = useId();
-  const first = useRef<HTMLInputElement & HTMLTextAreaElement & HTMLSelectElement>(null);
-  const [refusal, setRefusal] = useState<{ error: string; problems: StoreProblem[] } | null>(null);
-  const [tries, setTries] = useState(0);
-  const [saving, setSaving] = useState(false);
-  useEffect(() => { first.current?.focus(); }, []);
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
-    const answer = await submit();
-    setSaving(false);
-    setTries((t) => t + 1);
-    if (answer && !answer.ok) setRefusal({ error: answer.error, problems: answer.problems });
-  };
-  return (
-    <form className="record-form" aria-labelledby={`${formId}-heading`} onSubmit={onSubmit} noValidate>
-      <header className="record-form-head">
-        <p className="eyebrow">{eyebrow}</p>
-        <h2 id={`${formId}-heading`}>{title}</h2>
-      </header>
-      {refusal && (
-        <Refusal title="The change was refused. Nothing was saved." reasons={refusal.problems.length > 0 ? refusal.problems.map(problemText) : [refusal.error]} focusKey={tries} />
-      )}
-      <fieldset className="form-group">
-        <legend>Fields</legend>
-        {children(first)}
-      </fieldset>
-      <div className="record-form-actions">
-        <Button variant="primary" type="submit" disabled={saving}>{saving ? 'Saving…' : saveLabel}</Button>
-        <Button onClick={onCancel} disabled={saving}>Cancel</Button>
-      </div>
-    </form>
-  );
-}
-
-/** One field of a form, by what it is: a column of a table, a record the field names, or a list of them. */
-type FieldSpec =
-  | { field: string; column: string; table: string; long?: boolean; required?: boolean }
-  | { field: string; label: string; description: string; one: Choice[]; required?: boolean }
-  | { field: string; label: string; description: string; many: Choice[] };
-
-/** The fields of a form, drawn from the shared inputs in the order given; the first takes focus. */
-function Fields({ index, specs, draft, setDraft, first }: {
-  index: SpecIndex;
-  specs: FieldSpec[];
-  draft: Draft;
-  setDraft: (change: (d: Draft) => Draft) => void;
-  first: React.RefObject<HTMLInputElement & HTMLTextAreaElement & HTMLSelectElement | null>;
-}) {
-  const formId = useId();
-  return (
-    <>
-      {specs.map((spec, at) => {
-        const id = `${formId}-field-${spec.field}`;
-        const ref = at === 0 ? first : undefined;
-        if ('column' in spec) {
-          const column = columnOf(index, spec.table, spec.column);
-          return (
-            <ColumnField key={spec.field} id={id} column={column} label={spec.field === 'id' ? 'ID' : spec.column.replaceAll('_', ' ')} long={spec.long}
-              required={spec.required ?? column.required} value={draft.text[spec.field] ?? ''} inputRef={ref}
-              onChange={(text) => setDraft((d) => ({ ...d, text: { ...d.text, [spec.field]: text } }))} />
-          );
-        }
-        if ('one' in spec) {
-          return (
-            <IdField key={spec.field} id={id} label={spec.label} description={spec.description} choices={spec.one} required={spec.required} inputRef={ref}
-              value={draft.text[spec.field] ?? ''} onChange={(value) => setDraft((d) => ({ ...d, text: { ...d.text, [spec.field]: value } }))} />
-          );
-        }
-        return (
-          <IdsField key={spec.field} id={id} label={spec.label} description={spec.description} choices={spec.many} ids={draft.ids[spec.field] ?? []}
-            renderId={(target) => <RecordLink index={index} id={target} />}
-            onChange={(ids) => setDraft((d) => ({ ...d, ids: { ...d.ids, [spec.field]: ids } }))} />
-        );
-      })}
-    </>
-  );
-}
+/** A use case's actors: the roles that take part, one per line. */
+const ACTORS: FieldSpec = { field: 'actors', label: 'Actors', description: 'The roles that take part in it.', texts: true };
 
 /** The fields each kind's Add and Change take (Change leaves out the ID and the parent), in their input's order. */
 function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean, parent: string): FieldSpec[] {
@@ -219,7 +123,7 @@ function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean, pare
         { field: 'title', column: 'title', table: 'use_case' },
         { field: 'goal', column: 'goal', table: 'use_case', long: true },
         { field: 'notes', column: 'notes', table: 'use_case', long: true },
-        { field: 'actors', column: 'role_name', table: 'use_case_actor', required: false },
+        ACTORS,
       ];
     case 'uc_requirement':
       return [
@@ -272,20 +176,19 @@ function fieldsOf(context: FormContext, kind: UseCaseKind, adding: boolean, pare
   }
 }
 
-/** The record's current values, by its input's field names, as a draft: its row's columns and the links it starts. */
-function currentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): { values: Record<string, Value | undefined>; ids: Record<string, string[]> } {
-  const row = <T extends object>(r: T) => r as unknown as Record<string, Value | undefined>;
-  const tested = (t: TestOnPage<object>) => ({ values: row(t.test), ids: { starts_from: t.startsFrom } });
+/** The record's current values, by its input's field names: its row's columns and the links it starts. */
+function currentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): Record<string, unknown> {
+  const tested = (t: TestOnPage<object>) => ({ ...t.test, starts_from: t.startsFrom });
   switch (kind) {
     case 'use_case':
-      return { values: { ...row(useCase.useCase), actors: useCase.actors }, ids: {} };
+      return { ...useCase.useCase, actors: useCase.actors };
     case 'uc_requirement':
-      return { values: row(useCase.requirements.find((r) => r.requirement.id === id)!.requirement), ids: {} };
+      return { ...useCase.requirements.find((r) => r.requirement.id === id)!.requirement };
     case 'flow':
-      return { values: row(useCase.flows.find((f) => f.flow.id === id)!.flow), ids: {} };
+      return { ...useCase.flows.find((f) => f.flow.id === id)!.flow };
     case 'flow_step': {
       const step: StepOnPage = stepsOfUseCase(useCase).find((s) => s.step.id === id)!;
-      return { values: { ...row(step.step), invokes: step.invokes ?? undefined, happens_in: step.happensIn ?? undefined }, ids: { fulfills: step.fulfills, exchanges_with: step.exchangesWith } };
+      return { ...step.step, invokes: step.invokes ?? undefined, happens_in: step.happensIn ?? undefined, fulfills: step.fulfills, exchanges_with: step.exchangesWith };
     }
     case 'use_case_test':
       return tested(useCase.requirements.flatMap((r) => r.tests).find((t) => t.test.id === id)!);
@@ -293,19 +196,6 @@ function currentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): { value
       return tested(useCase.flows.find((f) => f.test?.test.id === id)!.test!);
   }
 }
-
-/** The column a field's text becomes the value of; a field naming a record is its ID, as text. */
-const columnFor = (index: SpecIndex, spec: FieldSpec): ColumnDescription | null => ('column' in spec ? columnOf(index, spec.table, spec.column) : null);
-
-/** A field's value from its text: the column's value, a list of lines for the actors, or the ID it names. */
-function valueOf(index: SpecIndex, spec: FieldSpec, text: string): Value | undefined {
-  const column = columnFor(index, spec);
-  if (spec.field === 'actors') return text.split('\n').map((l) => l.trim()).filter(Boolean);
-  if (!column) return text.trim() || undefined;
-  return columnValue(column, text);
-}
-
-const same = (a: unknown, b: unknown) => JSON.stringify(a ?? null) === JSON.stringify(b ?? null);
 
 /** Each kind's Change command, and the fields it may clear with null. */
 const CHANGE: Record<UseCaseKind, { route: UseCaseRoute; clearable: readonly string[] }> = {
@@ -336,22 +226,9 @@ function ChangeForm({ context, id, kind }: { context: FormContext; id: string; k
   const announce = useAnnounce();
   const specs = fieldsOf(context, kind, false, id);
   const current = currentOf(useCase, kind, id);
-  const [draft, setDraft] = useState<Draft>(() => ({
-    text: Object.fromEntries(specs.filter((s) => !('many' in s)).map((s) => [s.field, columnText(current.values[s.field])])),
-    ids: Object.fromEntries(specs.filter((s) => 'many' in s).map((s) => [s.field, current.ids[s.field] ?? []])),
-  }));
+  const [draft, setDraft] = useState<Draft>(() => draftOf(specs, current));
   const submit = async () => {
-    const input: Record<string, unknown> = { id };
-    for (const spec of specs) {
-      if ('many' in spec) {
-        if (!same([...(current.ids[spec.field] ?? [])].sort(), [...(draft.ids[spec.field] ?? [])].sort())) input[spec.field] = draft.ids[spec.field] ?? [];
-        continue;
-      }
-      const value = valueOf(index, spec, draft.text[spec.field] ?? '');
-      if (same(value, current.values[spec.field])) continue;
-      // Emptied: cleared where the command may clear it; otherwise sent empty, and the command says why it is needed.
-      input[spec.field] = value ?? (CHANGE[kind].clearable.includes(spec.field) ? null : '');
-    }
+    const input = changeInput(index, specs, draft, current, { id }, CHANGE[kind].clearable);
     if (Object.keys(input).length === 1) { announce('Nothing changed'); onDone(); return null; }
     const answer = await send(writer, CHANGE[kind].route, input);
     if (answer.ok) { announce(`Saved ${id}`); onDone(); }
@@ -371,8 +248,8 @@ function AddForm({ context, parent, kind }: { context: FormContext; parent: stri
   const specs = fieldsOf(context, kind, true, parent);
   const next = useNextId(kind, parent, index);
   const [draft, setDraft] = useState<Draft>(() => ({
+    ...emptyDraft(),
     text: { path: kind === 'flow_step' ? 'main' : '', ...(kind === 'flow_step' ? { position: String(nextPosition(stepsOfUseCase(useCase).filter((s) => s.step.flow_id === parent))) } : {}) },
-    ids: {},
   }));
   // The suggested ID fills the field once it is read, unless something was typed there first.
   useEffect(() => {
@@ -388,15 +265,7 @@ function AddForm({ context, parent, kind }: { context: FormContext; parent: stri
     return after;
   });
   const submit = async () => {
-    const input: Record<string, unknown> = { [ADD[kind].parent]: parent };
-    for (const spec of specs) {
-      if ('many' in spec) {
-        if ((draft.ids[spec.field] ?? []).length > 0) input[spec.field] = draft.ids[spec.field];
-        continue;
-      }
-      const value = valueOf(index, spec, draft.text[spec.field] ?? '');
-      if (value !== undefined && !(Array.isArray(value) && value.length === 0 && spec.field === 'actors')) input[spec.field] = value;
-    }
+    const input = addInput(index, specs, draft, { [ADD[kind].parent]: parent });
     const answer = await send(writer, ADD[kind].route, input);
     if (answer.ok) {
       announce(`Added ${String(input.id)}`);
@@ -478,50 +347,12 @@ function parentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): string {
   }
 }
 
-/** Remove: says what goes with the record, sends its Remove, and shows the refusal (what still references it). */
-function RemovePanel({ context, id, kind }: { context: FormContext; id: string; kind: UseCaseKind }) {
-  const { index, useCase, writer, onDone } = context;
-  const announce = useAnnounce();
-  const [refusal, setRefusal] = useState<{ error: string; problems: StoreProblem[] } | null>(null);
-  const [tries, setTries] = useState(0);
-  const [busy, setBusy] = useState(false);
-  const heading = useRef<HTMLHeadingElement>(null);
-  useEffect(() => { heading.current?.focus(); }, []);
-  const goes = goesWith(useCase, kind, id);
-  const remove = async () => {
-    setBusy(true);
-    const answer = await sendUseCase(writer, REMOVE[kind], { id });
-    setBusy(false);
-    setTries((t) => t + 1);
-    if (!answer.ok) { setRefusal({ error: answer.error, problems: answer.problems }); return; }
-    announce(`Removed ${id}`);
-    navigate(addressOf(parentOf(useCase, kind, id)));
-  };
-  return (
-    <section className="remove-panel" aria-labelledby={`remove-${id}`}>
-      <h2 id={`remove-${id}`} tabIndex={-1} ref={heading}>Remove {id}?</h2>
-      <p>This removes the {LABEL[kind]} <strong>{index.byId.get(id)?.title ?? id}</strong> and the links it starts{goes.length > 0 ? `, with the ${goes.length} ${goes.length === 1 ? 'record' : 'records'} under it` : ''}. It is refused while anything else still references them.</p>
-      {goes.length > 0 && (
-        <ul className="plain remove-referrers" aria-label={`What goes with ${id}`}>
-          {goes.slice(0, 20).map((g) => <li key={g}><RecordLink index={index} id={g} /></li>)}
-          {goes.length > 20 && <li className="hint">and {goes.length - 20} more</li>}
-        </ul>
-      )}
-      {refusal && <Refusal title="The removal was refused. Nothing was changed." reasons={refusal.problems.length > 0 ? refusal.problems.map(problemText) : [refusal.error]} focusKey={tries} />}
-      <div className="record-form-actions">
-        <Button danger onClick={remove} disabled={busy}>{busy ? 'Removing…' : `Remove ${id}`}</Button>
-        <Button onClick={onDone} disabled={busy}>Cancel</Button>
-      </div>
-    </section>
-  );
-}
-
 /** Add a use case to a capability (from the capability's page): the aggregate's own Add, its ID the next free one. */
 export function AddUseCaseForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextId('use_case', parent, index);
-  const [draft, setDraft] = useState<Draft>({ text: {}, ids: {} });
+  const [draft, setDraft] = useState<Draft>(emptyDraft);
   useEffect(() => {
     if (next.state === 'read') setDraft((d) => (d.text.id ? d : { ...d, text: { ...d.text, id: next.answer } }));
   }, [next]);
@@ -530,14 +361,10 @@ export function AddUseCaseForm({ index, parent, onDone }: { index: SpecIndex; pa
     { field: 'title', column: 'title', table: 'use_case' },
     { field: 'goal', column: 'goal', table: 'use_case', long: true },
     { field: 'notes', column: 'notes', table: 'use_case', long: true },
-    { field: 'actors', column: 'role_name', table: 'use_case_actor', required: false },
+    ACTORS,
   ];
   const submit = async () => {
-    const input: Record<string, unknown> = { capability_id: parent };
-    for (const spec of specs) {
-      const value = valueOf(index, spec, draft.text[spec.field] ?? '');
-      if (value !== undefined && !(Array.isArray(value) && value.length === 0)) input[spec.field] = value;
-    }
+    const input = addInput(index, specs, draft, { capability_id: parent });
     const answer = await send(writer, '/api/use-case/add-use-case', input);
     if (answer.ok) { announce(`Added ${String(input.id)}`); navigate(addressOf(String(input.id))); }
     return answer;

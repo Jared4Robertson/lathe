@@ -51,6 +51,20 @@ describe('LA-V113-R02-T01 the Tooling editor writes only through the aggregate\'
     await waitFor(() => expect(commands).toEqual([{ route: '/api/tooling/change-tooling', input: { id: 'DM-SHOP-TOOL01', file: null } }]));
     expect(writes).toEqual([]);
   });
+
+  it('Edit shows its packages one per line in the shared list-of-texts input, and sends the list as it now stands', async () => {
+    const user = userEvent.setup();
+    const { commands, writes } = await openApp('/DM-SHOP-TOOL01', { data: withTooling(), command: () => ({ answer: ok }) });
+    await within(main()).findByRole('heading', { name: /^Packages/ });
+    await user.click(within(toolbar('DM-SHOP-TOOL01')).getByRole('button', { name: 'Edit' }));
+    const form = screen.getByRole('form', { name: 'Edit DM-SHOP-TOOL01' });
+    const packages = within(form).getByRole('textbox', { name: /^Packages/ });
+    expect(packages).toHaveValue('vitest');
+    await user.type(packages, '{Enter}  zod  {Enter}');
+    await user.click(within(form).getByRole('button', { name: 'Save' }));
+    await waitFor(() => expect(commands).toEqual([{ route: '/api/tooling/change-tooling', input: { id: 'DM-SHOP-TOOL01', packages: ['vitest', 'zod'] } }]));
+    expect(writes).toEqual([]);
+  });
 });
 
 describe('LA-V113-R03-T01 a refused Tooling command shows every reason, keeps what was entered, and changes nothing', () => {
