@@ -27,9 +27,10 @@ async function quickFind(page: Page, id: string) {
   await page.waitForURL((u) => u.pathname === `/${id}`);
 }
 
-/** Opens a box other than the focus in a new tab, by Cmd+click, and returns its ID. */
+/** Opens a record's box other than the focus in a new tab, by Cmd+click, and returns its ID. */
 async function openBoxInNewTab(page: Page): Promise<string> {
-  const box = page.locator('.focus-stage .graph-box:not(.is-focus)').first();
+  // A record's box (a group's tab is named by its title, not an ID).
+  const box = page.locator('.focus-stage .graph-box:not(.is-focus):not([data-id*="/"])').first();
   await box.waitFor({ state: 'attached' });
   const id = (await box.getAttribute('data-id'))!;
   await box.dispatchEvent('click', { metaKey: true, button: 0 });
