@@ -55,7 +55,7 @@ export type LatheTools =
   | { status: 'loaded'; version: string | null; count: number }
   | { status: 'failed'; version: string | null; problem: string };
 
-/** The models the picker offers, by the alias `--model` takes; null is Claude Code's own default. */
+/** The models the picker offers, by the short name `--model` takes; null is Claude Code's own default. */
 export const CHAT_MODELS = ['opus', 'sonnet', 'haiku'] as const;
 export type ChatModel = (typeof CHAT_MODELS)[number];
 export const isChatModel = (value: unknown): value is ChatModel => typeof value === 'string' && (CHAT_MODELS as readonly string[]).includes(value);
