@@ -4,7 +4,7 @@
 .delivery-stage { margin-block-end: 16px; }
 .delivery-row-box { display: flex; align-items: stretch; gap: 6px; margin-inline-start: calc(var(--depth, 0) * 14px); }
 .delivery-row-box > .trace-col-row { flex: 1 1 auto; min-inline-size: 0; }
-.delivery-toggle { flex: none; min-inline-size: 64px; min-block-size: 44px; font: inherit; font-size: 0.85rem; color: var(--ink); background: var(--sheet); border: 1px solid var(--rule); border-radius: 6px; cursor: pointer; }
+.delivery-toggle { flex: none; min-inline-size: 64px; min-block-size: 44px; justify-content: center; }
 .trace-col-row.is-status { border-color: var(--g-interaction-design); background: var(--sheet); }
 .trace-col-row.is-heading { border-style: solid; border-color: var(--rule); background: var(--sheet); }
 .trace-col-row.is-hint { border-style: dashed; border-color: var(--rule); background: none; color: var(--muted); }

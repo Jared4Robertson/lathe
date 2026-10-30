@@ -31,7 +31,6 @@ export const DELIVERY_COLUMN_LABELS: Record<DeliveryColumn, string> = { outcome:
 /** The columns that expand down, each a stage of every row. */
 export const DELIVERY_STAGES = ['use-case', 'design', 'technical', 'suite'] as const;
 export type DeliveryStage = (typeof DELIVERY_STAGES)[number];
-export const columnOf = (c: DeliveryColumn) => DELIVERY_COLUMNS.indexOf(c);
 
 /** What a box is: a record, a stage's status, a gap (dashed), a heading over a group, or a hint. */
 export type ItemRole = 'record' | 'status' | 'gap' | 'heading' | 'hint';

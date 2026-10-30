@@ -6,6 +6,7 @@
 import { useState, type CSSProperties, type MouseEvent } from 'react';
 import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { stageFor } from '../../graph/model';
+import { Button } from '../../components/Button';
 import { DELIVERY_COLUMN_LABELS, DELIVERY_COLUMNS, isOpen, rowsOf, visible, type DeliveryGraph, type Item, type Openness } from './delivery';
 
 export interface DeliveryListProps {
@@ -33,9 +34,9 @@ export function DeliveryList({ index, graph, order, open, focus, hrefFor, onNavi
 
   const go = (id: string) => (e: MouseEvent) => { if (!plain(e)) return; e.preventDefault(); onNavigate(id); };
   const toggle = (item: Item) => item.opens && (
-    <button type="button" className="delivery-toggle" aria-expanded={isOpen(item, open)} onClick={() => onToggle(item.opens!)}>
+    <Button className="delivery-toggle" aria-expanded={isOpen(item, open)} onClick={() => onToggle(item.opens!)}>
       {isOpen(item, open) ? 'Close' : 'Open'}<span className="sr-only"> {item.words?.title ?? index.byId.get(item.id ?? '')?.title ?? ''}</span>
-    </button>
+    </Button>
   );
   const box = (item: Item, heading = false) => {
     const record = item.id && item.role === 'record' ? index.byId.get(item.id) : undefined;
