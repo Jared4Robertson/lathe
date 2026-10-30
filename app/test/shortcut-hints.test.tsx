@@ -3,7 +3,7 @@ import { act, fireEvent, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it } from 'vitest';
 import { COMMANDS, ariaKeyShortcuts, formatBinding, resolveCommands } from '../src/shell/keymap';
-import { OVERRIDES_KEY } from '../src/platform/keymap/read-model';
+import { bindKey } from '../src/platform/key-bindings/commands/bind-key';
 import { TOOLTIP_DELAY } from '../src/shell/Tooltip';
 import { openApp } from './helpers';
 import { testWorkspace } from './graph/workspace';
@@ -13,7 +13,7 @@ import { addRows } from './fixtures/load';
 const twoProducts = () => addRows(testWorkspace(), 'product', { id: 'ZZ', title: 'Other product' });
 
 // Shortcut hints the standard way: tooltips that name a control and its keys, the palette's
-// right-aligned keys, and aria-keyshortcuts, all read from the one keymap with its overrides.
+// right-aligned keys, and aria-keyshortcuts, all read from the one keymap with the person's keys.
 
 const nav = () => screen.getByRole('navigation', { name: 'Main' });
 const tooltip = () => screen.getByRole('tooltip');
@@ -126,8 +126,9 @@ describe('shortcut hints', () => {
     expect(css).toMatch(/\.palette-list li\s*\{[^}]*justify-content:\s*space-between/);
   });
 
-  it('LA-V61-R15-T01 A rebinding in local storage changes the tooltip, the palette, the sheet and aria-keyshortcuts', async () => {
-    window.localStorage.setItem(OVERRIDES_KEY, JSON.stringify({ toggleNav: 'Mod+J', stageGraph: ['Alt+G'] }));
+  it('LA-V61-R15-T01 A rebinding changes the tooltip, the palette, the sheet and aria-keyshortcuts', async () => {
+    bindKey({ shortcut: 'toggleNav', key: 'Ctrl+J', replacing: 'Ctrl+B', mac: false });
+    bindKey({ shortcut: 'stageGraph', key: 'Ctrl+Alt+G', replacing: 'Alt+G', mac: false });
     await openApp('/P-D-UC01', { data: testWorkspace() });
     await screen.findByRole('heading', { level: 1, name: 'Lend a thing' });
     const collapse = within(nav()).getByRole('button', { name: 'Collapse the navigation' });
@@ -135,9 +136,9 @@ describe('shortcut hints', () => {
     keyFocus(collapse);
     expect(tooltip()).toHaveTextContent('Collapse the navigation Ctrl+J');
     const graph = within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name: 'Graph' });
-    expect(graph).toHaveAttribute('aria-keyshortcuts', 'Alt+G');
+    expect(graph).toHaveAttribute('aria-keyshortcuts', 'Control+Alt+G Control+1');
     keyFocus(graph);
-    expect(tooltip()).toHaveTextContent('Graph stage Alt+G');
+    expect(tooltip()).toHaveTextContent('Graph stage Ctrl+Alt+G');
 
     openPalette();
     const palette = screen.getByRole('dialog', { name: 'Command palette' });
@@ -147,7 +148,7 @@ describe('shortcut hints', () => {
     fireEvent.keyDown(document.body, { key: '?', code: 'Slash', shiftKey: true });
     const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
     expect(within(sheet).getByRole('rowheader', { name: 'Show or hide the navigation' }).nextElementSibling).toHaveTextContent('Ctrl+J');
-    expect(within(sheet).getByRole('rowheader', { name: 'Graph stage' }).nextElementSibling).toHaveTextContent('Alt+G');
+    expect(within(sheet).getByRole('rowheader', { name: 'Graph stage' }).nextElementSibling).toHaveTextContent('Ctrl+Alt+G or Ctrl+1');
   });
 
   const proveLaPltDs01T02 = async () => {
@@ -194,7 +195,7 @@ describe('shortcut hints', () => {
     fireEvent.keyDown(document.body, { key: '?', code: 'Slash', shiftKey: true });
     const sheet = screen.getByRole('dialog', { name: 'Keyboard shortcuts' });
     const rows = within(sheet).getAllByRole('rowheader').filter((r) => r.textContent!.startsWith('Switch to'));
-    expect(rows.map((r) => [r.textContent, r.nextElementSibling!.textContent])).toEqual([
+    expect(rows.map((r) => [r.textContent, [...r.nextElementSibling!.querySelectorAll('kbd')].map((k) => k.textContent).join(' ')])).toEqual([
       ['Switch to Demo shop', 'Alt+1'],
       ['Switch to Notebook', 'Alt+2'],
     ]);

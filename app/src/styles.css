@@ -605,8 +605,34 @@ li.problem.is-current-problem { box-shadow: 0 0 0 2px var(--steel); }
 .kbd { display: inline-block; font: 500 0.75rem var(--mono); padding: 1px 6px; border: 1px solid var(--rule); border-bottom-width: 2px; border-radius: 4px; background: var(--paper); color: var(--ink); }
 .shortcut-table td.cmd-id { padding-left: 10px; width: 1%; }
 .cmd-id code { color: var(--muted); font-size: 0.7rem; }
-.kbd-or { color: var(--muted); font-size: 0.75rem; }
-.shortcut-note { font-size: 0.78rem; }
+.kbd-or { color: var(--muted); font-size: 0.75rem; white-space: pre; }
+.shortcut-note { font-size: 0.78rem; margin: 0; }
+/* Each shortcut's keys in the sheet: a key to change (it records the next key pressed), its remove button, Add key, Reset. */
+.shortcut-table td.shortcut-keys { white-space: normal; }
+.dialog.shortcut-sheet { width: min(780px, calc(100vw - 32px)); }
+.shortcut-key-list { display: flex; flex-wrap: nowrap; justify-content: flex-end; align-items: center; gap: 4px; }
+.shortcut-key { display: inline-flex; align-items: center; }
+.shortcut-key .button.shortcut-key-change { padding: 2px 3px; min-height: 26px; }
+.shortcut-key .icon-button.shortcut-key-remove { min-width: 22px; min-height: 22px; }
+.shortcut-table .button.shortcut-add, .shortcut-table .button.shortcut-reset { min-height: 26px; padding: 2px 8px; font-size: 0.78rem; }
+.shortcut-table td.shortcut-reset-cell { width: 1%; padding-left: 4px; }
+.shortcut-none, .shortcut-fixed { color: var(--muted); font-size: 0.75rem; }
+.button.key-recorder { min-height: 26px; padding: 2px 8px; border: 1px dashed var(--steel); background: var(--steel-bg); color: var(--steel); font: 500 0.75rem var(--mono); }
+.key-recorder-hint { color: var(--muted); font-weight: 400; }
+.shortcut-table tr.shortcut-offer-row { border-top: 0; }
+.shortcut-table tr.shortcut-offer-row > td { padding: 0 0 6px; text-align: left; white-space: normal; }
+.shortcut-offer { display: flex; flex-wrap: wrap; justify-content: flex-end; align-items: center; gap: 6px; padding: 6px 8px; border-radius: 6px; background: var(--paper); border: 1px solid var(--rule); text-align: left; white-space: normal; font-size: 0.82rem; }
+.shortcut-offer > span { flex: 1 1 12em; }
+.shortcut-foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.shortcut-foot .shortcut-note { flex: 1 1 18em; }
+/* On a phone a row's keys wrap under its name and the command's ID gives way, so nothing scrolls sideways. */
+@media (max-width: 600px) {
+  .shortcut-table tr { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+  .shortcut-table th, .shortcut-table tr.shortcut-offer-row > td { grid-column: 1 / -1; }
+  .shortcut-table td.cmd-id { display: none; }
+  .shortcut-key-list { flex-wrap: wrap; justify-content: flex-start; }
+  .shortcut-table td.shortcut-keys { text-align: left; }
+}
 .palette-list { list-style: none; margin: 0; padding: 0; overflow-y: auto; }
 .palette-list li { display: flex; justify-content: space-between; gap: 12px; align-items: center; padding: var(--item-pad-y) 8px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
 .palette-list li.active { background: var(--steel-bg); color: var(--steel); }

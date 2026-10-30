@@ -2,7 +2,7 @@ import type { MenuItemConstructorOptions } from 'electron';
 import { describe, expect, it, vi } from 'vitest';
 import { COMMANDS, eventChord, normalizeBinding, platformKeys } from '../../app/src/shell/keymap.ts';
 import { commandKeys, keyPresses, MENU_COMMANDS, TAB_COMMANDS } from '../src/commands.ts';
-import { menuTemplate } from '../src/menu.ts';
+import { acceleratorOf, menuTemplate } from '../src/menu.ts';
 
 type Item = MenuItemConstructorOptions;
 const submenu = (item: Item | undefined) => (item?.submenu ?? []) as Item[];
@@ -74,6 +74,28 @@ describe('The native menus offer the app commands, by command ID, without taking
         expect(chords.join(' '), `${command.id} on ${mac ? 'Mac' : 'other'}`).toBe(normalizeBinding(keys, mac));
       }
     }
+  });
+});
+
+describe('LA-V66-R03 The menus show the person\'s keys without taking them', () => {
+  it('LA-V66-R03-T02 shows the first key of each command that can be an accelerator, never registered, and the menu\'s own keys stay', () => {
+    expect(acceleratorOf('Shift+Meta+P', true)).toBe('Shift+Cmd+P');
+    expect(acceleratorOf('Ctrl+Shift+P', false)).toBe('Ctrl+Shift+P');
+    expect(acceleratorOf('Ctrl+Meta+I', false)).toBe('Ctrl+Super+I');
+    expect(acceleratorOf('Alt+ArrowLeft', false)).toBe('Alt+Left');
+    expect(acceleratorOf('Ctrl++', false)).toBe('Ctrl+Plus');
+    expect(acceleratorOf('F8', false)).toBe('F8');
+    // A plain key and a sequence cannot be shown as an accelerator.
+    for (const k of ['?', 'Enter', 'G F', 'Shift+K', 'ArrowUp']) expect(acceleratorOf(k, true), k).toBeUndefined();
+    const keys = { toggleNav: ['Meta+J'], showShortcuts: ['?', 'Meta+/'], goFormat: ['G F'], newTab: ['Alt+Shift+T'] };
+    const actions = { recent: [], openFolder: vi.fn(), openRecent: vi.fn(), clearRecent: vi.fn(), runCommand: vi.fn(), keys };
+    const items = flat(menuTemplate(actions, true));
+    expect(items.find((m) => m.label === 'Show or Hide Navigation')).toMatchObject({ accelerator: 'Cmd+J', registerAccelerator: false });
+    expect(items.find((m) => m.label === 'Keyboard Shortcuts')).toMatchObject({ accelerator: 'Cmd+/', registerAccelerator: false });
+    expect(items.find((m) => m.label === 'Record Format')?.accelerator).toBeUndefined();
+    // New Tab keeps the menu's own Cmd+T, registered.
+    expect(items.find((m) => m.label === 'New Tab')).toEqual(expect.objectContaining({ accelerator: 'CmdOrCtrl+T' }));
+    expect(items.find((m) => m.label === 'New Tab')?.registerAccelerator).toBeUndefined();
   });
 });
 

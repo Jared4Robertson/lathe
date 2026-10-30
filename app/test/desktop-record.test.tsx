@@ -23,6 +23,7 @@ function desktop() {
       listener(false);
       return () => {};
     }),
+    setMenuKeys: vi.fn<(keys: Record<string, string[]>) => void>(),
     setErrorCount: vi.fn<(count: number) => void>(),
     revealRecord: vi.fn<(id: string) => void>(),
     openRecordInEditor: vi.fn<(id: string) => void>(),

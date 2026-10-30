@@ -7,7 +7,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { COMMANDS, SPACE_KEYS, spaceCommandId } from '../src/shell/keymap';
+import { COMMANDS, SPACE_KEYS, WALK_COMMANDS, spaceCommandId } from '../src/shell/keymap';
 import { STAGE_NAMES } from '../src/views/address';
 
 const src = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../src');
@@ -27,6 +27,8 @@ const quoted = (text: string) => [...text.matchAll(/'([A-Za-z0-9_-]+)'|"([A-Za-z
 /** Command IDs registered with useCommand('id', ...); the space commands are registered through spaceCommandId(n). */
 const handled = new Set([...source.matchAll(/useCommand\(\s*'([A-Za-z0-9]+)'/g)].map((m) => m[1]));
 if (/useCommand\(\s*spaceCommandId\(/.test(source)) for (let n = 1; n <= SPACE_KEYS; n++) handled.add(spaceCommandId(n));
+// The walk's moves are handled by the stage walk (useStageWalk), which the commands layer sends their keys to.
+if (/useStageWalk\(/.test(source)) for (const id of Object.values(WALK_COMMANDS)) handled.add(id);
 
 describe('LA-STD-PRINCIPLES-R04-T03 commands', () => {
   it('Every command in the keymap is handled and can be reached', () => {

@@ -8,6 +8,7 @@ import { windowForFolder } from '../src/instance.ts';
 import { closeProductWindow } from '../src/product-window/commands/close-product-window.ts';
 import { openProductFolder } from '../src/product-window/commands/open-product-folder.ts';
 import { reportErrorCount } from '../src/product-window/commands/report-error-count.ts';
+import { reportMenuKeys } from '../src/product-window/commands/report-menu-keys.ts';
 import { revealRecordDataFile } from '../src/product-window/commands/reveal-record-data-file.ts';
 import { saveWindowPlace } from '../src/product-window/commands/save-window-place.ts';
 import type { OpenWindow } from '../src/product-window/model.ts';
@@ -55,6 +56,11 @@ describe('LA-PLT-INV05-T Each folder has one window: the Product window\'s repos
     expect(reportErrorCount(windows, { folder: '/p/b', count: 3 })).toBe(true);
     expect(reportErrorCount(windows, { folder: '/p/b', count: '3' })).toBe(false);
     expect(windows.load().open.get('/p/b')?.errors).toBe(3);
+    // The page's keys, for the menu: kept as sent, anything that is not a list of key texts dropped.
+    expect(reportMenuKeys(windows, { folder: '/p/b', keys: { toggleNav: ['Shift+Meta+J'], bad: 'x', 'no id': ['A'] } })).toBe(true);
+    expect(reportMenuKeys(windows, { folder: '/p/b', keys: { toggleNav: ['Shift+Meta+J'] } })).toBe(false);
+    expect(reportMenuKeys(windows, { folder: '/p/x', keys: {} })).toBe(false);
+    expect(windows.load().open.get('/p/b')?.menuKeys).toEqual({ toggleNav: ['Shift+Meta+J'] });
     const reveal = vi.fn();
     revealRecordDataFile(windows, { folder: '/p/b', request: { id: 'LA-AUT-UC01', path: '/etc' } }, reveal);
     revealRecordDataFile(windows, { folder: '/p/b', request: { id: 'LA-AUT-UC01' } }, reveal);

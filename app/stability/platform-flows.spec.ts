@@ -104,13 +104,13 @@ test.describe('Platform flows in the app', () => {
     await filter.pressSequentially('gt?');
     await expect(filter).toHaveValue('gt?');
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    // ? opens the shortcuts sheet: every shortcut by group, a search, how to override a binding.
+    // ? opens the shortcuts sheet: every shortcut by group, a search, and each shortcut's keys to change.
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('Shift+?');
     const sheet = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
     await expect(sheet).toBeVisible();
     await expect(sheet.getByRole('region', { name: 'Navigate' })).toBeVisible();
-    await expect(sheet).toContainText('lathe:keybindings');
+    await expect(sheet.getByRole('button', { name: 'Add a key to Command palette' })).toBeVisible();
     await sheet.getByRole('searchbox', { name: 'Search shortcuts' }).fill('palette');
     await expect(sheet.getByRole('rowheader', { name: 'Command palette' })).toBeVisible();
   });
@@ -125,22 +125,60 @@ test.describe('Platform flows in the app', () => {
     await page.keyboard.type('navigation');
     await expect(palette(page).getByRole('option', { name: /Show or hide the navigation Ctrl\+B$/ })).toBeVisible();
     await page.keyboard.press('Escape');
-    // Rebind toggleNav, as the sheet says, and reload: every hint follows.
-    await page.evaluate(() => localStorage.setItem('lathe:keybindings', JSON.stringify({ toggleNav: 'Mod+J' })));
-    await page.reload();
-    await page.locator('.header-strip h1').first().waitFor();
-    await nav(page).getByRole('button', { name: 'Collapse the navigation' }).hover();
-    await expect(page.locator('.tooltip')).toContainText('Ctrl+J');
-    await expect(nav(page).getByRole('button', { name: 'Collapse the navigation' })).toHaveAttribute('aria-keyshortcuts', /Control\+J/);
+    // Rebind toggleNav in the shortcuts sheet: every hint follows at once, and after a reload.
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Shift+?');
+    const sheet = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+    await sheet.getByRole('searchbox', { name: 'Search shortcuts' }).fill('navigation');
+    await sheet.getByRole('button', { name: 'Change Ctrl+B of Show or hide the navigation' }).click();
+    await expect(sheet.getByRole('button', { name: /^Press a key for Show or hide the navigation/ })).toBeFocused();
+    await page.keyboard.press('Control+j');
+    await expect(sheet.getByRole('row', { name: /^Show or hide the navigation/ })).toContainText('Ctrl+J');
+    await page.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
+    for (const when of ['now', 'after a reload']) {
+      if (when === 'after a reload') { await page.reload(); await page.locator('.header-strip h1').first().waitFor(); }
+      await nav(page).getByRole('button', { name: 'Collapse the navigation' }).hover();
+      await expect(page.locator('.tooltip'), when).toContainText('Ctrl+J');
+      await expect(nav(page).getByRole('button', { name: 'Collapse the navigation' }), when).toHaveAttribute('aria-keyshortcuts', /Control\+J/);
+    }
     await page.keyboard.press('Control+Shift+p');
     await page.keyboard.type('navigation');
     await expect(palette(page).getByRole('option', { name: /Show or hide the navigation Ctrl\+J$/ })).toBeVisible();
     await page.keyboard.press('Escape');
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('Control+j');
+    await expect(nav(page).getByRole('button', { name: 'Expand the navigation' })).toBeVisible();
+  });
+
+  test('LA-V61-R10-T03 a walk key and a stage key rebound in the shortcuts sheet walk the stage and switch it, and the old ones no longer do', async ({ page }) => {
+    await openPage(page, `${RECORD}?stage=erd`);
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
     await page.keyboard.press('Shift+?');
-    await page.getByRole('dialog', { name: 'Keyboard shortcuts' }).getByRole('searchbox', { name: 'Search shortcuts' }).fill('navigation');
-    await expect(page.getByRole('dialog', { name: 'Keyboard shortcuts' }).getByRole('row', { name: /^Show or hide the navigation/ })).toContainText('Ctrl+J');
-    await page.evaluate(() => localStorage.removeItem('lathe:keybindings'));
+    const sheet = page.getByRole('dialog', { name: 'Keyboard shortcuts' });
+    // Step right: L becomes Y. Graph stage: Ctrl+1 becomes Ctrl+Alt+1.
+    await sheet.getByRole('button', { name: 'Change l of Step right' }).click();
+    await page.keyboard.press('y');
+    await expect(sheet.getByRole('row', { name: /^Step right/ })).toContainText('y');
+    await sheet.getByRole('button', { name: 'Change Ctrl+1 of Graph stage' }).click();
+    await page.keyboard.press('Control+Alt+1');
+    await expect(sheet.getByRole('row', { name: /^Graph stage/ })).toContainText('Ctrl+Alt+1');
+    await page.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
+    // The old stage key does nothing; the new one shows the Graph.
+    await page.keyboard.press('Control+1');
+    await page.waitForTimeout(300);
+    expect(new URL(page.url()).searchParams.get('stage')).toBe('erd');
+    await page.keyboard.press('Control+Alt+1');
+    await page.locator(GRAPH_CANVAS).waitFor();
+    // Y walks right, as L did; L no longer walks.
+    const start = new URL(page.url()).pathname;
+    await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+    await page.keyboard.press('l');
+    await page.waitForTimeout(300);
+    expect(new URL(page.url()).pathname).toBe(start);
+    await page.keyboard.press('y');
+    await page.waitForURL((u) => u.pathname !== start);
   });
 
   test('LA-PLT-UC06-FL01-T arrange the panels: drag and step an edge, sizes kept, reset by double-click, fold by dragging small, collapse the wiki card', async ({ page }) => {

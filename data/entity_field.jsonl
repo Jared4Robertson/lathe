@@ -489,6 +489,7 @@
 {"entity_id":"LA-PLT-EN08","position":3,"name":"Server","meaning":"Where it loads Lathe from.","type_aggregate_id":"LA-PLT-A7","required":true}
 {"entity_id":"LA-PLT-EN08","position":4,"name":"Chrome","meaning":"The colors its own page last sent for its background and window controls.","type_value_object_id":"LA-VO65","required":false,"example":"#f4f1ea, #1d1b16"}
 {"entity_id":"LA-PLT-EN08","position":5,"name":"Error count","meaning":"The check errors its page last reported, for the Dock badge.","type":"whole number","required":false,"example":"3"}
+{"entity_id":"LA-PLT-EN08","position":6,"name":"Menu keys","meaning":"The keys the person bound in its page, by command, as the page last sent them, which the menu shows while it has focus.","type_value_object_id":"LA-VO61","required":false,"example":"toggleNav: Meta+J"}
 {"entity_id":"LA-PLT-EN09","position":1,"name":"Folder","meaning":"The folder.","type":"text","required":true,"example":"~/Development/tool-library"}
 {"entity_id":"LA-PLT-EN09","position":2,"name":"Opened","meaning":"When it was last opened, which orders the list. Not stored by the code (see findings).","type":"date and time","required":true,"example":"2026-10-25T09:14:00Z"}
 {"entity_id":"LA-PLT-EN10","position":1,"name":"Source","meaning":"Which server it is: `serve()` in the shell or from `lathe serve`, a Vite dev server the shell starts, or the shared 5199 dev server.","type":"text","required":true,"example":"serve()"}
@@ -505,6 +506,10 @@
 {"entity_id":"LA-PLT-EN20","position":1,"name":"Editor","meaning":"The editor Open in editor uses: VS Code, Cursor, Zed, the system default or a custom command.","type":"text","required":true}
 {"entity_id":"LA-PLT-EN20","position":2,"name":"Editor command","meaning":"The custom editor's command, run with the data file's path.","type":"text","required":false}
 {"entity_id":"LA-PLT-EN20","position":3,"name":"Claude path","meaning":"Where the `claude` the chat runs is, when it is not on the PATH.","type":"text","required":false}
+{"entity_id":"LA-PLT-EN24","position":1,"name":"Person","meaning":"Whose bindings they are: the browser they are kept in.","type":"text","required":true,"example":"this browser"}
+{"entity_id":"LA-PLT-EN25","position":1,"name":"Shortcut","meaning":"The keymap command whose keys these are.","type":"text","required":true,"example":"toggleNav"}
+{"entity_id":"LA-PLT-EN25","position":2,"name":"Keys","meaning":"Its keys on this platform, the first one shown.","type_value_object_id":"LA-VO61","required":false,"example":"Meta+J"}
+{"entity_id":"LA-PLT-EN25","position":3,"name":"Unbound","meaning":"Left without a key on purpose.","type":"yes/no","required":true,"example":"no"}
 {"entity_id":"LA-TRC-EN05","position":1,"name":"Follower","meaning":"The ID of the domain or use case that follows the pattern.","type":"text","required":true,"column_name":"source_id","example":"TL-LEND-UC01"}
 {"entity_id":"LA-TRC-EN05","position":2,"name":"Pattern","meaning":"The pattern followed.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"target_id","example":"TL-PAT-LIBRARIAN-ACTION"}
 {"entity_id":"LA-TRC-EN06","position":1,"name":"Setting","meaning":"One of the pattern's settings (a `pattern_setting` name).","type":"text","required":true,"example":"required_input"}
