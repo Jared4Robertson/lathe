@@ -11,13 +11,13 @@ import { textMeasure, treeLabel } from '../../src/graph/text';
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { layoutTree } from './maps';
 
-// Every map is laid out off the main thread, and again only when what it reads changes (LA-PLT-UC09-R13, layout.ts): its
+// Every map is laid out off the main thread, and again only when what it reads changes (LA-EXP-DS05, LA-PLT-UC09-R13, layout.ts): its
 // packed input is its key and what the layout's worker is sent; the map shown stays until the new one arrives.
 
 const MEASURE = () => textMeasure().key;
 
 describe('a map\'s layout input', () => {
-  it('LA-PLT-UC09-R13-T02 The worker lays out what the page would: its unpacked input places every box where the page places it', () => {
+  it('LA-EXP-DS05-T15 The worker lays out what the page would: its unpacked input places every box where the page places it', () => {
     const index = testIndex();
     const input = productInput(index, 'P', 'tree', MEASURE());
     const { shape, labels } = unpackInput(input.packed, input.shape.roots.map((r) => input.shape.ids.indexOf(r)));
@@ -30,7 +30,7 @@ describe('a map\'s layout input', () => {
     input.shape.ids.forEach((id, i) => expect([map.nodes.get(id)!.x, map.nodes.get(id)!.w, map.nodes.get(id)!.text]).toEqual([here.boxes[i * 5], here.boxes[i * 5 + 2], here.boxes[i * 5 + 4]]));
   });
 
-  it('LA-PLT-UC09-R13-T02 A map is laid out again only when what it reads changes: new data that leaves it alone gives the same input', () => {
+  it('LA-EXP-DS05-T15 A map is laid out again only when what it reads changes: new data that leaves it alone gives the same input', () => {
     const a = productInput(testIndex(), 'P', 'tree', MEASURE());
     const b = productInput(testIndex(), 'P', 'tree', MEASURE());
     expect(b).not.toBe(a);
@@ -45,7 +45,7 @@ describe('a map\'s layout input', () => {
     expect(productInput(testIndex(), 'P', 'nested', MEASURE()).packed).not.toBe(a.packed);
   });
 
-  it('LA-PLT-UC09-R13-T02 Kept fits lay a changed map out as a fresh layout does', () => {
+  it('LA-EXP-DS05-T15 Kept fits lay a changed map out as a fresh layout does', () => {
     const cache = fitCache();
     const index = testIndex();
     const input = productInput(index, 'P', 'tree', MEASURE());
@@ -81,7 +81,7 @@ class HeldWorker {
 describe('the layout\'s worker', () => {
   afterEach(() => vi.unstubAllGlobals());
 
-  it('LA-PLT-UC09-R13-T02 The map shown stays, with the index it was laid out from, until the new one arrives from the worker', async () => {
+  it('LA-EXP-DS05-T15 The map shown stays, with the index it was laid out from, until the new one arrives from the worker', async () => {
     vi.stubGlobal('Worker', HeldWorker);
     vi.stubGlobal('OffscreenCanvas', class {});
     vi.resetModules();

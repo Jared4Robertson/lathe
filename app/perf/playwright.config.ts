@@ -4,13 +4,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, devices } from '@playwright/test';
-import { largeProduct } from './large-product';
+import { largeProduct } from '../../lathe/perf/large-product.ts';
 
 // The performance suite (LA-PAT-APP-UX-R11): Playwright with Chromium, one worker. It builds the app
 // for production and serves it with `lathe serve`'s server (perf/serve.ts) on a free port, never
 // 5199, over a copy of this repo's data, then measures the first load, view switches, graph
-// re-centers, the ERD view and memory against the budgets in perf/budgets.ts; and, over the large product
-// (large-product.ts, about ten times Lathe's records) on a second port, the big maps' budgets (big-maps.perf.ts). Run it with
+// re-centers, the ERD view and memory against the budgets in perf/budgets.ts; and, over a copy of the large product
+// (lathe/perf/large-product.ts, about ten times Lathe's records) on a second port, the big maps' budgets (big-maps.perf.ts). Run it with
 // `npm --prefix app run test:perf`, after the stability suite for a UI change.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -44,7 +44,12 @@ if (!process.env.PERF_ROOT) {
 }
 // The large product the big-map scenarios measure (big-maps.perf.ts), served from the same build on its own port.
 if (!process.env.PERF_LARGE_PORT) process.env.PERF_LARGE_PORT = String(await freePort());
-if (!process.env.PERF_LARGE_ROOT) process.env.PERF_LARGE_ROOT = largeProduct(repo);
+if (!process.env.PERF_LARGE_ROOT) {
+  // A copy: the scenarios write to it.
+  const root = mkdtempSync(path.join(tmpdir(), 'lathe-perf-large-'));
+  cpSync(await largeProduct(), root, { recursive: true });
+  process.env.PERF_LARGE_ROOT = root;
+}
 const port = Number(process.env.PERF_PORT);
 const largePort = Number(process.env.PERF_LARGE_PORT);
 

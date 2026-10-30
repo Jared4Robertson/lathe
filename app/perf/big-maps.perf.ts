@@ -6,14 +6,15 @@ import { BUDGETS } from './budgets';
 import { installProbes, quiet, record, work } from './measure';
 import { GRAPH, sceneOf } from '../stability/scene';
 
-// LA-PLT-UC09-R13-T01: big maps stay smooth (LA-PLT-UC09-R13), on the large product (LA-PLT-TD04, large-product.ts),
+// LA-PLT-UC09-R13-T01: big maps stay smooth (LA-PLT-UC09-R13), on the large product (LA-PLT-TD04, lathe/perf/large-product.ts),
 // served by the perf server on its own port. The Graph, the ERD and the Trace are panned and zoomed at 60 Hz; the arrow
 // walk frames a new focus within its budget; the Graph's map is laid out off the main thread within its budget; and
 // panning goes on at 60 Hz through a data change that lays the map out again.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const LARGE = `http://127.0.0.1:${process.env.PERF_LARGE_PORT}`;
-const DOMAIN = '/LA-EXP';
+const DOMAIN = '/LP-D001';
+const USE_CASE = 'LP-D001-UC01';
 
 async function open(page: Page, url: string, ready: string) {
   await installProbes(page);
@@ -79,13 +80,13 @@ test.describe('big maps', () => {
   });
 
   test('LA-PLT-UC09-R13-T01 the Graph pans at 60 Hz through a data change that lays its map out again', async ({ page }) => {
-    await open(page, `${DOMAIN}-UC03?stage=graph`, `${GRAPH} .graph-box`);
+    await open(page, `/${USE_CASE}?stage=graph`, `${GRAPH} .graph-box`);
     const before = (await sceneOf(page)).laidOut!;
     const canvas = (await page.locator(`${GRAPH} canvas`).boundingBox())!;
     const at = { x: canvas.x + canvas.width * 0.5, y: canvas.y + canvas.height * 0.5 };
-    const title = `Walk the model as a graph ${Date.now() % 100_000}`;
+    const title = `Renew tool ${Date.now() % 100_000}`;
     // A write through the CLI, as an Agent writes: the server reloads, the page reads again, and the map is laid out again.
-    const written = new Promise<void>((done, fail) => execFile('node', [path.resolve(here, '../../lathe/bin/lathe.ts'), 'use-case', 'change-use-case', '--id', 'LA-EXP-UC03', '--title', title, '--root', process.env.PERF_LARGE_ROOT!], (e) => (e ? fail(e) : done())));
+    const written = new Promise<void>((done, fail) => execFile('node', [path.resolve(here, '../../lathe/bin/lathe.ts'), 'use-case', 'change-use-case', '--id', USE_CASE, '--title', title, '--root', process.env.PERF_LARGE_ROOT!], (e) => (e ? fail(e) : done())));
     const r = await work(page, async () => {
       await page.mouse.move(at.x, at.y);
       await page.mouse.down();
