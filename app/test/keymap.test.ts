@@ -136,9 +136,9 @@ describe('the keymap', () => {
     expect(keysOn('stageErd', true)).toEqual(['Ctrl+E', 'Ctrl+2']);
     expect(keysOn('stageTrace', true)).toEqual(['Ctrl+T', 'Ctrl+3']);
     expect(keysOn('toggleWikiCard', false)).toEqual(['Enter', 'Alt+W']);
-    // No single letter but the walk's own is left on W, A, S or D.
+    // No single letter but the walk's own is left on W, A, S, D or H, J, K, L.
     for (const mac of [true, false]) for (const c of resolveCommands({}, mac)) for (const k of c.keys) {
-      if (['W', 'A', 'S', 'D', 'Shift+W', 'Shift+S'].includes(normalizeBinding(k, mac))) expect(c.id, k).toMatch(/^walk/);
+      if (['W', 'A', 'S', 'D', 'H', 'J', 'K', 'L', 'Shift+W', 'Shift+S', 'Shift+K', 'Shift+J'].includes(normalizeBinding(k, mac))) expect(c.id, k).toMatch(/^walk/);
     }
     expect(keysOn('stageGraph', false)).toEqual(['Alt+G', 'Ctrl+1']);
     expect(keysOn('stageErd', false)).toEqual(['Alt+E', 'Ctrl+2']);
@@ -197,11 +197,19 @@ describe('the keymap', () => {
     document.body.innerHTML = '';
   });
 
-  it('LA-V61-R49-T06 W, A, S and D walk as Up, Left, Down and Right, Shift+Up and Shift+Down (Shift+W and Shift+S) as Out and In, and the guard keeps them with every element that takes text', () => {
+  it('LA-V61-R49-T06 W, A, S and D, and vim\'s H, J, K and L, walk as the arrows, Shift+Up and Shift+Down (Shift+W or Shift+K, Shift+S or Shift+J) as Out and In, and the guard keeps them with every element that takes text', () => {
     expect(walkMove(eventChord(key('w', 'KeyW')))).toBe('up');
     expect(walkMove(eventChord(key('a', 'KeyA')))).toBe('left');
     expect(walkMove(eventChord(key('s', 'KeyS')))).toBe('down');
     expect(walkMove(eventChord(key('d', 'KeyD')))).toBe('right');
+    // As vim's: H Left, J Down, K Up, L Right; Shift+K out and Shift+J in.
+    expect(walkMove(eventChord(key('h', 'KeyH')))).toBe('left');
+    expect(walkMove(eventChord(key('j', 'KeyJ')))).toBe('down');
+    expect(walkMove(eventChord(key('k', 'KeyK')))).toBe('up');
+    expect(walkMove(eventChord(key('l', 'KeyL')))).toBe('right');
+    expect(walkMove(eventChord(key('K', 'KeyK', { shiftKey: true })))).toBe('out');
+    expect(walkMove(eventChord(key('J', 'KeyJ', { shiftKey: true })))).toBe('in');
+    expect(walkMove(eventChord(key('H', 'KeyH', { shiftKey: true })))).toBeUndefined();
     // Caps Lock types a capital and still walks.
     expect(walkMove(eventChord(key('W', 'KeyW')))).toBe('up');
     expect(walkMove(eventChord(key('ArrowLeft', 'ArrowLeft')))).toBe('left');
@@ -220,10 +228,10 @@ describe('the keymap', () => {
     expect(walkMove(eventChord(key('q', 'KeyQ')))).toBeUndefined();
     // The walk's rows list each move's arrow, then its letter.
     const step = (id: string) => COMMANDS.find((c) => c.id === id)!;
-    expect(step('walkLeft').keys).toEqual(['ArrowLeft', 'A']);
-    expect(step('walkDown').keys).toEqual(['ArrowDown', 'S']);
-    expect(step('walkOut').keys).toEqual(['Shift+ArrowUp', 'Shift+W']);
-    expect(step('walkIn').keys).toEqual(['Shift+ArrowDown', 'Shift+S']);
+    expect(step('walkLeft').keys).toEqual(['ArrowLeft', 'A', 'H']);
+    expect(step('walkDown').keys).toEqual(['ArrowDown', 'S', 'J']);
+    expect(step('walkOut').keys).toEqual(['Shift+ArrowUp', 'Shift+W', 'Shift+K']);
+    expect(step('walkIn').keys).toEqual(['Shift+ArrowDown', 'Shift+S', 'Shift+J']);
     // Every element that takes text keeps a letter; a button, a link and the page give it to the stage.
     const make = (html: string) => {
       const host = document.createElement('div');
