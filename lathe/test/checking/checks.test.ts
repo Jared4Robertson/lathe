@@ -113,7 +113,7 @@ describe('recorded exceptions', () => {
 
     it("LA-CHK-UC01-R08-T01 a repository's recorded exceptions are listed with their repository, aggregate and reason, never as warnings", async () => {
       const reason = 'One generic store persists every table.';
-      const one = without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
+      const one = without(without(without(complete(), 'persists', (r) => r.source_id === 'EX-LEND-REPO02'), 'stored_in', (r) => r.source_id === 'EX-LEND-REPO02'), 'repository', (r) => r.id === 'EX-LEND-REPO02');
       const ws = await loadData(adding(one, {
         command_change: [{ command_id: 'EX-LEND-CMD01', aggregate_id: 'EX-LEND-A2', reason: 'The tool must never show as free while lent.' }],
         repository_share: [{ repository_id: 'EX-LEND-REPO01', aggregate_id: 'EX-LEND-A2', reason }],
@@ -159,7 +159,7 @@ check('event-not-by-outbox', () => {
   it('LA-AUT-UC25-R03-T01 an event a policy hears whose aggregate is in no database table, such as one kept in browser storage, a file or in memory, is exempt', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = without(data, 'table_key', (r) => r.table_id === 'EX-LEND-EN01-TB' || r.target_table_id === 'EX-LEND-EN01-TB');
-    expect(ofCheck(await loadData(without(data, 'table', (r) => r.id === 'EX-LEND-EN01-TB')), 'event-not-by-outbox')).toEqual([]);
+    expect(ofCheck(await loadData(without(without(data, 'stored_in', (r) => r.source_id === 'EX-LEND-EN01-TB'), 'table', (r) => r.id === 'EX-LEND-EN01-TB')), 'event-not-by-outbox')).toEqual([]);
     for (const storage of ['browser storage', 'file', 'in memory']) {
       const kept = changing(data, 'table', (r) => r.id === 'EX-LEND-EN01-TB', { storage });
       expect(ofCheck(await loadData(kept), 'event-not-by-outbox'), storage).toEqual([]);
