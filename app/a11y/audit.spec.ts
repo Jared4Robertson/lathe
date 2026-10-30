@@ -14,10 +14,17 @@ import { showCard } from '../stability/measure';
 /** A group: a domain's Technical specification folder, at its parent, stage and folder. */
 const GROUP = '/LA-EXP/technical-specification';
 
-/** Opens the page and waits for `ready`: drawn, or only attached when it is the Trace's table, which sits visually hidden under its canvas for the keyboard. */
+/** What only a record's page in the wiki card draws: on a phone the card is a sheet the Reader opens. */
+const inCard = (ready: string) => ready.startsWith('[data-aggregate=') || ready === '.interface-flows';
+
+/**
+ * Opens the page and waits for `ready`: drawn, or only attached when it is the Trace's table, which sits visually hidden
+ * under its canvas for the keyboard. On a phone, a record's page is read in the wiki card's sheet, opened as the Reader does.
+ */
 async function open(page: Page, url: string, ready: string, state: 'visible' | 'attached' = 'visible') {
   await page.goto(url);
   await page.locator('.app[data-specs="ready"]').first().waitFor();
+  if (inCard(ready) && (page.viewportSize()?.width ?? 1440) < 768) await page.getByRole('button', { name: 'Show the wiki card' }).click();
   await page.locator(ready).first().waitFor({ state });
   await page.waitForTimeout(400);
 }
