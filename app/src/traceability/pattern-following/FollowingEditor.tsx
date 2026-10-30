@@ -24,14 +24,14 @@ export type FollowingMode = { mode: 'view' } | { mode: 'change'; following: Foll
 const VALUES: FieldSpec = {
   field: 'setting_values',
   label: 'Setting values',
-  description: "Each of the pattern's settings with its value, or the reason it does not apply (not applicable).",
+  description: "Each of the pattern's settings with the value this follower gives it.",
   table: 'setting_value',
-  columns: ['setting', 'value', 'not_applicable'],
+  columns: ['setting', 'value'],
 };
 
 /** A following's values as the setting_value rows its form holds. */
 const valuesOf = (following: FollowingPage) => ({
-  setting_values: following.settings.map((s) => ({ setting: s.setting, value: s.value ?? undefined, not_applicable: s.notApplicable ?? undefined })),
+  setting_values: following.settings.map((s) => ({ setting: s.setting, value: s.value })),
 });
 
 /** The actions on one follower's row: Change values and Stop following, each opening its form under the followers. */
@@ -115,7 +115,7 @@ function FollowForm({ index, page, followers, onDone }: { index: RecordIndex; pa
     { field: 'follower_id', label: 'Follower', description: 'The domain or use case that follows the pattern.', one: choices, required: true },
     VALUES,
   ];
-  const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), parts: { setting_values: page.settings.map((s) => ({ setting: s.name, value: '', not_applicable: '' })) } }));
+  const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), parts: { setting_values: page.settings.map((s) => ({ setting: s.name, value: '' })) } }));
   const submit = async () => {
     const input = addInput(index, specs, draft, { pattern_id: pattern });
     const route = '/api/pattern-following/follow-pattern';

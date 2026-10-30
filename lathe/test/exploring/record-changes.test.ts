@@ -2,7 +2,8 @@
 // the rows now and the baseline the server reads for the query's `since`, through the read model's reader.
 import { afterEach, describe, expect, it } from 'vitest';
 import { LIST_RECORD_CHANGES } from '../../src/exploring/record-changes/queries.ts';
-import type { BaselineView, ProductChanges } from '../../src/exploring/record-changes/read-model.ts';
+import type { ProductChanges } from '../../src/exploring/record-changes/read-model.ts';
+import type { ReadView } from '../../src/platform/data/rules.ts';
 import { runQuery } from '../../src/platform/commands/run.ts';
 import type { Store } from '../../src/platform/data/store.ts';
 import type { BaselineAnswer } from '../../src/server/contract.ts';
@@ -10,7 +11,7 @@ import { closeTwoProducts, twoProducts } from '../checking/problems/data-set.ts'
 
 afterEach(closeTwoProducts);
 
-const withBaseline = (store: Store, baseline?: BaselineAnswer): BaselineView => ({ schema: store.schema, rows: (t) => store.rows(t), record: (id) => store.record(id), baseline });
+const withBaseline = (store: Store, baseline?: BaselineAnswer): ReadView => ({ schema: store.schema, rows: (t) => store.rows(t), record: (id) => store.record(id), baseline });
 
 /** The store's rows, every stored table's, with a change made to them: the baseline a commit would hold. */
 function tablesOf(store: Store, change: (tables: Record<string, Record<string, unknown>[]>) => void) {

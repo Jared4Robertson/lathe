@@ -118,7 +118,7 @@ export function recordTraceTableFrom(view: ReadView): RecordTraceTable {
   const owingDomains = (record: Placed): string[] => {
     if (record.domain) return [record.domain];
     if (record.kind !== 'pattern_rule') return record.product ? [record.product] : [];
-    return sortIds((run?.coverage ?? []).filter((c) => c.domain !== null && c.product === record.product && c.pattern_rules[record.id] === 'owed').map((c) => c.domain as string));
+    return sortIds((run?.coverage ?? []).filter((c) => c.domain !== null && c.product === record.product && c.pattern_rules.includes(record.id)).map((c) => c.domain as string));
   };
   const judge = (record: Placed, domain: string): Judgment => {
     const needsDesign = record.kind !== 'pattern_rule';

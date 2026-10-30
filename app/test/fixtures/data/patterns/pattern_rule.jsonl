@@ -1,3 +1,3 @@
 {"id":"DM-PAT-AUDIT-R01","title":"Each change is recorded","pattern_id":"DM-PAT-AUDIT","statement":"Each change MUST be recorded."}
-{"id":"DM-PAT-AUDIT-R02","title":"Records are kept","pattern_id":"DM-PAT-AUDIT","statement":"Records MUST be kept for {retention}.","setting":"retention"}
-{"id":"DM-PAT-AUDIT-R03","title":"The clerk is named","pattern_id":"DM-PAT-AUDIT","statement":"The clerk MUST be named.","applies_when_setting":"who","applies_when_negated":false,"applies_when_value":"clerk"}
+{"id":"DM-PAT-AUDIT-R02","title":"Records are kept","pattern_id":"DM-PAT-AUDIT","statement":"Records MUST be kept for {retention}."}
+{"id":"DM-PAT-AUDIT-R03","title":"The clerk is named","pattern_id":"DM-PAT-AUDIT","statement":"The clerk MUST be named."}

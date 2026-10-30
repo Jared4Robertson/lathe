@@ -30,18 +30,18 @@ export async function throughEngine(data: ServedData, files: Record<string, stri
   }
 }
 
-/** The data with the engine's findings and chains in place of the hand-written and loaded ones, as GET /api/spec would serve it. */
+/** The data with the engine's findings and chains in place of the hand-written and loaded ones, as the server's checks' run gives them. */
 export async function servedByEngine(data: ServedData, files: Record<string, string> = {}): Promise<ServedData> {
   const ws = await throughEngine(data, files);
   return { ...structuredClone(data), problems: ws.problems, coverage: ws.coverage, chains: ws.chains };
 }
 
-/** Expects a fixture's hand-written pattern rule standings to be the engine's, domain by domain. */
-export async function expectStandingsAsEngine(data: ServedData): Promise<void> {
+/** Expects a fixture's hand-written owed pattern rules to be the engine's, domain by domain. */
+export async function expectOwedRulesAsEngine(data: ServedData): Promise<void> {
   const ws = await throughEngine(data);
-  const standings = (coverage: ServedData['coverage']) =>
-    Object.fromEntries(coverage.filter((c) => c.domain !== null && Object.keys(c.pattern_rules).length > 0).map((c) => [c.domain, c.pattern_rules]));
-  expect(standings(data.coverage)).toEqual(standings(ws.coverage));
+  const owed = (coverage: ServedData['coverage']) =>
+    Object.fromEntries(coverage.filter((c) => c.domain !== null && c.pattern_rules.length > 0).map((c) => [c.domain, [...c.pattern_rules].sort()]));
+  expect(owed(data.coverage)).toEqual(owed(ws.coverage));
 }
 
 /** The data with the engine's chains for its rows as a test changed them, its hand-written findings kept. */

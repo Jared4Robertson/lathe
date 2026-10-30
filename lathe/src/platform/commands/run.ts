@@ -21,10 +21,11 @@ export function runQuery(view: ReadView, definition: AnyQuery, args: unknown): u
 
 /**
  * The query's answer over the data: its handler is given its read model's reader, made over the data (injected). A
- * query that reads the checks' run is refused over data that comes without one.
+ * query that reads the checks' run, or a baseline, is refused over data that comes without one.
  */
 export function answerQuery(view: ReadView, definition: AnyQuery, input: unknown): unknown {
   if (definition.checked && !view.checked) throw new Error(`${definition.id} reads the checks' run, and the data it was given comes without one: run the checks first.`);
+  if (definition.baseline && !view.baseline) throw new Error(`${definition.id} reads the data at a baseline, and the data it was given comes without one: read the baseline first.`);
   return definition.run(definition.reader(view) as never, input as never);
 }
 

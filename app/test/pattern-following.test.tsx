@@ -32,7 +32,7 @@ describe('LA-V122-R06-T01 a pattern\'s followers are read through the Pattern fo
     const shop = within(followed).getByRole('region', { name: 'Followed in DM-SHOP' });
     expect(within(within(shop).getAllByRole('table')[0]).getAllByRole('row').map(rowText)).toEqual([
       'Use caseretentionwho',
-      'The whole domain1 yearNot applicable: Shoppers act for themselves.',
+      'The whole domain1 yearnot given',
       'DM-SHOP-UC01Add an item to the basketnot givennot given',
     ]);
   });
@@ -64,7 +64,7 @@ describe('LA-V122-R07-T01 the following\'s editor writes only through the Patter
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{
       route: '/api/pattern-following/change-setting-values',
-      input: { follower_id: 'DM-SHOP', pattern_id: 'DM-PAT-AUDIT', setting_values: [{ setting: 'retention', value: '2 years' }, { setting: 'who', not_applicable: 'Shoppers act for themselves.' }] } }]));
+      input: { follower_id: 'DM-SHOP', pattern_id: 'DM-PAT-AUDIT', setting_values: [{ setting: 'retention', value: '2 years' }] } }]));
   });
 
   it('Stop following asks first, then sends Stop following a pattern', async () => {

@@ -139,6 +139,11 @@ export interface QueryDefinition<T = never, R = unknown, D = unknown> {
    * refuses to answer it over data that comes without one (`ReadView.checked`), and each interface runs the checks first.
    */
   checked?: true;
+  /**
+   * Whether its read model reads the data at a baseline commit (git's), named by its input's `since`: each interface
+   * reads that baseline first, and the runner refuses to answer it over data that comes without one (`ReadView.baseline`).
+   */
+  baseline?: true;
   /** Makes its read model's reader over the current data: what the runner gives the handler. */
   reader: (view: ReadView) => D;
   /** Reads the answer from its reader, or refuses with a reason. */
