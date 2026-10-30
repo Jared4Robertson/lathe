@@ -138,6 +138,7 @@
 {"id":"LA-AUT-UC18-FL04-S03","title":"Through its tool, the Agent removes a view no step happens in","flow_id":"LA-AUT-UC18-FL04","path":"main","position":3}
 {"id":"LA-AUT-UC19-FL03-S01","title":"Git merges two branches and runs the merge driver for each data file","flow_id":"LA-AUT-UC19-FL03","path":"main","position":1}
 {"id":"LA-AUT-UC19-FL03-S02","title":"A real clash stops the merge, naming the key and both versions","flow_id":"LA-AUT-UC19-FL03","path":"clash","position":1}
+{"id":"LA-AUT-UC19-FL03-S03","title":"A driver whose lathe is not installed stops the merge, saying the file was not merged and how to merge it again","flow_id":"LA-AUT-UC19-FL03","path":"not installed","position":1}
 {"id":"LA-AUT-UC20-FL01-S01","title":"On its page, the Owner adds a specification reading the aggregates it judges, with its predicate","flow_id":"LA-AUT-UC20-FL01","path":"main","position":2}
 {"id":"LA-AUT-UC20-FL01-S02","title":"On its page, the Owner adds the specification's test","flow_id":"LA-AUT-UC20-FL01","path":"main","position":3}
 {"id":"LA-AUT-UC20-FL01-S03","title":"On its page, the Owner removes a specification nothing checks or selects by","flow_id":"LA-AUT-UC20-FL01","path":"main","position":4}
