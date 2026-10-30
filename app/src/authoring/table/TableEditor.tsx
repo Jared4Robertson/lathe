@@ -7,7 +7,7 @@ import { IdField, type Choice } from '../../edit/fields';
 import { useWriter } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendTable, type TableCommands } from './commands';
 import { useNextTableId } from './reads';
@@ -26,11 +26,11 @@ const KEY_COLUMNS = ['type', 'columns', 'name', 'invariant_id', 'target_table_id
 const PARENT_COLUMN: Record<string, 'entity_id' | 'read_model_id' | 'domain_id'> = { entity: 'entity_id', read_model: 'read_model_id', domain: 'domain_id' };
 
 /** The records of the product of these kinds, as choices. */
-const choices = (index: SpecIndex, product: string, kinds: readonly string[]): Choice[] =>
+const choices = (index: RecordIndex, product: string, kinds: readonly string[]): Choice[] =>
   [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields Add and Change take (Change leaves out the ID), in their input's order. */
-function fieldsOf(index: SpecIndex, product: string, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string, adding: boolean): FieldSpec[] {
   return [
     ...(adding ? [{ field: 'id', column: 'id', table: 'table' }] : []),
     { field: 'title', column: 'title', table: 'table' },
@@ -54,7 +54,7 @@ const currentOf = (page: TablePage): Record<string, unknown> => ({
 type Mode = 'view' | 'change' | 'move' | 'remove';
 
 /** The table with its actions; a form or the remove question shows in place of its page. */
-export function TableEditor({ index, page, children }: { index: SpecIndex; page: TablePage; children: ReactNode }) {
+export function TableEditor({ index, page, children }: { index: RecordIndex; page: TablePage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>('view');
@@ -98,7 +98,7 @@ export function TableEditor({ index, page, children }: { index: SpecIndex; page:
 
 /** Edit: the table's Change, with only what changed. */
 function ChangeForm({ index, specs, current, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   id: string;
@@ -114,7 +114,7 @@ function ChangeForm({ index, specs, current, id, submit, onDone }: {
 }
 
 /** Move: the table to another entity, read model or domain of its product, as its own command. */
-function MoveForm({ index, page, product, onDone }: { index: SpecIndex; page: TablePage; product: string; onDone: () => void }) {
+function MoveForm({ index, page, product, onDone }: { index: RecordIndex; page: TablePage; product: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const formId = useId();
@@ -139,7 +139,7 @@ function MoveForm({ index, page, product, onDone }: { index: SpecIndex; page: Ta
 }
 
 /** Add a table under an entity, a read model or a domain (from its page): the aggregate's own Add, its ID the next free one. */
-export function AddTableForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddTableForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextTableId(parent, index);

@@ -1,6 +1,6 @@
+import type { ServedData } from './read-view';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { SpecData } from '../../lathe/src/server/contract';
 import { textOf } from '../src/specs/data';
 import { answerQuery } from '../../lathe/src/platform/commands/run';
 import { LIST_FOLLOWERS } from '../../lathe/src/traceability/pattern-following/queries';
@@ -18,7 +18,7 @@ import { addRows, indexOf, removeRows } from './fixtures/load';
 // DM-SHOP-UC01 (R01 proved there by a pattern rule test), and DM-PAY through DM-PAY-UC01, which marks
 // `retention` not applicable and gives `who` Shopper (R01 there has only a test not automated yet).
 
-function twoDomains(): SpecData {
+function twoDomains(): ServedData {
   const ws = patternWorkspace();
   addRows(ws, 'follows', { source_id: 'DM-PAY-UC01', target_id: 'DM-PAT-AUDIT' });
   addRows(ws, 'setting_value',
@@ -33,7 +33,7 @@ function twoDomains(): SpecData {
 }
 
 /** Paying follows the pattern itself, not through a use case. */
-function payItself(): SpecData {
+function payItself(): ServedData {
   const ws = twoDomains();
   removeRows(ws, 'follows', (l) => l.source_id === 'DM-PAY-UC01');
   removeRows(ws, 'setting_value', (v) => v.follower_id === 'DM-PAY-UC01');
@@ -148,7 +148,7 @@ describe('Patterns we follow, on the domain page', () => {
   it('LA-V91-R54-T06 A rule whose pattern rule test names a file that does not exist is not proved, as coverage says', async () => {
     // The patterns workspace through the real engine, in a product folder with no code files: DM-PAT-AUDIT-R01-T01 is
     // automated and run by test/audit.test.ts, which does not exist there, so it proves nothing.
-    const rule = async (data: SpecData) => {
+    const rule = async (data: ServedData) => {
       await openApp('/DM-SHOP', { data });
       await screen.findByRole('heading', { level: 1, name: 'Shopping' });
       const patterns = section(/^Patterns we follow/);

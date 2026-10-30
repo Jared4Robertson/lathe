@@ -1,5 +1,5 @@
 import type { ProductTraces } from '../../../lathe/src/traceability/trace/read-model';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { layoutTree, type GraphMap } from '../graph/map';
 import { treeChildren, treeParent } from '../graph/tree';
 import { treeLabel, type MapLabel } from '../graph/text';
@@ -68,7 +68,7 @@ const GAP_WORDS: Record<GapColumn, string> = { design: 'Not designed', build: 'N
 /** A product's tree: each key's children and what it is. */
 interface Built { children: Map<string, string[]>; nodes: Map<string, TraceNode>; links: Set<string>; gapped: Set<string>; obligations: number; withGaps: number; untraced: number }
 
-function build(index: SpecIndex, traces: ProductTraces, product: string): Built {
+function build(index: RecordIndex, traces: ProductTraces, product: string): Built {
   const untracedIds = untracedUnder(index, traces, product).flatMap((g) => g.ids);
   const top = traceTop(index, product, untracedIds.length > 0);
   const children = new Map<string, string[]>();
@@ -129,7 +129,7 @@ function build(index: SpecIndex, traces: ProductTraces, product: string): Built 
 }
 
 /** A use case's capability, named on its kind line as the tree draws no capability. */
-function capabilityNote(index: SpecIndex, id: string): string | undefined {
+function capabilityNote(index: RecordIndex, id: string): string | undefined {
   const record = index.byId.get(id);
   if (record?.kind !== 'use_case' || !record.parent) return undefined;
   const capability = index.byId.get(record.parent);
@@ -137,26 +137,26 @@ function capabilityNote(index: SpecIndex, id: string): string | undefined {
 }
 
 /** A node's label on its box: its words when it is no record, else the record's as the Graph's Tree labels it, with its note. */
-export function nodeLabel(index: SpecIndex, n: TraceNode): MapLabel {
+export function nodeLabel(index: RecordIndex, n: TraceNode): MapLabel {
   if (n.words) return { ...n.words, shape: 'box' };
   const label = treeLabel(index, n.id);
   return n.note ? { ...label, meta: `${label.meta} · ${n.note}` } : label;
 }
 
 /** Each Trace read's layouts, one per product and data change. */
-const mapsOf = new WeakMap<ProductTraces, (index: SpecIndex, product: string) => TraceMap>();
+const mapsOf = new WeakMap<ProductTraces, (index: RecordIndex, product: string) => TraceMap>();
 
 /**
  * A product's Trace map, laid out once per product and data change (one-map.ts) by the Graph's Tree layout, and again
  * for each answer of its Trace read (list-traces), which follows each data change.
  */
-export function traceMap(index: SpecIndex, traces: ProductTraces, product: string): TraceMap {
+export function traceMap(index: RecordIndex, traces: ProductTraces, product: string): TraceMap {
   let layout = mapsOf.get(traces);
   if (!layout) { layout = onePerData((i, p) => layOut(i, traces, p)); mapsOf.set(traces, layout); }
   return layout(index, product);
 }
 
-function layOut(index: SpecIndex, traces: ProductTraces, product: string): TraceMap {
+function layOut(index: RecordIndex, traces: ProductTraces, product: string): TraceMap {
   const built = build(index, traces, product);
   const { nodes, children } = built;
   // Every copy of each record, in the tree's order: depth first from the product.
@@ -192,7 +192,7 @@ function layOut(index: SpecIndex, traces: ProductTraces, product: string): Trace
  * else (an entity, a stage, a folder, a domain with nothing under Not under an outcome) the nearest record above it in
  * the record tree that the map draws, and the product when none is.
  */
-export function focusKey(map: TraceMap, index: SpecIndex, focus: string, at: string | null = null): string {
+export function focusKey(map: TraceMap, index: RecordIndex, focus: string, at: string | null = null): string {
   if (focus === map.product) return map.product;
   for (let id: string | null = focus; id !== null; id = treeParent(index, id)) {
     const keys = map.copies.get(id);

@@ -1,6 +1,6 @@
+import type { ServedData } from './read-view';
 import { fireEvent, screen, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import type { SpecData } from '../../lathe/src/server/contract';
 import { groupRecords } from '../src/specs/groups';
 import { appliesWhenOf, patternsFollowedBy, ruleStatus } from '../src/specs/patterns';
 import { owingDomains } from '../src/specs/trace';
@@ -15,7 +15,7 @@ import { addRows, indexOf, setRow } from './fixtures/load';
 // and DM-PAY follows through DM-PAY-UC01, which gives who Shopper.
 
 /** The pattern workspace with DM-PAY-UC01 following too, R04 (who is not clerk), and R03 and R04 grouped. */
-function waiverWorkspace(): SpecData {
+function waiverWorkspace(): ServedData {
   const ws = patternWorkspace();
   addRows(ws, 'follows', { source_id: 'DM-PAY-UC01', target_id: 'DM-PAT-AUDIT' });
   addRows(ws, 'setting_value',
@@ -32,7 +32,7 @@ function waiverWorkspace(): SpecData {
 }
 
 /** The pattern workspace with DM-SHOP-UC01's UC requirements in groups, after an ungrouped one. */
-function groupedWorkspace(): SpecData {
+function groupedWorkspace(): ServedData {
   const ws = setRow(waiverWorkspace(), 'uc_requirement', 'DM-SHOP-UC01-R02', { group_name: 'Limits' });
   return addRows(ws, 'uc_requirement',
     { id: 'DM-SHOP-UC01-R03', title: 'A sold-out item is refused', use_case_id: 'DM-SHOP-UC01', statement: 'A sold-out item MUST be refused.', group_name: 'Stock' },

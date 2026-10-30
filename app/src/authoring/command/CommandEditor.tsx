@@ -10,7 +10,7 @@ import { lowerLabel } from '../../plural';
 import { adderOf } from '../../record/pages';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import { kindLabel, type SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendCommand, type CommandCommands, type CommandRoute } from './commands';
 import { useNextCommandId } from './reads';
@@ -54,18 +54,18 @@ interface Place {
 }
 
 /** The place of a command under the entity it changes, read from the records the page names. */
-function placeOf(index: SpecIndex, entity: string): Place {
+function placeOf(index: RecordIndex, entity: string): Place {
   const record = index.byId.get(entity);
   return { aggregate: record?.parent ?? '', domain: record?.domain ?? '', product: record?.product ?? '' };
 }
 
 /** The records of these kinds the filter keeps, as choices. */
-function choices(index: SpecIndex, kinds: readonly string[], keep: (r: { parent?: string | null; domain?: string | null; product?: string | null }) => boolean): Choice[] {
+function choices(index: RecordIndex, kinds: readonly string[], keep: (r: { parent?: string | null; domain?: string | null; product?: string | null }) => boolean): Choice[] {
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && keep(r)).map((r) => ({ id: r.id, title: r.title }));
 }
 
 /** A handler's file, description, standard rules and packages. */
-const handlerFields = (index: SpecIndex, place: Place, table: string): FieldSpec[] => [
+const handlerFields = (index: RecordIndex, place: Place, table: string): FieldSpec[] => [
   { field: 'title', column: 'title', table },
   { field: 'file', column: 'file', table },
   { field: 'description', column: 'description', table, long: true },
@@ -74,7 +74,7 @@ const handlerFields = (index: SpecIndex, place: Place, table: string): FieldSpec
 ];
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
-function fieldsOf(index: SpecIndex, place: Place, kind: CommandKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, place: Place, kind: CommandKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'command':
@@ -195,18 +195,18 @@ function parentOf(page: CommandPage, kind: CommandKind, id: string): string {
 }
 
 /** The roots of other aggregates added under a record of this kind through their own Add form, by the schema's parents. */
-function othersUnder(index: SpecIndex, kind: CommandKind): string[] {
+function othersUnder(index: RecordIndex, kind: CommandKind): string[] {
   return Object.values(index.workspace.schema.kinds)
     .filter((k) => k.parents.some((p) => p.kind === kind))
     .map((k) => k.name)
-    .filter((k) => adderOf(index.workspace.schema, k) !== undefined)
+    .filter((k) => adderOf(index.meta, k) !== undefined)
     .sort();
 }
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'adopt'; kind: string } | { mode: 'remove' };
 
 /** A record of the command with its actions; a form or the remove question shows in place of its page. */
-export function CommandEditor({ index, page, children }: { index: SpecIndex; page: CommandPage; children: ReactNode }) {
+export function CommandEditor({ index, page, children }: { index: RecordIndex; page: CommandPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -233,7 +233,7 @@ export function CommandEditor({ index, page, children }: { index: SpecIndex; pag
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} place={place} kind={mode.kind} parent={id} onDone={back} /></div>;
   if (mode.mode === 'adopt') {
-    const Adder = adderOf(index.workspace.schema, mode.kind)!;
+    const Adder = adderOf(index.meta, mode.kind)!;
     return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
   }
   // A command has one handler, and a policy one event handler and one test: once it has it, there is nothing more to add of that kind.
@@ -260,7 +260,7 @@ export function CommandEditor({ index, page, children }: { index: SpecIndex; pag
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -277,7 +277,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a kind of the aggregate (a command under its entity, or a kind under the record), its ID the next free one, sent as that kind's Add. */
-function AddForm({ index, place, kind, parent, onDone }: { index: SpecIndex; place: Place; kind: CommandKind; parent: string; onDone: () => void }) {
+function AddForm({ index, place, kind, parent, onDone }: { index: RecordIndex; place: Place; kind: CommandKind; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextCommandId(kind, parent, index);
@@ -301,6 +301,6 @@ function AddForm({ index, place, kind, parent, onDone }: { index: SpecIndex; pla
 }
 
 /** Add a command to an entity (from the entity's page): the aggregate's own Add, with the next free ID in its domain. */
-export function AddCommandForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddCommandForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   return <AddForm index={index} place={placeOf(index, parent)} kind="command" parent={parent} onDone={onDone} />;
 }

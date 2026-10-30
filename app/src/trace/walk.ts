@@ -1,4 +1,4 @@
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { graphMove, stepName } from '../graph/steps';
 import { levelMove, type Move, type StageLevels } from '../views/levels';
 import type { TraceMap, TraceNode } from './tree';
@@ -35,7 +35,7 @@ export function traceLevels(map: TraceMap): StageLevels {
 export const traceTarget = (map: TraceMap, at: string, move: Move): string | null => levelMove(traceLevels(map), at, graphMove('tree', move));
 
 /** What the walk says on a node: a record as the graph names it, "Not built, a gap of Lend a thing", "File src/lend.ts". */
-export function nodeWords(index: SpecIndex, map: TraceMap, node: TraceNode): string {
+export function nodeWords(index: RecordIndex, map: TraceMap, node: TraceNode): string {
   switch (node.role) {
     case 'gap': { const obligation = map.nodes.get(node.chain!)!.id; return `${node.words!.title}, a gap of ${index.byId.get(obligation)?.title ?? obligation}`; }
     case 'file': return `File ${node.words!.title}`;

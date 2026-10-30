@@ -6,7 +6,7 @@ import { addInput, changeInput, CommandForm, draftOf, emptyDraft, Fields, type D
 import type { Choice } from '../../edit/fields';
 import { useWriter } from '../../edit/write';
 import { useAnnounce } from '../../shell/commands';
-import { byIdOrder, type SpecIndex } from '../../specs/data';
+import { byIdOrder, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { sendPatternFollowing, type PatternFollowingCommands } from './commands';
 import '../../edit/edit.css';
 
@@ -56,7 +56,7 @@ export function FollowButton({ pattern, setMode }: { pattern: string; setMode: (
 }
 
 /** The form the mode opens: a follower's Change values or Stop following, or Follow. */
-export function FollowingForm({ index, page, followers, mode, onDone }: { index: SpecIndex; page: PatternPage; followers: readonly string[]; mode: FollowingMode; onDone: () => void }) {
+export function FollowingForm({ index, page, followers, mode, onDone }: { index: RecordIndex; page: PatternPage; followers: readonly string[]; mode: FollowingMode; onDone: () => void }) {
   if (mode.mode === 'change') return <ChangeValuesForm index={index} following={mode.following} onDone={onDone} />;
   if (mode.mode === 'stop') return <StopFollowingForm following={mode.following} onDone={onDone} />;
   if (mode.mode === 'follow') return <FollowForm index={index} page={page} followers={followers} onDone={onDone} />;
@@ -64,7 +64,7 @@ export function FollowingForm({ index, page, followers, mode, onDone }: { index:
 }
 
 /** Change values: the whole list of the follower's setting values, sent only when it changed. */
-function ChangeValuesForm({ index, following, onDone }: { index: SpecIndex; following: FollowingPage; onDone: () => void }) {
+function ChangeValuesForm({ index, following, onDone }: { index: RecordIndex; following: FollowingPage; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const current = valuesOf(following);
@@ -102,7 +102,7 @@ function StopFollowingForm({ following, onDone }: { following: FollowingPage; on
 }
 
 /** Follow: a domain or use case of the pattern's product that does not follow it yet, with a row for each of its settings. */
-function FollowForm({ index, page, followers, onDone }: { index: SpecIndex; page: PatternPage; followers: readonly string[]; onDone: () => void }) {
+function FollowForm({ index, page, followers, onDone }: { index: RecordIndex; page: PatternPage; followers: readonly string[]; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const pattern = page.pattern.id;

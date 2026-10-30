@@ -6,14 +6,14 @@ import { LongList } from '../../components/LongList';
 import { Refusal, problemText } from '../../edit/fields';
 import type { AggregatePageProps } from '../../record/pages';
 import { Card, CardGrid } from '../../shell/Card';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { Markdown } from '../../specs/Markdown';
 import { Prose } from '../../specs/mentions';
 import { ProblemBadge, ProblemList, RecordLink, Section } from '../../specs/parts';
 import { CoverageBars, ProductSummary } from '../../specs/ProductHealth';
 import { RecordFrame } from '../../specs/RecordContent';
 import { problemsUnder, StageSections } from '../../specs/SpecPages';
-import { productFolders } from '../../specs/folders';
+import { productFolders } from '../../exploring/folder-tree/folders';
 import { addressOf } from '../../views/address';
 import { kindInProduct, ProductEditor, type DeclarationActions, type ProductRecordKind } from './ProductEditor';
 import { useProduct } from './reads';
@@ -28,7 +28,7 @@ import { useProduct } from './reads';
 // workspace's index until the stage reads land; what every record's page holds around its content is the Record page's.
 
 /** A text of the record, read as Markdown with the IDs it names as links, under its heading or as the page's lead. */
-function Text({ index, id, source, title, field }: { index: SpecIndex; id: string; source: string | undefined; title?: string; field: string }) {
+function Text({ index, id, source, title, field }: { index: RecordIndex; id: string; source: string | undefined; title?: string; field: string }) {
   if (!source?.trim()) return null;
   const prose = <Prose index={index} source={source} self={id} />;
   return title ? <Section title={title} className={`record-${field}`}>{prose}</Section> : <div className="record-lead" data-field={field}>{prose}</div>;
@@ -41,7 +41,7 @@ function Facts({ facts }: { facts: { label: string; value: ReactNode }[] }) {
 }
 
 /** The product's business outcomes, the discovery stage: each with its statement, measure, target and the capabilities that serve it. */
-function BusinessOutcomes({ index, page }: { index: SpecIndex; page: Product }) {
+function BusinessOutcomes({ index, page }: { index: RecordIndex; page: Product }) {
   return (
     <Section title="Business outcomes" count={page.outcomes.length} className="stage stage-discovery product-outcomes">
       <p className="hint">What the product exists to achieve, each measurable, and the capabilities that serve it.</p>
@@ -70,7 +70,7 @@ function BusinessOutcomes({ index, page }: { index: SpecIndex; page: Product }) 
 }
 
 /** The product's open questions, each with its owner and what it is about. */
-function Questions({ index, questions }: { index: SpecIndex; questions: QuestionEntry[] }) {
+function Questions({ index, questions }: { index: RecordIndex; questions: QuestionEntry[] }) {
   return (
     <Section title="Open questions" count={questions.length}>
       {questions.length === 0 ? <p className="hint">No open questions.</p> : (
@@ -90,7 +90,7 @@ function Questions({ index, questions }: { index: SpecIndex; questions: Question
 }
 
 /** The product's roles, interfaces, and the kinds and relations it declares as its own, with each declaration's actions. */
-function Declarations({ index, page, actions }: { index: SpecIndex; page: Product; actions: DeclarationActions | null }) {
+function Declarations({ index, page, actions }: { index: RecordIndex; page: Product; actions: DeclarationActions | null }) {
   return (
     <>
       <Section title="Roles" count={page.roles.length} className="product-roles">
@@ -149,7 +149,7 @@ function Declarations({ index, page, actions }: { index: SpecIndex; page: Produc
 }
 
 /** The product's own page: its outcomes, domains, shared records, summary, declarations, open questions and problems. */
-function ProductContent({ index, page, actions }: { index: SpecIndex; page: Product; actions: DeclarationActions | null }) {
+function ProductContent({ index, page, actions }: { index: RecordIndex; page: Product; actions: DeclarationActions | null }) {
   const id = page.product.id;
   const problems = problemsUnder(index, 'product', id);
   // Its business outcomes have a section of their own, so Shared holds the other stages.
@@ -209,7 +209,7 @@ function ByCapabilities<T extends { id: string }>({ groups, label, render }: { g
 }
 
 /** An interface's flows by capability and use case, and the product's use cases with no flow through it (LA-V51-R06). */
-function InterfaceFlows({ index, iface }: { index: SpecIndex; iface: InterfaceEntry }) {
+function InterfaceFlows({ index, iface }: { index: RecordIndex; iface: InterfaceEntry }) {
   const count = (groups: { items: unknown[] }[]) => groups.reduce((n, g) => n + g.items.length, 0);
   return (
     <>
@@ -238,7 +238,7 @@ function InterfaceFlows({ index, iface }: { index: SpecIndex; iface: InterfaceEn
 }
 
 /** What an open question or an interface shows on its page. */
-function RecordContentOf({ index, page, id, kind }: { index: SpecIndex; page: Product; id: string; kind: Exclude<ProductRecordKind, 'product'> }) {
+function RecordContentOf({ index, page, id, kind }: { index: RecordIndex; page: Product; id: string; kind: Exclude<ProductRecordKind, 'product'> }) {
   if (kind === 'question') {
     const q = page.questions.find((x) => x.id === id)!;
     return (
@@ -264,7 +264,7 @@ function RecordContentOf({ index, page, id, kind }: { index: SpecIndex; page: Pr
 }
 
 /** The record's summary in the wiki card: its lead text and a few key facts. */
-function Summary({ index, page, id, kind }: { index: SpecIndex; page: Product; id: string; kind: ProductRecordKind }) {
+function Summary({ index, page, id, kind }: { index: RecordIndex; page: Product; id: string; kind: ProductRecordKind }) {
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const { lead, facts } = ((): { lead: string; facts: { label: string; value: ReactNode }[] } => {
     switch (kind) {

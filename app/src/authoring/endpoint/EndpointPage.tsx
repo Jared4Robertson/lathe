@@ -3,7 +3,7 @@ import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { EndpointEditor } from './EndpointEditor';
 import { useEndpoint } from './reads';
 
@@ -29,7 +29,7 @@ function groupsOf(requirements: readonly ApiRequirementOnPage[]): { heading: str
 }
 
 /** The endpoint's API requirements in a table, one row each under their groups with the tests that prove it. */
-function Requirements({ index, page }: { index: SpecIndex; page: Endpoint }) {
+function Requirements({ index, page }: { index: RecordIndex; page: Endpoint }) {
   return (
     <Section title="API requirements" count={page.requirements.length} className="endpoint-requirements">
       {page.requirements.length === 0 ? <p className="hint">No API requirements yet.</p> : (
@@ -73,7 +73,7 @@ const requirementOf = (page: Endpoint, id: string) => page.requirements.find((r)
 const testOf = (page: Endpoint, id: string) => page.requirements.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
 
 /** What one record of the endpoint shows on its page, by the kind it is in the endpoint. */
-function Content({ index, page }: { index: SpecIndex; page: Endpoint }) {
+function Content({ index, page }: { index: RecordIndex; page: Endpoint }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'endpoint':
@@ -99,7 +99,7 @@ function Content({ index, page }: { index: SpecIndex; page: Endpoint }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Endpoint): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Endpoint): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const endpoint = { label: 'Endpoint', value: <RecordLink index={index} id={page.endpoint.id} /> };

@@ -1,7 +1,7 @@
 // The Trace stage drawn on the canvas (LA-V98): the product's tree (tree.ts) drawn as the Graph's Tree is, by the
 // graph's renderer (paint.ts, plate.ts), camera (camera.ts), level of detail and pointer.
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { drawnFor, frameOnMap, frameRect, maxZoomFor, MIN_ZOOM, type Viewport } from '../graph/camera';
 import { fadeTween, faintest, type FadeLook } from '../graph/fade';
 import { pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
@@ -65,7 +65,7 @@ export interface TraceScene {
 export type TraceHost = HTMLDivElement & { traceScene?: (whole?: boolean) => TraceScene; traceHit?: (clientX: number, clientY: number) => string | null };
 
 export interface TraceCanvasProps {
-  index: SpecIndex;
+  index: RecordIndex;
   focus: string;
   map: TraceMap;
   /** The node the focus stands on (tree.ts focusKey): what the camera frames. */

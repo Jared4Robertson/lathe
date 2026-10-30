@@ -1,8 +1,8 @@
+import type { ServedData } from './read-view';
 import './graph/setup';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
-import type { SpecData } from '../../lathe/src/server/contract';
 import { graphMap, mapRootOf } from '../src/graph/map';
 import { spaceIndex } from '../src/specs/data';
 import { addRows, indexOf, setRow } from './fixtures/load';
@@ -15,7 +15,7 @@ import { boxElement, drawnIds } from './graph/scene';
 // across products (which the store refuses, but the app does not rely on that).
 
 /** The fixture with Demo shop's use case linking to and naming Notebook's domain, and a record of no product. */
-function crossingWorkspace(): SpecData {
+function crossingWorkspace(): ServedData {
   const ws = setRow(workspace(), 'use_case', 'DM-SHOP-UC01', { goal: 'Like NF-NOTE, it keeps a list.' });
   addRows(ws, 'use_case', { id: 'ZZ-LOOSE', title: 'A loose use case', capability_id: 'ZZ-GONE' });
   addRows(ws, 'follows', { source_id: 'DM-SHOP-UC01', target_id: 'NF-NOTE' });

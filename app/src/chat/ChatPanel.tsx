@@ -6,7 +6,7 @@ import { CHAT_DEFAULT, CHAT_MAX, CHAT_MIN } from '../exploring/session-settings/
 import { Link } from '../router';
 import { useAnnounce } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { Markdown } from '../specs/Markdown';
 import { proseLinks } from '../specs/mentions';
 import { addressOf } from '../views/address';
@@ -30,7 +30,7 @@ import './ChatPanel.css';
 export interface ChatPanelProps {
   bridge: ChatBridge;
   /** The whole workspace's specs: record links and diffs read them. */
-  index: SpecIndex | null;
+  index: RecordIndex | null;
   width: number | null;
   onWidth: (width: number | null) => void;
   onClose: () => void;
@@ -262,7 +262,7 @@ function SessionPicker({ sessions, current, busy, onChoose }: { sessions: ChatSe
 
 // ---------- The log ----------
 
-function ChatLog({ items, turns, index, answer }: { items: ChatItem[]; turns: Turn[]; index: SpecIndex | null; answer: (id: string, allow: boolean) => Promise<boolean> }) {
+function ChatLog({ items, turns, index, answer }: { items: ChatItem[]; turns: Turn[]; index: RecordIndex | null; answer: (id: string, allow: boolean) => Promise<boolean> }) {
   const log = useRef<HTMLDivElement>(null);
   const [active, setActive] = useState<string | null>(null);
   // The log stays at its foot while Claude writes, unless the Owner has scrolled up.
@@ -302,7 +302,7 @@ function ChatLog({ items, turns, index, answer }: { items: ChatItem[]; turns: Tu
   );
 }
 
-function ItemWithChanges({ item, index, answer, tabIndex, onFocus, turn }: { item: ChatItem; index: SpecIndex | null; answer: (id: string, allow: boolean) => Promise<boolean>; tabIndex: number; onFocus: (id: string) => void; turn?: Turn }) {
+function ItemWithChanges({ item, index, answer, tabIndex, onFocus, turn }: { item: ChatItem; index: RecordIndex | null; answer: (id: string, allow: boolean) => Promise<boolean>; tabIndex: number; onFocus: (id: string) => void; turn?: Turn }) {
   return (
     <>
       <ChatEntry item={item} index={index} answer={answer} tabIndex={tabIndex} onFocus={onFocus} />
@@ -313,7 +313,7 @@ function ItemWithChanges({ item, index, answer, tabIndex, onFocus, turn }: { ite
 
 const WHO: Record<ChatItem['kind'], string> = { user: 'You', assistant: 'Claude', tool: 'Tool call', permission: 'Permission', notice: 'Notice' };
 
-const ChatEntry = memo(function ChatEntry({ item, index, answer, tabIndex, onFocus }: { item: ChatItem; index: SpecIndex | null; answer: (id: string, allow: boolean) => Promise<boolean>; tabIndex: number; onFocus: (id: string) => void }) {
+const ChatEntry = memo(function ChatEntry({ item, index, answer, tabIndex, onFocus }: { item: ChatItem; index: RecordIndex | null; answer: (id: string, allow: boolean) => Promise<boolean>; tabIndex: number; onFocus: (id: string) => void }) {
   const common = { className: `chat-item is-${item.kind}`, 'data-item': item.id, tabIndex, onFocus: (e: { target: EventTarget; currentTarget: EventTarget }) => { if (e.target === e.currentTarget) onFocus(item.id); } };
   switch (item.kind) {
     case 'user':
@@ -334,7 +334,7 @@ const ChatEntry = memo(function ChatEntry({ item, index, answer, tabIndex, onFoc
 });
 
 /** Claude's text as Markdown, each record ID it names a link that opens the record on the stage. */
-function AssistantText({ text, index }: { text: string; index: SpecIndex | null }) {
+function AssistantText({ text, index }: { text: string; index: RecordIndex | null }) {
   const links = useMemo(() => (index ? proseLinks(index, text, '') : undefined), [index, text]);
   return <Markdown source={text} links={links} />;
 }
@@ -399,7 +399,7 @@ function PermissionPrompt({ item, answer }: { item: Extract<ChatItem, { kind: 'p
 const MOST_RECORDS = 40;
 
 /** The records a turn changed (LA-PLT-UC19-R03): the engine's record diff (changes/changes.ts) of the spec before the turn against the spec after it. */
-function TurnChanges({ before, after }: { before: SpecIndex; after: SpecIndex }) {
+function TurnChanges({ before, after }: { before: RecordIndex; after: RecordIndex }) {
   const diffs = useMemo(() => reloadChanges(before, after), [before, after]);
   if (diffs.length === 0) return null;
   const shown = diffs.slice(0, MOST_RECORDS);
@@ -414,7 +414,7 @@ function TurnChanges({ before, after }: { before: SpecIndex; after: SpecIndex })
   );
 }
 
-function TurnChange({ index, change }: { index: SpecIndex; change: RecordChange }) {
+function TurnChange({ index, change }: { index: RecordIndex; change: RecordChange }) {
   return (
     <li className={`chat-change is-${change.change}`}>
       <div className="chat-change-head">

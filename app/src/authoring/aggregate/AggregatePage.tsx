@@ -3,11 +3,11 @@ import { LongList } from '../../components/LongList';
 import { plural } from '../../plural';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
-import { kindLabel, type Row, type SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { linkLabel } from '../../specs/labels';
 import { ProblemBadge, RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import { FieldsTable } from '../../specs/RecordText';
+import { FieldsTable } from '../../specs/FieldsTable';
 import { AggregateEditor } from './AggregateEditor';
 import { useAggregate } from './reads';
 
@@ -20,7 +20,7 @@ import { useAggregate } from './reads';
 // is the Record page's (RecordFrame).
 
 /** A list of one kind is titled by that kind's plural label (LA-V92-R09). */
-const titleOf = (index: SpecIndex, kind: string) => plural(kindLabel(index, kind));
+const titleOf = (index: RecordIndex, kind: string) => plural(kindLabel(index, kind));
 
 const entityOf = (page: Aggregate, id: string) => page.entities.find((e) => e.entity.id === id)!;
 const invariantOf = (page: Aggregate, id: string) => page.invariants.find((i) => i.invariant.id === id)!;
@@ -29,7 +29,7 @@ const testOf = (page: Aggregate, id: string) => page.invariants.find((i) => i.te
 const ruleOf = (page: Aggregate, id: string) => page.invariants.find((i) => i.rule?.rule.id === id)!;
 
 /** One domain event of the aggregate: a whole-row link to it saying whether it is published, what raises it and how many policies hear it, in the relations' own words. */
-function EventRow({ index, row }: { index: SpecIndex; row: EventOnPage }) {
+function EventRow({ index, row }: { index: RecordIndex; row: EventOnPage }) {
   const { event, raisedBy, heardBy } = row;
   const raised = raisedBy.length > 0 ? `${linkLabel(index, { source: raisedBy[0], relation: 'raises', target: event.id }, 'target')} ${raisedBy.map((id) => index.byId.get(id)?.title ?? id).join(', ')}` : null;
   const heard = heardBy.length > 0 ? `${linkLabel(index, { source: heardBy[0], relation: 'hears', target: event.id }, 'target')} ${heardBy.length}` : null;
@@ -47,7 +47,7 @@ function EventRow({ index, row }: { index: SpecIndex; row: EventOnPage }) {
 }
 
 /** The aggregate's domain events, titled by their kind, or nothing when it has none. */
-function DomainEvents({ index, page }: { index: SpecIndex; page: Aggregate }) {
+function DomainEvents({ index, page }: { index: RecordIndex; page: Aggregate }) {
   const events = page.domainEvents;
   if (events.length === 0) return null;
   return (
@@ -59,7 +59,7 @@ function DomainEvents({ index, page }: { index: SpecIndex; page: Aggregate }) {
 }
 
 /** What one record of the aggregate shows on its page, by the kind it is in the aggregate. */
-function Content({ index, page }: { index: SpecIndex; page: Aggregate }) {
+function Content({ index, page }: { index: RecordIndex; page: Aggregate }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'aggregate': {
@@ -80,7 +80,7 @@ function Content({ index, page }: { index: SpecIndex; page: Aggregate }) {
       return (
         <>
           <Text index={index} id={id} source={e.entity.description} field="description" />
-          {e.fields.length > 0 && <FieldsTable index={index} rows={e.fields as unknown as Row[]} owner={id} />}
+          {e.fields.length > 0 && <FieldsTable index={index} rows={e.fields} owner={id} />}
           <RowsSection index={index} title={titleOf(index, 'data_model')} ids={e.dataModel ? [e.dataModel.dataModel.id] : []} label={`${titleOf(index, 'data_model')} of ${id}`} empty="No data model yet." />
           <RowsSection index={index} title={titleOf(index, 'command')} ids={e.commands} label={`${titleOf(index, 'command')} of ${id}`} empty="No command changes it yet." className="entity-commands" />
           {e.tables.length > 0 && <RowsSection index={index} title={titleOf(index, 'table')} ids={e.tables} label={`${titleOf(index, 'table')} of ${id}`} empty="" />}
@@ -109,7 +109,7 @@ function Content({ index, page }: { index: SpecIndex; page: Aggregate }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Aggregate): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Aggregate): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const inAggregate: Fact = { label: 'Aggregate', value: <RecordLink index={index} id={page.aggregate.id} /> };

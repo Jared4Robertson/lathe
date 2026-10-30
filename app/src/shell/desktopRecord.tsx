@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
-import { parseSpecRoute, type SpecIndex } from '../specs/data';
+import { parseSpecRoute } from '../views/spec-route';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { focusOf, isFocusRoute } from '../views/address';
 import { desktopBridge } from './desktopChrome';
 import { Button } from '../components/Button';
@@ -37,7 +38,7 @@ export function recordIdAt(target: Element | null, pathname: string, known: (id:
 }
 
 /** Sends the product's check errors to the Dock badge whenever the specs load or reload. */
-export function useDesktopErrorCount(index: SpecIndex | null) {
+export function useDesktopErrorCount(index: RecordIndex | null) {
   const setErrorCount = desktopBridge()?.setErrorCount;
   const count = index ? index.workspace.problems.filter((p) => p.severity === 'error').length : null;
   useEffect(() => {
@@ -55,7 +56,7 @@ export function takeMenuRecord(): string | null {
 }
 
 /** A right-click on a record opens the shell's native record menu in place of the browser's. */
-export function useDesktopRecordMenu(index: SpecIndex | null) {
+export function useDesktopRecordMenu(index: RecordIndex | null) {
   const showRecordMenu = desktopBridge()?.showRecordMenu;
   useEffect(() => {
     if (!showRecordMenu || !index) return;

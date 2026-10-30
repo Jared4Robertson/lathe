@@ -2,7 +2,7 @@ import { Fragment, useState } from 'react';
 import type { PathOnPage, StepOnPage } from '../../../../lathe/src/authoring/use-case/read-model';
 import { Button } from '../../components/Button';
 import { Icon } from '../../components/icons';
-import { kindLabel, type SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { ProblemBadge, RecordLink, Section } from '../../specs/parts';
 
 // A flow's steps as a table, in order (the Use case page): the step, what happens, the command or query it invokes,
@@ -22,7 +22,7 @@ const COLUMNS: readonly { heading: string; of: (step: StepOnPage) => string[] }[
 /** A path's heading: "Main path", "Refused path". */
 const pathLabel = (path: string) => `${path.charAt(0).toUpperCase()}${path.slice(1)} path`;
 
-function IdLinks({ index, ids, label }: { index: SpecIndex; ids: string[]; label: string }) {
+function IdLinks({ index, ids, label }: { index: RecordIndex; ids: string[]; label: string }) {
   if (ids.length === 0) return <span className="hint">None</span>;
   return (
     <ul className="step-ids" aria-label={label}>
@@ -33,7 +33,7 @@ function IdLinks({ index, ids, label }: { index: SpecIndex; ids: string[]; label
   );
 }
 
-function TitledLinks({ index, ids, heading }: { index: SpecIndex; ids: string[]; heading: string }) {
+function TitledLinks({ index, ids, heading }: { index: RecordIndex; ids: string[]; heading: string }) {
   if (ids.length === 0) return null;
   return (
     <div className="step-detail-links">
@@ -54,7 +54,7 @@ function TitledLinks({ index, ids, heading }: { index: SpecIndex; ids: string[];
 }
 
 /** The Steps section of a flow, from its steps as the use case holds them; nothing when it has none. */
-export function FlowSteps({ index, flow, paths }: { index: SpecIndex; flow: string; paths: readonly PathOnPage[] }) {
+export function FlowSteps({ index, flow, paths }: { index: RecordIndex; flow: string; paths: readonly PathOnPage[] }) {
   const [open, setOpen] = useState<ReadonlySet<string>>(new Set());
   const steps = paths.flatMap((p) => p.steps);
   if (steps.length === 0) return null;

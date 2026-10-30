@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { CHECK_COMMANDS } from '../../lathe/src/checking/check/commands/index';
 import type { CheckCommands } from '../src/checking/check/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { openApp } from './helpers';
@@ -16,7 +17,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const card = () => screen.getByRole('region', { name: 'Wiki card' });
 
 /** The component-test workspace with a check of the product's own. */
-function ownCheck(): SpecData {
+function ownCheck(): ServedData {
   return addRows(workspace(), 'check', {
     name: 'domain-without-owner', product_id: 'DM', position: 1, severity: 'warning', summary: 'Every domain names its owner.',
     explanation: 'Name the role that owns the domain.', query: "SELECT 'warning' AS severity, 'domain-without-owner' AS \"check\", id AS record, 'x' AS message FROM domain WHERE false", kinds: ['domain'],

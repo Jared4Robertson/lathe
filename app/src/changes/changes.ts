@@ -1,7 +1,7 @@
 import { createContext, useContext } from 'react';
 import { applyDelta, recordChanges, rowDelta, type Delta, type RecordChange, type Tables } from '../../../lathe/src/changes';
 import type { BaselineAnswer, BaselineSince } from '../../../lathe/src/server/contract';
-import type { SpecIndex, SpecSource } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 
 export type { Delta, RecordChange, Tables };
 
@@ -36,7 +36,7 @@ export interface LiveMark {
 // ---------- The product's rows ----------
 
 /** The product folder's rows as served: the source whose data folder holds the product's own record. */
-export function productSource(index: SpecIndex, product: string): SpecSource | null {
+export function productSource(index: RecordIndex, product: string): SpecSource | null {
   const file = index.byId.get(product)?.file;
   if (!file) return null;
   const dir = file.slice(0, file.lastIndexOf('/'));
@@ -44,7 +44,7 @@ export function productSource(index: SpecIndex, product: string): SpecSource | n
 }
 
 /** Every record change from one load of the workspace to the next, folder by folder. */
-export function reloadChanges(before: SpecIndex, after: SpecIndex): RecordChange[] {
+export function reloadChanges(before: RecordIndex, after: RecordIndex): RecordChange[] {
   const was = new Map(before.workspace.sources.map((s) => [s.dataDir, s.tables]));
   return after.workspace.sources.flatMap((s) => recordChanges(after.workspace.schema, was.get(s.dataDir) ?? {}, s.tables));
 }
@@ -83,7 +83,7 @@ const shortDay = (iso: string) => {
 };
 
 /** The baseline's rows for the Reader's choice, with how the panel and the card name it. */
-export async function loadBaseline(index: SpecIndex, product: string, since: Since, mark: LookMark | undefined, fresh: boolean): Promise<Baseline> {
+export async function loadBaseline(index: RecordIndex, product: string, since: Since, mark: LookMark | undefined, fresh: boolean): Promise<Baseline> {
   const schema = index.workspace.schema;
   if (since === 'looked') {
     if (!mark) return { state: 'none', message: "You haven't looked at this product before in this session." };
@@ -102,7 +102,7 @@ export async function loadBaseline(index: SpecIndex, product: string, since: Sin
 }
 
 /** The moment now, as a LookMark: the last commit and the rows that differ from it (every row, with no git). */
-export async function markNow(index: SpecIndex, product: string): Promise<LookMark | null> {
+export async function markNow(index: RecordIndex, product: string): Promise<LookMark | null> {
   const source = productSource(index, product);
   if (!source) return null;
   const schema = index.workspace.schema;
@@ -116,7 +116,7 @@ export async function markNow(index: SpecIndex, product: string): Promise<LookMa
  * The changes from a baseline to the product's rows now: its folder's, of its own records only (a folder may hold
  * other products), a removed record known as the product's by its ID.
  */
-export function changesSince(index: SpecIndex, product: string, baseline: Tables): RecordChange[] {
+export function changesSince(index: RecordIndex, product: string, baseline: Tables): RecordChange[] {
   const source = productSource(index, product);
   if (!source) return [];
   const own = (c: RecordChange) => {

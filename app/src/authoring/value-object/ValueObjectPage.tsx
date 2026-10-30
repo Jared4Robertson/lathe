@@ -1,11 +1,11 @@
 import type { ValueObjectPage as ValueObject } from '../../../../lathe/src/authoring/value-object/read-model';
 import type { AggregatePageProps } from '../../record/pages';
 import { Rows, RowsSection, Summary, Text, readState, type Fact } from '../../record/page-parts';
-import type { Row, SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { Prose } from '../../specs/mentions';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import { FieldsTable } from '../../specs/RecordText';
+import { FieldsTable } from '../../specs/FieldsTable';
 import { ValueObjectEditor } from './ValueObjectEditor';
 import { useValueObject } from './reads';
 
@@ -17,7 +17,7 @@ import { useValueObject } from './reads';
 // record's page holds around that (traceability, problems, facts and links) is the Record page's (RecordFrame).
 
 /** The value object's constraints in a table, one row each with the test that proves it. */
-function Constraints({ index, page }: { index: SpecIndex; page: ValueObject }) {
+function Constraints({ index, page }: { index: RecordIndex; page: ValueObject }) {
   return (
     <Section title="Constraints" count={page.constraints.length}>
       {page.constraints.length === 0 ? <p className="hint">No constraints yet.</p> : (
@@ -44,7 +44,7 @@ const constraintOf = (page: ValueObject, id: string) => page.constraints.find((c
 const testOf = (page: ValueObject, id: string) => page.constraints.find((c) => c.test?.test.id === id)!.test!;
 
 /** What one record of the value object shows on its page, by the kind it is in the value object. */
-function Content({ index, page }: { index: SpecIndex; page: ValueObject }) {
+function Content({ index, page }: { index: RecordIndex; page: ValueObject }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'value_object':
@@ -52,7 +52,7 @@ function Content({ index, page }: { index: SpecIndex; page: ValueObject }) {
         <>
           <Text index={index} id={id} source={page.valueObject.description} field="description" />
           {page.fields.length === 0 ? <Section title="Fields" count={0}><p className="hint">No fields yet.</p></Section>
-            : <FieldsTable index={index} rows={page.fields as unknown as Row[]} owner={id} />}
+            : <FieldsTable index={index} rows={page.fields} owner={id} />}
           <Constraints index={index} page={page} />
           <RowsSection index={index} title="Value type" ids={page.valueType ? [page.valueType.valueType.id] : []} label={`The value type of ${id}`} empty="Its value type is not written yet." />
         </>
@@ -86,7 +86,7 @@ function Content({ index, page }: { index: SpecIndex; page: ValueObject }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: ValueObject): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: ValueObject): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const valueObject = <RecordLink index={index} id={page.valueObject.id} />;
   switch (kind) {

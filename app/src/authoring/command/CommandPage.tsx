@@ -2,7 +2,7 @@ import type { CommandPage as Command } from '../../../../lathe/src/authoring/com
 import { plural } from '../../plural';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
-import { kindLabel, type SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
 import { RecordedExceptions } from '../../specs/RecordText';
@@ -18,12 +18,12 @@ import { useCommand } from './reads';
 // every record's page holds around that (traceability, problems, facts and links) is the Record page's (RecordFrame).
 
 /** A list of one kind is titled by that kind's plural label (LA-V92-R09). */
-const titleOf = (index: SpecIndex, kind: string) => plural(kindLabel(index, kind));
+const titleOf = (index: RecordIndex, kind: string) => plural(kindLabel(index, kind));
 
 const policyOf = (page: Command, id: string) => page.policies.find((p) => p.policy.id === id || p.eventHandler?.handler.id === id || p.test?.test.id === id)!;
 
 /** What one record of the command shows on its page, by the kind it is in the command. */
-function Content({ index, page }: { index: SpecIndex; page: Command }) {
+function Content({ index, page }: { index: RecordIndex; page: Command }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'command':
@@ -67,7 +67,7 @@ const technicalFacts = (file: string | undefined, packages: readonly string[]): 
 ];
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Command): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Command): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const ofCommand: Fact = { label: 'Command', value: <RecordLink index={index} id={page.command.id} /> };
   switch (kind) {

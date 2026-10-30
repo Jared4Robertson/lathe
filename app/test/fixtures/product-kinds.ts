@@ -1,5 +1,5 @@
+import type { ServedData } from '../read-view';
 import type { Coverage } from '../../../lathe/src/types';
-import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture } from './load';
 import { gap, obligation, workspace } from './workspace';
 
@@ -7,7 +7,7 @@ import { gap, obligation, workspace } from './workspace';
 // `security_control`, an obligation in the interaction design stage that sits under an endpoint, with
 // a required `statement`; DM-SHOP-EP01-SC01 is one, not designed or proved yet.
 
-export function productKindWorkspace(): SpecData {
+export function productKindWorkspace(): ServedData {
   const base = workspace();
   return fixture('product-kinds', {
     problems: base.problems,

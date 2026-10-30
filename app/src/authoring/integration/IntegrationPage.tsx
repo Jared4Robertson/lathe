@@ -3,7 +3,7 @@ import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { IntegrationEditor } from './IntegrationEditor';
 import { useIntegration } from './reads';
 
@@ -27,7 +27,7 @@ function Packages({ packages }: { packages: readonly string[] }) {
 const testOf = (page: Integration, id: string) => page.tests.find((t) => t.test.id === id)!;
 
 /** What one record of the integration shows on its page, by the kind it is in the integration. */
-function Content({ index, page }: { index: SpecIndex; page: Integration }) {
+function Content({ index, page }: { index: RecordIndex; page: Integration }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'integration':
@@ -50,7 +50,7 @@ function Content({ index, page }: { index: SpecIndex; page: Integration }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Integration): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Integration): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const integration = { label: 'Integration', value: <RecordLink index={index} id={page.integration.id} /> };
   switch (kind) {

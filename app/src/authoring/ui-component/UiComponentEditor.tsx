@@ -7,7 +7,7 @@ import type { Choice } from '../../edit/fields';
 import { useWriter } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendUiComponent, type UiComponentCommands } from './commands';
 import { useNextUiComponentId } from './reads';
@@ -20,11 +20,11 @@ import '../../edit/edit.css';
 // aggregate has no Move. A refusal shows every reason the command gave, keeps what was entered, and changes nothing.
 
 /** The records of a kind in the product, as what a list may name. */
-const choicesOf = (index: SpecIndex, product: string, kind: string): Choice[] =>
+const choicesOf = (index: RecordIndex, product: string, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
-function fieldsOf(index: SpecIndex, product: string, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string, adding: boolean): FieldSpec[] {
   return [
     ...(adding ? [{ field: 'id', column: 'id', table: 'ui_component' }] : []),
     { field: 'title', column: 'title', table: 'ui_component' },
@@ -44,7 +44,7 @@ const withoutPackages = (specs: FieldSpec[]) => specs.filter((s) => s.field !== 
 type Mode = 'view' | 'change' | 'remove';
 
 /** The UI component with its actions; the form or the remove question shows in place of its page. */
-export function UiComponentEditor({ index, page, children }: { index: SpecIndex; page: UiComponentPage; children: ReactNode }) {
+export function UiComponentEditor({ index, page, children }: { index: RecordIndex; page: UiComponentPage; children: ReactNode }) {
   const writer = useWriter();
   const [mode, setMode] = useState<Mode>('view');
   const toolbar = useRef<HTMLDivElement>(null);
@@ -88,7 +88,7 @@ export function UiComponentEditor({ index, page, children }: { index: SpecIndex;
 
 /** Edit: the UI component's Change, with only what changed. */
 function ChangeForm({ index, specs, current, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   id: string;
@@ -104,7 +104,7 @@ function ChangeForm({ index, specs, current, id, submit, onDone }: {
 }
 
 /** Add a UI component to a product (from the product's page): the aggregate's own Add, its ID the next free one. */
-export function AddUiComponentForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddUiComponentForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextUiComponentId(parent, index);

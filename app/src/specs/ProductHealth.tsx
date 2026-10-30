@@ -1,5 +1,5 @@
 import { plural } from '../plural';
-import type { Coverage, SpecIndex } from './data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import type { ObligationCoverage, TestCounts } from '../../../lathe/src/types';
 
 // Coverage as the engine counts it (designed, built, proved, and tests not automated yet) per obligation kind, each
@@ -88,7 +88,7 @@ export function CoverageBars({ coverage }: { coverage: Coverage | undefined }) {
 // ---------- Product summary ----------
 
 /** What Lathe counts across a product, its domains and its records outside them: coverage, tests, open questions, errors and warnings. */
-export function ProductSummary({ index, productId }: { index: SpecIndex; productId: string }) {
+export function ProductSummary({ index, productId }: { index: RecordIndex; productId: string }) {
   const coverage = index.workspace.coverage.filter((c) => c.product === productId);
   const groups = coverage.flatMap((c) => c.obligations);
   const items = sum(groups.map((g) => g.total));

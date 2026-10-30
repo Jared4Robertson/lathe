@@ -4,7 +4,7 @@ import { Button } from '../../components/Button';
 import { addInput, CommandForm, draftOf, Fields, type Draft, type FieldSpec } from '../../edit/command-form';
 import { useWriter } from '../../edit/write';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { sendProductSetting, type ProductSettingCommands } from './commands';
 import '../../edit/edit.css';
 
@@ -20,7 +20,7 @@ const FIELDS: FieldSpec[] = [
 ];
 
 /** The product's limits with Set limits; the form shows in their place while it is open. */
-export function LimitsEditor({ index, limits, children }: { index: SpecIndex; limits: Limits; children: ReactNode }) {
+export function LimitsEditor({ index, limits, children }: { index: RecordIndex; limits: Limits; children: ReactNode }) {
   const writer = useWriter();
   const [open, setOpen] = useState(false);
   const toolbar = useRef<HTMLDivElement>(null);
@@ -41,7 +41,7 @@ export function LimitsEditor({ index, limits, children }: { index: SpecIndex; li
 }
 
 /** Set limits: both limits, starting at the product's current ones. */
-function SetLimitsForm({ index, limits, onDone }: { index: SpecIndex; limits: Limits; onDone: () => void }) {
+function SetLimitsForm({ index, limits, onDone }: { index: RecordIndex; limits: Limits; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const [draft, setDraft] = useState<Draft>(() => draftOf(FIELDS, { max_children: limits.maxChildren, max_entities_per_aggregate: limits.maxEntitiesPerAggregate }));

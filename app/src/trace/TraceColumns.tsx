@@ -1,7 +1,7 @@
 // The Trace stage drawn as columns (LA-V98-R13): the product's tree (tree.ts) along the focus's path, a column per level
 // (columns.ts), drawn by the graph's renderer (paint.ts, plate.ts) under the graph's camera gestures (gestures.ts).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import type { Viewport } from '../graph/camera';
 import { faintest, fadeTween, type FadeLook } from '../graph/fade';
 import { fontFor, pageMeasure, readGraphFonts, readyMeasure, type GraphFonts } from '../graph/fonts';
@@ -65,7 +65,7 @@ export interface ColumnScene extends Omit<TraceScene, 'boxes'> { boxes: ColumnSc
 export type ColumnsHost = HTMLDivElement & { traceScene?: (whole?: boolean) => ColumnScene; traceHit?: TraceHost['traceHit'] };
 
 export interface TraceColumnsProps {
-  index: SpecIndex;
+  index: RecordIndex;
   focus: string;
   map: TraceMap;
   /** The node the focus stands on (tree.ts focusKey): the columns run to it. */

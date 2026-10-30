@@ -4,7 +4,7 @@ import type { StoreProblem, Value, WriteAnswer } from '../../../lathe/src/server
 import { Button } from '../components/Button';
 import { navigate } from '../router';
 import { useAnnounce } from '../shell/commands';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { RecordLink } from '../specs/parts';
 import { ColumnField, IdField, IdsField, PartsField, Refusal, TextsField, columnValue, problemText, textsValue, type Choice } from './fields';
 
@@ -79,14 +79,14 @@ export type FieldSpec =
   | { field: string; label: string; description: string; table: string; columns: string[] };
 
 /** The column of a table, as the schema describes it. */
-export function columnOf(index: SpecIndex, table: string, name: string): ColumnDescription {
-  const found = index.workspace.schema.tables[table]?.columns.find((c) => c.name === name);
+export function columnOf(index: RecordIndex, table: string, name: string): ColumnDescription {
+  const found = index.meta.columns[table]?.find((c) => c.name === name);
   return found ?? { name, sqlType: 'VARCHAR', kind: 'text', required: false, description: null };
 }
 
 /** The fields of a form, drawn from the shared inputs in the order given; the first takes focus. */
 export function Fields({ index, specs, draft, setDraft, first }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   draft: Draft;
   setDraft: (change: (d: Draft) => Draft) => void;
@@ -144,7 +144,7 @@ const cellText = (value: unknown): string => (value === undefined || value === n
 const partText = (columns: readonly string[], row: Record<string, unknown>): Record<string, string> => Object.fromEntries(columns.map((c) => [c, cellText(row[c])]));
 
 /** A part row's text as its columns' values, each left out when empty. */
-function partValue(index: SpecIndex, spec: { table: string; columns: string[] }, row: Record<string, string>): Record<string, Value> {
+function partValue(index: RecordIndex, spec: { table: string; columns: string[] }, row: Record<string, string>): Record<string, Value> {
   const out: Record<string, Value> = {};
   for (const name of spec.columns) {
     const value = columnValue(columnOf(index, spec.table, name), row[name] ?? '');
@@ -154,7 +154,7 @@ function partValue(index: SpecIndex, spec: { table: string; columns: string[] },
 }
 
 /** A field's value from the draft: the column's value, the list of texts, the ID it names, the list of IDs, or the part rows; undefined when empty. */
-export function draftValue(index: SpecIndex, spec: FieldSpec, draft: Draft): Value | Record<string, Value>[] | undefined {
+export function draftValue(index: RecordIndex, spec: FieldSpec, draft: Draft): Value | Record<string, Value>[] | undefined {
   if ('columns' in spec) return (draft.parts[spec.field] ?? []).map((row) => partValue(index, spec, row));
   if ('many' in spec) return draft.ids[spec.field] ?? [];
   const text = draft.text[spec.field] ?? '';
@@ -182,7 +182,7 @@ export function draftOf(specs: FieldSpec[], current: Record<string, unknown>): D
  * A Change command's input: the record's key and each field whose value differs from the current one. A field
  * emptied is sent as null where the command may clear it, and otherwise as '' so the command refuses it with its reason.
  */
-export function changeInput(index: SpecIndex, specs: FieldSpec[], draft: Draft, current: Record<string, unknown>, key: Record<string, unknown>, clearable: readonly string[]): Record<string, unknown> {
+export function changeInput(index: RecordIndex, specs: FieldSpec[], draft: Draft, current: Record<string, unknown>, key: Record<string, unknown>, clearable: readonly string[]): Record<string, unknown> {
   const input: Record<string, unknown> = { ...key };
   for (const spec of specs) {
     const value = draftValue(index, spec, draft);
@@ -197,7 +197,7 @@ export function changeInput(index: SpecIndex, specs: FieldSpec[], draft: Draft, 
 }
 
 /** An Add command's input: its parent's field and every field given, an empty list left out. */
-export function addInput(index: SpecIndex, specs: FieldSpec[], draft: Draft, parent: Record<string, unknown>): Record<string, unknown> {
+export function addInput(index: RecordIndex, specs: FieldSpec[], draft: Draft, parent: Record<string, unknown>): Record<string, unknown> {
   const input: Record<string, unknown> = { ...parent };
   for (const spec of specs) {
     const value = draftValue(index, spec, draft);
@@ -212,7 +212,7 @@ export function addInput(index: SpecIndex, specs: FieldSpec[], draft: Draft, par
  * and shows the refusal (what still references it) in the question; on success it opens `then`.
  */
 export function RemoveQuestion({ index, id, label, goes, remove, then, onCancel }: {
-  index: SpecIndex;
+  index: RecordIndex;
   id: string;
   /** The record's kind in a sentence, such as business outcome. */
   label: string;

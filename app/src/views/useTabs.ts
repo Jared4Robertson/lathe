@@ -2,7 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { lastAddressMove, noteInEntry } from '../router';
 import { isNumber, useAggregate } from '../shell/prefs';
 import { productOfPath } from '../shell/spaces';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf, focusOf, isFocusPath, pathOf, type FocusRoute } from './address';
 import { DEFAULT_VIEW, hereOf, type PlaceView } from './place';
 import { currentTag, inStep } from './tabHistory';
@@ -27,7 +27,7 @@ import { runTabSetCommand } from '../exploring/tab-set/run';
 
 const isAddress = (address: string) => isFocusPath(address.split(/[?#]/)[0]);
 
-export function usePageTabs(index: SpecIndex, route: FocusRoute, search: string): PlaceApi {
+export function usePageTabs(index: RecordIndex, route: FocusRoute, search: string): PlaceApi {
   const page = pathOf(route);
   const space = productOfPath(index, page) ?? index.byId.get(focusOf(route))?.product ?? '';
   const address = page + search;

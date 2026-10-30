@@ -12,8 +12,11 @@ export type Read<R> =
   | { state: 'read'; answer: R }
   | { state: 'refused'; error: string; problems: StoreProblem[] };
 
+/** A read with the data version it answers for: what useRead keeps for each address. */
+type Kept = { version: unknown; read: Read<unknown> };
+
 /** Each address's last answer, with the data it was read for. */
-const known = new Map<string, { version: unknown; read: Read<unknown> }>();
+const known = new Map<string, Kept>();
 
 /** A query's address: its route and its input as the query string, such as /api/use-case/get-use-case?id=TL-LEND-UC01. */
 const queryAddress = (route: string, input: Record<string, string>) => `${route}?${new URLSearchParams(input).toString()}`;
@@ -33,27 +36,34 @@ async function readQuery<R>(address: string): Promise<Read<R>> {
 
 /**
  * The query's answer for the input, read again when `version` changes (pass the data the page is drawn from: a new
- * one comes after every reload). Until the first answer it is reading.
+ * one comes after every reload). Until the first answer it is reading. With no input (null) nothing is read.
  */
-export function useRead<R>(route: string, input: Record<string, string>, version: unknown): Read<R> {
-  const address = queryAddress(route, input);
-  const [read, setRead] = useState<Read<R>>(() => (known.get(address)?.read as Read<R> | undefined) ?? { state: 'reading' });
+export function useRead<R>(route: string, input: Record<string, string> | null, version: unknown): Read<R> {
+  return useVersionedRead<R>(route, input, version).read;
+}
+
+/** useRead, with the version the read on screen answers for (undefined while nothing is read). */
+export function useVersionedRead<R>(route: string, input: Record<string, string> | null, version: unknown): { read: Read<R>; version: unknown } {
+  const address = input ? queryAddress(route, input) : '';
+  const [kept, setKept] = useState<Kept>(() => known.get(address) ?? { version: undefined, read: { state: 'reading' } });
   // The address last read: the same address read again keeps its answer on screen even when nothing is kept for it.
   const last = useRef(address);
   useEffect(() => {
+    if (!address) { setKept({ version: undefined, read: { state: 'reading' } }); return; }
     const cached = known.get(address);
-    if (cached) setRead(cached.read as Read<R>);
-    else if (last.current !== address) setRead({ state: 'reading' });
+    if (cached) setKept(cached);
+    else if (last.current !== address) setKept({ version: undefined, read: { state: 'reading' } });
     last.current = address;
     if (cached?.version === version) return;
     let live = true;
     void readQuery<R>(address).then((answer) => {
-      known.set(address, { version, read: answer });
-      if (live) setRead(answer);
+      const next = { version, read: answer };
+      known.set(address, next);
+      if (live) setKept(next);
     });
     return () => { live = false; };
   }, [address, version]);
-  return read;
+  return { read: kept.read as Read<R>, version: kept.version };
 }
 
 /** Forgets every answer (for tests, between apps). */

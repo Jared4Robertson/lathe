@@ -8,7 +8,7 @@ import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendIntegration, type IntegrationCommands, type IntegrationRoute } from './commands';
 import { useNextIntegrationId } from './reads';
@@ -32,11 +32,11 @@ function addsUnder(page: IntegrationPage): Exclude<IntegrationKind, 'integration
 }
 
 /** The product's records of the kind, as choices. */
-const choicesOf = (index: SpecIndex, product: string | undefined, kind: string): Choice[] =>
+const choicesOf = (index: RecordIndex, product: string | undefined, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
-function fieldsOf(index: SpecIndex, product: string | undefined, kind: IntegrationKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string | undefined, kind: IntegrationKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'integration':
@@ -126,7 +126,7 @@ function goesWith(page: IntegrationPage, kind: IntegrationKind): string[] {
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Exclude<IntegrationKind, 'integration'> } | { mode: 'remove' };
 
 /** A record of the integration with its actions; a form or the remove question shows in place of its page. */
-export function IntegrationEditor({ index, page, children }: { index: SpecIndex; page: IntegrationPage; children: ReactNode }) {
+export function IntegrationEditor({ index, page, children }: { index: RecordIndex; page: IntegrationPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -176,7 +176,7 @@ export function IntegrationEditor({ index, page, children }: { index: SpecIndex;
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -193,7 +193,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for the adapter or an integration test under the integration, its ID the next free one, sent as that kind's Add. */
-function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; product: string | undefined; kind: Exclude<IntegrationKind, 'integration'>; parent: string; onDone: () => void }) {
+function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex; product: string | undefined; kind: Exclude<IntegrationKind, 'integration'>; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextIntegrationId(kind, parent, index);
@@ -221,7 +221,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
  * Add an integration to a product (from the product's page): the aggregate's own Add, its ID the next free one. An
  * integration has no owner: its product follows from its ID, so the input names no parent.
  */
-export function AddIntegrationForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddIntegrationForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextIntegrationId('integration', parent, index);

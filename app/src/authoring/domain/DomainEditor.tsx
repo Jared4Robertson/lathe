@@ -10,7 +10,7 @@ import { adderOf } from '../../record/pages';
 import { lowerLabel } from '../../plural';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import { kindLabel, type SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendDomain, type DomainCommands, type DomainRoute } from './commands';
 import { useNextDomainId } from './reads';
@@ -50,20 +50,20 @@ const ADDED_UNDER: Record<DomainKind, Inside[]> = {
 };
 
 /** The product's records of these kinds, as choices; `domain` narrows them to its own. */
-function choices(index: SpecIndex, product: string, kinds: readonly string[], domain?: string): Choice[] {
+function choices(index: RecordIndex, product: string, kinds: readonly string[], domain?: string): Choice[] {
   return [...index.byId.values()]
     .filter((r) => kinds.includes(r.kind) && r.product === product && (domain === undefined || r.domain === domain))
     .map((r) => ({ id: r.id, title: r.title }));
 }
 
 /** A technical record's standard rules and packages: the packages a list of names, one part row each. */
-const technical = (index: SpecIndex, product: string): FieldSpec[] => [
+const technical = (index: RecordIndex, product: string): FieldSpec[] => [
   { field: 'meets', label: 'Meets', description: 'The standard rules it meets.', many: choices(index, product, ['standard_rule']) },
   { field: 'packages', label: 'Packages', description: 'The packages it uses, by their names in the product\'s package.json files. The list replaces its packages.', table: 'package_use', columns: ['package'] },
 ];
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
-function fieldsOf(index: SpecIndex, page: DomainPage | null, product: string, kind: DomainKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, page: DomainPage | null, product: string, kind: DomainKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'domain':
@@ -225,19 +225,19 @@ function parentOf(page: DomainPage, kind: DomainKind, id: string): string {
 }
 
 /** The roots of other aggregates added under a record of this kind through their own Add form, by the schema's parents. */
-function othersUnder(index: SpecIndex, kind: DomainKind): string[] {
+function othersUnder(index: RecordIndex, kind: DomainKind): string[] {
   if (kind !== 'domain' && kind !== 'capability') return [];
   return Object.values(index.workspace.schema.kinds)
     .filter((k) => k.parents.some((p) => p.kind === kind) || (kind === 'domain' && k.parents.length === 0 && k.idScope === 'domain'))
     .map((k) => k.name)
-    .filter((k) => adderOf(index.workspace.schema, k) !== undefined)
+    .filter((k) => adderOf(index.meta, k) !== undefined)
     .sort();
 }
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'adopt'; kind: string } | { mode: 'remove' };
 
 /** A record of the domain with its actions; a form or the remove question shows in place of its page. */
-export function DomainEditor({ index, page, children }: { index: SpecIndex; page: DomainPage; children: ReactNode }) {
+export function DomainEditor({ index, page, children }: { index: RecordIndex; page: DomainPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -264,7 +264,7 @@ export function DomainEditor({ index, page, children }: { index: SpecIndex; page
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} page={page} kind={mode.kind} parent={id} onDone={back} /></div>;
   if (mode.mode === 'adopt') {
-    const Adder = adderOf(index.workspace.schema, mode.kind)!;
+    const Adder = adderOf(index.meta, mode.kind)!;
     return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
   }
   // A domain service has one service: once it has it, there is nothing more to add of that kind.
@@ -288,7 +288,7 @@ export function DomainEditor({ index, page, children }: { index: SpecIndex; page
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -305,7 +305,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a kind under the record, its ID the next free one, sent as that kind's Add. */
-function AddForm({ index, page, kind, parent, onDone }: { index: SpecIndex; page: DomainPage; kind: Inside; parent: string; onDone: () => void }) {
+function AddForm({ index, page, kind, parent, onDone }: { index: RecordIndex; page: DomainPage; kind: Inside; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextDomainId(kind, parent, index);
@@ -334,7 +334,7 @@ function AddForm({ index, page, kind, parent, onDone }: { index: SpecIndex; page
  * Add a domain to a product (from the product's page): the aggregate's own Add. A domain's ID is its product's and a
  * code chosen for it, so the form starts it with the product's prefix and leaves the code to the person.
  */
-export function AddDomainForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddDomainForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text: { id: `${parent}-` } }));

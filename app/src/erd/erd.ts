@@ -1,5 +1,5 @@
-import type { Row, SpecIndex, SpecRecord } from '../specs/data';
-import { textOf, byIdOrder, partsOf } from '../specs/data';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { byIdOrder } from '../exploring/record-summaries/record-index';
 import { keptFade, type Fade, type FadeLook } from '../graph/fade';
 import { onePerData } from '../graph/one-map';
 
@@ -71,19 +71,19 @@ export interface ErdMap {
   lines: ErdLine[];
 }
 
-const isRootEntity = (r: SpecRecord) => textOf(r.row, 'role') === 'root';
-const childrenOfKind = (index: SpecIndex, id: string, kind: string) => (index.children.get(id) ?? []).filter((r) => r.kind === kind).sort(byIdOrder);
-const titleOf = (index: SpecIndex, id: string | null) => (id ? index.byId.get(id)?.title ?? id : '');
-const targets = (index: SpecIndex, id: string, relation: string) =>
-  (index.outgoing.get(id) ?? []).filter((l) => l.relation === relation).map((l) => index.byId.get(l.target)).filter((r): r is SpecRecord => !!r).sort(byIdOrder);
+const isRootEntity = (r: RecordSummary) => textOf(r.row, 'role') === 'root';
+const childrenOfKind = (index: RecordIndex, id: string, kind: string) => (index.children.get(id) ?? []).filter((r) => r.kind === kind).sort(byIdOrder);
+const titleOf = (index: RecordIndex, id: string | null) => (id ? index.byId.get(id)?.title ?? id : '');
+const targets = (index: RecordIndex, id: string, relation: string) =>
+  (index.outgoing.get(id) ?? []).filter((l) => l.relation === relation).map((l) => index.byId.get(l.target)).filter((r): r is RecordSummary => !!r).sort(byIdOrder);
 
 /** An aggregate's entities: the root first, then the children, in ID order. */
-export function entitiesOf(index: SpecIndex, aggregate: string): SpecRecord[] {
+export function entitiesOf(index: RecordIndex, aggregate: string): RecordSummary[] {
   return [...childrenOfKind(index, aggregate, 'entity')].sort((a, b) => Number(isRootEntity(b)) - Number(isRootEntity(a)) || byIdOrder(a, b));
 }
 
 /** A field's type in words: its basic type, its value object's title, or "→ Aggregate" for a reference. */
-export function fieldType(index: SpecIndex, field: Row): string {
+export function fieldType(index: RecordIndex, field: Row): string {
   const vo = textOf(field, 'type_value_object_id');
   if (vo) return titleOf(index, vo);
   const aggregate = textOf(field, 'type_aggregate_id');
@@ -91,13 +91,13 @@ export function fieldType(index: SpecIndex, field: Row): string {
   return textOf(field, 'type');
 }
 
-const fieldsOf = (index: SpecIndex, id: string): ErdField[] =>
+const fieldsOf = (index: RecordIndex, id: string): ErdField[] =>
   partsOf(index, id, 'entity_field').map((f) => ({ field: textOf(f, 'name'), kind: fieldType(index, f) }));
 
 /** A product's map: built once per index, that is once per data change (graph/one-map.ts), then read. */
 export const erdMap = onePerData(buildMap);
 
-function buildMap(index: SpecIndex, productId: string): ErdMap {
+function buildMap(index: RecordIndex, productId: string): ErdMap {
   const boxes = new Map<string, ErdBox>();
   const lines = new Map<string, ErdLine>();
   const domains = index.workspace.records.filter((r) => r.kind === 'domain' && r.product === productId).sort(byIdOrder);
@@ -144,7 +144,7 @@ function buildMap(index: SpecIndex, productId: string): ErdMap {
 export interface ErdFocus { product: string; scope: string; pick: string | null }
 
 /** A focus on its product's map, or null for an unknown focus or one in no product. */
-export function erdFocus(index: SpecIndex, focus: string): ErdFocus | null {
+export function erdFocus(index: RecordIndex, focus: string): ErdFocus | null {
   const slash = focus.indexOf('/');
   if (slash > 0) return erdFocus(index, focus.slice(0, slash));
   const record = index.byId.get(focus);
@@ -154,7 +154,7 @@ export function erdFocus(index: SpecIndex, focus: string): ErdFocus | null {
   if (record.kind === 'domain' || record.kind === 'aggregate') return { product, scope: record.id, pick: record.id };
   if (record.kind === 'entity' && record.parent) return { product, scope: record.parent, pick: record.id };
   let pick: string | null = null;
-  for (let at: SpecRecord | undefined = record; at; at = at.parent ? index.byId.get(at.parent) : undefined) {
+  for (let at: RecordSummary | undefined = record; at; at = at.parent ? index.byId.get(at.parent) : undefined) {
     if (at.kind === 'entity' || at.kind === 'aggregate') { pick = at.id; break; }
   }
   return { product, scope: record.domain ?? product, pick };

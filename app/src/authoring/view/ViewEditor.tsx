@@ -8,7 +8,7 @@ import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendView, type ViewCommands, type ViewRoute } from './commands';
 import { useNextViewId } from './reads';
@@ -28,11 +28,11 @@ const LABEL: Record<ViewKind, string> = { view: 'view', view_requirement: 'view 
 const ADDED_UNDER: Record<ViewKind, Exclude<ViewKind, 'view'> | null> = { view: 'view_requirement', view_requirement: 'view_test', view_test: null };
 
 /** The test data sets of the product, as what a test may start from. */
-const dataSets = (index: SpecIndex, product: string): Choice[] =>
+const dataSets = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === 'test_data_set' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
-function fieldsOf(index: SpecIndex, product: string, kind: ViewKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string, kind: ViewKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'view':
@@ -117,7 +117,7 @@ function goesWith(page: ViewPage, kind: ViewKind, id: string): string[] {
 }
 
 /** The record a removed one's page gives way to: what it sits under (a view's product). */
-function parentOf(index: SpecIndex, page: ViewPage, kind: ViewKind, id: string): string {
+function parentOf(index: RecordIndex, page: ViewPage, kind: ViewKind, id: string): string {
   if (kind === 'view') return index.byId.get(id)?.product ?? '';
   if (kind === 'view_requirement') return page.view.id;
   return page.requirements.find((r) => r.tests.some((t) => t.test.id === id))!.requirement.id;
@@ -126,7 +126,7 @@ function parentOf(index: SpecIndex, page: ViewPage, kind: ViewKind, id: string):
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Exclude<ViewKind, 'view'> } | { mode: 'remove' };
 
 /** A record of the view with its actions; a form or the remove question shows in place of its page. */
-export function ViewEditor({ index, page, children }: { index: SpecIndex; page: ViewPage; children: ReactNode }) {
+export function ViewEditor({ index, page, children }: { index: RecordIndex; page: ViewPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -171,7 +171,7 @@ export function ViewEditor({ index, page, children }: { index: SpecIndex; page: 
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -188,7 +188,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a record of the kind under its parent, its ID the next free one, sent as that kind's Add. */
-function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; product: string; kind: ViewKind; parent: string; onDone: () => void }) {
+function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex; product: string; kind: ViewKind; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextViewId(kind, parent, index);
@@ -212,6 +212,6 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
 }
 
 /** Add a view to a product (from the product's page): the aggregate's own Add, its ID the next free one. */
-export function AddViewForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddViewForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   return <AddForm index={index} product={parent} kind="view" parent={parent} onDone={onDone} />;
 }

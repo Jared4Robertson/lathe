@@ -7,7 +7,7 @@ import { IdField, type Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendUseCase, type UseCaseCommands, type UseCaseRoute } from './commands';
 import { stepsOf, useNextId } from './reads';
@@ -52,7 +52,7 @@ type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: UseCase
 const stepsOfUseCase = (useCase: UseCasePage): StepOnPage[] => useCase.flows.flatMap(stepsOf);
 
 /** A record of the use case with its actions; a form or the remove question shows in place of its page. */
-export function UseCaseEditor({ index, useCase, id, kind, children }: { index: SpecIndex; useCase: UseCasePage; id: string; kind: UseCaseKind; children: ReactNode }) {
+export function UseCaseEditor({ index, useCase, id, kind, children }: { index: RecordIndex; useCase: UseCasePage; id: string; kind: UseCaseKind; children: ReactNode }) {
   const writer = useWriter();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
   const toolbar = useRef<HTMLDivElement>(null);
@@ -88,14 +88,14 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: S
 // ---------- Forms ----------
 
 interface FormContext {
-  index: SpecIndex;
+  index: RecordIndex;
   useCase: UseCasePage;
   writer: Writer;
   onDone: () => void;
 }
 
 /** The records of the use case's product of one kind, as choices: what a field of the use case may name. */
-function productChoices(index: SpecIndex, useCase: UseCasePage, kinds: readonly string[]): Choice[] {
+function productChoices(index: RecordIndex, useCase: UseCasePage, kinds: readonly string[]): Choice[] {
   const product = index.byId.get(useCase.useCase.id)?.product;
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
@@ -348,7 +348,7 @@ function parentOf(useCase: UseCasePage, kind: UseCaseKind, id: string): string {
 }
 
 /** Add a use case to a capability (from the capability's page): the aggregate's own Add, its ID the next free one. */
-export function AddUseCaseForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddUseCaseForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextId('use_case', parent, index);

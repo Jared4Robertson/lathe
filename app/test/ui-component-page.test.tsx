@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { UI_COMPONENT_COMMANDS } from '../../lathe/src/authoring/ui-component/commands/index';
 import type { UiComponentCommands } from '../src/authoring/ui-component/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
@@ -15,7 +16,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The model fixture with its UI component using a package. */
-const withPackage = (): SpecData => addRows(modelWorkspace(), 'package_use', { record_id: 'P-UI01', package: 'react' });
+const withPackage = (): ServedData => addRows(modelWorkspace(), 'package_use', { record_id: 'P-UI01', package: 'react' });
 
 describe('LA-V151-R01-T01 a UI component is read through the UI component aggregate\'s own query, never a generic record read', () => {
   it('reads GET /api/ui-component/get-ui-component, and shows its description and its packages, the views it renders in its Traceability', async () => {

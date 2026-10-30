@@ -1,5 +1,5 @@
+import type { ServedData } from '../read-view';
 import './setup';
-import type { SpecData } from '../../../lathe/src/server/contract';
 import { addRows, indexOf } from '../fixtures/load';
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
@@ -20,7 +20,7 @@ const ids = (n: Neighborhood) => n.nodes.map((x) => x.id).sort();
 const node = (id: string) => boxElement(id);
 const STAGES = ['P-D/domain-model', 'P-D/use-cases', 'P-D/interaction-design', 'P-D/technical-specification', 'P-D/test-plan'];
 
-async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1) {
+async function showGraph(path: string, workspace: ServedData = testWorkspace(), depth = 1) {
   startAtDepth(depth);
   await openApp(`${path}?stage=graph`, { data: workspace });
   await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));

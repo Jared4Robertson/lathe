@@ -1,5 +1,5 @@
+import type { ServedData } from '../read-view';
 import { describe, expect, it } from 'vitest';
-import type { SpecData } from '../../../lathe/src/server/contract';
 import { addRows, indexOf } from '../fixtures/load';
 import { isGraphNode, neighborhood, nodeParent } from '../../src/graph/model';
 import { graphMap } from '../../src/graph/map';
@@ -8,7 +8,7 @@ import { testIndex, testWorkspace } from './workspace';
 // Flow steps in the graph: under their flow. A requirement's chain through its step is the Trace view's (test/trace).
 
 /** The test workspace with more steps on the main path of P-D-UC01's flow, up to `stepCount`. */
-function flowWorkspace(stepCount: number): SpecData {
+function flowWorkspace(stepCount: number): ServedData {
   const w = testWorkspace();
   for (let i = 4; i <= stepCount; i++) {
     addRows(w, 'flow_step', { id: `P-D-UC01-FL01-S0${i}`, title: `Step ${i}`, flow_id: 'P-D-UC01-FL01', path: 'main', position: i - 1 });

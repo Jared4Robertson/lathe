@@ -8,7 +8,7 @@ import { IdField, type Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendEndpoint, type EndpointCommands, type EndpointRoute } from './commands';
 import { useNextEndpointId } from './reads';
@@ -42,11 +42,11 @@ function addsUnder(page: EndpointPage): Exclude<EndpointKind, 'endpoint'>[] {
 const MOVE: Partial<Record<EndpointKind, '/api/endpoint/move-endpoint'>> = { endpoint: '/api/endpoint/move-endpoint' };
 
 /** The product's records of the kinds, as choices. */
-const choicesOf = (index: SpecIndex, product: string | undefined, kinds: readonly string[]): Choice[] =>
+const choicesOf = (index: RecordIndex, product: string | undefined, kinds: readonly string[]): Choice[] =>
   [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
-function fieldsOf(index: SpecIndex, product: string | undefined, kind: EndpointKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string | undefined, kind: EndpointKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'endpoint':
@@ -158,7 +158,7 @@ function parentOf(page: EndpointPage, kind: EndpointKind, id: string): string {
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Exclude<EndpointKind, 'endpoint'> } | { mode: 'move' } | { mode: 'remove' };
 
 /** A record of the endpoint with its actions; a form or the remove question shows in place of its page. */
-export function EndpointEditor({ index, page, children }: { index: SpecIndex; page: EndpointPage; children: ReactNode }) {
+export function EndpointEditor({ index, page, children }: { index: RecordIndex; page: EndpointPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -208,7 +208,7 @@ export function EndpointEditor({ index, page, children }: { index: SpecIndex; pa
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -225,7 +225,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a kind under the record, its ID the next free one, sent as that kind's Add. */
-function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; product: string | undefined; kind: Exclude<EndpointKind, 'endpoint'>; parent: string; onDone: () => void }) {
+function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex; product: string | undefined; kind: Exclude<EndpointKind, 'endpoint'>; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextEndpointId(kind, parent, index);
@@ -250,7 +250,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
 }
 
 /** Move: the endpoint to another command or query of its domain, as its own command. */
-function MoveForm({ index, page, writer, onDone }: { index: SpecIndex; page: EndpointPage; writer: Writer; onDone: () => void }) {
+function MoveForm({ index, page, writer, onDone }: { index: RecordIndex; page: EndpointPage; writer: Writer; onDone: () => void }) {
   const announce = useAnnounce();
   const { endpoint } = page;
   const exposes = endpoint.command_id ?? endpoint.query_id ?? '';
@@ -279,7 +279,7 @@ function MoveForm({ index, page, writer, onDone }: { index: SpecIndex; page: End
  * Add an endpoint under the command or query it exposes (from that record's page): the aggregate's own Add, its ID
  * the next free one in the domain, naming its parent by the parent's kind.
  */
-export function AddEndpointForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddEndpointForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextEndpointId('endpoint', parent, index);

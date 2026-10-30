@@ -8,7 +8,7 @@ import { useWriter } from '../../edit/write';
 import { lowerLabel } from '../../plural';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendExtensionRecord, type ExtensionRecordCommands } from './commands';
 import { useNextExtensionRecordId } from './reads';
@@ -23,7 +23,7 @@ import '../../edit/edit.css';
 // keeps what was entered, and changes nothing.
 
 /** The kind's value columns (its title and declared fields, not its ID or parent), its parent column, and its relations. */
-function declarationOf(index: SpecIndex, kind: string) {
+function declarationOf(index: RecordIndex, kind: string) {
   const { schema } = index.workspace;
   const parent = schema.kinds[kind].parents[0].column;
   const columns = schema.tables[kind].columns.filter((c) => c.name !== 'id' && c.name !== parent);
@@ -34,7 +34,7 @@ function declarationOf(index: SpecIndex, kind: string) {
 const LINK = 'link:';
 
 /** The fields Add and Change take (Change leaves out the ID): values, then each relation's links, then packages. */
-function fieldsOf(index: SpecIndex, kind: string, product: string | null, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, kind: string, product: string | null, adding: boolean): FieldSpec[] {
   const { columns, relations } = declarationOf(index, kind);
   const records = [...index.byId.values()].filter((r) => r.product === product);
   const choices = (relation: string): Choice[] => {
@@ -58,7 +58,7 @@ const sortedSame = (a: readonly string[], b: readonly string[]) => JSON.stringif
 type Mode = 'view' | 'change' | 'remove';
 
 /** The record with its actions; the form or the remove question shows in place of its page. */
-export function ExtensionRecordEditor({ index, page, children }: { index: SpecIndex; page: ExtensionRecordPage; children: ReactNode }) {
+export function ExtensionRecordEditor({ index, page, children }: { index: RecordIndex; page: ExtensionRecordPage; children: ReactNode }) {
   const writer = useWriter();
   const [mode, setMode] = useState<Mode>('view');
   const toolbar = useRef<HTMLDivElement>(null);
@@ -110,7 +110,7 @@ export function ExtensionRecordEditor({ index, page, children }: { index: SpecIn
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -127,7 +127,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add a record of a product kind under its parent (from the parent's page): the aggregate's own Add, its ID the next free one. */
-export function AddExtensionRecordForm({ index, parent, kind, onDone }: { index: SpecIndex; parent: string; kind: string; onDone: () => void }) {
+export function AddExtensionRecordForm({ index, parent, kind, onDone }: { index: RecordIndex; parent: string; kind: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextExtensionRecordId(kind, parent, index);

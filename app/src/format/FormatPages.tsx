@@ -7,7 +7,8 @@ import { Link, useLocation } from '../router';
 import { useSpaces } from '../shell/spaces';
 import { addressOf } from '../views/address';
 import { treeGroup } from '../graph/tree';
-import { byIdOrder, type Problem, type SpecIndex, type SpecRecord, type Stage } from '../specs/data';
+import { byIdOrder, type ListedProblem, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
 import { Markdown } from '../specs/Markdown';
 import { RecordLink, Section } from '../specs/parts';
 import {
@@ -44,7 +45,7 @@ import './format.css';
 // Checks here (AddCheck).
 
 interface PageProps {
-  index: SpecIndex;
+  index: RecordIndex;
   reference: FormatReference;
 }
 
@@ -60,7 +61,7 @@ interface FormatPage {
  * A format page in the wiki card: its kind line and title as the card heads a record's page, then its
  * body. It starts at the top, or at the part the address names (`#fields`, `#field-title`).
  */
-export function FormatPageView({ index, route }: { index: SpecIndex; route: FormatRoute }) {
+export function FormatPageView({ index, route }: { index: RecordIndex; route: FormatRoute }) {
   const reference = useFormat(index);
   const { hash } = useLocation();
   const box = useRef<HTMLDivElement>(null);
@@ -150,7 +151,7 @@ function KindLink({ reference, kind, row = false }: { reference: FormatReference
 }
 
 /** A check as a clickable row: its name and summary, with how many problems it reports now. */
-function CheckRows({ index, checks, label }: { index: SpecIndex; checks: readonly CheckReference[]; label: string }) {
+function CheckRows({ index, checks, label }: { index: RecordIndex; checks: readonly CheckReference[]; label: string }) {
   if (checks.length === 0) return <p className="hint">None.</p>;
   const counts = new Map<string, number>();
   for (const p of index.workspace.problems) counts.set(p.check, (counts.get(p.check) ?? 0) + 1);
@@ -290,7 +291,7 @@ function AllRelations({ reference }: { reference: FormatReference }) {
 // ---------- A kind's page ----------
 
 /** A record's row as its data file holds it: one JSON object on one line. */
-export const rowLineOf = (record: SpecRecord) => JSON.stringify(record.row);
+export const rowLineOf = (record: RecordSummary) => JSON.stringify(record.row);
 
 function kindPage({ index, reference }: PageProps, kind: KindReference): FormatPage {
   return {
@@ -300,7 +301,7 @@ function kindPage({ index, reference }: PageProps, kind: KindReference): FormatP
   };
 }
 
-function KindBody({ index, reference, kind }: { index: SpecIndex; reference: FormatReference; kind: KindReference }) {
+function KindBody({ index, reference, kind }: { index: RecordIndex; reference: FormatReference; kind: KindReference }) {
   const spaces = useSpaces();
   const stage = reference.stages.find((s) => s.stage === kind.stage);
   const relations = relationsOf(reference, kind.kind);
@@ -310,7 +311,7 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
   const space = spaces?.current ?? null;
   const inSpace = space ? ` in ${space.title}` : '';
   const example = records[0];
-  const groups = new Map<string, SpecRecord[]>();
+  const groups = new Map<string, RecordSummary[]>();
   for (const r of records) if (r.parent) groups.set(r.parent, [...(groups.get(r.parent) ?? []), r]);
   const parents = [...groups.keys()].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
   const name = lowerLabel(plural(kind.label));
@@ -411,7 +412,7 @@ function KindBody({ index, reference, kind }: { index: SpecIndex; reference: For
 
 // ---------- A check's page ----------
 
-function checkPage({ index, reference }: PageProps, check: CheckReference, problems: Problem[]): FormatPage {
+function checkPage({ index, reference }: PageProps, check: CheckReference, problems: ListedProblem[]): FormatPage {
   return {
     eyebrow: <><Link to={formatPath}>Record format</Link> · Check · {check.severities.join(' or ')}</>,
     title: check.check,

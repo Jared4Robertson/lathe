@@ -1,4 +1,4 @@
-import { textOf, type SpecRecord } from './data';
+import { type RecordSummary } from '../exploring/record-summaries/record-index';
 
 // Groups (lathe/REFERENCE.md): a term, requirement, interaction requirement, pattern rule or standard rule may name a
 // short heading in `group_name`, such as Validation or Paging. The wiki shows the ungrouped records first,
@@ -10,15 +10,15 @@ export interface RecordGroup {
   key: string;
   /** The heading as first written, or null for the ungrouped records. */
   heading: string | null;
-  records: SpecRecord[];
+  records: RecordSummary[];
 }
 
 /** Records sorted into their groups: the ungrouped first (when there are any), then each group in the order it first appears. */
-export function groupRecords<T extends SpecRecord>(records: readonly T[]): (RecordGroup & { records: T[] })[] {
+export function groupRecords<T extends RecordSummary>(records: readonly T[]): (RecordGroup & { records: T[] })[] {
   const groups = new Map<string, RecordGroup & { records: T[] }>();
   const ungrouped: T[] = [];
   for (const r of records) {
-    const heading = textOf(r.row, 'group_name').trim();
+    const heading = (r.group ?? '').trim();
     if (heading === '') { ungrouped.push(r); continue; }
     const key = heading.toLowerCase();
     const group = groups.get(key) ?? { key, heading, records: [] };

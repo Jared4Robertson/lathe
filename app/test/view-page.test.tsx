@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { VIEW_COMMANDS } from '../../lathe/src/authoring/view/commands/index';
 import type { ViewCommands } from '../src/authoring/view/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
@@ -16,7 +17,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The component-test workspace with DM-V01's requirement proved by a test, and a second requirement under a group. */
-function withRequirements(): SpecData {
+function withRequirements(): ServedData {
   const data = addRows(workspace(), 'view_test', { id: 'DM-V01-R01-T01', title: 'The total shows', view_requirement_id: 'DM-V01-R01', level: 'browser', state: 'automated', file: 'test/basket.spec.ts', when: 'Opens the basket.', then: 'Expects the total.' });
   return addRows(data, 'view_requirement', { id: 'DM-V01-R02', title: 'Shows the shipping', view_id: 'DM-V01', statement: 'The basket page MUST show the shipping cost.', group_name: 'Costs' });
 }

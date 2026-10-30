@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import type { CheckPage as Check } from '../../../../lathe/src/checking/check/read-model';
 import { Refusal, problemText } from '../../edit/fields';
 import { ORIGIN_TEXT, type CheckReference } from '../../format/reference';
-import type { Problem, SpecIndex } from '../../specs/data';
+import { type ListedProblem, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { Markdown } from '../../specs/Markdown';
 import { ProblemList, Section } from '../../specs/parts';
 import { CheckEditor } from './CheckEditor';
@@ -21,7 +21,7 @@ const severitiesOf = (severity: Check['severity']): string[] => (severity === 'e
 const SeverityTags = ({ severities }: { severities: readonly string[] }) => <>{severities.map((s) => <span key={s} className={`severity-tag ${s}`}>{s}</span>)}</>;
 
 /** The problems the check reports now, or a hint when it reports none. */
-function ProblemsNow({ index, problems }: { index: SpecIndex; problems: Problem[] }) {
+function ProblemsNow({ index, problems }: { index: RecordIndex; problems: ListedProblem[] }) {
   return (
     <Section title="Problems now" count={problems.length}>
       {problems.length === 0 ? <p className="hint">This check reports nothing now.</p> : <ProblemList index={index} problems={problems} showCheck={false} />}
@@ -30,7 +30,7 @@ function ProblemsNow({ index, problems }: { index: SpecIndex; problems: Problem[
 }
 
 /** A check the engine reports itself: it has no row, so the page says what the format reference knows of it. */
-function EngineCheck({ index, check, problems }: { index: SpecIndex; check: CheckReference; problems: Problem[] }) {
+function EngineCheck({ index, check, problems }: { index: RecordIndex; check: CheckReference; problems: ListedProblem[] }) {
   return (
     <>
       <p className="hint">The engine reports this itself: it has no row in the check table.</p>
@@ -44,7 +44,7 @@ function EngineCheck({ index, check, problems }: { index: SpecIndex; check: Chec
 }
 
 /** A check with a row, read whole through its own query, with its editor's actions. */
-function RowCheck({ index, name, problems, kindRows }: { index: SpecIndex; name: string; problems: Problem[]; kindRows: (kinds: readonly string[]) => ReactNode }) {
+function RowCheck({ index, name, problems, kindRows }: { index: RecordIndex; name: string; problems: ListedProblem[]; kindRows: (kinds: readonly string[]) => ReactNode }) {
   const read = useCheck(name, index);
   if (read.state === 'refused') return <Refusal title={`${name} could not be read.`} reasons={read.problems.length ? read.problems.map(problemText) : [read.error]} focusKey={0} />;
   if (read.state !== 'read' || read.answer.name !== name) return <p className="hint" role="status">Reading {name}…</p>;
@@ -82,7 +82,7 @@ function ordinal(n: number): string {
  * A check's page body in the wiki card: read through its own query when it has a row, from the format reference when
  * the engine reports it itself. The format page draws the kinds it concerns as its own rows (`kindRows`).
  */
-export function CheckPage({ index, check, problems, kindRows }: { index: SpecIndex; check: CheckReference; problems: Problem[]; kindRows: (kinds: readonly string[]) => ReactNode }) {
+export function CheckPage({ index, check, problems, kindRows }: { index: RecordIndex; check: CheckReference; problems: ListedProblem[]; kindRows: (kinds: readonly string[]) => ReactNode }) {
   return check.origin === 'engine'
     ? <EngineCheck index={index} check={check} problems={problems} />
     : <RowCheck index={index} name={check.check} problems={problems} kindRows={kindRows} />;

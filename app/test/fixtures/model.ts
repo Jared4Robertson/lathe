@@ -1,5 +1,5 @@
+import type { ServedData } from '../read-view';
 import type { Coverage, Problem, RecordedException } from '../../../lathe/src/types';
-import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture, indexOf } from './load';
 import { gap, obligation } from './workspace';
 
@@ -59,6 +59,6 @@ const coverage = (): Coverage[] => [{
   gaps: [gap('P-E-CMD01', 'command', 'record-untraced')],
 }];
 
-export const modelWorkspace = (): SpecData => fixture('model', { problems: structuredClone(PROBLEMS), exceptions: structuredClone(EXCEPTIONS), coverage: coverage() });
+export const modelWorkspace = (): ServedData => fixture('model', { problems: structuredClone(PROBLEMS), exceptions: structuredClone(EXCEPTIONS), coverage: coverage() });
 
 export const modelIndex = () => indexOf(modelWorkspace());

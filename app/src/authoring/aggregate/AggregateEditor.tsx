@@ -10,7 +10,7 @@ import { lowerLabel } from '../../plural';
 import { adderOf } from '../../record/pages';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import { kindLabel, type SpecIndex } from '../../specs/data';
+import { kindLabel, type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendAggregate, type AggregateCommands, type AggregateRoute } from './commands';
 import { useNextAggregateId } from './reads';
@@ -49,12 +49,12 @@ const ADDED_UNDER: Record<AggregateKind, Inside[]> = {
 };
 
 /** The product's records of these kinds, as choices. */
-function choices(index: SpecIndex, product: string, kinds: readonly string[]): Choice[] {
+function choices(index: RecordIndex, product: string, kinds: readonly string[]): Choice[] {
   return [...index.byId.values()].filter((r) => kinds.includes(r.kind) && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 }
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
-function fieldsOf(index: SpecIndex, page: AggregatePage | null, product: string, kind: AggregateKind, adding: boolean, self?: string): FieldSpec[] {
+function fieldsOf(index: RecordIndex, page: AggregatePage | null, product: string, kind: AggregateKind, adding: boolean, self?: string): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'aggregate':
@@ -205,18 +205,18 @@ function parentOf(page: AggregatePage, kind: AggregateKind, id: string): string 
 }
 
 /** The roots of other aggregates added under a record of this kind through their own Add form, by the schema's parents. */
-function othersUnder(index: SpecIndex, kind: AggregateKind): string[] {
+function othersUnder(index: RecordIndex, kind: AggregateKind): string[] {
   return Object.values(index.workspace.schema.kinds)
     .filter((k) => k.parents.some((p) => p.kind === kind))
     .map((k) => k.name)
-    .filter((k) => adderOf(index.workspace.schema, k) !== undefined)
+    .filter((k) => adderOf(index.meta, k) !== undefined)
     .sort();
 }
 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'adopt'; kind: string } | { mode: 'remove' };
 
 /** A record of the aggregate with its actions; a form or the remove question shows in place of its page. */
-export function AggregateEditor({ index, page, children }: { index: SpecIndex; page: AggregatePage; children: ReactNode }) {
+export function AggregateEditor({ index, page, children }: { index: RecordIndex; page: AggregatePage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -243,7 +243,7 @@ export function AggregateEditor({ index, page, children }: { index: SpecIndex; p
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} page={page} product={product} kind={mode.kind} parent={id} onDone={back} /></div>;
   if (mode.mode === 'adopt') {
-    const Adder = adderOf(index.workspace.schema, mode.kind)!;
+    const Adder = adderOf(index.meta, mode.kind)!;
     return <div className="spec-body"><Adder index={index} parent={id} onDone={back} /></div>;
   }
   // An entity has one data model and an invariant one rule and one test: once it has it, there is nothing more to add of that kind.
@@ -270,7 +270,7 @@ export function AggregateEditor({ index, page, children }: { index: SpecIndex; p
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -287,7 +287,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a kind of the aggregate (under the record, or an aggregate under its domain), its ID the next free one under its parent, sent as that kind's Add. */
-function AddForm({ index, page, product, kind, parent, onDone }: { index: SpecIndex; page: AggregatePage | null; product: string; kind: AggregateKind; parent: string; onDone: () => void }) {
+function AddForm({ index, page, product, kind, parent, onDone }: { index: RecordIndex; page: AggregatePage | null; product: string; kind: AggregateKind; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextAggregateId(kind, parent, index);
@@ -313,6 +313,6 @@ function AddForm({ index, page, product, kind, parent, onDone }: { index: SpecIn
 }
 
 /** Add an aggregate to a domain (from the domain's page): the aggregate's own Add, with the next free ID in the domain. */
-export function AddAggregateForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddAggregateForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   return <AddForm index={index} page={null} product={index.byId.get(parent)?.product ?? ''} kind="aggregate" parent={parent} onDone={onDone} />;
 }

@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { READ_MODEL_COMMANDS } from '../../lathe/src/authoring/read-model/commands/index';
 import type { ReadModelCommands } from '../src/authoring/read-model/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
@@ -17,7 +18,7 @@ const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${i
 const rows = (table: HTMLTableElement) => [...table.querySelectorAll('tbody tr')].map((tr) => [...tr.querySelectorAll('th, td')].map((c) => c.textContent));
 
 /** The model product with a reader for P-D-RM01. */
-function withReader(): SpecData {
+function withReader(): ServedData {
   return addRows(modelWorkspace(), 'reader', { id: 'P-D-RM01-RD', title: 'CatalogReader', read_model_id: 'P-D-RM01', file: 'src/catalog.ts', description: 'Reads the catalog view for the query handlers.' });
 }
 

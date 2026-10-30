@@ -1,9 +1,9 @@
+import type { ServedData } from '../read-view';
 import { fireResize } from './setup';
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { GraphView } from '../../src/graph/GraphPage';
 import { DEFAULT_GRAPH_SETTINGS } from '../../src/exploring/session-settings/model';
-import type { SpecData } from '../../../lathe/src/server/contract';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
 import { marksOf } from '../../src/graph/text';
@@ -27,7 +27,7 @@ async function back() {
 }
 
 /** Opens a graph page at a depth (1 unless asked). */
-async function showGraph(path: string, workspace: SpecData = testWorkspace(), depth = 1) {
+async function showGraph(path: string, workspace: ServedData = testWorkspace(), depth = 1) {
   startAtDepth(depth);
   await openApp(path.includes('?') ? path : `${path}?stage=graph`, { data: workspace });
   await waitFor(() => expect(boxElements().length).toBeGreaterThan(0));

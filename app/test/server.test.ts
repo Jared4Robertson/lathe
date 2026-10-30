@@ -1,3 +1,4 @@
+import type { ServedData } from './read-view';
 // @vitest-environment node
 import { mkdir, mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import type { IncomingMessage, ServerResponse } from 'node:http';
@@ -7,7 +8,7 @@ import { Readable } from 'node:stream';
 import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { latheApi } from '../server/lathe';
 import * as realApi from '../../lathe/src/server/api.ts';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract.ts';
+import type { ServedData, WriteAnswer } from '../../lathe/src/server/contract.ts';
 import { openStore } from '../../lathe/src/platform/data/index.ts';
 import { SCHEMA_VERSION } from '../../lathe/src/config.ts';
 
@@ -87,7 +88,7 @@ describe('dev API plugin', () => {
     const spec = await request(fake.middlewares[0], '/api/spec');
     expect(spec.status).toBe(200);
     expect(decodeURIComponent(spec.headers['x-lathe-root'])).toBe(root);
-    const data = spec.json() as SpecData;
+    const data = spec.json() as ServedData;
     expect(data.sources.map((s) => s.dataDir)).toEqual(['data']);
     expect(data.sources[0].tables.product).toEqual([{ id: 'EX', title: 'Example', description: 'A small product for keeping notes.' }]);
     expect(data.sources[0].tables.use_case.map((r) => r.id)).toEqual(['EX-NOTE-UC01']);
@@ -114,7 +115,7 @@ describe('dev API plugin', () => {
     const { fake, written } = await writeOnce();
     expect(written.status).toBe(200);
     expect(await readFile(path.join(root, 'data/uc_requirement.jsonl'), 'utf8')).toContain('The note MUST be saved.');
-    const data = (await request(fake.middlewares[0], '/api/spec')).json() as SpecData;
+    const data = (await request(fake.middlewares[0], '/api/spec')).json() as ServedData;
     expect(data.sources[0].tables.uc_requirement.map((r) => r.id)).toEqual(['EX-NOTE-UC01-R01']);
   });
 
@@ -175,7 +176,7 @@ describe('dev API plugin', () => {
     const fake = await start(async () => realApi, root);
     const file = path.join(root, 'data/use_case.jsonl');
     await writeFile(file, (await readFile(file, 'utf8')).replace('Write a note', 'Write a long note'));
-    const data = (await request(fake.middlewares[0], '/api/spec')).json() as SpecData;
+    const data = (await request(fake.middlewares[0], '/api/spec')).json() as ServedData;
     expect(data.sources[0].tables.use_case[0].title).toBe('Write a long note');
     // A file that breaks the schema is an error naming the file and line, until it is fixed.
     const good = await readFile(file, 'utf8');

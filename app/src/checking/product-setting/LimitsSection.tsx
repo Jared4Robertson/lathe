@@ -1,6 +1,6 @@
 import { Refusal, problemText } from '../../edit/fields';
 import { Facts } from '../../record/page-parts';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { Section } from '../../specs/parts';
 import { LimitsEditor } from './LimitsEditor';
 import { useLimits } from './reads';
@@ -10,7 +10,7 @@ import { useLimits } from './reads';
 // changes them only through the aggregate's own command (LimitsEditor).
 
 /** A product's limits: the most children of one kind a record should hold and the most entities an aggregate should hold. */
-export function LimitsSection({ index, product }: { index: SpecIndex; product: string }) {
+export function LimitsSection({ index, product }: { index: RecordIndex; product: string }) {
   const read = useLimits(product, index);
   return (
     <Section title="Limits" className="product-limits">

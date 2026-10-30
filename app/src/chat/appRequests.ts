@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { navigate } from '../router';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf, STAGE_LABELS, withStage, type StageName } from '../views/address';
 import type { AppRequest } from './types';
 
@@ -25,13 +25,13 @@ export function useViewState(state: ViewState, selected: () => string | null) {
 }
 
 interface Named { id: string; kind: string; title: string }
-const named = (index: SpecIndex | null, id: string | null): Named | null => {
+const named = (index: RecordIndex | null, id: string | null): Named | null => {
   const r = id ? index?.byId.get(id) : undefined;
   return r ? { id: r.id, kind: r.kind, title: r.title } : null;
 };
 
 /** What the Reader is looking at, as app_focus gives it. */
-export function focusAnswer(index: SpecIndex | null, path: string, product: string | null) {
+export function focusAnswer(index: RecordIndex | null, path: string, product: string | null) {
   const view = shown?.() ?? null;
   return {
     connected: true,
@@ -47,7 +47,7 @@ export function focusAnswer(index: SpecIndex | null, path: string, product: stri
 }
 
 /** Opens a record in the window, as app_open asks; refused for a record the workspace does not have. */
-export function openAnswer(index: SpecIndex | null, open: { id: string; stage: StageName | null }) {
+export function openAnswer(index: RecordIndex | null, open: { id: string; stage: StageName | null }) {
   const record = index?.byId.get(open.id);
   if (!record) return { ok: false, message: `There is no record ${open.id} in this window's specs.` };
   navigate(open.stage ? withStage(addressOf(open.id), open.stage) : addressOf(open.id));
@@ -55,7 +55,7 @@ export function openAnswer(index: SpecIndex | null, open: { id: string; stage: S
 }
 
 /** Answers the app bridge's questions while the shell shows this index. */
-export function useAppRequests(index: SpecIndex | null, product: string | null) {
+export function useAppRequests(index: RecordIndex | null, product: string | null) {
   const latest = useRef({ index, product });
   latest.current = { index, product };
   useEffect(() => {

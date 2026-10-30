@@ -6,8 +6,11 @@ import { LongList } from '../components/LongList';
 import { treeParent } from '../graph/tree';
 import { LatheLogo } from '../LatheLogo';
 import { Link, useLocation } from '../router';
-import { parseSpecRoute, type SpecIndex, type SpecRecord, type SpecState, type Stage } from '../specs/data';
-import { branchOf, domainFolders, productFolders, sharedKey, type Folder, type StageFolders } from '../specs/folders';
+import { parseSpecRoute } from '../views/spec-route';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { type DataState } from '../exploring/record-summaries/reads';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
+import { branchOf, domainFolders, productFolders, sharedKey, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
 import { recordText, StageMark } from '../specs/parts';
 import { useRunCommand, useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
@@ -45,7 +48,7 @@ import { overlaysOf, panelHref } from '../views/overlays';
 
 export interface NavProps {
   /** The specs as the current space sees them: its own index. */
-  spec: SpecState;
+  spec: DataState;
   path: string;
   collapsed: boolean;
   onToggleCollapsed: () => void;
@@ -291,7 +294,7 @@ function SpaceRail({ spaces, current, lastPage, loaded, top, bottom }: SpaceRail
 
 
 /** The nav rows open on the current page: the page's record's domain, stage and folder (or the product's folder). */
-function currentBranch(index: SpecIndex, path: string): string[] {
+function currentBranch(index: RecordIndex, path: string): string[] {
   const route = parseSpecRoute(path.split('?')[0], index);
   if (!route) return [];
   if (route.page === 'domain') return [`domain:${route.domain}`];
@@ -319,7 +322,7 @@ function currentBranch(index: SpecIndex, path: string): string[] {
  * own (remembered for the session) and shows its count, and the current page's branch opens itself.
  * A stage or folder with no records is left out. Names and order come from the schema's stages and kinds.
  */
-function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: Space; path: string; reveal: boolean }) {
+function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space: Space; path: string; reveal: boolean }) {
   const domains = index.domainsOf.get(space.id) ?? [];
   const own = productFolders(index, space.id);
   const rows = useAggregate(navRowRepository);
@@ -340,7 +343,7 @@ function SpaceItems({ index, space, path, reveal }: { index: SpecIndex; space: S
     openNavBranch({ branch: branch.split('\n') });
   }, [branch, reveal]);
 
-  const recordRows = (records: SpecRecord[], label: string, depth: number) => (
+  const recordRows = (records: RecordSummary[], label: string, depth: number) => (
     <LongList
       label={label}
       className="nav-records"
