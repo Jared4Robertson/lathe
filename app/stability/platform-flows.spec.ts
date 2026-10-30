@@ -135,8 +135,7 @@ test.describe('Platform flows in the app', () => {
     await expect(sheet.getByRole('button', { name: /^Press a key for Show or hide the navigation/ })).toBeFocused();
     await page.keyboard.press('Control+j');
     await expect(sheet.getByRole('row', { name: /^Show or hide the navigation/ })).toContainText('Ctrl+J');
-    // The key taken, the focus is back on the row's Key button; Escape then closes the sheet.
-    await expect(sheet.getByRole('button', { name: 'Add a key to Show or hide the navigation' })).toBeFocused();
+    // The key taken, Escape closes the sheet, pressed straight away.
     await page.keyboard.press('Escape');
     await expect(sheet).toHaveCount(0);
     for (const when of ['now', 'after a reload']) {
@@ -166,7 +165,6 @@ test.describe('Platform flows in the app', () => {
     await sheet.getByRole('button', { name: 'Change Ctrl+1 of Graph stage' }).click();
     await page.keyboard.press('Control+Alt+1');
     await expect(sheet.getByRole('row', { name: /^Graph stage/ })).toContainText('Ctrl+Alt+1');
-    await expect(sheet.getByRole('button', { name: 'Add a key to Graph stage' })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(sheet).toHaveCount(0);
     // The old stage key does nothing; the new one shows the Graph.

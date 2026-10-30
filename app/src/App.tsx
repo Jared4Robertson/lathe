@@ -204,7 +204,7 @@ function Shell() {
   backdropRef.current = backdropPath;
   useEffect(() => { setPatchBase(() => (window.location.pathname === HOME_PATH && backdropRef.current) || window.location.pathname); }, []);
   const leaveHome = isHome && backdrop ? () => navigate(backdrop) : null;
-  useEscapeClosesTopmost(search, leaveHome);
+  useEscapeClosesTopmost(leaveHome);
   const closeTool = useCallback(() => navigate(panelHref(null)), []);
 
   let page;

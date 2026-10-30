@@ -527,7 +527,8 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
     framedFor.current = frameKey;
   }, [framed, frameKey, placed, cameraKey, size]);
   // New data leaves the camera where it is (the frame key holds no layout), unless the new layout moved the box it frames,
-  // when the camera glides with that box as the boxes glide to their new places (LA-PAT-APP-UX-R22).
+  // when the camera glides with that box as the boxes glide to their new places (LA-PAT-APP-UX-R22). A box that only grew
+  // or shrank where it is (an entity added inside the focused aggregate) has not moved: the camera stays.
   const followed = useRef<{ id: string; rect: Rect } | null>(null);
   useLayoutEffect(() => {
     if (!placed) return;
@@ -536,7 +537,10 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
     const was = followed.current;
     followed.current = now ? { id, rect: now } : null;
     if (!was || !now || was.id !== id || !fitted.current || framedFor.current !== frameKey) return;
-    const v = followBox(view.current, rectBox(was.rect), rectBox(now), { min: MIN_ZOOM, max: MAX_ZOOM });
+    const before = rectBox(was.rect);
+    const after = rectBox(now);
+    if (before.x === after.x && before.y === after.y) return;
+    const v = followBox(view.current, before, after, { min: MIN_ZOOM, max: MAX_ZOOM });
     // Following the focus keeps it whole too (LA-PAT-APP-UX-R23).
     const s = sizeRef.current;
     if (v) gestures.moveTo(s ? wholeIn(v, rectBox(now), marginFrame(s, margin), 0, MIN_ZOOM) : v, true);

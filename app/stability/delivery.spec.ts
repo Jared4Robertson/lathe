@@ -20,6 +20,24 @@ const placesOf = async (page: Page) => {
   return { camera: JSON.stringify(s.camera), rows: s.rows, boxes: new Map(s.boxes.map((b) => [b.key, { row: b.row, rect: JSON.stringify(b.rect) }])) };
 };
 
+/** Whether a point of the page is the Delivery's own canvas, not a panel floating over it (the wiki card, the key, the tools). */
+const onCanvas = (page: Page, x: number, y: number) => page.evaluate(({ sel, x, y }) => !!document.elementFromPoint(x, y)?.closest(sel), { sel: DELIVERY, x, y });
+
+/**
+ * A point of what `at` finds, in the open space: where a panel floats over it, the Reader pans it out from under the
+ * panel first (the wheel pans the Delivery), as they would to click it.
+ */
+async function reach(page: Page, at: () => Promise<{ x: number; y: number }>) {
+  for (let tries = 0; tries < 4; tries++) {
+    const point = await at();
+    if (await onCanvas(page, point.x, point.y)) return point;
+    await page.mouse.move(600, 450);
+    await page.mouse.wheel(point.x - 600, point.y - 450);
+    await page.waitForTimeout(600);
+  }
+  throw new Error('the box stays under the panels');
+}
+
 test.describe('the Delivery view stays where the Reader left it', () => {
   test('LA-V98-R20-T03 Opening a row moves only it and the rows below, keeps the camera, and a step\'s path lights across its row', async ({ page }) => {
     await openPage(page, `/${USE_CASE}?stage=trace`);
@@ -40,12 +58,13 @@ test.describe('the Delivery view stays where the Reader left it', () => {
 
     // A step of its first flow: its path across the row, the wiki card on it.
     const flow = `${USE_CASE}|design/${USE_CASE}-FL01`;
-    const toggle = (await sceneOf(page, false)).boxes.find((b) => b.key === flow)?.toggle;
-    expect(toggle).toBeTruthy();
-    await page.mouse.click(toggle!.x, toggle!.y);
+    expect((await sceneOf(page, false)).boxes.find((b) => b.key === flow)?.toggle).toBeTruthy();
+    const toggle = await reach(page, async () => (await sceneOf(page, false)).boxes.find((b) => b.key === flow)!.toggle!);
+    await page.mouse.click(toggle.x, toggle.y);
     await page.waitForTimeout(600);
-    const step = (await sceneOf(page, false)).boxes.find((b) => b.id === STEP)!;
-    await page.mouse.click(step.rect.left + step.rect.width / 2, step.rect.top + step.rect.height / 2);
+    const centerOf = async (id: string) => { const r = (await sceneOf(page, false)).boxes.find((b) => b.id === id)!.rect; return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; };
+    const step = await reach(page, () => centerOf(STEP));
+    await page.mouse.click(step.x, step.y);
     await expect(page).toHaveURL(new RegExp(`/${STEP}\\?stage=trace`));
     await expect.poll(async () => (await sceneOf(page)).lines.filter((l) => l.kind === 'path').length, { timeout: 5000 }).toBeGreaterThan(2);
     const lit = await sceneOf(page);
@@ -81,10 +100,14 @@ test.describe('the Delivery view stays where the Reader left it', () => {
 
     // Another row's use case, clicked where it is drawn: its outcomes glide to it.
     const s = await sceneOf(page, false);
-    const other = s.boxes.find((b) => b.column === 1 && b.depth === 0 && b.row !== USE_CASE && b.row !== null && s.lines.some((l) => l.kind === 'serves' && l.to === b.key))!;
+    const serving = s.boxes.filter((b) => b.column === 1 && b.depth === 0 && b.row !== USE_CASE && b.row !== null && s.lines.some((l) => l.kind === 'serves' && l.to === b.key));
+    // One whose middle is in the open space, as drawn: not under a panel, not past the canvas's edge.
+    const middle = (b: (typeof serving)[number]) => ({ x: b.rect.left + b.rect.width / 2, y: b.rect.top + b.rect.height / 2 });
+    let other: (typeof serving)[number] | undefined;
+    for (const b of serving) if (await onCanvas(page, middle(b).x, middle(b).y)) { other = b; break; }
     expect(other).toBeTruthy();
-    await page.mouse.click(other.rect.left + other.rect.width / 2, other.rect.top + other.rect.height / 2);
-    await expect(page).toHaveURL(new RegExp(`/${other.row}\\?stage=trace`));
-    await expect.poll(async () => { try { await level(other.row!); return true; } catch { return false; } }, { timeout: 5000 }).toBe(true);
+    await page.mouse.click(middle(other!).x, middle(other!).y);
+    await expect(page).toHaveURL(new RegExp(`/${other!.row}\\?stage=trace`));
+    await expect.poll(async () => { try { await level(other!.row!); return true; } catch { return false; } }, { timeout: 5000 }).toBe(true);
   });
 });
