@@ -13,7 +13,6 @@ import {
 } from 'react';
 import {
   GROUPS,
-  OVERRIDES_KEY,
   ariaKeyShortcuts,
   eventChord,
   formatBinding,
@@ -21,13 +20,15 @@ import {
   isSingleKey,
   isTyping,
   match,
-  readOverrides,
   resolveCommands,
   usesArrows,
   usesEnter,
   walkMove,
   type Command,
 } from './keymap';
+import { OVERRIDES_KEY } from '../platform/keymap/read-model';
+import { keymapReader } from '../platform/keymap/reader';
+import { listKeyboardCommands } from '../platform/keymap/queries';
 import type { Move } from '../views/levels';
 import { Link } from '../router';
 import { Button } from '../components/Button';
@@ -161,7 +162,7 @@ const SEQUENCE_WAIT = 1500;
 
 export function CommandsProvider({ children }: { children: ReactNode }) {
   const mac = useMemo(() => isMac(), []);
-  const commands = useMemo(() => resolveCommands(readOverrides(), mac), [mac]);
+  const commands = useMemo(() => listKeyboardCommands(keymapReader(mac)), [mac]);
   const handlers = useRef(new Map<string, HandlerRef[]>());
   const walks = useRef<WalkRef[]>([]);
   const [, setVersion] = useState(0);

@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
-import { useLocation } from '../router';
+import { browserHistory, useLocation } from '../router';
 import { useRunCommand } from './commands';
 import type { SpecIndex } from '../specs/data';
 import { desktopBridge } from './desktopChrome';
@@ -124,8 +124,8 @@ function TitleBar({ bridge, index }: { bridge: LatheDesktop; index: SpecIndex | 
     return () => root.removeAttribute('data-title-bar');
   }, []);
 
-  const back = () => { if (!run('goBack')) window.history.back(); };
-  const forward = () => { if (!run('goForward')) window.history.forward(); };
+  const back = () => { if (!run('goBack')) browserHistory.back(); };
+  const forward = () => { if (!run('goForward')) browserHistory.forward(); };
 
   return (
     <header className={`desktop-title-bar ${platformClass(platform, fullScreen)}`} aria-label="Title bar">

@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useStat
 import { Button } from '../components/Button';
 import { Icon } from '../components/icons';
 import { ResizeHandle } from '../components/ResizeHandle';
-import { CHAT_DEFAULT, CHAT_MAX, CHAT_MIN } from '../graph/settings';
+import { CHAT_DEFAULT, CHAT_MAX, CHAT_MIN } from '../exploring/session-settings/model';
 import { Link } from '../router';
 import { useAnnounce } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';

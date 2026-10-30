@@ -2,7 +2,7 @@ import { fireResize } from './setup';
 import { describe, expect, it } from 'vitest';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { GraphView } from '../../src/graph/GraphPage';
-import { DEFAULT_GRAPH_SETTINGS } from '../../src/graph/settings';
+import { DEFAULT_GRAPH_SETTINGS } from '../../src/exploring/session-settings/model';
 import type { SpecData } from '../../../lathe/src/server/contract';
 import { openApp, startAtDepth } from '../helpers';
 import { testIndex, testWorkspace } from './workspace';
