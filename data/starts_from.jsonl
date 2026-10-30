@@ -476,6 +476,8 @@
 {"source_id":"LA-PLT-UC02-R03-T01","target_id":"LA-EXP-TD03"}
 {"source_id":"LA-PLT-UC02-R05-T01","target_id":"LA-AUT-TD01"}
 {"source_id":"LA-PLT-UC03-FL01-T","target_id":"LA-EXP-TD02"}
+{"source_id":"LA-PLT-UC03-R05-T01","target_id":"LA-PLT-TD02"}
+{"source_id":"LA-PLT-UC03-R05-T01","target_id":"LA-PLT-TD04"}
 {"source_id":"LA-PLT-UC04-FL01-T","target_id":"LA-EXP-TD02"}
 {"source_id":"LA-PLT-UC05-FL01-T","target_id":"LA-EXP-TD02"}
 {"source_id":"LA-PLT-UC06-FL01-T","target_id":"LA-EXP-TD02"}

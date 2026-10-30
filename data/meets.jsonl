@@ -109,6 +109,7 @@
 {"source_id":"LA-PLT-SP02-PR","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-PLT-SP02-PR","target_id":"LA-STD-CODE-R04"}
 {"source_id":"LA-TRC-DS02-SV","target_id":"LA-STD-CODE-R06"}
+{"source_id":"LA-TRC-DS06-SV","target_id":"LA-STD-MODELING-R13"}
 {"source_id":"LA-TRC-RM01-PJ","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-TRC-RM01-PJ","target_id":"LA-STD-MODELING-R01"}
 {"source_id":"LA-TRC-RM01-PJ","target_id":"LA-STD-MODELING-R02"}
@@ -126,4 +127,12 @@
 {"source_id":"LA-TRC-RM06-PJ","target_id":"LA-STD-MODELING-R06"}
 {"source_id":"LA-TRC-RM06-PJ","target_id":"LA-STD-MODELING-R07"}
 {"source_id":"LA-TRC-RM06-PJ","target_id":"LA-STD-MODELING-R08"}
+{"source_id":"LA-TRC-RM12-PJ","target_id":"LA-STD-CODE-R03"}
+{"source_id":"LA-TRC-RM12-PJ","target_id":"LA-STD-MODELING-R01"}
+{"source_id":"LA-TRC-RM12-PJ","target_id":"LA-STD-MODELING-R02"}
+{"source_id":"LA-TRC-RM12-PJ","target_id":"LA-STD-MODELING-R03"}
+{"source_id":"LA-TRC-RM12-PJ","target_id":"LA-STD-MODELING-R05"}
+{"source_id":"LA-TRC-RM12-PJ","target_id":"LA-STD-MODELING-R06"}
+{"source_id":"LA-TRC-RM12-PJ","target_id":"LA-STD-MODELING-R07"}
+{"source_id":"LA-TRC-RM12-PJ","target_id":"LA-STD-MODELING-R08"}
 {"source_id":"LA-UI79","target_id":"LA-STD-CODE-R04"}

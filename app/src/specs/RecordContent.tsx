@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { type RecordIndex, type RecordSummary, type SummaryLink } from '../exploring/record-summaries/record-index';
 import { groupByLabel } from './labels';
 import { Traceability } from './Traceability';
+import { ServesFact } from '../traceability/serves/ServesFact';
 import { kindPagePath } from '../format/reference';
 import { LongList } from '../components/LongList';
 import { DesktopRecordActions } from '../shell/desktopRecord';
@@ -84,7 +85,8 @@ export function parentlessText(index: RecordIndex, record: RecordSummary): strin
 }
 
 /**
- * A record's facts: kind, stage, short fields, data file and line, and its links both ways. Shown after the body, in the wiki card's whole page.
+ * A record's facts: kind, stage, the outcomes it serves, short fields, data file and line, and its links both ways.
+ * Shown after the body, in the wiki card's whole page.
  */
 export function RecordFacts({ index, record }: { index: RecordIndex; record: RecordSummary }) {
   const { id } = record;
@@ -96,6 +98,7 @@ export function RecordFacts({ index, record }: { index: RecordIndex; record: Rec
       <dl className="fields">
         <div><dt>Kind</dt><dd title={kind?.description}><SpecLink to={kindPagePath(record.kind)} title={`How a ${lowerLabel(kind?.label ?? record.kind)} works`}>{kind?.label ?? record.kind}</SpecLink></dd></div>
         <StageFact index={index} kind={record.kind} />
+        <ServesFact index={index} record={record} />
         {isTest && <div><dt>State</dt><dd><TestStateTag record={record} /></dd></div>}
         {/* Why a record has no parent; one that has one is named by the card's breadcrumb. */}
         {!record.parent && <div><dt>Parent</dt><dd>{parentlessText(index, record)}</dd></div>}

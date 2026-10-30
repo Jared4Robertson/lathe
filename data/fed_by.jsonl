@@ -32,3 +32,5 @@
 {"source_id":"LA-TRC-RM07","target_id":"LA-PLT-EV06"}
 {"source_id":"LA-TRC-RM11","target_id":"LA-AUT-EV03"}
 {"source_id":"LA-TRC-RM11","target_id":"LA-PLT-EV06"}
+{"source_id":"LA-TRC-RM12","target_id":"LA-AUT-EV03"}
+{"source_id":"LA-TRC-RM12","target_id":"LA-PLT-EV06"}

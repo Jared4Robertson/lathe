@@ -35,7 +35,16 @@ export interface ReadView {
    * such a query without it.
    */
   readonly baseline?: BaselineAnswer;
+  /**
+   * The read model's reader over this data, kept by the data's holder (the store) until a table its projection read
+   * changes; data with no holder (a baseline, every product's read as one) has none, and the runner makes the reader
+   * each time.
+   */
+  readerOf?<D>(make: (view: ReadView) => D): D;
 }
+
+/** How a read model's reader is made over the data: a query definition's `reader`. */
+export type ReaderFactory = (view: ReadView) => unknown;
 
 /** One row that breaks an aggregate's rule. */
 export interface RuleProblem {

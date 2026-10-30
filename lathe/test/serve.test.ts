@@ -10,6 +10,7 @@ import { configuredRoot } from './store/fixture.ts';
 import { run } from './helpers.ts';
 import { PACKAGE_DIR } from '../src/index.ts';
 import type { WriteAnswer } from '../src/server/contract.ts';
+import type { DataChange } from '../src/server/events.ts';
 import type { RecordSummaries } from '../src/exploring/record-summaries/read-model.ts';
 import type { MetaModel } from '../src/platform/meta-model/read-model.ts';
 import { openStore, SCHEMA_DIR } from '../src/platform/data/index.ts';
@@ -117,9 +118,13 @@ describe.skipIf(!prebuilt && !canBuild)('lathe serve', () => {
     expect(events.headers.get('content-type')).toBe('text/event-stream');
     const file = path.join(root, 'data/use_case.jsonl');
     setTimeout(() => writeFileSync(file, readFileSync(file, 'utf8').replace('Write a note', 'Write a long note')), 300);
-    const text = await readEvents(events, 'data: spec:changed', 5000);
+    const text = await readEvents(events, '"tables":["use_case"]', 5000);
     expect(text).toContain(': connected');
-    expect(text).toContain('data: spec:changed');
+    // The change names the table it changed and the read models that read it: the record summaries read use cases,
+    // the meta model (read above) does not.
+    const change = JSON.parse(/event: spec:changed\ndata: (\{"tables":\["use_case"\].*)\n/.exec(text)![1]) as DataChange;
+    expect(change.readModels).toContain('record-summaries');
+    expect(change.readModels).not.toContain('meta-model');
 
     // The next request sees the change: the store reads the files again when they change under it.
     expect((await summaries()).records.find((r) => r.id === 'EX-NOTE-UC01')?.title).toBe('Write a long note');

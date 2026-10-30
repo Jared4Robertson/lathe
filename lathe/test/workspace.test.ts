@@ -157,7 +157,7 @@ describe('a workspace of several products', () => {
     expect((await request(root, '/api/product/add-product', { id: 'NP', title: 'New product', description: 'A product added through the API.' })).status).toBe(200);
     expect(readFileSync(path.join(root, 'data/product.jsonl'), 'utf8')).toContain('"NP"');
 
-    expect(watchTargets(root).map((t) => t.dir)).toEqual(expect.arrayContaining([path.join(root, 'data'), path.join(root, SHOP, 'data')]));
+    expect(watchTargets(root)).toEqual(expect.arrayContaining([path.join(root, 'data'), path.join(root, SHOP, 'data')]));
   });
 
   it('LA-PLT-UC02-R11-T02 A read of the whole workspace joins every product\'s schema and refuses one product in two folders', async () => {
