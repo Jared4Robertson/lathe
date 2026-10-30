@@ -107,12 +107,12 @@ const PAGES: State[] = [
   { name: 'ERD stage on a use case', url: `${RECORD}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   { name: 'ERD stage on a Shared record', url: `${SHARED}?stage=erd`, ready: '.focus-stage .erd-canvas' },
   // Nothing replaces the stage (LA-PAT-APP-UX-R20): every tool over it, and the products picker.
-  { name: 'Checks panel', url: `${PRODUCT}?panel=checks`, ready: '.tool-panel.checks-panel .problems' },
+  { name: 'Checks panel', url: `${PRODUCT}?panel=checks`, ready: '.checks-panel .problems' },
   { name: 'Format page in the wiki card', url: `${PRODUCT}?page=format`, ready: '.wiki-panel.is-format h2' },
   { name: 'Kind page in the wiki card', url: `${RECORD}?page=format/kinds/use_case`, ready: '.wiki-panel.is-format h2' },
   // The Check aggregate's own page: a product's own check, with its actions.
   { name: 'Check page in the wiki card', url: `${PRODUCT}?page=format/checks/actor-not-a-role`, ready: '.wiki-panel.is-format [data-aggregate="check"]' },
-  { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.tool-panel.appearance-popover .theme-rows' },
+  { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.appearance-popover .theme-rows' },
   { name: 'Products picker', url: '/', ready: '.dialog.products-picker h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready, 'state' in p ? p.state : 'visible') }));
 // The Trace stage with only the branches that have a gap.
@@ -126,12 +126,12 @@ PAGES.push({ name: 'Trace stage, gaps only', run: async (page: Page) => {
 // forms are not sent, and the store refuses the removal.
 PAGES.push(
   { name: 'an aggregate\'s edit form', run: async (page: Page) => {
-    await open(page, EDITED, '.header-strip h1');
+    await open(page, EDITED, '[data-aggregate="use-case"]');
     await page.getByRole('toolbar', { name: `Change ${EDITED.slice(1)}` }).getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('form').waitFor();
   } },
   { name: 'the add form, with its problems shown', run: async (page: Page) => {
-    await open(page, RECORD, '.header-strip h1');
+    await open(page, RECORD, '[data-aggregate="use-case"]');
     const actions = page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` });
     await actions.getByRole('button', { name: 'Add…' }).click();
     await actions.getByRole('group', { name: /Kinds to add/ }).getByRole('button', { name: 'UC requirement' }).click();
@@ -144,7 +144,7 @@ PAGES.push(
     await page.getByRole('form').locator('.form-parts').waitFor();
   } },
   { name: 'the set limits form', run: async (page: Page) => {
-    await open(page, PRODUCT, '.product-limits .record-actions');
+    await open(page, PRODUCT, '[data-aggregate="product"] .product-limits .record-actions');
     await page.getByRole('toolbar', { name: 'Change the limits of LA' }).getByRole('button', { name: 'Set limits' }).click();
     await page.getByRole('form', { name: 'Set limits' }).waitFor();
   } },
@@ -160,7 +160,7 @@ PAGES.push(
   } },
   { name: 'the remove question and its refusal', run: async (page: Page) => {
     // A record others reference, so the removal is refused and the suite's data stays whole for the states after it.
-    await open(page, REFERENCED, '.header-strip h1');
+    await open(page, REFERENCED, '[data-aggregate="use-case"]');
     await page.getByRole('toolbar', { name: `Change ${REFERENCED.slice(1)}` }).getByRole('button', { name: 'Remove' }).click();
     const panel = page.getByRole('region', { name: `Remove ${REFERENCED.slice(1)}?` });
     await panel.getByRole('button', { name: `Remove ${REFERENCED.slice(1)}` }).click();
