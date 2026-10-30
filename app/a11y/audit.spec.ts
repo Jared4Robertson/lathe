@@ -171,7 +171,7 @@ PAGES.push(
 for (const layout of ['Nested', 'Map'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
   await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
   // A narrow toolbar folds the layouts into its More menu.
-  const choice = page.locator('.focus-stage .graph-layout button', { hasText: layout });
+  const choice = page.locator('.focus-stage .graph-layout').getByRole('button', { name: layout, exact: true });
   if (!(await choice.isVisible())) await page.locator('.focus-stage .stage-more > summary').click();
   await choice.click();
   await page.locator(`.focus-stage .graph-flow[data-layout="${layout.toLowerCase()}"] .graph-box`).first().waitFor();
