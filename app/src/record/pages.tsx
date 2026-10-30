@@ -33,6 +33,17 @@ import { AddTestDataSetForm } from '../authoring/test-data-set/TestDataSetEditor
 import { TestDataSetPage } from '../authoring/test-data-set/TestDataSetPage';
 import { AddUseCaseForm } from '../authoring/use-case/UseCaseEditor';
 import { UseCasePage } from '../authoring/use-case/UseCasePage';
+import type { ViewKind } from '../../../lathe/src/authoring/view/model';
+import { AddViewForm } from '../authoring/view/ViewEditor';
+import { ViewPage } from '../authoring/view/ViewPage';
+import { AddUiComponentForm } from '../authoring/ui-component/UiComponentEditor';
+import { UiComponentPage } from '../authoring/ui-component/UiComponentPage';
+import type { EndpointKind } from '../../../lathe/src/authoring/endpoint/model';
+import { AddEndpointForm } from '../authoring/endpoint/EndpointEditor';
+import { EndpointPage } from '../authoring/endpoint/EndpointPage';
+import type { IntegrationKind } from '../../../lathe/src/authoring/integration/model';
+import { AddIntegrationForm } from '../authoring/integration/IntegrationEditor';
+import { IntegrationPage } from '../authoring/integration/IntegrationPage';
 import type { ReadModelKind } from '../../../lathe/src/authoring/read-model/model';
 import type { SpecificationKind } from '../../../lathe/src/authoring/specification/model';
 import type { ValueObjectKind } from '../../../lathe/src/authoring/value-object/model';
@@ -66,7 +77,7 @@ export interface AggregatePageProps {
 }
 
 /** The kinds with an aggregate page. */
-type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling' | SpecificationKind | ValueObjectKind | ReadModelKind | 'table' | AggregateKind | DomainEventKind | CommandKind;
+type PagedKind = UseCaseKind | DomainKind | 'test_data_set' | PatternKind | StandardKind | 'product' | 'question' | 'interface' | 'business_outcome' | 'entry_point' | 'tooling' | SpecificationKind | ValueObjectKind | ReadModelKind | 'table' | AggregateKind | DomainEventKind | CommandKind | ViewKind | 'ui_component' | EndpointKind | IntegrationKind;
 
 /** Each kind with its aggregate's page. */
 const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = {
@@ -109,6 +120,17 @@ const PAGES: { readonly [K in PagedKind]: ComponentType<AggregatePageProps> } = 
   business_outcome: BusinessOutcomePage,
   entry_point: EntryPointPage,
   tooling: ToolingPage,
+  view: ViewPage,
+  view_requirement: ViewPage,
+  view_test: ViewPage,
+  ui_component: UiComponentPage,
+  endpoint: EndpointPage,
+  api_requirement: EndpointPage,
+  endpoint_handler: EndpointPage,
+  endpoint_test: EndpointPage,
+  integration: IntegrationPage,
+  adapter: IntegrationPage,
+  integration_test: IntegrationPage,
   specification: SpecificationPage,
   predicate: SpecificationPage,
   specification_test: SpecificationPage,
@@ -141,7 +163,7 @@ export interface AggregateAdderProps {
 }
 
 /** Each aggregate root added from the page of what it sits under, with its aggregate's Add form. */
-const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'question' | 'entry_point' | 'tooling' | 'specification' | 'value_object' | 'read_model' | 'table' | 'aggregate' | 'domain_event' | 'command']: ComponentType<AggregateAdderProps> } = {
+const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'pattern' | 'standard' | 'business_outcome' | 'question' | 'entry_point' | 'tooling' | 'specification' | 'value_object' | 'read_model' | 'table' | 'aggregate' | 'domain_event' | 'command' | 'view' | 'ui_component' | 'endpoint' | 'integration']: ComponentType<AggregateAdderProps> } = {
   use_case: AddUseCaseForm,
   domain: AddDomainForm,
   test_data_set: AddTestDataSetForm,
@@ -154,6 +176,10 @@ const ADDERS: { readonly [K in 'use_case' | 'domain' | 'test_data_set' | 'patter
   question: AddQuestionForm,
   entry_point: AddEntryPointForm,
   tooling: AddToolingForm,
+  view: AddViewForm,
+  ui_component: AddUiComponentForm,
+  endpoint: AddEndpointForm,
+  integration: AddIntegrationForm,
   specification: AddSpecificationForm,
   value_object: AddValueObjectForm,
   read_model: AddReadModelForm,

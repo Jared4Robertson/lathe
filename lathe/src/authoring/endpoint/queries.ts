@@ -1,6 +1,7 @@
 // The Endpoint aggregate's own reads, each answered from its read model (LA-AUT-RM33) through its reader (reader.ts),
-// which the query runner gives each handler: an endpoint whole, the endpoints of a command or query, and the next free
-// ID for a record of one of its kinds. A handler never sees the data, a repository or the aggregate's model.
+// which the query runner gives each handler: an endpoint whole as its page reads it, the endpoints of a command or
+// query, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the
+// aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { ENDPOINT_SLICE, type EndpointKind } from './model.ts';
@@ -11,10 +12,12 @@ const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
-/** The endpoint that holds the record: the endpoint itself, or one of its requirements, its handler or a test. */
+const article = (kind: string) => (/^[aeiou]/.test(kind) ? 'an' : 'a');
+
+/** The endpoint that holds the record, as its page reads it: the endpoint itself, or one of its requirements, its handler or a test. */
 export function getEndpoint(reader: EndpointReader, input: { id: string }): EndpointPage {
   const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
-  return reader.page(input.id) ?? refuse('kind', `${input.id} is ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind}, not an endpoint or a record in one`);
+  return reader.page(input.id) ?? refuse('kind', `${input.id} is ${article(kind)} ${kind}, not an endpoint or a record in one`);
 }
 
 /** GET an endpoint whole (LA-AUT-QRY194). */
@@ -24,7 +27,7 @@ export const GET_ENDPOINT: QueryDefinition<{ id: string }, EndpointPage, Endpoin
   name: 'get-endpoint',
   method: 'GET',
   route: '/api/endpoint/get-endpoint',
-  description: 'Reads an endpoint whole, by its ID or the ID of any record in it: its row, its API requirements with their tests, and its handler.',
+  description: "Reads an endpoint whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the endpoint's row, its handler (with the standard rules it meets and the packages it uses), and its API requirements by ID, each with its tests (with the test data sets they start from).",
   input: { id: id('The endpoint, or an API requirement, endpoint handler or endpoint test in it.', 'required') },
   reader: endpointReader,
   run: getEndpoint,
@@ -33,9 +36,7 @@ export const GET_ENDPOINT: QueryDefinition<{ id: string }, EndpointPage, Endpoin
 
 /** The endpoints of a command or query, by ID. */
 export function listEndpoints(reader: EndpointReader, input: { parent: string }): EndpointSummary[] {
-  const parent = reader.kindOf(input.parent);
-  if (parent !== 'command' && parent !== 'query') refuse('missing', `there is no command or query ${input.parent}`);
-  return reader.endpointsOf(input.parent);
+  return reader.endpointsOf(input.parent) ?? refuse('missing', `there is no command or query ${input.parent}`);
 }
 
 /** List the endpoints of a command or query (LA-AUT-QRY195). */
@@ -72,7 +73,7 @@ export function nextEndpointId(reader: EndpointReader, input: { kind: string; pa
   if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Endpoint aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
   const kind = input.kind as EndpointKind;
   const parent = reader.kindOf(input.parent);
-  if (!parent || !UNDER[kind].includes(parent)) refuse('parent', `${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind} sits under ${UNDER[kind].map((k) => `${/^[aeiou]/.test(k) ? 'an' : 'a'} ${k}`).join(' or ')}, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
+  if (!parent || !UNDER[kind].includes(parent)) refuse('parent', `${article(kind)} ${kind} sits under ${UNDER[kind].map((k) => `${article(k)} ${k}`).join(' or ')}, and ${input.parent} is ${parent ? `${article(parent)} ${parent}` : 'no record'}`);
   switch (kind) {
     case 'endpoint':
       return onePast(reader, `${reader.domainOf(input.parent)}-EP`);
@@ -107,16 +108,17 @@ export const NEXT_ENDPOINT_ID: QueryDefinition<{ kind: string; parent: string },
 
 /** An endpoint as text: its row, its handler, then each requirement with its tests. */
 function endpointText(page: EndpointPage): string {
-  const lines = [`Endpoint ${page.id}: ${page.title}`, `  exposes: ${page.exposes}`, `  description: ${page.description}`];
-  if (page.notes) lines.push(`  notes: ${page.notes}`);
-  const h = page.handler;
-  if (h) {
-    const extra = [...(h.file ? [h.file] : []), ...h.meets.map((x) => `meets ${x}`), ...h.packages.map((x) => `uses ${x}`)];
+  const { endpoint: row } = page;
+  const lines = [`Endpoint ${row.id}: ${row.title}`, `  exposes: ${row.command_id ?? row.query_id}`, `  description: ${row.description}`];
+  if (row.notes) lines.push(`  notes: ${row.notes}`);
+  if (page.handler) {
+    const { handler: h, meets, packages } = page.handler;
+    const extra = [...(h.file ? [h.file] : []), ...meets.map((x) => `meets ${x}`), ...packages.map((x) => `uses ${x}`)];
     lines.push(`Endpoint handler ${h.id}: ${h.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
   }
   for (const r of page.requirements) {
-    lines.push(`API requirement ${r.id}: ${r.title}`);
-    for (const t of r.tests) lines.push(`  endpoint test ${t.id}: ${t.title} (${t.state})`);
+    lines.push(`API requirement ${r.requirement.id}: ${r.requirement.title}`);
+    for (const t of r.tests) lines.push(`  endpoint test ${t.test.id}: ${t.test.title} (${t.test.state})`);
   }
   return lines.join('\n');
 }

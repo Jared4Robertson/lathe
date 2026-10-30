@@ -120,7 +120,7 @@
 {"id":"LA-AUT-TB89","title":"builds","domain_id":"LA-AUT","name":"builds","storage":"table","file":"lathe/schema/010-links.sql"}
 {"id":"LA-CHK-EN01-TB","title":"check","entity_id":"LA-CHK-EN01","name":"check","storage":"table","file":"lathe/schema/011-checking.sql"}
 {"id":"LA-CHK-EN03-TB","title":"product_setting","entity_id":"LA-CHK-EN03","name":"product_setting","storage":"table","file":"lathe/schema/003-product.sql"}
-{"id":"LA-CHK-RM01-TB","title":"problem","read_model_id":"LA-CHK-RM01","name":"problem","storage":"table","file":"lathe/schema/011-checking.sql"}
+{"id":"LA-CHK-RM01-TB","title":"ProblemsTable","read_model_id":"LA-CHK-RM01","name":"ProblemsTable","storage":"in memory","file":"lathe/src/checking/problems/read-model.ts"}
 {"id":"LA-CHK-RM10-TB","title":"CheckTable","read_model_id":"LA-CHK-RM10","name":"CheckTable","storage":"in memory","file":"lathe/src/checking/check/read-model.ts"}
 {"id":"LA-CHK-RM11-TB","title":"LimitsTable","read_model_id":"LA-CHK-RM11","name":"LimitsTable","storage":"in memory","file":"lathe/src/checking/product-setting/read-model.ts"}
 {"id":"LA-EXP-EN01-TB","title":"history","entity_id":"LA-EXP-EN01","name":"history","storage":"browser storage","file":"app/src/router.tsx"}
@@ -159,3 +159,4 @@
 {"id":"LA-TRC-RM06-TB","title":"Trace","read_model_id":"LA-TRC-RM06","name":"Trace","storage":"in memory","file":"app/src/specs/trace.ts"}
 {"id":"LA-TRC-RM07-TB","title":"table_facts","read_model_id":"LA-TRC-RM07","name":"table_facts","storage":"table","file":"lathe/src/trace/tables.ts"}
 {"id":"LA-TRC-RM10-TB","title":"FollowingTable","read_model_id":"LA-TRC-RM10","name":"FollowingTable","storage":"in memory","file":"lathe/src/traceability/pattern-following/read-model.ts"}
+{"id":"LA-TRC-RM11-TB","title":"TraceTable","read_model_id":"LA-TRC-RM11","name":"TraceTable","storage":"in memory","file":"lathe/src/traceability/trace/read-model.ts"}

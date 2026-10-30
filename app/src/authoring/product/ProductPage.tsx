@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { ByCapability, InterfaceEntry, ProductPage as Product, QuestionEntry } from '../../../../lathe/src/authoring/product/read-model';
+import { LimitsSection } from '../../checking/product-setting/LimitsSection';
 import { Button } from '../../components/Button';
 import { LongList } from '../../components/LongList';
 import { Refusal, problemText } from '../../edit/fields';
@@ -184,6 +185,7 @@ function ProductContent({ index, page, actions }: { index: SpecIndex; page: Prod
       <Section title="Summary">
         <ProductSummary index={index} productId={id} />
       </Section>
+      <LimitsSection index={index} product={id} />
       <Declarations index={index} page={page} actions={actions} />
       <Questions index={index} questions={page.questions} />
       <Section title="Problems in this product" count={problems.length}>

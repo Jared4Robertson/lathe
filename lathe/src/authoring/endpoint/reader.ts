@@ -9,10 +9,10 @@ import { endpointTableFrom, type EndpointPage, type EndpointSummary, type Endpoi
 export interface EndpointReader {
   /** The kind of the record with this ID, of any kind, or undefined when no record has it. */
   kindOf(id: string): string | undefined;
-  /** The page of the endpoint that holds the record, or undefined when no endpoint holds it. */
+  /** The page of a record inside an endpoint, or undefined when no endpoint holds it. */
   page(id: string): EndpointPage | undefined;
-  /** The endpoints that expose the command or query, by ID. */
-  endpointsOf(parent: string): EndpointSummary[];
+  /** The endpoints that expose a command or query, by ID, or undefined when there is no such command or query. */
+  endpointsOf(parent: string): EndpointSummary[] | undefined;
   /** The domain whose ID begins the record's, the longest, or undefined. */
   domainOf(id: string): string | undefined;
   /** The highest number in use after the prefix, as in <prefix>07, or 0 when none is. */
@@ -32,12 +32,12 @@ export class InMemoryEndpointReader implements EndpointReader {
   }
 
   page(id: string): EndpointPage | undefined {
-    const root = this.table.holding.get(id);
-    return root === undefined ? undefined : this.table.endpoints.get(root);
+    const holding = this.table.holding.get(id);
+    return holding && { record: { id, kind: holding.kind }, ...this.table.endpoints.get(holding.root)! };
   }
 
-  endpointsOf(parent: string): EndpointSummary[] {
-    return [...this.table.endpoints.values()].filter((e) => e.exposes === parent).map((e) => ({ id: e.id, title: e.title }));
+  endpointsOf(parent: string): EndpointSummary[] | undefined {
+    return this.table.parents.get(parent);
   }
 
   domainOf(id: string): string | undefined {

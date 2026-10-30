@@ -296,11 +296,8 @@ export const provedByOf = (index: SpecIndex, id: string, scope: string): string[
 /** A record's rows of one part table (an entity's fields, a table's keys), in key order. */
 export const partsOf = (index: SpecIndex, id: string, table: string): Row[] => index.parts.get(id)?.get(table) ?? [];
 
-/** True when a problem belongs to no product: it names no record, or a record no product holds. */
 /** The record a recorded exception belongs to: its command, or its repository. */
 export const exceptionOwner = (e: RecordedException): string => ('command' in e ? e.command : e.repository);
-
-export const isWorkspaceProblem =(index: SpecIndex, p: Problem) => !p.record || !index.byId.get(p.record)?.product;
 
 const spaceCache = new WeakMap<SpecIndex, Map<string, SpecIndex>>();
 

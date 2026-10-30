@@ -25,17 +25,16 @@ export const GET_VIEW: QueryDefinition<{ id: string }, ViewPage, ViewReader> = {
   name: 'get-view',
   method: 'GET',
   route: '/api/view/get-view',
-  description: 'Reads a view whole, by its ID or the ID of any record in it: its row, and its view requirements with their tests.',
+  description: "Reads a view whole as its page shows it, by its ID or the ID of any requirement or test in it: the record asked for and its kind, the view's row, and its requirements by ID, each with its tests (with the test data sets they start from).",
   input: { id: id('The view, or a view requirement or view test in it.', 'required') },
   reader: viewReader,
   run: getView,
   text: viewText,
 };
 
-/** The views of a product, by ID: those whose ID starts with the product's. */
+/** The views of a product, by ID: those whose ID is the product's, V and a number. */
 export function listViews(reader: ViewReader, input: { product_id: string }): ViewSummary[] {
-  if (reader.kindOf(input.product_id) !== 'product') refuse('missing', `there is no product ${input.product_id}`);
-  return reader.viewsOf(input.product_id);
+  return reader.viewsOf(input.product_id) ?? refuse('missing', `there is no product ${input.product_id}`);
 }
 
 /** List the views of a product (LA-AUT-QRY191). */
@@ -63,7 +62,7 @@ export function nextViewId(reader: ViewReader, input: { kind: string; parent: st
   if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the View aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
   const kind = input.kind as ViewKind;
   const parent = reader.kindOf(input.parent);
-  if (parent !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
+  if (parent !== UNDER[kind]) refuse('parent', `a ${kind} sits under a ${UNDER[kind]}, and ${input.parent} is ${parent ? `${a(parent)} ${parent}` : 'no record'}`);
   const suffix = { view: 'V', view_requirement: 'R', view_test: 'T' }[kind];
   return onePast(reader, `${input.parent}-${suffix}`);
 }
@@ -87,11 +86,12 @@ export const NEXT_VIEW_ID: QueryDefinition<{ kind: string; parent: string }, str
 
 /** A view as text: its row, then each requirement with its tests. */
 function viewText(page: ViewPage): string {
-  const lines = [`View ${page.id}: ${page.title}`, ...(page.route ? [`  route: ${page.route}`] : []), `  description: ${page.description}`];
-  if (page.notes) lines.push(`  notes: ${page.notes}`);
+  const { view: row } = page;
+  const lines = [`View ${row.id}: ${row.title}`, ...(row.route ? [`  route: ${row.route}`] : []), `  description: ${row.description}`];
+  if (row.notes) lines.push(`  notes: ${row.notes}`);
   for (const r of page.requirements) {
-    lines.push(`View requirement ${r.id}: ${r.title}`);
-    for (const t of r.tests) lines.push(`  view test ${t.id}: ${t.title} (${t.state})`);
+    lines.push(`View requirement ${r.requirement.id}: ${r.requirement.title}`);
+    for (const t of r.tests) lines.push(`  view test ${t.test.id}: ${t.test.title} (${t.test.state})`);
   }
   return lines.join('\n');
 }

@@ -24,12 +24,13 @@ export const GET_UI_COMPONENT: QueryDefinition<{ id: string }, UiComponentPage, 
   name: 'get-ui-component',
   method: 'GET',
   route: '/api/ui-component/get-ui-component',
-  description: 'Reads a UI component whole: its row, the views it renders, the view requirements it builds, the standard rules it meets and the packages it uses.',
+  description: "Reads a UI component whole as its page shows it: the record asked for and its kind, the component's row, and the views it renders, the view requirements it builds, the standard rules it meets and the packages it uses, each list sorted.",
   input: { id: id('The UI component.', 'required') },
   reader: uiComponentReader,
   run: getUiComponent,
   text: (c) => {
-    const lines = [`UI component ${c.id}: ${c.title}`, ...(c.file ? [`  file: ${c.file}`] : []), `  description: ${c.description}`];
+    const { component: row } = c;
+    const lines = [`UI component ${row.id}: ${row.title}`, ...(row.file ? [`  file: ${row.file}`] : []), `  description: ${row.description}`];
     if (c.renders.length) lines.push(`  renders: ${c.renders.join(', ')}`);
     if (c.builds.length) lines.push(`  builds: ${c.builds.join(', ')}`);
     if (c.meets.length) lines.push(`  meets: ${c.meets.join(', ')}`);
@@ -38,10 +39,9 @@ export const GET_UI_COMPONENT: QueryDefinition<{ id: string }, UiComponentPage, 
   },
 };
 
-/** The UI components of a product, by ID: those whose ID starts with the product's. */
+/** The UI components of a product, by ID: those whose ID is the product's, UI and a number. */
 export function listUiComponents(reader: UiComponentReader, input: { product_id: string }): UiComponentSummary[] {
-  if (reader.kindOf(input.product_id) !== 'product') refuse('missing', `there is no product ${input.product_id}`);
-  return reader.componentsOf(input.product_id);
+  return reader.componentsOf(input.product_id) ?? refuse('missing', `there is no product ${input.product_id}`);
 }
 
 /** List the UI components of a product (LA-AUT-QRY205). */

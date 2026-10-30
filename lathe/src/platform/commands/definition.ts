@@ -97,7 +97,7 @@ function flags<M extends Mode>(mode: M): Flags<M> {
 
 /** What an aggregate's commands and queries are reached by: `lathe use-case`, the use_case_ tools, /api/use-case/. */
 export interface Slice {
-  /** The aggregate's record ID, such as LA-AUT-A11. */
+  /** The aggregate's record ID, such as LA-AUT-A11; a slice of reads alone, with no aggregate of its own, names its read model, such as LA-TRC-RM11. */
   aggregate: string;
   /** Its name in kebab case, such as use-case. */
   name: string;
@@ -136,6 +136,11 @@ export interface QueryDefinition<T = never, R = unknown, D = ReadView> {
   method: 'GET';
   route: string;
   input: InputSpec<T>;
+  /**
+   * Whether its read model reads the checks' run (problems, coverage, chains), which no rows hold: the runner then
+   * refuses to answer it over data that comes without one (`ReadView.checked`), and each interface runs the checks first.
+   */
+  checked?: true;
   /** Makes its read model's reader over the current data: what the runner gives the handler. */
   reader?: (view: ReadView) => D;
   /** Reads the answer from its reader, or refuses with a reason. */

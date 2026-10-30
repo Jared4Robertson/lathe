@@ -27,7 +27,7 @@ import { baseline, parseSince } from './baseline.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../commands.ts';
 import { flagValue, InputError, type AnyCommand, type AnyQuery } from '../platform/commands/definition.ts';
 import { answerQuery, runCommand, runQuery } from '../platform/commands/run.ts';
-import type { ReadView } from '../platform/data/rules.ts';
+import type { CheckRun, ReadView } from '../platform/data/rules.ts';
 import { recordHistory } from './history.ts';
 
 /** The most a write's body may hold. */
@@ -413,32 +413,47 @@ async function workspaceView(products: LatheConfig[]): Promise<ReadView> {
   };
 }
 
+/** Every product's checks' run, each the one the server keeps for its data, joined as GET /api/spec joins them. */
+async function workspaceRun(products: LatheConfig[]): Promise<CheckRun> {
+  const runs = await Promise.all(products.map((config) => withStore(config.root, async (opened) => (opened.checks ??= checksOf(config.root)))));
+  return { problems: runs.flatMap((r) => r.problems), coverage: runs.flatMap((r) => r.coverage), chains: runs.flatMap((r) => r.chains) };
+}
+
+/** The query's answer over the data for the query string: 200, 400 for an input of another shape, 422 when it refuses. */
+function answerRead(view: ReadView, definition: AnyQuery, params: URLSearchParams): { status: number; answer: unknown } {
+  try {
+    const args: Record<string, unknown> = {};
+    for (const name of new Set(params.keys())) {
+      const field = definition.input[name];
+      args[name] = field ? flagValue(view.schema, name, field, params.getAll(name)) : params.get(name);
+    }
+    return { status: 200, answer: runQuery(view, definition, args) };
+  } catch (error) {
+    if (error instanceof InputError) return { status: 400, answer: { error: error.message } satisfies ReadRefusal };
+    if (error instanceof StoreError) return { status: 422, answer: { error: error.message, problems: error.problems } satisfies ReadRefusal };
+    throw error;
+  }
+}
+
 /**
  * Reads one aggregate query on the product its input names: 200 with its answer, 400 when the input is not of its
  * shape, 422 when it refuses (a record that is missing or of another kind). The input is the query string, each field
  * read as the CLI reads its flag: a list from the field given once per item, a number or true or false by its column.
+ * A query that reads the checks' run reads every product's data with every product's run, the server's kept ones, as
+ * the space's problems and coverage take in the workspace's and leave out the other products'.
  */
 async function runRead(workspace: string, definition: AnyQuery, params: URLSearchParams): Promise<{ status: number; answer: unknown }> {
   const products = workspaceProducts(workspace);
+  if (definition.checked) {
+    const [view, checked] = await Promise.all([workspaceView(products), workspaceRun(products)]);
+    return answerRead({ ...view, checked }, definition, params);
+  }
   const values = [...new Set(params.keys())].flatMap((name) => params.getAll(name));
   // A read that names no record, such as the list of the products, is of the whole workspace: every product's store.
   if (values.length === 0 && products.length > 1) return { status: 200, answer: answerQuery(await workspaceView(products), definition, {}) };
   const routed = products.length === 1 ? { root: products[0].root } : await writeRoot(products, [values]);
   if ('refused' in routed) return { status: 422, answer: { error: 'A read is of one product, and this one names records of several.' } satisfies ReadRefusal };
-  return withStore(routed.root, async (opened) => {
-    try {
-      const args: Record<string, unknown> = {};
-      for (const name of new Set(params.keys())) {
-        const field = definition.input[name];
-        args[name] = field ? flagValue(opened.store.schema, name, field, params.getAll(name)) : params.get(name);
-      }
-      return { status: 200, answer: runQuery(opened.store, definition, args) };
-    } catch (error) {
-      if (error instanceof InputError) return { status: 400, answer: { error: error.message } satisfies ReadRefusal };
-      if (error instanceof StoreError) return { status: 422, answer: { error: error.message, problems: error.problems } satisfies ReadRefusal };
-      throw error;
-    }
-  });
+  return withStore(routed.root, async (opened) => answerRead(opened.store, definition, params));
 }
 
 // ---------- Routing ----------

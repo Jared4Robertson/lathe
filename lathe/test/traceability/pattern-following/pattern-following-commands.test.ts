@@ -9,7 +9,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { CHANGE_SETTING_VALUES } from '../../../src/traceability/pattern-following/commands/change-setting-values.ts';
 import { FOLLOW_PATTERN } from '../../../src/traceability/pattern-following/commands/follow-pattern.ts';
 import { STOP_FOLLOWING_PATTERN } from '../../../src/traceability/pattern-following/commands/stop-following-pattern.ts';
-import { GET_FOLLOWING, LIST_FOLLOWINGS } from '../../../src/traceability/pattern-following/queries.ts';
+import { GET_FOLLOWING, LIST_FOLLOWERS, LIST_FOLLOWINGS } from '../../../src/traceability/pattern-following/queries.ts';
 import { runAggregateCommand } from '../../../src/cli/aggregates.ts';
 import { callTool } from '../../../src/cli/mcp.ts';
 import { closeStores, handleApi } from '../../../src/server/api.ts';
@@ -35,7 +35,7 @@ async function refusal(store: Store, definition: AnyCommand, input: unknown): Pr
 const fileOf = (store: Store, table: string) => readFileSync(path.join(store.dataDir, `${table}.jsonl`), 'utf8');
 
 describe('LA-TRC-UC07-R50-T01 each Pattern following command (LA-TRC-A3) changes one following through PatternFollowingRepository, and is reached by name from the CLI, the MCP tools and HTTP', () => {
-  it('LA-PAT-AGGREGATE-TESTS-R03-T03 builds the data set with its own command, and reads a following whole and the patterns a follower follows', async () => {
+  it('LA-PAT-AGGREGATE-TESTS-R03-T03 builds the data set with its own command, and reads a following whole, the patterns a follower follows and a pattern\'s followers', async () => {
     const store = await patternFollowingDataSet();
     expect(runQuery(store, GET_FOLLOWING, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' })).toEqual({
       follower: 'TL-LEND-UC01', pattern: 'TL-PAT-ACT',
@@ -43,11 +43,18 @@ describe('LA-TRC-UC07-R50-T01 each Pattern following command (LA-TRC-A3) changes
     });
     expect(runQuery(store, LIST_FOLLOWINGS, { follower_id: 'TL-LEND-UC01' })).toEqual(['TL-PAT-ACT']);
     expect(() => runQuery(store, GET_FOLLOWING, { follower_id: 'TL-LEND', pattern_id: 'TL-PAT-ACT' })).toThrow(/TL-LEND does not follow TL-PAT-ACT/);
+    expect(runQuery(store, LIST_FOLLOWERS, { pattern_id: 'TL-PAT-ACT' })).toEqual({
+      pattern: 'TL-PAT-ACT',
+      domains: [{ domain: 'TL-LEND', itself: null, useCases: [runQuery(store, GET_FOLLOWING, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' })] }],
+    });
+    expect(runQuery(store, LIST_FOLLOWERS, { pattern_id: 'TL-PAT-LOG' })).toEqual({ pattern: 'TL-PAT-LOG', domains: [] });
+    expect(() => runQuery(store, LIST_FOLLOWERS, { pattern_id: 'TL-PAT-NONE' })).toThrow(/there is no pattern TL-PAT-NONE/);
   });
 
   it('follows a pattern with no settings, and changes the setting values, writing only its own tables', async () => {
     const store = await patternFollowingDataSet();
     expect((await runCommand(store, FOLLOW_PATTERN, { follower_id: 'TL-LEND', pattern_id: 'TL-PAT-LOG' })).tables).toEqual(['follows']);
+    expect(runQuery(store, LIST_FOLLOWERS, { pattern_id: 'TL-PAT-LOG' })).toEqual({ pattern: 'TL-PAT-LOG', domains: [{ domain: 'TL-LEND', itself: { follower: 'TL-LEND', pattern: 'TL-PAT-LOG', settings: [] }, useCases: [] }] });
     const changed = await runCommand(store, CHANGE_SETTING_VALUES, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting_values: [{ setting: 'record', value: 'The loan.' }, { setting: 'required_input', value: 'The member card.' }] });
     expect(changed.tables).toEqual(['setting_value']);
     expect(changed.changes).toHaveLength(1);
@@ -77,6 +84,9 @@ describe('LA-TRC-UC07-R50-T01 each Pattern following command (LA-TRC-A3) changes
     const base = `http://127.0.0.1:${(server.address() as AddressInfo).port}`;
     const post = (route: string, body: unknown) => fetch(`${base}${route}`, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
     try {
+      const followers = await fetch(`${base}/api/pattern-following/list-followers?pattern_id=TL-PAT-LOG`);
+      expect(followers.status).toBe(200);
+      expect(((await followers.json()) as { domains: { domain: string }[] }).domains.map((d) => d.domain)).toEqual(['TL-LEND']);
       expect((await post('/api/pattern-following/stop-following-pattern', { follower_id: 'TL-LEND', pattern_id: 'TL-PAT-LOG' })).status).toBe(200);
       expect((await post('/api/pattern-following/stop-following-pattern', { follower_id: 'TL-LEND', pattern_id: 'TL-PAT-LOG' })).status).toBe(422);
     } finally {
