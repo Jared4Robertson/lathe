@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardGrid } from '../shell/Card';
 import { lowerLabel } from '../plural';
-import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
+import { compareIds, kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf } from '../views/address';
 import { ToolPanelFrame } from '../views/ToolPanel';
 import { CHANGE_LABEL, ChangeDetails, changeSummary, SincePicker } from './ChangeDetails';
@@ -32,7 +32,7 @@ export function ChangesPanel({ index, focus, sheet, onClose }: ChangesPanelProps
   const [now, setNow] = useState(Date.now);
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), TICK_MS); return () => clearInterval(t); }, []);
   const at = (c: RecordChange) => live.get(c.id)?.at ?? null;
-  const ordered = [...changes].sort((a, b) => (at(b) ?? -1) - (at(a) ?? -1) || a.id.localeCompare(b.id, 'en', { numeric: true }));
+  const ordered = [...changes].sort((a, b) => (at(b) ?? -1) - (at(a) ?? -1) || compareIds(a.id, b.id));
   const counts = <p className="changes-count">{baseline.state === 'ok' ? countsText(changes) : ''}</p>;
   return (
     <ToolPanelFrame label="Changes" head={counts} className="changes-panel" sheet={sheet} onClose={onClose}>

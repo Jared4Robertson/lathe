@@ -14,6 +14,8 @@
 // The IDs a test case names are every ID-shaped word, as a whole ID, in its name, in the rows of its each(…) (where
 // `it.each(['LA-X-T01', 'LA-X-T02'])('%s …')` writes them) and in the same of the describes around it.
 
+import { keptByText } from '../platform/kept-by-text.ts';
+
 /** A test case in a test file: its line, its name as written, and the IDs it and its describes name. */
 export interface TestCase {
   line: number;
@@ -134,8 +136,11 @@ const skipSpace = (code: string, at: number) => {
   return at;
 };
 
-/** The test cases in a test file's text, in order. */
-export function readTestCases(text: string): TestCase[] {
+/** The test cases in a test file's text, in order (kept by the text: nothing changes them). */
+export const readTestCases: (text: string) => readonly TestCase[] = keptByText(parseTestCases);
+
+// The test cases in a test file's text, in order.
+function parseTestCases(text: string): TestCase[] {
   const code = blankLiterals(text);
   const calls: { kind: 'describe' | 'test'; at: number; end: number; name: string; rows: string }[] = [];
   const start = /(?<![A-Za-z0-9_$.])(describe|it|test)\b/g;

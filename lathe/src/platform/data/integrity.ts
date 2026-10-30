@@ -111,6 +111,26 @@ FROM placed p LEFT JOIN inherited i ON i.id = p.id;
 }
 
 /**
+ * The columns record_scope reads, by table (recordScopeSql): each kind's ID and parent columns, a domain's product, and
+ * the user and used columns of the tables that tell which domain uses a record with no owner. A change that leaves
+ * every one of them as it was leaves record_scope as it was.
+ */
+export function recordScopeColumns(schema: SchemaDescription): Map<string, string[]> {
+  const columns = new Map<string, Set<string>>();
+  const read = (table: string, ...names: string[]) => {
+    const set = columns.get(table) ?? new Set<string>();
+    for (const name of names) set.add(name);
+    columns.set(table, set);
+  };
+  for (const kind of Object.values(schema.kinds)) read(kind.name, 'id', ...kind.parents.map((p) => p.column));
+  read('domain', 'product_id');
+  for (const u of USED_BY) read(u.table, u.user, u.used);
+  read('renders', 'source_id', 'target_id');
+  read('happens_in', 'source_id', 'target_id');
+  return new Map([...columns].map(([table, set]) => [table, [...set]]));
+}
+
+/**
  * How a domain uses a record with no owner (record_scope): each row of the table names a user, placed in its domain
  * through its parents, and the record it uses. A UI component is used through the views it renders, by the flow
  * steps that happen in them.
