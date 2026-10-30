@@ -20,6 +20,7 @@ import { copyRecordId } from './product-window/commands/copy-record-id.ts';
 import { openProductFolder } from './product-window/commands/open-product-folder.ts';
 import { openRecordDataFile } from './product-window/commands/open-record-data-file.ts';
 import { reportErrorCount } from './product-window/commands/report-error-count.ts';
+import { reportMenuKeys } from './product-window/commands/report-menu-keys.ts';
 import { revealProductFolder } from './product-window/commands/reveal-product-folder.ts';
 import { revealRecordDataFile } from './product-window/commands/reveal-record-data-file.ts';
 import { saveWindowPlace } from './product-window/commands/save-window-place.ts';
@@ -124,6 +125,7 @@ function refreshMenu() {
         openRecent: (folder) => void openFolder(folder),
         clearRecent: clearRecentMenu,
         runCommand: (id) => sendCommand(BrowserWindow.getFocusedWindow(), id),
+        keys: menuKeysWindow()?.menuKeys,
         about: showAbout,
         settings: () => sendCommandId(focusedProductWindow(), 'openAppearance', []),
         settingsNow: shellSettings.load(),
@@ -146,6 +148,12 @@ function pickEditor(editor: Editor) {
   chooseEditor(shellSettings, { editor });
   refreshMenu();
 }
+
+/** The window whose keys the menu shows: the focused product window, or the one focused last. */
+const menuKeysWindow = () => {
+  const win = focusedProductWindow();
+  return win ? [...openWindows().values()].find((e) => e.win === win) : undefined;
+};
 
 /** The focused product window, or the one focused last while another (the About window) is in front. */
 function focusedProductWindow(): BrowserWindow | null {
@@ -408,6 +416,7 @@ async function openFolder(input: string) {
   win.on('focus', () => {
     lastFocused = win.id;
     updateBadge();
+    refreshMenu();
   });
   win.on('close', () => {
     clearTimeout(saveTimer);
@@ -751,6 +760,11 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
   ipcMain.on('lathe:set-chrome', (event, input: unknown) => {
     const entry = fromPage(event);
     if (entry) setWindowChrome(productWindows, { folder: entry.folder, chrome: input, dark: dark(), platform: process.platform });
+  });
+  // The person's keys, for the menu's key labels: sent by a page as they change and as its window takes focus.
+  ipcMain.on('lathe:menu-keys', (event, input: unknown) => {
+    const entry = fromPage(event);
+    if (entry && reportMenuKeys(productWindows, { folder: entry.folder, keys: input }) && menuKeysWindow() === entry) refreshMenu();
   });
   // Report a window's error count, for the Dock badge.
   ipcMain.on('lathe:error-count', (event, input: unknown) => {

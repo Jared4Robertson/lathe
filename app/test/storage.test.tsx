@@ -2,6 +2,7 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { SessionSettingsRepository, SETTINGS_KEY } from '../src/exploring/session-settings/repository';
+import { KeyBindingsRepository } from '../src/platform/key-bindings/repository';
 import { AppearanceRepository, APPEARANCE_KEYS } from '../src/platform/appearance/repository';
 import { PanelRepository } from '../src/platform/panel/repository';
 import { desktopBridgeStub, openApp } from './helpers';
@@ -34,6 +35,17 @@ describe('LA-PLT-A4-SR01 the person\'s themes, chosen theme and color mode are k
     expect(new AppearanceRepository().load()).toMatchObject({ mode: 'dark' });
     vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('blocked'); });
     expect(() => new AppearanceRepository().save({ ...appearance, mode: 'light' })).not.toThrow();
+  });
+});
+
+describe('LA-PLT-A14-SR01 the person\'s key bindings are kept in this browser', () => {
+  it('LA-PLT-A14-SR01-T01 the bindings saved read back from local storage, and a blocked storage loses only the bindings', () => {
+    new KeyBindingsRepository().save({ changed: [{ shortcut: 'toggleNav', keys: ['Ctrl+J'], unbound: false }, { shortcut: 'goHome', keys: [], unbound: true }] });
+    expect(JSON.parse(window.localStorage.getItem('lathe:keybindings')!)).toEqual({ toggleNav: ['Ctrl+J'], goHome: null });
+    expect(new KeyBindingsRepository().load().changed).toEqual([{ shortcut: 'toggleNav', keys: ['Ctrl+J'], unbound: false }, { shortcut: 'goHome', keys: [], unbound: true }]);
+    vi.spyOn(window, 'localStorage', 'get').mockImplementation(() => { throw new Error('blocked'); });
+    expect(() => new KeyBindingsRepository().save({ changed: [] })).not.toThrow();
+    expect(new KeyBindingsRepository().load().changed).toEqual([]);
   });
 });
 
