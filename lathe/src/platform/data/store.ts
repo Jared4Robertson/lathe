@@ -326,7 +326,9 @@ export class Store {
       tables.set(name, rows);
     };
 
-    const isDeclaration = (file: string) => (DECLARATION_TABLES as readonly string[]).includes(file.slice(0, -'.jsonl'.length));
+    // The declarations, with the products that declare them, are read first: the Product aggregate's rules judge them
+    // before the schema is built from them.
+    const isDeclaration = (file: string) => ([...DECLARATION_TABLES, 'product'] as readonly string[]).includes(file.slice(0, -'.jsonl'.length));
     await this.step('read declarations', () => {
       for (const folder of folders) for (const file of folder.files.filter(isDeclaration)) read(this.baseSchema, folder, file);
     });
