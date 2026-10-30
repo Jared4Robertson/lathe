@@ -38,10 +38,10 @@ const valuesOf = (following: FollowingPage) => ({
 export function RowActions({ following, setMode }: { following: FollowingPage; setMode: (mode: FollowingMode) => void }) {
   if (!useWriter()) return null;
   return (
-    <span>
-      <Button variant="icon" icon="edit" label={`Change the values ${following.follower} gives`} onClick={() => setMode({ mode: 'change', following })} />
-      <Button variant="icon" icon="trash" danger label={`Stop ${following.follower} following ${following.pattern}`} onClick={() => setMode({ mode: 'stop', following })} />
-    </span>
+    <div className="record-actions" role="toolbar" aria-label={`Change the following of ${following.follower}`}>
+      <Button icon="edit" onClick={() => setMode({ mode: 'change', following })}>Change values</Button>
+      <Button icon="trash" danger onClick={() => setMode({ mode: 'stop', following })}>Stop following</Button>
+    </div>
   );
 }
 

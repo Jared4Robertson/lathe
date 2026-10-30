@@ -44,6 +44,9 @@ function payItself(): SpecData {
 const index = () => indexOf(twoDomains());
 const rowOf = (scope: HTMLElement, id: string) => within(scope).getByRole('link', { name: new RegExp(`^${id}(?!-)`) }).closest('.record-row') as HTMLElement;
 
+/** A row's text without its actions' toolbar: the follower and the values it gives. */
+const rowText = (row: HTMLElement) => [...row.childNodes].map((c) => { const copy = c.cloneNode(true) as HTMLElement; copy.querySelectorAll?.('[role="toolbar"]').forEach((t) => t.remove()); return copy.textContent; }).join('');
+
 describe('pattern logic', () => {
   it('LA-V91-R54-T01 A domain follows the patterns it or its use cases follow, and a pattern lists its following domains', async () => {
     // The hand-written standings of these workspaces are the engine's.
@@ -222,7 +225,7 @@ describe('pattern pages (the Pattern page, LA-V122)', () => {
     expect(within(followed).getByRole('heading', { level: 2 }).textContent).toBe('Followed by2');
     const pay = within(followed).getByRole('region', { name: 'Followed in DM-PAY' });
     const useCases = within(pay).getAllByRole('table')[0];
-    expect(within(useCases).getAllByRole('row').map((r) => r.textContent)).toEqual([
+    expect(within(useCases).getAllByRole('row').map(rowText)).toEqual([
       'Use caseretentionwho',
       'DM-PAY-UC01Pay by cardNot applicable: Payments keep no recordsShopper',
     ]);
