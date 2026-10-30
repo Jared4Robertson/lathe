@@ -432,7 +432,8 @@ function ShortcutSheet({ commands, mac, available, titleOf, announce, onClose }:
                     const title = titleOf(c);
                     const mine = offer?.id === c.id ? offer : null;
                     return (
-                      <tr key={c.id} data-shortcut={c.id} data-changed={c.changed ? '' : undefined}>
+                      <Fragment key={c.id}>
+                      <tr data-shortcut={c.id} data-changed={c.changed ? '' : undefined}>
                         <th scope="row">{title}</th>
                         <td className="shortcut-keys">
                           <div className="shortcut-key-list">
@@ -458,18 +459,24 @@ function ShortcutSheet({ commands, mac, available, titleOf, announce, onClose }:
                             )}
                             {!c.customizable && <span className="shortcut-fixed">{c.browser ? 'The browser’s' : 'Fixed'}</span>}
                           </div>
-                          {mine && (
+                        </td>
+                        <td className="shortcut-reset-cell">{c.changed && <Button className="shortcut-reset" aria-label={`Reset ${title}`} onClick={() => reset(c.id)}>Reset</Button>}</td>
+                        <td className="cmd-id"><code>{c.id}</code></td>
+                      </tr>
+                      {/* A refusal's prompt has a row of its own under the shortcut's, so the shortcut's row never reflows. */}
+                      {mine && (
+                        <tr className="shortcut-offer-row" data-offer-for={c.id}>
+                          <td colSpan={4}>
                             <div className="shortcut-offer" role="alert" onKeyDown={onOfferKey(c.id)}>
                               <span>{mine.message}</span>
                               {mine.kind === 'swap' && <Button variant="primary" autoFocus onClick={() => swap(mine)}>Swap</Button>}
                               {mine.kind === 'unbind' && <Button variant="primary" autoFocus onClick={() => remove(c.id, mine.key, true)}>Leave without a key</Button>}
                               <Button autoFocus={mine.kind === 'refused'} onClick={() => cancel(c.id)}>{mine.kind === 'refused' ? 'OK' : 'Cancel'}</Button>
                             </div>
-                          )}
-                        </td>
-                        <td className="shortcut-reset-cell">{c.changed && <Button className="shortcut-reset" aria-label={`Reset ${title}`} onClick={() => reset(c.id)}>Reset</Button>}</td>
-                        <td className="cmd-id"><code>{c.id}</code></td>
-                      </tr>
+                          </td>
+                        </tr>
+                      )}
+                      </Fragment>
                     );
                   })}
                 </tbody>
