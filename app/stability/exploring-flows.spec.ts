@@ -353,7 +353,8 @@ test.describe('Exploring flows', () => {
     await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/LA-EXP/technical-specification');
     await graphReady(page);
-    expect((await sceneOf(page)).boxes.some((b) => b.id === 'LA-EXP/technical-specification/repository')).toBe(true);
+    // Its kinds are reached from it (the boxes' keyboard layer holds them, on screen or past the edge: the focus is framed whole).
+    await expect(page.locator(`${FLOW} .graph-box[data-id="LA-EXP/technical-specification/repository"]`)).toHaveCount(1);
     await expect(wikiTitle(page)).toHaveText(/^Technical specification/);
     await expect(page.locator('.header-strip .breadcrumb .crumb').last()).toContainText('Exploring');
   });

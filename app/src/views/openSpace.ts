@@ -113,7 +113,8 @@ export function useOpenSpaceMeasure(stage: RefObject<HTMLElement | null>, store:
 /** Measures the open space over `el` among the floating panels in `scope`, now and on every change; returns how to stop. */
 function measureOpenSpace(el: HTMLElement, scope: Element, store: OpenSpaceStore): () => void {
   const measure = () => {
-    const open = openInsets(el.getBoundingClientRect(), panelsIn(scope, 'floating'));
+    const stage = el.getBoundingClientRect();
+    const open = openInsets(stage, panelsIn(scope, 'floating'));
     const tools = panelsIn(el, 'stageTools');
     const frame = frameInsets(open, tools);
     for (const s of SIDES) {
@@ -124,7 +125,10 @@ function measureOpenSpace(el: HTMLElement, scope: Element, store: OpenSpaceStore
     // while the stage's toolbar row is drawn: a stage switch that redraws the row keeps the foot where it was, and before
     // the first measure the card's top reserves the row (--tools-row, styles.css), so the card never moves under it.
     const parent = el.parentElement;
-    if (parent && tools.some((t) => t.side === 'top')) {
+    // A row not laid out yet (a stage being drawn anew) has no size: the foot stays where it was. Where nothing is laid
+    // out at all (no layout engine), the foot is the measure's as it is.
+    const laidOut = (r: { width: number; height: number }) => r.width > 0 && r.height > 0;
+    if (parent && tools.some((t) => t.side === 'top' && (laidOut(t.rect) || !laidOut(stage)))) {
       parent.style.setProperty('--tools-foot', `${Math.round(frame.top - OPEN_GAP)}px`);
     }
     store.set({ open, frame });
