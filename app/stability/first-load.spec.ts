@@ -1,4 +1,4 @@
-import { test } from '@playwright/test';
+import { test } from './test';
 import { expectStable, firstLoad } from './measure';
 import { DOMAIN, FOCUS, PRODUCT, RECORD, SHELL } from './scenarios';
 

@@ -1,7 +1,8 @@
 import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from '../stability/test';
 import { BUDGETS } from './budgets';
 import { installProbes, quiet, record, work } from './measure';
 import { GRAPH, sceneOf } from '../stability/scene';

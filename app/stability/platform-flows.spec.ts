@@ -2,7 +2,8 @@ import { execFileSync } from 'node:child_process';
 import { appendFileSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, keepData, RECORD, SHELL } from './scenarios';
 import { cameraOf, sceneOf } from './scene';
@@ -62,7 +63,7 @@ test.describe('Platform flows in the app', () => {
       await openPage(page, '/LA-EXP-UC03');
       await expect(page.locator(`.header-strip h1`)).toHaveText('Walk the model as a graph');
       // An Agent changes the record through the command layer while the page is open.
-      lathe('set', 'LA-EXP-UC03', '--title', 'Walk the model as a graph, retitled by an Agent');
+      lathe('use-case', 'change-use-case', '--id', 'LA-EXP-UC03', '--title', 'Walk the model as a graph, retitled by an Agent');
       await expect(page.locator(`.header-strip h1`)).toHaveText('Walk the model as a graph, retitled by an Agent', { timeout: 20_000 });
       expect(new URL(page.url()).pathname).toBe('/LA-EXP-UC03');
       // A data file the store refuses: the page says what is wrong, not other data.
@@ -411,7 +412,7 @@ test.describe('Platform flows in the app', () => {
     const restore = keepData();
     try {
       expectStable(await step(page, 'flow', 'specs reload', { keys: ['nav#nav', '.wiki-panel-head'], allow: ['.wiki-panel-scroll'], settle: 1500 }, async () => {
-        lathe('set', RECORD.slice(1), '--goal', 'A goal the flow test writes while the page is open.');
+        lathe('use-case', 'change-use-case', '--id', RECORD.slice(1), '--goal', 'A goal the flow test writes while the page is open.');
         await expect(page.locator(WIKI)).toContainText('A goal the flow test writes', { timeout: 20_000 });
       }));
     } finally {

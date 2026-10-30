@@ -1,5 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from '../stability/test';
 
 // One axe-core audit of the page as it is now, at WCAG 2.2 AA (LA-PAT-APP-UX-R10).
 
