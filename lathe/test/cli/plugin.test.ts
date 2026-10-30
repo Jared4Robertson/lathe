@@ -225,6 +225,18 @@ describe('the MCP launcher', () => {
     expect((await results(`${major}.9.1`)).calls).toEqual([['Product TL: Tool Library\n  description: A neighborhood tool library.'], ['Product TL: Tool Library\n  description: A neighborhood tool library.']]);
   });
 
+  it('LA-PLT-UC19-R08-T02 runs the Lathe LATHE_CLI names, as the desktop chat sets it, though the repo has none installed', async () => {
+    const root = productRepo();
+    rmSync(path.join(root, 'node_modules'), { recursive: true, force: true });
+    const server = spawn(process.execPath, [path.join(pluginDir, 'scripts', 'mcp-server.mjs')], { env: { ...process.env, CLAUDE_PROJECT_DIR: root, LATHE_CLI: bin }, stdio: ['pipe', 'pipe', 'pipe'] });
+    let out = '';
+    server.stdout.on('data', (chunk) => (out += chunk));
+    server.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'product_get_product', arguments: { id: 'TL' } } })}\n`);
+    server.stdin.end();
+    expect(await new Promise((resolve) => server.on('close', resolve))).toBe(0);
+    expect(JSON.parse(out.trim().split('\n')[0]).result.content[0].text).toBe('Product TL: Tool Library\n  description: A neighborhood tool library.');
+  });
+
   it('LA-INT01-T03 LA-PLT-UC18-R02-T01 says why it cannot start outside a Lathe repo', () => {
     const empty = realpathSync(mkdtempSync(path.join(tmpdir(), 'lathe-plugin-none-')));
     roots.push(empty);

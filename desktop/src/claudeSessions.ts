@@ -2,7 +2,9 @@
 // the sessions it saved for a folder (its session store, ~/.claude/projects/<folder>/<id>.jsonl),
 // each by title and date, and which sessions another Claude client has open now (its registry of
 // running sessions, ~/.claude/sessions/<pid>.json), so the panel can warn before two clients write
-// one transcript. Lathe only reads these files; the CLI writes them.
+// one transcript. Lathe only reads these files; the CLI writes them. Whether the CLI is signed in comes from the CLI
+// itself (`claude auth status --json`), never from its files or the environment.
+import { execFile } from 'node:child_process';
 import { closeSync, existsSync, openSync, readdirSync, readFileSync, readSync, statSync } from 'node:fs';
 import path from 'node:path';
 import { promptText } from './chat.ts';
@@ -154,4 +156,29 @@ export function findClaude(configured: string | undefined, home: string, pathVar
     if (exists(file)) return file;
   }
   return null;
+}
+
+/**
+ * Whether `claude auth status --json` says the CLI is signed in (LA-PLT-UC19-R10): false only when it says it is not
+ * and has no other way in (no API key or helper), null when its answer cannot be read.
+ */
+export function signedInFrom(output: string): boolean | null {
+  try {
+    const status = JSON.parse(output) as { loggedIn?: unknown; authMethod?: unknown };
+    if (status.loggedIn === true) return true;
+    if (status.loggedIn === false) return status.authMethod === 'none' || status.authMethod === undefined ? false : null;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+/** How long the sign-in check may take before the chat stops waiting for it. */
+const STATUS_TIMEOUT_MS = 10_000;
+
+/** Asks the CLI whether it is signed in; null when it cannot tell. It reads only the answer's sign-in fields. */
+export function claudeSignedIn(command: string, env: NodeJS.ProcessEnv): Promise<boolean | null> {
+  return new Promise((resolve) => {
+    execFile(command, ['auth', 'status', '--json'], { env, timeout: STATUS_TIMEOUT_MS, maxBuffer: 64 * 1024 }, (_error, stdout) => resolve(signedInFrom(String(stdout ?? ''))));
+  });
 }

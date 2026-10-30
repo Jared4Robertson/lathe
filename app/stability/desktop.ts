@@ -18,11 +18,12 @@ export async function asDesktop(page: Page) {
       copyRecordId: () => {},
       showRecordMenu: () => {},
       chat: {
-        sessions: async () => ({ claude: null, configured: false, current: null, sessions: [] }),
+        sessions: async () => ({ claude: null, configured: false, signedIn: null, mode: 'accept-reads', current: null, sessions: [] }),
         open: async () => false,
         send: async () => false,
         answer: async () => false,
         stop: async () => false,
+        setMode: async () => false,
         onPatch: () => () => {},
       },
       onAppRequest: () => () => {},

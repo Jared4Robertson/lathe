@@ -15,7 +15,7 @@
 //                       checks the request and finds the data file itself, product-window/commands/);
 //   chat                the chat panel's Claude Code (LA-PLT-UC19): the folder's saved sessions, open one
 //                       (new, resumed or forked), send a message, answer a permission prompt, stop the
-//                       turn, and subscribe to the chat's patches (chat.ts);
+//                       turn, choose the permission mode, and subscribe to the chat's patches (chat.ts);
 //   onAppRequest        answers the app bridge's questions (bridge.ts), each on its own channel: what the
 //                       Reader is looking at (lathe:ask-focus), and opening a record (lathe:ask-open), for
 //                       Lathe's MCP tools run by the chat's Claude Code.
@@ -109,9 +109,10 @@ contextBridge.exposeInMainWorld('latheDesktop', {
   chat: {
     sessions: () => ipcRenderer.invoke('lathe:chat-sessions'),
     open: (choice: unknown) => ipcRenderer.invoke('lathe:chat-open', choice),
-    send: (text: unknown) => ipcRenderer.invoke('lathe:chat-send', text),
-    answer: (id: unknown, allow: unknown) => ipcRenderer.invoke('lathe:chat-answer', { id, allow }),
+    send: (text: unknown, focus: unknown) => ipcRenderer.invoke('lathe:chat-send', { text, focus }),
+    answer: (id: unknown, answer: unknown) => ipcRenderer.invoke('lathe:chat-answer', { id, answer }),
     stop: () => ipcRenderer.invoke('lathe:chat-stop'),
+    setMode: (mode: unknown) => ipcRenderer.invoke('lathe:chat-mode', mode),
     /** Subscribes to the chat's patches; the first is the whole chat, when there is one. */
     onPatch(listener: PatchListener) {
       if (typeof listener !== 'function') return () => {};

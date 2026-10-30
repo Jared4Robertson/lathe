@@ -15,6 +15,42 @@
 .chat-title-text { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-head-actions { flex: none; display: flex; align-items: center; gap: 2px; }
 
+/* Under the head: the Lathe tools the session has, and the permission mode (LA-V99-R03, ChatMode.tsx). */
+.chat-context { flex: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 32px; padding: 2px 6px 2px 12px; border-bottom: 1px solid var(--float-border); font-size: 0.78rem; }
+.chat-tools { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--muted); }
+.chat-tools.hint { margin: 0; font-size: inherit; }
+.chat-tools.is-failed { color: var(--error); }
+.chat-mode { position: relative; flex: none; }
+.chat-mode-button { display: inline-flex; align-items: center; gap: 4px; min-height: 26px; padding: 2px 6px 2px 8px; border: 1px solid var(--float-border); border-radius: 6px; background: var(--sheet); color: var(--ink); font: 600 0.8rem/1.2 var(--body); cursor: pointer; }
+.chat-mode-button:hover:not(:disabled) { background: var(--hover-bg); }
+.chat-mode-button:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+.chat-mode-button:disabled { opacity: 0.6; cursor: default; }
+.chat-mode-button.is-view-only { color: var(--steel); background: var(--steel-bg); }
+.chat-mode-button.is-bypass { color: var(--error); border-color: var(--error); }
+.chat-mode-menu { position: absolute; z-index: 6; top: calc(100% + 4px); right: 0; width: min(300px, calc(var(--chat-width, 400px) - 24px)); display: grid; gap: 2px; padding: 4px; border: 1px solid var(--float-border); border-radius: 8px; background: var(--sheet); box-shadow: var(--float-shadow); }
+.chat-mode-item { display: flex; align-items: flex-start; gap: 6px; padding: 6px 8px; border: 0; border-radius: 6px; background: none; color: var(--ink); font: inherit; text-align: left; cursor: pointer; }
+.chat-mode-item:hover, .chat-mode-item:focus-visible { background: var(--hover-bg); outline: none; }
+.chat-mode-item:focus-visible { box-shadow: inset 0 0 0 2px var(--steel); }
+.chat-mode-check { flex: none; width: 14px; height: 18px; display: inline-flex; align-items: center; color: var(--steel); }
+.chat-mode-text { display: grid; gap: 1px; min-width: 0; }
+.chat-mode-item-name { font-size: 0.84rem; font-weight: 600; }
+.chat-mode-item.is-bypass .chat-mode-item-name { color: var(--error); }
+.chat-mode-item-detail { font-size: 0.76rem; color: var(--muted); }
+
+/* Bypass: the warning before it is on, and the badge while it is. */
+.chat-bypass-badge { flex: none; padding: 1px 6px; border-radius: 999px; background: var(--error); color: var(--sheet); font: 700 0.7rem/1.4 var(--body); letter-spacing: 0.02em; text-transform: uppercase; }
+.chat-bypass-warning { flex: none; margin: 8px 12px 0; padding: 8px 10px; border: 1px solid var(--error); border-radius: 6px; background: var(--sheet); font-size: 0.82rem; color: var(--ink); }
+.chat-bypass-warning p { margin: 0 0 8px; }
+.chat-bypass-title { font-weight: 700; color: var(--error); }
+
+/* What the Owner is looking at, sent with each message: a chip above the message box. */
+.chat-focus { flex: none; display: flex; padding: 6px 12px 0; }
+.chat-focus-chip { min-width: 0; max-width: 100%; display: inline-flex; align-items: center; gap: 6px; padding: 2px 2px 2px 8px; border: 1px solid var(--float-border); border-radius: 999px; background: var(--steel-bg); color: var(--ink); font-size: 0.78rem; }
+.chat-focus-label { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-focus-remove { flex: none; display: inline-flex; align-items: center; justify-content: center; width: 20px; height: 20px; border: 0; border-radius: 50%; background: none; color: var(--muted); cursor: pointer; }
+.chat-focus-remove:hover { background: var(--hover-bg); color: var(--ink); }
+.chat-focus-remove:focus-visible { outline: 2px solid var(--steel); outline-offset: 1px; }
+
 .chat-help { flex: none; max-height: 40%; overflow-y: auto; padding: 8px 12px; border-bottom: 1px solid var(--float-border); font-size: 0.82rem; color: var(--ink); }
 .chat-help p { margin: 0 0 6px; }
 .chat-help ul { margin: 0; padding-left: 18px; }
@@ -32,6 +68,7 @@
 .chat-session-title { font-size: 0.86rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .chat-session-meta { display: flex; gap: 8px; font-size: 0.76rem; color: var(--muted); }
 .chat-session-elsewhere { color: var(--warn); font-weight: 600; }
+.chat-missing p { margin: 0 0 8px; }
 .chat-warning, .chat-missing { margin: 0; padding: 8px 10px; border: 1px solid var(--warn); border-radius: 6px; font-size: 0.82rem; color: var(--ink); background: var(--sheet); }
 .chat-warning p { margin: 0 0 8px; }
 .chat-warning-actions { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -72,7 +109,7 @@
 .chat-permission p { margin: 0; }
 .chat-permission-ask code { overflow-wrap: anywhere; }
 .chat-permission-input summary { font-size: 0.78rem; color: var(--muted); cursor: pointer; }
-.chat-permission-actions { display: flex; gap: 6px; }
+.chat-permission-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .chat-permission-answer { font-size: 0.8rem; color: var(--muted); }
 
 /* The records a turn changed. */
