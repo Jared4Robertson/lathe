@@ -19,9 +19,10 @@ export interface WindowOpenedReactions {
   onWindowOpenedStartAppServer: (event: ProductWindowOpened) => Promise<void>;
 }
 
-/** The reactions to a window closed. */
+/** The reactions to a window closed: its server stops and its chat ends, both at once. */
 export interface WindowClosedReactions {
   onWindowClosedStopAppServer: (event: ProductWindowClosed) => Promise<void>;
+  onWindowClosedEndChat: (event: ProductWindowClosed) => Promise<void>;
 }
 
 export async function raiseProductWindowOpened(event: ProductWindowOpened, reactions: WindowOpenedReactions): Promise<void> {
@@ -29,6 +30,6 @@ export async function raiseProductWindowOpened(event: ProductWindowOpened, react
   await reactions.onWindowOpenedStartAppServer(event);
 }
 
-export function raiseProductWindowClosed(event: ProductWindowClosed, reactions: WindowClosedReactions): Promise<void> {
-  return reactions.onWindowClosedStopAppServer(event);
+export async function raiseProductWindowClosed(event: ProductWindowClosed, reactions: WindowClosedReactions): Promise<void> {
+  await Promise.all([reactions.onWindowClosedStopAppServer(event), reactions.onWindowClosedEndChat(event)]);
 }
