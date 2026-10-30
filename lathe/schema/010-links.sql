@@ -35,10 +35,10 @@ CREATE TABLE builds (source_id VARCHAR NOT NULL REFERENCES ui_component (id), ta
 COMMENT ON TABLE builds IS 'The UI component builds the view requirement: its code does what the requirement says. A view requirement is built only through the components that build it, never through any component that renders its view.';
 CREATE TABLE follows (source_id VARCHAR NOT NULL REFERENCES follows_source (id), target_id VARCHAR NOT NULL REFERENCES pattern (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE follows IS 'The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows.';
-CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES meets_source (id), target_id VARCHAR NOT NULL REFERENCES standard_rule (id), PRIMARY KEY (source_id, target_id));
+CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES technical_record (id), target_id VARCHAR NOT NULL REFERENCES standard_rule (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE meets IS 'The technical record follows the standard rule: it shows where the rule is applied, and designs it.';
 CREATE TABLE persists (source_id VARCHAR NOT NULL UNIQUE REFERENCES repository (id), target_id VARCHAR NOT NULL UNIQUE REFERENCES aggregate (id), PRIMARY KEY (source_id, target_id));
-COMMENT ON TABLE persists IS 'The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository. Another aggregate a repository also persists is a recorded exception, a repository_share row.';
+COMMENT ON TABLE persists IS 'The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository.';
 CREATE TABLE serves (source_id VARCHAR NOT NULL REFERENCES capability (id), target_id VARCHAR NOT NULL REFERENCES business_outcome (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE serves IS 'The capability serves the business outcome: what it is for. A capability may serve several outcomes, and an outcome be served by several capabilities.';
 CREATE TABLE measured_by (source_id VARCHAR NOT NULL REFERENCES business_outcome (id), target_id VARCHAR NOT NULL REFERENCES record_id (id), PRIMARY KEY (source_id, target_id));
@@ -150,17 +150,14 @@ CREATE TABLE setting_value (
   follower_id VARCHAR NOT NULL,
   pattern_id VARCHAR NOT NULL,
   setting VARCHAR NOT NULL,
-  value VARCHAR,
-  not_applicable VARCHAR,
+  value VARCHAR NOT NULL CHECK (trim(value) <> ''),
   PRIMARY KEY (follower_id, pattern_id, setting),
   FOREIGN KEY (follower_id, pattern_id) REFERENCES follows (source_id, target_id),
-  FOREIGN KEY (pattern_id, setting) REFERENCES pattern_setting (pattern_id, name),
-  CHECK ((value IS NULL) <> (not_applicable IS NULL))
+  FOREIGN KEY (pattern_id, setting) REFERENCES pattern_setting (pattern_id, name)
 );
-COMMENT ON TABLE setting_value IS 'The value a use case or domain gives one setting of a pattern it follows: a value, or Not applicable with the reason.';
+COMMENT ON TABLE setting_value IS 'The value a use case or domain gives one setting of a pattern it follows. A follower owes every rule of the pattern; a value such as No input is a value like any other, never a way out of a rule.';
 COMMENT ON COLUMN setting_value.follower_id IS 'The use case or domain that follows the pattern.';
 COMMENT ON COLUMN setting_value.pattern_id IS 'The pattern it follows.';
 COMMENT ON COLUMN setting_value.setting IS 'The setting, one of the pattern''s.';
 COMMENT ON COLUMN setting_value.value IS 'The value it gives the setting.';
-COMMENT ON COLUMN setting_value.not_applicable IS 'Why the setting does not apply to it, in place of a value.';
 INSERT INTO meta_table VALUES ('setting_value', 'part', 'follower_id');

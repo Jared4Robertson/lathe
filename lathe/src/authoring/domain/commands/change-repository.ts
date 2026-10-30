@@ -40,7 +40,6 @@ export function changeRepository(tx: Transaction, input: ChangeRepository): void
           persists: input.persists === undefined ? r.persists : input.persists,
           meets: input.meets ?? r.meets,
           packages: input.packages ?? r.packages,
-          shares: r.shares,
         }
       : r,
   );

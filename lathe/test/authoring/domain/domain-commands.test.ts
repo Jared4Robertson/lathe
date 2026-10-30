@@ -63,7 +63,8 @@ describe('LA-AUT-UC02-R06-T02 each Domain command (LA-AUT-A4) changes one domain
     expect(whole.capabilities.map((c) => c.capability.id)).toEqual(['TL-LEND-CAP01']);
     expect(whole.domainServices.map((s) => s.service)).toEqual([{ service: { id: 'TL-LEND-DS01-SV', title: 'lateFee', domain_service_id: 'TL-LEND-DS01', file: 'src/fees.ts' }, meets: [], packages: [] }]);
     expect(whole.domainServices[0].tests.map((t) => t.test.id)).toEqual(['TL-LEND-DS01-T01']);
-    expect(whole.repositories).toEqual([expect.objectContaining({ persists: null, alsoPersists: [], meets: [], packages: [] })]);
+    expect(whole.repositories).toEqual([expect.objectContaining({ persists: null, meets: [], packages: [] })]);
+    expect(whole.repositories[0]).not.toHaveProperty('alsoPersists');
     expect(runQuery(store, LIST_DOMAINS, { product_id: 'TL' })).toEqual([{ id: 'TL-LEND', title: 'Lending' }]);
     expect(runQuery(store, NEXT_DOMAIN_ID, { kind: 'capability', parent: 'TL-LEND' })).toBe('TL-LEND-CAP02');
     expect(runQuery(store, NEXT_DOMAIN_ID, { kind: 'domain_service_test', parent: 'TL-LEND-DS01' })).toBe('TL-LEND-DS01-T02');
@@ -81,18 +82,19 @@ describe('LA-AUT-UC02-R06-T02 each Domain command (LA-AUT-A4) changes one domain
     expect(changed.tables).toEqual(['meets', 'package_use']);
   });
 
-  it('refuses a repository share naming an aggregate a repository persists (repository-share-unpersisted), and changes no file', async () => {
-    // TL-LEND-REPO01 persists TL-LEND-A1 and records a share of TL-LEND-A2.
+  it('refuses a repository for an aggregate another repository persists (one-repository), and changes no file', async () => {
+    // TL-LEND-REPO01 persists TL-LEND-A1; TL-LEND-A2 has no repository yet.
     const store = await storeOf(everyKind());
     const before = fileOf(store, 'persists');
-    expect((await refusal(store, CHANGE_REPOSITORY, { id: 'TL-LEND-REPO01', persists: 'TL-LEND-A2' })).problems).toEqual([
-      expect.objectContaining({ rule: 'repository-share-unpersisted', message: 'TL-LEND-REPO01 cannot also record TL-LEND-A2, the aggregate it persists' }),
-    ]);
-    const second = { id: 'TL-LEND-REPO02', title: 'ToolRepository', domain_id: 'TL-LEND', file: 'src/lending/tools.ts', description: 'Keeps tools.', persists: 'TL-LEND-A2' };
+    const second = { id: 'TL-LEND-REPO02', title: 'ToolRepository', domain_id: 'TL-LEND', file: 'src/lending/tools.ts', description: 'Keeps tools.', persists: 'TL-LEND-A1' };
     expect((await refusal(store, ADD_REPOSITORY, second)).problems).toEqual([
-      expect.objectContaining({ rule: 'repository-share-unpersisted', message: 'TL-LEND-REPO01 cannot also record TL-LEND-A2, which TL-LEND-REPO02 persists: an aggregate has one repository' }),
+      expect.objectContaining({ rule: 'one-repository', message: 'TL-LEND-REPO02 cannot persist TL-LEND-A1, which TL-LEND-REPO01 persists: an aggregate has one repository' }),
     ]);
     expect(fileOf(store, 'persists')).toBe(before);
+    await runCommand(store, ADD_REPOSITORY, { ...second, persists: 'TL-LEND-A2' });
+    expect((await refusal(store, CHANGE_REPOSITORY, { id: 'TL-LEND-REPO01', persists: 'TL-LEND-A2' })).problems).toEqual([
+      expect.objectContaining({ rule: 'one-repository', message: expect.stringMatching(/TL-LEND-REPO0[12] cannot persist TL-LEND-A2, which TL-LEND-REPO0[12] persists: an aggregate has one repository/) }),
+    ]);
   });
 
   it('removes a domain service with its service and tests, and refuses a record while another aggregate references it', async () => {

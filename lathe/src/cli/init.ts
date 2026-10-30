@@ -1,9 +1,13 @@
 // `lathe init` (LA-PLT-CMD21): sets Lathe up in a product repo. It writes lathe.config.json, with this Lathe's schema
-// version and the data folder, when the repo has none, and then adds the product's first record.
+// version and the data folder, when the repo has none, and then adds the product with the Product aggregate's own
+// command, Add a product (LA-AUT-CMD120).
 import { existsSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { CONFIG_FILE, SCHEMA_VERSION } from '../config.ts';
+import { ADD_PRODUCT } from '../authoring/product/commands/add-product.ts';
+import { InputError } from '../platform/commands/definition.ts';
+import { runCommand } from '../platform/commands/run.ts';
 import { StoreError } from '../platform/data/problems.ts';
 import { openStore } from '../platform/data/store.ts';
 
@@ -26,11 +30,10 @@ export async function initProduct(root: string, name: string | undefined, prefix
   const store = await openStore(root);
   try {
     if (store.record(id)) throw new InitError(`The product ${id} already exists.`);
-    // The generic write until the Product aggregate's Add a product lands on 166-commands; then init runs that command.
-    const { files } = await store.add('product', { id, title, description: `What ${title} is, who it is for, and what it must do.` });
+    const { files } = await runCommand(store, ADD_PRODUCT, { id, title, description: `What ${title} is, who it is for, and what it must do.` });
     for (const file of files) written.push(`Wrote ${path.relative(root, path.join(store.dataDir, file))}`);
   } catch (error) {
-    if (error instanceof StoreError) throw new InitError(error.message);
+    if (error instanceof StoreError || error instanceof InputError) throw new InitError(error.message);
     throw error;
   } finally {
     await store.close();

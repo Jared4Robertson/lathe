@@ -4,7 +4,10 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { vi } from 'vitest';
-import { loadWorkspace, openStore, StoreError, type Problem, type Row, type StoreProblem, type Workspace } from '../src/index.ts';
+import { loadWorkspace, openStore, StoreError, type Problem, type Row, type Store, type StoreProblem, type Workspace } from '../src/index.ts';
+import { ALL_COMMANDS } from '../src/commands.ts';
+import { runCommand } from '../src/platform/commands/run.ts';
+import type { Committed } from '../src/platform/data/transaction.ts';
 import { tableText } from '../src/platform/data/rows.ts';
 import { DATABASE_STORAGES, expectedColumns } from '../src/trace/tables.ts';
 import { writeData, type Data } from './store/fixture.ts';
@@ -105,6 +108,25 @@ export const gaps = (ws: Workspace) => ws.coverage.flatMap((c) => c.gaps.map((g)
 
 /** One obligation kind's coverage in a domain, or in the product outside the domains (domain null). */
 export const obligation = (ws: Workspace, domain: string | null, kind: string) => ws.coverage.find((c) => c.domain === domain)?.obligations.find((o) => o.kind === kind);
+
+/** Runs one aggregate command on the store, named as the CLI names it: run(store, 'view add-view', {...}). */
+export async function run(store: Store, command: string, input: Record<string, unknown>): Promise<Committed> {
+  const [aggregate, name] = command.split(' ');
+  const definition = ALL_COMMANDS.find((d) => d.slice.name === aggregate && d.name === name);
+  if (!definition) throw new Error(`there is no command ${command}`);
+  return runCommand(store, definition, input);
+}
+
+/** The reasons the store refuses one aggregate command; throws when the command goes through. */
+export async function refusedBy(store: Store, command: string, input: Record<string, unknown>): Promise<StoreProblem[]> {
+  try {
+    await run(store, command, input);
+  } catch (error) {
+    if (error instanceof StoreError) return error.problems;
+    throw error;
+  }
+  throw new Error(`${command} went through, but it should have been refused.`);
+}
 
 /** What the store refuses when the rows are written as data files and loaded, or [] when they load. */
 export async function refusals(data: Data): Promise<StoreProblem[]> {

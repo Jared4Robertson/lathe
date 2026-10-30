@@ -209,7 +209,6 @@
 {"read_model_id":"LA-TRC-RM03","position":4,"name":"Not automated yet","meaning":"The domain's tests not automated yet.","type":"whole number","required":true,"column_name":"not_automated","example":"0"}
 {"read_model_id":"LA-TRC-RM04","position":1,"name":"Domain","meaning":"A domain that follows the rule's pattern.","type_aggregate_id":"LA-AUT-A1","required":true,"example":"TL-LEND"}
 {"read_model_id":"LA-TRC-RM04","position":2,"name":"Pattern rule","meaning":"The rule's ID.","type":"text","required":true,"column_name":"id","example":"TL-PAT-LIBRARIAN-ACTION-R01"}
-{"read_model_id":"LA-TRC-RM04","position":3,"name":"Standing","meaning":"`owed`, `not applicable` or `waived` (SP02 to SP04).","type":"text","required":true,"example":"owed"}
 {"read_model_id":"LA-TRC-RM05","position":1,"name":"Record","meaning":"The test or technical record that names the file.","type":"text","required":true,"example":"TL-LEND-INV01-T"}
 {"read_model_id":"LA-TRC-RM05","position":2,"name":"File","meaning":"The file, from the product root.","type":"text","required":true,"example":"test/domain-rules.test.ts"}
 {"read_model_id":"LA-TRC-RM05","position":3,"name":"Exists","meaning":"Whether the file exists.","type":"yes/no","required":true,"column_name":"file_exists","example":"yes"}
@@ -226,7 +225,7 @@
 {"read_model_id":"LA-TRC-RM07","position":6,"name":"Found","meaning":"Whether the file defines it.","type":"yes/no","required":true,"example":"yes"}
 {"read_model_id":"LA-TRC-RM10","position":1,"name":"Follower","meaning":"The domain or use case that follows the pattern.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-TRC-RM10","position":2,"name":"Pattern","meaning":"The pattern it follows.","type_value_object_id":"LA-VO01","required":true}
-{"read_model_id":"LA-TRC-RM10","position":3,"name":"Settings","meaning":"Each setting with its value or not-applicable reason, by setting name.","type":"text","required":true}
+{"read_model_id":"LA-TRC-RM10","position":3,"name":"Settings","meaning":"Each setting with its value, by setting name.","type":"text","required":true}
 {"read_model_id":"LA-TRC-RM10","position":4,"name":"Domain","meaning":"The domain the follower sits in: a domain is its own, a use case its capability's. A pattern's followers are grouped by it, with whether the domain itself follows the pattern.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-TRC-RM11","position":1,"name":"Product","meaning":"The product whose space it is: its own records and those of no product.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-TRC-RM11","position":2,"name":"Obligation","meaning":"An obligation of the space with a chain or a gap.","type":"text","required":true,"example":"TL-LEND-UC03-R02"}

@@ -337,16 +337,6 @@ export interface ChecksRow {
   target_id: string;
 }
 
-/** A recorded exception to one aggregate per command: another aggregate of the same domain the command changes in the same transaction, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning. */
-export interface CommandChangeRow {
-  /** The command that also changes the aggregate. */
-  command_id: string;
-  /** The other aggregate it changes in the same transaction: of the command's domain, never its own. */
-  aggregate_id: string;
-  /** Why the change cannot follow through an event and a policy. */
-  reason: string;
-}
-
 /** Carries out its command: an application service that owns the transaction, loads the aggregate through its repository, checks specifications and raises events. What clean architecture calls a use case or interactor. */
 export interface CommandHandlerRow {
   /** The command handler's ID: its command's ID and H, such as TL-LEND-CMD01-H. */
@@ -891,7 +881,7 @@ export interface MeetsRow {
   target_id: string;
 }
 
-/** A package a technical record uses: a dependency one of the product's package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a record of a kind in the technical specification may name one. */
+/** A package a technical record uses: a dependency one of the product's package.json files lists, which the record accounts for, such as the package an adapter calls or a tooling record runs. Only a technical record names one: its record_id is one (technical_record). */
 export interface PackageUseRow {
   /** The technical record that uses the package: an adapter, a UI component, an entry point, a tooling record, or a record of a product's own technical kind. */
   record_id: string;
@@ -899,19 +889,7 @@ export interface PackageUseRow {
   package: string;
 }
 
-/** One setting of a pattern, in order: what each follower decides. */
-export interface PatternSettingRow {
-  /** The pattern. */
-  pattern_id: string;
-  /** The setting's place in the pattern, from 1. */
-  position: number;
-  /** The setting's name, in lower case with underscores, such as required_input. */
-  name: string;
-  /** What a follower decides in it. */
-  meaning: string;
-}
-
-/** One rule of a pattern. Every domain that follows the pattern owes it, unless it names a setting all of that domain's followers mark Not applicable, or its applies-when condition is met by no follower there. */
+/** One rule of a pattern. Every domain that follows the pattern owes it, with no exception: a rule that holds for only some followers belongs to their use cases, not to the pattern. */
 export interface PatternRuleRow {
   /** The rule's ID: its pattern's ID and R<nn>, such as TL-PAT-LIBRARIAN-ACTION-R01. */
   id: string;
@@ -923,14 +901,6 @@ export interface PatternRuleRow {
   statement: string;
   /** A short heading it is shown under among its siblings, such as Validation or Paging. */
   group_name?: string;
-  /** A setting of its pattern the rule depends on: in a domain whose following use cases all mark it Not applicable, the rule does not apply. */
-  setting?: string;
-  /** The setting of its pattern its applies-when condition reads; the rule is waived in a domain where no follower gives that setting a value that meets it. */
-  applies_when_setting?: string;
-  /** false: the condition is <setting> is <value>; true: <setting> is not <value>. */
-  applies_when_negated?: boolean;
-  /** The value the condition compares with, trimmed and in any letter case. */
-  applies_when_value?: string;
   /** Longer notes on how the rule applies. */
   notes?: string;
 }
@@ -967,7 +937,19 @@ export interface PatternRuleTestRow {
   notes?: string;
 }
 
-/** Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage. It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason. */
+/** One setting of a pattern, in order: what each follower decides. */
+export interface PatternSettingRow {
+  /** The pattern. */
+  pattern_id: string;
+  /** The setting's place in the pattern, from 1. */
+  position: number;
+  /** The setting's name, in lower case with underscores, such as required_input. */
+  name: string;
+  /** What a follower decides in it. */
+  meaning: string;
+}
+
+/** Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage. It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. */
 export interface RepositoryRow {
   /** The repository's ID: its domain's ID and REPO<nn>, such as TL-LEND-REPO01. */
   id: string;
@@ -981,7 +963,7 @@ export interface RepositoryRow {
   description: string;
 }
 
-/** The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository. Another aggregate a repository also persists is a recorded exception, a repository_share row. */
+/** The repository loads and saves the aggregate, whole: one repository per aggregate, and one aggregate per repository. */
 export interface PersistsRow {
   source_id: string;
   target_id: string;
@@ -1183,16 +1165,6 @@ export interface RendersRow {
   target_id: string;
 }
 
-/** A recorded exception to one repository per aggregate: another aggregate the repository also persists, and why. lathe check and the Checks page list every one under Recorded exceptions, always visible and never a warning. */
-export interface RepositoryShareRow {
-  /** The repository that also persists the aggregate. */
-  repository_id: string;
-  /** The other aggregate it persists: never its own, and one no other repository persists. */
-  aggregate_id: string;
-  /** Why the aggregate has no repository of its own. */
-  reason: string;
-}
-
 /** A role the product's records name, such as Owner, Reader or Agent: a use case's actors and a question's owner. Specs name roles, never people. */
 export interface RoleRow {
   /** The product. */
@@ -1239,7 +1211,7 @@ export interface ServiceRow {
   file?: string;
 }
 
-/** The value a use case or domain gives one setting of a pattern it follows: a value, or Not applicable with the reason. */
+/** The value a use case or domain gives one setting of a pattern it follows. A follower owes every rule of the pattern; a value such as No input is a value like any other, never a way out of a rule. */
 export interface SettingValueRow {
   /** The use case or domain that follows the pattern. */
   follower_id: string;
@@ -1248,9 +1220,7 @@ export interface SettingValueRow {
   /** The setting, one of the pattern's. */
   setting: string;
   /** The value it gives the setting. */
-  value?: string;
-  /** Why the setting does not apply to it, in place of a value. */
-  not_applicable?: string;
+  value: string;
 }
 
 /** Proves its specification: which records satisfy the predicate and which do not. */
@@ -1529,7 +1499,6 @@ export interface TableRows {
   check: CheckRow;
   specification: SpecificationRow;
   checks: ChecksRow;
-  command_change: CommandChangeRow;
   command_handler: CommandHandlerRow;
   value_object: ValueObjectRow;
   constraint: ConstraintRow;
@@ -1569,9 +1538,9 @@ export interface TableRows {
   standard_rule: StandardRuleRow;
   meets: MeetsRow;
   package_use: PackageUseRow;
-  pattern_setting: PatternSettingRow;
   pattern_rule: PatternRuleRow;
   pattern_rule_test: PatternRuleTestRow;
+  pattern_setting: PatternSettingRow;
   repository: RepositoryRow;
   persists: PersistsRow;
   policy_test: PolicyTestRow;
@@ -1587,7 +1556,6 @@ export interface TableRows {
   reader: ReaderRow;
   reads: ReadsRow;
   renders: RendersRow;
-  repository_share: RepositoryShareRow;
   role: RoleRow;
   rule: RuleRow;
   selects_by: SelectsByRow;

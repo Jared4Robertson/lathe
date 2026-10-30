@@ -5,7 +5,7 @@
 // its own records start.
 import type { Slice } from '../../platform/commands/definition.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
-import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, RepositoryShareRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
+import type { CapabilityRow, DomainRow, DomainServiceRow, DomainServiceTestRow, RepositoryRow, ServiceRow, TermRow } from '../../platform/data/tables.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const DOMAIN_AGGREGATE = 'LA-AUT-A4';
@@ -46,10 +46,9 @@ export interface Technical<T> {
   packages: string[];
 }
 
-/** A repository with the aggregate it persists, and the other aggregates it also persists (repository_share rows). */
+/** A repository with the one aggregate it persists. */
 export interface Repository extends Technical<RepositoryRow> {
   persists: string | null;
-  shares: RepositoryShareRow[];
 }
 
 /** A test with the test data sets it starts from. */
@@ -80,7 +79,6 @@ export const DOMAIN_TABLES = [
   'service',
   'domain_service_test',
   'repository',
-  'repository_share',
   'serves',
   'persists',
   'meets',
@@ -130,7 +128,6 @@ export function domainsFrom(rows: (table: string) => Row[], only?: string): Doma
   const tests = (rows('domain_service_test') as unknown as DomainServiceTestRow[]).filter((t) => serviceOf.has(t.domain_service_id));
   const [serves, persists, meets, startsFrom, buildsOn] = ['serves', 'persists', 'meets', 'starts_from', 'builds_on'].map((table) => bySource(rows(table)));
   const packages = bySource(rows('package_use'), 'record_id', 'package');
-  const shares = rows('repository_share') as unknown as RepositoryShareRow[];
   const targets = (links: Map<string, string[]>, source: string) => links.get(source) ?? [];
   const technical = <T extends { id: string }>(row: T): Technical<T> => ({ row, meets: targets(meets, row.id), packages: targets(packages, row.id) });
   return domains.map((domain) => {
@@ -147,7 +144,6 @@ export function domainsFrom(rows: (table: string) => Row[], only?: string): Doma
       repositories: repositories.filter(own).map((row) => ({
         ...technical(row),
         persists: targets(persists, row.id)[0] ?? null,
-        shares: shares.filter((s) => s.repository_id === row.id),
       })),
     };
   });
@@ -167,7 +163,6 @@ export function domainRows(domain: Domain): Map<string, Row[]> {
     ['service', domain.services.map((s) => asRow(s.row))],
     ['domain_service_test', domain.domainServiceTests.map((t) => asRow(t.row))],
     ['repository', domain.repositories.map((r) => asRow(r.row))],
-    ['repository_share', domain.repositories.flatMap((r) => r.shares.map(asRow))],
     ['serves', domain.capabilities.flatMap((c) => links(c.row.id, c.serves))],
     ['persists', domain.repositories.flatMap((r) => links(r.row.id, [r.persists]))],
     ['meets', technical.flatMap((t) => links(t.row.id, t.meets))],

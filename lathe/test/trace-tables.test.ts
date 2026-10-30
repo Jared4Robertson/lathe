@@ -182,7 +182,7 @@ describe('Check a table against its file from the command line', () => {
     ]);
     tl.write('db/001-loans.sql', 'CREATE TABLE loans (id INTEGER PRIMARY KEY);\n');
     // S01: the Agent names the table's migration.
-    tl.run('add', 'table', '--id', 'TL-LEND-EN01-TB', '--title', 'loans', '--entity_id', 'TL-LEND-EN01', '--name', 'loans', '--storage', 'table', '--file', 'db/001-loans.sql');
+    tl.command('table add-table', { id: 'TL-LEND-EN01-TB', title: 'loans', entity_id: 'TL-LEND-EN01', name: 'loans', storage: 'table', file: 'db/001-loans.sql' });
     // S02 and S03: lathe check reads it, and warns of the column it leaves out, naming the table and the file.
     const first = tl.check();
     expect(first.stdout).toContain('[table-schema-mismatch] TL-LEND-EN01-TB: Table TL-LEND-EN01-TB names db/001-loans.sql, which gives loans no column due_date.');

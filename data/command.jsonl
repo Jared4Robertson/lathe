@@ -1,11 +1,3 @@
-{"id":"LA-AUT-CMD01","title":"Add a record","entity_id":"LA-AUT-EN01","description":"Adds a row to a kind, part, declaration or checking table, with its registry and supertype rows (`store.add`)."}
-{"id":"LA-AUT-CMD02","title":"Change a record","entity_id":"LA-AUT-EN01","description":"Changes or clears a record's columns; its key and parent columns stay (`store.set`)."}
-{"id":"LA-AUT-CMD03","title":"Move a record","entity_id":"LA-AUT-EN01","description":"Puts a record under a new parent of a kind it may sit under, with what sits inside it (`store.move`)."}
-{"id":"LA-AUT-CMD04","title":"Link two records","entity_id":"LA-AUT-EN01","description":"Links two records by a relation (`store.link`)."}
-{"id":"LA-AUT-CMD05","title":"Unlink two records","entity_id":"LA-AUT-EN01","description":"Removes a link between two records (`store.unlink`)."}
-{"id":"LA-AUT-CMD06","title":"Remove a record","entity_id":"LA-AUT-EN01","description":"Removes a record with its parts and the links it starts, refused while anything else references it (`store.remove`)."}
-{"id":"LA-AUT-CMD07","title":"Apply several changes as one","entity_id":"LA-AUT-EN01","description":"Applies several changes as one write, all or nothing (`store.apply`). Every writer's change goes through it or the single commands: the CLI, the MCP tools and `POST /api/write`."}
-{"id":"LA-AUT-CMD08","title":"Merge two branches' data","entity_id":"LA-AUT-EN01","description":"Merges two branches' versions of a data file row by row against their base, keeping both sides' rows (`mergeData`, `mergeDataFiles`)."}
 {"id":"LA-AUT-CMD100","title":"Add a use case","entity_id":"LA-AUT-EN11","description":"Adds a use case under a capability, with its actors in order, the main actor first."}
 {"id":"LA-AUT-CMD101","title":"Change a use case","entity_id":"LA-AUT-EN11","description":"Changes a use case's title, goal or notes, or its actors (the whole list, in order). Its capability changes only by Move a use case."}
 {"id":"LA-AUT-CMD102","title":"Move a use case","entity_id":"LA-AUT-EN11","description":"Moves a use case, with everything in it, under another capability of its domain."}

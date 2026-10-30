@@ -4,7 +4,7 @@
 // - Loading Lathe's own spec (a cold load: the data files read and loaded with every key and rule, then checked)
 //   takes under 2 s.
 // - A live reload after one row changes takes under 500 ms.
-// - A cold CLI command (`lathe show <id>` on Lathe's spec, a fresh process with the schema cache in place) takes
+// - A cold CLI command (`lathe use-case get-use-case --id <id>` on Lathe's spec, a fresh process with the schema cache in place) takes
 //   under 800 ms, from the process's start to its exit.
 // It also measures, without a budget, a synthetic product of about 10,000 records (Lathe's data copied six times
 // under other ID prefixes, in a temporary folder), and the reference.
@@ -22,6 +22,8 @@ import { loadavg, tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildReference, CONFIG_FILE, loadWorkspace, openStore, SCHEMA_VERSION, sortRows, tableText, type LoadTimings, type Row } from '../src/index.ts';
+import { CHANGE_USE_CASE } from '../src/authoring/use-case/commands/change-use-case.ts';
+import { runCommand } from '../src/platform/commands/run.ts';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const repo = path.resolve(here, '../..');
@@ -93,7 +95,7 @@ async function timedLoad(root: string) {
   return { ms: performance.now() - start, timings, records: workspace.records.length };
 }
 
-/** Changes one row through the store (its title, so the data file changes) and reloads; the median of RUNS. */
+/** Changes one use case with Change a use case (its title, so the data file changes) and reloads; the median of RUNS. */
 async function reload(root: string) {
   const store = await openStore(root);
   const [first] = store.rows('use_case');
@@ -101,7 +103,7 @@ async function reload(root: string) {
   const runs: { ms: number; timings: Partial<LoadTimings> }[] = [];
   for (let i = 0; i < RUNS; i++) {
     const writer = await openStore(root);
-    await writer.set('use_case', String(first.id), { title: `${first.title} ${i}` });
+    await runCommand(writer, CHANGE_USE_CASE, { id: String(first.id), title: `${first.title} ${i}` });
     await writer.close();
     runs.push(await timedLoad(root));
   }
@@ -110,15 +112,15 @@ async function reload(root: string) {
 }
 
 /**
- * A cold CLI command, as an Agent runs it: `lathe show` in a fresh process, timed from its start to its exit. The first
- * run fills the schema cache, as any earlier command has on a working machine; then the median of RUNS.
+ * A cold CLI command, as an Agent runs it: `lathe use-case get-use-case` in a fresh process, timed from its start to
+ * its exit. The first run fills the schema cache, as any earlier command has on a working machine; then the median of RUNS.
  */
-function cliShow(root: string, id: string): number {
+function cliGetUseCase(root: string, id: string): number {
   const bin = path.join(here, '..', 'bin', 'lathe.ts');
   const once = () => {
     const start = performance.now();
-    const run = spawnSync(process.execPath, [bin, 'show', id, '--root', root], { encoding: 'utf8' });
-    if (run.status !== 0) throw new Error(`lathe show ${id} failed: ${run.stderr}`);
+    const run = spawnSync(process.execPath, [bin, 'use-case', 'get-use-case', '--id', id, '--root', root], { encoding: 'utf8' });
+    if (run.status !== 0) throw new Error(`lathe use-case get-use-case --id ${id} failed: ${run.stderr}`);
     return performance.now() - start;
   };
   once();
@@ -154,7 +156,7 @@ try {
   const live = await reload(lathe);
   judge("Lathe's spec, live reload", live.ms, ENGINE_BUDGETS.reloadMs, phases(live.timings));
   if (PROFILE) lines.push(`Steps of that reload (1 ms and over):\n${profile(live.timings)}`);
-  judge('A cold CLI command (lathe show)', cliShow(lathe, 'LA-PLT-UC01'), ENGINE_BUDGETS.cliMs, `median of ${RUNS} fresh processes`);
+  judge('A cold CLI command (lathe use-case get-use-case)', cliGetUseCase(lathe, 'LA-PLT-UC01'), ENGINE_BUDGETS.cliMs, `median of ${RUNS} fresh processes`);
   const refs: number[] = [];
   for (let i = 0; i < RUNS; i++) { const t = performance.now(); await buildReference(lathe); refs.push(performance.now() - t); }
   judge('Reference (first, then cached)', refs[0], null, `cached ${median(refs.slice(1)).toFixed(1)} ms`);

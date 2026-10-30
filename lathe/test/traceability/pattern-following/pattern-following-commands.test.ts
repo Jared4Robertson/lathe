@@ -39,7 +39,7 @@ describe('LA-TRC-UC07-R50-T01 each Pattern following command (LA-TRC-A3) changes
     const store = await patternFollowingDataSet();
     expect(runQuery(store, GET_FOLLOWING, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' })).toEqual({
       follower: 'TL-LEND-UC01', pattern: 'TL-PAT-ACT',
-      settings: [{ setting: 'record', value: 'The loan.', notApplicable: null }, { setting: 'required_input', value: null, notApplicable: 'The member is scanned at the desk.' }],
+      settings: [{ setting: 'record', value: 'The loan.' }, { setting: 'required_input', value: 'No input: the member is scanned at the desk.' }],
     });
     expect(runQuery(store, LIST_FOLLOWINGS, { follower_id: 'TL-LEND-UC01' })).toEqual(['TL-PAT-ACT']);
     expect(() => runQuery(store, GET_FOLLOWING, { follower_id: 'TL-LEND', pattern_id: 'TL-PAT-ACT' })).toThrow(/TL-LEND does not follow TL-PAT-ACT/);
@@ -60,12 +60,12 @@ describe('LA-TRC-UC07-R50-T01 each Pattern following command (LA-TRC-A3) changes
     expect(changed.changes).toHaveLength(1);
   });
 
-  it("LA-PAT-AGGREGATE-COMMANDS-R02-T03 refuses a second following, a setting the pattern does not have, a value with a reason too, and an input that is not the command's, changing no file", async () => {
+  it("LA-PAT-AGGREGATE-COMMANDS-R02-T03 refuses a second following, a setting the pattern does not have, a setting with no value, and an input that is not the command's, changing no file", async () => {
     const store = await patternFollowingDataSet();
     const before = fileOf(store, 'setting_value');
     expect((await refusal(store, FOLLOW_PATTERN, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT' })).problems[0]).toMatchObject({ rule: 'exists', message: 'TL-LEND-UC01 already follows TL-PAT-ACT' });
     expect((await refusal(store, CHANGE_SETTING_VALUES, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting_values: [{ setting: 'colour', value: 'red' }] })).problems[0].message).toMatch(/colour/);
-    expect((await refusal(store, CHANGE_SETTING_VALUES, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting_values: [{ setting: 'record', value: 'x', not_applicable: 'y' }] })).problems.length).toBeGreaterThan(0);
+    await expect(runCommand(store, CHANGE_SETTING_VALUES, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting_values: [{ setting: 'record' }] })).rejects.toThrow('has an item with no value');
     expect((await refusal(store, CHANGE_SETTING_VALUES, { follower_id: 'TL-LEND', pattern_id: 'TL-PAT-ACT', setting_values: [] })).problems[0]).toMatchObject({ rule: 'missing', message: 'TL-LEND does not follow TL-PAT-ACT' });
     await expect(runCommand(store, CHANGE_SETTING_VALUES, { follower_id: 'TL-LEND-UC01', pattern_id: 'TL-PAT-ACT', setting_values: [{ setting: 'record', value: 'x', position: 1 }] })).rejects.toThrow(InputError);
     expect(fileOf(store, 'setting_value')).toBe(before);

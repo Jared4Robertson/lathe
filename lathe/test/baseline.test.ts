@@ -10,6 +10,7 @@ import { recordChanges } from '../src/changes.ts';
 import { closeStores, handleApi } from '../src/server/api.ts';
 import type { BaselineAnswer } from '../src/server/contract.ts';
 import { openStore, type Store } from '../src/platform/data/index.ts';
+import { run } from './helpers.ts';
 
 const temps: string[] = [];
 let repo = '';
@@ -36,12 +37,10 @@ const UC = 'EX-NOTE-UC01';
 
 async function seed(root: string) {
   const s = await openStore(root);
-  await s.apply([
-    { op: 'add', table: 'product', row: { id: 'EX', title: 'Example', description: 'A small product for writing notes.' } },
-    { op: 'add', table: 'domain', row: { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' } },
-    { op: 'add', table: 'capability', row: { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' } },
-    { op: 'add', table: 'use_case', row: { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' } },
-  ]);
+  await run(s, 'product add-product', { id: 'EX', title: 'Example', description: 'A small product for writing notes.' });
+  await run(s, 'domain add-domain', { id: 'EX-NOTE', title: 'Notes', product_id: 'EX', subdomain_type: 'core', description: 'Writing and keeping notes.' });
+  await run(s, 'domain add-capability', { id: 'EX-NOTE-CAP01', title: 'Writing', domain_id: 'EX-NOTE', position: 1, description: 'Writing notes down.' });
+  await run(s, 'use-case add-use-case', { id: UC, title: 'Write a note', capability_id: 'EX-NOTE-CAP01', goal: 'A writer keeps a note.' });
   return s;
 }
 
@@ -58,9 +57,9 @@ beforeAll(async () => {
   first = git(repo, 'rev-parse', 'HEAD');
   // A branch off main with a commit of its own, then a change not committed yet.
   git(repo, 'checkout', '--quiet', '-b', 'notes');
-  await store.set('use_case', UC, { title: 'Write a short note' });
+  await run(store, 'use-case change-use-case', { id: UC, title: 'Write a short note' });
   git(repo, 'commit', '--quiet', '-am', 'Shorter');
-  await store.set('use_case', UC, { title: 'Write a very short note' });
+  await run(store, 'use-case change-use-case', { id: UC, title: 'Write a very short note' });
 }, 120_000);
 
 afterAll(async () => {

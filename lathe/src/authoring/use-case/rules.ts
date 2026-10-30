@@ -96,5 +96,5 @@ export const useCaseRules: AggregateRules = {
 /** Refuses the command, with every reason, when the use case as it would be saved breaks one of its rules. */
 export function holdToRules(tx: Transaction, useCase: UseCase): void {
   const problems = useCaseProblems(useCase, tx);
-  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message, command: 0 })));
+  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message })));
 }

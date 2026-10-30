@@ -11,8 +11,8 @@ const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
-/** The lines of a following's settings, each with its value or why it does not apply. */
-const settingLines = (f: FollowingPage, indent: string) => f.settings.map((v) => `${indent}${v.setting}: ${v.value ?? `not applicable: ${v.notApplicable}`}`);
+/** The lines of a following's settings, each with its value. */
+const settingLines = (f: FollowingPage, indent: string) => f.settings.map((v) => `${indent}${v.setting}: ${v.value}`);
 
 /** The following of the pattern by the follower, whole. */
 export function getFollowing(reader: FollowingReader, input: { follower_id: string; pattern_id: string }): FollowingPage {
@@ -26,7 +26,7 @@ export const GET_FOLLOWING: QueryDefinition<{ follower_id: string; pattern_id: s
   name: 'get-following',
   method: 'GET',
   route: '/api/pattern-following/get-following',
-  description: "Reads a domain's or use case's following of a pattern whole: the value, or the reason it does not apply, it gives each of the pattern's settings.",
+  description: "Reads a domain's or use case's following of a pattern whole: the value it gives each of the pattern's settings.",
   input: { follower_id: id('The domain or use case.', 'required'), pattern_id: id('The pattern.', 'required') },
   reader: followingReader,
   run: getFollowing,
@@ -64,7 +64,7 @@ export const LIST_FOLLOWERS: QueryDefinition<{ pattern_id: string }, PatternFoll
   name: 'list-followers',
   method: 'GET',
   route: '/api/pattern-following/list-followers',
-  description: "Lists a pattern's followers by domain, in ID order: whether the domain itself follows it, and each of its use cases that does, each with the value, or the reason it does not apply, it gives each of the pattern's settings.",
+  description: "Lists a pattern's followers by domain, in ID order: whether the domain itself follows it, and each of its use cases that does, each with the value it gives each of the pattern's settings.",
   input: { pattern_id: id('The pattern.', 'required') },
   reader: followingReader,
   run: listFollowers,

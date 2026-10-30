@@ -33,5 +33,5 @@ export const extensionRecordRules: AggregateRules = {
 /** Refuses the command, with every reason, when the record as it would be saved breaks one of its rules. */
 export function holdToRules(tx: Transaction, record: ExtensionRecord): void {
   const problems = extensionRecordProblems(record, tx);
-  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message, command: 0 })));
+  if (problems.length) throw new StoreError(problems.map((p) => ({ rule: p.rule, table: p.table, message: p.message })));
 }

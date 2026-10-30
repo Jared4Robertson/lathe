@@ -8,7 +8,7 @@ import { Readable } from 'node:stream';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { loadConfig, loadProducts, openStore, SCHEMA_VERSION, workspaceProducts } from '../src/index.ts';
 import { closeStores, handleApi, watchTargets } from '../src/server/api.ts';
-import type { SpecData, WriteAnswer } from '../src/server/contract.ts';
+import type { SpecData } from '../src/server/contract.ts';
 import { gatherRouteFacts } from '../src/trace/routes.ts';
 import { readPackageFacts } from '../src/trace/packages.ts';
 import { sourceFiles } from '../src/trace/source-files.ts';
@@ -147,11 +147,11 @@ describe('a workspace of several products', () => {
     expect((listed.json() as { id: string }[]).map((p) => p.id)).toEqual(['SH', 'WS']);
 
     // A new record under the shop's domain goes to the shop's folder, a new product to the workspace's.
-    const added = await request(root, '/api/write', { commands: [{ op: 'add', table: 'capability', row: { id: 'SH-SELL-CAP01', title: 'Checkout', domain_id: 'SH-SELL', position: 1, description: 'Paying for a basket.' } }] });
+    const added = await request(root, '/api/domain/add-capability', { id: 'SH-SELL-CAP01', title: 'Checkout', domain_id: 'SH-SELL', position: 1, description: 'Paying for a basket.' });
     expect(added.status).toBe(200);
     expect(existsSync(path.join(root, SHOP, 'data/capability.jsonl'))).toBe(true);
     expect(existsSync(path.join(root, 'data/capability.jsonl'))).toBe(false);
-    expect((await request(root, '/api/write', { commands: [{ op: 'add', table: 'product', row: { id: 'NP', title: 'New product', description: 'A product added through the API.' } }] })).status).toBe(200);
+    expect((await request(root, '/api/product/add-product', { id: 'NP', title: 'New product', description: 'A product added through the API.' })).status).toBe(200);
     expect(readFileSync(path.join(root, 'data/product.jsonl'), 'utf8')).toContain('"NP"');
 
     expect(watchTargets(root).map((t) => t.dir)).toEqual(expect.arrayContaining([path.join(root, 'data'), path.join(root, SHOP, 'data')]));
@@ -177,27 +177,5 @@ describe('a workspace of several products', () => {
     const clash = await request(twice, '/api/spec');
     expect(clash.status).toBe(500);
     expect(JSON.stringify(clash.json())).toContain('The product WS is in two folders, . and examples/shop');
-  });
-
-  it('LA-AUT-EP02-R03-T01 POST /api/write goes to the folder of the product its commands name', async () => {
-    const root = workspace();
-    opened.push(root);
-    const shopFile = path.join(root, SHOP, 'data/domain.jsonl');
-    const ownFile = path.join(root, 'data/domain.jsonl');
-    const ownBefore = readFileSync(ownFile, 'utf8');
-    const set = await request(root, '/api/write', { commands: [{ op: 'set', table: 'domain', key: 'SH-SELL', changes: { title: 'Sales' } }] });
-    expect(set.status).toBe(200);
-    expect(readFileSync(shopFile, 'utf8')).toContain('"Sales"');
-    expect(readFileSync(ownFile, 'utf8')).toBe(ownBefore);
-
-    const shopBefore = readFileSync(shopFile, 'utf8');
-    const mixed = await request(root, '/api/write', { commands: [
-      { op: 'set', table: 'domain', key: 'SH-SELL', changes: { title: 'Selling' } },
-      { op: 'set', table: 'domain', key: 'WS-CORE', changes: { title: 'Heart' } },
-    ] });
-    expect(mixed.status).toBe(422);
-    expect((mixed.json() as WriteAnswer & { ok: false }).error).toBe("A write changes one product: these commands name records in examples/shop and the workspace's own folder. Send each product's commands as a write of its own.");
-    expect(readFileSync(shopFile, 'utf8')).toBe(shopBefore);
-    expect(readFileSync(ownFile, 'utf8')).toBe(ownBefore);
   });
 });

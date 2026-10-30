@@ -18,7 +18,7 @@ export async function librarianAction(): Promise<Store> {
     { latheDataDir: null },
   );
   await runCommand(store, ADD_PATTERN, { id: 'TL-PAT-ACT', title: 'Librarian action', product_id: 'TL', description: 'An action the librarian takes at the desk.', settings: [{ name: 'record', meaning: 'The record the action saves.' }] });
-  await runCommand(store, ADD_PATTERN_RULE, { id: 'TL-PAT-ACT-R01', title: 'Saved record reads the same', pattern_id: 'TL-PAT-ACT', statement: 'A saved record MUST read back the same.', setting: 'record' });
+  await runCommand(store, ADD_PATTERN_RULE, { id: 'TL-PAT-ACT-R01', title: 'Saved record reads the same', pattern_id: 'TL-PAT-ACT', statement: 'A saved record MUST read back the same.' });
   await runCommand(store, ADD_PATTERN_RULE_TEST, { id: 'TL-PAT-ACT-R01-T01', title: 'A saved tool reads the same', pattern_rule_id: 'TL-PAT-ACT-R01', domain_id: 'TL-LEND', level: 'integration', state: 'automated', file: 'test/catalog.test.ts', when: 'Saves a tool.', then: 'Expects the catalog to read the same.' });
   return store;
 }
