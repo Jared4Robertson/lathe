@@ -1,0 +1,6 @@
+{"id":"TL-LEND-INV01-RL","title":"email_taken","invariant_id":"TL-LEND-INV01","file":"src/member-repository.ts"}
+{"id":"TL-LEND-INV02-RL","title":"tool_already_damaged","invariant_id":"TL-LEND-INV02","file":"src/tool.ts"}
+{"id":"TL-LEND-INV03-RL","title":"tool_on_loan","invariant_id":"TL-LEND-INV03","file":"src/loan.ts"}
+{"id":"TL-LEND-INV04-RL","title":"dueDate","invariant_id":"TL-LEND-INV04","file":"src/model.ts"}
+{"id":"TL-LEND-INV05-RL","title":"already_returned","invariant_id":"TL-LEND-INV05","file":"src/loan.ts"}
+{"id":"TL-LEND-INV06-RL","title":"recordReturn","invariant_id":"TL-LEND-INV06","file":"src/loan.ts"}

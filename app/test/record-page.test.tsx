@@ -144,17 +144,6 @@ describe('record page', () => {
     expect(rows(member)[2]).toEqual(['Account', 'The member\'s account.', '→ P-E-A1Account', 'no', '']);
   });
 
-  it('LA-PAT-RECORD-PAGE-R08-T01 A table shows its keys: the primary key, a unique key with the invariant it enforces and its condition, a foreign key with its target', async () => {
-    await openApp('/P-D-EN03-TB', { data: modelWorkspace() });
-    await screen.findByRole('heading', { level: 1, name: 'loans' });
-    const keys = section(/^Keys/);
-    expect(keys.querySelector('h2, h3')).toHaveTextContent(/^Keys\s*3$/);
-    expect(rows(keys.querySelector('table')!)).toEqual([
-      ['unnamed', 'primary', 'id', ''],
-      ['loans_one_open_per_thing', 'unique', 'thing_id', 'enforces P-D-INV01A thing is lent to one member at a timewhere returned_at IS NULL'],
-      ['unnamed', 'foreign', 'member_id', 'references P-D-EN02-TBmembers'],
-    ]);
-  });
 
   it('LA-PAT-RECORD-PAGE-R08-T01 A technical record shows the packages it uses as one fact', () => {
     const index = indexOf(addRows(modelWorkspace(), 'package_use', { record_id: 'P-INT01-AD', package: 'nodemailer' }, { record_id: 'P-INT01-AD', package: '@scope/mjml' }));

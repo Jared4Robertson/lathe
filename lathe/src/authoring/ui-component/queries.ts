@@ -24,13 +24,14 @@ export const GET_UI_COMPONENT: QueryDefinition<{ id: string }, UiComponentPage, 
   name: 'get-ui-component',
   method: 'GET',
   route: '/api/ui-component/get-ui-component',
-  description: 'Reads a UI component whole: its row, the views it renders, the standard rules it meets and the packages it uses.',
+  description: 'Reads a UI component whole: its row, the views it renders, the view requirements it builds, the standard rules it meets and the packages it uses.',
   input: { id: id('The UI component.', 'required') },
   reader: uiComponentReader,
   run: getUiComponent,
   text: (c) => {
     const lines = [`UI component ${c.id}: ${c.title}`, ...(c.file ? [`  file: ${c.file}`] : []), `  description: ${c.description}`];
     if (c.renders.length) lines.push(`  renders: ${c.renders.join(', ')}`);
+    if (c.builds.length) lines.push(`  builds: ${c.builds.join(', ')}`);
     if (c.meets.length) lines.push(`  meets: ${c.meets.join(', ')}`);
     if (c.packages.length) lines.push(`  uses: ${c.packages.join(', ')}`);
     return lines.join('\n');

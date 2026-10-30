@@ -378,6 +378,9 @@ describe('Authoring flows', () => {
     tl.run('add', 'table_key', '--table_id', 'TL-LEND-EN01-TB', '--position', '1', '--type', 'primary', '--columns', 'id');
     tl.run('add', 'table_key', '--table_id', 'TL-LEND-EN01-TB', '--position', '2', '--type', 'unique', '--columns', 'tool_id', '--invariant_id', 'TL-LEND-INV01', '--condition', 'returned_at IS NULL');
     tl.refused('add', 'table_key', '--table_id', 'TL-LEND-EN01-TB', '--position', '3', '--type', 'index', '--columns', 'tool_id', '--invariant_id', 'TL-LEND-INV01');
+    // The key backs the invariant up, but only its rule builds it.
+    expect(tl.workspace().coverage.find((c) => c.domain === 'TL-LEND')?.obligations.find((o) => o.kind === 'invariant')).toMatchObject({ designed: 1, built: 0 });
+    tl.run('aggregate', 'add-rule', '--id', 'TL-LEND-INV01-RL', '--title', 'tool-on-loan', '--invariant_id', 'TL-LEND-INV01', '--file', 'src/loans.ts');
     const ws = tl.workspace();
     expect(problemsOf(ws, 'technical-file-missing')).toEqual([]);
     expect(ws.records.find((r) => r.id === 'TL-LEND-EN01-TB')?.parts.table_key.map((k) => [k.type, k.invariant_id ?? null])).toEqual([['primary', null], ['unique', 'TL-LEND-INV01']]);

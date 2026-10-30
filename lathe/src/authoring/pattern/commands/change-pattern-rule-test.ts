@@ -4,6 +4,8 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleTestRow } from '../../../platform/data/tables.ts';
 import { PATTERN_SLICE, changed } from '../model.ts';
 import { PatternRepository } from '../repository.ts';
+import { refuseBroken } from '../../../platform/data/rules.ts';
+import { patternRuleTestPerDomain } from '../rules.ts';
 
 /** The test's changes: a column given is set, null clears an optional one; starts_from, when given, replaces the list. */
 export type ChangePatternRuleTest = Pick<PatternRuleTestRow, 'id'> & { title?: PatternRuleTestRow['title']; domain_id?: PatternRuleTestRow['domain_id']; level?: PatternRuleTestRow['level']; state?: PatternRuleTestRow['state']; file?: PatternRuleTestRow['file'] | null; manual_reason?: PatternRuleTestRow['manual_reason'] | null; size?: PatternRuleTestRow['size'] | null; smoke?: PatternRuleTestRow['smoke'] | null; external?: PatternRuleTestRow['external'] | null; when?: PatternRuleTestRow['when']; then?: PatternRuleTestRow['then']; notes?: PatternRuleTestRow['notes'] | null; starts_from?: string[] };
@@ -40,5 +42,6 @@ export function changePatternRuleTest(tx: Transaction, input: ChangePatternRuleT
   const patterns = new PatternRepository(tx);
   const pattern = patterns.loadHolding('pattern_rule_test', input.id) ?? tx.refuse('missing', `there is no pattern rule test ${input.id}`);
   pattern.ruleTests = pattern.ruleTests.map((t) => (t.row.id === input.id ? { row: changed(t.row, input, ['title', 'domain_id', 'level', 'state', 'file', 'manual_reason', 'size', 'smoke', 'external', 'when', 'then', 'notes']), startsFrom: input.starts_from ?? t.startsFrom } : t));
+  refuseBroken(patternRuleTestPerDomain(pattern.ruleTests.map((t) => t.row)));
   patterns.save(pattern);
 }

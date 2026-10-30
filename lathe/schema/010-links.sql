@@ -31,6 +31,8 @@ CREATE TABLE exchanges_with (source_id VARCHAR NOT NULL REFERENCES flow_step (id
 COMMENT ON TABLE exchanges_with IS 'The flow step exchanges with the integration''s outside system.';
 CREATE TABLE renders (source_id VARCHAR NOT NULL REFERENCES ui_component (id), target_id VARCHAR NOT NULL REFERENCES view (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE renders IS 'The UI component renders the view, or part of it.';
+CREATE TABLE builds (source_id VARCHAR NOT NULL REFERENCES ui_component (id), target_id VARCHAR NOT NULL REFERENCES view_requirement (id), PRIMARY KEY (source_id, target_id));
+COMMENT ON TABLE builds IS 'The UI component builds the view requirement: its code does what the requirement says. A view requirement is built only through the components that build it, never through any component that renders its view.';
 CREATE TABLE follows (source_id VARCHAR NOT NULL REFERENCES follows_source (id), target_id VARCHAR NOT NULL REFERENCES pattern (id), PRIMARY KEY (source_id, target_id));
 COMMENT ON TABLE follows IS 'The domain or use case follows the pattern, and gives a value for each of its settings in setting_value rows.';
 CREATE TABLE meets (source_id VARCHAR NOT NULL REFERENCES meets_source (id), target_id VARCHAR NOT NULL REFERENCES standard_rule (id), PRIMARY KEY (source_id, target_id));
@@ -63,6 +65,7 @@ INSERT INTO meta_relation VALUES
   ('happens_in', NULL, 'product', 'Happens in', 'Hosts', NULL),
   ('exchanges_with', NULL, 'product', 'Exchanges with', 'Exchanged with by', NULL),
   ('renders', NULL, 'product', 'Renders', 'Rendered by', NULL),
+  ('builds', 'build', 'product', 'Builds', 'Built by', NULL),
   ('follows', NULL, 'product', 'Follows', 'Followed by', NULL),
   ('meets', NULL, 'product', 'Meets', 'Met by', NULL),
   ('persists', NULL, 'product', 'Persists', 'Persisted by', NULL),
@@ -91,12 +94,14 @@ INSERT INTO meta_relation_pair VALUES
   ('happens_in', 'flow_step', 'view', 'The step happens in the view.'),
   ('exchanges_with', 'flow_step', 'integration', 'The step exchanges with the outside system.'),
   ('renders', 'ui_component', 'view', 'The UI component renders the view, or part of it.'),
+  ('builds', 'ui_component', 'view_requirement', 'The UI component''s code does what the view requirement says.'),
   ('follows', 'domain', 'pattern', 'The whole domain follows the pattern, and so owes each of its rules.'),
   ('follows', 'use_case', 'pattern', 'The use case follows the pattern and gives a value for each of its settings.'),
   ('meets', 'repository', 'standard_rule', 'The repository follows the standard rule.'),
   ('meets', 'data_model', 'standard_rule', 'The data model follows the standard rule.'),
   ('meets', 'table', 'standard_rule', 'The table follows the standard rule.'),
   ('meets', 'value_type', 'standard_rule', 'The value type follows the standard rule.'),
+  ('meets', 'rule', 'standard_rule', 'The rule follows the standard rule.'),
   ('meets', 'predicate', 'standard_rule', 'The predicate follows the standard rule.'),
   ('meets', 'event_type', 'standard_rule', 'The event type follows the standard rule.'),
   ('meets', 'projection', 'standard_rule', 'The projection follows the standard rule.'),

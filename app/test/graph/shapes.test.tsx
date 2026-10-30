@@ -22,7 +22,7 @@ const TABLE: Record<string, [Shape, string?]> = {
   term: ['box', 'marker'], capability: ['slice'], use_case: ['stadium'], uc_requirement: ['page'], pattern: ['stack'],
   pattern_rule: ['octagon'], interface: ['window', 'plug'], flow: ['chevron-bar'], flow_step: ['chevron'], view: ['window'], view_requirement: ['page'],
   endpoint: ['port'], api_requirement: ['page'], integration: ['box', 'port'], repository: ['component'], data_model: ['component'],
-  table: ['stripes'], value_type: ['component'], predicate: ['component'], event_type: ['component'], projection: ['component'], reader: ['component'],
+  table: ['stripes'], value_type: ['component'], rule: ['component'], predicate: ['component'], event_type: ['component'], projection: ['component'], reader: ['component'],
   command_handler: ['component'], query_handler: ['component'], event_handler: ['component'], service: ['component'],
   ui_component: ['component'], endpoint_handler: ['component'], adapter: ['component'], entry_point: ['component'], tooling: ['component'], standard: ['stack', 'ruler'],
   standard_rule: ['octagon', 'ruler'], constraint_test: ['shield'], invariant_test: ['shield'], specification_test: ['shield'],
