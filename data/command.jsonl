@@ -235,10 +235,10 @@
 {"id":"LA-EXP-CMD41","title":"Resize the wiki card","entity_id":"LA-EXP-EN11","description":"Sets the wiki card's width within its limits, or back to its default."}
 {"id":"LA-EXP-CMD42","title":"Show or hide the chat","entity_id":"LA-EXP-EN11","description":"Opens or closes the desktop app's chat panel for the browser session."}
 {"id":"LA-EXP-CMD43","title":"Resize the chat","entity_id":"LA-EXP-EN11","description":"Sets the chat panel's width within its limits, or back to its default."}
-{"id":"LA-EXP-CMD44","title":"Turn the Changes lens on or off","entity_id":"LA-EXP-EN11","description":"Turns the Changes lens on or off for the browser session."}
-{"id":"LA-EXP-CMD45","title":"Choose the Changes baseline","entity_id":"LA-EXP-EN11","description":"Sets what the Changes lens compares with: the last commit, the branch, or when the Reader last looked; another baseline is refused."}
+{"id":"LA-EXP-CMD44","title":"Turn Highlight changes on or off","entity_id":"LA-EXP-EN11","description":"Turns Highlight changes on or off for the browser session."}
+{"id":"LA-EXP-CMD45","title":"Choose the Changes baseline","entity_id":"LA-EXP-EN11","description":"Sets what Highlight changes compares with: the last commit, the branch, or when the Reader last looked; another baseline is refused."}
 {"id":"LA-EXP-CMD46","title":"Turn Follow on or off","entity_id":"LA-EXP-EN11","description":"Turns Follow on or off, which opens each changed record as it changes."}
-{"id":"LA-EXP-CMD47","title":"Mark a product looked at","entity_id":"LA-EXP-EN11","description":"Notes the moment the Reader last looked at a product, which the Changes lens can compare with."}
+{"id":"LA-EXP-CMD47","title":"Mark a product looked at","entity_id":"LA-EXP-EN11","description":"Notes the moment the Reader last looked at a product, which Highlight changes can compare with."}
 {"id":"LA-PLT-CMD01","title":"Resize a panel","entity_id":"LA-PLT-EN02","description":"by drag or keys, within the panel's limits; a double-click resets it; a drag below the fold threshold hides it instead (CMD02)."}
 {"id":"LA-PLT-CMD02","title":"Show or hide a panel","entity_id":"LA-PLT-EN02","description":"Folds a panel away or brings it back, the stage taking its room: the navigation folds to its rail (on a narrow screen it is a drawer that opens and closes) and the wiki card collapses. Whether the navigation shows is kept for the next visit."}
 {"id":"LA-PLT-CMD03","title":"Choose a theme","entity_id":"LA-PLT-EN14","description":"Puts a theme in use across the whole app at once and keeps the choice; a chosen theme that no longer exists leaves Lathe in use."}

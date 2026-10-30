@@ -7,7 +7,7 @@ import { BUDGETS } from './budgets';
 import { installProbes, quiet, record, work } from './measure';
 import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 
-// LA-PAT-APP-UX-R11-T01, LA-V96-R21-T01, LA-V96-R24-T03 and LA-V96-R29-T02: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
+// LA-PAT-APP-UX-R11-T01, LA-V96-R21-T01, LA-V96-R24-T03, LA-V96-R29-T02 and LA-V96-R29-T04: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-PLT-UC05';
@@ -271,6 +271,28 @@ test.describe('performance', () => {
       await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => b.change === 'changed').length, { timeout: 20_000 }).toBeGreaterThanOrEqual(drawn.length);
     }, 900);
     await record({ name: 'marking 50 changes at once', value: r.workMs, unit: 'ms', budget: BUDGETS.markChangesMs, detail: `longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms` });
+    write((was) => was);
+  });
+  test('LA-V96-R29-T04 with Highlight changes on, marking 50 changes at once, with their pills and roll-ups, takes under 500 ms of main-thread work', async ({ page }) => {
+    await open(page, `${DOMAIN}?stage=graph`);
+    await boxesDrawn(page);
+    await quiet(page, 900);
+    await page.locator('.focus-stage').getByRole('group', { name: 'Changes' }).getByRole('button', { name: 'Highlight changes' }).click();
+    const retitle = path.resolve(here, 'retitle.ts');
+    const kinds = new Set(JSON.parse(execFileSync('node', [retitle, '--kinds'], { encoding: 'utf8' })) as string[]);
+    const drawn = (await sceneOf(page)).boxes.filter((b) => !b.group && !b.focus && kinds.has(b.kind)).slice(0, 50);
+    expect(drawn.length, '50 records drawn').toBe(50);
+    const root = process.env.PERF_ROOT!;
+    const titleOf = (kind: string, id: string) => readFileSync(path.join(root, 'data', `${kind}.jsonl`), 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l) as { id: string; title: string }).find((r) => r.id === id)!.title;
+    const titles = drawn.map((b) => ({ kind: b.kind, id: b.id, title: titleOf(b.kind, b.id) }));
+    const write = (title: (was: string) => string) => execFileSync('node', [retitle, '--root', root], {
+      input: JSON.stringify(titles.map((t) => ({ kind: t.kind, id: t.id, title: title(t.title) }))), stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    const r = await work(page, async () => {
+      write((was) => `${was} (changed)`);
+      await expect.poll(async () => (await sceneOf(page)).boxes.filter((b) => b.pill === 'changed').length, { timeout: 20_000 }).toBeGreaterThanOrEqual(drawn.length);
+    }, 900);
+    await record({ name: 'marking 50 changes at once under Highlight changes', value: r.workMs, unit: 'ms', budget: BUDGETS.markChangesMs, detail: `longest frame ${Math.round(r.worstFrameMs)} ms, ${r.slowFrames} of ${r.frames} frames over 20 ms` });
     write((was) => was);
   });
 });

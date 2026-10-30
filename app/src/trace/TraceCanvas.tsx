@@ -26,7 +26,7 @@ import { copyInChain, lineKey, linesAt, traceFade, traceInput, type TraceMap, ty
 import { useLaidOut } from '../graph/layout';
 import type { GraphMap } from '../graph/map';
 import { useChanges } from '../changes/changes';
-import { lensFade, marksMoving, useStageMarks } from '../changes/marks';
+import { highlightFade, marksMoving, useStageMarks } from '../changes/marks';
 
 // The product's one tree, laid out once (LA-PAT-APP-UX-R19): focusing a record glides the camera to frame its node and
 // its children, as the Graph's Tree frames a focus at depth 1, and fades what is not under it; Gaps only fades the
@@ -249,15 +249,16 @@ function TraceScene({ index, focus, map, laid, at, kept, gapsOnly, onNavigate, o
   /** The look's fade strength, read when drawn, so a theme change takes effect without a new fade. */
   const fadeLook = useMemo<Pick<FadeLook, 'focusFade'>>(() => ({ get focusFade() { return look.current.focusFade; } }), []);
   // What the focus and Gaps only keep at full strength, the rest faded (fade.ts): eased in over the glide to a new focus,
-  // or the spotlight's fade for the filter. With the Changes lens on, what changed from its baseline is kept in place of
+  // or the spotlight's fade for the filter. With Highlight changes on, what changed from its baseline is kept in place of
   // the focus's branch (changes/marks.ts).
   const changes = useChanges();
-  const fade = useMemo(() => (changes.lens
-    ? faintest(traceFade(map, null, gapsOnly, fadeLook), lensFade(changes.byId, fadeLook, (place) => map.nodes.get(place)?.id ?? place))
-    : traceFade(map, kept, gapsOnly, fadeLook)), [map, kept, gapsOnly, fadeLook, changes.lens, changes.byId]);
+  const fade = useMemo(() => (changes.highlight
+    ? faintest(traceFade(map, null, gapsOnly, fadeLook), highlightFade(changes.byId, (place) => map.nodes.get(place)?.id ?? place))
+    : traceFade(map, kept, gapsOnly, fadeLook)), [map, kept, gapsOnly, fadeLook, changes.highlight, changes.byId]);
   // The live marks: each record's on every copy; a removed record's ghost on its first copy in the map drawn before.
   const placeOf = useCallback((id: string) => { const k = map.copies.get(id)?.[0]; const n = k ? laid.nodes.get(k) : undefined; return n ? { x: n.x, y: n.y, w: n.w, h: n.h } : null; }, [map, laid]);
-  const marks = useStageMarks(placeOf);
+  const tree = useMemo(() => ({ nodes: map.tree, idOf: (place: string) => map.nodes.get(place)?.id ?? place, placeOfId: (id: string) => map.copies.get(id)?.[0] ?? null }), [map]);
+  const marks = useStageMarks(placeOf, tree);
   const tween = useMemo(() => fadeTween((t) => readMotion().ease(t)), []);
   useLayoutEffect(() => {
     tween.send(fade, glideMs.current ?? look.current.fade);

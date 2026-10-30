@@ -4,7 +4,7 @@ import type { LookMark, Since } from '../../changes/changes';
 
 // Session settings (LA-EXP-A6): how the Reader likes to see things, for the window's session, shared by every tab and
 // every page (LA-V93-R72): the graph's layout and minimap, how wide the wiki card is, whether the desktop app's chat
-// panel is open and how wide (LA-PLT-UC19), and the Changes lens (LA-EXP-UC15): whether it is on, the baseline it
+// panel is open and how wide (LA-PLT-UC19), and Highlight changes (LA-EXP-UC15): whether it is on, the baseline it
 // compares with, whether Follow is on, and the moment the Reader last looked at each product. Where the Reader is (the
 // focus, the stage, the depth, the kind filters, the wiki card's open and expanded state) is not here: it is the
 // place's (views/place.ts). Moving through the stage never changes it; only the person's own commands do.
@@ -35,11 +35,11 @@ export const CHAT_DEFAULT = 400;
 export const CHAT_MAX = 760;
 
 /**
- * The Changes lens (changes/changes.ts): on or off, the baseline it compares with, Follow, and by product the moment
- * the Reader last looked at it (set as they dismiss the lens or leave the product).
+ * Highlight changes (changes/changes.ts): on or off, the baseline it compares with, Follow, and by product the moment
+ * the Reader last looked at it (set as they dismiss Highlight changes or leave the product).
  */
-export interface ChangeSettings { lens: boolean; since: Since; follow: boolean; looked: Record<string, LookMark> }
-export const DEFAULT_CHANGES: ChangeSettings = { lens: false, since: 'commit', follow: false, looked: {} };
+export interface ChangeSettings { highlight: boolean; since: Since; follow: boolean; looked: Record<string, LookMark> }
+export const DEFAULT_CHANGES: ChangeSettings = { highlight: false, since: 'commit', follow: false, looked: {} };
 
 export interface SessionSettings { graph: GraphLook; card: CardSettings; chat: ChatSettings; changes: ChangeSettings }
 export const DEFAULT_SESSION_SETTINGS: SessionSettings = { graph: DEFAULT_GRAPH_LOOK, card: DEFAULT_CARD, chat: DEFAULT_CHAT, changes: DEFAULT_CHANGES };
@@ -48,7 +48,7 @@ export const DEFAULT_SESSION_SETTINGS: SessionSettings = { graph: DEFAULT_GRAPH_
 export interface StoredSettings {
   layout: GraphLayout; minimap: boolean;
   cardWidth: number | null; chat: boolean; chatWidth: number | null;
-  lens: boolean; since: Since; follow: boolean; looked: Record<string, LookMark>;
+  highlight: boolean; since: Since; follow: boolean; looked: Record<string, LookMark>;
 }
 
 const isNumber = (v: unknown): v is number => typeof v === 'number' && Number.isFinite(v);
@@ -63,7 +63,7 @@ const isStored = (v: unknown): v is StoredSettings => {
   return typeof s.layout === 'string'
     && typeof s.minimap === 'boolean' && (s.cardWidth === null || isNumber(s.cardWidth))
     && typeof s.chat === 'boolean' && (s.chatWidth === null || isNumber(s.chatWidth))
-    && typeof s.lens === 'boolean' && (s.since === 'commit' || s.since === 'branch' || s.since === 'looked') && typeof s.follow === 'boolean'
+    && typeof s.highlight === 'boolean' && (s.since === 'commit' || s.since === 'branch' || s.since === 'looked') && typeof s.follow === 'boolean'
     && !!s.looked && typeof s.looked === 'object' && Object.values(s.looked).every(isMark);
 };
 
@@ -80,7 +80,7 @@ export function sessionSettingsFrom(stored: unknown): SessionSettings {
     graph: { layout: LAYOUTS.includes(stored.layout) ? stored.layout : DEFAULT_GRAPH_LOOK.layout, minimap: stored.minimap },
     card: { width: cardWidthWithin(stored.cardWidth) },
     chat: { open: stored.chat, width: chatWidthWithin(stored.chatWidth) },
-    changes: { lens: stored.lens, since: stored.since, follow: stored.follow, looked: stored.looked },
+    changes: { highlight: stored.highlight, since: stored.since, follow: stored.follow, looked: stored.looked },
   };
 }
 
@@ -88,5 +88,5 @@ export function sessionSettingsFrom(stored: unknown): SessionSettings {
 export const storedSettings = ({ graph, card, chat, changes }: SessionSettings): StoredSettings => ({
   layout: graph.layout, minimap: graph.minimap,
   cardWidth: card.width, chat: chat.open, chatWidth: chat.width,
-  lens: changes.lens, since: changes.since, follow: changes.follow, looked: changes.looked,
+  highlight: changes.highlight, since: changes.since, follow: changes.follow, looked: changes.looked,
 });

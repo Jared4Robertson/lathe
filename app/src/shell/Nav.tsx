@@ -1,4 +1,4 @@
-import { forwardRef, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
+import { forwardRef, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from 'react';
 import { Button } from '../components/Button';
 import { PaletteIcon } from '../theme/ThemeCommands';
 import { Icon } from '../components/icons';
@@ -13,6 +13,8 @@ import type { Stage } from '../../../lathe/src/platform/data/schema';
 import { branchOf, ownerFolders, sharedKey, type Folder, type StageFolders } from '../exploring/folder-tree/folders';
 import { recordText, StageMark } from '../specs/parts';
 import { useProblems } from '../checking/problems/reads';
+import { useChanges } from '../changes/changes';
+import { navChanges, rollupText, type ChangeCounts } from '../changes/rollup';
 import { useRunCommand, useShortcutHint } from './commands';
 import { SPACE_KEYS, spaceCommandId } from './keymap';
 import { useAggregate } from './prefs';
@@ -328,6 +330,9 @@ function currentBranch(index: RecordIndex, path: string): string[] {
 function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space: Space; path: string; reveal: boolean }) {
   const domains = index.product === space.id ? index.domains : [];
   const own = ownerFolders(index, space.id);
+  // With Highlight changes on, each row counts the records under it that are new, changed or removed (changes/rollup.ts).
+  const { highlight, byId: changed } = useChanges();
+  const rolled = useMemo(() => (highlight ? navChanges(index, changed) : null), [highlight, index, changed]);
   const rows = useAggregate(navRowRepository);
   const isOpen = (key: string) => isFolderOpen(rows, key);
   const branch = currentBranch(index, path).join('\n');
@@ -363,13 +368,13 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
     />
   );
   const folderRow = (folder: Folder, owner: string, depth: number) => (
-    <NavFolder key={folder.key} id={folder.key} depth={depth} label={folder.label} count={folder.count} open={isOpen(folder.key)} holds={holds(folder.key)} onToggle={() => toggle(folder.key)}>
+    <NavFolder key={folder.key} id={folder.key} depth={depth} label={folder.label} count={folder.count} changes={rolled?.ofRecords(folder.records.map((r) => r.id))} open={isOpen(folder.key)} holds={holds(folder.key)} onToggle={() => toggle(folder.key)}>
       {recordRows(folder.records, `${folder.label} of ${owner}`, depth + 1)}
     </NavFolder>
   );
   // An owner's stages with records, each folding its folders with records, or a stage with one folder its records.
   const stageRows = (stages: StageFolders[], owner: string, depth: number) => stages.filter((stage) => stage.count > 0).map((stage) => (
-    <NavFolder key={stage.key} id={stage.key} depth={depth} label={stage.label} count={stage.count} open={isOpen(stage.key)} holds={holds(stage.key)} onToggle={() => toggle(stage.key)} stage={stage.stage}>
+    <NavFolder key={stage.key} id={stage.key} depth={depth} label={stage.label} count={stage.count} changes={rolled?.ofRecords(stage.folders.flatMap((f) => f.records.map((r) => r.id)))} open={isOpen(stage.key)} holds={holds(stage.key)} onToggle={() => toggle(stage.key)} stage={stage.stage}>
       {stage.direct ? recordRows(stage.direct.records, `${stage.label} of ${owner}`, depth + 1) : (
         <ul className="nav-tree" aria-label={`${stage.label} of ${owner}`}>
           {stage.folders.filter((f) => f.count > 0).map((f) => folderRow(f, owner, depth + 1))}
@@ -393,7 +398,7 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
       {ownStages.length > 0 && (
         // What the product shares, in one folder before the domains, as the graph's tree has it.
         <ul className="nav-tree nav-shared" aria-label={`Shared in ${space.title}`}>
-          <NavFolder id={sharedKey(space.id)} depth={0} label="Shared" count={ownStages.reduce((n, s) => n + s.count, 0)} open={isOpen(sharedKey(space.id))} holds={holds(sharedKey(space.id))} onToggle={() => toggle(sharedKey(space.id))}>
+          <NavFolder id={sharedKey(space.id)} depth={0} label="Shared" count={ownStages.reduce((n, s) => n + s.count, 0)} changes={rolled?.ofRecords(ownStages.flatMap((s) => s.folders.flatMap((f) => f.records.map((r) => r.id))))} open={isOpen(sharedKey(space.id))} holds={holds(sharedKey(space.id))} onToggle={() => toggle(sharedKey(space.id))}>
             <ul className="nav-tree" aria-label={`Stages of ${space.title}`}>
               {stageRows(ownStages, space.title, 1)}
             </ul>
@@ -426,6 +431,7 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
                 >
                   <Link to={addressOf(domain.id)} aria-current={here(path, addressOf(domain.id))} title={domain.title}>
                     <span className="nav-label">{domain.title}</span>
+                    <NavChanges counts={rolled?.ofDomain(domain.id)} />
                   </Link>
                 </NavRow>
                 {open && (
@@ -447,7 +453,7 @@ function SpaceItems({ index, space, path, reveal }: { index: RecordIndex; space:
               <li key={folder.key}>
                 <NavRow depth={0} selected={path === to}>
                   <Link to={to} aria-current={here(path, to)}>
-                    <span className="nav-label">{folder.label}</span> <span className="nav-badge quiet">{folder.count}</span>
+                    <span className="nav-label">{folder.label}</span> <NavChanges counts={rolled?.ofRecords(folder.records.map((r) => r.id))} /> <span className="nav-badge quiet">{folder.count}</span>
                   </Link>
                 </NavRow>
               </li>
@@ -474,11 +480,26 @@ function NavRow({ depth, selected = false, holds = false, chevron, children }: {
   );
 }
 
+/** A row's changes with Highlight changes on: "+3 ~5 −1" in each change's color, with the words for a screen reader and the tooltip. */
+function NavChanges({ counts }: { counts: ChangeCounts | undefined }) {
+  if (!counts) return null;
+  return (
+    <span className="nav-changes" title={rollupText(counts)}>
+      <span className="sr-only">{rollupText(counts)}</span>
+      <span aria-hidden="true" className="nav-changes-marks">
+        {counts.added > 0 && <span className="is-added">+{counts.added}</span>}
+        {counts.changed > 0 && <span className="is-changed">~{counts.changed}</span>}
+        {counts.removed > 0 && <span className="is-removed">−{counts.removed}</span>}
+      </span>
+    </span>
+  );
+}
+
 /**
  * A foldable nav row (a stage or a folder) with its count, holding its rows below it when open. The button is the
  * row. A stage's row carries its stage's color mark.
  */
-function NavFolder({ id, depth, label, count, open, holds = false, onToggle, stage, children }: { id: string; depth: number; label: string; count: number; open: boolean; holds?: boolean; onToggle: () => void; stage?: Stage; children: ReactNode }) {
+function NavFolder({ id, depth, label, count, changes, open, holds = false, onToggle, stage, children }: { id: string; depth: number; label: string; count: number; changes?: ChangeCounts; open: boolean; holds?: boolean; onToggle: () => void; stage?: Stage; children: ReactNode }) {
   const bodyId = `nav-folder-${id.replace(/[^A-Za-z0-9_-]/g, '-')}`;
   return (
     <li className={`nav-folder${stage ? ' is-stage' : ''}`}>
@@ -486,6 +507,7 @@ function NavFolder({ id, depth, label, count, open, holds = false, onToggle, sta
         <Icon name={open ? 'chevron-down' : 'chevron-right'} size={14} />
         {stage && <StageMark stage={stage} />}
         <span className="nav-label">{label}</span>
+        <NavChanges counts={changes} />
         <span className="nav-badge quiet">{count}</span>
       </button>
       {open && <div id={bodyId} className="nav-folder-body">{children}</div>}

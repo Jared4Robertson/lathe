@@ -112,7 +112,7 @@ export function section(name: string | RegExp) {
 
 /** Starts the place at a depth and the window at a layout, as if the person had chosen them (the default is 1, Tree). */
 export function startAtDepth(depth: number, layout: 'tree' | 'nested' = 'tree') {
-  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, cardWidth: null, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
+  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, cardWidth: null, chat: false, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
   window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth, hiddenKinds: [], card: { open: true, expanded: true } }));
 }
 

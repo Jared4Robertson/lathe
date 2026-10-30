@@ -44,7 +44,8 @@ import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpa
 import { drawLeaderLine, openIn, useLeaderFollow } from '../views/leaderLine';
 import { useChanges } from '../changes/changes';
 import { useChangesKey } from '../changes/ChangesKey';
-import { GHOST_MS, lensFade, marksMoving, useStageMarks } from '../changes/marks';
+import { rollupText } from '../changes/rollup';
+import { GHOST_MS, highlightFade, marksMoving, useLiveVersion, useStageMarks } from '../changes/marks';
 
 // The graph view: the product's tree as one fixed map (map.ts), explored by a camera (camera.ts).
 // Clicking a record or a group focuses it (through onNavigate, so the host changes the address and
@@ -313,12 +314,32 @@ function MapOverview({ map, focus, hidden, view }: { map: PlacedMap; focus: stri
       <svg role="img" aria-label="Minimap" width={W} height={H} viewBox={`${-pad} ${-pad} ${map.width + 2 * pad} ${map.height + 2 * pad}`} preserveAspectRatio="xMidYMid meet">
         {boxes.map((n) => shapeOf(n, 'graph-minimap-node'))}
         {f && shapeOf(f, 'graph-minimap-node is-focus')}
+        <MinimapChanges map={map} pad={pad} />
         <rect className="graph-minimap-view" x={vx} y={vy} width={vw} height={vh} vectorEffect="non-scaling-stroke" />
       </svg>
     </div>
   );
 }
 
+
+/** Highlight changes' markers on the minimap (LA-V93-R20): a dot at each changed record's box, in the change's color, big enough to see at any size. */
+function MinimapChanges({ map, pad }: { map: PlacedMap; pad: number }) {
+  const { highlight, byId, live } = useChanges();
+  const version = useLiveVersion();
+  const marks = useMemo(() => {
+    if (!highlight) return [];
+    const out: { id: string; change: string; x: number; y: number }[] = [];
+    const ids = new Set([...byId.keys(), ...live.all().map((m) => m.id)]);
+    for (const id of ids) {
+      const n = map.nodes.get(id);
+      const change = byId.get(id)?.change ?? live.get(id)?.change;
+      if (n && change && change !== 'removed') out.push({ id, change, x: n.x + n.w / 2, y: n.y + n.h / 2 });
+    }
+    return out;
+  }, [highlight, byId, live, map, version]);
+  const r = pad * 0.9;
+  return <>{marks.map((m) => <circle key={m.id} className={`graph-minimap-change is-${m.change}`} cx={m.x} cy={m.y} r={r} />)}</>;
+}
 
 /** No floating panels: the frame is the whole stage. */
 const NO_INSETS: Insets = { left: 0, top: 0, right: 0, bottom: 0 };
@@ -344,6 +365,9 @@ export interface SceneBox {
   strength: number;
   /** Its live mark (changes/marks.ts): new or changed as the data reloaded, or null. */
   change: 'added' | 'changed' | null;
+  /** With Highlight changes on: its pill (New, Changed) and its container's roll-up, null for none (changes/marks.ts). */
+  pill: 'added' | 'changed' | null;
+  rollup: string | null;
   /** Its box in the map, and its text's and border's scales there: fixed by the map, never by the camera. */
   map: { x: number; y: number; w: number; h: number };
   textScale: number;
@@ -712,14 +736,15 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
     return at;
   };
   // The live marks (changes/marks.ts), the removed records' ghosts placed where the map drawn before had them; and the
-  // Changes lens, which fades everything unchanged from its baseline in place of the focus fade.
+  // Highlight changes, which fades everything unchanged from its baseline in place of the focus fade.
   const changes = useChanges();
   const placeOf = useCallback((id: string) => { const n = map.nodes.get(id); return n ? { x: n.x, y: n.y, w: n.w, h: n.h } : null; }, [map]);
-  const marks = useStageMarks(placeOf);
-  const lens = useMemo(() => (changes.lens ? lensFade(changes.byId, { get focusFade() { return look.current.focusFade; } }) : null), [changes.lens, changes.byId]);
-  /** How strongly each box is drawn now: the new focus's fade, eased in from the old one's over the camera's glide; with the lens on, the lens's. */
+  const tree = useMemo(() => ({ nodes: map.nodes }), [map]);
+  const marks = useStageMarks(placeOf, tree);
+  const dimmed = useMemo(() => (changes.highlight ? highlightFade(changes.byId) : null), [changes.highlight, changes.byId]);
+  /** How strongly each box is drawn now: the new focus's fade, eased in from the old one's over the camera's glide; with Highlight changes on, Highlight changes'. */
   const strengthNow = (): { at: (id: string) => number; done: boolean } => {
-    if (lens) return { at: lens, done: true };
+    if (dimmed) return { at: dimmed, done: true };
     const shift = fadeShift.current;
     const to = strengthOf(focus);
     const t = shift.from === null || shift.to !== focus || shift.duration <= 0 ? 1 : Math.min(1, (performance.now() - shift.start) / shift.duration);
@@ -916,13 +941,15 @@ function GraphScene({ index: pageIndex, mapIndex: index, map, graph, layout, dep
         blockBelowPx: BLOCK_BELOW_PX,
         laidOut: lastLayout(),
         spotlight: sp.id !== null,
-        ghosts: ((live) => live.reduced ? [] : live.ghosts.filter((g) => live.now - g.t < GHOST_MS).map((g) => g.id))(marks.at(performance.now())),
+        ghosts: ((live) => live.reduced && !live.highlight ? [] : live.ghosts.filter((g) => live.highlight || live.now - g.t < GHOST_MS).map((g) => g.id))(marks.at(performance.now())),
         bars: frame.bars.map((b) => rect(b.x, b.y, b.w, b.h)),
         lines: frame.lines.map((l) => ({ id: l.id, source: l.source, target: l.target, style: l.style, link: l.link, lit: sp.id !== null && sp.litLines ? sp.litLines.has(l.id) : null, points: l.points.map((p) => [X(p.x), Y(p.y)] as [number, number]) })),
         boxes: frame.plates.map((p) => ({
           id: p.id, kind: p.kind, stage: p.stage, shape: p.shape, view: p.view, focus: p.id === focus, group: p.group,
           hover: hover.current === p.id, ring: ring.current === p.id, armed: tapToOpen.armed === p.id, lit: sp.id !== null && sp.lit ? sp.lit.has(p.id) : null, strength: strength(p.id),
           change: ((m) => (m && m.change !== 'removed' ? m.change : null))(changes.live.get(p.id)),
+          pill: ((c) => (c === 'added' || c === 'changed' ? c : null))(marks.highlight?.change(p.id)),
+          rollup: ((r) => (r ? rollupText(r) : null))(marks.highlight?.rolls.get(p.place)),
           map: { x: p.x, y: p.y, w: p.w, h: p.h }, textScale: p.text, boxScale: p.scale,
           rect: rect(p.x, p.y, p.w, p.h),
           polygon: p.outline.kind === 'polygon' ? p.outline.points.map(([x, y]) => [X(x), Y(y)] as [number, number]) : null,

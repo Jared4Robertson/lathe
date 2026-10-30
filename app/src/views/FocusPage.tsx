@@ -37,6 +37,7 @@ import { parseFormatPage } from '../format/reference';
 import { overlaysOf, pageHref } from './overlays';
 import { useChanges } from '../changes/changes';
 import { useLiveVersion } from '../changes/marks';
+import { useJumpChanges } from '../changes/jump';
 
 // One page for one thing (a record, a group, a product or a domain), at one address. One stage
 // fills the window behind everything: the Graph, the ERD (of a domain, an aggregate or an entity's
@@ -324,6 +325,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
   useCommand('openRecordInNewTab', () => { const id = takeMenuRecord(); if (id) openNew(hrefFor(id)); }, !!tabs);
 
   useFollow(focus, onNavigate, stageEl);
+  useJumpChanges(index, focus, onNavigate);
 
   const content: Record<StageName, ReactNode> = {
     graph: (

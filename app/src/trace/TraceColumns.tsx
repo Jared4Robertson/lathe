@@ -23,7 +23,7 @@ import { useOpenSpace, type Insets, type OpenSpaceStore } from '../views/openSpa
 import { drawLeaderLine, useLeaderFollow } from '../views/leaderLine';
 import { StageCamera, ZOOM_STEP } from '../views/StageChrome';
 import { useChanges } from '../changes/changes';
-import { lensFade, marksMoving, useStageMarks } from '../changes/marks';
+import { highlightFade, marksMoving, useStageMarks } from '../changes/marks';
 import {
   BOX_HEIGHT, clampScroll, COLUMN_GAP, COLUMN_WIDTH, columnBoxes, columnHeight, columnLefts, columnScrolls, columnSizes, columnsView, columnView,
   COLUMNS_PAD, COMPACT_HEIGHT, COMPACT_WIDTH, COUNT_ROOM, holds, scrollToShow, traceColumns, type ColumnSize, type TraceColumn,
@@ -38,7 +38,7 @@ import type { TraceHost, TraceScene, TraceSceneBox } from './TraceCanvas';
 // as on the tree. Labels are always placed as the column lays them out: no sticky label moves under a panel. The camera
 // opens at zoom 1 with every column when they fit, else the last one ending at the frame's right; a column taller than the stage scrolls on its own under the wheel, its chosen box
 // scrolled into view as the focus moves. Drag and the wheel (across the gaps, or a zoom) move the camera as on the tree,
-// Scroll to zoom included. Gaps only and the Changes lens fade as on the tree; the focus fades nothing, since the path is the point.
+// Scroll to zoom included. Gaps only and Highlight changes fade as on the tree; the focus fades nothing, since the path is the point.
 //
 // The canvas is hidden from assistive technology: the Trace stage's table (TraceView.tsx) stays its accessible layer.
 
@@ -248,9 +248,9 @@ function ColumnsScene({ index, focus, map, at, gapsOnly, onNavigate, onPeek, spa
   useLayoutEffect(() => { if (wrapper.current) look.current = readLook(wrapper.current); requestPaint(); }, [theme]);
   const fadeLook = useMemo<Pick<FadeLook, 'focusFade'>>(() => ({ get focusFade() { return look.current.focusFade; } }), []);
   const changes = useChanges();
-  const fade = useMemo(() => (changes.lens
-    ? faintest(traceFade(map, null, gapsOnly, fadeLook), lensFade(changes.byId, fadeLook, (place) => map.nodes.get(place)?.id ?? place))
-    : traceFade(map, null, gapsOnly, fadeLook)), [map, gapsOnly, fadeLook, changes.lens, changes.byId]);
+  const fade = useMemo(() => (changes.highlight
+    ? faintest(traceFade(map, null, gapsOnly, fadeLook), highlightFade(changes.byId, (place) => map.nodes.get(place)?.id ?? place))
+    : traceFade(map, null, gapsOnly, fadeLook)), [map, gapsOnly, fadeLook, changes.highlight, changes.byId]);
   const tween = useMemo(() => fadeTween((t) => readMotion().ease(t)), []);
   useLayoutEffect(() => { tween.send(fade, look.current.fade); requestPaint(); }, [fade]);
 

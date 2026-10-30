@@ -8,7 +8,7 @@ import type { Page } from '@playwright/test';
 /** Gives the page a desktop bridge with a chat about `record`, open or at its session picker. */
 export async function withChat(page: Page, record: string, open: 'conversation' | 'picker' = 'conversation') {
   await page.addInitScript(({ record, open }) => {
-    const settings = { layout: 'tree', minimap: false, cardWidth: null, chat: true, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} };
+    const settings = { layout: 'tree', minimap: false, cardWidth: null, chat: true, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} };
     window.sessionStorage.setItem('lathe:session-settings', JSON.stringify(settings));
     type Item = Record<string, unknown> & { id: string };
     let items: Item[] = [

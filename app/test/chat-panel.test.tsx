@@ -62,7 +62,7 @@ function fakeChat(sessions: ChatSessions = SESSIONS) {
 }
 
 const openChat = (open = true) =>
-  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', minimap: false, cardWidth: null, chat: open, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
+  window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout: 'tree', minimap: false, cardWidth: null, chat: open, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} }));
 const chat = () => screen.getByRole('complementary', { name: 'Chat with Claude' });
 const log = () => within(chat()).getByRole('log', { name: 'Conversation' });
 
