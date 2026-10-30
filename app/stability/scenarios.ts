@@ -6,6 +6,8 @@ export const PRODUCT = '/LA';
 export const DOMAIN = '/LA-EXP';
 /** A use case with requirements, links and a long body. */
 export const RECORD = '/LA-PLT-UC05';
+/** A use case others reference (pattern followings), so a request to remove it is refused and the data stays as it is. */
+export const REFERENCED = '/LA-AUT-UC02';
 /** An aggregate: its ERD stage draws its own diagram. */
 export const AGGREGATE = '/LA-EXP-A1';
 /** A UC requirement of RECORD: what the edit scenarios change, then put back. */
@@ -19,7 +21,7 @@ export const FOCUS = ['.page-bar-actions', '.header-strip', '.wiki-panel'];
 export const STAGE = '.focus-stage';
 export const GRAPH_CANVAS = '.focus-stage .graph-canvas';
 /** The graph's toolbar, floating at the top of the open space. */
-export const GRAPH_TOOLS = '.focus-stage .graph-tools';
+export const GRAPH_TOOLS = '.focus-stage .stage-tools';
 export const ERD_CANVAS = '.focus-stage .erd-canvas';
 
 /**

@@ -15,6 +15,7 @@ import { addressOf } from '../../views/address';
 import { sendAggregate, type AggregateCommands, type AggregateRoute } from './commands';
 import { useNextAggregateId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Aggregate editor (LA-AUT-A6): the actions on a record of an aggregate, each sending one of the aggregate's own
 // commands, POST /api/aggregate/<command>, and nothing else. Edit sends its kind's Change with only what changed (an
@@ -212,7 +213,7 @@ export function AggregateEditor({ index, page, children }: { index: RecordIndex;
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(page.aggregate.id)?.product ?? '';
   if (mode.mode === 'change') {

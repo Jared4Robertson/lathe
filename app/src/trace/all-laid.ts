@@ -6,8 +6,9 @@ import { BOX_HEIGHT, BOX_WIDTH, columnLeft, layOutColumns, type LayoutInput, typ
 // maps out): its order and places are worked out in its worker (all-layout.worker.ts), again only when what they read
 // changes (the boxes, their sections and their links: the input's key), and never on a reload that left them alone.
 // While a new layout is made, the one before stays on screen with the graph it was made from. Each product's last
-// layout is kept for the page's life: a new one keeps its order (layout stability), and switching back to the stage reads
-// it at once. Where there is no worker (the unit tests, in jsdom), the same layout runs on the page.
+// layout is kept for the page's life: a new one keeps every box shown before at its place and in its order
+// (all-layout.ts placeKept, LA-PAT-APP-UX-R22) until Tidy up lays the columns out afresh, and switching back to the
+// stage reads it at once. Where there is no worker (the unit tests, in jsdom), the same layout runs on the page.
 
 /** One box's place, in map units. */
 export interface BoxPlace { x: number; y: number; w: number; h: number }
@@ -31,7 +32,20 @@ function inputOf(graph: AllGraph, previous: AllLaid | null): { input: LayoutInpu
   if (!made) { made = numbered(graph); inputs.set(graph, made); }
   const { number } = made;
   const was = previous ? previous.order.map((c) => c.filter((k) => number.has(k)).map((k) => number.get(k)!)) : null;
-  return { input: { ...made.input, previous: was }, keys: made.keys, key: made.key };
+  return { input: { ...made.input, previous: was, kept: previous ? keptOf(made, previous) : null }, keys: made.keys, key: made.key };
+}
+
+/** Each box's top in the layout shown before, by number: NaN for a box it did not show, or showed in another column or section. */
+function keptOf(made: { input: Omit<LayoutInput, 'previous'>; keys: string[] }, previous: AllLaid): { y: Float64Array; outsideTop: number | null } {
+  const { columnOf, under } = made.input;
+  const y = new Float64Array(made.keys.length).fill(NaN);
+  made.keys.forEach((k, i) => {
+    const p = previous.places.get(k);
+    if (!p || p.x !== columnLeft(columnOf[i])) return;
+    const wasUnder = previous.outsideTop === null || p.y < previous.outsideTop;
+    if (wasUnder === (under[i] === 1)) y[i] = p.y;
+  });
+  return { y, outsideTop: previous.outsideTop };
 }
 
 function numbered(graph: AllGraph) {
@@ -131,7 +145,7 @@ export interface Laid { laid: AllLaid; graph: AllGraph }
 
 /**
  * The layout for a graph: the graph's own once laid out; until then the one shown before, which stays on screen; null
- * before the first. `tidy` (a count the Tidy up button raises) orders the columns afresh once.
+ * before the first. `tidy` (a count Tidy up raises) lays the columns out afresh once.
  */
 export function useAllLaidOut(graph: AllGraph, tidy: number): Laid | null {
   const [shown, setShown] = useState<{ graph: AllGraph; tidy: number; laid: AllLaid } | null>(null);

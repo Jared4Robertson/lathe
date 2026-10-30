@@ -1,8 +1,9 @@
-import { expect, test } from '@playwright/test';
-import { openPage } from './measure';
+import { expect, test } from './test';
+import { openPage, showCard } from './measure';
 import { rowsOf, servedWorkspace, testsText } from './flows';
-import { PRODUCT } from './scenarios';
+import { keepData, PRODUCT } from './scenarios';
 import { expectKeyWhole, traceDrawn, traceSceneOf } from './scene';
+import { execFileSync } from 'node:child_process';
 import path from 'node:path';
 import { openStore } from '../../lathe/src/platform/data/index';
 import { servesOf } from '../../lathe/src/trace/serves';
@@ -20,6 +21,9 @@ const EXP = 'LA-EXP';
 /** A UC requirement with a flow step that fulfills it, in a view, and a test. */
 const REQUIREMENT = 'LA-TRC-UC10-R03';
 const WIKI = '.wiki-panel';
+const repo = path.resolve(import.meta.dirname, '../..');
+/** An Agent's write to the suite's copy, through the command layer. */
+const lathe = (...args: string[]) => execFileSync('node', [path.join(repo, 'lathe/bin/lathe.ts'), ...args, '--root', process.env.STABILITY_ROOT!], { stdio: 'pipe' }).toString();
 
 test.describe('Traceability flows', () => {
   test('LA-TRC-UC09-FL01-T see each domain\'s coverage and the product\'s summary', async ({ page }) => {
@@ -235,42 +239,48 @@ test.describe('Traceability flows', () => {
   });
 
   test('LA-TRC-UC14-FL01-T trace a record', async ({ page }) => {
-    const spec = await servedWorkspace();
-    // What designs and builds it is the engine's chain, the one the Trace stage draws.
-    const chain = spec.chains.find((c) => c.obligation === REQUIREMENT)!;
-    const tests = rowsOf(spec, 'use_case_test').filter((t) => t.uc_requirement_id === REQUIREMENT);
-    // S01: the Reader opens a domain, searches for a requirement and opens it.
-    await openPage(page, `/${TRC}`);
-    await page.locator(WIKI).getByRole('searchbox', { name: 'Filter records' }).fill(REQUIREMENT);
-    await page.locator(WIKI).getByRole('link', { name: new RegExp(`^${REQUIREMENT} `) }).first().click();
-    await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}`);
-    // S02: its Traceability: what designs it, what builds it, what proves it, and a callout for each gap.
-    const wiki = page.locator(WIKI);
-    await expect(wiki.getByRole('heading', { name: 'Traceability', level: 2 })).toBeVisible();
-    for (const id of chain.design) await expect(wiki.getByRole('list', { name: 'Designed by' }).getByRole('link', { name: new RegExp(`^${id} `) })).toBeVisible();
-    for (const id of chain.build) await expect(wiki.getByRole('list', { name: 'Built by' }).getByRole('link', { name: new RegExp(`^${id} `) })).toBeVisible();
-    for (const t of tests) await expect(wiki.getByRole('list', { name: 'Proved by' }).getByRole('listitem').filter({ hasText: String(t.id) })).toContainText(String(t.state));
-    const gaps = spec.coverage.flatMap((c) => c.gaps).filter((g) => g.id === REQUIREMENT);
-    const callouts = wiki.getByRole('list', { name: `Gaps in ${REQUIREMENT}` }).getByRole('listitem');
-    await expect(callouts).toHaveCount(gaps.length);
-    // S03: a test's page: what it proves and its run by.
-    const test0 = tests[0];
-    await wiki.getByRole('list', { name: 'Proved by' }).getByRole('link', { name: new RegExp(`^${test0.id} `) }).click();
-    await page.waitForURL((u) => u.pathname === `/${test0.id}`);
-    await expect(wiki.getByRole('list', { name: 'Proves' }).getByRole('link', { name: new RegExp(`^${REQUIREMENT} `) })).toBeVisible();
-    await expect(wiki.getByRole('heading', { name: 'Run by', level: 3 })).toBeVisible();
-    await expect(wiki.locator('dt', { hasText: /^Level$/ }).locator('xpath=following-sibling::dd[1]')).toHaveText(String(test0.level));
-    // S04: a gap's callout leads to the page of the check that reports it.
-    await page.goBack();
-    await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}`);
-    // The suite serves the data without the code, so the requirement is not built there.
-    expect(gaps.length).toBeGreaterThan(0);
-    const check = callouts.first().getByRole('link');
-    const name = (await check.textContent())!.trim();
-    await check.click();
-    // It opens in the wiki card over the stage, which keeps its focus (LA-PAT-APP-UX-R20).
-    await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}` && u.search.endsWith(`page=format/checks/${name}`));
-    await expect(page.locator('.wiki-panel.is-format h2')).toHaveText(name);
+    const restore = keepData();
+    try {
+      // The suite serves the code too, so the requirement is built; its test, made not automated yet, leaves it a gap to follow.
+      lathe('use-case', 'change-use-case-test', '--id', `${REQUIREMENT}-T01`, '--state', 'not automated yet', '--manual_reason', '');
+      const spec = await servedWorkspace();
+      // What designs and builds it is the engine's chain, the one the Trace stage draws.
+      const chain = spec.chains.find((c) => c.obligation === REQUIREMENT)!;
+      const tests = rowsOf(spec, 'use_case_test').filter((t) => t.uc_requirement_id === REQUIREMENT);
+      // S01: the Reader opens a domain, searches for a requirement and opens it.
+      await openPage(page, `/${TRC}`);
+      await page.locator(WIKI).getByRole('searchbox', { name: 'Filter records' }).fill(REQUIREMENT);
+      await page.locator(WIKI).getByRole('link', { name: new RegExp(`^${REQUIREMENT} `) }).first().click();
+      await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}`);
+      // S02: its Traceability: what designs it, what builds it, what proves it, and a callout for each gap.
+      const wiki = page.locator(WIKI);
+      await expect(wiki.getByRole('heading', { name: 'Traceability', level: 2 })).toBeVisible();
+      for (const id of chain.design) await expect(wiki.getByRole('list', { name: 'Designed by' }).getByRole('link', { name: new RegExp(`^${id} `) })).toBeVisible();
+      for (const id of chain.build) await expect(wiki.getByRole('list', { name: 'Built by' }).getByRole('link', { name: new RegExp(`^${id} `) })).toBeVisible();
+      for (const t of tests) await expect(wiki.getByRole('list', { name: 'Proved by' }).getByRole('listitem').filter({ hasText: String(t.id) })).toContainText(String(t.state));
+      const gaps = spec.coverage.flatMap((c) => c.gaps).filter((g) => g.id === REQUIREMENT);
+      const callouts = wiki.getByRole('list', { name: `Gaps in ${REQUIREMENT}` }).getByRole('listitem');
+      await expect(callouts).toHaveCount(gaps.length);
+      // S03: a test's page: what it proves and its run by.
+      const test0 = tests[0];
+      await wiki.getByRole('list', { name: 'Proved by' }).getByRole('link', { name: new RegExp(`^${test0.id} `) }).click();
+      await page.waitForURL((u) => u.pathname === `/${test0.id}`);
+      await expect(wiki.getByRole('list', { name: 'Proves' }).getByRole('link', { name: new RegExp(`^${REQUIREMENT} `) })).toBeVisible();
+      await expect(wiki.getByRole('heading', { name: 'Run by', level: 3 })).toBeVisible();
+      await expect(wiki.locator('dt', { hasText: /^Level$/ }).locator('xpath=following-sibling::dd[1]')).toHaveText(String(test0.level));
+      // S04: a gap's callout leads to the page of the check that reports it.
+      await page.goBack();
+      await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}`);
+      expect(gaps.length).toBeGreaterThan(0);
+      const check = callouts.first().getByRole('link');
+      const name = (await check.textContent())!.trim();
+      await check.click();
+      // It opens in the wiki card over the stage, which keeps its focus (LA-PAT-APP-UX-R20).
+      await page.waitForURL((u) => u.pathname === `/${REQUIREMENT}` && u.search.endsWith(`page=format/checks/${name}`));
+      await expect(page.locator('.wiki-panel.is-format .wiki-panel-title h2')).toHaveText(name);
+    } finally {
+      restore();
+    }
   });
 
   test('LA-TRC-UC20-FL01-T see the outcomes a record serves', async ({ page }) => {
@@ -281,7 +291,7 @@ test.describe('Traceability flows', () => {
     const wiki = page.locator(WIKI);
     const servesLine = () => wiki.locator('[data-fact="serves"] dd');
     /** The card's whole page (More), where a record's facts are. */
-    const whole = async () => { const more = wiki.getByRole('button', { name: 'More' }); if (await more.count()) await more.click(); };
+    const whole = () => showCard(page, 'whole');
     // S01, S02: an aggregate, a storage requirement and a view requirement each name the outcomes they serve, each a link.
     const aggregate = 'LA-AUT-A11';
     const storage = String(rowsOf(spec, 'storage_requirement').find((r) => r.aggregate_id === aggregate)?.id ?? rowsOf(spec, 'storage_requirement').find((r) => served.has(String(r.id)))!.id);
@@ -301,12 +311,18 @@ test.describe('Traceability flows', () => {
     await whole();
     await expect(wiki.locator('dt', { hasText: /^Kind$/ })).toBeVisible();
     await expect(servesLine()).toHaveCount(0);
-    // S04: Tools › Checks lists each serves-no-outcome warning the engine finds.
-    const unserved = spec.problems.filter((p) => p.check === 'serves-no-outcome' && p.record?.startsWith('LA-'));
-    expect(unserved.length).toBeGreaterThan(0);
-    await openPage(page, `${PRODUCT}?panel=checks`);
-    const panel = page.locator('.tool-panel.checks-panel');
-    await expect(panel.getByText('serves-no-outcome').first()).toBeVisible();
-    await expect(panel.getByText(unserved[0].message).first()).toBeAttached();
+    // S04: Tools › Checks lists each serves-no-outcome warning the engine finds; an Agent adds a read model nothing reaches.
+    const restore = keepData();
+    try {
+      lathe('read-model', 'add-read-model', '--id', 'LA-TRC-RM99', '--title', 'Unread counts', '--domain_id', TRC, '--description', 'A read model nothing queries, added by the stability suite.');
+      const unserved = (await servedWorkspace()).problems.filter((p) => p.check === 'serves-no-outcome' && p.record?.startsWith('LA-'));
+      expect(unserved.length).toBeGreaterThan(0);
+      await openPage(page, `${PRODUCT}?panel=checks`);
+      const panel = page.locator('.tool-panel.checks-panel');
+      await expect(panel.getByText('serves-no-outcome').first()).toBeVisible();
+      await expect(panel.getByText(unserved[0].message).first()).toBeAttached();
+    } finally {
+      restore();
+    }
   });
 });

@@ -12,6 +12,7 @@ import { addressOf } from '../../views/address';
 import { sendTable, type TableCommands } from './commands';
 import { useNextTableId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Table editor (LA-AUT-A18): the actions on a table, each sending one of the aggregate's own commands,
 // POST /api/table/<command>, and nothing else. Edit sends Change a table with only what changed (its keys as the whole
@@ -64,7 +65,7 @@ export function TableEditor({ index, page, children }: { index: RecordIndex; pag
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(`Change ${table.id}`, toolbar);
   };
   const product = index.byId.get(table.id)?.product ?? '';
   if (mode === 'change') {

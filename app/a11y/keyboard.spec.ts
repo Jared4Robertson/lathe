@@ -1,6 +1,8 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from '../stability/test';
 import { DOMAIN, EDITED, keepData, PRODUCT, RECORD } from '../stability/scenarios';
 import { withChat } from './chat';
+import { showCard } from '../stability/measure';
 
 // What axe can't check, walked with the keyboard alone (LA-PAT-APP-UX-R10):
 // LA-V61-R41-T01 every control on the main pages is reached by Tab and Shift+Tab, with no trap;
@@ -291,6 +293,8 @@ test.describe('keyboard', () => {
 
   test('LA-V61-R41-T02 fold and unfold a row with the keyboard', async ({ page }) => {
     await open(page, DOMAIN);
+    // The rows are the domain's whole page, in the wiki card (More).
+    await showCard(page, 'whole');
     await tabUntil(page, (el) => el.classList.contains('tree-toggle') && !!el.closest('#main'), 'a row\'s fold button', 300);
     const toggle = page.locator(':focus');
     const before = await toggle.getAttribute('aria-expanded');
@@ -356,6 +360,8 @@ test.describe('keyboard', () => {
 
   test('LA-V61-R41-T02 open a domain from its card: each card is one tab stop, and Enter opens it', async ({ page }) => {
     await open(page, PRODUCT);
+    // The domain cards are the product's whole page, in the wiki card (More).
+    await showCard(page, 'whole');
     const inDomains = (el: Element) => el.classList.contains('card-title') && !!el.closest('ul[aria-label="Domains"]');
     await tabUntil(page, inDomains, 'a domain card', 400);
     const first = await page.evaluate(() => document.activeElement!.getAttribute('href'));

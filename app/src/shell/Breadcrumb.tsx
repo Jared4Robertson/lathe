@@ -60,6 +60,15 @@ export function Breadcrumb({ items, label = 'Breadcrumb', className, onFollow }:
   );
 }
 
+/** The stage and the floating panels a menu lies over, not those that hold it. */
+function coveredBy(menu: HTMLElement | null): HTMLElement[] {
+  if (!menu) return [];
+  const m = menu.getBoundingClientRect();
+  const over = (r: DOMRect) => r.left < m.right && r.right > m.left && r.top < m.bottom && r.bottom > m.top;
+  return [...document.querySelectorAll<HTMLElement>('[data-stage-tools], [data-floating]')]
+    .filter((el) => !el.contains(menu) && !el.inert && over(el.getBoundingClientRect()));
+}
+
 /** The "…" button and its menu of the levels a long trail hides. */
 function HiddenLevels({ items, onFollow }: { items: readonly Crumb[]; onFollow?: (to: string) => void }) {
   const [open, setOpen] = useState(false);
@@ -78,7 +87,14 @@ function HiddenLevels({ items, onFollow }: { items: readonly Crumb[]; onFollow?:
       if (!menu.current?.contains(t) && !button.current?.contains(t)) setOpen(false);
     };
     document.addEventListener('pointerdown', away, true);
-    return () => document.removeEventListener('pointerdown', away, true);
+    // What the menu covers is inert while it is open, as under any popover: a press there only closes the menu, and
+    // nothing half hidden under it is a target (WCAG 2.5.8).
+    const covered = coveredBy(menu.current);
+    for (const el of covered) el.inert = true;
+    return () => {
+      document.removeEventListener('pointerdown', away, true);
+      for (const el of covered) el.inert = false;
+    };
   }, [open]);
 
   const onMenuKey = (e: KeyboardEvent<HTMLUListElement>) => {

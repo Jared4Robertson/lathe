@@ -2,8 +2,10 @@ import { execFileSync } from 'node:child_process';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { expect, test, type Page } from '@playwright/test';
-import { openPage } from './measure';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
+import { asDesktop } from './desktop';
+import { openPage, showCard } from './measure';
 import { EDITED, keepData, RECORD } from './scenarios';
 import { boxOf, sceneOf } from './scene';
 
@@ -29,11 +31,16 @@ function commitCopy() {
 
 /** The Agent's changes, through the command layer. */
 function agentChanges() {
-  lathe('add', 'aggregate', '--id', ADDED, '--title', 'Watch list', '--domain_id', 'LA-EXP');
-  lathe('set', 'uc_requirement', '--id', REQUIREMENT, '--title', 'Changed by the Agent while the Reader watched');
+  lathe('aggregate', 'add-aggregate', '--id', ADDED, '--title', 'Watch list', '--domain_id', 'LA-EXP', '--description', 'The records a Reader watches, kept together.', '--identity', 'Watch list ID');
+  lathe('use-case', 'change-uc-requirement', '--id', REQUIREMENT, '--title', 'Changed by the Agent while the Reader watched');
 }
 
 const tools = (page: Page) => page.locator('.focus-stage').getByRole('group', { name: 'Changes' });
+/** Opens the toolbar's More menu when a narrower toolbar (the chat open beside the stage) folded the Changes controls there. */
+async function reachChanges(page: Page) {
+  const more = page.locator('.focus-stage .stage-more');
+  if ((await more.locator('.changes-tools').count()) && !(await more.evaluate((d) => (d as HTMLDetailsElement).open))) await more.locator('summary').click();
+}
 const graphReady = (page: Page) => page.locator('.focus-stage .graph-flow[data-ready] .graph-box').first().waitFor();
 const changeOf = (page: Page, id: string) => page.evaluate((id) => {
   const host = document.querySelector('.focus-stage .graph-flow') as HTMLElement & { graphScene?: () => { boxes: { id: string; change: string | null }[] } };
@@ -55,26 +62,21 @@ test.describe('watching the spec change', () => {
       await page.goto(`${EDITED}?stage=graph`);
       await graphReady(page);
       // A page opened after the change has no live marks; the next change lands live.
-      lathe('set', 'uc_requirement', '--id', REQUIREMENT, '--title', 'Changed again while the Reader watched');
+      lathe('use-case', 'change-uc-requirement', '--id', REQUIREMENT, '--title', 'Changed again while the Reader watched');
       await expect.poll(() => changeOf(page, REQUIREMENT), { timeout: 20_000 }).toBe('changed');
 
       // Follow: the next change glides the camera to it; the Reader's own wheel turns it off, with a note.
       await tools(page).getByRole('button', { name: 'Follow' }).click();
-      lathe('set', 'aggregate', '--id', ADDED, '--title', 'Watch list of tools');
+      lathe('aggregate', 'change-aggregate', '--id', ADDED, '--title', 'Watch list of tools');
       await page.waitForURL((u) => u.pathname === `/${ADDED}`, { timeout: 20_000 });
       await page.locator('.focus-stage canvas').hover();
       await page.mouse.wheel(0, 200);
       await expect(tools(page).getByRole('status')).toHaveText('Follow is off: you moved the camera.');
       await expect(tools(page).getByRole('button', { name: 'Follow' })).toHaveAttribute('aria-pressed', 'false');
 
-      // Highlight changes: everything unchanged dims, against each baseline.
+      // Highlight changes: everything unchanged dims against the baseline.
       await tools(page).getByRole('button', { name: 'Highlight changes' }).click();
       await expect.poll(async () => (await boxOf(page, ADDED))?.strength).toBe(1);
-      const picker = tools(page).getByRole('combobox', { name: 'Compared with' });
-      for (const since of ['branch', 'looked', 'commit']) {
-        await picker.selectOption(since);
-        await expect(picker).toHaveValue(since);
-      }
 
       // Every changed record carries its pill, and a container its roll-up of the records under it.
       await expect.poll(async () => (await boxOf(page, ADDED))?.pill).toBe('added');
@@ -92,14 +94,19 @@ test.describe('watching the spec change', () => {
       // The panel lists both, newest first, and a click focuses the requirement; its card shows the field old → new.
       await tools(page).getByRole('button', { name: /^Changes 2/ }).click();
       const panel = page.getByRole('region', { name: 'Changes' });
+      // The baseline, from the panel (the toolbar holds the picker only in its widest form).
+      const picker = panel.getByRole('combobox', { name: 'Compared with' });
+      for (const since of ['branch', 'looked', 'commit']) {
+        await picker.selectOption(since);
+        await expect(picker).toHaveValue(since);
+      }
       const cards = panel.getByRole('list', { name: 'Changed records' }).locator('.card-title');
       await expect(cards.first()).toContainText(ADDED);
       await expect(cards.nth(1)).toContainText(REQUIREMENT);
       await cards.nth(1).click();
       await page.waitForURL((u) => u.pathname === EDITED);
       const card = page.locator('.wiki-panel');
-      const more = card.getByRole('button', { name: 'More' });
-      if (await more.count()) await more.click();
+      await showCard(page, 'whole');
       const section = card.locator('.record-changes');
       await expect(section).toContainText('Changed since the last commit');
       await expect(section.locator('ins')).toContainText('Changed again while the Reader watched');
@@ -113,26 +120,24 @@ test.describe('watching the spec change', () => {
     try {
       commitCopy();
       // The desktop shell stood in for: its bridge, with a chat whose patches the test sends (window.chatPatch).
-      await page.addInitScript(() => {
+      await asDesktop(page, (bridge) => {
         const settings = { layout: 'tree', minimap: false, allLinks: false, cardWidth: null, chat: true, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} };
         window.sessionStorage.setItem('lathe:session-settings', JSON.stringify(settings));
         window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
-        let listener: ((patch: unknown) => void) | null = null;
-        (window as unknown as { chatPatch: (patch: unknown) => void }).chatPatch = (patch) => listener?.(patch);
-        const chat = {
-          sessions: async () => ({ claude: '/usr/local/bin/claude', configured: false, current: 'session-1', sessions: [{ id: 'session-1', title: 'Watch list', updated: Date.now(), openElsewhere: null }] }),
+        let listener: ((patch: import('../src/chat/types').ChatPatch) => void) | null = null;
+        // The test sends a patch's session, status and items; the rest is as the shell sends it.
+        (window as unknown as { chatPatch: (patch: Pick<import('../src/chat/types').ChatPatch, 'reset' | 'sessionId' | 'status' | 'items'>) => void }).chatPatch = (patch) =>
+          listener?.({ mode: 'accept-reads', choice: { model: null, effort: null }, lathe: { status: 'counting', version: null }, queue: [], ...patch });
+        bridge.chat = {
+          ...bridge.chat,
+          sessions: async () => ({ claude: '/usr/local/bin/claude', configured: false, signedIn: true, mode: 'accept-reads', current: 'session-1', sessions: [{ id: 'session-1', title: 'Watch list', updated: Date.now(), openElsewhere: null }] }),
           open: async () => true, send: async () => true, answer: async () => true, stop: async () => true,
-          onPatch: (l: (patch: unknown) => void) => { listener = l; return () => { listener = null; }; },
-        };
-        const none = () => () => {};
-        (window as unknown as { latheDesktop: unknown }).latheDesktop = {
-          isDesktop: true, platform: 'darwin', onCommand: none, setChrome: () => {}, onFullScreen: (l: (v: boolean) => void) => { l(false); return () => {}; },
-          setErrorCount: () => {}, revealRecord: () => {}, openRecordInEditor: () => {}, copyRecordId: () => {}, showRecordMenu: () => {},
-          chat, onAppRequest: none,
+          onPatch: (l) => { listener = l; return () => { listener = null; }; },
         };
       });
       await openPage(page, `${RECORD}?stage=graph`);
       await graphReady(page);
+      await reachChanges(page);
       await tools(page).getByRole('button', { name: 'Follow' }).click();
       const user = { kind: 'user', id: 'u1', text: 'Add a watch list and sharpen the requirement' };
       const patch = (items: unknown[], status: string, reset = false) => page.evaluate(({ items, status, reset }) => (window as unknown as { chatPatch: (p: unknown) => void }).chatPatch({ reset, sessionId: 'session-1', status, items: items.map((item, at) => ({ at, item })) }), { items, status, reset });
@@ -148,7 +153,8 @@ test.describe('watching the spec change', () => {
       await expect(turn.locator('summary')).toHaveText('2 records changed');
       await expect(turn).toContainText(ADDED);
       await expect(turn).toContainText(REQUIREMENT);
-      await expect(turn.locator('ins')).toContainText('Changed by the Agent while the Reader watched');
+      // By record (LA-PLT-UC19-R03): the changed requirement under its new title; its fields' old and new show in the panel and the card.
+      await expect(turn.locator('.chat-change.is-changed')).toContainText('Changed by the Agent while the Reader watched');
 
       // The same records and fields in the Changes panel and the requirement's wiki card.
       await tools(page).getByRole('button', { name: 'Highlight changes' }).click();
@@ -158,6 +164,10 @@ test.describe('watching the spec change', () => {
       await expect(panel.locator('ins').first()).toContainText('Changed by the Agent while the Reader watched');
       await panel.getByRole('link', { name: new RegExp(REQUIREMENT) }).click();
       await page.waitForURL((u) => u.pathname === EDITED);
+      // With the chat and the Changes panel open the card has collapsed to give the stage room; the Reader shows it.
+      const showTheCard = page.getByRole('button', { name: /^Show the wiki card/ });
+      if (await showTheCard.count()) await showTheCard.click();
+      await showCard(page, 'whole');
       await expect(page.locator('.wiki-panel .record-changes ins')).toContainText('Changed by the Agent while the Reader watched');
     } finally {
       restore();

@@ -113,7 +113,8 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   useEffect(() => { if (followed.current !== path) followed.current = null; }, [path]);
   const onClickCapture = (e: MouseEvent) => {
     const a = (e.target as Element).closest?.('a[href]') as HTMLAnchorElement | null;
-    if (a) followed.current = new URL(a.href, window.location.href).pathname;
+    // Only a link to another page is a move made in the nav: a tool's link (Appearance, Checks) keeps the page.
+    if (a) { const to = new URL(a.href, window.location.href).pathname; if (to !== window.location.pathname) followed.current = to; }
   };
 
   // The current row is scrolled into view on the nav's first draw (and when it is expanded again)

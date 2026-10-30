@@ -13,6 +13,7 @@ import { addressOf } from '../../views/address';
 import { sendStandard, type StandardCommands, type StandardRoute } from './commands';
 import { useNextStandardId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The Standard editor (LA-AUT-A3): the actions on a record of a standard, each sending one of the aggregate's own
 // commands, POST /api/standard/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add
@@ -130,7 +131,7 @@ export function StandardEditor({ index, page, children }: { index: RecordIndex; 
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = page.standard.product_id;
   if (mode.mode === 'change') {

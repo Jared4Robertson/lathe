@@ -1,9 +1,7 @@
 import './setup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, waitFor } from '@testing-library/react';
-import { CHILD_READ_PX, drawnNested, frameFocus, frameMap, frameNested, frameOnMap, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, PARENT_STRIP_MAX, viewRect, zoomPath } from '../../src/graph/camera';
-import { MAX_ASPECT, type GraphMap } from '../../src/graph/map';
-import { TITLE_FONT } from '../../src/graph/text';
+import { drawnNested, FOCUS_CLEAR, frameGround, frameMap, frameNested, frameOnMap, FRAME_PADDING, glideDuration, MAX_DRAWN, MAX_ZOOM, MIN_DRAWN, PARENT_STRIP, PARENT_STRIP_MAX, STREET_ZOOM, viewRect, wholeIn, zoomPath } from '../../src/graph/camera';
 import { MOTION_SPEED_MS } from '../../src/graph/motion';
 import { roundCamera } from '../../src/graph/GraphPage';
 import { openApp, startAtDepth } from '../helpers';
@@ -34,8 +32,7 @@ describe('graph camera', () => {
     const h = 800;
     const strip = Math.min(PARENT_STRIP_MAX, w * PARENT_STRIP);
     for (const [focus, depth] of [['P-D', 1], ['P-D', 2], ['P-D/use-cases', 3], ['P-D-UC01', 1], ['P-D/question', 1]] as const) {
-      // The focus's own frame (a focus whose children it draws too small to read frames their column: LA-EXP-DS09-T14).
-      const v = frameFocus(map, map.nodes.get(focus)!, depth, w, h);
+      const v = frameOnMap(map, focus, depth, w, h);
       const f = map.nodes.get(focus)!;
       const screen = (x: number, y: number) => ({ x: x * v.zoom + v.x, y: y * v.zoom + v.y });
       // The focus is whole in the pane; never past the camera's limit.
@@ -66,7 +63,7 @@ describe('graph camera', () => {
       expect(top.x).toBeGreaterThan(screen(p.x + p.w, 0).x);
     }
     // Deeper frames take more levels in: never a larger zoom.
-    expect(frameFocus(map, map.nodes.get('P-D')!, 3, w, h).zoom).toBeLessThanOrEqual(frameFocus(map, map.nodes.get('P-D')!, 1, w, h).zoom);
+    expect(frameOnMap(map, 'P-D', 3, w, h).zoom).toBeLessThanOrEqual(frameOnMap(map, 'P-D', 1, w, h).zoom);
     // A leaf framed short of the limit: a deep leaf is small against the product's box, and the camera reaches it.
     expect(frameOnMap(map, 'P-D-UC01-R01', 1, w, h).zoom).toBeLessThan(MAX_ZOOM);
     // The whole map fits the overview.
@@ -74,56 +71,80 @@ describe('graph camera', () => {
     expect(map.height * all.zoom).toBeLessThanOrEqual(h);
   });
 
-  it("LA-EXP-DS09-T14 LA-V93-R07-T07 A focus whose children its frame would draw too small to read frames their column at reading size; one whose children read keeps its frame", () => {
-    // A 6:1 tree: the product holds six parents; one has eight children (each with two of its own), one two, one one.
+  it('LA-EXP-DS09-T14 LA-V93-R07-T07 LA-PAT-APP-UX-R23-T01 A focus with many children is framed whole, its children shown as far as they fit', () => {
+    // A 6:1 tree: the product holds six parents; one has eight children (each with two of its own), one forty.
     const kids: Record<string, string[]> = {
-      P: ['few', 'many', 'one', 'other 1', 'other 2', 'other 3'],
+      P: ['few', 'many', 'most', 'other 1', 'other 2', 'other 3'],
       few: ['few-a', 'few-b'],
       many: Array.from({ length: 8 }, (_, i) => `use case ${i + 1}`),
-      one: ['one-a'] };
+      most: Array.from({ length: 40 }, (_, i) => `rule ${i + 1}`) };
     for (const k of kids.many) kids[k] = [`${k} step 1`, `${k} step 2`];
     const tree = layoutTree(['P'], (id) => kids[id] ?? [], (id) => ({ title: `The record called ${id}`, meta: `Use case · ${id}` }));
-    const [w, h] = [1000, 800];
-    const strip = Math.min(PARENT_STRIP_MAX, w * PARENT_STRIP);
-    const titlePx = (m: GraphMap, id: string, zoom: number) => m.nodes.get(id)!.text * zoom * TITLE_FONT;
-    const many = tree.nodes.get('many')!;
-    const first = tree.nodes.get(many.children[0])!;
-    expect(first.w / first.h).toBeCloseTo(MAX_ASPECT, 9);
-    // Its own frame draws the eight children's titles under the threshold.
-    expect(titlePx(tree, first.id, frameFocus(tree, many, 1, w, h).zoom)).toBeLessThan(CHILD_READ_PX);
-    for (const depth of [1, 2, 3]) {
-      const v = frameOnMap(tree, 'many', depth, w, h);
-      const screen = (x: number, y: number) => ({ x: x * v.zoom + v.x, y: y * v.zoom + v.y });
-      // The children read: their titles at least the threshold.
-      expect(titlePx(tree, first.id, v.zoom), `depth ${depth}`).toBeGreaterThanOrEqual(CHILD_READ_PX * (1 - 1e-9));
-      // Whole rows: no child cut at the top or bottom, the first one in view, and no box in view cut at the right edge.
-      const children = many.children.map((c) => tree.nodes.get(c)!);
-      const shown = children.filter((c) => screen(0, c.y + c.h).y > 0.5 && screen(0, c.y).y < h - 0.5);
-      for (const c of children) {
-        const [y0, y1] = [screen(0, c.y).y, screen(0, c.y + c.h).y];
-        expect(y0 < -0.5 && y1 > 0.5, `${c.id} cut at the top`).toBe(false);
-        expect(y0 < h - 0.5 && y1 > h + 0.5, `${c.id} cut at the bottom`).toBe(false);
-      }
-      expect(shown[0]).toBe(first);
-      for (const n of [...tree.nodes.values()].filter((n) => screen(0, n.y + n.h).y > 0.5 && screen(0, n.y).y < h - 0.5)) {
-        const [x0, x1] = [screen(n.x, 0).x, screen(n.x + n.w, 0).x];
-        expect(x0 < w - 0.5 && x1 > w + 0.5, `${n.id} cut at the right`).toBe(false);
-      }
-      // They fill the open space: the next child would not fit below the last one shown.
-      const last = shown[shown.length - 1];
-      if (last !== children[children.length - 1]) expect(screen(0, last.y + last.h).y + first.h * v.zoom).toBeGreaterThan(h);
-      // The focus stays in view: at least the strip at the left edge, its rows on screen, its children right of it.
-      const right = screen(many.x + many.w, 0).x;
-      expect(right).toBeGreaterThanOrEqual(strip + FRAME_PADDING - 0.5);
-      expect(screen(0, many.y).y).toBeLessThan(h);
-      expect(screen(first.x, 0).x).toBeGreaterThan(right);
+    for (const [w, h] of [[1000, 800], [547, 600], [1400, 1000]] as const) for (const id of ['few', 'many', 'most']) for (const depth of [1, 2, 3]) {
+      const v = frameOnMap(tree, id, depth, w, h);
+      const f = tree.nodes.get(id)!;
+      const at = `${id} depth ${depth} in ${w}x${h}`;
+      // The focus whole, with the frame's padding at the left (past the parent's strip) and inside the pane elsewhere.
+      expect(f.x * v.zoom + v.x, at).toBeGreaterThanOrEqual(FRAME_PADDING - 0.5);
+      expect((f.x + f.w) * v.zoom + v.x, at).toBeLessThanOrEqual(w + 0.5);
+      expect(f.y * v.zoom + v.y, at).toBeGreaterThanOrEqual(-0.5);
+      expect((f.y + f.h) * v.zoom + v.y, at).toBeLessThanOrEqual(h + 0.5);
+      // Its first child shows beside it.
+      const first = tree.nodes.get(f.children[0])!;
+      expect(first.x * v.zoom + v.x, at).toBeLessThan(w);
     }
-    // A focus whose children read keeps its own frame, at every depth (in a wider pane, where its two children and its one read).
-    const [wide, tall] = [1400, 1000];
-    for (const id of ['few', 'one']) for (const depth of [1, 2, 3]) {
-      const own = frameFocus(tree, tree.nodes.get(id)!, depth, wide, tall);
-      expect(titlePx(tree, tree.nodes.get(id)!.children[0], own.zoom), `${id} depth ${depth}`).toBeGreaterThanOrEqual(CHILD_READ_PX);
-      expect(frameOnMap(tree, id, depth, wide, tall)).toEqual(own);
+  });
+
+  it('LA-PAT-APP-UX-R23-T01 The focused box is always whole in the frame: kept as it is when whole, moved in at an edge, zoomed out when too big, clear of the panels', () => {
+    // The frame: what the panels leave, 300 px in from the left (the nav, a panel) and 60 down (the toolbar).
+    const frame = { x: 300, y: 60, w: 700, h: 500 };
+    const whole = (v: { x: number; y: number; zoom: number }, b: { x: number; y: number; w: number; h: number }) => {
+      const [x0, y0, x1, y1] = [b.x * v.zoom + v.x, b.y * v.zoom + v.y, (b.x + b.w) * v.zoom + v.x, (b.y + b.h) * v.zoom + v.y];
+      return x0 >= frame.x + FOCUS_CLEAR - 1e-6 && y0 >= frame.y + FOCUS_CLEAR - 1e-6 && x1 <= frame.x + frame.w - FOCUS_CLEAR + 1e-6 && y1 <= frame.y + frame.h - FOCUS_CLEAR + 1e-6;
+    };
+    const box = { x: 1000, y: 2000, w: 100, h: 50 };
+    // Whole already: unchanged.
+    const inside = { x: 500 - 1000, y: 200 - 2000, zoom: 1 };
+    expect(wholeIn(inside, box, frame)).toEqual(inside);
+    // At the map's edge, under the panel at the left and cut at the top: moved in as little as it takes, at the same zoom.
+    const cut = { x: 280 - 1000, y: 40 - 2000, zoom: 1 };
+    const moved = wholeIn(cut, box, frame);
+    expect(moved.zoom).toBe(1);
+    expect(whole(moved, box)).toBe(true);
+    expect(box.x * moved.zoom + moved.x).toBeCloseTo(frame.x + FOCUS_CLEAR, 6);
+    expect(box.y * moved.zoom + moved.y).toBeCloseTo(frame.y + FOCUS_CLEAR, 6);
+    // Taller than the frame at the camera's zoom: zoomed out until it fits, and whole.
+    const tall = { x: 0, y: 0, w: 200, h: 4000 };
+    const out = wholeIn({ x: 400, y: 100, zoom: 1 }, tall, frame);
+    expect(out.zoom).toBeCloseTo((frame.h - 2 * FOCUS_CLEAR) / tall.h, 9);
+    expect(whole(out, tall)).toBe(true);
+    // Never past the least zoom: then from its top left corner.
+    const least = wholeIn({ x: 400, y: 100, zoom: 1 }, tall, frame, FOCUS_CLEAR, 0.5);
+    expect(least.zoom).toBe(0.5);
+    expect(tall.y * least.zoom + least.y).toBeCloseTo(frame.y + FOCUS_CLEAR, 6);
+  });
+
+  it('LA-PAT-APP-UX-R23-T01 The Map and the Nested view frame a focus whole: a record too big for the pane at street level is zoomed out until it fits', () => {
+    const ground = { nodes: new Map([['big', { id: 'big', x: 100, y: 200, w: 3000, h: 2000, role: 'record' }], ['small', { id: 'small', x: 50, y: 60, w: 200, h: 80, role: 'record' }]]) } as unknown as Parameters<typeof frameGround>[0];
+    const [w, h] = [900, 700];
+    for (const id of ['big', 'small']) {
+      const v = frameGround(ground, id, w, h);
+      const n = ground.nodes.get(id)!;
+      expect(v.zoom).toBeLessThanOrEqual(STREET_ZOOM);
+      expect(n.x * v.zoom + v.x).toBeGreaterThanOrEqual(FRAME_PADDING - 1e-6);
+      expect((n.x + n.w) * v.zoom + v.x).toBeLessThanOrEqual(w - FRAME_PADDING + 1e-6);
+      expect(n.y * v.zoom + v.y).toBeGreaterThanOrEqual(FRAME_PADDING - 1e-6);
+      expect((n.y + n.h) * v.zoom + v.y).toBeLessThanOrEqual(h - FRAME_PADDING + 1e-6);
+    }
+    expect(frameGround(ground, 'small', w, h).zoom).toBe(STREET_ZOOM);
+    const nested = nestedMap(testIndex(), 'P');
+    for (const id of nested.nodes.keys()) {
+      const v = frameNested(nested, id, w, h);
+      const n = nested.nodes.get(id)!;
+      expect(n.x * v.zoom + v.x, id).toBeGreaterThanOrEqual(-1e-6);
+      expect(n.y * v.zoom + v.y, id).toBeGreaterThanOrEqual(-1e-6);
+      expect((n.x + n.w) * v.zoom + v.x, id).toBeLessThanOrEqual(w + 1e-6);
+      expect((n.y + n.h) * v.zoom + v.y, id).toBeLessThanOrEqual(h + 1e-6);
     }
   });
 

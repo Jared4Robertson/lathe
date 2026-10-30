@@ -63,6 +63,7 @@
 {"id":"LA-PLT-INV42-RL","title":"shortcut-keeps-a-key","invariant_id":"LA-PLT-INV42","file":"app/src/platform/key-bindings/rules.ts"}
 {"id":"LA-PLT-INV43-RL","title":"shortcut-can-be-bound","invariant_id":"LA-PLT-INV43","file":"app/src/platform/key-bindings/rules.ts"}
 {"id":"LA-PLT-INV44-RL","title":"voice-phrases-distinct","invariant_id":"LA-PLT-INV44","file":"app/src/platform/voice-settings/rules.ts"}
+{"id":"LA-PLT-INV45-RL","title":"one-chat-per-window","invariant_id":"LA-PLT-INV45","file":"desktop/src/window-chat/rules.ts"}
 {"id":"LA-TRC-INV01-RL","title":"setting-value-given","invariant_id":"LA-TRC-INV01","file":"lathe/src/traceability/pattern-following/rules.ts"}
 {"id":"LA-TRC-INV02-RL","title":"setting-value-own-pattern","invariant_id":"LA-TRC-INV02","file":"lathe/src/traceability/pattern-following/rules.ts"}
 {"id":"LA-TRC-INV03-RL","title":"setting-value-of-followed-setting","invariant_id":"LA-TRC-INV03","file":"lathe/src/traceability/pattern-following/rules.ts"}

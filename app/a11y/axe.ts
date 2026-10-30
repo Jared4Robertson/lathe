@@ -1,5 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { readWholeCards } from '../stability/measure';
+import { expect, test } from '../stability/test';
 
 // One axe-core audit of the page as it is now, at WCAG 2.2 AA (LA-PAT-APP-UX-R10).
 
@@ -32,6 +34,7 @@ export async function useLook(page: Page, look: Look) {
     } catch { /* no storage */ }
   }, { theme: look.theme, mode: look.mode });
   await page.emulateMedia({ colorScheme: look.mode, reducedMotion: 'reduce' });
+  await readWholeCards(page);
 }
 
 /** Audits the page (or the part `include` names) and records what it finds under `state`; a finding fails the test softly. */

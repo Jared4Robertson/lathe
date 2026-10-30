@@ -12,6 +12,7 @@ import { addressOf } from '../../views/address';
 import { sendUiComponent, type UiComponentCommands } from './commands';
 import { useNextUiComponentId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The UI component editor (LA-AUT-A15): the actions on a UI component, each sending one of the aggregate's own
 // commands, POST /api/ui-component/<command>, and nothing else. Edit sends Change a UI component with only what
@@ -51,7 +52,7 @@ export function UiComponentEditor({ index, page, children }: { index: RecordInde
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(id)?.product ?? '';
   if (mode === 'change') {

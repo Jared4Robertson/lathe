@@ -16,9 +16,9 @@ export interface Served {
   chains: TraceChain[];
 }
 
-/** The workspace the dev server reads now: this repo's products (Lathe's and the Tool Library's), each through its own store. */
+/** The workspace the dev server reads now: the suite's copy of this repo's products (Lathe's and the Tool Library's), each through its own store. */
 export async function servedWorkspace(): Promise<Served> {
-  const repo = path.resolve(import.meta.dirname, '../..');
+  const repo = process.env.STABILITY_ROOT ?? path.resolve(import.meta.dirname, '../..');
   const served: Served = { tables: {}, problems: [], coverage: [], chains: [] };
   for (const root of [repo, path.join(repo, 'examples/tool-library')]) {
     const store = await openStore(root);

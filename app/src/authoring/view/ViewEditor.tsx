@@ -13,6 +13,7 @@ import { addressOf } from '../../views/address';
 import { sendView, type ViewCommands, type ViewRoute } from './commands';
 import { useNextViewId } from './reads';
 import '../../edit/edit.css';
+import { backToActions } from '../../edit/back-to-actions';
 
 // The View editor (LA-AUT-A12): the actions on a record of a view, each sending one of the aggregate's own commands,
 // POST /api/view/<command>, and nothing else. Edit sends its kind's Change with only what changed; Add opens an empty
@@ -136,7 +137,7 @@ export function ViewEditor({ index, page, children }: { index: RecordIndex; page
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    setTimeout(() => toolbar.current?.querySelector<HTMLElement>('button')?.focus(), 0);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(page.view.id)?.product ?? '';
   if (mode.mode === 'change') {

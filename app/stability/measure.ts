@@ -1,4 +1,5 @@
-import { expect, test, type Page } from '@playwright/test';
+import type { Page } from '@playwright/test';
+import { expect, test } from './test';
 
 // What the stability suite measures in each step of a scenario (LA-PAT-APP-UX-R08):
 // - every layout shift, from a PerformanceObserver for `layout-shift`, including the ones the
@@ -188,8 +189,21 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
 /** Starts the probes on a page; `firstKeys` are tracked from the very first frame (for a first load). */
 export async function installProbes(page: Page, firstKeys: string[] = []) {
   await page.addInitScript(probes, { firstKeys, deferred: DEFERRED });
-  // The scenarios read the wiki card's whole page (More), as a Reader who expanded it (it opens as a
-  // summary); a choice made in a scenario is kept.
+  await readWholeCards(page);
+}
+
+/** Shows the wiki card as its summary or its whole page (More and Less, LA-V96-R22), from whichever it shows now. */
+export async function showCard(page: Page, as: 'summary' | 'whole') {
+  const toggle = page.locator('.wiki-panel .wiki-panel-more').first();
+  if (((await toggle.getAttribute('aria-expanded')) === 'true') !== (as === 'whole')) await toggle.click();
+  await page.locator(as === 'whole' ? '.wiki-panel.is-expanded' : '.wiki-panel:not(.is-expanded)').first().waitFor();
+}
+
+/**
+ * Opens the wiki card on its whole page (More), as a Reader who expanded it (it opens as a summary), so the stability and
+ * accessibility suites reach every section of a record's page; a choice made in a scenario is kept.
+ */
+export async function readWholeCards(page: Page) {
   await page.addInitScript(() => {
     try {
       if (!sessionStorage.getItem('lathe:place')) {
