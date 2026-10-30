@@ -14,7 +14,7 @@ import { productRules } from '../../authoring/product/rules.ts';
 import { loadConfig, PACKAGE_DIR } from '../../config.ts';
 import { attachCached, baseKey, copyDatabase, productKey, writeCached } from './cache.ts';
 import { appendRows, insertRows } from './insert.ts';
-import { integrityQueries, recordScopeSql, storeViewsSql } from './integrity.ts';
+import { integrityQueries, recordScopeColumns, recordScopeSql, storeViewsSql } from './integrity.ts';
 import { problemAt, StoreError, type Origin, type StoreProblem } from './problems.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import type { Located } from './references.ts';
@@ -329,7 +329,16 @@ export class Store {
   readerOf<D>(make: (view: ReadView) => D): D {
     if (this.readers.has(make)) return this.readers.get(make) as D;
     const reads = new Set<string>();
-    const reader = make(trackedView(this.currentSchema, this.tables, reads, (table) => this.rows(table)));
+    // A projection may read a reader the store keeps for several (the records' placement): it reads what that read.
+    const view: ReadView = {
+      ...trackedView(this.currentSchema, this.tables, reads, (table) => this.rows(table)),
+      readerOf: (inner) => {
+        const shared = this.readerOf(inner);
+        for (const table of this.readerReads.of(inner) ?? []) reads.add(table);
+        return shared;
+      },
+    };
+    const reader = make(view);
     this.readerReads.add(make, reads);
     this.readers.set(make, reader);
     return reader;
@@ -507,7 +516,7 @@ export class Store {
       next.set(name, rows);
       changed.add(name);
     }
-    if (changed.size && !(await this.holds(schema, next, changed))) {
+    if (changed.size && !(await this.holds(schema, this.tables, next, changed))) {
       // Something is broken: the whole build names every problem, as a load from scratch does.
       const dataDb = await this.buildData(this.schemaDb, schema, next, this.origins);
       this.tables = next;
@@ -526,9 +535,10 @@ export class Store {
     return { files, tables: [...changed].sort(), full: false };
   }
 
-  // Whether the changed tables keep every key and the rules of each aggregate that reads them (what a reload holds at once).
-  private async holds(schema: SchemaDescription, tables: Tables, changed: ReadonlySet<string>): Promise<boolean> {
-    const registered = await this.step('reload registry', () => ![...changed].some((t) => schema.kinds[t]) || !this.registry(schema, tables, this.origins).problems.length);
+  // Whether the changed tables keep every key and the rules of each aggregate that reads them (what a reload holds at
+  // once). The IDs are held once across kinds only when a changed kind's IDs are not those it had before.
+  private async holds(schema: SchemaDescription, before: Tables, tables: Tables, changed: ReadonlySet<string>): Promise<boolean> {
+    const registered = await this.step('reload registry', () => sameIds(schema, before, tables, changed) || !this.registry(schema, tables, this.origins).problems.length);
     if (!registered || !(await this.step('reload keys', () => keysHold(schema, tables, changed)))) return false;
     for (const rules of AGGREGATE_RULES) {
       if (!this.ruleReads.touched(rules, changed)) continue;
@@ -549,11 +559,14 @@ export class Store {
    * at once and refuses with every problem, as it always has.
    */
   private async writeHolds(schema: SchemaDescription, tables: Tables, changed: ReadonlySet<string>): Promise<boolean> {
-    if (!this.dataDb || !(await this.holds(schema, tables, changed))) return false;
+    if (!this.dataDb || !(await this.holds(schema, this.tables, tables, changed))) return false;
     const base = this.dbTables;
     const differ = new Set(Object.values(schema.tables).filter((t) => t.stored && tables.get(t.name) !== base.get(t.name)).map((t) => t.name));
-    // The registry and the supertypes follow the kinds' rows.
-    const derived = Object.keys(schema.kinds).some((kind) => differ.has(kind)) ? this.registry(schema, tables, this.origins).rows : new Map<string, Row[]>();
+    // The registry and the supertypes follow the kinds' IDs, and record_scope the columns it reads: each is the data
+    // database's own while those are as it holds them.
+    const derived = sameIds(schema, base, tables, differ) ? new Map<string, Row[]>() : this.registry(schema, tables, this.origins).rows;
+    const scopeColumns = recordScopeColumns(schema);
+    const sameScope = [...differ].every((table) => !scopeColumns.has(table) || sameColumns(base.get(table), tables.get(table), scopeColumns.get(table)!));
     const overlay = `lathe_overlay_${++databases}`;
     const connection = await this.instance.connect();
     try {
@@ -572,7 +585,8 @@ export class Store {
       }
       await this.step('write holds: views', () => connection.run(views.join('\n')));
       await connection.run(storeViewsSql(schema));
-      await this.step('write holds: record_scope', () => connection.run(recordScopeSql(schema)));
+      await this.step('write holds: record_scope', () =>
+        connection.run(sameScope ? `CREATE VIEW record_scope AS SELECT * FROM ${sqlName(this.dataDb)}.record_scope` : recordScopeSql(schema)));
       // The integrity queries only read, so they run side by side on a few connections.
       const queries = integrityQueries(schema);
       const extra = await Promise.all(
@@ -1033,6 +1047,27 @@ function signaturesOf(folders: Folder[]): Map<string, string> {
     const full = path.join(folder.dir, file);
     return [full, signatureOf(full)] as const;
   })));
+}
+
+/** Whether each changed kind holds the same IDs as before: the registry and the supertypes are as they were. */
+function sameIds(schema: SchemaDescription, before: Tables, after: Tables, changed: Iterable<string>): boolean {
+  for (const table of changed) {
+    if (!schema.kinds[table]) continue;
+    const [a, b] = [before.get(table), after.get(table)];
+    if ((a?.size ?? 0) !== (b?.size ?? 0)) return false;
+    for (const key of b?.keys() ?? []) if (!a!.has(key)) return false;
+  }
+  return true;
+}
+
+/** Whether a table's rows hold the same keys, and the same values in these columns, as before. */
+function sameColumns(before: Map<string, Row> | undefined, after: Map<string, Row> | undefined, columns: readonly string[]): boolean {
+  if ((before?.size ?? 0) !== (after?.size ?? 0)) return false;
+  for (const [key, row] of after ?? []) {
+    const was = before!.get(key);
+    if (!was || columns.some((column) => (was[column] ?? null) !== (row[column] ?? null))) return false;
+  }
+  return true;
 }
 
 /** Whether a table read again holds the same rows, each on the same line of the same file, as before. */
