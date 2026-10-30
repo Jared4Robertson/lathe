@@ -57,7 +57,6 @@
 {"id":"LA-CHK-MOD03","title":"product-setting/model.ts","domain_id":"LA-CHK","file":"lathe/src/checking/product-setting/model.ts"}
 {"id":"LA-CHK-MOD04","title":"product-setting/commands/index.ts","domain_id":"LA-CHK","file":"lathe/src/checking/product-setting/commands/index.ts"}
 {"id":"LA-EXP-MOD01","title":"elk.ts","domain_id":"LA-EXP","file":"app/src/elk.ts"}
-{"id":"LA-EXP-MOD02","title":"model/events.ts","domain_id":"LA-EXP","file":"app/src/specs/events.ts"}
 {"id":"LA-EXP-MOD03","title":"plural.ts","domain_id":"LA-EXP","file":"app/src/plural.ts"}
 {"id":"LA-EXP-MOD05","title":"one-map.ts","domain_id":"LA-EXP","file":"app/src/graph/one-map.ts"}
 {"id":"LA-EXP-MOD06","title":"steps.ts","domain_id":"LA-EXP","file":"app/src/graph/steps.ts"}

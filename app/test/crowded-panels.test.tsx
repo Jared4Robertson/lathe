@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { act, fireEvent, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { CARD_MIN } from '../src/graph/settings';
+import { CARD_MIN } from '../src/exploring/session-settings/model';
 import { crowded, crowdedLabel, openWidth, STAGE_MIN, type CrowdPanel, type Room } from '../src/views/openSpace';
 import './graph/setup';
 import { openApp } from './helpers';

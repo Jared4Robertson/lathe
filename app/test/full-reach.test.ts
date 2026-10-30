@@ -10,6 +10,7 @@ import { erdMap } from '../src/erd/erd';
 import { erdLayout } from '../src/erd/layout';
 import { erdLevels } from '../src/erd/walk';
 import { traceMap } from '../src/trace/tree';
+import { tracesOf } from './trace/traces';
 import { traceTarget } from '../src/trace/walk';
 import { MOVES, reachable } from '../src/views/levels';
 
@@ -51,7 +52,7 @@ describe('every node is reachable by keyboard', () => {
   }, 60_000);
 
   it('LA-PAT-APP-UX-R21-T02 On the Trace, every box of the tree is reached from the product', () => {
-    const map = traceMap(index, PRODUCT);
+    const map = traceMap(index, tracesOf(index, PRODUCT), PRODUCT);
     expect(map.map.nodes.size).toBeGreaterThan(1000);
     const seen = new Set([map.product]);
     const queue = [map.product];

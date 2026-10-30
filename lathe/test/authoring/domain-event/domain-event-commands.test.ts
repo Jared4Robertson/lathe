@@ -41,12 +41,13 @@ describe('LA-AUT-UC25-R50-T01 each Domain event command (LA-AUT-A7) changes one 
   it('builds the data set with its own Add commands, and reads an event whole by its ID or its event type\'s', async () => {
     const store = await domainEventDataSet();
     const whole = runQuery(store, GET_DOMAIN_EVENT, { id: 'TL-LEND-EV01-ET' }) as Whole;
-    expect(whole.root).toBe('TL-LEND-EV01');
+    expect(whole.record).toEqual({ id: 'TL-LEND-EV01-ET', kind: 'event_type' });
+    expect(whole.event.id).toBe('TL-LEND-EV01');
     expect(whole.fields.map((f) => [f.position, f.name])).toEqual([
       [1, 'Loan ID'],
       [2, 'Due'],
     ]);
-    expect(whole.eventType).toEqual({ row: { id: 'TL-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'TL-LEND-EV01', delivery: 'outbox', file: 'src/lending/events.ts' }, meets: ['TL-STD-CODE-R01'], packages: [] });
+    expect(whole.eventType).toEqual({ eventType: { id: 'TL-LEND-EV01-ET', title: 'LoanOpened', domain_event_id: 'TL-LEND-EV01', delivery: 'outbox', file: 'src/lending/events.ts' }, meets: ['TL-STD-CODE-R01'], packages: [] });
     expect(runQuery(store, LIST_DOMAIN_EVENTS, { aggregate_id: 'TL-LEND-A1' })).toEqual([
       { id: 'TL-LEND-EV01', title: 'Loan opened' },
       { id: 'TL-LEND-EV02', title: 'Loan closed' },

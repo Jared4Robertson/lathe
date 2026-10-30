@@ -1,5 +1,6 @@
 // The Trace stage of an address, /<id>?stage=trace (LA-TRC-UC10, LA-V98).
 import { lazy, Suspense, useCallback, useLayoutEffect, useMemo, useState, type FocusEvent, type KeyboardEvent, type MouseEvent, type PointerEvent, type ReactNode } from 'react';
+import type { ProductTraces } from '../../../lathe/src/traceability/trace/read-model';
 import { Button } from '../components/Button';
 import { mapRootOf } from '../graph/map';
 import { groupName, isGroup } from '../graph/model';
@@ -21,6 +22,8 @@ import { ColumnList } from './ColumnList';
 import { TRACE_LAYOUTS, useTraceLayout, type TraceLayout } from './layout';
 import { useChangesKey } from '../changes/ChangesKey';
 import { nodeWords, traceTarget } from './walk';
+import { useTraces } from '../traceability/trace/reads';
+import { readState } from '../record/page-parts';
 
 // What the product owes and how far it has come, drawn on the canvas as the Graph's Tree is (TraceCanvas.tsx), one tree
 // per product (tree.ts, LA-PAT-APP-UX-R19): the product's outcomes with links to the capabilities serving them, its
@@ -45,7 +48,9 @@ import { nodeWords, traceTarget } from './walk';
 // Every cell shows each record's ID and title and links to it; a file links to the record that
 // names it. Long matrices show a page of rows at a time. It never reads the address. Its toolbar is every stage's
 // (views/StageChrome.tsx), floating at the top of the open space (openSpace.ts) with its own "Gaps only" filter and its
-// key, which also says why it shows what it shows; what it holds is told to the header strip.
+// key, which also says why it shows what it shows; what it holds is told to the header strip. Each obligation's chain,
+// its gaps and whether only proof is asked of it, and the untraced records, are the Trace read model's (list-traces,
+// LA-TRC-RM11), read again after every reload; the tree's structure, titles and kinds are the index's.
 
 const TraceCanvas = lazy(() => import('./TraceCanvas').then((m) => ({ default: m.TraceCanvas })));
 const TraceColumns = lazy(() => import('./TraceColumns').then((m) => ({ default: m.TraceColumns })));
@@ -61,7 +66,7 @@ export interface TraceViewProps {
   onCounts?: (counts: string) => void;
   /** The open space the host's floating panels leave over the stage, where the canvas frames the focus. */
   space?: OpenSpaceStore;
-  /** The place the Trace shows (views/cameras.ts): its camera is kept as the place is left and taken back as it shows again. */
+  /** The place the Trace shows (the Tab set's cameras, exploring/tab-set): its camera is kept as the place is left and taken back as it shows again. */
   cameraKey?: string;
   /** Opens a record in a new place (Cmd or Ctrl+click, or a middle-click for the background), when the host has places. */
   onOpenNew?: (id: string, background: boolean) => void;
@@ -84,8 +89,8 @@ const itemsOf = (row: TraceRow, column: TraceColumn): number => (column === 'fil
 /** What a matrix shows, from the focus's shape: its groups, its label, its Untraced section's owner, its caption and its note. */
 interface MatrixSpec { groups: TraceGroup[]; label: string; untracedOf?: string; caption?: string; lead?: ReactNode; /** What the obligations are counted as, after their count: " under this outcome". */ under?: string }
 
-function matrixSpec(index: SpecIndex, focus: string): MatrixSpec | null {
-  const shape = traceShape(index, focus);
+function matrixSpec(index: SpecIndex, traces: ProductTraces, focus: string): MatrixSpec | null {
+  const shape = traceShape(index, traces, focus);
   const nameOf = (id: string) => index.byId.get(id)?.title ?? (isGroup(index, id) ? groupName(index, id) : id);
   const name = nameOf(focus);
   switch (shape.shape) {
@@ -179,17 +184,28 @@ function walk(e: KeyboardEvent<HTMLElement>) {
 /** The Trace stage: one per product, so moving the focus within it keeps its map, its camera and its filter. */
 export function TraceView(props: TraceViewProps) {
   const product = mapRootOf(props.index, props.focus);
-  return <TraceStage key={product} {...props} product={product} />;
+  return <ProductTrace key={product} {...props} product={product} />;
 }
 
-function TraceStage(props: TraceViewProps & { product: string }) {
-  const { index, focus, onCounts, product } = props;
+/** A product's Trace stage once its Trace read answers for it; until then, that it is reading (or why it could not). */
+function ProductTrace(props: TraceViewProps & { product: string }) {
+  const { index, product } = props;
+  const read = readState(index, product, useTraces(product, index), (answer) => answer.product === product, false);
+  if ('shown' in read) return <section className="trace-page" aria-label="Trace">{read.shown}</section>;
+  return <TraceStage {...props} traces={read.answer} />;
+}
+
+/** The props of the stage and of its table: the view's, with the product's traces as its Trace read answers them. */
+type StageProps = TraceViewProps & { traces: ProductTraces };
+
+function TraceStage(props: StageProps & { product: string }) {
+  const { index, focus, onCounts, product, traces } = props;
   const narrow = useNarrow();
   // The tree or the columns (LA-V98-R13): the window's preference, switched by the toolbar's control or v.
   const [layout, setLayout] = useTraceLayout();
   const columnsOn = layout === 'columns';
   useCommand('graphLayout', () => setLayout(columnsOn ? 'tree' : 'columns'), true, 'Tree or Columns layout: the product\'s whole tree, or the path to the focus as columns');
-  const spec = useMemo(() => matrixSpec(index, focus), [index, focus]);
+  const spec = useMemo(() => matrixSpec(index, traces, focus), [index, traces, focus]);
   const [gapsOnly, setGapsOnly] = useState(false);
   // The table's page and the keyboard's ring are the focus's: a new focus starts them again.
   const [paging, setPaging] = useState({ focus, shown: TRACE_PAGE });
@@ -197,13 +213,13 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   const page = useMemo(() => (spec ? pageOf(spec.groups, gapsOnly, shown) : null), [spec, gapsOnly, shown]);
   // The product's one map: laid out once per product and data change, whatever the focus or the filter. On a phone only
   // the columns draw it.
-  const map = useMemo(() => (narrow && !columnsOn ? null : traceMap(index, product)), [narrow, columnsOn, index, product]);
+  const map = useMemo(() => (narrow && !columnsOn ? null : traceMap(index, traces, product)), [narrow, columnsOn, index, traces, product]);
   const [ringAt, setRing] = useState<{ focus: string; at: { id: string; chain: string | null } | null }>({ focus, at: null });
   // Where the walk or a click is on the tree (walk.ts), for the focus it left there: a node's key, so a record in several
   // chains keeps the copy arrived on, and a node that is no record (a gap, a file, the branch, the mark) holds the ring.
   const [walked, setWalked] = useState<{ focus: string; node: string } | null>(null);
   const walkedNode = walked?.focus === focus ? walked.node : null;
-  const mapNow = useCallback((): TraceMap => map ?? traceMap(index, product), [map, index, product]);
+  const mapNow = useCallback((): TraceMap => map ?? traceMap(index, traces, product), [map, index, traces, product]);
   /** The node the focus stands on, and the node the walk is on (the same, unless the walk is on a node that is no record). */
   const at = useMemo(() => focusKey(mapNow(), index, focus, walkedNode), [mapNow, index, focus, walkedNode]);
   const kept = useMemo(() => keptFor(mapNow(), focus, at), [mapNow, focus, at]);
@@ -245,17 +261,17 @@ function TraceStage(props: TraceViewProps & { product: string }) {
   }, [props.onNavigate]);
 
   // What the header strip says.
-  const untraced = useMemo(() => (spec?.untracedOf ? untracedUnder(index, spec.untracedOf) : []), [index, spec]);
+  const untraced = useMemo(() => (spec?.untracedOf ? untracedUnder(index, traces, spec.untracedOf) : []), [index, traces, spec]);
   const untracedCount = untraced.reduce((n, g) => n + g.ids.length, 0);
   const total = spec ? spec.groups.reduce((n, g) => n + g.rows.length, 0) : 0;
   const caption = useMemo(() => {
     if (!spec) {
-      const row = traceChain(index, focus)!;
+      const row = traceChain(index, traces, focus)!;
       const gaps = row.gaps;
       return `${kindLabel(index, index.byId.get(focus)!.kind)} · ${TRACE_COLUMNS.map((c) => `${itemsOf(row, c)} ${TRACE_COLUMN_LABELS[c].toLowerCase()}`).join(' · ')}${gaps.length > 0 ? ` · ${count(gaps.length, 'gap')}` : ''}`;
     }
     return spec.caption ?? `${count(total, 'obligation')}${spec.under ?? ''} · ${page!.withGaps} with gaps${spec.untracedOf ? ` · ${untracedCount} untraced` : ''}`;
-  }, [spec, index, focus, total, page, untracedCount]);
+  }, [spec, index, traces, focus, total, page, untracedCount]);
   useLayoutEffect(() => { onCounts?.(caption); }, [caption, onCounts]);
 
   const drawn = !narrow && map !== null;
@@ -429,9 +445,9 @@ function Region({ label, access, children }: { label: string; access: boolean; c
   return <div className="trace-scroll" role="region" tabIndex={access ? undefined : 0} aria-label={label}>{children}</div>;
 }
 
-function TraceChainCards(props: TraceViewProps & { access: boolean }) {
-  const { index, focus, access } = props;
-  const row = useMemo(() => traceChain(index, focus)!, [index, focus]);
+function TraceChainCards(props: StageProps & { access: boolean }) {
+  const { index, traces, focus, access } = props;
+  const row = useMemo(() => traceChain(index, traces, focus)!, [index, traces, focus]);
   const column = (c: TraceColumn): ReactNode => {
     if (itemsOf(row, c) === 0) return <p className="trace-cell-empty"><Empty row={row} column={c} /></p>;
     return (
@@ -465,7 +481,7 @@ function TraceChainCards(props: TraceViewProps & { access: boolean }) {
 
 // ---------- A matrix: of the obligations under a record or group, of the rows holding a record, or around it ----------
 
-interface MatrixProps extends TraceViewProps {
+interface MatrixProps extends StageProps {
   spec: MatrixSpec;
   page: MatrixPage;
   untraced: { kind: string; ids: string[] }[];

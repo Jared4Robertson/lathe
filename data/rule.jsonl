@@ -24,3 +24,17 @@
 {"id":"LA-AUT-INV80-RL","title":"read-model-fed-by-published","invariant_id":"LA-AUT-INV80","file":"lathe/src/authoring/read-model/rules.ts"}
 {"id":"LA-AUT-INV81-RL","title":"foreign-key-crosses-domain","invariant_id":"LA-AUT-INV81","file":"lathe/src/authoring/table/rules.ts"}
 {"id":"LA-AUT-INV82-RL","title":"key-outside-database","invariant_id":"LA-AUT-INV82","file":"lathe/src/authoring/table/rules.ts"}
+{"id":"LA-EXP-INV07-RL","title":"tab-set-has-active-tab","invariant_id":"LA-EXP-INV07","file":"app/src/exploring/tab-set/rules.ts"}
+{"id":"LA-EXP-INV08-RL","title":"tab-place-is-its-own","invariant_id":"LA-EXP-INV08","file":"app/src/exploring/tab-set/rules.ts"}
+{"id":"LA-EXP-INV20-RL","title":"space-page-is-a-page","invariant_id":"LA-EXP-INV20","file":"app/src/exploring/space/rules.ts"}
+{"id":"LA-EXP-INV21-RL","title":"nav-row-is-open-or-folded","invariant_id":"LA-EXP-INV21","file":"app/src/exploring/nav-row/rules.ts"}
+{"id":"LA-EXP-INV30-RL","title":"session-settings-known","invariant_id":"LA-EXP-INV30","file":"app/src/exploring/session-settings/rules.ts"}
+{"id":"LA-PLT-INV02-RL","title":"theme-has-light-and-dark","invariant_id":"LA-PLT-INV02","file":"app/src/platform/appearance/rules.ts"}
+{"id":"LA-PLT-INV03-RL","title":"built-in-theme-unchanged","invariant_id":"LA-PLT-INV03","file":"app/src/platform/appearance/rules.ts"}
+{"id":"LA-PLT-INV04-RL","title":"chosen-theme-exists","invariant_id":"LA-PLT-INV04","file":"app/src/platform/appearance/rules.ts"}
+{"id":"LA-PLT-INV05-RL","title":"one-window-per-folder","invariant_id":"LA-PLT-INV05","file":"desktop/src/product-window/rules.ts"}
+{"id":"LA-PLT-INV06-RL","title":"server-not-on-5199","invariant_id":"LA-PLT-INV06","file":"desktop/src/app-server/rules.ts"}
+{"id":"LA-PLT-INV14-RL","title":"recent-folders-once-at-most-10","invariant_id":"LA-PLT-INV14","file":"desktop/src/recent-folders/rules.ts"}
+{"id":"LA-PLT-INV30-RL","title":"panel-width-within-limits","invariant_id":"LA-PLT-INV30","file":"app/src/platform/panel/rules.ts"}
+{"id":"LA-PLT-INV31-RL","title":"custom-editor-has-command","invariant_id":"LA-PLT-INV31","file":"desktop/src/shell-settings/rules.ts"}
+{"id":"LA-PLT-INV32-RL","title":"editor-is-known","invariant_id":"LA-PLT-INV32","file":"desktop/src/shell-settings/rules.ts"}

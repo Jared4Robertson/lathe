@@ -1,6 +1,7 @@
 // The Integration aggregate's own reads, each answered from its read model (LA-AUT-RM34) through its reader
-// (reader.ts), which the query runner gives each handler: an integration whole, the integrations of a product, and
-// the next free ID for a record of one of its kinds. A handler never sees the data, a repository or the model.
+// (reader.ts), which the query runner gives each handler: an integration whole as its page reads it, the integrations
+// of a product, and the next free ID for a record of one of its kinds. A handler never sees the data, a repository or
+// the aggregate's model; each changes nothing.
 import { id, type AnyQuery, type QueryDefinition } from '../../platform/commands/definition.ts';
 import { StoreError } from '../../platform/data/problems.ts';
 import { INTEGRATION_SLICE, type IntegrationKind } from './model.ts';
@@ -11,10 +12,12 @@ const refuse = (rule: string, message: string): never => {
   throw new StoreError([{ rule, message }]);
 };
 
-/** The integration that holds the record: the integration itself, its adapter or one of its tests. */
+const article = (kind: string) => (/^[aeiou]/.test(kind) ? 'an' : 'a');
+
+/** The integration that holds the record, as its page reads it: the integration itself, its adapter or one of its tests. */
 export function getIntegration(reader: IntegrationReader, input: { id: string }): IntegrationPage {
   const kind = reader.kindOf(input.id) ?? refuse('missing', `no record has the ID ${input.id}`);
-  return reader.page(input.id) ?? refuse('kind', `${input.id} is ${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind}, not an integration or a record in one`);
+  return reader.page(input.id) ?? refuse('kind', `${input.id} is ${article(kind)} ${kind}, not an integration or a record in one`);
 }
 
 /** GET an integration whole (LA-AUT-QRY199). */
@@ -24,7 +27,7 @@ export const GET_INTEGRATION: QueryDefinition<{ id: string }, IntegrationPage, I
   name: 'get-integration',
   method: 'GET',
   route: '/api/integration/get-integration',
-  description: 'Reads an integration whole, by its ID or the ID of any record in it: its row, its adapter and its integration tests.',
+  description: "Reads an integration whole as its page shows it, by its ID or the ID of any record in it: the record asked for and its kind, the integration's row, its adapter (with the standard rules it meets and the packages it uses), and its integration tests by ID (with the test data sets they start from).",
   input: { id: id('The integration, or its adapter or an integration test.', 'required') },
   reader: integrationReader,
   run: getIntegration,
@@ -33,8 +36,7 @@ export const GET_INTEGRATION: QueryDefinition<{ id: string }, IntegrationPage, I
 
 /** The integrations of a product, by ID: those whose ID starts with the product's. */
 export function listIntegrations(reader: IntegrationReader, input: { product_id: string }): IntegrationSummary[] {
-  if (reader.kindOf(input.product_id) !== 'product') refuse('missing', `there is no product ${input.product_id}`);
-  return reader.integrationsOf(input.product_id);
+  return reader.integrationsOf(input.product_id) ?? refuse('missing', `there is no product ${input.product_id}`);
 }
 
 /** List the integrations of a product (LA-AUT-QRY200). */
@@ -62,7 +64,7 @@ export function nextIntegrationId(reader: IntegrationReader, input: { kind: stri
   if (!(input.kind in UNDER)) refuse('kind', `${input.kind} is not a kind of the Integration aggregate; its kinds are ${Object.keys(UNDER).join(', ')}`);
   const kind = input.kind as IntegrationKind;
   const parent = reader.kindOf(input.parent);
-  if (parent !== UNDER[kind]) refuse('parent', `${/^[aeiou]/.test(kind) ? 'an' : 'a'} ${kind} sits under ${/^[aeiou]/.test(UNDER[kind]) ? 'an' : 'a'} ${UNDER[kind]}, and ${input.parent} is ${parent ? `a ${parent}` : 'no record'}`);
+  if (parent !== UNDER[kind]) refuse('parent', `${article(kind)} ${kind} sits under ${article(UNDER[kind])} ${UNDER[kind]}, and ${input.parent} is ${parent ? `${article(parent)} ${parent}` : 'no record'}`);
   switch (kind) {
     case 'integration':
       return onePast(reader, `${input.parent}-INT`);
@@ -95,13 +97,14 @@ export const NEXT_INTEGRATION_ID: QueryDefinition<{ kind: string; parent: string
 
 /** An integration as text: its row, its adapter, then its tests. */
 function integrationText(page: IntegrationPage): string {
-  const lines = [`Integration ${page.id}: ${page.title}`, ...(page.system ? [`  system: ${page.system}`] : []), `  description: ${page.description}`];
-  const a = page.adapter;
-  if (a) {
-    const extra = [...(a.file ? [a.file] : []), ...a.meets.map((x) => `meets ${x}`), ...a.packages.map((x) => `uses ${x}`)];
+  const { integration: row } = page;
+  const lines = [`Integration ${row.id}: ${row.title}`, ...(row.system ? [`  system: ${row.system}`] : []), `  description: ${row.description}`];
+  if (page.adapter) {
+    const { adapter: a, meets, packages } = page.adapter;
+    const extra = [...(a.file ? [a.file] : []), ...meets.map((x) => `meets ${x}`), ...packages.map((x) => `uses ${x}`)];
     lines.push(`Adapter ${a.id}: ${a.title}${extra.length ? ` [${extra.join('; ')}]` : ''}`);
   }
-  for (const t of page.tests) lines.push(`Integration test ${t.id}: ${t.title} (${t.state})`);
+  for (const t of page.tests) lines.push(`Integration test ${t.test.id}: ${t.test.title} (${t.test.state})`);
   return lines.join('\n');
 }
 

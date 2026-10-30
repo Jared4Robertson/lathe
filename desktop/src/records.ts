@@ -1,7 +1,7 @@
 // The desktop-only record actions (LA-AUT-UC15-R01): reveal a record's data file in Finder, open it in
-// the editor, copy its ID, or a native menu of the three. The page names only a record ID; the main
-// process checks the request (LA-PAT-SHELL-ACTIONS-R01) and finds the file itself, among the folder's data files,
-// so a page can never name a file of its own.
+// the editor, copy its ID, or a native menu of the three, each on its own channel (product-window/commands/). The
+// page names only a record ID; the main process checks the request (LA-PAT-SHELL-ACTIONS-R01) and finds the file
+// itself, among the folder's data files, so a page can never name a file of its own.
 import type { MenuItemConstructorOptions } from 'electron';
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import path from 'node:path';
@@ -10,23 +10,14 @@ import path from 'node:path';
 export const RECORD_ID = /^[A-Z][A-Z0-9]*(-[A-Z0-9]+)*$/;
 const MAX_ID = 128;
 
-export const RECORD_ACTIONS = ['reveal', 'open-in-editor', 'copy-id', 'menu'] as const;
-export type RecordAction = (typeof RECORD_ACTIONS)[number];
-
-export interface RecordRequest {
-  action: RecordAction;
-  id: string;
-}
-
-/** A page's request, when it is exactly { action, id } with a known action and a record ID; else null. */
-export function parseRecordRequest(input: unknown): RecordRequest | null {
+/** A page's request, when it is exactly { id } with an ID in the record ID format; else null. Each action has its own channel. */
+export function parseRecordId(input: unknown): string | null {
   if (typeof input !== 'object' || input === null || Array.isArray(input)) return null;
-  const keys = Object.keys(input).sort();
-  if (keys.length !== 2 || keys[0] !== 'action' || keys[1] !== 'id') return null;
-  const { action, id } = input as Record<string, unknown>;
-  if (typeof action !== 'string' || !(RECORD_ACTIONS as readonly string[]).includes(action)) return null;
+  const keys = Object.keys(input);
+  if (keys.length !== 1 || keys[0] !== 'id') return null;
+  const { id } = input as Record<string, unknown>;
   if (typeof id !== 'string' || id.length > MAX_ID || !RECORD_ID.test(id)) return null;
-  return { action: action as RecordAction, id };
+  return id;
 }
 
 // A data file's line that holds the record starts with its id column: {"id":"<ID>", then a comma or the end.

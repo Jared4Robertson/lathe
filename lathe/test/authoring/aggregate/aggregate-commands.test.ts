@@ -50,14 +50,15 @@ describe('LA-AUT-UC10-R50-T01 each Aggregate command (LA-AUT-A6) changes one agg
   it('LA-PAT-AGGREGATE-TESTS-R03-T01 builds the data set with its own Add commands, and reads an aggregate whole by any record in it', async () => {
     const store = await aggregateDataSet();
     const whole = runQuery(store, GET_AGGREGATE, { id: 'TL-LEND-INV01-T' }) as Whole;
-    expect(whole.root).toBe('TL-LEND-A1');
-    expect(whole.entities.map((e) => [e.row.id, e.fields.length, e.hasOne])).toEqual([
+    expect(whole.record).toEqual({ id: 'TL-LEND-INV01-T', kind: 'invariant_test' });
+    expect(whole.aggregate.id).toBe('TL-LEND-A1');
+    expect(whole.entities.map((e) => [e.entity.id, e.fields.length, e.hasOne])).toEqual([
       ['TL-LEND-EN01', 3, ['TL-LEND-EN02']],
       ['TL-LEND-EN02', 1, []],
     ]);
     expect(whole.entities[0].fields[1]).toEqual({ entity_id: 'TL-LEND-EN01', position: 2, name: 'Tool', meaning: 'The tool lent.', type_aggregate_id: 'TL-LEND-A2', required: true, column_name: 'tool_id' });
-    expect(whole.dataModels).toEqual([{ row: { id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }, meets: ['TL-STD-CODE-R01'], packages: [] }]);
-    expect(whole.invariantTests[0].startsFrom).toEqual(['TL-LEND-TD01']);
+    expect(whole.entities[0].dataModel).toEqual({ dataModel: { id: 'TL-LEND-EN01-DM', title: 'Loan', entity_id: 'TL-LEND-EN01', file: 'src/lending/loan.ts' }, meets: ['TL-STD-CODE-R01'], packages: [] });
+    expect(whole.invariants[0].test?.startsFrom).toEqual(['TL-LEND-TD01']);
     expect(runQuery(store, LIST_AGGREGATES, { domain_id: 'TL-LEND' })).toEqual([
       { id: 'TL-LEND-A1', title: 'Loan' },
       { id: 'TL-LEND-A2', title: 'Tool' },

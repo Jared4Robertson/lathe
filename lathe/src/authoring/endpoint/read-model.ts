@@ -1,54 +1,46 @@
-// The Endpoint read model (LA-AUT-RM33): an endpoint as its readers see it, with its handler and its API requirements,
-// each holding its tests, and the endpoints of a command or query in a list. Its projection builds its table from
-// the rows; it shares no type with the aggregate.
-import type { Row } from '../../platform/data/rows.ts';
+// The Endpoint aggregate's read model (LA-AUT-RM33), shaped for its readers: the Endpoint page reads an endpoint whole
+// (its handler with the standard rules it meets and the packages it uses, and its API requirements by ID, each with
+// its tests) with the record the page is about, a command's or query's list reads each endpoint that exposes it, and
+// the editor's next ID reads the IDs in use. The projection (endpointTableFrom) is the only code that reads the source
+// rows and the only code that writes the read model's table; the query handlers read that table only through the
+// reader (reader.ts). Nothing here is the aggregate's own instance type.
 import type { ReadView } from '../../platform/data/rules.ts';
+import type { Row } from '../../platform/data/rows.ts';
+import type { ApiRequirementRow, EndpointHandlerRow, EndpointRow, EndpointTestRow } from '../../platform/data/tables.ts';
+import type { EndpointKind } from './model.ts';
 
-/** An endpoint test, as a reader sees it. */
-export interface EndpointTestLine {
-  id: string;
-  title: string;
-  level: string;
-  state: string;
-  file: string | null;
-  /** The test data sets it starts from. */
+/** An endpoint test as the page shows it: its row and the test data sets it starts from. */
+export interface EndpointTestOnPage {
+  test: EndpointTestRow;
   startsFrom: string[];
 }
 
-/** An API requirement with its tests. */
-export interface ApiRequirementLine {
-  id: string;
-  title: string;
-  statement: string;
-  group: string | null;
-  tests: EndpointTestLine[];
+/** An API requirement as the page shows it: its row and its tests by ID. */
+export interface ApiRequirementOnPage {
+  requirement: ApiRequirementRow;
+  tests: EndpointTestOnPage[];
 }
 
-/** The code that serves the endpoint. */
-export interface EndpointHandlerLine {
-  id: string;
-  title: string;
-  file: string | null;
-  description: string;
+/** The endpoint's handler as the page shows it: its row, the standard rules it meets and the packages it uses. */
+export interface EndpointHandlerOnPage {
+  handler: EndpointHandlerRow;
   meets: string[];
   packages: string[];
 }
 
-/** One endpoint, whole. */
-export interface EndpointPage {
-  id: string;
-  title: string;
-  method: string;
-  route: string;
-  /** The command or query it exposes. */
-  exposes: string;
-  description: string;
-  notes: string | null;
-  handler: EndpointHandlerLine | null;
-  requirements: ApiRequirementLine[];
+/** An endpoint whole, as its page shows it: its row, its handler when it has one, and its API requirements by ID. */
+export interface EndpointTree {
+  endpoint: EndpointRow;
+  handler: EndpointHandlerOnPage | null;
+  requirements: ApiRequirementOnPage[];
 }
 
-/** An endpoint in a list. */
+/** An endpoint as its page reads it, with the record of it the page is about. */
+export interface EndpointPage extends EndpointTree {
+  record: { id: string; kind: EndpointKind };
+}
+
+/** An endpoint as a command's or query's list reads it. */
 export interface EndpointSummary {
   id: string;
   title: string;
@@ -56,65 +48,66 @@ export interface EndpointSummary {
 
 /** The read model's table, kept in memory: what the reader reads, and all it reads. */
 export interface EndpointTable {
-  /** Each endpoint whole, by its ID, in ID order. */
-  endpoints: Map<string, EndpointPage>;
-  /** Each record inside an endpoint: the endpoint that holds it. */
-  holding: Map<string, string>;
-  /** Every domain's ID. */
+  /** Each endpoint whole, by its ID. */
+  endpoints: Map<string, EndpointTree>;
+  /** Each record inside an endpoint: the endpoint that holds it and its kind there. */
+  holding: Map<string, { root: string; kind: EndpointKind }>;
+  /** Each command's and query's endpoints, by ID; one with none has an empty list. */
+  parents: Map<string, EndpointSummary[]>;
+  /** Every domain's ID: what an endpoint's number is counted across. */
   domains: string[];
   /** Every record ID in use, with its kind: what a next ID is one past, and what a refusal names. */
   kinds: Map<string, string>;
 }
 
-const text = (v: unknown): string | null => (v === undefined || v === null ? null : String(v));
 const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-const targets = (links: Row[], from: string, source: string, target: string) => links.filter((l) => l[source] === from).map((l) => String(l[target])).sort();
+
+/** Rows by a column's value, each list in the table's order. */
+function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
+  const found = new Map<string, T[]>();
+  for (const r of rows) found.set(String(r[column]), [...(found.get(String(r[column])) ?? []), r as unknown as T]);
+  return found;
+}
+
+/** A link table's other ends by one end, each list sorted. */
+function linked(view: ReadView, table: string, by: string, other: string): (id: string) => string[] {
+  const found = grouped<Row>(view.rows(table), by);
+  return (id) => (found.get(id) ?? []).map((l) => String(l[other])).sort();
+}
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function endpointTableFrom(view: ReadView): EndpointTable {
-  const kinds = new Map<string, string>();
-  for (const kind of Object.keys(view.schema.kinds)) for (const r of view.rows(kind)) kinds.set(String(r.id), kind);
-  const [startsFrom, meets, packages] = [view.rows('starts_from'), view.rows('meets'), view.rows('package_use')];
-  const [requirements, tests, handlers] = [view.rows('api_requirement'), view.rows('endpoint_test'), view.rows('endpoint_handler')];
-  const endpoints = new Map<string, EndpointPage>();
-  const holding = new Map<string, string>();
-  for (const endpoint of [...view.rows('endpoint')].sort((a, b) => byId({ id: String(a.id) }, { id: String(b.id) }))) {
-    const id = String(endpoint.id);
-    const hold = (inside: unknown) => holding.set(String(inside), id);
-    hold(id);
-    const handler = handlers.find((h) => h.endpoint_id === id);
-    if (handler) hold(handler.id);
-    endpoints.set(id, {
-      id,
-      title: String(endpoint.title),
-      method: String(endpoint.method),
-      route: String(endpoint.route),
-      exposes: String(endpoint.command_id ?? endpoint.query_id),
-      description: String(endpoint.description),
-      notes: text(endpoint.notes),
-      handler: handler
-        ? { id: String(handler.id), title: String(handler.title), file: text(handler.file), description: String(handler.description), meets: targets(meets, String(handler.id), 'source_id', 'target_id'), packages: targets(packages, String(handler.id), 'record_id', 'package') }
-        : null,
-      requirements: requirements
-        .filter((r) => r.endpoint_id === id)
-        .map((r) => {
-          hold(r.id);
-          return {
-            id: String(r.id),
-            title: String(r.title),
-            statement: String(r.statement),
-            group: text(r.group_name),
-            tests: tests
-              .filter((t) => t.api_requirement_id === r.id)
-              .map((t) => {
-                hold(t.id);
-                return { id: String(t.id), title: String(t.title), level: String(t.level), state: String(t.state), file: text(t.file), startsFrom: targets(startsFrom, String(t.id), 'source_id', 'target_id') };
-              })
-              .sort(byId),
-          };
-        })
-        .sort(byId),
-    });
+  const startsFrom = linked(view, 'starts_from', 'source_id', 'target_id');
+  const meets = linked(view, 'meets', 'source_id', 'target_id');
+  const packages = linked(view, 'package_use', 'record_id', 'package');
+  const requirements = grouped<ApiRequirementRow>(view.rows('api_requirement'), 'endpoint_id');
+  const tests = grouped<EndpointTestRow>(view.rows('endpoint_test'), 'api_requirement_id');
+  const handlers = grouped<EndpointHandlerRow>(view.rows('endpoint_handler'), 'endpoint_id');
+  const endpoints = new Map<string, EndpointTree>();
+  const holding = new Map<string, { root: string; kind: EndpointKind }>();
+  const parents = new Map<string, EndpointSummary[]>([...view.rows('command'), ...view.rows('query')].map((p) => [String(p.id), []]));
+  for (const endpoint of view.rows('endpoint') as unknown as EndpointRow[]) {
+    const root = endpoint.id;
+    holding.set(root, { root, kind: 'endpoint' });
+    const handler = handlers.get(root)?.[0];
+    const tree: EndpointTree = {
+      endpoint,
+      handler: handler ? { handler, meets: meets(handler.id), packages: packages(handler.id) } : null,
+      requirements: [...(requirements.get(root) ?? [])].sort(byId).map((requirement) => ({
+        requirement,
+        tests: [...(tests.get(requirement.id) ?? [])].sort(byId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
+      })),
+    };
+    if (handler) holding.set(handler.id, { root, kind: 'endpoint_handler' });
+    for (const r of tree.requirements) {
+      holding.set(r.requirement.id, { root, kind: 'api_requirement' });
+      for (const t of r.tests) holding.set(t.test.id, { root, kind: 'endpoint_test' });
+    }
+    endpoints.set(root, tree);
+    parents.get(String(endpoint.command_id ?? endpoint.query_id))?.push({ id: endpoint.id, title: endpoint.title });
   }
-  return { endpoints, holding, domains: view.rows('domain').map((d) => String(d.id)), kinds };
+  for (const list of parents.values()) list.sort(byId);
+  const kinds = new Map<string, string>();
+  for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
+  return { endpoints, holding, parents, domains: view.rows('domain').map((d) => String(d.id)), kinds };
 }

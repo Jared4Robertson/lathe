@@ -127,7 +127,14 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
 });
 
 describe('LA-STD-MODELING-R09-T02 each rule record is a rule in its aggregate\'s rules.ts, by the name its refusal carries, and each rule there has its record', () => {
-  const files = sources();
+  /** Every rules.ts under a directory, from the repo root: the app's and the desktop's aggregates keep their rules there too. */
+  const rulesFiles = (dir: string): { file: string; text: string; imports: string[] }[] =>
+    readdirSync(dir).flatMap((name) => {
+      const full = path.join(dir, name);
+      if (statSync(full).isDirectory()) return rulesFiles(full);
+      return name === 'rules.ts' ? [{ file: path.relative(REPO, full), text: readFileSync(full, 'utf8'), imports: [] }] : [];
+    });
+  const files = [...sources(), ...rulesFiles(path.join(REPO, 'app', 'src')), ...rulesFiles(path.join(REPO, 'desktop', 'src'))];
   /** The rules a rules.ts writes: each name a refusal of it carries. */
   const rulesIn = (text: string) => new Set([...text.matchAll(/\brule: '([a-z0-9-]+)'/g)].map((m) => m[1]));
 
@@ -166,6 +173,9 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
     'lathe/src/authoring/test-data-set',
     'lathe/src/authoring/pattern',
     'lathe/src/authoring/standard',
+    'lathe/src/authoring/aggregate',
+    'lathe/src/authoring/domain-event',
+    'lathe/src/authoring/command',
     'lathe/src/authoring/specification',
     'lathe/src/authoring/value-object',
     'lathe/src/authoring/read-model',
@@ -179,6 +189,9 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
     'lathe/src/checking/check',
     'lathe/src/checking/product-setting',
     'lathe/src/traceability/pattern-following',
+    // Slices of reads alone, with no aggregate of their own and so no model.ts.
+    'lathe/src/checking/problems',
+    'lathe/src/traceability/trace',
   ];
   const files = sources();
   const file = (name: string) => files.find((f) => f.file === name);
@@ -191,8 +204,9 @@ describe('LA-STD-MODELING-R11-T01 a query reads only its read model: no query ha
 
   it('lets a converted slice\'s queries.ts, read-model.ts and reader.ts import neither its repository nor its model type or row builder', () => {
     const crossing = READ_MODEL_SLICES.flatMap((slice) => {
-      const model = file(`${slice}/model.ts`)!;
-      // The model's types (the instance type and its parts) and every function over them (the row builders).
+      // The model's types (the instance type and its parts) and every function over them (the row builders); none for a
+      // slice of reads alone.
+      const model = file(`${slice}/model.ts`) ?? { text: '' };
       const types = [...model.text.matchAll(/^export interface (\w+)/gm)].map((m) => m[1]);
       const mentions = (signature: string) => types.some((t) => new RegExp(`\\b${t}\\b`).test(signature));
       const builders = [...model.text.matchAll(/^export function (\w+)[^{]*/gm)].filter((m) => mentions(m[0])).map((m) => m[1]);

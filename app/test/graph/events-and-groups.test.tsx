@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { groupLabel, neighborhood } from '../../src/graph/model';
 import { shapeOf } from '../../src/graph/shapes';
 import { treeChildren, treeParent } from '../../src/graph/tree';
-import { SETTINGS_KEY, sessionSettings } from '../../src/graph/settings';
+import { SETTINGS_KEY, sessionSettingsRepository } from '../../src/exploring/session-settings/repository';
 import { readView } from '../../src/views/place';
 import { openApp } from '../helpers';
 import { indexOf } from '../fixtures/load';
@@ -65,26 +65,24 @@ describe('the rules the graph keeps', () => {
     // The answer is the children's alone: the focus, depth and filters frame it, never change it.
     neighborhood(index, 'P-D-A3', 3, { hiddenKinds: new Set(['domain_event']) });
     expect(treeChildren(index, 'P-D-A3')).toEqual(['P-D-A3/entity', 'P-D-A3/invariant', 'P-D-A3/domain_event']);
-    // The record page titles a list of one kind by that kind, and a mixed one "Children".
+    // The record page titles a list of one kind by that kind.
     await openApp('/DM-SHOP-EP01');
     expect(await screen.findByRole('heading', { name: /^API requirements/ })).toBeInTheDocument();
-    await openApp('/DM-SHOP-CMD01');
-    expect(await screen.findByRole('heading', { name: /^Children/ })).toBeInTheDocument();
   });
 
   it('LA-VO92-C01-T A graph\'s depth is a whole number from 1 to 3, and its layout one of tree and nested', () => {
-    // The layout is the window's (graph/settings.ts); the depth is the place's (views/place.ts).
+    // The layout is the window's (exploring/session-settings); the depth is the place's (views/place.ts).
     const stored = (layout: string) => window.sessionStorage.setItem(SETTINGS_KEY, JSON.stringify({ layout, minimap: false, cardWidth: null, chat: false, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} }));
     for (const layout of ['tree', 'nested'] as const) {
       stored(layout);
-      expect(sessionSettings().graph).toEqual({ layout, minimap: false });
+      expect(sessionSettingsRepository.load().graph).toEqual({ layout, minimap: false });
     }
     for (const depth of [1, 2, 3]) expect(readView({ depth }).depth).toBe(depth);
     // Any other depth falls back to 1; any other layout, one the graph no longer has included, reads as Tree and keeps the rest.
     for (const depth of [0, 4, 2.5, -1, '2']) expect(readView({ depth }).depth).toBe(1);
     for (const layout of ['grid', 'voronoi']) {
       stored(layout);
-      expect(sessionSettings().graph).toEqual({ layout: 'tree', minimap: false });
+      expect(sessionSettingsRepository.load().graph).toEqual({ layout: 'tree', minimap: false });
     }
   });
 

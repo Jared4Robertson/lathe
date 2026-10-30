@@ -7,6 +7,7 @@ import { spaceIndex } from '../../src/specs/data';
 import { obligationsUnder } from '../../src/trace/chain';
 import { focusKey, keptFor, traceFade, traceMap, type TraceMap } from '../../src/trace/tree';
 import { OUTSIDE, UNTRACED } from '../../src/trace/top';
+import { tracesOf } from './traces';
 import { CHILD_READ_PX, drawnFor, frameFocus, frameMap, frameOnMap, MAX_DRAWN, viewRect } from '../../src/graph/camera';
 import { TITLE_FONT } from '../../src/graph/text';
 import { treeText } from '../../src/graph/map';
@@ -34,7 +35,7 @@ const positions = (m: TraceMap) => JSON.stringify([...m.map.nodes.values()].map(
 describe('the Trace stage\'s tree', () => {
   it('LA-V98-R03-T03 The tree\'s children rule: each outcome to its use cases, their requirements and each one\'s chain to the right, Not under an outcome by domain, a shared record repeated with its count', () => {
     const index = withOutcomes();
-    const map = traceMap(index, 'P');
+    const map = traceMap(index, tracesOf(index, 'P'), 'P');
     // The product: its outcomes, Not under an outcome, the Untraced mark last.
     expect(childrenOf(map, 'P')).toEqual(['P-BO01', 'P-BO02', OUTSIDE, UNTRACED]);
     expect(map.nodes.get(OUTSIDE)).toMatchObject({ role: 'outside', opens: null, words: { title: 'Not under an outcome' } });
@@ -85,7 +86,7 @@ describe('the Trace stage\'s tree', () => {
     const data = modelWorkspace();
     data.coverage[0].gaps.push(gap('P-D-SP01', 'specification', 'built'), gap('P-D-SP01', 'specification', 'proved'));
     const index = indexOf(data);
-    const map = traceMap(index, 'P');
+    const map = traceMap(index, tracesOf(index, 'P'), 'P');
     const gaps = childrenOf(map, 'P-D-SP01').map((k) => map.nodes.get(k)!).filter((n) => n.role === 'gap');
     expect(gaps.map((n) => n.words?.title)).toEqual(['Not built', 'Not proved']);
     expect(childrenOf(map, 'P-D-SP01').slice(0, 2)).toEqual(gaps.map((n) => n.key));
@@ -101,7 +102,7 @@ describe('the Trace stage\'s tree', () => {
 
   it('LA-V98-R07-T03 The Untraced mark comes last under the product, holding each record no chain reaches', () => {
     const index = withOutcomes();
-    const map = traceMap(index, 'P');
+    const map = traceMap(index, tracesOf(index, 'P'), 'P');
     const mark = map.nodes.get(UNTRACED)!;
     expect(childrenOf(map, 'P').at(-1)).toBe(UNTRACED);
     expect(mark.role).toBe('untraced');
@@ -112,12 +113,12 @@ describe('the Trace stage\'s tree', () => {
     // Where everything is reached there is no mark.
     const data = modelWorkspace();
     for (const c of data.coverage) c.gaps = c.gaps.filter((g) => g.missing !== 'record-untraced');
-    expect(traceMap(indexOf(data), 'P').nodes.has(UNTRACED)).toBe(false);
+    expect(traceMap(indexOf(data), tracesOf(indexOf(data), 'P'), 'P').nodes.has(UNTRACED)).toBe(false);
   });
 
   it('LA-V98-R08-T02 Focusing stands each kind of record on its box and keeps what is under it at full strength', () => {
     const index = withOutcomes();
-    const map = traceMap(index, 'P');
+    const map = traceMap(index, tracesOf(index, 'P'), 'P');
     const fadeOf = (focus: string, at: string | null = null) => { const key = focusKey(map, index, focus, at); return { key, fade: traceFade(map, keptFor(map, focus, key), false, FADE) }; };
     // The product: its own box, nothing faded.
     const product = fadeOf('P');
@@ -154,7 +155,7 @@ describe('the Trace stage\'s tree', () => {
 
   it('LA-PAT-APP-UX-R19-T01 The Trace tree is laid out once: focusing two records and toggling Gaps only moves no box', () => {
     const index = withOutcomes();
-    const map = traceMap(index, 'P');
+    const map = traceMap(index, tracesOf(index, 'P'), 'P');
     const before = positions(map);
     for (const focus of ['P-D-UC01-R01', 'P-D-CMD01', 'P-D-CAP01']) {
       const key = focusKey(map, index, focus);
@@ -163,15 +164,15 @@ describe('the Trace stage\'s tree', () => {
     }
     expect(positions(map)).toBe(before);
     // The same tree for the same product and data; a new tree, laid out once, for new data.
-    expect(traceMap(index, 'P')).toBe(map);
-    const again = traceMap(withOutcomes(), 'P');
+    expect(traceMap(index, tracesOf(index, 'P'), 'P')).toBe(map);
+    const again = traceMap(withOutcomes(), tracesOf(withOutcomes(), 'P'), 'P');
     expect(again).not.toBe(map);
     expect(positions(again)).toBe(before);
   });
 
   it('LA-V98-R06-T03 Only what is in view is drawn, at most 260 boxes, the runs too small to see as bars', async () => {
     const index = spaceIndex(indexOf(await repoData({ chains: true })), 'LA');
-    const map = traceMap(index, 'LA');
+    const map = traceMap(index, tracesOf(index, 'LA'), 'LA');
     expect(map.map.nodes.size).toBeGreaterThan(MAX_DRAWN * 10);
     // Far out, the whole tree: at most the budget as boxes, the rest as bars.
     const far = drawnFor(map.map, frameMap(map.map, 1440, 900), 1440, 900);
@@ -189,7 +190,7 @@ describe('the Trace stage\'s tree', () => {
 
   it("LA-V98-R03-T05 An outcome's use cases and a domain's parents read when focused: the camera frames their column", async () => {
     const index = spaceIndex(indexOf(await repoData({ chains: true })), 'LA');
-    const map = traceMap(index, 'LA');
+    const map = traceMap(index, tracesOf(index, 'LA'), 'LA');
     // The outcome holding the most use cases, and the Traceability domain under Not under an outcome.
     const outcome = [...map.map.nodes.values()].filter((n) => index.byId.get(n.id)?.kind === 'business_outcome').sort((a, b) => b.children.length - a.children.length)[0];
     expect(outcome.children.length, 'an outcome with several use cases').toBeGreaterThan(4);

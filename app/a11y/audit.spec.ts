@@ -70,6 +70,16 @@ const PAGES: State[] = [
   { name: 'test data set page', url: '/LA-AUT-TD30', ready: '[data-aggregate="test-data-set"] .record-lead' },
   { name: 'pattern page', url: '/LA-PAT-RECORD-PAGE', ready: '[data-aggregate="pattern"] .pattern-rules' },
   { name: 'standard page', url: '/LA-STD-CODE', ready: '[data-aggregate="standard"] .standard-rules' },
+  // The View and UI component aggregates' own pages.
+  { name: 'view page', url: '/LA-V150', ready: '[data-aggregate="view"] .view-requirements' },
+  { name: 'UI component page', url: '/LA-UI280', ready: '[data-aggregate="ui-component"] .traceability' },
+  // The Endpoint and Integration aggregates' own pages.
+  { name: 'endpoint page', url: '/LA-AUT-EP02', ready: '[data-aggregate="endpoint"] .endpoint-requirements' },
+  { name: 'integration page', url: '/LA-INT04', ready: '[data-aggregate="integration"] .integration-tests' },
+  // The Aggregate, Domain event and Command aggregates' own pages.
+  { name: 'aggregate page', url: '/LA-AUT-A6', ready: '[data-aggregate="aggregate"] .aggregate-entities' },
+  { name: 'domain event page', url: '/LA-AUT-EV01', ready: '[data-aggregate="domain-event"] .record-lead' },
+  { name: 'command page', url: '/LA-AUT-CMD210', ready: '[data-aggregate="command"] .command-endpoints' },
   // The Table, Specification, Value object and Read model aggregates' own pages.
   { name: 'table page', url: '/LA-AUT-EN54-TB', ready: '[data-aggregate="table"] .table-keys' },
   { name: 'specification page', url: '/LA-AUT-SP03', ready: '[data-aggregate="specification"] .record-lead' },
@@ -87,6 +97,8 @@ const PAGES: State[] = [
   { name: 'Checks panel', url: `${PRODUCT}?panel=checks`, ready: '.tool-panel.checks-panel .problems' },
   { name: 'Format page in the wiki card', url: `${PRODUCT}?page=format`, ready: '.wiki-panel.is-format h2' },
   { name: 'Kind page in the wiki card', url: `${RECORD}?page=format/kinds/use_case`, ready: '.wiki-panel.is-format h2' },
+  // The Check aggregate's own page: a product's own check, with its actions.
+  { name: 'Check page in the wiki card', url: `${PRODUCT}?page=format/checks/actor-not-a-role`, ready: '.wiki-panel.is-format [data-aggregate="check"]' },
   { name: 'Appearance popover', url: `${PRODUCT}?panel=appearance`, ready: '.tool-panel.appearance-popover .theme-rows' },
   { name: 'Products picker', url: '/', ready: '.dialog.products-picker h1' },
 ].map((p) => ({ name: p.name, run: (page: Page) => open(page, p.url, p.ready) }));
@@ -124,6 +136,21 @@ PAGES.push(
   { name: 'the pattern form, its settings as rows', run: async (page: Page) => {
     await open(page, '/LA-PAT-RECORD-PAGE', '[data-aggregate="pattern"] .pattern-rules');
     await page.getByRole('toolbar', { name: 'Change LA-PAT-RECORD-PAGE' }).getByRole('button', { name: 'Edit' }).click();
+    await page.getByRole('form').locator('.form-parts').waitFor();
+  } },
+  { name: 'the set limits form', run: async (page: Page) => {
+    await open(page, PRODUCT, '.product-limits .record-actions');
+    await page.getByRole('toolbar', { name: 'Change the limits of LA' }).getByRole('button', { name: 'Set limits' }).click();
+    await page.getByRole('form', { name: 'Set limits' }).waitFor();
+  } },
+  { name: 'the following\'s Follow form', run: async (page: Page) => {
+    await open(page, '/LA-PAT-RECORD-PAGE', '[data-aggregate="pattern"] .pattern-domain');
+    await page.getByRole('toolbar', { name: 'Followers of LA-PAT-RECORD-PAGE' }).getByRole('button', { name: 'Follow' }).click();
+    await page.getByRole('form', { name: 'Follow LA-PAT-RECORD-PAGE' }).waitFor();
+  } },
+  { name: 'the entity form, its fields as rows', run: async (page: Page) => {
+    await open(page, '/LA-AUT-EN11', '[data-aggregate="aggregate"] .entity-commands');
+    await page.getByRole('toolbar', { name: 'Change LA-AUT-EN11' }).getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('form').locator('.form-parts').waitFor();
   } },
   { name: 'the remove question and its refusal', run: async (page: Page) => {
