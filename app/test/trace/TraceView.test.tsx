@@ -394,8 +394,12 @@ describe('the Trace stage', () => {
     await canvasHost();
     const views = within(traceStage()).getByRole('group', { name: 'Trace view' });
     expect(within(views).getByRole('button', { name: 'All at once' })).toHaveAttribute('aria-pressed', 'true');
-    // Delivery is offered once its view is built.
-    expect(within(views).getByRole('button', { name: 'Delivery' })).toBeDisabled();
+    // Delivery switches the view, and All at once back.
+    fireEvent.click(within(views).getByRole('button', { name: 'Delivery' }));
+    await waitFor(() => expect(traceStage().querySelector('.trace-flow[data-view="delivery"]')).not.toBeNull());
+    expect(within(within(traceStage()).getByRole('group', { name: 'Trace view' })).getByRole('button', { name: 'Delivery' })).toHaveAttribute('aria-pressed', 'true');
+    fireEvent.click(within(within(traceStage()).getByRole('group', { name: 'Trace view' })).getByRole('button', { name: 'All at once' }));
+    await waitFor(() => expect(traceStage().querySelector('.trace-flow[data-view="all-at-once"]')).not.toBeNull());
     // The view is the place's, kept with its depth: each tab its own, All at once by default.
     expect(DEFAULT_VIEW.trace).toBe('all-at-once');
     expect(readView({ ...DEFAULT_VIEW, trace: 'delivery' }).trace).toBe('delivery');

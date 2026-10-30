@@ -639,8 +639,10 @@
 {"source_id":"LA-TRC-UC09-FL02-S03","target_id":"LA-CHK-QRY02"}
 {"source_id":"LA-TRC-UC10-FL01-S02","target_id":"LA-TRC-QRY06"}
 {"source_id":"LA-TRC-UC10-FL01-S03","target_id":"LA-TRC-QRY13"}
+{"source_id":"LA-TRC-UC10-FL01-S05","target_id":"LA-TRC-QRY18"}
 {"source_id":"LA-TRC-UC10-FL02-S02","target_id":"LA-TRC-QRY06"}
 {"source_id":"LA-TRC-UC10-FL02-S03","target_id":"LA-TRC-QRY13"}
+{"source_id":"LA-TRC-UC10-FL02-S05","target_id":"LA-TRC-QRY18"}
 {"source_id":"LA-TRC-UC11-FL01-S01","target_id":"LA-TRC-QRY01"}
 {"source_id":"LA-TRC-UC11-FL01-S02","target_id":"LA-TRC-QRY02"}
 {"source_id":"LA-TRC-UC11-FL01-S03","target_id":"LA-TRC-QRY05"}

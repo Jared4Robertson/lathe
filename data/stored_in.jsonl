@@ -250,3 +250,5 @@
 {"source_id":"LA-TRC-RM11-TB","target_id":"LA-STORE04"}
 {"source_id":"LA-TRC-RM12-RD","target_id":"LA-STORE04"}
 {"source_id":"LA-TRC-RM12-TB","target_id":"LA-STORE04"}
+{"source_id":"LA-TRC-RM13-RD","target_id":"LA-STORE04"}
+{"source_id":"LA-TRC-RM13-TB","target_id":"LA-STORE04"}
