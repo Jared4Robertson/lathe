@@ -122,7 +122,7 @@ describe('LA-EXP-DS09-T15 a focus framed as a strip beside its children reads at
     // A parent with a long label and many children, whose column is framed at reading size with the parent as a strip.
     const kids = Array.from({ length: 40 }, (_, i) => `c${i}`);
     const labelOf = (id: string) => (id === 'p'
-      ? { title: 'Every list that can grow stays at ten rows', meta: 'Pattern · LA-PAT-RECORD-PAGE-WITH-A-LONG-NAME', shape: 'stack' as const, marks: 1, marked: true }
+      ? { title: 'Every list that can grow stays at ten rows', meta: 'Pattern · LA-PAT-RECORD-PAGE-WITH-A-LONG-NAME', shape: 'stack' as const, marks: 1 }
       : { title: `A rule ${id}`, meta: `Pattern rule · ${id}`, shape: 'stadium' as const });
     const map = layoutTree(['root'], (id) => (id === 'root' ? ['p', 'q'] : id === 'p' ? kids : []), labelOf);
     const node = map.nodes.get('p')!;

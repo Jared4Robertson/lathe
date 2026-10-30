@@ -53,8 +53,9 @@ describe('one stage chrome', () => {
     fireEvent.click(stageButton('ERD'));
     await waitFor(() => expect(stage().querySelector('.react-flow__node')).not.toBeNull());
     const erd = chrome();
-    // The ERD has no controls of its own; React Flow's own buttons give way to the shared ones.
-    expect(erd.order).toEqual([...SHARED, 'end: -']);
+    // The ERD's own: Tidy up; React Flow's own buttons give way to the shared ones.
+    expect(erd.order).toEqual([...SHARED, 'own', 'end: -']);
+    expect(within(stage().querySelector<HTMLElement>('.stage-toolbar')!).getByRole('button', { name: 'Tidy up' })).toBeInTheDocument();
     expect(erd.camera).toEqual(CAMERA);
     expect(erd.reactFlowControls).toBe(0);
 
