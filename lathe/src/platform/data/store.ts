@@ -14,7 +14,7 @@ import { productRules } from '../../authoring/product/rules.ts';
 import { loadConfig, PACKAGE_DIR } from '../../config.ts';
 import { attachCached, baseKey, copyDatabase, productKey, writeCached } from './cache.ts';
 import { appendRows, insertRows } from './insert.ts';
-import { integrityQueries, recordScopeSql, storeViewsSql } from './integrity.ts';
+import { integrityQueries, recordScopeColumns, recordScopeSql, storeViewsSql } from './integrity.ts';
 import { problemAt, StoreError, type Origin, type StoreProblem } from './problems.ts';
 import { productKindSql, type DeclarationProblem } from './product-kinds.ts';
 import type { Located } from './references.ts';
@@ -200,6 +200,8 @@ export class Store {
   private currentSchema!: SchemaDescription;
   private schemaDb = '';
   private dataDb = '';
+  /** The tables the current data database was built whole from: the current ones, unless a reload or a write changed tables since. */
+  private dbTables: Tables = new Map();
   private tables: Tables = new Map();
   private origins = new WeakMap<Row, Origin>();
   /** The rows loaded from latheDataDir, which no write changes or writes out. */
@@ -213,9 +215,9 @@ export class Store {
   private signatures = new Map<string, string>();
   /** Moved on whenever the current state changes: a whole build of an older one is not adopted. */
   private generation = 0;
-  /** The state last built whole: the current one, unless a reload changed tables since. */
+  /** The state last built whole: the current one, unless a reload or a write changed tables since. */
   private builtWhole: Whole = { tables: new Map(), signatures: new Map() };
-  /** Whether the database holds the current state (false after a reload, until the next whole build or write). */
+  /** Whether the database holds the current state (false after a reload or a write held without one, until the next whole build). */
   private built = true;
   /** The data files as a reload last refused them, as one key, with the refusal. */
   private refused: { key: string; error: StoreError } | undefined;
@@ -264,19 +266,20 @@ export class Store {
     return this.currentSchema;
   }
 
-  // The database is the current state's only after a load or a write; after a reload, whole() builds it.
+  // The database is the current state's only after a load or a whole build; after a reload or a write held without
+  // one, whole() builds it.
   private get database(): string {
-    if (!this.built) throw new Error('The store was reloaded in part, so its database is not built for the current data: run SQL through whole().');
+    if (!this.built) throw new Error('The store changed in part (a reload or a write) since its database was built: run SQL through whole().');
     return this.dataDb;
   }
 
-  /** A connection whose current database holds the current data. It follows every write. */
+  /** A connection whose current database holds the current data. It follows every load and whole build. */
   get connection(): DuckDBConnection {
     void this.database;
     return this.main;
   }
 
-  /** A new connection on the current data, for queries run side by side; it reads the data as it was until the next write. */
+  /** A new connection on the current data, for queries run side by side; it reads the data as it was until the next whole build. */
   async connect(): Promise<DuckDBConnection> {
     const database = this.database;
     const connection = await this.instance.connect();
@@ -326,7 +329,16 @@ export class Store {
   readerOf<D>(make: (view: ReadView) => D): D {
     if (this.readers.has(make)) return this.readers.get(make) as D;
     const reads = new Set<string>();
-    const reader = make(trackedView(this.currentSchema, this.tables, reads, (table) => this.rows(table)));
+    // A projection may read a reader the store keeps for several (the records' placement): it reads what that read.
+    const view: ReadView = {
+      ...trackedView(this.currentSchema, this.tables, reads, (table) => this.rows(table)),
+      readerOf: (inner) => {
+        const shared = this.readerOf(inner);
+        for (const table of this.readerReads.of(inner) ?? []) reads.add(table);
+        return shared;
+      },
+    };
+    const reader = make(view);
     this.readerReads.add(make, reads);
     this.readers.set(make, reader);
     return reader;
@@ -443,7 +455,7 @@ export class Store {
     this.tables = tables;
     this.signatures = signatures;
     this.becameWhole('all');
-    await this.switchTo(dataDb);
+    await this.switchTo(dataDb, tables);
   }
 
   // The current state was built whole (a load, a write): the database holds it, and a refused full check comes back to it.
@@ -504,13 +516,13 @@ export class Store {
       next.set(name, rows);
       changed.add(name);
     }
-    if (changed.size && !(await this.holds(schema, next, changed))) {
+    if (changed.size && !(await this.holds(schema, this.tables, next, changed))) {
       // Something is broken: the whole build names every problem, as a load from scratch does.
       const dataDb = await this.buildData(this.schemaDb, schema, next, this.origins);
       this.tables = next;
       this.signatures = signatures;
       this.becameWhole(changed);
-      await this.switchTo(dataDb);
+      await this.switchTo(dataDb, next);
       return { files, tables: [...changed].sort(), full: false };
     }
     this.tables = next;
@@ -523,9 +535,10 @@ export class Store {
     return { files, tables: [...changed].sort(), full: false };
   }
 
-  // Whether the changed tables keep every key and the rules of each aggregate that reads them (what a reload holds at once).
-  private async holds(schema: SchemaDescription, tables: Tables, changed: ReadonlySet<string>): Promise<boolean> {
-    const registered = await this.step('reload registry', () => ![...changed].some((t) => schema.kinds[t]) || !this.registry(schema, tables, this.origins).problems.length);
+  // Whether the changed tables keep every key and the rules of each aggregate that reads them (what a reload holds at
+  // once). The IDs are held once across kinds only when a changed kind's IDs are not those it had before.
+  private async holds(schema: SchemaDescription, before: Tables, tables: Tables, changed: ReadonlySet<string>): Promise<boolean> {
+    const registered = await this.step('reload registry', () => sameIds(schema, before, tables, changed) || !this.registry(schema, tables, this.origins).problems.length);
     if (!registered || !(await this.step('reload keys', () => keysHold(schema, tables, changed)))) return false;
     for (const rules of AGGREGATE_RULES) {
       if (!this.ruleReads.touched(rules, changed)) continue;
@@ -538,11 +551,86 @@ export class Store {
   }
 
   /**
+   * Whether a write's new state holds to everything its whole build holds it to, without building it (LA-PLT-UC03-R05):
+   * the keys and the rules of each aggregate that reads a changed table (as a reload holds them), then, in a database
+   * of views over the current data database with the tables that differ from it beside them, each such row's NOT NULL
+   * and CHECK constraints, record_scope and every integrity query. When it holds, the write needs no database of its
+   * own: the whole build (the checks') follows in the background, and passes. When it does not, the whole build runs
+   * at once and refuses with every problem, as it always has.
+   */
+  private async writeHolds(schema: SchemaDescription, tables: Tables, changed: ReadonlySet<string>): Promise<boolean> {
+    if (!this.dataDb || !(await this.holds(schema, this.tables, tables, changed))) return false;
+    const base = this.dbTables;
+    const differ = new Set(Object.values(schema.tables).filter((t) => t.stored && tables.get(t.name) !== base.get(t.name)).map((t) => t.name));
+    // The registry and the supertypes follow the kinds' IDs, and record_scope the columns it reads: each is the data
+    // database's own while those are as it holds them.
+    const derived = sameIds(schema, base, tables, differ) ? new Map<string, Row[]>() : this.registry(schema, tables, this.origins).rows;
+    const scopeColumns = recordScopeColumns(schema);
+    const sameScope = [...differ].every((table) => !scopeColumns.has(table) || sameColumns(base.get(table), tables.get(table), scopeColumns.get(table)!));
+    const overlay = `lathe_overlay_${++databases}`;
+    const connection = await this.instance.connect();
+    try {
+      await connection.run(`ATTACH ':memory:' AS ${sqlName(overlay)}; USE ${sqlName(overlay)}`);
+      const views: string[] = [];
+      for (const table of Object.values(schema.tables)) {
+        const rows = derived.get(table.name) ?? (differ.has(table.name) ? [...(tables.get(table.name)?.values() ?? [])] : null);
+        if (!rows) {
+          views.push(`CREATE VIEW ${sqlName(table.name)} AS SELECT * FROM ${sqlName(this.dataDb)}.${sqlName(table.name)};`);
+          continue;
+        }
+        // The keys are held already; the table keeps its columns' own constraints.
+        const columns = table.columns.map((c) => `${sqlName(c.name)} ${c.sqlType}${c.required ? ' NOT NULL' : ''}`);
+        await connection.run(`CREATE TABLE ${sqlName(table.name)} (${[...columns, ...table.checks.map((check) => `CHECK (${check})`)].join(', ')})`);
+        if (rows.length) await this.step(`write holds: ${table.name}`, () => appendRows(connection, overlay, table, rows));
+      }
+      await this.step('write holds: views', () => connection.run(views.join('\n')));
+      await connection.run(storeViewsSql(schema));
+      await this.step('write holds: record_scope', () =>
+        connection.run(sameScope ? `CREATE VIEW record_scope AS SELECT * FROM ${sqlName(this.dataDb)}.record_scope` : recordScopeSql(schema)));
+      // The integrity queries only read, so they run side by side on a few connections.
+      const queries = integrityQueries(schema);
+      const extra = await Promise.all(
+        Array.from({ length: Math.min(VALIDATION_CONNECTIONS, queries.length) - 1 }, async () => {
+          const other = await this.instance.connect();
+          await other.run(`USE ${sqlName(overlay)}`);
+          return other;
+        }),
+      );
+      try {
+        let next = 0;
+        let found = 0;
+        await this.step('write holds: integrity queries, side by side', () =>
+          Promise.all(
+            [connection, ...extra].map(async (on) => {
+              while (next < queries.length && !found) {
+                // Read before it is added: `found += await …` would add to the count as it was before the wait.
+                const rows = (await on.runAndReadAll(queries[next++].sql)).currentRowCount;
+                found += rows;
+              }
+            }),
+          ),
+        );
+        return !found;
+      } finally {
+        for (const other of extra) other.closeSync();
+      }
+    } catch {
+      // A row its table's constraints refuse, or anything else the database refuses: the whole build decides, and
+      // names every problem.
+      return false;
+    } finally {
+      await connection.run(`USE ${BASE_DB}; DETACH DATABASE IF EXISTS ${sqlName(overlay)}`).catch(() => undefined);
+      connection.closeSync();
+    }
+  }
+
+  /**
    * Builds the current state whole in a database of its own (every key and check, the integrity queries and every
    * aggregate's rules) and runs the work on a store that holds it, such as the check rows and coverage; then drops it.
    * Answers null when the state changed while it was built (a newer reload or write; another whole build follows it).
    * When the build refuses the current state, the store goes back to the state last built whole, so its files read
-   * again on the next reload, and the refusal is thrown: a load from scratch would refuse the same.
+   * again on the next reload, and the refusal is thrown: a load from scratch would refuse the same. When the state is
+   * still the current one after the work, the database becomes the store's own.
    */
   async whole<T>(work: (built: Store) => Promise<T>): Promise<{ value: T } | null> {
     const run = (async () => {
@@ -578,8 +666,17 @@ export class Store {
       built.origins = this.origins;
       built.builtIn = this.builtIn;
       try {
-        await built.switchTo(dataDb);
-        return { value: await work(built) };
+        await built.switchTo(dataDb, tables);
+        const value = await work(built);
+        // Still the current state: its database becomes the store's, so SQL needs no whole build again and the next
+        // write holds its changes against it.
+        await this.serial(async () => {
+          if (this.generation !== generation || this.closing) return;
+          built.dataDb = '';
+          await this.switchTo(dataDb, tables);
+          this.built = true;
+        });
+        return { value };
       } finally {
         await built.close();
       }
@@ -868,11 +965,12 @@ export class Store {
     return [{ rule: 'database', table: failed, message: `${failed} could not be loaded: ${(error as Error).message.split('\n')[0]}` }];
   }
 
-  // Makes the given database the current data, for the main connection, and drops the one before.
-  private async switchTo(dataDb: string) {
+  // Makes the given database, built whole from the tables, the current data, for the main connection, and drops the one before.
+  private async switchTo(dataDb: string, tables: Tables) {
     const previous = this.dataDb;
     await this.main.run(`USE ${sqlName(dataDb)}`);
     this.dataDb = dataDb;
+    this.dbTables = tables;
     if (previous) await this.detach(previous);
   }
 
@@ -885,8 +983,10 @@ export class Store {
 
   /**
    * Runs the work as one transaction, after every write before it: the work changes the transaction's draft through
-   * its aggregate's repository, and the commit then builds the new state whole and rewrites the changed files. A
-   * refusal, from the work or the commit, changes nothing.
+   * its aggregate's repository, and the commit then holds the new state to every refusal of its whole build (built
+   * whole only when it changes the product's kinds or relations, or something is refused) and rewrites the changed
+   * files. A refusal, from the work or the commit, changes nothing. A write not built whole leaves its whole build to
+   * whole(), as a reload does.
    */
   transact<T>(work: (tx: Transaction) => T | Promise<T>): Promise<{ value: T; committed: Committed }> {
     return this.serial(async () => {
@@ -902,7 +1002,12 @@ export class Store {
         else signatures.delete(full);
       }
       this.signatures = signatures;
-      this.becameWhole(this.currentSchema === schema ? committed.tables : 'all');
+      const changed = this.currentSchema === schema ? committed.tables : 'all';
+      if (this.built) this.becameWhole(changed);
+      else {
+        this.generation++;
+        this.forgetReaders(changed);
+      }
       return { value, committed };
     });
   }
@@ -917,12 +1022,14 @@ export class Store {
       origins: this.origins,
       builtIn: this.builtIn,
       buildSchema: (tables, origins) => this.buildSchema(tables, origins),
-      buildData: (schemaDb, schema, tables, origins) => this.buildData(schemaDb, schema, tables, origins),
+      build: async (schemaDb, schema, tables, origins, changed) =>
+        schemaDb === this.schemaDb && (await this.step('write holds', () => this.writeHolds(schema, tables, changed))) ? null : this.buildData(schemaDb, schema, tables, origins),
       adopt: async (state) => {
         this.tables = state.tables;
         this.currentSchema = state.schema;
         this.schemaDb = state.schemaDb;
-        await this.switchTo(state.dataDb);
+        this.built = state.dataDb !== null;
+        if (state.dataDb !== null) await this.switchTo(state.dataDb, state.tables);
       },
     };
   }
@@ -940,6 +1047,27 @@ function signaturesOf(folders: Folder[]): Map<string, string> {
     const full = path.join(folder.dir, file);
     return [full, signatureOf(full)] as const;
   })));
+}
+
+/** Whether each changed kind holds the same IDs as before: the registry and the supertypes are as they were. */
+function sameIds(schema: SchemaDescription, before: Tables, after: Tables, changed: Iterable<string>): boolean {
+  for (const table of changed) {
+    if (!schema.kinds[table]) continue;
+    const [a, b] = [before.get(table), after.get(table)];
+    if ((a?.size ?? 0) !== (b?.size ?? 0)) return false;
+    for (const key of b?.keys() ?? []) if (!a!.has(key)) return false;
+  }
+  return true;
+}
+
+/** Whether a table's rows hold the same keys, and the same values in these columns, as before. */
+function sameColumns(before: Map<string, Row> | undefined, after: Map<string, Row> | undefined, columns: readonly string[]): boolean {
+  if ((before?.size ?? 0) !== (after?.size ?? 0)) return false;
+  for (const [key, row] of after ?? []) {
+    const was = before!.get(key);
+    if (!was || columns.some((column) => (was[column] ?? null) !== (row[column] ?? null))) return false;
+  }
+  return true;
 }
 
 /** Whether a table read again holds the same rows, each on the same line of the same file, as before. */

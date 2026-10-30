@@ -1,7 +1,8 @@
 // One write, as a transaction: a draft of every table, which a command's handler changes through its aggregate's
-// repository (data-files.ts) and nothing else, then the commit. The commit builds the new state in a fresh database
-// (every key, constraint and integrity query of the schema, and every aggregate's rules over all data), and only when
-// it passes makes it the current state and rewrites the data files of the tables that changed.
+// repository (data-files.ts) and nothing else, then the commit. The commit holds the new state to every key,
+// constraint and integrity query of the schema and every aggregate's rules over all data (the store builds it in a
+// fresh database, or holds only what the changed tables can break), and only when it passes makes it the current
+// state and rewrites the data files of the tables that changed.
 //
 // Only the store creates a transaction (Store.transact), one at a time; only data-files.ts changes its draft.
 import { existsSync, readFileSync } from 'node:fs';
@@ -28,10 +29,13 @@ export interface TransactionHost {
   readonly origins: WeakMap<Row, Origin>;
   readonly builtIn: WeakSet<Row>;
   buildSchema(tables: Tables, origins: WeakMap<Row, Origin>): Promise<{ schemaDb: string; schema: SchemaDescription }>;
-  /** Builds the state in a fresh database and returns its name, or throws a StoreError. */
-  buildData(schemaDb: string, schema: SchemaDescription, tables: Tables, origins: WeakMap<Row, Origin>): Promise<string>;
-  /** Makes the built state the store's current one. */
-  adopt(state: { tables: Tables; schema: SchemaDescription; schemaDb: string; dataDb: string }): Promise<void>;
+  /**
+   * Holds the state, whose changed tables are given, to every refusal of its whole build: built in a fresh database
+   * (its name), or held without one (null) when the store can hold it so; throws a StoreError when it is refused.
+   */
+  build(schemaDb: string, schema: SchemaDescription, tables: Tables, origins: WeakMap<Row, Origin>, changed: ReadonlySet<string>): Promise<string | null>;
+  /** Makes the state the store's current one, with its database when it was built in one. */
+  adopt(state: { tables: Tables; schema: SchemaDescription; schemaDb: string; dataDb: string | null }): Promise<void>;
 }
 
 /** What a committed transaction changed. */
@@ -109,8 +113,8 @@ export function editableTable(tx: Transaction, name: string): Map<string, Row> {
 }
 
 /**
- * Commits the transaction: builds the new state whole, with every key, check and rule, then makes it current and
- * rewrites the files of the tables that changed. Nothing changes when anything is refused.
+ * Commits the transaction: holds the new state to every key, check and rule, then makes it current and rewrites the
+ * files of the tables that changed. Nothing changes when anything is refused.
  */
 export async function commit(tx: Transaction): Promise<Committed> {
   const draft = drafts.get(tx)!;
@@ -136,7 +140,7 @@ export async function commit(tx: Transaction): Promise<Committed> {
     if (problems.length) throw new StoreError(problems);
   }
   const before = host.tables;
-  const dataDb = await host.buildData(schemaDb, schema, tables, origins);
+  const dataDb = await host.build(schemaDb, schema, tables, origins, changed);
   await host.adopt({ tables, schema, schemaDb, dataDb });
   const names = [...changed].sort();
   const files = await writeFiles(host.dataDir, schema, tables, host.builtIn, origins, names);

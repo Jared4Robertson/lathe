@@ -2,6 +2,7 @@
 // rule's tests (with the test data sets they start from). One instance is one standard, whole; the technical records
 // that meet its rules start those links in their own aggregates.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { StandardRow, StandardRuleRow, StandardRuleTestRow } from '../../platform/data/tables.ts';
 
@@ -64,14 +65,14 @@ export function standardsFrom(rows: (table: string) => Row[], only?: string): St
   const ids = new Set(standards.map((s) => s.id));
   const rules = (rows('standard_rule') as unknown as StandardRuleRow[]).filter((r) => ids.has(r.standard_id));
   const standardOf = new Map(rules.map((r) => [r.id, r.standard_id]));
-  const tests = (rows('standard_rule_test') as unknown as StandardRuleTestRow[]).filter((t) => standardOf.has(t.standard_rule_id));
-  const startsFrom = new Map<string, string[]>();
-  for (const l of rows('starts_from')) startsFrom.set(String(l.source_id), [...(startsFrom.get(String(l.source_id)) ?? []), String(l.target_id)].sort());
+  const rulesOf = groupBy(rules, (r) => r.standard_id);
+  const testsOf = groupBy((rows('standard_rule_test') as unknown as StandardRuleTestRow[]).filter((t) => standardOf.has(t.standard_rule_id)), (t) => standardOf.get(t.standard_rule_id));
+  const startsFrom = bySource(rows('starts_from'));
   return standards.map((standard) => ({
     root: standard.id,
     standard,
-    rules: rules.filter((r) => r.standard_id === standard.id),
-    ruleTests: tests.filter((t) => standardOf.get(t.standard_rule_id) === standard.id).map((row) => ({ row, startsFrom: startsFrom.get(row.id) ?? [] })),
+    rules: groupOf(rulesOf, standard.id),
+    ruleTests: groupOf(testsOf, standard.id).map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) })),
   }));
 }
 

@@ -9,6 +9,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { AggregateRow, DataModelRow, DomainEventRow, EntityFieldRow, EntityRow, InvariantRow, InvariantTestRow, RuleRow } from '../../platform/data/tables.ts';
 import type { AggregateKind } from './model.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 /** A data model as the page shows it: its row, the standard rules it meets and the packages it uses. */
 export interface DataModelOnPage {
@@ -93,8 +94,6 @@ export interface AggregateTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: string, b: string) => a.localeCompare(b, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -105,7 +104,7 @@ function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
 /** A link table's sources or targets, by the other end, each list sorted. */
 function linked(view: ReadView, table: string, by: string, to: string): (id: string) => string[] {
   const found = grouped<Row>(view.rows(table), by);
-  return (id) => (found.get(id) ?? []).map((l) => String(l[to])).sort(byId);
+  return (id) => (found.get(id) ?? []).map((l) => String(l[to])).sort(compareIds);
 }
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
@@ -134,7 +133,7 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
     const tree: AggregateTree = {
       aggregate,
       entities: [...(entities.get(root) ?? [])]
-        .sort((a, b) => Number(b.role === 'root') - Number(a.role === 'root') || byId(a.id, b.id))
+        .sort((a, b) => Number(b.role === 'root') - Number(a.role === 'root') || compareIds(a.id, b.id))
         .map((entity) => {
           const dataModel = (dataModels.get(entity.id) ?? [])[0];
           return {
@@ -143,11 +142,11 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
             hasOne: hasOne(entity.id),
             hasMany: hasMany(entity.id),
             dataModel: dataModel ? { dataModel, meets: meets(dataModel.id), packages: packages(dataModel.id) } : null,
-            commands: (commands.get(entity.id) ?? []).map((c) => c.id).sort(byId),
-            tables: (tables.get(entity.id) ?? []).map((t) => t.id).sort(byId),
+            commands: (commands.get(entity.id) ?? []).map((c) => c.id).sort(compareIds),
+            tables: (tables.get(entity.id) ?? []).map((t) => t.id).sort(compareIds),
           };
         }),
-      invariants: [...(invariants.get(root) ?? [])].sort((a, b) => byId(a.id, b.id)).map((invariant) => {
+      invariants: [...(invariants.get(root) ?? [])].sort((a, b) => compareIds(a.id, b.id)).map((invariant) => {
         const rule = (rules.get(invariant.id) ?? [])[0];
         const test = (tests.get(invariant.id) ?? [])[0];
         return {
@@ -156,7 +155,7 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
           test: test ? { test, startsFrom: startsFrom(test.id) } : null,
         };
       }),
-      domainEvents: [...(events.get(root) ?? [])].sort((a, b) => byId(a.id, b.id)).map((e) => ({
+      domainEvents: [...(events.get(root) ?? [])].sort((a, b) => compareIds(a.id, b.id)).map((e) => ({
         event: { id: e.id, title: e.title, published: e.published },
         raisedBy: raisedBy(e.id),
         heardBy: heardBy(e.id),
@@ -174,7 +173,7 @@ export function aggregateTableFrom(view: ReadView): AggregateTable {
     aggregates.set(root, tree);
     domains.get(aggregate.domain_id)?.push({ id: aggregate.id, title: aggregate.title });
   }
-  for (const list of domains.values()) list.sort((a, b) => byId(a.id, b.id));
+  for (const list of domains.values()) list.sort((a, b) => compareIds(a.id, b.id));
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { aggregates, holding, domains, kinds };

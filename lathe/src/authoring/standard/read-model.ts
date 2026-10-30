@@ -8,6 +8,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { StandardRow, StandardRuleRow, StandardRuleTestRow } from '../../platform/data/tables.ts';
 import type { StandardKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** A standard rule test as the page shows it: its row and the test data sets it starts from. */
 export interface StandardRuleTestOnPage {
@@ -51,8 +52,6 @@ export interface StandardTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** Rows by a column's value, each list in the table's order. */
 function grouped<T>(rows: Row[], column: string): Map<string, T[]> {
   const found = new Map<string, T[]>();
@@ -81,10 +80,10 @@ export function standardTableFrom(view: ReadView): StandardTable {
     holding.set(root, { root, kind: 'standard' });
     const tree: StandardTree = {
       standard,
-      rules: [...(rules.get(root) ?? [])].sort(byId).map((rule) => ({
+      rules: [...(rules.get(root) ?? [])].sort(byRecordId).map((rule) => ({
         rule,
         metBy: metBy(rule.id),
-        tests: [...(tests.get(rule.id) ?? [])].sort(byId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
+        tests: [...(tests.get(rule.id) ?? [])].sort(byRecordId).map((test) => ({ test, startsFrom: startsFrom(test.id) })),
       })),
     };
     for (const r of tree.rules) {
@@ -94,7 +93,7 @@ export function standardTableFrom(view: ReadView): StandardTable {
     standards.set(root, tree);
     products.get(standard.product_id)?.push({ id: standard.id, title: standard.title });
   }
-  for (const list of products.values()) list.sort(byId);
+  for (const list of products.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { standards, holding, products, kinds };

@@ -11,7 +11,10 @@
 import { termsBottomUp } from '../../authoring/domain/read-model.ts';
 import type { ReadView } from '../../platform/data/rules.ts';
 import type { Stage } from '../../platform/data/schema.ts';
-import { inSpace, placeRecords, type Placed } from '../placement.ts';
+import { inSpace, placementOf, type Placed } from '../placement.ts';
+import { groupBy, groupOf } from '../../platform/data/grouped.ts';
+import { byRecordId, idOrder } from '../../platform/data/ids.ts';
+import type { Row } from '../../platform/data/rows.ts';
 
 /** One record in its folder, with the records that fold under it. */
 export interface FolderEntry {
@@ -68,37 +71,35 @@ export interface FolderTreeTable {
 }
 
 const CONTAINERS: ReadonlySet<string> = new Set(['product', 'domain']);
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
 
 /** The projection: the read model's table, built from the rows on each read (in memory; nothing keeps it). */
 export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
   const { schema } = view;
-  const placed = placeRecords(view);
+  const placed = placementOf(view);
   const rank = (k: string) => schema.kinds[k]?.position ?? Number.MAX_SAFE_INTEGER;
   const kinds = Object.keys(schema.kinds).sort((a, b) => rank(a) - rank(b) || a.localeCompare(b));
   const kindRank = new Map(kinds.map((k, i) => [k, i]));
   const stageOf = (kind: string): Stage | null => schema.kinds[kind]?.stage ?? null;
-  const children = new Map<string, Placed[]>();
-  for (const r of placed.values()) if (r.parent) children.set(r.parent, [...(children.get(r.parent) ?? []), r]);
-  const buildsOn = new Map<string, string[]>();
-  if (schema.tables.builds_on) for (const l of view.rows('builds_on')) buildsOn.set(String(l.source_id), [...(buildsOn.get(String(l.source_id)) ?? []), String(l.target_id)]);
+  const children = groupBy([...placed.values()].filter((r) => r.parent), (r) => r.parent);
+  const buildsOn = schema.tables.builds_on ? groupBy(view.rows('builds_on'), (l) => l.source_id) : new Map<string, Row[]>();
 
   const position = (r: Placed) => (typeof r.row.position === 'number' ? r.row.position : Infinity);
   const path = (r: Placed) => (typeof r.row.path === 'string' && r.row.path.trim() ? r.row.path.trim().toLowerCase() : 'main');
+  const order = idOrder(placed.keys());
   const pathRank = (a: Placed, b: Placed) => { const pa = path(a); const pb = path(b); return pa === pb ? 0 : pa === 'main' ? -1 : pb === 'main' ? 1 : pa.localeCompare(pb); };
   /** Kind by kind in the schema's order; within a kind by path, then position, then ID; terms bottom-up. */
   const sorted = (records: readonly Placed[]): Placed[] => {
-    const out = [...records].sort((a, b) => (kindRank.get(a.kind) ?? Infinity) - (kindRank.get(b.kind) ?? Infinity) || (a.kind === b.kind ? pathRank(a, b) || position(a) - position(b) : 0) || byId(a, b));
+    const out = [...records].sort((a, b) => (kindRank.get(a.kind) ?? Infinity) - (kindRank.get(b.kind) ?? Infinity) || (a.kind === b.kind ? pathRank(a, b) || position(a) - position(b) : 0) || order.get(a.id)! - order.get(b.id)!);
     const first = out.findIndex((r) => r.kind === 'term');
     if (first === -1) return out;
     const terms = out.filter((r) => r.kind === 'term');
-    out.splice(first, terms.length, ...termsBottomUp(terms, (id) => buildsOn.get(id) ?? []));
+    out.splice(first, terms.length, ...termsBottomUp(terms, (id) => groupOf(buildsOn, id).map((l) => String(l.target_id))));
     return out;
   };
   const entry = (r: Placed, seen: Set<string>): FolderEntry => {
     seen.add(r.id);
     const stage = stageOf(r.kind);
-    const folded = sorted((children.get(r.id) ?? []).filter((c) => !seen.has(c.id) && (stage === null || stageOf(c.kind) === stage)));
+    const folded = sorted(groupOf(children, r.id).filter((c) => !seen.has(c.id) && (stage === null || stageOf(c.kind) === stage)));
     return { id: r.id, kind: r.kind, title: r.title, folded: folded.map((c) => entry(c, seen)) };
   };
   const startsBranch = (r: Placed) => {
@@ -127,29 +128,31 @@ export function folderTreeTableFrom(view: ReadView): FolderTreeTable {
     return { key, kind, entries: sorted(records).map((r) => entry(r, seen)), count: records.length };
   };
   const ownerFolders = (owner: Placed, owned: Placed[]): OwnerFolders => {
-    const roots = owned.filter(startsBranch);
+    const roots = groupBy(owned.filter(startsBranch), (r) => r.kind);
     const stages = [...schema.stages].sort((a, b) => a.position - b.position).map((s): StageFolders => {
       const key = `${owner.id}/${s.name}`;
       const folders = kinds
         .filter((k) => schema.kinds[k].stage === s.name && !CONTAINERS.has(k))
-        .map((k) => folderOf(`${key}/${k}`, k, roots.filter((r) => r.kind === k)))
+        .map((k) => folderOf(`${key}/${k}`, k, groupOf(roots, k)))
         // An empty folder only for a kind that can start a branch here.
         .filter((f) => f.count > 0 || canStartIn(f.kind, owner.kind));
       return { key, stage: s.name, folders, direct: folders.length === 1, count: folders.reduce((n, f) => n + f.count, 0) };
     }).filter((s) => s.folders.length > 0);
-    const looseKinds = kinds.filter((k) => stageOf(k) === null && roots.some((r) => r.kind === k));
-    return { owner: owner.id, stages, loose: looseKinds.map((k) => folderOf(`${owner.id}/${k}`, k, roots.filter((r) => r.kind === k))) };
+    const looseKinds = kinds.filter((k) => stageOf(k) === null && roots.has(k));
+    return { owner: owner.id, stages, loose: looseKinds.map((k) => folderOf(`${owner.id}/${k}`, k, groupOf(roots, k))) };
   };
 
   const products = new Map<string, FolderTree>();
   const all = [...placed.values()];
   for (const product of all.filter((r) => r.kind === 'product')) {
     const space = all.filter((r) => inSpace(r, product.id));
-    const domains = space.filter((r) => r.kind === 'domain' && r.product === product.id).sort(byId);
+    const domains = space.filter((r) => r.kind === 'domain' && r.product === product.id).sort(byRecordId);
+    // The space's records by the domain they sit in, grouped once.
+    const inDomain = groupBy(space.filter((r) => r.domain !== null), (r) => r.domain);
     products.set(product.id, {
       product: product.id,
       shared: ownerFolders(product, space.filter((r) => r.domain === null && r.kind !== 'product' && r.product === product.id)),
-      domains: domains.map((d) => ({ ...ownerFolders(d, space.filter((r) => r.domain === d.id && r.id !== d.id)), title: d.title })),
+      domains: domains.map((d) => ({ ...ownerFolders(d, groupOf(inDomain, d.id).filter((r) => r.id !== d.id)), title: d.title })),
     });
   }
   return { products };

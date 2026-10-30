@@ -18,6 +18,7 @@
 // serves-no-outcome check reads it), and the Serves read model's projection (LA-TRC-RM12-PJ) answers from it.
 import type { ReadView } from '../platform/data/rules.ts';
 import type { Row } from '../platform/data/rows.ts';
+import { compareIds } from '../platform/data/ids.ts';
 
 /** What a record serves: the outcomes, and the use cases through which it serves them. */
 export interface Served {
@@ -25,7 +26,7 @@ export interface Served {
   useCases: string[];
 }
 
-const byId = (ids: Iterable<string>) => [...ids].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+const byId = (ids: Iterable<string>) => [...ids].sort(compareIds);
 
 /** Rows grouped by one column's value: each key's values of another column. */
 function index(rows: readonly Row[], key: string, value: string): Map<string, string[]> {

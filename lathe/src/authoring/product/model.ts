@@ -4,6 +4,7 @@
 // links its own records start.
 import type { Slice } from '../../platform/commands/definition.ts';
 import type { Transaction } from '../../platform/data/transaction.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { InterfaceRow, ProductKindFieldRow, ProductKindRow, ProductRelationRow, ProductRow, QuestionRow, RoleRow } from '../../platform/data/tables.ts';
 
@@ -88,20 +89,19 @@ export function productsFrom(rows: (table: string) => Row[], productOfDomain: (d
   const relations = rows('product_relation') as unknown as ProductRelationRow[];
   const questions = rows('question') as unknown as QuestionRow[];
   const interfaces = rows('interface') as unknown as InterfaceRow[];
-  const about = new Map<string, string[]>();
-  for (const l of rows('about')) about.set(String(l.source_id), [...(about.get(String(l.source_id)) ?? []), String(l.target_id)]);
-  for (const list of about.values()) list.sort();
+  const about = bySource(rows('about'));
+  const fieldsOf = groupBy(fields, (f) => f.kind);
   return products.map((product) => {
     const own = (r: { product_id?: string }) => r.product_id === product.id;
     return {
       root: product.id,
       product,
       roles: roles.filter(own),
-      kinds: kinds.filter(own).map((row) => ({ row, fields: fields.filter((f) => f.kind === row.name).sort((a, b) => a.position - b.position) })),
+      kinds: kinds.filter(own).map((row) => ({ row, fields: [...groupOf(fieldsOf, row.name)].sort((a, b) => a.position - b.position) })),
       relations: relations.filter(own),
       questions: questions
         .filter((q) => (q.product_id ?? (q.domain_id === undefined ? undefined : productOfDomain(q.domain_id))) === product.id)
-        .map((row) => ({ row, about: about.get(row.id) ?? [] })),
+        .map((row) => ({ row, about: groupOf(about, row.id) })),
       interfaces: interfaces.filter(own),
     };
   });

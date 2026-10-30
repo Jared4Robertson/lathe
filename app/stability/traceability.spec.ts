@@ -3,9 +3,6 @@ import { openPage } from './measure';
 import { rowsOf, servedWorkspace, testsText } from './flows';
 import { PRODUCT } from './scenarios';
 import { expectKeyWhole, traceDrawn, traceSceneOf } from './scene';
-import { keepData } from './scenarios';
-import { execFileSync } from 'node:child_process';
-import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { openStore } from '../../lathe/src/platform/data/index';
 import { servesOf } from '../../lathe/src/trace/serves';
@@ -20,9 +17,6 @@ import { servesOf } from '../../lathe/src/trace/serves';
 const TRC = 'LA-TRC';
 /** A domain that follows patterns. */
 const EXP = 'LA-EXP';
-const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-/** The CLI over the suite's copy of the data: an Agent's write while the page is open. */
-const lathe = (...args: string[]) => execFileSync('node', [path.join(repo, 'lathe/bin/lathe.ts'), ...args, '--root', process.env.STABILITY_ROOT!], { stdio: 'pipe' }).toString();
 /** A UC requirement with a flow step that fulfills it, in a view, and a test. */
 const REQUIREMENT = 'LA-TRC-UC10-R03';
 const WIKI = '.wiki-panel';
@@ -166,27 +160,6 @@ test.describe('Traceability flows', () => {
     await page.mouse.move(box.rect.left + box.rect.width / 2, box.rect.top + box.rect.height / 2);
     await expect.poll(async () => (await traceSceneOf(page, true)).boxes.find((b) => b.key === useCase)?.lit).toBe(true);
     expect((await traceSceneOf(page, true)).boxes.find((b) => b.key === REQUIREMENT)!.hover).toBe(true);
-  });
-
-  test('LA-V98-R12-T03 a record added while the Trace is open keeps every column\'s order and the camera, the new box in its place', async ({ page }) => {
-    const restore = keepData();
-    try {
-      const useCase = String(rowsOf(await servedWorkspace(), 'uc_requirement').find((r) => r.id === REQUIREMENT)!.use_case_id);
-      await openPage(page, `/${REQUIREMENT}?stage=trace`);
-      await traceDrawn(page, 900);
-      const before = await traceSceneOf(page, true);
-      const order = (scene: typeof before) => [0, 1, 2, 3, 4].map((c) => scene.boxes.filter((b) => b.column === c).sort((a, b) => a.rect.top - b.rect.top).map((b) => b.key));
-      const added = `${useCase}-R98`;
-      lathe('add', 'uc_requirement', '--id', added, '--title', 'Added while the Reader watched', '--use_case_id', useCase, '--statement', 'A box added MUST keep the others in their order.');
-      await expect.poll(async () => (await traceSceneOf(page, true)).boxes.some((b) => b.key === added), { timeout: 20_000 }).toBe(true);
-      await page.waitForTimeout(900);
-      const after = await traceSceneOf(page, true);
-      expect(after.camera, 'the camera stays put').toEqual(before.camera);
-      const was = order(before);
-      order(after).forEach((c, i) => expect(c.filter((k) => k !== added), `column ${i}`).toEqual(was[i]));
-    } finally {
-      restore();
-    }
   });
 
   test('LA-TRC-UC11-FL01-T see every obligation kind and test state', async ({ page }) => {

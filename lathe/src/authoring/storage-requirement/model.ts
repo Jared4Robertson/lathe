@@ -3,8 +3,10 @@
 // aggregate or read model whose data it is about, outside the aggregate. One instance is one storage requirement,
 // whole; it holds only the links its own records start.
 import type { Slice } from '../../platform/commands/definition.ts';
+import { bySource, groupBy, groupOf } from '../../platform/data/grouped.ts';
 import type { Row, Value } from '../../platform/data/rows.ts';
 import type { StorageRequirementRow, StorageRequirementTestRow } from '../../platform/data/tables.ts';
+import { compareIds } from '../../platform/data/ids.ts';
 
 /** The aggregate's record ID in Lathe's own spec. */
 export const STORAGE_REQUIREMENT_AGGREGATE = 'LA-AUT-A22';
@@ -57,22 +59,20 @@ export function newStorageRequirement(requirement: StorageRequirementRow): Stora
   return { root: requirement.id, requirement, tests: [] };
 }
 
-const byId = (a: { row: { id: string } }, b: { row: { id: string } }) => a.row.id.localeCompare(b.row.id, 'en', { numeric: true });
+const byId = (a: { row: { id: string } }, b: { row: { id: string } }) => compareIds(a.row.id, b.row.id);
 
 /** The storage requirements in the data, each whole, built from the aggregate's tables; only the one given, when given. */
 export function storageRequirementsFrom(rows: (table: string) => Row[], only?: string): StorageRequirement[] {
   const requirements = rows('storage_requirement').filter((r) => only === undefined || r.id === only) as unknown as StorageRequirementRow[];
   if (!requirements.length) return [];
   const ids = new Set(requirements.map((r) => r.id));
-  const tests = (rows('storage_requirement_test') as unknown as StorageRequirementTestRow[]).filter((t) => ids.has(t.storage_requirement_id));
-  const startsFrom = new Map<string, string[]>();
-  for (const l of rows('starts_from')) startsFrom.set(String(l.source_id), [...(startsFrom.get(String(l.source_id)) ?? []), String(l.target_id)]);
+  const testsOf = groupBy((rows('storage_requirement_test') as unknown as StorageRequirementTestRow[]).filter((t) => ids.has(t.storage_requirement_id)), (t) => t.storage_requirement_id);
+  const startsFrom = bySource(rows('starts_from'));
   return requirements.map((requirement) => ({
     root: requirement.id,
     requirement,
-    tests: tests
-      .filter((t) => t.storage_requirement_id === requirement.id)
-      .map((row) => ({ row, startsFrom: [...(startsFrom.get(row.id) ?? [])].sort() }))
+    tests: groupOf(testsOf, requirement.id)
+      .map((row) => ({ row, startsFrom: groupOf(startsFrom, row.id) }))
       .sort(byId),
   }));
 }

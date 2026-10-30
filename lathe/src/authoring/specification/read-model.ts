@@ -8,6 +8,7 @@ import type { ReadView } from '../../platform/data/rules.ts';
 import type { Row } from '../../platform/data/rows.ts';
 import type { PredicateRow, SpecificationRow, SpecificationTestRow } from '../../platform/data/tables.ts';
 import type { SpecificationKind } from './model.ts';
+import { byRecordId } from '../../platform/data/ids.ts';
 
 /** The predicate as the page shows it: its row, the standard rules it meets and the packages it uses. */
 export interface PredicateOnPage {
@@ -58,8 +59,6 @@ export interface SpecificationTable {
   kinds: Map<string, string>;
 }
 
-const byId = (a: { id: string }, b: { id: string }) => a.id.localeCompare(b.id, 'en', { numeric: true });
-
 /** A link table's other ends by one column, each list sorted. */
 function linked(rows: Row[], by: string, other: string): (id: string) => string[] {
   const found = new Map<string, string[]>();
@@ -103,7 +102,7 @@ export function specificationTableFrom(view: ReadView): SpecificationTable {
     if (test) holding.set(test.id, { root, kind: 'specification_test' });
     domains.get(tree.domain)?.push({ id: root, title: specification.title });
   }
-  for (const list of domains.values()) list.sort(byId);
+  for (const list of domains.values()) list.sort(byRecordId);
   const kinds = new Map<string, string>();
   for (const kind of Object.keys(view.schema.kinds)) for (const row of view.rows(kind)) kinds.set(String(row.id), kind);
   return { specifications, holding, domains, kinds };
