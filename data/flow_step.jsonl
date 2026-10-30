@@ -599,10 +599,14 @@
 {"id":"LA-PLT-UC19-FL02-S05","title":"Claude asks what the Reader is looking at","flow_id":"LA-PLT-UC19-FL02","path":"main","position":5}
 {"id":"LA-PLT-UC19-FL02-S06","title":"Claude opens a record in the window","flow_id":"LA-PLT-UC19-FL02","path":"main","position":6}
 {"id":"LA-PLT-UC19-FL02-S07","title":"Each tool call Claude makes shows as a row that expands to its input and result","flow_id":"LA-PLT-UC19-FL02","path":"main","position":7}
-{"id":"LA-PLT-UC19-FL02-S08","title":"A tool that needs permission waits in the chat until they allow it once or deny it","flow_id":"LA-PLT-UC19-FL02","path":"main","position":8}
+{"id":"LA-PLT-UC19-FL02-S08","title":"A tool that needs permission waits in the chat until they allow it once, allow it always in this chat, or deny it","flow_id":"LA-PLT-UC19-FL02","path":"main","position":8}
 {"id":"LA-PLT-UC19-FL02-S09","title":"They stop the turn under way","flow_id":"LA-PLT-UC19-FL02","path":"main","position":9}
 {"id":"LA-PLT-UC19-FL02-S10","title":"After the turn, the records it changed show as diffs, by record","flow_id":"LA-PLT-UC19-FL02","path":"main","position":10}
 {"id":"LA-PLT-UC19-FL02-S11","title":"A record ID in Claude's answer opens the record on the stage","flow_id":"LA-PLT-UC19-FL02","path":"main","position":11}
+{"id":"LA-PLT-UC19-FL02-S12","title":"Each session loads the Lathe tools of the Lathe the window runs; the head shows how many, and from which Lathe","flow_id":"LA-PLT-UC19-FL02","path":"main","position":12}
+{"id":"LA-PLT-UC19-FL02-S13","title":"Before the first message, the empty chat says when Claude Code is not found or not signed in, with the fix","flow_id":"LA-PLT-UC19-FL02","path":"main","position":13}
+{"id":"LA-PLT-UC19-FL02-S14","title":"They choose a permission mode (Ask, Accept reads, Auto, Bypass after a warning, or View only); the session starts again in it, and the folder keeps it","flow_id":"LA-PLT-UC19-FL02","path":"main","position":14}
+{"id":"LA-PLT-UC19-FL02-S16","title":"Each message goes with what they are looking at, a chip they can remove; Claude starts from it, and uses the app tools for anything else about the window","flow_id":"LA-PLT-UC19-FL02","path":"main","position":15}
 {"id":"LA-TRC-UC01-FL03-S01","title":"The Owner runs lathe check and reads one coverage line per domain and obligation kind: designed, built, proved and not automated yet","flow_id":"LA-TRC-UC01-FL03","path":"main","position":1}
 {"id":"LA-TRC-UC01-FL03-S02","title":"Each gap names the obligation and what it lacks: its design, a built file or a test","flow_id":"LA-TRC-UC01-FL03","path":"main","position":2}
 {"id":"LA-TRC-UC01-FL03-S03","title":"The gaps are warnings, so the check still passes","flow_id":"LA-TRC-UC01-FL03","path":"main","position":3}

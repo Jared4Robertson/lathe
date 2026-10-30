@@ -13,3 +13,4 @@
 {"id":"LA-PLT-CMD45-IPC","title":"lathe:show-record-menu","command_id":"LA-PLT-CMD45","file":"desktop/src/preload.cts"}
 {"id":"LA-PLT-CMD46-IPC","title":"lathe:reveal-product-folder","command_id":"LA-PLT-CMD46","file":"desktop/src/local-preload.cts"}
 {"id":"LA-PLT-CMD59-IPC","title":"lathe:menu-keys","command_id":"LA-PLT-CMD59","file":"desktop/src/preload.cts"}
+{"id":"LA-PLT-CMD60-IPC","title":"lathe:chat-mode","command_id":"LA-PLT-CMD60","file":"desktop/src/preload.cts"}

@@ -56,7 +56,7 @@ Every change is one command of the aggregate it changes, such as Add a flow step
 
 - **The CLI.** `lathe <aggregate> <command>`, such as `lathe use-case add-flow-step`, with flags and help from the command's fields (`lathe use-case --help`, `lathe use-case add-flow-step --help`); its queries the same way, such as `lathe use-case get-use-case --id TL-LEND-UC01`. `--json` prints the result as JSON. A command takes its fields as JSON instead of flags with `--json -` (stdin) or `--json <file>`: the arguments of its MCP tool. Text keeps its quotes, newlines and backticks, the validation and refusals are the flags', and JSON given with field flags as well is bad usage.
 - **The app.** Each record's page has its aggregate's own editor, which sends its aggregate's commands to `POST /api/<aggregate>/<command>`.
-- **The Claude Code plugin.** Its MCP server (`lathe mcp`) has one tool per command and query, named `<aggregate>_<command>`, such as `use_case_add_flow_step`, and the `check` tool.
+- **The Claude Code plugin.** Its MCP server (`lathe mcp`) has one tool per command and query, named `<aggregate>_<command>`, such as `use_case_add_flow_step`, and the `check` tool. The package ships the plugin in `dist/plugin`; its read tools are marked `readOnlyHint`, and with `LATHE_VIEW_ONLY=1` (the desktop chat's View only mode) the server lists only the queries and the check, and refuses every command.
 - **Code.** `runCommand` runs one of `ALL_COMMANDS` on an open store:
 
 ```ts
@@ -211,6 +211,6 @@ In this repo the CLI runs from source on Node 26's built-in TypeScript support; 
 ## Build the package
 
 ```sh
-npm --prefix lathe run build   # compiles src/ and bin/ to dist/, regenerates REFERENCE.md, and builds the web app into dist/app
+npm --prefix lathe run build   # compiles src/ and bin/ to dist/, regenerates REFERENCE.md, builds the web app into dist/app and copies the Claude Code plugin into dist/plugin
 cd lathe && npm pack           # writes jaredrob-lathe-<version>.tgz
 ```

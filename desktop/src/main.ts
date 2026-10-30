@@ -26,8 +26,9 @@ import { revealRecordDataFile } from './product-window/commands/reveal-record-da
 import { saveWindowPlace } from './product-window/commands/save-window-place.ts';
 import { setWindowChrome } from './product-window/commands/set-window-chrome.ts';
 import { showRecordMenu } from './product-window/commands/show-record-menu.ts';
+import { chooseChatMode } from './product-window/commands/choose-chat-mode.ts';
 import type { WindowClosedReactions, WindowOpenedReactions } from './product-window/events.ts';
-import { MIN_SIZE, windowFor, type OpenWindow } from './product-window/model.ts';
+import { MIN_SIZE, startingMode, windowFor, type OpenWindow } from './product-window/model.ts';
 import { ProductWindowRepository } from './product-window/repository.ts';
 import { startAppServer } from './app-server/commands/start-app-server.ts';
 import { stopAppServer } from './app-server/commands/stop-app-server.ts';
@@ -45,8 +46,9 @@ import type { Editor } from './shell-settings/model.ts';
 import { ShellSettingsRepository } from './shell-settings/repository.ts';
 import { startBridge, type Bridge, type OpenAnswer, type OpenRequest } from './bridge.ts';
 import { chatPatch, transcriptItems } from './chat.ts';
+import { appPluginDir, chatLatheFor, countLatheTools, sourceLathe, withLatheCli, type ChatLathe } from './chatLathe.ts';
 import { ChatSession } from './chatSession.ts';
-import { findClaude, listSessions, processAlive, runningSessions, transcriptFile } from './claudeSessions.ts';
+import { claudeSignedIn, findClaude, listSessions, processAlive, runningSessions, transcriptFile } from './claudeSessions.ts';
 import { chromeWindowOptions, startChrome, type Chrome } from './chrome.ts';
 import { commandKeys, keyPresses, MENU_COMMANDS, type KeyPress } from './commands.ts';
 import { badgeFor, dockMenuTemplate } from './dock.ts';
@@ -89,7 +91,7 @@ if (process.env.LATHE_DESKTOP_USER_DATA) app.setPath('userData', process.env.LAT
 const userFile = (name: string) => () => path.join(app.getPath('userData'), name);
 
 // The aggregates' repositories: the only code that reaches their storage.
-const productWindows = new ProductWindowRepository({ places: userFile('window-state.json'), chrome: userFile('chrome.json') });
+const productWindows = new ProductWindowRepository({ places: userFile('window-state.json'), chrome: userFile('chrome.json'), modes: userFile('chat-modes.json') });
 const appServers = new AppServerRepository({ ports: userFile('app-server-ports.json') });
 const recentFolders = new RecentFolderRepository(userFile('recent-folders.json'));
 const shellSettings = new ShellSettingsRepository(userFile('settings.json'));
@@ -549,21 +551,41 @@ function stopChat(entry: OpenWindow): Promise<void> {
 
 const ourClaudes = () => new Set([...openWindows().values()].map((e) => e.chat?.pid).filter((pid): pid is number => typeof pid === 'number'));
 
-/** The `claude` the chat runs, and the folder's saved sessions, for the panel's picker. */
 /** Get the window's chat (LA-PLT-QRY10): the whole chat as one patch, for a page that (re)loads; the next patches follow it. */
 function wholeChat(entry: OpenWindow) {
   entry.chatSent = entry.chat?.state ?? null;
   return entry.chat ? chatPatch(null, entry.chat.state) : null;
 }
 
-function chatSessions(entry: OpenWindow) {
+/** The environment `claude` runs in: the shell's, with the CLI's own directory and the usual ones on the PATH. */
+function claudeEnvFor(claude: string): NodeJS.ProcessEnv {
+  const env: NodeJS.ProcessEnv = { ...process.env };
+  // An app started from the Finder has a short PATH.
+  env.PATH = [path.dirname(claude), env.PATH, '/opt/homebrew/bin', '/usr/local/bin', '/usr/bin', '/bin'].filter(Boolean).join(path.delimiter);
+  // Started from inside a Claude Code session (in development), the CLI would think it is nested.
+  delete env.CLAUDECODE;
+  return env;
+}
+
+/**
+ * List a folder's Claude Code sessions (LA-PLT-QRY08): the `claude` the chat runs and whether it is signed in, the
+ * folder's saved sessions, and the mode the folder's next chat starts in, for the panel's picker.
+ */
+async function chatSessions(entry: OpenWindow) {
   const settings = shellSettings.load();
   const claude = findClaude(settings.claudePath, os.homedir(), process.env.PATH);
   const home = CLAUDE_HOME();
   const running = runningSessions(path.join(home, 'sessions'), processAlive, ourClaudes());
   const current = entry.chat?.state.sessionId ?? null;
   const sessions = listSessions(path.join(home, 'projects'), entry.folder, running).map((s) => (s.id === current ? { ...s, openElsewhere: null } : s));
-  return { claude, configured: !!settings.claudePath, current, sessions };
+  const signedIn = claude ? await claudeSignedIn(claude, claudeEnvFor(claude)) : null;
+  return { claude, configured: !!settings.claudePath, signedIn, mode: startingMode(productWindows.load().modes, entry.folder), current, sessions };
+}
+
+/** The Lathe a window's chat brings (chatLathe.ts): the plugin and Lathe of the Lathe the window runs. */
+function chatLatheOf(entry: OpenWindow): ChatLathe {
+  if (DEV) return sourceLathe(REPO_ROOT);
+  return chatLatheFor(latheFor(entry.folder, bundledServe()), appPluginDir(REPO_ROOT, app.isPackaged ? { resourcesPath: process.resourcesPath } : null));
 }
 
 /** Opens a session in the window's chat: a new one, a saved one resumed, or a fork of one. */
@@ -579,15 +601,21 @@ async function openChat(entry: OpenWindow, input: unknown): Promise<boolean> {
     if (!file) return false;
     history = transcriptItems(readFileSync(file, 'utf8').split('\n'));
   }
-  const env: NodeJS.ProcessEnv = { ...process.env, ...(await appBridge()).envFor(entry.key) };
-  // The CLI's own directory, and the usual ones, on the PATH: an app started from the Finder has a short one.
-  env.PATH = [path.dirname(claude), env.PATH, '/opt/homebrew/bin', '/usr/local/bin', '/usr/bin', '/bin'].filter(Boolean).join(path.delimiter);
-  // Started from inside a Claude Code session (in development), the CLI would think it is nested.
-  delete env.CLAUDECODE;
+  // The Lathe the window runs, its plugin loaded into every session (LA-PLT-UC19-R08), and the window's app bridge.
+  const lathe = chatLatheOf(entry);
+  const env = withLatheCli({ ...claudeEnvFor(claude), ...(await appBridge()).envFor(entry.key) }, lathe);
   if (entry.win.isDestroyed()) return false;
   // Each session gets a CLI of its own; the last one's ends first.
   await stopChat(entry);
-  const chat = new ChatSession({ command: claude, cwd: entry.folder, env, onChange: () => chatChanged(entry) });
+  const chat = new ChatSession({
+    command: claude,
+    cwd: entry.folder,
+    env,
+    // A new chat starts in the mode the folder's last chat had (LA-PLT-UC19-R09).
+    setup: { pluginDir: lathe.pluginDir, mode: startingMode(productWindows.load().modes, entry.folder) },
+    countTools: (runEnv) => countLatheTools({ pluginDir: lathe.pluginDir, cwd: entry.folder, env: runEnv, version: lathe.version }),
+    onChange: () => chatChanged(entry),
+  });
   entry.chat = chat;
   entry.chatSent = null;
   chat.open(mode === 'new' ? {} : { resume: id as string, fork: mode === 'fork' }, history);
@@ -801,18 +829,23 @@ if (!SMOKE && !app.requestSingleInstanceLock()) {
     const entry = fromPageCall(event);
     return entry ? openChat(entry, input) : false;
   });
-  ipcMain.handle('lathe:chat-send', (event, text: unknown) => {
+  ipcMain.handle('lathe:chat-send', (event, input: unknown) => {
     const entry = fromPageCall(event);
-    return !!entry?.chat && typeof text === 'string' && entry.chat.send(text.slice(0, 100_000));
+    const { text, focus } = (input ?? {}) as { text?: unknown; focus?: unknown };
+    return !!entry?.chat && typeof text === 'string' && entry.chat.send(text.slice(0, 100_000), typeof focus === 'string' ? focus : null);
   });
   ipcMain.handle('lathe:chat-answer', (event, input: unknown) => {
     const entry = fromPageCall(event);
-    const { id, allow } = (input ?? {}) as { id?: unknown; allow?: unknown };
-    return !!entry?.chat && typeof id === 'string' && typeof allow === 'boolean' && entry.chat.answer(id, allow);
+    const { id, answer } = (input ?? {}) as { id?: unknown; answer?: unknown };
+    return !!entry?.chat && typeof id === 'string' && (answer === 'once' || answer === 'always' || answer === 'deny') && entry.chat.answer(id, answer);
   });
   ipcMain.handle('lathe:chat-stop', (event) => {
     const entry = fromPageCall(event);
     return !!entry?.chat && entry.chat.stop();
+  });
+  ipcMain.handle('lathe:chat-mode', (event, mode: unknown) => {
+    const entry = fromPageCall(event);
+    return !!entry && chooseChatMode(productWindows, { folder: entry.folder, mode });
   });
   // A page that (re)loads asks for the whole chat.
   ipcMain.handle('lathe:chat-state', (event) => {

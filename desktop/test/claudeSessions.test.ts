@@ -1,9 +1,9 @@
-import { mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
+import { chmodSync, mkdirSync, mkdtempSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { parseSettings } from '../src/shell-settings/model.ts';
-import { findClaude, listSessions, projectDirName, runningSessions, sessionTitle, transcriptFile } from '../src/claudeSessions.ts';
+import { claudeSignedIn, findClaude, listSessions, projectDirName, runningSessions, sessionTitle, signedInFrom, transcriptFile } from '../src/claudeSessions.ts';
 
 const home = mkdtempSync(path.join(os.tmpdir(), 'lathe-claude-home-'));
 const store = path.join(home, 'projects');
@@ -82,5 +82,23 @@ describe('LA-PLT-UC19-R01-T03 The chat finds the Owner\'s own claude', () => {
   it('reads the configured path from settings.json', () => {
     expect(parseSettings({ claudePath: ' /opt/claude ' })).toEqual({ editor: 'vscode', claudePath: '/opt/claude' });
     expect(parseSettings({ claudePath: '' })).toEqual({ editor: 'vscode' });
+  });
+});
+
+describe('LA-PLT-UC19-R10-T02 The chat asks the CLI itself whether it is signed in', () => {
+  it('reads `claude auth status --json`: signed in, not signed in with no other way in, or cannot tell', () => {
+    expect(signedInFrom(JSON.stringify({ loggedIn: true, authMethod: 'claude.ai' }))).toBe(true);
+    expect(signedInFrom(JSON.stringify({ loggedIn: false, authMethod: 'none' }))).toBe(false);
+    // An API key or helper, which the status may not count as signed in: the chat does not block on it.
+    expect(signedInFrom(JSON.stringify({ loggedIn: false, authMethod: 'api_key' }))).toBeNull();
+    expect(signedInFrom('Not JSON')).toBeNull();
+  });
+
+  it('runs the CLI\'s own status command, even when it exits with an error, and never reads its files', async () => {
+    const cli = path.join(home, 'claude-status');
+    writeFileSync(cli, `#!/bin/sh\n[ "$1 $2 $3" = "auth status --json" ] || exit 2\necho '{"loggedIn": false, "authMethod": "none"}'\nexit 1\n`);
+    chmodSync(cli, 0o755);
+    expect(await claudeSignedIn(cli, process.env)).toBe(false);
+    expect(await claudeSignedIn(path.join(home, 'no-such-claude'), process.env)).toBeNull();
   });
 });
