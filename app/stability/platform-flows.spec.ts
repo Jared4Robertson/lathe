@@ -6,7 +6,7 @@ import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { expectStable, openPage, step } from './measure';
 import { FOCUS, GRAPH_CANVAS, keepData, RECORD, SHELL } from './scenarios';
-import { cameraOf, sceneOf } from './scene';
+import { cameraOf, focusDrawn, graphDrawn, sceneOf } from './scene';
 
 // Platform's flow tests that happen in the app (LA-PLT-UC03-FL01 to UC10-FL01): one per flow, each
 // walking its main path in Chromium over the suite's copy of Lathe's data. The flows run through
@@ -67,7 +67,7 @@ test.describe('Platform flows in the app', () => {
       await expect(page.locator(`.header-strip h1`)).toHaveText('Walk the model as a graph, retitled by an Agent', { timeout: 20_000 });
       expect(new URL(page.url()).pathname).toBe('/LA-EXP-UC03');
       // A data file the store refuses: the page says what is wrong, not other data.
-      appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'use_case.jsonl'), '{"id":"LA-EXP-UC99","title":"Under no capability","capability_id":"LA-EXP-CAP99"}\n');
+      appendFileSync(path.join(process.env.STABILITY_ROOT!, 'data', 'use_case.jsonl'), '{"id":"LA-EXP-UC99","title":"Under no capability","goal":"A use case whose capability is not there.","capability_id":"LA-EXP-CAP99"}\n');
       await expect(page.getByText(/Couldn.t (re)?load the specs/).first()).toBeVisible({ timeout: 20_000 });
       await expect(page.getByText(/LA-EXP-CAP99/).first()).toBeVisible();
     } finally {
@@ -135,6 +135,8 @@ test.describe('Platform flows in the app', () => {
     await expect(sheet.getByRole('button', { name: /^Press a key for Show or hide the navigation/ })).toBeFocused();
     await page.keyboard.press('Control+j');
     await expect(sheet.getByRole('row', { name: /^Show or hide the navigation/ })).toContainText('Ctrl+J');
+    // The key taken, the focus is back on the row's Key button; Escape then closes the sheet.
+    await expect(sheet.getByRole('button', { name: 'Add a key to Show or hide the navigation' })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(sheet).toHaveCount(0);
     for (const when of ['now', 'after a reload']) {
@@ -164,6 +166,7 @@ test.describe('Platform flows in the app', () => {
     await sheet.getByRole('button', { name: 'Change Ctrl+1 of Graph stage' }).click();
     await page.keyboard.press('Control+Alt+1');
     await expect(sheet.getByRole('row', { name: /^Graph stage/ })).toContainText('Ctrl+Alt+1');
+    await expect(sheet.getByRole('button', { name: 'Add a key to Graph stage' })).toBeFocused();
     await page.keyboard.press('Escape');
     await expect(sheet).toHaveCount(0);
     // The old stage key does nothing; the new one shows the Graph.
@@ -172,6 +175,9 @@ test.describe('Platform flows in the app', () => {
     expect(new URL(page.url()).searchParams.get('stage')).toBe('erd');
     await page.keyboard.press('Control+Alt+1');
     await page.locator(GRAPH_CANVAS).waitFor();
+    // The walk keys walk once the graph has drawn its focus.
+    await graphDrawn(page);
+    await focusDrawn(page, RECORD.slice(1));
     // Y walks right, as L did; L no longer walks.
     const start = new URL(page.url()).pathname;
     await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
@@ -371,7 +377,7 @@ test.describe('Platform flows in the app', () => {
       // The domain sits in the card's breadcrumb, behind "…" when the trail is long.
       const more = page.locator(`${WIKI} .wiki-panel-head .crumb-more-button`);
       if (await more.count()) await more.click();
-      await page.locator(`${WIKI} .wiki-panel-head`).getByRole('link', { name: 'Platform', exact: true }).click();
+      await page.locator(WIKI).getByRole('link', { name: 'Platform (LA-PLT)', exact: true }).click();
       await page.waitForURL((u) => u.pathname === '/LA-PLT');
     }));
     expectStable(await step(page, 'flow', 'Back', { keys: KEYS, allow: CONTENT }, async () => {

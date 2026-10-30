@@ -56,6 +56,8 @@ test.describe('Checking flows', () => {
       // Escape closes the topmost overlay first: the card's page, then the panel.
       await page.keyboard.press('Escape');
       await page.waitForURL((u) => u.search === '?panel=checks');
+      await expect(page.locator('.wiki-panel.is-format')).toHaveCount(0);
+      await expect(page.locator('.wiki-panel')).toHaveAttribute('data-page', ADDED);
       await page.keyboard.press('Escape');
       await page.waitForURL((u) => u.search === '');
       await expect(page.locator(PANEL)).toHaveCount(0);
