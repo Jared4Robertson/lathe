@@ -1,8 +1,10 @@
 // Coverage: every obligation designed, built and proved, per domain and for what the product shares, and the
 // records short of a minimum. Each case starts from the complete product, where everything is covered.
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { ALLOWED_LEVELS, GAP_RULES, type Workspace } from '../src/index.ts';
-import { adding, changing, complete, gaps, loadData, obligation, ofCheck, records, removeData, sparse, SPARSE_FILES, without, type Data } from './helpers.ts';
+import { CHANGE_SETTING_VALUES } from '../src/traceability/pattern-following/commands/change-setting-values.ts';
+import { ALLOWED_LEVELS, GAP_RULES, openStore, StoreError, type Workspace } from '../src/index.ts';
+import { runCommand } from '../src/platform/commands/run.ts';
+import { adding, build, changing, complete, gaps, loadData, obligation, ofCheck, records, removeData, sparse, SPARSE_FILES, without, type Data } from './helpers.ts';
 
 afterAll(removeData);
 
@@ -17,7 +19,7 @@ describe('coverage of the complete product', () => {
   it('LA-TRC-UC02-R01-T01 counts every obligation kind, in kind order, per domain and for what the product shares', () => {
     expect(clean.coverage.map((c) => [c.product, c.domain])).toEqual([['EX', 'EX-LEND'], ['EX', null]]);
     const lending = clean.coverage[0];
-    expect(lending.obligations.map((o) => o.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
+    expect(lending.obligations.map((o) => o.kind)).toEqual(['constraint', 'invariant', 'specification', 'policy', 'domain_service', 'storage_requirement', 'uc_requirement', 'pattern_rule', 'view_requirement', 'api_requirement', 'standard_rule']);
     expect(obligation(clean, 'EX-LEND', 'uc_requirement')).toMatchObject({ label: 'UC requirement', proof_only: false, ...covered(2) });
     expect(obligation(clean, 'EX-LEND', 'pattern_rule')).toMatchObject({ proof_only: true, ...covered(1) });
     for (const kind of ['invariant', 'specification', 'policy', 'domain_service', 'api_requirement']) expect(obligation(clean, 'EX-LEND', kind), kind).toMatchObject(covered(1));
@@ -49,7 +51,7 @@ describe('coverage of the complete product', () => {
   });
 
   it('LA-TRC-UC06-R02-T01 counts the tests of each scope by state', () => {
-    expect(clean.coverage[0].tests).toEqual({ automated: 11, manual: 2, not_automated: 0 });
+    expect(clean.coverage[0].tests).toEqual({ automated: 12, manual: 2, not_automated: 0 });
     // Outside every domain: the standard rule's test.
     expect(clean.coverage[1].tests).toEqual({ automated: 1, manual: 0, not_automated: 0 });
   });
@@ -236,7 +238,7 @@ describe('proved', () => {
   it('LA-TRC-UC02-R03-T01 a test not automated yet leaves its obligation unproved, counted and named as such', () => {
     expect(obligation(ws, 'EX-LEND', 'specification')).toMatchObject({ total: 1, proved: 0, not_automated: 1 });
     expect(ws.coverage[0].gaps.find((g) => g.id === 'EX-LEND-SP01')?.message).toBe('Specification EX-LEND-SP01 is not proved yet: its test is not automated yet.');
-    expect(ws.coverage[0].tests).toEqual({ automated: 9, manual: 3, not_automated: 1 });
+    expect(ws.coverage[0].tests).toEqual({ automated: 10, manual: 3, not_automated: 1 });
   });
 
   it('LA-AUT-UC16-R02-T03 a standard rule with no standard rule test is not proved', () => {
@@ -455,7 +457,23 @@ describe('pattern rules, domain by domain', () => {
     expect(obligation(ws, 'EX-LEND', 'pattern_rule')).toMatchObject({ total: 2, proved: 1 });
   });
 
-  it('LA-TRC-INV02-T a follower of two patterns with a setting of the same name gives each its own value', async () => {
+  it("LA-TRC-INV02-T a setting takes one value from each follower: a second value of one setting is refused with setting-value-own-pattern, changing nothing", async () => {
+    const store = await openStore(await build(complete()));
+    try {
+      const error = await runCommand(store, CHANGE_SETTING_VALUES, {
+        follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting_values: [{ setting: 'record', value: 'Tool' }, { setting: 'record', value: 'Loan' }],
+      }).then(() => null, (e: unknown) => e);
+      expect(error).toBeInstanceOf(StoreError);
+      expect((error as StoreError).problems.map((p) => [p.rule, p.message])).toEqual([
+        ['setting-value-own-pattern', 'EX-LEND-UC02 gives setting record of EX-PAT-ACT a second value: a setting takes one value from each follower'],
+      ]);
+      expect(store.rows('setting_value')).toEqual([{ follower_id: 'EX-LEND-UC02', pattern_id: 'EX-PAT-ACT', setting: 'record', value: 'Tool' }]);
+    } finally {
+      await store.close();
+    }
+  });
+
+  it('LA-TRC-UC07-R03-T01 a follower of two patterns with a setting of the same name gives each its own value', async () => {
     const data = adding(complete(), {
       pattern: [{ id: 'EX-PAT-AUD', title: 'Audited action', product_id: 'EX', description: 'An action the audit log records.' }],
       pattern_setting: [{ pattern_id: 'EX-PAT-AUD', position: 1, name: 'record', meaning: 'The record audited.' }],
@@ -513,6 +531,7 @@ describe('the run by levels', () => {
       specification_test: ['unit', 'integration'],
       policy_test: ['integration', 'service', 'system', 'browser'],
       domain_service_test: ['unit'],
+      storage_requirement_test: ['integration', 'service', 'system', 'browser'],
       use_case_test: ['service', 'system', 'browser'],
       view_test: ['unit', 'browser'],
       endpoint_test: ['service', 'system'],

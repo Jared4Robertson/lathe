@@ -48,6 +48,10 @@
 {"use_case_id":"LA-AUT-UC29","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-AUT-UC30","position":1,"role_name":"Owner"}
 {"use_case_id":"LA-AUT-UC30","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-AUT-UC31","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-AUT-UC31","position":2,"role_name":"Agent"}
+{"use_case_id":"LA-AUT-UC32","position":1,"role_name":"Owner"}
+{"use_case_id":"LA-AUT-UC32","position":2,"role_name":"Agent"}
 {"use_case_id":"LA-CHK-UC01","position":1,"role_name":"Agent"}
 {"use_case_id":"LA-CHK-UC01","position":2,"role_name":"Owner"}
 {"use_case_id":"LA-CHK-UC02","position":1,"role_name":"Agent"}

@@ -8,11 +8,53 @@ import { DOMAIN_AGGREGATE, domainsFrom, type Domain } from './model.ts';
 
 /**
  * Every rule the domain breaks (LA-AUT-INV112 a domain service has at most one service; LA-AUT-INV41 an aggregate has
- * one repository; LA-AUT-INV60 a term never builds on itself). The view gives the persists links of the other domains' repositories and the builds_on links of the other
- * domains' terms.
+ * one repository; LA-AUT-INV60 a term never builds on itself; LA-AUT-INV17 each capability has its own position). The
+ * view gives the persists links of the other domains' repositories and the builds_on links of the other domains' terms.
  */
 export function domainProblems(domain: Domain, view: ReadView): RuleProblem[] {
-  return [...oneEach(domain, view), ...buildsOnLoops(domain, view)];
+  return [...oneEach(domain, view), ...buildsOnLoops(domain, view), ...capabilityPositions(domain)];
+}
+
+/** LA-AUT-INV17: no two capabilities of the domain have the same position; each after the first at one is refused. */
+function capabilityPositions(domain: Domain): RuleProblem[] {
+  const first = new Map<number, string>();
+  const problems: RuleProblem[] = [];
+  for (const { row } of domain.capabilities) {
+    const holder = first.get(row.position);
+    if (holder === undefined) first.set(row.position, row.id);
+    else {
+      problems.push({
+        rule: 'capability-position',
+        table: 'capability',
+        row: row as unknown as Row,
+        message: `capability ${holder} is at position ${row.position} of domain ${domain.root}, so ${row.id} cannot be too: each capability of a domain has its own position`,
+      });
+    }
+  }
+  return problems;
+}
+
+/**
+ * Every persists link that breaks LA-AUT-INV40: a repository persists at most one aggregate. Each link after the first
+ * of its repository is refused. (One that persists none is reported by repository-persists-nothing until its link is
+ * written.)
+ */
+export function repositoryPersistsOne(links: readonly { source_id: string; target_id: string }[]): RuleProblem[] {
+  const first = new Map<string, string>();
+  const problems: RuleProblem[] = [];
+  for (const link of links) {
+    const persisted = first.get(link.source_id);
+    if (persisted === undefined) first.set(link.source_id, link.target_id);
+    else {
+      problems.push({
+        rule: 'repository-persists-one',
+        table: 'persists',
+        row: link as unknown as Row,
+        message: `repository ${link.source_id} already persists ${persisted}, so it cannot also persist ${link.target_id}: a repository persists one aggregate`,
+      });
+    }
+  }
+  return problems;
 }
 
 // LA-AUT-INV41: no repository persists an aggregate another one already persists. LA-AUT-INV112: a domain service has
@@ -33,7 +75,7 @@ function oneEach(domain: Domain, view: ReadView): RuleProblem[] {
       rule: 'one-repository',
       table: 'repository',
       row: repository.row as unknown as Row,
-      message: `${repository.row.id} cannot persist ${repository.persists}, which ${persister} persists: an aggregate has one repository`,
+      message: `${persister} and ${repository.row.id} both persist ${repository.persists}: an aggregate has one repository`,
     });
   }
   for (const service of beyondFirst(domain.services.map((x) => x.row), (r) => r.domain_service_id)) {
@@ -145,7 +187,10 @@ export const domainRules: AggregateRules = {
       named.add(p.message);
       return true;
     };
-    return domainsFrom((table) => view.rows(table)).flatMap((domain) => domainProblems(domain, view)).filter(once);
+    return [
+      ...domainsFrom((table) => view.rows(table)).flatMap((domain) => domainProblems(domain, view)).filter(once),
+      ...repositoryPersistsOne(view.rows('persists') as unknown as { source_id: string; target_id: string }[]),
+    ];
   },
 };
 

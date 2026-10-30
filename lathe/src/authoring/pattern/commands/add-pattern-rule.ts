@@ -4,6 +4,7 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { PatternRuleRow } from '../../../platform/data/tables.ts';
 import { PATTERN_SLICE } from '../model.ts';
 import { PatternRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 
 /** A new pattern rule. */
 export type AddPatternRule = Pick<PatternRuleRow, 'id' | 'title' | 'pattern_id' | 'statement' | 'group_name' | 'notes'>;
@@ -32,5 +33,6 @@ export function addPatternRule(tx: Transaction, input: AddPatternRule): void {
   const patterns = new PatternRepository(tx);
   const pattern = patterns.load(input.pattern_id) ?? tx.refuse('missing', `there is no pattern ${input.pattern_id}`);
   pattern.rules.push(input);
+  holdToRules(tx, pattern);
   patterns.save(pattern);
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_SIZE, MIN_SIZE, parseWindowStates, saveWindow, windowFor } from '../src/windowState.ts';
+import { DEFAULT_SIZE, MIN_SIZE, parseWindowStates, saveWindow, windowFor } from '../src/product-window/model.ts';
 
 const display = { x: 0, y: 0, width: 1728, height: 1080 };
 

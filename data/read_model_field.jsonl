@@ -106,6 +106,15 @@
 {"read_model_id":"LA-AUT-RM41","position":1,"name":"Tooling","meaning":"The tooling record's row.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-AUT-RM41","position":2,"name":"Packages","meaning":"The packages it uses.","type":"text","required":true}
 {"read_model_id":"LA-AUT-RM41","position":3,"name":"Meets","meaning":"The standard rules it meets.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM42","position":1,"name":"Requirement","meaning":"The requirement's row: its ID, title, parent and statement.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM42","position":2,"name":"Parent","meaning":"The aggregate or read model it is about, with its kind and title.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM42","position":3,"name":"Builder","meaning":"The repository or reader that builds it, with its file and the data store it names.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM42","position":4,"name":"Tests","meaning":"Its storage requirement tests, each with the test data sets it starts from.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM42","position":5,"name":"Record","meaning":"The record the page is about, by ID, and its kind in the requirement.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM43","position":1,"name":"Store","meaning":"The data store's row: its ID, title, parent, kind and description.","type_value_object_id":"LA-VO01","required":true}
+{"read_model_id":"LA-AUT-RM43","position":2,"name":"Parent","meaning":"The product or domain it sits under.","type":"text","required":true}
+{"read_model_id":"LA-AUT-RM43","position":3,"name":"Provided by","meaning":"The integration that reaches it, when someone else runs it.","type":"text","required":false}
+{"read_model_id":"LA-AUT-RM43","position":4,"name":"Stores","meaning":"The repositories, readers and tables stored in it, by ID.","type":"text","required":true}
 {"read_model_id":"LA-CHK-RM01","position":1,"name":"Product","meaning":"The product whose space it is.","type_value_object_id":"LA-VO01","required":true}
 {"read_model_id":"LA-CHK-RM01","position":2,"name":"Counts","meaning":"Its errors and warnings, the workspace's among them.","type":"text","required":true,"example":"2 errors · 3 warnings"}
 {"read_model_id":"LA-CHK-RM01","position":3,"name":"Own problems","meaning":"The problems of its records by check, in the order of each check's first problem: errors before warnings, then by check and record. Each names its severity, check, record and message.","type":"text","required":true}
@@ -174,7 +183,7 @@
 {"read_model_id":"LA-PLT-RM02","position":1,"name":"Command ID","meaning":"The command.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM02","position":2,"name":"Title","meaning":"What the palette and the sheet call it, or the title its handler gives (\"Switch to Lathe\").","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM02","position":3,"name":"Group","meaning":"Where the sheet lists it.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM02","position":4,"name":"Shown keys","meaning":"Its bindings with the person's overrides, as the platform shows them (DS01).","type":"text","required":false}
+{"read_model_id":"LA-PLT-RM02","position":4,"name":"Shown keys","meaning":"Its bindings with the person's overrides, as the platform shows them (DS01).","type_value_object_id":"LA-VO61","required":false}
 {"read_model_id":"LA-PLT-RM02","position":5,"name":"ARIA keys","meaning":"What `aria-keyshortcuts` says; none for a sequence.","type":"text","required":false}
 {"read_model_id":"LA-PLT-RM03","position":1,"name":"Theme ID","meaning":"The theme.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM03","position":2,"name":"Name","meaning":"What it is called.","type":"text","required":true}

@@ -123,7 +123,14 @@ describe('LA-AUT-UC06-R12-T02 only repositories write data files, each handler l
 });
 
 describe('LA-STD-MODELING-R09-T02 each rule record is a rule in its aggregate\'s rules.ts, by the name its refusal carries, and each rule there has its record', () => {
-  const files = sources();
+  /** Every rules.ts under a directory, from the repo root: the app's and the desktop's aggregates keep their rules there too. */
+  const rulesFiles = (dir: string): { file: string; text: string; imports: string[] }[] =>
+    readdirSync(dir).flatMap((name) => {
+      const full = path.join(dir, name);
+      if (statSync(full).isDirectory()) return rulesFiles(full);
+      return name === 'rules.ts' ? [{ file: path.relative(REPO, full), text: readFileSync(full, 'utf8'), imports: [] }] : [];
+    });
+  const files = [...sources(), ...rulesFiles(path.join(REPO, 'app', 'src')), ...rulesFiles(path.join(REPO, 'desktop', 'src'))];
   /** The rules a rules.ts writes: each name a refusal of it carries. */
   const rulesIn = (text: string) => new Set([...text.matchAll(/\brule: '([a-z0-9-]+)'/g)].map((m) => m[1]));
 

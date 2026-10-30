@@ -101,7 +101,7 @@ Domains and their aggregates, entities, value objects, rules (constraints, invar
 A part of the product with its own model, language and owner, for one business capability: what DDD calls a bounded context. Domains meet only through published events.
 
 - **Parents:** [`product`](#kind-product) (`product_id`)
-- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
+- **Children:** [`aggregate`](#kind-aggregate), [`read_model`](#kind-read_model), [`domain_service`](#kind-domain_service), [`term`](#kind-term), [`capability`](#kind-capability), [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`table`](#kind-table), [`entry_point`](#kind-entry_point), [`tooling`](#kind-tooling), [`test_data_set`](#kind-test_data_set), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>-<D>`, such as `TL-LEND`; it starts with its parent's ID
 - **Links out:** Follows ([`follows`](#relation-follows))
@@ -131,12 +131,12 @@ A part of the product with its own model, language and owner, for one business c
 The consistency boundary: a cluster of entities changed together as one unit, by one command at a time. Other aggregates follow its changes through events, and refer to it by ID only.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
-- **Children:** [`entity`](#kind-entity), [`invariant`](#kind-invariant), [`domain_event`](#kind-domain_event)
+- **Children:** [`entity`](#kind-entity), [`invariant`](#kind-invariant), [`domain_event`](#kind-domain_event), [`storage_requirement`](#kind-storage_requirement)
 - **Obligation:** no
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Persisted by ([`persists`](#relation-persists)), Read by ([`reads`](#relation-reads))
-- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`aggregate-too-large`](#check-aggregate-too-large)
+- **Checks:** [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
 <a id="table-aggregate"></a>
@@ -168,7 +168,7 @@ A record the domain keeps, with an identity: its aggregate's root or one of its 
 - **Links out:** Has many ([`has_many`](#relation-has_many)), Has one ([`has_one`](#relation-has_one))
 - **Links in:** Questions about this ([`about`](#relation-about)), Part of ([`has_many`](#relation-has_many)), Part of ([`has_one`](#relation-has_one))
 - **Parts:** [`entity_field`](#table-entity_field)
-- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large)
+- **Checks:** [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`entity-without-fields`](#gap-entity-without-fields), [`entity-without-data-model`](#gap-entity-without-data-model), [`entity-without-table`](#gap-entity-without-table)
 
 <a id="table-entity"></a>
@@ -463,7 +463,7 @@ A recorded exception to one aggregate per command: another aggregate of the same
 A view of its domain's data shaped for reading, which reads one or more of the domain's aggregates. Its fields are read_model_field rows, and it is stored in a table of its own.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
-- **Children:** [`query`](#kind-query), [`table`](#kind-table), [`projection`](#kind-projection), [`reader`](#kind-reader)
+- **Children:** [`query`](#kind-query), [`storage_requirement`](#kind-storage_requirement), [`table`](#kind-table), [`projection`](#kind-projection), [`reader`](#kind-reader)
 - **Obligation:** no
 - **ID:** `<P>-<D>-RM<nn>`, such as `TL-LEND-RM01`; it starts with its domain's ID
 - **Links out:** Calls ([`calls`](#relation-calls)), Fed by ([`fed_by`](#relation-fed_by)), Reads ([`reads`](#relation-reads))
@@ -599,6 +599,37 @@ Domain logic that belongs to no single entity and is not a yes-or-no check, such
 - **Rule:** `("trim"(title) != '')`
 - **Rule:** `("trim"("statement") != '')`
 
+<a id="kind-storage_requirement"></a>
+
+### Storage requirement (`storage_requirement`)
+
+What the business needs kept of one aggregate or read model, its parent, and how well: whichever apply of durability (it survives a restart or a crash), atomicity (saved whole or not at all, such as a loan with its outbox event), retention and deletion (how long it is kept, and deleted on request), recovery (backups, and how much may be lost) and capacity (how much, how fast). It is built by its aggregate's repository, or its read model's reader, naming a file that exists and the data store it is stored in, and proved by its storage requirement tests.
+
+- **Parents:** [`aggregate`](#kind-aggregate) (`aggregate_id`), [`read_model`](#kind-read_model) (`read_model_id`)
+- **Children:** [`storage_requirement_test`](#kind-storage_requirement_test)
+- **Obligation:** yes: designed, built and proved
+  - **Designed:** By construction, under its aggregate or read model.
+  - **Built:** Its aggregate's repository, or its read model's reader, names a file that exists and the data store it is stored in.
+  - **Proved:** One of its storage requirement tests.
+- **ID:** `<aggregate or read model>-SR<nn>`, such as `TL-LEND-A1-SR01`; it starts with its parent's ID
+- **Links out:** none
+- **Links in:** Questions about this ([`about`](#relation-about))
+
+<a id="table-storage_requirement"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The requirement's ID: its aggregate's or read model's ID and SR<nn>, such as TL-LEND-A1-SR01. |
+| `title` | VARCHAR | yes | The requirement in a few words, such as A loan is saved with its outbox event. |
+| `aggregate_id` | VARCHAR → [`aggregate`](#table-aggregate) | no | The aggregate whose data it is about; exactly one of aggregate and read model is given. |
+| `read_model_id` | VARCHAR → [`read_model`](#table-read_model) | no | The read model whose data it is about; exactly one of aggregate and read model is given. |
+| `statement` | VARCHAR | yes | What must be kept and how well, stated with MUST, MUST NOT, SHOULD or MAY. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"("statement") != '')`
+- **Rule:** `((aggregate_id IS NULL) != (read_model_id IS NULL))`
+
 <a id="kind-term"></a>
 
 ### Term (`term`)
@@ -659,15 +690,15 @@ An event a policy hears, whose aggregate is stored in a database table, whose ev
 
 An event a policy hears is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, since a lost reaction is a lost change. That is every event a policy hears whose aggregate is stored in a database table (an entity of the aggregate has a table whose storage is `table`), in its own domain or, when published, in another. An event inside one process with no transaction to join, such as one whose aggregate is kept in browser storage, a file or in memory and is heard in the same browser tab or process, is exempt. So is an event that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load: it may be delivered in process, since the next load rebuilds what a lost delivery missed. Its event type records the delivery; one a policy hears that is delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
 
-<a id="check-has-crosses-aggregate"></a>
+<a id="check-term-used-unlinked"></a>
 
-### `has-crosses-aggregate`
+### `term-used-unlinked`
 
-**Error** · Lathe's · Kinds: [`entity`](#kind-entity), [`aggregate`](#kind-aggregate)
+**Warning** · Lathe's · Kinds: [`term`](#kind-term)
 
-A `has_one` or `has_many` link stays inside its aggregate.
+A term's meaning uses another term of its product by title without a builds_on link to it.
 
-These relations link an entity to its parts, and parts belong to their aggregate, so both ends sit in the same aggregate. Aggregates refer to each other by ID only: a field typed by the other aggregate. Type a field by the other aggregate instead, or move the part into the aggregate.
+Definitions build up, never in a circle (LA-STD-MODELING-R12): a term is defined only by plain words and terms below it, and names each one it uses with builds_on, so the store can refuse a loop. The check reads each meaning in lower case, with text in backticks left out as code, and looks for every other term of the product by title as a whole word, singular or plural (a title ending in a consonant and y also as -ies); a shorter title found only inside a longer term's title (Domain inside Domain event) does not count. It cannot tell a word used in another sense, so it is a warning. Link the term with builds_on to the term it uses, or say it in plain words.
 
 <a id="check-entity-unreferenced"></a>
 
@@ -677,7 +708,7 @@ These relations link an entity to its parts, and parts belong to their aggregate
 
 A child entity that its aggregate's root does not reach.
 
-Each child entity is a part of its aggregate's root, so a `has_one` or `has_many` reaches it from the root, directly or through other children of the same aggregate. Links that cross aggregates (has-crosses-aggregate) do not count. Link the child from the root or from another child with `has_one` or `has_many`.
+Each child entity is a part of its aggregate's root, so a `has_one` or `has_many` reaches it from the root, directly or through other children of the same aggregate. Link the child from the root or from another child with `has_one` or `has_many`.
 
 <a id="check-event-tense"></a>
 
@@ -728,16 +759,6 @@ A specification is a yes/no condition a record meets or not, and its title names
 A query whose title does not start with Get, List or Find.
 
 A query asks for data and changes nothing, so its title starts with the verb that says what comes back: Get for one thing, List for several, Find for a search, such as "Get a member's loans", "List overdue loans" or "Find a tool by name". A query titled like a command ("Check the workspace", "Export a theme") reads as a change. Retitle the query with Get, List or Find.
-
-<a id="check-term-used-unlinked"></a>
-
-### `term-used-unlinked`
-
-**Warning** · Lathe's · Kinds: [`term`](#kind-term)
-
-A term's meaning uses another term of its product by title without a builds_on link to it.
-
-Definitions build up, never in a circle (LA-STD-MODELING-R12): a term is defined only by plain words and terms below it, and names each one it uses with builds_on, so the store can refuse a loop. The check reads each meaning in lower case, with text in backticks left out as code, and looks for every other term of the product by title as a whole word, singular or plural (a title ending in a consonant and y also as -ies); a shorter title found only inside a longer term's title (Domain inside Domain event) does not count. It cannot tell a word used in another sense, so it is a warning. Link the term with builds_on to the term it uses, or say it in plain words.
 
 ### Coverage gaps: domain model
 
@@ -1246,7 +1267,7 @@ An outside system the product exchanges with, such as a payment provider or a ma
 - **Obligation:** no
 - **ID:** `<P>-INT<nn>`, such as `TL-INT01`; it starts with its product's ID
 - **Links out:** none
-- **Links in:** Questions about this ([`about`](#relation-about)), Exchanged with by ([`exchanges_with`](#relation-exchanges_with))
+- **Links in:** Questions about this ([`about`](#relation-about)), Exchanged with by ([`exchanges_with`](#relation-exchanges_with)), Provides ([`provided_by`](#relation-provided_by))
 - **Checks:** [`integration-unused`](#check-integration-unused)
 - **Gaps:** [`integration-without-adapter`](#gap-integration-without-adapter)
 
@@ -1354,21 +1375,53 @@ Each is reported in coverage, under the record that falls short, never as a prob
 
 The technical record that implements each design record, such as a command's handler or an entity's table, and the standards code meets.
 
+<a id="kind-data_store"></a>
+
+### Data store (`data_store`)
+
+Where data actually lives: a database, a bucket, a folder of files, browser storage or memory. Every repository, reader and table names the one it is stored in (stored_in). One that is a service someone else runs, which the user must provide, such as a managed database or a bucket, is reached through its integration (provided_by); one the product owns outright, such as a local file or browser storage, has none.
+
+- **Parents:** [`product`](#kind-product) (`product_id`), [`domain`](#kind-domain) (`domain_id`)
+- **Children:** none
+- **Obligation:** no
+- **ID:** `<P>-STORE<nn> or <P>-<D>-STORE<nn>`, such as `TL-STORE01`; it starts with its parent's ID
+- **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
+- **Links out:** Provided by ([`provided_by`](#relation-provided_by))
+- **Links in:** Questions about this ([`about`](#relation-about)), Stores ([`stored_in`](#relation-stored_in))
+- **Gaps:** [`data-store-unused`](#gap-data-store-unused)
+
+<a id="table-data_store"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The data store's ID: its product's ID and STORE<nn>, or its domain's ID and STORE<nn>, such as TL-STORE01. |
+| `title` | VARCHAR | yes | Its name in code or config, such as DATABASE_URL, dataDir or localStorage. |
+| `product_id` | VARCHAR → [`product`](#table-product) | no | The product it sits under, when several of its domains use it; exactly one of product and domain is given. |
+| `domain_id` | VARCHAR → [`domain`](#table-domain) | no | The domain it sits under, when one domain alone uses it; exactly one of product and domain is given. |
+| `kind` | ENUM('database', 'object store', 'file folder', 'file', 'browser storage', 'memory') | yes | database: a database server or file, such as PostgreSQL or SQLite; object store: a bucket of objects, such as S3; file folder: a folder of files the program reads and writes; file: one file the program reads and writes whole; browser storage: kept by the browser, such as local or session storage or its history; memory: kept only while the program runs, and rebuilt on each start. |
+| `description` | VARCHAR | yes | Where it is and what keeps it there, in a sentence or two: its location, who runs it and how it is reached. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `("trim"(description) != '')`
+- **Rule:** `((product_id IS NULL) != (domain_id IS NULL))`
+
 <a id="kind-repository"></a>
 
 ### Repository (`repository`)
 
-Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage. It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason.
+Loads and saves its aggregate, whole: the way command handlers reach the aggregate's storage, in the one data store it names (stored_in). It persists exactly one aggregate, linked with persists, and sits under its domain, or, for one several domains share, under the domain that holds what they share. One that also persists other aggregates records each as a repository share, with its reason.
 
 - **Parents:** [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<domain>-REPO<nn>`, such as `TL-LEND-REPO01`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets)), Persists ([`persists`](#relation-persists))
+- **Links out:** Meets ([`meets`](#relation-meets)), Persists ([`persists`](#relation-persists)), Stored in ([`stored_in`](#relation-stored_in))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`repository_share`](#table-repository_share)
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`package-not-in-manifest`](#check-package-not-in-manifest), [`repository-persists-nothing`](#check-repository-persists-nothing)
+- **Gaps:** [`stored-nowhere`](#gap-stored-nowhere)
 
 <a id="table-repository"></a>
 
@@ -1432,14 +1485,14 @@ Its entity in code: the entity's data, behavior and mapping to its table. A comm
 
 ### Table (`table`)
 
-Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables, or computed in memory on each load.
+Where an entity or a read model, its parent, is stored, in a database or not; or, under a domain, a table of the domain's own infrastructure that implements no design record, such as its outbox. It is kept in the one data store it names (stored_in). Its columns follow from its parent's fields, a value object's fields flattened into columns, so it stores only what fields cannot say: its keys and indexes (table_key rows). An entity's table holds its rows, the source of truth: a table, normalized, or the browser storage, file or memory that keeps them; a read model's is a projection that can be rebuilt, usually a view over its domain's entity tables, or computed in memory on each load.
 
 - **Parents:** [`entity`](#kind-entity) (`entity_id`), [`read_model`](#kind-read_model) (`read_model_id`), [`domain`](#kind-domain) (`domain_id`)
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<entity or read model>-TB, or <domain>-TB<nn>`, such as `TL-LEND-EN01-TB`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** Meets ([`meets`](#relation-meets)), Stored in ([`stored_in`](#relation-stored_in))
 - **Links in:** Questions about this ([`about`](#relation-about))
 - **Parts:** [`table_key`](#table-table_key)
 - **Checks:** [`technical-file-missing`](#check-technical-file-missing), [`table-schema-mismatch`](#check-table-schema-mismatch), [`package-not-in-manifest`](#check-package-not-in-manifest)
@@ -1637,14 +1690,14 @@ Fills its read model's table and keeps it current, from events or as a view's qu
 
 ### Reader (`reader`)
 
-Reads its read model's table for its query handlers: the way query handlers reach a read model's storage. It reads exactly one read model, its parent, and nothing else; a query handler reads only through its own read model's reader, and the projection alone fills the table it reads.
+Reads its read model's table for its query handlers: the way query handlers reach a read model's storage, in the one data store it names (stored_in). It reads exactly one read model, its parent, and nothing else; a query handler reads only through its own read model's reader, and the projection alone fills the table it reads.
 
 - **Parents:** [`read_model`](#kind-read_model) (`read_model_id`)
 - **Children:** none
 - **Obligation:** no
 - **ID:** `<read model>-RD`, such as `TL-LEND-RM01-RD`; it starts with its parent's ID
 - **Title:** one identifier exactly as in code, with no whitespace (refused otherwise)
-- **Links out:** Meets ([`meets`](#relation-meets))
+- **Links out:** Meets ([`meets`](#relation-meets)), Stored in ([`stored_in`](#relation-stored_in))
 - **Links in:** Questions about this ([`about`](#relation-about))
 
 <a id="table-reader"></a>
@@ -2048,6 +2101,8 @@ Each is reported in coverage, under the record that falls short, never as a prob
 | <a id="gap-query-without-handler"></a>`query-without-handler` | [`query`](#kind-query), [`query_handler`](#kind-query_handler) | A query with no query handler. |
 | <a id="gap-endpoint-without-handler"></a>`endpoint-without-handler` | [`endpoint`](#kind-endpoint), [`endpoint_handler`](#kind-endpoint_handler) | An endpoint with no endpoint handler. |
 | <a id="gap-integration-without-adapter"></a>`integration-without-adapter` | [`integration`](#kind-integration), [`adapter`](#kind-adapter) | An integration with no adapter. |
+| <a id="gap-stored-nowhere"></a>`stored-nowhere` | [`repository`](#kind-repository), [`reader`](#kind-reader), [`table`](#kind-table), [`data_store`](#kind-data_store) | A repository, reader or table that names no data store. |
+| <a id="gap-data-store-unused"></a>`data-store-unused` | [`data_store`](#kind-data_store), [`repository`](#kind-repository), [`reader`](#kind-reader), [`table`](#kind-table) | A data store no repository, reader or table is stored in. |
 | <a id="gap-package-not-accounted-for"></a>`package-not-accounted-for` | [`product`](#kind-product), `package_use` | A product whose package.json files list a package no record of it uses. |
 | <a id="gap-table-without-file"></a>`table-without-file` | [`table`](#kind-table) | A table stored in a database table that names no file creating it. |
 | <a id="gap-view-without-ui-component"></a>`view-without-ui-component` | [`view`](#kind-view), [`ui_component`](#kind-ui_component) | A view no UI component renders. |
@@ -2290,6 +2345,47 @@ Proves its domain service: from the inputs given, the value or decision it retur
 | `id` | VARCHAR → `record_id` | yes | The test's ID: its domain service's ID and T<nn>, such as TL-LEND-DS01-T01. |
 | `title` | VARCHAR | yes | What the test shows, in a sentence. |
 | `domain_service_id` | VARCHAR → [`domain_service`](#table-domain_service) | yes | The domain service it proves. |
+| `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
+| `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
+| `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
+| `manual_reason` | VARCHAR | no | Why a person runs it rather than a file; a manual test must give one, and only a manual test. |
+| `size` | ENUM('volume', 'worst case') | no | How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle). |
+| `smoke` | BOOLEAN | no | Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise. |
+| `external` | BOOLEAN | no | Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise. |
+| `when` | VARCHAR | yes | What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from). |
+| `then` | VARCHAR | yes | What the test expects. |
+| `notes` | VARCHAR | no | Longer notes on the test, such as when to run it. |
+
+- **Key:** `id`
+- **Rule:** `("trim"(title) != '')`
+- **Rule:** `smoke`
+- **Rule:** `"external"`
+- **Rule:** `("trim"("when") != '')`
+- **Rule:** `("trim"("then") != '')`
+- **Rule:** `((state != 'automated') OR (file IS NOT NULL))`
+- **Rule:** `((state = 'manual') = (manual_reason IS NOT NULL))`
+
+<a id="kind-storage_requirement_test"></a>
+
+### Storage requirement test (`storage_requirement_test`)
+
+Proves its storage requirement at the level that can observe it: a round trip, a restart, a failed save that leaves nothing behind, a deletion, a restore.
+
+- **Parents:** [`storage_requirement`](#kind-storage_requirement) (`storage_requirement_id`)
+- **Children:** none
+- **Obligation:** no
+- **Run by levels:** `integration`, `service`, `system`, `browser`
+- **ID:** `<storage requirement>-T<nn>`, such as `TL-LEND-A1-SR01-T01`; it starts with its parent's ID
+- **Links out:** Starts from ([`starts_from`](#relation-starts_from))
+- **Links in:** Questions about this ([`about`](#relation-about)), Measures ([`measured_by`](#relation-measured_by))
+
+<a id="table-storage_requirement_test"></a>
+
+| Column | Type | Required | Meaning |
+| --- | --- | --- | --- |
+| `id` | VARCHAR → `record_id` | yes | The test's ID: its storage requirement's ID and T<nn>, such as TL-LEND-A1-SR01-T01. |
+| `title` | VARCHAR | yes | What the test shows, in a sentence. |
+| `storage_requirement_id` | VARCHAR → [`storage_requirement`](#table-storage_requirement) | yes | The storage requirement it proves. |
 | `level` | ENUM('unit', 'integration', 'service', 'system', 'browser') | yes | How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises. |
 | `state` | ENUM('automated', 'manual', 'not automated yet') | yes | automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet. |
 | `file` | VARCHAR | no | The file that runs it, from the product root; an automated test must name one. |
@@ -2728,7 +2824,7 @@ The product, the roles its records name and its open questions, which belong to 
 A product: the root of a set of specifications.
 
 - **Parents:** none (a root record)
-- **Children:** [`business_outcome`](#kind-business_outcome), [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`interface`](#kind-interface), [`standard`](#kind-standard), [`question`](#kind-question)
+- **Children:** [`business_outcome`](#kind-business_outcome), [`domain`](#kind-domain), [`pattern`](#kind-pattern), [`interface`](#kind-interface), [`data_store`](#kind-data_store), [`standard`](#kind-standard), [`question`](#kind-question)
 - **Obligation:** no
 - **ID:** `<P>`, such as `TL`
 - **Links out:** none
@@ -3159,6 +3255,7 @@ The business outcome is measured by the test or record: a test of any kind, or a
 | [`business_outcome`](#kind-business_outcome) | [`policy_test`](#kind-policy_test) | The business outcome is measured by the policy test. |
 | [`business_outcome`](#kind-business_outcome) | [`specification_test`](#kind-specification_test) | The business outcome is measured by the specification test. |
 | [`business_outcome`](#kind-business_outcome) | [`standard_rule_test`](#kind-standard_rule_test) | The business outcome is measured by the standard rule test. |
+| [`business_outcome`](#kind-business_outcome) | [`storage_requirement_test`](#kind-storage_requirement_test) | The business outcome is measured by the storage requirement test. |
 | [`business_outcome`](#kind-business_outcome) | [`use_case_test`](#kind-use_case_test) | The business outcome is measured by the use case test. |
 | [`business_outcome`](#kind-business_outcome) | [`view_test`](#kind-view_test) | The business outcome is measured by the view test. |
 
@@ -3204,6 +3301,19 @@ The repository loads and saves the aggregate, whole: one repository per aggregat
 | From | To | Meaning |
 | --- | --- | --- |
 | [`repository`](#kind-repository) | [`aggregate`](#kind-aggregate) | The repository loads and saves the aggregate, whole. |
+
+<a id="relation-provided_by"></a>
+
+### `provided_by`
+
+The data store is a service someone else runs, which the user must provide, reached through the integration: a managed database or a bucket. A store the product owns outright, such as a local file or browser storage, has none.
+
+- **Reads:** Provided by / Provides
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`data_store`](#kind-data_store) | [`integration`](#kind-integration) | The data store is a service someone else runs, reached through the integration. |
 
 <a id="relation-raises"></a>
 
@@ -3292,8 +3402,24 @@ The test starts from the test data set: it is prepared before the test and reset
 | [`policy_test`](#kind-policy_test) | [`test_data_set`](#kind-test_data_set) | The policy test starts from the test data set. |
 | [`specification_test`](#kind-specification_test) | [`test_data_set`](#kind-test_data_set) | The specification test starts from the test data set. |
 | [`standard_rule_test`](#kind-standard_rule_test) | [`test_data_set`](#kind-test_data_set) | The standard rule test starts from the test data set. |
+| [`storage_requirement_test`](#kind-storage_requirement_test) | [`test_data_set`](#kind-test_data_set) | The storage requirement test starts from the test data set. |
 | [`use_case_test`](#kind-use_case_test) | [`test_data_set`](#kind-test_data_set) | The use case test starts from the test data set. |
 | [`view_test`](#kind-view_test) | [`test_data_set`](#kind-test_data_set) | The view test starts from the test data set. |
+
+<a id="relation-stored_in"></a>
+
+### `stored_in`
+
+The repository, reader or table is kept in the data store: each names exactly one, where its data actually lives.
+
+- **Reads:** Stored in / Stores
+- **Role:** none
+
+| From | To | Meaning |
+| --- | --- | --- |
+| [`reader`](#kind-reader) | [`data_store`](#kind-data_store) | The reader reads its read model's table in the data store. |
+| [`repository`](#kind-repository) | [`data_store`](#kind-data_store) | The repository loads and saves its aggregate in the data store. |
+| [`table`](#kind-table) | [`data_store`](#kind-data_store) | The table is kept in the data store. |
 
 ## Checks of any kind
 

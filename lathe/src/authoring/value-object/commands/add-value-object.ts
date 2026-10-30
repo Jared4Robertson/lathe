@@ -4,6 +4,7 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { ValueObjectRow } from '../../../platform/data/tables.ts';
 import { FIELD_COLUMNS, VALUE_OBJECT_SLICE, newValueObject, type ValueObjectField } from '../model.ts';
 import { ValueObjectRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 
 /** A new value object, with its fields in order. */
 export type AddValueObject = Pick<ValueObjectRow, 'id' | 'title' | 'description'> & { fields?: ValueObjectField[] };
@@ -30,5 +31,6 @@ export function addValueObject(tx: Transaction, input: AddValueObject): void {
   const valueObjects = new ValueObjectRepository(tx);
   const { fields = [], ...row } = input;
   const valueObject = valueObjects.create(newValueObject(row, fields));
+  holdToRules(tx, valueObject);
   valueObjects.save(valueObject);
 }

@@ -11,7 +11,7 @@ COMMENT ON COLUMN record_id.kind IS 'The record''s kind, which is the table that
 
 -- Each supertype holds one row per record of its member kinds (meta_supertype_member).
 CREATE TABLE obligation (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
-COMMENT ON TABLE obligation IS 'Every obligation: a record that must be designed, built and proved. Constraints, invariants, specifications, policies, domain services, UC requirements, view requirements, API requirements, pattern rules and standard rules, and a product''s own obligation kinds.';
+COMMENT ON TABLE obligation IS 'Every obligation: a record that must be designed, built and proved. Constraints, invariants, specifications, policies, domain services, storage requirements, UC requirements, view requirements, API requirements, pattern rules and standard rules, and a product''s own obligation kinds.';
 CREATE TABLE operation (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
 COMMENT ON TABLE operation IS 'Commands and queries: what a flow step invokes and what calls a domain service.';
 CREATE TABLE reads_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
@@ -25,12 +25,15 @@ CREATE TABLE test (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (i
 COMMENT ON TABLE test IS 'Every test, of each test kind: what may start from a test data set.';
 COMMENT ON TABLE technical_record IS 'The records of the technical specification: Lathe''s technical kinds and a product''s own kinds of that stage. Only they meet a standard rule, showing where the rule is applied, and only they name the packages they use.';
 
+CREATE TABLE stored_in_source (id VARCHAR PRIMARY KEY, kind VARCHAR NOT NULL, FOREIGN KEY (id, kind) REFERENCES record_id (id, kind));
+COMMENT ON TABLE stored_in_source IS 'The records that are kept in a data store: repositories, readers and tables.';
+
 INSERT INTO meta_table VALUES ('record_id', 'registry', NULL);
 INSERT INTO meta_table
-  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('calls_source'), ('follows_source'), ('technical_record'), ('test')) AS t (name);
+  SELECT name, 'supertype', NULL FROM (VALUES ('obligation'), ('operation'), ('reads_source'), ('calls_source'), ('follows_source'), ('technical_record'), ('test'), ('stored_in_source')) AS t (name);
 INSERT INTO meta_supertype_member
   SELECT 'obligation', kind FROM (VALUES ('constraint'), ('invariant'), ('specification'), ('policy'), ('domain_service'),
-    ('uc_requirement'), ('view_requirement'), ('api_requirement'), ('pattern_rule'), ('standard_rule')) AS t (kind)
+    ('storage_requirement'), ('uc_requirement'), ('view_requirement'), ('api_requirement'), ('pattern_rule'), ('standard_rule')) AS t (kind)
   UNION ALL SELECT 'operation', kind FROM (VALUES ('command'), ('query')) AS t (kind)
   UNION ALL SELECT 'reads_source', kind FROM (VALUES ('specification'), ('read_model')) AS t (kind)
   UNION ALL SELECT 'calls_source', kind FROM (VALUES ('command'), ('query'), ('read_model')) AS t (kind)
@@ -39,5 +42,6 @@ INSERT INTO meta_supertype_member
     ('event_type'), ('projection'), ('reader'), ('command_handler'), ('query_handler'), ('event_handler'), ('service'), ('ui_component'),
     ('endpoint_handler'), ('adapter'), ('entry_point'), ('tooling')) AS t (kind)
   UNION ALL SELECT 'test', kind FROM (VALUES ('constraint_test'), ('invariant_test'), ('specification_test'), ('policy_test'),
-    ('domain_service_test'), ('use_case_test'), ('view_test'), ('endpoint_test'), ('flow_test'), ('integration_test'),
-    ('pattern_rule_test'), ('standard_rule_test')) AS t (kind);
+    ('domain_service_test'), ('storage_requirement_test'), ('use_case_test'), ('view_test'), ('endpoint_test'), ('flow_test'), ('integration_test'),
+    ('pattern_rule_test'), ('standard_rule_test')) AS t (kind)
+  UNION ALL SELECT 'stored_in_source', kind FROM (VALUES ('repository'), ('reader'), ('table')) AS t (kind);

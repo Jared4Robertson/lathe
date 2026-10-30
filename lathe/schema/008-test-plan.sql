@@ -1,8 +1,9 @@
 -- The test plan: one test kind per thing tested, each under exactly what it proves. Every test has a run by: its level,
 -- its state, and the file that runs it or why it is manual. A constraint, invariant, specification, policy or flow has
--- exactly one test; a domain service, UC requirement, view requirement or API requirement at least one (a check, not a
--- refusal); an integration or a standard rule any number; a pattern rule one per domain that adopts it. A run by also
--- gives the test's size and its markers. Then the test data sets, under a domain, that tests start from.
+-- exactly one test; a domain service, storage requirement, UC requirement, view requirement or API requirement at least
+-- one (a check, not a refusal); an integration or a standard rule any number; a pattern rule one per domain that adopts
+-- it. A run by also gives the test's size and its markers. Then the test data sets, under a domain, that tests start
+-- from.
 
 -- A test's level says only how it runs, cheapest first: unit (in process, no storage or I/O), integration (in process,
 -- with real storage: a database, files, git), service (through the product's interface in process, with real storage:
@@ -175,6 +176,38 @@ COMMENT ON COLUMN domain_service_test.external IS 'Yes when it reaches a system 
 COMMENT ON COLUMN domain_service_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
 COMMENT ON COLUMN domain_service_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN domain_service_test.notes IS 'Longer notes on the test, such as when to run it.';
+
+CREATE TABLE storage_requirement_test (
+  id VARCHAR PRIMARY KEY REFERENCES record_id (id),
+  title VARCHAR NOT NULL CHECK (trim(title) <> ''),
+  storage_requirement_id VARCHAR NOT NULL REFERENCES storage_requirement (id),
+  level test_level NOT NULL,
+  state test_state NOT NULL,
+  file VARCHAR,
+  manual_reason VARCHAR,
+  size test_size,
+  smoke BOOLEAN CHECK (smoke),
+  external BOOLEAN CHECK (external),
+  "when" VARCHAR NOT NULL CHECK (trim("when") <> ''),
+  "then" VARCHAR NOT NULL CHECK (trim("then") <> ''),
+  notes VARCHAR,
+  CHECK (state <> 'automated' OR file IS NOT NULL),
+  CHECK ((state = 'manual') = (manual_reason IS NOT NULL))
+);
+COMMENT ON TABLE storage_requirement_test IS 'Proves its storage requirement at the level that can observe it: a round trip, a restart, a failed save that leaves nothing behind, a deletion, a restore.';
+COMMENT ON COLUMN storage_requirement_test.id IS 'The test''s ID: its storage requirement''s ID and T<nn>, such as TL-LEND-A1-SR01-T01.';
+COMMENT ON COLUMN storage_requirement_test.title IS 'What the test shows, in a sentence.';
+COMMENT ON COLUMN storage_requirement_test.storage_requirement_id IS 'The storage requirement it proves.';
+COMMENT ON COLUMN storage_requirement_test.level IS 'How it runs: unit, integration, service, system or browser, the lowest that can observe its result; a manual test names the level a person exercises.';
+COMMENT ON COLUMN storage_requirement_test.state IS 'automated: its file runs it; manual: a person follows it, for the reason given; not automated yet: meant to be automated, and not proof yet.';
+COMMENT ON COLUMN storage_requirement_test.file IS 'The file that runs it, from the product root; an automated test must name one.';
+COMMENT ON COLUMN storage_requirement_test.manual_reason IS 'Why a person runs it rather than a file; a manual test must give one, and only a manual test.';
+COMMENT ON COLUMN storage_requirement_test.size IS 'How much it exercises: none for small (a few records, the usual case), volume (many records, to show it holds at scale) or worst case (the slowest or largest input it must still handle).';
+COMMENT ON COLUMN storage_requirement_test.smoke IS 'Yes when it is a smoke test: one of the few run first, after a build or a deploy, to show the product works at all. Left out otherwise.';
+COMMENT ON COLUMN storage_requirement_test.external IS 'Yes when it reaches a system outside the product, such as a third-party service, so it needs that system and its access to run. Left out otherwise.';
+COMMENT ON COLUMN storage_requirement_test."when" IS 'What the test does, in a sentence, opening with any state it sets up beyond the test data sets it starts from (starts_from).';
+COMMENT ON COLUMN storage_requirement_test."then" IS 'What the test expects.';
+COMMENT ON COLUMN storage_requirement_test.notes IS 'Longer notes on the test, such as when to run it.';
 
 CREATE TABLE use_case_test (
   id VARCHAR PRIMARY KEY REFERENCES record_id (id),
@@ -404,24 +437,26 @@ COMMENT ON COLUMN standard_rule_test."then" IS 'What the test expects.';
 COMMENT ON COLUMN standard_rule_test.notes IS 'Longer notes on the test, such as when to run it.';
 
 INSERT INTO meta_kind VALUES
-  ('constraint_test', 'Constraint test', 'test-plan', 51, false, '<constraint>-T', 'TL-VO01-C01-T', 'parent', NULL),
-  ('invariant_test', 'Invariant test', 'test-plan', 52, false, '<invariant>-T', 'TL-LEND-INV01-T', 'parent', NULL),
-  ('specification_test', 'Specification test', 'test-plan', 53, false, '<specification>-T', 'TL-LEND-SP01-T', 'parent', NULL),
-  ('policy_test', 'Policy test', 'test-plan', 54, false, '<policy>-T', 'TL-LEND-PO01-T', 'parent', NULL),
-  ('domain_service_test', 'Domain service test', 'test-plan', 55, false, '<domain service>-T<nn>', 'TL-LEND-DS01-T01', 'parent', NULL),
-  ('use_case_test', 'Use case test', 'test-plan', 56, false, '<UC requirement>-T<nn>', 'TL-LEND-UC01-R01-T01', 'parent', NULL),
-  ('view_test', 'View test', 'test-plan', 57, false, '<view requirement>-T<nn>', 'TL-V01-R01-T01', 'parent', NULL),
-  ('endpoint_test', 'Endpoint test', 'test-plan', 58, false, '<API requirement>-T<nn>', 'TL-LEND-EP01-R01-T01', 'parent', NULL),
-  ('flow_test', 'Flow test', 'test-plan', 59, false, '<flow>-T', 'TL-LEND-UC01-FL01-T', 'parent', NULL),
-  ('integration_test', 'Integration test', 'test-plan', 60, false, '<integration>-T<nn>', 'TL-INT01-T01', 'parent', NULL),
-  ('pattern_rule_test', 'Pattern rule test', 'test-plan', 61, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL),
-  ('standard_rule_test', 'Standard rule test', 'test-plan', 62, false, '<standard rule>-T<nn>', 'TL-STD-CODE-R01-T01', 'parent', NULL);
+  ('constraint_test', 'Constraint test', 'test-plan', 53, false, '<constraint>-T', 'TL-VO01-C01-T', 'parent', NULL),
+  ('invariant_test', 'Invariant test', 'test-plan', 54, false, '<invariant>-T', 'TL-LEND-INV01-T', 'parent', NULL),
+  ('specification_test', 'Specification test', 'test-plan', 55, false, '<specification>-T', 'TL-LEND-SP01-T', 'parent', NULL),
+  ('policy_test', 'Policy test', 'test-plan', 56, false, '<policy>-T', 'TL-LEND-PO01-T', 'parent', NULL),
+  ('domain_service_test', 'Domain service test', 'test-plan', 57, false, '<domain service>-T<nn>', 'TL-LEND-DS01-T01', 'parent', NULL),
+  ('storage_requirement_test', 'Storage requirement test', 'test-plan', 58, false, '<storage requirement>-T<nn>', 'TL-LEND-A1-SR01-T01', 'parent', NULL),
+  ('use_case_test', 'Use case test', 'test-plan', 59, false, '<UC requirement>-T<nn>', 'TL-LEND-UC01-R01-T01', 'parent', NULL),
+  ('view_test', 'View test', 'test-plan', 60, false, '<view requirement>-T<nn>', 'TL-V01-R01-T01', 'parent', NULL),
+  ('endpoint_test', 'Endpoint test', 'test-plan', 61, false, '<API requirement>-T<nn>', 'TL-LEND-EP01-R01-T01', 'parent', NULL),
+  ('flow_test', 'Flow test', 'test-plan', 62, false, '<flow>-T', 'TL-LEND-UC01-FL01-T', 'parent', NULL),
+  ('integration_test', 'Integration test', 'test-plan', 63, false, '<integration>-T<nn>', 'TL-INT01-T01', 'parent', NULL),
+  ('pattern_rule_test', 'Pattern rule test', 'test-plan', 64, false, '<pattern rule>-T<nn>', 'TL-PAT-ACT-R01-T01', 'parent', NULL),
+  ('standard_rule_test', 'Standard rule test', 'test-plan', 65, false, '<standard rule>-T<nn>', 'TL-STD-CODE-R01-T01', 'parent', NULL);
 INSERT INTO meta_kind_parent VALUES
   ('constraint_test', 'constraint', 1, 'constraint_id'),
   ('invariant_test', 'invariant', 1, 'invariant_id'),
   ('specification_test', 'specification', 1, 'specification_id'),
   ('policy_test', 'policy', 1, 'policy_id'),
   ('domain_service_test', 'domain_service', 1, 'domain_service_id'),
+  ('storage_requirement_test', 'storage_requirement', 1, 'storage_requirement_id'),
   ('use_case_test', 'uc_requirement', 1, 'uc_requirement_id'),
   ('view_test', 'view_requirement', 1, 'view_requirement_id'),
   ('endpoint_test', 'api_requirement', 1, 'api_requirement_id'),
@@ -435,6 +470,7 @@ INSERT INTO meta_table VALUES
   ('specification_test', 'kind', NULL),
   ('policy_test', 'kind', NULL),
   ('domain_service_test', 'kind', NULL),
+  ('storage_requirement_test', 'kind', NULL),
   ('use_case_test', 'kind', NULL),
   ('view_test', 'kind', NULL),
   ('endpoint_test', 'kind', NULL),
@@ -467,6 +503,6 @@ COMMENT ON COLUMN test_data_set.reset IS 'How to reset it after a test, so the n
 COMMENT ON COLUMN test_data_set.file IS 'The seed or fixture that builds it, from the product root.';
 COMMENT ON COLUMN test_data_set.description IS 'What it is for, in a sentence or two.';
 
-INSERT INTO meta_kind VALUES ('test_data_set', 'Test data set', 'test-plan', 50, false, '<P>-<D>-TD<nn>', 'TL-LEND-TD01', 'domain', NULL);
+INSERT INTO meta_kind VALUES ('test_data_set', 'Test data set', 'test-plan', 52, false, '<P>-<D>-TD<nn>', 'TL-LEND-TD01', 'domain', NULL);
 INSERT INTO meta_kind_parent VALUES ('test_data_set', 'domain', 1, 'domain_id');
 INSERT INTO meta_table VALUES ('test_data_set', 'kind', NULL);

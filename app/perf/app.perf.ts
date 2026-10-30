@@ -7,7 +7,7 @@ import { BUDGETS } from './budgets';
 import { installProbes, quiet, record, work } from './measure';
 import { focusDrawn, reachableBoxes, sceneOf } from '../stability/scene';
 
-// LA-PAT-APP-UX-R11-T01, LA-V61-R37-T01 to T04, LA-V96-R21-T01, LA-V96-R24-T03 and LA-V96-R29-T02: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
+// LA-PAT-APP-UX-R11-T01, LA-V96-R21-T01, LA-V96-R24-T03 and LA-V96-R29-T02: the app's performance budgets (LA-PAT-APP-UX-R11), on the production build.
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const RECORD = '/LA-PLT-UC05';
@@ -42,7 +42,7 @@ test.describe('performance', () => {
     await record({ name: 'first-load JavaScript (gzip)', value: kb, unit: 'KB', budget: BUDGETS.firstLoadKb, detail: `${initial.map((c) => c.file).join(', ')}; largest: ${largest}` });
   });
 
-  test('LA-V61-R37-T01 a record page is interactive within 1.5 s', async ({ page }) => {
+  test('LA-PAT-APP-UX-R11-T01 a record page is interactive within 1.5 s', async ({ page }) => {
     await installProbes(page);
     // A warm server: the server has loaded the data once, as it has for any page after the first.
     await page.goto(RECORD);
@@ -65,7 +65,7 @@ test.describe('performance', () => {
     await record({ name: 'record page interactive', value: times[1], unit: 'ms', budget: BUDGETS.interactiveMs, detail: `median of 3: ${times.map(Math.round).join(', ')} ms` });
   });
 
-  test('LA-V61-R37-T02 a stage switch takes under 100 ms of main-thread work', async ({ page }) => {
+  test('LA-PAT-APP-UX-R11-T01 a stage switch takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, `${RECORD}?stage=graph`);
     await boxesDrawn(page);
     // Warm: the ERD's code and ELK load on the first switch; time later ones.
@@ -106,7 +106,7 @@ test.describe('performance', () => {
   });
 
   // In the Tree and Nested layouts (LA-V93-R21): the same budgets.
-  for (const layout of ['Tree', 'Nested'] as const) test(`LA-V61-R37-T03 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
+  for (const layout of ['Tree', 'Nested'] as const) test(`LA-PAT-APP-UX-R11-T01 a graph re-center at depth 3 takes under 500 ms of main-thread work, and glides at 60 Hz, in the ${layout} layout`, async ({ page }) => {
     const label = layout === 'Tree' ? 'graph re-center at depth 3' : `${layout} graph re-center at depth 3`;
     await open(page, `${RECORD}?stage=graph`);
     await boxesDrawn(page);
@@ -144,7 +144,7 @@ test.describe('performance', () => {
     await record({ name: `${label}: frames over 20 ms`, value: Math.max(...slow), unit: 'frames', budget: BUDGETS.recenterSlowFrames + 1, detail: `worst of 3: ${slow.join(', ')}; at most ${BUDGETS.recenterSlowFrames}` });
   });
 
-  test('LA-V61-R37-T04 switching to the ERD stage takes under 100 ms of main-thread work', async ({ page }) => {
+  test('LA-PAT-APP-UX-R11-T01 switching to the ERD stage takes under 100 ms of main-thread work', async ({ page }) => {
     await open(page, AGGREGATE);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+2');

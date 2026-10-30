@@ -121,7 +121,7 @@ check('event-not-by-outbox', () => {
   it('LA-AUT-UC25-R03-T01 the rule reads an event a policy hears only when its aggregate is stored in a database table, not in browser storage, a file or memory', async () => {
     let data = changing(complete(), 'event_type', (r) => r.id === 'EX-LEND-EV01-ET', { delivery: 'in process' });
     data = without(data, 'table_key', (r) => r.table_id === 'EX-LEND-EN01-TB' || r.target_table_id === 'EX-LEND-EN01-TB');
-    expect(ofCheck(await loadData(without(data, 'table', (r) => r.id === 'EX-LEND-EN01-TB')), 'event-not-by-outbox')).toEqual([]);
+    expect(ofCheck(await loadData(without(without(data, 'stored_in', (r) => r.source_id === 'EX-LEND-EN01-TB'), 'table', (r) => r.id === 'EX-LEND-EN01-TB')), 'event-not-by-outbox')).toEqual([]);
     for (const storage of ['browser storage', 'file', 'in memory']) {
       const kept = changing(data, 'table', (r) => r.id === 'EX-LEND-EN01-TB', { storage });
       expect(ofCheck(await loadData(kept), 'event-not-by-outbox'), storage).toEqual([]);

@@ -63,6 +63,24 @@
 {"entity_id":"LA-AUT-EN11","position":3,"name":"Capability","meaning":"The capability it sits in.","type_aggregate_id":"LA-AUT-A4","required":true,"column_name":"capability_id"}
 {"entity_id":"LA-AUT-EN11","position":4,"name":"Goal","meaning":"What the actor wants to reach, in a sentence.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN11","position":5,"name":"Notes","meaning":"Longer notes, such as the order in which refusals are reported.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN110","position":1,"name":"ID","meaning":"The requirement's ID: its aggregate's or read model's ID and SR<nn>, such as TL-LEND-A1-SR01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN110","position":2,"name":"Title","meaning":"The requirement in a few words.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN110","position":3,"name":"Aggregate","meaning":"The aggregate whose data it is about; exactly one of aggregate and read model is given.","type_value_object_id":"LA-VO01","required":false,"column_name":"aggregate_id"}
+{"entity_id":"LA-AUT-EN110","position":4,"name":"Read model","meaning":"The read model whose data it is about; exactly one of aggregate and read model is given.","type_value_object_id":"LA-VO01","required":false,"column_name":"read_model_id"}
+{"entity_id":"LA-AUT-EN110","position":5,"name":"Statement","meaning":"What must be kept and how well, stated with MUST, MUST NOT, SHOULD or MAY.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN111","position":1,"name":"ID","meaning":"The test's ID: its storage requirement's ID and T<nn>, such as TL-LEND-A1-SR01-T01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN111","position":2,"name":"Title","meaning":"What the test shows, in a sentence.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN111","position":3,"name":"Storage requirement","meaning":"The storage requirement it proves.","type_value_object_id":"LA-VO01","required":true,"column_name":"storage_requirement_id"}
+{"entity_id":"LA-AUT-EN111","position":4,"name":"Run by","meaning":"How the test runs: its level, its state, and its file or why it is manual.","type_value_object_id":"LA-VO14","required":true}
+{"entity_id":"LA-AUT-EN111","position":5,"name":"When","meaning":"What the test does, opening with any state it sets up beyond the test data sets it starts from.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN111","position":6,"name":"Then","meaning":"What the test expects.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN111","position":7,"name":"Notes","meaning":"Longer notes on the test, such as when to run it.","type":"text","required":false}
+{"entity_id":"LA-AUT-EN112","position":1,"name":"ID","meaning":"The data store's ID: its product's or domain's ID and STORE<nn>, such as TL-STORE01.","type_value_object_id":"LA-VO01","required":true}
+{"entity_id":"LA-AUT-EN112","position":2,"name":"Title","meaning":"Its name in code or config, such as DATABASE_URL, dataDir or localStorage.","type_value_object_id":"LA-VO02","required":true}
+{"entity_id":"LA-AUT-EN112","position":3,"name":"Product","meaning":"The product it sits under, when several of its domains use it; exactly one of product and domain is given.","type_value_object_id":"LA-VO01","required":false,"column_name":"product_id"}
+{"entity_id":"LA-AUT-EN112","position":4,"name":"Domain","meaning":"The domain it sits under, when one domain alone uses it; exactly one of product and domain is given.","type_value_object_id":"LA-VO01","required":false,"column_name":"domain_id"}
+{"entity_id":"LA-AUT-EN112","position":5,"name":"Kind","meaning":"database, object store, file folder, file, browser storage or memory.","type":"text","required":true}
+{"entity_id":"LA-AUT-EN112","position":6,"name":"Description","meaning":"Where it is and what keeps it there.","type":"text","required":true}
 {"entity_id":"LA-AUT-EN12","position":1,"name":"ID","meaning":"The requirement's ID: its use case's ID and R<nn>, such as TL-LEND-UC01-R01.","type_value_object_id":"LA-VO01","required":true}
 {"entity_id":"LA-AUT-EN12","position":2,"name":"Title","meaning":"The requirement in a few words.","type_value_object_id":"LA-VO02","required":true}
 {"entity_id":"LA-AUT-EN12","position":3,"name":"Use case","meaning":"The use case it belongs to.","type_value_object_id":"LA-VO01","required":true,"column_name":"use_case_id"}
@@ -455,14 +473,6 @@
 {"entity_id":"LA-PLT-EN02","position":1,"name":"Panel","meaning":"Which part of the app it is: the navigation or the wiki card.","type":"text","required":true,"example":"Wiki card"}
 {"entity_id":"LA-PLT-EN02","position":2,"name":"Shown","meaning":"Whether it is on screen; a hidden panel keeps a control that brings it back.","type":"yes/no","required":true,"example":"yes"}
 {"entity_id":"LA-PLT-EN02","position":3,"name":"Size","meaning":"Its width in pixels, within its limits.","type":"decimal","required":true,"example":"340"}
-{"entity_id":"LA-PLT-EN03","position":1,"name":"Command ID","meaning":"The command's name in the keymap, unique.","type":"text","required":true,"example":"commandPalette"}
-{"entity_id":"LA-PLT-EN03","position":2,"name":"Title","meaning":"What it does, as the palette and the shortcuts sheet show it.","type":"text","required":true,"example":"Command palette"}
-{"entity_id":"LA-PLT-EN03","position":3,"name":"Group","meaning":"Where the shortcuts sheet lists it: Navigate, View, Graph or Lists.","type":"text","required":true,"example":"Navigate"}
-{"entity_id":"LA-PLT-EN03","position":4,"name":"Context","meaning":"Where it applies: anywhere, on a page, while the graph shows, or in a list.","type":"text","required":true,"example":"Anywhere"}
-{"entity_id":"LA-PLT-EN03","position":5,"name":"Handled by","meaning":"Who acts on its keys: the app, the component it belongs to, or the browser.","type":"text","required":true,"example":"The app"}
-{"entity_id":"LA-PLT-EN04","position":1,"name":"Keys","meaning":"The chord, or chords in sequence, as the keymap writes them.","type_value_object_id":"LA-VO61","required":true,"example":"Mod+Shift+P"}
-{"entity_id":"LA-PLT-EN04","position":2,"name":"Off a Mac","meaning":"Its keys on other platforms, where they differ.","type_value_object_id":"LA-VO61","required":false,"example":"Alt+G"}
-{"entity_id":"LA-PLT-EN04","position":3,"name":"Override","meaning":"The person's own binding in its place.","type_value_object_id":"LA-VO61","required":false}
 {"entity_id":"LA-PLT-EN06","position":1,"name":"Theme ID","meaning":"A built-in's name, or `custom-` and a name for one of the person's own.","type":"text","required":true,"example":"custom-workshop-copy"}
 {"entity_id":"LA-PLT-EN06","position":2,"name":"File","meaning":"The theme itself: its name, its light and dark colors and its shared tokens.","type_value_object_id":"LA-VO63","required":true}
 {"entity_id":"LA-PLT-EN06","position":3,"name":"Built in","meaning":"Whether Lathe ships it, so it is never changed (INV03).","type":"yes/no","required":true,"example":"no"}
@@ -484,6 +494,9 @@
 {"entity_id":"LA-PLT-EN16","position":2,"name":"Data folder","meaning":"Where its data files are, as `lathe.config.json`'s `data` names it; `data` unless set.","type":"text","required":true,"example":"data"}
 {"entity_id":"LA-PLT-EN16","position":3,"name":"Schema version","meaning":"The schema version its data is for, as `lathe.config.json`'s `schema` names it; 1 unless set. Lathe loads only data for its own version.","type":"whole number","required":true,"example":"1"}
 {"entity_id":"LA-PLT-EN16","position":4,"name":"Products","meaning":"The folders of the other products this repo shows as a workspace, as `lathe.config.json`'s `products` lists them, each with its own config and data; none unless set.","type":"text","required":false,"example":"examples/tool-library"}
+{"entity_id":"LA-PLT-EN20","position":1,"name":"Editor","meaning":"The editor Open in editor uses: VS Code, Cursor, Zed, the system default or a custom command.","type":"text","required":true}
+{"entity_id":"LA-PLT-EN20","position":2,"name":"Editor command","meaning":"The custom editor's command, run with the data file's path.","type":"text","required":false}
+{"entity_id":"LA-PLT-EN20","position":3,"name":"Claude path","meaning":"Where the `claude` the chat runs is, when it is not on the PATH.","type":"text","required":false}
 {"entity_id":"LA-TRC-EN05","position":1,"name":"Follower","meaning":"The ID of the domain or use case that follows the pattern.","type":"text","required":true,"column_name":"source_id","example":"TL-LEND-UC01"}
 {"entity_id":"LA-TRC-EN05","position":2,"name":"Pattern","meaning":"The pattern followed.","type_aggregate_id":"LA-AUT-A1","required":true,"column_name":"target_id","example":"TL-PAT-LIBRARIAN-ACTION"}
 {"entity_id":"LA-TRC-EN06","position":1,"name":"Setting","meaning":"One of the pattern's settings (a `pattern_setting` name).","type":"text","required":true,"example":"required_input"}

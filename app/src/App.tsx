@@ -1,6 +1,6 @@
 import { ResizeHandle } from './components/ResizeHandle';
 import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
-import { navigate, setCarry, setPatchBase, useLocation } from './router';
+import { browserHistory, navigate, setCarry, setPatchBase, useLocation } from './router';
 import { parseSpecRoute, useSpec, type SpecState } from './specs/data';
 import { formatPath } from './format/reference';
 import { SpecView } from './specs/SpecPages';
@@ -13,7 +13,11 @@ import { SpacesProvider, useSpaceState, type SpacesApi } from './shell/spaces';
 import { pageHeading, TopBar } from './shell/MobileBar';
 import { QuickOpen } from './shell/QuickOpen';
 import { useThemeColor } from './shell/themeColor';
-import { isBool, usePanelSize, usePref } from './shell/prefs';
+import { useAggregate } from './shell/prefs';
+import { PANEL_LIMITS } from './platform/panel/model';
+import { panelRepository } from './platform/panel/repository';
+import { resizePanel } from './platform/panel/commands/resize-panel';
+import { showOrHidePanel } from './platform/panel/commands/show-or-hide-panel';
 import { useNarrow } from './shell/useNarrow';
 import { FocusPage, StageBackdrop } from './views/FocusPage';
 import { ChecksPanel } from './views/ChecksPanel';
@@ -23,7 +27,10 @@ import { ProductsPicker } from './views/ProductsPicker';
 import { carryOverlays, overlaysOf, panelHref, useEscapeClosesTopmost, type ToolPanel } from './views/overlays';
 import { ChatPanel } from './chat/ChatPanel';
 import { useAppRequests } from './chat/appRequests';
-import { CARD_MIN, CHAT_DEFAULT, useSessionSettings } from './graph/settings';
+import { CARD_MIN, CHAT_DEFAULT } from './exploring/session-settings/model';
+import { useSessionSettings } from './exploring/session-settings/use-session-settings';
+import { showOrHideChat } from './exploring/session-settings/commands/show-or-hide-chat';
+import { resizeChat } from './exploring/session-settings/commands/resize-chat';
 import { CARD_GAP, CARD_GAP_Y, crowdedLabel, RoomContext, STAGE_MIN, useRoomState } from './views/openSpace';
 import { desktopBridge } from './shell/desktopChrome';
 import { addressOf, focusOf, HOME_PATH, isFocusRoute } from './views/address';
@@ -51,9 +58,6 @@ export default function App() {
   );
 }
 
-const NAV_KEY = 'lathe:nav-collapsed';
-/** The nav's width (the space rail and the panel), its limits, and below what a drag collapses it to the rail. */
-const NAV_WIDTH = { key: 'lathe:nav-width', fallback: 336, min: 256, max: 560, collapseBelow: 180 };
 /** The nav collapsed to its rail, in px. */
 const NAV_RAIL = 56;
 
@@ -84,8 +88,7 @@ function Shell() {
 
   // The nav: collapsed to a rail (remembered), or a drawer on a narrow screen.
   const narrow = useNarrow();
-  const [collapsed, setCollapsed] = usePref<boolean>(NAV_KEY, false, isBool);
-  const [navWidth, setNavWidth, resetNavWidth] = usePanelSize(NAV_WIDTH.key, NAV_WIDTH.fallback, NAV_WIDTH.min, NAV_WIDTH.max);
+  const { nav: { collapsed, width: navWidth } } = useAggregate(panelRepository);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const navRef = useRef<HTMLElement>(null);
   const menuButton = useRef<HTMLButtonElement>(null);
@@ -95,7 +98,7 @@ function Shell() {
   useEffect(() => { if (narrow && drawerOpen) setTimeout(() => navRef.current?.querySelector<HTMLElement>('.quick-find-button')?.focus(), 0); }, [narrow, drawerOpen]);
   // The chat panel (LA-PLT-UC19): desktop only, never on a phone. Its open state and width are the session's setting.
   const chatBridge = narrow ? null : desktopBridge()?.chat ?? null;
-  const { chat, setChat } = useSessionSettings();
+  const { chat } = useSessionSettings();
   const chatShown = !!chatBridge && chat.open;
   // Panels never crowd the page (LA-PAT-APP-UX-R18): the nav collapses to its rail for space last,
   // after the page's wiki card; the Reader's own choice (`collapsed`) stays as set.
@@ -105,9 +108,9 @@ function Shell() {
   const navCollapsed = collapsed || navCrowded;
   /** Opens or collapses the nav as the Reader asks; one opened while collapsed for space is held open. */
   const setNavOpen = useCallback((open: boolean) => {
-    setCollapsed(!open);
+    showOrHidePanel({ panel: 'nav', shown: open });
     hold('nav', open);
-  }, [setCollapsed, hold]);
+  }, [hold]);
   const showNav = useCallback(() => {
     if (narrow) setDrawerOpen(true);
     else if (navCollapsed) setNavOpen(true);
@@ -136,8 +139,8 @@ function Shell() {
     showNav();
     setTimeout(() => (navRef.current?.querySelector<HTMLElement>('[aria-current="page"]') ?? navRef.current?.querySelector<HTMLElement>('.quick-find-button'))?.focus(), 0);
   });
-  useCommand('goBack', () => window.history.back());
-  useCommand('goForward', () => window.history.forward());
+  useCommand('goBack', () => browserHistory.back());
+  useCommand('goForward', () => browserHistory.forward());
   const space = spaces.current?.id ?? null;
   useCommand('openChecks', () => navigate(panelHref('checks')), !!space);
   useCommand('goChecks', () => navigate(panelHref('checks')), !!space);
@@ -154,8 +157,8 @@ function Shell() {
   const chatPanel = () => document.getElementById('chat-panel');
   useCommand('toggleChat', () => {
     // Open: focus the message box; open with focus elsewhere: focus it; with focus in it: hide it.
-    if (chatShown && chatPanel()?.contains(document.activeElement)) { setChat({ open: false }); announce('Chat hidden'); return; }
-    if (!chatShown) { setChat({ open: true }); announce('Chat shown'); }
+    if (chatShown && chatPanel()?.contains(document.activeElement)) { showOrHideChat({ shown: false }); announce('Chat hidden'); return; }
+    if (!chatShown) { showOrHideChat({ shown: true }); announce('Chat shown'); }
     setTimeout(() => chatInput.current?.focus(), 0);
   }, !!chatBridge);
   useAppRequests(spec.index, spaces.current?.id ?? null);
@@ -259,15 +262,15 @@ function Shell() {
         <ResizeHandle
           className="app-nav-handle"
           label="Resize the navigation"
-          value={navCollapsed ? NAV_WIDTH.min : navWidth}
-          min={NAV_WIDTH.min}
-          max={NAV_WIDTH.max}
+          value={navCollapsed ? PANEL_LIMITS.nav.min : navWidth}
+          min={PANEL_LIMITS.nav.min}
+          max={PANEL_LIMITS.nav.max}
           step={16}
           bigStep={64}
           valueAt={(x) => x - (navRef.current?.getBoundingClientRect().left ?? 0)}
-          onChange={(w) => { setNavWidth(w); if (navCollapsed) setNavOpen(true); }}
-          onReset={() => { resetNavWidth(); setNavOpen(true); }}
-          collapseBelow={NAV_WIDTH.collapseBelow}
+          onChange={(w) => { resizePanel({ panel: 'nav', width: w }); if (navCollapsed) setNavOpen(true); }}
+          onReset={() => { resizePanel({ panel: 'nav', width: null }); setNavOpen(true); }}
+          collapseBelow={PANEL_LIMITS.nav.collapseBelow}
           onCollapse={() => { if (!navCollapsed) setNavOpen(false); }}
         />
       )}
@@ -279,8 +282,8 @@ function Shell() {
           bridge={chatBridge}
           index={spec.index}
           width={chat.width}
-          onWidth={(width) => setChat({ width })}
-          onClose={() => { setChat({ open: false }); announce('Chat hidden'); }}
+          onWidth={(width) => resizeChat({ width })}
+          onClose={() => { showOrHideChat({ shown: false }); announce('Chat hidden'); }}
           input={chatInput}
         />
       )}

@@ -4,6 +4,7 @@ import type { Transaction } from '../../../platform/data/transaction.ts';
 import type { DomainEventRow } from '../../../platform/data/tables.ts';
 import { DOMAIN_EVENT_SLICE, newDomainEvent, type EventFieldInput } from '../model.ts';
 import { DomainEventRepository } from '../repository.ts';
+import { holdToRules } from '../rules.ts';
 
 /** A new domain event, with its fields in order. */
 export type AddDomainEvent = Pick<DomainEventRow, 'id' | 'title' | 'aggregate_id' | 'published' | 'description'> & { fields?: EventFieldInput[] };
@@ -32,5 +33,6 @@ export function addDomainEvent(tx: Transaction, input: AddDomainEvent): void {
   const events = new DomainEventRepository(tx);
   const { fields = [], ...row } = input;
   const event = events.create(newDomainEvent(row, fields));
+  holdToRules(tx, event);
   events.save(event);
 }
