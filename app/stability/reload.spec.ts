@@ -77,7 +77,7 @@ test.describe('live reload', () => {
     await page.waitForTimeout(500);
     let restore = () => {};
     try {
-      const keys = ['.focus-stage .graph-canvas', '.focus-stage .graph-tools', '.focus-stage .graph-flow canvas', '.wiki-panel-head'];
+      const keys = ['.focus-stage .graph-canvas', '.focus-stage .stage-tools', '.focus-stage .graph-flow canvas', '.wiki-panel-head'];
       const r = await step(page, 'reload', 'data edited with the graph open', { keys, allow: ['.wiki-panel-scroll'], settle: 1500 }, async () => {
         restore = edit('use_case', RECORD.slice(1), 'goal', 'Another paragraph from the stability suite, with the graph open.', 'end');
         await expect(page.locator('.wiki-panel')).toContainText('with the graph open', { timeout: 20_000 });

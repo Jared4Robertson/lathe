@@ -19,7 +19,7 @@ export const FOCUS = ['.page-bar-actions', '.header-strip', '.wiki-panel'];
 export const STAGE = '.focus-stage';
 export const GRAPH_CANVAS = '.focus-stage .graph-canvas';
 /** The graph's toolbar, floating at the top of the open space. */
-export const GRAPH_TOOLS = '.focus-stage .graph-tools';
+export const GRAPH_TOOLS = '.focus-stage .stage-tools';
 export const ERD_CANVAS = '.focus-stage .erd-canvas';
 
 /**

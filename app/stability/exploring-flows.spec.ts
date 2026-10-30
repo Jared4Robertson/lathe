@@ -45,12 +45,12 @@ test.describe('Exploring flows', () => {
     for (const stage of ['Domain model', 'Use cases', 'Interaction design', 'Technical specification', 'Test plan']) {
       await expect(wiki.getByRole('heading', { level: 2, name: new RegExp(`^${stage} \\d+`) })).toBeVisible();
     }
-    await wiki.getByRole('searchbox', { name: 'Filter records' }).fill('Tab group');
+    await wiki.getByRole('searchbox', { name: 'Filter records' }).fill('Tab set');
     await expect(wiki.getByRole('list', { name: 'Aggregates' }).getByRole('listitem')).toHaveCount(1);
     await expect(wiki.getByText('Nothing matches.').first()).toBeVisible();
-    await wiki.getByRole('link', { name: 'LA-EXP-A5 Tab group' }).click();
+    await wiki.getByRole('link', { name: 'LA-EXP-A5 Tab set' }).click();
     await page.waitForURL((u) => u.pathname === '/LA-EXP-A5');
-    await expect(wikiTitle(page)).toHaveText('Tab group');
+    await expect(wikiTitle(page)).toHaveText('Tab set');
   });
 
   test('LA-EXP-UC02-FL01-T follow a record\'s links: its page, a link by its relation, a row anywhere', async ({ page }) => {
@@ -207,9 +207,9 @@ test.describe('Exploring flows', () => {
   test('LA-EXP-UC06-FL01-T read a flow step by step: its table, a step unfolded, the graph, a requirement traced to its step', async ({ page }) => {
     await openPage(page, '/LA-EXP-UC03-FL01');
     const steps = page.locator(WIKI).getByRole('table', { name: 'Steps of LA-EXP-UC03-FL01, in order' });
-    await expect(steps.getByRole('rowheader')).toHaveCount(9);
+    await expect(steps.getByRole('rowheader')).toHaveCount(10);
     await expect(steps.getByRole('rowheader').first()).toContainText('LA-EXP-UC03-FL01-S01');
-    await expect(steps.getByRole('rowheader').last()).toContainText('LA-EXP-UC03-FL01-S09');
+    await expect(steps.getByRole('rowheader').last()).toContainText('LA-EXP-UC03-FL01-S10');
     const unfold = steps.getByRole('button', { name: 'Expand LA-EXP-UC03-FL01-S01' });
     await unfold.click();
     await expect(steps.getByRole('button', { name: 'Collapse LA-EXP-UC03-FL01-S01' })).toHaveAttribute('aria-expanded', 'true');
@@ -456,7 +456,7 @@ test.describe('Exploring flows', () => {
   test('LA-EXP-UC13-FL01-T read a domain\'s endpoints and integrations: the domain\'s Interaction design, a command\'s endpoint, an integration\'s steps', async ({ page }) => {
     await openPage(page, '/LA-AUT');
     const wiki = page.locator(WIKI);
-    await expect(wiki.getByRole('list', { name: 'Endpoints' })).toContainText('POST · /api/use-case/change-use-case');
+    await expect(wiki.getByRole('list', { name: 'Endpoints' }).getByRole('link', { name: 'LA-AUT-EP101 POST /api/use-case/change-use-case' })).toBeVisible();
     await expect(wiki.getByRole('list', { name: 'Integrations' }).getByRole('listitem').first()).toBeVisible();
     // The command and its endpoint, method and route.
     await page.goto('/LA-AUT-CMD101');

@@ -126,7 +126,8 @@ export function StageToolbar({ can, walkLabels = {}, own, measureKey }: StageToo
         return (
           <Tooltip key={move} label={label} command={WALK_COMMANDS[move]}>
             <Button className={`stage-step is-${move}`} aria-label={label} disabled={!can(move)} onClick={() => runWalk(move)}>
-              {mark}{letter && form.letters && <span className="stage-step-letter" aria-hidden="true">{letter}</span>}
+              {/* An arrow is a picture of the move, so its name alone is read (LA-V61-R44); Out and In are words, and read. */}
+              {ARROW_MOVES.includes(move) ? <span aria-hidden="true">{mark}</span> : mark}{letter && form.letters && <span className="stage-step-letter" aria-hidden="true">{letter}</span>}
             </Button>
           </Tooltip>
         );

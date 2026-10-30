@@ -17,6 +17,8 @@ const NAV = 'nav#nav';
 const WIKI_BAR = '.wiki-panel-head';
 const STRIP = '.header-strip';
 const TITLE = '.wiki-panel-title';
+/** A use case others reference (pattern followings), so its removal is refused. */
+const REFERENCED = '/LA-AUT-UC02';
 const CONTENT = ['.wiki-panel-scroll'];
 test.describe('editing', () => {
   test('LA-AUT-UC06-FL01-T on the Use case page, open a requirement\'s form and save an edit', async ({ page }) => {
@@ -57,7 +59,7 @@ test.describe('editing', () => {
       await form.getByRole('textbox', { name: /^title/ }).fill('A requirement the stability suite adds');
       await form.getByRole('textbox', { name: /^statement/ }).fill('The page MUST hold still while a record is added.');
       await form.getByRole('button', { name: 'Add UC requirement' }).click();
-      await expect(page.locator(`${TITLE} h1`)).toHaveText('A requirement the stability suite adds', { timeout: 20_000 });
+      await expect(page.locator(`${TITLE} h2`)).toHaveText('A requirement the stability suite adds', { timeout: 20_000 });
     } finally {
       restore();
     }
@@ -66,15 +68,15 @@ test.describe('editing', () => {
   test('LA-V101-R03-T03 ask to remove a referenced use case, and see the refusal', async ({ page }) => {
     const restore = keepData();
     try {
-      await openPage(page, RECORD);
-      const panel = page.getByRole('region', { name: `Remove ${RECORD.slice(1)}?` });
+      await openPage(page, REFERENCED);
+      const panel = page.getByRole('region', { name: `Remove ${REFERENCED.slice(1)}?` });
       const ask = await step(page, 'edit', 'ask to remove', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT }, async () => {
-        await page.getByRole('toolbar', { name: `Change ${RECORD.slice(1)}` }).getByRole('button', { name: 'Remove' }).click();
+        await page.getByRole('toolbar', { name: `Change ${REFERENCED.slice(1)}` }).getByRole('button', { name: 'Remove' }).click();
         await panel.waitFor();
       });
       expectStable(ask);
       const refused = await step(page, 'edit', 'the command refuses the removal', { keys: [NAV, WIKI_BAR, STRIP, TITLE], allow: CONTENT, settle: 1000 }, async () => {
-        await panel.getByRole('button', { name: `Remove ${RECORD.slice(1)}` }).click();
+        await panel.getByRole('button', { name: `Remove ${REFERENCED.slice(1)}` }).click();
         await panel.getByRole('alert').waitFor({ timeout: 20_000 });
       });
       expectStable(refused);

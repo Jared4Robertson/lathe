@@ -773,7 +773,7 @@ function ErdCanvas({ index, map, at, focus, refocus, onNavigate, onPeek, space, 
       </div>
       <StageCamera onZoomIn={zoomButton(ZOOM_STEP)} onZoomOut={zoomButton(1 / ZOOM_STEP)} onFit={fitMap} />
       {hints.more !== NO_HINTS && <EdgeHintChips past={past(hints.more)} noun="more" onPan={pan} />}
-      {marks.highlight && hints.changes !== NO_HINTS && <EdgeHintChips past={past(hints.changes)} noun="changed" word="changes" onPan={pan} />}
+      {marks.highlight && hints.changes !== NO_HINTS && <EdgeHintChips past={past(hints.changes)} noun="changed" word={{ one: 'change', many: 'changes' }} onPan={pan} />}
       {armedBox && <TapCard kind={BOX_KIND[armedBox.kind]} name={armedBox.title} onOpen={tap.openArmed} onDismiss={tap.clear} />}
     </div>
   );

@@ -189,8 +189,14 @@ function probes({ firstKeys, deferred }: { firstKeys: string[]; deferred: string
 /** Starts the probes on a page; `firstKeys` are tracked from the very first frame (for a first load). */
 export async function installProbes(page: Page, firstKeys: string[] = []) {
   await page.addInitScript(probes, { firstKeys, deferred: DEFERRED });
-  // The scenarios read the wiki card's whole page (More), as a Reader who expanded it (it opens as a
-  // summary); a choice made in a scenario is kept.
+  await readWholeCards(page);
+}
+
+/**
+ * Opens the wiki card on its whole page (More), as a Reader who expanded it (it opens as a summary), so the stability and
+ * accessibility suites reach every section of a record's page; a choice made in a scenario is kept.
+ */
+export async function readWholeCards(page: Page) {
   await page.addInitScript(() => {
     try {
       if (!sessionStorage.getItem('lathe:place')) {
