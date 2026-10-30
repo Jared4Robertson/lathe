@@ -1,5 +1,5 @@
 import { expect, test } from './test';
-import { expectStable, openPage, step } from './measure';
+import { expectStable, openPage, showCard, step } from './measure';
 import { FOCUS, RECORD, SHELL } from './scenarios';
 
 // LA-V61-R34-T01: tooltips, quick find, the command palette, the shortcuts sheet and the tools over the stage. Each is placed
@@ -25,6 +25,9 @@ test.describe('overlays', () => {
 
   test('LA-V61-R34-T01 quick find', async ({ page }) => {
     await openPage(page, RECORD);
+    // Quick find previews a result in the card's summary, whatever the place's setting (FocusPage.tsx); the Reader reads
+    // the summary here, so the card holds still while the preview comes and goes.
+    await showCard(page, 'summary');
     const r = await step(page, 'overlays', 'quick find: open and type', { keys: [...SHELL, ...FOCUS, '.quick-find-button'], allow: ['.quick-open-backdrop'] }, async () => {
       await page.keyboard.press('Control+k');
       await page.keyboard.type('graph re', { delay: 60 });

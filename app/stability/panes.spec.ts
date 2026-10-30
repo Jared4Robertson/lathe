@@ -16,8 +16,8 @@ const PAGE_BAR = '.page-bar-actions';
 const STRIP = '.header-strip';
 const CARD = '.wiki-panel';
 const BOXES = `${STAGE} .graph-flow .graph-box`;
-/** What floats in the open space (the stage's tools, the camera's buttons, the minimap, the edge hints): it moves with the open space on purpose. */
-const MOVES_WITH_OPEN_SPACE = [`${STAGE} .stage-tools`, `${STAGE} .stage-camera`, `${STAGE} .graph-minimap`, `${STAGE} .graph-edge-hints`];
+/** What floats in the open space (the stage's tools, the camera's buttons, the minimap, the edge hints, the key bar centered along its foot, LA-V96-R30): it moves with the open space on purpose. */
+const MOVES_WITH_OPEN_SPACE = [`${STAGE} .stage-tools`, `${STAGE} .stage-camera`, `${STAGE} .graph-minimap`, `${STAGE} .graph-edge-hints`, `${STAGE} .stage-key-room`];
 
 /** The open space the panels leave over the stage, in the page's pixels, as the stage measured it. */
 async function openSpace(page: Page) {
@@ -29,14 +29,21 @@ async function openSpace(page: Page) {
   }, STAGE);
 }
 
-/** The focus's drawn box lies whole in the open space, so no panel covers it. */
+/**
+ * The focus's drawn box lies whole in the open space, so no panel covers it; or, when the camera frames its children's
+ * column (camera.ts frameChildren, their titles too small otherwise), the focus is the strip at the open space's left
+ * edge: its right part in the open space, whole top to bottom.
+ */
 async function expectFocusInOpenSpace(page: Page, what: string) {
   await expect.poll(async () => {
     const focus = (await sceneOf(page)).boxes.find((b) => b.focus);
     const open = await openSpace(page);
     if (!focus) return 'no focus drawn';
     const { left, top, width, height } = focus.rect;
-    const inside = left >= open.left - 1 && top >= open.top - 1 && left + width <= open.right + 1 && top + height <= open.bottom + 1;
+    const rows = top >= open.top - 1 && top + height <= open.bottom + 1;
+    const whole = left >= open.left - 1 && left + width <= open.right + 1;
+    const strip = left < open.left && left + width > open.left + 1 && left + width <= open.right + 1;
+    const inside = rows && (whole || strip);
     return inside ? 'inside' : `outside: ${JSON.stringify({ focus: focus.rect, open })}`;
   }, { message: `${what}: the focus sits in the open space`, timeout: 5000 }).toBe('inside');
 }

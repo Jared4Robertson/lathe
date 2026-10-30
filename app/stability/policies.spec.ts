@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './test';
 import { asDesktop } from './desktop';
-import { openPage } from './measure';
+import { openPage, showCard } from './measure';
 import { RECORD } from './scenarios';
 
 // Exploring's policies in a real browser (LA-EXP-PO01 to PO03): what a page opened, or a tab
@@ -40,6 +40,8 @@ async function openBoxInNewTab(page: Page): Promise<string> {
 /** Follows the first link in the wiki card to a record other than the one shown, and returns its ID. */
 async function followLink(page: Page): Promise<string> {
   const from = new URL(page.url()).pathname;
+  // A new tab's place opens its card as a summary; the links are on the whole page.
+  await showCard(page, 'whole');
   const links = page.locator('.wiki-panel .spec-body a.record-link[href^="/LA-"]');
   const target = await links.evaluateAll((all, here) => all.map((a) => a.getAttribute('href')!).find((h) => h !== here && !h.includes('?'))!, from);
   expect(target, `a link from ${from} to another record`).toBeTruthy();

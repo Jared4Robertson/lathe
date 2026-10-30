@@ -36,6 +36,11 @@ function agentChanges() {
 }
 
 const tools = (page: Page) => page.locator('.focus-stage').getByRole('group', { name: 'Changes' });
+/** Opens the toolbar's More menu when a narrower toolbar (the chat open beside the stage) folded the Changes controls there. */
+async function reachChanges(page: Page) {
+  const more = page.locator('.focus-stage .stage-more');
+  if ((await more.locator('.changes-tools').count()) && !(await more.evaluate((d) => (d as HTMLDetailsElement).open))) await more.locator('summary').click();
+}
 const graphReady = (page: Page) => page.locator('.focus-stage .graph-flow[data-ready] .graph-box').first().waitFor();
 const changeOf = (page: Page, id: string) => page.evaluate((id) => {
   const host = document.querySelector('.focus-stage .graph-flow') as HTMLElement & { graphScene?: () => { boxes: { id: string; change: string | null }[] } };
@@ -132,6 +137,7 @@ test.describe('watching the spec change', () => {
       });
       await openPage(page, `${RECORD}?stage=graph`);
       await graphReady(page);
+      await reachChanges(page);
       await tools(page).getByRole('button', { name: 'Follow' }).click();
       const user = { kind: 'user', id: 'u1', text: 'Add a watch list and sharpen the requirement' };
       const patch = (items: unknown[], status: string, reset = false) => page.evaluate(({ items, status, reset }) => (window as unknown as { chatPatch: (p: unknown) => void }).chatPatch({ reset, sessionId: 'session-1', status, items: items.map((item, at) => ({ at, item })) }), { items, status, reset });
@@ -147,7 +153,8 @@ test.describe('watching the spec change', () => {
       await expect(turn.locator('summary')).toHaveText('2 records changed');
       await expect(turn).toContainText(ADDED);
       await expect(turn).toContainText(REQUIREMENT);
-      await expect(turn.locator('ins')).toContainText('Changed by the Agent while the Reader watched');
+      // By record (LA-PLT-UC19-R03): the changed requirement under its new title; its fields' old and new show in the panel and the card.
+      await expect(turn.locator('.chat-change.is-changed')).toContainText('Changed by the Agent while the Reader watched');
 
       // The same records and fields in the Changes panel and the requirement's wiki card.
       await tools(page).getByRole('button', { name: 'Highlight changes' }).click();
@@ -157,6 +164,10 @@ test.describe('watching the spec change', () => {
       await expect(panel.locator('ins').first()).toContainText('Changed by the Agent while the Reader watched');
       await panel.getByRole('link', { name: new RegExp(REQUIREMENT) }).click();
       await page.waitForURL((u) => u.pathname === EDITED);
+      // With the chat and the Changes panel open the card has collapsed to give the stage room; the Reader shows it.
+      const showTheCard = page.getByRole('button', { name: /^Show the wiki card/ });
+      if (await showTheCard.count()) await showTheCard.click();
+      await showCard(page, 'whole');
       await expect(page.locator('.wiki-panel .record-changes ins')).toContainText('Changed by the Agent while the Reader watched');
     } finally {
       restore();
