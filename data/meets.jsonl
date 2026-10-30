@@ -62,6 +62,8 @@
 {"source_id":"LA-CHK-RM01-PJ","target_id":"LA-STD-MODELING-R08"}
 {"source_id":"LA-EXP-DS12-SV","target_id":"LA-STD-MODELING-R14"}
 {"source_id":"LA-EXP-QRY11-H","target_id":"LA-STD-CODE-R03"}
+{"source_id":"LA-EXP-RM01-IX","target_id":"LA-STD-CODE-R08"}
+{"source_id":"LA-EXP-RM01-IX","target_id":"LA-STD-CODE-R09"}
 {"source_id":"LA-EXP-RM01-PJ","target_id":"LA-STD-CODE-R03"}
 {"source_id":"LA-EXP-RM01-PJ","target_id":"LA-STD-CODE-R08"}
 {"source_id":"LA-EXP-RM01-PJ","target_id":"LA-STD-MODELING-R01"}
@@ -146,6 +148,4 @@
 {"source_id":"LA-TRC-RM13-PJ","target_id":"LA-STD-MODELING-R06"}
 {"source_id":"LA-TRC-RM13-PJ","target_id":"LA-STD-MODELING-R07"}
 {"source_id":"LA-TRC-RM13-PJ","target_id":"LA-STD-MODELING-R08"}
-{"source_id":"LA-UI330","target_id":"LA-STD-CODE-R08"}
-{"source_id":"LA-UI330","target_id":"LA-STD-CODE-R09"}
 {"source_id":"LA-UI79","target_id":"LA-STD-CODE-R04"}

@@ -284,6 +284,13 @@ describe("LA-AUT-INV23-T a pair Lathe's relation's ends do not accept, a pair na
     ]);
   });
 
+  it("lets an own kind of the technical specification join Lathe's meets, as its table joins the technical records", async () => {
+    const on = await store();
+    const meets = { product_id: 'TL', name: 'meets', source_kind: 'cli_command', target_kind: 'standard_rule', forward_label: 'Meets', reverse_label: 'Met by', description: 'The CLI command follows the standard rule.' };
+    await runCommand(on, DECLARE_PRODUCT_RELATION, meets);
+    expect(on.rows('product_relation')).toContainEqual(expect.objectContaining({ name: 'meets', source_kind: 'cli_command', target_kind: 'standard_rule' }));
+  });
+
   it('is refused on load without both labels', async () => {
     const [documents] = everyKind().product_relation;
     const { reverse_label: _r, ...noReverse } = documents;
