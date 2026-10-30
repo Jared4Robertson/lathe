@@ -1,9 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_VIEW, freshPlace, hereOf, MAX_HISTORY, movePlace, notePlace, readPlace, replacePlace, stepPlace, type PlaceView } from '../src/views/place';
-import { activateTab, activeTab, closeTab, cycleTab, duplicateTab, emptyTabs, moveInTab, newTab, parseTabSet, replaceInTab, stepTab, updateView, type TabSet } from '../src/views/tabs';
+import { activateTab as activate } from '../src/exploring/tab-set/commands/activate-tab';
+import { closeTab as close } from '../src/exploring/tab-set/commands/close-tab';
+import { cycleTab as cycle } from '../src/exploring/tab-set/commands/cycle-tab';
+import { duplicateTab as duplicate } from '../src/exploring/tab-set/commands/duplicate-tab';
+import { moveInTab as move } from '../src/exploring/tab-set/commands/move-in-tab';
+import { newTab as open } from '../src/exploring/tab-set/commands/new-tab';
+import { replaceInTab as replace } from '../src/exploring/tab-set/commands/replace-in-tab';
+import { stepTab as step } from '../src/exploring/tab-set/commands/step-tab';
+import { updateView as changeView } from '../src/exploring/tab-set/commands/update-view';
+import { activeTab, emptyTabs, NO_TABS, parseTabSet, type TabSet, type TabSets } from '../src/exploring/tab-set/model';
 
 // The desktop app's tabs as a browser's (tabs.ts) over places (place.ts): a move never leaves its tab, a page may be
 // open in several tabs, a new tab opens only when asked for, and each tab has its own history.
+
+// The Tab set's commands run on one space's set here: each takes the whole tab sets and gives them back.
+const S = 'S';
+const on = <I,>(set: TabSet, command: (tabs: TabSets, input: I & { space: string }) => TabSets, input: I): TabSet =>
+  command({ ...NO_TABS, sets: { [S]: set } }, { ...input, space: S }).sets[S] ?? set;
+const moveInTab = (set: TabSet, address: string, v: PlaceView) => on(set, move, { address, view: v });
+const replaceInTab = (set: TabSet, address: string) => on(set, replace, { address });
+const newTab = (set: TabSet, address: string, v: PlaceView, opts: { background?: boolean } = {}) => on(set, open, { address, view: v, ...opts });
+const closeTab = (set: TabSet, key: string, home: string) => on(set, close, { key, home });
+const activateTab = (set: TabSet, key: string) => on(set, activate, { key });
+const cycleTab = (set: TabSet, by: number) => on(set, cycle, { step: by });
+const stepTab = (set: TabSet, key: string, to: number) => on(set, step, { key, to });
+const duplicateTab = (set: TabSet, key: string) => on(set, duplicate, { key });
+const updateView = (set: TabSet, _key: string, change: (v: PlaceView) => PlaceView) => on(set, changeView, { change });
 
 const view: PlaceView = { depth: 2, hiddenKinds: ['term'], card: { open: false, expanded: true } };
 const at = (set: TabSet) => set.tabs.map((t) => `${hereOf(t.place).address}${t.key === set.active ? '<' : ''}`);
