@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { byIdOrder, type RecordIndex } from '../exploring/record-summaries/record-index';
+import { compareIds, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { useAnnounce, useCommand } from '../shell/commands';
 import { CHANGE_LABEL } from './ChangeDetails';
 import { useChanges } from './changes';
@@ -10,12 +10,10 @@ import { useLiveVersion } from './marks';
 // compared by value), from the focus on: the next one after it, the previous one before it, around at the ends. Each
 // step is announced with where it is in the walk. A removed record has no box to focus, so the walk skips it.
 
-/** Two IDs in ID order, the one order of the package (record-index.ts byIdOrder). */
-const compare = (a: string, b: string) => byIdOrder({ id: a }, { id: b });
 
 /** The records to walk, in reading order. */
 export function changedInReadingOrder(ids: Iterable<string>): string[] {
-  return [...new Set(ids)].sort((a, b) => compare(a, b));
+  return [...new Set(ids)].sort(compareIds);
 }
 
 /** The record a step from `focus` reaches in a walk: the next one after it (or the first), the previous one before it (or the last); null for an empty walk. */
@@ -26,7 +24,7 @@ export function stepChange(walk: readonly string[], focus: string, step: 1 | -1)
   if (here >= 0) at = (here + step + walk.length) % walk.length;
   else {
     // The focus is no change: the walk goes on from where it would stand in the order.
-    const after = walk.findIndex((id) => compare(id, focus) > 0);
+    const after = walk.findIndex((id) => compareIds(id, focus) > 0);
     at = step === 1 ? (after >= 0 ? after : 0) : (after > 0 ? after - 1 : walk.length - 1);
   }
   return { id: walk[at]!, at };

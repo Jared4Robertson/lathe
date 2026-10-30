@@ -26,6 +26,7 @@ import { createPeekStore } from './peek';
 import { TAB_PANEL_ID, tabId, tabLabel } from './TabStrip';
 import { rememberedStage, useNewPlaceOpener, usePlace, withStageIn, type TabsApi } from './usePlace';
 import { hereOf, type PlaceView } from './place';
+import { DEFAULT_TRACE_VIEW } from '../trace/views';
 import { runTabSetCommand } from '../exploring/tab-set/run';
 import { rememberStage } from '../exploring/tab-set/commands/remember-stage';
 import { takeMenuRecord } from '../shell/desktopRecord';
@@ -195,6 +196,8 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
       return same ? v : { ...v, depth: next.depth, hiddenKinds: kinds };
     });
   }, [setView]);
+  // The Trace's view is the place's: each tab its own (LA-V98).
+  const setTraceView = useCallback((trace: PlaceView['trace']) => setView((v) => (v.trace === trace ? v : { ...v, trace })), [setView]);
   const setCardView = useCallback((patch: Partial<PlaceView['card']>) => setView((v) => (
     Object.entries(patch).every(([k, x]) => v.card[k as keyof PlaceView['card']] === x) ? v : { ...v, card: { ...v.card, ...patch } }
   )), [setView]);
@@ -340,7 +343,7 @@ function Focused({ index, route: addressRoute, search: addressSearch }: { index:
     ),
     trace: (
       <Suspense fallback={<p className="hint graph-loading">Loading the trace…</p>}>
-        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} />
+        <TraceView index={index} focus={shownFocus} onNavigate={onNavigate} hrefFor={hrefFor} onPeek={peek.set} onCounts={setCounts} space={space} cameraKey={place.key} onOpenNew={onOpenNew} view={view.trace} onView={setTraceView} />
       </Suspense>
     ),
   };
@@ -459,7 +462,7 @@ export function StageBackdrop({ index, focus }: { index: RecordIndex | null; foc
       <Suspense fallback={fallback}>
         {stage === 'graph' && <GraphView index={index} focus={shown} onNavigate={ignore} settings={settings} onSettingsChange={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
         {stage === 'erd' && <ErdView index={index} focus={shown} onNavigate={ignore} onPeek={peek.set} onCounts={ignore} space={space} />}
-        {stage === 'trace' && <TraceView index={index} focus={shown} onNavigate={ignore} hrefFor={addressOf} onPeek={peek.set} onCounts={ignore} space={space} />}
+        {stage === 'trace' && <TraceView index={index} focus={shown} onNavigate={ignore} hrefFor={addressOf} onPeek={peek.set} onCounts={ignore} space={space} view={DEFAULT_TRACE_VIEW} onView={ignore} />}
       </Suspense>
     );
   }

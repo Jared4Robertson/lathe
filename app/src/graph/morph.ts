@@ -1,5 +1,4 @@
 import { useRef } from 'react';
-import type { PlacedMap } from './map';
 import { readMotion } from './motion';
 import type { Plate } from './plate';
 import type { Viewport } from './camera';
@@ -12,6 +11,9 @@ import type { Viewport } from './camera';
 // each frame draws the new map's plates moved and scaled from their old box to their new one.
 
 type Box = { x: number; y: number; w: number; h: number };
+
+/** What a morph reads of a laid-out map: which view laid it out, its roots, and each box by its place (a Graph map, the Trace's All-at-once layout). */
+export interface MorphMap { view: string; roots: readonly string[]; nodes: ReadonlyMap<string, Box> }
 
 const same = (a: Box, b: Box) => a.x === b.x && a.y === b.y && a.w === b.w && a.h === b.h;
 const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
@@ -43,7 +45,7 @@ export function plateAt(p: Plate, to: Box): Plate {
   };
 }
 
-interface Morphing { map: PlacedMap; from: ReadonlyMap<string, Box>; start: number; duration: number; ease: (t: number) => number }
+interface Morphing { map: MorphMap; from: ReadonlyMap<string, Box>; start: number; duration: number; ease: (t: number) => number }
 
 /** Where a morph has a box now: between its old place and its map's, or its map's once the morph is over. */
 function boxAt(m: Morphing, id: string, now: number): Box | null {
@@ -56,7 +58,7 @@ function boxAt(m: Morphing, id: string, now: number): Box | null {
 }
 
 /** The morph of a map from the one drawn before it (pure, for tests): each box the new map moves, from where it was drawn at `now`. */
-export function morphFrom(before: Morphing | null, map: PlacedMap, now: number, duration: number, ease: (t: number) => number): Morphing {
+export function morphFrom(before: Morphing | null, map: MorphMap, now: number, duration: number, ease: (t: number) => number): Morphing {
   const from = new Map<string, Box>();
   // Only a new layout of the same map morphs: another product or another layout is a new picture.
   if (before && duration > 0 && before.map !== map && before.map.view === map.view && before.map.roots[0] === map.roots[0]) {
@@ -71,11 +73,13 @@ export function morphFrom(before: Morphing | null, map: PlacedMap, now: number, 
 /** A stage's morph: what each plate is drawn at now, and whether anything is still moving (the stage paints again while it is). */
 export interface Morph {
   plate: (p: Plate, now: number) => Plate;
+  /** Where a place's box is drawn now: on its way from where it was, or its map's; null for a place the map has not. */
+  box: (place: string, now: number) => Box | null;
   moving: (now: number) => boolean;
 }
 
 /** The morph from the map a scene drew before to the one it draws now, started as the new map arrives: one object for the scene's life. */
-export function useMorph(map: PlacedMap): Morph {
+export function useMorph(map: MorphMap): Morph {
   const state = useRef<Morphing | null>(null);
   if (state.current?.map !== map) {
     const motion = readMotion();
@@ -89,6 +93,7 @@ export function useMorph(map: PlacedMap): Morph {
       const at = boxAt(m, p.place, now);
       return at ? plateAt(p, at) : p;
     },
+    box: (place, now) => boxAt(state.current!, place, now),
     moving: (now) => { const m = state.current!; return m.from.size > 0 && now - m.start < m.duration; },
   };
   return morph.current;
