@@ -149,8 +149,9 @@
 {"id":"LA-PLT-EN15-TB","title":"recent-folders.json","entity_id":"LA-PLT-EN15","name":"recent-folders.json","storage":"file","file":"desktop/src/recent-folders/repository.ts"}
 {"id":"LA-PLT-EN16-TB","title":"lathe.config.json","entity_id":"LA-PLT-EN16","name":"lathe.config.json","storage":"file","file":"lathe/src/platform/product-repo/repository.ts"}
 {"id":"LA-PLT-EN20-TB","title":"settings.json","entity_id":"LA-PLT-EN20","name":"settings.json","storage":"file","file":"desktop/src/shell-settings/repository.ts"}
+{"id":"LA-PLT-EN24-TB","title":"lathe:keybindings","entity_id":"LA-PLT-EN24","name":"lathe:keybindings","storage":"browser storage","file":"app/src/platform/key-bindings/repository.ts"}
 {"id":"LA-PLT-RM01-TB","title":"Workspace","read_model_id":"LA-PLT-RM01","name":"Workspace","storage":"in memory","file":"lathe/src/types.ts"}
-{"id":"LA-PLT-RM02-TB","title":"KeymapTable","read_model_id":"LA-PLT-RM02","name":"KeymapTable","storage":"in memory","file":"app/src/platform/keymap/read-model.ts"}
+{"id":"LA-PLT-RM02-TB","title":"KeymapTable","read_model_id":"LA-PLT-RM02","name":"KeymapTable","storage":"in memory","file":"app/src/platform/key-bindings/read-model.ts"}
 {"id":"LA-PLT-RM03-TB","title":"ThemesTable","read_model_id":"LA-PLT-RM03","name":"ThemesTable","storage":"in memory","file":"app/src/platform/appearance/read-model.ts"}
 {"id":"LA-PLT-RM04-TB","title":"RecentFoldersTable","read_model_id":"LA-PLT-RM04","name":"RecentFoldersTable","storage":"in memory","file":"desktop/src/recent-folders/read-model.ts"}
 {"id":"LA-PLT-RM05-TB","title":"transcripts","read_model_id":"LA-PLT-RM05","name":"~/.claude/projects/<folder>/<session>.jsonl","storage":"file","file":"desktop/src/claudeSessions.ts"}

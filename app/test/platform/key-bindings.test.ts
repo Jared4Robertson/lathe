@@ -108,6 +108,10 @@ describe('LA-V61-R10-T01 A person binds, removes and resets keys, and the keymap
     bindKey({ shortcut: 'stageGraph', key: 'Alt+Shift+G', replacing: 'Alt+G', mac: false });
     expect(keysOf('walkLeft')).toEqual(['ArrowLeft', 'A', 'Y']);
     expect(keysOf('stageGraph')).toEqual(['Alt+Shift+G', 'Ctrl+1']);
+    // A shortcut with no default key, such as Turn scroll to zoom on or off, takes one too.
+    bindKey({ shortcut: 'toggleScrollToZoom', key: 'Ctrl+Alt+Z', mac: false });
+    expect(keysOf('toggleScrollToZoom')).toEqual(['Ctrl+Alt+Z']);
+    expect(keymap().find((c) => c.id === 'toggleScrollToZoom')).toMatchObject({ changed: true, customizable: true, defaultKeys: [] });
     resetAllShortcuts({ mac: false });
     expect(stored()).toEqual({});
     expect(keysOf('walkLeft')).toEqual(['ArrowLeft', 'A', 'H']);

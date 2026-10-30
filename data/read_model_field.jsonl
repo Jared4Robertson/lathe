@@ -183,8 +183,11 @@
 {"read_model_id":"LA-PLT-RM02","position":1,"name":"Command ID","meaning":"The command.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM02","position":2,"name":"Title","meaning":"What the palette and the sheet call it, or the title its handler gives (\"Switch to Lathe\").","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM02","position":3,"name":"Group","meaning":"Where the sheet lists it.","type":"text","required":true}
-{"read_model_id":"LA-PLT-RM02","position":4,"name":"Shown keys","meaning":"Its bindings with the person's overrides, as the platform shows them (DS01).","type_value_object_id":"LA-VO61","required":false}
+{"read_model_id":"LA-PLT-RM02","position":4,"name":"Shown keys","meaning":"Its keys as the person bound them, as the platform shows them (DS01).","type_value_object_id":"LA-VO61","required":false}
 {"read_model_id":"LA-PLT-RM02","position":5,"name":"ARIA keys","meaning":"What `aria-keyshortcuts` says; none for a sequence.","type":"text","required":false}
+{"read_model_id":"LA-PLT-RM02","position":6,"name":"Default keys","meaning":"Its keys on this platform before the person changed them.","type_value_object_id":"LA-VO61","required":false}
+{"read_model_id":"LA-PLT-RM02","position":7,"name":"Changed","meaning":"The person changed its keys: the sheet offers Reset.","type":"yes/no","required":true}
+{"read_model_id":"LA-PLT-RM02","position":8,"name":"Customizable","meaning":"The person may bind its keys: not the browser's own, nor an ARIA control's.","type":"yes/no","required":true}
 {"read_model_id":"LA-PLT-RM03","position":1,"name":"Theme ID","meaning":"The theme.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM03","position":2,"name":"Name","meaning":"What it is called.","type":"text","required":true}
 {"read_model_id":"LA-PLT-RM03","position":3,"name":"Built in","meaning":"Whether Lathe ships it.","type":"yes/no","required":true}
