@@ -122,7 +122,7 @@ export function SpecificationEditor({ index, page, children }: { index: RecordIn
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(page.specification.id)?.product ?? '';
   if (mode.mode === 'change') {

@@ -52,7 +52,7 @@ export function EntryPointEditor({ index, page, children }: { index: RecordIndex
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    backToActions(toolbar, `Change ${entryPoint.id}`);
+    backToActions(`Change ${entryPoint.id}`, toolbar);
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, entryPoint.domain_id, false);

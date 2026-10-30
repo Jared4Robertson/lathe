@@ -62,7 +62,7 @@ export function UseCaseEditor({ index, useCase, id, kind, children }: { index: R
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const context: FormContext = { index, useCase, writer, onDone: back };
   if (mode.mode === 'change') return <div className="spec-body"><ChangeForm context={context} id={id} kind={kind} /></div>;

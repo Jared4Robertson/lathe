@@ -143,7 +143,7 @@ export function ProductEditor({ index, page, id, kind, children }: {
   if (!writer) return <>{children(null)}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = page.product.id;
   const context = { index, page, writer, onDone: back };

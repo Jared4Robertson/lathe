@@ -54,7 +54,7 @@ export function CheckEditor({ index, page, children }: { index: RecordIndex; pag
   if (!writer || page.product === null) return <>{children}</>;
   const back = () => {
     setMode('view');
-    backToActions(toolbar, `Change ${name}`);
+    backToActions(`Change ${name}`, toolbar);
   };
   if (mode === 'change') {
     const specs = fieldsOf(false);

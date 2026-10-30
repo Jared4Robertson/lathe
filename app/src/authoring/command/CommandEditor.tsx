@@ -202,7 +202,7 @@ export function CommandEditor({ index, page, children }: { index: RecordIndex; p
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const place = placeOf(index, page.command.entity_id);
   if (mode.mode === 'change') {

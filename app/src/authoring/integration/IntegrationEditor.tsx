@@ -135,7 +135,7 @@ export function IntegrationEditor({ index, page, children }: { index: RecordInde
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(page.integration.id)?.product ?? undefined;
   if (mode.mode === 'change') {

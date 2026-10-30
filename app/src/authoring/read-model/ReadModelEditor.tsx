@@ -165,7 +165,7 @@ export function ReadModelEditor({ index, page, children }: { index: RecordIndex;
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const domain = page.readModel.domain_id;
   if (mode.mode === 'change') {

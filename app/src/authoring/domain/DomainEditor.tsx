@@ -232,7 +232,7 @@ export function DomainEditor({ index, page, children }: { index: RecordIndex; pa
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = page.domain.product_id;
   if (mode.mode === 'change') {

@@ -137,7 +137,7 @@ export function ViewEditor({ index, page, children }: { index: RecordIndex; page
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode({ mode: 'view' });
-    backToActions(toolbar, `Change ${id}`);
+    backToActions(`Change ${id}`, toolbar);
   };
   const product = index.byId.get(page.view.id)?.product ?? '';
   if (mode.mode === 'change') {

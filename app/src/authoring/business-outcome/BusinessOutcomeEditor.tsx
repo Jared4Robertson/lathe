@@ -53,7 +53,7 @@ export function BusinessOutcomeEditor({ index, page, children }: { index: Record
   if (!writer) return <>{children}</>;
   const back = () => {
     setMode('view');
-    backToActions(toolbar, `Change ${outcome.id}`);
+    backToActions(`Change ${outcome.id}`, toolbar);
   };
   if (mode === 'change') {
     const specs = fieldsOf(index, outcome.product_id, false);

@@ -170,7 +170,10 @@ PAGES.push(
 // The graph in its Nested and Map layouts (LA-V93-R21, LA-V93-R74): the same roles and names as the Tree layout.
 for (const layout of ['Nested', 'Map'] as const) PAGES.push({ name: `graph, ${layout} layout`, run: async (page: Page) => {
   await open(page, `${RECORD}?stage=graph`, '.focus-stage .graph-flow .graph-box');
-  await page.locator('.focus-stage .graph-layout button', { hasText: layout }).click();
+  // A narrow toolbar folds the layouts into its More menu.
+  const choice = page.locator('.focus-stage .graph-layout button', { hasText: layout });
+  if (!(await choice.isVisible())) await page.locator('.focus-stage .stage-more > summary').click();
+  await choice.click();
   await page.locator(`.focus-stage .graph-flow[data-layout="${layout.toLowerCase()}"] .graph-box`).first().waitFor();
   await page.waitForTimeout(900);
 } });
