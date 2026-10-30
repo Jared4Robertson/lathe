@@ -1,7 +1,7 @@
-// The camera's gestures on a canvas, one way for every canvas stage (the Graph, GraphPage.tsx, and
-// the Trace stage, trace/TraceAll.tsx): a glide to a viewport with the shared motion, zoom about
+// The camera's gestures on a canvas, one way for every canvas stage (the Graph, GraphPage.tsx, the ERD,
+// erd/ErdView.tsx, and the Trace stage, trace/TraceAll.tsx): a glide to a viewport with the shared motion, zoom about
 // a point within the stage's limits, and the pointer: hover, a tap, drag to pan, a pinch to zoom, and
-// the wheel by wheelMove, which the ERD (erd/ErdView.tsx) follows too: scroll pans
+// the wheel by wheelMove: scroll pans
 // and Cmd or Ctrl with scroll zooms (Figma's convention), or with Scroll to zoom on (the Appearance's,
 // LA-PLT-A4) scroll zooms and Cmd or Ctrl with scroll pans. A gesture during a glide takes over from it.
 // Each stage keeps its own camera (its viewport ref and paint) and says what follows a move through the callbacks.
@@ -41,17 +41,12 @@ export interface CameraGestureOptions {
 export interface CameraGestures {
   /** Moves the camera to a viewport: one smooth zoom and pan, or at once. Returns how long the glide takes, in ms (0 at once). */
   moveTo: (target: Viewport, animate: boolean) => number;
-  /** Zooms by a factor about a point of the pane, within the limits. */
-  zoomAt: (sx: number, sy: number, factor: number) => void;
   /** Zooms by a factor about a point of the pane with a glide, within the limits. */
   zoomBy: (cx: number, cy: number, factor: number) => void;
-  stopGlide: () => void;
   /** Whether a glide is running. */
   gliding: () => boolean;
   /** Whether a pointer is pressed on the canvas. */
   pressed: (pointerId: number) => boolean;
-  /** Moves the camera by a wheel event at a point of the pane (wheelMove, kept to its scroll by wheelLatch); the canvas's own wheel comes here, and a stage with no canvas (the ERD) sends its own. */
-  wheel: (e: WheelEvent, at: { x: number; y: number }) => void;
   /** The canvas's pointer handlers. */
   handlers: {
     onPointerDown: (e: ReactPointerEvent<HTMLCanvasElement>) => void;
@@ -61,7 +56,7 @@ export interface CameraGestures {
   };
 }
 
-/** Pixels a line of scroll moves (a wheel in line mode, as Firefox sends it), as React Flow's on the ERD. */
+/** Pixels a line of scroll moves (a wheel in line mode, as Firefox sends it). */
 const LINE_PX = 20;
 /** A page of scroll when the pane has no size yet, in pixels. */
 const PAGE_PX = 800;
@@ -285,12 +280,9 @@ export function useCameraGestures(options: CameraGestureOptions): CameraGestures
 
   return {
     moveTo,
-    zoomAt,
     zoomBy,
-    stopGlide,
     gliding: useCallback(() => glide.current !== null, []),
     pressed: useCallback((id: number) => pointers.current.has(id), []),
-    wheel,
     handlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: onPointerUp },
   };
 }

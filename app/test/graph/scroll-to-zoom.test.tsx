@@ -6,6 +6,7 @@ import { APPEARANCE_KEYS } from '../../src/platform/appearance/repository';
 import { openApp } from '../helpers';
 import { canvasOf, scene } from './scene';
 import { testWorkspace } from './workspace';
+import { erdDrawn, erdHost, erdScene } from '../erd-scene';
 
 // Scroll to zoom (LA-V62-R05, LA-PLT-CMD47): Appearance's switch and the palette's command turn it on or off, kept at
 // once; the key bar says what scroll does, and the wheel follows it on the Graph and the ERD alike (LA-V93-R07).
@@ -17,12 +18,8 @@ const wheelOn = (target: Element, init: WheelEventInit) =>
 const pause = () => new Promise((r) => setTimeout(r, 200));
 const scrollWords = () => document.querySelector('[data-key-entry="scroll"]')?.textContent;
 const stored = () => window.localStorage.getItem(APPEARANCE_KEYS.scrollToZoom);
-/** The ERD's viewport as React Flow draws it: its translate and scale. */
-const erdView = () => {
-  const t = document.querySelector<HTMLElement>('.react-flow__viewport')!.style.transform;
-  const m = /translate\((-?[\d.e+-]+)px, ?(-?[\d.e+-]+)px\) scale\((-?[\d.e+-]+)\)/.exec(t)!;
-  return { x: Number(m[1]), y: Number(m[2]), zoom: Number(m[3]) };
-};
+/** The ERD's camera, as its canvas draws it. */
+const erdView = () => erdScene().camera;
 
 describe('LA-V62-R05-T01 Scroll to zoom, from Appearance or the palette, switches what scroll does on every stage', () => {
   it('pans by default, zooms once it is on with Cmd/Ctrl+scroll panning and a pinch zooming, and turns off from the palette', async () => {
@@ -65,10 +62,10 @@ describe('LA-V62-R05-T01 Scroll to zoom, from Appearance or the palette, switche
 
     // The ERD follows the same rule: scroll zooms it too.
     fireEvent.click(within(screen.getByRole('group', { name: 'Stage' })).getByRole('button', { name: 'ERD' }));
-    await waitFor(() => expect(document.querySelector('.react-flow__node')).not.toBeNull());
+    await waitFor(() => expect(erdDrawn()).toBe(true));
     await pause();
     const erdBefore = erdView();
-    wheelOn(document.querySelector('.react-flow__pane')!, { deltaY: -100 });
+    wheelOn(erdHost()!.querySelector('canvas')!, { deltaY: -100 });
     await waitFor(() => expect(erdView().zoom).toBeGreaterThan(erdBefore.zoom));
 
     // The palette's command turns it off again, and the key and the switch say so.

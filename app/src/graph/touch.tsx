@@ -7,8 +7,8 @@ import { Card } from '../shell/Card';
 // Touch on a canvas (the graph and the ERD). A finger has no hover, so the first tap on a node
 // selects it: the node is outlined and a card at the bottom of the canvas names it. A second tap
 // on the same node, or a tap on the card, opens it. A tap on the empty canvas lets go.
-// With a mouse a click still opens at once. Pan and pinch-zoom are the canvas's own (the graph's
-// camera, or React Flow's in the ERD view).
+// With a mouse a click still opens at once. Pan and pinch-zoom are the canvas's own (the shared
+// camera's gestures, gestures.ts).
 
 /** The native event of a React or DOM event. */
 const nativeOf = (event: SyntheticEvent | Event | undefined) => (event && 'nativeEvent' in event ? event.nativeEvent : event) as MouseEvent | undefined;
@@ -35,8 +35,8 @@ export interface TapToOpen {
 /**
  * The tap-to-select, tap-again-to-open behavior of a canvas. `open` follows a node; `canOpen`
  * says whether a node can be opened at all (the center node and file nodes cannot). The selected
- * node's element (the element with its `data-id` under `wrapper`: the ERD view's node, the graph's
- * box in its accessibility layer) carries `is-armed` while selected.
+ * node's element (the element with its `data-id` under `wrapper`: the box in the Graph's or the
+ * ERD's accessibility layer) carries `is-armed` while selected.
  * The selection is let go when `resetKey` changes (a new focus). With `openNew` (a host with places, views/place.ts),
  * Cmd or Ctrl+click opens a node in a new place and a middle-click opens it there in the background, as a browser
  * opens a link in a new tab.

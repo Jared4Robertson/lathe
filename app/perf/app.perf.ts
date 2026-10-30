@@ -148,20 +148,20 @@ test.describe('performance', () => {
     await open(page, AGGREGATE);
     const first = await work(page, async () => {
       await page.keyboard.press('Control+2');
-      await page.locator('.focus-stage .erd-flow .react-flow__node').first().waitFor();
+      await page.locator('.focus-stage .erd-flow[data-ready] .erd-node').first().waitFor({ state: 'attached' });
     });
     await page.keyboard.press('Control+1');
     await boxesDrawn(page);
     const again = await work(page, async () => {
       await page.keyboard.press('Control+2');
-      await page.locator('.focus-stage .erd-flow .react-flow__node').first().waitFor();
+      await page.locator('.focus-stage .erd-flow[data-ready] .erd-node').first().waitFor({ state: 'attached' });
     });
     await record({ name: 'ERD stage: first switch (loads its code and ELK)', value: first.workMs, unit: 'ms', budget: null, detail: `longest frame ${Math.round(first.worstFrameMs)} ms` });
     await record({ name: 'stage switch: to the ERD', value: again.workMs, unit: 'ms', budget: BUDGETS.viewSwitchMs, detail: `longest frame ${Math.round(again.worstFrameMs)} ms` });
     // The time from the key press to the laid-out diagram, on a domain page (the ELK layout in its worker).
     await page.goto(`${DOMAIN}?stage=erd`);
     const start = await page.evaluate(() => performance.now());
-    await page.locator('.focus-stage .erd-flow .react-flow__node').first().waitFor();
+    await page.locator('.focus-stage .erd-flow[data-ready] .erd-node').first().waitFor({ state: 'attached' });
     const laid = (await page.evaluate(() => performance.now())) - start;
     await record({ name: 'ERD stage: map drawn after the page', value: laid, unit: 'ms', budget: null });
   });
@@ -171,13 +171,14 @@ test.describe('performance', () => {
     await boxesDrawn(page);
     const start = await page.evaluate(() => performance.now());
     await page.keyboard.press('Control+2');
-    await page.locator('.focus-stage .erd-flow[data-framed] .react-flow__node').first().waitFor();
+    await page.locator('.focus-stage .erd-flow[data-framed][data-ready] .erd-node').first().waitFor({ state: 'attached' });
     const first = (await page.evaluate(() => performance.now())) - start;
     await record({ name: 'ERD map: first frame of the product map', value: first, unit: 'ms', budget: BUDGETS.erdMapFirstFrameMs, detail: 'key press to the map drawn and framed, ELK and the layout included' });
     // A domain focus on the same map: the camera glides, nothing is laid out again.
     await quiet(page);
     const toDomain = await work(page, async () => {
-      await page.locator('.focus-stage .erd-flow .react-flow__node[data-id="LA-EXP"] .erd-box-head').click();
+      const b = (await page.evaluate(() => (document.querySelector('.focus-stage .erd-flow') as HTMLElement & { erdScene: () => { boxes: { id: string; rect: { left: number; top: number } }[] } }).erdScene().boxes.find((x) => x.id === 'LA-EXP')))!;
+      await page.mouse.click(b.rect.left + 6, b.rect.top + 4);
       await page.waitForURL((u) => u.pathname === DOMAIN);
       await quiet(page);
     });
