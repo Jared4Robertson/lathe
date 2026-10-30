@@ -126,7 +126,7 @@ describe('format reference pages', () => {
 
     // An explanation reads as Markdown.
     await openPage('format/checks/not-designed', 'not-designed');
-    expect(within(card()).getByText('fulfills').tagName).toBe('CODE');
+    expect((await within(card()).findByText('fulfills')).tagName).toBe('CODE');
 
     // A check that reports nothing says so; an unknown one says it is not in the format.
     await openApp('/DM?page=format/checks/event-not-by-outbox');

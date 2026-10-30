@@ -7,6 +7,7 @@ import { resetExpanded } from '../src/components/TreeList';
 class FakeEventSource {
   onmessage: ((message: MessageEvent) => void) | null = null;
   constructor(public url: string) {}
+  addEventListener() {}
   close() {}
 }
 

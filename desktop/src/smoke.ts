@@ -5,7 +5,7 @@
 // Help › Keyboard Shortcuts, starts a reload by touching a data file and asking for the products,
 // writes what it saw to that file as JSON, and quits while that reload is in progress.
 import { Menu, type BrowserWindow } from 'electron';
-import { readdirSync, utimesSync, writeFileSync } from 'node:fs';
+import { existsSync, readdirSync, utimesSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import type { Chrome } from './chrome.ts';
 
@@ -116,12 +116,16 @@ export async function runSmoke(
 }
 
 /**
- * Starts a reload, as an edit does: touches the folder's data files, which the server's watcher sees, and asks for
- * the specs, which loads them afresh. Resolves, a moment later, to whether that answer is still to come.
+ * Starts a reload that loads every file afresh, as a change to the product's own kinds does: touches the folder's data
+ * files and writes its product relations' file (empty, when it has none), which the server's watcher sees, and asks for
+ * the specs. A touched file alone reloads too quickly to be caught (only changed tables are read again). Resolves, a
+ * moment later, to whether that answer is still to come.
  */
 export async function reloadInProgress(url: string, folder: string): Promise<boolean> {
   const data = path.join(folder, 'data');
   const later = new Date(Date.now() + 2_000);
+  const relations = path.join(data, 'product_relation.jsonl');
+  if (!existsSync(relations)) writeFileSync(relations, '');
   for (const file of readdirSync(data).filter((f) => f.endsWith('.jsonl'))) utimesSync(path.join(data, file), later, later);
   let answered = false;
   void fetch(`${url}/api/product/list-products`).then((res) => res.arrayBuffer()).then(() => (answered = true), () => undefined);

@@ -304,4 +304,29 @@ describe('Traceability flows from the command line', () => {
     expect(out).toContain('[pattern-rule-test-outside-followers] TL-PAT-ACT-R01-T01:');
     expect(out).toContain('[manual-test-file-silent] TL-LEND-UC01-R01-T01:');
   });
+
+  it('LA-TRC-UC20-FL03-T see the outcomes each record serves', async () => {
+    const tl = product();
+    await tl.seed([
+      ...LENDING,
+      ...DESIGNED,
+      add('business_outcome', { id: 'TL-BO01', title: 'More tools in use', product_id: 'TL', statement: 'Members borrow the library\'s tools more often.', measure: 'Loans opened per tool per month.', target: 'Two per tool per month within a year of opening.', measured_outside: 'The librarian counts loans each month.' }),
+      link('TL-LEND-CAP01', 'serves', 'TL-BO01'),
+      // An aggregate no step reaches.
+      add('aggregate', { id: 'TL-LEND-A2', title: 'Fee', domain_id: 'TL-LEND', identity: 'Fee ID', description: 'A fee a member owes.' }),
+    ]);
+    // S01: a record's outcomes, and the use cases it serves them through.
+    expect(tl.run('serves', 'get-serves', '--id', 'TL-LEND-A1').trim()).toBe('TL-LEND-A1 serves TL-BO01 through TL-LEND-UC01');
+    expect(tl.run('serves', 'get-serves', '--id', 'TL-LEND-A2').trim()).toBe('TL-LEND-A2 serves no outcome');
+    // S02: the product's records with their outcomes, and those serving none.
+    const listed = tl.run('serves', 'list-serves', '--product_id', 'TL');
+    expect(listed).toContain('  TL-LEND-A1: TL-BO01\n');
+    expect(listed).toContain('  Serves no outcome: TL-LEND-A2');
+    // S03: the check warns of each, saying how to fix it, and still passes.
+    const result = tl.check();
+    expect(result.status).toBe(0);
+    expect(problemsOf(tl.workspace(), 'serves-no-outcome')).toEqual([
+      'TL-LEND-A2: Aggregate TL-LEND-A2 serves no outcome: no use case whose capability serves a business outcome reaches it. Write the use case that needs it, or remove it.',
+    ]);
+  });
 });
