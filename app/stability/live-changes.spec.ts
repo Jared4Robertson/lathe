@@ -5,11 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { expect, test, type Page } from '@playwright/test';
 import { openPage } from './measure';
 import { EDITED, keepData, RECORD } from './scenarios';
-import { boxOf } from './scene';
+import { boxOf, sceneOf } from './scene';
 
 // The Reader watches the spec change (LA-EXP-UC15): its two flows, each walking its main path in Chromium over the
 // suite's copy of Lathe's data, made a git repository so the baselines have a commit to read. An Agent changes the
-// data through the real CLI while the page is open; the stage marks it, Follow glides to it, and the Changes lens, the
+// data through the real CLI while the page is open; the stage marks it, Follow glides to it, and Highlight changes, the
 // Changes panel and the wiki card compare it with the baseline. The copy is put back after each.
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
@@ -41,7 +41,7 @@ const changeOf = (page: Page, id: string) => page.evaluate((id) => {
 }, id);
 
 test.describe('watching the spec change', () => {
-  test('LA-EXP-UC15-FL01-T An Agent\'s changes land on the stage, in the Changes lens, the panel and the wiki card in the web app', async ({ page }) => {
+  test('LA-EXP-UC15-FL01-T An Agent\'s changes land on the stage, under Highlight changes, in the panel and the wiki card in the web app, and ] and [ walk them', async ({ page }) => {
     const restore = keepData();
     try {
       commitCopy();
@@ -67,14 +67,27 @@ test.describe('watching the spec change', () => {
       await expect(tools(page).getByRole('status')).toHaveText('Follow is off: you moved the camera.');
       await expect(tools(page).getByRole('button', { name: 'Follow' })).toHaveAttribute('aria-pressed', 'false');
 
-      // The lens: everything unchanged dims, against each baseline.
-      await tools(page).getByRole('button', { name: 'Changes lens' }).click();
+      // Highlight changes: everything unchanged dims, against each baseline.
+      await tools(page).getByRole('button', { name: 'Highlight changes' }).click();
       await expect.poll(async () => (await boxOf(page, ADDED))?.strength).toBe(1);
       const picker = tools(page).getByRole('combobox', { name: 'Compared with' });
       for (const since of ['branch', 'looked', 'commit']) {
         await picker.selectOption(since);
         await expect(picker).toHaveValue(since);
       }
+
+      // Every changed record carries its pill, and a container its roll-up of the records under it.
+      await expect.poll(async () => (await boxOf(page, ADDED))?.pill).toBe('added');
+      await expect.poll(async () => (await sceneOf(page)).boxes.some((b) => b.rollup !== null), { timeout: 10_000 }).toBe(true);
+
+      // ] and [ walk the focus through the changed records in ID order, around at the ends.
+      await page.keyboard.press(']');
+      await page.waitForURL((u) => u.pathname === EDITED || u.pathname === `/${ADDED}`);
+      const first = new URL(page.url()).pathname;
+      await page.keyboard.press(']');
+      await page.waitForURL((u) => u.pathname !== first);
+      await page.keyboard.press('[');
+      await page.waitForURL((u) => u.pathname === first);
 
       // The panel lists both, newest first, and a click focuses the requirement; its card shows the field old → new.
       await tools(page).getByRole('button', { name: /^Changes 2/ }).click();
@@ -101,7 +114,7 @@ test.describe('watching the spec change', () => {
       commitCopy();
       // The desktop shell stood in for: its bridge, with a chat whose patches the test sends (window.chatPatch).
       await page.addInitScript(() => {
-        const settings = { layout: 'tree', minimap: false, cardWidth: null, chat: true, chatWidth: null, lens: false, since: 'commit', follow: false, looked: {} };
+        const settings = { layout: 'tree', minimap: false, cardWidth: null, chat: true, chatWidth: null, highlight: false, since: 'commit', follow: false, looked: {} };
         window.sessionStorage.setItem('lathe:session-settings', JSON.stringify(settings));
         window.sessionStorage.setItem('lathe:place', JSON.stringify({ depth: 1, hiddenKinds: [], card: { open: true, expanded: true } }));
         let listener: ((patch: unknown) => void) | null = null;
@@ -138,7 +151,7 @@ test.describe('watching the spec change', () => {
       await expect(turn.locator('ins')).toContainText('Changed by the Agent while the Reader watched');
 
       // The same records and fields in the Changes panel and the requirement's wiki card.
-      await tools(page).getByRole('button', { name: 'Changes lens' }).click();
+      await tools(page).getByRole('button', { name: 'Highlight changes' }).click();
       await tools(page).getByRole('button', { name: /^Changes 2/ }).click();
       const panel = page.getByRole('region', { name: 'Changes' });
       await expect(panel).toContainText(ADDED);

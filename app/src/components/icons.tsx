@@ -19,6 +19,8 @@ const PATHS: Record<string, string[]> = {
   // A stage's Frame (the focus) and its camera's Fit (the whole map).
   focus: ['M12 12m-3 0a3 3 0 1 0 6 0a3 3 0 1 0-6 0', 'M12 3v3', 'M12 18v3', 'M3 12h3', 'M18 12h3'],
   maximize: ['M4 8V6a2 2 0 0 1 2-2h2', 'M4 16v2a2 2 0 0 0 2 2h2', 'M16 4h2a2 2 0 0 1 2 2v2', 'M16 20h2a2 2 0 0 0 2-2v-2'],
+  // The ERD's Tidy up: the map laid out afresh, its boxes in a neat grid (Tabler's layout-grid).
+  tidy: ['M4 4h6v6H4z', 'M14 4h6v6h-6z', 'M4 14h6v6H4z', 'M14 14h6v6h-6z'],
   x: ['M18 6L6 18', 'M6 6l12 12'],
   // Every stage's zoom buttons, and a record's Add.
   plus: ['M12 5v14', 'M5 12h14'],

@@ -102,8 +102,10 @@ export const COMMANDS: readonly Command[] = [
   // collapses, once nothing above the card is open (each overlay takes its own Escape first, LA-V96-R19).
   { id: 'toggleWikiCard', title: 'Show or collapse the wiki card', group: 'View', keys: ['Enter', 'Ctrl+W'], otherKeys: ['Enter', 'Alt+W'], when: 'page' },
   { id: 'collapseWikiCard', title: 'Collapse the wiki card', group: 'View', keys: ['Escape'], when: 'page' },
-  // The Changes lens and Follow (LA-EXP-UC15), the same on every stage.
-  { id: 'toggleChangesLens', title: 'Changes lens: dim everything unchanged, or show everything again', group: 'View', keys: ['g l'], when: 'page' },
+  // Highlight changes and Follow (LA-EXP-UC15), the same on every stage.
+  { id: 'toggleHighlightChanges', title: 'Highlight changes: mark what is new, changed or removed and dim the rest, or show everything again', group: 'View', keys: ['g l'], when: 'page' },
+  { id: 'nextChange', title: 'Next change: go to the next new or changed record', group: 'View', keys: [']'], when: 'page' },
+  { id: 'previousChange', title: 'Previous change: go to the previous new or changed record', group: 'View', keys: ['['], when: 'page' },
   { id: 'toggleFollow', title: 'Follow the changes: glide to each change as it lands', group: 'View', keys: [], when: 'page' },
   { id: 'expandAll', title: 'Expand all rows on this page', group: 'View', keys: [], when: 'page' },
   { id: 'collapseAll', title: 'Collapse all rows on this page', group: 'View', keys: [], when: 'page' },
@@ -119,6 +121,8 @@ export const COMMANDS: readonly Command[] = [
   { id: 'graphDepthUp', title: 'More depth', group: 'Graph', keys: ['+', '='], when: 'graph' },
   { id: 'graphDepthDown', title: 'Less depth', group: 'Graph', keys: ['-'], when: 'graph' },
   { id: 'graphFit', title: 'Frame the focus again', group: 'Graph', keys: ['.'], when: 'graph' },
+  // The ERD's Tidy up (LA-V94-R09): new data keeps every box where it was, so the map is laid out afresh only on request.
+  { id: 'stageTidy', title: 'Tidy up: lay the whole map out afresh', group: 'Graph', keys: ['t'], when: 'graph' },
   { id: 'graphLayout', title: 'Tree or Nested layout: parents beside their children, or made of them as boxes', group: 'Graph', keys: ['v'], when: 'graph' },
   // The stage walk (WALK_KEYS), from anywhere but a control that uses arrows itself (usesArrows), by the commands layer's
   // one handler (LA-V61-R49), never matched as a command (no handler registers for it). Each move moves the stage's focus: the arrows among the siblings (on the Graph by its

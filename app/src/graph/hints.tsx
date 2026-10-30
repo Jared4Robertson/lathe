@@ -35,10 +35,10 @@ export function panToward(view: { x: number; y: number; zoom: number }, side: Si
   return { x: view.x + (h.dx * width) / 2, y: view.y + (h.dy * height) / 2, zoom: view.zoom };
 }
 
-/** The chips for the counts past each edge: `noun` says what they are ("more"); `onPan` moves the camera toward a side. */
-export function EdgeHintChips({ past, noun, onPan }: { past: Record<Side, number>; noun: string; onPan: (side: Side) => void }) {
+/** The chips for the counts past each edge: `noun` says what they are ("more"), `word` what they say beside the count ("4 changes →"); `onPan` moves the camera toward a side. */
+export function EdgeHintChips({ past, noun, word, onPan }: { past: Record<Side, number>; noun: string; word?: string; onPan: (side: Side) => void }) {
   return (
-    <div className="graph-edge-hints">
+    <div className={word ? 'graph-edge-hints is-changes' : 'graph-edge-hints'}>
       {HINTS.map((h) => past[h.side] > 0 && (
         <Button
           key={h.side}
@@ -47,7 +47,7 @@ export function EdgeHintChips({ past, noun, onPan }: { past: Record<Side, number
           title={`${past[h.side]} ${noun} ${h.label}`}
           onClick={() => onPan(h.side)}
         >
-          {past[h.side]} {h.mark}
+          {past[h.side]} {word ? `${word} ` : ''}{h.mark}
         </Button>
       ))}
     </div>

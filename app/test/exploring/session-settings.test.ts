@@ -8,7 +8,7 @@ import { showOrHideMinimap } from '../../src/exploring/session-settings/commands
 import { resizeWikiCard } from '../../src/exploring/session-settings/commands/resize-wiki-card';
 import { showOrHideChat } from '../../src/exploring/session-settings/commands/show-or-hide-chat';
 import { resizeChat } from '../../src/exploring/session-settings/commands/resize-chat';
-import { turnChangesLensOnOrOff } from '../../src/exploring/session-settings/commands/turn-changes-lens-on-or-off';
+import { turnHighlightChangesOnOrOff } from '../../src/exploring/session-settings/commands/turn-highlight-changes-on-or-off';
 import { chooseChangesBaseline } from '../../src/exploring/session-settings/commands/choose-changes-baseline';
 import { turnFollowOnOrOff } from '../../src/exploring/session-settings/commands/turn-follow-on-or-off';
 import { markProductLookedAt } from '../../src/exploring/session-settings/commands/mark-product-looked-at';
@@ -29,13 +29,13 @@ describe('LA-EXP-INV30-T the Session settings commands each keep one setting, in
     expect(sessionSettingsRepository.load().card.width).toBeNull();
   });
 
-  it('keeps the Changes lens, its baseline, Follow and the moment a product was looked at', () => {
-    turnChangesLensOnOrOff({ on: true });
+  it('keeps Highlight changes, its baseline, Follow and the moment a product was looked at', () => {
+    turnHighlightChangesOnOrOff({ on: true });
     chooseChangesBaseline({ since: 'branch' });
     turnFollowOnOrOff({ on: true });
     const mark = { commit: null, at: '2026-10-29T00:00:00Z', digests: {} };
     markProductLookedAt({ product: 'P', mark });
-    expect(stored()).toMatchObject({ lens: true, since: 'branch', follow: true, looked: { P: mark } });
+    expect(stored()).toMatchObject({ highlight: true, since: 'branch', follow: true, looked: { P: mark } });
   });
 
   it('saves nothing for a change that changes nothing', () => {
@@ -50,7 +50,7 @@ describe('LA-EXP-INV30-T The Session settings refuse a width outside its limits 
     expect(() => holdToRules({ ...DEFAULT_SESSION_SETTINGS, card: { width: 10 } })).toThrow("The wiki card's width 10 is outside 360–900 px.");
     expect(() => holdToRules({ ...DEFAULT_SESSION_SETTINGS, chat: { open: true, width: 2000 } })).toThrow("The chat's width 2000 is outside 320–760 px.");
     expect(() => holdToRules({ ...DEFAULT_SESSION_SETTINGS, graph: { layout: 'radial' as 'tree', minimap: false } })).toThrow('The graph has no layout "radial".');
-    expect(() => holdToRules({ ...DEFAULT_SESSION_SETTINGS, changes: { ...DEFAULT_SESSION_SETTINGS.changes, since: 'ever' as 'commit' } })).toThrow('The Changes lens has no baseline "ever".');
+    expect(() => holdToRules({ ...DEFAULT_SESSION_SETTINGS, changes: { ...DEFAULT_SESSION_SETTINGS.changes, since: 'ever' as 'commit' } })).toThrow('Highlight changes has no baseline "ever".');
     expect(window.sessionStorage.getItem(SETTINGS_KEY)).toBeNull();
   });
 });

@@ -9,7 +9,7 @@ import type { Viewport } from '../graph/camera';
  * The chips, inside a React Flow provider. `centers` are the world centers of the boxes they count;
  * `wrapper` is the canvas element; `moveTo` glides the camera (the shared camera, graph/gestures.ts).
  */
-export function EdgeHints({ centers, wrapper, moveTo }: { centers: readonly Point[]; wrapper: { current: HTMLElement | null }; moveTo: (v: Viewport) => void }) {
+export function EdgeHints({ centers, wrapper, moveTo, noun = 'more', word }: { centers: readonly Point[]; wrapper: { current: HTMLElement | null }; moveTo: (v: Viewport) => void; noun?: string; word?: string }) {
   const { getViewport } = useReactFlow();
   const width = wrapper.current?.clientWidth ?? 0;
   const height = wrapper.current?.clientHeight ?? 0;
@@ -23,5 +23,5 @@ export function EdgeHints({ centers, wrapper, moveTo }: { centers: readonly Poin
   if (width <= 0 || height <= 0 || centers.length === 0) return null;
   const [up, down, left, right] = key.split(' ').map(Number);
   const pan = (side: Side) => moveTo(panToward(getViewport(), side, width, height));
-  return <EdgeHintChips past={{ up, down, left, right }} noun="more" onPan={pan} />;
+  return <EdgeHintChips past={{ up, down, left, right }} noun={noun} word={word} onPan={pan} />;
 }
