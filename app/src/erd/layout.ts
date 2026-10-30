@@ -1,6 +1,6 @@
 import type { ElkNode } from 'elkjs/lib/elk-api';
 import { elkLayout } from '../elk';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { onePerData } from '../graph/one-map';
 import { BOUNDARY_PAD, boxSize, erdMap, type ErdBox, type ErdMap, type Rect } from './erd';
 
@@ -142,8 +142,8 @@ const layingOut = onePerData((index, product): Laying => {
 });
 
 /** A product's layout if it has arrived, so a stage switch on the same data draws the map framed at once. */
-export const readyErdLayout = (index: SpecIndex, product: string): Map<string, Rect> | undefined => layingOut(index, product).rects;
+export const readyErdLayout = (index: RecordIndex, product: string): Map<string, Rect> | undefined => layingOut(index, product).rects;
 
 /** A product's layout: laid out once per index (each data change), then read. */
-export const erdLayout = (index: SpecIndex, product: string): Promise<Map<string, Rect>> => layingOut(index, product).promise;
+export const erdLayout = (index: RecordIndex, product: string): Promise<Map<string, Rect>> => layingOut(index, product).promise;
 

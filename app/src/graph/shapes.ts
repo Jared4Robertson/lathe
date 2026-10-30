@@ -1,4 +1,4 @@
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 
 // A shape for each kind (LA-V93-R06): a secondary cue, after the label, that keeps a box's
 // rectangular footprint so boxes still stack. In the Tree view a box's outline is its
@@ -162,7 +162,7 @@ const FOLDER: KindShape = { shape: 'folder' };
 export const shapeOf = (kind: string, group = false): KindShape => (group ? FOLDER : KIND_SHAPES[kind] ?? PLAIN);
 
 /** A node's shape by its ID: a record's kind's, or a group's folder. */
-export function nodeShape(index: SpecIndex, id: string): KindShape {
+export function nodeShape(index: RecordIndex, id: string): KindShape {
   const record = index.byId.get(id);
   return record ? shapeOf(record.kind) : FOLDER;
 }

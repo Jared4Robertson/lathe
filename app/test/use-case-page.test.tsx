@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { USE_CASE_COMMANDS } from '../../lathe/src/authoring/use-case/commands/index';
 import type { UseCaseCommands } from '../src/authoring/use-case/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
@@ -46,7 +47,7 @@ describe('LA-V101-R01-T01 a use case\'s page reads the use case whole through it
 describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\'s own commands, one per change', () => {
   it('Edit sends Change a use case with only what changed, and shows it changed', async () => {
     const user = userEvent.setup();
-    const changed = (): SpecData => setRow(workspace(), 'use_case', 'DM-SHOP-UC01', { goal: 'A shopper adds an item they found.' });
+    const changed = (): ServedData => setRow(workspace(), 'use_case', 'DM-SHOP-UC01', { goal: 'A shopper adds an item they found.' });
     const { commands, writes } = await openApp('/DM-SHOP-UC01', { command: () => ({ answer: ok, data: changed() }) });
     await within(main()).findByText('A shopper adds an item.');
     await user.click(within(toolbar('DM-SHOP-UC01')).getByRole('button', { name: 'Edit' }));
@@ -66,7 +67,7 @@ describe('LA-V101-R02-T01 the Use case editor writes only through the aggregate\
 
   it('adds a flow step from its flow\'s page, with the next free ID and position, and the requirement it fulfills', async () => {
     const user = userEvent.setup();
-    const added = (): SpecData => addRows(workspace(), 'flow_step', { id: 'DM-SHOP-UC01-FL01-S04', title: 'Shop saves the basket', flow_id: 'DM-SHOP-UC01-FL01', path: 'main', position: 3 });
+    const added = (): ServedData => addRows(workspace(), 'flow_step', { id: 'DM-SHOP-UC01-FL01-S04', title: 'Shop saves the basket', flow_id: 'DM-SHOP-UC01-FL01', path: 'main', position: 3 });
     const { commands } = await openApp('/DM-SHOP-UC01-FL01', { command: () => ({ answer: ok, data: added() }) });
     await within(main()).findByRole('heading', { name: /^Steps/ });
     await user.click(within(toolbar('DM-SHOP-UC01-FL01')).getByRole('button', { name: 'Add flow step' }));

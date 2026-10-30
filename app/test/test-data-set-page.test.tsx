@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { TEST_DATA_SET_COMMANDS } from '../../lathe/src/authoring/test-data-set/commands/index';
 import type { TestDataSetCommands } from '../src/authoring/test-data-set/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
@@ -15,7 +16,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The demo shop with a data set its use case test starts from. */
-function withDataSet(): SpecData {
+function withDataSet(): ServedData {
   const w = workspace();
   addRows(w, 'test_data_set', {
     id: 'DM-SHOP-TD01', title: 'A basket with two items', domain_id: 'DM-SHOP', environment: 'A fresh in-memory store.', records: 'One shopper and a basket of two items.',

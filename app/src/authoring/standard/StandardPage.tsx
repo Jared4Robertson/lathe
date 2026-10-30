@@ -4,7 +4,7 @@ import { Summary, TestScenario, Text, readState, type Fact } from '../../record/
 import { relationLabelOf } from '../../specs/labels';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { StandardEditor } from './StandardEditor';
 import { useStandard } from './reads';
 
@@ -16,7 +16,7 @@ import { useStandard } from './reads';
 // problems, facts and links) is the Record page's (RecordFrame).
 
 /** A cell of record links, or a hint when there are none. */
-function Ids({ index, ids }: { index: SpecIndex; ids: readonly string[] }) {
+function Ids({ index, ids }: { index: RecordIndex; ids: readonly string[] }) {
   return ids.length === 0 ? <span className="hint">Nothing yet</span> : (
     <span className="trace-cell">{ids.map((id) => <RecordLink key={id} index={index} id={id} showTitle={false} />)}</span>
   );
@@ -36,8 +36,8 @@ function groupsOf(rules: readonly StandardRuleOnPage[]): { heading: string | nul
 }
 
 /** The standard's rules in a table, one row each with what meets it and its tests. */
-function Rules({ index, page }: { index: SpecIndex; page: Standard }) {
-  const metLabel = relationLabelOf(index.workspace.relations, 'meets', 'target');
+function Rules({ index, page }: { index: RecordIndex; page: Standard }) {
+  const metLabel = relationLabelOf(index.meta.relations, 'meets', 'target');
   return (
     <Section title="Rules" count={page.rules.length}>
       {page.rules.length === 0 ? <p className="hint">No rules yet.</p> : (
@@ -68,7 +68,7 @@ const ruleOf = (page: Standard, id: string) => page.rules.find((r) => r.rule.id 
 const testOf = (page: Standard, id: string) => page.rules.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
 
 /** What one record of the standard shows on its page, by the kind it is in the standard. */
-function Content({ index, page }: { index: SpecIndex; page: Standard }) {
+function Content({ index, page }: { index: RecordIndex; page: Standard }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'standard':
@@ -85,7 +85,7 @@ function Content({ index, page }: { index: SpecIndex; page: Standard }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Standard): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Standard): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   switch (kind) {

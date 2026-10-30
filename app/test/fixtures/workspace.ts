@@ -1,5 +1,5 @@
+import type { ServedData } from '../read-view';
 import type { Coverage, CoverageGap, ObligationCoverage } from '../../../lathe/src/types';
-import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture } from './load';
 
 // A small workspace for the component tests (data/workspace/). Two products:
@@ -83,7 +83,7 @@ const noteCoverage = (): Coverage => ({
   gaps: [],
 });
 
-export function workspace(): SpecData {
+export function workspace(): ServedData {
   return fixture('workspace', {
     problems: [
       { severity: 'warning', check: 'not-proved', record: 'DM-SHOP-INV01', message: 'No test proves invariant DM-SHOP-INV01.' },

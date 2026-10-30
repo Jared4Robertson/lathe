@@ -1,7 +1,7 @@
+import type { ServedData } from './read-view';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import type { SpecData } from '../../lathe/src/server/contract';
 import { RecordContent } from '../src/specs/RecordContent';
 import { productKindWorkspace } from './fixtures/product-kinds';
 import { facts, main, openApp, section as pageSection } from './helpers';
@@ -23,7 +23,7 @@ const section = (name: string | RegExp) => {
 // DM declares `security_control`, and DM-SHOP-EP01-SC01 is one.
 
 /** The workspace with a manual test of DM-SHOP-UC01-R02 beside the automated and the not automated yet ones. */
-function workspace(): SpecData {
+function workspace(): ServedData {
   return addRows(productKindWorkspace(), 'use_case_test', {
     id: 'DM-SHOP-UC01-R02-T01', title: 'A person fills a basket to 50', uc_requirement_id: 'DM-SHOP-UC01-R02', level: 'browser', state: 'manual', manual_reason: 'A person fills the basket by hand.',
   });
@@ -191,7 +191,7 @@ describe('obligation kinds and test states', () => {
 
 describe('tests by state and tests not automated yet', () => {
   /** The workspace with tests in every state: DM-SHOP has one automated, one manual and one not automated yet. */
-  const states = (): SpecData => {
+  const states = (): ServedData => {
     const ws = workspace();
     ws.coverage.find((c) => c.domain === 'DM-SHOP')!.tests = { automated: 1, manual: 1, not_automated: 1 };
     return ws;

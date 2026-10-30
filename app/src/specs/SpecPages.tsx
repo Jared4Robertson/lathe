@@ -7,16 +7,10 @@ import { patternsFollowedBy } from './patterns';
 import { CoverageBars } from './ProductHealth';
 import { LongList } from '../components/LongList';
 import { ProblemList, RecordLink, RecordTree, Section, StageMark, gapText, idText, levelBelow, recordText, type SectionLevel } from './parts';
-import { allFolders, domainFolders, foldedChildren, type Folder, type OwnerFolders, type StageFolders } from './folders';
+import { allFolders, domainFolders, foldedChildren, type Folder, type OwnerFolders, type StageFolders } from '../exploring/folder-tree/folders';
 import { ActionsSlotContext } from '../components/ActionsSlot';
-import {
-  byIdOrder,
-  kindLabel,
-  textOf,
-  type SpecIndex,
-  type SpecRecord,
-  type SpecState,
-} from './data';
+import { byIdOrder, kindLabel, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { type DataState } from '../exploring/record-summaries/reads';
 import { HOME_PATH } from '../views/address';
 
 // The wiki content of a domain, which the wiki card (app/src/views) shows over the stage; and what an address that is
@@ -24,12 +18,12 @@ import { HOME_PATH } from '../views/address';
 
 // ---------- Shared pieces ----------
 
-const recordsIn = (index: SpecIndex, predicate: (r: SpecRecord) => boolean) => index.workspace.records.filter(predicate).sort(byIdOrder);
+const recordsIn = (index: RecordIndex, predicate: (r: RecordSummary) => boolean) => index.workspace.records.filter(predicate).sort(byIdOrder);
 
 // ---------- Pages ----------
 
 /** An address that is no page, or the specs while they load or failed to. */
-export function SpecView({ spec }: { spec: SpecState }) {
+export function SpecView({ spec }: { spec: DataState }) {
   const { index } = spec;
   return (
     <main className="spec-page panel" id="main">
@@ -48,10 +42,10 @@ export function NotFound({ what, id }: { what: string; id?: string }) {
 }
 
 /** The problems in a product's or a domain's records. */
-export const problemsUnder = (index: SpecIndex, key: 'product' | 'domain', id: string) =>
+export const problemsUnder = (index: RecordIndex, key: 'product' | 'domain', id: string) =>
   index.workspace.problems.filter((p) => p.record && index.byId.get(p.record)?.[key] === id);
 
-function QuestionList({ index, questions }: { index: SpecIndex; questions: SpecRecord[] }) {
+function QuestionList({ index, questions }: { index: RecordIndex; questions: RecordSummary[] }) {
   if (questions.length === 0) return <p className="hint">No open questions.</p>;
   return (
     <LongList
@@ -100,13 +94,13 @@ function StageBlock({ stage, level, children }: { stage: StageFolders; level: 2 
  * row whose children of the same stage fold under it. A stage with nothing yet says so. Then the folders outside the stages, except open
  * questions, which the page lists itself.
  */
-export function StageSections({ index, folders, query, level = 2 }: { index: SpecIndex; folders: OwnerFolders; query: string; level?: 2 | 3 }) {
+export function StageSections({ index, folders, query, level = 2 }: { index: RecordIndex; folders: OwnerFolders; query: string; level?: 2 | 3 }) {
   const q = query.trim().toLowerCase();
-  const matches = (r: SpecRecord) => !q || recordText(r).toLowerCase().includes(q);
-  const nested = (r: SpecRecord) => foldedChildren(index, r);
-  const tree = (records: SpecRecord[], label: string) => {
+  const matches = (r: RecordSummary) => !q || recordText(r).toLowerCase().includes(q);
+  const nested = (r: RecordSummary) => foldedChildren(index, r);
+  const tree = (records: RecordSummary[], label: string) => {
     // A row shows when it, or anything folded under it at any depth, matches.
-    const deep = (r: SpecRecord): boolean => matches(r) || nested(r).some(deep);
+    const deep = (r: RecordSummary): boolean => matches(r) || nested(r).some(deep);
     const visible = records.filter(deep).length;
     return visible === 0 ? <p className="hint">Nothing matches.</p> : <RecordTree index={index} records={records} label={label} query={query} nested={nested} />;
   };
@@ -133,17 +127,17 @@ export function StageSections({ index, folders, query, level = 2 }: { index: Spe
  * A domain's wiki, read in the same stages and folders as the side nav (StageSections), then the
  * patterns the domain follows, its open questions, coverage and problems.
  */
-export function DomainWiki({ index, id }: { index: SpecIndex; id: string }) {
+export function DomainWiki({ index, id }: { index: RecordIndex; id: string }) {
   const [query, setQuery] = useState('');
   const domain = index.byId.get(id)!;
   const q = query.trim().toLowerCase();
-  const matches = (r: SpecRecord) => !q || recordText(r).toLowerCase().includes(q);
+  const matches = (r: RecordSummary) => !q || recordText(r).toLowerCase().includes(q);
   const problems = problemsUnder(index, 'domain', id);
 
   const folders = domainFolders(index, id);
   // Records of the domain that no folder lists and that no listed record folds (misplaced).
   const shown = new Set<string>();
-  const walk = (r: SpecRecord) => {
+  const walk = (r: RecordSummary) => {
     if (shown.has(r.id)) return;
     shown.add(r.id);
     for (const c of foldedChildren(index, r)) walk(c);

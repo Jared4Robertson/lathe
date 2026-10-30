@@ -2,7 +2,7 @@ import { Fragment } from 'react';
 import type { DomainPage as Domain } from '../../../../lathe/src/authoring/domain/read-model';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
 import { RecordedExceptions } from '../../specs/RecordText';
@@ -32,7 +32,7 @@ const technicalFacts = (file: string | undefined, packages: readonly string[]): 
 ];
 
 /** What one record of the domain shows on its page, by the kind it is in the domain (the domain itself has its wiki). */
-function Content({ index, page }: { index: SpecIndex; page: Domain }) {
+function Content({ index, page }: { index: RecordIndex; page: Domain }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'domain':
@@ -83,7 +83,7 @@ function Content({ index, page }: { index: SpecIndex; page: Domain }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Domain): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Domain): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const inDomain: Fact = { label: 'Domain', value: <RecordLink index={index} id={page.domain.id} /> };

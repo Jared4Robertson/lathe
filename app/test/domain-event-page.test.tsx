@@ -1,8 +1,9 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { DOMAIN_EVENT_COMMANDS } from '../../lathe/src/authoring/domain-event/commands/index';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import type { DomainEventCommands } from '../src/authoring/domain-event/commands';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -16,7 +17,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The demo shop with a policy that hears the basket's event. */
-function withPolicy(): SpecData {
+function withPolicy(): ServedData {
   const w = workspace();
   addRows(w, 'policy', { id: 'DM-SHOP-PO01', title: 'Add again when an item is added', command_id: 'DM-SHOP-CMD01', statement: 'Whenever an item is added, it is added again.' });
   addRows(w, 'hears', { source_id: 'DM-SHOP-PO01', target_id: 'DM-SHOP-EV01' });

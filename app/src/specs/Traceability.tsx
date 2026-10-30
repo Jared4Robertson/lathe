@@ -1,10 +1,39 @@
 import { Fragment } from 'react';
 import { LongList } from '../components/LongList';
 import { checkPagePath } from '../format/reference';
-import { type SpecIndex, type SpecRecord } from './data';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { groupRecords } from './groups';
 import { RecordLink, RecordRowBody, Section, SpecLink, TestStateTag, idText } from './parts';
-import { isBuilt, traceEmpty, traceOf, type GapKind, type Judgment, type Trace, type TraceGap, type TraceGroup } from './trace';
+import type { GapKind, Judgment, RunBy, TraceGap } from '../../../lathe/src/traceability/record-trace/read-model';
+import { useRecordTrace, type RecordTrace } from '../traceability/record-trace/reads';
+
+/** One list of the section: a chain's group, or the links of one label read from this record's end. */
+interface TraceGroup {
+  key: string;
+  label: string;
+  role: 'design' | 'build' | 'proof' | 'plain';
+  ids: string[];
+}
+
+const sortIds = (ids: Iterable<string>) => [...new Set(ids)].sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+
+/**
+ * The section's lists: an obligation's chain, then the links into it and out of it to what the chain does not hold; a
+ * test's Proves first; any other record's links out, then in. Links of the same label are one list; `skip` leaves out
+ * relations a page shows in a section of its own ("out:hears", "in:fulfills").
+ */
+function groupsOf(trace: RecordTrace, obligation: boolean, skip: ReadonlySet<string>): TraceGroup[] {
+  const links = (direction: 'out' | 'in'): TraceGroup[] => {
+    const byLabel = new Map<string, string[]>();
+    for (const g of trace.links) {
+      if (g.direction !== direction || skip.has(`${direction}:${g.relation}`)) continue;
+      byLabel.set(g.label, [...(byLabel.get(g.label) ?? []), ...g.ids]);
+    }
+    return [...byLabel].sort(([a], [b]) => a.localeCompare(b)).map(([label, ids]) => ({ key: `${direction}:${label}`, label, role: 'plain', ids: sortIds(ids) }));
+  };
+  if (obligation) return [...trace.chain.map((g) => ({ key: g.role, label: g.label, role: g.role, ids: g.ids })), ...links('in'), ...links('out')];
+  return [...(trace.proves ? [{ key: 'proves', label: 'Proves', role: 'plain' as const, ids: [trace.proves] }] : []), ...links('out'), ...links('in')];
+}
 
 // A record's Traceability section (LA-TRC-UC14): for an obligation, its chain as the engine works it
 // out (what designs it, the technical records that build it, each marked built or not, and the tests
@@ -35,7 +64,7 @@ function GapCallout({ gap }: { gap: TraceGap }) {
 }
 
 /** The gaps of an obligation in its own domain, or one line per owing domain for a pattern rule. */
-function Judgments({ index, record, judgments }: { index: SpecIndex; record: SpecRecord; judgments: Judgment[] }) {
+function Judgments({ index, record, judgments }: { index: RecordIndex; record: RecordSummary; judgments: Judgment[] }) {
   if (record.kind !== 'pattern_rule') {
     const gaps = judgments.flatMap((j) => j.gaps);
     if (gaps.length === 0) return null;
@@ -59,7 +88,7 @@ function Judgments({ index, record, judgments }: { index: SpecIndex; record: Spe
 }
 
 /** One group's rows: each a whole-row link (LA-PAT-APP-UX-R05), with its kind only when the list mixes kinds. */
-function TraceList({ index, group }: { index: SpecIndex; group: TraceGroup }) {
+function TraceList({ index, group, built }: { index: RecordIndex; group: TraceGroup; built: ReadonlySet<string> }) {
   const records = group.ids.map((id) => index.byId.get(id));
   const mixed = new Set(records.map((r) => r?.kind)).size > 1;
   return (
@@ -76,8 +105,8 @@ function TraceList({ index, group }: { index: SpecIndex; group: TraceGroup }) {
           return (
             <div className="trace-row">
               <RecordRowBody index={index} record={record} showKind={mixed} />
-              {group.role === 'build' && index.kinds.get(record.kind)?.stage === 'technical-specification' && (
-                <span className={`rule-mark ${isBuilt(index, id) ? 'ok' : 'missing'}`} data-mark="built">{isBuilt(index, id) ? 'built' : 'not built'}</span>
+              {group.role === 'build' && index.meta.kinds.get(record.kind)?.stage === 'technical-specification' && (
+                <span className={`rule-mark ${built.has(id) ? 'ok' : 'missing'}`} data-mark="built">{built.has(id) ? 'built' : 'not built'}</span>
               )}
             </div>
           );
@@ -88,7 +117,7 @@ function TraceList({ index, group }: { index: SpecIndex; group: TraceGroup }) {
 }
 
 /** IDs as compact links in a table cell, or a flag when there are none. */
-function Cell({ index, ids, flag, notAutomated = [] }: { index: SpecIndex; ids: string[]; flag: string | null; notAutomated?: string[] }) {
+function Cell({ index, ids, flag, notAutomated = [] }: { index: RecordIndex; ids: string[]; flag: string | null; notAutomated?: string[] }) {
   return (
     <span className="trace-cell">
       {ids.map((id) => <RecordLink key={id} index={index} id={id} showTitle={false} />)}
@@ -103,8 +132,9 @@ function Cell({ index, ids, flag, notAutomated = [] }: { index: SpecIndex; ids: 
 }
 
 /** A use case's requirements, one row each under their groups: Designed, Built and Proved, each cell linking what does it. */
-function RequirementTable({ index, useCase, rows }: { index: SpecIndex; useCase: SpecRecord; rows: { record: SpecRecord; judgment: Judgment | null }[] }) {
-  if (rows.length === 0) return null;
+function RequirementTable({ index, useCase, requirements }: { index: RecordIndex; useCase: RecordSummary; requirements: RecordTrace['requirements'] }) {
+  if (requirements.length === 0) return null;
+  const rows = requirements.map((r) => ({ record: index.byId.get(r.id) ?? { id: r.id, kind: 'uc_requirement', title: r.id, parent: useCase.id, product: useCase.product, domain: useCase.domain, group: r.group, testState: null, file: '', line: 0, digest: '' }, judgment: r.judgment }));
   const has = (j: Judgment | null, kind: GapKind) => !!j?.gaps.some((g) => g.kind === kind);
   const judgmentOf = new Map(rows.map((r) => [r.record.id, r.judgment]));
   return (
@@ -137,7 +167,7 @@ function RequirementTable({ index, useCase, rows }: { index: SpecIndex; useCase:
 }
 
 /** How a test is run: its level and state, and the file that runs it or why a person runs it. */
-function RunBy({ record, runBy }: { record: SpecRecord; runBy: NonNullable<Trace['runBy']> }) {
+function RunByFacts({ record, runBy }: { record: RecordSummary; runBy: RunBy }) {
   return (
     <Section title="Run by" level={3} className="trace-group">
       <dl className="fields run-by">
@@ -157,21 +187,25 @@ function RunBy({ record, runBy }: { record: SpecRecord; runBy: NonNullable<Trace
   );
 }
 
-export function Traceability({ index, record, skip }: { index: SpecIndex; record: SpecRecord; skip?: ReadonlySet<string> }) {
-  const trace = traceOf(index, record, skip);
-  if (traceEmpty(trace)) return null;
+export function Traceability({ index, record, skip = new Set() }: { index: RecordIndex; record: RecordSummary; skip?: ReadonlySet<string> }) {
+  const read = useRecordTrace(record.id, index);
+  if (read.state !== 'read' || read.answer.id !== record.id) return null;
+  const trace = read.answer;
+  const groups = groupsOf(trace, !!index.meta.kinds.get(record.kind)?.obligation, skip);
+  if (groups.length === 0 && trace.judgments.length === 0 && trace.requirements.length === 0 && !trace.runBy) return null;
+  const built = new Set(trace.built);
   return (
     <Section title="Traceability" className="traceability">
       <Judgments index={index} record={record} judgments={trace.judgments} />
-      <RequirementTable index={index} useCase={record} rows={trace.requirements} />
-      {trace.groups.map((g, i) => (
+      <RequirementTable index={index} useCase={record} requirements={trace.requirements} />
+      {groups.map((g, i) => (
         <Fragment key={g.key}>
           {/* A test's run by follows what it proves. */}
-          {trace.runBy && i === 1 && <RunBy record={record} runBy={trace.runBy} />}
-          <TraceList index={index} group={g} />
+          {trace.runBy && i === 1 && <RunByFacts record={record} runBy={trace.runBy} />}
+          <TraceList index={index} group={g} built={built} />
         </Fragment>
       ))}
-      {trace.runBy && trace.groups.length < 2 && <RunBy record={record} runBy={trace.runBy} />}
+      {trace.runBy && groups.length < 2 && <RunByFacts record={record} runBy={trace.runBy} />}
     </Section>
   );
 }

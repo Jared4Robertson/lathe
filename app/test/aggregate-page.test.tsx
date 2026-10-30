@@ -1,8 +1,9 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { AGGREGATE_COMMANDS } from '../../lathe/src/authoring/aggregate/commands/index';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import type { AggregateCommands } from '../src/authoring/aggregate/commands';
 import { addressOf } from '../src/views/address';
 import { addRows, setRow } from './fixtures/load';
@@ -18,7 +19,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The demo shop with a data model for the basket. */
-function withModel(): SpecData {
+function withModel(): ServedData {
   const w = workspace();
   addRows(w, 'data_model', { id: 'DM-SHOP-EN01-DM', title: 'Basket', entity_id: 'DM-SHOP-EN01', file: 'src/basket.ts' });
   return w;

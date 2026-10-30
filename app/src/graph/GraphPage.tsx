@@ -1,6 +1,6 @@
 // The Graph stage of an address, /<id>?stage=graph (LA-V93).
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type KeyboardEvent } from 'react';
-import { type SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { useCommand } from '../shell/commands';
 import { Tooltip } from '../shell/Tooltip';
 import { Icon } from '../components/icons';
@@ -91,7 +91,7 @@ export function graphSummary(graph: Neighborhood): string {
 }
 
 export interface GraphViewProps {
-  index: SpecIndex;
+  index: RecordIndex;
   /** A record ID, or a group's ID in the graph's tree. */
   focus: string;
   /** Called with a record or group ID when the person moves the focus there. */
@@ -133,7 +133,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
   const valid = isGraphNode(index, focus);
   const drawn = useMemo(() => (valid ? graphDrawn(index, graph, layout) : null), [valid, index, graph, layout]);
   const changesKey = useChangesKey();
-  const keyEntries = useMemo(() => (drawn ? [...graphKeyEntries(drawn, index.workspace.stages), ...changesKey] : []), [drawn, index, changesKey]);
+  const keyEntries = useMemo(() => (drawn ? [...graphKeyEntries(drawn, index.meta.stages), ...changesKey] : []), [drawn, index, changesKey]);
   // Before paint, so the header strip's counts change in the same frame as the graph (LA-PAT-APP-UX-R08).
   useLayoutEffect(() => { onCounts?.(graphSummary(graph)); }, [graph, onCounts]);
 
@@ -200,7 +200,7 @@ export function GraphView({ index, focus, onNavigate, settings: hosted, onSettin
 }
 
 interface FilterProps {
-  index: SpecIndex;
+  index: RecordIndex;
   filters: Filters;
   setFilters: (f: Filters) => void;
   minimap: boolean;
@@ -269,7 +269,7 @@ export function keyboardOrder(boxes: readonly Pick<Box, 'id' | 'x' | 'y'>[], tre
  * The nodes hidden by the kind filters (LA-V93-R13): a node of a hidden kind and everything
  * beneath it. The focus and its ancestors are never hidden. The map keeps their places.
  */
-export function hiddenNodes(index: SpecIndex, map: PlacedMap, filters: Filters, focus: string): Set<string> {
+export function hiddenNodes(index: RecordIndex, map: PlacedMap, filters: Filters, focus: string): Set<string> {
   const hidden = new Set<string>();
   if (filters.hiddenKinds.size === 0) return hidden;
   const keep = new Set<string>();
@@ -407,7 +407,7 @@ function GraphCanvas(props: CanvasProps) {
 }
 
 interface CanvasProps {
-  index: SpecIndex;
+  index: RecordIndex;
   graph: Neighborhood;
   layout: GraphLayout;
   depth: number;

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../components/Button';
-import type { SpecIndex, SpecRecord } from '../specs/data';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { Section } from '../specs/parts';
 import './RecordHistory.css';
 import { changeSummary, fetchHistory, shortDate, valueText, type HistoryAnswer, type HistoryChange, type HistoryCommit } from './history';
@@ -17,7 +17,7 @@ type Loaded = { answer: HistoryAnswer; commits: HistoryCommit[]; more: boolean }
 const WORKING = 'working';
 
 /** The History section of a record's whole page: a button that reads it, then the list. */
-export function HistorySection({ index, id }: { index: SpecIndex; id: string }) {
+export function HistorySection({ index, id }: { index: RecordIndex; id: string }) {
   const [shown, setShown] = useState(false);
   useEffect(() => { setShown(false); }, [id]);
   return (
@@ -29,7 +29,7 @@ export function HistorySection({ index, id }: { index: SpecIndex; id: string }) 
   );
 }
 
-function RecordHistory({ index, id }: { index: SpecIndex; id: string }) {
+function RecordHistory({ index, id }: { index: RecordIndex; id: string }) {
   const record = index.byId.get(id);
   const [loaded, setLoaded] = useState<Loaded | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -114,13 +114,13 @@ function Files({ files }: { files: string[] }) {
 }
 
 /** Which of the record's rows a change is about: the record itself, one of its parts, or a link it starts. */
-function rowName(record: SpecRecord, change: HistoryChange): string {
+function rowName(record: RecordSummary, change: HistoryChange): string {
   if (change.table === record.kind) return 'The record';
   return `${change.table.replaceAll('_', ' ')} (${change.key})`;
 }
 
 function HistoryRow({ record, commit, open, onToggle, subject, meta, changes, truncated, working = false }: {
-  record: SpecRecord; commit: string; open: boolean; onToggle: () => void; subject: string; meta: string; changes: HistoryChange[]; truncated: boolean; working?: boolean;
+  record: RecordSummary; commit: string; open: boolean; onToggle: () => void; subject: string; meta: string; changes: HistoryChange[]; truncated: boolean; working?: boolean;
 }) {
   const detailId = `history-changes-${commit}`;
   const summary = changes.map((c) => `${c.table === record.kind ? '' : `${c.table.replaceAll('_', ' ')}: `}${changeSummary(c)}`).join(' · ');

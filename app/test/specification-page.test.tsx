@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { SPECIFICATION_COMMANDS } from '../../lathe/src/authoring/specification/commands/index';
 import type { SpecificationCommands } from '../src/authoring/specification/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows } from './fixtures/load';
 import { modelWorkspace } from './fixtures/model';
 import { main, openApp, section } from './helpers';
@@ -16,7 +17,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.findByRole('toolbar', { name: `Change ${id}` });
 
 /** The model product with a predicate for P-D-SP01. */
-function withPredicate(): SpecData {
+function withPredicate(): ServedData {
   const w = modelWorkspace();
   addRows(w, 'predicate', { id: 'P-D-SP01-PR', title: 'isAtLoanLimit', specification_id: 'P-D-SP01', file: 'src/limits.ts' });
   return w;

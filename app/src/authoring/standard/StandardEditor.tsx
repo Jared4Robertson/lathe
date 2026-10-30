@@ -8,7 +8,7 @@ import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendStandard, type StandardCommands, type StandardRoute } from './commands';
 import { useNextStandardId } from './reads';
@@ -28,11 +28,11 @@ const LABEL: Record<StandardKind, string> = { standard: 'standard', standard_rul
 const ADDED_UNDER: Record<StandardKind, Exclude<StandardKind, 'standard'> | null> = { standard: 'standard_rule', standard_rule: 'standard_rule_test', standard_rule_test: null };
 
 /** The test data sets of the product, as what a test may start from. */
-const dataSets = (index: SpecIndex, product: string): Choice[] =>
+const dataSets = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === 'test_data_set' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
-function fieldsOf(index: SpecIndex, product: string, kind: StandardKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string, kind: StandardKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'standard':
@@ -120,7 +120,7 @@ function parentOf(page: StandardPage, kind: StandardKind, id: string): string {
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Exclude<StandardKind, 'standard'> } | { mode: 'remove' };
 
 /** A record of the standard with its actions; a form or the remove question shows in place of its page. */
-export function StandardEditor({ index, page, children }: { index: SpecIndex; page: StandardPage; children: ReactNode }) {
+export function StandardEditor({ index, page, children }: { index: RecordIndex; page: StandardPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -165,7 +165,7 @@ export function StandardEditor({ index, page, children }: { index: SpecIndex; pa
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -182,7 +182,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a rule or rule test under the record, its ID the next free one, sent as that kind's Add. */
-function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; product: string; kind: Exclude<StandardKind, 'standard'>; parent: string; onDone: () => void }) {
+function AddForm({ index, product, kind, parent, onDone }: { index: RecordIndex; product: string; kind: Exclude<StandardKind, 'standard'>; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextStandardId(kind, parent, index);
@@ -208,7 +208,7 @@ function AddForm({ index, product, kind, parent, onDone }: { index: SpecIndex; p
  * Add a standard to a product (from the product's page): the aggregate's own Add. A standard's ID is its product's,
  * STD and a name chosen for it, so the form starts it with the product's prefix and leaves the name to the person.
  */
-export function AddStandardForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddStandardForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text: { id: `${parent}-STD-` } }));

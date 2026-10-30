@@ -1,6 +1,8 @@
 import { useMemo } from 'react';
 import type { ColumnDescription } from '../../../lathe/src/platform/data/schema';
-import { kindOrder, partTablesOf, textOf, type SpecIndex, type Stage, type StageRule, type Workspace } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
+import { type MetaStage } from '../platform/meta-model/reads';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
 import { pageHref } from '../views/overlays';
 
 // The format reference in the app: every kind (its table and typed columns), relation, stage and
@@ -90,7 +92,7 @@ export interface FormatReference {
   kinds: KindReference[];
   relations: RelationReference[];
   /** The five stages, in order. */
-  stages: StageRule[];
+  stages: MetaStage[];
   /** The checks by their place, Lathe's before the product's, then the engine's own. */
   checks: CheckReference[];
 }
@@ -153,7 +155,7 @@ export function referenceOf(workspace: Workspace): FormatReference {
 }
 
 /** The format reference for the loaded data (the space's, when the index is a space's). */
-export function useFormat(index: SpecIndex | null): FormatReference | null {
+export function useFormat(index: RecordIndex | null): FormatReference | null {
   const workspace = index?.workspace ?? null;
   return useMemo(() => (workspace ? referenceOf(workspace) : null), [workspace]);
 }

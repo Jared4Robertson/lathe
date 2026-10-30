@@ -1,8 +1,8 @@
+import type { ServedData } from './read-view';
 import './graph/setup';
 import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
-import type { SpecData } from '../../lathe/src/server/contract';
 import { findItems, rankItems } from '../src/shell/QuickOpen';
 import { colorField, colorOf, iconField, monogramOf, productOfPath, spaceOf } from '../src/shell/spaces';
 import { spaceIndex } from '../src/specs/data';
@@ -21,7 +21,7 @@ const panel = () => nav().querySelector<HTMLElement>('.space-items')!;
 const announcer = () => screen.getByTestId('announcer');
 
 /** The fixture with an icon on Notebook, capabilities in Shopping, and a third product. */
-function spacesWorkspace(): SpecData {
+function spacesWorkspace(): ServedData {
   const ws = setRow(workspace(), 'product', 'NF', { icon: '📓', color: '#335577' });
   addRows(ws, 'capability',
     { id: 'DM-SHOP-CAP02', title: 'Paying for the basket', domain_id: 'DM-SHOP', position: 3 },

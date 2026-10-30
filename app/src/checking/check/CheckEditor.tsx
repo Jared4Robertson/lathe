@@ -8,7 +8,7 @@ import { checkPagePath, formatPath } from '../../format/reference';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
 import { useSpaces } from '../../shell/spaces';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { sendCheck, type CheckCommands } from './commands';
 import '../../edit/edit.css';
 
@@ -43,7 +43,7 @@ const CLEARABLE = ['kinds'] as const;
 type Mode = 'view' | 'change' | 'remove';
 
 /** A product's own check with its actions; the form or the remove question shows in place of its page. Lathe's show none. */
-export function CheckEditor({ index, page, children }: { index: SpecIndex; page: CheckPage; children: ReactNode }) {
+export function CheckEditor({ index, page, children }: { index: RecordIndex; page: CheckPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>('view');
@@ -84,7 +84,7 @@ export function CheckEditor({ index, page, children }: { index: SpecIndex; page:
 
 /** Edit: Change a check, with only what changed. */
 function ChangeForm({ index, specs, current, name, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   name: string;
@@ -100,7 +100,7 @@ function ChangeForm({ index, specs, current, name, submit, onDone }: {
 }
 
 /** Add a check to the product: an empty form for its own check, sent as Add a check with the product's ID. */
-function AddCheckForm({ index, product, onDone }: { index: SpecIndex; product: string; onDone: () => void }) {
+function AddCheckForm({ index, product, onDone }: { index: RecordIndex; product: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const [draft, setDraft] = useState<Draft>(emptyDraft);
@@ -119,7 +119,7 @@ function AddCheckForm({ index, product, onDone }: { index: SpecIndex; product: s
 }
 
 /** Add a check, where the product's checks are listed: the button, and the form in its place while it is open. */
-export function AddCheck({ index }: { index: SpecIndex }) {
+export function AddCheck({ index }: { index: RecordIndex }) {
   const writer = useWriter();
   const product = useSpaces()?.current?.id;
   const [open, setOpen] = useState(false);

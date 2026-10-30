@@ -9,7 +9,7 @@ import { useWriter, type Writer } from '../../edit/write';
 import { adderOf } from '../../record/pages';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendReadModel, type ReadModelCommands, type ReadModelRoute } from './commands';
 import { useNextReadModelId } from './reads';
@@ -34,11 +34,11 @@ const LABEL: Record<ReadModelKind, string> = { read_model: 'read model', query: 
 const FIELD_COLUMNS = ['name', 'meaning', 'type', 'type_value_object_id', 'type_aggregate_id', 'required', 'column_name', 'example'];
 
 /** The records of the domain of a kind, as choices. */
-const choices = (index: SpecIndex, domain: string, kind: string): Choice[] =>
+const choices = (index: RecordIndex, domain: string, kind: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === kind && r.domain === domain).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order; packages are one per line. */
-function fieldsOf(index: SpecIndex, domain: string, kind: ReadModelKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, domain: string, kind: ReadModelKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   const code = (table: Code): FieldSpec[] => [
     ...id(table),
@@ -157,7 +157,7 @@ function parentOf(page: ReadModelPage, kind: ReadModelKind, id: string): string 
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Inside } | { mode: 'table' } | { mode: 'remove' };
 
 /** A record of the read model with its actions; a form or the remove question shows in place of its page. */
-export function ReadModelEditor({ index, page, children }: { index: SpecIndex; page: ReadModelPage; children: ReactNode }) {
+export function ReadModelEditor({ index, page, children }: { index: RecordIndex; page: ReadModelPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -188,7 +188,7 @@ export function ReadModelEditor({ index, page, children }: { index: SpecIndex; p
   }
   if (mode.mode === 'add') return <div className="spec-body"><AddForm index={index} domain={domain} kind={mode.kind} parent={id} onDone={back} /></div>;
   // The table that stores the read model is the Table aggregate's, added through its own Add form.
-  const AddTable = kind === 'read_model' ? adderOf(index.workspace.schema, 'table') : undefined;
+  const AddTable = kind === 'read_model' ? adderOf(index.meta, 'table') : undefined;
   if (mode.mode === 'table' && AddTable) return <div className="spec-body"><AddTable index={index} parent={id} onDone={back} /></div>;
   const stored = [...index.byId.values()].some((r) => r.kind === 'table' && r.parent === id);
   return (
@@ -210,7 +210,7 @@ export function ReadModelEditor({ index, page, children }: { index: SpecIndex; p
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -227,7 +227,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a kind under the record, its ID the next free one (or the one it takes), sent as that kind's Add. */
-function AddForm({ index, domain, kind, parent, onDone }: { index: SpecIndex; domain: string; kind: Inside; parent: string; onDone: () => void }) {
+function AddForm({ index, domain, kind, parent, onDone }: { index: RecordIndex; domain: string; kind: Inside; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextReadModelId(kind, parent, index);
@@ -252,7 +252,7 @@ function AddForm({ index, domain, kind, parent, onDone }: { index: SpecIndex; do
 }
 
 /** Add a read model to a domain (from the domain's page): the aggregate's own Add, its ID the next free one. */
-export function AddReadModelForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddReadModelForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextReadModelId('read_model', parent, index);

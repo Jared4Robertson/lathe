@@ -2,7 +2,7 @@ import { countOf } from '../plural';
 import { Dialog } from '../shell/commands';
 import { Card, CardGrid } from '../shell/Card';
 import { SpaceMark, useSpaces } from '../shell/spaces';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { addressOf } from './address';
 
 // The products picker (LA-V97) at `/`, the app's one page of its own: a centered card over the stage
@@ -12,7 +12,7 @@ import { addressOf } from './address';
 // like quick find (shell/commands.tsx): Escape or a click on the dimmed stage goes back to the
 // product behind it, when there is one.
 
-export function ProductsPicker({ index, onClose }: { index: SpecIndex; onClose: (() => void) | null }) {
+export function ProductsPicker({ index, onClose }: { index: RecordIndex; onClose: (() => void) | null }) {
   const spaces = useSpaces();
   return (
     <Dialog label="Products" className="products-picker" backdropClassName="products-picker-backdrop" onClose={onClose ?? (() => {})}>

@@ -1,5 +1,5 @@
+import type { ServedData } from '../read-view';
 import type { PatternRuleStanding } from '../../../lathe/src/types';
-import type { SpecData } from '../../../lathe/src/server/contract';
 import { fixture } from './load';
 import { gap, obligation, workspace } from './workspace';
 
@@ -10,7 +10,7 @@ import { gap, obligation, workspace } from './workspace';
 // - R03 applies when `who` is clerk; DM-SHOP marks `who` not applicable, so R03 is waived there.
 // Its hand-written standings and those of each test's variant are held to the engine's (fixtures/engine.ts).
 
-export function patternWorkspace(): SpecData {
+export function patternWorkspace(): ServedData {
   const base = workspace();
   const coverage = base.coverage.map((c) => (c.domain === 'DM-SHOP'
     ? {
@@ -31,7 +31,7 @@ export function patternWorkspace(): SpecData {
 }
 
 /** Sets the standings of the pattern rules in a domain, as a test's variant of the workspace has them (rule IDs after DM-PAT-AUDIT-). */
-export function withStandings(data: SpecData, domain: string, standings: Record<string, PatternRuleStanding>): SpecData {
+export function withStandings(data: ServedData, domain: string, standings: Record<string, PatternRuleStanding>): ServedData {
   const coverage = data.coverage.find((c) => c.domain === domain);
   if (!coverage) throw new Error(`No coverage of ${domain}.`);
   coverage.pattern_rules = Object.fromEntries(Object.entries(standings).map(([rule, standing]) => [`DM-PAT-AUDIT-${rule}`, standing]));

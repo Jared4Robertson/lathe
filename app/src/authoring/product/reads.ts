@@ -11,5 +11,9 @@ export const useProduct = (id: string, version: unknown): Read<ProductPage> => u
 /** Every product, as the nav's space rail lists it. */
 export const useProducts = (version: unknown): Read<ProductSummary[]> => useRead<ProductSummary[]>('/api/product/list-products', {}, version);
 
+/** The product's interfaces, each with its kind (list-interfaces), as the pages that name an interface show it. */
+export const useInterfaces = (product: string, version: unknown): Read<{ id: string; title: string; kind: string }[]> =>
+  useRead<{ id: string; title: string; kind: string }[]>('/api/product/list-interfaces', { product_id: product }, version);
+
 /** The next free ID for an open question or an interface under its parent, as the Add form suggests it. */
 export const useNextProductId = (kind: 'question' | 'interface', parent: string, version: unknown): Read<string> => useRead<string>('/api/product/next-id', { kind, parent }, version);

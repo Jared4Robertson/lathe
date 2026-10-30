@@ -1,7 +1,7 @@
+import type { ServedData } from './read-view';
 import { act, fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { BaselineAnswer } from '../../lathe/src/server/contract';
-import type { SpecData } from '../../lathe/src/server/contract';
 import { SETTINGS_KEY } from '../src/exploring/session-settings/repository';
 import { setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
@@ -35,21 +35,21 @@ function baselines(asked: string[] = []): NonNullable<Served['baseline']> {
 }
 
 /** The fixture with the command renamed and a new one beside it: what an Agent writes. */
-function agentEdits(data: SpecData = workspace()): SpecData {
+function agentEdits(data: ServedData = workspace()): ServedData {
   const next = setRow(data, 'command', 'DM-SHOP-CMD01', { title: 'Put item in basket' });
   next.sources[0].tables.command.push({ id: 'DM-SHOP-CMD09', title: 'Empty basket', entity_id: 'DM-SHOP-EN01' });
   return next;
 }
 
 /** The data without one command. */
-function withoutCommand(data: SpecData, id: string): SpecData {
+function withoutCommand(data: ServedData, id: string): ServedData {
   const commands = data.sources[0].tables.command;
   commands.splice(commands.findIndex((r) => r.id === id), 1);
   return data;
 }
 
 /** The server reports a change and serves the new data; the page reloads it. */
-async function land(data: SpecData, asked?: string[]) {
+async function land(data: ServedData, asked?: string[]) {
   serve({ data, baseline: baselines(asked) });
   await act(async () => { for (const callback of listeners.get('spec:changed') ?? []) callback(); });
 }

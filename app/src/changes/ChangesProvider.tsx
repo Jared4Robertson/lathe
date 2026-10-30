@@ -4,7 +4,7 @@ import { turnChangesLensOnOrOff } from '../exploring/session-settings/commands/t
 import { chooseChangesBaseline } from '../exploring/session-settings/commands/choose-changes-baseline';
 import { turnFollowOnOrOff } from '../exploring/session-settings/commands/turn-follow-on-or-off';
 import { markProductLookedAt } from '../exploring/session-settings/commands/mark-product-looked-at';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { changesSince, ChangesContext, createLiveStore, loadBaseline, markNow, reloadChanges, type Baseline, type ChangesApi, type Since } from './changes';
 
 /** How long the note saying why Follow went off stays, in ms. */
@@ -14,12 +14,12 @@ const FOLLOW_NOTE_MS = 6000;
  * The changes of the product in view (changes.ts), for every part of the app: the stages' marks and lens, the wiki
  * card's Changes section and the Changes panel. `index` is the whole workspace's, as loaded; `product` the space's.
  */
-export function ChangesProvider({ index, product, children }: { index: SpecIndex | null; product: string | null; children: ReactNode }) {
+export function ChangesProvider({ index, product, children }: { index: RecordIndex | null; product: string | null; children: ReactNode }) {
   const { changes: settings } = useSessionSettings();
   const [live] = useState(createLiveStore);
 
   // The live changes: each reload against the data before it.
-  const before = useRef<SpecIndex | null>(null);
+  const before = useRef<RecordIndex | null>(null);
   useEffect(() => {
     const was = before.current;
     before.current = index;

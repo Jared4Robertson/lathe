@@ -6,7 +6,7 @@ import { Markdown } from '../../specs/Markdown';
 import { Prose } from '../../specs/mentions';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { EntryPointEditor } from './EntryPointEditor';
 import { useEntryPoint } from './reads';
 
@@ -17,7 +17,7 @@ import { useEntryPoint } from './reads';
 // the Record page's (RecordFrame).
 
 /** The entry point's file and packages. */
-function Content({ index, page }: { index: SpecIndex; page: EntryPoint }) {
+function Content({ index, page }: { index: RecordIndex; page: EntryPoint }) {
   const { entryPoint } = page;
   return (
     <>
@@ -33,7 +33,7 @@ function Content({ index, page }: { index: SpecIndex; page: EntryPoint }) {
 }
 
 /** The entry point's summary in the wiki card: what it does and a few key facts. */
-function Summary({ index, page }: { index: SpecIndex; page: EntryPoint }) {
+function Summary({ index, page }: { index: RecordIndex; page: EntryPoint }) {
   const facts: { label: string; value: ReactNode }[] = [
     { label: 'Domain', value: <RecordLink index={index} id={page.entryPoint.domain_id} /> },
     ...(page.entryPoint.file ? [{ label: 'File', value: <code>{page.entryPoint.file}</code> }] : []),

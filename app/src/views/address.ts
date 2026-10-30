@@ -1,4 +1,4 @@
-import type { SpecRoute } from '../specs/data';
+import { type SpecRoute } from './spec-route';
 
 // One address per thing, whichever stage shows it (LA-PAT-APP-CODE-R19). A record is at its bare
 // ID (`/LA-TRC-UC09`), a product and a domain included, whose one page is their overview (`/LA`,

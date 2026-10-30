@@ -4,7 +4,7 @@ import type { ProductTraces } from '../../../lathe/src/traceability/trace/read-m
 import { Button } from '../components/Button';
 import { mapRootOf } from '../graph/map';
 import { groupName, isGroup } from '../graph/model';
-import { kindLabel, type SpecIndex } from '../specs/data';
+import { kindLabel, type RecordIndex } from '../exploring/record-summaries/record-index';
 import { TRACE_COLUMN_LABELS, TRACE_COLUMNS, traceChain, traceShape, untracedUnder, type GapColumn, type TraceColumn, type TraceFile, type TraceGroup, type TraceRow } from './chain';
 import { plural } from '../plural';
 import { Card, CardGrid } from '../shell/Card';
@@ -56,7 +56,7 @@ const TraceCanvas = lazy(() => import('./TraceCanvas').then((m) => ({ default: m
 const TraceColumns = lazy(() => import('./TraceColumns').then((m) => ({ default: m.TraceColumns })));
 
 export interface TraceViewProps {
-  index: SpecIndex;
+  index: RecordIndex;
   focus: string;
   onNavigate: (id: string) => void;
   hrefFor: (id: string) => string;
@@ -89,7 +89,7 @@ const itemsOf = (row: TraceRow, column: TraceColumn): number => (column === 'fil
 /** What a matrix shows, from the focus's shape: its groups, its label, its Untraced section's owner, its caption and its note. */
 interface MatrixSpec { groups: TraceGroup[]; label: string; untracedOf?: string; caption?: string; lead?: ReactNode; /** What the obligations are counted as, after their count: " under this outcome". */ under?: string }
 
-function matrixSpec(index: SpecIndex, traces: ProductTraces, focus: string): MatrixSpec | null {
+function matrixSpec(index: RecordIndex, traces: ProductTraces, focus: string): MatrixSpec | null {
   const shape = traceShape(index, traces, focus);
   const nameOf = (id: string) => index.byId.get(id)?.title ?? (isGroup(index, id) ? groupName(index, id) : id);
   const name = nameOf(focus);

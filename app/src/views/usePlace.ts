@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { entryState, navigate, noteInEntry } from '../router';
 import { desktopBridge } from '../shell/desktopChrome';
 import { isNumber, useAggregate } from '../shell/prefs';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import { pathOf, stageFromSearch, type FocusRoute, type StageName } from './address';
 import type { PlaceView } from './place';
 import { updateView } from '../exploring/tab-set/commands/update-view';
@@ -98,7 +98,7 @@ export function useNewPlaceOpener(openNew: PlaceApi['openNew']) {
 // ---------- The place ----------
 
 /** The focus page's place: the active tab's in the desktop app, the browser tab's on the web. */
-export function usePlace(index: SpecIndex, route: FocusRoute, search: string): PlaceApi {
+export function usePlace(index: RecordIndex, route: FocusRoute, search: string): PlaceApi {
   // Whether the app runs in the desktop shell does not change while it runs.
   const [desktop] = useState(() => desktopBridge() !== null);
   return desktop ? usePageTabs(index, route, search) : useBrowserPlace(route, search);

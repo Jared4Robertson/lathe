@@ -3,7 +3,7 @@ import type { AggregatePageProps } from '../../record/pages';
 import { Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { ViewEditor } from './ViewEditor';
 import { useView } from './reads';
 
@@ -15,7 +15,7 @@ import { useView } from './reads';
 // Record page's (RecordFrame).
 
 /** A cell of record links, or a hint when there are none. */
-function Ids({ index, ids }: { index: SpecIndex; ids: readonly string[] }) {
+function Ids({ index, ids }: { index: RecordIndex; ids: readonly string[] }) {
   return ids.length === 0 ? <span className="hint">Nothing yet</span> : (
     <span className="trace-cell">{ids.map((id) => <RecordLink key={id} index={index} id={id} showTitle={false} />)}</span>
   );
@@ -35,7 +35,7 @@ function groupsOf(requirements: readonly ViewRequirementOnPage[]): { heading: st
 }
 
 /** The view's requirements in a table, one row each with the tests that prove it. */
-function Requirements({ index, page }: { index: SpecIndex; page: View }) {
+function Requirements({ index, page }: { index: RecordIndex; page: View }) {
   return (
     <Section title="View requirements" count={page.requirements.length}>
       {page.requirements.length === 0 ? <p className="hint">No requirements yet.</p> : (
@@ -65,7 +65,7 @@ const requirementOf = (page: View, id: string) => page.requirements.find((r) => 
 const testOf = (page: View, id: string) => page.requirements.flatMap((r) => r.tests).find((t) => t.test.id === id)!;
 
 /** What one record of the view shows on its page, by the kind it is in the view. */
-function Content({ index, page }: { index: SpecIndex; page: View }) {
+function Content({ index, page }: { index: RecordIndex; page: View }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'view': {
@@ -88,7 +88,7 @@ function Content({ index, page }: { index: SpecIndex; page: View }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: View): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: View): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   switch (kind) {

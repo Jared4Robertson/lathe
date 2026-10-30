@@ -6,7 +6,7 @@ import { Markdown } from '../../specs/Markdown';
 import { Prose } from '../../specs/mentions';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { BusinessOutcomeEditor } from './BusinessOutcomeEditor';
 import { useBusinessOutcome } from './reads';
 
@@ -17,14 +17,14 @@ import { useBusinessOutcome } from './reads';
 // and what serves it, problems, facts and links) is the Record page's (RecordFrame).
 
 /** A text of the outcome, read as Markdown with the IDs it names as links, under its heading or as the page's lead. */
-function Text({ index, id, source, title, field }: { index: SpecIndex; id: string; source: string | undefined; title?: string; field: string }) {
+function Text({ index, id, source, title, field }: { index: RecordIndex; id: string; source: string | undefined; title?: string; field: string }) {
   if (!source?.trim()) return null;
   const prose = <Prose index={index} source={source} self={id} />;
   return title ? <Section title={title} className={`record-${field}`}>{prose}</Section> : <div className="record-lead" data-field={field}>{prose}</div>;
 }
 
 /** The outcome's own texts, in their order. */
-function Content({ index, page }: { index: SpecIndex; page: Outcome }) {
+function Content({ index, page }: { index: RecordIndex; page: Outcome }) {
   const { outcome } = page;
   return (
     <>
@@ -38,7 +38,7 @@ function Content({ index, page }: { index: SpecIndex; page: Outcome }) {
 }
 
 /** The outcome's summary in the wiki card: its statement and a few key facts. */
-function Summary({ index, page }: { index: SpecIndex; page: Outcome }) {
+function Summary({ index, page }: { index: RecordIndex; page: Outcome }) {
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   const facts: { label: string; value: ReactNode }[] = [
     { label: 'Product', value: <RecordLink index={index} id={page.outcome.product_id} /> },

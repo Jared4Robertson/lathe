@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { ENTRY_POINT_COMMANDS } from '../../lathe/src/authoring/entry-point/commands/index';
 import type { EntryPointCommands } from '../src/authoring/entry-point/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
@@ -15,7 +16,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.getByRole('toolbar', { name: `Change ${id}` });
 
 /** The demo shop with an entry point of its Shopping domain that uses one package. */
-function withEntryPoint(): SpecData {
+function withEntryPoint(): ServedData {
   const w = workspace();
   addRows(w, 'entry_point', { id: 'DM-SHOP-ENTRY01', title: 'server.ts', domain_id: 'DM-SHOP', file: 'src/server.ts', description: 'Opens the store and serves the shop.' });
   addRows(w, 'package_use', { record_id: 'DM-SHOP-ENTRY01', package: 'express' });

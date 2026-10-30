@@ -3,7 +3,7 @@ import type { PatternPage as Pattern, PatternRuleOnPage } from '../../../../lath
 import type { PatternRuleRow } from '../../../../lathe/src/platform/data/tables';
 import type { AggregatePageProps } from '../../record/pages';
 import { Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink, Section } from '../../specs/parts';
 import { appliesWhenText, type AppliesWhen } from '../../specs/patterns';
 import { RecordFrame } from '../../specs/RecordContent';
@@ -53,7 +53,7 @@ function groupsOf(rules: readonly PatternRuleOnPage[]): { heading: string | null
 }
 
 /** The settings table: each setting, what it means, and the rules that depend on it. */
-function Settings({ index, page }: { index: SpecIndex; page: Pattern }) {
+function Settings({ index, page }: { index: RecordIndex; page: Pattern }) {
   return (
     <Section title="Settings" count={page.settings.length}>
       {page.settings.length === 0 ? <p className="hint">This pattern has no settings.</p> : (
@@ -78,7 +78,7 @@ function Settings({ index, page }: { index: SpecIndex; page: Pattern }) {
 }
 
 /** The rules under their group headings, each with its tags. */
-function Rules({ index, page }: { index: SpecIndex; page: Pattern }) {
+function Rules({ index, page }: { index: RecordIndex; page: Pattern }) {
   return (
     <Section title="Rules" count={page.rules.length}>
       {page.rules.length === 0 ? <p className="hint">No rules yet.</p> : groupsOf(page.rules).map((g) => {
@@ -107,7 +107,7 @@ function ruleFacts(rule: PatternRuleRow): Fact[] {
 }
 
 /** What one record of the pattern shows on its page, by the kind it is in the pattern. */
-function Content({ index, page }: { index: SpecIndex; page: Pattern }) {
+function Content({ index, page }: { index: RecordIndex; page: Pattern }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'pattern':
@@ -140,7 +140,7 @@ function Content({ index, page }: { index: SpecIndex; page: Pattern }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: Pattern): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: Pattern): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const count = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
   switch (kind) {

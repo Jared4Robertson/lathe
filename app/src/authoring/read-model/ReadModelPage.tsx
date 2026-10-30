@@ -1,10 +1,10 @@
 import type { CodeOnPage, ReadModelPage as ReadModel } from '../../../../lathe/src/authoring/read-model/read-model';
 import type { AggregatePageProps } from '../../record/pages';
 import { RowsSection, Summary, Text, readState, type Fact } from '../../record/page-parts';
-import type { Row, SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
-import { FieldsTable } from '../../specs/RecordText';
+import { FieldsTable } from '../../specs/FieldsTable';
 import { ReadModelEditor } from './ReadModelEditor';
 import { useReadModel } from './reads';
 
@@ -17,7 +17,7 @@ import { useReadModel } from './reads';
 // links) is the Record page's (RecordFrame).
 
 /** The read model's queries in a table, one row each with its handler. */
-function Queries({ index, page }: { index: SpecIndex; page: ReadModel }) {
+function Queries({ index, page }: { index: RecordIndex; page: ReadModel }) {
   return (
     <Section title="Queries" count={page.queries.length}>
       {page.queries.length === 0 ? <p className="hint">No queries yet.</p> : (
@@ -41,7 +41,7 @@ function Queries({ index, page }: { index: SpecIndex; page: ReadModel }) {
 }
 
 /** A piece of code of the read model (its projection, its reader or a query handler): its description; what it meets and the packages it uses are among the links and facts. */
-function Code({ index, id, code }: { index: SpecIndex; id: string; code: CodeOnPage<{ description: string }> }) {
+function Code({ index, id, code }: { index: RecordIndex; id: string; code: CodeOnPage<{ description: string }> }) {
   return <Text index={index} id={id} source={code.code.description} field="description" />;
 }
 
@@ -49,7 +49,7 @@ const queryOf = (page: ReadModel, id: string) => page.queries.find((q) => q.quer
 const handlerOf = (page: ReadModel, id: string) => page.queries.find((q) => q.handler?.code.id === id)!.handler!;
 
 /** What one record of the read model shows on its page, by the kind it is in the read model. */
-function Content({ index, page }: { index: SpecIndex; page: ReadModel }) {
+function Content({ index, page }: { index: RecordIndex; page: ReadModel }) {
   const { id, kind } = page.record;
   switch (kind) {
     case 'read_model':
@@ -57,7 +57,7 @@ function Content({ index, page }: { index: SpecIndex; page: ReadModel }) {
         <>
           <Text index={index} id={id} source={page.readModel.description} field="description" />
           {page.fields.length === 0 ? <Section title="Fields" count={0}><p className="hint">No fields yet.</p></Section>
-            : <FieldsTable index={index} rows={page.fields as unknown as Row[]} owner={id} />}
+            : <FieldsTable index={index} rows={page.fields} owner={id} />}
           <Queries index={index} page={page} />
           <RowsSection index={index} title="Projection" ids={page.projection ? [page.projection.code.id] : []} label={`The projection of ${id}`} empty="Its projection is not written yet." />
           <RowsSection index={index} title="Reader" ids={page.reader ? [page.reader.code.id] : []} label={`The reader of ${id}`} empty="Its reader is not written yet." />
@@ -82,7 +82,7 @@ function Content({ index, page }: { index: SpecIndex; page: ReadModel }) {
 }
 
 /** The record's lead and key facts in the wiki card. */
-function summaryOf(index: SpecIndex, page: ReadModel): { lead?: string; facts: Fact[] } {
+function summaryOf(index: RecordIndex, page: ReadModel): { lead?: string; facts: Fact[] } {
   const { id, kind } = page.record;
   const readModel = <RecordLink index={index} id={page.readModel.id} />;
   const code = (c: CodeOnPage<{ description: string; file?: string }>, label: string, parent: string): { lead?: string; facts: Fact[] } => ({

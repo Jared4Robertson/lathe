@@ -1,4 +1,4 @@
-import { textOf, byIdOrder, partsOf, provedByOf, type Row, type SpecIndex, type SpecRecord } from './data';
+import { byIdOrder, type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 
 // Patterns and their rules, as the pages show them (lathe/REFERENCE.md). A domain
 // follows a pattern when the domain itself or any of its use cases `follows` it. Whether it owes each of
@@ -13,7 +13,7 @@ export interface SettingValue {
 }
 
 /** What a follower (a use case or a domain) gives a setting of the pattern, or undefined when it gives nothing. */
-export function settingValue(index: SpecIndex, followerId: string, patternId: string, setting: string): SettingValue | undefined {
+export function settingValue(index: RecordIndex, followerId: string, patternId: string, setting: string): SettingValue | undefined {
   const row = partsOf(index, followerId, 'setting_value').find((r) => r.pattern_id === patternId && r.setting === setting);
   return row ? settingOfRow(row) : undefined;
 }
@@ -38,7 +38,7 @@ export interface AppliesWhen {
 }
 
 /** A rule's applies-when condition, from its applies_when columns, or null when it has none. */
-export function appliesWhenOf(rule: SpecRecord): AppliesWhen | null {
+export function appliesWhenOf(rule: RecordSummary): AppliesWhen | null {
   const setting = textOf(rule.row, 'applies_when_setting');
   if (!setting) return null;
   return { setting, not: rule.row.applies_when_negated === true, value: textOf(rule.row, 'applies_when_value') };
@@ -48,15 +48,15 @@ export function appliesWhenOf(rule: SpecRecord): AppliesWhen | null {
 export const appliesWhenText = (c: AppliesWhen) => `${c.setting} is ${c.not ? 'not ' : ''}${c.value}`;
 
 /** A pattern's settings, from its pattern_setting rows, in order. */
-export const settingsOf = (index: SpecIndex, pattern: SpecRecord) => partsOf(index, pattern.id, 'pattern_setting').map((r) => textOf(r, 'name'));
+export const settingsOf = (index: RecordIndex, pattern: RecordSummary) => partsOf(index, pattern.id, 'pattern_setting').map((r) => textOf(r, 'name'));
 
 /** A pattern's rules, in ID order. */
-export const rulesOf = (index: SpecIndex, patternId: string) =>
+export const rulesOf = (index: RecordIndex, patternId: string) =>
   (index.children.get(patternId) ?? []).filter((r) => r.kind === 'pattern_rule');
 
 /** How a domain follows a pattern: through these use cases, and (`byDomain`) itself. */
 export interface Followed {
-  useCases: readonly SpecRecord[];
+  useCases: readonly RecordSummary[];
   byDomain: boolean;
 }
 
@@ -64,8 +64,8 @@ export interface Followed {
  * The patterns a domain follows, in pattern ID order: those the domain itself follows (FORMAT
  * section 9; `byDomain`, so every rule applies) and those its use cases follow, each with them.
  */
-export function patternsFollowedBy(index: SpecIndex, domainId: string): { pattern: SpecRecord; useCases: SpecRecord[]; byDomain: boolean }[] {
-  const byPattern = new Map<string, SpecRecord[]>();
+export function patternsFollowedBy(index: RecordIndex, domainId: string): { pattern: RecordSummary; useCases: RecordSummary[]; byDomain: boolean }[] {
+  const byPattern = new Map<string, RecordSummary[]>();
   const ownFollows = new Set(
     (index.outgoing.get(domainId) ?? []).filter((l) => l.relation === 'follows' && index.byId.get(l.target)?.kind === 'pattern').map((l) => l.target),
   );
@@ -102,7 +102,7 @@ export type RuleStatus =
  * Whether a rule applies in a domain that follows its pattern as `followed` says, and if so what in that
  * domain proves it.
  */
-export function ruleStatus(index: SpecIndex, rule: SpecRecord, domainId: string, followed: Followed): RuleStatus {
+export function ruleStatus(index: RecordIndex, rule: RecordSummary, domainId: string, followed: Followed): RuleStatus {
   const { useCases } = followed;
   const pattern = rule.parent ?? '';
   // Whether the rule applies is the engine's answer (Coverage.pattern_rules); it lists every rule of every pattern a

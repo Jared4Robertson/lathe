@@ -8,7 +8,7 @@ import type { Choice } from '../../edit/fields';
 import { useWriter, type Writer } from '../../edit/write';
 import { navigate } from '../../router';
 import { useAnnounce } from '../../shell/commands';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { addressOf } from '../../views/address';
 import { sendPattern, type PatternCommands, type PatternRoute } from './commands';
 import { useNextPatternId } from './reads';
@@ -28,15 +28,15 @@ const LABEL: Record<PatternKind, string> = { pattern: 'pattern', pattern_rule: '
 const ADDED_UNDER: Record<PatternKind, Exclude<PatternKind, 'pattern'> | null> = { pattern: 'pattern_rule', pattern_rule: 'pattern_rule_test', pattern_rule_test: null };
 
 /** The test data sets of the product, as what a test may start from. */
-const dataSets = (index: SpecIndex, product: string): Choice[] =>
+const dataSets = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === 'test_data_set' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The domains of the product, as where a rule test proves its rule. */
-const domains = (index: SpecIndex, product: string): Choice[] =>
+const domains = (index: RecordIndex, product: string): Choice[] =>
   [...index.byId.values()].filter((r) => r.kind === 'domain' && r.product === product).map((r) => ({ id: r.id, title: r.title }));
 
 /** The fields each kind's Add and Change take (Change leaves out the ID), in their input's order. */
-function fieldsOf(index: SpecIndex, product: string, settings: readonly SettingOnPage[], kind: PatternKind, adding: boolean): FieldSpec[] {
+function fieldsOf(index: RecordIndex, product: string, settings: readonly SettingOnPage[], kind: PatternKind, adding: boolean): FieldSpec[] {
   const id = (table: string): FieldSpec[] => (adding ? [{ field: 'id', column: 'id', table }] : []);
   switch (kind) {
     case 'pattern':
@@ -133,7 +133,7 @@ function parentOf(page: PatternPage, kind: PatternKind, id: string): string {
 type Mode = { mode: 'view' } | { mode: 'change' } | { mode: 'add'; kind: Exclude<PatternKind, 'pattern'> } | { mode: 'remove' };
 
 /** A record of the pattern with its actions; a form or the remove question shows in place of its page. */
-export function PatternEditor({ index, page, children }: { index: SpecIndex; page: PatternPage; children: ReactNode }) {
+export function PatternEditor({ index, page, children }: { index: RecordIndex; page: PatternPage; children: ReactNode }) {
   const writer = useWriter();
   const announce = useAnnounce();
   const [mode, setMode] = useState<Mode>({ mode: 'view' });
@@ -178,7 +178,7 @@ export function PatternEditor({ index, page, children }: { index: SpecIndex; pag
 
 /** Edit: the record's Change, with only what changed. */
 function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
-  index: SpecIndex;
+  index: RecordIndex;
   specs: FieldSpec[];
   current: Record<string, unknown>;
   eyebrow: string;
@@ -195,7 +195,7 @@ function ChangeForm({ index, specs, current, eyebrow, id, submit, onDone }: {
 }
 
 /** Add: an empty form for a rule or rule test under the record, its ID the next free one, sent as that kind's Add. */
-function AddForm({ index, product, settings, kind, parent, onDone }: { index: SpecIndex; product: string; settings: readonly SettingOnPage[]; kind: Exclude<PatternKind, 'pattern'>; parent: string; onDone: () => void }) {
+function AddForm({ index, product, settings, kind, parent, onDone }: { index: RecordIndex; product: string; settings: readonly SettingOnPage[]; kind: Exclude<PatternKind, 'pattern'>; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const next = useNextPatternId(kind, parent, index);
@@ -221,7 +221,7 @@ function AddForm({ index, product, settings, kind, parent, onDone }: { index: Sp
  * Add a pattern to a product (from the product's page): the aggregate's own Add. A pattern's ID is its product's,
  * PAT and a name chosen for it, so the form starts it with the product's prefix and leaves the name to the person.
  */
-export function AddPatternForm({ index, parent, onDone }: { index: SpecIndex; parent: string; onDone: () => void }) {
+export function AddPatternForm({ index, parent, onDone }: { index: RecordIndex; parent: string; onDone: () => void }) {
   const writer = useWriter()!;
   const announce = useAnnounce();
   const [draft, setDraft] = useState<Draft>(() => ({ ...emptyDraft(), text: { id: `${parent}-PAT-` } }));

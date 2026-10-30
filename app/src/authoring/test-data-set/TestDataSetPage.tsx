@@ -1,7 +1,7 @@
 import type { TestDataSetPage as DataSet } from '../../../../lathe/src/authoring/test-data-set/read-model';
 import type { AggregatePageProps } from '../../record/pages';
 import { Summary, Text, readState } from '../../record/page-parts';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
 import { TestDataSetEditor } from './TestDataSetEditor';
@@ -14,7 +14,7 @@ import { useTestDataSet } from './reads';
 // its Traceability, which with the problems, facts and links is the Record page's (RecordFrame).
 
 /** The data set's own texts, in their order. */
-function Content({ index, page }: { index: SpecIndex; page: DataSet }) {
+function Content({ index, page }: { index: RecordIndex; page: DataSet }) {
   const set = page.testDataSet;
   return (
     <>

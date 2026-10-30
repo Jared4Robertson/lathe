@@ -3,7 +3,7 @@ import type { PatternPage } from '../../../../lathe/src/authoring/pattern/read-m
 import type { FollowingDomain, FollowingPage, SettingLine } from '../../../../lathe/src/traceability/pattern-following/read-model';
 import { Refusal, problemText } from '../../edit/fields';
 import type { Read } from '../../record/read';
-import type { SpecIndex } from '../../specs/data';
+import { type RecordIndex } from '../../exploring/record-summaries/record-index';
 import { RecordLink, Section, SpecLink } from '../../specs/parts';
 import { RuleMarks } from '../../specs/PatternParts';
 import { ruleStatus, type Followed } from '../../specs/patterns';
@@ -19,7 +19,7 @@ import { useFollowers } from './reads';
 // read from the workspace's index (ruleStatus) until that read is its own.
 
 /** How a domain follows the pattern, as the rule standings read it: its following use cases and whether it does itself. */
-function followedOf(index: SpecIndex, d: FollowingDomain): Followed {
+function followedOf(index: RecordIndex, d: FollowingDomain): Followed {
   return { useCases: d.useCases.flatMap((f) => index.byId.get(f.follower) ?? []), byDomain: d.itself !== null };
 }
 
@@ -41,7 +41,7 @@ function SettingCell({ name, given }: { name: string; given: SettingLine | undef
 }
 
 /** One domain that follows the pattern: who follows it there with the values they give, and its standing per rule. */
-function FollowingDomainSection({ index, page, d, setMode }: { index: SpecIndex; page: PatternPage; d: FollowingDomain; setMode: (mode: FollowingMode) => void }) {
+function FollowingDomainSection({ index, page, d, setMode }: { index: RecordIndex; page: PatternPage; d: FollowingDomain; setMode: (mode: FollowingMode) => void }) {
   const { domain } = d;
   const patternId = page.pattern.id;
   const record = index.byId.get(domain);
@@ -93,7 +93,7 @@ function FollowingDomainSection({ index, page, d, setMode }: { index: SpecIndex;
 }
 
 /** Each domain that follows the pattern, with its followers' values and its standing per rule; and Follow. */
-export function FollowedBy({ index, page }: { index: SpecIndex; page: PatternPage }) {
+export function FollowedBy({ index, page }: { index: RecordIndex; page: PatternPage }) {
   const patternId = page.pattern.id;
   const read = useFollowers(patternId, index);
   const [mode, setMode] = useState<FollowingMode>({ mode: 'view' });
@@ -122,7 +122,7 @@ export function FollowedBy({ index, page }: { index: SpecIndex; page: PatternPag
 }
 
 /** The domains that owe a rule, each with its standing for it. */
-export function OwedBy({ index, page, id }: { index: SpecIndex; page: PatternPage; id: string }) {
+export function OwedBy({ index, page, id }: { index: RecordIndex; page: PatternPage; id: string }) {
   const read = useFollowers(page.pattern.id, index);
   const shown = unread(read, page.pattern.id);
   const domains = read.state === 'read' ? read.answer.domains : [];
@@ -149,7 +149,7 @@ export function OwedBy({ index, page, id }: { index: SpecIndex; page: PatternPag
 }
 
 /** How many domains follow the pattern, for its summary in the wiki card: from the same read, blank until it answers. */
-export function FollowedInCount({ index, pattern }: { index: SpecIndex; pattern: string }) {
+export function FollowedInCount({ index, pattern }: { index: RecordIndex; pattern: string }) {
   const read = useFollowers(pattern, index);
   if (read.state !== 'read' || read.answer.pattern !== pattern) return null;
   const n = read.answer.domains.length;

@@ -3,7 +3,7 @@ import { LongList } from '../components/LongList';
 import { useProblems } from '../checking/problems/reads';
 import { checkPagePath } from '../format/reference';
 import { readState } from '../record/page-parts';
-import { exceptionOwner, type RecordedException, type SpecIndex, type SpecRecord } from '../specs/data';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { idText, ProblemList, RecordLink, Section } from '../specs/parts';
 import { ToolPanelFrame } from './ToolPanel';
 
@@ -18,8 +18,8 @@ import { ToolPanelFrame } from './ToolPanel';
 
 export interface ChecksPanelProps {
   /** The current space's index, so no other product's problems are in it. */
-  index: SpecIndex;
-  product: SpecRecord;
+  index: RecordIndex;
+  product: RecordSummary;
   /** The record or group in focus on the stage, whose problems' rows are marked. */
   focus: string | null;
   sheet: boolean;
@@ -71,7 +71,7 @@ export function ChecksPanel({ index, product, focus, sheet, onClose }: ChecksPan
  * aggregate and the reason. They are deliberate deviations, not problems: listed in a section of
  * their own, never counted or marked as warnings.
  */
-function RecordedExceptions({ index, exceptions }: { index: SpecIndex; exceptions: RecordedException[] }) {
+function RecordedExceptions({ index, exceptions }: { index: RecordIndex; exceptions: RecordedException[] }) {
   const items = exceptions.map((e) => ({ e, owner: exceptionOwner(e), key: `${exceptionOwner(e)} ${e.aggregate}` }));
   return (
     <Section level={3} title="Recorded exceptions" count={exceptions.length}>

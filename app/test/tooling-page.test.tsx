@@ -1,9 +1,10 @@
+import type { ServedData } from './read-view';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import { TOOLING_COMMANDS } from '../../lathe/src/authoring/tooling/commands/index';
 import type { ToolingCommands } from '../src/authoring/tooling/commands';
-import type { SpecData, WriteAnswer } from '../../lathe/src/server/contract';
+import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { addRows, setRow } from './fixtures/load';
 import { workspace } from './fixtures/workspace';
 import { main, openApp } from './helpers';
@@ -15,7 +16,7 @@ const ok: WriteAnswer = { ok: true, tables: [], files: [], changes: [] };
 const toolbar = (id: string) => screen.getByRole('toolbar', { name: `Change ${id}` });
 
 /** The demo shop with a tooling record of its Shopping domain that uses one package. */
-function withTooling(): SpecData {
+function withTooling(): ServedData {
   const w = workspace();
   addRows(w, 'tooling', { id: 'DM-SHOP-TOOL01', title: 'vitest.config.ts', domain_id: 'DM-SHOP', file: 'vitest.config.ts' });
   addRows(w, 'package_use', { record_id: 'DM-SHOP-TOOL01', package: 'vitest' });

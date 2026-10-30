@@ -1,6 +1,6 @@
-import type { SpecIndex, SpecRecord } from '../specs/data';
-import { kindLabel } from '../specs/data';
-import { foldedChildren, ownerFolders, sharedKey, type Folder } from '../specs/folders';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import { kindLabel } from '../exploring/record-summaries/record-index';
+import { foldedChildren, ownerFolders, sharedKey, type Folder } from '../exploring/folder-tree/folders';
 import { plural } from '../plural';
 
 // The graph's tree is the nav's tree: a product holds its Shared folder (its own stages, what it shares),
@@ -23,7 +23,7 @@ export interface TreeGroup {
   /** How many records it shows, as the nav counts them. */
   count: number;
   /** Its records at the first record level beneath it: what its marks and its page list. */
-  members: SpecRecord[];
+  members: RecordSummary[];
   /** The nearest record above it (its domain, product or parent record). */
   owner: string;
   /**
@@ -39,21 +39,21 @@ export interface Tree {
   groups: Map<string, TreeGroup>;
 }
 
-const kindRank = (index: SpecIndex) => {
-  const ranks = new Map(index.workspace.kinds.map((k, i) => [k.kind, i]));
+const kindRank = (index: RecordIndex) => {
+  const ranks = new Map(index.meta.kindList.map((k, i) => [k.kind, i]));
   return (kind: string) => ranks.get(kind) ?? ranks.size;
 };
 
 /** The kinds of some records, in the schema's order. */
-function kindsOf(index: SpecIndex, records: readonly SpecRecord[]): string[] {
+function kindsOf(index: RecordIndex, records: readonly RecordSummary[]): string[] {
   const rank = kindRank(index);
   return [...new Set(records.map((r) => r.kind))].sort((a, b) => rank(a) - rank(b));
 }
 
-const cache = new WeakMap<SpecIndex, Tree>();
+const cache = new WeakMap<RecordIndex, Tree>();
 
 /** The whole tree of an index, built once. */
-export function treeOf(index: SpecIndex): Tree {
+export function treeOf(index: RecordIndex): Tree {
   const known = cache.get(index);
   if (known) return known;
   const tree: Tree = { parent: new Map(), children: new Map(), groups: new Map() };
@@ -68,7 +68,7 @@ export function treeOf(index: SpecIndex): Tree {
   };
   const group = (id: string, g: TreeGroup) => { if (!tree.groups.has(id)) tree.groups.set(id, g); };
 
-  const addRecord = (r: SpecRecord) => {
+  const addRecord = (r: RecordSummary) => {
     if (visited.has(r.id)) return;
     visited.add(r.id);
     const kids = foldedChildren(index, r);
@@ -138,10 +138,10 @@ export function treeOf(index: SpecIndex): Tree {
 }
 
 /** A node's parent in the tree, or null at the top (a product). */
-export const treeParent = (index: SpecIndex, id: string): string | null => treeOf(index).parent.get(id) ?? null;
+export const treeParent = (index: RecordIndex, id: string): string | null => treeOf(index).parent.get(id) ?? null;
 
 /** A node's children in the tree, in the nav's order. */
-export const treeChildren = (index: SpecIndex, id: string): readonly string[] => treeOf(index).children.get(id) ?? [];
+export const treeChildren = (index: RecordIndex, id: string): readonly string[] => treeOf(index).children.get(id) ?? [];
 
 /** The stage, folder or kind group the tree has at an ID, or undefined. */
-export const treeGroup = (index: SpecIndex, id: string): TreeGroup | undefined => treeOf(index).groups.get(id);
+export const treeGroup = (index: RecordIndex, id: string): TreeGroup | undefined => treeOf(index).groups.get(id);

@@ -1,6 +1,7 @@
 import { plural } from '../plural';
-import type { SpecIndex, SpecRecord, Stage } from '../specs/data';
-import { byIdOrder, gapsOf, kindLabel } from '../specs/data';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
+import type { Stage } from '../../../lathe/src/platform/data/schema';
+import { byIdOrder, gapsOf, kindLabel } from '../exploring/record-summaries/record-index';
 import { treeChildren, treeGroup, treeOf, treeParent } from './tree';
 
 // Pure graph logic for the graph view: the picture the camera frames around a record or group, by
@@ -57,13 +58,13 @@ export const isFiltered = (f: Filters) => f.hiddenKinds.size > 0;
 const edgeId = (e: Omit<GraphEdge, 'id'>) => `${e.source}|${e.relation}|${e.target}`;
 
 /** A node's stage's place in the sort: groups and structural records first, then the six stages in order. */
-function stageRank(index: SpecIndex, stage: GraphNode['stage']): number {
+function stageRank(index: RecordIndex, stage: GraphNode['stage']): number {
   if (stage === GROUP_STAGE || stage === '') return 0;
-  return index.workspace.stages.findIndex((s) => s.stage === stage) + 1;
+  return index.meta.stages.findIndex((s) => s.stage === stage) + 1;
 }
 
 /** A kind's stage as the graph colors it: its stage, or '' for one outside the stages (structural). */
-export const stageOf = (index: SpecIndex, kind: string): GraphNode['stage'] => index.kinds.get(kind)?.stage ?? '';
+export const stageOf = (index: RecordIndex, kind: string): GraphNode['stage'] => index.meta.kinds.get(kind)?.stage ?? '';
 
 /** The stage whose colors a box is drawn in: a schema stage, or the structural colors for what has none. */
 export type BoxStage = Stage | 'structural';
@@ -72,10 +73,10 @@ export type BoxStage = Stage | 'structural';
  * A node's colors: its kind's stage; for a group, the stage it is (a stage group) or its kind's stage (a folder or a
  * record's kind group); the structural colors for what has no stage.
  */
-export function stageFor(index: SpecIndex, id: string, kind: string): BoxStage {
+export function stageFor(index: RecordIndex, id: string, kind: string): BoxStage {
   const group = index.byId.has(id) ? undefined : treeGroup(index, id);
   if (group?.role === 'stage') {
-    const named = index.workspace.stages.find((s) => s.stage === id.split('/')[1]);
+    const named = index.meta.stages.find((s) => s.stage === id.split('/')[1]);
     return named ? named.stage : 'structural';
   }
   const stage = stageOf(index, group ? group.kind ?? '' : kind);
@@ -83,12 +84,12 @@ export function stageFor(index: SpecIndex, id: string, kind: string): BoxStage {
 }
 
 
-function kindOrder(index: SpecIndex) {
-  const order = new Map(index.workspace.kinds.map((k, i) => [k.kind, i]));
+function kindOrder(index: RecordIndex) {
+  const order = new Map(index.meta.kindList.map((k, i) => [k.kind, i]));
   return (kind: string) => order.get(kind) ?? order.size;
 }
 
-function sortNodes(index: SpecIndex, nodes: GraphNode[]): GraphNode[] {
+function sortNodes(index: RecordIndex, nodes: GraphNode[]): GraphNode[] {
   const kindRank = kindOrder(index);
   return [...nodes].sort(
     (a, b) =>
@@ -99,7 +100,7 @@ function sortNodes(index: SpecIndex, nodes: GraphNode[]): GraphNode[] {
   );
 }
 
-function recordNode(index: SpecIndex, id: string, distance: number): GraphNode {
+function recordNode(index: RecordIndex, id: string, distance: number): GraphNode {
   const r = index.byId.get(id)!;
   return { id, distance, kind: r.kind, title: r.title, stage: stageOf(index, r.kind), column: 0, row: 0 };
 }
@@ -144,7 +145,7 @@ export function treeColumns(focus: string, edges: readonly GraphEdge[]): Map<str
  * before records, then ID. So a parent's children stay together, in the same order as their parents
  * and as the nav lists them, and re-centering is predictable.
  */
-function rowsByParent(index: SpecIndex, nodes: GraphNode[], edges: readonly GraphEdge[]): Map<string, number> {
+function rowsByParent(index: RecordIndex, nodes: GraphNode[], edges: readonly GraphEdge[]): Map<string, number> {
   const kindRank = kindOrder(index);
   const parentOf = new Map(edges.filter((e) => e.relation === PARENT).map((e) => [e.target, e.source]));
   const sibling = new Map<string, number>();
@@ -177,13 +178,13 @@ function rowsByParent(index: SpecIndex, nodes: GraphNode[], edges: readonly Grap
 }
 
 /** The parent of a node in the graph's tree (see tree.ts), or null at the top. */
-export const nodeParent = (index: SpecIndex, id: string): string | null => treeParent(index, id);
+export const nodeParent = (index: RecordIndex, id: string): string | null => treeParent(index, id);
 
 /** The children of a node in the graph's tree, in the nav's order. */
-export const nodeChildren = (index: SpecIndex, id: string): readonly string[] => treeChildren(index, id);
+export const nodeChildren = (index: RecordIndex, id: string): readonly string[] => treeChildren(index, id);
 
 /** The kind a node is filtered by: a record's kind, a kind group's kind, or null for a stage or a mixed folder (never hidden). */
-export function filterKind(index: SpecIndex, id: string): string | null {
+export function filterKind(index: RecordIndex, id: string): string | null {
   const record = index.byId.get(id);
   if (record) return record.kind;
   return treeGroup(index, id)?.kind ?? null;
@@ -199,7 +200,7 @@ export function filterKind(index: SpecIndex, id: string): string | null {
  * The kind filters hide kinds, and nothing is reached through a hidden record. The focus is never
  * hidden. The result is the same for the same input.
  */
-export function neighborhood(index: SpecIndex, focus: string, depth: number, filters: Filters = NO_FILTERS): Neighborhood {
+export function neighborhood(index: RecordIndex, focus: string, depth: number, filters: Filters = NO_FILTERS): Neighborhood {
   if (!isGraphNode(index, focus)) return { focus, nodes: [], edges: [] };
   const levels = Math.max(1, Math.floor(depth));
   const shownKind = (id: string) => {
@@ -259,36 +260,36 @@ export function parseGroupId(id: string): { parent: string; kind: string; path: 
 }
 
 /** The kinds of a record's children, in the meta-model's order. */
-export function childKinds(index: SpecIndex, id: string): string[] {
+export function childKinds(index: RecordIndex, id: string): string[] {
   const rank = kindOrder(index);
   return [...new Set((index.children.get(id) ?? []).map((c) => c.kind))].sort((a, b) => rank(a) - rank(b));
 }
 
 /** The records in a group at the first record level, however deep its groups, as the nav lists them (none for an ID that is no group). */
-export const groupMembers = (index: SpecIndex, gid: string): SpecRecord[] => treeGroup(index, gid)?.members ?? [];
+export const groupMembers = (index: RecordIndex, gid: string): RecordSummary[] => treeGroup(index, gid)?.members ?? [];
 
 /** Whether an ID names a group of the graph's tree: a stage, a folder or a kind group. */
-export const isGroup = (index: SpecIndex, id: string) => treeOf(index).groups.has(id);
+export const isGroup = (index: RecordIndex, id: string) => treeOf(index).groups.has(id);
 
 /** Whether the graph can center on an ID: a record or a group. */
-export const isGraphNode = (index: SpecIndex, id: string) => index.byId.has(id) || isGroup(index, id);
+export const isGraphNode = (index: RecordIndex, id: string) => index.byId.has(id) || isGroup(index, id);
 
 /** A kind's label in the plural: "Use cases", "Open questions", "Capabilities". */
-export function pluralLabel(index: SpecIndex, kind: string): string {
+export function pluralLabel(index: RecordIndex, kind: string): string {
   return plural(kindLabel(index, kind));
 }
 
 /** A group's label with its count, such as "Use cases (5)". */
-export const groupLabel = (index: SpecIndex, gid: string) => `${groupName(index, gid)} (${treeGroup(index, gid)?.count ?? 0})`;
+export const groupLabel = (index: RecordIndex, gid: string) => `${groupName(index, gid)} (${treeGroup(index, gid)?.count ?? 0})`;
 
 /** A group's name without its count, as the nav names it: "Domain model", "Aggregates", "Commands". */
-export const groupName = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.label ?? gid;
+export const groupName = (index: RecordIndex, gid: string) => treeGroup(index, gid)?.label ?? gid;
 
 /** The nearest record above a group: the domain of a stage or folder, the record of a kind group. */
-export const groupOwner = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.owner ?? parseGroupId(gid)?.parent ?? gid;
+export const groupOwner = (index: RecordIndex, gid: string) => treeGroup(index, gid)?.owner ?? parseGroupId(gid)?.parent ?? gid;
 
 /** What a group is, as its box's kind line names it: "Folder" (a product's Shared folder), "Stage", or a folder of its kind ("Aggregate folder", "Command folder"). */
-export function groupKindLabel(index: SpecIndex, gid: string): string {
+export function groupKindLabel(index: RecordIndex, gid: string): string {
   const g = treeGroup(index, gid);
   if (g?.role === 'shared') return 'Folder';
   if (g?.role === 'stage') return 'Stage';
@@ -296,7 +297,7 @@ export function groupKindLabel(index: SpecIndex, gid: string): string {
 }
 
 /** The problems and coverage gaps of a group's members and everything beneath them, summed for the group's mark. */
-export function groupMarks(index: SpecIndex, gid: string): { errors: number; warnings: number; gaps: string[] } {
+export function groupMarks(index: RecordIndex, gid: string): { errors: number; warnings: number; gaps: string[] } {
   let errors = 0;
   let warnings = 0;
   const gaps = new Set<string>();
@@ -310,9 +311,9 @@ export function groupMarks(index: SpecIndex, gid: string): { errors: number; war
 }
 
 /** The kind a group shows as: its records' kind when they are of one kind, or 'folder' for a stage or a mixed folder. */
-const groupKind = (index: SpecIndex, gid: string) => treeGroup(index, gid)?.kind ?? 'folder';
+const groupKind = (index: RecordIndex, gid: string) => treeGroup(index, gid)?.kind ?? 'folder';
 
-function groupNode(index: SpecIndex, id: string, distance: number): GraphNode {
+function groupNode(index: RecordIndex, id: string, distance: number): GraphNode {
   return {
     id,
     distance,
@@ -326,13 +327,13 @@ function groupNode(index: SpecIndex, id: string, distance: number): GraphNode {
 }
 
 /** The kinds a person can filter on, grouped by the six stages in order, then the structural kinds (product, open question). */
-export function kindGroups(index: SpecIndex): { stage: Stage | ''; title: string; kinds: { kind: string; label: string }[] }[] {
+export function kindGroups(index: RecordIndex): { stage: Stage | ''; title: string; kinds: { kind: string; label: string }[] }[] {
   const groups: { stage: Stage | ''; title: string }[] = [
-    ...index.workspace.stages.map((s) => ({ stage: s.stage, title: s.label })),
+    ...index.meta.stages.map((s) => ({ stage: s.stage, title: s.label })),
     { stage: '', title: 'Structural' },
   ];
   return groups.map((g) => ({
     ...g,
-    kinds: index.workspace.kinds.filter((k) => (k.stage ?? '') === g.stage).map((k) => ({ kind: k.kind, label: kindLabel(index, k.kind) })),
+    kinds: index.meta.kindList.filter((k) => (k.stage ?? '') === g.stage).map((k) => ({ kind: k.kind, label: kindLabel(index, k.kind) })),
   }));
 }

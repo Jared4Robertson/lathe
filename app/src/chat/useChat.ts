@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import type { SpecIndex } from '../specs/data';
+import { type RecordIndex } from '../exploring/record-summaries/record-index';
 import type { ChatBridge, ChatItem, ChatPatch, ChatStatus } from './types';
 
 // The window's chat as the page keeps it (LA-PLT-UC19): the items and status the shell sends as
@@ -10,9 +10,9 @@ import type { ChatBridge, ChatItem, ChatPatch, ChatStatus } from './types';
 export interface Turn {
   /** The position of the turn's first item (the Owner's message). */
   start: number;
-  before: SpecIndex;
+  before: RecordIndex;
   /** The spec when the next turn began; null for the last turn, which compares with the live spec. */
-  after: SpecIndex | null;
+  after: RecordIndex | null;
 }
 
 export interface ChatView {
@@ -36,7 +36,7 @@ export function applyPatch(items: ChatItem[], patch: ChatPatch): ChatItem[] {
 
 const busy = (s: ChatStatus) => s === 'running' || s === 'stopping';
 
-export function useChat(bridge: ChatBridge, index: SpecIndex | null) {
+export function useChat(bridge: ChatBridge, index: RecordIndex | null) {
   const [view, setView] = useState<ChatView>(EMPTY);
   const indexRef = useRef(index);
   indexRef.current = index;

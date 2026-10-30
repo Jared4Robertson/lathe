@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import { TreeList } from '../components/TreeList';
-import { textOf, type SpecIndex, type SpecRecord } from './data';
+import { type RecordIndex, type RecordSummary } from '../exploring/record-summaries/record-index';
 import { RecordLink, recordText } from './parts';
 import { appliesWhenOf, appliesWhenText, patternsFollowedBy, ruleStatus, rulesOf, type RuleStatus } from './patterns';
 
@@ -10,7 +10,7 @@ import { appliesWhenOf, appliesWhenText, patternsFollowedBy, ruleStatus, rulesOf
 const list = (ids: string[]) => ids.join(', ');
 
 /** What a rule's row says of its setting and its condition: "setting audit", "applies when scope is not single". */
-function RuleTags({ rule }: { rule: SpecRecord }) {
+function RuleTags({ rule }: { rule: RecordSummary }) {
   const condition = appliesWhenOf(rule);
   return (
     <>
@@ -21,7 +21,7 @@ function RuleTags({ rule }: { rule: SpecRecord }) {
 }
 
 /** A rule's proved mark in one domain, or Not applicable with its reasons, or Waived here. */
-export function RuleMarks({ index, status }: { index: SpecIndex; status: RuleStatus }) {
+export function RuleMarks({ index, status }: { index: RecordIndex; status: RuleStatus }) {
   if (!status.applies && status.why === 'waived') {
     const { setting } = status.condition;
     return (
@@ -67,14 +67,14 @@ export function RuleMarks({ index, status }: { index: SpecIndex; status: RuleSta
  * each, with its rules folded under it, and per rule whether this domain proves it or marks it
  * not applicable.
  */
-export function DomainPatterns({ index, domainId, query }: { index: SpecIndex; domainId: string; query?: string }) {
+export function DomainPatterns({ index, domainId, query }: { index: RecordIndex; domainId: string; query?: string }) {
   const followed = patternsFollowedBy(index, domainId);
   if (followed.length === 0) return <p className="hint">This domain follows no pattern.</p>;
   const followedOf = new Map(followed.map((f) => [f.pattern.id, f]));
   // A pattern the domain itself follows: no use case can mark its rules not applicable.
   const byDomain = new Set(followed.filter((f) => f.byDomain).map((f) => f.pattern.id));
   return (
-    <TreeList<SpecRecord>
+    <TreeList<RecordSummary>
       label="Patterns we follow"
       items={followed.map((f) => f.pattern)}
       itemKey={(r) => `${domainId}:${r.id}`}
