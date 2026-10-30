@@ -11,7 +11,8 @@ import { PLAIN_LOOK, useThemeVersion } from '../graph/look';
 import type { FadeLook } from '../graph/fade';
 import { lowerLabel } from '../plural';
 import { ERD_EMPTY, erdFocus, erdStrength, LINE_WORDS, lineGeometry, lineOffsets, RELATION_ENDS, scopeContents, type ErdBox, type ErdFocus, type ErdKind, type ErdLine, type ErdMap, type ErdRelation, type Rect, useErd } from './erd';
-import { erdLayout, readyErdLayout } from './layout';
+import { erdLayout, readyErdLayout, tidyErdLayout } from './layout';
+import { useGlidingRects } from './glide';
 import { TapCard, useTapToOpen } from '../graph/touch';
 import { EdgeHints } from './hints';
 import { ErdLeader } from './leader';
@@ -20,7 +21,10 @@ import { keepCamera } from '../exploring/tab-set/commands/keep-camera';
 import { keptCamera } from '../exploring/tab-set/reads';
 import { runTabSetCommand } from '../exploring/tab-set/run';
 import { useWalk } from '../graph/steps';
-import { useCommand } from '../shell/commands';
+import { useCommand, useRunCommand } from '../shell/commands';
+import { Tooltip } from '../shell/Tooltip';
+import { Button } from '../components/Button';
+import { Icon } from '../components/icons';
 import { StageCamera, StageKey, StageToolbar, ZOOM_STEP, type KeyEntry } from '../views/StageChrome';
 import type { Move } from '../views/levels';
 import { erdTarget } from './walk';
@@ -249,9 +253,21 @@ export function ErdView({ index, focus, onNavigate, onPeek, onCounts, space, cam
           </ReactFlowProvider>
         </div>
       )}
-      <StageToolbar can={(move) => target(move) !== null} />
+      <StageToolbar can={(move) => target(move) !== null} own={() => ({ primary: <TidyUp /> })} />
       <StageKey entries={keyEntries} />
     </section>
+  );
+}
+
+/** The toolbar's Tidy up (LA-V94-R09): the whole map laid out afresh, by its keymap command. */
+function TidyUp() {
+  const runCommand = useRunCommand();
+  return (
+    <Tooltip label="Tidy up: lay the whole map out afresh" command="stageTidy">
+      <Button className="stage-tidy" aria-label="Tidy up" onClick={() => runCommand('stageTidy')}>
+        <Icon name="tidy" size={14} /><span className="stage-tidy-name">Tidy up</span>
+      </Button>
+    </Tooltip>
   );
 }
 
@@ -364,10 +380,9 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
 
   // The boxes' places come from the layout alone; the focus changes only their strength, their
   // pick and their keyboard stop, never where they are or their size.
-  const { nodes, edges } = useMemo(() => {
-    if (!placed) return { nodes: [] as BoxNode[], edges: [] as LineEdge[] };
+  const nodes = useMemo(() => {
+    if (!placed) return [] as BoxNode[];
     const { rects } = placed;
-    const offsets = lineOffsets(placed.map.lines);
     const node = (box: ErdBox): BoxNode => {
       const r = rects.get(box.id) ?? { x: 0, y: 0, width: 0, height: 0 };
       // A box sits inside its parent, placed from its corner, so React Flow draws an entity's lines above its boundary.
@@ -394,9 +409,15 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
       };
     };
     // The map's boxes come each parent before its children, as React Flow wants.
-    const nodes = placed.map.boxes.map(node);
+    return placed.map.boxes.map(node);
+  }, [placed, strength, at.pick, focus, relations, marks.version]);
+  // The lines, between their boxes as they are drawn now: gliding with them to a new layout's places (glide.ts).
+  const { rects: lineRects, gliding } = useGlidingRects(placed?.rects);
+  const edges = useMemo(() => {
+    if (!placed || !lineRects) return [] as LineEdge[];
+    const offsets = lineOffsets(placed.map.lines);
     const titles = new Map(placed.map.boxes.map((b) => [b.id, b.title]));
-    const edges: LineEdge[] = placed.map.lines.map((line) => ({
+    return placed.map.lines.map((line): LineEdge => ({
       id: line.id,
       source: line.source,
       target: line.target,
@@ -404,12 +425,11 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
       focusable: false,
       selectable: false,
       data: {
-        line, source: rects.get(line.source)!, target: rects.get(line.target)!, offset: offsets.get(line.id) ?? 0,
+        line, source: lineRects.get(line.source)!, target: lineRects.get(line.target)!, offset: offsets.get(line.id) ?? 0,
         strength: Math.min(strength(line.source), strength(line.target)), ...lineWords(line, lineLabel(relations, line.relation), titles),
       },
     }));
-    return { nodes, edges };
-  }, [placed, strength, at.pick, focus, relations, marks.version]);
+  }, [placed, lineRects, strength, relations]);
 
   // The camera: the shared glide and wheel (graph/gestures.ts), driving React Flow's viewport; the wheel moves it by
   // the shared rule (wheelMove, with the person's Scroll to zoom), and React Flow keeps the pointer's drag and a touch
@@ -496,6 +516,17 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
   // `.` and the toolbar's Frame frame the focus again, as on every stage; the camera's buttons zoom about the frame's
   // middle and fit the whole map.
   useCommand('graphFit', () => { frameFocus(true); }, !!placed);
+  // Tidy up (LA-V94-R09): the whole map laid out afresh, its boxes and lines gliding to their new places; the camera
+  // follows the focus's box as on new data.
+  const tidying = useRef(false);
+  useCommand('stageTidy', () => {
+    if (tidying.current) return;
+    tidying.current = true;
+    tidyErdLayout(map).then(
+      (rects) => { tidying.current = false; setPlaced({ map, rects }); onLaidOut(); },
+      (e) => { tidying.current = false; setError(e instanceof Error ? e.message : String(e)); },
+    );
+  }, !!placed);
   const frameMiddle = () => {
     const box = wrapper.current?.getBoundingClientRect();
     if (!box) return { x: 0, y: 0 };
@@ -579,7 +610,7 @@ function ErdCanvas({ index, map, at, focus, onNavigate, onPeek, space, cameraKey
 
   if (error) return <p className="error">Couldn't draw the diagram: {error}</p>;
   return (
-    <div ref={wrapper} className="erd-flow" onKeyDown={onKeyDown} onAuxClick={(e) => { const id = boxAt(e.target); if (id) tap.onNodeAuxClick(e, id); }} onFocus={(e) => onPeek?.('hover', boxAt(e.target))} onBlur={() => onPeek?.('hover', null)}>
+    <div ref={wrapper} className={`erd-flow${gliding ? ' is-gliding' : ''}`} onKeyDown={onKeyDown} onAuxClick={(e) => { const id = boxAt(e.target); if (id) tap.onNodeAuxClick(e, id); }} onFocus={(e) => onPeek?.('hover', boxAt(e.target))} onBlur={() => onPeek?.('hover', null)}>
       {!placed && <p className="hint graph-loading">Laying out the map…</p>}
       <ReactFlow
         nodes={nodes}

@@ -13,9 +13,10 @@ import { BORDER, labelHeight, largestFit, linesIn, type MapLabel, type WrappedLa
 //   equal squares in the tree's order, row by row, a gap apart, with the column count that makes
 //   the squares largest. Room the grid leaves is blank: a busy parent packs its children smaller.
 // - Siblings share one text scale: their side over TEXT_SIZE, or the largest below it at which
-//   every sibling's whole label fits, a leaf's centered in its square, a parent's in a header band
-//   at most HEADER_SHARE of its square.
-// - Siblings share one header band too, as tall as the tallest of their labels at that scale.
+//   every sibling's whole label fits both ways, centered in its square (as a leaf's is drawn) and in
+//   a header band at most HEADER_SHARE of its square (as a parent's is), whichever it is now.
+// - Siblings share one header band too, as tall as the tallest of their labels at that scale, every
+//   sibling's counted, a leaf's too: what a sibling holds sizes nothing of the others (LA-PAT-APP-UX-R22).
 // - The padding and the gaps are shares of the box's side, so the layout is the same at any size.
 // Record counts and titles size nothing.
 //
@@ -28,7 +29,7 @@ export const NEST_GAP = 6;
 export const HEADER_SHARE = 0.25;
 
 export interface NestedNode extends MapNode {
-  /** The header band's height, in map units, its siblings' tallest label at their text scale: 0 for a box with no children (its label is centered in it). */
+  /** The header band's height, in map units, its siblings' tallest label at their text scale (every sibling's, a leaf's too): 0 for a box with no children (its label is centered in it). */
   header: number;
   /** Its place in the tree's order, a parent before its children: the keyboard's order. */
   order: number;
@@ -67,8 +68,12 @@ export function placeNested(shape: TreeShape, labelOf: (i: number) => MapLabel):
     const border = (s: number) => BORDER * Math.max(0.5, s);
     const labels = ids.map((i) => labelOf(i));
     const leaf = ids.map((i) => shape.children[i].length === 0);
-    const text = Math.min(...labels.map((label, k) => largestFit(label, leaf[k], side, leaf[k] ? side : HEADER_SHARE * side, most, border)));
-    const header = Math.max(0, ...labels.map((label, k) => (leaf[k] ? 0 : text * labelHeight(linesIn(label, text > 0 ? (side - 2 * border(text)) / text : Infinity, false)))));
+    // Fitted as if every sibling were both a parent and a leaf, so a sibling gaining its first child or losing its last
+    // changes neither its siblings' text nor their header band (LA-PAT-APP-UX-R22): each label must fit a header band
+    // and, centered, the whole square.
+    const fit = (label: MapLabel, cap: number) => largestFit(label, true, side, side, largestFit(label, false, side, HEADER_SHARE * side, cap, border), border);
+    const text = labels.reduce((t, label) => Math.min(t, fit(label, t)), most);
+    const header = Math.max(0, ...labels.map((label) => text * labelHeight(linesIn(label, text > 0 ? (side - 2 * border(text)) / text : Infinity, false))));
     const pad = NEST_PAD * most;
     const gap = NEST_GAP * most;
     ids.forEach((i, k) => {
