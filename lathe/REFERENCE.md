@@ -136,7 +136,7 @@ The consistency boundary: a cluster of entities changed together as one unit, by
 - **ID:** `<P>-<D>-A<n>`, such as `TL-LEND-A1`; it starts with its domain's ID
 - **Links out:** none
 - **Links in:** Questions about this ([`about`](#relation-about)), Persisted by ([`persists`](#relation-persists)), Read by ([`reads`](#relation-reads))
-- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`aggregate-too-large`](#check-aggregate-too-large)
+- **Checks:** [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`aggregate-without-root`](#gap-aggregate-without-root), [`aggregate-without-command`](#gap-aggregate-without-command), [`aggregate-without-repository`](#gap-aggregate-without-repository)
 
 <a id="table-aggregate"></a>
@@ -168,7 +168,7 @@ A record the domain keeps, with an identity: its aggregate's root or one of its 
 - **Links out:** Has many ([`has_many`](#relation-has_many)), Has one ([`has_one`](#relation-has_one))
 - **Links in:** Questions about this ([`about`](#relation-about)), Part of ([`has_many`](#relation-has_many)), Part of ([`has_one`](#relation-has_one))
 - **Parts:** [`entity_field`](#table-entity_field)
-- **Checks:** [`has-crosses-aggregate`](#check-has-crosses-aggregate), [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large)
+- **Checks:** [`entity-unreferenced`](#check-entity-unreferenced), [`aggregate-too-large`](#check-aggregate-too-large)
 - **Gaps:** [`entity-without-fields`](#gap-entity-without-fields), [`entity-without-data-model`](#gap-entity-without-data-model), [`entity-without-table`](#gap-entity-without-table)
 
 <a id="table-entity"></a>
@@ -690,15 +690,15 @@ An event a policy hears, whose aggregate is stored in a database table, whose ev
 
 An event a policy hears is delivered by outbox: saved in the same transaction as its aggregate and delivered reliably afterwards, since a lost reaction is a lost change. That is every event a policy hears whose aggregate is stored in a database table (an entity of the aggregate has a table whose storage is `table`), in its own domain or, when published, in another. An event inside one process with no transaction to join, such as one whose aggregate is kept in browser storage, a file or in memory and is heard in the same browser tab or process, is exempt. So is an event that only keeps read models current (fed_by), where those read models are rebuilt from the data on every load: it may be delivered in process, since the next load rebuilds what a lost delivery missed. Its event type records the delivery; one a policy hears that is delivered in process, with no delivery given, or no event type at all, leaves the reaction to chance. Give the event an event type delivered by outbox.
 
-<a id="check-has-crosses-aggregate"></a>
+<a id="check-term-used-unlinked"></a>
 
-### `has-crosses-aggregate`
+### `term-used-unlinked`
 
-**Error** · Lathe's · Kinds: [`entity`](#kind-entity), [`aggregate`](#kind-aggregate)
+**Warning** · Lathe's · Kinds: [`term`](#kind-term)
 
-A `has_one` or `has_many` link stays inside its aggregate.
+A term's meaning uses another term of its product by title without a builds_on link to it.
 
-These relations link an entity to its parts, and parts belong to their aggregate, so both ends sit in the same aggregate. Aggregates refer to each other by ID only: a field typed by the other aggregate. Type a field by the other aggregate instead, or move the part into the aggregate.
+Definitions build up, never in a circle (LA-STD-MODELING-R12): a term is defined only by plain words and terms below it, and names each one it uses with builds_on, so the store can refuse a loop. The check reads each meaning in lower case, with text in backticks left out as code, and looks for every other term of the product by title as a whole word, singular or plural (a title ending in a consonant and y also as -ies); a shorter title found only inside a longer term's title (Domain inside Domain event) does not count. It cannot tell a word used in another sense, so it is a warning. Link the term with builds_on to the term it uses, or say it in plain words.
 
 <a id="check-entity-unreferenced"></a>
 
@@ -708,7 +708,7 @@ These relations link an entity to its parts, and parts belong to their aggregate
 
 A child entity that its aggregate's root does not reach.
 
-Each child entity is a part of its aggregate's root, so a `has_one` or `has_many` reaches it from the root, directly or through other children of the same aggregate. Links that cross aggregates (has-crosses-aggregate) do not count. Link the child from the root or from another child with `has_one` or `has_many`.
+Each child entity is a part of its aggregate's root, so a `has_one` or `has_many` reaches it from the root, directly or through other children of the same aggregate. Link the child from the root or from another child with `has_one` or `has_many`.
 
 <a id="check-event-tense"></a>
 
@@ -759,16 +759,6 @@ A specification is a yes/no condition a record meets or not, and its title names
 A query whose title does not start with Get, List or Find.
 
 A query asks for data and changes nothing, so its title starts with the verb that says what comes back: Get for one thing, List for several, Find for a search, such as "Get a member's loans", "List overdue loans" or "Find a tool by name". A query titled like a command ("Check the workspace", "Export a theme") reads as a change. Retitle the query with Get, List or Find.
-
-<a id="check-term-used-unlinked"></a>
-
-### `term-used-unlinked`
-
-**Warning** · Lathe's · Kinds: [`term`](#kind-term)
-
-A term's meaning uses another term of its product by title without a builds_on link to it.
-
-Definitions build up, never in a circle (LA-STD-MODELING-R12): a term is defined only by plain words and terms below it, and names each one it uses with builds_on, so the store can refuse a loop. The check reads each meaning in lower case, with text in backticks left out as code, and looks for every other term of the product by title as a whole word, singular or plural (a title ending in a consonant and y also as -ies); a shorter title found only inside a longer term's title (Domain inside Domain event) does not count. It cannot tell a word used in another sense, so it is a warning. Link the term with builds_on to the term it uses, or say it in plain words.
 
 ### Coverage gaps: domain model
 

@@ -115,7 +115,7 @@ describe('format reference pages', () => {
     await openPage('format/checks/not-proved', 'not-proved');
     expect(within(card()).getByText('Every obligation is proved by a test.')).toBeInTheDocument();
     expect(within(card()).getByText('Add a test under it.')).toBeInTheDocument();
-    expect(section('Query').querySelector('pre')).toHaveTextContent(/^SELECT 'warning' AS severity, 'not-proved'/);
+    expect(section('Query').querySelector('pre')).toHaveTextContent(/^SELECT 'not-proved' AS "check"/);
     const problems = section(/^Problems now/);
     expect(problems).toHaveTextContent('Problems now2');
     const row = within(problems).getByRole('link', { name: 'DM-SHOP-INV01' });
