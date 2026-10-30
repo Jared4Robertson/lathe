@@ -353,10 +353,11 @@ test.describe('Exploring flows', () => {
     await page.keyboard.press('Enter');
     await page.waitForURL((u) => u.pathname === '/LA-EXP/technical-specification');
     await graphReady(page);
-    // Its kinds are reached from it (the boxes' keyboard layer holds them, on screen or past the edge: the focus is framed whole).
-    await expect(page.locator(`${FLOW} .graph-box[data-id="LA-EXP/technical-specification/repository"]`)).toHaveCount(1);
     await expect(wikiTitle(page)).toHaveText(/^Technical specification/);
     await expect(page.locator('.header-strip .breadcrumb .crumb').last()).toContainText('Exploring');
+    // Its kinds are reached from it: In steps to its first kind's group (the focus is framed whole, its kinds beside it).
+    await page.getByRole('button', { name: 'In to the first child', exact: true }).click();
+    await page.waitForURL((u) => u.pathname.startsWith('/LA-EXP/technical-specification/'));
   });
 
   test('LA-EXP-UC10-FL01-T explore in browser tabs, each its own place: no tab strip, one entry per move, kept through a reload, Cmd+click a new browser tab', async ({ page, context }) => {
