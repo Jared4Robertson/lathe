@@ -54,8 +54,17 @@ export function placeRecords(view: ReadView): Map<string, Placed> {
   const domains = new Map([...placed.values()].filter((r) => r.kind === 'domain').map((r) => [r.id, text(r.row.product_id)]));
   const domainIds = [...domains.keys()];
 
-  // Up the parents to the top: a product, a domain on the way, and the top record when it has no owner.
-  const anchorOf = (start: Placed): { product: string | null; domain: string | null; top: Placed } => {
+  // Up the parents to the top: a product, a domain on the way (the nearest of each), and the top record. Each record's
+  // is its own over its parent's, so each is worked out once and kept (a walk per record would climb the same chains
+  // again and again); a chain that comes back on itself is walked from each of its records as it stands.
+  type Up = { product: string | null; domain: string | null; top: Placed };
+  const ownUp = (at: Placed, above: Up): Up => ({
+    product: at.kind === 'product' ? at.id : at.kind === 'domain' ? (domains.get(at.id) ?? above.product) : above.product,
+    domain: at.kind === 'domain' ? at.id : above.domain,
+    top: above.top,
+  });
+  const ups = new Map<string, Up>();
+  const walk = (start: Placed): Up => {
     const seen = new Set<string>();
     let product: string | null = null;
     let domain: string | null = null;
@@ -66,6 +75,32 @@ export function placeRecords(view: ReadView): Map<string, Placed> {
       if (at.kind === 'domain') { domain ??= at.id; product ??= domains.get(at.id) ?? null; }
       if (at.kind === 'product') product ??= at.id;
     }
+    return { product, domain, top };
+  };
+  const upOf = (start: Placed): Up => {
+    const chain: Placed[] = [];
+    const seen = new Set<string>();
+    let at: Placed | undefined = start;
+    let above: Up | undefined;
+    while (at) {
+      above = ups.get(at.id);
+      if (above) break;
+      if (seen.has(at.id)) return walk(start);
+      seen.add(at.id);
+      chain.push(at);
+      at = at.parent ? placed.get(at.parent) : undefined;
+    }
+    let up: Up = above ?? { product: null, domain: null, top: chain[chain.length - 1] };
+    for (let i = chain.length - 1; i >= 0; i--) {
+      up = ownUp(chain[i], up);
+      ups.set(chain[i].id, up);
+    }
+    return up;
+  };
+  const anchorOf = (start: Placed): { product: string | null; domain: string | null; top: Placed } => {
+    const up = upOf(start);
+    let { product, domain } = up;
+    const { top } = up;
     if (top.kind !== 'product' && top.parent === null && schema.kinds[top.kind]?.parents.length === 0) {
       if (schema.kinds[top.kind].idScope === 'domain') {
         const d = longestPrefix(domainIds, top.id);
