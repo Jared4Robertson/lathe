@@ -1,7 +1,6 @@
 // Listen for the voice, or stop (LA-PLT-CMD64, LA-PLT-UC20): the window's chat starts or stops listening; it listens
 // only while its window is in front. Refused where the Mac cannot recognize on-device, or the microphone is denied.
 import type { VoiceListener } from '../../voice.ts';
-import { chatOf } from '../model.ts';
 import type { WindowChatRepository } from '../repository.ts';
 import { holdToRules } from '../rules.ts';
 
@@ -22,11 +21,14 @@ export async function listenForVoice(chats: WindowChatRepository, input: ListenF
   const allowed = await input.allowed();
   if (allowed !== 'allowed') return allowed;
   const now = chats.load();
-  const chat = chatOf(now, input.folder);
-  if (chat.voice) return chat.voice.want(true);
+  const had = now.open.get(input.folder);
+  if (had?.voice) return had.voice.want(true);
   const voice = input.listener();
   if (!voice) return 'stopped';
-  const next = { ...now, open: new Map(now.open).set(input.folder, { ...chat, voice }) };
+  // The chat keeps its place, so the page's pending patch still finds it.
+  const chat = had ?? { folder: input.folder, sent: null };
+  chat.voice = voice;
+  const next = { ...now, open: new Map(now.open).set(input.folder, chat) };
   holdToRules(next);
   chats.save(next);
   return voice.want(true);
