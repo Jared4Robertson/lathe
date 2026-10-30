@@ -8,18 +8,20 @@
 //
 // The root is a workspace: its own product, and each other product its lathe.config.json lists under products, each
 // read from and written to its own folder. The store of each product root is opened once and kept (on globalThis, so
-// it outlives a reload of this module in the dev server). Before each request the data folder's files are compared
-// with what the store last read or wrote; a change made by anything else (an editor, git) opens the store afresh.
-import { existsSync, readdirSync, statSync } from 'node:fs';
+// it outlives a reload of this module in the dev server). When a data file changes, by a command or by anything else
+// (an editor, git, an Agent), the store reads only the changed files' tables again, and the server announces which
+// tables and read models changed (Data files changed, LA-PLT-EV06), so a page reads again only what changed. The check
+// rows and coverage run in the background on the data built whole, a burst of changes making one run, and are
+// announced when they are ready (LA-PLT-UC03-R03, R04).
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import path from 'node:path';
 import { loadConfig, productClash, workspaceProducts, type LatheConfig } from '../config.ts';
-import { buildReference, loadWorkspace } from '../index.ts';
+import { buildReference, readWorkspace } from '../index.ts';
 import type { Row } from '../platform/data/rows.ts';
 import type { SchemaDescription } from '../platform/data/schema.ts';
 import { formatProblem, StoreError } from '../platform/data/problems.ts';
-import { LATHE_DATA_DIR, openStore, type Store } from '../platform/data/store.ts';
+import { LATHE_DATA_DIR, openStore, type Reloaded, type Store } from '../platform/data/store.ts';
 import type { ReadRefusal, WriteAnswer } from './contract.ts';
+import type { DataChange } from './events.ts';
 import { baseline, parseSince } from './baseline.ts';
 import { ALL_COMMANDS, ALL_QUERIES } from '../commands.ts';
 import { flagValue, InputError, type AnyCommand, type AnyQuery } from '../platform/commands/definition.ts';
@@ -31,11 +33,17 @@ import { recordHistory } from './history.ts';
 export const WRITE_BODY_LIMIT = 1024 * 1024;
 
 interface Opened {
+  config: LatheConfig;
   store: Store;
-  /** The data folder's files as the store last read or wrote them. */
-  signature: string;
-  /** The checks' problems, coverage and chains for this data, once worked out. */
-  checks: Promise<CheckRun> | null;
+  /** Why the data is refused, as a load from scratch would refuse it, until a change to the files is built whole; else null. */
+  refusal: StoreError | null;
+  /** The checks' problems, coverage and chains, of the data built whole last: answered from until a newer run is ready. */
+  run: CheckRun | null;
+  /** The checks' run in progress, and whether the data changed again since it started. */
+  checking: Promise<void> | null;
+  again: boolean;
+  /** The timer that starts the next run once a burst of changes is over. */
+  timer: NodeJS.Timeout | undefined;
   /** Requests on this root run one after another, so a write never races a reload. */
   queue: Promise<unknown>;
 }
@@ -44,45 +52,126 @@ const STORES_KEY = Symbol.for('lathe.server.stores');
 const stores: Map<string, Promise<Opened>> = ((globalThis as Record<symbol, unknown>)[STORES_KEY] as Map<string, Promise<Opened>> | undefined) ??
   ((globalThis as Record<symbol, unknown>)[STORES_KEY] = new Map<string, Promise<Opened>>());
 
-/** The data folder's .jsonl files, their sizes and modification times, as one string. */
-export function dataSignature(dataDir: string): string {
-  if (!existsSync(dataDir)) return '';
-  return readdirSync(dataDir)
-    .filter((f) => f.endsWith('.jsonl'))
-    .sort()
-    .map((f) => {
-      const s = statSync(path.join(dataDir, f));
-      return `${f}:${s.size}:${s.mtimeMs}`;
-    })
-    .join('\n');
+/** Who hears the data's changes, by the product root they show (kept on globalThis, beside the stores). */
+const LISTENERS_KEY = Symbol.for('lathe.server.listeners');
+const listeners: Map<string, Set<(change: DataChange) => void>> = ((globalThis as Record<symbol, unknown>)[LISTENERS_KEY] as Map<string, Set<(change: DataChange) => void>> | undefined) ??
+  ((globalThis as Record<symbol, unknown>)[LISTENERS_KEY] = new Map<string, Set<(change: DataChange) => void>>());
+
+/** How long the checks wait after a change for the next one, so a burst of changes (a git pull, an Agent's writes) makes one run. */
+export const CHECKS_DELAY_MS = 150;
+
+/**
+ * Hears every change to the data of the products the workspace at root shows (Data files changed, LA-PLT-EV06): the
+ * tables and read models a reload or a write changed, then the checks' read models once their run is ready. Returns
+ * how to stop hearing them.
+ */
+export function onDataChange(root: string, listener: (change: DataChange) => void): () => void {
+  const roots = workspaceProducts(root).map((config) => config.root);
+  for (const r of roots) {
+    if (!listeners.has(r)) listeners.set(r, new Set());
+    listeners.get(r)!.add(listener);
+  }
+  return () => { for (const r of roots) listeners.get(r)?.delete(listener); };
 }
 
-// What the store read: the product's data folder and Lathe's own (its checks), loaded beside it.
-const storeSignature = (dataDir: string) => `${dataSignature(dataDir)}\n--\n${dataSignature(LATHE_DATA_DIR)}`;
+// Tells every listener of the product root what changed.
+function announce(root: string, change: DataChange) {
+  for (const listener of listeners.get(root) ?? []) listener(change);
+}
 
-// Runs a task on the root's opened store, after every task before it, opening the store afresh when its files
-// changed under it.
-async function withStore<T>(root: string, task: (opened: Opened) => Promise<T>): Promise<T> {
-  const dataDir = loadConfig(root).dataDir;
+/** The read models whose queries read the checks' run: they change when a run is ready. */
+const CHECKED_READ_MODELS = [...new Set(ALL_QUERIES.filter((q) => q.checked).map((q) => q.slice.name))].sort();
+
+// The read models whose answers the change to these tables can change: each query's projection that read one of them,
+// or that has not run on this store yet. The checks' read models change with their run, announced on its own.
+function touchedReadModels(store: Store, tables: readonly string[]): string[] {
+  const changed = new Set(tables);
+  return [...new Set(ALL_QUERIES.filter((q) => !q.checked && store.readerTouched(q.reader, changed)).map((q) => q.slice.name))].sort();
+}
+
+// The store of a product root, opened once and kept; its checks start at once.
+function openedOf(root: string): Promise<Opened> {
   let pending = stores.get(root);
   if (!pending) {
     pending = (async () => {
-      const signature = storeSignature(dataDir);
-      return { store: await openStore(root), signature, checks: null, queue: Promise.resolve() };
+      const config = loadConfig(root);
+      const opened: Opened = { config, store: await openStore(root), refusal: null, run: null, checking: null, again: false, timer: undefined, queue: Promise.resolve() };
+      startChecks(opened);
+      return opened;
     })();
     stores.set(root, pending);
     pending.catch(() => stores.delete(root));
   }
-  const opened = await pending;
+  return pending;
+}
+
+// Reads the changed data files again, announces what changed and starts the checks after it. While the data is
+// refused, a change is built whole at once before the refusal is lifted, so a refused state never shows as served.
+async function refresh(opened: Opened): Promise<void> {
+  const { store, config } = opened;
+  let reloaded: Reloaded;
+  try {
+    reloaded = await store.reload();
+    if (!reloaded.files.length) return;
+    // While the data is refused, changed files lift the refusal only once their whole build passes.
+    if (opened.refusal && !(await store.whole(async () => true))) return;
+  } catch (error) {
+    if (!(error instanceof StoreError)) throw error;
+    // A refusal is announced once, not again for each request that meets it.
+    const known = opened.refusal?.message === error.message;
+    opened.refusal = error;
+    if (!known) announce(config.root, { tables: [], readModels: null });
+    return;
+  }
+  const wasRefused = opened.refusal !== null;
+  if (!reloaded.tables.length && !wasRefused) return;
+  opened.refusal = null;
+  announce(config.root, { tables: reloaded.tables, readModels: reloaded.full || wasRefused ? null : touchedReadModels(store, reloaded.tables) });
+  scheduleChecks(opened);
+}
+
+// Starts the checks once the changes stop coming for a moment.
+function scheduleChecks(opened: Opened) {
+  clearTimeout(opened.timer);
+  opened.timer = setTimeout(() => startChecks(opened), CHECKS_DELAY_MS);
+  opened.timer.unref?.();
+}
+
+// Runs the checks on the data built whole, again while the data changed during a run, and announces each run that is
+// of the current data. A refusal of the whole build is the data's refusal.
+function startChecks(opened: Opened) {
+  clearTimeout(opened.timer);
+  opened.timer = undefined;
+  if (opened.checking) {
+    opened.again = true;
+    return;
+  }
+  opened.checking = (async () => {
+    do {
+      opened.again = false;
+      try {
+        const built = await opened.store.whole((data) => checksOf(data, opened.config));
+        if (!built) continue;
+        opened.run = built.value;
+        announce(opened.config.root, { tables: [], readModels: CHECKED_READ_MODELS });
+      } catch (error) {
+        if (!(error instanceof StoreError)) throw error;
+        const known = opened.refusal?.message === error.message;
+        opened.refusal = error;
+        if (!known) announce(opened.config.root, { tables: [], readModels: null });
+      }
+    } while (opened.again);
+  })().finally(() => { opened.checking = null; });
+  opened.checking.catch(() => undefined);
+}
+
+// Runs a task on the root's opened store, after every task before it, reading the data files again first when they
+// changed under it. Refused data refuses the task.
+async function withStore<T>(root: string, task: (opened: Opened) => Promise<T>): Promise<T> {
+  const opened = await openedOf(root);
   const run = opened.queue.then(async () => {
-    if (storeSignature(dataDir) !== opened.signature) {
-      const signature = storeSignature(dataDir);
-      const fresh = await openStore(root);
-      await opened.store.close().catch(() => undefined);
-      opened.store = fresh;
-      opened.signature = signature;
-      opened.checks = null;
-    }
+    await refresh(opened);
+    if (opened.refusal) throw opened.refusal;
     return task(opened);
   });
   opened.queue = run.catch(() => undefined);
@@ -90,8 +179,18 @@ async function withStore<T>(root: string, task: (opened: Opened) => Promise<T>):
 }
 
 /**
+ * Reads the data files of the products under root again now, as a watcher does when one changes: only the changed
+ * files' tables of each product whose store is open (one not opened yet reads every file when it opens), and
+ * announces what changed. A refusal is announced, not thrown.
+ */
+export async function dataFilesChanged(root: string): Promise<void> {
+  const open = workspaceProducts(root).filter((config) => stores.has(config.root));
+  await Promise.all(open.map((config) => withStore(config.root, async () => undefined).catch(() => undefined)));
+}
+
+/**
  * Closes the stores this process opened, or those of a workspace's products (for tests and a server shutting down),
- * each once the request it is serving (a load, a reload or a write) has finished.
+ * each once the request it is serving (a load, a reload or a write) and its checks have finished.
  */
 export async function closeStores(root?: string): Promise<void> {
   const roots = root ? workspaceProducts(root).map((config) => config.root) : [...stores.keys()];
@@ -99,7 +198,9 @@ export async function closeStores(root?: string): Promise<void> {
   for (const pending of all) {
     try {
       const opened = await pending;
+      clearTimeout(opened.timer);
       await opened.queue;
+      await opened.checking?.catch(() => undefined);
       await opened.store.close();
     } catch {
       // A store that never opened has nothing to close.
@@ -117,9 +218,10 @@ function send(res: ServerResponse, status: number, body: unknown, headers: Recor
 const message = (error: unknown) => (error instanceof Error ? error.message : String(error));
 const storeMessage = (error: unknown) => (error instanceof StoreError ? error.problems.map(formatProblem).join('\n') : message(error));
 
-async function checksOf(root: string): Promise<CheckRun> {
+// The checks' run on the data built whole: every check row's problems, coverage and chains.
+async function checksOf(data: Store, config: LatheConfig): Promise<CheckRun> {
   try {
-    const workspace = await loadWorkspace(root);
+    const workspace = await readWorkspace(data, config);
     return { problems: workspace.problems, coverage: workspace.coverage, chains: workspace.chains };
   } catch (error) {
     return { problems: [{ severity: 'error', check: 'engine', record: null, message: `The checks could not run: ${message(error)}` }], coverage: [], chains: [] };
@@ -237,8 +339,10 @@ async function runRoute(workspace: string, definition: AnyCommand, input: Record
   return withStore(config.root, async (opened) => {
     try {
       const committed = await runCommand(opened.store, definition, input);
-      opened.signature = storeSignature(config.dataDir);
-      opened.checks = null;
+      if (committed.tables.length) {
+        announce(config.root, { tables: committed.tables, readModels: touchedReadModels(opened.store, committed.tables) });
+        scheduleChecks(opened);
+      }
       return { status: 200, answer: { ok: true, tables: committed.tables, files: committed.files, changes: committed.changes } };
     } catch (error) {
       if (error instanceof InputError) return { status: 400, answer: { error: error.message } };
@@ -278,7 +382,18 @@ async function workspaceView(products: LatheConfig[]): Promise<ReadView> {
 
 /** Every product's checks' run, each the one the server keeps for its data, joined. */
 async function workspaceRun(products: LatheConfig[]): Promise<CheckRun> {
-  const runs = await Promise.all(products.map((config) => withStore(config.root, async (opened) => (opened.checks ??= checksOf(config.root)))));
+  const runs = await Promise.all(products.map(async (config) => {
+    // The last run is answered at once; only data never checked yet waits for its first run, outside the queue.
+    const { run, first } = await withStore(config.root, async (opened) => {
+      if (!opened.run && !opened.checking) startChecks(opened);
+      return { run: opened.run, first: { done: opened.checking } };
+    });
+    if (run) return run;
+    await first.done;
+    const opened = await openedOf(config.root);
+    if (opened.refusal) throw opened.refusal;
+    return opened.run ?? { problems: [], coverage: [], chains: [] };
+  }));
   return { problems: runs.flatMap((r) => r.problems), coverage: runs.flatMap((r) => r.coverage), chains: runs.flatMap((r) => r.chains) };
 }
 
@@ -412,10 +527,10 @@ export async function handleApi(root: string, req: IncomingMessage, res: ServerR
 }
 
 /**
- * The folders whose changes should make open pages reload, and the event each sends: the data folder of every product
- * the workspace shows, and Lathe's (its checks).
+ * The folders whose changes the server reads again (dataFilesChanged): the data folder of every product the workspace
+ * shows, and Lathe's (its checks).
  */
-export function watchTargets(root: string): { dir: string; event: 'spec:changed' }[] {
+export function watchTargets(root: string): string[] {
   const dirs = workspaceProducts(root).map((config) => config.dataDir);
-  return [...new Set([...dirs, LATHE_DATA_DIR])].map((dir) => ({ dir, event: 'spec:changed' as const }));
+  return [...new Set([...dirs, LATHE_DATA_DIR])];
 }

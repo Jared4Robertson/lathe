@@ -67,15 +67,16 @@ function Shell() {
   const { path, search } = useLocation();
   // The data's version: every read follows it, and a write that went through or a change to the files moves it on.
   const dataVersion = useDataVersion();
-  const { reload } = dataVersion;
-  // Writes go through the aggregates' commands; the data is read again after one goes through.
+  const { reload, mark } = dataVersion;
+  // Writes go through the aggregates' commands; after one goes through, the reads of the read models it changed read again.
   const writer = useMemo<Writer>(() => ({
     command: async (route, input) => {
+      const before = mark();
       const answer = await postCommand(route, input);
-      if (answer.ok) await reload();
+      if (answer.ok) await reload({ mark: before, tables: answer.tables });
       return answer;
     },
-  }), [reload]);
+  }), [reload, mark]);
   const spaces = useSpaceState(dataVersion.version, path, search);
   // Every page inside a space, and the nav, read the current space's own reads, never another product's.
   const spec = useDataState(spaces.current?.id ?? null, dataVersion);
