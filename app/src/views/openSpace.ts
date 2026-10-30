@@ -124,7 +124,7 @@ function measureOpenSpace(el: HTMLElement, scope: Element, store: OpenSpaceStore
     // while the stage's toolbar row is drawn: a stage switch that redraws the row keeps the foot where it was, and before
     // the first measure the card's top reserves the row (--tools-row, styles.css), so the card never moves under it.
     const parent = el.parentElement;
-    if (parent && tools.some((t) => t.side === 'top' && t.rect.width > 0 && t.rect.height > 0)) {
+    if (parent && tools.some((t) => t.side === 'top')) {
       parent.style.setProperty('--tools-foot', `${Math.round(frame.top - OPEN_GAP)}px`);
     }
     store.set({ open, frame });
