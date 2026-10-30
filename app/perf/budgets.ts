@@ -51,7 +51,7 @@ export const BUDGETS = {
    */
   markChangesMs: 500,
   /**
-   * Big maps (LA-PLT-UC09-R13), on the large product (LA-PLT-TD04, about ten times Lathe's records in one product): how
+   * Big maps (LA-PLT-UC09-R13), on the large product (LA-PLT-TD04, lathe/perf/large-product.ts, about ten times Lathe's records in one product): how
    * many frames may take more than 20 ms (a dropped frame at 60 Hz) while panning and zooming the Graph, the ERD and the
    * Trace, and while panning the Graph through a reload that lays its map out again. None: every frame within 16.7 ms.
    */

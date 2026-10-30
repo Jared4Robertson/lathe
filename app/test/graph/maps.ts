@@ -1,7 +1,7 @@
 import type { RecordIndex } from '../../src/exploring/record-summaries/record-index';
 import { assembleTree, placeTree, treeShape, type GraphMap } from '../../src/graph/map';
 import { assembleNested, placeNested, type NestedMap } from '../../src/graph/nested';
-import { mapLabel, treeLabel, type MapLabel } from '../../src/graph/text';
+import { mapLabel, textMeasure, treeLabel, type MapLabel } from '../../src/graph/text';
 import { treeChildren } from '../../src/graph/tree';
 
 // The maps the app lays out in the layout's worker (app/src/graph/layout.ts), laid out on the test's thread by the same
@@ -23,8 +23,20 @@ export function layoutNested(roots: readonly string[], childrenOf: (id: string) 
   return assembleNested(shape, (i) => labels[i], placeNested(shape, (i) => labels[i]));
 }
 
+/** Each index's maps, by view, text measure and root: as the app keeps a layout for one input, one per index here. */
+const made = new WeakMap<RecordIndex, Map<string, GraphMap | NestedMap>>();
+function once<M extends GraphMap | NestedMap>(index: RecordIndex, key: string, make: () => M): M {
+  let maps = made.get(index);
+  if (!maps) { maps = new Map(); made.set(index, maps); }
+  const full = `${key}|${textMeasure().key}`;
+  if (!maps.has(full)) maps.set(full, make());
+  return maps.get(full) as M;
+}
+
 /** A product's Tree map (or a tree's no product reaches), from its root, as the Graph lays it out. */
-export const graphMap = (index: RecordIndex, root: string): GraphMap => layoutTree([root], (id) => treeChildren(index, id), (id) => treeLabel(index, id));
+export const graphMap = (index: RecordIndex, root: string): GraphMap =>
+  once(index, `tree|${root}`, () => layoutTree([root], (id) => treeChildren(index, id), (id) => treeLabel(index, id)));
 
 /** A product's Nested map, from its root, as the Graph lays it out. */
-export const nestedMap = (index: RecordIndex, root: string): NestedMap => layoutNested([root], (id) => treeChildren(index, id), (id) => mapLabel(index, id));
+export const nestedMap = (index: RecordIndex, root: string): NestedMap =>
+  once(index, `nested|${root}`, () => layoutNested([root], (id) => treeChildren(index, id), (id) => mapLabel(index, id)));
