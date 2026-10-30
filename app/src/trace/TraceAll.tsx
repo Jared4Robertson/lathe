@@ -685,7 +685,8 @@ function paintOutsideMark(g: CanvasRenderingContext2D, laid: AllLaid, graph: All
 function paintHeads(g: CanvasRenderingContext2D, counts: readonly number[], look: Look, fonts: GraphFonts, v: Viewport, box: { x: number; y: number; w: number; h: number }, dpr: number) {
   g.save();
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
-  g.globalAlpha = 0.94;
+  // Solid, in the stage's own paper, so a box under it never shows through.
+  g.globalAlpha = 1;
   g.fillStyle = look.paper;
   g.fillRect(box.x, box.y, box.w, HEAD_PX);
   g.globalAlpha = 1;
