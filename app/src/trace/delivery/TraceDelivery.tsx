@@ -31,7 +31,7 @@ import { highlightFade, marksMoving, useStageMarks, type MarkTree } from '../../
 import { anchorOf, rollupText, totalChanges, type ChangeCounts } from '../../changes/rollup';
 import { DELIVERY_COLUMN_LABELS, DELIVERY_COLUMNS, DELIVERY_STAGES, isOpen, type DeliveryGraph, type DeliveryStage, type Item, type Openness } from './delivery';
 import { lastDeliveryOrder, useDeliveryOrder } from './delivery-order';
-import { columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutDelivery, OUTSIDE_GAP, type BoxPlace, type DeliveryLaid } from './delivery-layout';
+import { columnLeft, ITEM_HEIGHT, ITEM_WIDTH, layOutDelivery, outcomesBeside, OUTSIDE_GAP, type BoxPlace, type DeliveryLaid } from './delivery-layout';
 import { litBy, type Lit } from './delivery-path';
 
 // Every box is one height, its kind and ID line and its title at a readable size; a box with children carries a ▸ at
@@ -41,7 +41,8 @@ import { litBy, type Lit } from './delivery-path';
 // BLOCK_BELOW_PX). The serves links are drawn as curves from each outcome to the use cases it is served by, under the
 // boxes; the selection's path in its row is drawn the same way, from each record on it to the next across the columns,
 // and lit, the rest of the view faded. The columns' names stay at the top of the frame, a ▸ beside each stage's name
-// opening it in every row (Expand all). The camera frames the focus's row; opening a box, a new order (Tidy up) or a
+// opening it in every row (Expand all). While a row is focused, the outcomes it serves slide beside it and glide home
+// when none is (delivery-layout.ts outcomesBeside, LA-V98-R22). The camera frames the focus's row; opening a box, a new order (Tidy up) or a
 // data change moves no camera, and what moved glides from its old place to its new one. The canvas is hidden from
 // assistive technology: the stage's list (DeliveryList.tsx) is its accessible layer.
 
@@ -104,6 +105,8 @@ export interface TraceDeliveryProps {
   every: Readonly<Record<DeliveryStage, boolean>>;
   /** A count Tidy up raises: the rows are ordered afresh, their rooms closed, once for each. */
   tidy: number;
+  /** The row whose outcomes sit beside it (LA-V98-R22, delivery-layout.ts outcomesBeside); null keeps each at its own place. */
+  beside: string | null;
   /** Opens or closes a box's children. */
   onToggle: (opens: string) => void;
   /** Opens or closes a stage in every row (a column's name). */
@@ -130,7 +133,8 @@ export function TraceDelivery(props: TraceDeliveryProps) {
     return () => { live = false; };
   }, [fonts.body, fonts.mono]);
   const ordered = useDeliveryOrder(props.graph, props.tidy);
-  const laid = useMemo(() => (ordered ? layOutDelivery(ordered.graph, ordered.order, props.open) : null), [ordered, props.open]);
+  const home = useMemo(() => (ordered ? layOutDelivery(ordered.graph, ordered.order, props.open) : null), [ordered, props.open]);
+  const laid = useMemo(() => (ordered && home ? outcomesBeside(home, ordered.graph.serves, props.beside) : null), [ordered, home, props.beside]);
   if (!measure || !ordered || !laid) return <div className="graph-flow trace-flow" data-view="delivery" aria-busy="true" />;
   setTextMeasure(measure);
   return <DeliveryScene {...props} graph={ordered.graph} laid={laid} fonts={fonts} theme={theme} />;
@@ -190,7 +194,7 @@ function plainOf(item: Item): PlainBox {
 /** What one frame draws. */
 interface DeliveryFrame { plates: Plate[]; bars: Bar[]; barred: boolean; serves: number[]; marks: { key: string; x: number; y: number }[] }
 
-function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, onEvery, onBox, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceDeliveryProps, 'tidy'> & { laid: DeliveryLaid; fonts: GraphFonts; theme: number }) {
+function DeliveryScene({ index, focus, graph, laid, open, at, beside, every, onToggle, onEvery, onBox, onNavigate, onPeek, space, ring: ringAt, cameraKey, onOpenNew, fonts, theme }: Omit<TraceDeliveryProps, 'tidy'> & { laid: DeliveryLaid; fonts: GraphFonts; theme: number }) {
   const wrapper = useRef<DeliveryHost>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState<{ w: number; h: number } | null>(null);
@@ -234,7 +238,8 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
   /**
    * The camera for the focus: its row's height (each row it shows in, for a record several use cases share) at a zoom
    * its boxes read at, every column across when they fit, else from the column before the focus's on; the focus's box
-   * always in the frame. With no box, the top of the view.
+   * always in the frame. The outcomes beside its row (LA-V98-R22) are framed with it when they fit: their height with
+   * the row's, and from the Outcome column on when that reaches the focus's box. With no box, the top of the view.
    */
   const framing = useCallback((): Viewport | null => {
     if (!size || (space && !openSpace)) return null;
@@ -254,17 +259,23 @@ function DeliveryScene({ index, focus, graph, laid, open, at, every, onToggle, o
     // As large as reads, up to every column from the Use case column on fitting across.
     const fromUseCase = laid.width - columnLeft(1);
     const zoom = Math.max(ROW_ZOOM, Math.min(1, Math.max(fits, across / fromUseCase), tall));
+    // The outcomes beside the row, in the frame with it when they fit at that zoom.
+    const column = graph.items.get(focusKey!)?.column ?? 0;
+    const outcomes = beside && column > 0 ? graph.serves.filter(([, u]) => u === beside).map(([o]) => laid.places.get(`outcome/${o}`)).filter((p): p is BoxPlace => !!p) : [];
+    const withTop = Math.min(top, ...outcomes.map((p) => p.y));
+    const withBottom = Math.max(bottom, ...outcomes.map((p) => p.y + p.h));
+    if ((withBottom - withTop) * zoom <= head.h - 48) { top = withTop; bottom = withBottom; }
     // Down: the row's top near the frame's top, the focus's box kept in the frame.
     let y = head.y + 24 - top * zoom;
     const atY = own.y * zoom + y;
     if (atY + own.h * zoom > head.y + head.h - 24) y -= atY + own.h * zoom - (head.y + head.h - 24);
-    // Across: every column when they fit, else from the column before the focus's (the Use case column's for a row's
-    // own boxes: the outcomes sit where their rows are, rarely beside this one).
-    const column = graph.items.get(focusKey!)?.column ?? 0;
-    const x = laid.width * zoom <= across ? head.x + (head.w - laid.width * zoom) / 2 : head.x + 24 - columnLeft(column === 0 ? 0 : Math.max(1, column - 1)) * zoom;
+    // Across: every column when they fit; else from the Outcome column when the row's outcomes are beside it and the
+    // focus's box still fits, else from the column before the focus's (the Use case column's for a row's own boxes).
+    const first = outcomes.length > 0 && (own.x + own.w) * zoom <= across ? 0 : column === 0 ? 0 : Math.max(1, column - 1);
+    const x = laid.width * zoom <= across ? head.x + (head.w - laid.width * zoom) / 2 : head.x + 24 - columnLeft(first) * zoom;
     // The focused box always whole in the frame (LA-PAT-APP-UX-R23).
     return wholeIn({ x, y, zoom }, own, head);
-  }, [size, laid, lit, focusKey, frameBox, space, openSpace, graph]);
+  }, [size, laid, lit, focusKey, frameBox, space, openSpace, graph, beside]);
 
   // Each place keeps its camera (the Tab set's cameras, exploring/tab-set): taken back at once when it still frames the
   // same focus in the same order.
