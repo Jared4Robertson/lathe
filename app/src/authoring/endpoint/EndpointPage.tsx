@@ -1,6 +1,6 @@
 import type { ApiRequirementOnPage, EndpointPage as Endpoint } from '../../../../lathe/src/authoring/endpoint/read-model';
 import type { AggregatePageProps } from '../../record/pages';
-import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
+import { Facts, RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
@@ -80,6 +80,7 @@ function Content({ index, page }: { index: RecordIndex; page: Endpoint }) {
       return (
         <>
           <Text index={index} id={id} source={page.endpoint.description} field="description" />
+          <Facts facts={[{ label: 'Method', value: page.endpoint.method }, { label: 'Route', value: <code>{page.endpoint.route}</code> }]} />
           <Text index={index} id={id} source={page.endpoint.notes} title="Notes" field="notes" />
           <RowsSection index={index} title="Handler" ids={page.handler ? [page.handler.handler.id] : []} label={`The handler of ${id}`} empty="No handler yet." className="endpoint-handler" />
           <Requirements index={index} page={page} />

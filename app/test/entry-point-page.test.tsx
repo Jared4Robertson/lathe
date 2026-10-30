@@ -50,7 +50,7 @@ describe('LA-V112-R02-T01 the Entry point editor writes only through the aggrega
     const description = within(form).getByRole('textbox', { name: /^description/ });
     await user.clear(description);
     await user.type(description, 'Opens the store, then serves the shop.');
-    await user.type(within(form).getByRole('textbox', { name: /^packages/ }), '{Enter}zod');
+    await user.type(within(form).getByRole('textbox', { name: /^Packages/ }), '{Enter}zod');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/entry-point/change-entry-point', input: { id: 'DM-SHOP-ENTRY01', description: 'Opens the store, then serves the shop.', packages: ['express', 'zod'] } }]));
     expect(await within(main()).findByText('Opens the store, then serves the shop.')).toBeInTheDocument();

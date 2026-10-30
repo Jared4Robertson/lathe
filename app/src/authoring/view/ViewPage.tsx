@@ -1,6 +1,6 @@
 import type { ViewPage as View, ViewRequirementOnPage } from '../../../../lathe/src/authoring/view/read-model';
 import type { AggregatePageProps } from '../../record/pages';
-import { Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
+import { Facts, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
@@ -73,6 +73,7 @@ function Content({ index, page }: { index: RecordIndex; page: View }) {
       return (
         <>
           <Text index={index} id={id} source={view.description} field="description" />
+          <Facts facts={view.route ? [{ label: 'Route', value: <code>{view.route}</code> }] : []} />
           <Text index={index} id={id} source={view.notes} title="Notes" field="notes" />
           <Requirements index={index} page={page} />
         </>

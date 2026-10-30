@@ -1,4 +1,5 @@
 import type { ServedData } from './read-view';
+import { addChoices, chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -92,8 +93,9 @@ describe('LA-V130-R02-T01 the Aggregate editor writes only through the aggregate
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-A1', { data: withModel(), command: () => ({ answer: ok }) });
     const actions = await toolbar('DM-SHOP-A1');
-    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add entity', 'Add invariant', 'Add domain event', 'Remove']);
-    await user.click(within(actions).getByRole('button', { name: 'Add invariant' }));
+    expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Add…', 'Remove']);
+    expect(await addChoices(user, actions)).toEqual(['Entity', 'Invariant', 'Domain event', 'Storage requirement']);
+    await chooseAdd(user, actions, 'Invariant');
     const form = screen.getByRole('form', { name: 'Add an invariant' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-INV02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'A line holds at least one item');
@@ -105,7 +107,7 @@ describe('LA-V130-R02-T01 the Aggregate editor writes only through the aggregate
   it('adds a domain event from the aggregate\'s page through the Domain event aggregate\'s own Add', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-A1', { data: withModel(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('DM-SHOP-A1')).getByRole('button', { name: 'Add domain event' }));
+    await chooseAdd(user, await toolbar('DM-SHOP-A1'), 'Domain event');
     const form = screen.getByRole('form', { name: 'Add a domain event' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-EV02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Item removed');
@@ -117,7 +119,7 @@ describe('LA-V130-R02-T01 the Aggregate editor writes only through the aggregate
   it('adds an aggregate from its domain\'s page through the aggregate\'s own Add', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP', { data: withModel(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('DM-SHOP')).getByRole('button', { name: 'Add aggregate' }));
+    await chooseAdd(user, await toolbar('DM-SHOP'), 'Aggregate');
     const form = screen.getByRole('form', { name: 'Add an aggregate' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-A2'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Wish list');
@@ -130,7 +132,7 @@ describe('LA-V130-R02-T01 the Aggregate editor writes only through the aggregate
   it('Add sends Add a rule with the invariant\'s RL ID', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-SHOP-INV01', { data: withModel(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('DM-SHOP-INV01')).getByRole('button', { name: 'Add rule' }));
+    await chooseAdd(user, await toolbar('DM-SHOP-INV01'), 'Rule');
     const form = screen.getByRole('form', { name: 'Add a rule' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-SHOP-INV01-RL'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'basket-limit');

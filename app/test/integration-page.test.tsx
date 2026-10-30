@@ -1,3 +1,4 @@
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -5,7 +6,7 @@ import { INTEGRATION_COMMANDS } from '../../lathe/src/authoring/integration/comm
 import type { IntegrationCommands } from '../src/authoring/integration/commands';
 import type { WriteAnswer } from '../../lathe/src/server/contract';
 import { modelWorkspace } from './fixtures/model';
-import { facts, main, openApp, section } from './helpers';
+import { main, openApp, section } from './helpers';
 
 // The Integration page and its editor (LA-AUT-A14, LA-V153): an integration and its adapter and tests are read through
 // the aggregate's own query, and changed only through the aggregate's own commands, one per change, each refusal shown
@@ -58,7 +59,7 @@ describe('LA-V153-R02-T01 the Integration editor writes only through the aggrega
     expect(within(actions).getAllByRole('button').map((b) => b.textContent)).toEqual(['Edit', 'Remove']);
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit P-INT01-AD' });
-    await user.type(within(form).getByRole('textbox', { name: /^packages/ }), 'nodemailer');
+    await user.type(within(form).getByRole('textbox', { name: /^Packages/ }), 'nodemailer');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/integration/change-adapter', input: { id: 'P-INT01-AD', packages: ['nodemailer'] } }]));
   });
@@ -66,7 +67,7 @@ describe('LA-V153-R02-T01 the Integration editor writes only through the aggrega
   it('adds an integration test under the integration with the next free ID, through Add an integration test', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/P-INT01', { data: modelWorkspace(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('P-INT01')).getByRole('button', { name: 'Add integration test' }));
+    await chooseAdd(user, await toolbar('P-INT01'), 'Integration test');
     const form = screen.getByRole('form', { name: 'Add an integration test' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('P-INT01-T01'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Sends a mail');
@@ -116,7 +117,7 @@ describe('LA-V153-R04-T01 an integration\'s page lists the flow steps that excha
     const exchanges = await waitFor(() => section(/^Exchanged with by/));
     expect(within(main()).getByRole('heading', { name: /^Exchanged with by/ })).toHaveTextContent('Exchanged with by1');
     expect(within(exchanges).getByRole('link', { name: /P-D-UC01-FL01-S02/ })).toHaveAttribute('href', '/P-D-UC01-FL01-S02');
-    // The outside system, among its facts in the wiki card.
-    await waitFor(() => expect(facts()).toHaveTextContent('The mail service'));
+    // The outside system, among the integration's own facts on its page.
+    await waitFor(() => expect(main()).toHaveTextContent('The mail service'));
   });
 });

@@ -42,7 +42,7 @@ describe('LA-V151-R02-T01 the UI component editor writes only through the aggreg
     await user.click(within(actions).getByRole('button', { name: 'Edit' }));
     const form = screen.getByRole('form', { name: 'Edit P-UI01' });
     await user.clear(within(form).getByRole('textbox', { name: /^file/ }));
-    await user.type(within(form).getByRole('textbox', { name: /^packages/ }), '{enter}react-dom');
+    await user.type(within(form).getByRole('textbox', { name: /^Packages/ }), '{enter}react-dom');
     await user.click(within(form).getByRole('button', { name: 'Save' }));
     await waitFor(() => expect(commands).toEqual([{ route: '/api/ui-component/change-ui-component', input: { id: 'P-UI01', file: null, packages: ['react', 'react-dom'] } }]));
   });

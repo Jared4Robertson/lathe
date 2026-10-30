@@ -1,6 +1,6 @@
 import type { IntegrationPage as Integration } from '../../../../lathe/src/authoring/integration/read-model';
 import type { AggregatePageProps } from '../../record/pages';
-import { RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
+import { Facts, RowsSection, Summary, TestScenario, Text, readState, type Fact } from '../../record/page-parts';
 import { RecordLink, Section } from '../../specs/parts';
 import { RecordFrame } from '../../specs/RecordContent';
 import { type RecordIndex } from '../../exploring/record-summaries/record-index';
@@ -34,6 +34,7 @@ function Content({ index, page }: { index: RecordIndex; page: Integration }) {
       return (
         <>
           <Text index={index} id={id} source={page.integration.description} field="description" />
+          <Facts facts={page.integration.system ? [{ label: 'System', value: page.integration.system }] : []} />
           <RowsSection index={index} title="Adapter" ids={page.adapter ? [page.adapter.adapter.id] : []} label={`The adapter of ${id}`} empty="No adapter yet." className="integration-adapter" />
           <RowsSection index={index} title="Integration tests" ids={page.tests.map((t) => t.test.id)} label={`The integration tests of ${id}`} empty="No integration tests yet." className="integration-tests" />
         </>

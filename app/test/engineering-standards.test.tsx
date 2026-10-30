@@ -61,6 +61,7 @@ describe('standards in the nav and the wiki', () => {
   it('LA-V92-R73-T01 A standard rule\'s Traceability shows what meets it and its tests, and what meets it shows Meets', async () => {
     await openApp('/DM-STD-CODE-R01', served());
     await screen.findByRole('heading', { level: 1, name: 'Handlers own their transaction' });
+    await within(main()).findByRole('heading', { name: /^Traceability/ });
     const trace = section(/^Traceability/);
     const metBy = within(trace).getByRole('heading', { name: /^Met by/ }).closest('section')!;
     expect(within(metBy).getAllByRole('link').map((a) => a.getAttribute('href'))).toEqual(['/DM-SHOP-CMD01-H']);
@@ -69,6 +70,7 @@ describe('standards in the nav and the wiki', () => {
 
     await openApp('/DM-SHOP-CMD01-H', served());
     await screen.findByRole('heading', { level: 1, name: 'addToBasket' });
+    await within(main()).findByRole('heading', { name: /^Traceability/ });
     const meets = within(section(/^Traceability/)).getByRole('heading', { name: /^Meets/ }).closest('section')!;
     expect(within(meets).getByRole('link', { name: /DM-STD-CODE-R01/ })).toHaveAttribute('href', '/DM-STD-CODE-R01');
   });

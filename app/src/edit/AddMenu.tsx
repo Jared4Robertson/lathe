@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Button } from '../components/Button';
+import { lowerLabel } from '../plural';
 
 // The one way a record's toolbar offers to add what sits under it (LA-PAT-APP-UX): a single "Add <kind>" button when it
 // can add one kind, and one "Add…" button opening the kinds it can add when it can add several, so a page never lines
@@ -25,7 +26,7 @@ export function AddMenu({ id, choices, onPick, title = 'Add…', group = 'Kinds 
   const [open, setOpen] = useState(false);
   useEffect(() => { setOpen(false); }, [id]);
   if (choices.length === 0) return null;
-  if (choices.length === 1) return <Button icon="plus" onClick={() => onPick(choices[0].key)}>Add {lowerFirst(choices[0].label)}</Button>;
+  if (choices.length === 1) return <Button icon="plus" onClick={() => onPick(choices[0].key)}>Add {lowerLabel(choices[0].label)}</Button>;
   const menuId = `add-kinds-${id}-${title.replace(/\W/g, '')}`;
   return (
     <span className="record-add">
@@ -38,6 +39,3 @@ export function AddMenu({ id, choices, onPick, title = 'Add…', group = 'Kinds 
     </span>
   );
 }
-
-/** A label inside a sentence: its first letter lower case, unless the label starts with an initialism (UC, API, UI). */
-const lowerFirst = (label: string) => (/^[A-Z]{2}/.test(label) ? label : label.charAt(0).toLowerCase() + label.slice(1));

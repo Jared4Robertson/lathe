@@ -1,3 +1,4 @@
+import { chooseAdd } from './add-menu';
 import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
@@ -49,7 +50,7 @@ describe('LA-V122-R02-T01 the Pattern editor writes only through the aggregate\'
   it('adds a rule test under a rule with the next free ID, naming the domain it proves the rule in', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-PAT-AUDIT-R01', { data: patternWorkspace(), command: () => ({ answer: ok }) });
-    await user.click(within(await toolbar('DM-PAT-AUDIT-R01')).getByRole('button', { name: 'Add pattern rule test' }));
+    await chooseAdd(user, await toolbar('DM-PAT-AUDIT-R01'), 'Pattern rule test');
     const form = screen.getByRole('form', { name: 'Add a pattern rule test' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-PAT-AUDIT-R01-T02'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Paying is recorded');
@@ -82,7 +83,7 @@ describe('LA-V122-R03-T01 a refused Pattern command shows every reason, keeps wh
     const user = userEvent.setup();
     const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'setting', table: 'pattern_rule', key: 'DM-PAT-AUDIT-R04', message: 'DM-PAT-AUDIT-R04 names the setting scope, which DM-PAT-AUDIT does not have' }] };
     const { commands } = await openApp('/DM-PAT-AUDIT', { data: patternWorkspace(), command: () => ({ answer: refusal }) });
-    await user.click(within(await toolbar('DM-PAT-AUDIT')).getByRole('button', { name: 'Add pattern rule' }));
+    await chooseAdd(user, await toolbar('DM-PAT-AUDIT'), 'Pattern rule');
     const form = screen.getByRole('form', { name: 'Add a pattern rule' });
     await waitFor(() => expect(within(form).getByRole('textbox', { name: /^ID/ })).toHaveValue('DM-PAT-AUDIT-R04'));
     await user.type(within(form).getByRole('textbox', { name: /^title/ }), 'Scope is named');

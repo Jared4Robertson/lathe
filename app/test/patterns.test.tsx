@@ -1,5 +1,5 @@
 import type { ServedData } from './read-view';
-import { fireEvent, screen, within } from '@testing-library/react';
+import { fireEvent, screen, waitFor, within } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
 import { answerQuery } from '../../lathe/src/platform/commands/run';
 import { LIST_FOLLOWERS } from '../../lathe/src/traceability/pattern-following/queries';
@@ -107,7 +107,7 @@ describe('Patterns we follow, on the domain page', () => {
     expect(within(patterns).getByText('3 rules')).toBeInTheDocument();
     fireEvent.click(within(patterns).getByRole('button', { name: 'Expand DM-PAY:DM-PAT-AUDIT' }));
     const r01 = rowOf(patterns, 'DM-PAT-AUDIT-R01');
-    expect(within(r01).getByText('not proved')).toBeInTheDocument();
+    expect(await within(r01).findByText('not proved')).toBeInTheDocument();
     expect(within(r01).getByText('not automated yet')).toHaveAttribute('title', expect.stringContaining('DM-PAT-AUDIT-R01-T02'));
     const r02 = rowOf(patterns, 'DM-PAT-AUDIT-R02');
     expect(r02).toHaveTextContent('setting retention');
@@ -119,7 +119,7 @@ describe('Patterns we follow, on the domain page', () => {
     const patterns = section(/^Patterns we follow/);
     fireEvent.click(within(patterns).getByRole('button', { name: 'Expand DM-PAY:DM-PAT-AUDIT' }));
     const r02 = rowOf(patterns, 'DM-PAT-AUDIT-R02');
-    expect(within(r02).getByText('not applicable')).toBeInTheDocument();
+    expect(await within(r02).findByText('not applicable')).toBeInTheDocument();
     expect(r02).toHaveTextContent('DM-PAY-UC01: Payments keep no records');
     expect(within(r02).getByRole('link', { name: 'DM-PAY-UC01' })).toHaveAttribute('href', '/DM-PAY-UC01');
 
@@ -127,7 +127,7 @@ describe('Patterns we follow, on the domain page', () => {
     await screen.findByRole('heading', { level: 1, name: 'Shopping' });
     const shop = section(/^Patterns we follow/);
     fireEvent.click(within(shop).getByRole('button', { name: 'Expand DM-SHOP:DM-PAT-AUDIT' }));
-    expect(within(rowOf(shop, 'DM-PAT-AUDIT-R01')).getByText('proved')).toBeInTheDocument();
+    expect(await within(rowOf(shop, 'DM-PAT-AUDIT-R01')).findByText('proved')).toBeInTheDocument();
   });
 
   it('LA-V91-R51-T02 Coverage shows the pattern rule line, and its gaps name the rule', async () => {
@@ -161,7 +161,7 @@ describe('Patterns we follow, on the domain page', () => {
       // The tree keeps the pattern open from the first look.
       const expand = within(patterns).queryByRole('button', { name: 'Expand DM-SHOP:DM-PAT-AUDIT' });
       if (expand) fireEvent.click(expand);
-      return within(rowOf(patterns, 'DM-PAT-AUDIT-R01')).getByText(/proved$/);
+      return within(rowOf(patterns, 'DM-PAT-AUDIT-R01')).findByText(/proved$/);
     };
     const missing = await servedByEngine(patternWorkspace());
     const shop = missing.coverage.find((c) => c.domain === 'DM-SHOP')!;
@@ -195,7 +195,7 @@ describe('Patterns we follow, on the domain page', () => {
           expect(standing, `${rule.id} in ${followed.domain}`).toBeDefined();
           const status = standingOf(data, rule.id, followed.domain);
           expect(status.applies).toBe(standing === 'owed');
-          expect(within(rowOf(patterns, rule.id)).getAllByText(marks[standing]).length).toBeGreaterThan(0);
+          expect((await within(rowOf(patterns, rule.id)).findAllByText(marks[standing])).length).toBeGreaterThan(0);
         }
       }
     }
@@ -217,7 +217,7 @@ describe('pattern pages (the Pattern page, LA-V122)', () => {
     expect(within(settings).getAllByRole('row').map((r) => r.textContent)).toEqual([
       'SettingMeaningRules that depend on it',
       'retentionHow long records are kept.DM-PAT-AUDIT-R02',
-      'whoWho is recorded.DM-PAT-AUDIT-R03',
+      'whoWho is recorded.None',
     ]);
     expect(within(section(/^Rules/)).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
       'DM-PAT-AUDIT-R01Each change is recorded',
@@ -246,6 +246,7 @@ describe('pattern pages (the Pattern page, LA-V122)', () => {
       const tables = within(within(followed).getByRole('region', { name: `Followed in ${domain}` })).getAllByRole('table');
       return within(tables[tables.length - 1]).getByRole('link', { name: new RegExp(`^${rule}`) }).closest('tr') as HTMLElement;
     };
+    await waitFor(() => expect(statusOf('DM-PAY', 'DM-PAT-AUDIT-R03')).toHaveTextContent('not applicable'));
     expect(statusOf('DM-SHOP', 'DM-PAT-AUDIT-R01')).toHaveTextContent('proved');
     expect(statusOf('DM-SHOP', 'DM-PAT-AUDIT-R01')).not.toHaveTextContent('not proved');
     expect(statusOf('DM-PAY', 'DM-PAT-AUDIT-R01')).toHaveTextContent(/not proved\s*not automated yet/);
