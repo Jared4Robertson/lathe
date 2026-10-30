@@ -13,6 +13,9 @@ import { useDataStore } from './reads';
 // reaches it, and the repositories, readers and tables stored in it. What every record's page holds around that
 // (traceability, problems, facts and links) is the Record page's (RecordFrame).
 
+/** What the page draws itself from its read, which its Traceability leaves out: what is stored in it, and what provides it. */
+const SHOWN: ReadonlySet<string> = new Set(['in:stored_in', 'out:provided_by']);
+
 /** The data store's kind, where it sits and what reaches it. */
 const factsOf = (index: RecordIndex, page: Store): Fact[] => [
   { label: 'Kind', value: page.store.kind },
@@ -45,7 +48,7 @@ export function DataStorePage({ index, id, summary = false, after }: AggregatePa
         <div className={body}><Summary lead={page.store.description} facts={[...factsOf(index, page), { label: 'Stores', value: page.stores.length }]} />{after}</div>
       ) : (
         <div className={body} data-aggregate="data-store">
-          <RecordFrame index={index} record={index.byId.get(id)!}><Content index={index} page={page} /></RecordFrame>
+          <RecordFrame index={index} record={index.byId.get(id)!} skip={SHOWN}><Content index={index} page={page} /></RecordFrame>
           {after}
         </div>
       )}
