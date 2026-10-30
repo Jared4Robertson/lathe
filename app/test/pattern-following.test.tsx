@@ -21,13 +21,16 @@ async function followedBy() {
   return within(main()).findByRole('heading', { name: /^Followed by\d/ }).then(() => section(/^Followed by/));
 }
 
+/** A row's text without its actions' toolbar: the follower and the values it gives. */
+const rowText = (row: HTMLElement) => [...row.childNodes].map((c) => { const copy = c.cloneNode(true) as HTMLElement; copy.querySelectorAll?.('[role="toolbar"]').forEach((t) => t.remove()); return copy.textContent; }).join('');
+
 describe('LA-V122-R06-T01 a pattern\'s followers are read through the Pattern following aggregate\'s own query', () => {
   it('reads GET /api/pattern-following/list-followers for the pattern, and shows each domain with who follows it there', async () => {
     const { requests } = await openApp('/DM-PAT-AUDIT', { data: patternWorkspace() });
     const followed = await followedBy();
     expect(requests).toContain('GET /api/pattern-following/list-followers?pattern_id=DM-PAT-AUDIT');
     const shop = within(followed).getByRole('region', { name: 'Followed in DM-SHOP' });
-    expect(within(within(shop).getAllByRole('table')[0]).getAllByRole('row').map((r) => r.textContent)).toEqual([
+    expect(within(within(shop).getAllByRole('table')[0]).getAllByRole('row').map(rowText)).toEqual([
       'Use caseretentionwho',
       'The whole domain1 yearNot applicable: Shoppers act for themselves.',
       'DM-SHOP-UC01Add an item to the basketnot givennot given',
@@ -52,7 +55,7 @@ describe('LA-V122-R07-T01 the following\'s editor writes only through the Patter
   it('Change values sends Change the setting values with the whole list', async () => {
     const user = userEvent.setup();
     const { commands, writes } = await openApp('/DM-PAT-AUDIT', { data: patternWorkspace(), command: () => ({ answer: ok }) });
-    await user.click(within(await followedBy()).getByRole('button', { name: 'Change the values DM-SHOP gives' }));
+    await user.click(within(within(await followedBy()).getByRole('toolbar', { name: 'Change the following of DM-SHOP' })).getByRole('button', { name: 'Change values' }));
     const form = screen.getByRole('form', { name: 'Change the values DM-SHOP gives' });
     const retention = within(form).getByRole('textbox', { name: 'value 1' });
     expect(retention).toHaveValue('1 year');
@@ -69,7 +72,7 @@ describe('LA-V122-R07-T01 the following\'s editor writes only through the Patter
   it('Stop following asks first, then sends Stop following a pattern', async () => {
     const user = userEvent.setup();
     const { commands } = await openApp('/DM-PAT-AUDIT', { data: patternWorkspace(), command: () => ({ answer: ok }) });
-    await user.click(within(await followedBy()).getByRole('button', { name: 'Stop DM-SHOP-UC01 following DM-PAT-AUDIT' }));
+    await user.click(within(within(await followedBy()).getByRole('toolbar', { name: 'Change the following of DM-SHOP-UC01' })).getByRole('button', { name: 'Stop following' }));
     const form = screen.getByRole('form', { name: 'Stop DM-SHOP-UC01 following DM-PAT-AUDIT' });
     expect(commands).toEqual([]);
     await user.click(within(form).getByRole('button', { name: 'Stop following' }));
@@ -103,7 +106,7 @@ describe('LA-V122-R08-T01 a refused Pattern following command shows every reason
     const user = userEvent.setup();
     const refusal: WriteAnswer = { ok: false, error: 'refused', problems: [{ rule: 'check', table: 'setting_value', key: 'DM-SHOP', message: 'setting colour is not one of DM-PAT-AUDIT\'s settings' }] };
     const { commands } = await openApp('/DM-PAT-AUDIT', { data: patternWorkspace(), command: () => ({ answer: refusal }) });
-    await user.click(within(await followedBy()).getByRole('button', { name: 'Change the values DM-SHOP gives' }));
+    await user.click(within(within(await followedBy()).getByRole('toolbar', { name: 'Change the following of DM-SHOP' })).getByRole('button', { name: 'Change values' }));
     const form = screen.getByRole('form', { name: 'Change the values DM-SHOP gives' });
     const setting = within(form).getByRole('textbox', { name: 'setting 1' });
     await user.clear(setting);
