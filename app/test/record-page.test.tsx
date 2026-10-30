@@ -7,6 +7,7 @@ import { main, openApp } from './helpers';
 import { pageOf } from '../src/record/pages';
 import { recordIndexOf } from './read-view';
 import { productKindWorkspace } from './fixtures/product-kinds';
+import { patternWorkspace } from './fixtures/patterns';
 
 // The record page's wiki card shows its aggregate's page (its text, its parts such as fields with their types), its
 // Traceability, children and problems; its whole page adds its facts after the body: its kind, its stage, its data
@@ -100,6 +101,31 @@ describe('record page', () => {
       Invokes: ['/DM-SHOP-CMD01'],
       'Happens in': ['/DM-V01'] }));
     expect(factLinks()).toEqual(expect.arrayContaining(['/DM-SHOP-UC01-R01', '/DM-SHOP-CMD01', '/DM-V01']));
+  });
+
+  it('LA-PAT-RECORD-PAGE-R09-T01 A use case\'s frame lists every link its record summary holds both ways, and its Problems count matches its list', async () => {
+    // A use case that follows a pattern (a link out), named by a step's flow (links in through its requirements are
+    // its requirements' own), with a problem of its own: the frame agrees with the reads one by one.
+    const data = patternWorkspace();
+    data.problems.push({ severity: 'warning', check: 'lone-child', record: 'DM-SHOP-UC01', message: 'DM-SHOP-UC01 has a lone child.' });
+    const index = recordIndexOf(data, 'DM');
+    const out = index.outgoing.get('DM-SHOP-UC01') ?? [];
+    const into = index.incoming.get('DM-SHOP-UC01') ?? [];
+    expect(out.length).toBeGreaterThan(0);
+    expanded();
+    await openApp('/DM-SHOP-UC01', { data });
+    await screen.findByRole('heading', { level: 1, name: 'Add an item to the basket' });
+    const linked = (heading: string) => {
+      const list = within(facts()).getByRole('heading', { name: heading }).nextElementSibling as HTMLElement;
+      return [...list.querySelectorAll('a')].map((a) => a.getAttribute('href'));
+    };
+    await waitFor(() => expect(linked('Links out').sort()).toEqual(out.map((l) => `/${l.target}`).sort()));
+    if (into.length > 0) expect(linked('Links in').sort()).toEqual(into.map((l) => `/${l.source}`).sort());
+    else expect(within(facts()).getByText('Nothing links to this record.')).toBeInTheDocument();
+    // The Problems section's count is its list's length, and both are the problems the read gives the record.
+    const problems = section(/^Problems/);
+    await waitFor(() => expect(within(problems).getAllByRole('listitem')).toHaveLength(index.problemsFor.get('DM-SHOP-UC01')!.length));
+    expect(problems.querySelector('.section-count')).toHaveTextContent(String(index.problemsFor.get('DM-SHOP-UC01')!.length));
   });
 
   it('LA-PAT-RECORD-PAGE-R10-T01 A record body is sanitized before it is shown', async () => {

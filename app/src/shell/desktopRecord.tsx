@@ -41,7 +41,7 @@ export function recordIdAt(target: Element | null, pathname: string, known: (id:
 /** Sends the space's check errors, as its Checks panel counts them (list-problems), to the Dock badge whenever the data is read. */
 export function useDesktopErrorCount(index: RecordIndex | null) {
   const setErrorCount = desktopBridge()?.setErrorCount;
-  const problems = useProblems(index?.product ?? '', index);
+  const problems = useProblems(index?.product ?? null, index);
   const count = index && problems.state === 'read' && problems.answer.product === index.product ? problems.answer.errors : null;
   useEffect(() => {
     if (setErrorCount && count !== null) setErrorCount(count);

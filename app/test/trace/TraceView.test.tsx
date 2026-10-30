@@ -242,7 +242,7 @@ describe('the Trace stage', () => {
     expect(within(traceStage()).getByText(/Nothing traces to this record: it serves no requirement or rule\./)).toHaveClass('trace-note', 'is-untraced');
     expect(within(table).getAllByRole('rowheader').map((h) => h.querySelector('.trace-id')!.textContent)).toEqual(['P-D-INV01', 'P-D-INV02']);
     expect(within(traceStage()).getByRole('region', { name: /^Untraced/ }).querySelector('a[aria-current="page"] .trace-id')).toHaveTextContent('P-D-CMD02');
-    await waitFor(() => expect(counts()).toHaveTextContent('Untraced'));
+    await waitFor(() => expect(counts()).toHaveTextContent(/^Untraced · Loan: 2 obligations · \d+ with gaps/));
 
     // An entity, outside every chain: the matrix of its aggregate, with no untraced warning.
     await openApp('/P-D-EN03?stage=trace', served());
@@ -250,7 +250,7 @@ describe('the Trace stage', () => {
     expect(within(table).getAllByRole('rowheader').map((h) => h.querySelector('.trace-id')!.textContent)).toEqual(['P-D-INV01', 'P-D-INV02']);
     expect(traceStage().querySelector('.trace-note.is-untraced')).toBeNull();
     expect(traceStage()).toHaveTextContent('This record sits outside every chain');
-    await waitFor(() => expect(counts()).toHaveTextContent(/^Outside the chains · matrix of Loan/));
+    await waitFor(() => expect(counts()).toHaveTextContent(/^Outside the chains · Loan: 2 obligations · \d+ with gaps/));
   });
 
   it('LA-V98-R05-T02 A click on a box opens its record, keeping the stage and its place; a file\'s box opens the record that names it', async () => {

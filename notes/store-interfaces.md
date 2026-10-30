@@ -175,7 +175,6 @@ store.dataDir: string
 store.rows(table: string): Row[]         // sorted by key
 store.record(id: string): { kind: string; row: Row } | undefined
 store.origin(row: Row): Origin | undefined          // { file, line } or { command }
-store.placements(): Promise<Record<string, { product: string | null; domain: string | null }>>   // each record with no owner, from record_scope (GET /api/spec serves it)
 store.isBuiltIn(row: Row): boolean                  // a row of lathe/data (Lathe's own checks), read-only
 store.query<T>(sql: string): Promise<T[]>           // on the current data
 store.connection: DuckDBConnection                  // follows every write
@@ -232,4 +231,4 @@ What a command does:
 - A `table` may sit under a domain (`domain_id`) for the domain's own infrastructure that implements no design record, such as its outbox: ID `<domain>-TB<nn>`, storage `table`. Exactly one of entity, read model and domain is given.
 - `fed_by` links a read model to a domain event it is kept current from: its own domain's, or another domain's published one (`read-model-fed-by-published` refuses an unpublished event of another domain). This is how a read model shows another domain's data.
 - `calls` may come from a read model too (its projection uses the domain service); its source is the `calls_source` supertype (command, query, read model).
-- A workspace: `products` in `lathe.config.json` lists other products' folders, each with its own config and data and its own store (`workspaceProducts`, `loadProducts`). `GET /api/spec` serves `SpecData.sources`, one per product folder (`{ dataDir, tables }`), under one schema joined from the products' (`joinSchemas`); `POST /api/write` goes to the store of the product its commands name.
+- A workspace: `products` in `lathe.config.json` lists other products' folders, each with its own config and data and its own store (`workspaceProducts`, `loadProducts`). A read that names no record (the products, the meta model) reads every product's store under one schema joined from the products' (`joinSchemas`), refusing two folders that hold the same product; a read or a command that names a record goes to the store of the product that holds it.

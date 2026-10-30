@@ -133,7 +133,7 @@ export const Nav = forwardRef<HTMLElement, NavProps>(function Nav(props, ref) {
   });
 
   // The space's counts as its Checks panel gives them (list-problems): its own problems and the workspace's.
-  const problemsRead = useProblems(index?.product ?? '', index);
+  const problemsRead = useProblems(index?.product ?? null, index);
   const counted = index && problemsRead.state === 'read' && problemsRead.answer.product === index.product ? problemsRead.answer : null;
   const errors = counted?.errors ?? 0;
   const warnings = counted?.warnings ?? 0;

@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { graphMap } from '../../src/graph/map';
 import { plateOf } from '../../src/graph/plate';
-import { STICKY_READ_PX, stickyLabel, stickyRoom, type ScreenBox } from '../../src/graph/sticky';
+import { keepLabel, STICKY_READ_PX, stickyLabel, stickyRoom, type ScreenBox } from '../../src/graph/sticky';
 import { TITLE_FONT, textMeasure } from '../../src/graph/text';
 import { testIndex } from './workspace';
 
@@ -84,5 +84,33 @@ describe('LA-EXP-DS06-T14 a moved label lies on its box\'s one fill, never acros
       }
     }
     expect(moved).toBeGreaterThan(0);
+  });
+});
+
+describe('LA-EXP-DS06-T15 a focused box is never left without its label: the camera moves to where its visible part holds it', () => {
+  const index = testIndex();
+  const map = graphMap(index, 'P');
+  const node = map.nodes.get('P-D')!;
+  const plate = plateOf(index, 'P-D', { view: 'tree', node });
+  // The domain's box 900 px wide from x = 0; a panel covers all but its right 20 px.
+  const zoom = 900 / node.w;
+  const v = { x: -node.x * zoom, y: -node.y * zoom, zoom };
+  const open: ScreenBox = { left: 880, top: -10, right: 2000, bottom: 2000 };
+  const at = (cam: typeof v) => stickyLabel(plate, cam.zoom, (x) => cam.x + x * cam.zoom, (y) => cam.y + y * cam.zoom, open);
+
+  it('leaves a camera that draws the label as it is', () => {
+    const wide: ScreenBox = { left: 300, top: -10, right: 2000, bottom: 2000 };
+    expect(keepLabel(plate, v, wide)).toEqual(v);
+  });
+
+  it('moves a camera whose cut leaves the label no room right, as little as it takes, at the same zoom', () => {
+    expect(at(v).kind).toBe('hidden');
+    const kept = keepLabel(plate, v, open);
+    expect(kept.zoom).toBe(zoom);
+    expect(kept.y).toBe(v.y);
+    expect(kept.x).toBeGreaterThan(v.x);
+    expect(at(kept).kind).not.toBe('hidden');
+    // A pixel less and it would not be drawn.
+    expect(at({ ...kept, x: kept.x - 1.5 }).kind).toBe('hidden');
   });
 });
